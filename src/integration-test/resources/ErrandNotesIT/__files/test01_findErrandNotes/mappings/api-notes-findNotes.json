@@ -1,0 +1,39 @@
+{
+	"name": "api-notes-findNotes",
+	"request": {
+		"method": "GET",
+		"urlPath": "/api-notes/notes",
+		"headers": {
+			"Authorization": {
+				"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
+			}
+		},
+        "queryParameters": {
+            "context": {
+                "equalTo": "SUPPORT"
+            },
+            "caseId": {
+                "equalTo": "ec677eb3-604c-4935-bff7-f8f0b500c8f4"
+            },
+            "clientId": {
+                "equalTo": "api-support-management"
+            },
+            "partyId": {
+                "equalTo": "81471222-5798-11e9-ae24-57fa13b361e1"
+            },
+            "page": {
+                "equalTo": "1"
+            },
+            "limit": {
+                "equalTo": "100"
+            }
+        }
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/json"
+		},
+		"status": 200,
+		"bodyFileName": "test01_findErrandNotes/responses/api-notes-findNotes-response.json"
+	}
+}

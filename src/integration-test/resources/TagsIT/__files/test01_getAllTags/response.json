@@ -1,0 +1,22 @@
+{
+	"categoryTags": [
+		"CATEGORY-1",
+		"CATEGORY-2",
+		"CATEGORY-3"
+	],
+	"statusTags": [
+		"STATUS-1",
+		"STATUS-2",
+		"STATUS-3"
+	],
+	"typeTags": [
+		"TYPE-1",
+		"TYPE-2",
+		"TYPE-3"
+	],
+	"clientIdTags": [
+		"CLIENT_ID-1",
+		"CLIENT_ID-2",
+		"CLIENT_ID-3"
+	]
+}

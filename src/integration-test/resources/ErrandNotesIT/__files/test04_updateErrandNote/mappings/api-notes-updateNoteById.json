@@ -1,0 +1,28 @@
+{
+	"name": "api-notes-updateNoteById",
+	"request": {
+		"method": "PATCH",
+		"urlPath": "/api-notes/notes/d1f2c8d4-d234-4504-a483-b74570a7941d",
+		"headers": {
+			"Authorization": {
+				"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
+			}
+		},
+		"bodyPatterns": [
+			{
+				"equalToJson": {
+					"subject": "This is an updated subject",
+					"body": "This is an updated note",
+					"modifiedBy": "Santa Claus"
+				}
+			}
+		]
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/json"
+		},
+		"status": 200,
+		"bodyFileName": "test04_updateErrandNote/responses/api-notes-updateNoteById-response.json"
+	}
+}

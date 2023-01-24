@@ -1,0 +1,1 @@
+ALTER TABLE errand CHANGE COLUMN updated modified datetime(6);

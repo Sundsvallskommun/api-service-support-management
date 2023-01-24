@@ -1,0 +1,753 @@
+openapi: 3.0.1
+info:
+  title: api-notes
+  contact: {}
+  license:
+    name: MIT License
+    url: https://opensource.org/licenses/MIT
+  version: "2.0"
+servers:
+- url: https://microservices-test.sundsvall.se/notes
+  description: Generated server url
+tags:
+- name: Notes
+  description: Notes
+paths:
+  /notes:
+    get:
+      tags:
+      - Notes
+      summary: Find all notes filtered by incoming parameters
+      operationId: findNotes
+      parameters:
+      - name: searchParams
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/FindNotesRequest'
+      responses:
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/Problem'
+                - $ref: '#/components/schemas/ConstraintViolationProblem'
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FindNotesResponse'
+    post:
+      tags:
+      - Notes
+      summary: Create new note
+      operationId: createNote
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateNoteRequest'
+        required: true
+      responses:
+        "201":
+          description: Successful operation
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
+          content:
+            application/json: {}
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/Problem'
+                - $ref: '#/components/schemas/ConstraintViolationProblem'
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /notes/{id}:
+    get:
+      tags:
+      - Notes
+      summary: Get note by ID
+      operationId: getNoteById
+      parameters:
+      - name: id
+        in: path
+        description: Note ID
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      responses:
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/Problem'
+                - $ref: '#/components/schemas/ConstraintViolationProblem'
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+    delete:
+      tags:
+      - Notes
+      summary: Delete note by ID
+      operationId: deleteNoteById
+      parameters:
+      - name: id
+        in: path
+        description: Note ID
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      responses:
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/Problem'
+                - $ref: '#/components/schemas/ConstraintViolationProblem'
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        "204":
+          description: Successful operation
+          content:
+            application/json: {}
+    patch:
+      tags:
+      - Notes
+      summary: Update note
+      operationId: updateNote
+      parameters:
+      - name: id
+        in: path
+        description: Note ID
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateNoteRequest'
+        required: true
+      responses:
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/Problem'
+                - $ref: '#/components/schemas/ConstraintViolationProblem'
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /api-docs:
+    get:
+      tags:
+      - API
+      summary: OpenAPI
+      operationId: getApiDocs
+      responses:
+        "200":
+          description: OK
+          content:
+            application/yaml:
+              schema:
+                type: string
+      x-auth-type: None
+      x-throttling-tier: Unlimited
+      x-wso2-mutual-ssl: Optional
+components:
+  schemas:
+    CreateNoteRequest:
+      required:
+      - body
+      - clientId
+      - context
+      - createdBy
+      - role
+      - subject
+      type: object
+      properties:
+        context:
+          maxLength: 255
+          minLength: 1
+          type: string
+          description: Context for note
+          example: SUPPORT
+        role:
+          maxLength: 255
+          minLength: 1
+          type: string
+          description: Role of note creator
+          example: FIRST_LINE_SUPPORT
+        clientId:
+          maxLength: 255
+          minLength: 1
+          type: string
+          description: Id of the client who is the owner of the note
+          example: SUPPORT_MGMT
+        partyId:
+          type: string
+          description: Party id (e.g. a personId or an organizationId)
+          example: 81471222-5798-11e9-ae24-57fa13b361e1
+        subject:
+          maximum: 255
+          maxLength: 255
+          minLength: 1
+          type: string
+          description: The note subject
+          example: This is a subject
+        body:
+          maximum: 2048
+          maxLength: 2048
+          minLength: 1
+          type: string
+          description: The note body
+          example: This is a note
+        createdBy:
+          type: string
+          description: Created by
+          example: John Doe
+        caseId:
+          maxLength: 255
+          minLength: 1
+          type: string
+          description: Id for the case
+          example: "12345"
+        caseType:
+          maxLength: 255
+          minLength: 1
+          type: string
+          description: Type of the case
+          example: Byggärende
+        caseLink:
+          maxLength: 512
+          minLength: 1
+          type: string
+          description: Link to the case
+          example: http://test.sundsvall.se/case1337
+        externalCaseId:
+          maxLength: 255
+          minLength: 1
+          type: string
+          description: External id for the case
+          example: "2229"
+      description: CreateNoteRequest model
+    Problem:
+      type: object
+      properties:
+        instance:
+          type: string
+          format: uri
+        type:
+          type: string
+          format: uri
+        parameters:
+          type: object
+          additionalProperties:
+            type: object
+        detail:
+          type: string
+        status:
+          $ref: '#/components/schemas/StatusType'
+        title:
+          type: string
+    StatusType:
+      type: object
+      properties:
+        statusCode:
+          type: integer
+          format: int32
+        reasonPhrase:
+          type: string
+    ConstraintViolationProblem:
+      type: object
+      properties:
+        cause:
+          $ref: '#/components/schemas/ThrowableProblem'
+        stackTrace:
+          type: array
+          items:
+            type: object
+            properties:
+              classLoaderName:
+                type: string
+              moduleName:
+                type: string
+              moduleVersion:
+                type: string
+              methodName:
+                type: string
+              fileName:
+                type: string
+              lineNumber:
+                type: integer
+                format: int32
+              className:
+                type: string
+              nativeMethod:
+                type: boolean
+        type:
+          type: string
+          format: uri
+        status:
+          $ref: '#/components/schemas/StatusType'
+        violations:
+          type: array
+          items:
+            $ref: '#/components/schemas/Violation'
+        title:
+          type: string
+        message:
+          type: string
+        instance:
+          type: string
+          format: uri
+        parameters:
+          type: object
+          additionalProperties:
+            type: object
+        detail:
+          type: string
+        suppressed:
+          type: array
+          items:
+            type: object
+            properties:
+              cause:
+                type: object
+                properties:
+                  stackTrace:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        classLoaderName:
+                          type: string
+                        moduleName:
+                          type: string
+                        moduleVersion:
+                          type: string
+                        methodName:
+                          type: string
+                        fileName:
+                          type: string
+                        lineNumber:
+                          type: integer
+                          format: int32
+                        className:
+                          type: string
+                        nativeMethod:
+                          type: boolean
+                  message:
+                    type: string
+                  localizedMessage:
+                    type: string
+              stackTrace:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    classLoaderName:
+                      type: string
+                    moduleName:
+                      type: string
+                    moduleVersion:
+                      type: string
+                    methodName:
+                      type: string
+                    fileName:
+                      type: string
+                    lineNumber:
+                      type: integer
+                      format: int32
+                    className:
+                      type: string
+                    nativeMethod:
+                      type: boolean
+              message:
+                type: string
+              localizedMessage:
+                type: string
+        localizedMessage:
+          type: string
+    ThrowableProblem:
+      type: object
+      properties:
+        cause:
+          $ref: '#/components/schemas/ThrowableProblem'
+        stackTrace:
+          type: array
+          items:
+            type: object
+            properties:
+              classLoaderName:
+                type: string
+              moduleName:
+                type: string
+              moduleVersion:
+                type: string
+              methodName:
+                type: string
+              fileName:
+                type: string
+              lineNumber:
+                type: integer
+                format: int32
+              className:
+                type: string
+              nativeMethod:
+                type: boolean
+        message:
+          type: string
+        instance:
+          type: string
+          format: uri
+        type:
+          type: string
+          format: uri
+        parameters:
+          type: object
+          additionalProperties:
+            type: object
+        detail:
+          type: string
+        status:
+          $ref: '#/components/schemas/StatusType'
+        title:
+          type: string
+        suppressed:
+          type: array
+          items:
+            type: object
+            properties:
+              cause:
+                type: object
+                properties:
+                  stackTrace:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        classLoaderName:
+                          type: string
+                        moduleName:
+                          type: string
+                        moduleVersion:
+                          type: string
+                        methodName:
+                          type: string
+                        fileName:
+                          type: string
+                        lineNumber:
+                          type: integer
+                          format: int32
+                        className:
+                          type: string
+                        nativeMethod:
+                          type: boolean
+                  message:
+                    type: string
+                  localizedMessage:
+                    type: string
+              stackTrace:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    classLoaderName:
+                      type: string
+                    moduleName:
+                      type: string
+                    moduleVersion:
+                      type: string
+                    methodName:
+                      type: string
+                    fileName:
+                      type: string
+                    lineNumber:
+                      type: integer
+                      format: int32
+                    className:
+                      type: string
+                    nativeMethod:
+                      type: boolean
+              message:
+                type: string
+              localizedMessage:
+                type: string
+        localizedMessage:
+          type: string
+    Violation:
+      type: object
+      properties:
+        field:
+          type: string
+        message:
+          type: string
+    UpdateNoteRequest:
+      required:
+      - body
+      - modifiedBy
+      - subject
+      type: object
+      properties:
+        subject:
+          maximum: 255
+          maxLength: 255
+          minLength: 1
+          type: string
+          description: The note subject
+          example: This is a subject
+        body:
+          maximum: 2048
+          maxLength: 2048
+          minLength: 1
+          type: string
+          description: The note nody
+          example: This is a note
+        modifiedBy:
+          type: string
+          description: Modified by
+          example: John Doe
+        caseId:
+          maxLength: 255
+          minLength: 1
+          type: string
+          description: Id for the case
+          example: "12345"
+        caseType:
+          maxLength: 255
+          minLength: 1
+          type: string
+          description: Type of the case
+          example: Byggärende
+        caseLink:
+          maxLength: 512
+          minLength: 1
+          type: string
+          description: Link to the case
+          example: http://test.sundsvall.se/case1337
+        externalCaseId:
+          maxLength: 255
+          minLength: 1
+          type: string
+          description: External id for the case
+          example: "2229"
+      description: UpdateNoteRequest model
+    Note:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Note ID
+          example: b82bd8ac-1507-4d9a-958d-369261eecc15
+        context:
+          type: string
+          description: Context for note
+          example: SUPPORT
+        role:
+          type: string
+          description: Role of note creator
+          example: FIRST_LINE_SUPPORT
+        clientId:
+          type: string
+          description: Id of the client who is the owner of the note
+          example: SUPPORT_MGMT
+        partyId:
+          type: string
+          description: Party ID (e.g. a personId or an organizationId)
+          example: 81471222-5798-11e9-ae24-57fa13b361e1
+        subject:
+          type: string
+          description: The note subject
+          example: This is a subject
+        body:
+          type: string
+          description: The note body
+          example: This is a note
+        caseId:
+          type: string
+          description: Id for the case
+          example: "12345"
+        caseType:
+          type: string
+          description: Type of the case
+          example: Byggärende
+        caseLink:
+          type: string
+          description: Link to the case
+          example: http://test.sundsvall.se/case1337
+        externalCaseId:
+          type: string
+          description: External id for the case
+          example: "2229"
+        createdBy:
+          type: string
+          description: Created by
+          example: John Doe
+        modifiedBy:
+          type: string
+          description: Modified by
+          example: John Doe
+        created:
+          type: string
+          description: Created timestamp
+          format: date-time
+        modified:
+          type: string
+          description: Modified timestamp
+          format: date-time
+      description: Note model
+    FindNotesRequest:
+      type: object
+      properties:
+        context:
+          type: string
+          description: Context for note
+          example: SUPPORT
+        role:
+          type: string
+          description: Role of note creator
+          example: FIRST_LINE_SUPPORT
+        clientId:
+          type: string
+          description: Id of the client who is the owner of the note
+          example: SUPPORT_MGMT
+        partyId:
+          type: string
+          description: Party id (e.g. a personId or an organizationId)
+          example: 81471222-5798-11e9-ae24-57fa13b361e1
+        caseId:
+          type: string
+          description: Id for the case
+          example: "12345"
+        page:
+          minimum: 1
+          type: integer
+          description: Page number
+          format: int32
+          example: 1
+          default: 1
+        limit:
+          maximum: 1000
+          minimum: 1
+          type: integer
+          description: Result size per page
+          format: int32
+          example: 100
+          default: 100
+      description: FindNotesRequest model
+    FindNotesResponse:
+      type: object
+      properties:
+        notes:
+          type: array
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/Note'
+        _meta:
+          $ref: '#/components/schemas/MetaData'
+      description: FindNotesResponse model
+    MetaData:
+      type: object
+      properties:
+        page:
+          type: integer
+          description: Current page
+          format: int32
+          readOnly: true
+          example: 5
+        limit:
+          type: integer
+          description: Displayed objects per page
+          format: int32
+          readOnly: true
+          example: 20
+        count:
+          type: integer
+          description: Displayed objects on current page
+          format: int32
+          readOnly: true
+          example: 13
+        totalRecords:
+          type: integer
+          description: Total amount of hits based on provided search parameters
+          format: int64
+          readOnly: true
+          example: 98
+        totalPages:
+          type: integer
+          description: Total amount of pages based on provided search parameters
+          format: int32
+          readOnly: true
+          example: 23
+      description: Metadata model
+      readOnly: true
+  securitySchemes: {}

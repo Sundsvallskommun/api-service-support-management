@@ -1,0 +1,27 @@
+{
+	"id": "1be673c0-6ba3-4fb0-af4a-43acf23389f6",
+	"title": "Updated title",
+	"priority": "HIGH",
+	"customer": {
+		"id": "CUSTOMER_ID-3",
+		"type": "ENTERPRISE"
+	},
+	"externalTags": [
+		{
+			"key": "KEY-4",
+			"value": "VALUE-4"
+		},
+		{
+			"key": "KEY-5",
+			"value": "VALUE-5"
+		}
+	],
+	"clientIdTag": "CLIENT_ID-3",
+	"categoryTag": "CATEGORY-3",
+	"typeTag": "TYPE-3",
+	"statusTag": "STATUS-3",
+	"reporterUserId": "REPORTER_USER_ID-3",
+	"assignedUserId": "ASSIGNED_USER_ID-3",
+	"assignedGroupId": "ASSIGNED_GROUP_ID-3",
+	"modified": "${json-unit.any-string}"
+}

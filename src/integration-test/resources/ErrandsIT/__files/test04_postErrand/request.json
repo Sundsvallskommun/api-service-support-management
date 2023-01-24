@@ -1,0 +1,21 @@
+{
+	"title": "Title for the errand",
+	"priority": "LOW",
+	"customer": {
+		"id": "cb20c51f-fcf3-42c0-b613-de563634a8ec",
+		"type": "PRIVATE"
+	},
+	"externalTags": [
+		{
+			"key": "caseid",
+			"value": "8849-2848"
+		}
+	],
+	"clientIdTag": "CLIENT_ID-2",
+	"categoryTag": "CATEGORY-2",
+	"typeTag": "TYPE-2",
+	"statusTag": "STATUS-2",
+	"reporterUserId": "joe01doe",
+	"assignedUserId": "joe01doe",
+	"assignedGroupId": "hardware support"
+}

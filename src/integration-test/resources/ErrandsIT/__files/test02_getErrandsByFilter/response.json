@@ -1,0 +1,55 @@
+{
+	"content": [
+		{
+			"id": "ec677eb3-604c-4935-bff7-f8f0b500c8f4",
+			"title": "TITLE-1",
+			"priority": "LOW",
+			"customer": {
+				"id": "CUSTOMER_ID-1",
+				"type": "EMPLOYEE"
+			},
+			"externalTags": [
+				{
+					"key": "KEY-1",
+					"value": "VALUE-1"
+				},
+				{
+					"key": "KEY-2",
+					"value": "VALUE-2"
+				}
+			],
+			"clientIdTag": "CLIENT_ID-1",
+			"categoryTag": "CATEGORY-1",
+			"typeTag": "TYPE-1",
+			"statusTag": "STATUS-1",
+			"reporterUserId": "REPORTER_USER_ID-1",
+			"assignedUserId": "ASSIGNED_USER_ID-1",
+			"assignedGroupId": "ASSIGNED_GROUP_ID-1"
+		}
+	],
+	"pageable": {
+		"sort": {
+			"empty": true,
+			"sorted": false,
+			"unsorted": true
+		},
+		"offset": 0,
+		"pageNumber": 0,
+		"pageSize": 20,
+		"unpaged": false,
+		"paged": true
+	},
+	"last": true,
+	"totalPages": 1,
+	"totalElements": 1,
+	"size": 20,
+	"number": 0,
+	"sort": {
+		"empty": true,
+		"sorted": false,
+		"unsorted": true
+	},
+	"first": true,
+	"numberOfElements": 1,
+	"empty": false
+}
