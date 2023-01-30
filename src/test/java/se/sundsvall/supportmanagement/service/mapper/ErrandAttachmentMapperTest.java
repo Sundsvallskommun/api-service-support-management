@@ -1,18 +1,17 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
-import org.junit.jupiter.api.Test;
-
-import java.util.List;
-
 import static org.apache.commons.codec.binary.Base64.encodeBase64String;
 import static org.assertj.core.api.Assertions.assertThat;
 import static se.sundsvall.supportmanagement.service.util.TestObjectsBuilder.buildAttachmentEntity;
 import static se.sundsvall.supportmanagement.service.util.TestObjectsBuilder.buildErrandAttachment;
 import static se.sundsvall.supportmanagement.service.util.TestObjectsBuilder.buildErrandEntity;
 
+import java.util.List;
+
+import org.junit.jupiter.api.Test;
+
 class ErrandAttachmentMapperTest {
 
-	private static final String ERRAND_ID = "errandId";
 	private static final String ATTACHMENT_ID = "attachmentId";
 	private static final String FILE_NAME = "fileName";
 	private static final String FILE = "file";
