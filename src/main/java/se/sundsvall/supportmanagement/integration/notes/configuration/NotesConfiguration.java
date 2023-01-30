@@ -12,13 +12,13 @@ import se.sundsvall.dept44.configuration.feign.decoder.ProblemErrorDecoder;
 @Import(FeignConfiguration.class)
 public class NotesConfiguration {
 
-	public static final String CLIENT_REGISTRATION_ID = "notes";
+	public static final String CLIENT_ID = "notes";
 
 	@Bean
 	FeignBuilderCustomizer feignBuilderCustomizer(final NotesProperties notesProperties, final ClientRegistrationRepository clientRegistrationRepository) {
 		return FeignMultiCustomizer.create()
-			.withErrorDecoder(new ProblemErrorDecoder(CLIENT_REGISTRATION_ID))
-			.withRetryableOAuth2InterceptorForClientRegistration(clientRegistrationRepository.findByRegistrationId(CLIENT_REGISTRATION_ID))
+			.withErrorDecoder(new ProblemErrorDecoder(CLIENT_ID))
+			.withRetryableOAuth2InterceptorForClientRegistration(clientRegistrationRepository.findByRegistrationId(CLIENT_ID))
 			.withRequestTimeoutsInSeconds(notesProperties.connectTimeout(), notesProperties.readTimeout())
 			.composeCustomizersToOne();
 	}

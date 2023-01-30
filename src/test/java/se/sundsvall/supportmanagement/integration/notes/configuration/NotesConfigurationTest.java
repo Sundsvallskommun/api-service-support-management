@@ -5,7 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static se.sundsvall.supportmanagement.integration.notes.configuration.NotesConfiguration.CLIENT_REGISTRATION_ID;
+import static se.sundsvall.supportmanagement.integration.notes.configuration.NotesConfiguration.CLIENT_ID;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -57,14 +57,14 @@ class NotesConfigurationTest {
 			ArgumentCaptor<ProblemErrorDecoder> errorDecoderCaptor = ArgumentCaptor.forClass(ProblemErrorDecoder.class);
 
 			verify(feignMultiCustomizerSpy).withErrorDecoder(errorDecoderCaptor.capture());
-			verify(clientRegistrationRepositoryMock).findByRegistrationId(CLIENT_REGISTRATION_ID);
+			verify(clientRegistrationRepositoryMock).findByRegistrationId(CLIENT_ID);
 			verify(feignMultiCustomizerSpy).withRetryableOAuth2InterceptorForClientRegistration(same(clientRegistrationMock));
 			verify(propertiesMock).connectTimeout();
 			verify(propertiesMock).readTimeout();
 			verify(feignMultiCustomizerSpy).withRequestTimeoutsInSeconds(1, 2);
 			verify(feignMultiCustomizerSpy).composeCustomizersToOne();
 
-			assertThat(errorDecoderCaptor.getValue()).hasFieldOrPropertyWithValue("integrationName", CLIENT_REGISTRATION_ID);
+			assertThat(errorDecoderCaptor.getValue()).hasFieldOrPropertyWithValue("integrationName", CLIENT_ID);
 			assertThat(customizer).isSameAs(feignBuilderCustomizerMock);
 		}
 	}
