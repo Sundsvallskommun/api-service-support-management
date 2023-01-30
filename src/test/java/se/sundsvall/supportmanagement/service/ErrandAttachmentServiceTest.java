@@ -1,18 +1,5 @@
 package se.sundsvall.supportmanagement.service;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.zalando.problem.ThrowableProblem;
-import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
-import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
-import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
-import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-
-import java.util.List;
-
 import static java.util.Optional.of;
 import static org.apache.commons.codec.binary.Base64.encodeBase64String;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -26,6 +13,20 @@ import static org.zalando.problem.Status.NOT_FOUND;
 import static se.sundsvall.supportmanagement.service.util.TestObjectsBuilder.buildAttachmentEntity;
 import static se.sundsvall.supportmanagement.service.util.TestObjectsBuilder.buildErrandAttachment;
 import static se.sundsvall.supportmanagement.service.util.TestObjectsBuilder.buildErrandEntity;
+
+import java.util.List;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.zalando.problem.ThrowableProblem;
+
+import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
+import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 
 @ExtendWith(MockitoExtension.class)
 class ErrandAttachmentServiceTest {
@@ -99,7 +100,7 @@ class ErrandAttachmentServiceTest {
 		// Assertions and verifications
 		assertThat(exception.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(exception.getTitle()).isEqualTo(BAD_REQUEST.getReasonPhrase());
-		assertThat(exception.getMessage()).isEqualTo("Bad Request: An attachment with id 'attachmentId' does not belong to errand with id 'errandId'");
+		assertThat(exception.getMessage()).isEqualTo("Bad Request: Attachment with id 'attachmentId' was not found for errand with id 'errandId'");
 
 		verify(errandsRepositoryMock).existsById(ERRAND_ID);
 		verify(attachmentRepositoryMock).findById(ATTACHMENT_ID);
