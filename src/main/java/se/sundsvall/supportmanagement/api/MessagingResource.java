@@ -32,7 +32,7 @@ import se.sundsvall.supportmanagement.api.model.messaging.SmsRequest;
 public class MessagingResource {
 
 	@PostMapping(path = "/email", consumes = APPLICATION_JSON_VALUE, produces = { ALL_VALUE, APPLICATION_PROBLEM_JSON_VALUE })
-	@Operation(summary = "Send email message", description = "Send an email message to a recipient")
+	@Operation(summary = "Send email", description = "Send an email message to a recipient")
 	@ApiResponse(responseCode = "204", description = "Successful operation")
 	@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = { Problem.class, ConstraintViolationProblem.class })))
 	@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
