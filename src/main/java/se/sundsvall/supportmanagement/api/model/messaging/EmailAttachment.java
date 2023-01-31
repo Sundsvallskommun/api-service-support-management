@@ -67,7 +67,7 @@ public class EmailAttachment {
 		if (getClass() != obj.getClass()) {
 			return false;
 		}
-		EmailAttachment other = (EmailAttachment) obj;
+var other = (EmailAttachment) obj;
 		return Objects.equals(base64EncodedString, other.base64EncodedString) && Objects.equals(name, other.name);
 	}
 
