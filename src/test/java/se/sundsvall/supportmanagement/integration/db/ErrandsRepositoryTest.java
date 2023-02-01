@@ -134,10 +134,10 @@ class ErrandsRepositoryTest {
 		final var dateFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
 		final var from = OffsetDateTime.now().minusMinutes(1).format(dateFormat);
 		final var to = OffsetDateTime.now().plusMinutes(1).format(dateFormat);
-		final var filter = String.format("(created > '" + from + "' AND created < '" + to + "')");
+		final var filter = String.format("(created > '%s' AND created < '%s')", from, to);
 
-		Specification<ErrandEntity> specification = new FilterSpecification<>(filter);
-		Pageable pageable = PageRequest.of(0, 20);
+		final var specification = new FilterSpecification<ErrandEntity>(filter);
+		final var pageable = PageRequest.of(0, 20);
 
 		//Setup ErrandEntity to find
 		final var entityToUpdate = errandsRepository.findById("ERRAND_ID-3");
@@ -158,7 +158,7 @@ class ErrandsRepositoryTest {
 	void shouldThrowExceptionWhenDateTimeIsOfWrongFormat() {
 		//Setup date filter;
 		final var invalidDateFormat = "31-01-2023T16:00:20.954+01:00";
-		final var filter = String.format("(created > '" + invalidDateFormat + "')");
+		final var filter = String.format("(created > '%s')", invalidDateFormat);
 
 		Specification<ErrandEntity> specification = new FilterSpecification<>(filter);
 		Pageable pageable = PageRequest.of(0, 20);
