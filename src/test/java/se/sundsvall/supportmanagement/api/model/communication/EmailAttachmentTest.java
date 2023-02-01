@@ -1,4 +1,4 @@
-package se.sundsvall.supportmanagement.api.model.messaging;
+package se.sundsvall.supportmanagement.api.model.communication;
 
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanEquals;

@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.api;
 
+import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
@@ -7,6 +8,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.zalando.problem.Status.BAD_REQUEST;
 
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,16 +20,18 @@ import org.zalando.problem.violations.ConstraintViolationProblem;
 import org.zalando.problem.violations.Violation;
 
 import se.sundsvall.supportmanagement.Application;
-import se.sundsvall.supportmanagement.api.model.messaging.EmailAttachment;
-import se.sundsvall.supportmanagement.api.model.messaging.EmailRequest;
-import se.sundsvall.supportmanagement.api.model.messaging.SmsRequest;
-
+import se.sundsvall.supportmanagement.api.model.communication.EmailAttachment;
+import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
+import se.sundsvall.supportmanagement.api.model.communication.SmsRequest;
 @SpringBootTest(classes = Application.class, webEnvironment = RANDOM_PORT)
 @ActiveProfiles("junit")
-class MessagingResourceFailureTest {
+class ErrandCommunicationResourceFailureTest {
 
+	private static final String ERRAND_ID = randomUUID().toString();
 	private static final String CONSTRAINT_VIOLATION = "Constraint Violation";
-	private static final String PATH = "/messaging/";
+	private static final String PATH_PREFIX = "/errands/{id}/communication";
+	private static final String PATH_SMS = "/sms";
+	private static final String PATH_EMAIL = "/email";
 
 	@Autowired
 	private WebTestClient webTestClient;
@@ -36,7 +40,7 @@ class MessagingResourceFailureTest {
 	void sendSmsWithoutBody() {
 
 		// Call
-		final var response = webTestClient.post().uri(PATH + "sms")
+		final var response = webTestClient.post().uri(builder -> builder.path(PATH_PREFIX + PATH_SMS).build(Map.of("id", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.exchange()
 			.expectStatus().isBadRequest()
@@ -48,7 +52,8 @@ class MessagingResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getDetail()).isEqualTo("""
 			Required request body is missing: public org.springframework.http.ResponseEntity<java.lang.Void>\s\
-			se.sundsvall.supportmanagement.api.MessagingResource.sendSms(se.sundsvall.supportmanagement.api.model.messaging.SmsRequest)""");
+			se.sundsvall.supportmanagement.api.ErrandCommunicationResource.sendSms(java.lang.String,\
+			se.sundsvall.supportmanagement.api.model.communication.SmsRequest)""");
 
 		// Verification
 		// TODO: Add verification when service layer is in place
@@ -58,7 +63,7 @@ class MessagingResourceFailureTest {
 	void sendSmsWithEmptyBody() {
 
 		// Call
-		final var response = webTestClient.post().uri(PATH + "sms")
+		final var response = webTestClient.post().uri(builder -> builder.path(PATH_PREFIX + PATH_SMS).build(Map.of("id", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(SmsRequest.create())
 			.exchange()
@@ -83,7 +88,7 @@ class MessagingResourceFailureTest {
 	void sendSmsWithInvalidValues() {
 
 		// Call
-		final var response = webTestClient.post().uri(PATH + "sms")
+		final var response = webTestClient.post().uri(builder -> builder.path(PATH_PREFIX + PATH_SMS).build(Map.of("id", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(smsRequest()
 				.withRecipient("123")
@@ -109,7 +114,7 @@ class MessagingResourceFailureTest {
 	void sendEmailWithoutBody() {
 
 		// Call
-		final var response = webTestClient.post().uri(PATH + "email")
+		final var response = webTestClient.post().uri(builder -> builder.path(PATH_PREFIX + PATH_EMAIL).build(Map.of("id", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.exchange()
 			.expectStatus().isBadRequest()
@@ -121,7 +126,8 @@ class MessagingResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getDetail()).isEqualTo("""
 			Required request body is missing: public org.springframework.http.ResponseEntity<java.lang.Void>\s\
-			se.sundsvall.supportmanagement.api.MessagingResource.sendEmail(se.sundsvall.supportmanagement.api.model.messaging.EmailRequest)""");
+			se.sundsvall.supportmanagement.api.ErrandCommunicationResource.sendEmail(java.lang.String,\
+			se.sundsvall.supportmanagement.api.model.communication.EmailRequest)""");
 
 		// Verification
 		// TODO: Add verification when service layer is in place
@@ -131,7 +137,7 @@ class MessagingResourceFailureTest {
 	void sendEmailWithEmptyBody() {
 
 		// Call
-		final var response = webTestClient.post().uri(PATH + "email")
+		final var response = webTestClient.post().uri(builder -> builder.path(PATH_PREFIX + PATH_EMAIL).build(Map.of("id", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(EmailRequest.create())
 			.exchange()
@@ -157,7 +163,7 @@ class MessagingResourceFailureTest {
 	void sendEmailWithInvalidValues() {
 
 		// Call
-		final var response = webTestClient.post().uri(PATH + "email")
+		final var response = webTestClient.post().uri(builder -> builder.path(PATH_PREFIX + PATH_EMAIL).build(Map.of("id", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(emailRequest()
 				.withRecipient("not_an_email")
@@ -183,7 +189,7 @@ class MessagingResourceFailureTest {
 	void sendEmailWithEmptyAttachment() {
 
 		// Call
-		final var response = webTestClient.post().uri(PATH + "email")
+		final var response = webTestClient.post().uri(builder -> builder.path(PATH_PREFIX + PATH_EMAIL).build(Map.of("id", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(emailRequest()
 				.withAttachments(List.of(EmailAttachment.create())))
@@ -208,7 +214,7 @@ class MessagingResourceFailureTest {
 	void sendEmailWithInvalidAttachmentString() {
 
 		// Call
-		final var response = webTestClient.post().uri(PATH + "email")
+		final var response = webTestClient.post().uri(builder -> builder.path(PATH_PREFIX + PATH_EMAIL).build(Map.of("id", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(emailRequest()
 				.withAttachments(List.of(EmailAttachment.create()

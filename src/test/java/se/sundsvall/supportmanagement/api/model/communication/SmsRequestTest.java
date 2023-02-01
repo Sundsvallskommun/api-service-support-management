@@ -1,4 +1,4 @@
-package se.sundsvall.supportmanagement.api.model.messaging;
+package se.sundsvall.supportmanagement.api.model.communication;
 
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanEquals;
@@ -9,15 +9,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-import java.util.List;
-
 import org.junit.jupiter.api.Test;
 
-class EmailRequestTest {
+class SmsRequestTest {
 
 	@Test
 	void testBean() {
-		assertThat(EmailRequest.class, allOf(
+		assertThat(SmsRequest.class, allOf(
 			hasValidBeanConstructor(),
 			hasValidGettersAndSetters(),
 			hasValidBeanHashCode(),
@@ -27,30 +25,24 @@ class EmailRequestTest {
 
 	@Test
 	void testBuilderMethods() {
-		final var attachments = List.of(EmailAttachment.create());
 		final var message = "message";
 		final var recipient = "recipient";
 		final var sender = "sender";
-		final var subject = "subject";
 
-		final var bean = EmailRequest.create()
-			.withAttachments(attachments)
+		final var bean = SmsRequest.create()
 			.withMessage(message)
 			.withRecipient(recipient)
-			.withSender(sender)
-			.withSubject(subject);
+			.withSender(sender);
 
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
-		assertThat(bean.getAttachments()).isEqualTo(attachments);
 		assertThat(bean.getMessage()).isEqualTo(message);
 		assertThat(bean.getRecipient()).isEqualTo(recipient);
 		assertThat(bean.getSender()).isEqualTo(sender);
-		assertThat(bean.getSubject()).isEqualTo(subject);
 	}
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(EmailRequest.create()).hasAllNullFieldsOrProperties();
-		assertThat(new EmailRequest()).hasAllNullFieldsOrProperties();
+		assertThat(SmsRequest.create()).hasAllNullFieldsOrProperties();
+		assertThat(new SmsRequest()).hasAllNullFieldsOrProperties();
 	}
 }

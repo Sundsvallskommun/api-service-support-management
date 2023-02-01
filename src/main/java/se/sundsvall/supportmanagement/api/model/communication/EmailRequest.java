@@ -1,4 +1,4 @@
-package se.sundsvall.supportmanagement.api.model.messaging;
+package se.sundsvall.supportmanagement.api.model.communication;
 
 import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 
