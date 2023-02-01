@@ -10,8 +10,8 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 abstract class AbstractTagConstraintValidator {
 	private static final String CUSTOM_ERROR_MESSAGE_TEMPLATE = "value '%s' doesn't match any of %s";
 
-	boolean isValid(final String value, final List<String> validTags, final ConstraintValidatorContext context) {
-		final var valid = isBlank(value) || ofNullable(validTags).orElse(emptyList()).stream().anyMatch(value::equalsIgnoreCase);
+	boolean isValid(String value, List<String> validTags, ConstraintValidatorContext context) {
+		var valid = isBlank(value) || ofNullable(validTags).orElse(emptyList()).stream().anyMatch(value::equalsIgnoreCase);
 
 		if (!valid) {
 			useCustomMessageForValidation(value, validTags, context);

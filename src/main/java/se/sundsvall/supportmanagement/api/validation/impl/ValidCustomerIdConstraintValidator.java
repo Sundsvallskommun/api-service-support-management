@@ -37,7 +37,7 @@ public class ValidCustomerIdConstraintValidator implements ConstraintValidator<V
 	}
 
 	private void useCustomMessageForValidation(ConstraintValidatorContext constraintContext, CustomerType customerType) {
-		final var errorTemplate = EMPLOYEE == customerType ? CUSTOM_ERROR_USERID_MESSAGE_TEMPLATE : CUSTOM_ERROR_UUID_MESSAGE_TEMPLATE;
+		final var errorTemplate = customerType.equals(EMPLOYEE) ? CUSTOM_ERROR_USERID_MESSAGE_TEMPLATE : CUSTOM_ERROR_UUID_MESSAGE_TEMPLATE;
 		constraintContext.disableDefaultConstraintViolation();
 		constraintContext.buildConstraintViolationWithTemplate(String.format(errorTemplate, customerType.name())).addConstraintViolation();
 	}

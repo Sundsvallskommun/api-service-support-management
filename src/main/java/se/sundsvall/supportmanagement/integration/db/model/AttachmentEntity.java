@@ -17,6 +17,7 @@ import javax.persistence.PreUpdate;
 import javax.persistence.Table;
 import java.io.Serializable;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -64,12 +65,12 @@ public class AttachmentEntity implements Serializable {
 
 	@PrePersist
 	void onCreate() {
-		created = now().truncatedTo(MILLIS);
+		created = now(ZoneId.systemDefault()).truncatedTo(MILLIS);
 	}
 
 	@PreUpdate
 	void onUpdate() {
-		modified = now().truncatedTo(MILLIS);
+		modified = now(ZoneId.systemDefault()).truncatedTo(MILLIS);
 	}
 
 	public String getId() {
@@ -98,8 +99,7 @@ public class AttachmentEntity implements Serializable {
 		return this;
 	}
 
-	public String getMimeType() {
-		return mimeType;
+	public String getMimeType() {return mimeType;
 	}
 
 	public void setMimeType(String mimeType) {
@@ -167,7 +167,7 @@ public class AttachmentEntity implements Serializable {
 	public boolean equals(Object o) {
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
-		AttachmentEntity that = (AttachmentEntity) o;
+		var that = (AttachmentEntity) o;
 		return Objects.equals(id, that.id) &&
 				Objects.equals(fileName, that.fileName) &&
 				Objects.equals(mimeType, that.mimeType) &&
@@ -184,7 +184,7 @@ public class AttachmentEntity implements Serializable {
 
 	@Override
 	public String toString() {
-		final var errandId = errandEntity == null ? null  : errandEntity.getId();
+		var errandId = errandEntity == null ? null  : errandEntity.getId();
 		return "AttachmentEntity[" +
 				"id=" + id +
 				", fileName=" + fileName + ", mimeType='" + mimeType + ", file=" + Arrays.toString(file) +

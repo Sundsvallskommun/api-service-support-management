@@ -82,7 +82,7 @@ public class ErrandAttachment {
 		if (getClass() != obj.getClass()) {
 			return false;
 		}
-		ErrandAttachment other = (ErrandAttachment) obj;
+		var other = (ErrandAttachment) obj;
 		return Objects.equals(errandAttachmentHeader, other.errandAttachmentHeader) && Objects.equals(mimeType, other.mimeType) && Objects.equals(base64EncodedString, other.base64EncodedString);
 	}
 

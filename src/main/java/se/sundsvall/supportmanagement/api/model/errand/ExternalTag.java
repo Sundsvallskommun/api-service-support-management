@@ -59,13 +59,13 @@ public class ExternalTag {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		ExternalTag other = (ExternalTag) obj;
+		var other = (ExternalTag) obj;
 		return Objects.equals(key, other.key) && Objects.equals(value, other.value);
 	}
 
 	@Override
 	public String toString() {
-		StringBuilder builder = new StringBuilder();
+		var builder = new StringBuilder();
 		builder.append("ExternalTag [key=").append(key).append(", value=").append(value).append("]");
 		return builder.toString();
 	}

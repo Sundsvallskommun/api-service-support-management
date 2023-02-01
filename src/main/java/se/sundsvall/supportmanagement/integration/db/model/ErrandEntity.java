@@ -20,6 +20,7 @@ import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 import java.io.Serializable;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Objects;
 
@@ -98,23 +99,23 @@ public class ErrandEntity implements Serializable {
 
 	@PrePersist
 	void onCreate() {
-		created = now().truncatedTo(MILLIS);
+		created = now(ZoneId.systemDefault()).truncatedTo(MILLIS);
 	}
 
 	@PreUpdate
 	protected void onUpdate() {
-		modified = now().truncatedTo(MILLIS);
+		modified = now(ZoneId.systemDefault()).truncatedTo(MILLIS);
 	}
 
 	public String getId() {
 		return id;
 	}
 
-	public void setId(final String id) {
+	public void setId(String id) {
 		this.id = id;
 	}
 
-	public ErrandEntity withId(final String id) {
+	public ErrandEntity withId(String id) {
 		this.id = id;
 		return this;
 	}
@@ -123,11 +124,11 @@ public class ErrandEntity implements Serializable {
 		return externalTags;
 	}
 
-	public void setExternalTags(final List<DbExternalTag> externalTags) {
+	public void setExternalTags(List<DbExternalTag> externalTags) {
 		this.externalTags = externalTags;
 	}
 
-	public ErrandEntity withExternalTags(final List<DbExternalTag> externalTags) {
+	public ErrandEntity withExternalTags(List<DbExternalTag> externalTags) {
 		this.externalTags = externalTags;
 		return this;
 	}
@@ -136,7 +137,7 @@ public class ErrandEntity implements Serializable {
 		return customer;
 	}
 
-	public void setCustomer(final EmbeddableCustomer customer) {
+	public void setCustomer(EmbeddableCustomer customer) {
 		this.customer = customer;
 	}
 
@@ -149,11 +150,11 @@ public class ErrandEntity implements Serializable {
 		return clientIdTag;
 	}
 
-	public void setClientIdTag(final String clientIdTag) {
+	public void setClientIdTag(String clientIdTag) {
 		this.clientIdTag = clientIdTag;
 	}
 
-	public ErrandEntity withClientIdTag(final String clientIdTag) {
+	public ErrandEntity withClientIdTag(String clientIdTag) {
 		this.clientIdTag = clientIdTag;
 		return this;
 	}
@@ -162,11 +163,11 @@ public class ErrandEntity implements Serializable {
 		return title;
 	}
 
-	public void setTitle(final String title) {
+	public void setTitle(String title) {
 		this.title = title;
 	}
 
-	public ErrandEntity withTitle(final String title) {
+	public ErrandEntity withTitle(String title) {
 		this.title = title;
 		return this;
 	}
@@ -175,11 +176,11 @@ public class ErrandEntity implements Serializable {
 		return categoryTag;
 	}
 
-	public void setCategoryTag(final String categoryTag) {
+	public void setCategoryTag(String categoryTag) {
 		this.categoryTag = categoryTag;
 	}
 
-	public ErrandEntity withCategoryTag(final String categoryTag) {
+	public ErrandEntity withCategoryTag(String categoryTag) {
 		this.categoryTag = categoryTag;
 		return this;
 	}
@@ -188,11 +189,11 @@ public class ErrandEntity implements Serializable {
 		return typeTag;
 	}
 
-	public void setTypeTag(final String typeTag) {
+	public void setTypeTag(String typeTag) {
 		this.typeTag = typeTag;
 	}
 
-	public ErrandEntity withTypeTag(final String typeTag) {
+	public ErrandEntity withTypeTag(String typeTag) {
 		this.typeTag = typeTag;
 		return this;
 	}
@@ -201,11 +202,11 @@ public class ErrandEntity implements Serializable {
 		return statusTag;
 	}
 
-	public void setStatusTag(final String statusTag) {
+	public void setStatusTag(String statusTag) {
 		this.statusTag = statusTag;
 	}
 
-	public ErrandEntity withStatusTag(final String statusTag) {
+	public ErrandEntity withStatusTag(String statusTag) {
 		this.statusTag = statusTag;
 		return this;
 	}
@@ -214,11 +215,11 @@ public class ErrandEntity implements Serializable {
 		return priority;
 	}
 
-	public void setPriority(final String priority) {
+	public void setPriority(String priority) {
 		this.priority = priority;
 	}
 
-	public ErrandEntity withPriority(final String priority) {
+	public ErrandEntity withPriority(String priority) {
 		this.priority = priority;
 		return this;
 	}
@@ -227,11 +228,11 @@ public class ErrandEntity implements Serializable {
 		return reporterUserId;
 	}
 
-	public void setReporterUserId(final String reporterUserId) {
+	public void setReporterUserId(String reporterUserId) {
 		this.reporterUserId = reporterUserId;
 	}
 
-	public ErrandEntity withReporterUserId(final String reporterUserId) {
+	public ErrandEntity withReporterUserId(String reporterUserId) {
 		this.reporterUserId = reporterUserId;
 		return this;
 	}
@@ -240,11 +241,11 @@ public class ErrandEntity implements Serializable {
 		return assignedUserId;
 	}
 
-	public void setAssignedUserId(final String assignedUserId) {
+	public void setAssignedUserId(String assignedUserId) {
 		this.assignedUserId = assignedUserId;
 	}
 
-	public ErrandEntity withAssignedUserId(final String assignedUserId) {
+	public ErrandEntity withAssignedUserId(String assignedUserId) {
 		this.assignedUserId = assignedUserId;
 		return this;
 	}
@@ -253,11 +254,11 @@ public class ErrandEntity implements Serializable {
 		return assignedGroupId;
 	}
 
-	public void setAssignedGroupId(final String assignedGroupId) {
+	public void setAssignedGroupId(String assignedGroupId) {
 		this.assignedGroupId = assignedGroupId;
 	}
 
-	public ErrandEntity withAssignedGroupId(final String assignedGroupId) {
+	public ErrandEntity withAssignedGroupId(String assignedGroupId) {
 		this.assignedGroupId = assignedGroupId;
 		return this;
 	}
@@ -266,11 +267,11 @@ public class ErrandEntity implements Serializable {
 		return attachments;
 	}
 
-	public void setAttachments(final List<AttachmentEntity> attachments) {
+	public void setAttachments(List<AttachmentEntity> attachments) {
 		this.attachments = attachments;
 	}
 
-	public ErrandEntity withAttachments(final List<AttachmentEntity> attachments) {
+	public ErrandEntity withAttachments(List<AttachmentEntity> attachments) {
 		this.attachments = attachments;
 		return this;
 	}
@@ -279,11 +280,11 @@ public class ErrandEntity implements Serializable {
 		return created;
 	}
 
-	public void setCreated(final OffsetDateTime created) {
+	public void setCreated(OffsetDateTime created) {
 		this.created = created;
 	}
 
-	public ErrandEntity withCreated(final OffsetDateTime created) {
+	public ErrandEntity withCreated(OffsetDateTime created) {
 		this.created = created;
 		return this;
 	}
@@ -292,11 +293,11 @@ public class ErrandEntity implements Serializable {
 		return modified;
 	}
 
-	public void setModified(final OffsetDateTime modified) {
+	public void setModified(OffsetDateTime modified) {
 		this.modified = modified;
 	}
 
-	public ErrandEntity withModified(final OffsetDateTime modified) {
+	public ErrandEntity withModified(OffsetDateTime modified) {
 		this.modified = modified;
 		return this;
 	}
@@ -307,14 +308,14 @@ public class ErrandEntity implements Serializable {
 	}
 
 	@Override
-	public boolean equals(final Object o) {
+	public boolean equals(Object o) {
 		if (this == o) {
 			return true;
 		}
 		if (o == null || getClass() != o.getClass()) {
 			return false;
 		}
-		final var that = (ErrandEntity) o;
+		var that = (ErrandEntity) o;
 		return Objects.equals(id, that.id) && Objects.equals(externalTags, that.externalTags) && Objects.equals(customer, that.customer) && Objects.equals(clientIdTag, that.clientIdTag) && Objects
 			.equals(title, that.title) && Objects.equals(categoryTag, that.categoryTag) && Objects.equals(typeTag, that.typeTag) && Objects.equals(statusTag, that.statusTag) && Objects.equals(priority, that.priority) && Objects.equals(reporterUserId,
 				that.reporterUserId) && Objects.equals(assignedUserId, that.assignedUserId) && Objects.equals(assignedGroupId, that.assignedGroupId) && Objects.equals(attachments, that.attachments) && Objects.equals(created, that.created) && Objects.equals(modified, that.modified);
@@ -322,7 +323,7 @@ public class ErrandEntity implements Serializable {
 
 	@Override
 	public String toString() {
-		final var builder = new StringBuilder();
+		var builder = new StringBuilder();
 		builder.append("ErrandEntity [id=").append(id).append(", externalTags=").append(externalTags)
 			.append(", customer=").append(customer).append(", clientIdTag=")
 			.append(clientIdTag).append(", title=").append(title).append(", categoryTag=")

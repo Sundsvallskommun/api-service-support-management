@@ -65,7 +65,7 @@ public class Customer {
 		if (getClass() != obj.getClass()) {
 			return false;
 		}
-		Customer other = (Customer) obj;
+		var other = (Customer) obj;
 		return Objects.equals(id, other.id) && type == other.type;
 	}
 

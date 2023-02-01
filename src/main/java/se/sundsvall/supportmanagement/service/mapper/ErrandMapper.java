@@ -40,7 +40,7 @@ public class ErrandMapper {
 			.withTypeTag(errand.getTypeTag());
 	}
 
-	public static ErrandEntity updateEntity(final ErrandEntity entity, final Errand errand) {
+	public static ErrandEntity updateEntity(ErrandEntity entity, Errand errand) {
 		if (isNull(errand)) {
 			return entity;
 		}
@@ -70,7 +70,7 @@ public class ErrandMapper {
 			.withValue(tag.getValue());
 	}
 
-	public static List<Errand> toErrands(final List<ErrandEntity> entities) {
+	public static List<Errand> toErrands(List<ErrandEntity> entities) {
 		if (isNull(entities)) {
 			return emptyList();
 		}
@@ -81,7 +81,7 @@ public class ErrandMapper {
 			.toList();
 	}
 
-	public static Errand toErrand(final ErrandEntity entity) {
+	public static Errand toErrand(ErrandEntity entity) {
 		if (isNull(entity)) {
 			return null;
 		}
@@ -103,7 +103,7 @@ public class ErrandMapper {
 			.withTypeTag(entity.getTypeTag());
 	}
 
-	private static Customer toCustomer(final EmbeddableCustomer customer) {
+	private static Customer toCustomer(EmbeddableCustomer customer) {
 		if (isNull(customer)) {
 			return null;
 		}
@@ -113,7 +113,7 @@ public class ErrandMapper {
 			.withType(CustomerType.valueOf(customer.getType()));
 	}
 
-	private static EmbeddableCustomer toCustomer(final Customer customer) {
+	private static EmbeddableCustomer toCustomer(Customer customer) {
 		if (isNull(customer)) {
 			return null;
 		}
@@ -123,14 +123,14 @@ public class ErrandMapper {
 			.withType(customer.getType().toString());
 	}
 
-	private static List<ExternalTag> toExternalTags(final List<DbExternalTag> entities) {
+	private static List<ExternalTag> toExternalTags(List<DbExternalTag> entities) {
 		return ofNullable(entities).orElse(emptyList())
 			.stream()
 			.map(ErrandMapper::toExternalTag)
 			.toList();
 	}
 
-	private static ExternalTag toExternalTag(final DbExternalTag entity) {
+	private static ExternalTag toExternalTag(DbExternalTag entity) {
 		return ExternalTag.create()
 			.withKey(entity.getKey())
 			.withValue(entity.getValue());

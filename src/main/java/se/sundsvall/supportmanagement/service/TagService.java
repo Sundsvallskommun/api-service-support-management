@@ -48,7 +48,7 @@ public class TagService {
 		return findAllTagsWithType(CLIENT_ID);
 	}
 
-	private List<String> findAllTagsWithType(final TagType tagType) {
+	private List<String> findAllTagsWithType(TagType tagType) {
 		return toStringList(tagRepository.findByType(tagType));
 	}
 }

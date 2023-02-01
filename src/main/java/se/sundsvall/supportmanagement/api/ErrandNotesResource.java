@@ -57,11 +57,11 @@ public class ErrandNotesResource {
 	@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = { Problem.class, ConstraintViolationProblem.class })))
 	@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	public ResponseEntity<Void> createErrandNote(
-		final UriComponentsBuilder uriComponentsBuilder,
-		@Parameter(name = "id", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("id") final String id,
-		@Valid @NotNull @RequestBody final CreateErrandNoteRequest createErrandNoteRequest) {
+		UriComponentsBuilder uriComponentsBuilder,
+		@Parameter(name = "id", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("id") String id,
+		@Valid @NotNull @RequestBody CreateErrandNoteRequest createErrandNoteRequest) {
 
-		final var noteId = service.createErrandNote(id, createErrandNoteRequest);
+		var noteId = service.createErrandNote(id, createErrandNoteRequest);
 		return created(uriComponentsBuilder.path("/errands/{id}/notes/{noteId}").buildAndExpand(id, noteId).toUri()).header(CONTENT_TYPE, ALL_VALUE).build();
 	}
 
@@ -72,8 +72,8 @@ public class ErrandNotesResource {
 	@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	public ResponseEntity<ErrandNote> readErrandNote(
-		@Parameter(name = "id", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("id") final String id,
-		@Parameter(name = "noteId", description = "Errand note id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable("noteId") final String noteId) {
+		@Parameter(name = "id", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("id") String id,
+		@Parameter(name = "noteId", description = "Errand note id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable("noteId") String noteId) {
 
 		return ok(service.readErrandNote(id, noteId));
 	}
@@ -84,8 +84,8 @@ public class ErrandNotesResource {
 	@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = { Problem.class, ConstraintViolationProblem.class })))
 	@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	public ResponseEntity<FindErrandNotesResponse> findErrandNotes(
-		@Parameter(name = "id", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("id") final String id,
-		@Valid final FindErrandNotesRequest findErrandNotesRequest) {
+		@Parameter(name = "id", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("id") String id,
+		@Valid FindErrandNotesRequest findErrandNotesRequest) {
 
 		return ok(service.findErrandNotes(id, findErrandNotesRequest));
 	}
@@ -97,9 +97,9 @@ public class ErrandNotesResource {
 	@ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	public ResponseEntity<ErrandNote> updateErrandNote(
-		@Parameter(name = "id", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("id") final String id,
-		@Parameter(name = "noteId", description = "Errand note id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable("noteId") final String noteId,
-		@Valid @NotNull @RequestBody final UpdateErrandNoteRequest updateErrandNoteRequest) {
+		@Parameter(name = "id", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("id") String id,
+		@Parameter(name = "noteId", description = "Errand note id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable("noteId") String noteId,
+		@Valid @NotNull @RequestBody UpdateErrandNoteRequest updateErrandNoteRequest) {
 
 		return ok(service.updateErrandNote(id, noteId, updateErrandNoteRequest));
 	}
@@ -111,8 +111,8 @@ public class ErrandNotesResource {
 	@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	public ResponseEntity<Void> deleteErrandNote(
-		@Parameter(name = "id", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("id") final String id,
-		@Parameter(name = "noteId", description = "Errand note id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable("noteId") final String noteId) {
+		@Parameter(name = "id", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("id") String id,
+		@Parameter(name = "noteId", description = "Errand note id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable("noteId") String noteId) {
 
 		service.deleteErrandNote(id, noteId);
 		return noContent().build();
