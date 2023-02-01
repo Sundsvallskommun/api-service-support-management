@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.api.model.communication;
 
+import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.NOT_REQUIRED;
 import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 
 import java.util.List;
@@ -19,6 +20,9 @@ public class EmailRequest {
 	@Email
 	@Schema(description = "Email address for sender", example = "sender@sender.se", requiredMode = REQUIRED)
 	private String sender;
+
+	@Schema(description = "Optional displayname of sender on email. If left out, email will be displayed as sender name.", example = "Firstname Lastname", requiredMode = NOT_REQUIRED)
+	private String senderName;
 
 	@NotNull
 	@Email
@@ -50,6 +54,19 @@ public class EmailRequest {
 
 	public EmailRequest withSender(String sender) {
 		this.sender = sender;
+		return this;
+	}
+
+	public String getSenderName() {
+		return senderName;
+	}
+
+	public void setSenderName(String senderName) {
+		this.senderName = senderName;
+	}
+
+	public EmailRequest withSenderName(String senderName) {
+		this.senderName = senderName;
 		return this;
 	}
 
@@ -107,7 +124,7 @@ public class EmailRequest {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(attachments, message, recipient, sender, subject);
+		return Objects.hash(attachments, message, recipient, sender, senderName, subject);
 	}
 
 	@Override
@@ -122,13 +139,15 @@ public class EmailRequest {
 			return false;
 		}
 		EmailRequest other = (EmailRequest) obj;
-		return Objects.equals(attachments, other.attachments) && Objects.equals(message, other.message) && Objects.equals(recipient, other.recipient) && Objects.equals(sender, other.sender) && Objects.equals(subject, other.subject);
+		return Objects.equals(attachments, other.attachments) && Objects.equals(message, other.message) && Objects.equals(recipient, other.recipient) && Objects.equals(sender, other.sender) && Objects.equals(senderName, other.senderName) && Objects
+			.equals(subject, other.subject);
 	}
 
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
-		builder.append("EmailRequest [sender=").append(sender).append(", recipient=").append(recipient).append(", subject=").append(subject).append(", message=").append(message).append(", attachments=").append(attachments).append("]");
+		builder.append("EmailRequest [sender=").append(sender).append(", senderName=").append(senderName).append(", recipient=").append(recipient).append(", subject=").append(subject).append(", message=").append(message).append(", attachments=")
+			.append(attachments).append("]");
 		return builder.toString();
 	}
 }

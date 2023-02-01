@@ -31,6 +31,7 @@ class EmailRequestTest {
 		final var message = "message";
 		final var recipient = "recipient";
 		final var sender = "sender";
+		final var senderName = "senderName";
 		final var subject = "subject";
 
 		final var bean = EmailRequest.create()
@@ -38,6 +39,7 @@ class EmailRequestTest {
 			.withMessage(message)
 			.withRecipient(recipient)
 			.withSender(sender)
+			.withSenderName(senderName)
 			.withSubject(subject);
 
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
@@ -45,6 +47,7 @@ class EmailRequestTest {
 		assertThat(bean.getMessage()).isEqualTo(message);
 		assertThat(bean.getRecipient()).isEqualTo(recipient);
 		assertThat(bean.getSender()).isEqualTo(sender);
+		assertThat(bean.getSenderName()).isEqualTo(senderName);
 		assertThat(bean.getSubject()).isEqualTo(subject);
 	}
 
