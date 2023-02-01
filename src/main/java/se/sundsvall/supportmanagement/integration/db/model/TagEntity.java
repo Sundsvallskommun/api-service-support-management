@@ -12,6 +12,7 @@ import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 import java.io.Serializable;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.Objects;
 
 import static java.time.OffsetDateTime.now;
@@ -54,23 +55,23 @@ public class TagEntity implements Serializable {
 
 	@PrePersist
 	void prePersist() {
-		created = now().truncatedTo(MILLIS);
+		created = now(ZoneId.systemDefault()).truncatedTo(MILLIS);
 	}
 
 	@PreUpdate
 	void preUpdate() {
-		updated = now().truncatedTo(MILLIS);
+		updated = now(ZoneId.systemDefault()).truncatedTo(MILLIS);
 	}
 
 	public long getId() {
 		return id;
 	}
 
-	public void setId(final long id) {
+	public void setId(long id) {
 		this.id = id;
 	}
 
-	public TagEntity withId(final long id) {
+	public TagEntity withId(long id) {
 		this.id = id;
 		return this;
 	}
@@ -79,11 +80,11 @@ public class TagEntity implements Serializable {
 		return name;
 	}
 
-	public void setName(final String name) {
+	public void setName(String name) {
 		this.name = name;
 	}
 
-	public TagEntity withName(final String name) {
+	public TagEntity withName(String name) {
 		this.name = name;
 		return this;
 	}
@@ -92,11 +93,11 @@ public class TagEntity implements Serializable {
 		return type;
 	}
 
-	public void setType(final TagType type) {
+	public void setType(TagType type) {
 		this.type = type;
 	}
 
-	public TagEntity withType(final TagType type) {
+	public TagEntity withType(TagType type) {
 		this.type = type;
 		return this;
 	}
@@ -105,11 +106,11 @@ public class TagEntity implements Serializable {
 		return created;
 	}
 
-	public void setCreated(final OffsetDateTime created) {
+	public void setCreated(OffsetDateTime created) {
 		this.created = created;
 	}
 
-	public TagEntity withCreated(final OffsetDateTime created) {
+	public TagEntity withCreated(OffsetDateTime created) {
 		this.created = created;
 		return this;
 	}
@@ -118,11 +119,11 @@ public class TagEntity implements Serializable {
 		return updated;
 	}
 
-	public void setUpdated(final OffsetDateTime updated) {
+	public void setUpdated(OffsetDateTime updated) {
 		this.updated = updated;
 	}
 
-	public TagEntity withUpdated(final OffsetDateTime updated) {
+	public TagEntity withUpdated(OffsetDateTime updated) {
 		this.updated = updated;
 		return this;
 	}
@@ -133,20 +134,20 @@ public class TagEntity implements Serializable {
 	}
 
 	@Override
-	public boolean equals(final Object obj) {
+	public boolean equals(Object obj) {
 		if (this == obj) {
 			return true;
 		}
 		if (obj == null || getClass() != obj.getClass()) {
 			return false;
 		}
-		final var other = (TagEntity) obj;
+		var other = (TagEntity) obj;
 		return Objects.equals(created, other.created) && id == other.id && Objects.equals(name, other.name) && type == other.type && Objects.equals(updated, other.updated);
 	}
 
 	@Override
 	public String toString() {
-		final var builder = new StringBuilder();
+		var builder = new StringBuilder();
 		builder.append("TagEntity [id=").append(id).append(", name=").append(name).append(", type=").append(type).append(", created=").append(created).append(", updated=").append(updated).append("]");
 		return builder.toString();
 	}

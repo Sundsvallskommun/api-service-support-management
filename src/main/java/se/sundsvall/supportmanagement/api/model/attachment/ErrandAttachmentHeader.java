@@ -66,7 +66,7 @@ public class ErrandAttachmentHeader {
 		if (getClass() != obj.getClass()) {
 			return false;
 		}
-		ErrandAttachmentHeader other = (ErrandAttachmentHeader) obj;
+		var other = (ErrandAttachmentHeader) obj;
 		return Objects.equals(id, other.id) && Objects.equals(fileName, other.fileName);
 	}
 

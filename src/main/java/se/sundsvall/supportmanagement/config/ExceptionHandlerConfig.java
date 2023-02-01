@@ -30,7 +30,7 @@ public class ExceptionHandlerConfig {
 		public ResponseEntity<Problem> handleBadFilterSyntaxException(BadFilterSyntaxException exception) {
 			LOGGER.info(LOG_MESSAGE, exception);
 
-			final var errorResponse = Problem.builder()
+			var errorResponse = Problem.builder()
 				.withStatus(BAD_REQUEST)
 				.withTitle(TITLE)
 				.withDetail(extractMessage(exception))

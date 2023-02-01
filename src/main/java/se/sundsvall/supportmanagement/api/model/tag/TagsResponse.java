@@ -31,11 +31,11 @@ public class TagsResponse {
 		return categoryTags;
 	}
 
-	public void setCategoryTags(final List<String> categoryTags) {
+	public void setCategoryTags(List<String> categoryTags) {
 		this.categoryTags = categoryTags;
 	}
 
-	public TagsResponse withCategoryTags(final List<String> categoryTags) {
+	public TagsResponse withCategoryTags(List<String> categoryTags) {
 		this.categoryTags = categoryTags;
 		return this;
 	}
@@ -44,11 +44,11 @@ public class TagsResponse {
 		return statusTags;
 	}
 
-	public void setStatusTags(final List<String> statusTags) {
+	public void setStatusTags(List<String> statusTags) {
 		this.statusTags = statusTags;
 	}
 
-	public TagsResponse withStatusTags(final List<String> statusTags) {
+	public TagsResponse withStatusTags(List<String> statusTags) {
 		this.statusTags = statusTags;
 		return this;
 	}
@@ -57,11 +57,11 @@ public class TagsResponse {
 		return typeTags;
 	}
 
-	public void setTypeTags(final List<String> typeTags) {
+	public void setTypeTags(List<String> typeTags) {
 		this.typeTags = typeTags;
 	}
 
-	public TagsResponse withTypeTags(final List<String> typeTags) {
+	public TagsResponse withTypeTags(List<String> typeTags) {
 		this.typeTags = typeTags;
 		return this;
 	}
@@ -70,11 +70,11 @@ public class TagsResponse {
 		return clientIdTags;
 	}
 
-	public void setClientIdTags(final List<String> clientIdTags) {
+	public void setClientIdTags(List<String> clientIdTags) {
 		this.clientIdTags = clientIdTags;
 	}
 
-	public TagsResponse withClientIdTags(final List<String> clientIdTags) {
+	public TagsResponse withClientIdTags(List<String> clientIdTags) {
 		this.clientIdTags = clientIdTags;
 		return this;
 	}
@@ -85,20 +85,20 @@ public class TagsResponse {
 	}
 
 	@Override
-	public boolean equals(final Object obj) {
+	public boolean equals(Object obj) {
 		if (this == obj) {
 			return true;
 		}
 		if (obj == null || getClass() != obj.getClass()) {
 			return false;
 		}
-		final var other = (TagsResponse) obj;
+		var other = (TagsResponse) obj;
 		return Objects.equals(categoryTags, other.categoryTags) && Objects.equals(clientIdTags, other.clientIdTags) && Objects.equals(statusTags, other.statusTags) && Objects.equals(typeTags, other.typeTags);
 	}
 
 	@Override
 	public String toString() {
-		final var builder = new StringBuilder();
+		var builder = new StringBuilder();
 		builder.append("TagsResponse [categoryTags=").append(categoryTags).append(", statusTags=").append(statusTags).append(", typeTags=").append(typeTags).append(", clientIdTags=").append(clientIdTags).append("]");
 		return builder.toString();
 	}

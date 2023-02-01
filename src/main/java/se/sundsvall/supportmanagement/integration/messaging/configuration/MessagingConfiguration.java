@@ -15,7 +15,7 @@ public class MessagingConfiguration {
     public static final String CLIENT_ID = "messaging";
 
     @Bean
-	FeignBuilderCustomizer feignBuilderCustomizer(final MessagingProperties messagingProperties, final ClientRegistrationRepository clientRegistrationRepository) {
+	FeignBuilderCustomizer feignBuilderCustomizer(MessagingProperties messagingProperties, ClientRegistrationRepository clientRegistrationRepository) {
         return FeignMultiCustomizer.create()
 			.withErrorDecoder(new ProblemErrorDecoder(CLIENT_ID))
 			.withRequestTimeoutsInSeconds(messagingProperties.connectTimeout(), messagingProperties.readTimeout())

@@ -26,32 +26,32 @@ public class ErrandService {
 	@Autowired
 	private ErrandsRepository repository;
 
-	public String createErrand(final Errand errand) {
+	public String createErrand(Errand errand) {
 		return repository.save(toErrandEntity(errand)).getId();
 	}
 
-	public Page<Errand> findErrands(final Specification<ErrandEntity> filter, final Pageable pageable) {
-		final var matches = repository.findAll(filter, pageable);
+	public Page<Errand> findErrands(Specification<ErrandEntity> filter, Pageable pageable) {
+		var matches = repository.findAll(filter, pageable);
 		return new PageImpl<>(toErrands(matches.getContent()), pageable, repository.count(filter));
 	}
 
-	public Errand readErrand(final String id) {
+	public Errand readErrand(String id) {
 		verifyExistingId(id);
 		return toErrand(repository.getReferenceById(id));
 	}
 
-	public Errand updateErrand(final String id, final Errand errand) {
+	public Errand updateErrand(String id, Errand errand) {
 		verifyExistingId(id);
-		final var entity = updateEntity(repository.getReferenceById(id), errand);
+		var entity = updateEntity(repository.getReferenceById(id), errand);
 		return toErrand(repository.save(entity));
 	}
 
-	public void deleteErrand(final String id) {
+	public void deleteErrand(String id) {
 		verifyExistingId(id);
 		repository.deleteById(id);
 	}
 
-	private void verifyExistingId(final String id) {
+	private void verifyExistingId(String id) {
 		if (!repository.existsById(id)) {
 			throw Problem.valueOf(NOT_FOUND, String.format(ENTITY_NOT_FOUND, id));
 		}

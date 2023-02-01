@@ -15,7 +15,7 @@ public class NotesConfiguration {
 	public static final String CLIENT_ID = "notes";
 
 	@Bean
-	FeignBuilderCustomizer feignBuilderCustomizer(final NotesProperties notesProperties, final ClientRegistrationRepository clientRegistrationRepository) {
+	FeignBuilderCustomizer feignBuilderCustomizer(NotesProperties notesProperties, ClientRegistrationRepository clientRegistrationRepository) {
 		return FeignMultiCustomizer.create()
 			.withErrorDecoder(new ProblemErrorDecoder(CLIENT_ID))
 			.withRetryableOAuth2InterceptorForClientRegistration(clientRegistrationRepository.findByRegistrationId(CLIENT_ID))
