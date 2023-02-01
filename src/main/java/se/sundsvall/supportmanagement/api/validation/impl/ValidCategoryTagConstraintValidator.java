@@ -12,7 +12,7 @@ public class ValidCategoryTagConstraintValidator extends AbstractTagConstraintVa
 	private TagService tagService;
 
 	@Override
-	public boolean isValid(final String value, final ConstraintValidatorContext context) {
+	public boolean isValid(String value, ConstraintValidatorContext context) {
 		return isValid(value, tagService.findAllCategoryTags(), context);
 	}
 }

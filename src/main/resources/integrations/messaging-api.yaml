@@ -1,0 +1,999 @@
+openapi: 3.0.1
+info:
+  title: Messaging
+  contact: {}
+  license:
+    name: MIT License
+    url: https://opensource.org/licenses/MIT
+  version: "2.6"
+servers:
+- url: https://api-i-test.sundsvall.se/messaging-v2
+  description: Generated server url
+paths:
+  /webmessage:
+    post:
+      tags:
+      - Sending Resources
+      summary: Send a single web message
+      operationId: sendWebMessage
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebMessageRequest'
+        required: true
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        "200":
+          description: Successful Operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /snailmail:
+    post:
+      tags:
+      - Sending Resources
+      summary: Send a single snailmail
+      operationId: sendSnailmail
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SnailmailRequest'
+        required: true
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        "200":
+          description: Successful Operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /sms:
+    post:
+      tags:
+      - Sending Resources
+      summary: Send a single SMS
+      operationId: sendSms
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SmsRequest'
+        required: true
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        "200":
+          description: Successful Operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /messages:
+    post:
+      tags:
+      - Sending Resources
+      summary: Send a batch of messages as e-mail or SMS to a list of parties
+      operationId: sendMessages
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MessageRequest'
+        required: true
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        "200":
+          description: Successful Operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessagesResponse'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/MessagesResponse'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /letter:
+    post:
+      tags:
+      - Sending Resources
+      summary: Send a single letter as digital mail or snail mail
+      operationId: sendLetter
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LetterRequest'
+        required: true
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        "200":
+          description: Successful Operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /email:
+    post:
+      tags:
+      - Sending Resources
+      summary: Send a single e-mail
+      operationId: sendEmail
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailRequest'
+        required: true
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        "200":
+          description: Successful Operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /digitalmail:
+    post:
+      tags:
+      - Sending Resources
+      summary: Send a single digital mail to one or more parties
+      operationId: sendDigitalMail
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DigitalMailRequest'
+        required: true
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        "200":
+          description: Successful Operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessagesResponse'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/MessagesResponse'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /status/{messageId}:
+    get:
+      tags:
+      - Status and History Resources
+      summary: Get the status for a single message and its deliveries
+      operationId: getMessageStatus
+      parameters:
+      - name: messageId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        "200":
+          description: Successful Operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageStatusResponse'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/MessageStatusResponse'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /message/{messageId}:
+    get:
+      tags:
+      - Status and History Resources
+      summary: Get a message and all its deliveries
+      operationId: getMessage
+      parameters:
+      - name: messageId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        "200":
+          description: Successful Operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HistoryResponse'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/HistoryResponse'
+  /conversation-history/{partyId}:
+    get:
+      tags:
+      - Status and History Resources
+      summary: Get the entire conversation history for a given party
+      operationId: getConversationHistory
+      parameters:
+      - name: partyId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: from
+        in: query
+        description: "From-date (inclusive). Format: yyyy-MM-dd (ISO8601)"
+        required: false
+        schema:
+          type: string
+          format: date
+      - name: to
+        in: query
+        description: "To-date (inclusive). Format: yyyy-MM-dd (ISO8601)"
+        required: false
+        schema:
+          type: string
+          format: date
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        "200":
+          description: Successful Operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HistoryResponse'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/HistoryResponse'
+  /batch-status/{batchId}:
+    get:
+      tags:
+      - Status and History Resources
+      summary: "Get the status for a message batch, its messages and their deliveries"
+      operationId: getBatchStatus
+      parameters:
+      - name: batchId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        "200":
+          description: Successful Operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchStatusResponse'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/BatchStatusResponse'
+  /api-docs:
+    get:
+      tags:
+      - API
+      summary: OpenAPI
+      operationId: getApiDocs
+      responses:
+        "200":
+          description: OK
+          content:
+            application/yaml:
+              schema:
+                type: string
+      x-auth-type: None
+      x-throttling-tier: Unlimited
+      x-wso2-mutual-ssl: Optional
+components:
+  schemas:
+    ExternalReference:
+      required:
+      - key
+      - value
+      type: object
+      properties:
+        key:
+          type: string
+          description: The external reference key
+          example: flowInstanceId
+        value:
+          type: string
+          description: The external reference value
+          example: 356t4r34f
+      description: External references
+    Header:
+      required:
+      - values
+      type: object
+      properties:
+        name:
+          type: string
+          description: The header name
+          enum:
+          - DISTRIBUTION_RULE
+          - CATEGORY
+          - FACILITY_ID
+          - TYPE
+        values:
+          type: array
+          description: The header values
+          items:
+            type: string
+            description: The header values
+      description: Headers
+    Party:
+      type: object
+      properties:
+        partyId:
+          type: string
+          description: The message party ID
+          example: f427952b-247c-4d3b-b081-675a467b3619
+        externalReferences:
+          type: array
+          description: External references
+          items:
+            $ref: '#/components/schemas/ExternalReference'
+      description: Party
+    WebMessageAttachment:
+      type: object
+      properties:
+        fileName:
+          type: string
+          description: File name
+        mimeType:
+          type: string
+          description: Mime-type
+        base64Data:
+          type: string
+          description: "BASE64-encoded file, max size 10 MB"
+      description: Attachment
+    WebMessageRequest:
+      required:
+      - message
+      type: object
+      properties:
+        party:
+          $ref: '#/components/schemas/Party'
+        headers:
+          type: array
+          description: Headers
+          items:
+            $ref: '#/components/schemas/Header'
+        message:
+          type: string
+          description: Message
+        attachments:
+          maxItems: 10
+          type: array
+          items:
+            $ref: '#/components/schemas/WebMessageAttachment'
+    Problem:
+      type: object
+      properties:
+        instance:
+          type: string
+          format: uri
+        type:
+          type: string
+          format: uri
+        parameters:
+          type: object
+          additionalProperties:
+            type: object
+        status:
+          $ref: '#/components/schemas/StatusType'
+        title:
+          type: string
+        detail:
+          type: string
+    StatusType:
+      type: object
+      properties:
+        statusCode:
+          type: integer
+          format: int32
+        reasonPhrase:
+          type: string
+    MessageResponse:
+      type: object
+      properties:
+        messageId:
+          type: string
+    SnailmailAttachment:
+      required:
+      - content
+      - name
+      type: object
+      properties:
+        content:
+          type: string
+          description: The attachment (file) content as a BASE64-encoded string
+          example: aGVsbG8gd29ybGQK
+        name:
+          type: string
+          description: The attachment filename
+          example: test.txt
+        contentType:
+          type: string
+          description: The attachment content type
+          example: text/plain
+      description: Attachment
+    SnailmailRequest:
+      required:
+      - department
+      type: object
+      properties:
+        party:
+          $ref: '#/components/schemas/Party'
+        headers:
+          type: array
+          description: Headers
+          items:
+            $ref: '#/components/schemas/Header'
+        department:
+          type: string
+          description: Department and unit that should be billed
+          example: "SBK(Gatuavdelningen, Trafiksektionen)"
+        deviation:
+          type: string
+          description: If the letter to send deviates from the standard
+          example: A3 Ritning
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/SnailmailAttachment'
+    Sms:
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          maxLength: 11
+          minLength: 0
+          type: string
+          description: The sender of the SMS
+          example: sender
+      description: Sender
+    SmsRequest:
+      required:
+      - message
+      - mobileNumber
+      type: object
+      properties:
+        party:
+          $ref: '#/components/schemas/Party'
+        headers:
+          type: array
+          description: Headers
+          items:
+            $ref: '#/components/schemas/Header'
+        sender:
+          $ref: '#/components/schemas/Sms'
+        mobileNumber:
+          type: string
+          description: Mobile number. Should start with +467x
+        message:
+          type: string
+          description: Message
+    DigitalMail:
+      required:
+      - supportInfo
+      type: object
+      properties:
+        supportInfo:
+          $ref: '#/components/schemas/SupportInfo'
+    Email:
+      required:
+      - address
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+          description: The sender of the e-mail
+        address:
+          type: string
+          description: Sender e-mail address
+          example: sender@sender.se
+        replyTo:
+          type: string
+          description: Reply-to e-mail address
+          example: sender@sender.se
+    Message:
+      required:
+      - message
+      type: object
+      properties:
+        party:
+          $ref: '#/components/schemas/Party'
+        headers:
+          type: array
+          description: Headers
+          items:
+            $ref: '#/components/schemas/Header'
+        sender:
+          $ref: '#/components/schemas/Sender'
+        subject:
+          type: string
+          description: The message subject (for E-mails)
+        message:
+          type: string
+          description: Plain-text message text
+        htmlMessage:
+          type: string
+          description: "HTML message text, for e-mails (BASE64-encoded)"
+      description: A message to be sent
+    MessageRequest:
+      type: object
+      properties:
+        messages:
+          type: array
+          description: The messages to be sent
+          items:
+            $ref: '#/components/schemas/Message'
+      description: Message representation
+    Sender:
+      type: object
+      properties:
+        sms:
+          $ref: '#/components/schemas/Sms'
+        email:
+          $ref: '#/components/schemas/Email'
+        digitalMail:
+          $ref: '#/components/schemas/DigitalMail'
+      description: Sender
+    SupportInfo:
+      required:
+      - emailAddress
+      - phoneNumber
+      - text
+      - url
+      type: object
+      properties:
+        text:
+          type: string
+        emailAddress:
+          type: string
+        phoneNumber:
+          type: string
+        url:
+          type: string
+    MessagesResponse:
+      type: object
+      properties:
+        batchId:
+          type: string
+        messageIds:
+          type: array
+          items:
+            type: string
+    LetterAttachment:
+      required:
+      - content
+      - deliveryMode
+      - filename
+      type: object
+      properties:
+        deliveryMode:
+          type: string
+          description: |
+            Delivery mode, to indicate whether an attachment is intended/allowed to be used for
+            digital mail, snail-mail or both
+          enum:
+          - BOTH
+          - DIGITAL_MAIL
+          - SNAIL_MAIL
+        contentType:
+          type: string
+          description: Content type
+          enum:
+          - application/pdf
+        content:
+          type: string
+          description: Content (BASE64-encoded)
+        filename:
+          type: string
+          description: Filename
+      description: Attachments
+    LetterRequest:
+      required:
+      - body
+      - contentType
+      - department
+      type: object
+      properties:
+        party:
+          $ref: '#/components/schemas/Parties'
+        headers:
+          type: array
+          description: Headers
+          items:
+            $ref: '#/components/schemas/Header'
+        subject:
+          type: string
+          description: Subject
+          nullable: true
+        sender:
+          $ref: '#/components/schemas/DigitalMail'
+        contentType:
+          type: string
+          description: Content type
+          enum:
+          - text/plain
+          - text/html
+        body:
+          type: string
+          description: "Body (plain text if contentType is set to 'text/plain', BASE64-encoded\
+            \ if contentType is set to 'text/html')"
+        department:
+          type: string
+          description: Department and unit that should be billed in case of snailmail
+          example: "SBK(Gatuavdelningen, Trafiksektionen)"
+        deviation:
+          type: string
+          description: If the letter to send deviates from the standard
+          example: A3 Ritning
+        attachments:
+          type: array
+          description: Attachments
+          items:
+            $ref: '#/components/schemas/LetterAttachment'
+    Parties:
+      required:
+      - partyIds
+      type: object
+      properties:
+        partyIds:
+          type: array
+          description: The message party ID:s
+          items:
+            type: string
+            description: The message party ID:s
+        externalReferences:
+          type: array
+          description: External references
+          items:
+            $ref: '#/components/schemas/ExternalReference'
+      description: Parties
+    EmailAttachment:
+      required:
+      - content
+      - name
+      type: object
+      properties:
+        content:
+          type: string
+          description: The attachment (file) content as a BASE64-encoded string
+          example: aGVsbG8gd29ybGQK
+        name:
+          type: string
+          description: The attachment filename
+          example: test.txt
+        contentType:
+          type: string
+          description: The attachment content type
+          example: text/plain
+      description: Attachment
+    EmailRequest:
+      required:
+      - emailAddress
+      - subject
+      type: object
+      properties:
+        party:
+          $ref: '#/components/schemas/Party'
+        headers:
+          type: array
+          description: Headers
+          items:
+            $ref: '#/components/schemas/Header'
+        emailAddress:
+          type: string
+          description: Recipient e-mail address
+        subject:
+          type: string
+          description: E-mail subject
+        message:
+          type: string
+          description: E-mail plain-text body
+        htmlMessage:
+          type: string
+          description: E-mail HTML body (BASE64-encoded)
+        sender:
+          $ref: '#/components/schemas/Email'
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/EmailAttachment'
+    DigitalMailAttachment:
+      required:
+      - content
+      - filename
+      type: object
+      properties:
+        contentType:
+          type: string
+          description: Content type
+          enum:
+          - application/pdf
+        content:
+          type: string
+          description: Content (BASE64-encoded)
+        filename:
+          type: string
+          description: Filename
+      description: Attachments
+    DigitalMailRequest:
+      required:
+      - body
+      - contentType
+      type: object
+      properties:
+        party:
+          $ref: '#/components/schemas/Parties'
+        headers:
+          type: array
+          description: Headers
+          items:
+            $ref: '#/components/schemas/Header'
+        sender:
+          $ref: '#/components/schemas/DigitalMail'
+        subject:
+          type: string
+          description: Subject
+          nullable: true
+        contentType:
+          type: string
+          description: Content type
+          enum:
+          - text/plain
+          - text/html
+        body:
+          type: string
+          description: "Body (plain text if contentType is set to 'text/plain', BASE64-encoded\
+            \ if contentType is set to 'application/html')"
+        attachments:
+          type: array
+          description: Attachments
+          items:
+            $ref: '#/components/schemas/DigitalMailAttachment'
+    MessageStatusResponse:
+      type: object
+      properties:
+        messageId:
+          type: string
+        deliveryId:
+          type: string
+        status:
+          type: string
+          enum:
+          - AWAITING_FEEDBACK
+          - PENDING
+          - SENT
+          - FAILED
+          - NO_FEEDBACK_SETTINGS_FOUND
+          - NO_FEEDBACK_WANTED
+    HistoryResponse:
+      type: object
+      properties:
+        content:
+          type: object
+        messageType:
+          type: string
+          enum:
+          - MESSAGE
+          - EMAIL
+          - SMS
+          - WEB_MESSAGE
+          - DIGITAL_MAIL
+          - SNAIL_MAIL
+          - LETTER
+        status:
+          type: string
+          enum:
+          - AWAITING_FEEDBACK
+          - PENDING
+          - SENT
+          - FAILED
+          - NO_FEEDBACK_SETTINGS_FOUND
+          - NO_FEEDBACK_WANTED
+        timestamp:
+          type: string
+          format: date-time
+    BatchStatusResponse:
+      type: object
+      properties:
+        batchId:
+          type: string
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/MessageStatusResponse'
+  securitySchemes: {}

@@ -292,7 +292,7 @@ public class Errand {
 		if (getClass() != obj.getClass()) {
 			return false;
 		}
-		Errand other = (Errand) obj;
+		var other = (Errand) obj;
 		return Objects.equals(assignedGroupId, other.assignedGroupId) && Objects.equals(assignedUserId, other.assignedUserId) && Objects.equals(categoryTag, other.categoryTag) && Objects.equals(created, other.created) && Objects.equals(customer,
 			other.customer) && Objects.equals(externalTags, other.externalTags) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(clientIdTag, other.clientIdTag) && priority == other.priority && Objects.equals(
 				reporterUserId, other.reporterUserId) && Objects.equals(statusTag, other.statusTag) && Objects.equals(title, other.title) && Objects.equals(typeTag, other.typeTag);
@@ -300,7 +300,7 @@ public class Errand {
 
 	@Override
 	public String toString() {
-		StringBuilder builder = new StringBuilder();
+		var builder = new StringBuilder();
 		builder.append("Errand [id=").append(id).append(", title=").append(title).append(", priority=").append(priority).append(", customer=").append(customer).append(", externalTags=").append(externalTags).append(", clientIdTag=").append(clientIdTag)
 			.append(", categoryTag=").append(categoryTag).append(", typeTag=").append(typeTag).append(", statusTag=").append(statusTag).append(", reporterUserId=").append(reporterUserId).append(", assignedUserId=").append(assignedUserId).append(
 				", assignedGroupId=").append(assignedGroupId).append(", created=").append(created).append(", modified=").append(modified).append("]");

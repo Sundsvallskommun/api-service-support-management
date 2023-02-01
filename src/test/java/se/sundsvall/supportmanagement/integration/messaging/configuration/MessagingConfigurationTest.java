@@ -1,11 +1,11 @@
-package se.sundsvall.supportmanagement.integration.notes.configuration;
+package se.sundsvall.supportmanagement.integration.messaging.configuration;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static se.sundsvall.supportmanagement.integration.notes.configuration.NotesConfiguration.CLIENT_ID;
+import static se.sundsvall.supportmanagement.integration.messaging.configuration.MessagingConfiguration.CLIENT_ID;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,7 +23,7 @@ import se.sundsvall.dept44.configuration.feign.FeignMultiCustomizer;
 import se.sundsvall.dept44.configuration.feign.decoder.ProblemErrorDecoder;
 
 @ExtendWith(MockitoExtension.class)
-class NotesConfigurationTest {
+class MessagingConfigurationTest {
 
 	@Mock
 	private ClientRegistrationRepository clientRegistrationRepositoryMock;
@@ -38,11 +38,11 @@ class NotesConfigurationTest {
 	private FeignBuilderCustomizer feignBuilderCustomizerMock;
 
 	@Mock
-	private NotesProperties propertiesMock;
+	private MessagingProperties propertiesMock;
 
 	@Test
 	void testFeignBuilderCustomizer() {
-		final var configuration = new NotesConfiguration();
+		final var configuration = new MessagingConfiguration();
 
 		when(clientRegistrationRepositoryMock.findByRegistrationId(any())).thenReturn(clientRegistrationMock);
 		when(propertiesMock.connectTimeout()).thenReturn(1);

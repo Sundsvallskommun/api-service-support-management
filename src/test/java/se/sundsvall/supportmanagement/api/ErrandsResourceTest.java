@@ -1,20 +1,9 @@
 package se.sundsvall.supportmanagement.api;
 
-import static com.fasterxml.jackson.annotation.JsonCreator.Mode.PROPERTIES;
-import static java.util.Collections.emptyMap;
-import static java.util.UUID.randomUUID;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
-import static org.springframework.http.MediaType.ALL;
-import static org.springframework.http.MediaType.APPLICATION_JSON;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
@@ -29,12 +18,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.reactive.server.WebTestClient;
-
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.JsonNode;
-
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.errand.Customer;
 import se.sundsvall.supportmanagement.api.model.errand.CustomerType;
@@ -44,6 +27,23 @@ import se.sundsvall.supportmanagement.api.model.errand.Priority;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.service.ErrandService;
 import se.sundsvall.supportmanagement.service.TagService;
+
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import static com.fasterxml.jackson.annotation.JsonCreator.Mode.PROPERTIES;
+import static java.util.Collections.emptyMap;
+import static java.util.UUID.randomUUID;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
+import static org.springframework.http.MediaType.ALL;
+import static org.springframework.http.MediaType.APPLICATION_JSON;
 
 @SpringBootTest(classes = Application.class, webEnvironment = RANDOM_PORT)
 @ActiveProfiles("junit")
@@ -162,6 +162,40 @@ class ErrandsResourceTest {
 			.queryParam("filter", filter)
 			.queryParam("page", page)
 			.queryParam("size", size).build(emptyMap()))
+			.exchange()
+			.expectStatus().isOk()
+			.expectHeader().contentType(APPLICATION_JSON)
+			.returnResult(new ParameterizedTypeReference<RestResponsePage<Errand>>() {
+			})
+			.getResponseBody()
+			.blockFirst();
+
+		// Verification
+		verify(errandServiceMock).findErrands(ArgumentMatchers.<Specification<ErrandEntity>>any(), eq(pageable));
+		assertThat(response).isNotNull();
+		assertThat(response.getContent()).hasSize(1);
+	}
+
+	@Test
+	void findErrandsWithDateFilter() {
+		// Parameter values
+		final var page = 13;
+		final var size = 37;
+		final var pageable = PageRequest.of(page, size);
+		final var matches = new PageImpl<>(List.of(Errand.create()), pageable, 1);
+		final var dateFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+		final var from = OffsetDateTime.now().minusMinutes(1).format(dateFormat);
+		final var to = OffsetDateTime.now().format(dateFormat);
+		final var filter = "created > '" + from + "' and created < '" + to + "'";
+
+		// Mock
+		when(errandServiceMock.findErrands(ArgumentMatchers.<Specification<ErrandEntity>>any(), eq(pageable))).thenReturn(matches);
+
+		// Call
+		final var response = webTestClient.get().uri(builder -> builder.path(PATH)
+				.queryParam("filter", filter)
+				.queryParam("page", page)
+				.queryParam("size", size).build(emptyMap()))
 			.exchange()
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)

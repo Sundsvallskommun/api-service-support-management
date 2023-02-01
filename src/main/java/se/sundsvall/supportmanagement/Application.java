@@ -10,7 +10,7 @@ import se.sundsvall.dept44.ServiceApplication;
 @EnableCaching
 @EnableFeignClients
 public class Application {
-	public static void main(final String... args) {
+	public static void main(String... args) {
 		SpringApplication.run(Application.class, args);
 	}
 }

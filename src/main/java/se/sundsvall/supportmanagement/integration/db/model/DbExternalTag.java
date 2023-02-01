@@ -24,11 +24,11 @@ public class DbExternalTag implements Serializable {
 		return key;
 	}
 
-	public void setKey(final String key) {
+	public void setKey(String key) {
 		this.key = key;
 	}
 
-	public DbExternalTag withKey(final String key) {
+	public DbExternalTag withKey(String key) {
 		this.key = key;
 		return this;
 	}
@@ -37,11 +37,11 @@ public class DbExternalTag implements Serializable {
 		return value;
 	}
 
-	public void setValue(final String value) {
+	public void setValue(String value) {
 		this.value = value;
 	}
 
-	public DbExternalTag withValue(final String value) {
+	public DbExternalTag withValue(String value) {
 		this.value = value;
 		return this;
 	}
@@ -52,20 +52,20 @@ public class DbExternalTag implements Serializable {
 	}
 
 	@Override
-	public boolean equals(final Object o) {
+	public boolean equals(Object o) {
 		if (this == o) {
 			return true;
 		}
 		if (o == null || getClass() != o.getClass()) {
 			return false;
 		}
-		final var that = (DbExternalTag) o;
+		var that = (DbExternalTag) o;
 		return Objects.equals(key, that.key) && Objects.equals(value, that.value);
 	}
 
 	@Override
 	public String toString() {
-		final var builder = new StringBuilder();
+		var builder = new StringBuilder();
 
 		builder.append("DbExternalTag [key=").append(key).append(", value=").append(value).append("]");
 

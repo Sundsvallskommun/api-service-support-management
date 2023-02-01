@@ -17,13 +17,13 @@ public class TagMapper {
 
 	private TagMapper() {}
 
-	public static List<String> toStringList(final List<TagEntity> tagEntityList) {
+	public static List<String> toStringList(List<TagEntity> tagEntityList) {
 		return Optional.ofNullable(tagEntityList).orElse(emptyList()).stream()
 			.map(TagEntity::getName)
 			.toList();
 	}
 
-	public static TagsResponse toTagsResponse(final List<TagEntity> tagEntityList) {
+	public static TagsResponse toTagsResponse(List<TagEntity> tagEntityList) {
 		return TagsResponse.create()
 			.withStatusTags(toStringListFilteredByType(tagEntityList, STATUS))
 			.withCategoryTags(toStringListFilteredByType(tagEntityList, CATEGORY))
@@ -31,7 +31,7 @@ public class TagMapper {
 			.withClientIdTags(toStringListFilteredByType(tagEntityList, CLIENT_ID));
 	}
 
-	private static List<String> toStringListFilteredByType(final List<TagEntity> tagEntityList, final TagType type) {
+	private static List<String> toStringListFilteredByType(List<TagEntity> tagEntityList, TagType type) {
 		return Optional.ofNullable(tagEntityList).orElse(emptyList()).stream()
 			.filter(tagEntity -> type == tagEntity.getType())
 			.map(TagEntity::getName)
