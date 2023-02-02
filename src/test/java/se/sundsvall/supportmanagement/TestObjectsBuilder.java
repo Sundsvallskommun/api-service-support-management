@@ -1,4 +1,4 @@
-package se.sundsvall.supportmanagement.service.util;
+package se.sundsvall.supportmanagement;
 
 import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
 import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachmentHeader;

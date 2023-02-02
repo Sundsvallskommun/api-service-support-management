@@ -27,8 +27,8 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.data.domain.Sort.Direction.DESC;
 import static org.zalando.problem.Status.NOT_FOUND;
-import static se.sundsvall.supportmanagement.service.util.TestObjectsBuilder.buildErrand;
-import static se.sundsvall.supportmanagement.service.util.TestObjectsBuilder.buildErrandEntity;
+import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrand;
+import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrandEntity;
 
 @ExtendWith(MockitoExtension.class)
 class ErrandServiceTest {

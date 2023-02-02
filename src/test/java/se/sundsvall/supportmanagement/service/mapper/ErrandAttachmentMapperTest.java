@@ -6,9 +6,9 @@ import java.util.List;
 
 import static org.apache.commons.codec.binary.Base64.encodeBase64String;
 import static org.assertj.core.api.Assertions.assertThat;
-import static se.sundsvall.supportmanagement.service.util.TestObjectsBuilder.buildAttachmentEntity;
-import static se.sundsvall.supportmanagement.service.util.TestObjectsBuilder.buildErrandAttachment;
-import static se.sundsvall.supportmanagement.service.util.TestObjectsBuilder.buildErrandEntity;
+import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildAttachmentEntity;
+import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrandAttachment;
+import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrandEntity;
 
 class ErrandAttachmentMapperTest {
 
