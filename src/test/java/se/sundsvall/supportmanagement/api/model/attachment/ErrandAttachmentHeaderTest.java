@@ -27,14 +27,17 @@ class ErrandAttachmentHeaderTest {
 	void testBuilderMethods() {
 		final var id = "id";
 		final var fileName = "fileName";
+		final var mimeType = "mimeType";
 
 		final var bean = ErrandAttachmentHeader.create()
 			.withId(id)
-			.withFileName(fileName);
+			.withFileName(fileName)
+			.withMimeType(mimeType);
 
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(bean.getId()).isEqualTo(id);
 		assertThat(bean.getFileName()).isEqualTo(fileName);
+		assertThat(bean.getMimeType()).isEqualTo(mimeType);
 	}
 
 	@Test

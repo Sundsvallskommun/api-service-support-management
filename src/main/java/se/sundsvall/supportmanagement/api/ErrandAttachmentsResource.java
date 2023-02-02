@@ -23,6 +23,7 @@ import org.zalando.problem.Problem;
 import org.zalando.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
+import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachmentHeader;
 import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
 import se.sundsvall.supportmanagement.service.ErrandAttachmentService;
 
@@ -81,10 +82,10 @@ public class ErrandAttachmentsResource {
 	@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = { Problem.class, ConstraintViolationProblem.class })))
 	@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
-	public ResponseEntity<List<ErrandAttachment>> readErrandAttachments(
+	public ResponseEntity<List<ErrandAttachmentHeader>> readErrandAttachments(
 		@Parameter(name = "id", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("id") final String id) {
 
-		return ResponseEntity.ok(errandAttachmentService.readErrandAttachments(id));
+		return ResponseEntity.ok(errandAttachmentService.readErrandAttachmentHeaders(id));
 	}
 
 	@DeleteMapping(path = "/{attachmentId}")

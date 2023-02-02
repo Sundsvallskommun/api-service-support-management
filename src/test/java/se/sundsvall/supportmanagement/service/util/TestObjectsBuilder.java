@@ -76,8 +76,8 @@ public class TestObjectsBuilder {
 		return ErrandAttachment.create()
 			.withErrandAttachmentHeader(ErrandAttachmentHeader.create()
 				.withId(ATTACHMENT_ID)
-				.withFileName(FILE_NAME))
-			.withMimeType(MIME_TYPE)
+				.withFileName(FILE_NAME)
+				.withMimeType(MIME_TYPE))
 			.withBase64EncodedString(encodeBase64String(FILE.getBytes()));
 	}
 

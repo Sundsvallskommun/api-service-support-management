@@ -118,8 +118,10 @@ class ErrandAttachmentsResourceFailureTest {
 		// Parameters
 		final var id = "invalid-uuid";
 		final var requestBody = ErrandAttachment.create()
-			.withErrandAttachmentHeader(ErrandAttachmentHeader.create().withId("id").withFileName("test.txt"))
-			.withMimeType("mimeType")
+			.withErrandAttachmentHeader(ErrandAttachmentHeader.create()
+				.withId("id")
+				.withFileName("test.txt")
+				.withMimeType("mimeType"))
 			.withBase64EncodedString("file");
 
 		// Call

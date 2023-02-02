@@ -42,13 +42,13 @@ public class ErrandAttachmentMapper {
 			.withMimeType(detectMimeType(toFileName(errandAttachment.getErrandAttachmentHeader()), byteArray));
 	}
 
-	public static List<ErrandAttachment> toErrandAttachments(final List<AttachmentEntity> attachmentEntities) {
+	public static List<ErrandAttachmentHeader> toErrandAttachmentHeaders(final List<AttachmentEntity> attachmentEntities) {
 		if (isNull(attachmentEntities)) {
 			return emptyList();
 		}
 
 		return attachmentEntities.stream()
-			.map(ErrandAttachmentMapper::toErrandAttachment)
+			.map(ErrandAttachmentMapper::toErrandAttachmentHeader)
 			.filter(Objects::nonNull)
 			.toList();
 	}
@@ -60,7 +60,6 @@ public class ErrandAttachmentMapper {
 
 		return new ErrandAttachment()
 			.withBase64EncodedString(encodeBase64String(attachmentEntity.getFile()))
-			.withMimeType(attachmentEntity.getMimeType())
 			.withErrandAttachmentHeader(toErrandAttachmentHeader(attachmentEntity));
 	}
 
@@ -71,7 +70,8 @@ public class ErrandAttachmentMapper {
 
 		return new ErrandAttachmentHeader()
 			.withFileName(attachmentEntity.getFileName())
-			.withId(attachmentEntity.getId());
+			.withId(attachmentEntity.getId())
+			.withMimeType(attachmentEntity.getMimeType());
 	}
 
 	private static String detectMimeType(String fileName, byte[] byteArray) {
