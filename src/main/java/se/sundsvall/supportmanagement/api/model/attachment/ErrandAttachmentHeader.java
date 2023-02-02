@@ -20,6 +20,9 @@ public class ErrandAttachmentHeader {
 	@NotBlank(groups = OnCreate.class)
 	protected String fileName;
 
+	@Schema(description = "Mime type of the file", accessMode = Schema.AccessMode.READ_ONLY)
+	private String mimeType;
+
 	public static ErrandAttachmentHeader create() {
 		return new ErrandAttachmentHeader();
 	}
@@ -50,9 +53,22 @@ public class ErrandAttachmentHeader {
 		return this;
 	}
 
+	public String getMimeType() {
+		return this.mimeType;
+	}
+
+	public void setMimeType(String mimeType) {
+		this.mimeType = mimeType;
+	}
+
+	public ErrandAttachmentHeader withMimeType(String mimeType) {
+		this.mimeType = mimeType;
+		return this;
+	}
+
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, fileName);
+		return Objects.hash(id, fileName, mimeType);
 	}
 
 	@Override
@@ -67,11 +83,11 @@ public class ErrandAttachmentHeader {
 			return false;
 		}
 		var other = (ErrandAttachmentHeader) obj;
-		return Objects.equals(id, other.id) && Objects.equals(fileName, other.fileName);
+		return Objects.equals(id, other.id) && Objects.equals(fileName, other.fileName) && Objects.equals(mimeType, other.mimeType);
 	}
 
 	@Override
 	public String toString() {
-		return "ErrandAttachmentHeader [id=" + id + ", fileName=" + fileName + "]";
+		return "ErrandAttachmentHeader [id=" + id + ", fileName=" + fileName + ", mimeType=" + mimeType + "]";
 	}
 }

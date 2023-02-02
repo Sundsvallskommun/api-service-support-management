@@ -29,16 +29,17 @@ class ErrandAttachmentTest {
 		final var fileName = "fileName";
 		final var mimeType = "mimeType";
 		final var base64EncodedString = "file";
-		final var errandAttachmentHeader = ErrandAttachmentHeader.create().withFileName(fileName).withId(id);
+		final var errandAttachmentHeader = ErrandAttachmentHeader.create()
+			.withFileName(fileName)
+			.withId(id)
+			.withMimeType(mimeType);
 
 		final var bean = ErrandAttachment.create()
 			.withErrandAttachmentHeader(errandAttachmentHeader)
-			.withMimeType(mimeType)
 			.withBase64EncodedString(base64EncodedString);
 
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(bean.getErrandAttachmentHeader()).isEqualTo(errandAttachmentHeader);
-		assertThat(bean.getMimeType()).isEqualTo(mimeType);
 		assertThat(bean.getBase64EncodedString()).isEqualTo(base64EncodedString);
 	}
 

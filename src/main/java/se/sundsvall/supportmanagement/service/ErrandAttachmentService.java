@@ -1,25 +1,25 @@
 package se.sundsvall.supportmanagement.service;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.zalando.problem.Problem;
+import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
+import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachmentHeader;
+import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
+import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+
+import java.util.List;
+import java.util.Objects;
+
 import static java.util.Optional.ofNullable;
 import static org.zalando.problem.Status.BAD_GATEWAY;
 import static org.zalando.problem.Status.BAD_REQUEST;
 import static org.zalando.problem.Status.NOT_FOUND;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapper.toAttachmentEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapper.toErrandAttachment;
-import static se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapper.toErrandAttachments;
-
-import java.util.List;
-import java.util.Objects;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.zalando.problem.Problem;
-
-import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
-import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
-import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
-import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
-import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapper.toErrandAttachmentHeaders;
 
 @Service
 public class ErrandAttachmentService {
@@ -50,11 +50,11 @@ public class ErrandAttachmentService {
 		return toErrandAttachment(attachmentEntity);
 	}
 
-	public List<ErrandAttachment> readErrandAttachments(final String errandId) {
+	public List<ErrandAttachmentHeader> readErrandAttachmentHeaders(final String errandId) {
 
 		verifyExistingErrand(errandId);
 
-		return toErrandAttachments(attachmentRepository.findByErrandEntityId(errandId));
+		return toErrandAttachmentHeaders(attachmentRepository.findByErrandEntityId(errandId));
 	}
 
 	public void deleteErrandAttachment(final String errandId, final String attachmentId) {

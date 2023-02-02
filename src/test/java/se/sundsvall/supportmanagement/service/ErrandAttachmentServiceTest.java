@@ -1,5 +1,18 @@
 package se.sundsvall.supportmanagement.service;
 
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.zalando.problem.ThrowableProblem;
+import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
+import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+
+import java.util.List;
+
 import static java.util.Optional.of;
 import static org.apache.commons.codec.binary.Base64.encodeBase64String;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -13,20 +26,6 @@ import static org.zalando.problem.Status.NOT_FOUND;
 import static se.sundsvall.supportmanagement.service.util.TestObjectsBuilder.buildAttachmentEntity;
 import static se.sundsvall.supportmanagement.service.util.TestObjectsBuilder.buildErrandAttachment;
 import static se.sundsvall.supportmanagement.service.util.TestObjectsBuilder.buildErrandEntity;
-
-import java.util.List;
-
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.zalando.problem.ThrowableProblem;
-
-import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
-import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
-import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
-import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 
 @ExtendWith(MockitoExtension.class)
 class ErrandAttachmentServiceTest {
@@ -80,7 +79,7 @@ class ErrandAttachmentServiceTest {
 		assertThat(result).isNotNull();
 		assertThat(result.getErrandAttachmentHeader().getId()).isEqualTo(ATTACHMENT_ID);
 		assertThat(result.getErrandAttachmentHeader().getFileName()).isEqualTo(FILE_NAME);
-		assertThat(result.getMimeType()).isEqualTo(MIME_TYPE);
+		assertThat(result.getErrandAttachmentHeader().getMimeType()).isEqualTo(MIME_TYPE);
 		assertThat(result.getBase64EncodedString()).isEqualTo(encodeBase64String(FILE.getBytes()));
 
 		verify(errandsRepositoryMock).existsById(ERRAND_ID);
@@ -132,14 +131,13 @@ class ErrandAttachmentServiceTest {
 		when(attachmentRepositoryMock.findByErrandEntityId(ERRAND_ID)).thenReturn(List.of(buildAttachmentEntity(buildErrandEntity())));
 
 		// Call
-		final var result = service.readErrandAttachments(ERRAND_ID);
+		final var result = service.readErrandAttachmentHeaders(ERRAND_ID);
 
 		// Assertions and verifications
 		assertThat(result).isNotNull().hasSize(1);
-		assertThat(result.get(0).getErrandAttachmentHeader().getId()).isEqualTo(ATTACHMENT_ID);
-		assertThat(result.get(0).getErrandAttachmentHeader().getFileName()).isEqualTo(FILE_NAME);
+		assertThat(result.get(0).getId()).isEqualTo(ATTACHMENT_ID);
+		assertThat(result.get(0).getFileName()).isEqualTo(FILE_NAME);
 		assertThat(result.get(0).getMimeType()).isEqualTo(MIME_TYPE);
-		assertThat(result.get(0).getBase64EncodedString()).isEqualTo(encodeBase64String(FILE.getBytes()));
 
 		verify(errandsRepositoryMock).existsById(ERRAND_ID);
 		verify(attachmentRepositoryMock).findByErrandEntityId(ERRAND_ID);

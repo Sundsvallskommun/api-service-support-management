@@ -51,9 +51,10 @@ class ErrandAttachmentsResourceTest {
 		final var attachmentId = "attachmentId";
 		final var requestBody = ErrandAttachment.create()
 			.withErrandAttachmentHeader(ErrandAttachmentHeader.create()
-				.withFileName(fileName))
-			.withBase64EncodedString(file)
-			.withMimeType(mimeType);
+				.withFileName(fileName)
+				.withMimeType(mimeType))
+			.withBase64EncodedString(file);
+
 		// Mock
 		when(errandAttachmentServiceMock.createErrandAttachment(ERRAND_ID, requestBody)).thenReturn(attachmentId);
 
@@ -80,9 +81,9 @@ class ErrandAttachmentsResourceTest {
 		final var errandAttachment = ErrandAttachment.create()
 			.withErrandAttachmentHeader(ErrandAttachmentHeader.create()
 				.withFileName("test.txt")
-				.withId(attachmentId))
-			.withBase64EncodedString("test")
-			.withMimeType("text/plain");
+				.withId(attachmentId)
+				.withMimeType("text/plain"))
+			.withBase64EncodedString("test");
 
 		// Mock
 		when(errandAttachmentServiceMock.readErrandAttachment(ERRAND_ID, attachmentId)).thenReturn(errandAttachment);
@@ -104,26 +105,24 @@ class ErrandAttachmentsResourceTest {
 	@Test
 	void readErrandAttachments() {
 		//Parameter values
-		final var errandAttachments = List.of(ErrandAttachment.create()
-			.withErrandAttachmentHeader(ErrandAttachmentHeader.create()
+		final var errandAttachments = List.of(ErrandAttachmentHeader.create()
 				.withFileName("test.txt")
-				.withId(randomUUID().toString()))
-			.withBase64EncodedString("test")
-			.withMimeType("text/plain"));
+				.withId(randomUUID().toString())
+				.withMimeType("text/plain"));
 
-		when(errandAttachmentServiceMock.readErrandAttachments(ERRAND_ID)).thenReturn(errandAttachments);
+		when(errandAttachmentServiceMock.readErrandAttachmentHeaders(ERRAND_ID)).thenReturn(errandAttachments);
 
 		final var response = webTestClient.get().uri(builder -> builder.path(PATH).build(Map.of("id", ERRAND_ID)))
 			.exchange()
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)
-			.expectBodyList(ErrandAttachment.class)
+			.expectBodyList(ErrandAttachmentHeader.class)
 			.returnResult();
 
 		assertThat(response.getResponseBody()).isEqualTo(errandAttachments);
 
 		// Verification
-		verify(errandAttachmentServiceMock).readErrandAttachments(ERRAND_ID);
+		verify(errandAttachmentServiceMock).readErrandAttachmentHeaders(ERRAND_ID);
 	}
 
 	@Test

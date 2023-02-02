@@ -1,14 +1,14 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
+import org.junit.jupiter.api.Test;
+
+import java.util.List;
+
 import static org.apache.commons.codec.binary.Base64.encodeBase64String;
 import static org.assertj.core.api.Assertions.assertThat;
 import static se.sundsvall.supportmanagement.service.util.TestObjectsBuilder.buildAttachmentEntity;
 import static se.sundsvall.supportmanagement.service.util.TestObjectsBuilder.buildErrandAttachment;
 import static se.sundsvall.supportmanagement.service.util.TestObjectsBuilder.buildErrandEntity;
-
-import java.util.List;
-
-import org.junit.jupiter.api.Test;
 
 class ErrandAttachmentMapperTest {
 
@@ -46,7 +46,7 @@ class ErrandAttachmentMapperTest {
 		assertThat(result).isNotNull();
 		assertThat(result.getErrandAttachmentHeader().getId()).isEqualTo(ATTACHMENT_ID);
 		assertThat(result.getErrandAttachmentHeader().getFileName()).isEqualTo(FILE_NAME);
-		assertThat(result.getMimeType()).isEqualTo(MIME_TYPE);
+		assertThat(result.getErrandAttachmentHeader().getMimeType()).isEqualTo(MIME_TYPE);
 		assertThat(result.getBase64EncodedString()).isEqualTo(encodeBase64String(FILE.getBytes()));
 	}
 
@@ -58,21 +58,20 @@ class ErrandAttachmentMapperTest {
 	}
 
 	@Test
-	void toErrandAttachments() {
+	void toErrandAttachmentHeaders() {
 
-		final var result = ErrandAttachmentMapper.toErrandAttachments(List.of(buildAttachmentEntity(buildErrandEntity())));
+		final var result = ErrandAttachmentMapper.toErrandAttachmentHeaders(List.of(buildAttachmentEntity(buildErrandEntity())));
 
 		assertThat(result).isNotNull();
-		assertThat(result.get(0).getErrandAttachmentHeader().getId()).isEqualTo(ATTACHMENT_ID);
-		assertThat(result.get(0).getErrandAttachmentHeader().getFileName()).isEqualTo(FILE_NAME);
+		assertThat(result.get(0).getId()).isEqualTo(ATTACHMENT_ID);
+		assertThat(result.get(0).getFileName()).isEqualTo(FILE_NAME);
 		assertThat(result.get(0).getMimeType()).isEqualTo(MIME_TYPE);
-		assertThat(result.get(0).getBase64EncodedString()).isEqualTo(encodeBase64String(FILE.getBytes()));
 	}
 
 	@Test
 	void toErrandAttachmentsFromNullInput() {
 
-		assertThat(ErrandAttachmentMapper.toErrandAttachments(null))
+		assertThat(ErrandAttachmentMapper.toErrandAttachmentHeaders(null))
 			.isNotNull().isEmpty();
 	}
 }

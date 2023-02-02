@@ -14,9 +14,6 @@ public class ErrandAttachment {
 	@NotNull(groups = OnCreate.class)
 	private ErrandAttachmentHeader errandAttachmentHeader;
 
-	@Schema(description = "Mime type of the file", accessMode = Schema.AccessMode.READ_ONLY)
-	private String mimeType;
-
 	@Schema(description = "Base 64 encoded file, max size 10 MB", format = "base64")
 	@NotNull
 	@ValidBase64
@@ -40,19 +37,6 @@ public class ErrandAttachment {
 		return this;
 	}
 
-	public String getMimeType() {
-		return this.mimeType;
-	}
-
-	public void setMimeType(String mimeType) {
-		this.mimeType = mimeType;
-	}
-
-	public ErrandAttachment withMimeType(String mimeType) {
-		this.mimeType = mimeType;
-		return this;
-	}
-
 	public String getBase64EncodedString() {
 		return base64EncodedString;
 	}
@@ -68,7 +52,7 @@ public class ErrandAttachment {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(errandAttachmentHeader, mimeType, base64EncodedString);
+		return Objects.hash(errandAttachmentHeader, base64EncodedString);
 	}
 
 	@Override
@@ -83,11 +67,11 @@ public class ErrandAttachment {
 			return false;
 		}
 		var other = (ErrandAttachment) obj;
-		return Objects.equals(errandAttachmentHeader, other.errandAttachmentHeader) && Objects.equals(mimeType, other.mimeType) && Objects.equals(base64EncodedString, other.base64EncodedString);
+		return Objects.equals(errandAttachmentHeader, other.errandAttachmentHeader) && Objects.equals(base64EncodedString, other.base64EncodedString);
 	}
 
 	@Override
 	public String toString() {
-		return "ErrandAttachment [errandAttachmentHeader=" + errandAttachmentHeader + ", mimeType=" + mimeType + ", base64EncodedString=" + base64EncodedString + "]";
+		return "ErrandAttachment [errandAttachmentHeader=" + errandAttachmentHeader + ", base64EncodedString=" + base64EncodedString + "]";
 	}
 }
