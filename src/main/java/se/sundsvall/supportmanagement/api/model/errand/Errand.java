@@ -1,10 +1,21 @@
 package se.sundsvall.supportmanagement.api.model.errand;
 
-import io.swagger.v3.oas.annotations.media.ArraySchema;
-import io.swagger.v3.oas.annotations.media.Schema;
+import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
+
+import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.Objects;
+
+import javax.validation.Valid;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Null;
+
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.format.annotation.DateTimeFormat.ISO;
 
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Schema;
 import se.sundsvall.supportmanagement.api.validation.UniqueExternalTagKeys;
 import se.sundsvall.supportmanagement.api.validation.ValidCategoryTag;
 import se.sundsvall.supportmanagement.api.validation.ValidClientIdTag;
@@ -12,16 +23,6 @@ import se.sundsvall.supportmanagement.api.validation.ValidStatusTag;
 import se.sundsvall.supportmanagement.api.validation.ValidTypeTag;
 import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
 import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
-
-import javax.validation.Valid;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Null;
-import java.time.OffsetDateTime;
-import java.util.List;
-import java.util.Objects;
-
-import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 
 @Schema(description = "Errand model")
 public class Errand {
@@ -89,6 +90,11 @@ public class Errand {
 	@DateTimeFormat(iso = ISO.DATE_TIME)
 	@Null(groups = { OnCreate.class, OnUpdate.class })
 	private OffsetDateTime modified;
+
+	@Schema(description = "Timestamp when errand was last touched (created or modified)", example = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
+	@DateTimeFormat(iso = ISO.DATE_TIME)
+	@Null(groups = { OnCreate.class, OnUpdate.class })
+	private OffsetDateTime touched;
 
 	public static Errand create() {
 		return new Errand();
@@ -276,9 +282,22 @@ public class Errand {
 		return this;
 	}
 
+	public OffsetDateTime getTouched() {
+		return touched;
+	}
+
+	public void setTouched(OffsetDateTime touched) {
+		this.touched = touched;
+	}
+
+	public Errand withTouched(OffsetDateTime touched) {
+		this.touched = touched;
+		return this;
+	}
+
 	@Override
 	public int hashCode() {
-		return Objects.hash(assignedGroupId, assignedUserId, categoryTag, created, customer, externalTags, id, modified, clientIdTag, priority, reporterUserId, statusTag, title, typeTag);
+		return Objects.hash(assignedGroupId, assignedUserId, categoryTag, clientIdTag, created, customer, externalTags, id, modified, priority, reporterUserId, statusTag, title, touched, typeTag);
 	}
 
 	@Override
@@ -292,18 +311,19 @@ public class Errand {
 		if (getClass() != obj.getClass()) {
 			return false;
 		}
-		var other = (Errand) obj;
-		return Objects.equals(assignedGroupId, other.assignedGroupId) && Objects.equals(assignedUserId, other.assignedUserId) && Objects.equals(categoryTag, other.categoryTag) && Objects.equals(created, other.created) && Objects.equals(customer,
-			other.customer) && Objects.equals(externalTags, other.externalTags) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(clientIdTag, other.clientIdTag) && priority == other.priority && Objects.equals(
-				reporterUserId, other.reporterUserId) && Objects.equals(statusTag, other.statusTag) && Objects.equals(title, other.title) && Objects.equals(typeTag, other.typeTag);
+		Errand other = (Errand) obj;
+		return Objects.equals(assignedGroupId, other.assignedGroupId) && Objects.equals(assignedUserId, other.assignedUserId) && Objects.equals(categoryTag, other.categoryTag) && Objects.equals(clientIdTag, other.clientIdTag) &&
+			Objects.equals(created, other.created) && Objects.equals(customer, other.customer) && Objects.equals(externalTags, other.externalTags) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified)
+			&& priority == other.priority && Objects.equals(reporterUserId, other.reporterUserId) && Objects.equals(statusTag, other.statusTag) && Objects.equals(title, other.title) && Objects.equals(touched, other.touched) &&
+			Objects.equals(typeTag, other.typeTag);
 	}
 
 	@Override
 	public String toString() {
-		var builder = new StringBuilder();
-		builder.append("Errand [id=").append(id).append(", title=").append(title).append(", priority=").append(priority).append(", customer=").append(customer).append(", externalTags=").append(externalTags).append(", clientIdTag=").append(clientIdTag)
-			.append(", categoryTag=").append(categoryTag).append(", typeTag=").append(typeTag).append(", statusTag=").append(statusTag).append(", reporterUserId=").append(reporterUserId).append(", assignedUserId=").append(assignedUserId).append(
-				", assignedGroupId=").append(assignedGroupId).append(", created=").append(created).append(", modified=").append(modified).append("]");
+		StringBuilder builder = new StringBuilder();
+		builder.append("Errand [id=").append(id).append(", title=").append(title).append(", priority=").append(priority).append(", customer=").append(customer).append(", externalTags=").append(externalTags).append(", clientIdTag=").append(
+			clientIdTag).append(", categoryTag=").append(categoryTag).append(", typeTag=").append(typeTag).append(", statusTag=").append(statusTag).append(", reporterUserId=").append(reporterUserId).append(", assignedUserId=").append(assignedUserId)
+			.append(", assignedGroupId=").append(assignedGroupId).append(", created=").append(created).append(", modified=").append(modified).append(", touched=").append(touched).append("]");
 		return builder.toString();
 	}
 }

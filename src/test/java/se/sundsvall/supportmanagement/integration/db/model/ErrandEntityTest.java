@@ -33,6 +33,7 @@ class ErrandEntityTest {
 
 	@Test
 	void testBean() {
+
 		assertThat(ErrandEntity.class, allOf(
 			hasValidBeanConstructor(),
 			hasValidGettersAndSetters(),
@@ -59,7 +60,8 @@ class ErrandEntityTest {
 		final var assignedGroupId = "assignedGroupId";
 		final var attachments = List.of(AttachmentEntity.create().withId(attachmentId).withFileName("fileName").withFile("file".getBytes()).withMimeType("mimeType"));
 		final var created = now();
-		final var updated = now().plusDays(1);
+		final var modified = now().plusDays(1);
+		final var touched = now().plusDays(2);
 
 		final var errandEntity = ErrandEntity.create()
 			.withId(id)
@@ -76,7 +78,8 @@ class ErrandEntityTest {
 			.withAssignedGroupId(assignedGroupId)
 			.withAttachments(attachments)
 			.withCreated(created)
-			.withModified(updated);
+			.withModified(modified)
+			.withTouched(touched);
 
 		assertThat(errandEntity).hasNoNullFieldsOrProperties();
 		assertThat(errandEntity.getId()).isEqualTo(id);
@@ -93,7 +96,8 @@ class ErrandEntityTest {
 		assertThat(errandEntity.getAssignedGroupId()).isEqualTo(assignedGroupId);
 		assertThat(errandEntity.getAttachments()).isEqualTo(attachments);
 		assertThat(errandEntity.getCreated()).isEqualTo(created);
-		assertThat(errandEntity.getModified()).isEqualTo(updated);
+		assertThat(errandEntity.getModified()).isEqualTo(modified);
+		assertThat(errandEntity.getTouched()).isEqualTo(touched);
 	}
 
 	@Test

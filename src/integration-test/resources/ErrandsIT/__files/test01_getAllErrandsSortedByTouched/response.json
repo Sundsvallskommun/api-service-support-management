@@ -1,32 +1,6 @@
 {
 	"content": [
 		{
-			"id": "ec677eb3-604c-4935-bff7-f8f0b500c8f4",
-			"title": "TITLE-1",
-			"priority": "LOW",
-			"customer": {
-				"id": "CUSTOMER_ID-1",
-				"type": "EMPLOYEE"
-			},
-			"externalTags": [
-				{
-					"key": "KEY-1",
-					"value": "VALUE-1"
-				},
-				{
-					"key": "KEY-2",
-					"value": "VALUE-2"
-				}
-			],
-			"clientIdTag": "CLIENT_ID-1",
-			"categoryTag": "CATEGORY-1",
-			"typeTag": "TYPE-1",
-			"statusTag": "STATUS-1",
-			"reporterUserId": "REPORTER_USER_ID-1",
-			"assignedUserId": "ASSIGNED_USER_ID-1",
-			"assignedGroupId": "ASSIGNED_GROUP_ID-1"
-		},
-		{
 			"id": "cc236cf1-c00f-4479-8341-ecf5dd90b5b9",
 			"title": "TITLE-1",
 			"priority": "LOW",
@@ -46,7 +20,10 @@
 			"statusTag": "STATUS-1",
 			"reporterUserId": "REPORTER_USER_ID-1",
 			"assignedUserId": "ASSIGNED_USER_ID-1",
-			"assignedGroupId": "ASSIGNED_GROUP_ID-1"
+			"assignedGroupId": "ASSIGNED_GROUP_ID-1",
+			"created": "2022-02-01T12:00:00+01:00",
+			"modified": "2022-04-01T12:00:00+02:00",
+			"touched": "2022-04-01T12:00:00+02:00"
 		},
 		{
 			"id": "1be673c0-6ba3-4fb0-af4a-43acf23389f6",
@@ -72,32 +49,62 @@
 			"statusTag": "STATUS-3",
 			"reporterUserId": "REPORTER_USER_ID-3",
 			"assignedUserId": "ASSIGNED_USER_ID-3",
-			"assignedGroupId": "ASSIGNED_GROUP_ID-3"
+			"assignedGroupId": "ASSIGNED_GROUP_ID-3",
+			"created": "2022-03-01T12:00:00+01:00",
+			"touched": "2022-03-01T12:00:00+01:00"
+		},
+		{
+			"id": "ec677eb3-604c-4935-bff7-f8f0b500c8f4",
+			"title": "TITLE-1",
+			"priority": "LOW",
+			"customer": {
+				"id": "CUSTOMER_ID-1",
+				"type": "EMPLOYEE"
+			},
+			"externalTags": [
+				{
+					"key": "KEY-1",
+					"value": "VALUE-1"
+				},
+				{
+					"key": "KEY-2",
+					"value": "VALUE-2"
+				}
+			],
+			"clientIdTag": "CLIENT_ID-1",
+			"categoryTag": "CATEGORY-1",
+			"typeTag": "TYPE-1",
+			"statusTag": "STATUS-1",
+			"reporterUserId": "REPORTER_USER_ID-1",
+			"assignedUserId": "ASSIGNED_USER_ID-1",
+			"assignedGroupId": "ASSIGNED_GROUP_ID-1",
+			"created": "2022-01-01T12:00:00+01:00",
+			"touched": "2022-01-01T12:00:00+01:00"
 		}
 	],
 	"pageable": {
 		"sort": {
-			"empty": true,
-			"sorted": false,
-			"unsorted": true
+			"empty": false,
+			"sorted": true,
+			"unsorted": false
 		},
 		"offset": 0,
 		"pageSize": 20,
 		"pageNumber": 0,
-		"paged": true,
-		"unpaged": false
+		"unpaged": false,
+		"paged": true
 	},
-	"last": true,
 	"totalPages": 1,
 	"totalElements": 3,
+	"last": true,
 	"size": 20,
 	"number": 0,
 	"sort": {
-		"empty": true,
-		"sorted": false,
-		"unsorted": true
+		"empty": false,
+		"sorted": true,
+		"unsorted": false
 	},
-	"first": true,
 	"numberOfElements": 3,
+	"first": true,
 	"empty": false
 }
