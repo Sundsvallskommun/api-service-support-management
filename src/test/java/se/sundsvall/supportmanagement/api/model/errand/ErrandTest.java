@@ -46,12 +46,13 @@ class ErrandTest {
 		final var customer = Customer.create().withId("id").withType(CustomerType.PRIVATE);
 		final var externalTags = List.of(ExternalTag.create().withKey("externalTagkey").withValue("externalTagValue"));
 		final var id = randomUUID().toString();
-		final var modified = OffsetDateTime.now();
+		final var modified = OffsetDateTime.now().plusDays(1);
 		final var clientIdTag = "clientIdTag";
 		final var priority = Priority.MEDIUM;
 		final var reporterUserId = "reporterUserId";
 		final var statusTag = "statusTag";
 		final var title = "title";
+		final var touched = OffsetDateTime.now().plusDays(2);
 		final var typeTag = "typeTag";
 
 		final var bean = Errand.create()
@@ -68,6 +69,7 @@ class ErrandTest {
 			.withReporterUserId(reporterUserId)
 			.withStatusTag(statusTag)
 			.withTitle(title)
+			.withTouched(touched)
 			.withTypeTag(typeTag);
 
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
@@ -84,6 +86,7 @@ class ErrandTest {
 		assertThat(bean.getReporterUserId()).isEqualTo(reporterUserId);
 		assertThat(bean.getStatusTag()).isEqualTo(statusTag);
 		assertThat(bean.getTitle()).isEqualTo(title);
+		assertThat(bean.getTouched()).isEqualTo(touched);
 		assertThat(bean.getTypeTag()).isEqualTo(typeTag);
 	}
 

@@ -1,6 +1,13 @@
 package se.sundsvall.supportmanagement.integration.db.model;
 
-import org.hibernate.annotations.GenericGenerator;
+import static java.time.OffsetDateTime.now;
+import static java.time.ZoneId.systemDefault;
+import static java.time.temporal.ChronoUnit.MILLIS;
+
+import java.io.Serializable;
+import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.Objects;
 
 import javax.persistence.CascadeType;
 import javax.persistence.CollectionTable;
@@ -18,14 +25,9 @@ import javax.persistence.PrePersist;
 import javax.persistence.PreUpdate;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
-import java.io.Serializable;
-import java.time.OffsetDateTime;
-import java.time.ZoneId;
-import java.util.List;
-import java.util.Objects;
 
-import static java.time.OffsetDateTime.now;
-import static java.time.temporal.ChronoUnit.MILLIS;
+import org.hibernate.annotations.Formula;
+import org.hibernate.annotations.GenericGenerator;
 
 @Entity
 @Table(name = "errand",
@@ -93,18 +95,21 @@ public class ErrandEntity implements Serializable {
 	@Column(name = "modified")
 	private OffsetDateTime modified;
 
+	@Formula("greatest(coalesce(created, 0), coalesce(modified, 0))")
+	private OffsetDateTime touched;
+
 	public static ErrandEntity create() {
 		return new ErrandEntity();
 	}
 
 	@PrePersist
 	void onCreate() {
-		created = now(ZoneId.systemDefault()).truncatedTo(MILLIS);
+		created = now(systemDefault()).truncatedTo(MILLIS);
 	}
 
 	@PreUpdate
 	protected void onUpdate() {
-		modified = now(ZoneId.systemDefault()).truncatedTo(MILLIS);
+		modified = now(systemDefault()).truncatedTo(MILLIS);
 	}
 
 	public String getId() {
@@ -302,23 +307,41 @@ public class ErrandEntity implements Serializable {
 		return this;
 	}
 
+	public OffsetDateTime getTouched() {
+		return touched;
+	}
+
+	public void setTouched(final OffsetDateTime touched) {
+		this.touched = touched;
+	}
+
+	public ErrandEntity withTouched(final OffsetDateTime touched) {
+		this.touched = touched;
+		return this;
+	}
+
+
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, externalTags, customer, clientIdTag, title, categoryTag, typeTag, statusTag, priority, reporterUserId, assignedUserId, assignedGroupId, attachments, created, modified);
+		return Objects.hash(assignedGroupId, assignedUserId, attachments, categoryTag, clientIdTag, created, customer, externalTags, id, modified, priority, reporterUserId, statusTag, title, touched, typeTag);
 	}
 
 	@Override
-	public boolean equals(Object o) {
-		if (this == o) {
+	public boolean equals(Object obj) {
+		if (this == obj) {
 			return true;
 		}
-		if (o == null || getClass() != o.getClass()) {
+		if (obj == null) {
 			return false;
 		}
-		var that = (ErrandEntity) o;
-		return Objects.equals(id, that.id) && Objects.equals(externalTags, that.externalTags) && Objects.equals(customer, that.customer) && Objects.equals(clientIdTag, that.clientIdTag) && Objects
-			.equals(title, that.title) && Objects.equals(categoryTag, that.categoryTag) && Objects.equals(typeTag, that.typeTag) && Objects.equals(statusTag, that.statusTag) && Objects.equals(priority, that.priority) && Objects.equals(reporterUserId,
-				that.reporterUserId) && Objects.equals(assignedUserId, that.assignedUserId) && Objects.equals(assignedGroupId, that.assignedGroupId) && Objects.equals(attachments, that.attachments) && Objects.equals(created, that.created) && Objects.equals(modified, that.modified);
+		if (getClass() != obj.getClass()) {
+			return false;
+		}
+		ErrandEntity other = (ErrandEntity) obj;
+		return Objects.equals(assignedGroupId, other.assignedGroupId) && Objects.equals(assignedUserId, other.assignedUserId) && Objects.equals(attachments, other.attachments) && Objects.equals(categoryTag, other.categoryTag) &&
+			Objects.equals(clientIdTag, other.clientIdTag) && Objects.equals(created, other.created) && Objects.equals(customer, other.customer) && Objects.equals(externalTags, other.externalTags) && Objects.equals(id, other.id) &&
+			Objects.equals(modified, other.modified) && Objects.equals(priority, other.priority) && Objects.equals(reporterUserId, other.reporterUserId) && Objects.equals(statusTag, other.statusTag) && Objects.equals(title, other.title) &&
+			Objects.equals(touched, other.touched) && Objects.equals(typeTag, other.typeTag);
 	}
 
 	@Override
@@ -331,7 +354,8 @@ public class ErrandEntity implements Serializable {
 			.append(statusTag).append(", priority=").append(priority).append(", reporterUserId=")
 			.append(reporterUserId).append(", assignedUserId=").append(assignedUserId)
 			.append(", assignedGroupId=").append(assignedGroupId).append(", attachments=").append(attachments).append(", created=")
-			.append(created).append(", modified=").append(modified).append("]");
+			.append(created).append(", modified=").append(modified).append(", touched=").append(touched).append("]");
 		return builder.toString();
 	}
+
 }

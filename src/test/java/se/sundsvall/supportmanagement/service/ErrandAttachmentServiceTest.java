@@ -23,9 +23,9 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.zalando.problem.Status.BAD_REQUEST;
 import static org.zalando.problem.Status.NOT_FOUND;
-import static se.sundsvall.supportmanagement.service.util.TestObjectsBuilder.buildAttachmentEntity;
-import static se.sundsvall.supportmanagement.service.util.TestObjectsBuilder.buildErrandAttachment;
-import static se.sundsvall.supportmanagement.service.util.TestObjectsBuilder.buildErrandEntity;
+import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildAttachmentEntity;
+import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrandAttachment;
+import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrandEntity;
 
 @ExtendWith(MockitoExtension.class)
 class ErrandAttachmentServiceTest {

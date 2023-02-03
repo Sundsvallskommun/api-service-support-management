@@ -3,6 +3,6 @@ target/
 bin/
 """
 
-ignoreRules = ["UnnecessaryParenthesis", "UnnecessaryFinal", "YodaCondition" ]
+ignoreRules = ["InlineFormatString", "UnnecessaryParenthesis", "UnnecessaryFinal", "YodaCondition" ]
 
 jdkVersion = "17"

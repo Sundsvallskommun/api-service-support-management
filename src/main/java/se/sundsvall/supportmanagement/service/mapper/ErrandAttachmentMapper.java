@@ -1,31 +1,22 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
-import org.overviewproject.mime_types.MimeTypeDetector;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.util.MimeTypeUtils;
+import static java.util.Collections.emptyList;
+import static java.util.Objects.isNull;
+import static org.apache.commons.codec.binary.Base64.decodeBase64;
+import static org.apache.commons.codec.binary.Base64.encodeBase64String;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.detectMimeType;
+
+import java.util.List;
+import java.util.Objects;
+
 import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
 import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachmentHeader;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.util.List;
-import java.util.Objects;
-
-import static java.util.Collections.emptyList;
-import static java.util.Objects.isNull;
-import static org.apache.commons.codec.binary.Base64.decodeBase64;
-import static org.apache.commons.codec.binary.Base64.encodeBase64String;
-
 public class ErrandAttachmentMapper {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(ErrandAttachmentMapper.class);
-	private static final MimeTypeDetector DETECTOR = new MimeTypeDetector();
-
-	private ErrandAttachmentMapper() {
-	}
+	private ErrandAttachmentMapper() {}
 
 	public static AttachmentEntity toAttachmentEntity(final ErrandEntity errandEntity, final ErrandAttachment errandAttachment) {
 		if (isNull(errandEntity) || isNull(errandAttachment)) {
@@ -72,15 +63,6 @@ public class ErrandAttachmentMapper {
 			.withFileName(attachmentEntity.getFileName())
 			.withId(attachmentEntity.getId())
 			.withMimeType(attachmentEntity.getMimeType());
-	}
-
-	private static String detectMimeType(String fileName, byte[] byteArray) {
-		try (InputStream stream = new ByteArrayInputStream(byteArray)) {
-			return DETECTOR.detectMimeType(fileName, stream);
-		} catch (Exception e) {
-			LOGGER.warn(String.format("Exception when detecting mime type of file with filename '%s'", fileName), e);
-			return MimeTypeUtils.APPLICATION_OCTET_STREAM_VALUE; // Return mime type for arbitrary binary files
-		}
 	}
 
 	private static String toFileName(ErrandAttachmentHeader errandAttachmentHeader) {

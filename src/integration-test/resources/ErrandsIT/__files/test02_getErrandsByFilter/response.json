@@ -24,7 +24,9 @@
 			"statusTag": "STATUS-1",
 			"reporterUserId": "REPORTER_USER_ID-1",
 			"assignedUserId": "ASSIGNED_USER_ID-1",
-			"assignedGroupId": "ASSIGNED_GROUP_ID-1"
+			"assignedGroupId": "ASSIGNED_GROUP_ID-1",
+			"created": "2022-01-01T12:00:00+01:00",
+			"touched": "2022-01-01T12:00:00+01:00"
 		}
 	],
 	"pageable": {
@@ -34,14 +36,14 @@
 			"unsorted": true
 		},
 		"offset": 0,
-		"pageNumber": 0,
 		"pageSize": 20,
+		"pageNumber": 0,
 		"unpaged": false,
 		"paged": true
 	},
-	"last": true,
-	"totalPages": 1,
 	"totalElements": 1,
+	"totalPages": 1,
+	"last": true,
 	"size": 20,
 	"number": 0,
 	"sort": {
@@ -49,7 +51,7 @@
 		"sorted": false,
 		"unsorted": true
 	},
-	"first": true,
 	"numberOfElements": 1,
+	"first": true,
 	"empty": false
 }

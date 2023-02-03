@@ -40,9 +40,9 @@ class ErrandsIT extends AbstractAppTest {
 	private ErrandsRepository errandsRepository;
 
 	@Test
-	void test01_getAllErrands() {
+	void test01_getAllErrandsSortedByTouched() {
 		setupCall()
-			.withServicePath("/errands")
+			.withServicePath("/errands?sort=touched,desc")
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
