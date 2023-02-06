@@ -7,9 +7,11 @@ import static org.springframework.util.MimeTypeUtils.IMAGE_PNG_VALUE;
 
 import java.util.List;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import generated.se.sundsvall.messaging.ExternalReference;
+import generated.se.sundsvall.messaging.Party;
 import se.sundsvall.supportmanagement.api.model.communication.EmailAttachment;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
 import se.sundsvall.supportmanagement.api.model.communication.SmsRequest;
@@ -20,6 +22,7 @@ class MessagingMapperTest {
 
 	private static final String ERRAND_ID = randomUUID().toString();
 	private static final String CUSTOMER_ID = randomUUID().toString();
+	private static final String USER_ID = "userId";
 	private static final String MESSAGE = "message";
 	private static final String RECIPIENT = "recipient";
 	private static final String SENDER_EMAIL = "sender@sender.com";
@@ -29,9 +32,10 @@ class MessagingMapperTest {
 	private static final String FILE_NAME = "fileName";
 	private static final String ERRAND_ID_KEY = "errandId";
 
-	@Test
-	void tomEmailRequestWithSenderName() {
-		final var result = MessagingMapper.toEmailRequest(createErrandEntity(), createEmailRequest(true));
+	@ParameterizedTest
+	@ValueSource(booleans = { true, false })
+	void toEmailRequestWithSenderName(boolean hasUuid) {
+		final var result = MessagingMapper.toEmailRequest(createErrandEntity(hasUuid), createEmailRequest(true));
 
 		assertThat(result.getEmailAddress()).isEqualTo(RECIPIENT);
 		assertThat(result.getHeaders()).isNullOrEmpty();
@@ -41,11 +45,7 @@ class MessagingMapperTest {
 		assertThat(result.getSender().getAddress()).isEqualTo(SENDER_EMAIL);
 		assertThat(result.getSender().getName()).isEqualTo(SENDER_NAME);
 		assertThat(result.getSender().getReplyTo()).isNull();
-		assertThat(result.getParty().getPartyId()).isEqualTo(CUSTOMER_ID);
-
-		assertThat(result.getParty().getExternalReferences()).hasSize(1).extracting(
-			ExternalReference::getKey,
-			ExternalReference::getValue).containsExactly(tuple(ERRAND_ID_KEY, ERRAND_ID));
+		validateParty(hasUuid, result.getParty());
 
 		assertThat(result.getAttachments()).isNotNull().extracting(
 			generated.se.sundsvall.messaging.EmailAttachment::getContent,
@@ -53,9 +53,10 @@ class MessagingMapperTest {
 			generated.se.sundsvall.messaging.EmailAttachment::getName).containsExactly(tuple(FILE_CONTENT, IMAGE_PNG_VALUE, FILE_NAME));
 	}
 
-	@Test
-	void tomEmailRequestWithoutSenderName() {
-		final var result = MessagingMapper.toEmailRequest(createErrandEntity(), createEmailRequest(false));
+	@ParameterizedTest
+	@ValueSource(booleans = { true, false })
+	void toEmailRequestWithoutSenderName(boolean hasUuid) {
+		final var result = MessagingMapper.toEmailRequest(createErrandEntity(hasUuid), createEmailRequest(false));
 
 		assertThat(result.getEmailAddress()).isEqualTo(RECIPIENT);
 		assertThat(result.getHeaders()).isNullOrEmpty();
@@ -65,11 +66,7 @@ class MessagingMapperTest {
 		assertThat(result.getSender().getAddress()).isEqualTo(SENDER_EMAIL);
 		assertThat(result.getSender().getName()).isEqualTo(SENDER_EMAIL);
 		assertThat(result.getSender().getReplyTo()).isNull();
-		assertThat(result.getParty().getPartyId()).isEqualTo(CUSTOMER_ID);
-
-		assertThat(result.getParty().getExternalReferences()).hasSize(1).extracting(
-			ExternalReference::getKey,
-			ExternalReference::getValue).containsExactly(tuple(ERRAND_ID_KEY, ERRAND_ID));
+		validateParty(hasUuid, result.getParty());
 
 		assertThat(result.getAttachments()).isNotNull().extracting(
 			generated.se.sundsvall.messaging.EmailAttachment::getContent,
@@ -77,19 +74,29 @@ class MessagingMapperTest {
 			generated.se.sundsvall.messaging.EmailAttachment::getName).containsExactly(tuple(FILE_CONTENT, IMAGE_PNG_VALUE, FILE_NAME));
 	}
 
-	@Test
-	void toSmsRequest() {
-		final var result = MessagingMapper.toSmsRequest(createErrandEntity(), createSmsRequest());
+	@ParameterizedTest
+	@ValueSource(booleans = { true, false })
+	void toSmsRequest(boolean hasUuid) {
+		final var result = MessagingMapper.toSmsRequest(createErrandEntity(hasUuid), createSmsRequest());
 
 		assertThat(result.getHeaders()).isNullOrEmpty();
 		assertThat(result.getMessage()).isEqualTo(MESSAGE);
 		assertThat(result.getMobileNumber()).isEqualTo(RECIPIENT);
 		assertThat(result.getSender().getName()).isEqualTo(SENDER_NAME);
-		assertThat(result.getParty().getPartyId()).isEqualTo(CUSTOMER_ID);
-		assertThat(result.getParty().getExternalReferences()).hasSize(1).extracting(
-			ExternalReference::getKey,
-			ExternalReference::getValue).containsExactly(tuple(ERRAND_ID_KEY, ERRAND_ID));
+		validateParty(hasUuid, result.getParty());
 	}
+
+	private static void validateParty(boolean hasUuid, final Party party) {
+		if (hasUuid) {
+			assertThat(party.getPartyId()).isEqualTo(CUSTOMER_ID);
+			assertThat(party.getExternalReferences()).hasSize(1).extracting(
+				ExternalReference::getKey,
+				ExternalReference::getValue).containsExactly(tuple(ERRAND_ID_KEY, ERRAND_ID));
+		} else {
+			assertThat(party).isNull();
+		}
+	}
+
 
 	private SmsRequest createSmsRequest() {
 		return SmsRequest.create()
@@ -110,10 +117,10 @@ class MessagingMapperTest {
 			.withSubject(SUBJECT);
 	}
 
-	private static ErrandEntity createErrandEntity() {
+	private static ErrandEntity createErrandEntity(boolean hasCustomerUuid) {
 		return ErrandEntity.create()
 			.withId(ERRAND_ID)
 			.withCustomer(EmbeddableCustomer.create()
-				.withId(CUSTOMER_ID));
+				.withId(hasCustomerUuid ? CUSTOMER_ID : USER_ID));
 	}
 }

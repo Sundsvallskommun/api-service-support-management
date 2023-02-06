@@ -1,0 +1,37 @@
+{
+	"name": "api-messaging-sms",
+	"request": {
+		"method": "POST",
+		"url": "/api-messaging/sms",
+		"headers": {
+			"Authorization": {
+				"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
+			}
+		},
+		"bodyPatterns" : [ {
+			"equalToJson" : {
+				"party": {
+					"partyId": "7fba994b-e99e-4beb-8ab5-63cc74483b66",
+					"externalReferences": [
+						{
+							"key": "errandId",
+							"value": "1be673c0-6ba3-4fb0-af4a-43acf23389f6"
+						}
+					]
+				},
+				"sender": {
+					"name": "0701234567"
+				},
+				"mobileNumber": "0707654321",
+				"message": "Have you heard the news that Bender is suffering from a terminal manufacturing defect, effectively rendering him mortal?"
+			}
+		} ]
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/json"
+		},
+		"status": 200,
+		"bodyFileName": "test03_sendSms/response/api-messaging-send-sms-response.json"
+	}
+}

@@ -8,9 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.util.MimeTypeUtils.IMAGE_PNG_VALUE;
-import static org.zalando.problem.Status.BAD_REQUEST;
 import static org.zalando.problem.Status.NOT_FOUND;
-import static se.sundsvall.supportmanagement.api.model.errand.CustomerType.EMPLOYEE;
 
 import java.util.List;
 
@@ -79,7 +77,6 @@ class CommunicationServiceTest {
 		when(repositoryMock.getReferenceById(ERRAND_ID)).thenReturn(errandEntityMock);
 		when(errandEntityMock.getId()).thenReturn(ERRAND_ID);
 		when(errandEntityMock.getCustomer()).thenReturn(embeddableCustomerMock);
-		when(embeddableCustomerMock.getType()).thenReturn(type.name());
 		when(embeddableCustomerMock.getId()).thenReturn(CUSTOMER_ID);
 		// Call
 		service.sendEmail(ERRAND_ID, request);
@@ -116,7 +113,6 @@ class CommunicationServiceTest {
 		when(repositoryMock.getReferenceById(ERRAND_ID)).thenReturn(errandEntityMock);
 		when(errandEntityMock.getId()).thenReturn(ERRAND_ID);
 		when(errandEntityMock.getCustomer()).thenReturn(embeddableCustomerMock);
-		when(embeddableCustomerMock.getType()).thenReturn(type.name());
 		when(embeddableCustomerMock.getId()).thenReturn(CUSTOMER_ID);
 
 		// Call
@@ -155,26 +151,28 @@ class CommunicationServiceTest {
 	}
 
 	@Test
-	void employeWithNonUuid() {
+	void customerWithNonUuid() {
 		// Setup
 		final var request = createSmsRequest();
 
 		// Mock
 		when(repositoryMock.getReferenceById(ERRAND_ID)).thenReturn(errandEntityMock);
 		when(errandEntityMock.getCustomer()).thenReturn(embeddableCustomerMock);
-		when(embeddableCustomerMock.getType()).thenReturn(EMPLOYEE.name());
 		when(embeddableCustomerMock.getId()).thenReturn("non-valid-uuid");
 
 		// Call
-		final var exception = assertThrows(ThrowableProblem.class, () -> service.sendSms(ERRAND_ID, request));
+		service.sendSms(ERRAND_ID, request);
 
 		// Verifications and assertions
 		verify(repositoryMock).getReferenceById(ERRAND_ID);
-		verifyNoInteractions(messagingClientMock);
+		verify(messagingClientMock).sendSms(messagingSmsCaptor.capture());
 
-		assertThat(exception.getStatus()).isEqualTo(BAD_REQUEST);
-		assertThat(exception.getTitle()).isEqualTo(BAD_REQUEST.getReasonPhrase());
-		assertThat(exception.getMessage()).isEqualTo("Bad Request: Errand with id '" + ERRAND_ID + "' has an employee customer reference with other identifier than an uuid");
+		final var arguments = messagingSmsCaptor.getValue();
+		assertThat(arguments.getHeaders()).isNullOrEmpty();
+		assertThat(arguments.getMessage()).isEqualTo(MESSAGE);
+		assertThat(arguments.getMobileNumber()).isEqualTo(RECIPIENT);
+		assertThat(arguments.getParty()).isNull();
+		assertThat(arguments.getSender().getName()).isEqualTo(SENDER_NAME);
 	}
 
 	private SmsRequest createSmsRequest() {
