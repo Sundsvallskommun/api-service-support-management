@@ -5,7 +5,7 @@
 			"title": "TITLE-1",
 			"priority": "LOW",
 			"customer": {
-				"id": "CUSTOMER_ID-1",
+				"id": "USER_ID",
 				"type": "EMPLOYEE"
 			},
 			"externalTags": [

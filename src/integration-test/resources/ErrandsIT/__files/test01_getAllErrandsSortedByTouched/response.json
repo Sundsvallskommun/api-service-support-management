@@ -5,7 +5,7 @@
 			"title": "TITLE-1",
 			"priority": "LOW",
 			"customer": {
-				"id": "CUSTOMER_ID-2",
+				"id": "def57969-9b83-4e54-9351-667dc896a19d",
 				"type": "PRIVATE"
 			},
 			"externalTags": [
@@ -30,7 +30,7 @@
 			"title": "TITLE-3",
 			"priority": "HIGH",
 			"customer": {
-				"id": "CUSTOMER_ID-3",
+				"id": "7fba994b-e99e-4beb-8ab5-63cc74483b66",
 				"type": "ENTERPRISE"
 			},
 			"externalTags": [
@@ -58,7 +58,7 @@
 			"title": "TITLE-1",
 			"priority": "LOW",
 			"customer": {
-				"id": "CUSTOMER_ID-1",
+				"id": "USER_ID",
 				"type": "EMPLOYEE"
 			},
 			"externalTags": [
