@@ -1,5 +1,7 @@
 package se.sundsvall.supportmanagement.api.validation.impl;
 
+import org.hibernate.validator.internal.engine.messageinterpolation.util.InterpolationHelper;
+
 import javax.validation.ConstraintValidatorContext;
 import java.util.List;
 
@@ -22,6 +24,6 @@ abstract class AbstractTagConstraintValidator {
 
 	private void useCustomMessageForValidation(String value, List<String> validTags, ConstraintValidatorContext constraintContext) {
 		constraintContext.disableDefaultConstraintViolation();
-		constraintContext.buildConstraintViolationWithTemplate(String.format(CUSTOM_ERROR_MESSAGE_TEMPLATE, value, validTags)).addConstraintViolation();
+		constraintContext.buildConstraintViolationWithTemplate(InterpolationHelper.escapeMessageParameter(String.format(CUSTOM_ERROR_MESSAGE_TEMPLATE, value, validTags))).addConstraintViolation();
 	}
 }
