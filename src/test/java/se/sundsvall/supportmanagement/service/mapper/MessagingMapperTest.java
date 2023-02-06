@@ -97,7 +97,6 @@ class MessagingMapperTest {
 		}
 	}
 
-
 	private SmsRequest createSmsRequest() {
 		return SmsRequest.create()
 			.withMessage(MESSAGE)
