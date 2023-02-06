@@ -8,6 +8,7 @@ import static org.springframework.http.ResponseEntity.noContent;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -27,12 +28,16 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
 import se.sundsvall.supportmanagement.api.model.communication.SmsRequest;
+import se.sundsvall.supportmanagement.service.CommunicationService;
 
 @RestController
 @Validated
 @RequestMapping("/errands/{id}/communication")
 @Tag(name = "Errand communication", description = "Errand communication operations")
 public class ErrandCommunicationResource {
+
+	@Autowired
+	private CommunicationService service;
 
 	@PostMapping(path = "/email", consumes = APPLICATION_JSON_VALUE, produces = { ALL_VALUE, APPLICATION_PROBLEM_JSON_VALUE })
 	@Operation(summary = "Send email to customer in errand", description = "Sends an email message to the customer specified in the errand")
@@ -42,6 +47,8 @@ public class ErrandCommunicationResource {
 	public ResponseEntity<Void> sendEmail(
 		@Parameter(name = "id", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("id") final String id,
 		@Valid @NotNull @RequestBody final EmailRequest request) {
+
+		service.sendEmail(id, request);
 		return noContent().build();
 
 	}
@@ -54,6 +61,8 @@ public class ErrandCommunicationResource {
 	public ResponseEntity<Void> sendSms(
 		@Parameter(name = "id", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("id") final String id,
 		@Valid @NotNull @RequestBody final SmsRequest request) {
+
+		service.sendSms(id, request);
 		return noContent().build();
 	}
 }

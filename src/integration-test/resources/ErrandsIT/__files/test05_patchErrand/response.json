@@ -3,7 +3,7 @@
 	"title": "Updated title",
 	"priority": "HIGH",
 	"customer": {
-		"id": "CUSTOMER_ID-3",
+		"id": "7fba994b-e99e-4beb-8ab5-63cc74483b66",
 		"type": "ENTERPRISE"
 	},
 	"externalTags": [
@@ -23,5 +23,7 @@
 	"reporterUserId": "REPORTER_USER_ID-3",
 	"assignedUserId": "ASSIGNED_USER_ID-3",
 	"assignedGroupId": "ASSIGNED_GROUP_ID-3",
-	"modified": "${json-unit.any-string}"
+	"created": "2022-03-01T12:00:00+01:00",
+	"modified": "${json-unit.any-string}",
+	"touched": "${json-unit.any-string}"
 }

@@ -1,5 +1,14 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
+import static java.util.Collections.emptyList;
+import static java.util.Objects.isNull;
+import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toCollection;
+import static org.apache.commons.lang3.StringUtils.isEmpty;
+
+import java.util.ArrayList;
+import java.util.List;
+
 import se.sundsvall.supportmanagement.api.model.errand.Customer;
 import se.sundsvall.supportmanagement.api.model.errand.CustomerType;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
@@ -8,15 +17,6 @@ import se.sundsvall.supportmanagement.api.model.errand.Priority;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.EmbeddableCustomer;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import static java.util.Collections.emptyList;
-import static java.util.Objects.isNull;
-import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.toCollection;
-import static org.apache.commons.lang3.StringUtils.isEmpty;
 public class ErrandMapper {
 
 	private ErrandMapper() {}
@@ -100,6 +100,7 @@ public class ErrandMapper {
 			.withReporterUserId(entity.getReporterUserId())
 			.withStatusTag(entity.getStatusTag())
 			.withTitle(entity.getTitle())
+			.withTouched(entity.getTouched())
 			.withTypeTag(entity.getTypeTag());
 	}
 

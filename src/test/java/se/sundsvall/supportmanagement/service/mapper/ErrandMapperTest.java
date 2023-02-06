@@ -1,19 +1,5 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
-import org.junit.jupiter.api.Test;
-
-import se.sundsvall.supportmanagement.api.model.errand.Customer;
-import se.sundsvall.supportmanagement.api.model.errand.CustomerType;
-import se.sundsvall.supportmanagement.api.model.errand.Errand;
-import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
-import se.sundsvall.supportmanagement.api.model.errand.Priority;
-import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
-import se.sundsvall.supportmanagement.integration.db.model.EmbeddableCustomer;
-import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-
-import java.time.OffsetDateTime;
-import java.util.List;
-
 import static java.time.OffsetDateTime.now;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -25,6 +11,20 @@ import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErran
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrands;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.updateEntity;
+
+import java.time.OffsetDateTime;
+import java.util.List;
+
+import org.junit.jupiter.api.Test;
+
+import se.sundsvall.supportmanagement.api.model.errand.Customer;
+import se.sundsvall.supportmanagement.api.model.errand.CustomerType;
+import se.sundsvall.supportmanagement.api.model.errand.Errand;
+import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
+import se.sundsvall.supportmanagement.api.model.errand.Priority;
+import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
+import se.sundsvall.supportmanagement.integration.db.model.EmbeddableCustomer;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 
 class ErrandMapperTest {
 	private static final String ASSIGNED_GROUP_ID = "assignedGroupId";
@@ -42,6 +42,7 @@ class ErrandMapperTest {
 	private static final String REPORTER_USER_ID = "reporterUserId";
 	private static final String STATUS_TAG = "statusTag";
 	private static final String TITLE = "title";
+	private static final OffsetDateTime TOUCHED = now().plusWeeks(1);
 	private static final String TYPE_TAG = "typeTag";
 
 	@Test
@@ -65,6 +66,7 @@ class ErrandMapperTest {
 		assertThat(errand.getReporterUserId()).isEqualTo(REPORTER_USER_ID);
 		assertThat(errand.getStatusTag()).isEqualTo(STATUS_TAG);
 		assertThat(errand.getTitle()).isEqualTo(TITLE);
+		assertThat(errand.getTouched()).isEqualTo(TOUCHED);
 		assertThat(errand.getTypeTag()).isEqualTo(TYPE_TAG);
 	}
 
@@ -93,6 +95,7 @@ class ErrandMapperTest {
 				Errand::getReporterUserId,
 				Errand::getStatusTag,
 				Errand::getTitle,
+				Errand::getTouched,
 				Errand::getTypeTag)
 			.containsExactly(tuple(
 				ASSIGNED_GROUP_ID,
@@ -108,6 +111,7 @@ class ErrandMapperTest {
 				REPORTER_USER_ID,
 				STATUS_TAG,
 				TITLE,
+				TOUCHED,
 				TYPE_TAG));
 	}
 
@@ -149,6 +153,7 @@ class ErrandMapperTest {
 		assertThat(entity.getCreated()).isNull();
 		assertThat(entity.getId()).isNull();
 		assertThat(entity.getModified()).isNull();
+		assertThat(entity.getTouched()).isNull();
 	}
 
 	@Test
@@ -187,6 +192,7 @@ class ErrandMapperTest {
 		assertThat(entity.getId()).isNull();
 		assertThat(entity.getReporterUserId()).isNull();
 		assertThat(entity.getModified()).isNull();
+		assertThat(entity.getTouched()).isNull();
 	}
 
 	@Test
@@ -224,6 +230,7 @@ class ErrandMapperTest {
 			.withReporterUserId(REPORTER_USER_ID)
 			.withStatusTag(STATUS_TAG)
 			.withTitle(TITLE)
+			.withTouched(TOUCHED)
 			.withTypeTag(TYPE_TAG);
 	}
 
@@ -242,6 +249,7 @@ class ErrandMapperTest {
 			.withStatusTag(STATUS_TAG)
 			.withTitle(TITLE)
 			.withTypeTag(TYPE_TAG)
+			.withTouched(TOUCHED)
 			.withModified(MODIFIED);
 	}
 }
