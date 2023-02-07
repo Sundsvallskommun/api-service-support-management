@@ -13,10 +13,10 @@ name: "CodeQL"
 
 on:
   push:
-    branches: [ "main", develop ]
+    branches: [ "main", "develop" ]
   pull_request:
     # The branches below must be a subset of the branches above
-    branches: [ "main", develop ]
+    branches: [ "main", "develop" ]
   schedule:
     - cron: '43 4 * * 5'
 
@@ -58,6 +58,7 @@ jobs:
       with:
         java-version: '17'
         distribution: 'temurin'
+        cache: 'maven'
 
     # Autobuild attempts to build any compiled languages  (C/C++, C#, Go, or Java).
     # If this step fails, then you should remove it and run the build manually (see below)
