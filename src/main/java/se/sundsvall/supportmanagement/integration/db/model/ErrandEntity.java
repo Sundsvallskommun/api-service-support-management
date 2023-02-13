@@ -74,6 +74,12 @@ public class ErrandEntity implements Serializable {
 	@Column(name = "status_tag")
 	private String statusTag;
 
+	@Column(name = "resolution")
+	private String resolution;
+
+	@Column(name = "description", length = 5000)
+	private String description;
+
 	@Column(name = "priority")
 	private String priority;
 
@@ -216,6 +222,32 @@ public class ErrandEntity implements Serializable {
 		return this;
 	}
 
+	public String getResolution() {
+		return resolution;
+	}
+
+	public void setResolution(String resolution) {
+		this.resolution = resolution;
+	}
+
+	public ErrandEntity withResolution(String resolution) {
+		this.resolution = resolution;
+		return this;
+	}
+
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
+	}
+
+	public ErrandEntity withDescription(String description) {
+		this.description = description;
+		return this;
+	}
+
 	public String getPriority() {
 		return priority;
 	}
@@ -323,7 +355,7 @@ public class ErrandEntity implements Serializable {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(assignedGroupId, assignedUserId, attachments, categoryTag, clientIdTag, created, customer, externalTags, id, modified, priority, reporterUserId, statusTag, title, touched, typeTag);
+		return Objects.hash(assignedGroupId, assignedUserId, attachments, categoryTag, clientIdTag, created, customer, externalTags, id, modified, priority, reporterUserId, statusTag, resolution, description, title, touched, typeTag);
 	}
 
 	@Override
@@ -341,7 +373,7 @@ public class ErrandEntity implements Serializable {
 		return Objects.equals(assignedGroupId, other.assignedGroupId) && Objects.equals(assignedUserId, other.assignedUserId) && Objects.equals(attachments, other.attachments) && Objects.equals(categoryTag, other.categoryTag) &&
 			Objects.equals(clientIdTag, other.clientIdTag) && Objects.equals(created, other.created) && Objects.equals(customer, other.customer) && Objects.equals(externalTags, other.externalTags) && Objects.equals(id, other.id) &&
 			Objects.equals(modified, other.modified) && Objects.equals(priority, other.priority) && Objects.equals(reporterUserId, other.reporterUserId) && Objects.equals(statusTag, other.statusTag) && Objects.equals(title, other.title) &&
-			Objects.equals(touched, other.touched) && Objects.equals(typeTag, other.typeTag);
+			Objects.equals(touched, other.touched) && Objects.equals(typeTag, other.typeTag) && Objects.equals(resolution, other.resolution) && Objects.equals(description, other.description);
 	}
 
 	@Override
@@ -354,7 +386,8 @@ public class ErrandEntity implements Serializable {
 			.append(statusTag).append(", priority=").append(priority).append(", reporterUserId=")
 			.append(reporterUserId).append(", assignedUserId=").append(assignedUserId)
 			.append(", assignedGroupId=").append(assignedGroupId).append(", attachments=").append(attachments).append(", created=")
-			.append(created).append(", modified=").append(modified).append(", touched=").append(touched).append("]");
+			.append(created).append(", modified=").append(modified).append(", touched=").append(touched)
+			.append(", resolution=").append(resolution).append(", description=").append(description).append("]");
 		return builder.toString();
 	}
 

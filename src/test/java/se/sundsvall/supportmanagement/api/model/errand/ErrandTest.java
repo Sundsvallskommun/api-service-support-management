@@ -54,6 +54,8 @@ class ErrandTest {
 		final var title = "title";
 		final var touched = OffsetDateTime.now().plusDays(2);
 		final var typeTag = "typeTag";
+		final var resolution = "resolution";
+		final var description = "description";
 
 		final var bean = Errand.create()
 			.withAssignedGroupId(assignedGroupId)
@@ -70,7 +72,9 @@ class ErrandTest {
 			.withStatusTag(statusTag)
 			.withTitle(title)
 			.withTouched(touched)
-			.withTypeTag(typeTag);
+			.withTypeTag(typeTag)
+			.withResolution(resolution)
+			.withDescription(description);
 
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(bean.getAssignedGroupId()).isEqualTo(assignedGroupId);
@@ -88,6 +92,8 @@ class ErrandTest {
 		assertThat(bean.getTitle()).isEqualTo(title);
 		assertThat(bean.getTouched()).isEqualTo(touched);
 		assertThat(bean.getTypeTag()).isEqualTo(typeTag);
+		assertThat(bean.getResolution()).isEqualTo(resolution);
+		assertThat(bean.getDescription()).isEqualTo(description);
 	}
 
 	@Test
