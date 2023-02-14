@@ -20,6 +20,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Index;
 import javax.persistence.JoinColumn;
+import javax.persistence.Lob;
 import javax.persistence.OneToMany;
 import javax.persistence.PrePersist;
 import javax.persistence.PreUpdate;
@@ -77,7 +78,8 @@ public class ErrandEntity implements Serializable {
 	@Column(name = "resolution")
 	private String resolution;
 
-	@Column(name = "description", length = 5000)
+	@Column(name = "description")
+	@Lob
 	private String description;
 
 	@Column(name = "priority")

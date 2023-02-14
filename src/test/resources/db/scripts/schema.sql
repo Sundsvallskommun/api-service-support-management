@@ -19,7 +19,7 @@
         created datetime(6),
         customer_id varchar(255),
         customer_type varchar(255),
-        description varchar(5000),
+        description longtext,
         modified datetime(6),
         priority varchar(255),
         reporter_user_id varchar(255),
