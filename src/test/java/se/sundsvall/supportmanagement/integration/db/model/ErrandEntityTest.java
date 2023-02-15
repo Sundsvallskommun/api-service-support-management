@@ -62,6 +62,8 @@ class ErrandEntityTest {
 		final var created = now();
 		final var modified = now().plusDays(1);
 		final var touched = now().plusDays(2);
+		final var resolution = "resolution";
+		final var description = "description";
 
 		final var errandEntity = ErrandEntity.create()
 			.withId(id)
@@ -79,7 +81,9 @@ class ErrandEntityTest {
 			.withAttachments(attachments)
 			.withCreated(created)
 			.withModified(modified)
-			.withTouched(touched);
+			.withTouched(touched)
+			.withResolution(resolution)
+			.withDescription(description);
 
 		assertThat(errandEntity).hasNoNullFieldsOrProperties();
 		assertThat(errandEntity.getId()).isEqualTo(id);
@@ -98,6 +102,8 @@ class ErrandEntityTest {
 		assertThat(errandEntity.getCreated()).isEqualTo(created);
 		assertThat(errandEntity.getModified()).isEqualTo(modified);
 		assertThat(errandEntity.getTouched()).isEqualTo(touched);
+		assertThat(errandEntity.getResolution()).isEqualTo(resolution);
+		assertThat(errandEntity.getDescription()).isEqualTo(description);
 	}
 
 	@Test

@@ -37,7 +37,9 @@ public class ErrandMapper {
 			.withReporterUserId(errand.getReporterUserId())
 			.withStatusTag(errand.getStatusTag())
 			.withTitle(errand.getTitle())
-			.withTypeTag(errand.getTypeTag());
+			.withTypeTag(errand.getTypeTag())
+			.withResolution(errand.getResolution())
+			.withDescription(errand.getDescription());
 	}
 
 	public static ErrandEntity updateEntity(ErrandEntity entity, Errand errand) {
@@ -54,6 +56,8 @@ public class ErrandMapper {
 		ofNullable(errand.getStatusTag()).ifPresent(entity::setStatusTag);
 		ofNullable(errand.getTitle()).ifPresent(entity::setTitle);
 		ofNullable(errand.getTypeTag()).ifPresent(entity::setTypeTag);
+		ofNullable(errand.getResolution()).ifPresent(value -> entity.setResolution(isEmpty(value) ? null : value));
+		ofNullable(errand.getDescription()).ifPresent(value -> entity.setDescription(isEmpty(value) ? null : value));
 
 		return entity;
 	}
@@ -101,7 +105,9 @@ public class ErrandMapper {
 			.withStatusTag(entity.getStatusTag())
 			.withTitle(entity.getTitle())
 			.withTouched(entity.getTouched())
-			.withTypeTag(entity.getTypeTag());
+			.withTypeTag(entity.getTypeTag())
+			.withResolution(entity.getResolution())
+			.withDescription(entity.getDescription());
 	}
 
 	private static Customer toCustomer(EmbeddableCustomer customer) {
