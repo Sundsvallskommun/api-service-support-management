@@ -33,6 +33,7 @@ import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 })
 class ErrandsIT extends AbstractAppTest {
 
+	private static final String PATH = "/2281/errands"; // 2281 is the municipalityId of Sundsvalls kommun
 	private static final String REQUEST_FILE = "request.json";
 	private static final String RESPONSE_FILE = "response.json";
 
@@ -42,7 +43,7 @@ class ErrandsIT extends AbstractAppTest {
 	@Test
 	void test01_getAllErrandsSortedByTouched() {
 		setupCall()
-			.withServicePath("/errands?sort=touched,desc")
+			.withServicePath(PATH + "?sort=touched,desc")
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
@@ -53,7 +54,7 @@ class ErrandsIT extends AbstractAppTest {
 	@Test
 	void test02_getErrandsByFilter() {
 		setupCall()
-			.withServicePath("/errands?filter=categoryTag:'CATEGORY-1' and externalTags.key:'KEY-1'")
+			.withServicePath(PATH + "?filter=categoryTag:'CATEGORY-1' and externalTags.key:'KEY-1'")
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
@@ -64,7 +65,7 @@ class ErrandsIT extends AbstractAppTest {
 	@Test
 	void test03_getErrandsById() {
 		setupCall()
-			.withServicePath("/errands/1be673c0-6ba3-4fb0-af4a-43acf23389f6")
+			.withServicePath(PATH + "/1be673c0-6ba3-4fb0-af4a-43acf23389f6")
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
@@ -75,7 +76,7 @@ class ErrandsIT extends AbstractAppTest {
 	@Test
 	void test04_postErrand() {
 		setupCall()
-			.withServicePath("/errands")
+			.withServicePath(PATH)
 			.withHttpMethod(POST)
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(CREATED)
@@ -86,7 +87,7 @@ class ErrandsIT extends AbstractAppTest {
 	@Test
 	void test05_patchErrand() {
 		setupCall()
-			.withServicePath("/errands/1be673c0-6ba3-4fb0-af4a-43acf23389f6")
+			.withServicePath(PATH + "/1be673c0-6ba3-4fb0-af4a-43acf23389f6")
 			.withHttpMethod(PATCH)
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(OK)
@@ -102,7 +103,7 @@ class ErrandsIT extends AbstractAppTest {
 		assertThat(errandsRepository.existsById(id)).isTrue();
 
 		setupCall()
-			.withServicePath("/errands/" + id)
+			.withServicePath(PATH + "/" + id)
 			.withHttpMethod(DELETE)
 			.withExpectedResponseStatus(NO_CONTENT)
 			.sendRequestAndVerifyResponse();

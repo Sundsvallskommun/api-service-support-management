@@ -37,6 +37,7 @@ class ErrandNoteServiceTest {
 
 	private static final int LIMIT = 99;
 	private static final int PAGE = 2;
+	private static final String MUNICIPALITY_ID = "municipalityId";
 	private static final String ERRAND_ID = "errandId";
 	private static final String BODY = "body";
 	private static final String CONTEXT = "context";
@@ -73,16 +74,18 @@ class ErrandNoteServiceTest {
 
 		// Mock
 		ReflectionTestUtils.setField(service, "clientId", APPLICATION_NAME);
+		when(repositoryMock.existsByIdAndMunicipalityId(ERRAND_ID, MUNICIPALITY_ID)).thenReturn(true);
 		when(httpHeadersMock.get(LOCATION)).thenReturn(List.of(locationUrl));
 		when(responseEntityMock.getHeaders()).thenReturn(httpHeadersMock);
 		when(notesClientMock.createNote(createNoteRequest)).thenReturn(responseEntityMock);
 
 		// Call
-		final var result = service.createErrandNote(ERRAND_ID, errandNote);
+		final var result = service.createErrandNote(MUNICIPALITY_ID, ERRAND_ID, errandNote);
 
 		// Assertions and verifications
 		assertThat(result).isEqualTo(NOTE_ID);
 
+		verify(repositoryMock).existsByIdAndMunicipalityId(ERRAND_ID, MUNICIPALITY_ID);
 		verify(notesClientMock).createNote(createNoteRequest);
 	}
 
@@ -90,34 +93,31 @@ class ErrandNoteServiceTest {
 	void readErrandNote() {
 
 		// Mock
-		when(repositoryMock.existsById(ERRAND_ID)).thenReturn(true);
+		when(repositoryMock.existsByIdAndMunicipalityId(ERRAND_ID, MUNICIPALITY_ID)).thenReturn(true);
 		when(notesClientMock.findNoteById(NOTE_ID)).thenReturn(new Note());
 
 		// Call
-		final var result = service.readErrandNote(ERRAND_ID, NOTE_ID);
+		final var result = service.readErrandNote(MUNICIPALITY_ID, ERRAND_ID, NOTE_ID);
 
 		// Assertions and verifications
 		assertThat(result).isNotNull();
 
-		verify(repositoryMock).existsById(ERRAND_ID);
+		verify(repositoryMock).existsByIdAndMunicipalityId(ERRAND_ID, MUNICIPALITY_ID);
 		verify(notesClientMock).findNoteById(NOTE_ID);
 	}
 
 	@Test
 	void readErrandNoteErrandNotFound() {
 
-		// Mock
-		when(repositoryMock.existsById(ERRAND_ID)).thenReturn(false);
-
 		// Call
-		final var exception = assertThrows(ThrowableProblem.class, () -> service.readErrandNote(ERRAND_ID, NOTE_ID));
+		final var exception = assertThrows(ThrowableProblem.class, () -> service.readErrandNote(MUNICIPALITY_ID, ERRAND_ID, NOTE_ID));
 
 		// Assertions and verifications
 		assertThat(exception.getStatus()).isEqualTo(NOT_FOUND);
 		assertThat(exception.getTitle()).isEqualTo(NOT_FOUND.getReasonPhrase());
-		assertThat(exception.getMessage()).isEqualTo("Not Found: An errand with id 'errandId' could not be found");
+		assertThat(exception.getMessage()).isEqualTo("Not Found: An errand with id 'errandId' could not be found for municipality with id 'municipalityId'");
 
-		verify(repositoryMock).existsById(ERRAND_ID);
+		verify(repositoryMock).existsByIdAndMunicipalityId(ERRAND_ID, MUNICIPALITY_ID);
 		verifyNoInteractions(notesClientMock);
 	}
 
@@ -134,15 +134,16 @@ class ErrandNoteServiceTest {
 
 		// Mock
 		ReflectionTestUtils.setField(service, "clientId", APPLICATION_NAME);
-		when(repositoryMock.existsById(ERRAND_ID)).thenReturn(true);
+		when(repositoryMock.existsByIdAndMunicipalityId(ERRAND_ID, MUNICIPALITY_ID)).thenReturn(true);
 		when(notesClientMock.findNotes(anyString(), anyString(), anyString(), anyString(), anyString(), anyInt(), anyInt()))
 			.thenReturn(new FindNotesResponse().notes(List.of(new Note())));
 
 		// Call
-		final var result = service.findErrandNotes(ERRAND_ID, findErrandNotesRequest);
+		final var result = service.findErrandNotes(MUNICIPALITY_ID, ERRAND_ID, findErrandNotesRequest);
 
 		// Assertions and verifications
 		assertThat(result).isNotNull();
+		verify(repositoryMock).existsByIdAndMunicipalityId(ERRAND_ID, MUNICIPALITY_ID);
 		verify(notesClientMock).findNotes(CONTEXT, ROLE, ERRAND_ID, APPLICATION_NAME, PARTY_ID, PAGE, LIMIT);
 	}
 
@@ -157,18 +158,15 @@ class ErrandNoteServiceTest {
 			.withPartyId(PARTY_ID)
 			.withRole(ROLE);
 
-		// Mock
-		when(repositoryMock.existsById(ERRAND_ID)).thenReturn(false);
-
 		// Call
-		final var exception = assertThrows(ThrowableProblem.class, () -> service.findErrandNotes(ERRAND_ID, findErrandNotesRequest));
+		final var exception = assertThrows(ThrowableProblem.class, () -> service.findErrandNotes(MUNICIPALITY_ID, ERRAND_ID, findErrandNotesRequest));
 
 		// Assertions and verifications
 		assertThat(exception.getStatus()).isEqualTo(NOT_FOUND);
 		assertThat(exception.getTitle()).isEqualTo(NOT_FOUND.getReasonPhrase());
-		assertThat(exception.getMessage()).isEqualTo("Not Found: An errand with id 'errandId' could not be found");
+		assertThat(exception.getMessage()).isEqualTo("Not Found: An errand with id 'errandId' could not be found for municipality with id 'municipalityId'");
 
-		verify(repositoryMock).existsById(ERRAND_ID);
+		verify(repositoryMock).existsByIdAndMunicipalityId(ERRAND_ID, MUNICIPALITY_ID);
 		verifyNoInteractions(notesClientMock);
 	}
 
@@ -180,16 +178,16 @@ class ErrandNoteServiceTest {
 		final var updateNoteRequest = ErrandNoteMapper.toUpdateNoteRequest(errandNote);
 
 		// Mock
-		when(repositoryMock.existsById(ERRAND_ID)).thenReturn(true);
+		when(repositoryMock.existsByIdAndMunicipalityId(ERRAND_ID, MUNICIPALITY_ID)).thenReturn(true);
 		when(notesClientMock.updateNoteById(NOTE_ID, updateNoteRequest)).thenReturn(new Note());
 
 		// Call
-		final var result = service.updateErrandNote(ERRAND_ID, NOTE_ID, errandNote);
+		final var result = service.updateErrandNote(MUNICIPALITY_ID, ERRAND_ID, NOTE_ID, errandNote);
 
 		// Assertions and verifications
 		assertThat(result).isNotNull();
 
-		verify(repositoryMock).existsById(ERRAND_ID);
+		verify(repositoryMock).existsByIdAndMunicipalityId(ERRAND_ID, MUNICIPALITY_ID);
 		verify(notesClientMock).updateNoteById(NOTE_ID, updateNoteRequest);
 	}
 
@@ -199,18 +197,15 @@ class ErrandNoteServiceTest {
 		// Setup
 		final var errandNote = buildUpdateErrandNoteRequest();
 
-		// Mock
-		when(repositoryMock.existsById(ERRAND_ID)).thenReturn(false);
-
 		// Call
-		final var exception = assertThrows(ThrowableProblem.class, () -> service.updateErrandNote(ERRAND_ID, NOTE_ID, errandNote));
+		final var exception = assertThrows(ThrowableProblem.class, () -> service.updateErrandNote(MUNICIPALITY_ID, ERRAND_ID, NOTE_ID, errandNote));
 
 		// Assertions and verifications
 		assertThat(exception.getStatus()).isEqualTo(NOT_FOUND);
 		assertThat(exception.getTitle()).isEqualTo(NOT_FOUND.getReasonPhrase());
-		assertThat(exception.getMessage()).isEqualTo("Not Found: An errand with id 'errandId' could not be found");
+		assertThat(exception.getMessage()).isEqualTo("Not Found: An errand with id 'errandId' could not be found for municipality with id 'municipalityId'");
 
-		verify(repositoryMock).existsById(ERRAND_ID);
+		verify(repositoryMock).existsByIdAndMunicipalityId(ERRAND_ID, MUNICIPALITY_ID);
 		verifyNoInteractions(notesClientMock);
 	}
 
@@ -218,32 +213,29 @@ class ErrandNoteServiceTest {
 	void deleteErrandNote() {
 
 		// Mock
-		when(repositoryMock.existsById(ERRAND_ID)).thenReturn(true);
+		when(repositoryMock.existsByIdAndMunicipalityId(ERRAND_ID, MUNICIPALITY_ID)).thenReturn(true);
 		when(notesClientMock.deleteNoteById(NOTE_ID)).thenReturn(responseEntityMock);
 
 		// Call
-		service.deleteErrandNote(ERRAND_ID, NOTE_ID);
+		service.deleteErrandNote(MUNICIPALITY_ID, ERRAND_ID, NOTE_ID);
 
 		// Assertions and verifications
-		verify(repositoryMock).existsById(ERRAND_ID);
+		verify(repositoryMock).existsByIdAndMunicipalityId(ERRAND_ID, MUNICIPALITY_ID);
 		verify(notesClientMock).deleteNoteById(NOTE_ID);
 	}
 
 	@Test
 	void deleteErrandNoteErrandNotFound() {
 
-		// Mock
-		when(repositoryMock.existsById(ERRAND_ID)).thenReturn(false);
-
 		// Call
-		final var exception = assertThrows(ThrowableProblem.class, () -> service.deleteErrandNote(ERRAND_ID, NOTE_ID));
+		final var exception = assertThrows(ThrowableProblem.class, () -> service.deleteErrandNote(MUNICIPALITY_ID, ERRAND_ID, NOTE_ID));
 
 		// Assertions and verifications
 		assertThat(exception.getStatus()).isEqualTo(NOT_FOUND);
 		assertThat(exception.getTitle()).isEqualTo(NOT_FOUND.getReasonPhrase());
-		assertThat(exception.getMessage()).isEqualTo("Not Found: An errand with id 'errandId' could not be found");
+		assertThat(exception.getMessage()).isEqualTo("Not Found: An errand with id 'errandId' could not be found for municipality with id 'municipalityId'");
 
-		verify(repositoryMock).existsById(ERRAND_ID);
+		verify(repositoryMock).existsByIdAndMunicipalityId(ERRAND_ID, MUNICIPALITY_ID);
 		verifyNoInteractions(notesClientMock);
 	}
 

@@ -1,9 +1,23 @@
 package se.sundsvall.supportmanagement.api;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.JsonNode;
+import static com.fasterxml.jackson.annotation.JsonCreator.Mode.PROPERTIES;
+import static java.util.UUID.randomUUID;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
+import static org.springframework.http.MediaType.ALL;
+import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.web.util.UriComponentsBuilder.fromPath;
+
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
@@ -18,6 +32,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.reactive.server.WebTestClient;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
+
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.errand.Customer;
 import se.sundsvall.supportmanagement.api.model.errand.CustomerType;
@@ -28,28 +48,13 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.service.ErrandService;
 import se.sundsvall.supportmanagement.service.TagService;
 
-import java.time.OffsetDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import static com.fasterxml.jackson.annotation.JsonCreator.Mode.PROPERTIES;
-import static java.util.Collections.emptyMap;
-import static java.util.UUID.randomUUID;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
-import static org.springframework.http.MediaType.ALL;
-import static org.springframework.http.MediaType.APPLICATION_JSON;
-
 @SpringBootTest(classes = Application.class, webEnvironment = RANDOM_PORT)
 @ActiveProfiles("junit")
 class ErrandsResourceTest {
 
-	private static final String PATH = "/errands";
+	private static final String PATH = "/{municipalityId}/errands";
+	private static final String MUNICIPALITY_ID = "2281";
+	private static final String ERRAND_ID = UUID.randomUUID().toString();
 
 	@Autowired
 	private WebTestClient webTestClient;
@@ -74,19 +79,21 @@ class ErrandsResourceTest {
 	@Test
 	void createErrand() {
 		// Parameter values
-		final var uuid = randomUUID().toString();
 		final var errandInstance = createErrandInstance("CLIENT_ID_2", "reporterUserId", true);
 
 		// Mock
-		when(errandServiceMock.createErrand(errandInstance)).thenReturn(uuid);
+		when(errandServiceMock.createErrand(MUNICIPALITY_ID, errandInstance)).thenReturn(ERRAND_ID);
 
 		// Call
-		webTestClient.post().uri(PATH).contentType(APPLICATION_JSON)
+		webTestClient.post()
+			.uri(builder -> builder.path(PATH).build(Map.of("municipalityId", MUNICIPALITY_ID)))
+			.contentType(APPLICATION_JSON)
 			.bodyValue(errandInstance)
 			.exchange()
 			.expectStatus().isCreated()
 			.expectHeader().contentType(ALL)
-			.expectHeader().location("http://localhost:".concat(String.valueOf(port)).concat("/errands/").concat(uuid))
+			.expectHeader().location("http://localhost:".concat(String.valueOf(port)).concat(fromPath(PATH + "/{id}")
+				.build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)).toString()))
 			.expectBody().isEmpty();
 
 		// Verification
@@ -94,20 +101,20 @@ class ErrandsResourceTest {
 		verify(tagServiceMock).findAllClientIdTags();
 		verify(tagServiceMock).findAllStatusTags();
 		verify(tagServiceMock).findAllTypeTags();
-		verify(errandServiceMock).createErrand(errandInstance);
+		verify(errandServiceMock).createErrand(MUNICIPALITY_ID, errandInstance);
 	}
 
 	@Test
 	void readErrand() {
 		// Parameter values
-		final var uuid = randomUUID().toString();
-		final var errand = Errand.create().withId(uuid);
+		final var errand = Errand.create().withId(ERRAND_ID);
 
 		// Mock
-		when(errandServiceMock.readErrand(uuid)).thenReturn(errand);
+		when(errandServiceMock.readErrand(MUNICIPALITY_ID, ERRAND_ID)).thenReturn(errand);
 
 		// Call
-		final var response = webTestClient.get().uri(builder -> builder.path(PATH + "/{id}").build(Map.of("id", uuid)))
+		final var response = webTestClient.get()
+			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
 			.exchange()
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)
@@ -116,7 +123,7 @@ class ErrandsResourceTest {
 			.getResponseBody();
 
 		// Verification
-		verify(errandServiceMock).readErrand(uuid);
+		verify(errandServiceMock).readErrand(MUNICIPALITY_ID, ERRAND_ID);
 		assertThat(response).isNotNull().isEqualTo(errand);
 	}
 
@@ -127,10 +134,11 @@ class ErrandsResourceTest {
 		final var matches = new RestResponsePage<>(List.of(Errand.create()), pageable, 1);
 
 		// Mock
-		when(errandServiceMock.findErrands(null, pageable)).thenReturn(matches);
+		when(errandServiceMock.findErrands(MUNICIPALITY_ID, null, pageable)).thenReturn(matches);
 
 		// Call
-		final var response = webTestClient.get().uri(builder -> builder.path(PATH).build(emptyMap()))
+		final var response = webTestClient.get()
+			.uri(builder -> builder.path(PATH).build(Map.of("municipalityId", MUNICIPALITY_ID)))
 			.exchange()
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)
@@ -140,7 +148,7 @@ class ErrandsResourceTest {
 			.blockFirst();
 
 		// Verification
-		verify(errandServiceMock).findErrands(null, pageable);
+		verify(errandServiceMock).findErrands(MUNICIPALITY_ID, null, pageable);
 		assertThat(response).isNotNull();
 		assertThat(response.getContent()).hasSize(1);
 	}
@@ -155,13 +163,15 @@ class ErrandsResourceTest {
 		final var filter = "categoryTag:'SUPPORT_CASE' and reporterUserId:'joe01doe'";
 
 		// Mock
-		when(errandServiceMock.findErrands(ArgumentMatchers.<Specification<ErrandEntity>>any(), eq(pageable))).thenReturn(matches);
+		when(errandServiceMock.findErrands(eq(MUNICIPALITY_ID), ArgumentMatchers.<Specification<ErrandEntity>>any(), eq(pageable))).thenReturn(matches);
 
 		// Call
-		final var response = webTestClient.get().uri(builder -> builder.path(PATH)
-			.queryParam("filter", filter)
-			.queryParam("page", page)
-			.queryParam("size", size).build(emptyMap()))
+		final var response = webTestClient.get()
+			.uri(builder -> builder.path(PATH)
+				.queryParam("filter", filter)
+				.queryParam("page", page)
+				.queryParam("size", size)
+				.build(Map.of("municipalityId", MUNICIPALITY_ID)))
 			.exchange()
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)
@@ -171,7 +181,7 @@ class ErrandsResourceTest {
 			.blockFirst();
 
 		// Verification
-		verify(errandServiceMock).findErrands(ArgumentMatchers.<Specification<ErrandEntity>>any(), eq(pageable));
+		verify(errandServiceMock).findErrands(eq(MUNICIPALITY_ID), ArgumentMatchers.<Specification<ErrandEntity>>any(), eq(pageable));
 		assertThat(response).isNotNull();
 		assertThat(response.getContent()).hasSize(1);
 	}
@@ -189,13 +199,14 @@ class ErrandsResourceTest {
 		final var filter = "created > '" + from + "' and created < '" + to + "'";
 
 		// Mock
-		when(errandServiceMock.findErrands(ArgumentMatchers.<Specification<ErrandEntity>>any(), eq(pageable))).thenReturn(matches);
+		when(errandServiceMock.findErrands(eq(MUNICIPALITY_ID), ArgumentMatchers.<Specification<ErrandEntity>>any(), eq(pageable))).thenReturn(matches);
 
 		// Call
 		final var response = webTestClient.get().uri(builder -> builder.path(PATH)
 				.queryParam("filter", filter)
 				.queryParam("page", page)
-				.queryParam("size", size).build(emptyMap()))
+			.queryParam("size", size)
+			.build(Map.of("municipalityId", MUNICIPALITY_ID)))
 			.exchange()
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)
@@ -205,7 +216,7 @@ class ErrandsResourceTest {
 			.blockFirst();
 
 		// Verification
-		verify(errandServiceMock).findErrands(ArgumentMatchers.<Specification<ErrandEntity>>any(), eq(pageable));
+		verify(errandServiceMock).findErrands(eq(MUNICIPALITY_ID), ArgumentMatchers.<Specification<ErrandEntity>>any(), eq(pageable));
 		assertThat(response).isNotNull();
 		assertThat(response.getContent()).hasSize(1);
 	}
@@ -213,15 +224,15 @@ class ErrandsResourceTest {
 	@Test
 	void updateErrandFullRequest() {
 		// Parameter values
-		final var uuid = randomUUID().toString();
 		final var errandInstance = createErrandInstance(null, null, true);
-		final var updatedInstance = Errand.create().withId(uuid);
+		final var updatedInstance = Errand.create().withId(ERRAND_ID);
 
 		// Mock
-		when(errandServiceMock.updateErrand(uuid, errandInstance)).thenReturn(updatedInstance);
+		when(errandServiceMock.updateErrand(MUNICIPALITY_ID, ERRAND_ID, errandInstance)).thenReturn(updatedInstance);
 
 		// Call
-		final var response = webTestClient.patch().uri(builder -> builder.path(PATH + "/{id}").build(Map.of("id", uuid)))
+		final var response = webTestClient.patch()
+			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(errandInstance)
 			.exchange()
@@ -232,22 +243,22 @@ class ErrandsResourceTest {
 			.getResponseBody();
 
 		// Verification
-		verify(errandServiceMock).updateErrand(uuid, errandInstance);
+		verify(errandServiceMock).updateErrand(MUNICIPALITY_ID, ERRAND_ID, errandInstance);
 		assertThat(response).isEqualTo(updatedInstance);
 	}
 
 	@Test
 	void updateErrandEmptyRequest() {
 		// Parameter values
-		final var uuid = randomUUID().toString();
 		final var emptyInstance = Errand.create();
-		final var updatedInstance = Errand.create().withId(uuid);
+		final var updatedInstance = Errand.create().withId(ERRAND_ID);
 
 		// Mock
-		when(errandServiceMock.updateErrand(uuid, emptyInstance)).thenReturn(updatedInstance);
+		when(errandServiceMock.updateErrand(MUNICIPALITY_ID, ERRAND_ID, emptyInstance)).thenReturn(updatedInstance);
 
 		// Call
-		final var response = webTestClient.patch().uri(builder -> builder.path(PATH + "/{id}").build(Map.of("id", uuid)))
+		final var response = webTestClient.patch()
+			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(Errand.create())
 			.exchange()
@@ -258,21 +269,21 @@ class ErrandsResourceTest {
 			.getResponseBody();
 
 		// Verification
-		verify(errandServiceMock).updateErrand(uuid, emptyInstance);
+		verify(errandServiceMock).updateErrand(MUNICIPALITY_ID, ERRAND_ID, emptyInstance);
 		assertThat(response).isEqualTo(updatedInstance);
 	}
 
 	@Test
 	void updateErrandWithoutCustomer() {
 		// Parameter values
-		final var uuid = randomUUID().toString();
 		final var errandInstance = createErrandInstance(null, null, false);
-		final var updatedInstance = Errand.create().withId(uuid);
+		final var updatedInstance = Errand.create().withId(ERRAND_ID);
 
 		// Mock
-		when(errandServiceMock.updateErrand(uuid, errandInstance)).thenReturn(updatedInstance);
+		when(errandServiceMock.updateErrand(MUNICIPALITY_ID, ERRAND_ID, errandInstance)).thenReturn(updatedInstance);
 
-		final var response = webTestClient.patch().uri(builder -> builder.path(PATH + "/{id}").build(Map.of("id", uuid)))
+		final var response = webTestClient.patch()
+			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(errandInstance)
 			.exchange()
@@ -283,18 +294,19 @@ class ErrandsResourceTest {
 			.getResponseBody();
 
 		// Verification
-		verify(errandServiceMock).updateErrand(uuid, errandInstance);
+		verify(errandServiceMock).updateErrand(MUNICIPALITY_ID, ERRAND_ID, errandInstance);
 		assertThat(response).isEqualTo(updatedInstance);
 	}
 
 	@Test
 	void deleteErrand() {
-		final var uuid = randomUUID().toString();
-		webTestClient.delete().uri(builder -> builder.path(PATH + "/{id}").build(Map.of("id", uuid)))
+		webTestClient.delete()
+			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
 			.exchange()
 			.expectStatus().isNoContent()
 			.expectBody().isEmpty();
 
+		verify(errandServiceMock).deleteErrand(MUNICIPALITY_ID, ERRAND_ID);
 	}
 
 	private static Errand createErrandInstance(final String clientIdTag, final String reporterUserId, final boolean withCustomer) {

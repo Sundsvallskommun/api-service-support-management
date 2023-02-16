@@ -34,8 +34,10 @@ import se.sundsvall.supportmanagement.service.ErrandNoteService;
 @ActiveProfiles("junit")
 class ErrandNotesResourceTest {
 
+	private static final String MUNICIPALITY_ID = "2281";
 	private static final String ERRAND_ID = randomUUID().toString();
-	private static final String PATH = "/errands/{id}/notes/";
+	private static final String NOTE_ID = randomUUID().toString();
+	private static final String PATH = "/{municipalityId}/errands/{id}/notes/";
 
 	@Autowired
 	private WebTestClient webTestClient;
@@ -50,45 +52,44 @@ class ErrandNotesResourceTest {
 	void createErrandNote() {
 
 		// Parameter values
-		final var partyId = randomUUID().toString();
 		final var requestBody = CreateErrandNoteRequest.create()
 			.withBody("body")
 			.withContext("context")
 			.withCreatedBy("createdBy")
-			.withPartyId(partyId)
+			.withPartyId(randomUUID().toString())
 			.withRole("role")
 			.withSubject("subject");
 
 		// Mock
 		final var noteId = randomUUID().toString();
-		when(errandNotesServiceMock.createErrandNote(ERRAND_ID, requestBody)).thenReturn(noteId);
+		when(errandNotesServiceMock.createErrandNote(MUNICIPALITY_ID, ERRAND_ID, requestBody)).thenReturn(noteId);
 
 		// Call
-		final var response = webTestClient.post().uri(builder -> builder.path(PATH).build(Map.of("id", ERRAND_ID)))
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH).build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.accept(APPLICATION_JSON)
 			.bodyValue(requestBody)
 			.exchange()
 			.expectStatus().isCreated()
 			.expectHeader().contentType(ALL)
-			.expectHeader().location("http://localhost:".concat(String.valueOf(port)).concat(fromPath("/errands/{id}/notes/{noteId}").build(Map.of("id", ERRAND_ID, "noteId", noteId)).toString()))
+			.expectHeader().location("http://localhost:".concat(String.valueOf(port)).concat(fromPath(PATH + "{noteId}")
+				.build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "noteId", noteId)).toString()))
 			.expectBody().isEmpty();
 
 		// Verification
 		assertThat(response).isNotNull();
-		verify(errandNotesServiceMock).createErrandNote(ERRAND_ID, requestBody);
+		verify(errandNotesServiceMock).createErrandNote(MUNICIPALITY_ID, ERRAND_ID, requestBody);
 	}
 
 	@Test
 	void readErrandNote() {
 
-		// Parameter values
-		final var noteId = randomUUID().toString();
-
 		// Mock
-		when(errandNotesServiceMock.readErrandNote(ERRAND_ID, noteId)).thenReturn(ErrandNote.create());
+		when(errandNotesServiceMock.readErrandNote(MUNICIPALITY_ID, ERRAND_ID, NOTE_ID)).thenReturn(ErrandNote.create());
 
-		final var response = webTestClient.get().uri(builder -> builder.path(PATH.concat("{noteId}")).build(Map.of("id", ERRAND_ID, "noteId", noteId)))
+		final var response = webTestClient.get()
+			.uri(builder -> builder.path(PATH.concat("{noteId}")).build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "noteId", NOTE_ID)))
 			.accept(APPLICATION_JSON)
 			.exchange()
 			.expectStatus().isOk()
@@ -98,7 +99,7 @@ class ErrandNotesResourceTest {
 
 		// Verification
 		assertThat(response).isNotNull();
-		verify(errandNotesServiceMock).readErrandNote(ERRAND_ID, noteId);
+		verify(errandNotesServiceMock).readErrandNote(MUNICIPALITY_ID, ERRAND_ID, NOTE_ID);
 	}
 
 	@Test
@@ -113,9 +114,10 @@ class ErrandNotesResourceTest {
 		final var findErrandNotesResponse = FindErrandNotesResponse.create()
 			.withNotes(List.of(ErrandNote.create().withBody("testBody").withSubject("testSubject")))
 			.withMetaData(MetaData.create());
-		when(errandNotesServiceMock.findErrandNotes(ERRAND_ID, requestParameter)).thenReturn(findErrandNotesResponse);
+		when(errandNotesServiceMock.findErrandNotes(MUNICIPALITY_ID, ERRAND_ID, requestParameter)).thenReturn(findErrandNotesResponse);
 
-		final var response = webTestClient.get().uri(builder -> builder.path(PATH).queryParam("partyId", partyId).build(Map.of("id", ERRAND_ID)))
+		final var response = webTestClient.get()
+			.uri(builder -> builder.path(PATH).queryParam("partyId", partyId).build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
 			.exchange()
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)
@@ -125,23 +127,23 @@ class ErrandNotesResourceTest {
 		// Verification
 		assertThat(response).isNotNull();
 		assertThat(response.getResponseBody().getNotes()).hasSize(1);
-		verify(errandNotesServiceMock).findErrandNotes(ERRAND_ID, requestParameter);
+		verify(errandNotesServiceMock).findErrandNotes(MUNICIPALITY_ID, ERRAND_ID, requestParameter);
 	}
 
 	@Test
 	void updateErrandNotes() {
 
 		// Parameter values
-		final var noteId = randomUUID().toString();
 		final var requestBody = UpdateErrandNoteRequest.create()
 			.withBody("body")
 			.withModifiedBy("modifiedBy")
 			.withSubject("subject");
 
 		// Mock
-		when(errandNotesServiceMock.updateErrandNote(ERRAND_ID, noteId, requestBody)).thenReturn(ErrandNote.create());
+		when(errandNotesServiceMock.updateErrandNote(MUNICIPALITY_ID, ERRAND_ID, NOTE_ID, requestBody)).thenReturn(ErrandNote.create());
 
-		webTestClient.patch().uri(builder -> builder.path(PATH.concat("{noteId}")).build(Map.of("id", ERRAND_ID, "noteId", noteId)))
+		webTestClient.patch()
+			.uri(builder -> builder.path(PATH.concat("{noteId}")).build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "noteId", NOTE_ID)))
 			.accept(APPLICATION_JSON)
 			.contentType(APPLICATION_JSON)
 			.bodyValue(requestBody)
@@ -152,22 +154,20 @@ class ErrandNotesResourceTest {
 			.returnResult();
 
 		// Verification
-		verify(errandNotesServiceMock).updateErrandNote(ERRAND_ID, noteId, requestBody);
+		verify(errandNotesServiceMock).updateErrandNote(MUNICIPALITY_ID, ERRAND_ID, NOTE_ID, requestBody);
 	}
 
 	@Test
 	void deleteErrandNote() {
 
-		// Parameter values
-		final var noteId = randomUUID().toString();
-
-		webTestClient.delete().uri(builder -> builder.path(PATH.concat("{noteId}")).build(Map.of("id", ERRAND_ID, "noteId", noteId)))
+		webTestClient.delete()
+			.uri(builder -> builder.path(PATH.concat("{noteId}")).build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "noteId", NOTE_ID)))
 			.exchange()
 			.expectStatus().isNoContent()
 			.expectHeader().doesNotExist(CONTENT_TYPE);
 
 		// Verification
-		verify(errandNotesServiceMock).deleteErrandNote(ERRAND_ID, noteId);
+		verify(errandNotesServiceMock).deleteErrandNote(MUNICIPALITY_ID, ERRAND_ID, NOTE_ID);
 	}
 
 }

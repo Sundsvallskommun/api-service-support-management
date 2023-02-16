@@ -1,20 +1,5 @@
 package se.sundsvall.supportmanagement.api;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.web.reactive.server.WebTestClient;
-import org.zalando.problem.violations.ConstraintViolationProblem;
-import org.zalando.problem.violations.Violation;
-import se.sundsvall.supportmanagement.Application;
-import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
-import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachmentHeader;
-import se.sundsvall.supportmanagement.service.ErrandAttachmentService;
-
-import java.util.Map;
-
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
@@ -23,12 +8,32 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.zalando.problem.Status.BAD_REQUEST;
 
+import java.util.Map;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.reactive.server.WebTestClient;
+import org.zalando.problem.violations.ConstraintViolationProblem;
+import org.zalando.problem.violations.Violation;
+
+import se.sundsvall.supportmanagement.Application;
+import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
+import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachmentHeader;
+import se.sundsvall.supportmanagement.service.ErrandAttachmentService;
+
 @SpringBootTest(classes = Application.class, webEnvironment = RANDOM_PORT)
 @ActiveProfiles("junit")
 class ErrandAttachmentsResourceFailureTest {
 
+	private static final String MUNICIPALITY_ID = "2281";
 	private static final String ERRAND_ID = randomUUID().toString();
-	private static final String PATH = "/errands/{id}/attachments/";
+	private static final String ATTACHMENT_ID = randomUUID().toString();
+	private static final String INVALID_ID = "invalid";
+
+	private static final String PATH = "/{municipalityId}/errands/{id}/attachments/";
 
 	@Autowired
 	private WebTestClient webTestClient;
@@ -37,14 +42,34 @@ class ErrandAttachmentsResourceFailureTest {
 	private ErrandAttachmentService errandAttachmentServiceMock;
 
 	@Test
-	void readErrandAttachmentWithInvalidId() {
-
-		// Parameters
-		final var id = "invalid-uuid";
-		final var attachmentId = randomUUID().toString();
+	void readErrandAttachmentWithInvalidMunicipalityId() {
 
 		// Call
-		final var response = webTestClient.get().uri(builder -> builder.path(PATH.concat("{attachmentId}")).build(Map.of("id", id, "attachmentId", attachmentId)))
+		final var response = webTestClient.get()
+			.uri(builder -> builder.path(PATH.concat("{attachmentId}")).build(Map.of("municipalityId", INVALID_ID, "id", ERRAND_ID, "attachmentId", ATTACHMENT_ID)))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::getField, Violation::getMessage)
+			.containsExactlyInAnyOrder(tuple("readErrandAttachment.municipalityId", "not a valid municipality ID"));
+
+		// Verification
+		verifyNoInteractions(errandAttachmentServiceMock);
+	}
+
+	@Test
+	void readErrandAttachmentWithInvalidId() {
+
+		// Call
+		final var response = webTestClient.get()
+			.uri(builder -> builder.path(PATH.concat("{attachmentId}")).build(Map.of("municipalityId", MUNICIPALITY_ID, "id", INVALID_ID, "attachmentId", ATTACHMENT_ID)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -65,11 +90,9 @@ class ErrandAttachmentsResourceFailureTest {
 	@Test
 	void readErrandAttachmentWithInvalidAttachmentId() {
 
-		// Parameters
-		final var attachmentId = "invalid-uuid";
-
 		// Call
-		final var response = webTestClient.get().uri(builder -> builder.path(PATH.concat("{attachmentId}")).build(Map.of("id", ERRAND_ID, "attachmentId", attachmentId)))
+		final var response = webTestClient.get()
+			.uri(builder -> builder.path(PATH.concat("{attachmentId}")).build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "attachmentId", INVALID_ID)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -88,13 +111,34 @@ class ErrandAttachmentsResourceFailureTest {
 	}
 
 	@Test
-	void readErrandAttachmentsWithInvalidId() {
-
-		// Parameters
-		final var id = "invalid-uuid";
+	void readErrandAttachmentsWithInvalidMunicipalityId() {
 
 		// Call
-		final var response = webTestClient.get().uri(builder -> builder.path(PATH).build(Map.of("id", id)))
+		final var response = webTestClient.get()
+			.uri(builder -> builder.path(PATH).build(Map.of("municipalityId", INVALID_ID, "id", ERRAND_ID)))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::getField, Violation::getMessage)
+			.containsExactlyInAnyOrder(tuple("readErrandAttachments.municipalityId", "not a valid municipality ID"));
+
+		// Verification
+		verifyNoInteractions(errandAttachmentServiceMock);
+	}
+
+	@Test
+	void readErrandAttachmentsWithInvalidId() {
+
+		// Call
+		final var response = webTestClient.get()
+			.uri(builder -> builder.path(PATH).build(Map.of("municipalityId", MUNICIPALITY_ID, "id", INVALID_ID)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -113,10 +157,9 @@ class ErrandAttachmentsResourceFailureTest {
 	}
 
 	@Test
-	void createErrandAttachmentInvalidId() {
+	void createErrandAttachmentInvalidMunicipalityId() {
 
 		// Parameters
-		final var id = "invalid-uuid";
 		final var requestBody = ErrandAttachment.create()
 			.withErrandAttachmentHeader(ErrandAttachmentHeader.create()
 				.withId("id")
@@ -125,7 +168,41 @@ class ErrandAttachmentsResourceFailureTest {
 			.withBase64EncodedString("file");
 
 		// Call
-		final var response = webTestClient.post().uri(builder -> builder.path(PATH).build(Map.of("id", id)))
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH).build(Map.of("municipalityId", INVALID_ID, "id", ERRAND_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(requestBody)
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::getField, Violation::getMessage)
+			.containsExactlyInAnyOrder(tuple("createErrandAttachment.municipalityId", "not a valid municipality ID"));
+
+		// Verification
+		verifyNoInteractions(errandAttachmentServiceMock);
+	}
+
+	@Test
+	void createErrandAttachmentInvalidId() {
+
+		// Parameters
+		final var requestBody = ErrandAttachment.create()
+			.withErrandAttachmentHeader(ErrandAttachmentHeader.create()
+				.withId("id")
+				.withFileName("test.txt")
+				.withMimeType("mimeType"))
+			.withBase64EncodedString("file");
+
+		// Call
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH).build(Map.of("municipalityId", MUNICIPALITY_ID, "id", INVALID_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(requestBody)
 			.exchange()
@@ -152,7 +229,8 @@ class ErrandAttachmentsResourceFailureTest {
 		final var requestBody = ErrandAttachment.create();
 
 		// Call
-		final var response = webTestClient.post().uri(builder -> builder.path(PATH).build(Map.of("id", ERRAND_ID)))
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH).build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(requestBody)
 			.exchange()
@@ -175,14 +253,34 @@ class ErrandAttachmentsResourceFailureTest {
 	}
 
 	@Test
-	void deleteErrandAttachmentWithInvalidId() {
-
-		// Parameters
-		final var id = "invalid-uuid";
-		final var attachmentId = randomUUID().toString();
+	void deleteErrandAttachmentWithInvalidMunicipalityId() {
 
 		// Call
-		final var response = webTestClient.delete().uri(builder -> builder.path(PATH.concat("{attachmentId}")).build(Map.of("id", id, "attachmentId", attachmentId)))
+		final var response = webTestClient.delete()
+			.uri(builder -> builder.path(PATH.concat("{attachmentId}")).build(Map.of("municipalityId", INVALID_ID, "id", ERRAND_ID, "attachmentId", ATTACHMENT_ID)))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::getField, Violation::getMessage)
+			.containsExactlyInAnyOrder(tuple("deleteErrandAttachment.municipalityId", "not a valid municipality ID"));
+
+		// Verification
+		verifyNoInteractions(errandAttachmentServiceMock);
+	}
+
+	@Test
+	void deleteErrandAttachmentWithInvalidId() {
+
+		// Call
+		final var response = webTestClient.delete()
+			.uri(builder -> builder.path(PATH.concat("{attachmentId}")).build(Map.of("municipalityId", MUNICIPALITY_ID, "id", INVALID_ID, "attachmentId", ATTACHMENT_ID)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -203,11 +301,9 @@ class ErrandAttachmentsResourceFailureTest {
 	@Test
 	void deleteErrandAttachmenteWithInvalidAttachmentId() {
 
-		// Parameters
-		final var attachmentId = "invalid-uuid";
-
 		// Call
-		final var response = webTestClient.delete().uri(builder -> builder.path(PATH.concat("{attachmentId}")).build(Map.of("id", ERRAND_ID, "attachmentId", attachmentId)))
+		final var response = webTestClient.delete()
+			.uri(builder -> builder.path(PATH.concat("{attachmentId}")).build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "attachmentId", INVALID_ID)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)

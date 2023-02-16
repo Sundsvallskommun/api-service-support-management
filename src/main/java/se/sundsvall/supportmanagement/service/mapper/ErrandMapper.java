@@ -4,10 +4,12 @@ import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toCollection;
+import static org.apache.commons.lang3.ObjectUtils.anyNull;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import se.sundsvall.supportmanagement.api.model.errand.Customer;
 import se.sundsvall.supportmanagement.api.model.errand.CustomerType;
@@ -21,8 +23,8 @@ public class ErrandMapper {
 
 	private ErrandMapper() {}
 
-	public static ErrandEntity toErrandEntity(Errand errand) {
-		if (isNull(errand)) {
+	public static ErrandEntity toErrandEntity(String municipalityId, Errand errand) {
+		if (anyNull(municipalityId, errand)) {
 			return null;
 		}
 
@@ -33,6 +35,7 @@ public class ErrandMapper {
 			.withClientIdTag(errand.getClientIdTag())
 			.withCustomer(toCustomer(errand.getCustomer()))
 			.withExternalTags(toExternalTag(errand.getExternalTags()))
+			.withMunicipalityId(municipalityId)
 			.withPriority(errand.getPriority().name())
 			.withReporterUserId(errand.getReporterUserId())
 			.withStatusTag(errand.getStatusTag())
@@ -111,23 +114,19 @@ public class ErrandMapper {
 	}
 
 	private static Customer toCustomer(EmbeddableCustomer customer) {
-		if (isNull(customer)) {
-			return null;
-		}
-
-		return Customer.create()
-			.withId(customer.getId())
-			.withType(CustomerType.valueOf(customer.getType()));
+		return Optional.ofNullable(customer)
+			.map(c -> Customer.create()
+				.withId(c.getId())
+				.withType(CustomerType.valueOf(c.getType())))
+			.orElse(null);
 	}
 
 	private static EmbeddableCustomer toCustomer(Customer customer) {
-		if (isNull(customer)) {
-			return null;
-		}
-
-		return EmbeddableCustomer.create()
-			.withId(customer.getId())
-			.withType(customer.getType().toString());
+		return Optional.ofNullable(customer)
+			.map(c -> EmbeddableCustomer.create()
+				.withId(c.getId())
+				.withType(c.getType().toString()))
+			.orElse(null);
 	}
 
 	private static List<ExternalTag> toExternalTags(List<DbExternalTag> entities) {

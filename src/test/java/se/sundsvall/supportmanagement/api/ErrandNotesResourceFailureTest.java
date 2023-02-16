@@ -29,8 +29,11 @@ import se.sundsvall.supportmanagement.service.ErrandNoteService;
 @ActiveProfiles("junit")
 class ErrandNotesResourceFailureTest {
 
+	private static final String MUNICIPALITY_ID = "2281";
 	private static final String ERRAND_ID = randomUUID().toString();
-	private static final String PATH = "/errands/{id}/notes/";
+	private static final String NOTE_ID = randomUUID().toString();
+	private static final String INVALID_ID = "invalidId";
+	private static final String PATH = "/{municipalityId}/errands/{id}/notes/";
 
 	@Autowired
 	private WebTestClient webTestClient;
@@ -39,14 +42,34 @@ class ErrandNotesResourceFailureTest {
 	private ErrandNoteService errandNotesServiceMock;
 
 	@Test
-	void readErrandNoteWithInvalidId() {
-
-		// Parameters
-		final var id = "invalid-uuid";
-		final var noteId = randomUUID().toString();
+	void readErrandNoteWithInvalidMunicipalityId() {
 
 		// Call
-		final var response = webTestClient.get().uri(builder -> builder.path(PATH.concat("{noteId}")).build(Map.of("id", id, "noteId", noteId)))
+		final var response = webTestClient.get()
+			.uri(builder -> builder.path(PATH.concat("{noteId}")).build(Map.of("municipalityId", INVALID_ID, "id", ERRAND_ID, "noteId", NOTE_ID)))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::getField, Violation::getMessage)
+			.containsExactlyInAnyOrder(tuple("readErrandNote.municipalityId", "not a valid municipality ID"));
+
+		// Verification
+		verifyNoInteractions(errandNotesServiceMock);
+	}
+
+	@Test
+	void readErrandNoteWithInvalidId() {
+
+		// Call
+		final var response = webTestClient.get()
+			.uri(builder -> builder.path(PATH.concat("{noteId}")).build(Map.of("municipalityId", MUNICIPALITY_ID, "id", INVALID_ID, "noteId", NOTE_ID)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -67,12 +90,9 @@ class ErrandNotesResourceFailureTest {
 	@Test
 	void readErrandNoteWithInvalidNoteId() {
 
-		// Parameters
-		final var id = ERRAND_ID;
-		final var noteId = "invalid-uuid";
-
 		// Call
-		final var response = webTestClient.get().uri(builder -> builder.path(PATH.concat("{noteId}")).build(Map.of("id", id, "noteId", noteId)))
+		final var response = webTestClient.get()
+			.uri(builder -> builder.path(PATH.concat("{noteId}")).build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "noteId", INVALID_ID)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -94,7 +114,8 @@ class ErrandNotesResourceFailureTest {
 	void findErrandNotesWithInvalidSearchParams() {
 
 		// Call
-		final var response = webTestClient.get().uri(builder -> builder.path(PATH).queryParam("limit", "1001", "partyId", "invalidPartyId").build(Map.of("id", ERRAND_ID)))
+		final var response = webTestClient.get()
+			.uri(builder -> builder.path(PATH).queryParam("limit", "1001", "partyId", "invalidPartyId").build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -113,19 +134,39 @@ class ErrandNotesResourceFailureTest {
 	}
 
 	@Test
+	void createErrandNoteInvalidMunicipalityId() {
+
+		// Call
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH).build(Map.of("municipalityId", INVALID_ID, "id", ERRAND_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(createErrandNoteRequest())
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::getField, Violation::getMessage)
+			.containsExactlyInAnyOrder(tuple("createErrandNote.municipalityId", "not a valid municipality ID"));
+
+		// Verification
+		verifyNoInteractions(errandNotesServiceMock);
+	}
+
+	@Test
 	void createErrandNoteInvalidId() {
 
 		// Parameters
-		final var id = "invalid-uuid";
-		final var requestBody = CreateErrandNoteRequest.create()
-			.withBody("body")
-			.withContext("context")
-			.withCreatedBy("createdBy")
-			.withRole("role")
-			.withSubject("subject");
+		final var requestBody = createErrandNoteRequest();
 
 		// Call
-		final var response = webTestClient.post().uri(builder -> builder.path(PATH).build(Map.of("id", id)))
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH).build(Map.of("municipalityId", MUNICIPALITY_ID, "id", INVALID_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(requestBody)
 			.exchange()
@@ -148,14 +189,11 @@ class ErrandNotesResourceFailureTest {
 	@Test
 	void createErrandNoteInvalidRequestBody() {
 
-		// Parameters
-		final var id = ERRAND_ID;
-		final var requestBody = ErrandNote.create();
-
 		// Call
-		final var response = webTestClient.post().uri(builder -> builder.path(PATH).build(Map.of("id", id)))
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH).build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
-			.bodyValue(requestBody)
+			.bodyValue(ErrandNote.create())
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -179,21 +217,40 @@ class ErrandNotesResourceFailureTest {
 	}
 
 	@Test
-	void updateErrandNoteInvalidId() {
-
-		// Parameters
-		final var id = "invalid-uuid";
-		final var noteId = randomUUID().toString();
-		final var requestBody = ErrandNote.create()
-			.withBody("body")
-			.withModifiedBy("createdBy")
-			.withSubject("subject");
+	void updateErrandNoteInvalidMunicipalityId() {
 
 		// Call
-		final var response = webTestClient.patch().uri(builder -> builder.path(PATH.concat("{noteId}")).build(Map.of("id", id, "noteId", noteId)))
+		final var response = webTestClient.patch()
+			.uri(builder -> builder.path(PATH.concat("{noteId}")).build(Map.of("municipalityId", INVALID_ID, "id", ERRAND_ID, "noteId", NOTE_ID)))
 			.contentType(APPLICATION_JSON)
 			.accept(APPLICATION_JSON)
-			.bodyValue(requestBody)
+			.bodyValue(updateErrandNoteRequest())
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::getField, Violation::getMessage)
+			.containsExactlyInAnyOrder(tuple("updateErrandNote.municipalityId", "not a valid municipality ID"));
+
+		// Verification
+		verifyNoInteractions(errandNotesServiceMock);
+	}
+
+	@Test
+	void updateErrandNoteInvalidId() {
+
+		// Call
+		final var response = webTestClient.patch()
+			.uri(builder -> builder.path(PATH.concat("{noteId}")).build(Map.of("municipalityId", MUNICIPALITY_ID, "id", INVALID_ID, "noteId", NOTE_ID)))
+			.contentType(APPLICATION_JSON)
+			.accept(APPLICATION_JSON)
+			.bodyValue(updateErrandNoteRequest())
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -214,19 +271,12 @@ class ErrandNotesResourceFailureTest {
 	@Test
 	void updateErrandNoteInvalidNoteId() {
 
-		// Parameters
-		final var id = ERRAND_ID;
-		final var noteId = "invalid-uuid";
-		final var requestBody = UpdateErrandNoteRequest.create()
-			.withBody("body")
-			.withModifiedBy("createdBy")
-			.withSubject("subject");
-
 		// Call
-		final var response = webTestClient.patch().uri(builder -> builder.path(PATH.concat("{noteId}")).build(Map.of("id", id, "noteId", noteId)))
+		final var response = webTestClient.patch()
+			.uri(builder -> builder.path(PATH.concat("{noteId}")).build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "noteId", INVALID_ID)))
 			.contentType(APPLICATION_JSON)
 			.accept(APPLICATION_JSON)
-			.bodyValue(requestBody)
+			.bodyValue(updateErrandNoteRequest())
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -247,16 +297,12 @@ class ErrandNotesResourceFailureTest {
 	@Test
 	void updateErrandNoteInvalidRequestBody() {
 
-		// Parameters
-		final var id = ERRAND_ID;
-		final var noteId = randomUUID().toString();
-		final var requestBody = UpdateErrandNoteRequest.create();
-
 		// Call
-		final var response = webTestClient.patch().uri(builder -> builder.path(PATH.concat("{noteId}")).build(Map.of("id", id, "noteId", noteId)))
+		final var response = webTestClient.patch()
+			.uri(builder -> builder.path(PATH.concat("{noteId}")).build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "noteId", NOTE_ID)))
 			.contentType(APPLICATION_JSON)
 			.accept(APPLICATION_JSON)
-			.bodyValue(requestBody)
+			.bodyValue(UpdateErrandNoteRequest.create())
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -278,14 +324,34 @@ class ErrandNotesResourceFailureTest {
 	}
 
 	@Test
-	void deleteErrandNoteWithInvalidId() {
-
-		// Parameters
-		final var id = "invalid-uuid";
-		final var noteId = randomUUID().toString();
+	void deleteErrandNoteWithInvalidMunicipalityId() {
 
 		// Call
-		final var response = webTestClient.delete().uri(builder -> builder.path(PATH.concat("{noteId}")).build(Map.of("id", id, "noteId", noteId)))
+		final var response = webTestClient.delete()
+			.uri(builder -> builder.path(PATH.concat("{noteId}")).build(Map.of("municipalityId", INVALID_ID, "id", ERRAND_ID, "noteId", NOTE_ID)))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::getField, Violation::getMessage)
+			.containsExactlyInAnyOrder(tuple("deleteErrandNote.municipalityId", "not a valid municipality ID"));
+
+		// Verification
+		verifyNoInteractions(errandNotesServiceMock);
+	}
+
+	@Test
+	void deleteErrandNoteWithInvalidId() {
+
+		// Call
+		final var response = webTestClient.delete()
+			.uri(builder -> builder.path(PATH.concat("{noteId}")).build(Map.of("municipalityId", MUNICIPALITY_ID, "id", INVALID_ID, "noteId", NOTE_ID)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -306,12 +372,9 @@ class ErrandNotesResourceFailureTest {
 	@Test
 	void deleteErrandNoteWithInvalidNoteId() {
 
-		// Parameters
-		final var id = ERRAND_ID;
-		final var noteId = "invalid-uuid";
-
 		// Call
-		final var response = webTestClient.delete().uri(builder -> builder.path(PATH.concat("{noteId}")).build(Map.of("id", id, "noteId", noteId)))
+		final var response = webTestClient.delete()
+			.uri(builder -> builder.path(PATH.concat("{noteId}")).build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "noteId", INVALID_ID)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -327,5 +390,21 @@ class ErrandNotesResourceFailureTest {
 
 		// Verification
 		verifyNoInteractions(errandNotesServiceMock);
+	}
+
+	private static CreateErrandNoteRequest createErrandNoteRequest() {
+		return CreateErrandNoteRequest.create()
+			.withBody("body")
+			.withContext("context")
+			.withCreatedBy("createdBy")
+			.withRole("role")
+			.withSubject("subject");
+	}
+
+	private static UpdateErrandNoteRequest updateErrandNoteRequest() {
+		return UpdateErrandNoteRequest.create()
+			.withBody("body")
+			.withModifiedBy("createdBy")
+			.withSubject("subject");
 	}
 }

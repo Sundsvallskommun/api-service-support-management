@@ -11,6 +11,7 @@ import static org.zalando.problem.Status.BAD_REQUEST;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,7 +39,9 @@ import se.sundsvall.supportmanagement.service.TagService;
 @ActiveProfiles("junit")
 class ErrandsCreateResourceFailureTest {
 
-	private static final String PATH = "/errands";
+	private static final String PATH = "/{municipalityId}/errands";
+	private static final String MUNICIPALITY_ID = "2281";
+	private static final String INVALID_ID = "invalidId";
 
 	@Autowired
 	private WebTestClient webTestClient;
@@ -60,7 +63,8 @@ class ErrandsCreateResourceFailureTest {
 	@Test
 	void createErrandWithNullErrandInstance() {
 		// Call
-		final var response = webTestClient.post().uri(PATH)
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH).build(Map.of("municipalityId", MUNICIPALITY_ID)))
 			.contentType(APPLICATION_JSON)
 			.exchange()
 			.expectStatus().isBadRequest()
@@ -74,11 +78,42 @@ class ErrandsCreateResourceFailureTest {
 		assertThat(response.getDetail()).isEqualTo("""
 			Required request body is missing: public org.springframework.http.ResponseEntity<java.lang.Void>\s\
 			se.sundsvall.supportmanagement.api.ErrandsResource.createErrand(org.springframework.web.util.UriComponentsBuilder,\
-			se.sundsvall.supportmanagement.api.model.errand.Errand)""");
+			java.lang.String,se.sundsvall.supportmanagement.api.model.errand.Errand)""");
 
 		// Verification
 		verifyNoInteractions(tagServiceMock, errandServiceMock);
 	}
+
+	@Test
+	void createErrandWithInvalidMunicipalityId() {
+		// Call
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH).build(Map.of("municipalityId", INVALID_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(createErrandInstance())
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
+			tuple("createErrand.errand.id", "must be null"),
+			tuple("createErrand.errand.created", "must be null"),
+			tuple("createErrand.errand.modified", "must be null"),
+			tuple("createErrand.municipalityId", "not a valid municipality ID"));
+
+		// Verification
+		verify(tagServiceMock).findAllCategoryTags();
+		verify(tagServiceMock).findAllClientIdTags();
+		verify(tagServiceMock).findAllStatusTags();
+		verify(tagServiceMock).findAllTypeTags();
+		verifyNoInteractions(errandServiceMock);
+	}
+
 
 	@Test
 	void createErrandWithFullErrandInstance() {
@@ -86,7 +121,8 @@ class ErrandsCreateResourceFailureTest {
 		final var request = createErrandInstance();
 
 		// Call
-		final var response = webTestClient.post().uri(PATH)
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH).build(Map.of("municipalityId", MUNICIPALITY_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(request)
 			.exchange()
@@ -114,7 +150,8 @@ class ErrandsCreateResourceFailureTest {
 	@Test
 	void createErrandWithEmptyErrandInstance() {
 		// Call
-		final var response = webTestClient.post().uri(PATH)
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH).build(Map.of("municipalityId", MUNICIPALITY_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(Errand.create())
 			.exchange()
@@ -147,7 +184,8 @@ class ErrandsCreateResourceFailureTest {
 	@Test
 	void createErrandWithBlankErrandInstance() {
 		// Call
-		final var response = webTestClient.post().uri(PATH)
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH).build(Map.of("municipalityId", MUNICIPALITY_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(Errand.create().withTitle(" ").withClientIdTag(" ").withReporterUserId(" ").withCategoryTag(" ").withTypeTag(" ").withStatusTag(" "))
 			.exchange()
@@ -180,7 +218,8 @@ class ErrandsCreateResourceFailureTest {
 	@Test
 	void createErrandWithNullExternalKeyAndValue() {
 		// Call
-		final var response = webTestClient.post().uri(PATH)
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH).build(Map.of("municipalityId", MUNICIPALITY_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(Errand.create().withExternalTags(List.of(
 				ExternalTag.create(),
@@ -211,7 +250,8 @@ class ErrandsCreateResourceFailureTest {
 	@Test
 	void createErrandWithNonUniqueExternalTagKeys() {
 		// Call
-		final var response = webTestClient.post().uri(PATH)
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH).build(Map.of("municipalityId", MUNICIPALITY_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(Errand.create().withExternalTags(List.of(
 				ExternalTag.create().withKey("key").withValue("value"),
@@ -239,7 +279,8 @@ class ErrandsCreateResourceFailureTest {
 	@Test
 	void createErrandWithEmptyCustomer() {
 		// Call
-		final var response = webTestClient.post().uri(PATH)
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH).build(Map.of("municipalityId", MUNICIPALITY_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(Errand.create().withCustomer(Customer.create()))
 			.exchange()
@@ -267,7 +308,8 @@ class ErrandsCreateResourceFailureTest {
 	@EnumSource(names = { "ENTERPRISE", "PRIVATE" })
 	void createErrandWithInvalidCustomerId(final CustomerType type) {
 		// Call
-		final var response = webTestClient.post().uri(PATH)
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH).build(Map.of("municipalityId", MUNICIPALITY_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(Errand.create().withCustomer(Customer.create().withType(type).withId("id")))
 			.exchange()
@@ -293,7 +335,8 @@ class ErrandsCreateResourceFailureTest {
 	@Test
 	void createErrandWithInvalidTags() {
 		// Call
-		final var response = webTestClient.post().uri(PATH)
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH).build(Map.of("municipalityId", MUNICIPALITY_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(createErrandInstance().withCategoryTag("invalid_category").withClientIdTag("invalid_client_id").withStatusTag("invalid_status").withTypeTag("invalid_type"))
 			.exchange()

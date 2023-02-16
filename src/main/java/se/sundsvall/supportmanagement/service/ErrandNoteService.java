@@ -28,7 +28,7 @@ import se.sundsvall.supportmanagement.integration.notes.NotesClient;
 @Service
 public class ErrandNoteService {
 
-	private static final String ERRAND_ENTITY_NOT_FOUND = "An errand with id '%s' could not be found";
+	private static final String ERRAND_ENTITY_NOT_FOUND = "An errand with id '%s' could not be found for municipality with id '%s'";
 
 	@Value("${spring.application.name:}")
 	private String clientId;
@@ -39,17 +39,18 @@ public class ErrandNoteService {
 	@Autowired
 	private ErrandsRepository errandsRepository;
 
-	public String createErrandNote(final String id, final CreateErrandNoteRequest createErrandNoteRequest) {
+	public String createErrandNote(String municipalityId, String id, CreateErrandNoteRequest createErrandNoteRequest) {
+		verifyExistingErrand(id, municipalityId);
 		return extractNoteIdFromLocationHeader(notesClient.createNote(toCreateNoteRequest(id, clientId, createErrandNoteRequest)));
 	}
 
-	public ErrandNote readErrandNote(final String id, final String noteId) {
-		verifyExistingErrand(id);
+	public ErrandNote readErrandNote(String municipalityId, String id, String noteId) {
+		verifyExistingErrand(id, municipalityId);
 		return toErrandNote(notesClient.findNoteById(noteId));
 	}
 
-	public FindErrandNotesResponse findErrandNotes(final String id, final FindErrandNotesRequest findErrandNotesRequest) {
-		verifyExistingErrand(id);
+	public FindErrandNotesResponse findErrandNotes(String municipalityId, String id, FindErrandNotesRequest findErrandNotesRequest) {
+		verifyExistingErrand(id, municipalityId);
 		return toFindErrandNotesResponse(notesClient.findNotes(
 			findErrandNotesRequest.getContext(),
 			findErrandNotesRequest.getRole(),
@@ -60,13 +61,13 @@ public class ErrandNoteService {
 			findErrandNotesRequest.getLimit()));
 	}
 
-	public ErrandNote updateErrandNote(final String id, final String noteId, final UpdateErrandNoteRequest updateErrandNoteRequest) {
-		verifyExistingErrand(id);
+	public ErrandNote updateErrandNote(String municipalityId, String id, String noteId, UpdateErrandNoteRequest updateErrandNoteRequest) {
+		verifyExistingErrand(id, municipalityId);
 		return toErrandNote(notesClient.updateNoteById(noteId, toUpdateNoteRequest(updateErrandNoteRequest)));
 	}
 
-	public void deleteErrandNote(final String id, final String noteId) {
-		verifyExistingErrand(id);
+	public void deleteErrandNote(String municipalityId, String id, String noteId) {
+		verifyExistingErrand(id, municipalityId);
 		notesClient.deleteNoteById(noteId);
 	}
 
@@ -78,9 +79,9 @@ public class ErrandNoteService {
 		return EMPTY;
 	}
 
-	private void verifyExistingErrand(final String id) {
-		if (!errandsRepository.existsById(id)) {
-			throw Problem.valueOf(NOT_FOUND, String.format(ERRAND_ENTITY_NOT_FOUND, id));
+	private void verifyExistingErrand(String id, String municipalityId) {
+		if (!errandsRepository.existsByIdAndMunicipalityId(id, municipalityId)) {
+			throw Problem.valueOf(NOT_FOUND, String.format(ERRAND_ENTITY_NOT_FOUND, id, municipalityId));
 		}
 	}
 }

@@ -21,6 +21,7 @@
         customer_type varchar(255),
         description longtext,
         modified datetime(6),
+        municipality_id varchar(255) not null,
         priority varchar(255),
         reporter_user_id varchar(255),
         resolution varchar(255),
@@ -48,8 +49,10 @@ create index idx_attachment_file_name on attachment (file_name);
 create index idx_errand_id on errand (id);
 create index idx_errand_customer_id on errand (customer_id);
 create index idx_errand_client_id_tag on errand (client_id_tag);
+create index idx_errand_municipality_id on errand (municipality_id);
 create index idx_external_tag_errand_id on external_tag (errand_id);
 create index idx_external_tag_key on external_tag (`key`);
+
 
     alter table external_tag
        add constraint uq_external_tag_errand_id_key unique (errand_id, `key`);

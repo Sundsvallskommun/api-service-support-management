@@ -35,6 +35,8 @@ import se.sundsvall.supportmanagement.integration.messaging.MessagingClient;
 
 @ExtendWith(MockitoExtension.class)
 class CommunicationServiceTest {
+
+	private static final String MUNICIPALITY_ID = "municipalityId";
 	private static final String ERRAND_ID = randomUUID().toString();
 	private static final String CUSTOMER_ID = randomUUID().toString();
 	private static final String MESSAGE = "message";
@@ -74,14 +76,16 @@ class CommunicationServiceTest {
 		final var request = createEmailRequest();
 
 		// Mock
+		when(repositoryMock.existsByIdAndMunicipalityId(ERRAND_ID, MUNICIPALITY_ID)).thenReturn(true);
 		when(repositoryMock.getReferenceById(ERRAND_ID)).thenReturn(errandEntityMock);
 		when(errandEntityMock.getId()).thenReturn(ERRAND_ID);
 		when(errandEntityMock.getCustomer()).thenReturn(embeddableCustomerMock);
 		when(embeddableCustomerMock.getId()).thenReturn(CUSTOMER_ID);
 		// Call
-		service.sendEmail(ERRAND_ID, request);
+		service.sendEmail(MUNICIPALITY_ID, ERRAND_ID, request);
 
 		// Verifications and assertions
+		verify(repositoryMock).existsByIdAndMunicipalityId(ERRAND_ID, MUNICIPALITY_ID);
 		verify(repositoryMock).getReferenceById(ERRAND_ID);
 		verify(messagingClientMock).sendEmail(messagingEmailCaptor.capture());
 
@@ -110,15 +114,17 @@ class CommunicationServiceTest {
 		final var request = createSmsRequest();
 
 		// Mock
+		when(repositoryMock.existsByIdAndMunicipalityId(ERRAND_ID, MUNICIPALITY_ID)).thenReturn(true);
 		when(repositoryMock.getReferenceById(ERRAND_ID)).thenReturn(errandEntityMock);
 		when(errandEntityMock.getId()).thenReturn(ERRAND_ID);
 		when(errandEntityMock.getCustomer()).thenReturn(embeddableCustomerMock);
 		when(embeddableCustomerMock.getId()).thenReturn(CUSTOMER_ID);
 
 		// Call
-		service.sendSms(ERRAND_ID, request);
+		service.sendSms(MUNICIPALITY_ID, ERRAND_ID, request);
 
 		// Verifications and assertions
+		verify(repositoryMock).existsByIdAndMunicipalityId(ERRAND_ID, MUNICIPALITY_ID);
 		verify(repositoryMock).getReferenceById(ERRAND_ID);
 		verify(messagingClientMock).sendSms(messagingSmsCaptor.capture());
 
@@ -139,15 +145,15 @@ class CommunicationServiceTest {
 		final var request = createSmsRequest();
 
 		// Call
-		final var exception = assertThrows(ThrowableProblem.class, () -> service.sendSms(ERRAND_ID, request));
+		final var exception = assertThrows(ThrowableProblem.class, () -> service.sendSms(MUNICIPALITY_ID, ERRAND_ID, request));
 
 		// Verifications and assertions
-		verify(repositoryMock).getReferenceById(ERRAND_ID);
+		verify(repositoryMock).existsByIdAndMunicipalityId(ERRAND_ID, MUNICIPALITY_ID);
 		verifyNoInteractions(messagingClientMock);
 
 		assertThat(exception.getStatus()).isEqualTo(NOT_FOUND);
 		assertThat(exception.getTitle()).isEqualTo(NOT_FOUND.getReasonPhrase());
-		assertThat(exception.getMessage()).isEqualTo("Not Found: An errand with id '" + ERRAND_ID + "' could not be found");
+		assertThat(exception.getMessage()).isEqualTo("Not Found: An errand with id '" + ERRAND_ID + "' could not be found for municipality with id '" + MUNICIPALITY_ID + "'");
 	}
 
 	@Test
@@ -156,14 +162,16 @@ class CommunicationServiceTest {
 		final var request = createSmsRequest();
 
 		// Mock
+		when(repositoryMock.existsByIdAndMunicipalityId(ERRAND_ID, MUNICIPALITY_ID)).thenReturn(true);
 		when(repositoryMock.getReferenceById(ERRAND_ID)).thenReturn(errandEntityMock);
 		when(errandEntityMock.getCustomer()).thenReturn(embeddableCustomerMock);
 		when(embeddableCustomerMock.getId()).thenReturn("non-valid-uuid");
 
 		// Call
-		service.sendSms(ERRAND_ID, request);
+		service.sendSms(MUNICIPALITY_ID, ERRAND_ID, request);
 
 		// Verifications and assertions
+		verify(repositoryMock).existsByIdAndMunicipalityId(ERRAND_ID, MUNICIPALITY_ID);
 		verify(repositoryMock).getReferenceById(ERRAND_ID);
 		verify(messagingClientMock).sendSms(messagingSmsCaptor.capture());
 

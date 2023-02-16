@@ -30,13 +30,14 @@ import se.sundsvall.supportmanagement.Application;
 })
 class ErrandNotesIT extends AbstractAppTest {
 
+	private static final String PATH = "/2281/errands/"; // 2281 is the municipalityId of Sundsvalls kommun
 	private static final String REQUEST_FILE = "request.json";
 	private static final String RESPONSE_FILE = "response.json";
 
 	@Test
 	void test01_findErrandNotes() throws Exception {
 		setupCall()
-			.withServicePath("/errands/ec677eb3-604c-4935-bff7-f8f0b500c8f4/notes?context=SUPPORT&role=FIRST_LINE_SUPPORT&partyId=81471222-5798-11e9-ae24-57fa13b361e1&page=1&limit=100")
+			.withServicePath(PATH + "ec677eb3-604c-4935-bff7-f8f0b500c8f4/notes?context=SUPPORT&role=FIRST_LINE_SUPPORT&partyId=81471222-5798-11e9-ae24-57fa13b361e1&page=1&limit=100")
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
@@ -47,7 +48,7 @@ class ErrandNotesIT extends AbstractAppTest {
 	@Test
 	void test02_readErrandNote() throws Exception {
 		setupCall()
-			.withServicePath("/errands/ec677eb3-604c-4935-bff7-f8f0b500c8f4/notes/d1f2c8d4-d234-4504-a483-b74570a7941d")
+			.withServicePath(PATH + "ec677eb3-604c-4935-bff7-f8f0b500c8f4/notes/d1f2c8d4-d234-4504-a483-b74570a7941d")
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
@@ -58,7 +59,7 @@ class ErrandNotesIT extends AbstractAppTest {
 	@Test
 	void test03_createErrandNote() throws Exception {
 		setupCall()
-			.withServicePath("/errands/ec677eb3-604c-4935-bff7-f8f0b500c8f4/notes")
+			.withServicePath(PATH + "ec677eb3-604c-4935-bff7-f8f0b500c8f4/notes")
 			.withHttpMethod(POST)
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(CREATED)
@@ -69,7 +70,7 @@ class ErrandNotesIT extends AbstractAppTest {
 	@Test
 	void test04_updateErrandNote() throws Exception {
 		setupCall()
-			.withServicePath("/errands/ec677eb3-604c-4935-bff7-f8f0b500c8f4/notes/d1f2c8d4-d234-4504-a483-b74570a7941d")
+			.withServicePath(PATH + "ec677eb3-604c-4935-bff7-f8f0b500c8f4/notes/d1f2c8d4-d234-4504-a483-b74570a7941d")
 			.withHttpMethod(PATCH)
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(OK)
@@ -81,7 +82,7 @@ class ErrandNotesIT extends AbstractAppTest {
 	@Test
 	void test05_deleteErrandNote() throws Exception {
 		setupCall()
-			.withServicePath("/errands/ec677eb3-604c-4935-bff7-f8f0b500c8f4/notes/d1f2c8d4-d234-4504-a483-b74570a7941d")
+			.withServicePath(PATH + "ec677eb3-604c-4935-bff7-f8f0b500c8f4/notes/d1f2c8d4-d234-4504-a483-b74570a7941d")
 			.withHttpMethod(DELETE)
 			.withExpectedResponseStatus(NO_CONTENT)
 			.sendRequestAndVerifyResponse();

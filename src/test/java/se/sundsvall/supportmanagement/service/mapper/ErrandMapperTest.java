@@ -27,6 +27,7 @@ import se.sundsvall.supportmanagement.integration.db.model.EmbeddableCustomer;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 
 class ErrandMapperTest {
+	private static final String MUNICIPALITY_ID = "municipalityId";
 	private static final String ASSIGNED_GROUP_ID = "assignedGroupId";
 	private static final String ASSIGNED_USER_ID = "assignedUserId";
 	private static final String CATEGORY_TAG = "categoryTag";
@@ -131,7 +132,7 @@ class ErrandMapperTest {
 
 	@Test
 	void testToErrandEntity() {
-		final var entity = toErrandEntity(createErrand());
+		final var entity = toErrandEntity(MUNICIPALITY_ID, createErrand());
 
 		assertThat(entity)
 			.extracting(
@@ -141,6 +142,7 @@ class ErrandMapperTest {
 				ErrandEntity::getCustomer,
 				ErrandEntity::getClientIdTag,
 				ErrandEntity::getExternalTags,
+				ErrandEntity::getMunicipalityId,
 				ErrandEntity::getPriority,
 				ErrandEntity::getReporterUserId,
 				ErrandEntity::getStatusTag,
@@ -155,6 +157,7 @@ class ErrandMapperTest {
 				EmbeddableCustomer.create().withId(CUSTOMER_ID).withType(CUSTOMER_TYPE),
 				CLIENT_ID_TAG,
 				List.of(DbExternalTag.create().withKey(TAG_KEY).withValue(TAG_VALUE)),
+				MUNICIPALITY_ID,
 				PRIORITY,
 				REPORTER_USER_ID,
 				STATUS_TAG,
@@ -171,7 +174,9 @@ class ErrandMapperTest {
 
 	@Test
 	void testToErrandEntityFromNull() {
-		assertThat(toErrandEntity(null)).isNull();
+		assertThat(toErrandEntity(null, null)).isNull();
+		assertThat(toErrandEntity(null, Errand.create())).isNull();
+		assertThat(toErrandEntity(MUNICIPALITY_ID, null)).isNull();
 	}
 
 	@Test
@@ -265,6 +270,7 @@ class ErrandMapperTest {
 			.withCustomer(EmbeddableCustomer.create().withId(CUSTOMER_ID).withType(CUSTOMER_TYPE))
 			.withExternalTags(List.of(DbExternalTag.create().withKey(TAG_KEY).withValue(TAG_VALUE)))
 			.withId(ID)
+			.withMunicipalityId(MUNICIPALITY_ID)
 			.withPriority(PRIORITY)
 			.withReporterUserId(REPORTER_USER_ID)
 			.withStatusTag(STATUS_TAG)

@@ -1,6 +1,5 @@
 package se.sundsvall.supportmanagement.api;
 
-import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 import static org.mockito.Mockito.verify;
@@ -13,6 +12,7 @@ import static org.zalando.problem.Status.BAD_REQUEST;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -40,7 +40,10 @@ import se.sundsvall.supportmanagement.service.TagService;
 @ActiveProfiles("junit")
 class ErrandsUpdateResourceFailureTest {
 
-	private static final String PATH = "/errands";
+	private static final String PATH = "/{municipalityId}/errands";
+	private static final String MUNICIPALITY_ID = "2281";
+	private static final String ERRAND_ID = UUID.randomUUID().toString();
+	private static final String INVALID_ID = "invalidId";
 
 	@Autowired
 	private WebTestClient webTestClient;
@@ -60,9 +63,37 @@ class ErrandsUpdateResourceFailureTest {
 	}
 
 	@Test
-	void updateErrandWithInvalidUuid() {
+	void updateErrandWithInvalidMunicipalityId() {
 		// Call
-		final var response = webTestClient.patch().uri(builder -> builder.path(PATH + "/{id}").build(Map.of("id", "invalid-uuid")))
+		final var response = webTestClient.patch()
+			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("municipalityId", INVALID_ID, "id", ERRAND_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(Errand.create())
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
+			tuple("updateErrand.municipalityId", "not a valid municipality ID"));
+
+		// Verification
+		verify(tagServiceMock).findAllCategoryTags();
+		verify(tagServiceMock).findAllClientIdTags();
+		verify(tagServiceMock).findAllStatusTags();
+		verify(tagServiceMock).findAllTypeTags();
+		verifyNoInteractions(errandServiceMock);
+	}
+
+	@Test
+	void updateErrandWithInvalidErrandId() {
+		// Call
+		final var response = webTestClient.patch()
+			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("municipalityId", MUNICIPALITY_ID, "id", INVALID_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(Errand.create())
 			.exchange()
@@ -87,11 +118,10 @@ class ErrandsUpdateResourceFailureTest {
 
 	@Test
 	void updateErrandWithNullBody() {
-		// Parameter values
-		final var uuid = randomUUID().toString();
 
 		// Call
-		final var response = webTestClient.patch().uri(builder -> builder.path(PATH + "/{id}").build(Map.of("id", uuid)))
+		final var response = webTestClient.patch()
+			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.exchange()
 			.expectStatus().isBadRequest()
@@ -104,7 +134,7 @@ class ErrandsUpdateResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getDetail()).isEqualTo("""
 			Required request body is missing: public org.springframework.http.ResponseEntity<se.sundsvall.supportmanagement.api.model.errand.Errand>\s\
-			se.sundsvall.supportmanagement.api.ErrandsResource.updateErrand(java.lang.String,\
+			se.sundsvall.supportmanagement.api.ErrandsResource.updateErrand(java.lang.String,java.lang.String,\
 			se.sundsvall.supportmanagement.api.model.errand.Errand)""");
 
 		// Verification
@@ -113,14 +143,12 @@ class ErrandsUpdateResourceFailureTest {
 
 	@Test
 	void updateErrandWithFullErrandInstance() {
-		// Parameter values
-		final var uuid = randomUUID().toString();
-		final var request = createErrandInstance();
 
 		// Call
-		final var response = webTestClient.patch().uri(builder -> builder.path(PATH + "/{id}").build(Map.of("id", uuid)))
+		final var response = webTestClient.patch()
+			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
-			.bodyValue(request)
+			.bodyValue(createErrandInstance())
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -147,11 +175,10 @@ class ErrandsUpdateResourceFailureTest {
 
 	@Test
 	void updateErrandWithBlankErrandInstance() {
-		// Parameter values
-		final var uuid = randomUUID().toString();
 
 		// Call
-		final var response = webTestClient.patch().uri(builder -> builder.path(PATH + "/{id}").build(Map.of("id", uuid)))
+		final var response = webTestClient.patch()
+			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(Errand.create().withTitle(" ").withClientIdTag(" ").withReporterUserId(" ").withCategoryTag(" ").withTypeTag(" ").withStatusTag(" "))
 			.exchange()
@@ -177,11 +204,10 @@ class ErrandsUpdateResourceFailureTest {
 
 	@Test
 	void updateErrandWithNullExternalKeyAndValue() {
-		// Parameter values
-		final var uuid = randomUUID().toString();
 
 		// Call
-		final var response = webTestClient.patch().uri(builder -> builder.path(PATH + "/{id}").build(Map.of("id", uuid)))
+		final var response = webTestClient.patch()
+			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(Errand.create().withExternalTags(List.of(
 				ExternalTag.create(),
@@ -211,11 +237,10 @@ class ErrandsUpdateResourceFailureTest {
 
 	@Test
 	void updateErrandWithEmptyCustomer() {
-		// Parameter values
-		final var uuid = randomUUID().toString();
 
 		// Call
-		final var response = webTestClient.patch().uri(builder -> builder.path(PATH + "/{id}").build(Map.of("id", uuid)))
+		final var response = webTestClient.patch()
+			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(Errand.create().withCustomer(Customer.create()))
 			.exchange()
@@ -242,11 +267,10 @@ class ErrandsUpdateResourceFailureTest {
 	@ParameterizedTest
 	@EnumSource(names = { "ENTERPRISE", "PRIVATE" })
 	void updateErrandWithInvalidCustomerId(final CustomerType type) {
-		// Parameter values
-		final var uuid = randomUUID().toString();
 
 		// Call
-		final var response = webTestClient.patch().uri(builder -> builder.path(PATH + "/{id}").build(Map.of("id", uuid)))
+		final var response = webTestClient.patch()
+			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(Errand.create().withCustomer(Customer.create().withType(type).withId("id")))
 			.exchange()
@@ -271,11 +295,10 @@ class ErrandsUpdateResourceFailureTest {
 
 	@Test
 	void updateErrandWithInvalidTags() {
-		// Parameter values
-		final var uuid = randomUUID().toString();
 
 		// Call
-		final var response = webTestClient.patch().uri(builder -> builder.path(PATH + "/{id}").build(Map.of("id", uuid)))
+		final var response = webTestClient.patch()
+			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(Errand.create().withCategoryTag("invalid_category").withClientIdTag("invalid_client_id").withStatusTag("invalid_status").withTypeTag("invalid_type"))
 			.exchange()
