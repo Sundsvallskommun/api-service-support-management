@@ -10,6 +10,10 @@ public class SpecificationBuilder<T> {
 
 	private static final SpecificationBuilder<ErrandEntity> ERRAND_ENTITY_BUILDER = new SpecificationBuilder<>();
 
+	public static Specification<ErrandEntity> withNamespace(String namespace) {
+		return ERRAND_ENTITY_BUILDER.buildEqualFilter("namespace", namespace);
+	}
+
 	public static Specification<ErrandEntity> withMunicipalityId(String municipalityId) {
 		return ERRAND_ENTITY_BUILDER.buildEqualFilter("municipalityId", municipalityId);
 	}

@@ -1,9 +1,9 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
 import static java.util.Collections.emptyList;
-import static java.util.Objects.isNull;
 import static org.apache.commons.codec.binary.Base64.decodeBase64;
 import static org.apache.commons.codec.binary.Base64.encodeBase64String;
+import static org.apache.commons.lang3.ObjectUtils.anyNull;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.detectMimeType;
 
 import java.util.List;
@@ -20,7 +20,7 @@ public class ErrandAttachmentMapper {
 	private ErrandAttachmentMapper() {}
 
 	public static AttachmentEntity toAttachmentEntity(final ErrandEntity errandEntity, final ErrandAttachment errandAttachment) {
-		if (isNull(errandEntity) || isNull(errandAttachment)) {
+		if (anyNull(errandEntity, errandAttachment)) {
 			return null;
 		}
 

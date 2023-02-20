@@ -35,7 +35,7 @@ import org.hibernate.annotations.GenericGenerator;
 	indexes = {
 		@Index(name = "idx_errand_id", columnList = "id"),
 		@Index(name = "idx_errand_customer_id", columnList = "customer_id"),
-		@Index(name = "idx_errand_client_id_tag", columnList = "client_id_tag"),
+		@Index(name = "idx_errand_namespace", columnList = "namespace"),
 		@Index(name = "idx_errand_municipality_id", columnList = "municipality_id")
 	})
 public class ErrandEntity implements Serializable {
@@ -64,8 +64,8 @@ public class ErrandEntity implements Serializable {
 	@Column(name = "municipality_id", nullable = false)
 	private String municipalityId;
 
-	@Column(name = "client_id_tag")
-	private String clientIdTag;
+	@Column(name = "namespace")
+	private String namespace;
 
 	@Column(name = "title")
 	private String title;
@@ -176,16 +176,16 @@ public class ErrandEntity implements Serializable {
 		return this;
 	}
 
-	public String getClientIdTag() {
-		return clientIdTag;
+	public String getNamespace() {
+		return namespace;
 	}
 
-	public void setClientIdTag(String clientIdTag) {
-		this.clientIdTag = clientIdTag;
+	public void setNamespace(String namespace) {
+		this.namespace = namespace;
 	}
 
-	public ErrandEntity withClientIdTag(String clientIdTag) {
-		this.clientIdTag = clientIdTag;
+	public ErrandEntity withNamespace(String namespace) {
+		this.namespace = namespace;
 		return this;
 	}
 
@@ -374,7 +374,7 @@ public class ErrandEntity implements Serializable {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(assignedGroupId, assignedUserId, attachments, categoryTag, clientIdTag, created, customer, description, externalTags, id, modified, municipalityId, priority, reporterUserId, resolution, statusTag, title, touched, typeTag);
+		return Objects.hash(assignedGroupId, assignedUserId, attachments, categoryTag, created, customer, description, externalTags, id, modified, municipalityId, namespace, priority, reporterUserId, resolution, statusTag, title, touched, typeTag);
 	}
 
 	@Override
@@ -390,15 +390,15 @@ public class ErrandEntity implements Serializable {
 		}
 		ErrandEntity other = (ErrandEntity) obj;
 		return Objects.equals(assignedGroupId, other.assignedGroupId) && Objects.equals(assignedUserId, other.assignedUserId) && Objects.equals(attachments, other.attachments) && Objects.equals(categoryTag, other.categoryTag) && Objects.equals(
-			clientIdTag, other.clientIdTag) && Objects.equals(created, other.created) && Objects.equals(customer, other.customer) && Objects.equals(description, other.description) && Objects.equals(externalTags, other.externalTags) && Objects.equals(
-				id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(municipalityId, other.municipalityId) && Objects.equals(priority, other.priority) && Objects.equals(reporterUserId, other.reporterUserId) && Objects.equals(
-					resolution, other.resolution) && Objects.equals(statusTag, other.statusTag) && Objects.equals(title, other.title) && Objects.equals(touched, other.touched) && Objects.equals(typeTag, other.typeTag);
+			created, other.created) && Objects.equals(customer, other.customer) && Objects.equals(description, other.description) && Objects.equals(externalTags, other.externalTags) && Objects.equals(id, other.id) && Objects.equals(modified,
+				other.modified) && Objects.equals(municipalityId, other.municipalityId) && Objects.equals(namespace, other.namespace) && Objects.equals(priority, other.priority) && Objects.equals(reporterUserId, other.reporterUserId) && Objects
+					.equals(resolution, other.resolution) && Objects.equals(statusTag, other.statusTag) && Objects.equals(title, other.title) && Objects.equals(touched, other.touched) && Objects.equals(typeTag, other.typeTag);
 	}
 
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
-		builder.append("ErrandEntity [id=").append(id).append(", externalTags=").append(externalTags).append(", customer=").append(customer).append(", municipalityId=").append(municipalityId).append(", clientIdTag=").append(clientIdTag).append(
+		builder.append("ErrandEntity [id=").append(id).append(", externalTags=").append(externalTags).append(", customer=").append(customer).append(", municipalityId=").append(municipalityId).append(", namespace=").append(namespace).append(
 			", title=").append(title).append(", categoryTag=").append(categoryTag).append(", typeTag=").append(typeTag).append(", statusTag=").append(statusTag).append(", resolution=").append(resolution).append(", description=").append(description)
 			.append(", priority=").append(priority).append(", reporterUserId=").append(reporterUserId).append(", assignedUserId=").append(assignedUserId).append(", assignedGroupId=").append(assignedGroupId).append(", attachments=").append(
 				attachments).append(", created=").append(created).append(", modified=").append(modified).append(", touched=").append(touched).append("]");

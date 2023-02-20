@@ -39,9 +39,10 @@ import se.sundsvall.supportmanagement.service.TagService;
 @ActiveProfiles("junit")
 class ErrandsCreateResourceFailureTest {
 
-	private static final String PATH = "/{municipalityId}/errands";
+	private static final String PATH = "/{namespace}/{municipalityId}/errands";
+	private static final String NAMESPACE = "namespace";
 	private static final String MUNICIPALITY_ID = "2281";
-	private static final String INVALID_ID = "invalidId";
+	private static final String INVALID = "#invalid#";
 
 	@Autowired
 	private WebTestClient webTestClient;
@@ -55,16 +56,69 @@ class ErrandsCreateResourceFailureTest {
 	@BeforeEach
 	void setupMock() {
 		when(tagServiceMock.findAllCategoryTags()).thenReturn(List.of("CATEGORY_1", "CATEGORY_2"));
-		when(tagServiceMock.findAllClientIdTags()).thenReturn(List.of("CLIENT_ID_1", "CLIENT_ID_2"));
 		when(tagServiceMock.findAllStatusTags()).thenReturn(List.of("STATUS_1", "STATUS_2"));
 		when(tagServiceMock.findAllTypeTags()).thenReturn(List.of("TYPE_1", "TYPE_2"));
+	}
+
+	@Test
+	void createErrandWithInvalidNamespace() {
+		// Call
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(createErrandInstance().withId(null).withCreated(null).withModified(null))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::getField, Violation::getMessage)
+			.containsExactly(tuple("createErrand.namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."));
+
+		// Verification
+		verify(tagServiceMock).findAllCategoryTags();
+		verify(tagServiceMock).findAllStatusTags();
+		verify(tagServiceMock).findAllTypeTags();
+		verifyNoInteractions(errandServiceMock);
+	}
+
+	@Test
+	void createErrandWithInvalidMunicipalityId() {
+		// Call
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", INVALID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(createErrandInstance().withId(null).withCreated(null).withModified(null))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::getField, Violation::getMessage)
+			.containsExactly(tuple("createErrand.municipalityId", "not a valid municipality ID"));
+
+		// Verification
+		verify(tagServiceMock).findAllCategoryTags();
+		verify(tagServiceMock).findAllStatusTags();
+		verify(tagServiceMock).findAllTypeTags();
+		verifyNoInteractions(errandServiceMock);
 	}
 
 	@Test
 	void createErrandWithNullErrandInstance() {
 		// Call
 		final var response = webTestClient.post()
-			.uri(builder -> builder.path(PATH).build(Map.of("municipalityId", MUNICIPALITY_ID)))
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
 			.contentType(APPLICATION_JSON)
 			.exchange()
 			.expectStatus().isBadRequest()
@@ -78,42 +132,11 @@ class ErrandsCreateResourceFailureTest {
 		assertThat(response.getDetail()).isEqualTo("""
 			Required request body is missing: public org.springframework.http.ResponseEntity<java.lang.Void>\s\
 			se.sundsvall.supportmanagement.api.ErrandsResource.createErrand(org.springframework.web.util.UriComponentsBuilder,\
-			java.lang.String,se.sundsvall.supportmanagement.api.model.errand.Errand)""");
+			java.lang.String,java.lang.String,se.sundsvall.supportmanagement.api.model.errand.Errand)""");
 
 		// Verification
 		verifyNoInteractions(tagServiceMock, errandServiceMock);
 	}
-
-	@Test
-	void createErrandWithInvalidMunicipalityId() {
-		// Call
-		final var response = webTestClient.post()
-			.uri(builder -> builder.path(PATH).build(Map.of("municipalityId", INVALID_ID)))
-			.contentType(APPLICATION_JSON)
-			.bodyValue(createErrandInstance())
-			.exchange()
-			.expectStatus().isBadRequest()
-			.expectBody(ConstraintViolationProblem.class)
-			.returnResult()
-			.getResponseBody();
-
-		assertThat(response).isNotNull();
-		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
-		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
-		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
-			tuple("createErrand.errand.id", "must be null"),
-			tuple("createErrand.errand.created", "must be null"),
-			tuple("createErrand.errand.modified", "must be null"),
-			tuple("createErrand.municipalityId", "not a valid municipality ID"));
-
-		// Verification
-		verify(tagServiceMock).findAllCategoryTags();
-		verify(tagServiceMock).findAllClientIdTags();
-		verify(tagServiceMock).findAllStatusTags();
-		verify(tagServiceMock).findAllTypeTags();
-		verifyNoInteractions(errandServiceMock);
-	}
-
 
 	@Test
 	void createErrandWithFullErrandInstance() {
@@ -122,7 +145,7 @@ class ErrandsCreateResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.post()
-			.uri(builder -> builder.path(PATH).build(Map.of("municipalityId", MUNICIPALITY_ID)))
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(request)
 			.exchange()
@@ -141,7 +164,6 @@ class ErrandsCreateResourceFailureTest {
 
 		// Verification
 		verify(tagServiceMock).findAllCategoryTags();
-		verify(tagServiceMock).findAllClientIdTags();
 		verify(tagServiceMock).findAllStatusTags();
 		verify(tagServiceMock).findAllTypeTags();
 		verifyNoInteractions(errandServiceMock);
@@ -151,7 +173,7 @@ class ErrandsCreateResourceFailureTest {
 	void createErrandWithEmptyErrandInstance() {
 		// Call
 		final var response = webTestClient.post()
-			.uri(builder -> builder.path(PATH).build(Map.of("municipalityId", MUNICIPALITY_ID)))
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(Errand.create())
 			.exchange()
@@ -164,18 +186,16 @@ class ErrandsCreateResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
-			tuple("createErrand.errand.title", "must not be blank"),
-			tuple("createErrand.errand.clientIdTag", "must not be blank"),
-			tuple("createErrand.errand.reporterUserId", "must not be blank"),
-			tuple("createErrand.errand.priority", "must not be null"),
 			tuple("createErrand.errand.categoryTag", "must not be blank"),
 			tuple("createErrand.errand.customer", "must not be null"),
-			tuple("createErrand.errand.typeTag", "must not be blank"),
-			tuple("createErrand.errand.statusTag", "must not be blank"));
+			tuple("createErrand.errand.reporterUserId", "must not be blank"),
+			tuple("createErrand.errand.priority", "must not be null"),
+			tuple("createErrand.errand.statusTag", "must not be blank"),
+			tuple("createErrand.errand.title", "must not be blank"),
+			tuple("createErrand.errand.typeTag", "must not be blank"));
 
 		// Verification
 		verify(tagServiceMock).findAllCategoryTags();
-		verify(tagServiceMock).findAllClientIdTags();
 		verify(tagServiceMock).findAllStatusTags();
 		verify(tagServiceMock).findAllTypeTags();
 		verifyNoInteractions(errandServiceMock);
@@ -185,9 +205,9 @@ class ErrandsCreateResourceFailureTest {
 	void createErrandWithBlankErrandInstance() {
 		// Call
 		final var response = webTestClient.post()
-			.uri(builder -> builder.path(PATH).build(Map.of("municipalityId", MUNICIPALITY_ID)))
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
 			.contentType(APPLICATION_JSON)
-			.bodyValue(Errand.create().withTitle(" ").withClientIdTag(" ").withReporterUserId(" ").withCategoryTag(" ").withTypeTag(" ").withStatusTag(" "))
+			.bodyValue(Errand.create().withTitle(" ").withReporterUserId(" ").withCategoryTag(" ").withTypeTag(" ").withStatusTag(" "))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -199,7 +219,6 @@ class ErrandsCreateResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
 			tuple("createErrand.errand.title", "must not be blank"),
-			tuple("createErrand.errand.clientIdTag", "must not be blank"),
 			tuple("createErrand.errand.reporterUserId", "must not be blank"),
 			tuple("createErrand.errand.priority", "must not be null"),
 			tuple("createErrand.errand.categoryTag", "must not be blank"),
@@ -209,7 +228,6 @@ class ErrandsCreateResourceFailureTest {
 
 		// Verification
 		verify(tagServiceMock).findAllCategoryTags();
-		verify(tagServiceMock).findAllClientIdTags();
 		verify(tagServiceMock).findAllStatusTags();
 		verify(tagServiceMock).findAllTypeTags();
 		verifyNoInteractions(errandServiceMock);
@@ -219,7 +237,7 @@ class ErrandsCreateResourceFailureTest {
 	void createErrandWithNullExternalKeyAndValue() {
 		// Call
 		final var response = webTestClient.post()
-			.uri(builder -> builder.path(PATH).build(Map.of("municipalityId", MUNICIPALITY_ID)))
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(Errand.create().withExternalTags(List.of(
 				ExternalTag.create(),
@@ -241,7 +259,6 @@ class ErrandsCreateResourceFailureTest {
 
 		// Verification
 		verify(tagServiceMock).findAllCategoryTags();
-		verify(tagServiceMock).findAllClientIdTags();
 		verify(tagServiceMock).findAllStatusTags();
 		verify(tagServiceMock).findAllTypeTags();
 		verifyNoInteractions(errandServiceMock);
@@ -251,7 +268,7 @@ class ErrandsCreateResourceFailureTest {
 	void createErrandWithNonUniqueExternalTagKeys() {
 		// Call
 		final var response = webTestClient.post()
-			.uri(builder -> builder.path(PATH).build(Map.of("municipalityId", MUNICIPALITY_ID)))
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(Errand.create().withExternalTags(List.of(
 				ExternalTag.create().withKey("key").withValue("value"),
@@ -270,7 +287,6 @@ class ErrandsCreateResourceFailureTest {
 
 		// Verification
 		verify(tagServiceMock).findAllCategoryTags();
-		verify(tagServiceMock).findAllClientIdTags();
 		verify(tagServiceMock).findAllStatusTags();
 		verify(tagServiceMock).findAllTypeTags();
 		verifyNoInteractions(errandServiceMock);
@@ -280,7 +296,7 @@ class ErrandsCreateResourceFailureTest {
 	void createErrandWithEmptyCustomer() {
 		// Call
 		final var response = webTestClient.post()
-			.uri(builder -> builder.path(PATH).build(Map.of("municipalityId", MUNICIPALITY_ID)))
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(Errand.create().withCustomer(Customer.create()))
 			.exchange()
@@ -298,7 +314,6 @@ class ErrandsCreateResourceFailureTest {
 
 		// Verification
 		verify(tagServiceMock).findAllCategoryTags();
-		verify(tagServiceMock).findAllClientIdTags();
 		verify(tagServiceMock).findAllStatusTags();
 		verify(tagServiceMock).findAllTypeTags();
 		verifyNoInteractions(errandServiceMock);
@@ -309,7 +324,7 @@ class ErrandsCreateResourceFailureTest {
 	void createErrandWithInvalidCustomerId(final CustomerType type) {
 		// Call
 		final var response = webTestClient.post()
-			.uri(builder -> builder.path(PATH).build(Map.of("municipalityId", MUNICIPALITY_ID)))
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(Errand.create().withCustomer(Customer.create().withType(type).withId("id")))
 			.exchange()
@@ -326,7 +341,6 @@ class ErrandsCreateResourceFailureTest {
 
 		// Verification
 		verify(tagServiceMock).findAllCategoryTags();
-		verify(tagServiceMock).findAllClientIdTags();
 		verify(tagServiceMock).findAllStatusTags();
 		verify(tagServiceMock).findAllTypeTags();
 		verifyNoInteractions(errandServiceMock);
@@ -336,9 +350,9 @@ class ErrandsCreateResourceFailureTest {
 	void createErrandWithInvalidTags() {
 		// Call
 		final var response = webTestClient.post()
-			.uri(builder -> builder.path(PATH).build(Map.of("municipalityId", MUNICIPALITY_ID)))
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
 			.contentType(APPLICATION_JSON)
-			.bodyValue(createErrandInstance().withCategoryTag("invalid_category").withClientIdTag("invalid_client_id").withStatusTag("invalid_status").withTypeTag("invalid_type"))
+			.bodyValue(createErrandInstance().withCategoryTag("invalid_category").withStatusTag("invalid_status").withTypeTag("invalid_type"))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -350,13 +364,11 @@ class ErrandsCreateResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
 			tuple("categoryTag", "value 'invalid_category' doesn't match any of [CATEGORY_1, CATEGORY_2]"),
-			tuple("clientIdTag", "value 'invalid_client_id' doesn't match any of [CLIENT_ID_1, CLIENT_ID_2]"),
 			tuple("statusTag", "value 'invalid_status' doesn't match any of [STATUS_1, STATUS_2]"),
 			tuple("typeTag", "value 'invalid_type' doesn't match any of [TYPE_1, TYPE_2]"));
 
 		// Verification
 		verify(tagServiceMock).findAllCategoryTags();
-		verify(tagServiceMock).findAllClientIdTags();
 		verify(tagServiceMock).findAllStatusTags();
 		verify(tagServiceMock).findAllTypeTags();
 		verifyNoInteractions(errandServiceMock);
@@ -372,7 +384,6 @@ class ErrandsCreateResourceFailureTest {
 			.withExternalTags(List.of(ExternalTag.create().withKey("externalTagKey").withValue("externalTagValue")))
 			.withId("id")
 			.withModified(OffsetDateTime.now())
-			.withClientIdTag("CLIENT_ID_2")
 			.withPriority(Priority.HIGH)
 			.withReporterUserId("reporterUserId")
 			.withStatusTag("status_1")

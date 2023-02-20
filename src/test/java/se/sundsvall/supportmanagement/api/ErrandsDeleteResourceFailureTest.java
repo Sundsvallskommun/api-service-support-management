@@ -25,10 +25,11 @@ import se.sundsvall.supportmanagement.service.ErrandService;
 @ActiveProfiles("junit")
 class ErrandsDeleteResourceFailureTest {
 
-	private static final String PATH = "/{municipalityId}/errands";
+	private static final String PATH = "/{namespace}/{municipalityId}/errands";
+	private static final String NAMESPACE = "namespace";
 	private static final String MUNICIPALITY_ID = "2281";
 	private static final String ERRAND_ID = UUID.randomUUID().toString();
-	private static final String INVALID_ID = "invalidId";
+	private static final String INVALID = "#invalid#";
 
 	@Autowired
 	private WebTestClient webTestClient;
@@ -37,10 +38,10 @@ class ErrandsDeleteResourceFailureTest {
 	private ErrandService errandServiceMock;
 
 	@Test
-	void deleteErrandWithInvalidMunicipalityId() {
+	void deleteErrandWithInvalidNamespace() {
 		// Call
 		final var response = webTestClient.delete()
-			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("municipalityId", INVALID_ID, "id", ERRAND_ID)))
+			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -50,8 +51,31 @@ class ErrandsDeleteResourceFailureTest {
 		assertThat(response).isNotNull();
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
-		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
-			tuple("deleteErrand.municipalityId", "not a valid municipality ID"));
+		assertThat(response.getViolations())
+			.extracting(Violation::getField, Violation::getMessage)
+			.containsExactly(tuple("deleteErrand.namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."));
+
+		// Verification
+		verifyNoInteractions(errandServiceMock);
+	}
+
+	@Test
+	void deleteErrandWithInvalidMunicipalityId() {
+		// Call
+		final var response = webTestClient.delete()
+			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", NAMESPACE, "municipalityId", INVALID, "id", ERRAND_ID)))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::getField, Violation::getMessage)
+			.containsExactly(tuple("deleteErrand.municipalityId", "not a valid municipality ID"));
 
 		// Verification
 		verifyNoInteractions(errandServiceMock);
@@ -61,7 +85,7 @@ class ErrandsDeleteResourceFailureTest {
 	void deleteErrandWithInvalidErrandId() {
 		// Call
 		final var response = webTestClient.delete()
-			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("municipalityId", MUNICIPALITY_ID, "id", INVALID_ID)))
+			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", INVALID)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -71,8 +95,9 @@ class ErrandsDeleteResourceFailureTest {
 		assertThat(response).isNotNull();
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
-		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
-			tuple("deleteErrand.id", "not a valid UUID"));
+		assertThat(response.getViolations())
+			.extracting(Violation::getField, Violation::getMessage)
+			.containsExactly(tuple("deleteErrand.id", "not a valid UUID"));
 
 		// Verification
 		verifyNoInteractions(errandServiceMock);

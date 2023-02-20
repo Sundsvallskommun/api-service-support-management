@@ -50,7 +50,7 @@ class ErrandEntityTest {
 		final var attachmentId = UUID.randomUUID().toString();
 		final var attachments = List.of(AttachmentEntity.create().withId(attachmentId).withFileName("fileName").withFile("file".getBytes()).withMimeType("mimeType"));
 		final var categoryTag = "categoryTag";
-		final var clientIdTag = "clientIdTag";
+		final var namespace = "namespace";
 		final var created = now();
 		final var customer = EmbeddableCustomer.create().withId(UUID.randomUUID().toString()).withType(CustomerType.PRIVATE.toString());
 		final var description = "description";
@@ -71,7 +71,7 @@ class ErrandEntityTest {
 			.withAssignedUserId(assignedUserId)
 			.withAttachments(attachments)
 			.withCategoryTag(categoryTag)
-			.withClientIdTag(clientIdTag)
+			.withNamespace(namespace)
 			.withCreated(created)
 			.withCustomer(customer)
 			.withDescription(description)
@@ -92,7 +92,7 @@ class ErrandEntityTest {
 		assertThat(errandEntity.getAssignedUserId()).isEqualTo(assignedUserId);
 		assertThat(errandEntity.getAttachments()).isEqualTo(attachments);
 		assertThat(errandEntity.getCategoryTag()).isEqualTo(categoryTag);
-		assertThat(errandEntity.getClientIdTag()).isEqualTo(clientIdTag);
+		assertThat(errandEntity.getNamespace()).isEqualTo(namespace);
 		assertThat(errandEntity.getCreated()).isEqualTo(created);
 		assertThat(errandEntity.getCustomer()).isEqualTo(customer);
 		assertThat(errandEntity.getDescription()).isEqualTo(description);

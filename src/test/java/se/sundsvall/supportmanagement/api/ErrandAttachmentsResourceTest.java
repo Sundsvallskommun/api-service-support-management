@@ -30,9 +30,10 @@ import se.sundsvall.supportmanagement.service.ErrandAttachmentService;
 @ActiveProfiles("junit")
 class ErrandAttachmentsResourceTest {
 
+	private static final String NAMESPACE = "namespace";
 	private static final String MUNICIPALITY_ID = "2281";
 	private static final String ERRAND_ID = randomUUID().toString();
-	private static final String PATH = "/{municipalityId}/errands/{id}/attachments/";
+	private static final String PATH = "/" + NAMESPACE + "/{municipalityId}/errands/{id}/attachments/";
 
 	@MockBean
 	private ErrandAttachmentService errandAttachmentServiceMock;
@@ -58,7 +59,7 @@ class ErrandAttachmentsResourceTest {
 			.withBase64EncodedString(file);
 
 		// Mock
-		when(errandAttachmentServiceMock.createErrandAttachment(MUNICIPALITY_ID, ERRAND_ID, requestBody)).thenReturn(attachmentId);
+		when(errandAttachmentServiceMock.createErrandAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, requestBody)).thenReturn(attachmentId);
 
 		// Call
 		webTestClient.post().uri(builder -> builder.path(PATH).build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
@@ -69,11 +70,11 @@ class ErrandAttachmentsResourceTest {
 			.expectStatus().isCreated()
 			.expectHeader().contentType(ALL)
 			.expectHeader().location("http://localhost:".concat(String.valueOf(port)).concat(fromPath(PATH + "{attachmentId}")
-				.build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "attachmentId", attachmentId)).toString()))
+				.build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "attachmentId", attachmentId)).toString()))
 			.expectBody().isEmpty();
 
 		// Verification
-		verify(errandAttachmentServiceMock).createErrandAttachment(MUNICIPALITY_ID, ERRAND_ID, requestBody);
+		verify(errandAttachmentServiceMock).createErrandAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, requestBody);
 	}
 
 	@Test
@@ -89,7 +90,7 @@ class ErrandAttachmentsResourceTest {
 			.withBase64EncodedString("test");
 
 		// Mock
-		when(errandAttachmentServiceMock.readErrandAttachment(MUNICIPALITY_ID, ERRAND_ID, attachmentId)).thenReturn(errandAttachment);
+		when(errandAttachmentServiceMock.readErrandAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, attachmentId)).thenReturn(errandAttachment);
 
 		final var response = webTestClient.get().uri(builder -> builder.path(PATH.concat("{attachmentId}")).build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "attachmentId", attachmentId)))
 			.accept(APPLICATION_JSON)
@@ -102,7 +103,7 @@ class ErrandAttachmentsResourceTest {
 		assertThat(response.getResponseBody()).isEqualTo(errandAttachment);
 
 		// Verification
-		verify(errandAttachmentServiceMock).readErrandAttachment(MUNICIPALITY_ID, ERRAND_ID, attachmentId);
+		verify(errandAttachmentServiceMock).readErrandAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, attachmentId);
 	}
 
 	@Test
@@ -113,7 +114,7 @@ class ErrandAttachmentsResourceTest {
 				.withId(randomUUID().toString())
 				.withMimeType("text/plain"));
 
-		when(errandAttachmentServiceMock.readErrandAttachmentHeaders(MUNICIPALITY_ID, ERRAND_ID)).thenReturn(errandAttachments);
+		when(errandAttachmentServiceMock.readErrandAttachmentHeaders(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID)).thenReturn(errandAttachments);
 
 		final var response = webTestClient.get().uri(builder -> builder.path(PATH).build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
 			.exchange()
@@ -125,7 +126,7 @@ class ErrandAttachmentsResourceTest {
 		assertThat(response.getResponseBody()).isEqualTo(errandAttachments);
 
 		// Verification
-		verify(errandAttachmentServiceMock).readErrandAttachmentHeaders(MUNICIPALITY_ID, ERRAND_ID);
+		verify(errandAttachmentServiceMock).readErrandAttachmentHeaders(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 	}
 
 	@Test
@@ -140,7 +141,6 @@ class ErrandAttachmentsResourceTest {
 			.expectHeader().doesNotExist(CONTENT_TYPE);
 
 		// Verification
-		verify(errandAttachmentServiceMock).deleteErrandAttachment(MUNICIPALITY_ID, ERRAND_ID, attachmentId);
+		verify(errandAttachmentServiceMock).deleteErrandAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, attachmentId);
 	}
-
 }

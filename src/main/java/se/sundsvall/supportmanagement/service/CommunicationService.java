@@ -17,7 +17,7 @@ import se.sundsvall.supportmanagement.integration.messaging.MessagingClient;
 @Service
 public class CommunicationService {
 
-	private static final String ERRAND_ENTITY_NOT_FOUND = "An errand with id '%s' could not be found for municipality with id '%s'";
+	private static final String ERRAND_ENTITY_NOT_FOUND = "An errand with id '%s' could not be found in namespace '%s' for municipality with id '%s'";
 
 	@Autowired
 	private ErrandsRepository repository;
@@ -25,17 +25,17 @@ public class CommunicationService {
 	@Autowired
 	private MessagingClient messagingClient;
 
-	public void sendEmail(String municipalityId, String id, EmailRequest request) {
-		messagingClient.sendEmail(toEmailRequest(fetchEntity(municipalityId, id), request));
+	public void sendEmail(String namespace, String municipalityId, String id, EmailRequest request) {
+		messagingClient.sendEmail(toEmailRequest(fetchEntity(id, namespace, municipalityId), request));
 	}
 
-	public void sendSms(String municipalityId, String id, SmsRequest request) {
-		messagingClient.sendSms(toSmsRequest(fetchEntity(municipalityId, id), request));
+	public void sendSms(String namespace, String municipalityId, String id, SmsRequest request) {
+		messagingClient.sendSms(toSmsRequest(fetchEntity(id, namespace, municipalityId), request));
 	}
 
-	private ErrandEntity fetchEntity(String municipalityId, String id) {
-		if (!repository.existsByIdAndMunicipalityId(id, municipalityId)) {
-			throw Problem.valueOf(NOT_FOUND, String.format(ERRAND_ENTITY_NOT_FOUND, id, municipalityId));
+	private ErrandEntity fetchEntity(String id, String namespace, String municipalityId) {
+		if (!repository.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)) {
+			throw Problem.valueOf(NOT_FOUND, String.format(ERRAND_ENTITY_NOT_FOUND, id, namespace, municipalityId));
 		}
 
 		return repository.getReferenceById(id);

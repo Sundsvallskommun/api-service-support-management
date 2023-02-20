@@ -10,19 +10,17 @@ INSERT INTO tag(id, type, name) VALUES
       (6, 'TYPE', 'TYPE-3'),
       (7, 'STATUS', 'STATUS-1'),
       (8, 'STATUS', 'STATUS-2'),
-      (9, 'STATUS', 'STATUS-3'),
-      (10, 'CLIENT_ID', 'CLIENT_ID-1'),
-      (11, 'CLIENT_ID', 'CLIENT_ID-2'),
-      (12, 'CLIENT_ID', 'CLIENT_ID-3');
+      (9, 'STATUS', 'STATUS-3');
 
 -------------------------------------
 -- Errand
 -------------------------------------
-INSERT INTO errand(municipality_id, id, assigned_group_id, assigned_user_id, category_tag, customer_id, customer_type, client_id_tag, priority, reporter_user_id, status_tag, title, type_tag, created, modified, resolution, description) VALUES
-      ('2281', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', 'ASSIGNED_GROUP_ID-1', 'ASSIGNED_USER_ID-1', 'CATEGORY-1', 'USER_ID', 'EMPLOYEE', 'CLIENT_ID-1', 'LOW', 'REPORTER_USER_ID-1', 'STATUS-1', 'TITLE-1', 'TYPE-1', '2022-01-01 12:00:00.000', null, null, null),
-      ('2281', 'cc236cf1-c00f-4479-8341-ecf5dd90b5b9', 'ASSIGNED_GROUP_ID-1', 'ASSIGNED_USER_ID-1', 'CATEGORY-1', 'def57969-9b83-4e54-9351-667dc896a19d', 'PRIVATE', 'CLIENT_ID-1', 'LOW', 'REPORTER_USER_ID-1', 'STATUS-1', 'TITLE-1', 'TYPE-1', '2022-02-01 12:00:00.000', '2022-04-01 12:00:00.000', null, null),
-      ('2281', '1be673c0-6ba3-4fb0-af4a-43acf23389f6', 'ASSIGNED_GROUP_ID-3', 'ASSIGNED_USER_ID-3', 'CATEGORY-3', '7fba994b-e99e-4beb-8ab5-63cc74483b66', 'ENTERPRISE', 'CLIENT_ID-3', 'HIGH', 'REPORTER_USER_ID-3', 'STATUS-3', 'TITLE-3', 'TYPE-3', '2022-03-01 12:00:00.000', null, "RESOLUTION", "DESCRIPTION"),
-      ('2305', 'e29906af-3083-4dcf-bb8a-d787ccf2dcc4', 'ASSIGNED_GROUP_ID-3', 'ASSIGNED_USER_ID-3', 'CATEGORY-3', '76bf1aa0-6596-4dca-88ee-25d8a1a47e60', 'PRIVATE', 'CLIENT_ID-1', 'HIGH', 'REPORTER_USER_ID-1', 'STATUS-3', 'TITLE-3', 'TYPE-3', '2022-03-01 12:00:00.000', null, null, null);
+INSERT INTO errand(municipality_id, id, assigned_group_id, assigned_user_id, category_tag, customer_id, customer_type, namespace, priority, reporter_user_id, status_tag, title, type_tag, created, modified, resolution, description) VALUES
+      ('2281', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', 'ASSIGNED_GROUP_ID-1', 'ASSIGNED_USER_ID-1', 'CATEGORY-1', 'USER_ID', 'EMPLOYEE', 'NAMESPACE.1', 'LOW', 'REPORTER_USER_ID-1', 'STATUS-1', 'TITLE-1', 'TYPE-1', '2022-01-01 12:00:00.000', null, null, null),
+      ('2281', 'cc236cf1-c00f-4479-8341-ecf5dd90b5b9', 'ASSIGNED_GROUP_ID-1', 'ASSIGNED_USER_ID-1', 'CATEGORY-1', 'def57969-9b83-4e54-9351-667dc896a19d', 'PRIVATE', 'NAMESPACE.1', 'LOW', 'REPORTER_USER_ID-1', 'STATUS-1', 'TITLE-1', 'TYPE-1', '2022-02-01 12:00:00.000', '2022-04-01 12:00:00.000', null, null),
+      ('2281', '1be673c0-6ba3-4fb0-af4a-43acf23389f6', 'ASSIGNED_GROUP_ID-3', 'ASSIGNED_USER_ID-3', 'CATEGORY-3', '7fba994b-e99e-4beb-8ab5-63cc74483b66', 'ENTERPRISE', 'NAMESPACE.1', 'HIGH', 'REPORTER_USER_ID-3', 'STATUS-3', 'TITLE-3', 'TYPE-3', '2022-03-01 12:00:00.000', null, "RESOLUTION", "DESCRIPTION"),
+      ('2281', 'f4a7a771-bb75-487b-b7d8-2684a0c3512c', 'ASSIGNED_GROUP_ID-3', 'ASSIGNED_USER_ID-3', 'CATEGORY-3', '83793ee4-4b33-467a-ac56-570d6babcc5b', 'ENTERPRISE', 'NAMESPACE.2', 'HIGH', 'REPORTER_USER_ID-3', 'STATUS-3', 'TITLE-3', 'TYPE-3', '2022-03-01 12:00:00.000', null, "RESOLUTION", "DESCRIPTION"),
+      ('2305', 'e29906af-3083-4dcf-bb8a-d787ccf2dcc4', 'ASSIGNED_GROUP_ID-3', 'ASSIGNED_USER_ID-3', 'CATEGORY-3', '76bf1aa0-6596-4dca-88ee-25d8a1a47e60', 'PRIVATE', 'NAMESPACE.1', 'HIGH', 'REPORTER_USER_ID-1', 'STATUS-3', 'TITLE-3', 'TYPE-3', '2022-03-01 12:00:00.000', null, null, null);
 
 -------------------------------------
 -- ExternalTag

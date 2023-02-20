@@ -11,5 +11,5 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 @Transactional
 public interface ErrandsRepository extends CrudRepository<ErrandEntity, String>, JpaRepository<ErrandEntity, String>, JpaSpecificationExecutor<ErrandEntity> {
 
-	boolean existsByIdAndMunicipalityId(String id, String municipalityId);
+	boolean existsByIdAndNamespaceAndMunicipalityId(String id, String namespace, String municipalityId);
 }

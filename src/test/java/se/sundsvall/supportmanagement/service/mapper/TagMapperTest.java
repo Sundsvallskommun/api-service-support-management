@@ -1,12 +1,13 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
-import org.junit.jupiter.api.Test;
-import se.sundsvall.supportmanagement.integration.db.model.TagEntity;
-import se.sundsvall.supportmanagement.integration.db.model.TagType;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.Test;
+
+import se.sundsvall.supportmanagement.integration.db.model.TagEntity;
+import se.sundsvall.supportmanagement.integration.db.model.TagType;
 
 class TagMapperTest {
 
@@ -48,9 +49,7 @@ class TagMapperTest {
 			TagEntity.create().withName("Status-1").withType(TagType.STATUS),
 			TagEntity.create().withName("Status-2").withType(TagType.STATUS),
 			TagEntity.create().withName("Type-1").withType(TagType.TYPE),
-			TagEntity.create().withName("Type-2").withType(TagType.TYPE),
-			TagEntity.create().withName("ClientId-1").withType(TagType.CLIENT_ID),
-			TagEntity.create().withName("ClientId-2").withType(TagType.CLIENT_ID));
+			TagEntity.create().withName("Type-2").withType(TagType.TYPE));
 
 		// Call
 		final var tagsResponse = TagMapper.toTagsResponse(entityTagList);
@@ -60,7 +59,6 @@ class TagMapperTest {
 		assertThat(tagsResponse.getStatusTags()).containsExactly("Status-1", "Status-2");
 		assertThat(tagsResponse.getCategoryTags()).containsExactly("Category-1", "Category-2");
 		assertThat(tagsResponse.getTypeTags()).containsExactly("Type-1", "Type-2");
-		assertThat(tagsResponse.getClientIdTags()).containsExactly("ClientId-1", "ClientId-2");
 	}
 
 	@Test
@@ -74,6 +72,5 @@ class TagMapperTest {
 		assertThat(tagsResponse.getStatusTags()).isEmpty();
 		assertThat(tagsResponse.getCategoryTags()).isEmpty();
 		assertThat(tagsResponse.getTypeTags()).isEmpty();
-		assertThat(tagsResponse.getClientIdTags()).isEmpty();
 	}
 }

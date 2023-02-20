@@ -28,12 +28,13 @@ import se.sundsvall.supportmanagement.service.ErrandAttachmentService;
 @ActiveProfiles("junit")
 class ErrandAttachmentsResourceFailureTest {
 
+	private static final String NAMESPACE = "namespace";
 	private static final String MUNICIPALITY_ID = "2281";
 	private static final String ERRAND_ID = randomUUID().toString();
 	private static final String ATTACHMENT_ID = randomUUID().toString();
-	private static final String INVALID_ID = "invalid";
+	private static final String INVALID = "#invalid#";
 
-	private static final String PATH = "/{municipalityId}/errands/{id}/attachments/";
+	private static final String PATH = "/{namespace}/{municipalityId}/errands/{id}/attachments/";
 
 	@Autowired
 	private WebTestClient webTestClient;
@@ -42,11 +43,34 @@ class ErrandAttachmentsResourceFailureTest {
 	private ErrandAttachmentService errandAttachmentServiceMock;
 
 	@Test
+	void readErrandAttachmentWithInvalidNamespace() {
+
+		// Call
+		final var response = webTestClient.get()
+			.uri(builder -> builder.path(PATH.concat("{attachmentId}")).build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "attachmentId", ATTACHMENT_ID)))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::getField, Violation::getMessage)
+			.containsExactlyInAnyOrder(tuple("readErrandAttachment.namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."));
+
+		// Verification
+		verifyNoInteractions(errandAttachmentServiceMock);
+	}
+
+	@Test
 	void readErrandAttachmentWithInvalidMunicipalityId() {
 
 		// Call
 		final var response = webTestClient.get()
-			.uri(builder -> builder.path(PATH.concat("{attachmentId}")).build(Map.of("municipalityId", INVALID_ID, "id", ERRAND_ID, "attachmentId", ATTACHMENT_ID)))
+			.uri(builder -> builder.path(PATH.concat("{attachmentId}")).build(Map.of("namespace", NAMESPACE, "municipalityId", INVALID, "id", ERRAND_ID, "attachmentId", ATTACHMENT_ID)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -69,7 +93,7 @@ class ErrandAttachmentsResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.get()
-			.uri(builder -> builder.path(PATH.concat("{attachmentId}")).build(Map.of("municipalityId", MUNICIPALITY_ID, "id", INVALID_ID, "attachmentId", ATTACHMENT_ID)))
+			.uri(builder -> builder.path(PATH.concat("{attachmentId}")).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", INVALID, "attachmentId", ATTACHMENT_ID)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -92,7 +116,7 @@ class ErrandAttachmentsResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.get()
-			.uri(builder -> builder.path(PATH.concat("{attachmentId}")).build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "attachmentId", INVALID_ID)))
+			.uri(builder -> builder.path(PATH.concat("{attachmentId}")).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "attachmentId", INVALID)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -111,11 +135,34 @@ class ErrandAttachmentsResourceFailureTest {
 	}
 
 	@Test
+	void readErrandAttachmentsWithInvalidNamespace() {
+
+		// Call
+		final var response = webTestClient.get()
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::getField, Violation::getMessage)
+			.containsExactlyInAnyOrder(tuple("readErrandAttachments.namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."));
+
+		// Verification
+		verifyNoInteractions(errandAttachmentServiceMock);
+	}
+
+	@Test
 	void readErrandAttachmentsWithInvalidMunicipalityId() {
 
 		// Call
 		final var response = webTestClient.get()
-			.uri(builder -> builder.path(PATH).build(Map.of("municipalityId", INVALID_ID, "id", ERRAND_ID)))
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", INVALID, "id", ERRAND_ID)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -138,7 +185,7 @@ class ErrandAttachmentsResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.get()
-			.uri(builder -> builder.path(PATH).build(Map.of("municipalityId", MUNICIPALITY_ID, "id", INVALID_ID)))
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", INVALID)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -157,6 +204,39 @@ class ErrandAttachmentsResourceFailureTest {
 	}
 
 	@Test
+	void createErrandAttachmentInvalidNamespace() {
+
+		// Parameters
+		final var requestBody = ErrandAttachment.create()
+			.withErrandAttachmentHeader(ErrandAttachmentHeader.create()
+				.withId("id")
+				.withFileName("test.txt")
+				.withMimeType("mimeType"))
+			.withBase64EncodedString("file");
+
+		// Call
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(requestBody)
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::getField, Violation::getMessage)
+			.containsExactlyInAnyOrder(tuple("createErrandAttachment.namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."));
+
+		// Verification
+		verifyNoInteractions(errandAttachmentServiceMock);
+	}
+
+	@Test
 	void createErrandAttachmentInvalidMunicipalityId() {
 
 		// Parameters
@@ -169,7 +249,7 @@ class ErrandAttachmentsResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.post()
-			.uri(builder -> builder.path(PATH).build(Map.of("municipalityId", INVALID_ID, "id", ERRAND_ID)))
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", INVALID, "id", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(requestBody)
 			.exchange()
@@ -202,7 +282,7 @@ class ErrandAttachmentsResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.post()
-			.uri(builder -> builder.path(PATH).build(Map.of("municipalityId", MUNICIPALITY_ID, "id", INVALID_ID)))
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", INVALID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(requestBody)
 			.exchange()
@@ -230,7 +310,7 @@ class ErrandAttachmentsResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.post()
-			.uri(builder -> builder.path(PATH).build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(requestBody)
 			.exchange()
@@ -253,11 +333,34 @@ class ErrandAttachmentsResourceFailureTest {
 	}
 
 	@Test
+	void deleteErrandAttachmentWithInvalidNamespace() {
+
+		// Call
+		final var response = webTestClient.delete()
+			.uri(builder -> builder.path(PATH.concat("{attachmentId}")).build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "attachmentId", ATTACHMENT_ID)))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::getField, Violation::getMessage)
+			.containsExactlyInAnyOrder(tuple("deleteErrandAttachment.namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."));
+
+		// Verification
+		verifyNoInteractions(errandAttachmentServiceMock);
+	}
+
+	@Test
 	void deleteErrandAttachmentWithInvalidMunicipalityId() {
 
 		// Call
 		final var response = webTestClient.delete()
-			.uri(builder -> builder.path(PATH.concat("{attachmentId}")).build(Map.of("municipalityId", INVALID_ID, "id", ERRAND_ID, "attachmentId", ATTACHMENT_ID)))
+			.uri(builder -> builder.path(PATH.concat("{attachmentId}")).build(Map.of("namespace", NAMESPACE, "municipalityId", INVALID, "id", ERRAND_ID, "attachmentId", ATTACHMENT_ID)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -280,7 +383,7 @@ class ErrandAttachmentsResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.delete()
-			.uri(builder -> builder.path(PATH.concat("{attachmentId}")).build(Map.of("municipalityId", MUNICIPALITY_ID, "id", INVALID_ID, "attachmentId", ATTACHMENT_ID)))
+			.uri(builder -> builder.path(PATH.concat("{attachmentId}")).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", INVALID, "attachmentId", ATTACHMENT_ID)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -303,7 +406,7 @@ class ErrandAttachmentsResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.delete()
-			.uri(builder -> builder.path(PATH.concat("{attachmentId}")).build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "attachmentId", INVALID_ID)))
+			.uri(builder -> builder.path(PATH.concat("{attachmentId}")).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "attachmentId", INVALID)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)

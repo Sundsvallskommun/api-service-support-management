@@ -27,9 +27,10 @@ import se.sundsvall.supportmanagement.service.CommunicationService;
 @ActiveProfiles("junit")
 class ErrandCommunicationResourceTest {
 
+	private static final String NAMESPACE = "namespace";
 	private static final String MUNICIPALITY_ID = "2281";
 	private static final String ERRAND_ID = randomUUID().toString();
-	private static final String PATH_PREFIX = "/{municipalityId}/errands/{id}/communication";
+	private static final String PATH_PREFIX = "/" + NAMESPACE + "/{municipalityId}/errands/{id}/communication";
 	private static final String PATH_SMS = "/sms";
 	private static final String PATH_EMAIL = "/email";
 
@@ -55,8 +56,8 @@ class ErrandCommunicationResourceTest {
 			.expectBody().isEmpty();
 
 		// Verification
-		verify(serviceMock).sendSms(MUNICIPALITY_ID, ERRAND_ID, requestBody);
-		verify(serviceMock, never()).sendEmail(any(), any(), any());
+		verify(serviceMock).sendSms(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, requestBody);
+		verify(serviceMock, never()).sendEmail(any(), any(), any(), any());
 	}
 
 	@Test
@@ -74,8 +75,8 @@ class ErrandCommunicationResourceTest {
 			.expectBody().isEmpty();
 
 		// Verification
-		verify(serviceMock).sendEmail(MUNICIPALITY_ID, ERRAND_ID, requestBody);
-		verify(serviceMock, never()).sendSms(any(), any(), any());
+		verify(serviceMock).sendEmail(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, requestBody);
+		verify(serviceMock, never()).sendSms(any(), any(), any(), any());
 	}
 
 	@Test
@@ -93,8 +94,8 @@ class ErrandCommunicationResourceTest {
 			.expectBody().isEmpty();
 
 		// Verification
-		verify(serviceMock).sendEmail(MUNICIPALITY_ID, ERRAND_ID, requestBody);
-		verify(serviceMock, never()).sendSms(any(), any(), any());
+		verify(serviceMock).sendEmail(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, requestBody);
+		verify(serviceMock, never()).sendSms(any(), any(), any(), any());
 	}
 
 	private static SmsRequest smsRequest() {

@@ -1,22 +1,22 @@
 package se.sundsvall.supportmanagement.integration.db;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.jdbc.Sql;
-import se.sundsvall.supportmanagement.integration.db.model.TagEntity;
-import se.sundsvall.supportmanagement.integration.db.model.TagType;
-
-import java.time.OffsetDateTime;
-
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.Assertions.within;
 import static se.sundsvall.supportmanagement.integration.db.model.TagType.CATEGORY;
-import static se.sundsvall.supportmanagement.integration.db.model.TagType.CLIENT_ID;
 import static se.sundsvall.supportmanagement.integration.db.model.TagType.STATUS;
+
+import java.time.OffsetDateTime;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.jdbc.Sql;
+
+import se.sundsvall.supportmanagement.integration.db.model.TagEntity;
+import se.sundsvall.supportmanagement.integration.db.model.TagType;
 
 /**
  * Tag repository tests.
@@ -141,10 +141,5 @@ class TagRepositoryTest {
 	@Test
 	void findByTypeNull() {
 		assertThat(tagRepository.findByType(null)).isEmpty();
-	}
-
-	@Test
-	void findByTypeNotFound() {
-		assertThat(tagRepository.findByType(CLIENT_ID)).isEmpty();
 	}
 }

@@ -1,24 +1,24 @@
 package se.sundsvall.supportmanagement.service;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import se.sundsvall.supportmanagement.integration.db.TagRepository;
-import se.sundsvall.supportmanagement.integration.db.model.TagEntity;
-import se.sundsvall.supportmanagement.integration.db.model.TagType;
-
-import java.util.List;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static se.sundsvall.supportmanagement.integration.db.model.TagType.CATEGORY;
-import static se.sundsvall.supportmanagement.integration.db.model.TagType.CLIENT_ID;
 import static se.sundsvall.supportmanagement.integration.db.model.TagType.STATUS;
 import static se.sundsvall.supportmanagement.integration.db.model.TagType.TYPE;
+
+import java.util.List;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import se.sundsvall.supportmanagement.integration.db.TagRepository;
+import se.sundsvall.supportmanagement.integration.db.model.TagEntity;
+import se.sundsvall.supportmanagement.integration.db.model.TagType;
 
 @ExtendWith(MockitoExtension.class)
 class TagServiceTest {
@@ -90,26 +90,6 @@ class TagServiceTest {
 	}
 
 	@Test
-	void findAllOriginTags() {
-
-		// Setup
-		final var statusTagEntityList = List.of(
-			TagEntity.create().withName("ClientId-1"),
-			TagEntity.create().withName("ClientId-2"),
-			TagEntity.create().withName("ClientId-3"));
-
-		// Mock
-		when(tagRepositoryMock.findByType(any(TagType.class))).thenReturn(statusTagEntityList);
-
-		// Call
-		final var result = tagService.findAllClientIdTags();
-
-		// Verifications
-		assertThat(result).containsExactly("ClientId-1", "ClientId-2", "ClientId-3");
-		verify(tagRepositoryMock).findByType(CLIENT_ID);
-	}
-
-	@Test
 	void findAllTags() {
 
 		// Setup
@@ -122,10 +102,7 @@ class TagServiceTest {
 			TagEntity.create().withName("Category-3").withType(CATEGORY),
 			TagEntity.create().withName("Type-1").withType(TYPE),
 			TagEntity.create().withName("Type-2").withType(TYPE),
-			TagEntity.create().withName("Type-3").withType(TYPE),
-			TagEntity.create().withName("ClientId-1").withType(CLIENT_ID),
-			TagEntity.create().withName("ClientId-2").withType(CLIENT_ID),
-			TagEntity.create().withName("ClientId-3").withType(CLIENT_ID));
+			TagEntity.create().withName("Type-3").withType(TYPE));
 
 		// Mock
 		when(tagRepositoryMock.findAll()).thenReturn(tagEntityList);
@@ -137,7 +114,6 @@ class TagServiceTest {
 		assertThat(result).isNotNull();
 		assertThat(result.getStatusTags()).containsExactly("Status-1", "Status-2", "Status-3");
 		assertThat(result.getCategoryTags()).containsExactly("Category-1", "Category-2", "Category-3");
-		assertThat(result.getClientIdTags()).containsExactly("ClientId-1", "ClientId-2", "ClientId-3");
 		assertThat(result.getTypeTags()).containsExactly("Type-1", "Type-2", "Type-3");
 
 		verify(tagRepositoryMock).findAll();

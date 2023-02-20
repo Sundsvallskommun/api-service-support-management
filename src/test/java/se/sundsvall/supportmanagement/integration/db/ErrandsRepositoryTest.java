@@ -48,7 +48,7 @@ class ErrandsRepositoryTest {
 	void create() {
 		final var externalTag = DbExternalTag.create().withKey("key").withValue("value");
 		final var customer = EmbeddableCustomer.create().withId("id").withType(CustomerType.EMPLOYEE.toString()	);
-		final var clientIdTag = "clientIdTag";
+		final var namespace = "namespace";
 		final var title = "title";
 		final var categoryTag = "categoryTag";
 		final var typeTag = "typeTag";
@@ -60,7 +60,7 @@ class ErrandsRepositoryTest {
 		final var municipalityId = "municipalityId";
 
 		var errandEntity = ErrandEntity.create()
-			.withClientIdTag(clientIdTag)
+			.withNamespace(namespace)
 			.withTitle(title)
 			.withCategoryTag(categoryTag)
 			.withTypeTag(typeTag)
@@ -78,7 +78,7 @@ class ErrandsRepositoryTest {
 
 		assertThat(persistedEntity).isNotNull();
 		assertThat(persistedEntity.getId()).isNotNull();
-		assertThat(persistedEntity.getClientIdTag()).isEqualTo(clientIdTag);
+		assertThat(persistedEntity.getNamespace()).isEqualTo(namespace);
 		assertThat(persistedEntity.getTitle()).isEqualTo(title);
 		assertThat(persistedEntity.getCategoryTag()).isEqualTo(categoryTag);
 		assertThat(persistedEntity.getTypeTag()).isEqualTo(typeTag);
@@ -208,8 +208,10 @@ class ErrandsRepositoryTest {
 	}
 
 	@Test
-	void existsByMunicipalityIdAndId() {
-		assertThat(errandsRepository.existsByIdAndMunicipalityId("ERRAND_ID-1", "2281")).isTrue();
-		assertThat(errandsRepository.existsByIdAndMunicipalityId("ERRAND_ID-1", "2305")).isFalse();
+	void existsByIdAndNamespaceAndMunicipalityId() {
+		assertThat(errandsRepository.existsByIdAndNamespaceAndMunicipalityId("ERRAND_ID-1", "NAMESPACE.1", "2281")).isTrue();
+		assertThat(errandsRepository.existsByIdAndNamespaceAndMunicipalityId("ERRAND_ID-1", "NAMESPACE.1", "2305")).isFalse();
+		assertThat(errandsRepository.existsByIdAndNamespaceAndMunicipalityId("ERRAND_ID-1", "NAMESPACE.2", "2281")).isFalse();
+		assertThat(errandsRepository.existsByIdAndNamespaceAndMunicipalityId("ERRAND_ID-3", "NAMESPACE.1", "2281")).isFalse();
 	}
 }

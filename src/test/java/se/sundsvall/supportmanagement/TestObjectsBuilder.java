@@ -26,7 +26,7 @@ public class TestObjectsBuilder {
 	private static final String ASSIGNED_GROUP_ID = "assignedGroupId";
 	private static final String ASSIGNED_USER_ID = "assignedUserId";
 	private static final String CATEGORY_TAG = "categoryTag";
-	private static final String CLIENT_ID_TAG = "clientIdTag";
+	private static final String NAMESPACE = "namespace";
 	private static final OffsetDateTime CREATED = now().minusWeeks(1);
 	private static final String CUSTOMER_ID = "customerId";
 	private static final String CUSTOMER_TYPE_STRING = PRIVATE.toString();
@@ -53,7 +53,7 @@ public class TestObjectsBuilder {
 			.withAttachments(List.of(AttachmentEntity.create().withId(ATTACHMENT_ID).withFileName(FILE_NAME).withFile(FILE.getBytes()).withMimeType(MIME_TYPE)))
 			.withCategoryTag(CATEGORY_TAG)
 			.withCreated(CREATED)
-			.withClientIdTag(CLIENT_ID_TAG)
+			.withNamespace(NAMESPACE)
 			.withCustomer(EmbeddableCustomer.create().withId(CUSTOMER_ID).withType(CUSTOMER_TYPE_STRING))
 			.withExternalTags(List.of(DbExternalTag.create().withKey(TAG_KEY).withValue(TAG_VALUE)))
 			.withModified(MODIFIED)
@@ -88,7 +88,6 @@ public class TestObjectsBuilder {
 			.withAssignedGroupId(ASSIGNED_GROUP_ID)
 			.withAssignedUserId(ASSIGNED_USER_ID)
 			.withCategoryTag(CATEGORY_TAG)
-			.withClientIdTag(CLIENT_ID_TAG)
 			.withCreated(CREATED)
 			.withCustomer(Customer.create().withId(CUSTOMER_ID).withType(CUSTOMER_TYPE))
 			.withExternalTags(List.of(ExternalTag.create().withKey(TAG_KEY).withValue(TAG_VALUE)))

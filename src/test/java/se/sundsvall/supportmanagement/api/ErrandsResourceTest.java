@@ -52,7 +52,8 @@ import se.sundsvall.supportmanagement.service.TagService;
 @ActiveProfiles("junit")
 class ErrandsResourceTest {
 
-	private static final String PATH = "/{municipalityId}/errands";
+	private static final String PATH = "/{namespace}/{municipalityId}/errands";
+	private static final String NAMESPACE = "namespace";
 	private static final String MUNICIPALITY_ID = "2281";
 	private static final String ERRAND_ID = UUID.randomUUID().toString();
 
@@ -71,7 +72,6 @@ class ErrandsResourceTest {
 	@BeforeEach
 	void setupMock() {
 		when(tagServiceMock.findAllCategoryTags()).thenReturn(List.of("CATEGORY_1", "CATEGORY_2"));
-		when(tagServiceMock.findAllClientIdTags()).thenReturn(List.of("CLIENT_ID_1", "CLIENT_ID_2"));
 		when(tagServiceMock.findAllStatusTags()).thenReturn(List.of("STATUS_1", "STATUS_2"));
 		when(tagServiceMock.findAllTypeTags()).thenReturn(List.of("TYPE_1", "TYPE_2"));
 	}
@@ -79,29 +79,28 @@ class ErrandsResourceTest {
 	@Test
 	void createErrand() {
 		// Parameter values
-		final var errandInstance = createErrandInstance("CLIENT_ID_2", "reporterUserId", true);
+		final var errandInstance = createErrandInstance("reporterUserId", true);
 
 		// Mock
-		when(errandServiceMock.createErrand(MUNICIPALITY_ID, errandInstance)).thenReturn(ERRAND_ID);
+		when(errandServiceMock.createErrand(NAMESPACE, MUNICIPALITY_ID, errandInstance)).thenReturn(ERRAND_ID);
 
 		// Call
 		webTestClient.post()
-			.uri(builder -> builder.path(PATH).build(Map.of("municipalityId", MUNICIPALITY_ID)))
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(errandInstance)
 			.exchange()
 			.expectStatus().isCreated()
 			.expectHeader().contentType(ALL)
 			.expectHeader().location("http://localhost:".concat(String.valueOf(port)).concat(fromPath(PATH + "/{id}")
-				.build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)).toString()))
+				.build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)).toString()))
 			.expectBody().isEmpty();
 
 		// Verification
 		verify(tagServiceMock).findAllCategoryTags();
-		verify(tagServiceMock).findAllClientIdTags();
 		verify(tagServiceMock).findAllStatusTags();
 		verify(tagServiceMock).findAllTypeTags();
-		verify(errandServiceMock).createErrand(MUNICIPALITY_ID, errandInstance);
+		verify(errandServiceMock).createErrand(NAMESPACE, MUNICIPALITY_ID, errandInstance);
 	}
 
 	@Test
@@ -110,11 +109,11 @@ class ErrandsResourceTest {
 		final var errand = Errand.create().withId(ERRAND_ID);
 
 		// Mock
-		when(errandServiceMock.readErrand(MUNICIPALITY_ID, ERRAND_ID)).thenReturn(errand);
+		when(errandServiceMock.readErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID)).thenReturn(errand);
 
 		// Call
 		final var response = webTestClient.get()
-			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
+			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
 			.exchange()
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)
@@ -123,7 +122,7 @@ class ErrandsResourceTest {
 			.getResponseBody();
 
 		// Verification
-		verify(errandServiceMock).readErrand(MUNICIPALITY_ID, ERRAND_ID);
+		verify(errandServiceMock).readErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 		assertThat(response).isNotNull().isEqualTo(errand);
 	}
 
@@ -134,11 +133,11 @@ class ErrandsResourceTest {
 		final var matches = new RestResponsePage<>(List.of(Errand.create()), pageable, 1);
 
 		// Mock
-		when(errandServiceMock.findErrands(MUNICIPALITY_ID, null, pageable)).thenReturn(matches);
+		when(errandServiceMock.findErrands(NAMESPACE, MUNICIPALITY_ID, null, pageable)).thenReturn(matches);
 
 		// Call
 		final var response = webTestClient.get()
-			.uri(builder -> builder.path(PATH).build(Map.of("municipalityId", MUNICIPALITY_ID)))
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
 			.exchange()
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)
@@ -148,7 +147,7 @@ class ErrandsResourceTest {
 			.blockFirst();
 
 		// Verification
-		verify(errandServiceMock).findErrands(MUNICIPALITY_ID, null, pageable);
+		verify(errandServiceMock).findErrands(NAMESPACE, MUNICIPALITY_ID, null, pageable);
 		assertThat(response).isNotNull();
 		assertThat(response.getContent()).hasSize(1);
 	}
@@ -163,7 +162,7 @@ class ErrandsResourceTest {
 		final var filter = "categoryTag:'SUPPORT_CASE' and reporterUserId:'joe01doe'";
 
 		// Mock
-		when(errandServiceMock.findErrands(eq(MUNICIPALITY_ID), ArgumentMatchers.<Specification<ErrandEntity>>any(), eq(pageable))).thenReturn(matches);
+		when(errandServiceMock.findErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), ArgumentMatchers.<Specification<ErrandEntity>>any(), eq(pageable))).thenReturn(matches);
 
 		// Call
 		final var response = webTestClient.get()
@@ -171,7 +170,7 @@ class ErrandsResourceTest {
 				.queryParam("filter", filter)
 				.queryParam("page", page)
 				.queryParam("size", size)
-				.build(Map.of("municipalityId", MUNICIPALITY_ID)))
+				.build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
 			.exchange()
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)
@@ -181,7 +180,7 @@ class ErrandsResourceTest {
 			.blockFirst();
 
 		// Verification
-		verify(errandServiceMock).findErrands(eq(MUNICIPALITY_ID), ArgumentMatchers.<Specification<ErrandEntity>>any(), eq(pageable));
+		verify(errandServiceMock).findErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), ArgumentMatchers.<Specification<ErrandEntity>>any(), eq(pageable));
 		assertThat(response).isNotNull();
 		assertThat(response.getContent()).hasSize(1);
 	}
@@ -199,14 +198,14 @@ class ErrandsResourceTest {
 		final var filter = "created > '" + from + "' and created < '" + to + "'";
 
 		// Mock
-		when(errandServiceMock.findErrands(eq(MUNICIPALITY_ID), ArgumentMatchers.<Specification<ErrandEntity>>any(), eq(pageable))).thenReturn(matches);
+		when(errandServiceMock.findErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), ArgumentMatchers.<Specification<ErrandEntity>>any(), eq(pageable))).thenReturn(matches);
 
 		// Call
 		final var response = webTestClient.get().uri(builder -> builder.path(PATH)
 				.queryParam("filter", filter)
 				.queryParam("page", page)
 			.queryParam("size", size)
-			.build(Map.of("municipalityId", MUNICIPALITY_ID)))
+			.build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
 			.exchange()
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)
@@ -216,7 +215,7 @@ class ErrandsResourceTest {
 			.blockFirst();
 
 		// Verification
-		verify(errandServiceMock).findErrands(eq(MUNICIPALITY_ID), ArgumentMatchers.<Specification<ErrandEntity>>any(), eq(pageable));
+		verify(errandServiceMock).findErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), ArgumentMatchers.<Specification<ErrandEntity>>any(), eq(pageable));
 		assertThat(response).isNotNull();
 		assertThat(response.getContent()).hasSize(1);
 	}
@@ -224,15 +223,15 @@ class ErrandsResourceTest {
 	@Test
 	void updateErrandFullRequest() {
 		// Parameter values
-		final var errandInstance = createErrandInstance(null, null, true);
+		final var errandInstance = createErrandInstance(null, true);
 		final var updatedInstance = Errand.create().withId(ERRAND_ID);
 
 		// Mock
-		when(errandServiceMock.updateErrand(MUNICIPALITY_ID, ERRAND_ID, errandInstance)).thenReturn(updatedInstance);
+		when(errandServiceMock.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, errandInstance)).thenReturn(updatedInstance);
 
 		// Call
 		final var response = webTestClient.patch()
-			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
+			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(errandInstance)
 			.exchange()
@@ -243,7 +242,7 @@ class ErrandsResourceTest {
 			.getResponseBody();
 
 		// Verification
-		verify(errandServiceMock).updateErrand(MUNICIPALITY_ID, ERRAND_ID, errandInstance);
+		verify(errandServiceMock).updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, errandInstance);
 		assertThat(response).isEqualTo(updatedInstance);
 	}
 
@@ -254,11 +253,11 @@ class ErrandsResourceTest {
 		final var updatedInstance = Errand.create().withId(ERRAND_ID);
 
 		// Mock
-		when(errandServiceMock.updateErrand(MUNICIPALITY_ID, ERRAND_ID, emptyInstance)).thenReturn(updatedInstance);
+		when(errandServiceMock.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, emptyInstance)).thenReturn(updatedInstance);
 
 		// Call
 		final var response = webTestClient.patch()
-			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
+			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(Errand.create())
 			.exchange()
@@ -269,21 +268,21 @@ class ErrandsResourceTest {
 			.getResponseBody();
 
 		// Verification
-		verify(errandServiceMock).updateErrand(MUNICIPALITY_ID, ERRAND_ID, emptyInstance);
+		verify(errandServiceMock).updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, emptyInstance);
 		assertThat(response).isEqualTo(updatedInstance);
 	}
 
 	@Test
 	void updateErrandWithoutCustomer() {
 		// Parameter values
-		final var errandInstance = createErrandInstance(null, null, false);
+		final var errandInstance = createErrandInstance(null, false);
 		final var updatedInstance = Errand.create().withId(ERRAND_ID);
 
 		// Mock
-		when(errandServiceMock.updateErrand(MUNICIPALITY_ID, ERRAND_ID, errandInstance)).thenReturn(updatedInstance);
+		when(errandServiceMock.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, errandInstance)).thenReturn(updatedInstance);
 
 		final var response = webTestClient.patch()
-			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
+			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(errandInstance)
 			.exchange()
@@ -294,29 +293,28 @@ class ErrandsResourceTest {
 			.getResponseBody();
 
 		// Verification
-		verify(errandServiceMock).updateErrand(MUNICIPALITY_ID, ERRAND_ID, errandInstance);
+		verify(errandServiceMock).updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, errandInstance);
 		assertThat(response).isEqualTo(updatedInstance);
 	}
 
 	@Test
 	void deleteErrand() {
 		webTestClient.delete()
-			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
+			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
 			.exchange()
 			.expectStatus().isNoContent()
 			.expectBody().isEmpty();
 
-		verify(errandServiceMock).deleteErrand(MUNICIPALITY_ID, ERRAND_ID);
+		verify(errandServiceMock).deleteErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 	}
 
-	private static Errand createErrandInstance(final String clientIdTag, final String reporterUserId, final boolean withCustomer) {
+	private static Errand createErrandInstance(final String reporterUserId, final boolean withCustomer) {
 		return Errand.create()
 			.withAssignedGroupId("assignedGroupId")
 			.withAssignedUserId("assignedUserId")
 			.withCategoryTag("category_1")
 			.withCustomer(withCustomer ? Customer.create().withId(randomUUID().toString()).withType(CustomerType.ENTERPRISE) : null)
 			.withExternalTags(List.of(ExternalTag.create().withKey("externalTagKey").withValue("externalTagValue")))
-			.withClientIdTag(clientIdTag)
 			.withPriority(Priority.HIGH)
 			.withReporterUserId(reporterUserId)
 			.withStatusTag("status_2")

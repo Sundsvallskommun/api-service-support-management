@@ -63,12 +63,4 @@ public class TagsResource {
 	ResponseEntity<List<String>> getTypeTags() {
 		return ok(tagService.findAllTypeTags());
 	}
-
-	@GetMapping(path = "/clientIdTags", produces = { APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE })
-	@Operation(summary = "Get client-id tags")
-	@ApiResponse(responseCode = "200", description = "Successful operation", content = @Content(mediaType = APPLICATION_JSON_VALUE, array = @ArraySchema(schema = @Schema(description = "Client-id tags", example = "LON_PENSION"))))
-	@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
-	ResponseEntity<List<String>> getClientIdTags() {
-		return ok(tagService.findAllClientIdTags());
-	}
 }

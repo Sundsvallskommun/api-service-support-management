@@ -7,11 +7,14 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON_VALUE;
 import static org.springframework.http.ResponseEntity.created;
 import static org.springframework.http.ResponseEntity.noContent;
+import static se.sundsvall.supportmanagement.Constants.NAMESPACE_REGEXP;
+import static se.sundsvall.supportmanagement.Constants.NAMESPACE_VALIDATON_MESSAGE;
 
 import java.util.List;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -44,7 +47,7 @@ import se.sundsvall.supportmanagement.service.ErrandAttachmentService;
 
 @RestController
 @Validated
-@RequestMapping("/{municipalityId}/errands/{id}/attachments")
+@RequestMapping("/{namespace}/{municipalityId}/errands/{id}/attachments")
 @Tag(name = "Errand attachments", description = "Errand attachments operations")
 public class ErrandAttachmentsResource {
 
@@ -59,13 +62,14 @@ public class ErrandAttachmentsResource {
 	@Validated(OnCreate.class)
 	public ResponseEntity<Void> createErrandAttachment(
 		final UriComponentsBuilder uriComponentsBuilder,
+		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATON_MESSAGE, groups = OnCreate.class) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId(groups = OnCreate.class) @PathVariable final String municipalityId,
 		@Parameter(name = "id", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid(groups = OnCreate.class) @PathVariable("id") final String id,
 		@Valid @NotNull @RequestBody final ErrandAttachment errandAttachment) {
 
-		final var attachmentId = errandAttachmentService.createErrandAttachment(municipalityId, id, errandAttachment);
-		return created(uriComponentsBuilder.path("/{municipalityId}/errands/{id}/attachments/{attachmentId}")
-			.buildAndExpand(municipalityId, id, attachmentId).toUri()).header(CONTENT_TYPE, ALL_VALUE).build();
+		final var attachmentId = errandAttachmentService.createErrandAttachment(namespace, municipalityId, id, errandAttachment);
+		return created(uriComponentsBuilder.path("/{namespace}/{municipalityId}/errands/{id}/attachments/{attachmentId}")
+			.buildAndExpand(namespace, municipalityId, id, attachmentId).toUri()).header(CONTENT_TYPE, ALL_VALUE).build();
 	}
 
 	@GetMapping(path = "/{attachmentId}", produces = { APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE })
@@ -75,11 +79,12 @@ public class ErrandAttachmentsResource {
 	@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	public ResponseEntity<ErrandAttachment> readErrandAttachment(
+		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATON_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "id", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("id") final String id,
 		@Parameter(name = "attachmentId", description = "Errand attachment id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable("attachmentId") final String attachmentId) {
 
-		return ResponseEntity.ok(errandAttachmentService.readErrandAttachment(municipalityId, id, attachmentId));
+		return ResponseEntity.ok(errandAttachmentService.readErrandAttachment(namespace, municipalityId, id, attachmentId));
 	}
 
 	@GetMapping(produces = { APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE })
@@ -89,10 +94,11 @@ public class ErrandAttachmentsResource {
 	@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	public ResponseEntity<List<ErrandAttachmentHeader>> readErrandAttachments(
+		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATON_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "id", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("id") final String id) {
 
-		return ResponseEntity.ok(errandAttachmentService.readErrandAttachmentHeaders(municipalityId, id));
+		return ResponseEntity.ok(errandAttachmentService.readErrandAttachmentHeaders(namespace, municipalityId, id));
 	}
 
 	@DeleteMapping(path = "/{attachmentId}")
@@ -102,11 +108,12 @@ public class ErrandAttachmentsResource {
 	@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	public ResponseEntity<Void> deleteErrandAttachment(
+		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATON_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "id", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("id") final String id,
 		@Parameter(name = "attachmentId", description = "Errand attachment id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable("attachmentId") final String attachmentId) {
 
-		errandAttachmentService.deleteErrandAttachment(municipalityId, id, attachmentId);
+		errandAttachmentService.deleteErrandAttachment(namespace, municipalityId, id, attachmentId);
 		return noContent().build();
 	}
 }

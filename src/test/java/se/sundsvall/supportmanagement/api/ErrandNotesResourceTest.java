@@ -34,10 +34,11 @@ import se.sundsvall.supportmanagement.service.ErrandNoteService;
 @ActiveProfiles("junit")
 class ErrandNotesResourceTest {
 
+	private static final String NAMESPACE = "namespace";
 	private static final String MUNICIPALITY_ID = "2281";
 	private static final String ERRAND_ID = randomUUID().toString();
 	private static final String NOTE_ID = randomUUID().toString();
-	private static final String PATH = "/{municipalityId}/errands/{id}/notes/";
+	private static final String PATH = "/" + NAMESPACE + "/{municipalityId}/errands/{id}/notes/";
 
 	@Autowired
 	private WebTestClient webTestClient;
@@ -62,7 +63,7 @@ class ErrandNotesResourceTest {
 
 		// Mock
 		final var noteId = randomUUID().toString();
-		when(errandNotesServiceMock.createErrandNote(MUNICIPALITY_ID, ERRAND_ID, requestBody)).thenReturn(noteId);
+		when(errandNotesServiceMock.createErrandNote(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, requestBody)).thenReturn(noteId);
 
 		// Call
 		final var response = webTestClient.post()
@@ -79,14 +80,14 @@ class ErrandNotesResourceTest {
 
 		// Verification
 		assertThat(response).isNotNull();
-		verify(errandNotesServiceMock).createErrandNote(MUNICIPALITY_ID, ERRAND_ID, requestBody);
+		verify(errandNotesServiceMock).createErrandNote(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, requestBody);
 	}
 
 	@Test
 	void readErrandNote() {
 
 		// Mock
-		when(errandNotesServiceMock.readErrandNote(MUNICIPALITY_ID, ERRAND_ID, NOTE_ID)).thenReturn(ErrandNote.create());
+		when(errandNotesServiceMock.readErrandNote(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, NOTE_ID)).thenReturn(ErrandNote.create());
 
 		final var response = webTestClient.get()
 			.uri(builder -> builder.path(PATH.concat("{noteId}")).build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "noteId", NOTE_ID)))
@@ -99,7 +100,7 @@ class ErrandNotesResourceTest {
 
 		// Verification
 		assertThat(response).isNotNull();
-		verify(errandNotesServiceMock).readErrandNote(MUNICIPALITY_ID, ERRAND_ID, NOTE_ID);
+		verify(errandNotesServiceMock).readErrandNote(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, NOTE_ID);
 	}
 
 	@Test
@@ -114,7 +115,7 @@ class ErrandNotesResourceTest {
 		final var findErrandNotesResponse = FindErrandNotesResponse.create()
 			.withNotes(List.of(ErrandNote.create().withBody("testBody").withSubject("testSubject")))
 			.withMetaData(MetaData.create());
-		when(errandNotesServiceMock.findErrandNotes(MUNICIPALITY_ID, ERRAND_ID, requestParameter)).thenReturn(findErrandNotesResponse);
+		when(errandNotesServiceMock.findErrandNotes(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, requestParameter)).thenReturn(findErrandNotesResponse);
 
 		final var response = webTestClient.get()
 			.uri(builder -> builder.path(PATH).queryParam("partyId", partyId).build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
@@ -127,7 +128,7 @@ class ErrandNotesResourceTest {
 		// Verification
 		assertThat(response).isNotNull();
 		assertThat(response.getResponseBody().getNotes()).hasSize(1);
-		verify(errandNotesServiceMock).findErrandNotes(MUNICIPALITY_ID, ERRAND_ID, requestParameter);
+		verify(errandNotesServiceMock).findErrandNotes(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, requestParameter);
 	}
 
 	@Test
@@ -140,7 +141,7 @@ class ErrandNotesResourceTest {
 			.withSubject("subject");
 
 		// Mock
-		when(errandNotesServiceMock.updateErrandNote(MUNICIPALITY_ID, ERRAND_ID, NOTE_ID, requestBody)).thenReturn(ErrandNote.create());
+		when(errandNotesServiceMock.updateErrandNote(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, NOTE_ID, requestBody)).thenReturn(ErrandNote.create());
 
 		webTestClient.patch()
 			.uri(builder -> builder.path(PATH.concat("{noteId}")).build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "noteId", NOTE_ID)))
@@ -154,7 +155,7 @@ class ErrandNotesResourceTest {
 			.returnResult();
 
 		// Verification
-		verify(errandNotesServiceMock).updateErrandNote(MUNICIPALITY_ID, ERRAND_ID, NOTE_ID, requestBody);
+		verify(errandNotesServiceMock).updateErrandNote(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, NOTE_ID, requestBody);
 	}
 
 	@Test
@@ -167,7 +168,6 @@ class ErrandNotesResourceTest {
 			.expectHeader().doesNotExist(CONTENT_TYPE);
 
 		// Verification
-		verify(errandNotesServiceMock).deleteErrandNote(MUNICIPALITY_ID, ERRAND_ID, NOTE_ID);
+		verify(errandNotesServiceMock).deleteErrandNote(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, NOTE_ID);
 	}
-
 }
