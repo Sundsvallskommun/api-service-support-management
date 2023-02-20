@@ -64,7 +64,7 @@ public class ErrandEntity implements Serializable {
 	@Column(name = "municipality_id", nullable = false)
 	private String municipalityId;
 
-	@Column(name = "namespace")
+	@Column(name = "namespace", nullable = false)
 	private String namespace;
 
 	@Column(name = "title")
@@ -188,7 +188,6 @@ public class ErrandEntity implements Serializable {
 		this.namespace = namespace;
 		return this;
 	}
-
 
 	public String getTitle() {
 		return title;

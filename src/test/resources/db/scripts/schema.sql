@@ -21,7 +21,7 @@
         description longtext,
         modified datetime(6),
         municipality_id varchar(255) not null,
-        namespace varchar(255),
+        namespace varchar(255) not null,
         priority varchar(255),
         reporter_user_id varchar(255),
         resolution varchar(255),
