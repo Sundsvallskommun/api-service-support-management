@@ -37,7 +37,8 @@ import se.sundsvall.supportmanagement.integration.messaging.MessagingClient;
 class CommunicationServiceTest {
 	private static final String ERRAND_ID = randomUUID().toString();
 	private static final String CUSTOMER_ID = randomUUID().toString();
-	private static final String MESSAGE = "message";
+	private static final String HTML_MESSAGE = "<html><h1>message</h1></html>";
+	private static final String PLAIN_MESSAGE = "message";
 	private static final String RECIPIENT = "recipient";
 	private static final String SENDER_EMAIL = "sender@sender.com";
 	private static final String SENDER_NAME = "senderName";
@@ -88,8 +89,8 @@ class CommunicationServiceTest {
 		final var arguments = messagingEmailCaptor.getValue();
 		assertThat(arguments.getEmailAddress()).isEqualTo(RECIPIENT);
 		assertThat(arguments.getHeaders()).isNullOrEmpty();
-		assertThat(arguments.getHtmlMessage()).isNull();
-		assertThat(arguments.getMessage()).isEqualTo(MESSAGE);
+		assertThat(arguments.getHtmlMessage()).isEqualTo(HTML_MESSAGE);
+		assertThat(arguments.getMessage()).isNull();
 		assertThat(arguments.getParty().getPartyId()).isEqualTo(CUSTOMER_ID);
 		assertThat(arguments.getParty().getExternalReferences()).isNotEmpty().extracting(
 			ExternalReference::getKey,
@@ -124,7 +125,7 @@ class CommunicationServiceTest {
 
 		final var arguments = messagingSmsCaptor.getValue();
 		assertThat(arguments.getHeaders()).isNullOrEmpty();
-		assertThat(arguments.getMessage()).isEqualTo(MESSAGE);
+		assertThat(arguments.getMessage()).isEqualTo(PLAIN_MESSAGE);
 		assertThat(arguments.getMobileNumber()).isEqualTo(RECIPIENT);
 		assertThat(arguments.getParty().getPartyId()).isEqualTo(CUSTOMER_ID);
 		assertThat(arguments.getParty().getExternalReferences()).isNotEmpty().extracting(
@@ -169,7 +170,7 @@ class CommunicationServiceTest {
 
 		final var arguments = messagingSmsCaptor.getValue();
 		assertThat(arguments.getHeaders()).isNullOrEmpty();
-		assertThat(arguments.getMessage()).isEqualTo(MESSAGE);
+		assertThat(arguments.getMessage()).isEqualTo(PLAIN_MESSAGE);
 		assertThat(arguments.getMobileNumber()).isEqualTo(RECIPIENT);
 		assertThat(arguments.getParty()).isNull();
 		assertThat(arguments.getSender().getName()).isEqualTo(SENDER_NAME);
@@ -177,7 +178,7 @@ class CommunicationServiceTest {
 
 	private SmsRequest createSmsRequest() {
 		return SmsRequest.create()
-			.withMessage(MESSAGE)
+			.withMessage(PLAIN_MESSAGE)
 			.withRecipient(RECIPIENT)
 			.withSender(SENDER_NAME);
 	}
@@ -187,7 +188,7 @@ class CommunicationServiceTest {
 			.withAttachments(List.of(EmailAttachment.create()
 				.withBase64EncodedString(FILE_CONTENT)
 				.withName(FILE_NAME)))
-			.withMessage(MESSAGE)
+			.withMessage(HTML_MESSAGE)
 			.withRecipient(RECIPIENT)
 			.withSender(SENDER_EMAIL)
 			.withSenderName(SENDER_NAME)

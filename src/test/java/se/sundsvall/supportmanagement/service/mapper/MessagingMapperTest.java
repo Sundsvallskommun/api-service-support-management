@@ -39,8 +39,8 @@ class MessagingMapperTest {
 
 		assertThat(result.getEmailAddress()).isEqualTo(RECIPIENT);
 		assertThat(result.getHeaders()).isNullOrEmpty();
-		assertThat(result.getHtmlMessage()).isNull();
-		assertThat(result.getMessage()).isEqualTo(MESSAGE);
+		assertThat(result.getHtmlMessage()).isEqualTo(MESSAGE);
+		assertThat(result.getMessage()).isNull();
 		assertThat(result.getSubject()).isEqualTo(SUBJECT);
 		assertThat(result.getSender().getAddress()).isEqualTo(SENDER_EMAIL);
 		assertThat(result.getSender().getName()).isEqualTo(SENDER_NAME);
@@ -60,8 +60,8 @@ class MessagingMapperTest {
 
 		assertThat(result.getEmailAddress()).isEqualTo(RECIPIENT);
 		assertThat(result.getHeaders()).isNullOrEmpty();
-		assertThat(result.getHtmlMessage()).isNull();
-		assertThat(result.getMessage()).isEqualTo(MESSAGE);
+		assertThat(result.getHtmlMessage()).isEqualTo(MESSAGE);
+		assertThat(result.getMessage()).isNull();
 		assertThat(result.getSubject()).isEqualTo(SUBJECT);
 		assertThat(result.getSender().getAddress()).isEqualTo(SENDER_EMAIL);
 		assertThat(result.getSender().getName()).isEqualTo(SENDER_EMAIL);

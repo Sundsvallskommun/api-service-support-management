@@ -28,7 +28,7 @@ public class MessagingMapper {
 		return new EmailRequest()
 			.attachments(toAttachments(emailRequest.getAttachments()))
 			.emailAddress(emailRequest.getRecipient())
-			.message(emailRequest.getMessage())
+			.htmlMessage(emailRequest.getMessage())
 			.party(toParty(errandEntity))
 			.sender(toEmail(emailRequest))
 			.subject(emailRequest.getSubject());

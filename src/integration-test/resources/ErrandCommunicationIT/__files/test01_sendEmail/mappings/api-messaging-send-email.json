@@ -12,12 +12,13 @@
 			"equalToJson" : {
 				"emailAddress": "john.a@zoidberg.com",
 				"subject": "Insane in the Mainframe",
-				"message": "Some message about the HAL Institute for Criminally Insane Robots, where robots that murderously turns against its human crew are held",
+				"htmlMessage": "<html>Some message about the HAL Institute for <b>Criminally Insane Robots</b>, where robots that <i>murderously</i> turns against its human crew are held</html>",
 				"sender": {
 					"name": "Bender Bending Rodriguez",
 					"address": "bender@rodriguez.com"
 				},
-				"attachments": []
+				"attachments": [],
+				"headers": []
 			}
 		} ]
 	},
