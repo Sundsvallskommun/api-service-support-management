@@ -6,6 +6,7 @@
 		"id": "7fba994b-e99e-4beb-8ab5-63cc74483b66",
 		"type": "ENTERPRISE"
 	},
+	"description": "DESCRIPTION",
 	"externalTags": [
 		{
 			"key": "KEY-4",
@@ -21,6 +22,7 @@
 	"typeTag": "TYPE-3",
 	"statusTag": "STATUS-3",
 	"reporterUserId": "REPORTER_USER_ID-3",
+	"resolution": "RESOLUTION",
 	"assignedUserId": "ASSIGNED_USER_ID-3",
 	"assignedGroupId": "ASSIGNED_GROUP_ID-3",
 	"created": "2022-03-01T12:00:00+01:00",

@@ -18,10 +18,10 @@ INSERT INTO tag(id, type, name) VALUES
 -------------------------------------
 -- Errand
 -------------------------------------
-INSERT INTO errand(id, assigned_group_id, assigned_user_id, category_tag, customer_id, customer_type, client_id_tag, priority, reporter_user_id, status_tag, title, type_tag, created, modified) VALUES
-      ('ec677eb3-604c-4935-bff7-f8f0b500c8f4', 'ASSIGNED_GROUP_ID-1', 'ASSIGNED_USER_ID-1', 'CATEGORY-1', 'USER_ID', 'EMPLOYEE', 'CLIENT_ID-1', 'LOW', 'REPORTER_USER_ID-1', 'STATUS-1', 'TITLE-1', 'TYPE-1', '2022-01-01 12:00:00.000', null),
-      ('cc236cf1-c00f-4479-8341-ecf5dd90b5b9', 'ASSIGNED_GROUP_ID-1', 'ASSIGNED_USER_ID-1', 'CATEGORY-1', 'def57969-9b83-4e54-9351-667dc896a19d', 'PRIVATE', 'CLIENT_ID-1', 'LOW', 'REPORTER_USER_ID-1', 'STATUS-1', 'TITLE-1', 'TYPE-1', '2022-02-01 12:00:00.000', '2022-04-01 12:00:00.000'),
-      ('1be673c0-6ba3-4fb0-af4a-43acf23389f6', 'ASSIGNED_GROUP_ID-3', 'ASSIGNED_USER_ID-3', 'CATEGORY-3', '7fba994b-e99e-4beb-8ab5-63cc74483b66', 'ENTERPRISE', 'CLIENT_ID-3', 'HIGH', 'REPORTER_USER_ID-3', 'STATUS-3', 'TITLE-3', 'TYPE-3', '2022-03-01 12:00:00.000', null);
+INSERT INTO errand(id, assigned_group_id, assigned_user_id, category_tag, customer_id, customer_type, client_id_tag, priority, reporter_user_id, status_tag, title, type_tag, created, modified, resolution, description) VALUES
+      ('ec677eb3-604c-4935-bff7-f8f0b500c8f4', 'ASSIGNED_GROUP_ID-1', 'ASSIGNED_USER_ID-1', 'CATEGORY-1', 'USER_ID', 'EMPLOYEE', 'CLIENT_ID-1', 'LOW', 'REPORTER_USER_ID-1', 'STATUS-1', 'TITLE-1', 'TYPE-1', '2022-01-01 12:00:00.000', null, null, null),
+      ('cc236cf1-c00f-4479-8341-ecf5dd90b5b9', 'ASSIGNED_GROUP_ID-1', 'ASSIGNED_USER_ID-1', 'CATEGORY-1', 'def57969-9b83-4e54-9351-667dc896a19d', 'PRIVATE', 'CLIENT_ID-1', 'LOW', 'REPORTER_USER_ID-1', 'STATUS-1', 'TITLE-1', 'TYPE-1', '2022-02-01 12:00:00.000', '2022-04-01 12:00:00.000', null, null),
+      ('1be673c0-6ba3-4fb0-af4a-43acf23389f6', 'ASSIGNED_GROUP_ID-3', 'ASSIGNED_USER_ID-3', 'CATEGORY-3', '7fba994b-e99e-4beb-8ab5-63cc74483b66', 'ENTERPRISE', 'CLIENT_ID-3', 'HIGH', 'REPORTER_USER_ID-3', 'STATUS-3', 'TITLE-3', 'TYPE-3', '2022-03-01 12:00:00.000', null, "RESOLUTION", "DESCRIPTION");
 
 -------------------------------------
 -- ExternalTag

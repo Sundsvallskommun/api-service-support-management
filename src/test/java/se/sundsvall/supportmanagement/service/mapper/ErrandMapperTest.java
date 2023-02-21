@@ -45,6 +45,9 @@ class ErrandMapperTest {
 	private static final OffsetDateTime TOUCHED = now().plusWeeks(1);
 	private static final String TYPE_TAG = "typeTag";
 
+	private static final String DESCRIPTION = "description";
+	private static final String RESOLUTION = "resolution";
+
 	@Test
 	void testToErrand() {
 		final var errand = toErrand(createEntity());
@@ -68,6 +71,8 @@ class ErrandMapperTest {
 		assertThat(errand.getTitle()).isEqualTo(TITLE);
 		assertThat(errand.getTouched()).isEqualTo(TOUCHED);
 		assertThat(errand.getTypeTag()).isEqualTo(TYPE_TAG);
+		assertThat(errand.getResolution()).isEqualTo(RESOLUTION);
+		assertThat(errand.getDescription()).isEqualTo(DESCRIPTION);
 	}
 
 	@Test
@@ -96,7 +101,9 @@ class ErrandMapperTest {
 				Errand::getStatusTag,
 				Errand::getTitle,
 				Errand::getTouched,
-				Errand::getTypeTag)
+				Errand::getTypeTag,
+				Errand::getResolution,
+				Errand::getDescription)
 			.containsExactly(tuple(
 				ASSIGNED_GROUP_ID,
 				ASSIGNED_USER_ID,
@@ -112,7 +119,9 @@ class ErrandMapperTest {
 				STATUS_TAG,
 				TITLE,
 				TOUCHED,
-				TYPE_TAG));
+				TYPE_TAG,
+				RESOLUTION,
+				DESCRIPTION));
 	}
 
 	@Test
@@ -136,7 +145,9 @@ class ErrandMapperTest {
 				ErrandEntity::getReporterUserId,
 				ErrandEntity::getStatusTag,
 				ErrandEntity::getTitle,
-				ErrandEntity::getTypeTag)
+				ErrandEntity::getTypeTag,
+				ErrandEntity::getResolution,
+				ErrandEntity::getDescription)
 			.containsExactly(
 				ASSIGNED_GROUP_ID,
 				ASSIGNED_USER_ID,
@@ -148,7 +159,9 @@ class ErrandMapperTest {
 				REPORTER_USER_ID,
 				STATUS_TAG,
 				TITLE,
-				TYPE_TAG);
+				TYPE_TAG,
+				RESOLUTION,
+				DESCRIPTION);
 
 		assertThat(entity.getCreated()).isNull();
 		assertThat(entity.getId()).isNull();
@@ -175,7 +188,9 @@ class ErrandMapperTest {
 				ErrandEntity::getPriority,
 				ErrandEntity::getStatusTag,
 				ErrandEntity::getTitle,
-				ErrandEntity::getTypeTag)
+				ErrandEntity::getTypeTag,
+				ErrandEntity::getResolution,
+				ErrandEntity::getDescription)
 			.containsExactly(
 				ASSIGNED_GROUP_ID,
 				ASSIGNED_USER_ID,
@@ -185,7 +200,9 @@ class ErrandMapperTest {
 				PRIORITY,
 				STATUS_TAG,
 				TITLE,
-				TYPE_TAG);
+				TYPE_TAG,
+				RESOLUTION,
+				DESCRIPTION);
 
 		assertThat(entity.getClientIdTag()).isNull();
 		assertThat(entity.getCreated()).isNull();
@@ -196,13 +213,15 @@ class ErrandMapperTest {
 	}
 
 	@Test
-	void testUpdateEntityWithBlankAssignedGroupIdAndBlankAssignedUserId() {
-		final var entity = updateEntity(createEntity(), Errand.create().withAssignedGroupId("").withAssignedUserId(""));
+	void testUpdateEntityWithBlank() {
+		final var entity = updateEntity(createEntity(), Errand.create().withAssignedGroupId("").withAssignedUserId("").withResolution("").withDescription(""));
 
-		assertThat(entity).hasNoNullFieldsOrPropertiesExcept("assignedGroupId", "assignedUserId", "attachments");
+		assertThat(entity).hasNoNullFieldsOrPropertiesExcept("assignedGroupId", "assignedUserId", "attachments", "resolution", "description");
 		assertThat(entity.getAssignedGroupId()).isNull();
 		assertThat(entity.getAssignedUserId()).isNull();
 		assertThat(entity.getAttachments()).isNull();
+		assertThat(entity.getResolution()).isNull();
+		assertThat(entity.getDescription()).isNull();
 	}
 
 	@Test
@@ -231,7 +250,9 @@ class ErrandMapperTest {
 			.withStatusTag(STATUS_TAG)
 			.withTitle(TITLE)
 			.withTouched(TOUCHED)
-			.withTypeTag(TYPE_TAG);
+			.withTypeTag(TYPE_TAG)
+			.withResolution(RESOLUTION)
+			.withDescription(DESCRIPTION);
 	}
 
 	private static ErrandEntity createEntity() {
@@ -250,6 +271,8 @@ class ErrandMapperTest {
 			.withTitle(TITLE)
 			.withTypeTag(TYPE_TAG)
 			.withTouched(TOUCHED)
-			.withModified(MODIFIED);
+			.withModified(MODIFIED)
+			.withResolution(RESOLUTION)
+			.withDescription(DESCRIPTION);
 	}
 }

@@ -17,5 +17,7 @@
 	"statusTag": "STATUS-2",
 	"reporterUserId": "joe01doe",
 	"assignedUserId": "joe01doe",
-	"assignedGroupId": "hardware support"
+	"assignedGroupId": "hardware support",
+	"resolution": "fixed",
+	"description": "Fix as soon as possible!"
 }
