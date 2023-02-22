@@ -18,7 +18,6 @@ import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import se.sundsvall.supportmanagement.api.validation.UniqueExternalTagKeys;
 import se.sundsvall.supportmanagement.api.validation.ValidCategoryTag;
-import se.sundsvall.supportmanagement.api.validation.ValidClientIdTag;
 import se.sundsvall.supportmanagement.api.validation.ValidStatusTag;
 import se.sundsvall.supportmanagement.api.validation.ValidTypeTag;
 import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
@@ -48,12 +47,6 @@ public class Errand {
 	@UniqueExternalTagKeys
 	@Valid
 	private List<ExternalTag> externalTags;
-
-	@Schema(description = "System which owns the errand. Information for identifying the parent of an errand.", example = "CONTACTCENTER")
-	@NotBlank(groups = OnCreate.class)
-	@Null(groups = OnUpdate.class)
-	@ValidClientIdTag
-	private String clientIdTag;
 
 	@Schema(description = "Category for the errand", example = "SUPPORT_CASE")
 	@NotBlank(groups = OnCreate.class)
@@ -168,19 +161,6 @@ public class Errand {
 
 	public Errand withExternalTags(List<ExternalTag> externalTags) {
 		this.externalTags = externalTags;
-		return this;
-	}
-
-	public String getClientIdTag() {
-		return clientIdTag;
-	}
-
-	public void setClientIdTag(String clientIdTag) {
-		this.clientIdTag = clientIdTag;
-	}
-
-	public Errand withClientIdTag(String clientIdTag) {
-		this.clientIdTag = clientIdTag;
 		return this;
 	}
 
@@ -329,7 +309,7 @@ public class Errand {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(assignedGroupId, assignedUserId, categoryTag, clientIdTag, created, customer, externalTags, id, modified, priority, reporterUserId, statusTag, resolution, description, title, touched, typeTag);
+		return Objects.hash(assignedGroupId, assignedUserId, categoryTag, created, customer, externalTags, id, modified, priority, reporterUserId, statusTag, resolution, description, title, touched, typeTag);
 	}
 
 	@Override
@@ -344,7 +324,7 @@ public class Errand {
 			return false;
 		}
 		Errand other = (Errand) obj;
-		return Objects.equals(assignedGroupId, other.assignedGroupId) && Objects.equals(assignedUserId, other.assignedUserId) && Objects.equals(categoryTag, other.categoryTag) && Objects.equals(clientIdTag, other.clientIdTag) &&
+		return Objects.equals(assignedGroupId, other.assignedGroupId) && Objects.equals(assignedUserId, other.assignedUserId) && Objects.equals(categoryTag, other.categoryTag) &&
 			Objects.equals(created, other.created) && Objects.equals(customer, other.customer) && Objects.equals(externalTags, other.externalTags) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified)
 			&& priority == other.priority && Objects.equals(reporterUserId, other.reporterUserId) && Objects.equals(statusTag, other.statusTag) && Objects.equals(title, other.title) && Objects.equals(touched, other.touched) &&
 			Objects.equals(typeTag, other.typeTag) && Objects.equals(resolution, other.resolution) && Objects.equals(description, other.description);
@@ -353,9 +333,9 @@ public class Errand {
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
-		builder.append("Errand [id=").append(id).append(", title=").append(title).append(", priority=").append(priority).append(", customer=").append(customer).append(", externalTags=").append(externalTags).append(", clientIdTag=").append(
-			clientIdTag).append(", categoryTag=").append(categoryTag).append(", typeTag=").append(typeTag).append(", statusTag=").append(statusTag).append(", reporterUserId=").append(reporterUserId).append(", assignedUserId=").append(assignedUserId)
-			.append(", assignedGroupId=").append(assignedGroupId).append(", created=").append(created).append(", modified=").append(modified).append(", touched=").append(touched).append(", resolution=").append(resolution).append(", description=").append(description).append("]");
+		builder.append("Errand [id=").append(id).append(", title=").append(title).append(", priority=").append(priority).append(", customer=").append(customer).append(", externalTags=").append(externalTags).append(", categoryTag=").append(
+			categoryTag).append(", typeTag=").append(typeTag).append(", statusTag=").append(statusTag).append(", reporterUserId=").append(reporterUserId).append(", assignedUserId=").append(assignedUserId).append(", assignedGroupId=").append(
+				assignedGroupId).append(", created=").append(created).append(", modified=").append(modified).append(", touched=").append(touched).append(", resolution=").append(resolution).append(", description=").append(description).append("]");
 		return builder.toString();
 	}
 }

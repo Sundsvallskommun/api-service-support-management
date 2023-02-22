@@ -14,7 +14,6 @@
 					"value": "VALUE-3"
 				}
 			],
-			"clientIdTag": "CLIENT_ID-1",
 			"categoryTag": "CATEGORY-1",
 			"typeTag": "TYPE-1",
 			"statusTag": "STATUS-1",
@@ -44,7 +43,6 @@
 					"value": "VALUE-5"
 				}
 			],
-			"clientIdTag": "CLIENT_ID-3",
 			"categoryTag": "CATEGORY-3",
 			"typeTag": "TYPE-3",
 			"statusTag": "STATUS-3",
@@ -73,7 +71,6 @@
 					"value": "VALUE-2"
 				}
 			],
-			"clientIdTag": "CLIENT_ID-1",
 			"categoryTag": "CATEGORY-1",
 			"typeTag": "TYPE-1",
 			"statusTag": "STATUS-1",

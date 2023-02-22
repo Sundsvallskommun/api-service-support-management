@@ -41,7 +41,6 @@ class TagsResourceTest {
 		final var tagsResponse = TagsResponse.create()
 			.withCategoryTags(List.of("Category-1"))
 			.withStatusTags(List.of("Status-1"))
-			.withClientIdTags(List.of("ClientId-1"))
 			.withTypeTags(List.of("Type-1"));
 
 		when(tagServiceMock.findAllTags()).thenReturn(tagsResponse);
@@ -97,18 +96,5 @@ class TagsResourceTest {
 			.isEqualTo(EMPTY_STRING_ARRAY);
 
 		verify(tagServiceMock).findAllTypeTags();
-	}
-
-	@Test
-	void getClientIdTags() {
-
-		webTestClient.get().uri("tags/clientIdTags")
-			.exchange()
-			.expectStatus().isOk()
-			.expectHeader().contentType(APPLICATION_JSON)
-			.expectBody(String[].class)
-			.isEqualTo(EMPTY_STRING_ARRAY);
-
-		verify(tagServiceMock).findAllClientIdTags();
 	}
 }

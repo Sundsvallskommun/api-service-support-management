@@ -1,6 +1,15 @@
 package se.sundsvall.supportmanagement.integration.db;
 
-import com.turkraft.springfilter.boot.FilterSpecification;
+import static java.time.temporal.ChronoUnit.SECONDS;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
+import static org.assertj.core.api.Assertions.within;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -11,20 +20,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
+
+import com.turkraft.springfilter.boot.FilterSpecification;
+
 import se.sundsvall.supportmanagement.api.model.errand.CustomerType;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.EmbeddableCustomer;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-
-import java.time.OffsetDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
-
-import static java.time.temporal.ChronoUnit.SECONDS;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.tuple;
-import static org.assertj.core.api.Assertions.within;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tag repository tests.
@@ -46,7 +48,7 @@ class ErrandsRepositoryTest {
 	void create() {
 		final var externalTag = DbExternalTag.create().withKey("key").withValue("value");
 		final var customer = EmbeddableCustomer.create().withId("id").withType(CustomerType.EMPLOYEE.toString()	);
-		final var clientIdTag = "clientIdTag";
+		final var namespace = "namespace";
 		final var title = "title";
 		final var categoryTag = "categoryTag";
 		final var typeTag = "typeTag";
@@ -55,9 +57,10 @@ class ErrandsRepositoryTest {
 		final var reporterUserId = "reporterUserId";
 		final var assignedUserId = "assignedUserId";
 		final var assignedGroupId = "assignedGroupId";
+		final var municipalityId = "municipalityId";
 
 		var errandEntity = ErrandEntity.create()
-			.withClientIdTag(clientIdTag)
+			.withNamespace(namespace)
 			.withTitle(title)
 			.withCategoryTag(categoryTag)
 			.withTypeTag(typeTag)
@@ -67,14 +70,15 @@ class ErrandsRepositoryTest {
 			.withAssignedUserId(assignedUserId)
 			.withAssignedGroupId(assignedGroupId)
 			.withExternalTags(List.of(externalTag))
-			.withCustomer(customer);
+			.withCustomer(customer)
+			.withMunicipalityId(municipalityId);
 
 		// Execution
 		final var persistedEntity = errandsRepository.save(errandEntity);
 
 		assertThat(persistedEntity).isNotNull();
 		assertThat(persistedEntity.getId()).isNotNull();
-		assertThat(persistedEntity.getClientIdTag()).isEqualTo(clientIdTag);
+		assertThat(persistedEntity.getNamespace()).isEqualTo(namespace);
 		assertThat(persistedEntity.getTitle()).isEqualTo(title);
 		assertThat(persistedEntity.getCategoryTag()).isEqualTo(categoryTag);
 		assertThat(persistedEntity.getTypeTag()).isEqualTo(typeTag);
@@ -85,6 +89,7 @@ class ErrandsRepositoryTest {
 		assertThat(persistedEntity.getAssignedGroupId()).isEqualTo(assignedGroupId);
 		assertThat(persistedEntity.getExternalTags()).contains(externalTag);
 		assertThat(persistedEntity.getCustomer()).isEqualTo(customer);
+		assertThat(persistedEntity.getMunicipalityId()).isEqualTo(municipalityId);
 		assertThat(persistedEntity.getCreated()).isCloseTo(OffsetDateTime.now(), within(2, SECONDS));
 		assertThat(persistedEntity.getModified()).isNull();
 	}
@@ -129,7 +134,7 @@ class ErrandsRepositoryTest {
 	}
 
 	@Test
-	void findByDateFilter() {
+	void findByDateFilter() throws Exception {
 		//Setup date filter
 		final var dateFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
 		final var from = OffsetDateTime.now().minusMinutes(1).format(dateFormat);
@@ -140,9 +145,9 @@ class ErrandsRepositoryTest {
 		final var pageable = PageRequest.of(0, 20);
 
 		//Setup ErrandEntity to find
-		final var entityToUpdate = errandsRepository.findById("ERRAND_ID-3");
-		entityToUpdate.get().setCreated(OffsetDateTime.now());
-		errandsRepository.save(entityToUpdate.get());
+		final var entityToUpdate = errandsRepository.findById("ERRAND_ID-3").orElseThrow(() -> new Exception("There's something wrong with the test-data!"));
+		entityToUpdate.setCreated(OffsetDateTime.now());
+		errandsRepository.save(entityToUpdate);
 
 		final var errandEntities = errandsRepository.findAll(specification, pageable);
 
@@ -200,5 +205,13 @@ class ErrandsRepositoryTest {
 	@Test
 	void findByIdNotFound() {
 		assertThat(errandsRepository.findById("THIS_ERRAND_DOES_NOT_EXIST")).isEmpty();
+	}
+
+	@Test
+	void existsByIdAndNamespaceAndMunicipalityId() {
+		assertThat(errandsRepository.existsByIdAndNamespaceAndMunicipalityId("ERRAND_ID-1", "NAMESPACE.1", "2281")).isTrue();
+		assertThat(errandsRepository.existsByIdAndNamespaceAndMunicipalityId("ERRAND_ID-1", "NAMESPACE.1", "2305")).isFalse();
+		assertThat(errandsRepository.existsByIdAndNamespaceAndMunicipalityId("ERRAND_ID-1", "NAMESPACE.2", "2281")).isFalse();
+		assertThat(errandsRepository.existsByIdAndNamespaceAndMunicipalityId("ERRAND_ID-3", "NAMESPACE.1", "2281")).isFalse();
 	}
 }

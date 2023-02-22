@@ -26,6 +26,7 @@
 					"name": "bender@rodriguez.com",
 					"address": "bender@rodriguez.com"
 				},
+				"headers" : [],
 				"attachments": [
 					{
 						"name" : "internet_history.png",
