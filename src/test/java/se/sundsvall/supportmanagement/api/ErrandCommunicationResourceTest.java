@@ -27,8 +27,10 @@ import se.sundsvall.supportmanagement.service.CommunicationService;
 @ActiveProfiles("junit")
 class ErrandCommunicationResourceTest {
 
+	private static final String NAMESPACE = "namespace";
+	private static final String MUNICIPALITY_ID = "2281";
 	private static final String ERRAND_ID = randomUUID().toString();
-	private static final String PATH_PREFIX = "/errands/{id}/communication";
+	private static final String PATH_PREFIX = "/" + NAMESPACE + "/{municipalityId}/errands/{id}/communication";
 	private static final String PATH_SMS = "/sms";
 	private static final String PATH_EMAIL = "/email";
 
@@ -45,7 +47,8 @@ class ErrandCommunicationResourceTest {
 		final var requestBody = smsRequest();
 
 		// Call
-		webTestClient.post().uri(builder -> builder.path(PATH_PREFIX + PATH_SMS).build(Map.of("id", ERRAND_ID)))
+		webTestClient.post()
+			.uri(builder -> builder.path(PATH_PREFIX + PATH_SMS).build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(requestBody)
 			.exchange()
@@ -53,8 +56,8 @@ class ErrandCommunicationResourceTest {
 			.expectBody().isEmpty();
 
 		// Verification
-		verify(serviceMock).sendSms(ERRAND_ID, requestBody);
-		verify(serviceMock, never()).sendEmail(any(), any());
+		verify(serviceMock).sendSms(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, requestBody);
+		verify(serviceMock, never()).sendEmail(any(), any(), any(), any());
 	}
 
 	@Test
@@ -63,7 +66,8 @@ class ErrandCommunicationResourceTest {
 		// Parameter values
 		final var requestBody = emailRequest(false);
 
-		webTestClient.post().uri(builder -> builder.path(PATH_PREFIX + PATH_EMAIL).build(Map.of("id", ERRAND_ID)))
+		webTestClient.post()
+		.uri(builder -> builder.path(PATH_PREFIX + PATH_EMAIL).build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(requestBody)
 			.exchange()
@@ -71,8 +75,8 @@ class ErrandCommunicationResourceTest {
 			.expectBody().isEmpty();
 
 		// Verification
-		verify(serviceMock).sendEmail(ERRAND_ID, requestBody);
-		verify(serviceMock, never()).sendSms(any(), any());
+		verify(serviceMock).sendEmail(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, requestBody);
+		verify(serviceMock, never()).sendSms(any(), any(), any(), any());
 	}
 
 	@Test
@@ -81,7 +85,8 @@ class ErrandCommunicationResourceTest {
 		// Parameter values
 		final var requestBody = emailRequest(true);
 
-		webTestClient.post().uri(builder -> builder.path(PATH_PREFIX + PATH_EMAIL).build(Map.of("id", ERRAND_ID)))
+		webTestClient.post()
+			.uri(builder -> builder.path(PATH_PREFIX + PATH_EMAIL).build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(requestBody)
 			.exchange()
@@ -89,8 +94,8 @@ class ErrandCommunicationResourceTest {
 			.expectBody().isEmpty();
 
 		// Verification
-		verify(serviceMock).sendEmail(ERRAND_ID, requestBody);
-		verify(serviceMock, never()).sendSms(any(), any());
+		verify(serviceMock).sendEmail(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, requestBody);
+		verify(serviceMock, never()).sendSms(any(), any(), any(), any());
 	}
 
 	private static SmsRequest smsRequest() {

@@ -1,17 +1,16 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
-import se.sundsvall.supportmanagement.api.model.tag.TagsResponse;
-import se.sundsvall.supportmanagement.integration.db.model.TagEntity;
-import se.sundsvall.supportmanagement.integration.db.model.TagType;
+import static java.util.Collections.emptyList;
+import static se.sundsvall.supportmanagement.integration.db.model.TagType.CATEGORY;
+import static se.sundsvall.supportmanagement.integration.db.model.TagType.STATUS;
+import static se.sundsvall.supportmanagement.integration.db.model.TagType.TYPE;
 
 import java.util.List;
 import java.util.Optional;
 
-import static java.util.Collections.emptyList;
-import static se.sundsvall.supportmanagement.integration.db.model.TagType.CATEGORY;
-import static se.sundsvall.supportmanagement.integration.db.model.TagType.CLIENT_ID;
-import static se.sundsvall.supportmanagement.integration.db.model.TagType.STATUS;
-import static se.sundsvall.supportmanagement.integration.db.model.TagType.TYPE;
+import se.sundsvall.supportmanagement.api.model.tag.TagsResponse;
+import se.sundsvall.supportmanagement.integration.db.model.TagEntity;
+import se.sundsvall.supportmanagement.integration.db.model.TagType;
 
 public class TagMapper {
 
@@ -27,8 +26,7 @@ public class TagMapper {
 		return TagsResponse.create()
 			.withStatusTags(toStringListFilteredByType(tagEntityList, STATUS))
 			.withCategoryTags(toStringListFilteredByType(tagEntityList, CATEGORY))
-			.withTypeTags(toStringListFilteredByType(tagEntityList, TYPE))
-			.withClientIdTags(toStringListFilteredByType(tagEntityList, CLIENT_ID));
+			.withTypeTags(toStringListFilteredByType(tagEntityList, TYPE));
 	}
 
 	private static List<String> toStringListFilteredByType(List<TagEntity> tagEntityList, TagType type) {

@@ -8,9 +8,12 @@ import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON_VALUE;
 import static org.springframework.http.ResponseEntity.created;
 import static org.springframework.http.ResponseEntity.noContent;
 import static org.springframework.http.ResponseEntity.ok;
+import static se.sundsvall.supportmanagement.Constants.NAMESPACE_REGEXP;
+import static se.sundsvall.supportmanagement.Constants.NAMESPACE_VALIDATON_MESSAGE;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
 
 import org.springdoc.api.annotations.ParameterObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,6 +43,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import se.sundsvall.dept44.common.validators.annotation.ValidMunicipalityId;
 import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
@@ -49,7 +53,7 @@ import se.sundsvall.supportmanagement.service.ErrandService;
 
 @RestController
 @Validated
-@RequestMapping("/errands")
+@RequestMapping("/{namespace}/{municipalityId}/errands")
 @Tag(name = "Errands", description = "Errand operations")
 public class ErrandsResource {
 
@@ -62,8 +66,12 @@ public class ErrandsResource {
 	@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = { Problem.class, ConstraintViolationProblem.class })))
 	@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	@Validated(OnCreate.class)
-	public ResponseEntity<Void> createErrand(final UriComponentsBuilder uriComponentsBuilder, @Valid @NotNull @RequestBody final Errand errand) {
-		return created(uriComponentsBuilder.path("/errands/{id}").buildAndExpand(service.createErrand(errand)).toUri()).header(CONTENT_TYPE, ALL_VALUE).build();
+	public ResponseEntity<Void> createErrand(final UriComponentsBuilder uriComponentsBuilder,
+		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATON_MESSAGE, groups = OnCreate.class) @PathVariable final String namespace,
+		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId(groups = OnCreate.class) @PathVariable final String municipalityId,
+		@Valid @NotNull @RequestBody final Errand errand) {
+		return created(uriComponentsBuilder.path("/{namespace}/{municipalityId}/errands/{id}")
+			.buildAndExpand(namespace, municipalityId, service.createErrand(namespace, municipalityId, errand)).toUri()).header(CONTENT_TYPE, ALL_VALUE).build();
 	}
 
 	@GetMapping(path = "/{id}", produces = { APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE })
@@ -72,8 +80,11 @@ public class ErrandsResource {
 	@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = { Problem.class, ConstraintViolationProblem.class })))
 	@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
-	public ResponseEntity<Errand> readErrand(@Parameter(name = "id", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable final String id) {
-		return ok(service.readErrand(id));
+	public ResponseEntity<Errand> readErrand(
+		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATON_MESSAGE) @PathVariable final String namespace,
+		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
+		@Parameter(name = "id", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable final String id) {
+		return ok(service.readErrand(namespace, municipalityId, id));
 	}
 
 	@GetMapping(produces = { APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE })
@@ -82,11 +93,13 @@ public class ErrandsResource {
 	@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = { Problem.class, ConstraintViolationProblem.class })))
 	@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	public ResponseEntity<Page<Errand>> findErrands(
+		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATON_MESSAGE) @PathVariable final String namespace,
+		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(description = "Syntax description: [spring-filter](https://github.com/turkraft/spring-filter/blob/85730f950a5f8623159cc0eb4d737555f9382bb7/README.md#syntax)",
 			example = "categoryTag:'SUPPORT-CASE' and customer.id:'81471222-5798-11e9-ae24-57fa13b361e1' and externalTags.key:'caseid' and externalTags.value:'111' and created>'2022-09-08T12:00:00.000+02:00'",
 			schema = @Schema(implementation = String.class)) @Filter final Specification<ErrandEntity> filter,
 		@ParameterObject final Pageable pageable) {
-		return ok(service.findErrands(filter, pageable));
+		return ok(service.findErrands(namespace, municipalityId, filter, pageable));
 	}
 
 	@PatchMapping(path = "/{id}", consumes = APPLICATION_JSON_VALUE, produces = { APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE })
@@ -97,9 +110,11 @@ public class ErrandsResource {
 	@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	@Validated(OnUpdate.class)
 	public ResponseEntity<Errand> updateErrand(
+		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATON_MESSAGE, groups = OnUpdate.class) @PathVariable final String namespace,
+		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId(groups = OnUpdate.class) @PathVariable final String municipalityId,
 		@Parameter(name = "id", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid(groups = OnUpdate.class) @PathVariable("id") final String id,
 		@Valid @NotNull @RequestBody final Errand errand) {
-		return ok(service.updateErrand(id, errand));
+		return ok(service.updateErrand(namespace, municipalityId, id, errand));
 	}
 
 	@DeleteMapping(path = "/{id}")
@@ -108,8 +123,11 @@ public class ErrandsResource {
 	@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = { Problem.class, ConstraintViolationProblem.class })))
 	@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
-	public ResponseEntity<Void> deleteErrand(@Parameter(name = "id", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable final String id) {
-		service.deleteErrand(id);
+	public ResponseEntity<Void> deleteErrand(
+		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATON_MESSAGE) @PathVariable final String namespace,
+		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
+		@Parameter(name = "id", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable final String id) {
+		service.deleteErrand(namespace, municipalityId, id);
 		return noContent().build();
 	}
 }
