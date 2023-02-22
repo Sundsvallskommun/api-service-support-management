@@ -47,7 +47,6 @@ class ErrandTest {
 		final var externalTags = List.of(ExternalTag.create().withKey("externalTagkey").withValue("externalTagValue"));
 		final var id = randomUUID().toString();
 		final var modified = OffsetDateTime.now().plusDays(1);
-		final var clientIdTag = "clientIdTag";
 		final var priority = Priority.MEDIUM;
 		final var reporterUserId = "reporterUserId";
 		final var statusTag = "statusTag";
@@ -66,7 +65,6 @@ class ErrandTest {
 			.withExternalTags(externalTags)
 			.withId(id)
 			.withModified(modified)
-			.withClientIdTag(clientIdTag)
 			.withPriority(priority)
 			.withReporterUserId(reporterUserId)
 			.withStatusTag(statusTag)
@@ -85,7 +83,6 @@ class ErrandTest {
 		assertThat(bean.getExternalTags()).isEqualTo(externalTags);
 		assertThat(bean.getId()).isEqualTo(id);
 		assertThat(bean.getModified()).isEqualTo(modified);
-		assertThat(bean.getClientIdTag()).isEqualTo(clientIdTag);
 		assertThat(bean.getPriority()).isEqualTo(priority);
 		assertThat(bean.getReporterUserId()).isEqualTo(reporterUserId);
 		assertThat(bean.getStatusTag()).isEqualTo(statusTag);

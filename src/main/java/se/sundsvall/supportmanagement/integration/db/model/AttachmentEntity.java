@@ -1,6 +1,14 @@
 package se.sundsvall.supportmanagement.integration.db.model;
 
-import org.hibernate.annotations.GenericGenerator;
+import static java.time.OffsetDateTime.now;
+import static java.time.temporal.ChronoUnit.MILLIS;
+
+import java.io.Serializable;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.util.Arrays;
+import java.util.Objects;
+import java.util.Optional;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -15,14 +23,8 @@ import javax.persistence.ManyToOne;
 import javax.persistence.PrePersist;
 import javax.persistence.PreUpdate;
 import javax.persistence.Table;
-import java.io.Serializable;
-import java.time.OffsetDateTime;
-import java.time.ZoneId;
-import java.util.Arrays;
-import java.util.Objects;
 
-import static java.time.OffsetDateTime.now;
-import static java.time.temporal.ChronoUnit.MILLIS;
+import org.hibernate.annotations.GenericGenerator;
 
 @Entity
 @Table(name = "attachment",
@@ -184,7 +186,7 @@ public class AttachmentEntity implements Serializable {
 
 	@Override
 	public String toString() {
-		var errandId = errandEntity == null ? null  : errandEntity.getId();
+		var errandId = Optional.ofNullable(errandEntity).map(ErrandEntity::getId).orElse(null);
 		return "AttachmentEntity[" +
 				"id=" + id +
 				", fileName=" + fileName + ", mimeType='" + mimeType + ", file=" + Arrays.toString(file) +

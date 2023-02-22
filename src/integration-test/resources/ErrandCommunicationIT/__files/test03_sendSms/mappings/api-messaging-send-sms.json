@@ -23,7 +23,8 @@
 					"name": "0701234567"
 				},
 				"mobileNumber": "0707654321",
-				"message": "Have you heard the news that Bender is suffering from a terminal manufacturing defect, effectively rendering him mortal?"
+				"message": "Have you heard the news that Bender is suffering from a terminal manufacturing defect, effectively rendering him mortal?",
+				"headers" : []
 			}
 		} ]
 	},

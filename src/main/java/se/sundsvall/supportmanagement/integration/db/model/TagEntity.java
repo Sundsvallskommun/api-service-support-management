@@ -1,5 +1,15 @@
 package se.sundsvall.supportmanagement.integration.db.model;
 
+import static java.time.OffsetDateTime.now;
+import static java.time.temporal.ChronoUnit.MILLIS;
+import static javax.persistence.EnumType.STRING;
+import static javax.persistence.GenerationType.IDENTITY;
+
+import java.io.Serializable;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.util.Objects;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Enumerated;
@@ -10,15 +20,6 @@ import javax.persistence.PrePersist;
 import javax.persistence.PreUpdate;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
-import java.io.Serializable;
-import java.time.OffsetDateTime;
-import java.time.ZoneId;
-import java.util.Objects;
-
-import static java.time.OffsetDateTime.now;
-import static java.time.temporal.ChronoUnit.MILLIS;
-import static javax.persistence.EnumType.STRING;
-import static javax.persistence.GenerationType.IDENTITY;
 
 @Entity
 @Table(name = "tag", indexes = {
@@ -39,7 +40,7 @@ public class TagEntity implements Serializable {
 	@Column(name = "name")
 	private String name;
 
-	@Column(name = "type", columnDefinition = "ENUM('CATEGORY', 'STATUS', 'TYPE', 'CLIENT_ID')")
+	@Column(name = "type", columnDefinition = "ENUM('CATEGORY', 'STATUS', 'TYPE')")
 	@Enumerated(STRING)
 	private TagType type;
 

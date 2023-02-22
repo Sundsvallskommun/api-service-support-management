@@ -117,27 +117,4 @@ class TagsIT extends AbstractAppTest {
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 	}
-
-	@Test
-	void test09_getClientIdTags() throws Exception {
-		setupCall()
-			.withServicePath("/tags/clientIdTags")
-			.withHttpMethod(GET)
-			.withExpectedResponseStatus(OK)
-			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
-			.withExpectedResponse(RESPONSE_FILE)
-			.sendRequestAndVerifyResponse();
-	}
-
-	@Test
-	@Sql("/db/scripts/truncate.sql")
-	void test10_getClientIdTagsWhenEmpty() throws Exception {
-		setupCall()
-			.withServicePath("/tags/clientIdTags")
-			.withHttpMethod(GET)
-			.withExpectedResponseStatus(OK)
-			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
-			.withExpectedResponse(RESPONSE_FILE)
-			.sendRequestAndVerifyResponse();
-	}
 }
