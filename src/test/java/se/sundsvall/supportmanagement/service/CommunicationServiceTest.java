@@ -90,7 +90,7 @@ class CommunicationServiceTest {
 		assertThat(arguments.getEmailAddress()).isEqualTo(RECIPIENT);
 		assertThat(arguments.getHeaders()).isNullOrEmpty();
 		assertThat(arguments.getHtmlMessage()).isEqualTo(HTML_MESSAGE);
-		assertThat(arguments.getMessage()).isNull();
+		assertThat(arguments.getMessage()).isEqualTo(PLAIN_MESSAGE);
 		assertThat(arguments.getParty().getPartyId()).isEqualTo(CUSTOMER_ID);
 		assertThat(arguments.getParty().getExternalReferences()).isNotEmpty().extracting(
 			ExternalReference::getKey,
@@ -188,7 +188,8 @@ class CommunicationServiceTest {
 			.withAttachments(List.of(EmailAttachment.create()
 				.withBase64EncodedString(FILE_CONTENT)
 				.withName(FILE_NAME)))
-			.withMessage(HTML_MESSAGE)
+			.withHtmlMessage(HTML_MESSAGE)
+			.withMessage(PLAIN_MESSAGE)
 			.withRecipient(RECIPIENT)
 			.withSender(SENDER_EMAIL)
 			.withSenderName(SENDER_NAME)

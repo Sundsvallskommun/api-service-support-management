@@ -22,6 +22,7 @@
 				"emailAddress": "turanga@leela.com",
 				"subject": "Attack of the Killer App",
 				"htmlMessage": "<html>Since when is the internet about robbing people of their privacy? <i>Since August 6, 1991 when the World Wide Web project was announced</i>.</html>",
+				"message": "Since when is the internet about robbing people of their privacy? Since August 6, 1991 when the World Wide Web project was announced.",
 				"sender": {
 					"name": "bender@rodriguez.com",
 					"address": "bender@rodriguez.com"
