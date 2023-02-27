@@ -23,6 +23,7 @@ class MessagingMapperTest {
 	private static final String ERRAND_ID = randomUUID().toString();
 	private static final String CUSTOMER_ID = randomUUID().toString();
 	private static final String USER_ID = "userId";
+	private static final String HTML_MESSAGE = "htmlMessage";
 	private static final String MESSAGE = "message";
 	private static final String RECIPIENT = "recipient";
 	private static final String SENDER_EMAIL = "sender@sender.com";
@@ -39,7 +40,7 @@ class MessagingMapperTest {
 
 		assertThat(result.getEmailAddress()).isEqualTo(RECIPIENT);
 		assertThat(result.getHeaders()).isNullOrEmpty();
-		assertThat(result.getHtmlMessage()).isNull();
+		assertThat(result.getHtmlMessage()).isEqualTo(HTML_MESSAGE);
 		assertThat(result.getMessage()).isEqualTo(MESSAGE);
 		assertThat(result.getSubject()).isEqualTo(SUBJECT);
 		assertThat(result.getSender().getAddress()).isEqualTo(SENDER_EMAIL);
@@ -60,7 +61,7 @@ class MessagingMapperTest {
 
 		assertThat(result.getEmailAddress()).isEqualTo(RECIPIENT);
 		assertThat(result.getHeaders()).isNullOrEmpty();
-		assertThat(result.getHtmlMessage()).isNull();
+		assertThat(result.getHtmlMessage()).isEqualTo(HTML_MESSAGE);
 		assertThat(result.getMessage()).isEqualTo(MESSAGE);
 		assertThat(result.getSubject()).isEqualTo(SUBJECT);
 		assertThat(result.getSender().getAddress()).isEqualTo(SENDER_EMAIL);
@@ -109,6 +110,7 @@ class MessagingMapperTest {
 			.withAttachments(List.of(EmailAttachment.create()
 				.withBase64EncodedString(FILE_CONTENT)
 				.withName(FILE_NAME)))
+			.withHtmlMessage(HTML_MESSAGE)
 			.withMessage(MESSAGE)
 			.withRecipient(RECIPIENT)
 			.withSender(SENDER_EMAIL)

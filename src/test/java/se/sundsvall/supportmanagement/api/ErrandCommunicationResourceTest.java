@@ -107,6 +107,7 @@ class ErrandCommunicationResourceTest {
 
 	private static EmailRequest emailRequest(boolean withAttachment) {
 		return EmailRequest.create()
+			.withHtmlMessage("htmlMessage")
 			.withMessage("message")
 			.withRecipient("recipient@recipient.com")
 			.withSender("sender@sender.com")

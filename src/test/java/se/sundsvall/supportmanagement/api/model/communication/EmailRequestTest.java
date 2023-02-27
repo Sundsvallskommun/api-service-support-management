@@ -28,6 +28,7 @@ class EmailRequestTest {
 	@Test
 	void testBuilderMethods() {
 		final var attachments = List.of(EmailAttachment.create());
+		final var htmlMessage = "htmlMessage";
 		final var message = "message";
 		final var recipient = "recipient";
 		final var sender = "sender";
@@ -36,6 +37,7 @@ class EmailRequestTest {
 
 		final var bean = EmailRequest.create()
 			.withAttachments(attachments)
+			.withHtmlMessage(htmlMessage)
 			.withMessage(message)
 			.withRecipient(recipient)
 			.withSender(sender)
@@ -44,6 +46,7 @@ class EmailRequestTest {
 
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(bean.getAttachments()).isEqualTo(attachments);
+		assertThat(bean.getHtmlMessage()).isEqualTo(htmlMessage);
 		assertThat(bean.getMessage()).isEqualTo(message);
 		assertThat(bean.getRecipient()).isEqualTo(recipient);
 		assertThat(bean.getSender()).isEqualTo(sender);
