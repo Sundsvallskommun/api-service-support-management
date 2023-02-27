@@ -5,6 +5,10 @@ import static java.util.Optional.ofNullable;
 import static org.apache.commons.codec.binary.Base64.decodeBase64;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.detectMimeType;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.util.Base64.Decoder;
+import java.util.Base64.Encoder;
 import java.util.List;
 
 import generated.se.sundsvall.messaging.Email;
@@ -21,6 +25,8 @@ import se.sundsvall.supportmanagement.service.util.ServiceUtil;
 public class MessagingMapper {
 
 	private static final String ERRAND_ID = "errandId";
+	private static final Decoder BASE64_DECODER = Base64.getDecoder();
+	private static final Encoder BASE64_ENCODER = Base64.getEncoder();
 
 	private MessagingMapper() {}
 
@@ -28,7 +34,7 @@ public class MessagingMapper {
 		return new EmailRequest()
 			.attachments(toAttachments(emailRequest.getAttachments()))
 			.emailAddress(emailRequest.getRecipient())
-			.htmlMessage(emailRequest.getHtmlMessage())
+			.htmlMessage(addBase64Encoding(emailRequest.getHtmlMessage()))
 			.message(emailRequest.getMessage())
 			.party(toParty(errandEntity))
 			.sender(toEmail(emailRequest))
@@ -87,5 +93,14 @@ public class MessagingMapper {
 	private static Sms toSms(se.sundsvall.supportmanagement.api.model.communication.SmsRequest smsRequest) {
 		return new Sms()
 			.name(smsRequest.getSender());
+	}
+
+	private static String addBase64Encoding(String message) {
+		try {
+			BASE64_DECODER.decode(message.getBytes(StandardCharsets.UTF_8));
+			return message; // If decoding passes, the message is already in base64 format
+		} catch (Exception e) {
+			return BASE64_ENCODER.encodeToString(message.getBytes(StandardCharsets.UTF_8));
+		}
 	}
 }

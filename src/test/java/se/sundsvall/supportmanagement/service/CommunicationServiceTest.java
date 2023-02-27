@@ -10,6 +10,9 @@ import static org.mockito.Mockito.when;
 import static org.springframework.util.MimeTypeUtils.IMAGE_PNG_VALUE;
 import static org.zalando.problem.Status.NOT_FOUND;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.util.Base64.Decoder;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -35,7 +38,7 @@ import se.sundsvall.supportmanagement.integration.messaging.MessagingClient;
 
 @ExtendWith(MockitoExtension.class)
 class CommunicationServiceTest {
-
+	private static final Decoder BASE64_DECODER = Base64.getDecoder();
 	private static final String NAMESPACE = "namespace";
 	private static final String MUNICIPALITY_ID = "municipalityId";
 	private static final String ERRAND_ID = randomUUID().toString();
@@ -94,7 +97,7 @@ class CommunicationServiceTest {
 		final var arguments = messagingEmailCaptor.getValue();
 		assertThat(arguments.getEmailAddress()).isEqualTo(RECIPIENT);
 		assertThat(arguments.getHeaders()).isNullOrEmpty();
-		assertThat(arguments.getHtmlMessage()).isEqualTo(HTML_MESSAGE);
+		assertThat(new String(BASE64_DECODER.decode(arguments.getHtmlMessage()), StandardCharsets.UTF_8)).isEqualTo(HTML_MESSAGE);
 		assertThat(arguments.getMessage()).isEqualTo(PLAIN_MESSAGE);
 		assertThat(arguments.getParty().getPartyId()).isEqualTo(CUSTOMER_ID);
 		assertThat(arguments.getParty().getExternalReferences()).isNotEmpty().extracting(
