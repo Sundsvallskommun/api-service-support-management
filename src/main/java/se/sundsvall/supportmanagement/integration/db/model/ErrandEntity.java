@@ -8,12 +8,12 @@ import java.io.Serializable;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 import javax.persistence.CascadeType;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
-import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.ForeignKey;
 import javax.persistence.GeneratedValue;
@@ -34,7 +34,6 @@ import org.hibernate.annotations.GenericGenerator;
 @Table(name = "errand",
 	indexes = {
 		@Index(name = "idx_errand_id", columnList = "id"),
-		@Index(name = "idx_errand_customer_id", columnList = "customer_id"),
 		@Index(name = "idx_errand_namespace", columnList = "namespace"),
 		@Index(name = "idx_errand_municipality_id", columnList = "municipality_id")
 	})
@@ -58,8 +57,8 @@ public class ErrandEntity implements Serializable {
 		uniqueConstraints = @UniqueConstraint(name = "uq_external_tag_errand_id_key", columnNames = { "errand_id", "key" }))
 	private List<DbExternalTag> externalTags;
 
-	@Embedded
-	private EmbeddableCustomer customer;
+	@OneToMany(mappedBy = "errandEntity", cascade = CascadeType.ALL, orphanRemoval = true)
+	private List<StakeholderEntity> stakeholders;
 
 	@Column(name = "municipality_id", nullable = false)
 	private String municipalityId;
@@ -117,11 +116,15 @@ public class ErrandEntity implements Serializable {
 	@PrePersist
 	void onCreate() {
 		created = now(systemDefault()).truncatedTo(MILLIS);
+		Optional.ofNullable(stakeholders).ifPresent(st -> st.stream()
+				.forEach(s -> s.setErrandEntity(this)));
 	}
 
 	@PreUpdate
 	protected void onUpdate() {
 		modified = now(systemDefault()).truncatedTo(MILLIS);
+		Optional.ofNullable(stakeholders).ifPresent(st -> st.stream()
+				.forEach(s -> s.setErrandEntity(this)));
 	}
 
 	public String getId() {
@@ -150,16 +153,16 @@ public class ErrandEntity implements Serializable {
 		return this;
 	}
 
-	public EmbeddableCustomer getCustomer() {
-		return customer;
+	public List<StakeholderEntity> getStakeholders() {
+		return stakeholders;
 	}
 
-	public void setCustomer(EmbeddableCustomer customer) {
-		this.customer = customer;
+	public void setStakeholders(List<StakeholderEntity> stakeholders) {
+		this.stakeholders = stakeholders;
 	}
 
-	public ErrandEntity withCustomer(EmbeddableCustomer customer) {
-		this.customer = customer;
+	public ErrandEntity withStakeholders(List<StakeholderEntity> stakeholders) {
+		this.stakeholders = stakeholders;
 		return this;
 	}
 
@@ -373,7 +376,7 @@ public class ErrandEntity implements Serializable {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(assignedGroupId, assignedUserId, attachments, categoryTag, created, customer, description, externalTags, id, modified, municipalityId, namespace, priority, reporterUserId, resolution, statusTag, title, touched, typeTag);
+		return Objects.hash(assignedGroupId, assignedUserId, attachments, categoryTag, created, stakeholders, description, externalTags, id, modified, municipalityId, namespace, priority, reporterUserId, resolution, statusTag, title, touched, typeTag);
 	}
 
 	@Override
@@ -389,7 +392,7 @@ public class ErrandEntity implements Serializable {
 		}
 		ErrandEntity other = (ErrandEntity) obj;
 		return Objects.equals(assignedGroupId, other.assignedGroupId) && Objects.equals(assignedUserId, other.assignedUserId) && Objects.equals(attachments, other.attachments) && Objects.equals(categoryTag, other.categoryTag) && Objects.equals(
-			created, other.created) && Objects.equals(customer, other.customer) && Objects.equals(description, other.description) && Objects.equals(externalTags, other.externalTags) && Objects.equals(id, other.id) && Objects.equals(modified,
+			created, other.created) && Objects.equals(stakeholders, other.stakeholders) && Objects.equals(description, other.description) && Objects.equals(externalTags, other.externalTags) && Objects.equals(id, other.id) && Objects.equals(modified,
 				other.modified) && Objects.equals(municipalityId, other.municipalityId) && Objects.equals(namespace, other.namespace) && Objects.equals(priority, other.priority) && Objects.equals(reporterUserId, other.reporterUserId) && Objects
 					.equals(resolution, other.resolution) && Objects.equals(statusTag, other.statusTag) && Objects.equals(title, other.title) && Objects.equals(touched, other.touched) && Objects.equals(typeTag, other.typeTag);
 	}
@@ -397,7 +400,7 @@ public class ErrandEntity implements Serializable {
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
-		builder.append("ErrandEntity [id=").append(id).append(", externalTags=").append(externalTags).append(", customer=").append(customer).append(", municipalityId=").append(municipalityId).append(", namespace=").append(namespace).append(
+		builder.append("ErrandEntity [id=").append(id).append(", externalTags=").append(externalTags).append(", stakeholders=").append(stakeholders).append(", municipalityId=").append(municipalityId).append(", namespace=").append(namespace).append(
 			", title=").append(title).append(", categoryTag=").append(categoryTag).append(", typeTag=").append(typeTag).append(", statusTag=").append(statusTag).append(", resolution=").append(resolution).append(", description=").append(description)
 			.append(", priority=").append(priority).append(", reporterUserId=").append(reporterUserId).append(", assignedUserId=").append(assignedUserId).append(", assignedGroupId=").append(assignedGroupId).append(", attachments=").append(
 				attachments).append(", created=").append(created).append(", modified=").append(modified).append(", touched=").append(touched).append("]");

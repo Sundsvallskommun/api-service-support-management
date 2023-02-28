@@ -4,10 +4,12 @@
 			"id": "cc236cf1-c00f-4479-8341-ecf5dd90b5b9",
 			"title": "TITLE-1",
 			"priority": "LOW",
-			"customer": {
-				"id": "def57969-9b83-4e54-9351-667dc896a19d",
-				"type": "PRIVATE"
-			},
+			"stakeholders": [
+				{
+					"stakeholderId": "def57969-9b83-4e54-9351-667dc896a19d",
+					"type": "PRIVATE"
+				}
+			],
 			"externalTags": [
 				{
 					"key": "KEY-3",
@@ -28,10 +30,12 @@
 			"id": "1be673c0-6ba3-4fb0-af4a-43acf23389f6",
 			"title": "TITLE-3",
 			"priority": "HIGH",
-			"customer": {
-				"id": "7fba994b-e99e-4beb-8ab5-63cc74483b66",
-				"type": "ENTERPRISE"
-			},
+			"stakeholders": [
+				{
+					"stakeholderId": "7fba994b-e99e-4beb-8ab5-63cc74483b66",
+					"type": "ENTERPRISE"
+				}
+			],
 			"description": "DESCRIPTION",
 			"externalTags": [
 				{
@@ -57,10 +61,12 @@
 			"id": "ec677eb3-604c-4935-bff7-f8f0b500c8f4",
 			"title": "TITLE-1",
 			"priority": "LOW",
-			"customer": {
-				"id": "USER_ID",
-				"type": "EMPLOYEE"
-			},
+			"stakeholders": [
+				{
+					"stakeholderId": "USER_ID",
+					"type": "EMPLOYEE"
+				}
+			],
 			"externalTags": [
 				{
 					"key": "KEY-1",

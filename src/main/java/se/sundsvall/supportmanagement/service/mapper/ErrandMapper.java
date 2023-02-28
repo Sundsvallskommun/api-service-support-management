@@ -11,14 +11,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import se.sundsvall.supportmanagement.api.model.errand.Customer;
-import se.sundsvall.supportmanagement.api.model.errand.CustomerType;
+import se.sundsvall.supportmanagement.api.model.errand.Stakeholder;
+import se.sundsvall.supportmanagement.api.model.errand.StakeholderType;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
 import se.sundsvall.supportmanagement.api.model.errand.Priority;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
-import se.sundsvall.supportmanagement.integration.db.model.EmbeddableCustomer;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
+
 public class ErrandMapper {
 
 	private ErrandMapper() {}
@@ -32,7 +33,7 @@ public class ErrandMapper {
 			.withAssignedGroupId(errand.getAssignedGroupId())
 			.withAssignedUserId(errand.getAssignedUserId())
 			.withCategoryTag(errand.getCategoryTag())
-			.withCustomer(toCustomer(errand.getCustomer()))
+			.withStakeholders(toStakeholderEntities(errand.getStakeholders()))
 			.withExternalTags(toExternalTag(errand.getExternalTags()))
 			.withMunicipalityId(municipalityId)
 			.withNamespace(namespace)
@@ -53,7 +54,7 @@ public class ErrandMapper {
 		ofNullable(errand.getAssignedGroupId()).ifPresent(value -> entity.setAssignedGroupId(isEmpty(value) ? null : value));
 		ofNullable(errand.getAssignedUserId()).ifPresent(value -> entity.setAssignedUserId(isEmpty(value) ? null : value));
 		ofNullable(errand.getCategoryTag()).ifPresent(entity::setCategoryTag);
-		ofNullable(errand.getCustomer()).ifPresent(value -> entity.setCustomer(toCustomer(value)));
+		ofNullable(errand.getStakeholders()).ifPresent(value -> entity.setStakeholders(toStakeholderEntities(value)));
 		ofNullable(errand.getExternalTags()).ifPresent(value -> entity.setExternalTags(toExternalTag(value)));
 		ofNullable(errand.getPriority()).ifPresent(value -> entity.setPriority(value.name()));
 		ofNullable(errand.getStatusTag()).ifPresent(entity::setStatusTag);
@@ -91,7 +92,7 @@ public class ErrandMapper {
 				.withAssignedUserId(e.getAssignedUserId())
 				.withCategoryTag(e.getCategoryTag())
 				.withCreated(e.getCreated())
-				.withCustomer(toCustomer(e.getCustomer()))
+				.withStakeholders(toStakeholders(e.getStakeholders()))
 				.withExternalTags(toExternalTags(e.getExternalTags()))
 				.withId(e.getId())
 				.withModified(e.getModified())
@@ -106,20 +107,24 @@ public class ErrandMapper {
 			.orElse(null);
 	}
 
-	private static Customer toCustomer(EmbeddableCustomer customer) {
-		return Optional.ofNullable(customer)
-			.map(c -> Customer.create()
-				.withId(c.getId())
-				.withType(CustomerType.valueOf(c.getType())))
-			.orElse(null);
+	private static List<Stakeholder> toStakeholders(List<StakeholderEntity> stakeholderEntities) {
+		return Optional.ofNullable(stakeholderEntities)
+			.map(s -> s.stream()
+					.map(stakeholderEntity -> Stakeholder.create()
+							.withStakeholderId(stakeholderEntity.getStakeholderId())
+							.withType(StakeholderType.valueOf(stakeholderEntity.getType())))
+					.toList())
+			.orElse(emptyList());
 	}
 
-	private static EmbeddableCustomer toCustomer(Customer customer) {
-		return Optional.ofNullable(customer)
-			.map(c -> EmbeddableCustomer.create()
-				.withId(c.getId())
-				.withType(c.getType().toString()))
-			.orElse(null);
+	private static List<StakeholderEntity> toStakeholderEntities(List<Stakeholder> stakeholders) {
+		return Optional.ofNullable(stakeholders)
+			.map(s -> s.stream()
+					.map(stakeholder -> StakeholderEntity.create()
+							.withStakeholderId(stakeholder.getStakeholderId())
+							.withType(stakeholder.getType().toString()))
+					.toList())
+				.orElse(emptyList());
 	}
 
 	private static List<ExternalTag> toExternalTags(List<DbExternalTag> entities) {

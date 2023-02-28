@@ -23,10 +23,10 @@ import org.springframework.test.context.jdbc.Sql;
 
 import com.turkraft.springfilter.boot.FilterSpecification;
 
-import se.sundsvall.supportmanagement.api.model.errand.CustomerType;
+import se.sundsvall.supportmanagement.api.model.errand.StakeholderType;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
-import se.sundsvall.supportmanagement.integration.db.model.EmbeddableCustomer;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 
 /**
  * Tag repository tests.
@@ -47,7 +47,7 @@ class ErrandsRepositoryTest {
 	@Test
 	void create() {
 		final var externalTag = DbExternalTag.create().withKey("key").withValue("value");
-		final var customer = EmbeddableCustomer.create().withId("id").withType(CustomerType.EMPLOYEE.toString()	);
+		final var stakeholder = StakeholderEntity.create().withStakeholderId("id").withType(StakeholderType.EMPLOYEE.toString()	);
 		final var namespace = "namespace";
 		final var title = "title";
 		final var categoryTag = "categoryTag";
@@ -70,7 +70,7 @@ class ErrandsRepositoryTest {
 			.withAssignedUserId(assignedUserId)
 			.withAssignedGroupId(assignedGroupId)
 			.withExternalTags(List.of(externalTag))
-			.withCustomer(customer)
+			.withStakeholders(List.of(stakeholder))
 			.withMunicipalityId(municipalityId);
 
 		// Execution
@@ -88,7 +88,7 @@ class ErrandsRepositoryTest {
 		assertThat(persistedEntity.getAssignedUserId()).isEqualTo(assignedUserId);
 		assertThat(persistedEntity.getAssignedGroupId()).isEqualTo(assignedGroupId);
 		assertThat(persistedEntity.getExternalTags()).contains(externalTag);
-		assertThat(persistedEntity.getCustomer()).isEqualTo(customer);
+		assertThat(persistedEntity.getStakeholders()).containsExactly(stakeholder);
 		assertThat(persistedEntity.getMunicipalityId()).isEqualTo(municipalityId);
 		assertThat(persistedEntity.getCreated()).isCloseTo(OffsetDateTime.now(), within(2, SECONDS));
 		assertThat(persistedEntity.getModified()).isNull();
@@ -115,8 +115,8 @@ class ErrandsRepositoryTest {
 	@ValueSource(strings = {
 		"(externalTags.key : 'KEY-1')",
 		"(attachments.id : 'ATTACHMENT_ID-1')",
-		"(customer.id : 'CUSTOMER_ID-1' and externalTags is not empty)",
-		"(customer.id : 'CUSTOMER_ID-1' and attachments is not empty)"
+		"(stakeholders.stakeholderId : 'STAKEHOLDER_ID-1' and externalTags is not empty)",
+		"(stakeholders.stakeholderId : 'STAKEHOLDER_ID-1' and attachments is not empty)"
 	})
 	void findByFilter(String filter) {
 

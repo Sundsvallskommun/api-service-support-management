@@ -11,7 +11,6 @@
 		"bodyPatterns" : [ {
 			"equalToJson" : {
 				"party": {
-					"partyId": "def57969-9b83-4e54-9351-667dc896a19d",
 					"externalReferences": [
 						{
 							"key": "errandId",

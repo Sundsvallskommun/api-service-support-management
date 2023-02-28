@@ -1,4 +1,3 @@
-
     create table attachment (
        id varchar(255) not null,
         created datetime(6),
@@ -16,8 +15,6 @@
         assigned_user_id varchar(255),
         category_tag varchar(255),
         created datetime(6),
-        customer_id varchar(255),
-        customer_type varchar(255),
         description longtext,
         modified datetime(6),
         municipality_id varchar(255) not null,
@@ -37,6 +34,14 @@
         `value` varchar(255)
     ) engine=InnoDB;
 
+    create table stakeholder (
+       id bigint not null auto_increment,
+        stakeholder_id varchar(255),
+        type varchar(255),
+        errand_id varchar(255) not null,
+        primary key (id)
+    ) engine=InnoDB;
+
     create table tag (
        id bigint not null auto_increment,
         created datetime(6),
@@ -47,7 +52,6 @@
     ) engine=InnoDB;
 create index idx_attachment_file_name on attachment (file_name);
 create index idx_errand_id on errand (id);
-create index idx_errand_customer_id on errand (customer_id);
 create index idx_errand_namespace on errand (namespace);
 create index idx_errand_municipality_id on errand (municipality_id);
 create index idx_external_tag_errand_id on external_tag (errand_id);
@@ -68,5 +72,10 @@ create index idx_tag_type on tag (type);
 
     alter table external_tag 
        add constraint fk_errand_external_tag_errand_id 
+       foreign key (errand_id) 
+       references errand (id);
+
+    alter table stakeholder 
+       add constraint fk_errand_stakeholder_errand_id 
        foreign key (errand_id) 
        references errand (id);

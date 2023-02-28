@@ -11,11 +11,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 import org.junit.jupiter.api.Test;
 
-class CustomerTest {
+class StakeholderTest {
 
 	@Test
 	void testBean() {
-		assertThat(Customer.class, allOf(
+		assertThat(Stakeholder.class, allOf(
 			hasValidBeanConstructor(),
 			hasValidGettersAndSetters(),
 			hasValidBeanHashCode(),
@@ -26,19 +26,19 @@ class CustomerTest {
 	@Test
 	void testBuilderMethods() {
 		final var id = "id";
-		final var customerType = CustomerType.EMPLOYEE;
+		final var stakeholderType = StakeholderType.EMPLOYEE;
 
-		final var bean = Customer.create()
-			.withId(id)
-			.withType(customerType);
+		final var bean = Stakeholder.create()
+			.withStakeholderId(id)
+			.withType(stakeholderType);
 
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
-		assertThat(bean.getId()).isEqualTo(id);
-		assertThat(bean.getType()).isEqualTo(customerType);
+		assertThat(bean.getStakeholderId()).isEqualTo(id);
+		assertThat(bean.getType()).isEqualTo(stakeholderType);
 	}
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(Customer.create()).hasAllNullFieldsOrProperties();
+		assertThat(Stakeholder.create()).hasAllNullFieldsOrProperties();
 	}
 }

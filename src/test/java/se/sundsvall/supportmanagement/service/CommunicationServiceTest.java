@@ -30,10 +30,10 @@ import generated.se.sundsvall.messaging.ExternalReference;
 import se.sundsvall.supportmanagement.api.model.communication.EmailAttachment;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
 import se.sundsvall.supportmanagement.api.model.communication.SmsRequest;
-import se.sundsvall.supportmanagement.api.model.errand.CustomerType;
+import se.sundsvall.supportmanagement.api.model.errand.StakeholderType;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
-import se.sundsvall.supportmanagement.integration.db.model.EmbeddableCustomer;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.messaging.MessagingClient;
 
 @ExtendWith(MockitoExtension.class)
@@ -42,7 +42,7 @@ class CommunicationServiceTest {
 	private static final String NAMESPACE = "namespace";
 	private static final String MUNICIPALITY_ID = "municipalityId";
 	private static final String ERRAND_ID = randomUUID().toString();
-	private static final String CUSTOMER_ID = randomUUID().toString();
+	private static final String MESSAGE = "message";
 	private static final String HTML_MESSAGE = "<html><h1>message</h1></html>";
 	private static final String PLAIN_MESSAGE = "message";
 	private static final String RECIPIENT = "recipient";
@@ -60,7 +60,7 @@ class CommunicationServiceTest {
 	private ErrandEntity errandEntityMock;
 
 	@Mock
-	private EmbeddableCustomer embeddableCustomerMock;
+	private StakeholderEntity stakeholderEntityMock;
 
 	@Mock
 	private MessagingClient messagingClientMock;
@@ -75,8 +75,8 @@ class CommunicationServiceTest {
 	private ArgumentCaptor<generated.se.sundsvall.messaging.SmsRequest> messagingSmsCaptor;
 
 	@ParameterizedTest
-	@EnumSource(value = CustomerType.class)
-	void sendEmail(CustomerType type) {
+	@EnumSource(value = StakeholderType.class)
+	void sendEmail(StakeholderType type) {
 		// Setup
 		final var request = createEmailRequest();
 
@@ -84,8 +84,6 @@ class CommunicationServiceTest {
 		when(repositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
 		when(repositoryMock.getReferenceById(ERRAND_ID)).thenReturn(errandEntityMock);
 		when(errandEntityMock.getId()).thenReturn(ERRAND_ID);
-		when(errandEntityMock.getCustomer()).thenReturn(embeddableCustomerMock);
-		when(embeddableCustomerMock.getId()).thenReturn(CUSTOMER_ID);
 		// Call
 		service.sendEmail(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, request);
 
@@ -97,6 +95,8 @@ class CommunicationServiceTest {
 		final var arguments = messagingEmailCaptor.getValue();
 		assertThat(arguments.getEmailAddress()).isEqualTo(RECIPIENT);
 		assertThat(arguments.getHeaders()).isNullOrEmpty();
+		assertThat(arguments.getHtmlMessage()).isNull();
+		assertThat(arguments.getMessage()).isEqualTo(MESSAGE);
 		assertThat(new String(BASE64_DECODER.decode(arguments.getHtmlMessage()), StandardCharsets.UTF_8)).isEqualTo(HTML_MESSAGE);
 		assertThat(arguments.getMessage()).isEqualTo(PLAIN_MESSAGE);
 		assertThat(arguments.getParty().getPartyId()).isEqualTo(CUSTOMER_ID);
@@ -113,8 +113,8 @@ class CommunicationServiceTest {
 	}
 
 	@ParameterizedTest
-	@EnumSource(value = CustomerType.class)
-	void sendSms(CustomerType type) {
+	@EnumSource(value = StakeholderType.class)
+	void sendSms(StakeholderType type) {
 		// Setup
 		final var request = createSmsRequest();
 
@@ -122,8 +122,6 @@ class CommunicationServiceTest {
 		when(repositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
 		when(repositoryMock.getReferenceById(ERRAND_ID)).thenReturn(errandEntityMock);
 		when(errandEntityMock.getId()).thenReturn(ERRAND_ID);
-		when(errandEntityMock.getCustomer()).thenReturn(embeddableCustomerMock);
-		when(embeddableCustomerMock.getId()).thenReturn(CUSTOMER_ID);
 
 		// Call
 		service.sendSms(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, request);
@@ -137,7 +135,6 @@ class CommunicationServiceTest {
 		assertThat(arguments.getHeaders()).isNullOrEmpty();
 		assertThat(arguments.getMessage()).isEqualTo(PLAIN_MESSAGE);
 		assertThat(arguments.getMobileNumber()).isEqualTo(RECIPIENT);
-		assertThat(arguments.getParty().getPartyId()).isEqualTo(CUSTOMER_ID);
 		assertThat(arguments.getParty().getExternalReferences()).isNotEmpty().extracting(
 			ExternalReference::getKey,
 			ExternalReference::getValue).containsExactly(tuple(ERRAND_ID_KEY, ERRAND_ID));
@@ -163,15 +160,14 @@ class CommunicationServiceTest {
 	}
 
 	@Test
-	void customerWithNonUuid() {
+	void stakeholderWithNonUuid() {
 		// Setup
 		final var request = createSmsRequest();
 
 		// Mock
 		when(repositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
 		when(repositoryMock.getReferenceById(ERRAND_ID)).thenReturn(errandEntityMock);
-		when(errandEntityMock.getCustomer()).thenReturn(embeddableCustomerMock);
-		when(embeddableCustomerMock.getId()).thenReturn("non-valid-uuid");
+		when(errandEntityMock.getId()).thenReturn(ERRAND_ID);
 
 		// Call
 		service.sendSms(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, request);
@@ -185,7 +181,9 @@ class CommunicationServiceTest {
 		assertThat(arguments.getHeaders()).isNullOrEmpty();
 		assertThat(arguments.getMessage()).isEqualTo(PLAIN_MESSAGE);
 		assertThat(arguments.getMobileNumber()).isEqualTo(RECIPIENT);
-		assertThat(arguments.getParty()).isNull();
+		assertThat(arguments.getParty().getExternalReferences()).isNotEmpty().extracting(
+				ExternalReference::getKey,
+				ExternalReference::getValue).containsExactly(tuple(ERRAND_ID_KEY, ERRAND_ID));
 		assertThat(arguments.getSender().getName()).isEqualTo(SENDER_NAME);
 	}
 

@@ -4,10 +4,12 @@
 			"id": "ec677eb3-604c-4935-bff7-f8f0b500c8f4",
 			"title": "TITLE-1",
 			"priority": "LOW",
-			"customer": {
-				"id": "USER_ID",
-				"type": "EMPLOYEE"
-			},
+			"stakeholders": [
+				{
+					"stakeholderId": "USER_ID",
+					"type": "EMPLOYEE"
+				}
+			],
 			"externalTags": [
 				{
 					"key": "KEY-1",

@@ -43,7 +43,7 @@ class ErrandTest {
 		final var assignedUserId = "assignedUserId";
 		final var categoryTag = "categoryTag";
 		final var created = OffsetDateTime.now();
-		final var customer = Customer.create().withId("id").withType(CustomerType.PRIVATE);
+		final var stakeholder = Stakeholder.create().withStakeholderId("id").withType(StakeholderType.PRIVATE);
 		final var externalTags = List.of(ExternalTag.create().withKey("externalTagkey").withValue("externalTagValue"));
 		final var id = randomUUID().toString();
 		final var modified = OffsetDateTime.now().plusDays(1);
@@ -61,7 +61,7 @@ class ErrandTest {
 			.withAssignedUserId(assignedUserId)
 			.withCategoryTag(categoryTag)
 			.withCreated(created)
-			.withCustomer(customer)
+			.withStakeholders(List.of(stakeholder))
 			.withExternalTags(externalTags)
 			.withId(id)
 			.withModified(modified)
@@ -79,7 +79,7 @@ class ErrandTest {
 		assertThat(bean.getAssignedUserId()).isEqualTo(assignedUserId);
 		assertThat(bean.getCategoryTag()).isEqualTo(categoryTag);
 		assertThat(bean.getCreated()).isEqualTo(created);
-		assertThat(bean.getCustomer()).isEqualTo(customer);
+		assertThat(bean.getStakeholders()).containsExactly(stakeholder);
 		assertThat(bean.getExternalTags()).isEqualTo(externalTags);
 		assertThat(bean.getId()).isEqualTo(id);
 		assertThat(bean.getModified()).isEqualTo(modified);
