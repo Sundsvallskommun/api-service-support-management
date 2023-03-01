@@ -18,7 +18,7 @@ public class SmsRequest {
 	@Schema(description = "The sender of the SMS", maxLength = 11, example = "sender", requiredMode = REQUIRED)
 	private String sender;
 
-	@ValidMobileNumber //TODO update dept44 accordring to new format
+	@ValidMobileNumber
 	@Schema(description = "Mobile number to recipient in format 07[02369]\\d{7}", example = "0761234567", requiredMode = REQUIRED)
 	private String recipient;
 

@@ -24,6 +24,7 @@ import org.springframework.test.context.jdbc.Sql;
 import com.turkraft.springfilter.boot.FilterSpecification;
 
 import se.sundsvall.supportmanagement.api.model.errand.StakeholderType;
+import se.sundsvall.supportmanagement.integration.db.model.ContactChannelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
@@ -47,7 +48,7 @@ class ErrandsRepositoryTest {
 	@Test
 	void create() {
 		final var externalTag = DbExternalTag.create().withKey("key").withValue("value");
-		final var stakeholder = StakeholderEntity.create().withStakeholderId("id").withType(StakeholderType.EMPLOYEE.toString()	);
+		final var stakeholder = StakeholderEntity.create().withStakeholderId("id").withType(StakeholderType.EMPLOYEE.toString()).withContactChannels(List.of(ContactChannelEntity.create().withType("type").withValue("value")));
 		final var namespace = "namespace";
 		final var title = "title";
 		final var categoryTag = "categoryTag";
@@ -109,6 +110,20 @@ class ErrandsRepositoryTest {
 			.extracting(ErrandEntity::getId, ErrandEntity::getAssignedGroupId, ErrandEntity::getAssignedUserId).containsExactlyInAnyOrder(
 				tuple("ERRAND_ID-1", "ASSIGNED_GROUP_ID-1", "ASSIGNED_USER_ID-1"),
 				tuple("ERRAND_ID-2", "ASSIGNED_GROUP_ID-1", "ASSIGNED_USER_ID-1"));
+	}
+
+	@Test
+	void errandWithStakeholderAndContactChannel() {
+		var errandEntity =  errandsRepository.findById("ERRAND_ID-1");
+
+		assertThat(errandEntity.get().getStakeholders().size()).isEqualTo(1);
+		assertThat(errandEntity.get().getStakeholders())
+				.extracting(StakeholderEntity::getId, StakeholderEntity::getType, StakeholderEntity::getStakeholderId, StakeholderEntity::getFirstName, StakeholderEntity::getLastName, StakeholderEntity::getAddress, StakeholderEntity::getCareOf, StakeholderEntity::getZipCode, StakeholderEntity::getCountry)
+				.containsExactly(tuple(3001L, "EMPLOYEE", "STAKEHOLDER_ID-1", "FIRST_NAME-1", "LAST_NAME-1", "ADDRESS-1", "CARE_OF-1", "ZIP_CODE-1", "COUNTRY-1"));
+		assertThat(errandEntity.get().getStakeholders().get(0).getContactChannels().size()).isEqualTo(1);
+		assertThat(errandEntity.get().getStakeholders().get(0).getContactChannels())
+				.extracting(ContactChannelEntity::getType, ContactChannelEntity::getValue)
+				.containsExactly(tuple("TYPE-1", "VALUE-1"));
 	}
 
 	@ParameterizedTest

@@ -17,8 +17,6 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
@@ -30,10 +28,8 @@ import generated.se.sundsvall.messaging.ExternalReference;
 import se.sundsvall.supportmanagement.api.model.communication.EmailAttachment;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
 import se.sundsvall.supportmanagement.api.model.communication.SmsRequest;
-import se.sundsvall.supportmanagement.api.model.errand.StakeholderType;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.messaging.MessagingClient;
 
 @ExtendWith(MockitoExtension.class)
@@ -42,7 +38,6 @@ class CommunicationServiceTest {
 	private static final String NAMESPACE = "namespace";
 	private static final String MUNICIPALITY_ID = "municipalityId";
 	private static final String ERRAND_ID = randomUUID().toString();
-	private static final String MESSAGE = "message";
 	private static final String HTML_MESSAGE = "<html><h1>message</h1></html>";
 	private static final String PLAIN_MESSAGE = "message";
 	private static final String RECIPIENT = "recipient";
@@ -59,8 +54,6 @@ class CommunicationServiceTest {
 	@Mock
 	private ErrandEntity errandEntityMock;
 
-	@Mock
-	private StakeholderEntity stakeholderEntityMock;
 
 	@Mock
 	private MessagingClient messagingClientMock;
@@ -74,9 +67,8 @@ class CommunicationServiceTest {
 	@Captor
 	private ArgumentCaptor<generated.se.sundsvall.messaging.SmsRequest> messagingSmsCaptor;
 
-	@ParameterizedTest
-	@EnumSource(value = StakeholderType.class)
-	void sendEmail(StakeholderType type) {
+	@Test
+	void sendEmail() {
 		// Setup
 		final var request = createEmailRequest();
 
@@ -95,11 +87,9 @@ class CommunicationServiceTest {
 		final var arguments = messagingEmailCaptor.getValue();
 		assertThat(arguments.getEmailAddress()).isEqualTo(RECIPIENT);
 		assertThat(arguments.getHeaders()).isNullOrEmpty();
-		assertThat(arguments.getHtmlMessage()).isNull();
-		assertThat(arguments.getMessage()).isEqualTo(MESSAGE);
 		assertThat(new String(BASE64_DECODER.decode(arguments.getHtmlMessage()), StandardCharsets.UTF_8)).isEqualTo(HTML_MESSAGE);
 		assertThat(arguments.getMessage()).isEqualTo(PLAIN_MESSAGE);
-		assertThat(arguments.getParty().getPartyId()).isEqualTo(CUSTOMER_ID);
+		assertThat(arguments.getParty().getPartyId()).isNull();
 		assertThat(arguments.getParty().getExternalReferences()).isNotEmpty().extracting(
 			ExternalReference::getKey,
 			ExternalReference::getValue).containsExactly(tuple(ERRAND_ID_KEY, ERRAND_ID));
@@ -112,9 +102,8 @@ class CommunicationServiceTest {
 			generated.se.sundsvall.messaging.EmailAttachment::getName).containsExactly(tuple(FILE_CONTENT, IMAGE_PNG_VALUE, FILE_NAME));
 	}
 
-	@ParameterizedTest
-	@EnumSource(value = StakeholderType.class)
-	void sendSms(StakeholderType type) {
+	@Test
+	void sendSms() {
 		// Setup
 		final var request = createSmsRequest();
 

@@ -6,6 +6,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Random;
 
 import static com.google.code.beanmatchers.BeanMatchers.*;
@@ -37,17 +38,38 @@ class StakeholderEntityTest {
 		var stakeholderId = "stakeholderId";
 		var type = "type";
 		var errand = ErrandEntity.create();
+		var firstName = "firstName";
+		var lastName = "lastName";
+		var address = "address";
+		var careOf = "careOf";
+		var zipCode = "zipCode";
+		var country = "country";
+		var contactChannel = ContactChannelEntity.create();
 
 		var stakeholderEntity = StakeholderEntity.create()
 				.withId(id)
 				.withStakeholderId(stakeholderId)
 				.withType(type)
-				.withErrandEntity(errand);
+				.withErrandEntity(errand)
+				.withFirstName(firstName)
+				.withLastName(lastName)
+				.withAddress(address)
+				.withCareOf(careOf)
+				.withZipCode(zipCode)
+				.withCountry(country)
+				.withContactChannels(List.of(contactChannel));
 
 		assertThat(stakeholderEntity.getId()).isEqualTo(id);
 		assertThat(stakeholderEntity.getStakeholderId()).isEqualTo(stakeholderId);
 		assertThat(stakeholderEntity.getType()).isEqualTo(type);
 		assertThat(stakeholderEntity.getErrandEntity()).isSameAs(errand);
+		assertThat(stakeholderEntity.getFirstName()).isEqualTo(firstName);
+		assertThat(stakeholderEntity.getLastName()).isEqualTo(lastName);
+		assertThat(stakeholderEntity.getAddress()).isEqualTo(address);
+		assertThat(stakeholderEntity.getCareOf()).isEqualTo(careOf);
+		assertThat(stakeholderEntity.getZipCode()).isEqualTo(zipCode);
+		assertThat(stakeholderEntity.getCountry()).isEqualTo(country);
+		assertThat(stakeholderEntity.getContactChannels()).containsExactly(contactChannel);
 
 	}
 

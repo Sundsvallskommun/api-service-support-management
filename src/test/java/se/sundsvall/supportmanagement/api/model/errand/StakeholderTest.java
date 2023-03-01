@@ -11,6 +11,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 class StakeholderTest {
 
 	@Test
@@ -25,16 +27,38 @@ class StakeholderTest {
 
 	@Test
 	void testBuilderMethods() {
-		final var id = "id";
-		final var stakeholderType = StakeholderType.EMPLOYEE;
+		var stakeholderId = "id";
+		var stakeholderType = StakeholderType.EMPLOYEE;
+		var firstName = "firstName";
+		var lastName = "lastName";
+		var address = "address";
+		var careOf = "careOf";
+		var zipCode = "zipCode";
+		var country = "country";
+		var contactChannel = ContactChannel.create();
 
-		final var bean = Stakeholder.create()
-			.withStakeholderId(id)
-			.withType(stakeholderType);
+
+		var bean = Stakeholder.create()
+				.withStakeholderId(stakeholderId)
+				.withType(stakeholderType)
+				.withFirstName(firstName)
+				.withLastName(lastName)
+				.withAddress(address)
+				.withCareOf(careOf)
+				.withZipCode(zipCode)
+				.withCountry(country)
+				.withContactChannels(List.of(contactChannel));
 
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
-		assertThat(bean.getStakeholderId()).isEqualTo(id);
+		assertThat(bean.getStakeholderId()).isEqualTo(stakeholderId);
 		assertThat(bean.getType()).isEqualTo(stakeholderType);
+		assertThat(bean.getFirstName()).isEqualTo(firstName);
+		assertThat(bean.getLastName()).isEqualTo(lastName);
+		assertThat(bean.getAddress()).isEqualTo(address);
+		assertThat(bean.getCareOf()).isEqualTo(careOf);
+		assertThat(bean.getZipCode()).isEqualTo(zipCode);
+		assertThat(bean.getCountry()).isEqualTo(country);
+		assertThat(bean.getContactChannels()).containsExactly(contactChannel);
 	}
 
 	@Test

@@ -6,6 +6,7 @@
 			"priority": "LOW",
 			"stakeholders": [
 				{
+					"contactChannels": [],
 					"stakeholderId": "def57969-9b83-4e54-9351-667dc896a19d",
 					"type": "PRIVATE"
 				}
@@ -32,6 +33,7 @@
 			"priority": "HIGH",
 			"stakeholders": [
 				{
+					"contactChannels": [],
 					"stakeholderId": "7fba994b-e99e-4beb-8ab5-63cc74483b66",
 					"type": "ENTERPRISE"
 				}
@@ -63,8 +65,20 @@
 			"priority": "LOW",
 			"stakeholders": [
 				{
+					"address": "ADDRESS-1",
+					"careOf": "CARE_OF-1",
+					"contactChannels": [
+						{
+							"type": "TYPE-1",
+							"value": "VALUE-1"
+						}
+					],
+					"country": "COUNTRY-1",
+					"firstName": "FIRST_NAME-1",
+					"lastName": "LAST_NAME-1",
 					"stakeholderId": "USER_ID",
-					"type": "EMPLOYEE"
+					"type": "EMPLOYEE",
+					"zipCode": "ZIP_CODE-1"
 				}
 			],
 			"externalTags": [

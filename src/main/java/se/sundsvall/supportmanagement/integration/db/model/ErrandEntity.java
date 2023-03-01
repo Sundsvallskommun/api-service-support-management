@@ -10,22 +10,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import javax.persistence.CascadeType;
-import javax.persistence.CollectionTable;
-import javax.persistence.Column;
-import javax.persistence.ElementCollection;
-import javax.persistence.Entity;
-import javax.persistence.ForeignKey;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.Index;
-import javax.persistence.JoinColumn;
-import javax.persistence.Lob;
-import javax.persistence.OneToMany;
-import javax.persistence.PrePersist;
-import javax.persistence.PreUpdate;
-import javax.persistence.Table;
-import javax.persistence.UniqueConstraint;
+import javax.persistence.*;
 
 import org.hibernate.annotations.Formula;
 import org.hibernate.annotations.GenericGenerator;
@@ -57,7 +42,7 @@ public class ErrandEntity implements Serializable {
 		uniqueConstraints = @UniqueConstraint(name = "uq_external_tag_errand_id_key", columnNames = { "errand_id", "key" }))
 	private List<DbExternalTag> externalTags;
 
-	@OneToMany(mappedBy = "errandEntity", cascade = CascadeType.ALL, orphanRemoval = true)
+	@OneToMany(mappedBy = "errandEntity", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
 	private List<StakeholderEntity> stakeholders;
 
 	@Column(name = "municipality_id", nullable = false)
@@ -116,14 +101,14 @@ public class ErrandEntity implements Serializable {
 	@PrePersist
 	void onCreate() {
 		created = now(systemDefault()).truncatedTo(MILLIS);
-		Optional.ofNullable(stakeholders).ifPresent(st -> st.stream()
+		Optional.ofNullable(stakeholders).ifPresent(st -> st
 				.forEach(s -> s.setErrandEntity(this)));
 	}
 
 	@PreUpdate
 	protected void onUpdate() {
 		modified = now(systemDefault()).truncatedTo(MILLIS);
-		Optional.ofNullable(stakeholders).ifPresent(st -> st.stream()
+		Optional.ofNullable(stakeholders).ifPresent(st -> st
 				.forEach(s -> s.setErrandEntity(this)));
 	}
 
