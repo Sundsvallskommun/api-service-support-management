@@ -244,6 +244,7 @@ class ErrandCommunicationResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo(CONSTRAINT_VIOLATION);
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
+			tuple("htmlMessage", "must not be blank"),
 			tuple("message", "must not be blank"),
 			tuple("recipient", "must not be null"),
 			tuple("sender", "must not be null"),
@@ -342,6 +343,7 @@ class ErrandCommunicationResourceFailureTest {
 
 	private static EmailRequest emailRequest() {
 		return EmailRequest.create()
+			.withHtmlMessage("htmlMessage")
 			.withMessage("message")
 			.withRecipient("recipient@recipient.com")
 			.withSender("sender@sender.com")

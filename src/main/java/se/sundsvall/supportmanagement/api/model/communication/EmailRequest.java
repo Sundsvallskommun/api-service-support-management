@@ -34,7 +34,11 @@ public class EmailRequest {
 	private String subject;
 
 	@NotBlank
-	@Schema(description = "Message", example = "Message in plain text", requiredMode = REQUIRED)
+	@Schema(description = "Message in html (optionally in BASE64 encoded format)", example = "<html>HTML-formatted message</html>", requiredMode = REQUIRED)
+	private String htmlMessage;
+
+	@NotBlank
+	@Schema(description = "Message in plain text", example = "Message in plain text", requiredMode = REQUIRED)
 	private String message;
 
 	@ArraySchema(schema = @Schema(description = "List with Base64 encoded email attachments"))
@@ -96,6 +100,19 @@ public class EmailRequest {
 		return this;
 	}
 
+	public String getHtmlMessage() {
+		return htmlMessage;
+	}
+
+	public void setHtmlMessage(String htmlMessage) {
+		this.htmlMessage = htmlMessage;
+	}
+
+	public EmailRequest withHtmlMessage(String htmlMessage) {
+		this.htmlMessage = htmlMessage;
+		return this;
+	}
+
 	public String getMessage() {
 		return message;
 	}
@@ -124,7 +141,7 @@ public class EmailRequest {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(attachments, message, recipient, sender, senderName, subject);
+		return Objects.hash(attachments, htmlMessage, message, recipient, sender, senderName, subject);
 	}
 
 	@Override
@@ -139,15 +156,15 @@ public class EmailRequest {
 			return false;
 		}
 		EmailRequest other = (EmailRequest) obj;
-		return Objects.equals(attachments, other.attachments) && Objects.equals(message, other.message) && Objects.equals(recipient, other.recipient) && Objects.equals(sender, other.sender) && Objects.equals(senderName, other.senderName) && Objects
-			.equals(subject, other.subject);
+		return Objects.equals(attachments, other.attachments) && Objects.equals(htmlMessage, other.htmlMessage) && Objects.equals(message, other.message) && Objects.equals(recipient, other.recipient) && Objects.equals(sender, other.sender) && Objects
+			.equals(senderName, other.senderName) && Objects.equals(subject, other.subject);
 	}
 
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
-		builder.append("EmailRequest [sender=").append(sender).append(", senderName=").append(senderName).append(", recipient=").append(recipient).append(", subject=").append(subject).append(", message=").append(message).append(", attachments=")
-			.append(attachments).append("]");
+		builder.append("EmailRequest [sender=").append(sender).append(", senderName=").append(senderName).append(", recipient=").append(recipient).append(", subject=").append(subject).append(", htmlMessage=").append(htmlMessage).append(", message=")
+			.append(message).append(", attachments=").append(attachments).append("]");
 		return builder.toString();
 	}
 }

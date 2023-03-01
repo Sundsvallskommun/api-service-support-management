@@ -12,13 +12,14 @@
 			"equalToJson" : {
 				"emailAddress": "john.a@zoidberg.com",
 				"subject": "Insane in the Mainframe",
+				"htmlMessage": "PGh0bWw+U29tZSBtZXNzYWdlIGFib3V0IHRoZSBIQUwgSW5zdGl0dXRlIGZvciA8Yj5DcmltaW5hbGx5IEluc2FuZSBSb2JvdHM8L2I+LCB3aGVyZSByb2JvdHMgdGhhdCA8aT5tdXJkZXJvdXNseTwvaT4gdHVybnMgYWdhaW5zdCBpdHMgaHVtYW4gY3JldyBhcmUgaGVsZDwvaHRtbD4=",
 				"message": "Some message about the HAL Institute for Criminally Insane Robots, where robots that murderously turns against its human crew are held",
 				"sender": {
 					"name": "Bender Bending Rodriguez",
 					"address": "bender@rodriguez.com"
 				},
-				"headers" : [],
-				"attachments": []
+				"attachments": [],
+				"headers": []
 			}
 		} ]
 	},

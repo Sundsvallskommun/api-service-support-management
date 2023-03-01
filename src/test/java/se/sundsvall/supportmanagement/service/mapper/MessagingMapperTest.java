@@ -5,6 +5,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 import static org.springframework.util.MimeTypeUtils.IMAGE_PNG_VALUE;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.util.Base64.Decoder;
 import java.util.List;
 
 import org.junit.jupiter.params.ParameterizedTest;
@@ -19,10 +22,12 @@ import se.sundsvall.supportmanagement.integration.db.model.EmbeddableCustomer;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 
 class MessagingMapperTest {
-
+	private static final Decoder BASE64_DECODER = Base64.getDecoder();
 	private static final String ERRAND_ID = randomUUID().toString();
 	private static final String CUSTOMER_ID = randomUUID().toString();
 	private static final String USER_ID = "userId";
+	private static final String HTML_MESSAGE = "<html>htmlMessage</html>";
+	private static final String HTML_MESSAGE_IN_BASE64 = "PGh0bWw+aHRtbE1lc3NhZ2U8L2h0bWw+";
 	private static final String MESSAGE = "message";
 	private static final String RECIPIENT = "recipient";
 	private static final String SENDER_EMAIL = "sender@sender.com";
@@ -35,11 +40,11 @@ class MessagingMapperTest {
 	@ParameterizedTest
 	@ValueSource(booleans = { true, false })
 	void toEmailRequestWithSenderName(boolean hasUuid) {
-		final var result = MessagingMapper.toEmailRequest(createErrandEntity(hasUuid), createEmailRequest(true));
+		final var result = MessagingMapper.toEmailRequest(createErrandEntity(hasUuid), createEmailRequest(true, HTML_MESSAGE_IN_BASE64));
 
 		assertThat(result.getEmailAddress()).isEqualTo(RECIPIENT);
 		assertThat(result.getHeaders()).isNullOrEmpty();
-		assertThat(result.getHtmlMessage()).isNull();
+		assertThat(new String(BASE64_DECODER.decode(result.getHtmlMessage()), StandardCharsets.UTF_8)).isEqualTo(HTML_MESSAGE);
 		assertThat(result.getMessage()).isEqualTo(MESSAGE);
 		assertThat(result.getSubject()).isEqualTo(SUBJECT);
 		assertThat(result.getSender().getAddress()).isEqualTo(SENDER_EMAIL);
@@ -56,11 +61,11 @@ class MessagingMapperTest {
 	@ParameterizedTest
 	@ValueSource(booleans = { true, false })
 	void toEmailRequestWithoutSenderName(boolean hasUuid) {
-		final var result = MessagingMapper.toEmailRequest(createErrandEntity(hasUuid), createEmailRequest(false));
+		final var result = MessagingMapper.toEmailRequest(createErrandEntity(hasUuid), createEmailRequest(false, HTML_MESSAGE));
 
 		assertThat(result.getEmailAddress()).isEqualTo(RECIPIENT);
 		assertThat(result.getHeaders()).isNullOrEmpty();
-		assertThat(result.getHtmlMessage()).isNull();
+		assertThat(new String(BASE64_DECODER.decode(result.getHtmlMessage()), StandardCharsets.UTF_8)).isEqualTo(HTML_MESSAGE);
 		assertThat(result.getMessage()).isEqualTo(MESSAGE);
 		assertThat(result.getSubject()).isEqualTo(SUBJECT);
 		assertThat(result.getSender().getAddress()).isEqualTo(SENDER_EMAIL);
@@ -104,11 +109,12 @@ class MessagingMapperTest {
 			.withSender(SENDER_NAME);
 	}
 
-	private static EmailRequest createEmailRequest(boolean hasSenderName) {
+	private static EmailRequest createEmailRequest(boolean hasSenderName, String htmlMessage) {
 		return EmailRequest.create()
 			.withAttachments(List.of(EmailAttachment.create()
 				.withBase64EncodedString(FILE_CONTENT)
 				.withName(FILE_NAME)))
+			.withHtmlMessage(htmlMessage)
 			.withMessage(MESSAGE)
 			.withRecipient(RECIPIENT)
 			.withSender(SENDER_EMAIL)

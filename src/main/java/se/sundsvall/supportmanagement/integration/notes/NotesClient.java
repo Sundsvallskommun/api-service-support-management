@@ -17,11 +17,9 @@ import generated.se.sundsvall.notes.CreateNoteRequest;
 import generated.se.sundsvall.notes.FindNotesResponse;
 import generated.se.sundsvall.notes.Note;
 import generated.se.sundsvall.notes.UpdateNoteRequest;
-import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import se.sundsvall.supportmanagement.integration.notes.configuration.NotesConfiguration;
 
 @FeignClient(name = CLIENT_ID, url = "${integration.notes.url}", configuration = NotesConfiguration.class)
-@CircuitBreaker(name = CLIENT_ID)
 public interface NotesClient {
 
 	/**
