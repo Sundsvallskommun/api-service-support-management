@@ -34,7 +34,7 @@ public class EmailRequest {
 	private String subject;
 
 	@NotBlank
-	@Schema(description = "Message in html", example = "<html>HTML-formatted message</html>", requiredMode = REQUIRED)
+	@Schema(description = "Message in html (optionally in BASE64 encoded format)", example = "<html>HTML-formatted message</html>", requiredMode = REQUIRED)
 	private String htmlMessage;
 
 	@NotBlank
