@@ -10,8 +10,8 @@ import java.util.Objects;
 @Schema(description = "Stakeholder model")
 public class Stakeholder {
 
-	@Schema(description = "Unique identifyer for the stakeholder", example = "cb20c51f-fcf3-42c0-b613-de563634a8ec")
-	private String stakeholderId;
+	@Schema(description = "Unique identifier for the stakeholder", example = "cb20c51f-fcf3-42c0-b613-de563634a8ec")
+	private String externalId;
 
 	@Schema(implementation = StakeholderType.class)
 	@NotNull
@@ -42,16 +42,16 @@ public class Stakeholder {
 		return new Stakeholder();
 	}
 
-	public String getStakeholderId() {
-		return stakeholderId;
+	public String getExternalId() {
+		return externalId;
 	}
 
-	public void setStakeholderId(String stakeholderId) {
-		this.stakeholderId = stakeholderId;
+	public void setExternalId(String externalId) {
+		this.externalId = externalId;
 	}
 
-	public Stakeholder withStakeholderId(String stakeholderId) {
-		this.stakeholderId = stakeholderId;
+	public Stakeholder withExternalId(String externalId) {
+		this.externalId = externalId;
 		return this;
 	}
 
@@ -168,18 +168,18 @@ public class Stakeholder {
 			return false;
 		}
 		Stakeholder that = (Stakeholder) o;
-		return Objects.equals(stakeholderId, that.stakeholderId) && type == that.type && Objects.equals(firstName, that.firstName) && Objects.equals(lastName, that.lastName) && Objects.equals(address, that.address) && Objects.equals(careOf, that.careOf) && Objects.equals(zipCode, that.zipCode) && Objects.equals(country, that.country) && Objects.equals(contactChannels, that.contactChannels);
+		return Objects.equals(externalId, that.externalId) && type == that.type && Objects.equals(firstName, that.firstName) && Objects.equals(lastName, that.lastName) && Objects.equals(address, that.address) && Objects.equals(careOf, that.careOf) && Objects.equals(zipCode, that.zipCode) && Objects.equals(country, that.country) && Objects.equals(contactChannels, that.contactChannels);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(stakeholderId, type, firstName, lastName, address, careOf, zipCode, country, contactChannels);
+		return Objects.hash(externalId, type, firstName, lastName, address, careOf, zipCode, country, contactChannels);
 	}
 
 	@Override
 	public String toString() {
 		final StringBuilder sb = new StringBuilder("Stakeholder{");
-		sb.append("stakeholderId='").append(stakeholderId).append('\'');
+		sb.append("externalId='").append(externalId).append('\'');
 		sb.append(", type=").append(type);
 		sb.append(", firstName='").append(firstName).append('\'');
 		sb.append(", lastName='").append(lastName).append('\'');

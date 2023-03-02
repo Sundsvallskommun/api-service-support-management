@@ -48,7 +48,7 @@ class ErrandsRepositoryTest {
 	@Test
 	void create() {
 		final var externalTag = DbExternalTag.create().withKey("key").withValue("value");
-		final var stakeholder = StakeholderEntity.create().withStakeholderId("id").withType(StakeholderType.EMPLOYEE.toString()).withContactChannels(List.of(ContactChannelEntity.create().withType("type").withValue("value")));
+		final var stakeholder = StakeholderEntity.create().withExternalId("id").withType(StakeholderType.EMPLOYEE.toString()).withContactChannels(List.of(ContactChannelEntity.create().withType("type").withValue("value")));
 		final var namespace = "namespace";
 		final var title = "title";
 		final var categoryTag = "categoryTag";
@@ -118,8 +118,8 @@ class ErrandsRepositoryTest {
 
 		assertThat(errandEntity.get().getStakeholders().size()).isEqualTo(1);
 		assertThat(errandEntity.get().getStakeholders())
-				.extracting(StakeholderEntity::getId, StakeholderEntity::getType, StakeholderEntity::getStakeholderId, StakeholderEntity::getFirstName, StakeholderEntity::getLastName, StakeholderEntity::getAddress, StakeholderEntity::getCareOf, StakeholderEntity::getZipCode, StakeholderEntity::getCountry)
-				.containsExactly(tuple(3001L, "EMPLOYEE", "STAKEHOLDER_ID-1", "FIRST_NAME-1", "LAST_NAME-1", "ADDRESS-1", "CARE_OF-1", "ZIP_CODE-1", "COUNTRY-1"));
+				.extracting(StakeholderEntity::getId, StakeholderEntity::getType, StakeholderEntity::getExternalId, StakeholderEntity::getFirstName, StakeholderEntity::getLastName, StakeholderEntity::getAddress, StakeholderEntity::getCareOf, StakeholderEntity::getZipCode, StakeholderEntity::getCountry)
+				.containsExactly(tuple(3001L, "EMPLOYEE", "EXTERNAL_ID-1", "FIRST_NAME-1", "LAST_NAME-1", "ADDRESS-1", "CARE_OF-1", "ZIP_CODE-1", "COUNTRY-1"));
 		assertThat(errandEntity.get().getStakeholders().get(0).getContactChannels().size()).isEqualTo(1);
 		assertThat(errandEntity.get().getStakeholders().get(0).getContactChannels())
 				.extracting(ContactChannelEntity::getType, ContactChannelEntity::getValue)
@@ -130,8 +130,8 @@ class ErrandsRepositoryTest {
 	@ValueSource(strings = {
 		"(externalTags.key : 'KEY-1')",
 		"(attachments.id : 'ATTACHMENT_ID-1')",
-		"(stakeholders.stakeholderId : 'STAKEHOLDER_ID-1' and externalTags is not empty)",
-		"(stakeholders.stakeholderId : 'STAKEHOLDER_ID-1' and attachments is not empty)"
+		"(stakeholders.externalId : 'EXTERNAL_ID-1' and externalTags is not empty)",
+		"(stakeholders.externalId : 'EXTERNAL_ID-1' and attachments is not empty)"
 	})
 	void findByFilter(String filter) {
 

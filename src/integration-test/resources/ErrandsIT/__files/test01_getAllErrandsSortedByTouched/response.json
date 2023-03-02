@@ -7,7 +7,7 @@
 			"stakeholders": [
 				{
 					"contactChannels": [],
-					"stakeholderId": "def57969-9b83-4e54-9351-667dc896a19d",
+					"externalId": "def57969-9b83-4e54-9351-667dc896a19d",
 					"type": "PRIVATE"
 				}
 			],
@@ -34,7 +34,7 @@
 			"stakeholders": [
 				{
 					"contactChannels": [],
-					"stakeholderId": "7fba994b-e99e-4beb-8ab5-63cc74483b66",
+					"externalId": "7fba994b-e99e-4beb-8ab5-63cc74483b66",
 					"type": "ENTERPRISE"
 				}
 			],
@@ -76,7 +76,7 @@
 					"country": "COUNTRY-1",
 					"firstName": "FIRST_NAME-1",
 					"lastName": "LAST_NAME-1",
-					"stakeholderId": "USER_ID",
+					"externalId": "USER_ID",
 					"type": "EMPLOYEE",
 					"zipCode": "ZIP_CODE-1"
 				}

@@ -25,11 +25,11 @@ VALUES('2281', 'ERRAND_ID-1', 'ASSIGNED_GROUP_ID-1', 'ASSIGNED_USER_ID-1', 'CATE
 -------------------------------------
 -- Stakeholder
 ------------------------------------
-INSERT INTO stakeholder(id, stakeholder_id, type, errand_id, address, care_of, country, first_name, last_name, zip_code)
-VALUES('3001', 'STAKEHOLDER_ID-1', 'EMPLOYEE', 'ERRAND_ID-1', 'ADDRESS-1', 'CARE_OF-1','COUNTRY-1','FIRST_NAME-1', 'LAST_NAME-1', 'ZIP_CODE-1');
-INSERT INTO stakeholder(id, stakeholder_id, type, errand_id) VALUES('3002', 'STAKEHOLDER_ID-2', 'PRIVATE', 'ERRAND_ID-2');
-INSERT INTO stakeholder(id, stakeholder_id, type, errand_id) VALUES('3003', 'STAKEHOLDER_ID-3', 'ENTERPRISE', 'ERRAND_ID-3');
-INSERT INTO stakeholder(id, stakeholder_id, type, errand_id) VALUES('3004', 'STAKEHOLDER_ID-3', 'ENTERPRISE', 'ERRAND_ID-4');
+INSERT INTO stakeholder(id, external_id, type, errand_id, address, care_of, country, first_name, last_name, zip_code)
+VALUES('3001', 'EXTERNAL_ID-1', 'EMPLOYEE', 'ERRAND_ID-1', 'ADDRESS-1', 'CARE_OF-1','COUNTRY-1','FIRST_NAME-1', 'LAST_NAME-1', 'ZIP_CODE-1');
+INSERT INTO stakeholder(id, external_id, type, errand_id) VALUES('3002', 'EXTERNAL_ID-2', 'PRIVATE', 'ERRAND_ID-2');
+INSERT INTO stakeholder(id, external_id, type, errand_id) VALUES('3003', 'EXTERNAL_ID-3', 'ENTERPRISE', 'ERRAND_ID-3');
+INSERT INTO stakeholder(id, external_id, type, errand_id) VALUES('3004', 'EXTERNAL_ID-3', 'ENTERPRISE', 'ERRAND_ID-4');
 
 -------------------------------------
 -- ContactChannel

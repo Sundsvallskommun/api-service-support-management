@@ -25,7 +25,7 @@ public class TestObjectsBuilder {
 	private static final String CATEGORY_TAG = "categoryTag";
 	private static final String NAMESPACE = "namespace";
 	private static final OffsetDateTime CREATED = now().minusWeeks(1);
-	private static final String STAKEHOLDER_ID = "stakeholderId";
+	private static final String EXTERNAL_ID = "externalId";
 	private static final String STAKEHOLDER_TYPE_STRING = PRIVATE.toString();
 	private static final String TAG_KEY = "tagKey";
 	private static final String TAG_VALUE = "tagValue";
@@ -51,7 +51,7 @@ public class TestObjectsBuilder {
 			.withCategoryTag(CATEGORY_TAG)
 			.withCreated(CREATED)
 			.withNamespace(NAMESPACE)
-			.withStakeholders(List.of(StakeholderEntity.create().withStakeholderId(STAKEHOLDER_ID).withType(STAKEHOLDER_TYPE_STRING)))
+			.withStakeholders(List.of(StakeholderEntity.create().withExternalId(EXTERNAL_ID).withType(STAKEHOLDER_TYPE_STRING)))
 			.withExternalTags(List.of(DbExternalTag.create().withKey(TAG_KEY).withValue(TAG_VALUE)))
 			.withModified(MODIFIED)
 			.withMunicipalityId(MUNICIPALITY_ID)
@@ -86,7 +86,7 @@ public class TestObjectsBuilder {
 			.withAssignedUserId(ASSIGNED_USER_ID)
 			.withCategoryTag(CATEGORY_TAG)
 			.withCreated(CREATED)
-			.withStakeholders(List.of(Stakeholder.create().withStakeholderId(STAKEHOLDER_ID).withType(STAKEHOLDER_TYPE)))
+			.withStakeholders(List.of(Stakeholder.create().withExternalId(EXTERNAL_ID).withType(STAKEHOLDER_TYPE)))
 			.withExternalTags(List.of(ExternalTag.create().withKey(TAG_KEY).withValue(TAG_VALUE)))
 			.withId(ID)
 			.withModified(MODIFIED)

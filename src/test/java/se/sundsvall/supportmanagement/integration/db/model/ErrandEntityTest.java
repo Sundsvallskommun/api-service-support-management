@@ -52,7 +52,7 @@ class ErrandEntityTest {
 		final var categoryTag = "categoryTag";
 		final var namespace = "namespace";
 		final var created = now();
-		final var stakeholder = StakeholderEntity.create().withStakeholderId(UUID.randomUUID().toString()).withType(StakeholderType.PRIVATE.toString());
+		final var stakeholder = StakeholderEntity.create().withExternalId(UUID.randomUUID().toString()).withType(StakeholderType.PRIVATE.toString());
 		final var description = "description";
 		final var externalTags = List.of(DbExternalTag.create().withKey("key").withValue("value"));
 		final var id = UUID.randomUUID().toString();

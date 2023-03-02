@@ -43,7 +43,7 @@ class ErrandTest {
 		final var assignedUserId = "assignedUserId";
 		final var categoryTag = "categoryTag";
 		final var created = OffsetDateTime.now();
-		final var stakeholder = Stakeholder.create().withStakeholderId("id").withType(StakeholderType.PRIVATE);
+		final var stakeholder = Stakeholder.create().withExternalId("id").withType(StakeholderType.PRIVATE);
 		final var externalTags = List.of(ExternalTag.create().withKey("externalTagkey").withValue("externalTagValue"));
 		final var id = randomUUID().toString();
 		final var modified = OffsetDateTime.now().plusDays(1);

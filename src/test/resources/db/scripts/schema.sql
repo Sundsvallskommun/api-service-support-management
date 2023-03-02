@@ -1,4 +1,4 @@
-    create table attachment (
+create table attachment (
        id varchar(255) not null,
         created datetime(6),
         file longblob,
@@ -45,9 +45,9 @@
         address varchar(255),
         care_of varchar(255),
         country varchar(255),
+        external_id varchar(255),
         first_name varchar(255),
         last_name varchar(255),
-        stakeholder_id varchar(255),
         type varchar(255),
         zip_code varchar(255),
         errand_id varchar(255) not null,

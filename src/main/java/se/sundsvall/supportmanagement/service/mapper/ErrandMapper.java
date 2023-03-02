@@ -10,7 +10,6 @@ import static org.apache.commons.lang3.StringUtils.isEmpty;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
 
 import se.sundsvall.supportmanagement.api.model.errand.*;
 import se.sundsvall.supportmanagement.integration.db.model.ContactChannelEntity;
@@ -110,7 +109,7 @@ public class ErrandMapper {
 		return Optional.ofNullable(stakeholderEntities)
 				.map(s -> s.stream()
 						.map(stakeholderEntity -> Stakeholder.create()
-								.withStakeholderId(stakeholderEntity.getStakeholderId())
+								.withExternalId(stakeholderEntity.getExternalId())
 								.withType(StakeholderType.valueOf(stakeholderEntity.getType()))
 								.withFirstName(stakeholderEntity.getFirstName())
 								.withLastName(stakeholderEntity.getLastName())
@@ -127,7 +126,7 @@ public class ErrandMapper {
 		return Optional.ofNullable(stakeholders)
 				.map(s -> s.stream()
 						.map(stakeholder -> StakeholderEntity.create()
-								.withStakeholderId(stakeholder.getStakeholderId())
+								.withExternalId(stakeholder.getExternalId())
 								.withType(stakeholder.getType().toString())
 								.withFirstName(stakeholder.getFirstName())
 								.withLastName(stakeholder.getLastName())

@@ -26,8 +26,8 @@ public class StakeholderEntity implements Serializable {
             nullable = false,
             foreignKey = @ForeignKey(name = "fk_errand_stakeholder_errand_id"))
     private ErrandEntity errandEntity;
-    @Column(name = "stakeholder_id")
-    private String stakeholderId;
+    @Column(name = "external_id")
+    private String externalId;
     @Column(name = "type")
     private String type;
 
@@ -62,12 +62,12 @@ public class StakeholderEntity implements Serializable {
         return new StakeholderEntity();
     }
 
-    public String getStakeholderId() {
-        return stakeholderId;
+    public String getExternalId() {
+        return externalId;
     }
 
-    public void setStakeholderId(String stakeholderId) {
-        this.stakeholderId = stakeholderId;
+    public void setExternalId(String externalId) {
+        this.externalId = externalId;
     }
 
     public long getId() {
@@ -96,8 +96,8 @@ public class StakeholderEntity implements Serializable {
         return this;
     }
 
-    public StakeholderEntity withStakeholderId(String id) {
-        this.stakeholderId = id;
+    public StakeholderEntity withExternalId(String externalId) {
+        this.externalId = externalId;
         return this;
     }
 
@@ -214,12 +214,12 @@ public class StakeholderEntity implements Serializable {
             return false;
         }
         StakeholderEntity that = (StakeholderEntity) o;
-        return id == that.id && Objects.equals(errandEntity, that.errandEntity) && Objects.equals(stakeholderId, that.stakeholderId) && Objects.equals(type, that.type) && Objects.equals(firstName, that.firstName) && Objects.equals(lastName, that.lastName) && Objects.equals(address, that.address) && Objects.equals(careOf, that.careOf) && Objects.equals(zipCode, that.zipCode) && Objects.equals(country, that.country) && Objects.equals(contactChannels, that.contactChannels);
+        return id == that.id && Objects.equals(errandEntity, that.errandEntity) && Objects.equals(externalId, that.externalId) && Objects.equals(type, that.type) && Objects.equals(firstName, that.firstName) && Objects.equals(lastName, that.lastName) && Objects.equals(address, that.address) && Objects.equals(careOf, that.careOf) && Objects.equals(zipCode, that.zipCode) && Objects.equals(country, that.country) && Objects.equals(contactChannels, that.contactChannels);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, errandEntity, stakeholderId, type, firstName, lastName, address, careOf, zipCode, country, contactChannels);
+        return Objects.hash(id, errandEntity, externalId, type, firstName, lastName, address, careOf, zipCode, country, contactChannels);
     }
 
     @Override
@@ -227,7 +227,7 @@ public class StakeholderEntity implements Serializable {
         final StringBuilder sb = new StringBuilder("StakeholderEntity{");
         sb.append("id=").append(id);
         sb.append(", errandEntityId=").append(Optional.ofNullable(errandEntity).map(ErrandEntity::getId).orElse(null));
-        sb.append(", stakeholderId='").append(stakeholderId).append('\'');
+        sb.append(", externalId='").append(externalId).append('\'');
         sb.append(", type='").append(type).append('\'');
         sb.append(", firstName='").append(firstName).append('\'');
         sb.append(", lastName='").append(lastName).append('\'');
