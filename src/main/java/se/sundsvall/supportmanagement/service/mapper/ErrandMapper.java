@@ -10,6 +10,7 @@ import static org.apache.commons.lang3.StringUtils.isEmpty;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 
 import se.sundsvall.supportmanagement.api.model.errand.*;
 import se.sundsvall.supportmanagement.integration.db.model.ContactChannelEntity;
@@ -106,56 +107,72 @@ public class ErrandMapper {
 
 	private static List<Stakeholder> toStakeholders(List<StakeholderEntity> stakeholderEntities) {
 		return Optional.ofNullable(stakeholderEntities)
-			.map(s -> s.stream()
-					.map(stakeholderEntity -> Stakeholder.create()
-							.withStakeholderId(stakeholderEntity.getStakeholderId())
-							.withType(StakeholderType.valueOf(stakeholderEntity.getType()))
-							.withFirstName(stakeholderEntity.getFirstName())
-							.withLastName(stakeholderEntity.getLastName())
-							.withAddress(stakeholderEntity.getAddress())
-							.withCareOf(stakeholderEntity.getCareOf())
-							.withZipCode(stakeholderEntity.getZipCode())
-							.withCountry(stakeholderEntity.getCountry())
-							.withContactChannels(toContactChannels(stakeholderEntity.getContactChannels())))
-					.toList())
-			.orElse(null);
+			.map(toStakeholders())
+			.orElse(emptyList());
+	}
+
+	private static Function<List<StakeholderEntity>, List<Stakeholder>> toStakeholders() {
+		return stakeholderEntities -> stakeholderEntities.stream()
+				.map(stakeholderEntity -> Stakeholder.create()
+						.withStakeholderId(stakeholderEntity.getStakeholderId())
+						.withType(StakeholderType.valueOf(stakeholderEntity.getType()))
+						.withFirstName(stakeholderEntity.getFirstName())
+						.withLastName(stakeholderEntity.getLastName())
+						.withAddress(stakeholderEntity.getAddress())
+						.withCareOf(stakeholderEntity.getCareOf())
+						.withZipCode(stakeholderEntity.getZipCode())
+						.withCountry(stakeholderEntity.getCountry())
+						.withContactChannels(toContactChannels(stakeholderEntity.getContactChannels())))
+				.toList();
 	}
 
 	private static List<StakeholderEntity> toStakeholderEntities(List<Stakeholder> stakeholders) {
 		return Optional.ofNullable(stakeholders)
-			.map(s -> s.stream()
-					.map(stakeholder -> StakeholderEntity.create()
-							.withStakeholderId(stakeholder.getStakeholderId())
-							.withType(stakeholder.getType().toString())
-							.withFirstName(stakeholder.getFirstName())
-							.withLastName(stakeholder.getLastName())
-							.withAddress(stakeholder.getAddress())
-							.withCareOf(stakeholder.getCareOf())
-							.withZipCode(stakeholder.getZipCode())
-							.withCountry(stakeholder.getCountry())
-							.withContactChannels(toContactChannelEntities(stakeholder.getContactChannels())))
-					.toList())
-				.orElse(null);
+				.map(toStakeholderEntities())
+				.orElse(emptyList());
+	}
+
+	private static Function<List<Stakeholder>, List<StakeholderEntity>> toStakeholderEntities() {
+		return stakeholders -> stakeholders.stream()
+				.map(stakeholder -> StakeholderEntity.create()
+						.withStakeholderId(stakeholder.getStakeholderId())
+						.withType(stakeholder.getType().toString())
+						.withFirstName(stakeholder.getFirstName())
+						.withLastName(stakeholder.getLastName())
+						.withAddress(stakeholder.getAddress())
+						.withCareOf(stakeholder.getCareOf())
+						.withZipCode(stakeholder.getZipCode())
+						.withCountry(stakeholder.getCountry())
+						.withContactChannels(toContactChannelEntities(stakeholder.getContactChannels())))
+				.toList();
 	}
 
 	private static List<ContactChannelEntity> toContactChannelEntities(List<ContactChannel> contactChannels) {
 		return Optional.ofNullable(contactChannels)
-				.map(ch -> ch.stream()
-						.map(contactChannel -> ContactChannelEntity.create()
-								.withType(contactChannel.getType())
-								.withValue(contactChannel.getValue()))
-						.toList())
-				.orElse(null);
+				.map(toContactChannelEntities())
+				.orElse(emptyList());
+	}
+
+	private static Function<List<ContactChannel>, List<ContactChannelEntity>> toContactChannelEntities() {
+		return contactChannels -> contactChannels.stream()
+				.map(contactChannel -> ContactChannelEntity.create()
+						.withType(contactChannel.getType())
+						.withValue(contactChannel.getValue()))
+				.toList();
 	}
 
 	private static List<ContactChannel> toContactChannels(List<ContactChannelEntity> contactChannelEntities) {
 		return Optional.ofNullable(contactChannelEntities)
-				.map(ch -> ch.stream()
-						.map(contactChannelEntity -> ContactChannel.create()
-								.withType(contactChannelEntity.getType())
-								.withValue(contactChannelEntity.getValue()))
-						.toList())
-				.orElse(null);
+				.map(toContactChannels())
+				.orElse(emptyList());
+	}
+
+	private static Function<List<ContactChannelEntity>, List<ContactChannel>> toContactChannels() {
+		return contactChannelEntities -> contactChannelEntities.stream()
+				.map(contactChannelEntity -> ContactChannel.create()
+						.withType(contactChannelEntity.getType())
+						.withValue(contactChannelEntity.getValue()))
+				.toList();
 	}
 
 	private static List<ExternalTag> toExternalTags(List<DbExternalTag> entities) {

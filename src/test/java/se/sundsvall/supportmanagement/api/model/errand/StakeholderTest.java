@@ -37,7 +37,6 @@ class StakeholderTest {
 		var country = "country";
 		var contactChannel = ContactChannel.create();
 
-
 		var bean = Stakeholder.create()
 				.withStakeholderId(stakeholderId)
 				.withType(stakeholderType)

@@ -38,7 +38,7 @@ public class Errand {
 	@NotNull(groups = OnCreate.class)
 	private Priority priority;
 
-	@Schema(implementation = Stakeholder.class)
+	@ArraySchema(schema = @Schema(implementation = Stakeholder.class), uniqueItems = true)
 	private List<Stakeholder> stakeholders;
 
 	@ArraySchema(schema = @Schema(implementation = ExternalTag.class), uniqueItems = true)

@@ -5,6 +5,7 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 import static javax.persistence.GenerationType.IDENTITY;
 
@@ -21,7 +22,9 @@ public class StakeholderEntity implements Serializable {
     private long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "errand_id", nullable = false, foreignKey = @ForeignKey(name = "fk_errand_stakeholder_errand_id"))
+    @JoinColumn(name = "errand_id",
+            nullable = false,
+            foreignKey = @ForeignKey(name = "fk_errand_stakeholder_errand_id"))
     private ErrandEntity errandEntity;
     @Column(name = "stakeholder_id")
     private String stakeholderId;
@@ -204,8 +207,12 @@ public class StakeholderEntity implements Serializable {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         StakeholderEntity that = (StakeholderEntity) o;
         return id == that.id && Objects.equals(errandEntity, that.errandEntity) && Objects.equals(stakeholderId, that.stakeholderId) && Objects.equals(type, that.type) && Objects.equals(firstName, that.firstName) && Objects.equals(lastName, that.lastName) && Objects.equals(address, that.address) && Objects.equals(careOf, that.careOf) && Objects.equals(zipCode, that.zipCode) && Objects.equals(country, that.country) && Objects.equals(contactChannels, that.contactChannels);
     }
@@ -219,7 +226,7 @@ public class StakeholderEntity implements Serializable {
     public String toString() {
         final StringBuilder sb = new StringBuilder("StakeholderEntity{");
         sb.append("id=").append(id);
-        sb.append(", errandEntity=").append(errandEntity);
+        sb.append(", errandEntityId=").append(Optional.ofNullable(errandEntity).map(ErrandEntity::getId).orElse(null));
         sb.append(", stakeholderId='").append(stakeholderId).append('\'');
         sb.append(", type='").append(type).append('\'');
         sb.append(", firstName='").append(firstName).append('\'');

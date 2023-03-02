@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.integration.db.model;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Embeddable;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
@@ -10,12 +11,12 @@ public class ContactChannelEntity implements Serializable {
 
 	@Serial
 	private static final long serialVersionUID = -2018618163698478459L;
+
 	@Column(name = "type")
 	private String type;
 
 	@Column(name = "value")
 	private String value;
-
 
 	public static ContactChannelEntity create() {
 		return new ContactChannelEntity();
@@ -49,8 +50,12 @@ public class ContactChannelEntity implements Serializable {
 
 	@Override
 	public boolean equals(Object o) {
-		if (this == o) return true;
-		if (o == null || getClass() != o.getClass()) return false;
+		if (this == o) {
+			return true;
+		}
+		if (o == null || getClass() != o.getClass()) {
+			return false;
+		}
 		ContactChannelEntity that = (ContactChannelEntity) o;
 		return Objects.equals(type, that.type) && Objects.equals(value, that.value);
 	}

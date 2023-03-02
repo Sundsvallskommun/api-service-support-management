@@ -111,20 +111,22 @@ class ErrandEntityTest {
 
 	@Test
 	void testOnCreate() {
-		final var entity = new ErrandEntity();
+		final var entity = new ErrandEntity().withStakeholders(List.of(StakeholderEntity.create()));
 		entity.onCreate();
 
 		assertThat(entity.getCreated()).isCloseTo(now(), within(1, SECONDS));
-		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("created");
+		assertThat(entity.getStakeholders().get(0).getErrandEntity()).isSameAs(entity);
+		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("created", "stakeholders");
 	}
 
 	@Test
 	void testOnUpdate() {
-		final var entity = new ErrandEntity();
+		final var entity = new ErrandEntity().withStakeholders(List.of(StakeholderEntity.create()));
 		entity.onUpdate();
 
 		assertThat(entity.getModified()).isCloseTo(now(), within(1, SECONDS));
-		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("modified");
+		assertThat(entity.getStakeholders().get(0).getErrandEntity()).isSameAs(entity);
+		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("modified", "stakeholders");
 	}
 
 	@Test

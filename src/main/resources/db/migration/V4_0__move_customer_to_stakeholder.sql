@@ -39,3 +39,4 @@ select id, customer_type, customer_id from errand;
 
 alter table errand drop column customer_type;
 alter table errand drop column customer_id;
+drop index if exists idx_errand_customer_id on errand;

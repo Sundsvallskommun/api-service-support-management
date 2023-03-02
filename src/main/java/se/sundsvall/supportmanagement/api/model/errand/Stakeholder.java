@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.api.model.errand;
 
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import javax.validation.constraints.NotNull;
@@ -34,7 +35,7 @@ public class Stakeholder {
 	@Schema(description = "Country", example = "United Kingdom")
 	private String country;
 
-	@Schema(description = "Contact information")
+	@ArraySchema(schema = @Schema(implementation = ContactChannel.class))
 	private List<ContactChannel> contactChannels;
 
 	public static Stakeholder create() {
@@ -160,8 +161,12 @@ public class Stakeholder {
 
 	@Override
 	public boolean equals(Object o) {
-		if (this == o) return true;
-		if (o == null || getClass() != o.getClass()) return false;
+		if (this == o) {
+			return true;
+		}
+		if (o == null || getClass() != o.getClass()) {
+			return false;
+		}
 		Stakeholder that = (Stakeholder) o;
 		return Objects.equals(stakeholderId, that.stakeholderId) && type == that.type && Objects.equals(firstName, that.firstName) && Objects.equals(lastName, that.lastName) && Objects.equals(address, that.address) && Objects.equals(careOf, that.careOf) && Objects.equals(zipCode, that.zipCode) && Objects.equals(country, that.country) && Objects.equals(contactChannels, that.contactChannels);
 	}

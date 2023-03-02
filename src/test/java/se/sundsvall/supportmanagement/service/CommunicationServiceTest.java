@@ -148,34 +148,6 @@ class CommunicationServiceTest {
 			NAMESPACE + "' for municipality with id '" + MUNICIPALITY_ID + "'");
 	}
 
-	@Test
-	void stakeholderWithNonUuid() {
-		// Setup
-		final var request = createSmsRequest();
-
-		// Mock
-		when(repositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
-		when(repositoryMock.getReferenceById(ERRAND_ID)).thenReturn(errandEntityMock);
-		when(errandEntityMock.getId()).thenReturn(ERRAND_ID);
-
-		// Call
-		service.sendSms(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, request);
-
-		// Verifications and assertions
-		verify(repositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
-		verify(repositoryMock).getReferenceById(ERRAND_ID);
-		verify(messagingClientMock).sendSms(messagingSmsCaptor.capture());
-
-		final var arguments = messagingSmsCaptor.getValue();
-		assertThat(arguments.getHeaders()).isNullOrEmpty();
-		assertThat(arguments.getMessage()).isEqualTo(PLAIN_MESSAGE);
-		assertThat(arguments.getMobileNumber()).isEqualTo(RECIPIENT);
-		assertThat(arguments.getParty().getExternalReferences()).isNotEmpty().extracting(
-				ExternalReference::getKey,
-				ExternalReference::getValue).containsExactly(tuple(ERRAND_ID_KEY, ERRAND_ID));
-		assertThat(arguments.getSender().getName()).isEqualTo(SENDER_NAME);
-	}
-
 	private SmsRequest createSmsRequest() {
 		return SmsRequest.create()
 			.withMessage(PLAIN_MESSAGE)

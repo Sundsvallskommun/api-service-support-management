@@ -1,27 +1,31 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
+import org.junit.jupiter.api.Test;
+import se.sundsvall.supportmanagement.api.model.errand.ContactChannel;
+import se.sundsvall.supportmanagement.api.model.errand.Errand;
+import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
+import se.sundsvall.supportmanagement.api.model.errand.Priority;
+import se.sundsvall.supportmanagement.api.model.errand.Stakeholder;
+import se.sundsvall.supportmanagement.api.model.errand.StakeholderType;
+import se.sundsvall.supportmanagement.integration.db.model.ContactChannelEntity;
+import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
+
+import java.time.OffsetDateTime;
+import java.util.List;
+
 import static java.time.OffsetDateTime.now;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static org.assertj.core.groups.Tuple.tuple;
-import static se.sundsvall.supportmanagement.api.model.errand.StakeholderType.PRIVATE;
 import static se.sundsvall.supportmanagement.api.model.errand.Priority.HIGH;
+import static se.sundsvall.supportmanagement.api.model.errand.StakeholderType.PRIVATE;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrand;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrands;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.updateEntity;
-
-import java.time.OffsetDateTime;
-import java.util.List;
-
-import org.junit.jupiter.api.Test;
-
-import se.sundsvall.supportmanagement.api.model.errand.*;
-import se.sundsvall.supportmanagement.integration.db.model.ContactChannelEntity;
-import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
-import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 
 class ErrandMapperTest {
 
@@ -65,7 +69,6 @@ class ErrandMapperTest {
 		assertThat(errand.getAssignedUserId()).isEqualTo(ASSIGNED_USER_ID);
 		assertThat(errand.getCategoryTag()).isEqualTo(CATEGORY_TAG);
 		assertThat(errand.getCreated()).isCloseTo(CREATED, within(2, SECONDS));
-		assertThat(errand.getStakeholders()).isNotNull();
 		assertThat(errand.getStakeholders()).hasSize(1)
 				.extracting(Stakeholder::getStakeholderId, Stakeholder::getType, Stakeholder::getFirstName, Stakeholder::getLastName, Stakeholder::getAddress, Stakeholder::getCareOf, Stakeholder::getZipCode, Stakeholder::getCountry, Stakeholder::getContactChannels)
 				.contains(tuple(STAKEHOLDER_ID, StakeholderType.valueOf(STAKEHOLDER_TYPE), FIRST_NAME, LAST_NAME, ADDRESS, CARE_OF, ZIP_CODE, COUNTRY, List.of(ContactChannel.create().withType(CONTACT_CHANNEL_TYPE).withValue(CONTACT_CHANNEL_VALUE))));
