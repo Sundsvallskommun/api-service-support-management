@@ -1,30 +1,31 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
+import org.junit.jupiter.api.Test;
+import se.sundsvall.supportmanagement.api.model.errand.ContactChannel;
+import se.sundsvall.supportmanagement.api.model.errand.Errand;
+import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
+import se.sundsvall.supportmanagement.api.model.errand.Priority;
+import se.sundsvall.supportmanagement.api.model.errand.Stakeholder;
+import se.sundsvall.supportmanagement.api.model.errand.StakeholderType;
+import se.sundsvall.supportmanagement.integration.db.model.ContactChannelEntity;
+import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
+
+import java.time.OffsetDateTime;
+import java.util.List;
+
 import static java.time.OffsetDateTime.now;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static org.assertj.core.groups.Tuple.tuple;
-import static se.sundsvall.supportmanagement.api.model.errand.CustomerType.PRIVATE;
 import static se.sundsvall.supportmanagement.api.model.errand.Priority.HIGH;
+import static se.sundsvall.supportmanagement.api.model.errand.StakeholderType.PRIVATE;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrand;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrands;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.updateEntity;
-
-import java.time.OffsetDateTime;
-import java.util.List;
-
-import org.junit.jupiter.api.Test;
-
-import se.sundsvall.supportmanagement.api.model.errand.Customer;
-import se.sundsvall.supportmanagement.api.model.errand.CustomerType;
-import se.sundsvall.supportmanagement.api.model.errand.Errand;
-import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
-import se.sundsvall.supportmanagement.api.model.errand.Priority;
-import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
-import se.sundsvall.supportmanagement.integration.db.model.EmbeddableCustomer;
-import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 
 class ErrandMapperTest {
 
@@ -35,8 +36,8 @@ class ErrandMapperTest {
 	private static final String CATEGORY_TAG = "categoryTag";
 	private static final String CLIENT_ID_TAG = "clientIdTag";
 	private static final OffsetDateTime CREATED = now().minusWeeks(1);
-	private static final String CUSTOMER_ID = "customerId";
-	private static final String CUSTOMER_TYPE = PRIVATE.toString();
+	private static final String EXTERNAL_ID = "externalId";
+	private static final String STAKEHOLDER_TYPE = PRIVATE.toString();
 	private static final String TAG_KEY = "tagKey";
 	private static final String TAG_VALUE = "tagValue";
 	private static final String ID = "id";
@@ -51,6 +52,15 @@ class ErrandMapperTest {
 	private static final String DESCRIPTION = "description";
 	private static final String RESOLUTION = "resolution";
 
+	private static final String FIRST_NAME = "firstName";
+	private static final String LAST_NAME = "lastName";
+	private static final String ADDRESS = "address";
+	private static final String CARE_OF = "careOf";
+	private static final String ZIP_CODE = "zipCode";
+	private static final String COUNTRY = "country";
+	private static final String CONTACT_CHANNEL_TYPE = "contactChannelType";
+	private static final String CONTACT_CHANNEL_VALUE = "contactChannelValue";
+
 	@Test
 	void testToErrand() {
 		final var errand = toErrand(createEntity());
@@ -59,9 +69,9 @@ class ErrandMapperTest {
 		assertThat(errand.getAssignedUserId()).isEqualTo(ASSIGNED_USER_ID);
 		assertThat(errand.getCategoryTag()).isEqualTo(CATEGORY_TAG);
 		assertThat(errand.getCreated()).isCloseTo(CREATED, within(2, SECONDS));
-		assertThat(errand.getCustomer()).isNotNull();
-		assertThat(errand.getCustomer().getId()).isEqualTo(CUSTOMER_ID);
-		assertThat(errand.getCustomer().getType()).isEqualTo(CustomerType.valueOf(CUSTOMER_TYPE));
+		assertThat(errand.getStakeholders()).hasSize(1)
+				.extracting(Stakeholder::getExternalId, Stakeholder::getType, Stakeholder::getFirstName, Stakeholder::getLastName, Stakeholder::getAddress, Stakeholder::getCareOf, Stakeholder::getZipCode, Stakeholder::getCountry, Stakeholder::getContactChannels)
+				.contains(tuple(EXTERNAL_ID, StakeholderType.valueOf(STAKEHOLDER_TYPE), FIRST_NAME, LAST_NAME, ADDRESS, CARE_OF, ZIP_CODE, COUNTRY, List.of(ContactChannel.create().withType(CONTACT_CHANNEL_TYPE).withValue(CONTACT_CHANNEL_VALUE))));
 		assertThat(errand.getExternalTags()).hasSize(1)
 			.extracting(ExternalTag::getKey, ExternalTag::getValue)
 			.contains(tuple(TAG_KEY, TAG_VALUE));
@@ -93,7 +103,7 @@ class ErrandMapperTest {
 				Errand::getAssignedUserId,
 				Errand::getCategoryTag,
 				Errand::getCreated,
-				Errand::getCustomer,
+				Errand::getStakeholders,
 				Errand::getExternalTags,
 				Errand::getId,
 				Errand::getModified,
@@ -110,7 +120,7 @@ class ErrandMapperTest {
 				ASSIGNED_USER_ID,
 				CATEGORY_TAG,
 				CREATED,
-				Customer.create().withId(CUSTOMER_ID).withType(CustomerType.valueOf(CUSTOMER_TYPE)),
+				List.of(createStakeHolder()),
 				List.of(ExternalTag.create().withKey(TAG_KEY).withValue(TAG_VALUE)),
 				ID,
 				MODIFIED,
@@ -138,7 +148,7 @@ class ErrandMapperTest {
 				ErrandEntity::getAssignedGroupId,
 				ErrandEntity::getAssignedUserId,
 				ErrandEntity::getCategoryTag,
-				ErrandEntity::getCustomer,
+				ErrandEntity::getStakeholders,
 				ErrandEntity::getExternalTags,
 				ErrandEntity::getMunicipalityId,
 				ErrandEntity::getNamespace,
@@ -153,7 +163,7 @@ class ErrandMapperTest {
 				ASSIGNED_GROUP_ID,
 				ASSIGNED_USER_ID,
 				CATEGORY_TAG,
-				EmbeddableCustomer.create().withId(CUSTOMER_ID).withType(CUSTOMER_TYPE),
+				List.of(createStakeHolderEntity()),
 				List.of(DbExternalTag.create().withKey(TAG_KEY).withValue(TAG_VALUE)),
 				MUNICIPALITY_ID,
 				NAMESPACE,
@@ -192,7 +202,7 @@ class ErrandMapperTest {
 				ErrandEntity::getAssignedGroupId,
 				ErrandEntity::getAssignedUserId,
 				ErrandEntity::getCategoryTag,
-				ErrandEntity::getCustomer,
+				ErrandEntity::getStakeholders,
 				ErrandEntity::getExternalTags,
 				ErrandEntity::getPriority,
 				ErrandEntity::getStatusTag,
@@ -204,7 +214,7 @@ class ErrandMapperTest {
 				ASSIGNED_GROUP_ID,
 				ASSIGNED_USER_ID,
 				CATEGORY_TAG,
-				EmbeddableCustomer.create().withId(CUSTOMER_ID).withType(CUSTOMER_TYPE),
+				List.of(createStakeHolderEntity()),
 				List.of(DbExternalTag.create().withKey(TAG_KEY).withValue(TAG_VALUE)),
 				PRIORITY,
 				STATUS_TAG,
@@ -249,7 +259,7 @@ class ErrandMapperTest {
 			.withAssignedUserId(ASSIGNED_USER_ID)
 			.withCategoryTag(CATEGORY_TAG)
 			.withCreated(CREATED)
-			.withCustomer(Customer.create().withId(CUSTOMER_ID).withType(CustomerType.valueOf(CUSTOMER_TYPE)))
+			.withStakeholders(List.of(createStakeHolder()))
 			.withExternalTags(List.of(ExternalTag.create().withKey(TAG_KEY).withValue(TAG_VALUE)))
 			.withId(ID)
 			.withModified(MODIFIED)
@@ -263,6 +273,19 @@ class ErrandMapperTest {
 			.withDescription(DESCRIPTION);
 	}
 
+	private static Stakeholder createStakeHolder() {
+		return Stakeholder.create()
+				.withExternalId(EXTERNAL_ID)
+				.withType(StakeholderType.PRIVATE)
+				.withFirstName(FIRST_NAME)
+				.withLastName(LAST_NAME)
+				.withAddress(ADDRESS)
+				.withCareOf(CARE_OF)
+				.withZipCode(ZIP_CODE)
+				.withCountry(COUNTRY)
+				.withContactChannels(List.of(ContactChannel.create().withType(CONTACT_CHANNEL_TYPE).withValue(CONTACT_CHANNEL_VALUE)));
+	}
+
 	private static ErrandEntity createEntity() {
 		return ErrandEntity.create()
 			.withAssignedGroupId(ASSIGNED_GROUP_ID)
@@ -270,7 +293,7 @@ class ErrandMapperTest {
 			.withCategoryTag(CATEGORY_TAG)
 			.withNamespace(CLIENT_ID_TAG)
 			.withCreated(CREATED)
-			.withCustomer(EmbeddableCustomer.create().withId(CUSTOMER_ID).withType(CUSTOMER_TYPE))
+			.withStakeholders(List.of(createStakeHolderEntity()))
 			.withExternalTags(List.of(DbExternalTag.create().withKey(TAG_KEY).withValue(TAG_VALUE)))
 			.withId(ID)
 			.withMunicipalityId(MUNICIPALITY_ID)
@@ -283,5 +306,18 @@ class ErrandMapperTest {
 			.withModified(MODIFIED)
 			.withResolution(RESOLUTION)
 			.withDescription(DESCRIPTION);
+	}
+
+	private static StakeholderEntity createStakeHolderEntity() {
+		return StakeholderEntity.create()
+				.withExternalId(EXTERNAL_ID)
+				.withType(STAKEHOLDER_TYPE)
+				.withFirstName(FIRST_NAME)
+				.withLastName(LAST_NAME)
+				.withAddress(ADDRESS)
+				.withCareOf(CARE_OF)
+				.withZipCode(ZIP_CODE)
+				.withCountry(COUNTRY)
+				.withContactChannels(List.of(ContactChannelEntity.create().withType(CONTACT_CHANNEL_TYPE).withValue(CONTACT_CHANNEL_VALUE)));
 	}
 }

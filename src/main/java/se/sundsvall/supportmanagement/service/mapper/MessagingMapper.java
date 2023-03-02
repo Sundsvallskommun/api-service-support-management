@@ -18,9 +18,7 @@ import generated.se.sundsvall.messaging.ExternalReference;
 import generated.se.sundsvall.messaging.Party;
 import generated.se.sundsvall.messaging.Sms;
 import generated.se.sundsvall.messaging.SmsRequest;
-import se.sundsvall.supportmanagement.integration.db.model.EmbeddableCustomer;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.service.util.ServiceUtil;
 
 public class MessagingMapper {
 
@@ -65,17 +63,7 @@ public class MessagingMapper {
 	}
 
 	private static Party toParty(ErrandEntity errandEntity) {
-		return ofNullable(errandEntity.getCustomer())
-			.map(EmbeddableCustomer::getId)
-			.filter(ServiceUtil::isValidUuid)
-			.map(id -> toParty(id, errandEntity.getId()))
-			.orElse(null);
-	}
-
-	private static Party toParty(String id, String errandId) {
-		return new Party()
-			.partyId(id)
-			.externalReferences(List.of(toExternalReference(errandId)));
+		return new Party().addExternalReferencesItem(toExternalReference(errandEntity.getId()));
 	}
 
 	private static ExternalReference toExternalReference(String id) {

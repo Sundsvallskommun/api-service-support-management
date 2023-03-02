@@ -2,10 +2,13 @@
 	"id": "1be673c0-6ba3-4fb0-af4a-43acf23389f6",
 	"title": "TITLE-3",
 	"priority": "HIGH",
-	"customer": {
-		"id": "7fba994b-e99e-4beb-8ab5-63cc74483b66",
-		"type": "ENTERPRISE"
-	},
+	"stakeholders": [
+		{
+			"contactChannels": [],
+			"externalId": "7fba994b-e99e-4beb-8ab5-63cc74483b66",
+			"type": "ENTERPRISE"
+		}
+	],
 	"externalTags": [
 		{
 			"key": "KEY-4",

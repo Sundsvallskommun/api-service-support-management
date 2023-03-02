@@ -96,7 +96,7 @@ public class ErrandsResource {
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATON_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(description = "Syntax description: [spring-filter](https://github.com/turkraft/spring-filter/blob/85730f950a5f8623159cc0eb4d737555f9382bb7/README.md#syntax)",
-			example = "categoryTag:'SUPPORT-CASE' and customer.id:'81471222-5798-11e9-ae24-57fa13b361e1' and externalTags.key:'caseid' and externalTags.value:'111' and created>'2022-09-08T12:00:00.000+02:00'",
+			example = "categoryTag:'SUPPORT-CASE' and stakeholder.externalId:'81471222-5798-11e9-ae24-57fa13b361e1' and externalTags.key:'caseid' and externalTags.value:'111' and created>'2022-09-08T12:00:00.000+02:00'",
 			schema = @Schema(implementation = String.class)) @Filter final Specification<ErrandEntity> filter,
 		@ParameterObject final Pageable pageable) {
 		return ok(service.findErrands(namespace, municipalityId, filter, pageable));

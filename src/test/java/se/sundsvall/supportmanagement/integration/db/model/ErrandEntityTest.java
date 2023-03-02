@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 
 import com.google.code.beanmatchers.BeanMatchers;
 
-import se.sundsvall.supportmanagement.api.model.errand.CustomerType;
+import se.sundsvall.supportmanagement.api.model.errand.StakeholderType;
 
 class ErrandEntityTest {
 
@@ -52,7 +52,7 @@ class ErrandEntityTest {
 		final var categoryTag = "categoryTag";
 		final var namespace = "namespace";
 		final var created = now();
-		final var customer = EmbeddableCustomer.create().withId(UUID.randomUUID().toString()).withType(CustomerType.PRIVATE.toString());
+		final var stakeholder = StakeholderEntity.create().withExternalId(UUID.randomUUID().toString()).withType(StakeholderType.PRIVATE.toString());
 		final var description = "description";
 		final var externalTags = List.of(DbExternalTag.create().withKey("key").withValue("value"));
 		final var id = UUID.randomUUID().toString();
@@ -73,7 +73,7 @@ class ErrandEntityTest {
 			.withCategoryTag(categoryTag)
 			.withNamespace(namespace)
 			.withCreated(created)
-			.withCustomer(customer)
+			.withStakeholders(List.of(stakeholder))
 			.withDescription(description)
 			.withExternalTags(externalTags)
 			.withId(id)
@@ -94,7 +94,7 @@ class ErrandEntityTest {
 		assertThat(errandEntity.getCategoryTag()).isEqualTo(categoryTag);
 		assertThat(errandEntity.getNamespace()).isEqualTo(namespace);
 		assertThat(errandEntity.getCreated()).isEqualTo(created);
-		assertThat(errandEntity.getCustomer()).isEqualTo(customer);
+		assertThat(errandEntity.getStakeholders()).containsExactly(stakeholder);
 		assertThat(errandEntity.getDescription()).isEqualTo(description);
 		assertThat(errandEntity.getExternalTags()).isEqualTo(externalTags);
 		assertThat(errandEntity.getId()).isEqualTo(id);
@@ -111,20 +111,22 @@ class ErrandEntityTest {
 
 	@Test
 	void testOnCreate() {
-		final var entity = new ErrandEntity();
+		final var entity = new ErrandEntity().withStakeholders(List.of(StakeholderEntity.create()));
 		entity.onCreate();
 
 		assertThat(entity.getCreated()).isCloseTo(now(), within(1, SECONDS));
-		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("created");
+		assertThat(entity.getStakeholders().get(0).getErrandEntity()).isSameAs(entity);
+		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("created", "stakeholders");
 	}
 
 	@Test
 	void testOnUpdate() {
-		final var entity = new ErrandEntity();
+		final var entity = new ErrandEntity().withStakeholders(List.of(StakeholderEntity.create()));
 		entity.onUpdate();
 
 		assertThat(entity.getModified()).isCloseTo(now(), within(1, SECONDS));
-		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("modified");
+		assertThat(entity.getStakeholders().get(0).getErrandEntity()).isSameAs(entity);
+		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("modified", "stakeholders");
 	}
 
 	@Test

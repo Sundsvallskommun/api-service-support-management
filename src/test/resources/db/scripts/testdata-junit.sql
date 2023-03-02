@@ -16,11 +16,26 @@ INSERT INTO tag(id, type, name) VALUES(9, 'STATUS', 'STATUS-3');
 -------------------------------------
 -- Errand
 -------------------------------------
-INSERT INTO errand(municipality_id, id, assigned_group_id, assigned_user_id, category_tag, customer_id, customer_type, namespace, priority, reporter_user_id, status_tag, title, type_tag)
-VALUES('2281', 'ERRAND_ID-1', 'ASSIGNED_GROUP_ID-1', 'ASSIGNED_USER_ID-1', 'CATEGORY-1', 'CUSTOMER_ID-1', 'EMPLOYEE', 'NAMESPACE.1', 'PRIORITY-1', 'REPORTER_USER_ID-1', 'STATUS-1', 'TITLE-1', 'TYPE-1'),
-	  ('2281', 'ERRAND_ID-2', 'ASSIGNED_GROUP_ID-1', 'ASSIGNED_USER_ID-1', 'CATEGORY-1', 'CUSTOMER_ID-2', 'PRIVATE', 'NAMESPACE.1', 'PRIORITY-1', 'REPORTER_USER_ID-1', 'STATUS-1', 'TITLE-1', 'TYPE-1'),
-	  ('2281', 'ERRAND_ID-3', 'ASSIGNED_GROUP_ID-3', 'ASSIGNED_USER_ID-3', 'CATEGORY-3', 'CUSTOMER_ID-3', 'ENTERPRISE', 'NAMESPACE.3', 'PRIORITY-3', 'REPORTER_USER_ID-3', 'STATUS-3', 'TITLE-3', 'TYPE-3'),
-	  ('2305', 'ERRAND_ID-4', 'ASSIGNED_GROUP_ID-3', 'ASSIGNED_USER_ID-3', 'CATEGORY-3', 'CUSTOMER_ID-3', 'ENTERPRISE', 'NAMESPACE.3', 'PRIORITY-3', 'REPORTER_USER_ID-3', 'STATUS-3', 'TITLE-3', 'TYPE-3');
+INSERT INTO errand(municipality_id, id, assigned_group_id, assigned_user_id, category_tag, namespace, priority, reporter_user_id, status_tag, title, type_tag)
+VALUES('2281', 'ERRAND_ID-1', 'ASSIGNED_GROUP_ID-1', 'ASSIGNED_USER_ID-1', 'CATEGORY-1', 'NAMESPACE.1', 'PRIORITY-1', 'REPORTER_USER_ID-1', 'STATUS-1', 'TITLE-1', 'TYPE-1'),
+	  ('2281', 'ERRAND_ID-2', 'ASSIGNED_GROUP_ID-1', 'ASSIGNED_USER_ID-1', 'CATEGORY-1', 'NAMESPACE.1', 'PRIORITY-1', 'REPORTER_USER_ID-1', 'STATUS-1', 'TITLE-1', 'TYPE-1'),
+	  ('2281', 'ERRAND_ID-3', 'ASSIGNED_GROUP_ID-3', 'ASSIGNED_USER_ID-3', 'CATEGORY-3', 'NAMESPACE.3', 'PRIORITY-3', 'REPORTER_USER_ID-3', 'STATUS-3', 'TITLE-3', 'TYPE-3'),
+	  ('2305', 'ERRAND_ID-4', 'ASSIGNED_GROUP_ID-3', 'ASSIGNED_USER_ID-3', 'CATEGORY-3', 'NAMESPACE.3', 'PRIORITY-3', 'REPORTER_USER_ID-3', 'STATUS-3', 'TITLE-3', 'TYPE-3');
+
+-------------------------------------
+-- Stakeholder
+------------------------------------
+INSERT INTO stakeholder(id, external_id, type, errand_id, address, care_of, country, first_name, last_name, zip_code)
+VALUES('3001', 'EXTERNAL_ID-1', 'EMPLOYEE', 'ERRAND_ID-1', 'ADDRESS-1', 'CARE_OF-1','COUNTRY-1','FIRST_NAME-1', 'LAST_NAME-1', 'ZIP_CODE-1');
+INSERT INTO stakeholder(id, external_id, type, errand_id) VALUES('3002', 'EXTERNAL_ID-2', 'PRIVATE', 'ERRAND_ID-2');
+INSERT INTO stakeholder(id, external_id, type, errand_id) VALUES('3003', 'EXTERNAL_ID-3', 'ENTERPRISE', 'ERRAND_ID-3');
+INSERT INTO stakeholder(id, external_id, type, errand_id) VALUES('3004', 'EXTERNAL_ID-3', 'ENTERPRISE', 'ERRAND_ID-4');
+
+-------------------------------------
+-- ContactChannel
+------------------------------------
+
+INSERT INTO contact_channel(stakeholder_id, type, value) VALUES('3001', 'TYPE-1', 'VALUE-1');
 
 -------------------------------------
 -- ExternalTag

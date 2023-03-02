@@ -17,8 +17,6 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
@@ -30,9 +28,7 @@ import generated.se.sundsvall.messaging.ExternalReference;
 import se.sundsvall.supportmanagement.api.model.communication.EmailAttachment;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
 import se.sundsvall.supportmanagement.api.model.communication.SmsRequest;
-import se.sundsvall.supportmanagement.api.model.errand.CustomerType;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
-import se.sundsvall.supportmanagement.integration.db.model.EmbeddableCustomer;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.messaging.MessagingClient;
 
@@ -42,7 +38,6 @@ class CommunicationServiceTest {
 	private static final String NAMESPACE = "namespace";
 	private static final String MUNICIPALITY_ID = "municipalityId";
 	private static final String ERRAND_ID = randomUUID().toString();
-	private static final String CUSTOMER_ID = randomUUID().toString();
 	private static final String HTML_MESSAGE = "<html><h1>message</h1></html>";
 	private static final String PLAIN_MESSAGE = "message";
 	private static final String RECIPIENT = "recipient";
@@ -59,8 +54,6 @@ class CommunicationServiceTest {
 	@Mock
 	private ErrandEntity errandEntityMock;
 
-	@Mock
-	private EmbeddableCustomer embeddableCustomerMock;
 
 	@Mock
 	private MessagingClient messagingClientMock;
@@ -74,9 +67,8 @@ class CommunicationServiceTest {
 	@Captor
 	private ArgumentCaptor<generated.se.sundsvall.messaging.SmsRequest> messagingSmsCaptor;
 
-	@ParameterizedTest
-	@EnumSource(value = CustomerType.class)
-	void sendEmail(CustomerType type) {
+	@Test
+	void sendEmail() {
 		// Setup
 		final var request = createEmailRequest();
 
@@ -84,8 +76,6 @@ class CommunicationServiceTest {
 		when(repositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
 		when(repositoryMock.getReferenceById(ERRAND_ID)).thenReturn(errandEntityMock);
 		when(errandEntityMock.getId()).thenReturn(ERRAND_ID);
-		when(errandEntityMock.getCustomer()).thenReturn(embeddableCustomerMock);
-		when(embeddableCustomerMock.getId()).thenReturn(CUSTOMER_ID);
 		// Call
 		service.sendEmail(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, request);
 
@@ -99,7 +89,7 @@ class CommunicationServiceTest {
 		assertThat(arguments.getHeaders()).isNullOrEmpty();
 		assertThat(new String(BASE64_DECODER.decode(arguments.getHtmlMessage()), StandardCharsets.UTF_8)).isEqualTo(HTML_MESSAGE);
 		assertThat(arguments.getMessage()).isEqualTo(PLAIN_MESSAGE);
-		assertThat(arguments.getParty().getPartyId()).isEqualTo(CUSTOMER_ID);
+		assertThat(arguments.getParty().getPartyId()).isNull();
 		assertThat(arguments.getParty().getExternalReferences()).isNotEmpty().extracting(
 			ExternalReference::getKey,
 			ExternalReference::getValue).containsExactly(tuple(ERRAND_ID_KEY, ERRAND_ID));
@@ -112,9 +102,8 @@ class CommunicationServiceTest {
 			generated.se.sundsvall.messaging.EmailAttachment::getName).containsExactly(tuple(FILE_CONTENT, IMAGE_PNG_VALUE, FILE_NAME));
 	}
 
-	@ParameterizedTest
-	@EnumSource(value = CustomerType.class)
-	void sendSms(CustomerType type) {
+	@Test
+	void sendSms() {
 		// Setup
 		final var request = createSmsRequest();
 
@@ -122,8 +111,6 @@ class CommunicationServiceTest {
 		when(repositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
 		when(repositoryMock.getReferenceById(ERRAND_ID)).thenReturn(errandEntityMock);
 		when(errandEntityMock.getId()).thenReturn(ERRAND_ID);
-		when(errandEntityMock.getCustomer()).thenReturn(embeddableCustomerMock);
-		when(embeddableCustomerMock.getId()).thenReturn(CUSTOMER_ID);
 
 		// Call
 		service.sendSms(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, request);
@@ -137,7 +124,6 @@ class CommunicationServiceTest {
 		assertThat(arguments.getHeaders()).isNullOrEmpty();
 		assertThat(arguments.getMessage()).isEqualTo(PLAIN_MESSAGE);
 		assertThat(arguments.getMobileNumber()).isEqualTo(RECIPIENT);
-		assertThat(arguments.getParty().getPartyId()).isEqualTo(CUSTOMER_ID);
 		assertThat(arguments.getParty().getExternalReferences()).isNotEmpty().extracting(
 			ExternalReference::getKey,
 			ExternalReference::getValue).containsExactly(tuple(ERRAND_ID_KEY, ERRAND_ID));
@@ -160,33 +146,6 @@ class CommunicationServiceTest {
 		assertThat(exception.getTitle()).isEqualTo(NOT_FOUND.getReasonPhrase());
 		assertThat(exception.getMessage()).isEqualTo("Not Found: An errand with id '" + ERRAND_ID + "' could not be found in namespace '" +
 			NAMESPACE + "' for municipality with id '" + MUNICIPALITY_ID + "'");
-	}
-
-	@Test
-	void customerWithNonUuid() {
-		// Setup
-		final var request = createSmsRequest();
-
-		// Mock
-		when(repositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
-		when(repositoryMock.getReferenceById(ERRAND_ID)).thenReturn(errandEntityMock);
-		when(errandEntityMock.getCustomer()).thenReturn(embeddableCustomerMock);
-		when(embeddableCustomerMock.getId()).thenReturn("non-valid-uuid");
-
-		// Call
-		service.sendSms(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, request);
-
-		// Verifications and assertions
-		verify(repositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
-		verify(repositoryMock).getReferenceById(ERRAND_ID);
-		verify(messagingClientMock).sendSms(messagingSmsCaptor.capture());
-
-		final var arguments = messagingSmsCaptor.getValue();
-		assertThat(arguments.getHeaders()).isNullOrEmpty();
-		assertThat(arguments.getMessage()).isEqualTo(PLAIN_MESSAGE);
-		assertThat(arguments.getMobileNumber()).isEqualTo(RECIPIENT);
-		assertThat(arguments.getParty()).isNull();
-		assertThat(arguments.getSender().getName()).isEqualTo(SENDER_NAME);
 	}
 
 	private SmsRequest createSmsRequest() {

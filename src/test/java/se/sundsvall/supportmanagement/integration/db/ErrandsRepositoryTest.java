@@ -23,10 +23,11 @@ import org.springframework.test.context.jdbc.Sql;
 
 import com.turkraft.springfilter.boot.FilterSpecification;
 
-import se.sundsvall.supportmanagement.api.model.errand.CustomerType;
+import se.sundsvall.supportmanagement.api.model.errand.StakeholderType;
+import se.sundsvall.supportmanagement.integration.db.model.ContactChannelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
-import se.sundsvall.supportmanagement.integration.db.model.EmbeddableCustomer;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 
 /**
  * Tag repository tests.
@@ -47,7 +48,7 @@ class ErrandsRepositoryTest {
 	@Test
 	void create() {
 		final var externalTag = DbExternalTag.create().withKey("key").withValue("value");
-		final var customer = EmbeddableCustomer.create().withId("id").withType(CustomerType.EMPLOYEE.toString()	);
+		final var stakeholder = StakeholderEntity.create().withExternalId("id").withType(StakeholderType.EMPLOYEE.toString()).withContactChannels(List.of(ContactChannelEntity.create().withType("type").withValue("value")));
 		final var namespace = "namespace";
 		final var title = "title";
 		final var categoryTag = "categoryTag";
@@ -70,7 +71,7 @@ class ErrandsRepositoryTest {
 			.withAssignedUserId(assignedUserId)
 			.withAssignedGroupId(assignedGroupId)
 			.withExternalTags(List.of(externalTag))
-			.withCustomer(customer)
+			.withStakeholders(List.of(stakeholder))
 			.withMunicipalityId(municipalityId);
 
 		// Execution
@@ -88,7 +89,7 @@ class ErrandsRepositoryTest {
 		assertThat(persistedEntity.getAssignedUserId()).isEqualTo(assignedUserId);
 		assertThat(persistedEntity.getAssignedGroupId()).isEqualTo(assignedGroupId);
 		assertThat(persistedEntity.getExternalTags()).contains(externalTag);
-		assertThat(persistedEntity.getCustomer()).isEqualTo(customer);
+		assertThat(persistedEntity.getStakeholders()).containsExactly(stakeholder);
 		assertThat(persistedEntity.getMunicipalityId()).isEqualTo(municipalityId);
 		assertThat(persistedEntity.getCreated()).isCloseTo(OffsetDateTime.now(), within(2, SECONDS));
 		assertThat(persistedEntity.getModified()).isNull();
@@ -111,12 +112,26 @@ class ErrandsRepositoryTest {
 				tuple("ERRAND_ID-2", "ASSIGNED_GROUP_ID-1", "ASSIGNED_USER_ID-1"));
 	}
 
+	@Test
+	void errandWithStakeholderAndContactChannel() {
+		var errandEntity =  errandsRepository.findById("ERRAND_ID-1");
+
+		assertThat(errandEntity.get().getStakeholders().size()).isEqualTo(1);
+		assertThat(errandEntity.get().getStakeholders())
+				.extracting(StakeholderEntity::getId, StakeholderEntity::getType, StakeholderEntity::getExternalId, StakeholderEntity::getFirstName, StakeholderEntity::getLastName, StakeholderEntity::getAddress, StakeholderEntity::getCareOf, StakeholderEntity::getZipCode, StakeholderEntity::getCountry)
+				.containsExactly(tuple(3001L, "EMPLOYEE", "EXTERNAL_ID-1", "FIRST_NAME-1", "LAST_NAME-1", "ADDRESS-1", "CARE_OF-1", "ZIP_CODE-1", "COUNTRY-1"));
+		assertThat(errandEntity.get().getStakeholders().get(0).getContactChannels().size()).isEqualTo(1);
+		assertThat(errandEntity.get().getStakeholders().get(0).getContactChannels())
+				.extracting(ContactChannelEntity::getType, ContactChannelEntity::getValue)
+				.containsExactly(tuple("TYPE-1", "VALUE-1"));
+	}
+
 	@ParameterizedTest
 	@ValueSource(strings = {
 		"(externalTags.key : 'KEY-1')",
 		"(attachments.id : 'ATTACHMENT_ID-1')",
-		"(customer.id : 'CUSTOMER_ID-1' and externalTags is not empty)",
-		"(customer.id : 'CUSTOMER_ID-1' and attachments is not empty)"
+		"(stakeholders.externalId : 'EXTERNAL_ID-1' and externalTags is not empty)",
+		"(stakeholders.externalId : 'EXTERNAL_ID-1' and attachments is not empty)"
 	})
 	void findByFilter(String filter) {
 
