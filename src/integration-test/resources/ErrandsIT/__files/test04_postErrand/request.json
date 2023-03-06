@@ -5,7 +5,7 @@
 		{
 			"contactChannels": [],
 			"externalId": "cb20c51f-fcf3-42c0-b613-de563634a8ec",
-			"type": "PRIVATE"
+			"externalIdType": "PRIVATE"
 		}
 	],
 	"externalTags": [

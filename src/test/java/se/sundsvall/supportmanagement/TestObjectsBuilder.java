@@ -2,7 +2,6 @@ package se.sundsvall.supportmanagement;
 
 import static java.time.OffsetDateTime.now;
 import static org.apache.commons.codec.binary.Base64.encodeBase64String;
-import static se.sundsvall.supportmanagement.api.model.errand.StakeholderType.PRIVATE;
 import static se.sundsvall.supportmanagement.api.model.errand.Priority.HIGH;
 
 import java.time.OffsetDateTime;
@@ -11,7 +10,6 @@ import java.util.List;
 import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
 import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachmentHeader;
 import se.sundsvall.supportmanagement.api.model.errand.Stakeholder;
-import se.sundsvall.supportmanagement.api.model.errand.StakeholderType;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
 import se.sundsvall.supportmanagement.api.model.errand.Priority;
@@ -26,7 +24,7 @@ public class TestObjectsBuilder {
 	private static final String NAMESPACE = "namespace";
 	private static final OffsetDateTime CREATED = now().minusWeeks(1);
 	private static final String EXTERNAL_ID = "externalId";
-	private static final String STAKEHOLDER_TYPE_STRING = PRIVATE.toString();
+	private static final String EXTERNAL_ID_TYPE = "PRIVATE";
 	private static final String TAG_KEY = "tagKey";
 	private static final String TAG_VALUE = "tagValue";
 	private static final OffsetDateTime MODIFIED = now();
@@ -39,7 +37,6 @@ public class TestObjectsBuilder {
 	private static final String FILE = "file";
 	private static final String FILE_NAME = "fileName";
 	private static final String MIME_TYPE = "mimeType";
-	private static final StakeholderType STAKEHOLDER_TYPE = PRIVATE;
 	private static final String ID = "id";
 
 	public static ErrandEntity buildErrandEntity() {
@@ -51,7 +48,7 @@ public class TestObjectsBuilder {
 			.withCategoryTag(CATEGORY_TAG)
 			.withCreated(CREATED)
 			.withNamespace(NAMESPACE)
-			.withStakeholders(List.of(StakeholderEntity.create().withExternalId(EXTERNAL_ID).withType(STAKEHOLDER_TYPE_STRING)))
+			.withStakeholders(List.of(StakeholderEntity.create().withExternalId(EXTERNAL_ID).withExternalIdType(EXTERNAL_ID_TYPE)))
 			.withExternalTags(List.of(DbExternalTag.create().withKey(TAG_KEY).withValue(TAG_VALUE)))
 			.withModified(MODIFIED)
 			.withMunicipalityId(MUNICIPALITY_ID)
@@ -86,7 +83,7 @@ public class TestObjectsBuilder {
 			.withAssignedUserId(ASSIGNED_USER_ID)
 			.withCategoryTag(CATEGORY_TAG)
 			.withCreated(CREATED)
-			.withStakeholders(List.of(Stakeholder.create().withExternalId(EXTERNAL_ID).withType(STAKEHOLDER_TYPE)))
+			.withStakeholders(List.of(Stakeholder.create().withExternalId(EXTERNAL_ID).withExternalIdType(EXTERNAL_ID_TYPE)))
 			.withExternalTags(List.of(ExternalTag.create().withKey(TAG_KEY).withValue(TAG_VALUE)))
 			.withId(ID)
 			.withModified(MODIFIED)

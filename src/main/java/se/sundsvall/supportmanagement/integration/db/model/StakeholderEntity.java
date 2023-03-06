@@ -28,8 +28,8 @@ public class StakeholderEntity implements Serializable {
     private ErrandEntity errandEntity;
     @Column(name = "external_id")
     private String externalId;
-    @Column(name = "type")
-    private String type;
+    @Column(name = "external_id_type")
+    private String externalIdType;
 
     @Column(name = "first_name")
     private String firstName;
@@ -101,16 +101,16 @@ public class StakeholderEntity implements Serializable {
         return this;
     }
 
-    public String getType() {
-        return type;
+    public String getExternalIdType() {
+        return externalIdType;
     }
 
-    public void setType(String type) {
-        this.type = type;
+    public void setExternalIdType(String externalIdType) {
+        this.externalIdType = externalIdType;
     }
 
-    public StakeholderEntity withType(String type) {
-        this.type = type;
+    public StakeholderEntity withExternalIdType(String externalIdType) {
+        this.externalIdType = externalIdType;
         return this;
     }
 
@@ -214,12 +214,12 @@ public class StakeholderEntity implements Serializable {
             return false;
         }
         StakeholderEntity that = (StakeholderEntity) o;
-        return id == that.id && Objects.equals(errandEntity, that.errandEntity) && Objects.equals(externalId, that.externalId) && Objects.equals(type, that.type) && Objects.equals(firstName, that.firstName) && Objects.equals(lastName, that.lastName) && Objects.equals(address, that.address) && Objects.equals(careOf, that.careOf) && Objects.equals(zipCode, that.zipCode) && Objects.equals(country, that.country) && Objects.equals(contactChannels, that.contactChannels);
+        return id == that.id && Objects.equals(errandEntity, that.errandEntity) && Objects.equals(externalId, that.externalId) && Objects.equals(externalIdType, that.externalIdType) && Objects.equals(firstName, that.firstName) && Objects.equals(lastName, that.lastName) && Objects.equals(address, that.address) && Objects.equals(careOf, that.careOf) && Objects.equals(zipCode, that.zipCode) && Objects.equals(country, that.country) && Objects.equals(contactChannels, that.contactChannels);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, errandEntity, externalId, type, firstName, lastName, address, careOf, zipCode, country, contactChannels);
+        return Objects.hash(id, errandEntity, externalId, externalIdType, firstName, lastName, address, careOf, zipCode, country, contactChannels);
     }
 
     @Override
@@ -228,7 +228,7 @@ public class StakeholderEntity implements Serializable {
         sb.append("id=").append(id);
         sb.append(", errandEntityId=").append(Optional.ofNullable(errandEntity).map(ErrandEntity::getId).orElse(null));
         sb.append(", externalId='").append(externalId).append('\'');
-        sb.append(", type='").append(type).append('\'');
+        sb.append(", externalIdType='").append(externalIdType).append('\'');
         sb.append(", firstName='").append(firstName).append('\'');
         sb.append(", lastName='").append(lastName).append('\'');
         sb.append(", address='").append(address).append('\'');

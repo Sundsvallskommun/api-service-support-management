@@ -8,7 +8,7 @@
 				{
 					"contactChannels": [],
 					"externalId": "def57969-9b83-4e54-9351-667dc896a19d",
-					"type": "PRIVATE"
+					"externalIdType": "PRIVATE"
 				}
 			],
 			"externalTags": [
@@ -35,7 +35,7 @@
 				{
 					"contactChannels": [],
 					"externalId": "7fba994b-e99e-4beb-8ab5-63cc74483b66",
-					"type": "ENTERPRISE"
+					"externalIdType": "ENTERPRISE"
 				}
 			],
 			"description": "DESCRIPTION",
@@ -77,7 +77,7 @@
 					"firstName": "FIRST_NAME-1",
 					"lastName": "LAST_NAME-1",
 					"externalId": "USER_ID",
-					"type": "EMPLOYEE",
+					"externalIdType": "EMPLOYEE",
 					"zipCode": "ZIP_CODE-1"
 				}
 			],

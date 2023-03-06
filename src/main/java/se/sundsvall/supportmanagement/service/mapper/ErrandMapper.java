@@ -1,21 +1,25 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
+import se.sundsvall.supportmanagement.api.model.errand.ContactChannel;
+import se.sundsvall.supportmanagement.api.model.errand.Errand;
+import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
+import se.sundsvall.supportmanagement.api.model.errand.Priority;
+import se.sundsvall.supportmanagement.api.model.errand.Stakeholder;
+import se.sundsvall.supportmanagement.integration.db.model.ContactChannelEntity;
+import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
 import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toCollection;
 import static org.apache.commons.lang3.ObjectUtils.anyNull;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-
-import se.sundsvall.supportmanagement.api.model.errand.*;
-import se.sundsvall.supportmanagement.integration.db.model.ContactChannelEntity;
-import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
-import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 
 public class ErrandMapper {
 
@@ -110,7 +114,7 @@ public class ErrandMapper {
 				.map(s -> s.stream()
 						.map(stakeholderEntity -> Stakeholder.create()
 								.withExternalId(stakeholderEntity.getExternalId())
-								.withType(StakeholderType.valueOf(stakeholderEntity.getType()))
+								.withExternalIdType(stakeholderEntity.getExternalIdType())
 								.withFirstName(stakeholderEntity.getFirstName())
 								.withLastName(stakeholderEntity.getLastName())
 								.withAddress(stakeholderEntity.getAddress())
@@ -127,7 +131,7 @@ public class ErrandMapper {
 				.map(s -> s.stream()
 						.map(stakeholder -> StakeholderEntity.create()
 								.withExternalId(stakeholder.getExternalId())
-								.withType(stakeholder.getType().toString())
+								.withExternalIdType(stakeholder.getExternalIdType())
 								.withFirstName(stakeholder.getFirstName())
 								.withLastName(stakeholder.getLastName())
 								.withAddress(stakeholder.getAddress())

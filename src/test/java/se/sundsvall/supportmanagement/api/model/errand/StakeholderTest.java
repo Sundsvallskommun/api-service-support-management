@@ -28,7 +28,7 @@ class StakeholderTest {
 	@Test
 	void testBuilderMethods() {
 		var externalId = "id";
-		var stakeholderType = StakeholderType.EMPLOYEE;
+		var externalIdType = "EMPLOYEE";
 		var firstName = "firstName";
 		var lastName = "lastName";
 		var address = "address";
@@ -39,7 +39,7 @@ class StakeholderTest {
 
 		var bean = Stakeholder.create()
 				.withExternalId(externalId)
-				.withType(stakeholderType)
+				.withExternalIdType(externalIdType)
 				.withFirstName(firstName)
 				.withLastName(lastName)
 				.withAddress(address)
@@ -50,7 +50,7 @@ class StakeholderTest {
 
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(bean.getExternalId()).isEqualTo(externalId);
-		assertThat(bean.getType()).isEqualTo(stakeholderType);
+		assertThat(bean.getExternalIdType()).isEqualTo(externalIdType);
 		assertThat(bean.getFirstName()).isEqualTo(firstName);
 		assertThat(bean.getLastName()).isEqualTo(lastName);
 		assertThat(bean.getAddress()).isEqualTo(address);
