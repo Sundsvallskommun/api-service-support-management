@@ -1,13 +1,24 @@
 package se.sundsvall.supportmanagement.integration.db.model;
 
-import javax.persistence.*;
+import static javax.persistence.GenerationType.IDENTITY;
+
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import static javax.persistence.GenerationType.IDENTITY;
+import javax.persistence.CollectionTable;
+import javax.persistence.Column;
+import javax.persistence.ElementCollection;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.ForeignKey;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
 
 @Entity
 @Table(name = "stakeholder")
@@ -28,8 +39,8 @@ public class StakeholderEntity implements Serializable {
     private ErrandEntity errandEntity;
     @Column(name = "external_id")
     private String externalId;
-    @Column(name = "external_id_type")
-    private String externalIdType;
+	@Column(name = "external_id_type_tag")
+    private String externalIdTypeTag;
 
     @Column(name = "first_name")
     private String firstName;
@@ -101,16 +112,16 @@ public class StakeholderEntity implements Serializable {
         return this;
     }
 
-    public String getExternalIdType() {
-        return externalIdType;
+    public String getexternalIdTypeTag() {
+        return externalIdTypeTag;
     }
 
-    public void setExternalIdType(String externalIdType) {
-        this.externalIdType = externalIdType;
+    public void setexternalIdTypeTag(String externalIdTypeTag) {
+        this.externalIdTypeTag = externalIdTypeTag;
     }
 
-    public StakeholderEntity withExternalIdType(String externalIdType) {
-        this.externalIdType = externalIdType;
+    public StakeholderEntity withexternalIdTypeTag(String externalIdTypeTag) {
+        this.externalIdTypeTag = externalIdTypeTag;
         return this;
     }
 
@@ -214,12 +225,12 @@ public class StakeholderEntity implements Serializable {
             return false;
         }
         StakeholderEntity that = (StakeholderEntity) o;
-        return id == that.id && Objects.equals(errandEntity, that.errandEntity) && Objects.equals(externalId, that.externalId) && Objects.equals(externalIdType, that.externalIdType) && Objects.equals(firstName, that.firstName) && Objects.equals(lastName, that.lastName) && Objects.equals(address, that.address) && Objects.equals(careOf, that.careOf) && Objects.equals(zipCode, that.zipCode) && Objects.equals(country, that.country) && Objects.equals(contactChannels, that.contactChannels);
+        return id == that.id && Objects.equals(errandEntity, that.errandEntity) && Objects.equals(externalId, that.externalId) && Objects.equals(externalIdTypeTag, that.externalIdTypeTag) && Objects.equals(firstName, that.firstName) && Objects.equals(lastName, that.lastName) && Objects.equals(address, that.address) && Objects.equals(careOf, that.careOf) && Objects.equals(zipCode, that.zipCode) && Objects.equals(country, that.country) && Objects.equals(contactChannels, that.contactChannels);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, errandEntity, externalId, externalIdType, firstName, lastName, address, careOf, zipCode, country, contactChannels);
+        return Objects.hash(id, errandEntity, externalId, externalIdTypeTag, firstName, lastName, address, careOf, zipCode, country, contactChannels);
     }
 
     @Override
@@ -228,7 +239,7 @@ public class StakeholderEntity implements Serializable {
         sb.append("id=").append(id);
         sb.append(", errandEntityId=").append(Optional.ofNullable(errandEntity).map(ErrandEntity::getId).orElse(null));
         sb.append(", externalId='").append(externalId).append('\'');
-        sb.append(", externalIdType='").append(externalIdType).append('\'');
+        sb.append(", externalIdTypeTag='").append(externalIdTypeTag).append('\'');
         sb.append(", firstName='").append(firstName).append('\'');
         sb.append(", lastName='").append(lastName).append('\'');
         sb.append(", address='").append(address).append('\'');

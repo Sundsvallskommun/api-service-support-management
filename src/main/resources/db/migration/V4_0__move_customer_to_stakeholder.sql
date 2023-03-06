@@ -8,7 +8,7 @@ create table stakeholder (
     first_name varchar(255),
     last_name varchar(255),
     external_id varchar(255),
-    external_id_type varchar(255),
+    external_id_type_tag varchar(255),
     zip_code varchar(255),
     errand_id varchar(255) not null,
     primary key (id)
@@ -32,7 +32,7 @@ alter table stakeholder
 
 -- Migrate data
 
-insert into stakeholder(errand_id, external_id_type, external_id)
+insert into stakeholder(errand_id, external_id_type_tag, external_id)
 select id, customer_type, customer_id from errand;
 
 -- Update errand

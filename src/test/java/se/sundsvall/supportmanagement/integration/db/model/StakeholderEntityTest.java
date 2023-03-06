@@ -40,7 +40,7 @@ class StakeholderEntityTest {
 	void hasValidBuilderMethods() {
 		var id = 1;
 		var externalId = "externalId";
-		var externalIdType = "ExternalIdType";
+		var externalIdTypeTag = "externalIdTypeTag";
 		var errand = ErrandEntity.create();
 		var firstName = "firstName";
 		var lastName = "lastName";
@@ -53,7 +53,7 @@ class StakeholderEntityTest {
 		var stakeholderEntity = StakeholderEntity.create()
 				.withId(id)
 				.withExternalId(externalId)
-				.withExternalIdType(externalIdType)
+				.withexternalIdTypeTag(externalIdTypeTag)
 				.withErrandEntity(errand)
 				.withFirstName(firstName)
 				.withLastName(lastName)
@@ -65,7 +65,7 @@ class StakeholderEntityTest {
 
 		assertThat(stakeholderEntity.getId()).isEqualTo(id);
 		assertThat(stakeholderEntity.getExternalId()).isEqualTo(externalId);
-		assertThat(stakeholderEntity.getExternalIdType()).isEqualTo(externalIdType);
+		assertThat(stakeholderEntity.getexternalIdTypeTag()).isEqualTo(externalIdTypeTag);
 		assertThat(stakeholderEntity.getErrandEntity()).isSameAs(errand);
 		assertThat(stakeholderEntity.getFirstName()).isEqualTo(firstName);
 		assertThat(stakeholderEntity.getLastName()).isEqualTo(lastName);

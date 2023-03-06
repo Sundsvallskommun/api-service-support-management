@@ -319,7 +319,7 @@ class ErrandsCreateResourceFailureTest {
 		return Errand.create()
 			.withAssignedGroupId("assignedGroupId")
 			.withAssignedUserId("assignedUserId")
-			.withStakeholders(List.of(Stakeholder.create().withExternalId("id").withExternalIdType("EMPLOYEE")))
+			.withStakeholders(List.of(Stakeholder.create().withExternalId("id").withexternalIdTypeTag("EMPLOYEE")))
 			.withCategoryTag("category_1")
 			.withCreated(OffsetDateTime.now())
 			.withExternalTags(List.of(ExternalTag.create().withKey("externalTagKey").withValue("externalTagValue")))

@@ -46,7 +46,7 @@ create table attachment (
         care_of varchar(255),
         country varchar(255),
         external_id varchar(255),
-        external_id_type varchar(255),
+        external_id_type_tag varchar(255),
         first_name varchar(255),
         last_name varchar(255),
         zip_code varchar(255),

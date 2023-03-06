@@ -339,7 +339,7 @@ class ErrandsResourceTest {
 			.withAssignedGroupId("assignedGroupId")
 			.withAssignedUserId("assignedUserId")
 			.withCategoryTag("category_1")
-			.withStakeholders(withStakeholder ? List.of(Stakeholder.create().withExternalId(randomUUID().toString()).withExternalIdType("ENTERPRISE")) : null)
+			.withStakeholders(withStakeholder ? List.of(Stakeholder.create().withExternalId(randomUUID().toString()).withexternalIdTypeTag("ENTERPRISE")) : null)
 			.withExternalTags(List.of(ExternalTag.create().withKey("externalTagKey").withValue("externalTagValue")))
 			.withPriority(Priority.HIGH)
 			.withReporterUserId(reporterUserId)
