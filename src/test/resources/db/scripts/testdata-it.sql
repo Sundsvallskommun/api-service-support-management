@@ -25,12 +25,13 @@ INSERT INTO errand(municipality_id, id, assigned_group_id, assigned_user_id, cat
 -------------------------------------
 -- Stakeholder
 ------------------------------------
-INSERT INTO stakeholder(id, external_id, type, errand_id, address, care_of, country, first_name, last_name, zip_code)
-VALUES('3001', 'USER_ID', 'EMPLOYEE', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', 'ADDRESS-1', 'CARE_OF-1','COUNTRY-1','FIRST_NAME-1', 'LAST_NAME-1', 'ZIP_CODE-1');
-INSERT INTO stakeholder(id, external_id, type, errand_id) VALUES('3002', 'def57969-9b83-4e54-9351-667dc896a19d', 'PRIVATE', 'cc236cf1-c00f-4479-8341-ecf5dd90b5b9');
-INSERT INTO stakeholder(id, external_id, type, errand_id) VALUES('3003', '7fba994b-e99e-4beb-8ab5-63cc74483b66', 'ENTERPRISE', '1be673c0-6ba3-4fb0-af4a-43acf23389f6');
-INSERT INTO stakeholder(id, external_id, type, errand_id) VALUES('3004', '83793ee4-4b33-467a-ac56-570d6babcc5b', 'ENTERPRISE', 'f4a7a771-bb75-487b-b7d8-2684a0c3512c');
-INSERT INTO stakeholder(id, external_id, type, errand_id) VALUES('3005', '76bf1aa0-6596-4dca-88ee-25d8a1a47e60', 'PRIVATE', 'e29906af-3083-4dcf-bb8a-d787ccf2dcc4');
+INSERT INTO stakeholder(id, external_id, external_id_type_tag, errand_id, address, care_of, country, first_name, last_name, zip_code) VALUES
+	('3001', 'USER_ID', 'EMPLOYEE', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', 'ADDRESS-1', 'CARE_OF-1','COUNTRY-1','FIRST_NAME-1', 'LAST_NAME-1', 'ZIP_CODE-1');
+INSERT INTO stakeholder(id, external_id, external_id_type_tag, errand_id) VALUES
+	('3002', 'def57969-9b83-4e54-9351-667dc896a19d', 'PRIVATE', 'cc236cf1-c00f-4479-8341-ecf5dd90b5b9'),
+	('3003', '7fba994b-e99e-4beb-8ab5-63cc74483b66', 'ENTERPRISE', '1be673c0-6ba3-4fb0-af4a-43acf23389f6'),
+	('3004', '83793ee4-4b33-467a-ac56-570d6babcc5b', 'ENTERPRISE', 'f4a7a771-bb75-487b-b7d8-2684a0c3512c'),
+	('3005', '76bf1aa0-6596-4dca-88ee-25d8a1a47e60', 'PRIVATE', 'e29906af-3083-4dcf-bb8a-d787ccf2dcc4');
 
 -------------------------------------
 -- ContactChannel

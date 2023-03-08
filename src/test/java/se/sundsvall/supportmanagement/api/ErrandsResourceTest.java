@@ -40,7 +40,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.errand.Stakeholder;
-import se.sundsvall.supportmanagement.api.model.errand.StakeholderType;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
 import se.sundsvall.supportmanagement.api.model.errand.Priority;
@@ -340,7 +339,7 @@ class ErrandsResourceTest {
 			.withAssignedGroupId("assignedGroupId")
 			.withAssignedUserId("assignedUserId")
 			.withCategoryTag("category_1")
-			.withStakeholders(withStakeholder ? List.of(Stakeholder.create().withExternalId(randomUUID().toString()).withType(StakeholderType.ENTERPRISE)) : null)
+			.withStakeholders(withStakeholder ? List.of(Stakeholder.create().withExternalId(randomUUID().toString()).withexternalIdTypeTag("ENTERPRISE")) : null)
 			.withExternalTags(List.of(ExternalTag.create().withKey("externalTagKey").withValue("externalTagValue")))
 			.withPriority(Priority.HIGH)
 			.withReporterUserId(reporterUserId)

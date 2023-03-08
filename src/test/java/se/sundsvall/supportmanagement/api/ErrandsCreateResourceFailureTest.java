@@ -26,7 +26,6 @@ import org.zalando.problem.violations.Violation;
 
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.errand.Stakeholder;
-import se.sundsvall.supportmanagement.api.model.errand.StakeholderType;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
 import se.sundsvall.supportmanagement.api.model.errand.Priority;
@@ -320,7 +319,7 @@ class ErrandsCreateResourceFailureTest {
 		return Errand.create()
 			.withAssignedGroupId("assignedGroupId")
 			.withAssignedUserId("assignedUserId")
-			.withStakeholders(List.of(Stakeholder.create().withExternalId("id").withType(StakeholderType.EMPLOYEE)))
+			.withStakeholders(List.of(Stakeholder.create().withExternalId("id").withexternalIdTypeTag("EMPLOYEE")))
 			.withCategoryTag("category_1")
 			.withCreated(OffsetDateTime.now())
 			.withExternalTags(List.of(ExternalTag.create().withKey("externalTagKey").withValue("externalTagValue")))

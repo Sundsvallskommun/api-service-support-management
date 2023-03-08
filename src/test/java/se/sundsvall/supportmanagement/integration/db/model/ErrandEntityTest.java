@@ -22,8 +22,6 @@ import org.junit.jupiter.api.Test;
 
 import com.google.code.beanmatchers.BeanMatchers;
 
-import se.sundsvall.supportmanagement.api.model.errand.StakeholderType;
-
 class ErrandEntityTest {
 
 	@BeforeAll
@@ -52,7 +50,7 @@ class ErrandEntityTest {
 		final var categoryTag = "categoryTag";
 		final var namespace = "namespace";
 		final var created = now();
-		final var stakeholder = StakeholderEntity.create().withExternalId(UUID.randomUUID().toString()).withType(StakeholderType.PRIVATE.toString());
+		final var stakeholder = StakeholderEntity.create().withExternalId(UUID.randomUUID().toString()).withexternalIdTypeTag("PRIVATE");
 		final var description = "description";
 		final var externalTags = List.of(DbExternalTag.create().withKey("key").withValue("value"));
 		final var id = UUID.randomUUID().toString();

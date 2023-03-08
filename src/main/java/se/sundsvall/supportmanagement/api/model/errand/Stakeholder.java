@@ -3,7 +3,6 @@ package se.sundsvall.supportmanagement.api.model.errand;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-import javax.validation.constraints.NotNull;
 import java.util.List;
 import java.util.Objects;
 
@@ -13,9 +12,8 @@ public class Stakeholder {
 	@Schema(description = "Unique identifier for the stakeholder", example = "cb20c51f-fcf3-42c0-b613-de563634a8ec")
 	private String externalId;
 
-	@Schema(implementation = StakeholderType.class)
-	@NotNull
-	private StakeholderType type;
+	@Schema(description = "Type of external id", example = "PRIVATE")
+	private String externalIdTypeTag;
 
 	@Schema(description = "First name", example = "Aurthur")
 	private String firstName;
@@ -55,16 +53,16 @@ public class Stakeholder {
 		return this;
 	}
 
-	public StakeholderType getType() {
-		return type;
+	public String getexternalIdTypeTag() {
+		return externalIdTypeTag;
 	}
 
-	public void setType(StakeholderType type) {
-		this.type = type;
+	public void setexternalIdTypeTag(String externalIdTypeTag) {
+		this.externalIdTypeTag = externalIdTypeTag;
 	}
 
-	public Stakeholder withType(StakeholderType type) {
-		this.type = type;
+	public Stakeholder withexternalIdTypeTag(String externalIdTypeTag) {
+		this.externalIdTypeTag = externalIdTypeTag;
 		return this;
 	}
 
@@ -154,8 +152,8 @@ public class Stakeholder {
 		this.contactChannels = contactChannels;
 	}
 
-	public Stakeholder withContactChannels(List<ContactChannel> contacChannels) {
-		this.contactChannels = contacChannels;
+	public Stakeholder withContactChannels(List<ContactChannel> contactChannels) {
+		this.contactChannels = contactChannels;
 		return this;
 	}
 
@@ -168,19 +166,19 @@ public class Stakeholder {
 			return false;
 		}
 		Stakeholder that = (Stakeholder) o;
-		return Objects.equals(externalId, that.externalId) && type == that.type && Objects.equals(firstName, that.firstName) && Objects.equals(lastName, that.lastName) && Objects.equals(address, that.address) && Objects.equals(careOf, that.careOf) && Objects.equals(zipCode, that.zipCode) && Objects.equals(country, that.country) && Objects.equals(contactChannels, that.contactChannels);
+		return Objects.equals(externalId, that.externalId) && Objects.equals(externalIdTypeTag, that.externalIdTypeTag) && Objects.equals(firstName, that.firstName) && Objects.equals(lastName, that.lastName) && Objects.equals(address, that.address) && Objects.equals(careOf, that.careOf) && Objects.equals(zipCode, that.zipCode) && Objects.equals(country, that.country) && Objects.equals(contactChannels, that.contactChannels);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(externalId, type, firstName, lastName, address, careOf, zipCode, country, contactChannels);
+		return Objects.hash(externalId, externalIdTypeTag, firstName, lastName, address, careOf, zipCode, country, contactChannels);
 	}
 
 	@Override
 	public String toString() {
 		final StringBuilder sb = new StringBuilder("Stakeholder{");
 		sb.append("externalId='").append(externalId).append('\'');
-		sb.append(", type=").append(type);
+		sb.append(", externalIdTypeTag='").append(externalIdTypeTag).append('\'');
 		sb.append(", firstName='").append(firstName).append('\'');
 		sb.append(", lastName='").append(lastName).append('\'');
 		sb.append(", address='").append(address).append('\'');

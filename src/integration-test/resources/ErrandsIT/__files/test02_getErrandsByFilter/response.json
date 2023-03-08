@@ -18,7 +18,7 @@
 					"firstName": "FIRST_NAME-1",
 					"lastName": "LAST_NAME-1",
 					"externalId": "USER_ID",
-					"type": "EMPLOYEE",
+					"externalIdTypeTag": "EMPLOYEE",
 					"zipCode": "ZIP_CODE-1"
 				}
 			],
