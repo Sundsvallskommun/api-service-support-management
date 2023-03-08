@@ -17,9 +17,7 @@ import org.springframework.format.annotation.DateTimeFormat.ISO;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import se.sundsvall.supportmanagement.api.validation.UniqueExternalTagKeys;
-import se.sundsvall.supportmanagement.api.validation.ValidCategoryTag;
 import se.sundsvall.supportmanagement.api.validation.ValidStatusTag;
-import se.sundsvall.supportmanagement.api.validation.ValidTypeTag;
 import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
 import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
 
@@ -48,12 +46,10 @@ public class Errand {
 
 	@Schema(description = "Category for the errand", example = "SUPPORT_CASE")
 	@NotBlank(groups = OnCreate.class)
-	@ValidCategoryTag
 	private String categoryTag;
 
 	@Schema(description = "Type of errand", example = "OTHER_ISSUES")
 	@NotBlank(groups = OnCreate.class)
-	@ValidTypeTag
 	private String typeTag;
 
 	@Schema(description = "Status for the errand", example = "NEW_CASE")
