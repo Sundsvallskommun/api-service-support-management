@@ -70,9 +70,7 @@ class ErrandsResourceTest {
 
 	@BeforeEach
 	void setupMock() {
-		when(tagServiceMock.findAllCategoryTags()).thenReturn(List.of("CATEGORY_1", "CATEGORY_2"));
 		when(tagServiceMock.findAllStatusTags()).thenReturn(List.of("STATUS_1", "STATUS_2"));
-		when(tagServiceMock.findAllTypeTags()).thenReturn(List.of("TYPE_1", "TYPE_2"));
 	}
 
 	@Test
@@ -96,9 +94,7 @@ class ErrandsResourceTest {
 			.expectBody().isEmpty();
 
 		// Verification
-		verify(tagServiceMock).findAllCategoryTags();
 		verify(tagServiceMock).findAllStatusTags();
-		verify(tagServiceMock).findAllTypeTags();
 		verify(errandServiceMock).createErrand(NAMESPACE, MUNICIPALITY_ID, errandInstance);
 	}
 
@@ -123,9 +119,7 @@ class ErrandsResourceTest {
 				.expectBody().isEmpty();
 
 		// Verification
-		verify(tagServiceMock).findAllCategoryTags();
 		verify(tagServiceMock).findAllStatusTags();
-		verify(tagServiceMock).findAllTypeTags();
 		verify(errandServiceMock).createErrand(NAMESPACE, MUNICIPALITY_ID, errandInstance);
 	}
 
