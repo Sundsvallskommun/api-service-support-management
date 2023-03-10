@@ -54,7 +54,9 @@ class ErrandsUpdateResourceFailureTest {
 
 	@BeforeEach
 	void setupMock() {
+		when(tagServiceMock.findAllCategoryTags()).thenReturn(List.of("CATEGORY_1", "CATEGORY_2"));
 		when(tagServiceMock.findAllStatusTags()).thenReturn(List.of("STATUS_1", "STATUS_2"));
+		when(tagServiceMock.findAllTypeTags()).thenReturn(List.of("TYPE_1", "TYPE_2"));
 	}
 
 	@Test
@@ -77,7 +79,9 @@ class ErrandsUpdateResourceFailureTest {
 			tuple("updateErrand.namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."));
 
 		// Verification
+		verify(tagServiceMock).findAllCategoryTags();
 		verify(tagServiceMock).findAllStatusTags();
+		verify(tagServiceMock).findAllTypeTags();
 		verifyNoInteractions(errandServiceMock);
 	}
 
@@ -101,7 +105,9 @@ class ErrandsUpdateResourceFailureTest {
 			tuple("updateErrand.municipalityId", "not a valid municipality ID"));
 
 		// Verification
+		verify(tagServiceMock).findAllCategoryTags();
 		verify(tagServiceMock).findAllStatusTags();
+		verify(tagServiceMock).findAllTypeTags();
 		verifyNoInteractions(errandServiceMock);
 	}
 
@@ -125,7 +131,9 @@ class ErrandsUpdateResourceFailureTest {
 			tuple("updateErrand.id", "not a valid UUID"));
 
 		// Verification
+		verify(tagServiceMock).findAllCategoryTags();
 		verify(tagServiceMock).findAllStatusTags();
+		verify(tagServiceMock).findAllTypeTags();
 		verifyNoInteractions(errandServiceMock);
 	}
 
@@ -178,7 +186,9 @@ class ErrandsUpdateResourceFailureTest {
 			tuple("updateErrand.errand.reporterUserId", "must be null"));
 
 		// Verification
+		verify(tagServiceMock).findAllCategoryTags();
 		verify(tagServiceMock).findAllStatusTags();
+		verify(tagServiceMock).findAllTypeTags();
 		verifyNoInteractions(errandServiceMock);
 	}
 
@@ -203,7 +213,9 @@ class ErrandsUpdateResourceFailureTest {
 			tuple("updateErrand.errand.reporterUserId", "must be null"));
 
 		// Verification
+		verify(tagServiceMock).findAllCategoryTags();
 		verify(tagServiceMock).findAllStatusTags();
+		verify(tagServiceMock).findAllTypeTags();
 		verifyNoInteractions(errandServiceMock);
 	}
 
@@ -233,7 +245,9 @@ class ErrandsUpdateResourceFailureTest {
 			tuple("externalTags[1].value", "must not be blank"));
 
 		// Verification
+		verify(tagServiceMock).findAllCategoryTags();
 		verify(tagServiceMock).findAllStatusTags();
+		verify(tagServiceMock).findAllTypeTags();
 		verifyNoInteractions(errandServiceMock);
 	}
 
@@ -244,7 +258,7 @@ class ErrandsUpdateResourceFailureTest {
 		final var response = webTestClient.patch()
 			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
-			.bodyValue(Errand.create().withCategoryTag("category").withStatusTag("invalid_status").withTypeTag("type"))
+			.bodyValue(Errand.create().withCategoryTag("invalid_category").withStatusTag("invalid_status").withTypeTag("invalid_type"))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -255,10 +269,14 @@ class ErrandsUpdateResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
-			tuple("statusTag", "value 'invalid_status' doesn't match any of [STATUS_1, STATUS_2]"));
+			tuple("categoryTag", "value 'invalid_category' doesn't match any of [CATEGORY_1, CATEGORY_2]"),
+			tuple("statusTag", "value 'invalid_status' doesn't match any of [STATUS_1, STATUS_2]"),
+			tuple("typeTag", "value 'invalid_type' doesn't match any of [TYPE_1, TYPE_2]"));
 
 		// Verification
+		verify(tagServiceMock).findAllCategoryTags();
 		verify(tagServiceMock).findAllStatusTags();
+		verify(tagServiceMock).findAllTypeTags();
 		verifyNoInteractions(errandServiceMock);
 	}
 
