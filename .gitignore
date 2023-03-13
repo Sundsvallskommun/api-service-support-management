@@ -3,6 +3,7 @@
 
 #config
 .env
+application-default.properties
 
 ### Java ###
 # Compiled class file
