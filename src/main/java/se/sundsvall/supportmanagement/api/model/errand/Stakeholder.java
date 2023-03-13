@@ -53,15 +53,15 @@ public class Stakeholder {
 		return this;
 	}
 
-	public String getexternalIdTypeTag() {
+	public String getExternalIdTypeTag() {
 		return externalIdTypeTag;
 	}
 
-	public void setexternalIdTypeTag(String externalIdTypeTag) {
+	public void setExternalIdTypeTag(String externalIdTypeTag) {
 		this.externalIdTypeTag = externalIdTypeTag;
 	}
 
-	public Stakeholder withexternalIdTypeTag(String externalIdTypeTag) {
+	public Stakeholder withExternalIdTypeTag(String externalIdTypeTag) {
 		this.externalIdTypeTag = externalIdTypeTag;
 		return this;
 	}

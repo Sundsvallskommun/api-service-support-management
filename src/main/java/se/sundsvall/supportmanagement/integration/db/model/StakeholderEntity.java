@@ -112,15 +112,15 @@ public class StakeholderEntity implements Serializable {
         return this;
     }
 
-    public String getexternalIdTypeTag() {
+    public String getExternalIdTypeTag() {
         return externalIdTypeTag;
     }
 
-    public void setexternalIdTypeTag(String externalIdTypeTag) {
+    public void setExternalIdTypeTag(String externalIdTypeTag) {
         this.externalIdTypeTag = externalIdTypeTag;
     }
 
-    public StakeholderEntity withexternalIdTypeTag(String externalIdTypeTag) {
+    public StakeholderEntity withExternalIdTypeTag(String externalIdTypeTag) {
         this.externalIdTypeTag = externalIdTypeTag;
         return this;
     }
