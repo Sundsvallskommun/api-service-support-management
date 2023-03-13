@@ -4,12 +4,22 @@
 	"priority": "HIGH",
 	"stakeholders": [
 		{
-			"contactChannels": [],
-			"externalId": "7fba994b-e99e-4beb-8ab5-63cc74483b66",
-			"externalIdTypeTag": "ENTERPRISE"
+			"externalId": "cb20c51f-fcf3-42c0-b613-de563634a8ec",
+			"externalIdTypeTag": "CO_APPLICANT",
+			"firstName": "Aurthur",
+			"lastName": "Dent",
+			"address": "155 Country Lane, Cottington",
+			"careOf": "Ford Prefect",
+			"zipCode": "12345",
+			"country": "United Kingdom",
+			"contactChannels": [
+				{
+					"type": "Email",
+					"value": "arthur.dent@earth.com"
+				}
+			]
 		}
 	],
-	"description": "DESCRIPTION",
 	"externalTags": [
 		{
 			"key": "KEY-4",
@@ -18,13 +28,18 @@
 		{
 			"key": "KEY-5",
 			"value": "VALUE-5"
+		},
+		{
+			"key": "KEY-6",
+			"value": "VALUE-6"
 		}
 	],
 	"categoryTag": "CATEGORY-3",
 	"typeTag": "TYPE-3",
 	"statusTag": "STATUS-3",
-	"reporterUserId": "REPORTER_USER_ID-3",
 	"resolution": "RESOLUTION",
+	"description": "DESCRIPTION",
+	"reporterUserId": "REPORTER_USER_ID-3",
 	"assignedUserId": "ASSIGNED_USER_ID-3",
 	"assignedGroupId": "ASSIGNED_GROUP_ID-3",
 	"created": "2022-03-01T12:00:00+01:00",

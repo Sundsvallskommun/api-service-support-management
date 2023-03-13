@@ -5,15 +5,19 @@ import static org.apache.commons.codec.binary.Base64.encodeBase64String;
 import static se.sundsvall.supportmanagement.api.model.errand.Priority.HIGH;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
 import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachmentHeader;
-import se.sundsvall.supportmanagement.api.model.errand.Stakeholder;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
 import se.sundsvall.supportmanagement.api.model.errand.Priority;
-import se.sundsvall.supportmanagement.integration.db.model.*;
+import se.sundsvall.supportmanagement.api.model.errand.Stakeholder;
+import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
+import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 
 public class TestObjectsBuilder {
 	private static final String MUNICIPALITY_ID = "municipalityId";
@@ -48,7 +52,7 @@ public class TestObjectsBuilder {
 			.withCategoryTag(CATEGORY_TAG)
 			.withCreated(CREATED)
 			.withNamespace(NAMESPACE)
-			.withStakeholders(List.of(StakeholderEntity.create().withExternalId(EXTERNAL_ID).withExternalIdTypeTag(EXTERNAL_ID_TYPE_TAG)))
+			.withStakeholders(new ArrayList<>(List.of(StakeholderEntity.create().withExternalId(EXTERNAL_ID).withExternalIdTypeTag(EXTERNAL_ID_TYPE_TAG))))
 			.withExternalTags(List.of(DbExternalTag.create().withKey(TAG_KEY).withValue(TAG_VALUE)))
 			.withModified(MODIFIED)
 			.withMunicipalityId(MUNICIPALITY_ID)
