@@ -9,7 +9,7 @@
 	</parent>
 	<groupId>se.sundsvall</groupId>
 	<artifactId>api-service-support-management</artifactId>
-	<version>2.0</version>
+	<version>3.0</version>
 	<name>api-service-support-management</name>
 	<properties>
 		<!-- Pipeline properties -->
@@ -20,7 +20,7 @@
 		<sandbox.db>true</sandbox.db>
 		<!-- Service properties -->
 		<testcontainers.version>1.17.6</testcontainers.version>
-		<spring-filter.version>2.1.4</spring-filter.version>
+		<spring-filter.version>2.1.5</spring-filter.version>
 		<openapi-generator-maven-plugin.version>6.4.0</openapi-generator-maven-plugin.version>
 		<overviewproject.mimetypes.version>1.0.4</overviewproject.mimetypes.version>
 		<generated-sources-path>${project.build.directory}/generated-sources</generated-sources-path>

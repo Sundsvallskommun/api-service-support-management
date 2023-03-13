@@ -4,10 +4,24 @@
 			"id": "ec677eb3-604c-4935-bff7-f8f0b500c8f4",
 			"title": "TITLE-1",
 			"priority": "LOW",
-			"customer": {
-				"id": "USER_ID",
-				"type": "EMPLOYEE"
-			},
+			"stakeholders": [
+				{
+					"address": "ADDRESS-1",
+					"careOf": "CARE_OF-1",
+					"contactChannels": [
+						{
+							"type": "TYPE-1",
+							"value": "VALUE-1"
+						}
+					],
+					"country": "COUNTRY-1",
+					"firstName": "FIRST_NAME-1",
+					"lastName": "LAST_NAME-1",
+					"externalId": "USER_ID",
+					"externalIdTypeTag": "EMPLOYEE",
+					"zipCode": "ZIP_CODE-1"
+				}
+			],
 			"externalTags": [
 				{
 					"key": "KEY-1",

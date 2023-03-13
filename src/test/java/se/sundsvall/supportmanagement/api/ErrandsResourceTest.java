@@ -39,8 +39,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import se.sundsvall.supportmanagement.Application;
-import se.sundsvall.supportmanagement.api.model.errand.Customer;
-import se.sundsvall.supportmanagement.api.model.errand.CustomerType;
+import se.sundsvall.supportmanagement.api.model.errand.Stakeholder;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
 import se.sundsvall.supportmanagement.api.model.errand.Priority;
@@ -71,9 +70,7 @@ class ErrandsResourceTest {
 
 	@BeforeEach
 	void setupMock() {
-		when(tagServiceMock.findAllCategoryTags()).thenReturn(List.of("CATEGORY_1", "CATEGORY_2"));
 		when(tagServiceMock.findAllStatusTags()).thenReturn(List.of("STATUS_1", "STATUS_2"));
-		when(tagServiceMock.findAllTypeTags()).thenReturn(List.of("TYPE_1", "TYPE_2"));
 	}
 
 	@Test
@@ -97,9 +94,32 @@ class ErrandsResourceTest {
 			.expectBody().isEmpty();
 
 		// Verification
-		verify(tagServiceMock).findAllCategoryTags();
 		verify(tagServiceMock).findAllStatusTags();
-		verify(tagServiceMock).findAllTypeTags();
+		verify(errandServiceMock).createErrand(NAMESPACE, MUNICIPALITY_ID, errandInstance);
+	}
+
+	@Test
+	void createErrandWithoutStakeholders() {
+		// Parameter values
+		final var errandInstance = createErrandInstance("reporterUserId", false);
+
+		// Mock
+		when(errandServiceMock.createErrand(NAMESPACE, MUNICIPALITY_ID, errandInstance)).thenReturn(ERRAND_ID);
+
+		// Call
+		webTestClient.post()
+				.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+				.contentType(APPLICATION_JSON)
+				.bodyValue(errandInstance)
+				.exchange()
+				.expectStatus().isCreated()
+				.expectHeader().contentType(ALL)
+				.expectHeader().location("http://localhost:".concat(String.valueOf(port)).concat(fromPath(PATH + "/{id}")
+						.build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)).toString()))
+				.expectBody().isEmpty();
+
+		// Verification
+		verify(tagServiceMock).findAllStatusTags();
 		verify(errandServiceMock).createErrand(NAMESPACE, MUNICIPALITY_ID, errandInstance);
 	}
 
@@ -273,7 +293,7 @@ class ErrandsResourceTest {
 	}
 
 	@Test
-	void updateErrandWithoutCustomer() {
+	void updateErrandWithoutStakeholder() {
 		// Parameter values
 		final var errandInstance = createErrandInstance(null, false);
 		final var updatedInstance = Errand.create().withId(ERRAND_ID);
@@ -308,12 +328,12 @@ class ErrandsResourceTest {
 		verify(errandServiceMock).deleteErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 	}
 
-	private static Errand createErrandInstance(final String reporterUserId, final boolean withCustomer) {
+	private static Errand createErrandInstance(final String reporterUserId, final boolean withStakeholder) {
 		return Errand.create()
 			.withAssignedGroupId("assignedGroupId")
 			.withAssignedUserId("assignedUserId")
 			.withCategoryTag("category_1")
-			.withCustomer(withCustomer ? Customer.create().withId(randomUUID().toString()).withType(CustomerType.ENTERPRISE) : null)
+			.withStakeholders(withStakeholder ? List.of(Stakeholder.create().withExternalId(randomUUID().toString()).withexternalIdTypeTag("ENTERPRISE")) : null)
 			.withExternalTags(List.of(ExternalTag.create().withKey("externalTagKey").withValue("externalTagValue")))
 			.withPriority(Priority.HIGH)
 			.withReporterUserId(reporterUserId)

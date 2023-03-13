@@ -44,7 +44,7 @@ public class ErrandCommunicationResource {
 	private CommunicationService service;
 
 	@PostMapping(path = "/email", consumes = APPLICATION_JSON_VALUE, produces = { ALL_VALUE, APPLICATION_PROBLEM_JSON_VALUE })
-	@Operation(summary = "Send email to customer in errand", description = "Sends an email message to the customer specified in the errand")
+	@Operation(summary = "Send email to in context of an errand", description = "Sends an email message to the recipient specified in the request")
 	@ApiResponse(responseCode = "204", description = "Successful operation")
 	@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = { Problem.class, ConstraintViolationProblem.class })))
 	@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
@@ -60,7 +60,7 @@ public class ErrandCommunicationResource {
 	}
 
 	@PostMapping(path = "/sms", consumes = APPLICATION_JSON_VALUE, produces = { ALL_VALUE, APPLICATION_PROBLEM_JSON_VALUE })
-	@Operation(summary = "Send sms to customer in errand", description = "Sends a sms message to the customer specified in the errand")
+	@Operation(summary = "Send sms to in context of an errand", description = "Sends a sms message to the recipient specified in the request")
 	@ApiResponse(responseCode = "204", description = "Successful operation")
 	@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = { Problem.class, ConstraintViolationProblem.class })))
 	@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
