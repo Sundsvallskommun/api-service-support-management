@@ -47,7 +47,7 @@ class ErrandsRepositoryTest {
 	@Test
 	void create() {
 		final var externalTag = DbExternalTag.create().withKey("key").withValue("value");
-		final var stakeholder = StakeholderEntity.create().withExternalId("id").withexternalIdTypeTag("EMPLOYEE").withContactChannels(List.of(ContactChannelEntity.create().withType("type").withValue("value")));
+		final var stakeholder = StakeholderEntity.create().withExternalId("id").withExternalIdTypeTag("EMPLOYEE").withContactChannels(List.of(ContactChannelEntity.create().withType("type").withValue("value")));
 		final var namespace = "namespace";
 		final var title = "title";
 		final var categoryTag = "categoryTag";
@@ -117,7 +117,7 @@ class ErrandsRepositoryTest {
 
 		assertThat(errandEntity.get().getStakeholders()).hasSize(1);
 		assertThat(errandEntity.get().getStakeholders())
-				.extracting(StakeholderEntity::getId, StakeholderEntity::getexternalIdTypeTag, StakeholderEntity::getExternalId, StakeholderEntity::getFirstName, StakeholderEntity::getLastName, StakeholderEntity::getAddress, StakeholderEntity::getCareOf, StakeholderEntity::getZipCode, StakeholderEntity::getCountry)
+				.extracting(StakeholderEntity::getId, StakeholderEntity::getExternalIdTypeTag, StakeholderEntity::getExternalId, StakeholderEntity::getFirstName, StakeholderEntity::getLastName, StakeholderEntity::getAddress, StakeholderEntity::getCareOf, StakeholderEntity::getZipCode, StakeholderEntity::getCountry)
 				.containsExactly(tuple(3001L, "EMPLOYEE", "EXTERNAL_ID-1", "FIRST_NAME-1", "LAST_NAME-1", "ADDRESS-1", "CARE_OF-1", "ZIP_CODE-1", "COUNTRY-1"));
 		assertThat(errandEntity.get().getStakeholders().get(0).getContactChannels()).hasSize(1);
 		assertThat(errandEntity.get().getStakeholders().get(0).getContactChannels())
