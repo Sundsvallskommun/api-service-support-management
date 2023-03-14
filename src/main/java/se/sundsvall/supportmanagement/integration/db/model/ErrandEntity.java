@@ -1,14 +1,20 @@
 package se.sundsvall.supportmanagement.integration.db.model;
 
-import org.hibernate.annotations.Formula;
-import org.hibernate.annotations.GenericGenerator;
+import static java.time.OffsetDateTime.now;
+import static java.time.ZoneId.systemDefault;
+import static java.time.temporal.ChronoUnit.MILLIS;
+
+import java.io.Serializable;
+import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 import javax.persistence.CascadeType;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
 import javax.persistence.ForeignKey;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
@@ -20,15 +26,9 @@ import javax.persistence.PrePersist;
 import javax.persistence.PreUpdate;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
-import java.io.Serializable;
-import java.time.OffsetDateTime;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
 
-import static java.time.OffsetDateTime.now;
-import static java.time.ZoneId.systemDefault;
-import static java.time.temporal.ChronoUnit.MILLIS;
+import org.hibernate.annotations.Formula;
+import org.hibernate.annotations.GenericGenerator;
 
 @Entity
 @Table(name = "errand",
@@ -57,7 +57,7 @@ public class ErrandEntity implements Serializable {
 		uniqueConstraints = @UniqueConstraint(name = "uq_external_tag_errand_id_key", columnNames = { "errand_id", "key" }))
 	private List<DbExternalTag> externalTags;
 
-	@OneToMany(mappedBy = "errandEntity", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+	@OneToMany(mappedBy = "errandEntity", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<StakeholderEntity> stakeholders;
 
 	@Column(name = "municipality_id", nullable = false)
