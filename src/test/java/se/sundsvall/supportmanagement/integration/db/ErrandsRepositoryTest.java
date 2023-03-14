@@ -10,6 +10,8 @@ import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
+import javax.transaction.Transactional;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -112,6 +114,7 @@ class ErrandsRepositoryTest {
 	}
 
 	@Test
+	@Transactional
 	void errandWithStakeholderAndContactChannel() {
 		var errandEntity =  errandsRepository.findById("ERRAND_ID-1");
 
