@@ -114,7 +114,8 @@ public class CategoryTagEntity implements Serializable {
 			() -> this.typeTags = new ArrayList<>());
 
 		Optional.ofNullable(typeTags).orElse(Collections.emptyList()).stream()
-			.filter(x -> x instanceof TypeTagEntity)
+			.filter(Objects::nonNull)
+			.filter(TypeTagEntity.class::isInstance)
 			.forEach(tt -> this.typeTags.add(tt.withCategoryTagEntity(this)));
 	}
 
@@ -191,7 +192,7 @@ public class CategoryTagEntity implements Serializable {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(typeTags, created, displayName, id, modified, municipalityId, name, namespace);
+		return Objects.hash(created, displayName, id, modified, municipalityId, name, namespace, typeTags);
 	}
 
 	@Override
@@ -206,8 +207,8 @@ public class CategoryTagEntity implements Serializable {
 			return false;
 		}
 		CategoryTagEntity other = (CategoryTagEntity) obj;
-		return Objects.equals(typeTags, other.typeTags) && Objects.equals(created, other.created) && Objects.equals(displayName, other.displayName) && id == other.id && Objects.equals(modified, other.modified) && Objects.equals(municipalityId,
-			other.municipalityId) && Objects.equals(name, other.name) && Objects.equals(namespace, other.namespace);
+		return Objects.equals(created, other.created) && Objects.equals(displayName, other.displayName) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(municipalityId, other.municipalityId) && Objects
+			.equals(name, other.name) && Objects.equals(namespace, other.namespace) && Objects.equals(typeTags, other.typeTags);
 	}
 
 	@Override

@@ -180,7 +180,7 @@ public class TypeTagEntity implements Serializable {
 
 		var thisCategoryTagId = Optional.ofNullable(categoryTagEntity).map(CategoryTagEntity::getId).orElse(null);
 		var otherCategoryTagId = Optional.ofNullable(other.categoryTagEntity).map(CategoryTagEntity::getId).orElse(null);
-		return Objects.equals(thisCategoryTagId, otherCategoryTagId) && Objects.equals(created, other.created) && Objects.equals(displayName, other.displayName) && Objects.equals(escalationEmail, other.escalationEmail) && id == other.id
+		return Objects.equals(thisCategoryTagId, otherCategoryTagId) && Objects.equals(created, other.created) && Objects.equals(displayName, other.displayName) && Objects.equals(escalationEmail, other.escalationEmail) && Objects.equals(id, other.id)
 			&& Objects.equals(modified, other.modified) && Objects.equals(name, other.name);
 	}
 
