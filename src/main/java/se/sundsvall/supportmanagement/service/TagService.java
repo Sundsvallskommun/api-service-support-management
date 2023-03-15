@@ -79,10 +79,8 @@ public class TagService {
 
 	@Cacheable(value = "tagCache", key = "{#root.methodName, #namespace, #municipalityId, #type}")
 	public boolean isValidated(String namespace, String municipalityId, TagType type) {
-		return tagValidationRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId).stream()
-			.filter(entity -> Objects.equals(type, entity.getType()))
+		return tagValidationRepository.findByNamespaceAndMunicipalityIdAndType(namespace, municipalityId, type)
 			.map(TagValidationEntity::isValidated)
-			.findAny()
 			.orElse(false);
 	}
 }

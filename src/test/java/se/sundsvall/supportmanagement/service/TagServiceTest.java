@@ -1,6 +1,5 @@
 package se.sundsvall.supportmanagement.service;
 
-import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
@@ -10,6 +9,7 @@ import static org.mockito.Mockito.when;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.TagType.CATEGORY;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -179,13 +179,14 @@ class TagServiceTest {
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
 		final var type = CATEGORY;
-		final var validationEntityList = List.of(TagValidationEntity.create().withType(type).withValidated(true));
+		final var validationEntity = TagValidationEntity.create().withType(type).withValidated(true);
 
 		// Mock
-		when(tagValidationRepositoryMock.findAllByNamespaceAndMunicipalityId(namespace, municipalityId)).thenReturn(validationEntityList);
+		when(tagValidationRepositoryMock.findByNamespaceAndMunicipalityIdAndType(namespace, municipalityId, type)).thenReturn(Optional.of(validationEntity));
 
 		// Call and assert
 		assertThat(tagService.isValidated(namespace, municipalityId, type)).isTrue();
+		verify(tagValidationRepositoryMock).findByNamespaceAndMunicipalityIdAndType(namespace, municipalityId, type);
 	}
 
 	@Test
@@ -194,13 +195,14 @@ class TagServiceTest {
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
 		final var type = CATEGORY;
-		final var validationEntityList = List.of(TagValidationEntity.create().withType(type));
+		final var validationEntity = TagValidationEntity.create().withType(type);
 
 		// Mock
-		when(tagValidationRepositoryMock.findAllByNamespaceAndMunicipalityId(namespace, municipalityId)).thenReturn(validationEntityList);
+		when(tagValidationRepositoryMock.findByNamespaceAndMunicipalityIdAndType(namespace, municipalityId, type)).thenReturn(Optional.of(validationEntity));
 
 		// Call and assert
 		assertThat(tagService.isValidated(namespace, municipalityId, type)).isFalse();
+		verify(tagValidationRepositoryMock).findByNamespaceAndMunicipalityIdAndType(namespace, municipalityId, type);
 	}
 
 	@Test
@@ -211,9 +213,10 @@ class TagServiceTest {
 		final var type = CATEGORY;
 
 		// Mock
-		when(tagValidationRepositoryMock.findAllByNamespaceAndMunicipalityId(namespace, municipalityId)).thenReturn(emptyList());
+		when(tagValidationRepositoryMock.findByNamespaceAndMunicipalityIdAndType(namespace, municipalityId, type)).thenReturn(Optional.empty());
 
 		// Call and assert
 		assertThat(tagService.isValidated(namespace, municipalityId, type)).isFalse();
+		verify(tagValidationRepositoryMock).findByNamespaceAndMunicipalityIdAndType(namespace, municipalityId, type);
 	}
 }
