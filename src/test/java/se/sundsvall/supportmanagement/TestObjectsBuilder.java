@@ -51,7 +51,7 @@ public class TestObjectsBuilder {
 			.withAttachments(List.of(AttachmentEntity.create().withId(ATTACHMENT_ID).withFileName(FILE_NAME).withFile(FILE.getBytes()).withMimeType(MIME_TYPE)))
 			.withCategoryTag(CATEGORY_TAG)
 			.withCreated(CREATED)
-			.withNamespace(NAMESPACE)
+			.withNamespace(NAMESPACE) 
 			.withStakeholders(new ArrayList<>(List.of(StakeholderEntity.create().withExternalId(EXTERNAL_ID).withExternalIdTypeTag(EXTERNAL_ID_TYPE_TAG))))
 			.withExternalTags(List.of(DbExternalTag.create().withKey(TAG_KEY).withValue(TAG_VALUE)))
 			.withModified(MODIFIED)

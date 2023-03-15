@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.api;
 import static com.fasterxml.jackson.annotation.JsonCreator.Mode.PROPERTIES;
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -39,10 +40,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import se.sundsvall.supportmanagement.Application;
-import se.sundsvall.supportmanagement.api.model.errand.Stakeholder;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
 import se.sundsvall.supportmanagement.api.model.errand.Priority;
+import se.sundsvall.supportmanagement.api.model.errand.Stakeholder;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.service.ErrandService;
 import se.sundsvall.supportmanagement.service.TagService;
@@ -71,7 +72,7 @@ class ErrandsResourceTest {
 	@BeforeEach
 	void setupMock() {
 		when(tagServiceMock.findAllCategoryTags()).thenReturn(List.of("CATEGORY_1", "CATEGORY_2"));
-		when(tagServiceMock.findAllStatusTags()).thenReturn(List.of("STATUS_1", "STATUS_2"));
+		when(tagServiceMock.findAllStatusTags(any(), any())).thenReturn(List.of("STATUS_1", "STATUS_2"));
 		when(tagServiceMock.findAllTypeTags()).thenReturn(List.of("TYPE_1", "TYPE_2"));
 	}
 
@@ -97,7 +98,7 @@ class ErrandsResourceTest {
 
 		// Verification
 		verify(tagServiceMock).findAllCategoryTags();
-		verify(tagServiceMock).findAllStatusTags();
+		verify(tagServiceMock).findAllStatusTags(any(), any());
 		verify(tagServiceMock).findAllTypeTags();
 		verify(errandServiceMock).createErrand(NAMESPACE, MUNICIPALITY_ID, errandInstance);
 	}
@@ -122,9 +123,9 @@ class ErrandsResourceTest {
 						.build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)).toString()))
 				.expectBody().isEmpty();
 
-		// Verification
+		// Verification 
 		verify(tagServiceMock).findAllCategoryTags();
-		verify(tagServiceMock).findAllStatusTags();
+		verify(tagServiceMock).findAllStatusTags(any(), any());
 		verify(tagServiceMock).findAllTypeTags();
 		verify(errandServiceMock).createErrand(NAMESPACE, MUNICIPALITY_ID, errandInstance);
 	}

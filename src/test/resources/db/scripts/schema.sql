@@ -1,4 +1,5 @@
-create table attachment (
+
+    create table attachment (
        id varchar(255) not null,
         created datetime(6),
         file longblob,
@@ -6,6 +7,17 @@ create table attachment (
         mime_type varchar(255),
         modified datetime(6),
         errand_id varchar(255) not null,
+        primary key (id)
+    ) engine=InnoDB;
+
+    create table category_tag (
+       id bigint not null auto_increment,
+        created datetime(6),
+        display_name varchar(255),
+        modified datetime(6),
+        municipality_id varchar(255) not null,
+        name varchar(255) not null,
+        namespace varchar(255) not null,
         primary key (id)
     ) engine=InnoDB;
 
@@ -34,6 +46,16 @@ create table attachment (
         primary key (id)
     ) engine=InnoDB;
 
+    create table external_id_type_tag (
+       id bigint not null auto_increment,
+        created datetime(6),
+        modified datetime(6),
+        municipality_id varchar(255) not null,
+        name varchar(255) not null,
+        namespace varchar(255) not null,
+        primary key (id)
+    ) engine=InnoDB;
+
     create table external_tag (
        errand_id varchar(255) not null,
         `key` varchar(255),
@@ -54,45 +76,87 @@ create table attachment (
         primary key (id)
     ) engine=InnoDB;
 
-    create table tag (
+    create table status_tag (
        id bigint not null auto_increment,
         created datetime(6),
-        name varchar(255),
-        type ENUM('CATEGORY', 'STATUS', 'TYPE'),
-        updated datetime(6),
+        modified datetime(6),
+        municipality_id varchar(255) not null,
+        name varchar(255) not null,
+        namespace varchar(255) not null,
+        primary key (id)
+    ) engine=InnoDB;
+
+    create table tag_validation (
+       id bigint not null auto_increment,
+        created datetime(6),
+        modified datetime(6),
+        municipality_id varchar(255) not null,
+        namespace varchar(255) not null,
+        `type` varchar(255) not null,
+        validated bit,
+        primary key (id)
+    ) engine=InnoDB;
+
+    create table type_tag (
+       id bigint not null auto_increment,
+        created datetime(6),
+        display_name varchar(255),
+        escalation_email varchar(255),
+        modified datetime(6),
+        name varchar(255) not null,
+        category_tag_id bigint not null,
         primary key (id)
     ) engine=InnoDB;
 create index idx_attachment_file_name on attachment (file_name);
+create index idx_namespace_municipality_id on category_tag (namespace, municipality_id);
+
+    alter table category_tag 
+       add constraint uq_namespace_municipality_id_name unique (namespace, municipality_id, name);
 create index idx_errand_id on errand (id);
 create index idx_errand_namespace on errand (namespace);
 create index idx_errand_municipality_id on errand (municipality_id);
+create index idx_namespace_municipality_id on external_id_type_tag (namespace, municipality_id);
+
+    alter table external_id_type_tag 
+       add constraint uq_namespace_municipality_id_name unique (namespace, municipality_id, name);
 create index idx_external_tag_errand_id on external_tag (errand_id);
 create index idx_external_tag_key on external_tag (`key`);
 
-    alter table external_tag
+    alter table external_tag 
        add constraint uq_external_tag_errand_id_key unique (errand_id, `key`);
-create index idx_tag_name on tag (name);
-create index idx_tag_type on tag (type);
+create index idx_namespace_municipality_id on status_tag (namespace, municipality_id);
 
-    alter table tag
-       add constraint uq_tag_name unique (name);
+    alter table status_tag 
+       add constraint uq_namespace_municipality_id_name unique (namespace, municipality_id, name);
+create index idx_namespace_municipality_id_type on tag_validation (namespace, municipality_id, `type`);
 
-    alter table attachment
-       add constraint fk_errand_attachment_errand_id
-       foreign key (errand_id)
+    alter table tag_validation 
+       add constraint uq_namespace_municipality_id_type unique (namespace, municipality_id, `type`);
+
+    alter table type_tag 
+       add constraint uq_category_tag_id_name unique (category_tag_id, name);
+
+    alter table attachment 
+       add constraint fk_errand_attachment_errand_id 
+       foreign key (errand_id) 
        references errand (id);
 
-    alter table contact_channel
-       add constraint fk_stakeholder_contact_channel_stakeholder_id
-       foreign key (stakeholder_id)
+    alter table contact_channel 
+       add constraint fk_stakeholder_contact_channel_stakeholder_id 
+       foreign key (stakeholder_id) 
        references stakeholder (id);
 
-    alter table external_tag
-       add constraint fk_errand_external_tag_errand_id
-       foreign key (errand_id)
+    alter table external_tag 
+       add constraint fk_errand_external_tag_errand_id 
+       foreign key (errand_id) 
        references errand (id);
 
-    alter table stakeholder
-       add constraint fk_errand_stakeholder_errand_id
-       foreign key (errand_id)
+    alter table stakeholder 
+       add constraint fk_errand_stakeholder_errand_id 
+       foreign key (errand_id) 
        references errand (id);
+
+    alter table type_tag 
+       add constraint fk_category_tag_id 
+       foreign key (category_tag_id) 
+       references category_tag (id);

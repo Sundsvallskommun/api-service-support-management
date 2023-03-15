@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -25,10 +26,10 @@ import org.zalando.problem.violations.ConstraintViolationProblem;
 import org.zalando.problem.violations.Violation;
 
 import se.sundsvall.supportmanagement.Application;
-import se.sundsvall.supportmanagement.api.model.errand.Stakeholder;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
 import se.sundsvall.supportmanagement.api.model.errand.Priority;
+import se.sundsvall.supportmanagement.api.model.errand.Stakeholder;
 import se.sundsvall.supportmanagement.service.ErrandService;
 import se.sundsvall.supportmanagement.service.TagService;
 
@@ -53,7 +54,7 @@ class ErrandsCreateResourceFailureTest {
 	@BeforeEach
 	void setupMock() {
 		when(tagServiceMock.findAllCategoryTags()).thenReturn(List.of("CATEGORY_1", "CATEGORY_2"));
-		when(tagServiceMock.findAllStatusTags()).thenReturn(List.of("STATUS_1", "STATUS_2"));
+		when(tagServiceMock.findAllStatusTags(any(), any())).thenReturn(List.of("STATUS_1", "STATUS_2"));
 		when(tagServiceMock.findAllTypeTags()).thenReturn(List.of("TYPE_1", "TYPE_2"));
 	}
 
@@ -79,7 +80,7 @@ class ErrandsCreateResourceFailureTest {
 
 		// Verification
 		verify(tagServiceMock).findAllCategoryTags();
-		verify(tagServiceMock).findAllStatusTags();
+		verify(tagServiceMock).findAllStatusTags(any(), any());
 		verify(tagServiceMock).findAllTypeTags();
 		verifyNoInteractions(errandServiceMock);
 	}
@@ -106,7 +107,7 @@ class ErrandsCreateResourceFailureTest {
 
 		// Verification
 		verify(tagServiceMock).findAllCategoryTags();
-		verify(tagServiceMock).findAllStatusTags();
+		verify(tagServiceMock).findAllStatusTags(any(), any());
 		verify(tagServiceMock).findAllTypeTags();
 		verifyNoInteractions(errandServiceMock);
 	}
@@ -161,7 +162,7 @@ class ErrandsCreateResourceFailureTest {
 
 		// Verification
 		verify(tagServiceMock).findAllCategoryTags();
-		verify(tagServiceMock).findAllStatusTags();
+		verify(tagServiceMock).findAllStatusTags(any(), any());
 		verify(tagServiceMock).findAllTypeTags();
 		verifyNoInteractions(errandServiceMock);
 	}
@@ -192,7 +193,7 @@ class ErrandsCreateResourceFailureTest {
 
 		// Verification
 		verify(tagServiceMock).findAllCategoryTags();
-		verify(tagServiceMock).findAllStatusTags();
+		verify(tagServiceMock).findAllStatusTags(any(), any());
 		verify(tagServiceMock).findAllTypeTags();
 		verifyNoInteractions(errandServiceMock);
 	}
@@ -223,7 +224,7 @@ class ErrandsCreateResourceFailureTest {
 
 		// Verification
 		verify(tagServiceMock).findAllCategoryTags();
-		verify(tagServiceMock).findAllStatusTags();
+		verify(tagServiceMock).findAllStatusTags(any(), any());
 		verify(tagServiceMock).findAllTypeTags();
 		verifyNoInteractions(errandServiceMock);
 	}
@@ -254,7 +255,7 @@ class ErrandsCreateResourceFailureTest {
 
 		// Verification
 		verify(tagServiceMock).findAllCategoryTags();
-		verify(tagServiceMock).findAllStatusTags();
+		verify(tagServiceMock).findAllStatusTags(any(), any());
 		verify(tagServiceMock).findAllTypeTags();
 		verifyNoInteractions(errandServiceMock);
 	}
@@ -282,7 +283,7 @@ class ErrandsCreateResourceFailureTest {
 
 		// Verification
 		verify(tagServiceMock).findAllCategoryTags();
-		verify(tagServiceMock).findAllStatusTags();
+		verify(tagServiceMock).findAllStatusTags(any(), any());
 		verify(tagServiceMock).findAllTypeTags();
 		verifyNoInteractions(errandServiceMock);
 	}
@@ -310,7 +311,7 @@ class ErrandsCreateResourceFailureTest {
 
 		// Verification
 		verify(tagServiceMock).findAllCategoryTags();
-		verify(tagServiceMock).findAllStatusTags();
+		verify(tagServiceMock).findAllStatusTags(any(), any());
 		verify(tagServiceMock).findAllTypeTags();
 		verifyNoInteractions(errandServiceMock);
 	}
