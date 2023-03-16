@@ -6,9 +6,9 @@
 			"priority": "LOW",
 			"stakeholders": [
 				{
-					"contactChannels": [],
 					"externalId": "def57969-9b83-4e54-9351-667dc896a19d",
-					"externalIdTypeTag": "PRIVATE"
+					"externalIdTypeTag": "PRIVATE",
+					"contactChannels": []
 				}
 			],
 			"externalTags": [
@@ -33,12 +33,11 @@
 			"priority": "HIGH",
 			"stakeholders": [
 				{
-					"contactChannels": [],
 					"externalId": "7fba994b-e99e-4beb-8ab5-63cc74483b66",
-					"externalIdTypeTag": "ENTERPRISE"
+					"externalIdTypeTag": "ENTERPRISE",
+					"contactChannels": []
 				}
 			],
-			"description": "DESCRIPTION",
 			"externalTags": [
 				{
 					"key": "KEY-4",
@@ -52,8 +51,9 @@
 			"categoryTag": "CATEGORY-3",
 			"typeTag": "TYPE-3",
 			"statusTag": "STATUS-3",
-			"reporterUserId": "REPORTER_USER_ID-3",
 			"resolution": "RESOLUTION",
+			"description": "DESCRIPTION",
+			"reporterUserId": "REPORTER_USER_ID-3",
 			"assignedUserId": "ASSIGNED_USER_ID-3",
 			"assignedGroupId": "ASSIGNED_GROUP_ID-3",
 			"created": "2022-03-01T12:00:00+01:00",
@@ -65,20 +65,31 @@
 			"priority": "LOW",
 			"stakeholders": [
 				{
+					"externalId": "USER_ID",
+					"externalIdTypeTag": "EMPLOYEE",
+					"firstName": "FIRST_NAME-1",
+					"lastName": "LAST_NAME-1",
 					"address": "ADDRESS-1",
 					"careOf": "CARE_OF-1",
+					"zipCode": "ZIP_CODE-1",
+					"country": "COUNTRY-1",
 					"contactChannels": [
 						{
 							"type": "TYPE-1",
 							"value": "VALUE-1"
 						}
-					],
-					"country": "COUNTRY-1",
+					]
+				},
+				{
+					"externalId": "01e159b4-724d-40f9-91a4-9a7d021b8563",
+					"externalIdTypeTag": "PRIVATE",
 					"firstName": "FIRST_NAME-1",
 					"lastName": "LAST_NAME-1",
-					"externalId": "USER_ID",
-					"externalIdTypeTag": "EMPLOYEE",
-					"zipCode": "ZIP_CODE-1"
+					"address": "ADDRESS-2",
+					"careOf": "CARE_OF-2",
+					"zipCode": "ZIP_CODE-2",
+					"country": "COUNTRY-2",
+					"contactChannels": []
 				}
 			],
 			"externalTags": [
@@ -104,26 +115,26 @@
 	"pageable": {
 		"sort": {
 			"empty": false,
-			"sorted": true,
-			"unsorted": false
+			"unsorted": false,
+			"sorted": true
 		},
 		"offset": 0,
-		"pageSize": 20,
 		"pageNumber": 0,
-		"unpaged": false,
-		"paged": true
+		"pageSize": 20,
+		"paged": true,
+		"unpaged": false
 	},
+	"last": true,
 	"totalPages": 1,
 	"totalElements": 3,
-	"last": true,
 	"size": 20,
 	"number": 0,
 	"sort": {
 		"empty": false,
-		"sorted": true,
-		"unsorted": false
+		"unsorted": false,
+		"sorted": true
 	},
-	"numberOfElements": 3,
 	"first": true,
+	"numberOfElements": 3,
 	"empty": false
 }
