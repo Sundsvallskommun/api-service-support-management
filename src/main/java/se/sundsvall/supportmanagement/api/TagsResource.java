@@ -37,7 +37,7 @@ public class TagsResource {
 	@ApiResponse(responseCode = "200", description = "Successful operation", content = @Content(mediaType = APPLICATION_JSON_VALUE, schema = @Schema(implementation = TagsResponse.class)))
 	@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	ResponseEntity<TagsResponse> getTags() {
-		return ok(tagService.findAllTags());
+		return ok(tagService.findAllTags("NAMESPACE.1", "2281")); // TODO: Replace with path parameters when API is changed in UF-4537
 	}
 
 	@GetMapping(path = "/statusTags", produces = { APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE })
@@ -45,7 +45,7 @@ public class TagsResource {
 	@ApiResponse(responseCode = "200", description = "Successful operation", content = @Content(mediaType = APPLICATION_JSON_VALUE, array = @ArraySchema(schema = @Schema(description = "Status tags", example = "SOLVED"))))
 	@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	ResponseEntity<List<String>> getStatusTags() {
-		return ok(tagService.findAllStatusTags());
+		return ok(tagService.findAllStatusTags("NAMESPACE.1", "2281")); // TODO: Replace with path parameters when API is changed in UF-4537
 	}
 
 	@GetMapping(path = "/categoryTags", produces = { APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE })
@@ -53,7 +53,7 @@ public class TagsResource {
 	@ApiResponse(responseCode = "200", description = "Successful operation", content = @Content(mediaType = APPLICATION_JSON_VALUE, array = @ArraySchema(schema = @Schema(description = "Category tags", example = "SUPPORT_CASE"))))
 	@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	ResponseEntity<List<String>> getCategoryTags() {
-		return ok(tagService.findAllCategoryTags());
+		return ok(tagService.findAllCategoryTags("NAMESPACE.1", "2281")); // TODO: Replace with path parameters when API is changed in UF-4537
 	}
 
 	@GetMapping(path = "/typeTags", produces = { APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE })
@@ -61,6 +61,6 @@ public class TagsResource {
 	@ApiResponse(responseCode = "200", description = "Successful operation", content = @Content(mediaType = APPLICATION_JSON_VALUE, array = @ArraySchema(schema = @Schema(description = "Type tags", example = "OTHER_ISSUES"))))
 	@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	ResponseEntity<List<String>> getTypeTags() {
-		return ok(tagService.findAllTypeTags());
+		return ok(tagService.findAllTypeTags("NAMESPACE.1", "2281", "CATEGORY-1")); // TODO: Replace with path parameters when API is changed in UF-4537
 	}
 }

@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.api;
 
 import static org.apache.commons.lang3.ArrayUtils.EMPTY_STRING_ARRAY;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
@@ -43,7 +44,7 @@ class TagsResourceTest {
 			.withStatusTags(List.of("Status-1"))
 			.withTypeTags(List.of("Type-1"));
 
-		when(tagServiceMock.findAllTags()).thenReturn(tagsResponse);
+		when(tagServiceMock.findAllTags(any(), any())).thenReturn(tagsResponse);
 
 		// Call
 		final var response = webTestClient.get().uri("tags/")
@@ -56,7 +57,7 @@ class TagsResourceTest {
 		// Verification
 		assertThat(response).isEqualTo(tagsResponse);
 
-		verify(tagServiceMock).findAllTags();
+		verify(tagServiceMock).findAllTags(any(), any());
 	}
 
 	@Test
@@ -69,7 +70,7 @@ class TagsResourceTest {
 			.expectBody(String[].class)
 			.isEqualTo(EMPTY_STRING_ARRAY);
 
-		verify(tagServiceMock).findAllStatusTags();
+		verify(tagServiceMock).findAllStatusTags(any(), any());
 	}
 
 	@Test
@@ -82,11 +83,11 @@ class TagsResourceTest {
 			.expectBody(String[].class)
 			.isEqualTo(EMPTY_STRING_ARRAY);
 
-		verify(tagServiceMock).findAllCategoryTags();
+		verify(tagServiceMock).findAllCategoryTags(any(), any());
 	}
 
 	@Test
-	void getTypeTags() {
+	void getCategoryTypeTags() {
 
 		webTestClient.get().uri("tags/typeTags")
 			.exchange()
@@ -95,6 +96,6 @@ class TagsResourceTest {
 			.expectBody(String[].class)
 			.isEqualTo(EMPTY_STRING_ARRAY);
 
-		verify(tagServiceMock).findAllTypeTags();
+		verify(tagServiceMock).findAllTypeTags(any(), any(), any());
 	}
 }

@@ -91,7 +91,6 @@ class ErrandMapperTest {
 	@Test
 	void testToErrandFromNull() {
 		assertThat(toErrand(null)).isNull();
-
 	}
 
 	@Test

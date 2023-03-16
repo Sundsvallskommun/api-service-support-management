@@ -121,7 +121,7 @@ public class ErrandEntity implements Serializable {
 	}
 
 	@PreUpdate
-	protected void onUpdate() {
+	void onUpdate() {
 		modified = now(systemDefault()).truncatedTo(MILLIS);
 		Optional.ofNullable(stakeholders).ifPresent(st -> st
 				.forEach(s -> s.setErrandEntity(this)));
