@@ -10,6 +10,7 @@ import static org.springframework.web.servlet.HandlerMapping.URI_TEMPLATE_VARIAB
 import static se.sundsvall.supportmanagement.api.validation.impl.AbstractTagConstraintValidator.PATHVARIABLE_MUNICIPALITY_ID;
 import static se.sundsvall.supportmanagement.api.validation.impl.AbstractTagConstraintValidator.PATHVARIABLE_NAMESPACE;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -120,6 +121,17 @@ class ValidStatusTagConstraintValidatorTest {
 	}
 
 	@Test
+	void noRequestAttributesMapPresent() {
+		try (MockedStatic<RequestContextHolder> requestContextHolderMock = Mockito.mockStatic(RequestContextHolder.class)) {
+			requestContextHolderMock.when(RequestContextHolder::getRequestAttributes).thenReturn(requestAttributesMock);
+
+			final var e = assertThrows(ThrowableProblem.class, () -> validator.isValid("status-1", constraintValidatorContextMock));
+			assertThat(e.getStatus()).isEqualTo(Status.INTERNAL_SERVER_ERROR);
+			assertThat(e.getMessage()).isEqualTo("Internal Server Error: Path variable 'namespace' is not readable from request");
+		}
+	}
+
+	@Test
 	void attributePresentAsNonMap() {
 
 		try (MockedStatic<RequestContextHolder> requestContextHolderMock = Mockito.mockStatic(RequestContextHolder.class)) {
@@ -151,6 +163,21 @@ class ValidStatusTagConstraintValidatorTest {
 	void namespaceAttributePresentAsNonString() {
 		final var municipalityId = "municipalityId";
 		final var attributes = Map.of(PATHVARIABLE_NAMESPACE, Long.MAX_VALUE, PATHVARIABLE_MUNICIPALITY_ID, municipalityId);
+
+		try (MockedStatic<RequestContextHolder> requestContextHolderMock = Mockito.mockStatic(RequestContextHolder.class)) {
+			requestContextHolderMock.when(RequestContextHolder::getRequestAttributes).thenReturn(requestAttributesMock);
+			when(requestAttributesMock.getAttribute(URI_TEMPLATE_VARIABLES_ATTRIBUTE, SCOPE_REQUEST)).thenReturn(attributes);
+
+			final var e = assertThrows(ThrowableProblem.class, () -> validator.isValid("status-1", constraintValidatorContextMock));
+			assertThat(e.getStatus()).isEqualTo(Status.INTERNAL_SERVER_ERROR);
+			assertThat(e.getMessage()).isEqualTo("Internal Server Error: Path variable 'namespace' is not readable from request");
+		}
+	}
+
+	@Test
+	void attributePresentAsNull() {
+		final var attributes = new HashMap<>();
+		attributes.put(PATHVARIABLE_NAMESPACE, null);
 
 		try (MockedStatic<RequestContextHolder> requestContextHolderMock = Mockito.mockStatic(RequestContextHolder.class)) {
 			requestContextHolderMock.when(RequestContextHolder::getRequestAttributes).thenReturn(requestAttributesMock);

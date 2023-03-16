@@ -8,6 +8,7 @@ import static org.springframework.web.servlet.HandlerMapping.URI_TEMPLATE_VARIAB
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import javax.validation.ConstraintValidatorContext;
@@ -32,12 +33,14 @@ abstract class AbstractTagConstraintValidator {
 	String getPathVariable(String variableName) {
 		return Stream.ofNullable(RequestContextHolder.getRequestAttributes())
 			.map(req -> req.getAttribute(URI_TEMPLATE_VARIABLES_ATTRIBUTE, SCOPE_REQUEST))
+			.filter(Objects::nonNull)
 			.filter(Map.class::isInstance)
 			.map(Map.class::cast)
 			.map(map -> map.get(variableName))
-			.findAny()
+			.filter(Objects::nonNull)
 			.filter(String.class::isInstance)
 			.map(String.class::cast)
+			.findAny()
 			.orElseThrow(() -> Problem.valueOf(Status.INTERNAL_SERVER_ERROR, String.format("Path variable '%s' is not readable from request", variableName)));
 	}
 

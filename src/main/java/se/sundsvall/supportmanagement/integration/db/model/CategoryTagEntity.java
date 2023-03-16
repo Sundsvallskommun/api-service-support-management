@@ -115,7 +115,6 @@ public class CategoryTagEntity implements Serializable {
 
 		Optional.ofNullable(typeTags).orElse(Collections.emptyList()).stream()
 			.filter(Objects::nonNull)
-			.filter(TypeTagEntity.class::isInstance)
 			.forEach(tt -> this.typeTags.add(tt.withCategoryTagEntity(this)));
 	}
 
