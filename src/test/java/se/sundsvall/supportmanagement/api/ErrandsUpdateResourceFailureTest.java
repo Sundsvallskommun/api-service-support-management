@@ -55,9 +55,9 @@ class ErrandsUpdateResourceFailureTest {
 
 	@BeforeEach
 	void setupMock() {
-		when(tagServiceMock.findAllCategoryTags()).thenReturn(List.of("CATEGORY_1", "CATEGORY_2"));
+		when(tagServiceMock.findAllCategoryTags(any(), any())).thenReturn(List.of("CATEGORY_1", "CATEGORY_2"));
 		when(tagServiceMock.findAllStatusTags(any(), any())).thenReturn(List.of("STATUS_1", "STATUS_2"));
-		when(tagServiceMock.findAllTypeTags()).thenReturn(List.of("TYPE_1", "TYPE_2"));
+		when(tagServiceMock.findAllTypeTags(any(), any(), any())).thenReturn(List.of("TYPE_1", "TYPE_2"));
 	}
 
 	@Test
@@ -80,9 +80,9 @@ class ErrandsUpdateResourceFailureTest {
 			tuple("updateErrand.namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."));
 
 		// Verification
-		verify(tagServiceMock).findAllCategoryTags();
+		verify(tagServiceMock).findAllCategoryTags(any(), any());
 		verify(tagServiceMock).findAllStatusTags(any(), any());
-		verify(tagServiceMock).findAllTypeTags();
+		verify(tagServiceMock).findAllTypeTags(any(), any(), any());
 		verifyNoInteractions(errandServiceMock);
 	}
 
@@ -106,9 +106,9 @@ class ErrandsUpdateResourceFailureTest {
 			tuple("updateErrand.municipalityId", "not a valid municipality ID"));
 
 		// Verification
-		verify(tagServiceMock).findAllCategoryTags();
+		verify(tagServiceMock).findAllCategoryTags(any(), any());
 		verify(tagServiceMock).findAllStatusTags(any(), any());
-		verify(tagServiceMock).findAllTypeTags();
+		verify(tagServiceMock).findAllTypeTags(any(), any(), any());
 		verifyNoInteractions(errandServiceMock);
 	}
 
@@ -132,9 +132,9 @@ class ErrandsUpdateResourceFailureTest {
 			tuple("updateErrand.id", "not a valid UUID"));
 
 		// Verification
-		verify(tagServiceMock).findAllCategoryTags();
+		verify(tagServiceMock).findAllCategoryTags(any(), any());
 		verify(tagServiceMock).findAllStatusTags(any(), any());
-		verify(tagServiceMock).findAllTypeTags();
+		verify(tagServiceMock).findAllTypeTags(any(), any(), any());
 		verifyNoInteractions(errandServiceMock);
 	}
 
@@ -187,9 +187,9 @@ class ErrandsUpdateResourceFailureTest {
 			tuple("updateErrand.errand.reporterUserId", "must be null"));
 
 		// Verification
-		verify(tagServiceMock).findAllCategoryTags();
+		verify(tagServiceMock).findAllCategoryTags(any(), any());
 		verify(tagServiceMock).findAllStatusTags(any(), any());
-		verify(tagServiceMock).findAllTypeTags();
+		verify(tagServiceMock).findAllTypeTags(any(), any(), any());
 		verifyNoInteractions(errandServiceMock);
 	}
 
@@ -214,9 +214,9 @@ class ErrandsUpdateResourceFailureTest {
 			tuple("updateErrand.errand.reporterUserId", "must be null"));
 
 		// Verification
-		verify(tagServiceMock).findAllCategoryTags();
+		verify(tagServiceMock).findAllCategoryTags(any(), any());
 		verify(tagServiceMock).findAllStatusTags(any(), any());
-		verify(tagServiceMock).findAllTypeTags();
+		verify(tagServiceMock).findAllTypeTags(any(), any(), any());
 		verifyNoInteractions(errandServiceMock);
 	}
 
@@ -246,9 +246,9 @@ class ErrandsUpdateResourceFailureTest {
 			tuple("externalTags[1].value", "must not be blank"));
 
 		// Verification
-		verify(tagServiceMock).findAllCategoryTags();
+		verify(tagServiceMock).findAllCategoryTags(any(), any());
 		verify(tagServiceMock).findAllStatusTags(any(), any());
-		verify(tagServiceMock).findAllTypeTags();
+		verify(tagServiceMock).findAllTypeTags(any(), any(), any());
 		verifyNoInteractions(errandServiceMock);
 	}
 
@@ -275,9 +275,9 @@ class ErrandsUpdateResourceFailureTest {
 			tuple("typeTag", "value 'invalid_type' doesn't match any of [TYPE_1, TYPE_2]"));
 
 		// Verification
-		verify(tagServiceMock).findAllCategoryTags(); 
+		verify(tagServiceMock).findAllCategoryTags(any(), any());
 		verify(tagServiceMock).findAllStatusTags(any(), any());
-		verify(tagServiceMock).findAllTypeTags();
+		verify(tagServiceMock).findAllTypeTags(any(), any(), any());
 		verifyNoInteractions(errandServiceMock);
 	}
 
