@@ -8,31 +8,31 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import se.sundsvall.supportmanagement.api.model.tag.TagsResponse;
-import se.sundsvall.supportmanagement.integration.db.CategoryTagRepository;
-import se.sundsvall.supportmanagement.integration.db.ExternalIdTypeTagRepository;
-import se.sundsvall.supportmanagement.integration.db.StatusTagRepository;
-import se.sundsvall.supportmanagement.integration.db.TagValidationRepository;
-import se.sundsvall.supportmanagement.integration.db.model.CategoryTagEntity;
-import se.sundsvall.supportmanagement.integration.db.model.ExternalIdTypeTagEntity;
-import se.sundsvall.supportmanagement.integration.db.model.StatusTagEntity;
-import se.sundsvall.supportmanagement.integration.db.model.TagValidationEntity;
-import se.sundsvall.supportmanagement.integration.db.model.TypeTagEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.TagType;
+import se.sundsvall.supportmanagement.integration.db.CategoryRepository;
+import se.sundsvall.supportmanagement.integration.db.ExternalIdTypeRepository;
+import se.sundsvall.supportmanagement.integration.db.StatusRepository;
+import se.sundsvall.supportmanagement.integration.db.ValidationRepository;
+import se.sundsvall.supportmanagement.integration.db.model.CategoryEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ExternalIdTypeEntity;
+import se.sundsvall.supportmanagement.integration.db.model.StatusEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ValidationEntity;
+import se.sundsvall.supportmanagement.integration.db.model.TypeEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.EntityType;
 
 @Service
 public class TagService {
 
 	@Autowired
-	private StatusTagRepository statusTagRepository;
+	private StatusRepository statusRepository;
 
 	@Autowired
-	private CategoryTagRepository categoryTagTagRepository;
+	private CategoryRepository categoryRepository;
 
 	@Autowired
-	private ExternalIdTypeTagRepository externalIdTypeTagRepository;
+	private ExternalIdTypeRepository externalIdTypeRepository;
 
 	@Autowired
-	private TagValidationRepository tagValidationRepository;
+	private ValidationRepository validationRepository;
 
 	@Cacheable(value = "tagCache", key = "{#root.methodName, #namespace, #municipalityId}")
 	public TagsResponse findAllTags(String namespace, String municipalityId) {
@@ -44,43 +44,43 @@ public class TagService {
 
 	@Cacheable(value = "tagCache", key = "{#root.methodName, #namespace, #municipalityId}")
 	public List<String> findAllStatusTags(String namespace, String municipalityId) {
-		return statusTagRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId)
+		return statusRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId)
 			.stream()
-			.map(StatusTagEntity::getName)
+			.map(StatusEntity::getName)
 			.toList();
 	}
 
 	@Cacheable(value = "tagCache", key = "{#root.methodName, #namespace, #municipalityId}")
 	public List<String> findAllExternalIdTypeTags(String namespace, String municipalityId) {
-		return externalIdTypeTagRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId)
+		return externalIdTypeRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId)
 			.stream()
-			.map(ExternalIdTypeTagEntity::getName)
+			.map(ExternalIdTypeEntity::getName)
 			.toList();
 	}
 
 	@Cacheable(value = "tagCache", key = "{#root.methodName, #namespace, #municipalityId}")
 	public List<String> findAllCategoryTags(String namespace, String municipalityId) {
-		return categoryTagTagRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId)
+		return categoryRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId)
 			.stream()
-			.map(CategoryTagEntity::getName)
+			.map(CategoryEntity::getName)
 			.toList();
 	}
 
 	@Cacheable(value = "tagCache", key = "{#root.methodName, #namespace, #municipalityId, #category}")
 	public List<String> findAllTypeTags(String namespace, String municipalityId, String category) {
-		return categoryTagTagRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId)
+		return categoryRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId)
 			.stream()
 			.filter(entity -> Objects.equals(category, entity.getName()))
-			.map(CategoryTagEntity::getTypeTags)
+			.map(CategoryEntity::getTypes)
 			.flatMap(List::stream)
-			.map(TypeTagEntity::getName)
+			.map(TypeEntity::getName)
 			.toList();
 	}
 
 	@Cacheable(value = "tagCache", key = "{#root.methodName, #namespace, #municipalityId, #type}")
-	public boolean isValidated(String namespace, String municipalityId, TagType type) {
-		return tagValidationRepository.findByNamespaceAndMunicipalityIdAndType(namespace, municipalityId, type)
-			.map(TagValidationEntity::isValidated)
+	public boolean isValidated(String namespace, String municipalityId, EntityType type) {
+		return validationRepository.findByNamespaceAndMunicipalityIdAndType(namespace, municipalityId, type)
+			.map(ValidationEntity::isValidated)
 			.orElse(false);
 	}
 }

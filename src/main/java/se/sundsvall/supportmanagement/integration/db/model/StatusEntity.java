@@ -20,12 +20,12 @@ import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
 @Entity
-@Table(name = "status_tag", indexes = {
+@Table(name = "status", indexes = {
 	@Index(name = "idx_namespace_municipality_id", columnList = "namespace, municipality_id")
 }, uniqueConstraints = {
 	@UniqueConstraint(name = "uq_namespace_municipality_id_name", columnNames = { "namespace", "municipality_id", "name" })
 })
-public class StatusTagEntity implements Serializable {
+public class StatusEntity implements Serializable {
 
 	private static final long serialVersionUID = -5979976910282343331L;
 
@@ -49,8 +49,8 @@ public class StatusTagEntity implements Serializable {
 	@Column(name = "modified")
 	private OffsetDateTime modified;
 
-	public static StatusTagEntity create() {
-		return new StatusTagEntity();
+	public static StatusEntity create() {
+		return new StatusEntity();
 	}
 
 	public Long getId() {
@@ -61,7 +61,7 @@ public class StatusTagEntity implements Serializable {
 		this.id = id;
 	}
 
-	public StatusTagEntity withId(Long id) {
+	public StatusEntity withId(Long id) {
 		this.id = id;
 		return this;
 	}
@@ -74,7 +74,7 @@ public class StatusTagEntity implements Serializable {
 		this.name = name;
 	}
 
-	public StatusTagEntity withName(String name) {
+	public StatusEntity withName(String name) {
 		this.name = name;
 		return this;
 	}
@@ -87,7 +87,7 @@ public class StatusTagEntity implements Serializable {
 		this.municipalityId = municipalityId;
 	}
 
-	public StatusTagEntity withMunicipalityId(String municipalityId) {
+	public StatusEntity withMunicipalityId(String municipalityId) {
 		this.municipalityId = municipalityId;
 		return this;
 	}
@@ -100,7 +100,7 @@ public class StatusTagEntity implements Serializable {
 		this.namespace = namespace;
 	}
 
-	public StatusTagEntity withNamespace(String namespace) {
+	public StatusEntity withNamespace(String namespace) {
 		this.namespace = namespace;
 		return this;
 	}
@@ -113,7 +113,7 @@ public class StatusTagEntity implements Serializable {
 		this.created = created;
 	}
 
-	public StatusTagEntity withCreated(OffsetDateTime created) {
+	public StatusEntity withCreated(OffsetDateTime created) {
 		this.created = created;
 		return this;
 	}
@@ -126,7 +126,7 @@ public class StatusTagEntity implements Serializable {
 		this.modified = modified;
 	}
 
-	public StatusTagEntity withModified(OffsetDateTime modified) {
+	public StatusEntity withModified(OffsetDateTime modified) {
 		this.modified = modified;
 		return this;
 	}
@@ -157,7 +157,7 @@ public class StatusTagEntity implements Serializable {
 		if (getClass() != obj.getClass()) {
 			return false;
 		}
-		StatusTagEntity other = (StatusTagEntity) obj;
+		StatusEntity other = (StatusEntity) obj;
 		return Objects.equals(created, other.created) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(municipalityId, other.municipalityId) && Objects.equals(name, other.name) && Objects.equals(namespace,
 			other.namespace);
 	}
@@ -165,7 +165,7 @@ public class StatusTagEntity implements Serializable {
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
-		builder.append("StatusTagEntity [id=").append(id).append(", name=").append(name).append(", municipalityId=").append(municipalityId).append(", namespace=").append(namespace).append(", created=").append(created).append(", modified=").append(
+		builder.append("StatusEntity [id=").append(id).append(", name=").append(name).append(", municipalityId=").append(municipalityId).append(", namespace=").append(namespace).append(", created=").append(created).append(", modified=").append(
 			modified).append("]");
 		return builder.toString();
 	}

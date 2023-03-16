@@ -1,12 +1,12 @@
 -------------------------------------
--- CategoryTag and TypeTag
+-- Category and Type
 -------------------------------------
-INSERT INTO category_tag(id, created, display_name, modified, municipality_id, name, namespace) 
+INSERT INTO category(id, created, display_name, modified, municipality_id, name, namespace) 
 VALUES (100, now(), 'CATEGORY-DISPLAY-NAME-1', null, '2281', 'CATEGORY-1', 'NAMESPACE.1'),
        (101, now(), 'CATEGORY-DISPLAY-NAME-2', null, '2281', 'CATEGORY-2', 'NAMESPACE.1'),
        (102, now(), 'CATEGORY-DISPLAY-NAME-3', null, '2281', 'CATEGORY-3', 'NAMESPACE.1');
 
-INSERT INTO type_tag(id, created, display_name, escalation_email, modified, name, category_tag_id) 
+INSERT INTO type(id, created, display_name, escalation_email, modified, name, category_id) 
 VALUES (100, now(), 'TYPE-DISPLAY-NAME-1', 'ESCALATION-EMAIL-1', null, 'TYPE-1', 100),
        (101, now(), 'TYPE-DISPLAY-NAME-2', 'ESCALATION-EMAIL-2', null, 'TYPE-2', 100),
        (102, now(), 'TYPE-DISPLAY-NAME-3', 'ESCALATION-EMAIL-3', null, 'TYPE-3', 100),
@@ -15,9 +15,9 @@ VALUES (100, now(), 'TYPE-DISPLAY-NAME-1', 'ESCALATION-EMAIL-1', null, 'TYPE-1',
        (105, now(), 'TYPE-DISPLAY-NAME-1', 'ESCALATION-EMAIL-1', null, 'TYPE-1', 102);
        
 -------------------------------------
--- ExternalIdTypeTag
+-- ExternalIdType
 -------------------------------------
-INSERT INTO external_id_type_tag(id, created, modified, municipality_id, name, namespace) 
+INSERT INTO external_id_type(id, created, modified, municipality_id, name, namespace) 
 VALUES (100, now(), null, '2281', 'EXTERNAL-ID-TYPE-1', 'NAMESPACE.1'),
        (101, now(), null, '2281', 'EXTERNAL-ID-TYPE-2', 'NAMESPACE.1'),
        (102, now(), null, '2281', 'EXTERNAL-ID-TYPE-3', 'NAMESPACE.1'),
@@ -26,9 +26,9 @@ VALUES (100, now(), null, '2281', 'EXTERNAL-ID-TYPE-1', 'NAMESPACE.1'),
        (106, now(), null, '2305', 'EXTERNAL-ID-TYPE-2', 'NAMESPACE.1');
 
 -------------------------------------
--- StatusTag
+-- Status
 -------------------------------------
-INSERT INTO status_tag(id, created, modified, municipality_id, name, namespace) 
+INSERT INTO status(id, created, modified, municipality_id, name, namespace) 
 VALUES (100, now(), null, '2281', 'STATUS-1', 'NAMESPACE.1'),
        (101, now(), null, '2281', 'STATUS-2', 'NAMESPACE.1'),
        (102, now(), null, '2281', 'STATUS-3', 'NAMESPACE.1'),
@@ -37,9 +37,9 @@ VALUES (100, now(), null, '2281', 'STATUS-1', 'NAMESPACE.1'),
        (106, now(), null, '2305', 'STATUS-2', 'NAMESPACE.1');
 
 -------------------------------------
--- TagValidation
+-- Validation
 -------------------------------------
-INSERT INTO tag_validation(id, municipality_id, namespace, `type`, created, modified, validated)
+INSERT INTO validation(id, municipality_id, namespace, `type`, created, modified, validated)
 VALUES (100, '2281', 'NAMESPACE.1', 'CATEGORY', now(), null, true),
        (101, '2281', 'NAMESPACE.1', 'TYPE', now(), null, false),
        (102, '2281', 'NAMESPACE.2', 'CATEGORY', now(), null, false),

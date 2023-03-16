@@ -20,7 +20,9 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-class ExternalIdTypeTagEntityTest {
+import se.sundsvall.supportmanagement.integration.db.model.enums.EntityType;
+
+class ValidationEntityTest {
 
 	@BeforeAll
 	static void setup() {
@@ -29,7 +31,7 @@ class ExternalIdTypeTagEntityTest {
 
 	@Test
 	void testBean() {
-		assertThat(ExternalIdTypeTagEntity.class, allOf(
+		assertThat(ValidationEntity.class, allOf(
 			hasValidBeanConstructor(),
 			hasValidGettersAndSetters(),
 			hasValidBeanHashCode(),
@@ -44,47 +46,51 @@ class ExternalIdTypeTagEntityTest {
 		final var id = 1L;
 		final var modified = OffsetDateTime.now();
 		final var municipalityId = "municipalityId";
-		final var name = "name";
 		final var namespace = "namespace";
+		final var type = EntityType.CATEGORY;
+		final var validated = true;
 
-		final var entity = ExternalIdTypeTagEntity.create()
+		final var entity = ValidationEntity.create()
 			.withCreated(created)
 			.withId(id)
 			.withModified(modified)
 			.withMunicipalityId(municipalityId)
-			.withName(name)
-			.withNamespace(namespace);
+			.withNamespace(namespace)
+			.withType(type)
+			.withValidated(validated);
 
 		assertThat(entity).hasNoNullFieldsOrProperties();
 		assertThat(entity.getCreated()).isEqualTo(created);
 		assertThat(entity.getId()).isEqualTo(id);
 		assertThat(entity.getModified()).isEqualTo(modified);
 		assertThat(entity.getMunicipalityId()).isEqualTo(municipalityId);
-		assertThat(entity.getName()).isEqualTo(name);
 		assertThat(entity.getNamespace()).isEqualTo(namespace);
+		assertThat(entity.getType()).isEqualTo(type);
+		assertThat(entity.isValidated()).isEqualTo(validated);
 	}
 
 	@Test
 	void testOnCreate() {
-		final var entity = TypeTagEntity.create();
+		final var entity = ValidationEntity.create();
 		entity.onCreate();
 
 		Assertions.assertThat(entity.getCreated()).isCloseTo(now(), within(1, SECONDS));
-		Assertions.assertThat(entity).hasAllNullFieldsOrPropertiesExcept("created");
+		Assertions.assertThat(entity).hasAllNullFieldsOrPropertiesExcept("validated", "created");
 	}
 
 	@Test
 	void testOnUpdate() {
-		final var entity = TypeTagEntity.create();
+		final var entity = ValidationEntity.create();
 		entity.onUpdate();
 
 		Assertions.assertThat(entity.getModified()).isCloseTo(now(), within(1, SECONDS));
-		Assertions.assertThat(entity).hasAllNullFieldsOrPropertiesExcept("modified");
+		Assertions.assertThat(entity).hasAllNullFieldsOrPropertiesExcept("validated", "modified");
 	}
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(TypeTagEntity.create()).hasAllNullFieldsOrProperties();
-		assertThat(new TypeTagEntity()).hasAllNullFieldsOrProperties();
+		assertThat(ValidationEntity.create()).hasAllNullFieldsOrPropertiesExcept("validated").hasFieldOrPropertyWithValue("validated", false);
+		assertThat(new ValidationEntity()).hasAllNullFieldsOrPropertiesExcept("validated").hasFieldOrPropertyWithValue("validated", false);
+
 	}
 }

@@ -20,7 +20,7 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-class TypeTagEntityTest {
+class TypeEntityTest {
 
 	@BeforeAll
 	static void setup() {
@@ -29,12 +29,12 @@ class TypeTagEntityTest {
 
 	@Test
 	void testBean() {
-		assertThat(TypeTagEntity.class, allOf(
+		assertThat(TypeEntity.class, allOf(
 			hasValidBeanConstructor(),
 			hasValidGettersAndSetters(),
-			hasValidBeanHashCodeExcluding("categoryTagEntity"),
-			hasValidBeanEqualsExcluding("categoryTagEntity"),
-			hasValidBeanToStringExcluding("categoryTagEntity")));
+			hasValidBeanHashCodeExcluding("categoryEntity"),
+			hasValidBeanEqualsExcluding("categoryEntity"),
+			hasValidBeanToStringExcluding("categoryEntity")));
 	}
 
 	@Test
@@ -46,10 +46,10 @@ class TypeTagEntityTest {
 		final var id = 1L;
 		final var modified = OffsetDateTime.now();
 		final var name = "name";
-		final var categoryTagEntity = CategoryTagEntity.create();
+		final var categoryEntity = CategoryEntity.create();
 
-		final var entity = TypeTagEntity.create()
-			.withCategoryTagEntity(categoryTagEntity)
+		final var entity = TypeEntity.create()
+			.withCategoryEntity(categoryEntity)
 			.withCreated(created)
 			.withDisplayName(displayName)
 			.withEscalationEmail(escalationEmail)
@@ -58,7 +58,7 @@ class TypeTagEntityTest {
 			.withName(name);
 
 		assertThat(entity).hasNoNullFieldsOrProperties();
-		assertThat(entity.getCategoryTagEntity()).isEqualTo(categoryTagEntity);
+		assertThat(entity.getCategoryEntity()).isEqualTo(categoryEntity);
 		assertThat(entity.getCreated()).isEqualTo(created);
 		assertThat(entity.getDisplayName()).isEqualTo(displayName);
 		assertThat(entity.getEscalationEmail()).isEqualTo(escalationEmail);
@@ -69,7 +69,7 @@ class TypeTagEntityTest {
 
 	@Test
 	void testOnCreate() {
-		final var entity = TypeTagEntity.create();
+		final var entity = TypeEntity.create();
 		entity.onCreate();
 
 		Assertions.assertThat(entity.getCreated()).isCloseTo(now(), within(1, SECONDS));
@@ -78,7 +78,7 @@ class TypeTagEntityTest {
 
 	@Test
 	void testOnUpdate() {
-		final var entity = TypeTagEntity.create();
+		final var entity = TypeEntity.create();
 		entity.onUpdate();
 
 		Assertions.assertThat(entity.getModified()).isCloseTo(now(), within(1, SECONDS));
@@ -87,7 +87,7 @@ class TypeTagEntityTest {
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(TypeTagEntity.create()).hasAllNullFieldsOrProperties();
-		assertThat(new TypeTagEntity()).hasAllNullFieldsOrProperties();
+		assertThat(TypeEntity.create()).hasAllNullFieldsOrProperties();
+		assertThat(new TypeEntity()).hasAllNullFieldsOrProperties();
 	}
 }

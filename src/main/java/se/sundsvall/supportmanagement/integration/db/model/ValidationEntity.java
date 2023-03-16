@@ -21,15 +21,15 @@ import javax.persistence.PreUpdate;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
-import se.sundsvall.supportmanagement.integration.db.model.enums.TagType;
+import se.sundsvall.supportmanagement.integration.db.model.enums.EntityType;
 
 @Entity
-@Table(name = "tag_validation", indexes = {
+@Table(name = "validation", indexes = {
 	@Index(name = "idx_namespace_municipality_id_type", columnList = "namespace, municipality_id, type")
 }, uniqueConstraints = {
 	@UniqueConstraint(name = "uq_namespace_municipality_id_type", columnNames = { "namespace", "municipality_id", "type" })
 })
-public class TagValidationEntity implements Serializable {
+public class ValidationEntity implements Serializable {
 	private static final long serialVersionUID = -6163643004292601360L;
 
 	@Id
@@ -39,7 +39,7 @@ public class TagValidationEntity implements Serializable {
 
 	@Column(name = "`type`", nullable = false)
 	@Enumerated(STRING)
-	private TagType type;
+	private EntityType type;
 
 	@Column(name = "validated")
 	private boolean validated;
@@ -56,8 +56,8 @@ public class TagValidationEntity implements Serializable {
 	@Column(name = "modified")
 	private OffsetDateTime modified;
 
-	public static TagValidationEntity create() {
-		return new TagValidationEntity();
+	public static ValidationEntity create() {
+		return new ValidationEntity();
 	}
 
 	public Long getId() {
@@ -68,20 +68,20 @@ public class TagValidationEntity implements Serializable {
 		this.id = id;
 	}
 
-	public TagValidationEntity withId(Long id) {
+	public ValidationEntity withId(Long id) {
 		this.id = id;
 		return this;
 	}
 
-	public TagType getType() {
+	public EntityType getType() {
 		return this.type;
 	}
 
-	public void setType(TagType type) {
+	public void setType(EntityType type) {
 		this.type = type;
 	}
 
-	public TagValidationEntity withType(TagType type) {
+	public ValidationEntity withType(EntityType type) {
 		this.type = type;
 		return this;
 	}
@@ -94,7 +94,7 @@ public class TagValidationEntity implements Serializable {
 		this.validated = validated;
 	}
 
-	public TagValidationEntity withValidated(boolean validated) {
+	public ValidationEntity withValidated(boolean validated) {
 		this.validated = validated;
 		return this;
 	}
@@ -107,7 +107,7 @@ public class TagValidationEntity implements Serializable {
 		this.municipalityId = municipalityId;
 	}
 
-	public TagValidationEntity withMunicipalityId(String municipalityId) {
+	public ValidationEntity withMunicipalityId(String municipalityId) {
 		this.municipalityId = municipalityId;
 		return this;
 	}
@@ -120,7 +120,7 @@ public class TagValidationEntity implements Serializable {
 		this.namespace = namespace;
 	}
 
-	public TagValidationEntity withNamespace(String namespace) {
+	public ValidationEntity withNamespace(String namespace) {
 		this.namespace = namespace;
 		return this;
 	}
@@ -133,7 +133,7 @@ public class TagValidationEntity implements Serializable {
 		this.created = created;
 	}
 
-	public TagValidationEntity withCreated(OffsetDateTime created) {
+	public ValidationEntity withCreated(OffsetDateTime created) {
 		this.created = created;
 		return this;
 	}
@@ -146,7 +146,7 @@ public class TagValidationEntity implements Serializable {
 		this.modified = modified;
 	}
 
-	public TagValidationEntity withModified(OffsetDateTime modified) {
+	public ValidationEntity withModified(OffsetDateTime modified) {
 		this.modified = modified;
 		return this;
 	}
@@ -177,7 +177,7 @@ public class TagValidationEntity implements Serializable {
 		if (getClass() != obj.getClass()) {
 			return false;
 		}
-		TagValidationEntity other = (TagValidationEntity) obj;
+		ValidationEntity other = (ValidationEntity) obj;
 		return Objects.equals(created, other.created) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(municipalityId, other.municipalityId) && Objects.equals(namespace, other.namespace)
 			&& type == other.type && validated == other.validated;
 	}
@@ -185,7 +185,7 @@ public class TagValidationEntity implements Serializable {
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
-		builder.append("TagValidationEntity [id=").append(id).append(", type=").append(type).append(", validated=").append(validated).append(", municipalityId=").append(municipalityId).append(", namespace=").append(namespace).append(", created=")
+		builder.append("ValidationEntity [id=").append(id).append(", type=").append(type).append(", validated=").append(validated).append(", municipalityId=").append(municipalityId).append(", namespace=").append(namespace).append(", created=")
 			.append(created).append(", modified=").append(modified).append("]");
 		return builder.toString();
 	}

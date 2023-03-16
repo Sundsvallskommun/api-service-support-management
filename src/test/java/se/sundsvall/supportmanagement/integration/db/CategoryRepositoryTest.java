@@ -20,11 +20,11 @@ import org.springframework.data.domain.Example;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 
-import se.sundsvall.supportmanagement.integration.db.model.CategoryTagEntity;
-import se.sundsvall.supportmanagement.integration.db.model.TypeTagEntity;
+import se.sundsvall.supportmanagement.integration.db.model.CategoryEntity;
+import se.sundsvall.supportmanagement.integration.db.model.TypeEntity;
 
 /**
- * CategoryTagRepository tests.
+ * CategoryRepository tests.
  *
  * @see src/test/resources/db/testdata.sql for data setup.
  */
@@ -34,41 +34,41 @@ import se.sundsvall.supportmanagement.integration.db.model.TypeTagEntity;
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-junit.sql"
 })
-class CategoryTagRepositoryTest {
+class CategoryRepositoryTest {
 	private static final long TEST_ID = 101;
 
 	@Autowired
-	private CategoryTagRepository categoryTagRepository;
+	private CategoryRepository categoryRepository;
 
 	@Test
 	@Transactional
 	void create() {
-
+		// Setup
 		final var municipalityId = "municipalityId-1";
 		final var name = "category-4";
 		final var namespace = "namespace-1";
 		final var displayName = "category-display-name-4";
 		final var typeName = "type-1";
 		final var typeDisplayName = "type-displayname-1";
-		final var filter = CategoryTagEntity.create()
+		final var filter = CategoryEntity.create()
 			.withMunicipalityId(municipalityId)
 			.withName(name)
 			.withNamespace(namespace);
-		final var entityToSave = CategoryTagEntity.create()
+		final var entityToSave = CategoryEntity.create()
 			.withMunicipalityId(municipalityId)
 			.withName(name)
 			.withNamespace(namespace)
 			.withDisplayName(displayName)
-			.withTypeTags(List.of(TypeTagEntity.create().withName(typeName).withDisplayName(typeDisplayName)));
+			.withTypes(List.of(TypeEntity.create().withName(typeName).withDisplayName(typeDisplayName)));
 
 		// Assertions before execution
-		assertThat(categoryTagRepository.findOne(Example.of(filter))).isEmpty();
+		assertThat(categoryRepository.findOne(Example.of(filter))).isEmpty();
 
 		// Execution
-		categoryTagRepository.save(entityToSave);
+		categoryRepository.save(entityToSave);
 
 		// Assertions after execution
-		final var persistedEntity = categoryTagRepository.findOne(Example.of(filter));
+		final var persistedEntity = categoryRepository.findOne(Example.of(filter));
 
 		assertThat(persistedEntity).isPresent();
 		assertThat(persistedEntity.get().getMunicipalityId()).isEqualTo(municipalityId);
@@ -77,10 +77,10 @@ class CategoryTagRepositoryTest {
 		assertThat(persistedEntity.get().getNamespace()).isEqualTo(namespace);
 		assertThat(persistedEntity.get().getCreated()).isCloseTo(OffsetDateTime.now(), within(2, SECONDS));
 		assertThat(persistedEntity.get().getModified()).isNull();
-		assertThat(persistedEntity.get().getTypeTags()).hasSize(1)
+		assertThat(persistedEntity.get().getTypes()).hasSize(1)
 			.extracting(
-				TypeTagEntity::getName,
-				TypeTagEntity::getDisplayName)
+				TypeEntity::getName,
+				TypeEntity::getDisplayName)
 			.containsExactly(
 				tuple(typeName, typeDisplayName));
 	}
@@ -88,40 +88,39 @@ class CategoryTagRepositoryTest {
 	@Test
 	@Transactional
 	void update() {
-
 		// Setup
 		final var municipalityId = "municipalityId-1";
 		final var name = "category-1";
 		final var namespace = "namespace-1";
-		final var filter = CategoryTagEntity.create()
+		final var filter = CategoryEntity.create()
 			.withMunicipalityId(municipalityId)
 			.withName(name)
 			.withNamespace(namespace);
 
-		final var newTagName = "changed-name";
-		final var newTypeTagName = "changed-type-name";
-		final var newTypeTagDisplayName = "changed-type-display-name";
-		final var existingEntity = categoryTagRepository.findOne(Example.of(filter)).orElseThrow();
-		final var changedTypeList = List.of(TypeTagEntity.create().withName(newTypeTagName).withDisplayName(newTypeTagDisplayName).withCategoryTagEntity(existingEntity));
+		final var newName = "changed-name";
+		final var newTypeName = "changed-type-name";
+		final var newTypeDisplayName = "changed-type-display-name";
+		final var existingEntity = categoryRepository.findOne(Example.of(filter)).orElseThrow();
+		final var changedTypeList = List.of(TypeEntity.create().withName(newTypeName).withDisplayName(newTypeDisplayName).withCategoryEntity(existingEntity));
 
 		// Execution
-		existingEntity.withName(newTagName).withTypeTags(changedTypeList);
-		categoryTagRepository.save(existingEntity);
+		existingEntity.withName(newName).withTypes(changedTypeList);
+		categoryRepository.save(existingEntity);
 
 		// Assertions
-		assertThat(categoryTagRepository.findOne(Example.of(filter))).isNotPresent();
+		assertThat(categoryRepository.findOne(Example.of(filter))).isNotPresent();
 
-		final var updatedEntity = categoryTagRepository.findOne(Example.of(filter.withName(newTagName)));
+		final var updatedEntity = categoryRepository.findOne(Example.of(filter.withName(newName)));
 		assertThat(updatedEntity).isPresent();
 		assertThat(updatedEntity.get().getMunicipalityId()).isEqualTo(municipalityId);
-		assertThat(updatedEntity.get().getName()).isEqualTo(newTagName);
+		assertThat(updatedEntity.get().getName()).isEqualTo(newName);
 		assertThat(updatedEntity.get().getNamespace()).isEqualTo(namespace);
-		assertThat(updatedEntity.get().getTypeTags()).hasSize(1)
+		assertThat(updatedEntity.get().getTypes()).hasSize(1)
 			.extracting(
-				TypeTagEntity::getName,
-				TypeTagEntity::getDisplayName)
+				TypeEntity::getName,
+				TypeEntity::getDisplayName)
 			.containsExactly(
-				tuple(newTypeTagName, newTypeTagDisplayName));
+				tuple(newTypeName, newTypeDisplayName));
 		assertThat(updatedEntity.get().getModified()).isCloseTo(OffsetDateTime.now(), within(2, SECONDS));
 	}
 
@@ -132,15 +131,15 @@ class CategoryTagRepositoryTest {
 		final var municipalityId = "municipalityId-1";
 		final var namespace = "namespace-1";
 
-		final var matches = categoryTagRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId);
+		final var matches = categoryRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId);
 
 		assertThat(matches).hasSize(3)
 			.extracting(
-				CategoryTagEntity::getDisplayName,
-				CategoryTagEntity::getId,
-				CategoryTagEntity::getMunicipalityId,
-				CategoryTagEntity::getName,
-				CategoryTagEntity::getNamespace)
+				CategoryEntity::getDisplayName,
+				CategoryEntity::getId,
+				CategoryEntity::getMunicipalityId,
+				CategoryEntity::getName,
+				CategoryEntity::getNamespace)
 			.containsExactlyInAnyOrder(
 				tuple("category-display-name-1", 100L, municipalityId, "category-1", namespace),
 				tuple("category-display-name-2", 101L, municipalityId, "category-2", namespace),
@@ -160,37 +159,36 @@ class CategoryTagRepositoryTest {
 		verifyTypes(matches, verifications);
 	}
 
-	private void verifyTypes(List<CategoryTagEntity> matches, Map<String, List<Tuple>> verifications) {
+	private void verifyTypes(List<CategoryEntity> matches, Map<String, List<Tuple>> verifications) {
 		verifications.entrySet().stream()
 			.forEach(entry -> {
-				assertThat(extractTypeTags(matches, entry))
+				assertThat(extractTypes(matches, entry))
 					.hasSize(entry.getValue().size())
 					.extracting(
-						TypeTagEntity::getDisplayName,
-						TypeTagEntity::getEscalationEmail,
-						TypeTagEntity::getId,
-						TypeTagEntity::getName)
+						TypeEntity::getDisplayName,
+						TypeEntity::getEscalationEmail,
+						TypeEntity::getId,
+						TypeEntity::getName)
 					.containsExactlyInAnyOrderElementsOf(entry.getValue());
 			});
 	}
 
-	private List<TypeTagEntity> extractTypeTags(List<CategoryTagEntity> matches, Entry<String, List<Tuple>> entry) {
+	private List<TypeEntity> extractTypes(List<CategoryEntity> matches, Entry<String, List<Tuple>> entry) {
 		return matches.stream()
 			.filter(ct -> entry.getKey().equals(ct.getName())).findAny()
-			.map(CategoryTagEntity::getTypeTags)
+			.map(CategoryEntity::getTypes)
 			.orElseThrow();
 	}
 
 	@Test
 	void delete() {
-
 		// Setup
-		final var existingTagEntity = categoryTagRepository.findById(TEST_ID).orElseThrow();
+		final var existingEntity = categoryRepository.findById(TEST_ID).orElseThrow();
 
 		// Execution
-		categoryTagRepository.delete(existingTagEntity);
+		categoryRepository.delete(existingEntity);
 
 		// Assertions
-		assertThat(categoryTagRepository.findById(TEST_ID)).isNotPresent();
+		assertThat(categoryRepository.findById(TEST_ID)).isNotPresent();
 	}
 }

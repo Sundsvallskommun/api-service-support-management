@@ -14,10 +14,10 @@ import org.springframework.data.domain.Example;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 
-import se.sundsvall.supportmanagement.integration.db.model.StatusTagEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ExternalIdTypeEntity;
 
 /**
- * StatusTagRepository tests.
+ * ExternalIdTypeRepository tests.
  *
  * @see src/test/resources/db/testdata.sql for data setup.
  */
@@ -27,30 +27,30 @@ import se.sundsvall.supportmanagement.integration.db.model.StatusTagEntity;
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-junit.sql"
 })
-class StatusTagRepositoryTest {
+class ExternalIdTypeRepositoryTest {
 	private static final long TEST_ID = 101;
 
 	@Autowired
-	private StatusTagRepository statusTagRepository;
+	private ExternalIdTypeRepository externalIdTypeRepository;
 
 	@Test
 	void create() {
-
+		// Setup
 		final var municipalityId = "municipalityId-1";
-		final var name = "status-4";
+		final var name = "external-id-type-4";
 		final var namespace = "namespace-1";
-		final var tagEntity = StatusTagEntity.create()
+		final var entity = ExternalIdTypeEntity.create()
 			.withMunicipalityId(municipalityId)
 			.withName(name)
 			.withNamespace(namespace);
 
-		assertThat(statusTagRepository.findOne(Example.of(tagEntity))).isEmpty();
+		assertThat(externalIdTypeRepository.findOne(Example.of(entity))).isEmpty();
 
 		// Execution
-		statusTagRepository.save(tagEntity);
+		externalIdTypeRepository.save(entity);
 
 		// Assertions
-		final var persistedEntity = statusTagRepository.findOne(Example.of(tagEntity));
+		final var persistedEntity = externalIdTypeRepository.findOne(Example.of(entity));
 
 		assertThat(persistedEntity).isPresent();
 		assertThat(persistedEntity.get().getMunicipalityId()).isEqualTo(municipalityId);
@@ -62,30 +62,29 @@ class StatusTagRepositoryTest {
 
 	@Test
 	void update() {
-
 		// Setup
 		final var municipalityId = "municipalityId-1";
-		final var name = "status-1";
+		final var name = "external-id-type-1";
 		final var namespace = "namespace-1";
-		final var tagEntity = StatusTagEntity.create()
+		final var entity = ExternalIdTypeEntity.create()
 			.withMunicipalityId(municipalityId)
 			.withName(name)
 			.withNamespace(namespace);
 
-		final var existingEntity = statusTagRepository.findOne(Example.of(tagEntity)).orElseThrow();
-		final var newTagName = "changed-name";
+		final var existingEntity = externalIdTypeRepository.findOne(Example.of(entity)).orElseThrow();
+		final var newName = "changed-name";
 
 		// Execution
-		existingEntity.setName(newTagName);
-		statusTagRepository.save(existingEntity);
+		existingEntity.setName(newName);
+		externalIdTypeRepository.save(existingEntity);
 
 		// Assertions
-		assertThat(statusTagRepository.findOne(Example.of(tagEntity))).isNotPresent();
-		final var updatedEntity = statusTagRepository.findOne(Example.of(tagEntity.withName(newTagName)));
+		assertThat(externalIdTypeRepository.findOne(Example.of(entity))).isNotPresent();
+		final var updatedEntity = externalIdTypeRepository.findOne(Example.of(entity.withName(newName)));
 
 		assertThat(updatedEntity).isPresent();
 		assertThat(updatedEntity.get().getMunicipalityId()).isEqualTo(municipalityId);
-		assertThat(updatedEntity.get().getName()).isEqualTo(newTagName);
+		assertThat(updatedEntity.get().getName()).isEqualTo(newName);
 		assertThat(updatedEntity.get().getNamespace()).isEqualTo(namespace);
 		assertThat(updatedEntity.get().getModified()).isCloseTo(OffsetDateTime.now(), within(2, SECONDS));
 	}
@@ -96,29 +95,28 @@ class StatusTagRepositoryTest {
 		final var municipalityId = "municipalityId-1";
 		final var namespace = "namespace-1";
 
-		final var matches = statusTagRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId);
+		final var matches = externalIdTypeRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId);
 
 		assertThat(matches).hasSize(3)
 			.extracting(
-				StatusTagEntity::getMunicipalityId,
-				StatusTagEntity::getName,
-				StatusTagEntity::getNamespace)
+				ExternalIdTypeEntity::getMunicipalityId,
+				ExternalIdTypeEntity::getName,
+				ExternalIdTypeEntity::getNamespace)
 			.containsExactlyInAnyOrder(
-				tuple(municipalityId, "status-1", namespace),
-				tuple(municipalityId, "status-2", namespace),
-				tuple(municipalityId, "status-3", namespace));
+				tuple(municipalityId, "external-id-type-1", namespace),
+				tuple(municipalityId, "external-id-type-2", namespace),
+				tuple(municipalityId, "external-id-type-3", namespace));
 	}
 
 	@Test
 	void delete() {
-
 		// Setup
-		final var existingTagEntity = statusTagRepository.findById(TEST_ID).orElseThrow();
+		final var existingEntity = externalIdTypeRepository.findById(TEST_ID).orElseThrow();
 
 		// Execution
-		statusTagRepository.delete(existingTagEntity);
+		externalIdTypeRepository.delete(existingEntity);
 
 		// Assertions
-		assertThat(statusTagRepository.findById(TEST_ID)).isNotPresent();
+		assertThat(externalIdTypeRepository.findById(TEST_ID)).isNotPresent();
 	}
 }

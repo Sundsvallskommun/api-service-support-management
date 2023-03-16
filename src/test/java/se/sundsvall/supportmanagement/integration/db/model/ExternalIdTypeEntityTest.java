@@ -20,7 +20,7 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-class StatusTagEntityTest {
+class ExternalIdTypeEntityTest {
 
 	@BeforeAll
 	static void setup() {
@@ -29,7 +29,7 @@ class StatusTagEntityTest {
 
 	@Test
 	void testBean() {
-		assertThat(StatusTagEntity.class, allOf(
+		assertThat(ExternalIdTypeEntity.class, allOf(
 			hasValidBeanConstructor(),
 			hasValidGettersAndSetters(),
 			hasValidBeanHashCode(),
@@ -47,7 +47,7 @@ class StatusTagEntityTest {
 		final var name = "name";
 		final var namespace = "namespace";
 
-		final var entity = StatusTagEntity.create()
+		final var entity = ExternalIdTypeEntity.create()
 			.withCreated(created)
 			.withId(id)
 			.withModified(modified)
@@ -66,7 +66,7 @@ class StatusTagEntityTest {
 
 	@Test
 	void testOnCreate() {
-		final var entity = StatusTagEntity.create();
+		final var entity = TypeEntity.create();
 		entity.onCreate();
 
 		Assertions.assertThat(entity.getCreated()).isCloseTo(now(), within(1, SECONDS));
@@ -75,7 +75,7 @@ class StatusTagEntityTest {
 
 	@Test
 	void testOnUpdate() {
-		final var entity = StatusTagEntity.create();
+		final var entity = TypeEntity.create();
 		entity.onUpdate();
 
 		Assertions.assertThat(entity.getModified()).isCloseTo(now(), within(1, SECONDS));
@@ -84,7 +84,7 @@ class StatusTagEntityTest {
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(StatusTagEntity.create()).hasAllNullFieldsOrProperties();
-		assertThat(new StatusTagEntity()).hasAllNullFieldsOrProperties();
+		assertThat(TypeEntity.create()).hasAllNullFieldsOrProperties();
+		assertThat(new TypeEntity()).hasAllNullFieldsOrProperties();
 	}
 }

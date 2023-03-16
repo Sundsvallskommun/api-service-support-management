@@ -10,7 +10,7 @@
         primary key (id)
     ) engine=InnoDB;
 
-    create table category_tag (
+    create table category (
        id bigint not null auto_increment,
         created datetime(6),
         display_name varchar(255),
@@ -46,7 +46,7 @@
         primary key (id)
     ) engine=InnoDB;
 
-    create table external_id_type_tag (
+    create table external_id_type (
        id bigint not null auto_increment,
         created datetime(6),
         modified datetime(6),
@@ -76,7 +76,7 @@
         primary key (id)
     ) engine=InnoDB;
 
-    create table status_tag (
+    create table status (
        id bigint not null auto_increment,
         created datetime(6),
         modified datetime(6),
@@ -86,7 +86,18 @@
         primary key (id)
     ) engine=InnoDB;
 
-    create table tag_validation (
+    create table `type` (
+       id bigint not null auto_increment,
+        created datetime(6),
+        display_name varchar(255),
+        escalation_email varchar(255),
+        modified datetime(6),
+        name varchar(255) not null,
+        category_id bigint not null,
+        primary key (id)
+    ) engine=InnoDB;
+
+    create table validation (
        id bigint not null auto_increment,
         created datetime(6),
         modified datetime(6),
@@ -96,45 +107,34 @@
         validated bit,
         primary key (id)
     ) engine=InnoDB;
-
-    create table type_tag (
-       id bigint not null auto_increment,
-        created datetime(6),
-        display_name varchar(255),
-        escalation_email varchar(255),
-        modified datetime(6),
-        name varchar(255) not null,
-        category_tag_id bigint not null,
-        primary key (id)
-    ) engine=InnoDB;
 create index idx_attachment_file_name on attachment (file_name);
-create index idx_namespace_municipality_id on category_tag (namespace, municipality_id);
+create index idx_namespace_municipality_id on category (namespace, municipality_id);
 
-    alter table category_tag 
+    alter table category 
        add constraint uq_namespace_municipality_id_name unique (namespace, municipality_id, name);
 create index idx_errand_id on errand (id);
 create index idx_errand_namespace on errand (namespace);
 create index idx_errand_municipality_id on errand (municipality_id);
-create index idx_namespace_municipality_id on external_id_type_tag (namespace, municipality_id);
+create index idx_namespace_municipality_id on external_id_type (namespace, municipality_id);
 
-    alter table external_id_type_tag 
+    alter table external_id_type 
        add constraint uq_namespace_municipality_id_name unique (namespace, municipality_id, name);
 create index idx_external_tag_errand_id on external_tag (errand_id);
 create index idx_external_tag_key on external_tag (`key`);
 
     alter table external_tag 
        add constraint uq_external_tag_errand_id_key unique (errand_id, `key`);
-create index idx_namespace_municipality_id on status_tag (namespace, municipality_id);
+create index idx_namespace_municipality_id on status (namespace, municipality_id);
 
-    alter table status_tag 
+    alter table status 
        add constraint uq_namespace_municipality_id_name unique (namespace, municipality_id, name);
-create index idx_namespace_municipality_id_type on tag_validation (namespace, municipality_id, `type`);
 
-    alter table tag_validation 
+    alter table `type` 
+       add constraint uq_category_id_name unique (category_id, name);
+create index idx_namespace_municipality_id_type on validation (namespace, municipality_id, `type`);
+
+    alter table validation 
        add constraint uq_namespace_municipality_id_type unique (namespace, municipality_id, `type`);
-
-    alter table type_tag 
-       add constraint uq_category_tag_id_name unique (category_tag_id, name);
 
     alter table attachment 
        add constraint fk_errand_attachment_errand_id 
@@ -156,7 +156,7 @@ create index idx_namespace_municipality_id_type on tag_validation (namespace, mu
        foreign key (errand_id) 
        references errand (id);
 
-    alter table type_tag 
-       add constraint fk_category_tag_id 
-       foreign key (category_tag_id) 
-       references category_tag (id);
+    alter table `type` 
+       add constraint fk_category_id 
+       foreign key (category_id) 
+       references category (id);

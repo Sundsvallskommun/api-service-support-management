@@ -6,7 +6,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.TagType.CATEGORY;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EntityType.CATEGORY;
 
 import java.util.List;
 import java.util.Optional;
@@ -17,30 +17,30 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import se.sundsvall.supportmanagement.integration.db.CategoryTagRepository;
-import se.sundsvall.supportmanagement.integration.db.ExternalIdTypeTagRepository;
-import se.sundsvall.supportmanagement.integration.db.StatusTagRepository;
-import se.sundsvall.supportmanagement.integration.db.TagValidationRepository;
-import se.sundsvall.supportmanagement.integration.db.model.CategoryTagEntity;
-import se.sundsvall.supportmanagement.integration.db.model.ExternalIdTypeTagEntity;
-import se.sundsvall.supportmanagement.integration.db.model.StatusTagEntity;
-import se.sundsvall.supportmanagement.integration.db.model.TagValidationEntity;
-import se.sundsvall.supportmanagement.integration.db.model.TypeTagEntity;
+import se.sundsvall.supportmanagement.integration.db.CategoryRepository;
+import se.sundsvall.supportmanagement.integration.db.ExternalIdTypeRepository;
+import se.sundsvall.supportmanagement.integration.db.StatusRepository;
+import se.sundsvall.supportmanagement.integration.db.ValidationRepository;
+import se.sundsvall.supportmanagement.integration.db.model.CategoryEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ExternalIdTypeEntity;
+import se.sundsvall.supportmanagement.integration.db.model.StatusEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ValidationEntity;
+import se.sundsvall.supportmanagement.integration.db.model.TypeEntity;
 
 @ExtendWith(MockitoExtension.class)
 class TagServiceTest {
 
 	@Mock
-	private StatusTagRepository statusTagRepositoryMock;
+	private StatusRepository statusRepositoryMock;
 
 	@Mock
-	private CategoryTagRepository categoryTagTagRepositoryMock;
+	private CategoryRepository categoryRepositoryMock;
 
 	@Mock
-	private ExternalIdTypeTagRepository externalIdTypeTagRepositoryMock;
+	private ExternalIdTypeRepository externalIdTypeRepositoryMock;
 
 	@Mock
-	private TagValidationRepository tagValidationRepositoryMock;
+	private ValidationRepository validationRepositoryMock;
 
 	@InjectMocks
 	private TagService tagService;
@@ -52,20 +52,20 @@ class TagServiceTest {
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
 		final var statusTagEntityList = List.of(
-			StatusTagEntity.create().withName("Status-1"),
-			StatusTagEntity.create().withName("Status-2"),
-			StatusTagEntity.create().withName("Status-3"));
+			StatusEntity.create().withName("Status-1"),
+			StatusEntity.create().withName("Status-2"),
+			StatusEntity.create().withName("Status-3"));
 
 		// Mock
-		when(statusTagRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any())).thenReturn(statusTagEntityList);
+		when(statusRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any())).thenReturn(statusTagEntityList);
 
 		// Call
 		final var result = tagService.findAllStatusTags(namespace, municipalityId);
 
 		// Verifications
 		assertThat(result).containsExactly("Status-1", "Status-2", "Status-3");
-		verify(statusTagRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId);
-		verifyNoInteractions(categoryTagTagRepositoryMock, externalIdTypeTagRepositoryMock);
+		verify(statusRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId);
+		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock);
 	}
 
 	@Test
@@ -75,20 +75,20 @@ class TagServiceTest {
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
 		final var categoryTagEntityList = List.of(
-			CategoryTagEntity.create().withName("Category-1"),
-			CategoryTagEntity.create().withName("Category-2"),
-			CategoryTagEntity.create().withName("Category-3"));
+			CategoryEntity.create().withName("Category-1"),
+			CategoryEntity.create().withName("Category-2"),
+			CategoryEntity.create().withName("Category-3"));
 
 		// Mock
-		when(categoryTagTagRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any())).thenReturn(categoryTagEntityList);
+		when(categoryRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any())).thenReturn(categoryTagEntityList);
 
 		// Call
 		final var result = tagService.findAllCategoryTags(namespace, municipalityId);
 
 		// Verifications
 		assertThat(result).containsExactly("Category-1", "Category-2", "Category-3");
-		verify(categoryTagTagRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId);
-		verifyNoInteractions(statusTagRepositoryMock, externalIdTypeTagRepositoryMock);
+		verify(categoryRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId);
+		verifyNoInteractions(statusRepositoryMock, externalIdTypeRepositoryMock);
 	}
 
 	@Test
@@ -99,19 +99,19 @@ class TagServiceTest {
 		final var municipalityId = "municipalityId";
 		final var category = "Category-2";
 		final var categoryTagEntityList = List.of(
-			CategoryTagEntity.create().withName("Category-1").withTypeTags(List.of(TypeTagEntity.create().withName("Type-1"), TypeTagEntity.create().withName("Type-2"))),
-			CategoryTagEntity.create().withName(category).withTypeTags(List.of(TypeTagEntity.create().withName("Type-3"), TypeTagEntity.create().withName("Type-4"))));
+			CategoryEntity.create().withName("Category-1").withTypes(List.of(TypeEntity.create().withName("Type-1"), TypeEntity.create().withName("Type-2"))),
+			CategoryEntity.create().withName(category).withTypes(List.of(TypeEntity.create().withName("Type-3"), TypeEntity.create().withName("Type-4"))));
 
 		// Mock
-		when(categoryTagTagRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any())).thenReturn(categoryTagEntityList);
+		when(categoryRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any())).thenReturn(categoryTagEntityList);
 
 		// Call
 		final var result = tagService.findAllTypeTags(namespace, municipalityId, category);
 
 		// Verifications
 		assertThat(result).containsExactly("Type-3", "Type-4");
-		verify(categoryTagTagRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId);
-		verifyNoInteractions(statusTagRepositoryMock, externalIdTypeTagRepositoryMock);
+		verify(categoryRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId);
+		verifyNoInteractions(statusRepositoryMock, externalIdTypeRepositoryMock);
 	}
 
 	@Test
@@ -121,19 +121,19 @@ class TagServiceTest {
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
 		final var categoryTagEntityList = List.of(
-			ExternalIdTypeTagEntity.create().withName("ExternalIdTypeTag-1"),
-			ExternalIdTypeTagEntity.create().withName("ExternalIdTypeTag-2"));
+			ExternalIdTypeEntity.create().withName("ExternalIdTypeTag-1"),
+			ExternalIdTypeEntity.create().withName("ExternalIdTypeTag-2"));
 
 		// Mock
-		when(externalIdTypeTagRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any())).thenReturn(categoryTagEntityList);
+		when(externalIdTypeRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any())).thenReturn(categoryTagEntityList);
 
 		// Call
 		final var result = tagService.findAllExternalIdTypeTags(namespace, municipalityId);
 
 		// Verifications
 		assertThat(result).containsExactly("ExternalIdTypeTag-1", "ExternalIdTypeTag-2");
-		verify(externalIdTypeTagRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId);
-		verifyNoInteractions(statusTagRepositoryMock, categoryTagTagRepositoryMock);
+		verify(externalIdTypeRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId);
+		verifyNoInteractions(statusRepositoryMock, categoryRepositoryMock);
 	}
 
 	@Test
@@ -143,21 +143,21 @@ class TagServiceTest {
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
 		final var statusTagEntityList = List.of(
-			StatusTagEntity.create().withName("STATUS-1"),
-			StatusTagEntity.create().withName("STATUS-2"),
-			StatusTagEntity.create().withName("STATUS-3"));
+			StatusEntity.create().withName("STATUS-1"),
+			StatusEntity.create().withName("STATUS-2"),
+			StatusEntity.create().withName("STATUS-3"));
 		final var typeEntityList = List.of(
-			TypeTagEntity.create().withName("TYPE-1"),
-			TypeTagEntity.create().withName("TYPE-2"),
-			TypeTagEntity.create().withName("TYPE-3"));
+			TypeEntity.create().withName("TYPE-1"),
+			TypeEntity.create().withName("TYPE-2"),
+			TypeEntity.create().withName("TYPE-3"));
 		final var categoryTagEntityList = List.of(
-			CategoryTagEntity.create().withName("CATEGORY-1").withTypeTags(typeEntityList),
-			CategoryTagEntity.create().withName("CATEGORY-2").withTypeTags(typeEntityList),
-			CategoryTagEntity.create().withName("CATEGORY-3").withTypeTags(typeEntityList));
+			CategoryEntity.create().withName("CATEGORY-1").withTypes(typeEntityList),
+			CategoryEntity.create().withName("CATEGORY-2").withTypes(typeEntityList),
+			CategoryEntity.create().withName("CATEGORY-3").withTypes(typeEntityList));
 
 		// Mock
-		when(statusTagRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any())).thenReturn(statusTagEntityList);
-		when(categoryTagTagRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any())).thenReturn(categoryTagEntityList);
+		when(statusRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any())).thenReturn(statusTagEntityList);
+		when(categoryRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any())).thenReturn(categoryTagEntityList);
 
 		// Call
 		final var result = tagService.findAllTags(namespace, municipalityId);
@@ -168,9 +168,9 @@ class TagServiceTest {
 		assertThat(result.getCategoryTags()).containsExactly("CATEGORY-1", "CATEGORY-2", "CATEGORY-3");
 		assertThat(result.getTypeTags()).containsExactly("TYPE-1", "TYPE-2", "TYPE-3");
 
-		verify(statusTagRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId);
-		verify(categoryTagTagRepositoryMock, times(2)).findAllByNamespaceAndMunicipalityId(namespace, municipalityId);
-		verifyNoInteractions(externalIdTypeTagRepositoryMock);
+		verify(statusRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId);
+		verify(categoryRepositoryMock, times(2)).findAllByNamespaceAndMunicipalityId(namespace, municipalityId);
+		verifyNoInteractions(externalIdTypeRepositoryMock);
 	}
 
 	@Test
@@ -179,14 +179,14 @@ class TagServiceTest {
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
 		final var type = CATEGORY;
-		final var validationEntity = TagValidationEntity.create().withType(type).withValidated(true);
+		final var validationEntity = ValidationEntity.create().withType(type).withValidated(true);
 
 		// Mock
-		when(tagValidationRepositoryMock.findByNamespaceAndMunicipalityIdAndType(namespace, municipalityId, type)).thenReturn(Optional.of(validationEntity));
+		when(validationRepositoryMock.findByNamespaceAndMunicipalityIdAndType(namespace, municipalityId, type)).thenReturn(Optional.of(validationEntity));
 
 		// Call and assert
 		assertThat(tagService.isValidated(namespace, municipalityId, type)).isTrue();
-		verify(tagValidationRepositoryMock).findByNamespaceAndMunicipalityIdAndType(namespace, municipalityId, type);
+		verify(validationRepositoryMock).findByNamespaceAndMunicipalityIdAndType(namespace, municipalityId, type);
 	}
 
 	@Test
@@ -195,14 +195,14 @@ class TagServiceTest {
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
 		final var type = CATEGORY;
-		final var validationEntity = TagValidationEntity.create().withType(type);
+		final var validationEntity = ValidationEntity.create().withType(type);
 
 		// Mock
-		when(tagValidationRepositoryMock.findByNamespaceAndMunicipalityIdAndType(namespace, municipalityId, type)).thenReturn(Optional.of(validationEntity));
+		when(validationRepositoryMock.findByNamespaceAndMunicipalityIdAndType(namespace, municipalityId, type)).thenReturn(Optional.of(validationEntity));
 
 		// Call and assert
 		assertThat(tagService.isValidated(namespace, municipalityId, type)).isFalse();
-		verify(tagValidationRepositoryMock).findByNamespaceAndMunicipalityIdAndType(namespace, municipalityId, type);
+		verify(validationRepositoryMock).findByNamespaceAndMunicipalityIdAndType(namespace, municipalityId, type);
 	}
 
 	@Test
@@ -213,10 +213,10 @@ class TagServiceTest {
 		final var type = CATEGORY;
 
 		// Mock
-		when(tagValidationRepositoryMock.findByNamespaceAndMunicipalityIdAndType(namespace, municipalityId, type)).thenReturn(Optional.empty());
+		when(validationRepositoryMock.findByNamespaceAndMunicipalityIdAndType(namespace, municipalityId, type)).thenReturn(Optional.empty());
 
 		// Call and assert
 		assertThat(tagService.isValidated(namespace, municipalityId, type)).isFalse();
-		verify(tagValidationRepositoryMock).findByNamespaceAndMunicipalityIdAndType(namespace, municipalityId, type);
+		verify(validationRepositoryMock).findByNamespaceAndMunicipalityIdAndType(namespace, municipalityId, type);
 	}
 }

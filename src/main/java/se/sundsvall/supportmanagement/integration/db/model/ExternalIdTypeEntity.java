@@ -7,33 +7,27 @@ import static javax.persistence.GenerationType.IDENTITY;
 
 import java.io.Serializable;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
-import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Index;
-import javax.persistence.OneToMany;
 import javax.persistence.PrePersist;
 import javax.persistence.PreUpdate;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
 @Entity
-@Table(name = "category_tag", indexes = {
+@Table(name = "external_id_type", indexes = {
 	@Index(name = "idx_namespace_municipality_id", columnList = "namespace, municipality_id")
 }, uniqueConstraints = {
 	@UniqueConstraint(name = "uq_namespace_municipality_id_name", columnNames = { "namespace", "municipality_id", "name" })
 })
-public class CategoryTagEntity implements Serializable {
+public class ExternalIdTypeEntity implements Serializable {
 
-	private static final long serialVersionUID = -5979976910282343331L;
+	private static final long serialVersionUID = 3435337216198353220L;
 
 	@Id
 	@GeneratedValue(strategy = IDENTITY)
@@ -42,12 +36,6 @@ public class CategoryTagEntity implements Serializable {
 
 	@Column(name = "name", nullable = false)
 	private String name;
-
-	@Column(name = "display_name")
-	private String displayName;
-
-	@OneToMany(mappedBy = "categoryTagEntity", cascade = CascadeType.ALL, orphanRemoval = true)
-	private List<TypeTagEntity> typeTags;
 
 	@Column(name = "municipality_id", nullable = false)
 	private String municipalityId;
@@ -61,8 +49,8 @@ public class CategoryTagEntity implements Serializable {
 	@Column(name = "modified")
 	private OffsetDateTime modified;
 
-	public static CategoryTagEntity create() {
-		return new CategoryTagEntity();
+	public static ExternalIdTypeEntity create() {
+		return new ExternalIdTypeEntity();
 	}
 
 	public Long getId() {
@@ -73,7 +61,7 @@ public class CategoryTagEntity implements Serializable {
 		this.id = id;
 	}
 
-	public CategoryTagEntity withId(Long id) {
+	public ExternalIdTypeEntity withId(Long id) {
 		this.id = id;
 		return this;
 	}
@@ -86,40 +74,8 @@ public class CategoryTagEntity implements Serializable {
 		this.name = name;
 	}
 
-	public CategoryTagEntity withName(String name) {
+	public ExternalIdTypeEntity withName(String name) {
 		this.name = name;
-		return this;
-	}
-
-	public String getDisplayName() {
-		return displayName;
-	}
-
-	public void setDisplayName(String displayName) {
-		this.displayName = displayName;
-	}
-
-	public CategoryTagEntity withDisplayName(String displayName) {
-		this.displayName = displayName;
-		return this;
-	}
-
-	public List<TypeTagEntity> getTypeTags() {
-		return typeTags;
-	}
-
-	public void setTypeTags(List<TypeTagEntity> typeTags) {
-		Optional.ofNullable(this.typeTags).ifPresentOrElse(
-			List::clear,
-			() -> this.typeTags = new ArrayList<>());
-
-		Optional.ofNullable(typeTags).orElse(Collections.emptyList()).stream()
-			.filter(Objects::nonNull)
-			.forEach(tt -> this.typeTags.add(tt.withCategoryTagEntity(this)));
-	}
-
-	public CategoryTagEntity withTypeTags(List<TypeTagEntity> typeTags) {
-		setTypeTags(typeTags);
 		return this;
 	}
 
@@ -131,7 +87,7 @@ public class CategoryTagEntity implements Serializable {
 		this.municipalityId = municipalityId;
 	}
 
-	public CategoryTagEntity withMunicipalityId(String municipalityId) {
+	public ExternalIdTypeEntity withMunicipalityId(String municipalityId) {
 		this.municipalityId = municipalityId;
 		return this;
 	}
@@ -144,7 +100,7 @@ public class CategoryTagEntity implements Serializable {
 		this.namespace = namespace;
 	}
 
-	public CategoryTagEntity withNamespace(String namespace) {
+	public ExternalIdTypeEntity withNamespace(String namespace) {
 		this.namespace = namespace;
 		return this;
 	}
@@ -157,7 +113,7 @@ public class CategoryTagEntity implements Serializable {
 		this.created = created;
 	}
 
-	public CategoryTagEntity withCreated(OffsetDateTime created) {
+	public ExternalIdTypeEntity withCreated(OffsetDateTime created) {
 		this.created = created;
 		return this;
 	}
@@ -170,28 +126,24 @@ public class CategoryTagEntity implements Serializable {
 		this.modified = modified;
 	}
 
-	public CategoryTagEntity withModified(OffsetDateTime modified) {
+	public ExternalIdTypeEntity withModified(OffsetDateTime modified) {
 		this.modified = modified;
 		return this;
 	}
 
 	@PrePersist
 	void onCreate() {
-		Optional.ofNullable(typeTags).ifPresent(tt -> tt
-			.forEach(t -> t.setCategoryTagEntity(this)));
 		created = now(systemDefault()).truncatedTo(MILLIS);
 	}
 
 	@PreUpdate
 	void onUpdate() {
-		Optional.ofNullable(typeTags).ifPresent(tt -> tt
-			.forEach(t -> t.setCategoryTagEntity(this)));
 		modified = now(systemDefault()).truncatedTo(MILLIS);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(created, displayName, id, modified, municipalityId, name, namespace, typeTags);
+		return Objects.hash(created, id, modified, municipalityId, name, namespace);
 	}
 
 	@Override
@@ -205,16 +157,16 @@ public class CategoryTagEntity implements Serializable {
 		if (getClass() != obj.getClass()) {
 			return false;
 		}
-		CategoryTagEntity other = (CategoryTagEntity) obj;
-		return Objects.equals(created, other.created) && Objects.equals(displayName, other.displayName) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(municipalityId, other.municipalityId) && Objects
-			.equals(name, other.name) && Objects.equals(namespace, other.namespace) && Objects.equals(typeTags, other.typeTags);
+		ExternalIdTypeEntity other = (ExternalIdTypeEntity) obj;
+		return Objects.equals(created, other.created) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(municipalityId, other.municipalityId) && Objects.equals(name, other.name) && Objects.equals(namespace,
+			other.namespace);
 	}
 
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
-		builder.append("CategoryTagEntity [id=").append(id).append(", name=").append(name).append(", displayName=").append(displayName).append(", typeTags=").append(typeTags).append(", municipalityId=").append(municipalityId).append(", namespace=")
-			.append(namespace).append(", created=").append(created).append(", modified=").append(modified).append("]");
+		builder.append("ExternalIdTypeEntity [id=").append(id).append(", name=").append(name).append(", municipalityId=").append(municipalityId).append(", namespace=").append(namespace).append(", created=").append(created).append(", modified=")
+			.append(modified).append("]");
 		return builder.toString();
 	}
 }

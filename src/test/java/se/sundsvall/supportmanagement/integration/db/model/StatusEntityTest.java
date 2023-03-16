@@ -14,25 +14,22 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.AllOf.allOf;
 
 import java.time.OffsetDateTime;
-import java.util.List;
 import java.util.Random;
 
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-class CategoryTagEntityTest {
+class StatusEntityTest {
 
 	@BeforeAll
 	static void setup() {
-		final var random = new Random();
-		registerValueGenerator(() -> now().plusDays(random.nextInt()), OffsetDateTime.class);
-		registerValueGenerator(() -> List.of(TypeTagEntity.create().withId(random.nextLong())), List.class);
+		registerValueGenerator(() -> now().plusDays(new Random().nextInt()), OffsetDateTime.class);
 	}
 
 	@Test
 	void testBean() {
-		assertThat(CategoryTagEntity.class, allOf(
+		assertThat(StatusEntity.class, allOf(
 			hasValidBeanConstructor(),
 			hasValidGettersAndSetters(),
 			hasValidBeanHashCode(),
@@ -44,38 +41,32 @@ class CategoryTagEntityTest {
 	void hasValidBuilderMethods() {
 
 		final var created = OffsetDateTime.now().minusDays(1);
-		final var displayName = "displayName";
 		final var id = 1L;
 		final var modified = OffsetDateTime.now();
 		final var municipalityId = "municipalityId";
 		final var name = "name";
 		final var namespace = "namespace";
-		final var typeTags = List.of(TypeTagEntity.create());
 
-		final var entity = CategoryTagEntity.create()
+		final var entity = StatusEntity.create()
 			.withCreated(created)
-			.withDisplayName(displayName)
 			.withId(id)
 			.withModified(modified)
 			.withMunicipalityId(municipalityId)
 			.withName(name)
-			.withNamespace(namespace)
-			.withTypeTags(typeTags);
+			.withNamespace(namespace);
 
 		assertThat(entity).hasNoNullFieldsOrProperties();
 		assertThat(entity.getCreated()).isEqualTo(created);
-		assertThat(entity.getDisplayName()).isEqualTo(displayName);
 		assertThat(entity.getId()).isEqualTo(id);
 		assertThat(entity.getModified()).isEqualTo(modified);
 		assertThat(entity.getMunicipalityId()).isEqualTo(municipalityId);
 		assertThat(entity.getName()).isEqualTo(name);
 		assertThat(entity.getNamespace()).isEqualTo(namespace);
-		assertThat(entity.getTypeTags()).isEqualTo(typeTags);
 	}
 
 	@Test
 	void testOnCreate() {
-		final var entity = CategoryTagEntity.create();
+		final var entity = StatusEntity.create();
 		entity.onCreate();
 
 		Assertions.assertThat(entity.getCreated()).isCloseTo(now(), within(1, SECONDS));
@@ -84,7 +75,7 @@ class CategoryTagEntityTest {
 
 	@Test
 	void testOnUpdate() {
-		final var entity = CategoryTagEntity.create();
+		final var entity = StatusEntity.create();
 		entity.onUpdate();
 
 		Assertions.assertThat(entity.getModified()).isCloseTo(now(), within(1, SECONDS));
@@ -93,7 +84,7 @@ class CategoryTagEntityTest {
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(CategoryTagEntity.create()).hasAllNullFieldsOrProperties();
-		assertThat(new CategoryTagEntity()).hasAllNullFieldsOrProperties();
+		assertThat(StatusEntity.create()).hasAllNullFieldsOrProperties();
+		assertThat(new StatusEntity()).hasAllNullFieldsOrProperties();
 	}
 }

@@ -24,10 +24,10 @@ import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
 @Entity
-@Table(name = "type_tag", uniqueConstraints = {
-	@UniqueConstraint(name = "uq_category_tag_id_name", columnNames = { "category_tag_id", "name" })
+@Table(name = "`type`", uniqueConstraints = {
+	@UniqueConstraint(name = "uq_category_id_name", columnNames = { "category_id", "name" })
 })
-public class TypeTagEntity implements Serializable {
+public class TypeEntity implements Serializable {
 	private static final long serialVersionUID = -6163643004292601360L;
 
 	@Id
@@ -51,11 +51,11 @@ public class TypeTagEntity implements Serializable {
 	private OffsetDateTime modified;
 
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "category_tag_id", nullable = false, foreignKey = @ForeignKey(name = "fk_category_tag_id"))
-	private CategoryTagEntity categoryTagEntity;
+	@JoinColumn(name = "category_id", nullable = false, foreignKey = @ForeignKey(name = "fk_category_id"))
+	private CategoryEntity categoryEntity;
 
-	public static TypeTagEntity create() {
-		return new TypeTagEntity();
+	public static TypeEntity create() {
+		return new TypeEntity();
 	}
 
 	public Long getId() {
@@ -66,7 +66,7 @@ public class TypeTagEntity implements Serializable {
 		this.id = id;
 	}
 
-	public TypeTagEntity withId(Long id) {
+	public TypeEntity withId(Long id) {
 		this.id = id;
 		return this;
 	}
@@ -79,7 +79,7 @@ public class TypeTagEntity implements Serializable {
 		this.name = name;
 	}
 
-	public TypeTagEntity withName(String name) {
+	public TypeEntity withName(String name) {
 		this.name = name;
 		return this;
 	}
@@ -92,7 +92,7 @@ public class TypeTagEntity implements Serializable {
 		this.displayName = displayName;
 	}
 
-	public TypeTagEntity withDisplayName(String displayName) {
+	public TypeEntity withDisplayName(String displayName) {
 		this.displayName = displayName;
 		return this;
 	}
@@ -105,7 +105,7 @@ public class TypeTagEntity implements Serializable {
 		this.escalationEmail = escalationEmail;
 	}
 
-	public TypeTagEntity withEscalationEmail(String escalationEmail) {
+	public TypeEntity withEscalationEmail(String escalationEmail) {
 		this.escalationEmail = escalationEmail;
 		return this;
 	}
@@ -118,7 +118,7 @@ public class TypeTagEntity implements Serializable {
 		this.created = created;
 	}
 
-	public TypeTagEntity withCreated(OffsetDateTime created) {
+	public TypeEntity withCreated(OffsetDateTime created) {
 		this.created = created;
 		return this;
 	}
@@ -131,21 +131,21 @@ public class TypeTagEntity implements Serializable {
 		this.modified = modified;
 	}
 
-	public TypeTagEntity withModified(OffsetDateTime modified) {
+	public TypeEntity withModified(OffsetDateTime modified) {
 		this.modified = modified;
 		return this;
 	}
 
-	public CategoryTagEntity getCategoryTagEntity() {
-		return categoryTagEntity;
+	public CategoryEntity getCategoryEntity() {
+		return categoryEntity;
 	}
 
-	public void setCategoryTagEntity(CategoryTagEntity categoryTagEntity) {
-		this.categoryTagEntity = categoryTagEntity;
+	public void setCategoryEntity(CategoryEntity categoryEntity) {
+		this.categoryEntity = categoryEntity;
 	}
 
-	public TypeTagEntity withCategoryTagEntity(CategoryTagEntity categoryTagEntity) {
-		this.categoryTagEntity = categoryTagEntity;
+	public TypeEntity withCategoryEntity(CategoryEntity categoryEntity) {
+		this.categoryEntity = categoryEntity;
 		return this;
 	}
 
@@ -161,8 +161,8 @@ public class TypeTagEntity implements Serializable {
 
 	@Override
 	public int hashCode() {
-		var categoryTagId = Optional.ofNullable(categoryTagEntity).map(CategoryTagEntity::getId).orElse(null);
-		return Objects.hash(categoryTagId, created, displayName, escalationEmail, id, modified, name);
+		var categoryId = Optional.ofNullable(categoryEntity).map(CategoryEntity::getId).orElse(null);
+		return Objects.hash(categoryId, created, displayName, escalationEmail, id, modified, name);
 	}
 
 	@Override
@@ -176,20 +176,20 @@ public class TypeTagEntity implements Serializable {
 		if (getClass() != obj.getClass()) {
 			return false;
 		}
-		TypeTagEntity other = (TypeTagEntity) obj;
+		TypeEntity other = (TypeEntity) obj;
 
-		var thisCategoryTagId = Optional.ofNullable(categoryTagEntity).map(CategoryTagEntity::getId).orElse(null);
-		var otherCategoryTagId = Optional.ofNullable(other.categoryTagEntity).map(CategoryTagEntity::getId).orElse(null);
-		return Objects.equals(thisCategoryTagId, otherCategoryTagId) && Objects.equals(created, other.created) && Objects.equals(displayName, other.displayName) && Objects.equals(escalationEmail, other.escalationEmail) && Objects.equals(id, other.id)
+		var thisCategoryId = Optional.ofNullable(categoryEntity).map(CategoryEntity::getId).orElse(null);
+		var otherCategoryId = Optional.ofNullable(other.categoryEntity).map(CategoryEntity::getId).orElse(null);
+		return Objects.equals(thisCategoryId, otherCategoryId) && Objects.equals(created, other.created) && Objects.equals(displayName, other.displayName) && Objects.equals(escalationEmail, other.escalationEmail) && Objects.equals(id, other.id)
 			&& Objects.equals(modified, other.modified) && Objects.equals(name, other.name);
 	}
 
 	@Override
 	public String toString() {
-		var categoryTagId = Optional.ofNullable(categoryTagEntity).map(CategoryTagEntity::getId).orElse(null);
+		var categoryId = Optional.ofNullable(categoryEntity).map(CategoryEntity::getId).orElse(null);
 		StringBuilder builder = new StringBuilder();
-		builder.append("TypeTagEntity [id=").append(id).append(", name=").append(name).append(", displayName=").append(displayName).append(", escalationEmail=").append(escalationEmail).append(", created=").append(created).append(", modified=")
-			.append(modified).append(", categoryTagEntity.id=").append(categoryTagId).append("]");
+		builder.append("TypeEntity [id=").append(id).append(", name=").append(name).append(", displayName=").append(displayName).append(", escalationEmail=").append(escalationEmail).append(", created=").append(created).append(", modified=")
+			.append(modified).append(", categoryEntity.id=").append(categoryId).append("]");
 		return builder.toString();
 	}
 

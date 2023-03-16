@@ -15,11 +15,11 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 
-import se.sundsvall.supportmanagement.integration.db.model.TagValidationEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.TagType;
+import se.sundsvall.supportmanagement.integration.db.model.ValidationEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.EntityType;
 
 /**
- * TagValidationRepository tests.
+ * ValidationRepository tests.
  *
  * @see src/test/resources/db/testdata.sql for data setup.
  */
@@ -29,31 +29,31 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.TagType;
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-junit.sql"
 })
-class TagValidationRepositoryTest {
+class ValidationRepositoryTest {
 	private static final long TEST_ID = 100;
 
 	@Autowired
-	private TagValidationRepository tagValidationRepository;
+	private ValidationRepository validationRepository;
 
 	@Test
 	void create() {
-
+		// Setup
 		final var municipalityId = "municipalityId-1";
 		final var namespace = "namespace-1";
-		final var type = TagType.EXTERNAL_ID_TYPE;
-		final var entity = TagValidationEntity.create()
+		final var type = EntityType.EXTERNAL_ID_TYPE;
+		final var entity = ValidationEntity.create()
 			.withMunicipalityId(municipalityId)
 			.withNamespace(namespace)
 			.withType(type)
 			.withValidated(true);
 
-		assertThat(tagValidationRepository.findByNamespaceAndMunicipalityIdAndType(namespace, municipalityId, type)).isEmpty();
+		assertThat(validationRepository.findByNamespaceAndMunicipalityIdAndType(namespace, municipalityId, type)).isEmpty();
 
 		// Execution
-		tagValidationRepository.save(entity);
+		validationRepository.save(entity);
 
 		// Assertions
-		final var match = tagValidationRepository.findByNamespaceAndMunicipalityIdAndType(namespace, municipalityId, type);
+		final var match = validationRepository.findByNamespaceAndMunicipalityIdAndType(namespace, municipalityId, type);
 
 		assertThat(match).isPresent();
 		assertThat(match.get().getMunicipalityId()).isEqualTo(municipalityId);
@@ -67,13 +67,12 @@ class TagValidationRepositoryTest {
 	@Test
 	@Transactional
 	void update() {
-
 		// Setup
 		final var municipalityId = "municipalityId-1";
 		final var namespace = "namespace-1";
-		final var type = TagType.CATEGORY;
+		final var type = EntityType.CATEGORY;
 
-		final var existingEntity = tagValidationRepository.getReferenceById(TEST_ID);
+		final var existingEntity = validationRepository.getReferenceById(TEST_ID);
 		final var newNamespace = "changed-namespace";
 		final var newValidationSetting = false;
 
@@ -82,12 +81,12 @@ class TagValidationRepositoryTest {
 
 		// Execution
 		existingEntity.withNamespace(newNamespace).withValidated(newValidationSetting);
-		tagValidationRepository.save(existingEntity);
+		validationRepository.save(existingEntity);
 
 		// Assertions after execution
-		assertThat(tagValidationRepository.findByNamespaceAndMunicipalityIdAndType(namespace, municipalityId, type)).isNotPresent();
+		assertThat(validationRepository.findByNamespaceAndMunicipalityIdAndType(namespace, municipalityId, type)).isNotPresent();
 
-		final var updatedEntity = tagValidationRepository.findByNamespaceAndMunicipalityIdAndType(newNamespace, municipalityId, type);
+		final var updatedEntity = validationRepository.findByNamespaceAndMunicipalityIdAndType(newNamespace, municipalityId, type);
 		assertThat(updatedEntity).isPresent();
 		assertThat(updatedEntity.get().getMunicipalityId()).isEqualTo(municipalityId);
 		assertThat(updatedEntity.get().getNamespace()).isEqualTo(newNamespace);
@@ -101,10 +100,10 @@ class TagValidationRepositoryTest {
 		// Setup
 		final var municipalityId = "municipalityId-1";
 		final var namespace = "namespace-2";
-		final var type = TagType.STATUS;
+		final var type = EntityType.STATUS;
 
 		// Assertions
-		final var match = tagValidationRepository.findByNamespaceAndMunicipalityIdAndType(namespace, municipalityId, type);
+		final var match = validationRepository.findByNamespaceAndMunicipalityIdAndType(namespace, municipalityId, type);
 
 		assertThat(match).isPresent();
 		assertThat(match.get().getMunicipalityId()).isEqualTo(municipalityId);
@@ -119,29 +118,28 @@ class TagValidationRepositoryTest {
 		final var municipalityId = "municipalityId-1";
 		final var namespace = "namespace-1";
 
-		final var matches = tagValidationRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId);
+		final var matches = validationRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId);
 
 		assertThat(matches).hasSize(2)
 			.extracting(
-				TagValidationEntity::getMunicipalityId,
-				TagValidationEntity::getNamespace,
-				TagValidationEntity::getType,
-				TagValidationEntity::isValidated)
+				ValidationEntity::getMunicipalityId,
+				ValidationEntity::getNamespace,
+				ValidationEntity::getType,
+				ValidationEntity::isValidated)
 			.containsExactlyInAnyOrder(
-				tuple(municipalityId, namespace, TagType.CATEGORY, true),
-				tuple(municipalityId, namespace, TagType.TYPE, false));
+				tuple(municipalityId, namespace, EntityType.CATEGORY, true),
+				tuple(municipalityId, namespace, EntityType.TYPE, false));
 	}
 
 	@Test
 	void delete() {
-
 		// Setup
-		final var existingTagEntity = tagValidationRepository.findById(TEST_ID).orElseThrow();
+		final var existingEntity = validationRepository.findById(TEST_ID).orElseThrow();
 
 		// Execution
-		tagValidationRepository.delete(existingTagEntity);
+		validationRepository.delete(existingEntity);
 
 		// Assertions
-		assertThat(tagValidationRepository.findById(TEST_ID)).isNotPresent();
+		assertThat(validationRepository.findById(TEST_ID)).isNotPresent();
 	}
 }
