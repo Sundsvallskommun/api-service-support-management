@@ -12,6 +12,7 @@ import static org.springframework.data.domain.Sort.Direction.DESC;
 import static org.zalando.problem.Status.NOT_FOUND;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrand;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrandEntity;
+import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.distinct;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withMunicipalityId;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withNamespace;
 
@@ -95,10 +96,10 @@ class ErrandServiceTest {
 		assertThat(matches.getSort()).usingRecursiveComparison().isEqualTo(sort);
 
 		verify(repositoryMock).findAll(specificationCaptor.capture(), eq(pageable));
-		assertThat(specificationCaptor.getValue()).usingRecursiveComparison().isEqualTo(withNamespace(NAMESPACE).and(withMunicipalityId(MUNICIPALITY_ID)).and(filter));
+		assertThat(specificationCaptor.getValue()).usingRecursiveComparison().isEqualTo(distinct().and(withNamespace(NAMESPACE)).and(withMunicipalityId(MUNICIPALITY_ID)).and(filter));
 
 		verify(repositoryMock).count(specificationCaptor.capture());
-		assertThat(specificationCaptor.getValue()).usingRecursiveComparison().isEqualTo(withNamespace(NAMESPACE).and(withMunicipalityId(MUNICIPALITY_ID)).and(filter));
+		assertThat(specificationCaptor.getValue()).usingRecursiveComparison().isEqualTo(distinct().and(withNamespace(NAMESPACE)).and(withMunicipalityId(MUNICIPALITY_ID)).and(filter));
 
 		verifyNoMoreInteractions(repositoryMock);
 	}
@@ -125,10 +126,10 @@ class ErrandServiceTest {
 		assertThat(matches.getSort()).usingRecursiveComparison().isEqualTo(sort);
 
 		verify(repositoryMock).findAll(specificationCaptor.capture(), eq(pageable));
-		assertThat(specificationCaptor.getValue()).usingRecursiveComparison().isEqualTo(withNamespace(NAMESPACE).and(withMunicipalityId(MUNICIPALITY_ID)).and(filter));
+		assertThat(specificationCaptor.getValue()).usingRecursiveComparison().isEqualTo(distinct().and(withNamespace(NAMESPACE)).and(withMunicipalityId(MUNICIPALITY_ID)).and(filter));
 
 		verify(repositoryMock).count(specificationCaptor.capture());
-		assertThat(specificationCaptor.getValue()).usingRecursiveComparison().isEqualTo(withNamespace(NAMESPACE).and(withMunicipalityId(MUNICIPALITY_ID)).and(filter));
+		assertThat(specificationCaptor.getValue()).usingRecursiveComparison().isEqualTo(distinct().and(withNamespace(NAMESPACE)).and(withMunicipalityId(MUNICIPALITY_ID)).and(filter));
 
 		verifyNoMoreInteractions(repositoryMock);
 	}

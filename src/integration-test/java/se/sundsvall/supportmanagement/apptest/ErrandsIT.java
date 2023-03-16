@@ -54,7 +54,7 @@ class ErrandsIT extends AbstractAppTest {
 	@Test
 	void test02_getErrandsByFilter() {
 		setupCall()
-			.withServicePath(PATH + "?filter=categoryTag:'CATEGORY-1' and externalTags.key:'KEY-1'")
+			.withServicePath(PATH + "?filter=categoryTag:'CATEGORY-1' and concat(stakeholders.firstName, ' ', stakeholders.lastName) ~ '%FIRST_NAME-1 LAST_NAME-1%'")
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
