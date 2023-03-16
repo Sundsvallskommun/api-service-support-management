@@ -183,7 +183,7 @@ public class CategoryTagEntity implements Serializable {
 	}
 
 	@PreUpdate
-	protected void onUpdate() {
+	void onUpdate() {
 		Optional.ofNullable(typeTags).ifPresent(tt -> tt
 			.forEach(t -> t.setCategoryTagEntity(this)));
 		modified = now(systemDefault()).truncatedTo(MILLIS);

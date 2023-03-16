@@ -137,7 +137,7 @@ public class StatusTagEntity implements Serializable {
 	}
 
 	@PreUpdate
-	protected void onUpdate() {
+	void onUpdate() {
 		modified = now(systemDefault()).truncatedTo(MILLIS);
 	}
 
