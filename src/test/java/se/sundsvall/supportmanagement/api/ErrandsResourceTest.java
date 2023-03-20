@@ -346,7 +346,8 @@ class ErrandsResourceTest {
 			.withReporterUserId(reporterUserId)
 			.withStatusTag("status_2")
 			.withTitle("title")
-			.withTypeTag("type_1");
+			.withTypeTag("type_1")
+			.withEscalationEmail("escalation@email.com");
 	}
 
 	// Helper implementation of Page

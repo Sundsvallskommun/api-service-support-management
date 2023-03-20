@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Objects;
 
 import javax.validation.Valid;
+import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Null;
@@ -79,6 +80,7 @@ public class Errand {
 	private String assignedGroupId;
 
 	@Schema(description = "Email address used for escalation of errand", example = "joe.doe@email.com")
+	@Email
 	private String escalationEmail;
 
 	@Schema(description = "Timestamp when errand was created", example = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
