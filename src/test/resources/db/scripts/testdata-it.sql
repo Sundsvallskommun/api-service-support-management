@@ -2,48 +2,48 @@
 -- Category and Type
 -------------------------------------
 INSERT INTO category(id, created, display_name, modified, municipality_id, name, namespace) 
-VALUES (100, now(), 'CATEGORY-DISPLAY-NAME-1', null, '2281', 'CATEGORY-1', 'NAMESPACE.1'),
-       (101, now(), 'CATEGORY-DISPLAY-NAME-2', null, '2281', 'CATEGORY-2', 'NAMESPACE.1'),
-       (102, now(), 'CATEGORY-DISPLAY-NAME-3', null, '2281', 'CATEGORY-3', 'NAMESPACE.1');
+VALUES (100, '2023-01-01 12:00:00.000', 'CATEGORY-DISPLAY-NAME-1', null, '2281', 'CATEGORY-1', 'NAMESPACE.1'),
+       (101, '2023-01-01 12:00:00.000', 'CATEGORY-DISPLAY-NAME-2', null, '2281', 'CATEGORY-2', 'NAMESPACE.1'),
+       (102, '2023-01-01 12:00:00.000', 'CATEGORY-DISPLAY-NAME-3', null, '2281', 'CATEGORY-3', 'NAMESPACE.1');
 
 INSERT INTO type(id, created, display_name, escalation_email, modified, name, category_id) 
-VALUES (100, now(), 'TYPE-DISPLAY-NAME-1', 'ESCALATION-EMAIL-1', null, 'TYPE-1', 100),
-       (101, now(), 'TYPE-DISPLAY-NAME-2', 'ESCALATION-EMAIL-2', null, 'TYPE-2', 100),
-       (102, now(), 'TYPE-DISPLAY-NAME-3', 'ESCALATION-EMAIL-3', null, 'TYPE-3', 100),
-       (103, now(), 'TYPE-DISPLAY-NAME-1', 'ESCALATION-EMAIL-1', null, 'TYPE-1', 101),
-       (104, now(), 'TYPE-DISPLAY-NAME-2', 'ESCALATION-EMAIL-2', null, 'TYPE-2', 101),
-       (105, now(), 'TYPE-DISPLAY-NAME-1', 'ESCALATION-EMAIL-1', null, 'TYPE-1', 102);
+VALUES (100, '2023-01-01 12:00:00.000', 'TYPE-DISPLAY-NAME-1', 'ESCALATION-EMAIL-1', null, 'TYPE-1', 100),
+       (101, '2023-01-01 12:00:00.000', 'TYPE-DISPLAY-NAME-2', 'ESCALATION-EMAIL-2', null, 'TYPE-2', 100),
+       (102, '2023-01-01 12:00:00.000', 'TYPE-DISPLAY-NAME-3', 'ESCALATION-EMAIL-3', null, 'TYPE-3', 100),
+       (103, '2023-01-01 12:00:00.000', 'TYPE-DISPLAY-NAME-1', 'ESCALATION-EMAIL-1', null, 'TYPE-1', 101),
+       (104, '2023-01-01 12:00:00.000', 'TYPE-DISPLAY-NAME-2', 'ESCALATION-EMAIL-2', null, 'TYPE-2', 101),
+       (105, '2023-01-01 12:00:00.000', 'TYPE-DISPLAY-NAME-1', 'ESCALATION-EMAIL-1', null, 'TYPE-1', 102);
        
 -------------------------------------
 -- ExternalIdType
 -------------------------------------
 INSERT INTO external_id_type(id, created, modified, municipality_id, name, namespace) 
-VALUES (100, now(), null, '2281', 'EXTERNAL-ID-TYPE-1', 'NAMESPACE.1'),
-       (101, now(), null, '2281', 'EXTERNAL-ID-TYPE-2', 'NAMESPACE.1'),
-       (102, now(), null, '2281', 'EXTERNAL-ID-TYPE-3', 'NAMESPACE.1'),
-       (104, now(), null, '2281', 'EXTERNAL-ID-TYPE-1', 'NAMESPACE.2'),
-       (105, now(), null, '2305', 'EXTERNAL-ID-TYPE-1', 'NAMESPACE.1'),
-       (106, now(), null, '2305', 'EXTERNAL-ID-TYPE-2', 'NAMESPACE.1');
+VALUES (100, '2023-01-01 12:00:00.000', null, '2281', 'EXTERNAL-ID-TYPE-1', 'NAMESPACE.1'),
+       (101, '2023-01-01 12:00:00.000', null, '2281', 'EXTERNAL-ID-TYPE-2', 'NAMESPACE.1'),
+       (102, '2023-01-01 12:00:00.000', null, '2281', 'EXTERNAL-ID-TYPE-3', 'NAMESPACE.1'),
+       (104, '2023-01-01 12:00:00.000', null, '2281', 'EXTERNAL-ID-TYPE-1', 'NAMESPACE.2'),
+       (105, '2023-01-01 12:00:00.000', null, '2305', 'EXTERNAL-ID-TYPE-1', 'NAMESPACE.1'),
+       (106, '2023-01-01 12:00:00.000', null, '2305', 'EXTERNAL-ID-TYPE-2', 'NAMESPACE.1');
 
 -------------------------------------
 -- Status
 -------------------------------------
 INSERT INTO status(id, created, modified, municipality_id, name, namespace) 
-VALUES (100, now(), null, '2281', 'STATUS-1', 'NAMESPACE.1'),
-       (101, now(), null, '2281', 'STATUS-2', 'NAMESPACE.1'),
-       (102, now(), null, '2281', 'STATUS-3', 'NAMESPACE.1'),
-       (104, now(), null, '2281', 'STATUS-1', 'NAMESPACE.2'),
-       (105, now(), null, '2305', 'STATUS-1', 'NAMESPACE.1'),
-       (106, now(), null, '2305', 'STATUS-2', 'NAMESPACE.1');
+VALUES (100, '2023-01-01 12:00:00.000', null, '2281', 'STATUS-1', 'NAMESPACE.1'),
+       (101, '2023-01-01 12:00:00.000', null, '2281', 'STATUS-2', 'NAMESPACE.1'),
+       (102, '2023-01-01 12:00:00.000', null, '2281', 'STATUS-3', 'NAMESPACE.1'),
+       (104, '2023-01-01 12:00:00.000', null, '2281', 'STATUS-1', 'NAMESPACE.2'),
+       (105, '2023-01-01 12:00:00.000', null, '2305', 'STATUS-1', 'NAMESPACE.1'),
+       (106, '2023-01-01 12:00:00.000', null, '2305', 'STATUS-2', 'NAMESPACE.1');
 
 -------------------------------------
 -- Validation
 -------------------------------------
 INSERT INTO validation(id, municipality_id, namespace, `type`, created, modified, validated)
-VALUES (100, '2281', 'NAMESPACE.1', 'CATEGORY', now(), null, true),
-       (101, '2281', 'NAMESPACE.1', 'TYPE', now(), null, false),
-       (102, '2281', 'NAMESPACE.2', 'CATEGORY', now(), null, false),
-       (103, '2281', 'NAMESPACE.2', 'STATUS', now(), null, true);
+VALUES (100, '2281', 'NAMESPACE.1', 'CATEGORY', '2023-01-01 12:00:00.000', null, true),
+       (101, '2281', 'NAMESPACE.1', 'TYPE', '2023-01-01 12:00:00.000', null, false),
+       (102, '2281', 'NAMESPACE.2', 'CATEGORY', '2023-01-01 12:00:00.000', null, false),
+       (103, '2281', 'NAMESPACE.2', 'STATUS', '2023-01-01 12:00:00.000', null, true);
 
 -------------------------------------
 -- Errand
