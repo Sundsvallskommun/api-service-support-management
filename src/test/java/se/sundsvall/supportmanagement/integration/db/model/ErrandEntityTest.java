@@ -63,6 +63,7 @@ class ErrandEntityTest {
 		final var title = "title";
 		final var touched = now().plusDays(2);
 		final var typeTag = "typeTag";
+		final var escalationEmail = "escalation@email.com";
 
 		final var errandEntity = ErrandEntity.create()
 			.withAssignedGroupId(assignedGroupId)
@@ -83,7 +84,8 @@ class ErrandEntityTest {
 			.withStatusTag(statusTag)
 			.withTitle(title)
 			.withTouched(touched)
-			.withTypeTag(typeTag);
+			.withTypeTag(typeTag)
+			.withEscalationEmail(escalationEmail);
 
 		assertThat(errandEntity).hasNoNullFieldsOrProperties();
 		assertThat(errandEntity.getAssignedGroupId()).isEqualTo(assignedGroupId);
@@ -105,6 +107,7 @@ class ErrandEntityTest {
 		assertThat(errandEntity.getTitle()).isEqualTo(title);
 		assertThat(errandEntity.getTouched()).isEqualTo(touched);
 		assertThat(errandEntity.getTypeTag()).isEqualTo(typeTag);
+		assertThat(errandEntity.getEscalationEmail()).isEqualTo(escalationEmail);
 	}
 
 	@Test

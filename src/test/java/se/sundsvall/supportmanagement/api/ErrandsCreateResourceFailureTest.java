@@ -316,6 +316,33 @@ class ErrandsCreateResourceFailureTest {
 		verifyNoInteractions(errandServiceMock);
 	}
 
+	@Test
+	void createErrandWithInvalidEscalationEmail() {
+		// Call
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(createErrandInstance().withId(null).withCreated(null).withModified(null).withEscalationEmail("invalid"))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::getField, Violation::getMessage)
+			.containsExactly(tuple("escalationEmail", "must be a well-formed email address"));
+
+		// Verification
+		verify(tagServiceMock).findAllCategoryTags(any(), any());
+		verify(tagServiceMock).findAllStatusTags(any(), any());
+		verify(tagServiceMock).findAllTypeTags(any(), any(), any());
+		verifyNoInteractions(errandServiceMock);
+	}
+
 	private static Errand createErrandInstance() {
 		return Errand.create()
 			.withAssignedGroupId("assignedGroupId")

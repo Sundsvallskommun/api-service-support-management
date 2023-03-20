@@ -108,6 +108,7 @@
 			"reporterUserId": "REPORTER_USER_ID-1",
 			"assignedUserId": "ASSIGNED_USER_ID-1",
 			"assignedGroupId": "ASSIGNED_GROUP_ID-1",
+			"escalationEmail":"ESCALATION_EMAIL_1",
 			"created": "2022-01-01T12:00:00+01:00",
 			"touched": "2022-01-01T12:00:00+01:00"
 		}

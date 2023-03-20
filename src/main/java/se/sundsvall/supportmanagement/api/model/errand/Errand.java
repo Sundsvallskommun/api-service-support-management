@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Objects;
 
 import javax.validation.Valid;
+import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Null;
@@ -77,6 +78,10 @@ public class Errand {
 
 	@Schema(description = "Id for the group which is currently assigned to the errand if a group is assigned", example = "hardware support")
 	private String assignedGroupId;
+
+	@Schema(description = "Email address used for escalation of errand", example = "joe.doe@email.com")
+	@Email
+	private String escalationEmail;
 
 	@Schema(description = "Timestamp when errand was created", example = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	@DateTimeFormat(iso = ISO.DATE_TIME)
@@ -266,6 +271,19 @@ public class Errand {
 		return this;
 	}
 
+	public String getEscalationEmail() {
+		return escalationEmail;
+	}
+
+	public void setEscalationEmail(String escalationEmail) {
+		this.escalationEmail = escalationEmail;
+	}
+
+	public Errand withEscalationEmail(String escalationEmail) {
+		this.escalationEmail = escalationEmail;
+		return this;
+	}
+
 	public OffsetDateTime getCreated() {
 		return created;
 	}
@@ -306,34 +324,43 @@ public class Errand {
 	}
 
 	@Override
-	public int hashCode() {
-		return Objects.hash(assignedGroupId, assignedUserId, categoryTag, created, stakeholders, externalTags, id, modified, priority, reporterUserId, statusTag, resolution, description, title, touched, typeTag);
+	public boolean equals(Object o) {
+		if (this == o) {
+			return true;
+		}
+		if (o == null || getClass() != o.getClass()) {
+			return false;
+		}
+		Errand errand = (Errand) o;
+		return Objects.equals(id, errand.id) && Objects.equals(title, errand.title) && priority == errand.priority && Objects.equals(stakeholders, errand.stakeholders) && Objects.equals(externalTags, errand.externalTags) && Objects.equals(categoryTag, errand.categoryTag) && Objects.equals(typeTag, errand.typeTag) && Objects.equals(statusTag, errand.statusTag) && Objects.equals(resolution, errand.resolution) && Objects.equals(description, errand.description) && Objects.equals(reporterUserId, errand.reporterUserId) && Objects.equals(assignedUserId, errand.assignedUserId) && Objects.equals(assignedGroupId, errand.assignedGroupId) && Objects.equals(escalationEmail, errand.escalationEmail) && Objects.equals(created, errand.created) && Objects.equals(modified, errand.modified) && Objects.equals(touched, errand.touched);
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
-			return true;
-		}
-		if (obj == null) {
-			return false;
-		}
-		if (getClass() != obj.getClass()) {
-			return false;
-		}
-		Errand other = (Errand) obj;
-		return Objects.equals(assignedGroupId, other.assignedGroupId) && Objects.equals(assignedUserId, other.assignedUserId) && Objects.equals(categoryTag, other.categoryTag) &&
-			Objects.equals(created, other.created) && Objects.equals(stakeholders, other.stakeholders) && Objects.equals(externalTags, other.externalTags) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified)
-			&& priority == other.priority && Objects.equals(reporterUserId, other.reporterUserId) && Objects.equals(statusTag, other.statusTag) && Objects.equals(title, other.title) && Objects.equals(touched, other.touched) &&
-			Objects.equals(typeTag, other.typeTag) && Objects.equals(resolution, other.resolution) && Objects.equals(description, other.description);
+	public int hashCode() {
+		return Objects.hash(id, title, priority, stakeholders, externalTags, categoryTag, typeTag, statusTag, resolution, description, reporterUserId, assignedUserId, assignedGroupId, escalationEmail, created, modified, touched);
 	}
 
 	@Override
 	public String toString() {
-		StringBuilder builder = new StringBuilder();
-		builder.append("Errand [id=").append(id).append(", title=").append(title).append(", priority=").append(priority).append(", stakeholders=").append(stakeholders).append(", externalTags=").append(externalTags).append(", categoryTag=").append(
-			categoryTag).append(", typeTag=").append(typeTag).append(", statusTag=").append(statusTag).append(", reporterUserId=").append(reporterUserId).append(", assignedUserId=").append(assignedUserId).append(", assignedGroupId=").append(
-				assignedGroupId).append(", created=").append(created).append(", modified=").append(modified).append(", touched=").append(touched).append(", resolution=").append(resolution).append(", description=").append(description).append("]");
-		return builder.toString();
+		final StringBuilder sb = new StringBuilder("Errand{");
+		sb.append("id='").append(id).append('\'');
+		sb.append(", title='").append(title).append('\'');
+		sb.append(", priority=").append(priority);
+		sb.append(", stakeholders=").append(stakeholders);
+		sb.append(", externalTags=").append(externalTags);
+		sb.append(", categoryTag='").append(categoryTag).append('\'');
+		sb.append(", typeTag='").append(typeTag).append('\'');
+		sb.append(", statusTag='").append(statusTag).append('\'');
+		sb.append(", resolution='").append(resolution).append('\'');
+		sb.append(", description='").append(description).append('\'');
+		sb.append(", reporterUserId='").append(reporterUserId).append('\'');
+		sb.append(", assignedUserId='").append(assignedUserId).append('\'');
+		sb.append(", assignedGroupId='").append(assignedGroupId).append('\'');
+		sb.append(", escalationEmail='").append(escalationEmail).append('\'');
+		sb.append(", created=").append(created);
+		sb.append(", modified=").append(modified);
+		sb.append(", touched=").append(touched);
+		sb.append('}');
+		return sb.toString();
 	}
 }

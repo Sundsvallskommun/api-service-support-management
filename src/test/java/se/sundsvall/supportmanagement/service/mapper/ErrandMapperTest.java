@@ -61,6 +61,8 @@ class ErrandMapperTest {
 	private static final String CONTACT_CHANNEL_TYPE = "contactChannelType";
 	private static final String CONTACT_CHANNEL_VALUE = "contactChannelValue";
 
+	private static final String ESCALATION_EMAIL = "escalation@email.com";
+
 	@Test
 	void testToErrand() {
 		final var errand = toErrand(createEntity());
@@ -86,6 +88,7 @@ class ErrandMapperTest {
 		assertThat(errand.getTypeTag()).isEqualTo(TYPE_TAG);
 		assertThat(errand.getResolution()).isEqualTo(RESOLUTION);
 		assertThat(errand.getDescription()).isEqualTo(DESCRIPTION);
+		assertThat(errand.getEscalationEmail()).isEqualTo(ESCALATION_EMAIL);
 	}
 
 	@Test
@@ -114,7 +117,8 @@ class ErrandMapperTest {
 				Errand::getTouched,
 				Errand::getTypeTag,
 				Errand::getResolution,
-				Errand::getDescription)
+				Errand::getDescription,
+				Errand::getEscalationEmail)
 			.containsExactly(tuple(
 				ASSIGNED_GROUP_ID,
 				ASSIGNED_USER_ID,
@@ -131,7 +135,8 @@ class ErrandMapperTest {
 				TOUCHED,
 				TYPE_TAG,
 				RESOLUTION,
-				DESCRIPTION));
+				DESCRIPTION,
+				ESCALATION_EMAIL));
 	}
 
 	@Test
@@ -157,7 +162,8 @@ class ErrandMapperTest {
 				ErrandEntity::getTitle,
 				ErrandEntity::getTypeTag,
 				ErrandEntity::getResolution,
-				ErrandEntity::getDescription)
+				ErrandEntity::getDescription,
+				ErrandEntity::getEscalationEmail)
 			.containsExactly(
 				ASSIGNED_GROUP_ID,
 				ASSIGNED_USER_ID,
@@ -171,7 +177,8 @@ class ErrandMapperTest {
 				TITLE,
 				TYPE_TAG,
 				RESOLUTION,
-				DESCRIPTION);
+				DESCRIPTION,
+				ESCALATION_EMAIL);
 
 		assertThat(entity.getStakeholders()).hasSize(1).extracting(
 			StakeholderEntity::getAddress,
@@ -233,7 +240,8 @@ class ErrandMapperTest {
 				ErrandEntity::getTitle,
 				ErrandEntity::getTypeTag,
 				ErrandEntity::getResolution,
-				ErrandEntity::getDescription)
+				ErrandEntity::getDescription,
+				ErrandEntity::getEscalationEmail)
 			.containsExactly(
 				ASSIGNED_GROUP_ID,
 				ASSIGNED_USER_ID,
@@ -244,7 +252,8 @@ class ErrandMapperTest {
 				TITLE,
 				TYPE_TAG,
 				RESOLUTION,
-				DESCRIPTION);
+				DESCRIPTION,
+				ESCALATION_EMAIL);
 
 		assertThat(entity.getStakeholders()).hasSize(1).extracting(
 			StakeholderEntity::getAddress,
@@ -281,14 +290,15 @@ class ErrandMapperTest {
 
 	@Test
 	void testUpdateEntityWithBlank() {
-		final var entity = updateEntity(createEntity(), Errand.create().withAssignedGroupId("").withAssignedUserId("").withResolution("").withDescription(""));
+		final var entity = updateEntity(createEntity(), Errand.create().withAssignedGroupId("").withAssignedUserId("").withResolution("").withDescription("").withEscalationEmail(""));
 
-		assertThat(entity).hasNoNullFieldsOrPropertiesExcept("assignedGroupId", "assignedUserId", "attachments", "resolution", "description");
+		assertThat(entity).hasNoNullFieldsOrPropertiesExcept("assignedGroupId", "assignedUserId", "attachments", "resolution", "description", "escalationEmail");
 		assertThat(entity.getAssignedGroupId()).isNull();
 		assertThat(entity.getAssignedUserId()).isNull();
 		assertThat(entity.getAttachments()).isNull();
 		assertThat(entity.getResolution()).isNull();
 		assertThat(entity.getDescription()).isNull();
+		assertThat(entity.getEscalationEmail()).isNull();
 	}
 
 	@Test
@@ -318,7 +328,8 @@ class ErrandMapperTest {
 			.withTouched(TOUCHED)
 			.withTypeTag(TYPE_TAG)
 			.withResolution(RESOLUTION)
-			.withDescription(DESCRIPTION);
+			.withDescription(DESCRIPTION)
+			.withEscalationEmail(ESCALATION_EMAIL);
 	}
 
 	private static Stakeholder createStakeHolder() {
@@ -353,7 +364,8 @@ class ErrandMapperTest {
 			.withTouched(TOUCHED)
 			.withModified(MODIFIED)
 			.withResolution(RESOLUTION)
-			.withDescription(DESCRIPTION);
+			.withDescription(DESCRIPTION)
+			.withEscalationEmail(ESCALATION_EMAIL);
 	}
 
 	private static StakeholderEntity createStakeHolderEntity() {

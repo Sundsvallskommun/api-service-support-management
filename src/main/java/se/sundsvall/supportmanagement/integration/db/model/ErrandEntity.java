@@ -97,6 +97,9 @@ public class ErrandEntity implements Serializable {
 	@Column(name = "assigned_group_id")
 	private String assignedGroupId;
 
+	@Column(name = "escalation_email")
+	private String escalationEmail;
+
 	@OneToMany(mappedBy = "errandEntity", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<AttachmentEntity> attachments;
 
@@ -322,6 +325,19 @@ public class ErrandEntity implements Serializable {
 		return this;
 	}
 
+	public String getEscalationEmail() {
+		return escalationEmail;
+	}
+
+	public void setEscalationEmail(String escalationEmail) {
+		this.escalationEmail = escalationEmail;
+	}
+
+	public ErrandEntity withEscalationEmail(String escalationEmail) {
+		this.escalationEmail = escalationEmail;
+		return this;
+	}
+
 	public List<AttachmentEntity> getAttachments() {
 		return attachments;
 	}
@@ -375,35 +391,46 @@ public class ErrandEntity implements Serializable {
 	}
 
 	@Override
-	public int hashCode() {
-		return Objects.hash(assignedGroupId, assignedUserId, attachments, categoryTag, created, stakeholders, description, externalTags, id, modified, municipalityId, namespace, priority, reporterUserId, resolution, statusTag, title, touched, typeTag);
+	public boolean equals(Object o) {
+		if (this == o) {
+			return true;
+		}
+		if (o == null || getClass() != o.getClass()) {
+			return false;
+		}
+		ErrandEntity that = (ErrandEntity) o;
+		return Objects.equals(id, that.id) && Objects.equals(externalTags, that.externalTags) && Objects.equals(stakeholders, that.stakeholders) && Objects.equals(municipalityId, that.municipalityId) && Objects.equals(namespace, that.namespace) && Objects.equals(title, that.title) && Objects.equals(categoryTag, that.categoryTag) && Objects.equals(typeTag, that.typeTag) && Objects.equals(statusTag, that.statusTag) && Objects.equals(resolution, that.resolution) && Objects.equals(description, that.description) && Objects.equals(priority, that.priority) && Objects.equals(reporterUserId, that.reporterUserId) && Objects.equals(assignedUserId, that.assignedUserId) && Objects.equals(assignedGroupId, that.assignedGroupId) && Objects.equals(escalationEmail, that.escalationEmail) && Objects.equals(attachments, that.attachments) && Objects.equals(created, that.created) && Objects.equals(modified, that.modified) && Objects.equals(touched, that.touched);
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
-			return true;
-		}
-		if (obj == null) {
-			return false;
-		}
-		if (getClass() != obj.getClass()) {
-			return false;
-		}
-		ErrandEntity other = (ErrandEntity) obj;
-		return Objects.equals(assignedGroupId, other.assignedGroupId) && Objects.equals(assignedUserId, other.assignedUserId) && Objects.equals(attachments, other.attachments) && Objects.equals(categoryTag, other.categoryTag) && Objects.equals(
-			created, other.created) && Objects.equals(stakeholders, other.stakeholders) && Objects.equals(description, other.description) && Objects.equals(externalTags, other.externalTags) && Objects.equals(id, other.id) && Objects.equals(modified,
-				other.modified) && Objects.equals(municipalityId, other.municipalityId) && Objects.equals(namespace, other.namespace) && Objects.equals(priority, other.priority) && Objects.equals(reporterUserId, other.reporterUserId) && Objects
-					.equals(resolution, other.resolution) && Objects.equals(statusTag, other.statusTag) && Objects.equals(title, other.title) && Objects.equals(touched, other.touched) && Objects.equals(typeTag, other.typeTag);
+	public int hashCode() {
+		return Objects.hash(id, externalTags, stakeholders, municipalityId, namespace, title, categoryTag, typeTag, statusTag, resolution, description, priority, reporterUserId, assignedUserId, assignedGroupId, escalationEmail, attachments, created, modified, touched);
 	}
 
 	@Override
 	public String toString() {
-		StringBuilder builder = new StringBuilder();
-		builder.append("ErrandEntity [id=").append(id).append(", externalTags=").append(externalTags).append(", stakeholders=").append(stakeholders).append(", municipalityId=").append(municipalityId).append(", namespace=").append(namespace).append(
-			", title=").append(title).append(", categoryTag=").append(categoryTag).append(", typeTag=").append(typeTag).append(", statusTag=").append(statusTag).append(", resolution=").append(resolution).append(", description=").append(description)
-			.append(", priority=").append(priority).append(", reporterUserId=").append(reporterUserId).append(", assignedUserId=").append(assignedUserId).append(", assignedGroupId=").append(assignedGroupId).append(", attachments=").append(
-				attachments).append(", created=").append(created).append(", modified=").append(modified).append(", touched=").append(touched).append("]");
-		return builder.toString();
+		final StringBuilder sb = new StringBuilder("ErrandEntity{");
+		sb.append("id='").append(id).append('\'');
+		sb.append(", externalTags=").append(externalTags);
+		sb.append(", stakeholders=").append(stakeholders);
+		sb.append(", municipalityId='").append(municipalityId).append('\'');
+		sb.append(", namespace='").append(namespace).append('\'');
+		sb.append(", title='").append(title).append('\'');
+		sb.append(", categoryTag='").append(categoryTag).append('\'');
+		sb.append(", typeTag='").append(typeTag).append('\'');
+		sb.append(", statusTag='").append(statusTag).append('\'');
+		sb.append(", resolution='").append(resolution).append('\'');
+		sb.append(", description='").append(description).append('\'');
+		sb.append(", priority='").append(priority).append('\'');
+		sb.append(", reporterUserId='").append(reporterUserId).append('\'');
+		sb.append(", assignedUserId='").append(assignedUserId).append('\'');
+		sb.append(", assignedGroupId='").append(assignedGroupId).append('\'');
+		sb.append(", escalationEmail='").append(escalationEmail).append('\'');
+		sb.append(", attachments=").append(attachments);
+		sb.append(", created=").append(created);
+		sb.append(", modified=").append(modified);
+		sb.append(", touched=").append(touched);
+		sb.append('}');
+		return sb.toString();
 	}
 }

@@ -34,6 +34,7 @@
         category_tag varchar(255),
         created datetime(6),
         description longtext,
+        escalation_email varchar(255),
         modified datetime(6),
         municipality_id varchar(255) not null,
         namespace varchar(255) not null,
