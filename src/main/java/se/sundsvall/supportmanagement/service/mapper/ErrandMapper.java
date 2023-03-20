@@ -45,7 +45,8 @@ public class ErrandMapper {
 			.withTitle(errand.getTitle())
 			.withTypeTag(errand.getTypeTag())
 			.withResolution(errand.getResolution())
-			.withDescription(errand.getDescription());
+			.withDescription(errand.getDescription())
+			.withEscalationEmail(errand.getEscalationEmail());
 	}
 
 	public static ErrandEntity updateEntity(ErrandEntity entity, Errand errand) {
@@ -64,6 +65,7 @@ public class ErrandMapper {
 		ofNullable(errand.getTypeTag()).ifPresent(entity::setTypeTag);
 		ofNullable(errand.getResolution()).ifPresent(value -> entity.setResolution(isEmpty(value) ? null : value));
 		ofNullable(errand.getDescription()).ifPresent(value -> entity.setDescription(isEmpty(value) ? null : value));
+		ofNullable(errand.getEscalationEmail()).ifPresent(value -> entity.setEscalationEmail(isEmpty(value) ? null : value));
 
 		return entity;
 	}
@@ -110,7 +112,8 @@ public class ErrandMapper {
 				.withTouched(e.getTouched())
 				.withTypeTag(e.getTypeTag())
 				.withResolution(e.getResolution())
-				.withDescription(e.getDescription()))
+				.withDescription(e.getDescription())
+				.withEscalationEmail(e.getEscalationEmail()))
 			.orElse(null);
 	}
 

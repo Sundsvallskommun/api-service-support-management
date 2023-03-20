@@ -60,6 +60,7 @@ class ErrandsRepositoryTest {
 		final var assignedUserId = "assignedUserId";
 		final var assignedGroupId = "assignedGroupId";
 		final var municipalityId = "municipalityId";
+		final var escalationEmail = "escalation@email.com";
 
 		var errandEntity = ErrandEntity.create()
 			.withNamespace(namespace)
@@ -73,7 +74,8 @@ class ErrandsRepositoryTest {
 			.withAssignedGroupId(assignedGroupId)
 			.withExternalTags(List.of(externalTag))
 			.withStakeholders(List.of(stakeholder))
-			.withMunicipalityId(municipalityId);
+			.withMunicipalityId(municipalityId)
+			.withEscalationEmail(escalationEmail);
 
 		// Execution
 		final var persistedEntity = errandsRepository.save(errandEntity);
@@ -94,6 +96,7 @@ class ErrandsRepositoryTest {
 		assertThat(persistedEntity.getMunicipalityId()).isEqualTo(municipalityId);
 		assertThat(persistedEntity.getCreated()).isCloseTo(OffsetDateTime.now(), within(2, SECONDS));
 		assertThat(persistedEntity.getModified()).isNull();
+		assertThat(persistedEntity.getEscalationEmail()).isEqualTo(escalationEmail);
 	}
 
 	@Test
@@ -108,9 +111,9 @@ class ErrandsRepositoryTest {
 		assertThat(errandEntities.getTotalElements()).isEqualTo(2);
 
 		assertThat(errandEntities)
-			.extracting(ErrandEntity::getId, ErrandEntity::getAssignedGroupId, ErrandEntity::getAssignedUserId).containsExactlyInAnyOrder(
-				tuple("ERRAND_ID-1", "ASSIGNED_GROUP_ID-1", "ASSIGNED_USER_ID-1"),
-				tuple("ERRAND_ID-2", "ASSIGNED_GROUP_ID-1", "ASSIGNED_USER_ID-1"));
+			.extracting(ErrandEntity::getId, ErrandEntity::getAssignedGroupId, ErrandEntity::getAssignedUserId, ErrandEntity::getEscalationEmail).containsExactlyInAnyOrder(
+				tuple("ERRAND_ID-1", "ASSIGNED_GROUP_ID-1", "ASSIGNED_USER_ID-1", "ESCALATION_EMAIL_1"),
+				tuple("ERRAND_ID-2", "ASSIGNED_GROUP_ID-1", "ASSIGNED_USER_ID-1", "ESCALATION_EMAIL_2"));
 	}
 
 	@Test

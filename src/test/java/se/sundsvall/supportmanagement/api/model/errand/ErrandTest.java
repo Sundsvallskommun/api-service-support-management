@@ -55,24 +55,26 @@ class ErrandTest {
 		final var typeTag = "typeTag";
 		final var resolution = "resolution";
 		final var description = "description";
+		final var escalationEmail = "escalation@email.com";
 
 		final var bean = Errand.create()
-			.withAssignedGroupId(assignedGroupId)
-			.withAssignedUserId(assignedUserId)
-			.withCategoryTag(categoryTag)
-			.withCreated(created)
-			.withStakeholders(List.of(stakeholder))
-			.withExternalTags(externalTags)
-			.withId(id)
-			.withModified(modified)
-			.withPriority(priority)
-			.withReporterUserId(reporterUserId)
-			.withStatusTag(statusTag)
-			.withTitle(title)
-			.withTouched(touched)
-			.withTypeTag(typeTag)
-			.withResolution(resolution)
-			.withDescription(description);
+				.withAssignedGroupId(assignedGroupId)
+				.withAssignedUserId(assignedUserId)
+				.withCategoryTag(categoryTag)
+				.withCreated(created)
+				.withStakeholders(List.of(stakeholder))
+				.withExternalTags(externalTags)
+				.withId(id)
+				.withModified(modified)
+				.withPriority(priority)
+				.withReporterUserId(reporterUserId)
+				.withStatusTag(statusTag)
+				.withTitle(title)
+				.withTouched(touched)
+				.withTypeTag(typeTag)
+				.withResolution(resolution)
+				.withDescription(description)
+				.withEscalationEmail(escalationEmail);
 
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(bean.getAssignedGroupId()).isEqualTo(assignedGroupId);
@@ -91,6 +93,7 @@ class ErrandTest {
 		assertThat(bean.getTypeTag()).isEqualTo(typeTag);
 		assertThat(bean.getResolution()).isEqualTo(resolution);
 		assertThat(bean.getDescription()).isEqualTo(description);
+		assertThat(bean.getEscalationEmail()).isEqualTo(escalationEmail);
 	}
 
 	@Test
