@@ -340,9 +340,9 @@ class ErrandsCreateResourceFailureTest {
 			.containsExactly(tuple("escalationEmail", "must be a well-formed email address"));
 
 		// Verification
-		verify(tagServiceMock).findAllCategoryTags(any(), any());
-		verify(tagServiceMock).findAllStatusTags(any(), any());
-		verify(tagServiceMock).findAllTypeTags(any(), any(), any());
+		verify(metadataServiceMock).findCategories(any(), any());
+		verify(metadataServiceMock).findStatuses(any(), any());
+		verify(metadataServiceMock).findTypes(any(), any(), any());
 		verifyNoInteractions(errandServiceMock);
 	}
 
