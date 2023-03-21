@@ -1,8 +1,11 @@
 package se.sundsvall.supportmanagement.service;
 
+import static java.util.Collections.emptyList;
+
 import java.util.List;
 import java.util.Objects;
 
+import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -16,7 +19,6 @@ import se.sundsvall.supportmanagement.integration.db.CategoryRepository;
 import se.sundsvall.supportmanagement.integration.db.ExternalIdTypeRepository;
 import se.sundsvall.supportmanagement.integration.db.StatusRepository;
 import se.sundsvall.supportmanagement.integration.db.ValidationRepository;
-import se.sundsvall.supportmanagement.integration.db.model.CategoryEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ValidationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EntityType;
 import se.sundsvall.supportmanagement.service.mapper.MetadataMapper;
@@ -67,20 +69,18 @@ public class MetadataService {
 			.stream()
 			.map(MetadataMapper::toCategory)
 			.filter(Objects::nonNull)
+			.sorted((o1, o2) -> ObjectUtils.compare(o1.getDisplayName(), o2.getDisplayName()))
 			.toList();
 	}
 
 	@Cacheable(value = "metadataCache", key = "{#root.methodName, #namespace, #municipalityId, #category}")
 	public List<Type> findTypes(String namespace, String municipalityId, String category) {
-		return categoryRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId)
+		return findCategories(namespace, municipalityId)
 			.stream()
-			.filter(Objects::nonNull)
-			.filter(entity -> Objects.equals(category, entity.getName()))
-			.map(CategoryEntity::getTypes)
-			.flatMap(List::stream)
-			.map(MetadataMapper::toType)
-			.filter(Objects::nonNull)
-			.toList();
+			.filter(entry -> Objects.equals(category, entry.getName()))
+			.map(Category::getTypes)
+			.findAny()
+			.orElse(emptyList());
 	}
 
 	@Cacheable(value = "metadataCache", key = "{#root.methodName, #namespace, #municipalityId, #type}")

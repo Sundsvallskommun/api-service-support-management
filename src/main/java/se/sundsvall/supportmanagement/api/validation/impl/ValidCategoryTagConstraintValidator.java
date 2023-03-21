@@ -16,7 +16,7 @@ import se.sundsvall.supportmanagement.service.MetadataService;
 
 public class ValidCategoryTagConstraintValidator extends AbstractTagConstraintValidator implements ConstraintValidator<ValidCategoryTag, String> {
 	@Autowired
-	private MetadataService tagService;
+	private MetadataService metadataService;
 
 	@Override
 	public boolean isValid(String value, ConstraintValidatorContext context) {
@@ -24,7 +24,7 @@ public class ValidCategoryTagConstraintValidator extends AbstractTagConstraintVa
 	}
 
 	private List<String> getCategoryNames() {
-		return ofNullable(tagService.findCategories(getPathVariable(PATHVARIABLE_NAMESPACE), getPathVariable(PATHVARIABLE_MUNICIPALITY_ID))).orElse(emptyList()).stream()
+		return ofNullable(metadataService.findCategories(getPathVariable(PATHVARIABLE_NAMESPACE), getPathVariable(PATHVARIABLE_MUNICIPALITY_ID))).orElse(emptyList()).stream()
 			.map(Category::getName)
 			.toList();
 	}

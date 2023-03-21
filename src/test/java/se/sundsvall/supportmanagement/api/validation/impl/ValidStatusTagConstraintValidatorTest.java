@@ -42,7 +42,7 @@ class ValidStatusTagConstraintValidatorTest {
 	private ConstraintViolationBuilder constraintViolationBuilderMock;
 
 	@Mock
-	private MetadataService tagServiceMock;
+	private MetadataService metadataServiceMock;
 
 	@Mock
 	private RequestAttributes requestAttributesMock;
@@ -64,7 +64,7 @@ class ValidStatusTagConstraintValidatorTest {
 			assertThat(validator.isValid("status-1", constraintValidatorContextMock)).isFalse();
 			verify(constraintValidatorContextMock).buildConstraintViolationWithTemplate(any());
 			verify(constraintViolationBuilderMock).addConstraintViolation();
-			verify(tagServiceMock).findStatuses(namespace, municipalityId);
+			verify(metadataServiceMock).findStatuses(namespace, municipalityId);
 		}
 	}
 
@@ -77,10 +77,10 @@ class ValidStatusTagConstraintValidatorTest {
 		try (MockedStatic<RequestContextHolder> requestContextHolderMock = Mockito.mockStatic(RequestContextHolder.class)) {
 			requestContextHolderMock.when(RequestContextHolder::getRequestAttributes).thenReturn(requestAttributesMock);
 			when(requestAttributesMock.getAttribute(URI_TEMPLATE_VARIABLES_ATTRIBUTE, SCOPE_REQUEST)).thenReturn(attributes);
-			when(tagServiceMock.findStatuses(namespace, municipalityId)).thenReturn(List.of(Status.create().withName("STATUS-1")));
+			when(metadataServiceMock.findStatuses(namespace, municipalityId)).thenReturn(List.of(Status.create().withName("STATUS-1")));
 
 			assertThat(validator.isValid("status-1", constraintValidatorContextMock)).isTrue();
-			verify(tagServiceMock).findStatuses(namespace, municipalityId);
+			verify(metadataServiceMock).findStatuses(namespace, municipalityId);
 		}
 	}
 
@@ -95,7 +95,7 @@ class ValidStatusTagConstraintValidatorTest {
 			when(requestAttributesMock.getAttribute(URI_TEMPLATE_VARIABLES_ATTRIBUTE, SCOPE_REQUEST)).thenReturn(attributes);
 
 			assertThat(validator.isValid(null, constraintValidatorContextMock)).isTrue();
-			verify(tagServiceMock).findStatuses(namespace, municipalityId);
+			verify(metadataServiceMock).findStatuses(namespace, municipalityId);
 		}
 	}
 
@@ -110,7 +110,7 @@ class ValidStatusTagConstraintValidatorTest {
 			when(requestAttributesMock.getAttribute(URI_TEMPLATE_VARIABLES_ATTRIBUTE, SCOPE_REQUEST)).thenReturn(attributes);
 
 			assertThat(validator.isValid(" ", constraintValidatorContextMock)).isTrue();
-			verify(tagServiceMock).findStatuses(namespace, municipalityId);
+			verify(metadataServiceMock).findStatuses(namespace, municipalityId);
 		}
 	}
 

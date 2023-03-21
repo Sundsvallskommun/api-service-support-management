@@ -16,7 +16,7 @@ import se.sundsvall.supportmanagement.service.MetadataService;
 
 public class ValidStatusTagConstraintValidator extends AbstractTagConstraintValidator implements ConstraintValidator<ValidStatusTag, String> {
 	@Autowired
-	private MetadataService tagService;
+	private MetadataService metadataService;
 
 	@Override
 	public boolean isValid(final String value, final ConstraintValidatorContext context) {
@@ -24,7 +24,7 @@ public class ValidStatusTagConstraintValidator extends AbstractTagConstraintVali
 	}
 
 	private List<String> getStatusNames() {
-		return ofNullable(tagService.findStatuses(getPathVariable(PATHVARIABLE_NAMESPACE), getPathVariable(PATHVARIABLE_MUNICIPALITY_ID))).orElse(emptyList()).stream()
+		return ofNullable(metadataService.findStatuses(getPathVariable(PATHVARIABLE_NAMESPACE), getPathVariable(PATHVARIABLE_MUNICIPALITY_ID))).orElse(emptyList()).stream()
 			.map(Status::getName)
 			.toList();
 	}
