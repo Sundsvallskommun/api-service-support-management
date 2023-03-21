@@ -1,5 +1,21 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
+import org.junit.jupiter.api.Test;
+import se.sundsvall.supportmanagement.api.model.errand.Classification;
+import se.sundsvall.supportmanagement.api.model.errand.ContactChannel;
+import se.sundsvall.supportmanagement.api.model.errand.Errand;
+import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
+import se.sundsvall.supportmanagement.api.model.errand.Priority;
+import se.sundsvall.supportmanagement.api.model.errand.Stakeholder;
+import se.sundsvall.supportmanagement.integration.db.model.ContactChannelEntity;
+import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
+
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
 import static java.time.OffsetDateTime.now;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -10,22 +26,6 @@ import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErran
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrands;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.updateEntity;
-
-import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.junit.jupiter.api.Test;
-
-import se.sundsvall.supportmanagement.api.model.errand.ContactChannel;
-import se.sundsvall.supportmanagement.api.model.errand.Errand;
-import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
-import se.sundsvall.supportmanagement.api.model.errand.Priority;
-import se.sundsvall.supportmanagement.api.model.errand.Stakeholder;
-import se.sundsvall.supportmanagement.integration.db.model.ContactChannelEntity;
-import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
-import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 
 class ErrandMapperTest {
 
@@ -70,7 +70,8 @@ class ErrandMapperTest {
 
 		assertThat(errand.getAssignedGroupId()).isEqualTo(ASSIGNED_GROUP_ID);
 		assertThat(errand.getAssignedUserId()).isEqualTo(ASSIGNED_USER_ID);
-		assertThat(errand.getCategoryTag()).isEqualTo(CATEGORY_TAG);
+		assertThat(errand.getClassification().getCategory()).isEqualTo(CATEGORY_TAG);
+		assertThat(errand.getClassification().getType()).isEqualTo(TYPE_TAG);
 		assertThat(errand.getCreated()).isCloseTo(CREATED, within(2, SECONDS));
 		assertThat(errand.getStakeholders()).hasSize(1)
 			.extracting(Stakeholder::getExternalId, Stakeholder::getExternalIdTypeTag, Stakeholder::getFirstName, Stakeholder::getLastName, Stakeholder::getAddress, Stakeholder::getCareOf, Stakeholder::getZipCode, Stakeholder::getCountry,
@@ -86,7 +87,6 @@ class ErrandMapperTest {
 		assertThat(errand.getStatusTag()).isEqualTo(STATUS_TAG);
 		assertThat(errand.getTitle()).isEqualTo(TITLE);
 		assertThat(errand.getTouched()).isEqualTo(TOUCHED);
-		assertThat(errand.getTypeTag()).isEqualTo(TYPE_TAG);
 		assertThat(errand.getResolution()).isEqualTo(RESOLUTION);
 		assertThat(errand.getDescription()).isEqualTo(DESCRIPTION);
 		assertThat(errand.getEscalationEmail()).isEqualTo(ESCALATION_EMAIL);
@@ -105,7 +105,7 @@ class ErrandMapperTest {
 			.extracting(
 				Errand::getAssignedGroupId,
 				Errand::getAssignedUserId,
-				Errand::getCategoryTag,
+				Errand::getClassification,
 				Errand::getCreated,
 				Errand::getStakeholders,
 				Errand::getExternalTags,
@@ -116,14 +116,13 @@ class ErrandMapperTest {
 				Errand::getStatusTag,
 				Errand::getTitle,
 				Errand::getTouched,
-				Errand::getTypeTag,
 				Errand::getResolution,
 				Errand::getDescription,
 				Errand::getEscalationEmail)
 			.containsExactly(tuple(
 				ASSIGNED_GROUP_ID,
 				ASSIGNED_USER_ID,
-				CATEGORY_TAG,
+				Classification.create().withCategory(CATEGORY_TAG).withType(TYPE_TAG),
 				CREATED,
 				List.of(createStakeHolder()),
 				List.of(ExternalTag.create().withKey(TAG_KEY).withValue(TAG_VALUE)),
@@ -134,7 +133,6 @@ class ErrandMapperTest {
 				STATUS_TAG,
 				TITLE,
 				TOUCHED,
-				TYPE_TAG,
 				RESOLUTION,
 				DESCRIPTION,
 				ESCALATION_EMAIL));
@@ -320,7 +318,7 @@ class ErrandMapperTest {
 		return Errand.create()
 			.withAssignedGroupId(ASSIGNED_GROUP_ID)
 			.withAssignedUserId(ASSIGNED_USER_ID)
-			.withCategoryTag(CATEGORY_TAG)
+			.withClassification(Classification.create().withCategory(CATEGORY_TAG).withType(TYPE_TAG))
 			.withCreated(CREATED)
 			.withStakeholders(List.of(createStakeHolder()))
 			.withExternalTags(List.of(ExternalTag.create().withKey(TAG_KEY).withValue(TAG_VALUE)))
@@ -331,7 +329,6 @@ class ErrandMapperTest {
 			.withStatusTag(STATUS_TAG)
 			.withTitle(TITLE)
 			.withTouched(TOUCHED)
-			.withTypeTag(TYPE_TAG)
 			.withResolution(RESOLUTION)
 			.withDescription(DESCRIPTION)
 			.withEscalationEmail(ESCALATION_EMAIL);

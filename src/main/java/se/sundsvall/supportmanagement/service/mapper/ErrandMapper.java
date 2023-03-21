@@ -1,16 +1,6 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
-import static java.util.Collections.emptyList;
-import static java.util.Objects.isNull;
-import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.toCollection;
-import static org.apache.commons.lang3.ObjectUtils.anyNull;
-import static org.apache.commons.lang3.StringUtils.isEmpty;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-
+import se.sundsvall.supportmanagement.api.model.errand.Classification;
 import se.sundsvall.supportmanagement.api.model.errand.ContactChannel;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
@@ -20,6 +10,17 @@ import se.sundsvall.supportmanagement.integration.db.model.ContactChannelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+import static java.util.Collections.emptyList;
+import static java.util.Objects.isNull;
+import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toCollection;
+import static org.apache.commons.lang3.ObjectUtils.anyNull;
+import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 public class ErrandMapper {
 
@@ -34,7 +35,7 @@ public class ErrandMapper {
 		return errandEntity
 			.withAssignedGroupId(errand.getAssignedGroupId())
 			.withAssignedUserId(errand.getAssignedUserId())
-			.withCategoryTag(errand.getCategoryTag())
+			.withCategoryTag(errand.getClassification().getCategory())
 			.withStakeholders(toStakeholderEntities(errandEntity, errand.getStakeholders()))
 			.withExternalTags(toExternalTag(errand.getExternalTags()))
 			.withMunicipalityId(municipalityId)
@@ -43,7 +44,7 @@ public class ErrandMapper {
 			.withReporterUserId(errand.getReporterUserId())
 			.withStatusTag(errand.getStatusTag())
 			.withTitle(errand.getTitle())
-			.withTypeTag(errand.getTypeTag())
+			.withTypeTag(errand.getClassification().getType())
 			.withResolution(errand.getResolution())
 			.withDescription(errand.getDescription())
 			.withEscalationEmail(errand.getEscalationEmail());
@@ -56,13 +57,15 @@ public class ErrandMapper {
 
 		ofNullable(errand.getAssignedGroupId()).ifPresent(value -> entity.setAssignedGroupId(isEmpty(value) ? null : value));
 		ofNullable(errand.getAssignedUserId()).ifPresent(value -> entity.setAssignedUserId(isEmpty(value) ? null : value));
-		ofNullable(errand.getCategoryTag()).ifPresent(entity::setCategoryTag);
+		ofNullable(errand.getClassification()).ifPresent(value -> {
+			entity.setCategoryTag(value.getCategory());
+			entity.setTypeTag(value.getType());
+		});
 		ofNullable(errand.getStakeholders()).ifPresent(value -> updateStakeholders(entity, value));
 		ofNullable(errand.getExternalTags()).ifPresent(value -> entity.setExternalTags(toExternalTag(value)));
 		ofNullable(errand.getPriority()).ifPresent(value -> entity.setPriority(value.name()));
 		ofNullable(errand.getStatusTag()).ifPresent(entity::setStatusTag);
 		ofNullable(errand.getTitle()).ifPresent(entity::setTitle);
-		ofNullable(errand.getTypeTag()).ifPresent(entity::setTypeTag);
 		ofNullable(errand.getResolution()).ifPresent(value -> entity.setResolution(isEmpty(value) ? null : value));
 		ofNullable(errand.getDescription()).ifPresent(value -> entity.setDescription(isEmpty(value) ? null : value));
 		ofNullable(errand.getEscalationEmail()).ifPresent(value -> entity.setEscalationEmail(isEmpty(value) ? null : value));
@@ -99,7 +102,7 @@ public class ErrandMapper {
 			.map(e -> Errand.create()
 				.withAssignedGroupId(e.getAssignedGroupId())
 				.withAssignedUserId(e.getAssignedUserId())
-				.withCategoryTag(e.getCategoryTag())
+				.withClassification(Classification.create().withCategory(e.getCategoryTag()).withType(e.getTypeTag()))
 				.withCreated(e.getCreated())
 				.withStakeholders(toStakeholders(e.getStakeholders()))
 				.withExternalTags(toExternalTags(e.getExternalTags()))
@@ -110,7 +113,6 @@ public class ErrandMapper {
 				.withStatusTag(e.getStatusTag())
 				.withTitle(e.getTitle())
 				.withTouched(e.getTouched())
-				.withTypeTag(e.getTypeTag())
 				.withResolution(e.getResolution())
 				.withDescription(e.getDescription())
 				.withEscalationEmail(e.getEscalationEmail()))

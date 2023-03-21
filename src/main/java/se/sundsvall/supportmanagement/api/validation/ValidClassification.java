@@ -1,6 +1,6 @@
 package se.sundsvall.supportmanagement.api.validation;
 
-import se.sundsvall.supportmanagement.api.validation.impl.ValidCategoryTagConstraintValidator;
+import se.sundsvall.supportmanagement.api.validation.impl.ValidClassificationConstraintValidator;
 
 import javax.validation.Constraint;
 import javax.validation.Payload;
@@ -13,10 +13,10 @@ import java.lang.annotation.Target;
 @Documented
 @Target({ ElementType.FIELD, ElementType.CONSTRUCTOR, ElementType.PARAMETER, ElementType.TYPE_USE })
 @Retention(RetentionPolicy.RUNTIME)
-@Constraint(validatedBy = ValidCategoryTagConstraintValidator.class)
-public @interface ValidCategoryTag {
+@Constraint(validatedBy = ValidClassificationConstraintValidator.class)
+public @interface ValidClassification {
 
-	String message() default "not a valid categoryTag";
+	String message() default "not a valid category or type";
 
 	Class<?>[] groups() default {};
 
