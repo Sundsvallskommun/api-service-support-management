@@ -38,6 +38,7 @@ public class MetadataService {
 	@Autowired
 	private ValidationRepository validationRepository;
 
+	@Cacheable(value = "metadataCache", key = "{#root.methodName, #namespace, #municipalityId}")
 	public MetadataResponse findAll(String namespace, String municipalityId) {
 		return MetadataResponse.create()
 			.withCategories(findCategories(namespace, municipalityId))
