@@ -1,14 +1,7 @@
 package se.sundsvall.supportmanagement.integration.db.model;
 
-import static java.time.OffsetDateTime.now;
-import static java.time.ZoneId.systemDefault;
-import static java.time.temporal.ChronoUnit.MILLIS;
-
-import java.io.Serializable;
-import java.time.OffsetDateTime;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import org.hibernate.annotations.Formula;
+import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.CascadeType;
 import javax.persistence.CollectionTable;
@@ -26,9 +19,15 @@ import javax.persistence.PrePersist;
 import javax.persistence.PreUpdate;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
+import java.io.Serializable;
+import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
-import org.hibernate.annotations.Formula;
-import org.hibernate.annotations.GenericGenerator;
+import static java.time.OffsetDateTime.now;
+import static java.time.ZoneId.systemDefault;
+import static java.time.temporal.ChronoUnit.MILLIS;
 
 @Entity
 @Table(name = "errand",
@@ -69,14 +68,14 @@ public class ErrandEntity implements Serializable {
 	@Column(name = "title")
 	private String title;
 
-	@Column(name = "category_tag")
-	private String categoryTag;
+	@Column(name = "category")
+	private String category;
 
-	@Column(name = "type_tag")
-	private String typeTag;
+	@Column(name = "type")
+	private String type;
 
-	@Column(name = "status_tag")
-	private String statusTag;
+	@Column(name = "status")
+	private String status;
 
 	@Column(name = "resolution")
 	private String resolution;
@@ -208,42 +207,42 @@ public class ErrandEntity implements Serializable {
 		return this;
 	}
 
-	public String getCategoryTag() {
-		return categoryTag;
+	public String getCategory() {
+		return category;
 	}
 
-	public void setCategoryTag(String categoryTag) {
-		this.categoryTag = categoryTag;
+	public void setCategory(String category) {
+		this.category = category;
 	}
 
-	public ErrandEntity withCategoryTag(String categoryTag) {
-		this.categoryTag = categoryTag;
+	public ErrandEntity withCategory(String category) {
+		this.category = category;
 		return this;
 	}
 
-	public String getTypeTag() {
-		return typeTag;
+	public String getType() {
+		return type;
 	}
 
-	public void setTypeTag(String typeTag) {
-		this.typeTag = typeTag;
+	public void setType(String type) {
+		this.type = type;
 	}
 
-	public ErrandEntity withTypeTag(String typeTag) {
-		this.typeTag = typeTag;
+	public ErrandEntity withType(String type) {
+		this.type = type;
 		return this;
 	}
 
-	public String getStatusTag() {
-		return statusTag;
+	public String getStatus() {
+		return status;
 	}
 
-	public void setStatusTag(String statusTag) {
-		this.statusTag = statusTag;
+	public void setStatus(String status) {
+		this.status = status;
 	}
 
-	public ErrandEntity withStatusTag(String statusTag) {
-		this.statusTag = statusTag;
+	public ErrandEntity withStatus(String status) {
+		this.status = status;
 		return this;
 	}
 
@@ -399,12 +398,21 @@ public class ErrandEntity implements Serializable {
 			return false;
 		}
 		ErrandEntity that = (ErrandEntity) o;
-		return Objects.equals(id, that.id) && Objects.equals(externalTags, that.externalTags) && Objects.equals(stakeholders, that.stakeholders) && Objects.equals(municipalityId, that.municipalityId) && Objects.equals(namespace, that.namespace) && Objects.equals(title, that.title) && Objects.equals(categoryTag, that.categoryTag) && Objects.equals(typeTag, that.typeTag) && Objects.equals(statusTag, that.statusTag) && Objects.equals(resolution, that.resolution) && Objects.equals(description, that.description) && Objects.equals(priority, that.priority) && Objects.equals(reporterUserId, that.reporterUserId) && Objects.equals(assignedUserId, that.assignedUserId) && Objects.equals(assignedGroupId, that.assignedGroupId) && Objects.equals(escalationEmail, that.escalationEmail) && Objects.equals(attachments, that.attachments) && Objects.equals(created, that.created) && Objects.equals(modified, that.modified) && Objects.equals(touched, that.touched);
+		return Objects.equals(id, that.id) && Objects.equals(externalTags, that.externalTags) &&
+			Objects.equals(stakeholders, that.stakeholders) && Objects.equals(municipalityId, that.municipalityId) &&
+			Objects.equals(namespace, that.namespace) && Objects.equals(title, that.title) &&
+			Objects.equals(category, that.category) && Objects.equals(type, that.type) &&
+			Objects.equals(status, that.status) && Objects.equals(resolution, that.resolution) &&
+			Objects.equals(description, that.description) && Objects.equals(priority, that.priority) &&
+			Objects.equals(reporterUserId, that.reporterUserId) && Objects.equals(assignedUserId, that.assignedUserId) &&
+			Objects.equals(assignedGroupId, that.assignedGroupId) && Objects.equals(escalationEmail, that.escalationEmail) &&
+			Objects.equals(attachments, that.attachments) && Objects.equals(created, that.created) &&
+			Objects.equals(modified, that.modified) && Objects.equals(touched, that.touched);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, externalTags, stakeholders, municipalityId, namespace, title, categoryTag, typeTag, statusTag, resolution, description, priority, reporterUserId, assignedUserId, assignedGroupId, escalationEmail, attachments, created, modified, touched);
+		return Objects.hash(id, externalTags, stakeholders, municipalityId, namespace, title, category, type, status, resolution, description, priority, reporterUserId, assignedUserId, assignedGroupId, escalationEmail, attachments, created, modified, touched);
 	}
 
 	@Override
@@ -416,9 +424,9 @@ public class ErrandEntity implements Serializable {
 		sb.append(", municipalityId='").append(municipalityId).append('\'');
 		sb.append(", namespace='").append(namespace).append('\'');
 		sb.append(", title='").append(title).append('\'');
-		sb.append(", categoryTag='").append(categoryTag).append('\'');
-		sb.append(", typeTag='").append(typeTag).append('\'');
-		sb.append(", statusTag='").append(statusTag).append('\'');
+		sb.append(", category='").append(category).append('\'');
+		sb.append(", type='").append(type).append('\'');
+		sb.append(", status='").append(status).append('\'');
 		sb.append(", resolution='").append(resolution).append('\'');
 		sb.append(", description='").append(description).append('\'');
 		sb.append(", priority='").append(priority).append('\'');

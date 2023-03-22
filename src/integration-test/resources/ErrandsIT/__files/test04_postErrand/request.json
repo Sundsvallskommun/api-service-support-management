@@ -18,7 +18,7 @@
 		"category": "CATEGORY-2",
 		"type": "TYPE-2"
 	},
-	"statusTag": "STATUS-2",
+	"status": "STATUS-2",
 	"reporterUserId": "joe01doe",
 	"assignedUserId": "joe01doe",
 	"assignedGroupId": "hardware support",

@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.api.model.errand;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
+import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
 
 import javax.validation.constraints.NotBlank;
 import java.util.Objects;
@@ -9,11 +10,11 @@ import java.util.Objects;
 @Schema(description = "Classification model")
 public class Classification {
 	@Schema(description = "Category for the errand", example = "SUPPORT_CASE")
-	@NotBlank(groups = OnCreate.class)
+	@NotBlank(groups = {OnCreate.class, OnUpdate.class})
 	private String category;
 
 	@Schema(description = "Type of errand", example = "OTHER_ISSUES")
-	@NotBlank(groups = OnCreate.class)
+	@NotBlank(groups = {OnCreate.class, OnUpdate.class})
 	private String type;
 
 	public static Classification create() {

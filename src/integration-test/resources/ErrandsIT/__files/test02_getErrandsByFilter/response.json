@@ -49,7 +49,7 @@
 				"category": "CATEGORY-1",
 				"type": "TYPE-1"
 			},
-			"statusTag": "STATUS-1",
+			"status": "STATUS-1",
 			"reporterUserId": "REPORTER_USER_ID-1",
 			"assignedUserId": "ASSIGNED_USER_ID-1",
 			"assignedGroupId": "ASSIGNED_GROUP_ID-1",

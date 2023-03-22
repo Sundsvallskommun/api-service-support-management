@@ -25,7 +25,7 @@ public class TestObjectsBuilder {
 	private static final String ERRAND_ID = "errandId";
 	private static final String ASSIGNED_GROUP_ID = "assignedGroupId";
 	private static final String ASSIGNED_USER_ID = "assignedUserId";
-	private static final String CATEGORY_TAG = "categoryTag";
+	private static final String CATEGORY = "category";
 	private static final String NAMESPACE = "namespace";
 	private static final OffsetDateTime CREATED = now().minusWeeks(1);
 	private static final String EXTERNAL_ID = "externalId";
@@ -35,9 +35,9 @@ public class TestObjectsBuilder {
 	private static final OffsetDateTime MODIFIED = now();
 	private static final String PRIORITY = HIGH.name();
 	private static final String REPORTER_USER_ID = "reporterUserId";
-	private static final String STATUS_TAG = "statusTag";
+	private static final String STATUS = "status";
 	private static final String TITLE = "title";
-	private static final String TYPE_TAG = "typeTag";
+	private static final String TYPE = "type";
 	private static final String ATTACHMENT_ID = "attachmentId";
 	private static final String FILE = "file";
 	private static final String FILE_NAME = "fileName";
@@ -50,7 +50,7 @@ public class TestObjectsBuilder {
 			.withAssignedGroupId(ASSIGNED_GROUP_ID)
 			.withAssignedUserId(ASSIGNED_USER_ID)
 			.withAttachments(List.of(AttachmentEntity.create().withId(ATTACHMENT_ID).withFileName(FILE_NAME).withFile(FILE.getBytes()).withMimeType(MIME_TYPE)))
-			.withCategoryTag(CATEGORY_TAG)
+			.withCategory(CATEGORY)
 			.withCreated(CREATED)
 			.withNamespace(NAMESPACE)
 			.withStakeholders(new ArrayList<>(List.of(StakeholderEntity.create().withExternalId(EXTERNAL_ID).withExternalIdTypeTag(EXTERNAL_ID_TYPE_TAG))))
@@ -59,9 +59,9 @@ public class TestObjectsBuilder {
 			.withMunicipalityId(MUNICIPALITY_ID)
 			.withPriority(PRIORITY)
 			.withReporterUserId(REPORTER_USER_ID)
-			.withStatusTag(STATUS_TAG)
+			.withStatus(STATUS)
 			.withTitle(TITLE)
-			.withTypeTag(TYPE_TAG);
+			.withType(TYPE);
 	}
 
 	public static AttachmentEntity buildAttachmentEntity(ErrandEntity errandEntity) {
@@ -86,7 +86,7 @@ public class TestObjectsBuilder {
 		return Errand.create()
 			.withAssignedGroupId(ASSIGNED_GROUP_ID)
 			.withAssignedUserId(ASSIGNED_USER_ID)
-			.withClassification(Classification.create().withCategory(CATEGORY_TAG).withType(TYPE_TAG))
+			.withClassification(Classification.create().withCategory(CATEGORY).withType(TYPE))
 			.withCreated(CREATED)
 			.withStakeholders(List.of(Stakeholder.create().withExternalId(EXTERNAL_ID).withExternalIdTypeTag(EXTERNAL_ID_TYPE_TAG)))
 			.withExternalTags(List.of(ExternalTag.create().withKey(TAG_KEY).withValue(TAG_VALUE)))
@@ -94,7 +94,7 @@ public class TestObjectsBuilder {
 			.withModified(MODIFIED)
 			.withPriority(Priority.valueOf(PRIORITY))
 			.withReporterUserId(REPORTER_USER_ID)
-			.withStatusTag(STATUS_TAG)
+			.withStatus(STATUS)
 			.withTitle(TITLE);
 	}
 }

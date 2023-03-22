@@ -374,7 +374,7 @@ class ErrandsResourceTest {
 			.withExternalTags(List.of(ExternalTag.create().withKey("externalTagKey").withValue("externalTagValue")))
 			.withPriority(Priority.HIGH)
 			.withReporterUserId(reporterUserId)
-			.withStatusTag("status_2")
+			.withStatus("status_2")
 			.withTitle("title")
 			.withEscalationEmail("escalation@email.com");
 	}

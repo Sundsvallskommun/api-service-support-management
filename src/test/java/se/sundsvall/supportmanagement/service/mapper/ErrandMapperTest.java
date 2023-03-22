@@ -33,7 +33,7 @@ class ErrandMapperTest {
 	private static final String MUNICIPALITY_ID = "municipalityId";
 	private static final String ASSIGNED_GROUP_ID = "assignedGroupId";
 	private static final String ASSIGNED_USER_ID = "assignedUserId";
-	private static final String CATEGORY_TAG = "categoryTag";
+	private static final String CATEGORY = "category";
 	private static final String CLIENT_ID_TAG = "clientIdTag";
 	private static final OffsetDateTime CREATED = now().minusWeeks(1);
 	private static final String EXTERNAL_ID = "externalId";
@@ -44,10 +44,10 @@ class ErrandMapperTest {
 	private static final OffsetDateTime MODIFIED = now();
 	private static final String PRIORITY = HIGH.name();
 	private static final String REPORTER_USER_ID = "reporterUserId";
-	private static final String STATUS_TAG = "statusTag";
+	private static final String STATUS = "status";
 	private static final String TITLE = "title";
 	private static final OffsetDateTime TOUCHED = now().plusWeeks(1);
-	private static final String TYPE_TAG = "typeTag";
+	private static final String TYPE = "type";
 
 	private static final String DESCRIPTION = "description";
 	private static final String RESOLUTION = "resolution";
@@ -62,7 +62,6 @@ class ErrandMapperTest {
 	private static final String CONTACT_CHANNEL_VALUE = "contactChannelValue";
 
 	private static final String ESCALATION_EMAIL = "escalation@email.com";
-	private static final String STAKEHOLDER_ROLE = "role";
 
 	@Test
 	void testToErrand() {
@@ -70,13 +69,13 @@ class ErrandMapperTest {
 
 		assertThat(errand.getAssignedGroupId()).isEqualTo(ASSIGNED_GROUP_ID);
 		assertThat(errand.getAssignedUserId()).isEqualTo(ASSIGNED_USER_ID);
-		assertThat(errand.getClassification().getCategory()).isEqualTo(CATEGORY_TAG);
-		assertThat(errand.getClassification().getType()).isEqualTo(TYPE_TAG);
+		assertThat(errand.getClassification().getCategory()).isEqualTo(CATEGORY);
+		assertThat(errand.getClassification().getType()).isEqualTo(TYPE);
 		assertThat(errand.getCreated()).isCloseTo(CREATED, within(2, SECONDS));
 		assertThat(errand.getStakeholders()).hasSize(1)
 			.extracting(Stakeholder::getExternalId, Stakeholder::getExternalIdTypeTag, Stakeholder::getFirstName, Stakeholder::getLastName, Stakeholder::getAddress, Stakeholder::getCareOf, Stakeholder::getZipCode, Stakeholder::getCountry,
-				Stakeholder::getContactChannels, Stakeholder::getRole)
-			.contains(tuple(EXTERNAL_ID, String.valueOf(EXTERNAL_ID_TYPE_TAG), FIRST_NAME, LAST_NAME, ADDRESS, CARE_OF, ZIP_CODE, COUNTRY, List.of(ContactChannel.create().withType(CONTACT_CHANNEL_TYPE).withValue(CONTACT_CHANNEL_VALUE)), STAKEHOLDER_ROLE));
+				Stakeholder::getContactChannels)
+			.contains(tuple(EXTERNAL_ID, String.valueOf(EXTERNAL_ID_TYPE_TAG), FIRST_NAME, LAST_NAME, ADDRESS, CARE_OF, ZIP_CODE, COUNTRY, List.of(ContactChannel.create().withType(CONTACT_CHANNEL_TYPE).withValue(CONTACT_CHANNEL_VALUE))));
 		assertThat(errand.getExternalTags()).hasSize(1)
 			.extracting(ExternalTag::getKey, ExternalTag::getValue)
 			.contains(tuple(TAG_KEY, TAG_VALUE));
@@ -84,7 +83,7 @@ class ErrandMapperTest {
 		assertThat(errand.getModified()).isCloseTo(MODIFIED, within(2, SECONDS));
 		assertThat(errand.getPriority()).isEqualTo(Priority.valueOf(PRIORITY));
 		assertThat(errand.getReporterUserId()).isEqualTo(REPORTER_USER_ID);
-		assertThat(errand.getStatusTag()).isEqualTo(STATUS_TAG);
+		assertThat(errand.getStatus()).isEqualTo(STATUS);
 		assertThat(errand.getTitle()).isEqualTo(TITLE);
 		assertThat(errand.getTouched()).isEqualTo(TOUCHED);
 		assertThat(errand.getResolution()).isEqualTo(RESOLUTION);
@@ -113,7 +112,7 @@ class ErrandMapperTest {
 				Errand::getModified,
 				Errand::getPriority,
 				Errand::getReporterUserId,
-				Errand::getStatusTag,
+				Errand::getStatus,
 				Errand::getTitle,
 				Errand::getTouched,
 				Errand::getResolution,
@@ -122,7 +121,7 @@ class ErrandMapperTest {
 			.containsExactly(tuple(
 				ASSIGNED_GROUP_ID,
 				ASSIGNED_USER_ID,
-				Classification.create().withCategory(CATEGORY_TAG).withType(TYPE_TAG),
+				Classification.create().withCategory(CATEGORY).withType(TYPE),
 				CREATED,
 				List.of(createStakeHolder()),
 				List.of(ExternalTag.create().withKey(TAG_KEY).withValue(TAG_VALUE)),
@@ -130,7 +129,7 @@ class ErrandMapperTest {
 				MODIFIED,
 				Priority.valueOf(PRIORITY),
 				REPORTER_USER_ID,
-				STATUS_TAG,
+				STATUS,
 				TITLE,
 				TOUCHED,
 				RESOLUTION,
@@ -151,30 +150,30 @@ class ErrandMapperTest {
 			.extracting(
 				ErrandEntity::getAssignedGroupId,
 				ErrandEntity::getAssignedUserId,
-				ErrandEntity::getCategoryTag,
+				ErrandEntity::getCategory,
 				ErrandEntity::getExternalTags,
 				ErrandEntity::getMunicipalityId,
 				ErrandEntity::getNamespace,
 				ErrandEntity::getPriority,
 				ErrandEntity::getReporterUserId,
-				ErrandEntity::getStatusTag,
+				ErrandEntity::getStatus,
 				ErrandEntity::getTitle,
-				ErrandEntity::getTypeTag,
+				ErrandEntity::getType,
 				ErrandEntity::getResolution,
 				ErrandEntity::getDescription,
 				ErrandEntity::getEscalationEmail)
 			.containsExactly(
 				ASSIGNED_GROUP_ID,
 				ASSIGNED_USER_ID,
-				CATEGORY_TAG,
+				CATEGORY,
 				List.of(DbExternalTag.create().withKey(TAG_KEY).withValue(TAG_VALUE)),
 				MUNICIPALITY_ID,
 				NAMESPACE,
 				PRIORITY,
 				REPORTER_USER_ID,
-				STATUS_TAG,
+				STATUS,
 				TITLE,
-				TYPE_TAG,
+				TYPE,
 				RESOLUTION,
 				DESCRIPTION,
 				ESCALATION_EMAIL);
@@ -234,24 +233,24 @@ class ErrandMapperTest {
 			.extracting(
 				ErrandEntity::getAssignedGroupId,
 				ErrandEntity::getAssignedUserId,
-				ErrandEntity::getCategoryTag,
+				ErrandEntity::getCategory,
 				ErrandEntity::getExternalTags,
 				ErrandEntity::getPriority,
-				ErrandEntity::getStatusTag,
+				ErrandEntity::getStatus,
 				ErrandEntity::getTitle,
-				ErrandEntity::getTypeTag,
+				ErrandEntity::getType,
 				ErrandEntity::getResolution,
 				ErrandEntity::getDescription,
 				ErrandEntity::getEscalationEmail)
 			.containsExactly(
 				ASSIGNED_GROUP_ID,
 				ASSIGNED_USER_ID,
-				CATEGORY_TAG,
+				CATEGORY,
 				List.of(DbExternalTag.create().withKey(TAG_KEY).withValue(TAG_VALUE)),
 				PRIORITY,
-				STATUS_TAG,
+				STATUS,
 				TITLE,
-				TYPE_TAG,
+				TYPE,
 				RESOLUTION,
 				DESCRIPTION,
 				ESCALATION_EMAIL);
@@ -318,7 +317,7 @@ class ErrandMapperTest {
 		return Errand.create()
 			.withAssignedGroupId(ASSIGNED_GROUP_ID)
 			.withAssignedUserId(ASSIGNED_USER_ID)
-			.withClassification(Classification.create().withCategory(CATEGORY_TAG).withType(TYPE_TAG))
+			.withClassification(Classification.create().withCategory(CATEGORY).withType(TYPE))
 			.withCreated(CREATED)
 			.withStakeholders(List.of(createStakeHolder()))
 			.withExternalTags(List.of(ExternalTag.create().withKey(TAG_KEY).withValue(TAG_VALUE)))
@@ -326,7 +325,7 @@ class ErrandMapperTest {
 			.withModified(MODIFIED)
 			.withPriority(Priority.valueOf(PRIORITY))
 			.withReporterUserId(REPORTER_USER_ID)
-			.withStatusTag(STATUS_TAG)
+			.withStatus(STATUS)
 			.withTitle(TITLE)
 			.withTouched(TOUCHED)
 			.withResolution(RESOLUTION)
@@ -352,7 +351,7 @@ class ErrandMapperTest {
 		return ErrandEntity.create()
 			.withAssignedGroupId(ASSIGNED_GROUP_ID)
 			.withAssignedUserId(ASSIGNED_USER_ID)
-			.withCategoryTag(CATEGORY_TAG)
+			.withCategory(CATEGORY)
 			.withNamespace(CLIENT_ID_TAG)
 			.withCreated(CREATED)
 			.withStakeholders(List.of(createStakeHolderEntity()))
@@ -361,9 +360,9 @@ class ErrandMapperTest {
 			.withMunicipalityId(MUNICIPALITY_ID)
 			.withPriority(PRIORITY)
 			.withReporterUserId(REPORTER_USER_ID)
-			.withStatusTag(STATUS_TAG)
+			.withStatus(STATUS)
 			.withTitle(TITLE)
-			.withTypeTag(TYPE_TAG)
+			.withType(TYPE)
 			.withTouched(TOUCHED)
 			.withModified(MODIFIED)
 			.withResolution(RESOLUTION)
@@ -375,7 +374,6 @@ class ErrandMapperTest {
 		return StakeholderEntity.create()
 			.withExternalId(EXTERNAL_ID)
 			.withExternalIdTypeTag(EXTERNAL_ID_TYPE_TAG)
-			.withRole(STAKEHOLDER_ROLE)
 			.withFirstName(FIRST_NAME)
 			.withLastName(LAST_NAME)
 			.withAddress(ADDRESS)

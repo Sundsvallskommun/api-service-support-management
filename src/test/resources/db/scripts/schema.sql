@@ -31,7 +31,7 @@
        id varchar(255) not null,
         assigned_group_id varchar(255),
         assigned_user_id varchar(255),
-        category_tag varchar(255),
+        category varchar(255),
         created datetime(6),
         description longtext,
         escalation_email varchar(255),
@@ -41,9 +41,9 @@
         priority varchar(255),
         reporter_user_id varchar(255),
         resolution varchar(255),
-        status_tag varchar(255),
+        status varchar(255),
         title varchar(255),
-        type_tag varchar(255),
+        type varchar(255),
         primary key (id)
     ) engine=InnoDB;
 

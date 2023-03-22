@@ -198,7 +198,7 @@ class ErrandsUpdateResourceFailureTest {
 		final var response = webTestClient.patch()
 			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
-			.bodyValue(Errand.create().withTitle(" ").withReporterUserId(" ").withClassification(Classification.create().withCategory(" ").withType(" ")).withStatusTag(" "))
+			.bodyValue(Errand.create().withTitle(" ").withReporterUserId(" ").withClassification(Classification.create().withCategory(" ").withType(" ")).withStatus(" "))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -209,6 +209,8 @@ class ErrandsUpdateResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
+			tuple("updateErrand.errand.classification.category", "must not be blank"),
+			tuple("updateErrand.errand.classification.type", "must not be blank"),
 			tuple("updateErrand.errand.reporterUserId", "must be null"));
 
 		// Verification
@@ -255,7 +257,7 @@ class ErrandsUpdateResourceFailureTest {
 		final var response = webTestClient.patch()
 			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
-			.bodyValue(Errand.create().withClassification(Classification.create().withCategory("invalid_category").withType("invalid_type")).withStatusTag("invalid_status"))
+			.bodyValue(Errand.create().withClassification(Classification.create().withCategory("invalid_category").withType("invalid_type")).withStatus("invalid_status"))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -267,7 +269,7 @@ class ErrandsUpdateResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
 			tuple("classification", "value 'invalid_category' doesn't match any of [CATEGORY_1, CATEGORY_2]"),
-			tuple("statusTag", "value 'invalid_status' doesn't match any of [STATUS_1, STATUS_2]"));
+			tuple("status", "value 'invalid_status' doesn't match any of [STATUS_1, STATUS_2]"));
 
 		// Verification
 		verify(metadataServiceMock).findCategories(any(), any());
@@ -287,7 +289,7 @@ class ErrandsUpdateResourceFailureTest {
 			.withModified(OffsetDateTime.now())
 			.withPriority(Priority.HIGH)
 			.withReporterUserId("reporterUserId")
-			.withStatusTag("STATUS_2")
+			.withStatus("STATUS_2")
 			.withTitle("title");
 	}
 }

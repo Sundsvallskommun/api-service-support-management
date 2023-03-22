@@ -6,7 +6,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.format.annotation.DateTimeFormat.ISO;
 import se.sundsvall.supportmanagement.api.validation.UniqueExternalTagKeys;
 import se.sundsvall.supportmanagement.api.validation.ValidClassification;
-import se.sundsvall.supportmanagement.api.validation.ValidStatusTag;
+import se.sundsvall.supportmanagement.api.validation.ValidStatus;
 import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
 import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
 
@@ -52,8 +52,8 @@ public class Errand {
 
 	@Schema(description = "Status for the errand", example = "NEW_CASE")
 	@NotBlank(groups = OnCreate.class)
-	@ValidStatusTag
-	private String statusTag;
+	@ValidStatus
+	private String status;
 
 	@Schema(description = "Resolution status for closed errands. Value can be set to anything", example = "FIXED")
 	private String resolution;
@@ -173,16 +173,16 @@ public class Errand {
 		return this;
 	}
 
-	public String getStatusTag() {
-		return statusTag;
+	public String getStatus() {
+		return status;
 	}
 
-	public void setStatusTag(String statusTag) {
-		this.statusTag = statusTag;
+	public void setStatus(String status) {
+		this.status = status;
 	}
 
-	public Errand withStatusTag(String statusTag) {
-		this.statusTag = statusTag;
+	public Errand withStatus(String status) {
+		this.status = status;
 		return this;
 	}
 
@@ -312,12 +312,18 @@ public class Errand {
 			return false;
 		}
 		Errand errand = (Errand) o;
-		return Objects.equals(id, errand.id) && Objects.equals(title, errand.title) && priority == errand.priority && Objects.equals(stakeholders, errand.stakeholders) && Objects.equals(externalTags, errand.externalTags) && Objects.equals(classification, errand.classification) && Objects.equals(statusTag, errand.statusTag) && Objects.equals(resolution, errand.resolution) && Objects.equals(description, errand.description) && Objects.equals(reporterUserId, errand.reporterUserId) && Objects.equals(assignedUserId, errand.assignedUserId) && Objects.equals(assignedGroupId, errand.assignedGroupId) && Objects.equals(escalationEmail, errand.escalationEmail) && Objects.equals(created, errand.created) && Objects.equals(modified, errand.modified) && Objects.equals(touched, errand.touched);
+		return Objects.equals(id, errand.id) && Objects.equals(title, errand.title) && priority == errand.priority &&
+			Objects.equals(stakeholders, errand.stakeholders) && Objects.equals(externalTags, errand.externalTags) &&
+			Objects.equals(classification, errand.classification) && Objects.equals(status, errand.status) &&
+			Objects.equals(resolution, errand.resolution) && Objects.equals(description, errand.description) &&
+			Objects.equals(reporterUserId, errand.reporterUserId) && Objects.equals(assignedUserId, errand.assignedUserId) &&
+			Objects.equals(assignedGroupId, errand.assignedGroupId) && Objects.equals(escalationEmail, errand.escalationEmail) &&
+			Objects.equals(created, errand.created) && Objects.equals(modified, errand.modified) && Objects.equals(touched, errand.touched);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, title, priority, stakeholders, externalTags, classification, statusTag, resolution, description, reporterUserId, assignedUserId, assignedGroupId, escalationEmail, created, modified, touched);
+		return Objects.hash(id, title, priority, stakeholders, externalTags, classification, status, resolution, description, reporterUserId, assignedUserId, assignedGroupId, escalationEmail, created, modified, touched);
 	}
 
 	@Override
@@ -329,7 +335,7 @@ public class Errand {
 		sb.append(", stakeholders=").append(stakeholders);
 		sb.append(", externalTags=").append(externalTags);
 		sb.append(", classification='").append(classification).append('\'');
-		sb.append(", statusTag='").append(statusTag).append('\'');
+		sb.append(", statusTag='").append(status).append('\'');
 		sb.append(", resolution='").append(resolution).append('\'');
 		sb.append(", description='").append(description).append('\'');
 		sb.append(", reporterUserId='").append(reporterUserId).append('\'');

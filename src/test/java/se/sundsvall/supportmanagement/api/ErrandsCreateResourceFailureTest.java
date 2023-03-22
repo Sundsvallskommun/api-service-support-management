@@ -196,7 +196,7 @@ class ErrandsCreateResourceFailureTest {
 			tuple("createErrand.errand.classification", "must not be null"),
 			tuple("createErrand.errand.reporterUserId", "must not be blank"),
 			tuple("createErrand.errand.priority", "must not be null"),
-			tuple("createErrand.errand.statusTag", "must not be blank"),
+			tuple("createErrand.errand.status", "must not be blank"),
 			tuple("createErrand.errand.title", "must not be blank"));
 
 		// Verification
@@ -210,7 +210,7 @@ class ErrandsCreateResourceFailureTest {
 		final var response = webTestClient.post()
 			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
 			.contentType(APPLICATION_JSON)
-			.bodyValue(Errand.create().withTitle(" ").withReporterUserId(" ").withClassification(Classification.create().withCategory(" ").withType(" ")).withStatusTag(" "))
+			.bodyValue(Errand.create().withTitle(" ").withReporterUserId(" ").withClassification(Classification.create().withCategory(" ").withType(" ")).withStatus(" "))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -226,7 +226,7 @@ class ErrandsCreateResourceFailureTest {
 			tuple("createErrand.errand.title", "must not be blank"),
 			tuple("createErrand.errand.reporterUserId", "must not be blank"),
 			tuple("createErrand.errand.priority", "must not be null"),
-			tuple("createErrand.errand.statusTag", "must not be blank"));
+			tuple("createErrand.errand.status", "must not be blank"));
 
 		// Verification
 		verify(metadataServiceMock).findCategories(any(), any());
@@ -296,7 +296,7 @@ class ErrandsCreateResourceFailureTest {
 		final var response = webTestClient.post()
 			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
 			.contentType(APPLICATION_JSON)
-			.bodyValue(createErrandInstance().withClassification(Classification.create().withCategory("invalid_category").withType("invalid_type")).withStatusTag("invalid_status"))
+			.bodyValue(createErrandInstance().withClassification(Classification.create().withCategory("invalid_category").withType("invalid_type")).withStatus("invalid_status"))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -308,7 +308,7 @@ class ErrandsCreateResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
 			tuple("classification", "value 'invalid_category' doesn't match any of [CATEGORY_1, CATEGORY_2]"),
-			tuple("statusTag", "value 'invalid_status' doesn't match any of [STATUS_1, STATUS_2]"));
+			tuple("status", "value 'invalid_status' doesn't match any of [STATUS_1, STATUS_2]"));
 
 		// Verification
 		verify(metadataServiceMock).findCategories(any(), any());
@@ -322,7 +322,7 @@ class ErrandsCreateResourceFailureTest {
 		final var response = webTestClient.post()
 			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
 			.contentType(APPLICATION_JSON)
-			.bodyValue(createErrandInstance().withClassification(Classification.create().withCategory("CATEGORY_1").withType("invalid_type")).withStatusTag("STATUS_1"))
+			.bodyValue(createErrandInstance().withClassification(Classification.create().withCategory("CATEGORY_1").withType("invalid_type")).withStatus("STATUS_1"))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -379,7 +379,7 @@ class ErrandsCreateResourceFailureTest {
 			.withModified(OffsetDateTime.now())
 			.withPriority(Priority.HIGH)
 			.withReporterUserId("reporterUserId")
-			.withStatusTag("status_1")
+			.withStatus("status_1")
 			.withTitle("title");
 	}
 }

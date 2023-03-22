@@ -35,16 +35,16 @@ public class ErrandMapper {
 		return errandEntity
 			.withAssignedGroupId(errand.getAssignedGroupId())
 			.withAssignedUserId(errand.getAssignedUserId())
-			.withCategoryTag(errand.getClassification().getCategory())
+			.withCategory(errand.getClassification().getCategory())
 			.withStakeholders(toStakeholderEntities(errandEntity, errand.getStakeholders()))
 			.withExternalTags(toExternalTag(errand.getExternalTags()))
 			.withMunicipalityId(municipalityId)
 			.withNamespace(namespace)
 			.withPriority(errand.getPriority().name())
 			.withReporterUserId(errand.getReporterUserId())
-			.withStatusTag(errand.getStatusTag())
+			.withStatus(errand.getStatus())
 			.withTitle(errand.getTitle())
-			.withTypeTag(errand.getClassification().getType())
+			.withType(errand.getClassification().getType())
 			.withResolution(errand.getResolution())
 			.withDescription(errand.getDescription())
 			.withEscalationEmail(errand.getEscalationEmail());
@@ -58,13 +58,13 @@ public class ErrandMapper {
 		ofNullable(errand.getAssignedGroupId()).ifPresent(value -> entity.setAssignedGroupId(isEmpty(value) ? null : value));
 		ofNullable(errand.getAssignedUserId()).ifPresent(value -> entity.setAssignedUserId(isEmpty(value) ? null : value));
 		ofNullable(errand.getClassification()).ifPresent(value -> {
-			entity.setCategoryTag(value.getCategory());
-			entity.setTypeTag(value.getType());
+			entity.setCategory(value.getCategory());
+			entity.setType(value.getType());
 		});
 		ofNullable(errand.getStakeholders()).ifPresent(value -> updateStakeholders(entity, value));
 		ofNullable(errand.getExternalTags()).ifPresent(value -> entity.setExternalTags(toExternalTag(value)));
 		ofNullable(errand.getPriority()).ifPresent(value -> entity.setPriority(value.name()));
-		ofNullable(errand.getStatusTag()).ifPresent(entity::setStatusTag);
+		ofNullable(errand.getStatus()).ifPresent(entity::setStatus);
 		ofNullable(errand.getTitle()).ifPresent(entity::setTitle);
 		ofNullable(errand.getResolution()).ifPresent(value -> entity.setResolution(isEmpty(value) ? null : value));
 		ofNullable(errand.getDescription()).ifPresent(value -> entity.setDescription(isEmpty(value) ? null : value));
@@ -74,7 +74,7 @@ public class ErrandMapper {
 	}
 
 	private static void updateStakeholders(ErrandEntity entity, List<Stakeholder> stakeholders) {
-		ofNullable(entity.getStakeholders()).ifPresentOrElse(list -> list.clear(), () -> entity.setStakeholders(new ArrayList<>()));
+		ofNullable(entity.getStakeholders()).ifPresentOrElse(List::clear, () -> entity.setStakeholders(new ArrayList<>()));
 		entity.getStakeholders().addAll(toStakeholderEntities(entity, stakeholders));
 	}
 
@@ -102,7 +102,7 @@ public class ErrandMapper {
 			.map(e -> Errand.create()
 				.withAssignedGroupId(e.getAssignedGroupId())
 				.withAssignedUserId(e.getAssignedUserId())
-				.withClassification(Classification.create().withCategory(e.getCategoryTag()).withType(e.getTypeTag()))
+				.withClassification(Classification.create().withCategory(e.getCategory()).withType(e.getType()))
 				.withCreated(e.getCreated())
 				.withStakeholders(toStakeholders(e.getStakeholders()))
 				.withExternalTags(toExternalTags(e.getExternalTags()))
@@ -110,7 +110,7 @@ public class ErrandMapper {
 				.withModified(e.getModified())
 				.withPriority(Priority.valueOf(e.getPriority()))
 				.withReporterUserId(e.getReporterUserId())
-				.withStatusTag(e.getStatusTag())
+				.withStatus(e.getStatus())
 				.withTitle(e.getTitle())
 				.withTouched(e.getTouched())
 				.withResolution(e.getResolution())

@@ -90,6 +90,29 @@ class ValidClassificationConstraintValidatorTest {
 	}
 
 	@Test
+	void validCategoryInvalidType() {
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var categoryName = "CATEGORY-1";
+		final var typeName = "invalid-type";
+		final var attributes = Map.of(PATHVARIABLE_NAMESPACE, namespace, PATHVARIABLE_MUNICIPALITY_ID, municipalityId);
+
+		try (MockedStatic<RequestContextHolder> requestContextHolderMock = Mockito.mockStatic(RequestContextHolder.class)) {
+			requestContextHolderMock.when(RequestContextHolder::getRequestAttributes).thenReturn(requestAttributesMock);
+			when(requestAttributesMock.getAttribute(URI_TEMPLATE_VARIABLES_ATTRIBUTE, SCOPE_REQUEST)).thenReturn(attributes);
+			when(metadataServiceMock.isValidated(namespace, municipalityId, CATEGORY)).thenReturn(true);
+			when(metadataServiceMock.findCategories(namespace, municipalityId)).thenReturn(List.of(Category.create().withName(categoryName)));
+			when(metadataServiceMock.findTypes(namespace, municipalityId, categoryName)).thenReturn(List.of(Type.create().withName("TYPE-1")));
+			when(constraintValidatorContextMock.buildConstraintViolationWithTemplate(any())).thenReturn(constraintViolationBuilderMock);
+
+			assertThat(validator.isValid(Classification.create().withCategory(categoryName).withType(typeName), constraintValidatorContextMock)).isFalse();
+			verify(metadataServiceMock).isValidated(namespace, municipalityId, CATEGORY);
+			verify(metadataServiceMock).findCategories(namespace, municipalityId);
+			verify(metadataServiceMock).findTypes(namespace, municipalityId, categoryName);
+		}
+	}
+
+	@Test
 	void classificationNullValue() {
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
@@ -97,11 +120,8 @@ class ValidClassificationConstraintValidatorTest {
 
 		try (MockedStatic<RequestContextHolder> requestContextHolderMock = Mockito.mockStatic(RequestContextHolder.class)) {
 			requestContextHolderMock.when(RequestContextHolder::getRequestAttributes).thenReturn(requestAttributesMock);
-			when(requestAttributesMock.getAttribute(URI_TEMPLATE_VARIABLES_ATTRIBUTE, SCOPE_REQUEST)).thenReturn(attributes);
-			when(metadataServiceMock.isValidated(namespace, municipalityId, CATEGORY)).thenReturn(true);
 
 			assertThat(validator.isValid(null, constraintValidatorContextMock)).isTrue();
-			verify(metadataServiceMock).isValidated(namespace, municipalityId, CATEGORY);
 		}
 	}
 

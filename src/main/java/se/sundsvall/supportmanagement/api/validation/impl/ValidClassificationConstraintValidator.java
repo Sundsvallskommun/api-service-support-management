@@ -21,24 +21,27 @@ public class ValidClassificationConstraintValidator extends AbstractTagConstrain
 
 	@Override
 	public boolean isValid(Classification classification, ConstraintValidatorContext context) {
-		if (metadataService.isValidated(getPathVariable(PATHVARIABLE_NAMESPACE), getPathVariable(PATHVARIABLE_MUNICIPALITY_ID), EntityType.CATEGORY)) {
-			if (classification == null) {
-				return true;
-			}
-			return isValid(classification.getCategory(), getCategoryNames(), context) &&
-				isValid(classification.getType(), getTypeNames(classification.getCategory()), context);
+		if (classification == null) {
+			return true;
+		}
+		final var namespace = getPathVariable(PATHVARIABLE_NAMESPACE);
+		final var municipalityId = getPathVariable(PATHVARIABLE_MUNICIPALITY_ID);
+
+		if (metadataService.isValidated(namespace, municipalityId, EntityType.CATEGORY)) {
+			return isValid(classification.getCategory(), getCategoryNames(namespace, municipalityId), context) &&
+				isValid(classification.getType(), getTypeNames(namespace, municipalityId, classification.getCategory()), context);
 		}
 		return true;
 	}
 
-	private List<String> getCategoryNames() {
-		return ofNullable(metadataService.findCategories(getPathVariable(PATHVARIABLE_NAMESPACE), getPathVariable(PATHVARIABLE_MUNICIPALITY_ID))).orElse(emptyList()).stream()
+	private List<String> getCategoryNames(String namespace, String municipalityId) {
+		return ofNullable(metadataService.findCategories(namespace, municipalityId)).orElse(emptyList()).stream()
 			.map(Category::getName)
 			.toList();
 	}
 
-	private List<String> getTypeNames(String category) {
-		return ofNullable(metadataService.findTypes(getPathVariable(PATHVARIABLE_NAMESPACE), getPathVariable(PATHVARIABLE_MUNICIPALITY_ID), category)).orElse(emptyList()).stream()
+	private List<String> getTypeNames(String namespace, String municipalityId, String category) {
+		return ofNullable(metadataService.findTypes(namespace, municipalityId, category)).orElse(emptyList()).stream()
 			.map(Type::getName)
 			.toList();
 	}

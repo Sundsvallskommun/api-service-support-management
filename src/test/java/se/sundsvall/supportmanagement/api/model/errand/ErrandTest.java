@@ -49,7 +49,7 @@ class ErrandTest {
 		final var modified = OffsetDateTime.now().plusDays(1);
 		final var priority = Priority.MEDIUM;
 		final var reporterUserId = "reporterUserId";
-		final var statusTag = "statusTag";
+		final var status = "status";
 		final var title = "title";
 		final var touched = OffsetDateTime.now().plusDays(2);
 		final var type = "type";
@@ -68,7 +68,7 @@ class ErrandTest {
 				.withModified(modified)
 				.withPriority(priority)
 				.withReporterUserId(reporterUserId)
-				.withStatusTag(statusTag)
+				.withStatus(status)
 				.withTitle(title)
 				.withTouched(touched)
 				.withResolution(resolution)
@@ -87,7 +87,7 @@ class ErrandTest {
 		assertThat(bean.getModified()).isEqualTo(modified);
 		assertThat(bean.getPriority()).isEqualTo(priority);
 		assertThat(bean.getReporterUserId()).isEqualTo(reporterUserId);
-		assertThat(bean.getStatusTag()).isEqualTo(statusTag);
+		assertThat(bean.getStatus()).isEqualTo(status);
 		assertThat(bean.getTitle()).isEqualTo(title);
 		assertThat(bean.getTouched()).isEqualTo(touched);
 		assertThat(bean.getResolution()).isEqualTo(resolution);
