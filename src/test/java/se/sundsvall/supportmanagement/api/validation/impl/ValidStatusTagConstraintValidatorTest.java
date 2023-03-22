@@ -7,6 +7,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.web.context.request.RequestAttributes.SCOPE_REQUEST;
 import static org.springframework.web.servlet.HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE;
+import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
 import static se.sundsvall.supportmanagement.api.validation.impl.AbstractTagConstraintValidator.PATHVARIABLE_MUNICIPALITY_ID;
 import static se.sundsvall.supportmanagement.api.validation.impl.AbstractTagConstraintValidator.PATHVARIABLE_NAMESPACE;
 
@@ -26,10 +27,10 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
-import org.zalando.problem.Status;
 import org.zalando.problem.ThrowableProblem;
 
-import se.sundsvall.supportmanagement.service.TagService;
+import se.sundsvall.supportmanagement.api.model.metadata.Status;
+import se.sundsvall.supportmanagement.service.MetadataService;
 
 @ExtendWith(MockitoExtension.class)
 class ValidStatusTagConstraintValidatorTest {
@@ -41,7 +42,7 @@ class ValidStatusTagConstraintValidatorTest {
 	private ConstraintViolationBuilder constraintViolationBuilderMock;
 
 	@Mock
-	private TagService tagServiceMock;
+	private MetadataService metadataServiceMock;
 
 	@Mock
 	private RequestAttributes requestAttributesMock;
@@ -63,7 +64,7 @@ class ValidStatusTagConstraintValidatorTest {
 			assertThat(validator.isValid("status-1", constraintValidatorContextMock)).isFalse();
 			verify(constraintValidatorContextMock).buildConstraintViolationWithTemplate(any());
 			verify(constraintViolationBuilderMock).addConstraintViolation();
-			verify(tagServiceMock).findAllStatusTags(namespace, municipalityId);
+			verify(metadataServiceMock).findStatuses(namespace, municipalityId);
 		}
 	}
 
@@ -76,10 +77,10 @@ class ValidStatusTagConstraintValidatorTest {
 		try (MockedStatic<RequestContextHolder> requestContextHolderMock = Mockito.mockStatic(RequestContextHolder.class)) {
 			requestContextHolderMock.when(RequestContextHolder::getRequestAttributes).thenReturn(requestAttributesMock);
 			when(requestAttributesMock.getAttribute(URI_TEMPLATE_VARIABLES_ATTRIBUTE, SCOPE_REQUEST)).thenReturn(attributes);
-			when(tagServiceMock.findAllStatusTags(namespace, municipalityId)).thenReturn(List.of("STATUS-1"));
+			when(metadataServiceMock.findStatuses(namespace, municipalityId)).thenReturn(List.of(Status.create().withName("STATUS-1")));
 
 			assertThat(validator.isValid("status-1", constraintValidatorContextMock)).isTrue();
-			verify(tagServiceMock).findAllStatusTags(namespace, municipalityId);
+			verify(metadataServiceMock).findStatuses(namespace, municipalityId);
 		}
 	}
 
@@ -94,7 +95,7 @@ class ValidStatusTagConstraintValidatorTest {
 			when(requestAttributesMock.getAttribute(URI_TEMPLATE_VARIABLES_ATTRIBUTE, SCOPE_REQUEST)).thenReturn(attributes);
 
 			assertThat(validator.isValid(null, constraintValidatorContextMock)).isTrue();
-			verify(tagServiceMock).findAllStatusTags(namespace, municipalityId);
+			verify(metadataServiceMock).findStatuses(namespace, municipalityId);
 		}
 	}
 
@@ -109,14 +110,14 @@ class ValidStatusTagConstraintValidatorTest {
 			when(requestAttributesMock.getAttribute(URI_TEMPLATE_VARIABLES_ATTRIBUTE, SCOPE_REQUEST)).thenReturn(attributes);
 
 			assertThat(validator.isValid(" ", constraintValidatorContextMock)).isTrue();
-			verify(tagServiceMock).findAllStatusTags(namespace, municipalityId);
+			verify(metadataServiceMock).findStatuses(namespace, municipalityId);
 		}
 	}
 
 	@Test
 	void noRequestPresent() {
 		final var e = assertThrows(ThrowableProblem.class, () -> validator.isValid("status-1", constraintValidatorContextMock));
-		assertThat(e.getStatus()).isEqualTo(Status.INTERNAL_SERVER_ERROR);
+		assertThat(e.getStatus()).isEqualTo(INTERNAL_SERVER_ERROR);
 		assertThat(e.getMessage()).isEqualTo("Internal Server Error: Path variable 'namespace' is not readable from request");
 	}
 
@@ -126,7 +127,7 @@ class ValidStatusTagConstraintValidatorTest {
 			requestContextHolderMock.when(RequestContextHolder::getRequestAttributes).thenReturn(requestAttributesMock);
 
 			final var e = assertThrows(ThrowableProblem.class, () -> validator.isValid("status-1", constraintValidatorContextMock));
-			assertThat(e.getStatus()).isEqualTo(Status.INTERNAL_SERVER_ERROR);
+			assertThat(e.getStatus()).isEqualTo(INTERNAL_SERVER_ERROR);
 			assertThat(e.getMessage()).isEqualTo("Internal Server Error: Path variable 'namespace' is not readable from request");
 		}
 	}
@@ -139,7 +140,7 @@ class ValidStatusTagConstraintValidatorTest {
 			when(requestAttributesMock.getAttribute(URI_TEMPLATE_VARIABLES_ATTRIBUTE, SCOPE_REQUEST)).thenReturn(Long.MAX_VALUE);
 
 			final var e = assertThrows(ThrowableProblem.class, () -> validator.isValid("status-1", constraintValidatorContextMock));
-			assertThat(e.getStatus()).isEqualTo(Status.INTERNAL_SERVER_ERROR);
+			assertThat(e.getStatus()).isEqualTo(INTERNAL_SERVER_ERROR);
 			assertThat(e.getMessage()).isEqualTo("Internal Server Error: Path variable 'namespace' is not readable from request");
 		}
 	}
@@ -154,7 +155,7 @@ class ValidStatusTagConstraintValidatorTest {
 			when(requestAttributesMock.getAttribute(URI_TEMPLATE_VARIABLES_ATTRIBUTE, SCOPE_REQUEST)).thenReturn(attributes);
 
 			final var e = assertThrows(ThrowableProblem.class, () -> validator.isValid("status-1", constraintValidatorContextMock));
-			assertThat(e.getStatus()).isEqualTo(Status.INTERNAL_SERVER_ERROR);
+			assertThat(e.getStatus()).isEqualTo(INTERNAL_SERVER_ERROR);
 			assertThat(e.getMessage()).isEqualTo("Internal Server Error: Path variable 'municipalityId' is not readable from request");
 		}
 	}
@@ -169,7 +170,7 @@ class ValidStatusTagConstraintValidatorTest {
 			when(requestAttributesMock.getAttribute(URI_TEMPLATE_VARIABLES_ATTRIBUTE, SCOPE_REQUEST)).thenReturn(attributes);
 
 			final var e = assertThrows(ThrowableProblem.class, () -> validator.isValid("status-1", constraintValidatorContextMock));
-			assertThat(e.getStatus()).isEqualTo(Status.INTERNAL_SERVER_ERROR);
+			assertThat(e.getStatus()).isEqualTo(INTERNAL_SERVER_ERROR);
 			assertThat(e.getMessage()).isEqualTo("Internal Server Error: Path variable 'namespace' is not readable from request");
 		}
 	}
@@ -184,7 +185,7 @@ class ValidStatusTagConstraintValidatorTest {
 			when(requestAttributesMock.getAttribute(URI_TEMPLATE_VARIABLES_ATTRIBUTE, SCOPE_REQUEST)).thenReturn(attributes);
 
 			final var e = assertThrows(ThrowableProblem.class, () -> validator.isValid("status-1", constraintValidatorContextMock));
-			assertThat(e.getStatus()).isEqualTo(Status.INTERNAL_SERVER_ERROR);
+			assertThat(e.getStatus()).isEqualTo(INTERNAL_SERVER_ERROR);
 			assertThat(e.getMessage()).isEqualTo("Internal Server Error: Path variable 'namespace' is not readable from request");
 		}
 	}

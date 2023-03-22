@@ -25,7 +25,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 
-import se.sundsvall.supportmanagement.service.TagService;
+import se.sundsvall.supportmanagement.api.model.metadata.Category;
+import se.sundsvall.supportmanagement.service.MetadataService;
 
 @ExtendWith(MockitoExtension.class)
 class ValidCategoryTagConstraintValidatorTest {
@@ -37,7 +38,7 @@ class ValidCategoryTagConstraintValidatorTest {
 	private ConstraintViolationBuilder constraintViolationBuilderMock;
 
 	@Mock
-	private TagService tagServiceMock;
+	private MetadataService metadataServiceMock;
 
 	@Mock
 	private RequestAttributes requestAttributesMock;
@@ -59,7 +60,7 @@ class ValidCategoryTagConstraintValidatorTest {
 			assertThat(validator.isValid("category-1", constraintValidatorContextMock)).isFalse();
 			verify(constraintValidatorContextMock).buildConstraintViolationWithTemplate(any());
 			verify(constraintViolationBuilderMock).addConstraintViolation();
-			verify(tagServiceMock).findAllCategoryTags(namespace, municipalityId);
+			verify(metadataServiceMock).findCategories(namespace, municipalityId);
 		}
 	}
 
@@ -72,10 +73,10 @@ class ValidCategoryTagConstraintValidatorTest {
 		try (MockedStatic<RequestContextHolder> requestContextHolderMock = Mockito.mockStatic(RequestContextHolder.class)) {
 			requestContextHolderMock.when(RequestContextHolder::getRequestAttributes).thenReturn(requestAttributesMock);
 			when(requestAttributesMock.getAttribute(URI_TEMPLATE_VARIABLES_ATTRIBUTE, SCOPE_REQUEST)).thenReturn(attributes);
-			when(tagServiceMock.findAllCategoryTags(namespace, municipalityId)).thenReturn(List.of("CATEGORY-1"));
+			when(metadataServiceMock.findCategories(namespace, municipalityId)).thenReturn(List.of(Category.create().withName("CATEGORY-1")));
 
 			assertThat(validator.isValid("category-1", constraintValidatorContextMock)).isTrue();
-			verify(tagServiceMock).findAllCategoryTags(namespace, municipalityId);
+			verify(metadataServiceMock).findCategories(namespace, municipalityId);
 		}
 	}
 
@@ -90,7 +91,7 @@ class ValidCategoryTagConstraintValidatorTest {
 			when(requestAttributesMock.getAttribute(URI_TEMPLATE_VARIABLES_ATTRIBUTE, SCOPE_REQUEST)).thenReturn(attributes);
 
 			assertThat(validator.isValid(null, constraintValidatorContextMock)).isTrue();
-			verify(tagServiceMock).findAllCategoryTags(namespace, municipalityId);
+			verify(metadataServiceMock).findCategories(namespace, municipalityId);
 		}
 	}
 
@@ -105,7 +106,7 @@ class ValidCategoryTagConstraintValidatorTest {
 			when(requestAttributesMock.getAttribute(URI_TEMPLATE_VARIABLES_ATTRIBUTE, SCOPE_REQUEST)).thenReturn(attributes);
 
 			assertThat(validator.isValid(" ", constraintValidatorContextMock)).isTrue();
-			verify(tagServiceMock).findAllCategoryTags(namespace, municipalityId);
+			verify(metadataServiceMock).findCategories(namespace, municipalityId);
 		}
 	}
 }

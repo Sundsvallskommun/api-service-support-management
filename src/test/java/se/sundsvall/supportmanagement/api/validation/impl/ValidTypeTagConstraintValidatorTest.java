@@ -25,7 +25,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 
-import se.sundsvall.supportmanagement.service.TagService;
+import se.sundsvall.supportmanagement.api.model.metadata.Type;
+import se.sundsvall.supportmanagement.service.MetadataService;
 
 @ExtendWith(MockitoExtension.class)
 class ValidTypeTagConstraintValidatorTest {
@@ -37,7 +38,7 @@ class ValidTypeTagConstraintValidatorTest {
 	private ConstraintViolationBuilder constraintViolationBuilderMock;
 
 	@Mock
-	private TagService tagServiceMock;
+	private MetadataService metadataServiceMock;
 
 	@Mock
 	private RequestAttributes requestAttributesMock;
@@ -59,7 +60,7 @@ class ValidTypeTagConstraintValidatorTest {
 			assertThat(validator.isValid("type-1", constraintValidatorContextMock)).isFalse();
 			verify(constraintValidatorContextMock).buildConstraintViolationWithTemplate(any());
 			verify(constraintViolationBuilderMock).addConstraintViolation();
-			verify(tagServiceMock).findAllTypeTags(namespace, municipalityId, "CATEGORY-1"); // TODO: Refactor when API is changed in UF-4537
+			verify(metadataServiceMock).findTypes(namespace, municipalityId, "CATEGORY-1"); // TODO: Refactor when API is changed in UF-4594
 		}
 	}
 
@@ -72,10 +73,10 @@ class ValidTypeTagConstraintValidatorTest {
 		try (MockedStatic<RequestContextHolder> requestContextHolderMock = Mockito.mockStatic(RequestContextHolder.class)) {
 			requestContextHolderMock.when(RequestContextHolder::getRequestAttributes).thenReturn(requestAttributesMock);
 			when(requestAttributesMock.getAttribute(URI_TEMPLATE_VARIABLES_ATTRIBUTE, SCOPE_REQUEST)).thenReturn(attributes);
-			when(tagServiceMock.findAllTypeTags(namespace, municipalityId, "CATEGORY-1")).thenReturn(List.of("TYPE-1")); // TODO: Refactor when API is changed in UF-4537
+			when(metadataServiceMock.findTypes(namespace, municipalityId, "CATEGORY-1")).thenReturn(List.of(Type.create().withName("TYPE-1")));
 
 			assertThat(validator.isValid("type-1", constraintValidatorContextMock)).isTrue();
-			verify(tagServiceMock).findAllTypeTags(namespace, municipalityId, "CATEGORY-1"); // TODO: Refactor when API is changed in UF-4537
+			verify(metadataServiceMock).findTypes(namespace, municipalityId, "CATEGORY-1"); // TODO: Refactor when API is changed in UF-4594
 		}
 	}
 
@@ -90,7 +91,7 @@ class ValidTypeTagConstraintValidatorTest {
 			when(requestAttributesMock.getAttribute(URI_TEMPLATE_VARIABLES_ATTRIBUTE, SCOPE_REQUEST)).thenReturn(attributes);
 
 			assertThat(validator.isValid(null, constraintValidatorContextMock)).isTrue();
-			verify(tagServiceMock).findAllTypeTags(namespace, municipalityId, "CATEGORY-1"); // TODO: Refactor when API is changed in UF-4537
+			verify(metadataServiceMock).findTypes(namespace, municipalityId, "CATEGORY-1"); // TODO: Refactor when API is changed in UF-4594
 		}
 	}
 
@@ -105,7 +106,7 @@ class ValidTypeTagConstraintValidatorTest {
 			when(requestAttributesMock.getAttribute(URI_TEMPLATE_VARIABLES_ATTRIBUTE, SCOPE_REQUEST)).thenReturn(attributes);
 
 			assertThat(validator.isValid(" ", constraintValidatorContextMock)).isTrue();
-			verify(tagServiceMock).findAllTypeTags(namespace, municipalityId, "CATEGORY-1"); // TODO: Refactor when API is changed in UF-4537
+			verify(metadataServiceMock).findTypes(namespace, municipalityId, "CATEGORY-1"); // TODO: Refactor when API is changed in UF-4594
 		}
 	}
 }
