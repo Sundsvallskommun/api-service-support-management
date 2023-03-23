@@ -15,6 +15,9 @@ public class Stakeholder {
 	@Schema(description = "Type of external id", example = "PRIVATE")
 	private String externalIdTypeTag;
 
+	@Schema(description = "Role of stakeholder", example = "ADMINISTRATOR")
+	private String role;
+
 	@Schema(description = "First name", example = "Aurthur")
 	private String firstName;
 
@@ -63,6 +66,19 @@ public class Stakeholder {
 
 	public Stakeholder withExternalIdTypeTag(String externalIdTypeTag) {
 		this.externalIdTypeTag = externalIdTypeTag;
+		return this;
+	}
+
+	public String getRole() {
+		return role;
+	}
+
+	public void setRole(String role) {
+		this.role = role;
+	}
+
+	public Stakeholder withRole(String role) {
+		this.role = role;
 		return this;
 	}
 
@@ -166,12 +182,12 @@ public class Stakeholder {
 			return false;
 		}
 		Stakeholder that = (Stakeholder) o;
-		return Objects.equals(externalId, that.externalId) && Objects.equals(externalIdTypeTag, that.externalIdTypeTag) && Objects.equals(firstName, that.firstName) && Objects.equals(lastName, that.lastName) && Objects.equals(address, that.address) && Objects.equals(careOf, that.careOf) && Objects.equals(zipCode, that.zipCode) && Objects.equals(country, that.country) && Objects.equals(contactChannels, that.contactChannels);
+		return Objects.equals(externalId, that.externalId) && Objects.equals(externalIdTypeTag, that.externalIdTypeTag) && Objects.equals(role, that.role) && Objects.equals(firstName, that.firstName) && Objects.equals(lastName, that.lastName) && Objects.equals(address, that.address) && Objects.equals(careOf, that.careOf) && Objects.equals(zipCode, that.zipCode) && Objects.equals(country, that.country) && Objects.equals(contactChannels, that.contactChannels);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(externalId, externalIdTypeTag, firstName, lastName, address, careOf, zipCode, country, contactChannels);
+		return Objects.hash(externalId, externalIdTypeTag, role, firstName, lastName, address, careOf, zipCode, country, contactChannels);
 	}
 
 	@Override
@@ -179,6 +195,7 @@ public class Stakeholder {
 		final StringBuilder sb = new StringBuilder("Stakeholder{");
 		sb.append("externalId='").append(externalId).append('\'');
 		sb.append(", externalIdTypeTag='").append(externalIdTypeTag).append('\'');
+		sb.append(", role='").append(role).append('\'');
 		sb.append(", firstName='").append(firstName).append('\'');
 		sb.append(", lastName='").append(lastName).append('\'');
 		sb.append(", address='").append(address).append('\'');
