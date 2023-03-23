@@ -29,6 +29,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -83,7 +84,7 @@ class ErrandsCreateResourceFailureTest {
 			.containsExactly(tuple("createErrand.namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."));
 
 		// Verification
-		verify(metadataServiceMock).isValidated(any(), any(), any());
+		verify(metadataServiceMock, times(2)).isValidated(any(), any(), any());
 		verify(metadataServiceMock).findCategories(any(), any());
 		verify(metadataServiceMock).findStatuses(any(), any());
 		verify(metadataServiceMock).findTypes(any(), any(), any());
@@ -111,7 +112,7 @@ class ErrandsCreateResourceFailureTest {
 			.containsExactly(tuple("createErrand.municipalityId", "not a valid municipality ID"));
 
 		// Verification
-		verify(metadataServiceMock).isValidated(any(), any(), any());
+		verify(metadataServiceMock, times(2)).isValidated(any(), any(), any());
 		verify(metadataServiceMock).findCategories(any(), any());
 		verify(metadataServiceMock).findStatuses(any(), any());
 		verify(metadataServiceMock).findTypes(any(), any(), any());
@@ -169,7 +170,7 @@ class ErrandsCreateResourceFailureTest {
 			tuple("createErrand.errand.modified", "must be null"));
 
 		// Verification
-		verify(metadataServiceMock).isValidated(any(), any(), any());
+		verify(metadataServiceMock, times(2)).isValidated(any(), any(), any());
 		verify(metadataServiceMock).findCategories(any(), any());
 		verify(metadataServiceMock).findStatuses(any(), any());
 		verify(metadataServiceMock).findTypes(any(), any(), any());

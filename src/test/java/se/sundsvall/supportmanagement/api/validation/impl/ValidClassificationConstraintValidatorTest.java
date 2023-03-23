@@ -28,6 +28,7 @@ import static org.springframework.web.servlet.HandlerMapping.URI_TEMPLATE_VARIAB
 import static se.sundsvall.supportmanagement.api.validation.impl.AbstractTagConstraintValidator.PATHVARIABLE_MUNICIPALITY_ID;
 import static se.sundsvall.supportmanagement.api.validation.impl.AbstractTagConstraintValidator.PATHVARIABLE_NAMESPACE;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EntityType.CATEGORY;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EntityType.TYPE;
 
 @ExtendWith(MockitoExtension.class)
 class ValidClassificationConstraintValidatorTest {
@@ -79,6 +80,7 @@ class ValidClassificationConstraintValidatorTest {
 			requestContextHolderMock.when(RequestContextHolder::getRequestAttributes).thenReturn(requestAttributesMock);
 			when(requestAttributesMock.getAttribute(URI_TEMPLATE_VARIABLES_ATTRIBUTE, SCOPE_REQUEST)).thenReturn(attributes);
 			when(metadataServiceMock.isValidated(namespace, municipalityId, CATEGORY)).thenReturn(true);
+			when(metadataServiceMock.isValidated(namespace, municipalityId, TYPE)).thenReturn(true);
 			when(metadataServiceMock.findCategories(namespace, municipalityId)).thenReturn(List.of(Category.create().withName(categoryName)));
 			when(metadataServiceMock.findTypes(namespace, municipalityId, categoryName)).thenReturn(List.of(Type.create().withName(typeName)));
 
@@ -101,6 +103,7 @@ class ValidClassificationConstraintValidatorTest {
 			requestContextHolderMock.when(RequestContextHolder::getRequestAttributes).thenReturn(requestAttributesMock);
 			when(requestAttributesMock.getAttribute(URI_TEMPLATE_VARIABLES_ATTRIBUTE, SCOPE_REQUEST)).thenReturn(attributes);
 			when(metadataServiceMock.isValidated(namespace, municipalityId, CATEGORY)).thenReturn(true);
+			when(metadataServiceMock.isValidated(namespace, municipalityId, TYPE)).thenReturn(true);
 			when(metadataServiceMock.findCategories(namespace, municipalityId)).thenReturn(List.of(Category.create().withName(categoryName)));
 			when(metadataServiceMock.findTypes(namespace, municipalityId, categoryName)).thenReturn(List.of(Type.create().withName("TYPE-1")));
 			when(constraintValidatorContextMock.buildConstraintViolationWithTemplate(any())).thenReturn(constraintViolationBuilderMock);
@@ -135,6 +138,7 @@ class ValidClassificationConstraintValidatorTest {
 			requestContextHolderMock.when(RequestContextHolder::getRequestAttributes).thenReturn(requestAttributesMock);
 			when(requestAttributesMock.getAttribute(URI_TEMPLATE_VARIABLES_ATTRIBUTE, SCOPE_REQUEST)).thenReturn(attributes);
 			when(metadataServiceMock.isValidated(namespace, municipalityId, CATEGORY)).thenReturn(true);
+			when(metadataServiceMock.isValidated(namespace, municipalityId, TYPE)).thenReturn(true);
 
 			assertThat(validator.isValid(Classification.create(), constraintValidatorContextMock)).isTrue();
 			verify(metadataServiceMock).isValidated(namespace, municipalityId, CATEGORY);
@@ -157,7 +161,6 @@ class ValidClassificationConstraintValidatorTest {
 			assertThat(validator.isValid(Classification.create().withCategory(" ").withType(" "), constraintValidatorContextMock)).isTrue();
 			verify(metadataServiceMock).isValidated(namespace, municipalityId, CATEGORY);
 			verify(metadataServiceMock).findCategories(namespace, municipalityId);
-			verify(metadataServiceMock).findTypes(namespace, municipalityId, " ");
 		}
 	}
 }

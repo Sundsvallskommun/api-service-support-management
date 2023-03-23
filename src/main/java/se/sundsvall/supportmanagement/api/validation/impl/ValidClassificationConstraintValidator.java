@@ -16,6 +16,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
 
 public class ValidClassificationConstraintValidator extends AbstractTagConstraintValidator implements ConstraintValidator<ValidClassification, Classification> {
+
 	@Autowired
 	private MetadataService metadataService;
 
@@ -24,14 +25,27 @@ public class ValidClassificationConstraintValidator extends AbstractTagConstrain
 		if (classification == null) {
 			return true;
 		}
+
 		final var namespace = getPathVariable(PATHVARIABLE_NAMESPACE);
 		final var municipalityId = getPathVariable(PATHVARIABLE_MUNICIPALITY_ID);
 
-		if (metadataService.isValidated(namespace, municipalityId, EntityType.CATEGORY)) {
-			return isValid(classification.getCategory(), getCategoryNames(namespace, municipalityId), context) &&
-				isValid(classification.getType(), getTypeNames(namespace, municipalityId, classification.getCategory()), context);
+		final var categoryNames = getCategoryNames(namespace, municipalityId);
+
+		if (!isCategoryValid(namespace, municipalityId, categoryNames, classification, context)) {
+			return false;
 		}
-		return true;
+
+		return isTypeValid(namespace, municipalityId, classification, context);
+	}
+
+	private boolean isCategoryValid(String namespace, String municipalityId, List<String> categoryNames, Classification classification, ConstraintValidatorContext context) {
+		return !metadataService.isValidated(namespace, municipalityId, EntityType.CATEGORY) ||
+			isValid(classification.getCategory(), categoryNames, context);
+	}
+
+	private boolean isTypeValid(String namespace, String municipalityId, Classification classification, ConstraintValidatorContext context) {
+		return !metadataService.isValidated(namespace, municipalityId, EntityType.TYPE) ||
+			isValid(classification.getType(), getTypeNames(namespace, municipalityId, classification.getCategory()), context);
 	}
 
 	private List<String> getCategoryNames(String namespace, String municipalityId) {
