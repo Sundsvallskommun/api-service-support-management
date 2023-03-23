@@ -9,10 +9,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-import org.junit.jupiter.api.Test;
-
-import java.util.List;
-
 class StakeholderTest {
 
 	@Test
@@ -29,7 +25,6 @@ class StakeholderTest {
 	void testBuilderMethods() {
 		var externalId = "id";
 		var externalIdTypeTag = "EMPLOYEE";
-		var role = "ROLE";
 		var firstName = "firstName";
 		var lastName = "lastName";
 		var address = "address";
@@ -40,7 +35,7 @@ class StakeholderTest {
 
 		var bean = Stakeholder.create()
 			.withExternalId(externalId)
-			.withExternalIdTypeTag(externalIdTypeTag)
+			.withExternalIdType(externalIdType)
 			.withRole(role)
 			.withFirstName(firstName)
 			.withLastName(lastName)
@@ -52,7 +47,7 @@ class StakeholderTest {
 
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(bean.getExternalId()).isEqualTo(externalId);
-		assertThat(bean.getExternalIdTypeTag()).isEqualTo(externalIdTypeTag);
+		assertThat(bean.getExternalIdType()).isEqualTo(externalIdType);
 		assertThat(bean.getRole()).isEqualTo(role);
 		assertThat(bean.getFirstName()).isEqualTo(firstName);
 		assertThat(bean.getLastName()).isEqualTo(lastName);
@@ -66,5 +61,6 @@ class StakeholderTest {
 	@Test
 	void testNoDirtOnCreatedBean() {
 		assertThat(Stakeholder.create()).hasAllNullFieldsOrProperties();
+		assertThat(new Stakeholder()).hasAllNullFieldsOrProperties();
 	}
 }

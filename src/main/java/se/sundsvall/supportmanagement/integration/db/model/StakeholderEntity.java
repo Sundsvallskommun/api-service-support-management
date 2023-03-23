@@ -1,13 +1,5 @@
 package se.sundsvall.supportmanagement.integration.db.model;
 
-import static javax.persistence.GenerationType.IDENTITY;
-
-import java.io.Serial;
-import java.io.Serializable;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
@@ -19,6 +11,13 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
+import java.io.Serial;
+import java.io.Serializable;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+
+import static javax.persistence.GenerationType.IDENTITY;
 
 @Entity
 @Table(name = "stakeholder")
@@ -39,8 +38,8 @@ public class StakeholderEntity implements Serializable {
 	@Column(name = "external_id")
 	private String externalId;
 
-	@Column(name = "external_id_type_tag")
-	private String externalIdTypeTag;
+	@Column(name = "external_id_type")
+	private String externalIdType;
 
 	@Column(name = "role")
 	private String role;
@@ -110,16 +109,16 @@ public class StakeholderEntity implements Serializable {
 		return this;
 	}
 
-	public String getExternalIdTypeTag() {
-		return externalIdTypeTag;
+	public String getExternalIdType() {
+		return externalIdType;
 	}
 
-	public void setExternalIdTypeTag(String externalIdTypeTag) {
-		this.externalIdTypeTag = externalIdTypeTag;
+	public void setExternalIdType(String externalIdType) {
+		this.externalIdType = externalIdType;
 	}
 
-	public StakeholderEntity withExternalIdTypeTag(String externalIdTypeTag) {
-		this.externalIdTypeTag = externalIdTypeTag;
+	public StakeholderEntity withExternalIdType(String externalIdType) {
+		this.externalIdType = externalIdType;
 		return this;
 	}
 
@@ -236,12 +235,12 @@ public class StakeholderEntity implements Serializable {
 			return false;
 		}
 		StakeholderEntity that = (StakeholderEntity) o;
-		return id == that.id && Objects.equals(errandEntity, that.errandEntity) && Objects.equals(externalId, that.externalId) && Objects.equals(externalIdTypeTag, that.externalIdTypeTag) && Objects.equals(role, that.role) && Objects.equals(firstName, that.firstName) && Objects.equals(lastName, that.lastName) && Objects.equals(address, that.address) && Objects.equals(careOf, that.careOf) && Objects.equals(zipCode, that.zipCode) && Objects.equals(country, that.country) && Objects.equals(contactChannels, that.contactChannels);
+		return id == that.id && Objects.equals(errandEntity, that.errandEntity) && Objects.equals(externalId, that.externalId) && Objects.equals(externalIdType, that.externalIdTypeTag) && Objects.equals(role, that.role) && Objects.equals(firstName, that.firstName) && Objects.equals(lastName, that.lastName) && Objects.equals(address, that.address) && Objects.equals(careOf, that.careOf) && Objects.equals(zipCode, that.zipCode) && Objects.equals(country, that.country) && Objects.equals(contactChannels, that.contactChannels);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, errandEntity, externalId, externalIdTypeTag, role, firstName, lastName, address, careOf, zipCode, country, contactChannels);
+		return Objects.hash(id, errandEntity, externalId, externalIdType, role, firstName, lastName, address, careOf, zipCode, country, contactChannels);
 	}
 
 	@Override
@@ -250,7 +249,7 @@ public class StakeholderEntity implements Serializable {
 		sb.append("id=").append(id);
 		sb.append(", errandEntityId=").append(Optional.ofNullable(errandEntity).map(ErrandEntity::getId).orElse(null));
 		sb.append(", externalId='").append(externalId).append('\'');
-		sb.append(", externalIdTypeTag='").append(externalIdTypeTag).append('\'');
+		sb.append(", externalIdType='").append(externalIdType).append('\'');
 		sb.append(", role='").append(role).append('\'');
 		sb.append(", firstName='").append(firstName).append('\'');
 		sb.append(", lastName='").append(lastName).append('\'');

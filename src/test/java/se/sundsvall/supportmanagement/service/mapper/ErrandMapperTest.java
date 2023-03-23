@@ -73,7 +73,7 @@ class ErrandMapperTest {
 		assertThat(errand.getClassification().getType()).isEqualTo(TYPE);
 		assertThat(errand.getCreated()).isCloseTo(CREATED, within(2, SECONDS));
 		assertThat(errand.getStakeholders()).hasSize(1)
-			.extracting(Stakeholder::getExternalId, Stakeholder::getExternalIdTypeTag, Stakeholder::getFirstName, Stakeholder::getLastName, Stakeholder::getAddress, Stakeholder::getCareOf, Stakeholder::getZipCode, Stakeholder::getCountry,
+			.extracting(Stakeholder::getExternalId, Stakeholder::getExternalIdType, Stakeholder::getFirstName, Stakeholder::getLastName, Stakeholder::getAddress, Stakeholder::getCareOf, Stakeholder::getZipCode, Stakeholder::getCountry,
 				Stakeholder::getContactChannels)
 			.contains(tuple(EXTERNAL_ID, String.valueOf(EXTERNAL_ID_TYPE_TAG), FIRST_NAME, LAST_NAME, ADDRESS, CARE_OF, ZIP_CODE, COUNTRY, List.of(ContactChannel.create().withType(CONTACT_CHANNEL_TYPE).withValue(CONTACT_CHANNEL_VALUE))));
 		assertThat(errand.getExternalTags()).hasSize(1)
@@ -183,7 +183,7 @@ class ErrandMapperTest {
 			StakeholderEntity::getCareOf,
 			StakeholderEntity::getCountry,
 			StakeholderEntity::getExternalId,
-			StakeholderEntity::getExternalIdTypeTag,
+			StakeholderEntity::getExternalIdType,
 			StakeholderEntity::getFirstName,
 			StakeholderEntity::getLastName,
 			StakeholderEntity::getZipCode,
@@ -260,7 +260,7 @@ class ErrandMapperTest {
 			StakeholderEntity::getCareOf,
 			StakeholderEntity::getCountry,
 			StakeholderEntity::getExternalId,
-			StakeholderEntity::getExternalIdTypeTag,
+			StakeholderEntity::getExternalIdType,
 			StakeholderEntity::getFirstName,
 			StakeholderEntity::getLastName,
 			StakeholderEntity::getZipCode,
@@ -336,8 +336,7 @@ class ErrandMapperTest {
 	private static Stakeholder createStakeHolder() {
 		return Stakeholder.create()
 			.withExternalId(EXTERNAL_ID)
-			.withExternalIdTypeTag("PRIVATE")
-			.withRole(STAKEHOLDER_ROLE)
+			.withExternalIdType("PRIVATE")
 			.withFirstName(FIRST_NAME)
 			.withLastName(LAST_NAME)
 			.withAddress(ADDRESS)
@@ -373,7 +372,7 @@ class ErrandMapperTest {
 	private static StakeholderEntity createStakeHolderEntity() {
 		return StakeholderEntity.create()
 			.withExternalId(EXTERNAL_ID)
-			.withExternalIdTypeTag(EXTERNAL_ID_TYPE_TAG)
+			.withExternalIdType(EXTERNAL_ID_TYPE_TAG)
 			.withFirstName(FIRST_NAME)
 			.withLastName(LAST_NAME)
 			.withAddress(ADDRESS)

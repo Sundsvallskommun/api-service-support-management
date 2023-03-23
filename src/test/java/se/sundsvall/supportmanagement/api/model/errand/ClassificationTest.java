@@ -15,11 +15,11 @@ class ClassificationTest {
 	@Test
 	void testBean() {
 		assertThat(Classification.class, allOf(
-				hasValidBeanConstructor(),
-				hasValidGettersAndSetters(),
-				hasValidBeanHashCode(),
-				hasValidBeanEquals(),
-				hasValidBeanToString()));
+			hasValidBeanConstructor(),
+			hasValidGettersAndSetters(),
+			hasValidBeanHashCode(),
+			hasValidBeanEquals(),
+			hasValidBeanToString()));
 	}
 
 	@Test
@@ -28,8 +28,8 @@ class ClassificationTest {
 		var type = "type";
 
 		var classification = Classification.create()
-				.withCategory(category)
-				.withType(type);
+			.withCategory(category)
+			.withType(type);
 
 		assertThat(classification).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(classification.getCategory()).isEqualTo(category);
@@ -39,5 +39,6 @@ class ClassificationTest {
 	@Test
 	void testNoDirtOnCreatedBean() {
 		assertThat(Classification.create()).hasAllNullFieldsOrProperties();
+		assertThat(new Classification()).hasAllNullFieldsOrProperties();
 	}
 }

@@ -69,7 +69,7 @@
         care_of varchar(255),
         country varchar(255),
         external_id varchar(255),
-        external_id_type_tag varchar(255),
+        external_id_type varchar(255),
         first_name varchar(255),
         last_name varchar(255),
         role varchar(255),

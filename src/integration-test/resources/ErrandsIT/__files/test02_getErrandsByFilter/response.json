@@ -7,7 +7,7 @@
 			"stakeholders": [
 				{
 					"externalId": "USER_ID",
-					"externalIdTypeTag": "EMPLOYEE",
+					"externalIdType": "EMPLOYEE",
 					"role": "ROLE-1",
 					"firstName": "FIRST_NAME-1",
 					"lastName": "LAST_NAME-1",
@@ -24,7 +24,7 @@
 				},
 				{
 					"externalId": "01e159b4-724d-40f9-91a4-9a7d021b8563",
-					"externalIdTypeTag": "PRIVATE",
+					"externalIdType": "PRIVATE",
 					"role": "ROLE-2",
 					"firstName": "FIRST_NAME-1",
 					"lastName": "LAST_NAME-1",

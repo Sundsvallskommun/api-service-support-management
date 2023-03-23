@@ -42,7 +42,6 @@ class StakeholderEntityTest {
 		var externalId = "externalId";
 		var externalIdTypeTag = "externalIdTypeTag";
 		var errand = ErrandEntity.create();
-		var role = "role";
 		var firstName = "firstName";
 		var lastName = "lastName";
 		var address = "address";
@@ -54,7 +53,7 @@ class StakeholderEntityTest {
 		var stakeholderEntity = StakeholderEntity.create()
 			.withId(id)
 			.withExternalId(externalId)
-			.withExternalIdTypeTag(externalIdTypeTag)
+			.withExternalIdType(externalIdType)
 			.withErrandEntity(errand)
 			.withRole(role)
 			.withFirstName(firstName)
@@ -67,7 +66,7 @@ class StakeholderEntityTest {
 
 		assertThat(stakeholderEntity.getId()).isEqualTo(id);
 		assertThat(stakeholderEntity.getExternalId()).isEqualTo(externalId);
-		assertThat(stakeholderEntity.getExternalIdTypeTag()).isEqualTo(externalIdTypeTag);
+		assertThat(stakeholderEntity.getExternalIdType()).isEqualTo(externalIdType);
 		assertThat(stakeholderEntity.getErrandEntity()).isSameAs(errand);
 		assertThat(stakeholderEntity.getRole()).isEqualTo(role);
 		assertThat(stakeholderEntity.getFirstName()).isEqualTo(firstName);
