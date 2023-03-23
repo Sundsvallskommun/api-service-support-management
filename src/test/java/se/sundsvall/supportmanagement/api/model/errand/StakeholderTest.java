@@ -29,6 +29,7 @@ class StakeholderTest {
 	void testBuilderMethods() {
 		var externalId = "id";
 		var externalIdTypeTag = "EMPLOYEE";
+		var role = "ROLE";
 		var firstName = "firstName";
 		var lastName = "lastName";
 		var address = "address";
@@ -38,19 +39,21 @@ class StakeholderTest {
 		var contactChannel = ContactChannel.create();
 
 		var bean = Stakeholder.create()
-				.withExternalId(externalId)
-				.withExternalIdTypeTag(externalIdTypeTag)
-				.withFirstName(firstName)
-				.withLastName(lastName)
-				.withAddress(address)
-				.withCareOf(careOf)
-				.withZipCode(zipCode)
-				.withCountry(country)
-				.withContactChannels(List.of(contactChannel));
+			.withExternalId(externalId)
+			.withExternalIdTypeTag(externalIdTypeTag)
+			.withRole(role)
+			.withFirstName(firstName)
+			.withLastName(lastName)
+			.withAddress(address)
+			.withCareOf(careOf)
+			.withZipCode(zipCode)
+			.withCountry(country)
+			.withContactChannels(List.of(contactChannel));
 
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(bean.getExternalId()).isEqualTo(externalId);
 		assertThat(bean.getExternalIdTypeTag()).isEqualTo(externalIdTypeTag);
+		assertThat(bean.getRole()).isEqualTo(role);
 		assertThat(bean.getFirstName()).isEqualTo(firstName);
 		assertThat(bean.getLastName()).isEqualTo(lastName);
 		assertThat(bean.getAddress()).isEqualTo(address);
