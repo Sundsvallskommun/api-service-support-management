@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
 import static java.util.Optional.ofNullable;
+import static org.apache.commons.lang3.ObjectUtils.anyNull;
 
 import java.util.Collections;
 import java.util.List;
@@ -62,6 +63,17 @@ public class MetadataMapper {
 				.withModified(e.getModified())
 				.withName(e.getName()))
 			.orElse(null);
+	}
+
+	public static StatusEntity toStatusEntity(String namespace, String municipalityId, Status status) {
+		if (anyNull(namespace, municipalityId, status)) {
+			return null;
+		}
+
+		return StatusEntity.create()
+			.withMunicipalityId(municipalityId)
+			.withName(status.getName())
+			.withNamespace(namespace);
 	}
 
 	public static ExternalIdType toExternalIdType(ExternalIdTypeEntity entity) {

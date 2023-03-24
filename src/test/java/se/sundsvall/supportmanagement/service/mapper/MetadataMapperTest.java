@@ -6,9 +6,14 @@ import static org.assertj.core.groups.Tuple.tuple;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
+import se.sundsvall.supportmanagement.api.model.metadata.Status;
 import se.sundsvall.supportmanagement.api.model.metadata.Type;
 import se.sundsvall.supportmanagement.integration.db.model.CategoryEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ExternalIdTypeEntity;
@@ -113,6 +118,20 @@ class MetadataMapperTest {
 	@Test
 	void toStatusForNull() {
 		assertThat(MetadataMapper.toStatus(null)).isNull();
+	}
+
+	@ParameterizedTest
+	@MethodSource(value = "toStatusEntityArguments")
+	void toStatusEntity(String namespace, String municipalityId, Status status, StatusEntity expectedResult) {
+		assertThat(MetadataMapper.toStatusEntity(namespace, municipalityId, status)).isEqualTo(expectedResult);
+	}
+
+	private static Stream<Arguments> toStatusEntityArguments() {
+		return Stream.of(
+			Arguments.of("namespace", "municipalityId", null, null),
+			Arguments.of("namespace", null, Status.create().withName("name"), null),
+			Arguments.of(null, "municipalityId", Status.create().withName("name"), null),
+			Arguments.of("namespace", "municipalityId", Status.create().withName("name"), StatusEntity.create().withNamespace("namespace").withMunicipalityId("municipalityId").withName("name")));
 	}
 
 	private static CategoryEntity createCategoryEntity(OffsetDateTime categoryCreated, String categoryDisplayName, OffsetDateTime categoryModified, String categoryName,
