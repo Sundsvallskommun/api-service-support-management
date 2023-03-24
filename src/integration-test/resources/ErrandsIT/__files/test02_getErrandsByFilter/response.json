@@ -8,6 +8,7 @@
 				{
 					"externalId": "USER_ID",
 					"externalIdTypeTag": "EMPLOYEE",
+					"role": "ROLE-1",
 					"firstName": "FIRST_NAME-1",
 					"lastName": "LAST_NAME-1",
 					"address": "ADDRESS-1",
@@ -24,6 +25,7 @@
 				{
 					"externalId": "01e159b4-724d-40f9-91a4-9a7d021b8563",
 					"externalIdTypeTag": "PRIVATE",
+					"role": "ROLE-2",
 					"firstName": "FIRST_NAME-1",
 					"lastName": "LAST_NAME-1",
 					"address": "ADDRESS-2",
