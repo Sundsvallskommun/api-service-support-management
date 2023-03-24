@@ -90,6 +90,36 @@ class StatusRepositoryTest {
 	}
 
 	@Test
+	void getByNamespaceAndMunicipalityIdAndName() {
+		// Setup
+		final var municipalityId = "municipalityId-1";
+		final var namespace = "namespace-1";
+		final var name = "status-3";
+
+		// Execution
+		final var entity = statusRepository.getByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
+
+		// Assertions
+		assertThat(entity).isNotNull();
+		assertThat(entity.getNamespace()).isEqualTo(namespace);
+		assertThat(entity.getMunicipalityId()).isEqualTo(municipalityId);
+		assertThat(entity.getName()).isEqualTo(name);
+	}
+
+	@Test
+	void existsByNamespaceAndMunicipalityIdAndName() {
+		// Setup
+		final var municipalityId = "municipalityId-1";
+		final var namespace = "namespace-1";
+		final var existing_statusname = "status-3";
+		final var nonexisting_statusname = "status-4";
+
+		// Execution & assertion
+		assertThat(statusRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, existing_statusname)).isTrue();
+		assertThat(statusRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, nonexisting_statusname)).isFalse();
+	}
+
+	@Test
 	void findAllByNamespaceAndMunicipalityId() {
 		// Setup
 		final var municipalityId = "municipalityId-1";
@@ -114,7 +144,7 @@ class StatusRepositoryTest {
 		final var existingEntity = statusRepository.findById(TEST_ID).orElseThrow();
 
 		// Execution
-		statusRepository.delete(existingEntity);
+		statusRepository.deleteByNamespaceAndMunicipalityIdAndName(existingEntity.getNamespace(), existingEntity.getMunicipalityId(), existingEntity.getName());
 
 		// Assertions
 		assertThat(statusRepository.findById(TEST_ID)).isNotPresent();

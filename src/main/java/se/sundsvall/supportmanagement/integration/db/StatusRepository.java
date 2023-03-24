@@ -13,4 +13,10 @@ import se.sundsvall.supportmanagement.integration.db.model.StatusEntity;
 @CircuitBreaker(name = "statusRepository")
 public interface StatusRepository extends JpaRepository<StatusEntity, Long> {
 	List<StatusEntity> findAllByNamespaceAndMunicipalityId(String namespace, String municipalityId);
+
+	boolean existsByNamespaceAndMunicipalityIdAndName(String namespace, String municipalityId, String name);
+
+	StatusEntity getByNamespaceAndMunicipalityIdAndName(String namespace, String municipalityId, String name);
+
+	void deleteByNamespaceAndMunicipalityIdAndName(String namespace, String municipalityId, String name);
 }
