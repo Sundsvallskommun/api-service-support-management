@@ -29,11 +29,11 @@ class StakeholderEntityTest {
 	@Test
 	void testBean() {
 		assertThat(StakeholderEntity.class, allOf(
-				hasValidBeanConstructor(),
-				hasValidGettersAndSetters(),
-				hasValidBeanHashCode(),
-				hasValidBeanEquals(),
-				hasValidBeanToStringExcluding("errandEntity")));
+			hasValidBeanConstructor(),
+			hasValidGettersAndSetters(),
+			hasValidBeanHashCode(),
+			hasValidBeanEquals(),
+			hasValidBeanToStringExcluding("errandEntity")));
 	}
 
 	@Test
@@ -42,6 +42,7 @@ class StakeholderEntityTest {
 		var externalId = "externalId";
 		var externalIdTypeTag = "externalIdTypeTag";
 		var errand = ErrandEntity.create();
+		var role = "role";
 		var firstName = "firstName";
 		var lastName = "lastName";
 		var address = "address";
@@ -51,22 +52,24 @@ class StakeholderEntityTest {
 		var contactChannel = ContactChannelEntity.create();
 
 		var stakeholderEntity = StakeholderEntity.create()
-				.withId(id)
-				.withExternalId(externalId)
-				.withExternalIdTypeTag(externalIdTypeTag)
-				.withErrandEntity(errand)
-				.withFirstName(firstName)
-				.withLastName(lastName)
-				.withAddress(address)
-				.withCareOf(careOf)
-				.withZipCode(zipCode)
-				.withCountry(country)
-				.withContactChannels(List.of(contactChannel));
+			.withId(id)
+			.withExternalId(externalId)
+			.withExternalIdTypeTag(externalIdTypeTag)
+			.withErrandEntity(errand)
+			.withRole(role)
+			.withFirstName(firstName)
+			.withLastName(lastName)
+			.withAddress(address)
+			.withCareOf(careOf)
+			.withZipCode(zipCode)
+			.withCountry(country)
+			.withContactChannels(List.of(contactChannel));
 
 		assertThat(stakeholderEntity.getId()).isEqualTo(id);
 		assertThat(stakeholderEntity.getExternalId()).isEqualTo(externalId);
 		assertThat(stakeholderEntity.getExternalIdTypeTag()).isEqualTo(externalIdTypeTag);
 		assertThat(stakeholderEntity.getErrandEntity()).isSameAs(errand);
+		assertThat(stakeholderEntity.getRole()).isEqualTo(role);
 		assertThat(stakeholderEntity.getFirstName()).isEqualTo(firstName);
 		assertThat(stakeholderEntity.getLastName()).isEqualTo(lastName);
 		assertThat(stakeholderEntity.getAddress()).isEqualTo(address);

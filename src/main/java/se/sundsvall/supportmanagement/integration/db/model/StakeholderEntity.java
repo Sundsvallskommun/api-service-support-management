@@ -42,6 +42,9 @@ public class StakeholderEntity implements Serializable {
 	@Column(name = "external_id_type_tag")
 	private String externalIdTypeTag;
 
+	@Column(name = "role")
+	private String role;
+
 	@Column(name = "first_name")
 	private String firstName;
 
@@ -117,6 +120,19 @@ public class StakeholderEntity implements Serializable {
 
 	public StakeholderEntity withExternalIdTypeTag(String externalIdTypeTag) {
 		this.externalIdTypeTag = externalIdTypeTag;
+		return this;
+	}
+
+	public String getRole() {
+		return role;
+	}
+
+	public void setRole(String role) {
+		this.role = role;
+	}
+
+	public StakeholderEntity withRole(String role) {
+		this.role = role;
 		return this;
 	}
 
@@ -220,14 +236,12 @@ public class StakeholderEntity implements Serializable {
 			return false;
 		}
 		StakeholderEntity that = (StakeholderEntity) o;
-		return id == that.id && Objects.equals(errandEntity, that.errandEntity) && Objects.equals(externalId, that.externalId) && Objects.equals(externalIdTypeTag, that.externalIdTypeTag) && Objects.equals(firstName, that.firstName) && Objects
-			.equals(lastName, that.lastName) && Objects.equals(address, that.address) && Objects.equals(careOf, that.careOf) && Objects.equals(zipCode, that.zipCode) && Objects.equals(country, that.country) && Objects.equals(contactChannels,
-				that.contactChannels);
+		return id == that.id && Objects.equals(errandEntity, that.errandEntity) && Objects.equals(externalId, that.externalId) && Objects.equals(externalIdTypeTag, that.externalIdTypeTag) && Objects.equals(role, that.role) && Objects.equals(firstName, that.firstName) && Objects.equals(lastName, that.lastName) && Objects.equals(address, that.address) && Objects.equals(careOf, that.careOf) && Objects.equals(zipCode, that.zipCode) && Objects.equals(country, that.country) && Objects.equals(contactChannels, that.contactChannels);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, errandEntity, externalId, externalIdTypeTag, firstName, lastName, address, careOf, zipCode, country, contactChannels);
+		return Objects.hash(id, errandEntity, externalId, externalIdTypeTag, role, firstName, lastName, address, careOf, zipCode, country, contactChannels);
 	}
 
 	@Override
@@ -237,6 +251,7 @@ public class StakeholderEntity implements Serializable {
 		sb.append(", errandEntityId=").append(Optional.ofNullable(errandEntity).map(ErrandEntity::getId).orElse(null));
 		sb.append(", externalId='").append(externalId).append('\'');
 		sb.append(", externalIdTypeTag='").append(externalIdTypeTag).append('\'');
+		sb.append(", role='").append(role).append('\'');
 		sb.append(", firstName='").append(firstName).append('\'');
 		sb.append(", lastName='").append(lastName).append('\'');
 		sb.append(", address='").append(address).append('\'');

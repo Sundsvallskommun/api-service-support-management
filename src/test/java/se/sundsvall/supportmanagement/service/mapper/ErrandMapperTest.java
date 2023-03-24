@@ -62,6 +62,7 @@ class ErrandMapperTest {
 	private static final String CONTACT_CHANNEL_VALUE = "contactChannelValue";
 
 	private static final String ESCALATION_EMAIL = "escalation@email.com";
+	private static final String STAKEHOLDER_ROLE = "role";
 
 	@Test
 	void testToErrand() {
@@ -73,8 +74,8 @@ class ErrandMapperTest {
 		assertThat(errand.getCreated()).isCloseTo(CREATED, within(2, SECONDS));
 		assertThat(errand.getStakeholders()).hasSize(1)
 			.extracting(Stakeholder::getExternalId, Stakeholder::getExternalIdTypeTag, Stakeholder::getFirstName, Stakeholder::getLastName, Stakeholder::getAddress, Stakeholder::getCareOf, Stakeholder::getZipCode, Stakeholder::getCountry,
-				Stakeholder::getContactChannels)
-			.contains(tuple(EXTERNAL_ID, String.valueOf(EXTERNAL_ID_TYPE_TAG), FIRST_NAME, LAST_NAME, ADDRESS, CARE_OF, ZIP_CODE, COUNTRY, List.of(ContactChannel.create().withType(CONTACT_CHANNEL_TYPE).withValue(CONTACT_CHANNEL_VALUE))));
+				Stakeholder::getContactChannels, Stakeholder::getRole)
+			.contains(tuple(EXTERNAL_ID, String.valueOf(EXTERNAL_ID_TYPE_TAG), FIRST_NAME, LAST_NAME, ADDRESS, CARE_OF, ZIP_CODE, COUNTRY, List.of(ContactChannel.create().withType(CONTACT_CHANNEL_TYPE).withValue(CONTACT_CHANNEL_VALUE)), STAKEHOLDER_ROLE));
 		assertThat(errand.getExternalTags()).hasSize(1)
 			.extracting(ExternalTag::getKey, ExternalTag::getValue)
 			.contains(tuple(TAG_KEY, TAG_VALUE));
@@ -188,7 +189,8 @@ class ErrandMapperTest {
 			StakeholderEntity::getExternalIdTypeTag,
 			StakeholderEntity::getFirstName,
 			StakeholderEntity::getLastName,
-			StakeholderEntity::getZipCode)
+			StakeholderEntity::getZipCode,
+			StakeholderEntity::getRole)
 			.containsExactly(tuple(ADDRESS,
 				CARE_OF,
 				COUNTRY,
@@ -196,7 +198,8 @@ class ErrandMapperTest {
 				EXTERNAL_ID_TYPE_TAG,
 				FIRST_NAME,
 				LAST_NAME,
-				ZIP_CODE));
+				ZIP_CODE,
+				STAKEHOLDER_ROLE));
 
 		assertThat(entity.getStakeholders().get(0).getContactChannels()).hasSize(1).extracting(
 			ContactChannelEntity::getType,
@@ -263,7 +266,8 @@ class ErrandMapperTest {
 			StakeholderEntity::getExternalIdTypeTag,
 			StakeholderEntity::getFirstName,
 			StakeholderEntity::getLastName,
-			StakeholderEntity::getZipCode)
+			StakeholderEntity::getZipCode,
+			StakeholderEntity::getRole)
 			.containsExactly(tuple(ADDRESS,
 				CARE_OF,
 				COUNTRY,
@@ -271,7 +275,8 @@ class ErrandMapperTest {
 				EXTERNAL_ID_TYPE_TAG,
 				FIRST_NAME,
 				LAST_NAME,
-				ZIP_CODE));
+				ZIP_CODE,
+				STAKEHOLDER_ROLE));
 
 		assertThat(entity.getStakeholders().get(0).getContactChannels()).hasSize(1).extracting(
 			ContactChannelEntity::getType,
@@ -336,6 +341,7 @@ class ErrandMapperTest {
 		return Stakeholder.create()
 			.withExternalId(EXTERNAL_ID)
 			.withExternalIdTypeTag("PRIVATE")
+			.withRole(STAKEHOLDER_ROLE)
 			.withFirstName(FIRST_NAME)
 			.withLastName(LAST_NAME)
 			.withAddress(ADDRESS)
@@ -372,6 +378,7 @@ class ErrandMapperTest {
 		return StakeholderEntity.create()
 			.withExternalId(EXTERNAL_ID)
 			.withExternalIdTypeTag(EXTERNAL_ID_TYPE_TAG)
+			.withRole(STAKEHOLDER_ROLE)
 			.withFirstName(FIRST_NAME)
 			.withLastName(LAST_NAME)
 			.withAddress(ADDRESS)

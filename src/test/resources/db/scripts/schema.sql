@@ -72,6 +72,7 @@
         external_id_type_tag varchar(255),
         first_name varchar(255),
         last_name varchar(255),
+        role varchar(255),
         zip_code varchar(255),
         errand_id varchar(255) not null,
         primary key (id)
