@@ -208,6 +208,7 @@ class MetadataServiceTest {
 		final var municipalityId = "municipalityId";
 		final var categoryEntityList = List.of(
 			CategoryEntity.create().withName("CATEGORY_2").withDisplayName("Category-2"),
+			CategoryEntity.create().withName("CATEGORY_4"),
 			CategoryEntity.create().withName("CATEGORY_3").withDisplayName("Category-3"),
 			CategoryEntity.create().withName("CATEGORY_1").withDisplayName("Category-1"));
 
@@ -218,7 +219,7 @@ class MetadataServiceTest {
 		final var result = metadataService.findCategories(namespace, municipalityId);
 
 		// Verifications
-		assertThat(result).hasSize(3).extracting(Category::getName).containsExactly("CATEGORY_1", "CATEGORY_2", "CATEGORY_3");
+		assertThat(result).hasSize(4).extracting(Category::getName).containsExactly("CATEGORY_4", "CATEGORY_1", "CATEGORY_2", "CATEGORY_3");
 		verify(categoryRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId);
 		verifyNoInteractions(statusRepositoryMock, externalIdTypeRepositoryMock, validationRepositoryMock);
 	}
@@ -234,6 +235,7 @@ class MetadataServiceTest {
 			CategoryEntity.create().withName("CATEGORY_1").withTypes(List.of(TypeEntity.create().withName("TYPE_1"), TypeEntity.create().withName("TYPE_2"))),
 			CategoryEntity.create().withName(category).withTypes(List.of(
 				TypeEntity.create().withName("TYPE_5").withDisplayName("Type-5"),
+				TypeEntity.create().withName("TYPE_6"),
 				TypeEntity.create().withName("TYPE_3").withDisplayName("Type-3"),
 				TypeEntity.create().withName("TYPE_4").withDisplayName("Type-4"))));
 
@@ -244,7 +246,7 @@ class MetadataServiceTest {
 		final var result = metadataService.findTypes(namespace, municipalityId, category);
 
 		// Verifications
-		assertThat(result).hasSize(3).extracting(Type::getName).containsExactly("TYPE_3", "TYPE_4", "TYPE_5");
+		assertThat(result).hasSize(4).extracting(Type::getName).containsExactly("TYPE_6", "TYPE_3", "TYPE_4", "TYPE_5");
 		verify(categoryRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId);
 		verifyNoInteractions(statusRepositoryMock, externalIdTypeRepositoryMock, validationRepositoryMock);
 	}

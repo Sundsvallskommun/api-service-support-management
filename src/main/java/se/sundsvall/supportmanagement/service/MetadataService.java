@@ -1,6 +1,9 @@
 package se.sundsvall.supportmanagement.service;
 
 import static java.util.Collections.emptyList;
+import static java.util.Comparator.comparing;
+import static java.util.Comparator.naturalOrder;
+import static java.util.Comparator.nullsFirst;
 import static org.zalando.problem.Status.BAD_REQUEST;
 import static org.zalando.problem.Status.NOT_FOUND;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toStatusEntity;
@@ -8,7 +11,6 @@ import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toSta
 import java.util.List;
 import java.util.Objects;
 
-import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -75,7 +77,7 @@ public class MetadataService {
 			.stream()
 			.map(MetadataMapper::toExternalIdType)
 			.filter(Objects::nonNull)
-			.sorted((o1, o2) -> ObjectUtils.compare(o1.getName(), o2.getName()))
+			.sorted(comparing(ExternalIdType::getName))
 			.toList();
 	}
 
@@ -106,7 +108,7 @@ public class MetadataService {
 			.stream()
 			.map(MetadataMapper::toStatus)
 			.filter(Objects::nonNull)
-			.sorted((o1, o2) -> ObjectUtils.compare(o1.getName(), o2.getName()))
+			.sorted(comparing(Status::getName))
 			.toList();
 	}
 
@@ -129,7 +131,7 @@ public class MetadataService {
 			.stream()
 			.map(MetadataMapper::toCategory)
 			.filter(Objects::nonNull)
-			.sorted((o1, o2) -> ObjectUtils.compare(o1.getDisplayName(), o2.getDisplayName()))
+			.sorted(comparing(Category::getDisplayName, nullsFirst(naturalOrder())))
 			.toList();
 	}
 
@@ -140,6 +142,9 @@ public class MetadataService {
 			.filter(entry -> Objects.equals(category, entry.getName()))
 			.map(Category::getTypes)
 			.findAny()
-			.orElse(emptyList());
+			.orElse(emptyList())
+			.stream()
+			.sorted(comparing(Type::getDisplayName, nullsFirst(naturalOrder())))
+			.toList();
 	}
 }
