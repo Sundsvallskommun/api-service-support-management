@@ -7,7 +7,7 @@
 			"stakeholders": [
 				{
 					"externalId": "def57969-9b83-4e54-9351-667dc896a19d",
-					"externalIdTypeTag": "PRIVATE",
+					"externalIdType": "PRIVATE",
 					"contactChannels": []
 				}
 			],
@@ -17,9 +17,11 @@
 					"value": "VALUE-3"
 				}
 			],
-			"categoryTag": "CATEGORY-1",
-			"typeTag": "TYPE-1",
-			"statusTag": "STATUS-1",
+			"classification": {
+				"category": "CATEGORY-1",
+				"type": "TYPE-1"
+			},
+			"status": "STATUS-1",
 			"reporterUserId": "REPORTER_USER_ID-1",
 			"assignedUserId": "ASSIGNED_USER_ID-1",
 			"assignedGroupId": "ASSIGNED_GROUP_ID-1",
@@ -34,7 +36,7 @@
 			"stakeholders": [
 				{
 					"externalId": "7fba994b-e99e-4beb-8ab5-63cc74483b66",
-					"externalIdTypeTag": "ENTERPRISE",
+					"externalIdType": "ENTERPRISE",
 					"contactChannels": []
 				}
 			],
@@ -48,9 +50,11 @@
 					"value": "VALUE-5"
 				}
 			],
-			"categoryTag": "CATEGORY-3",
-			"typeTag": "TYPE-3",
-			"statusTag": "STATUS-3",
+			"classification": {
+				"category": "CATEGORY-3",
+				"type": "TYPE-3"
+			},
+			"status": "STATUS-3",
 			"resolution": "RESOLUTION",
 			"description": "DESCRIPTION",
 			"reporterUserId": "REPORTER_USER_ID-3",
@@ -66,7 +70,7 @@
 			"stakeholders": [
 				{
 					"externalId": "USER_ID",
-					"externalIdTypeTag": "EMPLOYEE",
+					"externalIdType": "EMPLOYEE",
 					"role": "ROLE-1",
 					"firstName": "FIRST_NAME-1",
 					"lastName": "LAST_NAME-1",
@@ -83,7 +87,7 @@
 				},
 				{
 					"externalId": "01e159b4-724d-40f9-91a4-9a7d021b8563",
-					"externalIdTypeTag": "PRIVATE",
+					"externalIdType": "PRIVATE",
 					"role": "ROLE-2",
 					"firstName": "FIRST_NAME-1",
 					"lastName": "LAST_NAME-1",
@@ -104,13 +108,15 @@
 					"value": "VALUE-2"
 				}
 			],
-			"categoryTag": "CATEGORY-1",
-			"typeTag": "TYPE-1",
-			"statusTag": "STATUS-1",
+			"classification": {
+				"category": "CATEGORY-1",
+				"type": "TYPE-1"
+			},
+			"status": "STATUS-1",
 			"reporterUserId": "REPORTER_USER_ID-1",
 			"assignedUserId": "ASSIGNED_USER_ID-1",
 			"assignedGroupId": "ASSIGNED_GROUP_ID-1",
-			"escalationEmail":"ESCALATION_EMAIL_1",
+			"escalationEmail": "ESCALATION_EMAIL_1",
 			"created": "2022-01-01T12:00:00+01:00",
 			"touched": "2022-01-01T12:00:00+01:00"
 		}

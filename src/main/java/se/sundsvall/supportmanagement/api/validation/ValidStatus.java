@@ -1,6 +1,6 @@
 package se.sundsvall.supportmanagement.api.validation;
 
-import se.sundsvall.supportmanagement.api.validation.impl.ValidStatusTagConstraintValidator;
+import se.sundsvall.supportmanagement.api.validation.impl.ValidStatusConstraintValidator;
 
 import javax.validation.Constraint;
 import javax.validation.Payload;
@@ -13,10 +13,10 @@ import java.lang.annotation.Target;
 @Documented
 @Target({ ElementType.FIELD, ElementType.CONSTRUCTOR, ElementType.PARAMETER, ElementType.TYPE_USE })
 @Retention(RetentionPolicy.RUNTIME)
-@Constraint(validatedBy = ValidStatusTagConstraintValidator.class)
-public @interface ValidStatusTag {
+@Constraint(validatedBy = ValidStatusConstraintValidator.class)
+public @interface ValidStatus {
 
-	String message() default "not a valid originTag";
+	String message() default "not a valid status";
 
 	Class<?>[] groups() default {};
 

@@ -1,5 +1,12 @@
 package se.sundsvall.supportmanagement.api.model.errand;
 
+
+
+
+import org.junit.jupiter.api.Test;
+
+import java.util.List;
+
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanEquals;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanHashCode;
@@ -8,10 +15,6 @@ import static com.google.code.beanmatchers.BeanMatchers.hasValidGettersAndSetter
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.MatcherAssert.assertThat;
-
-import org.junit.jupiter.api.Test;
-
-import java.util.List;
 
 class StakeholderTest {
 
@@ -28,19 +31,19 @@ class StakeholderTest {
 	@Test
 	void testBuilderMethods() {
 		var externalId = "id";
-		var externalIdTypeTag = "EMPLOYEE";
-		var role = "ROLE";
+		var externalIdType = "EMPLOYEE";
 		var firstName = "firstName";
 		var lastName = "lastName";
 		var address = "address";
 		var careOf = "careOf";
 		var zipCode = "zipCode";
 		var country = "country";
+		var role = "role";
 		var contactChannel = ContactChannel.create();
 
 		var bean = Stakeholder.create()
 			.withExternalId(externalId)
-			.withExternalIdTypeTag(externalIdTypeTag)
+			.withExternalIdType(externalIdType)
 			.withRole(role)
 			.withFirstName(firstName)
 			.withLastName(lastName)
@@ -52,7 +55,7 @@ class StakeholderTest {
 
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(bean.getExternalId()).isEqualTo(externalId);
-		assertThat(bean.getExternalIdTypeTag()).isEqualTo(externalIdTypeTag);
+		assertThat(bean.getExternalIdType()).isEqualTo(externalIdType);
 		assertThat(bean.getRole()).isEqualTo(role);
 		assertThat(bean.getFirstName()).isEqualTo(firstName);
 		assertThat(bean.getLastName()).isEqualTo(lastName);
@@ -66,5 +69,6 @@ class StakeholderTest {
 	@Test
 	void testNoDirtOnCreatedBean() {
 		assertThat(Stakeholder.create()).hasAllNullFieldsOrProperties();
+		assertThat(new Stakeholder()).hasAllNullFieldsOrProperties();
 	}
 }

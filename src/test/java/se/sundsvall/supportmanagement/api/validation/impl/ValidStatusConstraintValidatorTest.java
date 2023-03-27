@@ -1,5 +1,24 @@
 package se.sundsvall.supportmanagement.api.validation.impl;
 
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.web.context.request.RequestAttributes;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.zalando.problem.ThrowableProblem;
+import se.sundsvall.supportmanagement.api.model.metadata.Status;
+import se.sundsvall.supportmanagement.service.MetadataService;
+
+import javax.validation.ConstraintValidatorContext;
+import javax.validation.ConstraintValidatorContext.ConstraintViolationBuilder;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -11,29 +30,8 @@ import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
 import static se.sundsvall.supportmanagement.api.validation.impl.AbstractTagConstraintValidator.PATHVARIABLE_MUNICIPALITY_ID;
 import static se.sundsvall.supportmanagement.api.validation.impl.AbstractTagConstraintValidator.PATHVARIABLE_NAMESPACE;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.validation.ConstraintValidatorContext;
-import javax.validation.ConstraintValidatorContext.ConstraintViolationBuilder;
-
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.web.context.request.RequestAttributes;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.zalando.problem.ThrowableProblem;
-
-import se.sundsvall.supportmanagement.api.model.metadata.Status;
-import se.sundsvall.supportmanagement.service.MetadataService;
-
 @ExtendWith(MockitoExtension.class)
-class ValidStatusTagConstraintValidatorTest {
+class ValidStatusConstraintValidatorTest {
 
 	@Mock
 	private ConstraintValidatorContext constraintValidatorContextMock;
@@ -48,7 +46,7 @@ class ValidStatusTagConstraintValidatorTest {
 	private RequestAttributes requestAttributesMock;
 
 	@InjectMocks
-	private ValidStatusTagConstraintValidator validator;
+	private ValidStatusConstraintValidator validator;
 
 	@Test
 	void invalidStatus() {

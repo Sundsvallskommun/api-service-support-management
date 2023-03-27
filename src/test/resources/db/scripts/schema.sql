@@ -31,7 +31,7 @@
        id varchar(255) not null,
         assigned_group_id varchar(255),
         assigned_user_id varchar(255),
-        category_tag varchar(255),
+        category varchar(255),
         created datetime(6),
         description longtext,
         escalation_email varchar(255),
@@ -41,9 +41,9 @@
         priority varchar(255),
         reporter_user_id varchar(255),
         resolution varchar(255),
-        status_tag varchar(255),
+        status varchar(255),
         title varchar(255),
-        type_tag varchar(255),
+        type varchar(255),
         primary key (id)
     ) engine=InnoDB;
 
@@ -69,7 +69,7 @@
         care_of varchar(255),
         country varchar(255),
         external_id varchar(255),
-        external_id_type_tag varchar(255),
+        external_id_type varchar(255),
         first_name varchar(255),
         last_name varchar(255),
         role varchar(255),

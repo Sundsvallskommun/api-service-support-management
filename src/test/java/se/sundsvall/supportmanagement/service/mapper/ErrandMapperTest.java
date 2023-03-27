@@ -1,5 +1,21 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
+import org.junit.jupiter.api.Test;
+import se.sundsvall.supportmanagement.api.model.errand.Classification;
+import se.sundsvall.supportmanagement.api.model.errand.ContactChannel;
+import se.sundsvall.supportmanagement.api.model.errand.Errand;
+import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
+import se.sundsvall.supportmanagement.api.model.errand.Priority;
+import se.sundsvall.supportmanagement.api.model.errand.Stakeholder;
+import se.sundsvall.supportmanagement.integration.db.model.ContactChannelEntity;
+import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
+
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
 import static java.time.OffsetDateTime.now;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -11,29 +27,13 @@ import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErran
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrands;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.updateEntity;
 
-import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.junit.jupiter.api.Test;
-
-import se.sundsvall.supportmanagement.api.model.errand.ContactChannel;
-import se.sundsvall.supportmanagement.api.model.errand.Errand;
-import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
-import se.sundsvall.supportmanagement.api.model.errand.Priority;
-import se.sundsvall.supportmanagement.api.model.errand.Stakeholder;
-import se.sundsvall.supportmanagement.integration.db.model.ContactChannelEntity;
-import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
-import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
-
 class ErrandMapperTest {
 
 	private static final String NAMESPACE = "namespace";
 	private static final String MUNICIPALITY_ID = "municipalityId";
 	private static final String ASSIGNED_GROUP_ID = "assignedGroupId";
 	private static final String ASSIGNED_USER_ID = "assignedUserId";
-	private static final String CATEGORY_TAG = "categoryTag";
+	private static final String CATEGORY = "category";
 	private static final String CLIENT_ID_TAG = "clientIdTag";
 	private static final OffsetDateTime CREATED = now().minusWeeks(1);
 	private static final String EXTERNAL_ID = "externalId";
@@ -44,10 +44,10 @@ class ErrandMapperTest {
 	private static final OffsetDateTime MODIFIED = now();
 	private static final String PRIORITY = HIGH.name();
 	private static final String REPORTER_USER_ID = "reporterUserId";
-	private static final String STATUS_TAG = "statusTag";
+	private static final String STATUS = "status";
 	private static final String TITLE = "title";
 	private static final OffsetDateTime TOUCHED = now().plusWeeks(1);
-	private static final String TYPE_TAG = "typeTag";
+	private static final String TYPE = "type";
 
 	private static final String DESCRIPTION = "description";
 	private static final String RESOLUTION = "resolution";
@@ -70,12 +70,13 @@ class ErrandMapperTest {
 
 		assertThat(errand.getAssignedGroupId()).isEqualTo(ASSIGNED_GROUP_ID);
 		assertThat(errand.getAssignedUserId()).isEqualTo(ASSIGNED_USER_ID);
-		assertThat(errand.getCategoryTag()).isEqualTo(CATEGORY_TAG);
+		assertThat(errand.getClassification().getCategory()).isEqualTo(CATEGORY);
+		assertThat(errand.getClassification().getType()).isEqualTo(TYPE);
 		assertThat(errand.getCreated()).isCloseTo(CREATED, within(2, SECONDS));
 		assertThat(errand.getStakeholders()).hasSize(1)
-			.extracting(Stakeholder::getExternalId, Stakeholder::getExternalIdTypeTag, Stakeholder::getFirstName, Stakeholder::getLastName, Stakeholder::getAddress, Stakeholder::getCareOf, Stakeholder::getZipCode, Stakeholder::getCountry,
-				Stakeholder::getContactChannels, Stakeholder::getRole)
-			.contains(tuple(EXTERNAL_ID, String.valueOf(EXTERNAL_ID_TYPE_TAG), FIRST_NAME, LAST_NAME, ADDRESS, CARE_OF, ZIP_CODE, COUNTRY, List.of(ContactChannel.create().withType(CONTACT_CHANNEL_TYPE).withValue(CONTACT_CHANNEL_VALUE)), STAKEHOLDER_ROLE));
+			.extracting(Stakeholder::getExternalId, Stakeholder::getExternalIdType, Stakeholder::getFirstName, Stakeholder::getLastName, Stakeholder::getAddress, Stakeholder::getCareOf, Stakeholder::getZipCode, Stakeholder::getCountry,
+				Stakeholder::getContactChannels)
+			.contains(tuple(EXTERNAL_ID, String.valueOf(EXTERNAL_ID_TYPE_TAG), FIRST_NAME, LAST_NAME, ADDRESS, CARE_OF, ZIP_CODE, COUNTRY, List.of(ContactChannel.create().withType(CONTACT_CHANNEL_TYPE).withValue(CONTACT_CHANNEL_VALUE))));
 		assertThat(errand.getExternalTags()).hasSize(1)
 			.extracting(ExternalTag::getKey, ExternalTag::getValue)
 			.contains(tuple(TAG_KEY, TAG_VALUE));
@@ -83,10 +84,9 @@ class ErrandMapperTest {
 		assertThat(errand.getModified()).isCloseTo(MODIFIED, within(2, SECONDS));
 		assertThat(errand.getPriority()).isEqualTo(Priority.valueOf(PRIORITY));
 		assertThat(errand.getReporterUserId()).isEqualTo(REPORTER_USER_ID);
-		assertThat(errand.getStatusTag()).isEqualTo(STATUS_TAG);
+		assertThat(errand.getStatus()).isEqualTo(STATUS);
 		assertThat(errand.getTitle()).isEqualTo(TITLE);
 		assertThat(errand.getTouched()).isEqualTo(TOUCHED);
-		assertThat(errand.getTypeTag()).isEqualTo(TYPE_TAG);
 		assertThat(errand.getResolution()).isEqualTo(RESOLUTION);
 		assertThat(errand.getDescription()).isEqualTo(DESCRIPTION);
 		assertThat(errand.getEscalationEmail()).isEqualTo(ESCALATION_EMAIL);
@@ -105,7 +105,7 @@ class ErrandMapperTest {
 			.extracting(
 				Errand::getAssignedGroupId,
 				Errand::getAssignedUserId,
-				Errand::getCategoryTag,
+				Errand::getClassification,
 				Errand::getCreated,
 				Errand::getStakeholders,
 				Errand::getExternalTags,
@@ -113,17 +113,16 @@ class ErrandMapperTest {
 				Errand::getModified,
 				Errand::getPriority,
 				Errand::getReporterUserId,
-				Errand::getStatusTag,
+				Errand::getStatus,
 				Errand::getTitle,
 				Errand::getTouched,
-				Errand::getTypeTag,
 				Errand::getResolution,
 				Errand::getDescription,
 				Errand::getEscalationEmail)
 			.containsExactly(tuple(
 				ASSIGNED_GROUP_ID,
 				ASSIGNED_USER_ID,
-				CATEGORY_TAG,
+				Classification.create().withCategory(CATEGORY).withType(TYPE),
 				CREATED,
 				List.of(createStakeHolder()),
 				List.of(ExternalTag.create().withKey(TAG_KEY).withValue(TAG_VALUE)),
@@ -131,10 +130,9 @@ class ErrandMapperTest {
 				MODIFIED,
 				Priority.valueOf(PRIORITY),
 				REPORTER_USER_ID,
-				STATUS_TAG,
+				STATUS,
 				TITLE,
 				TOUCHED,
-				TYPE_TAG,
 				RESOLUTION,
 				DESCRIPTION,
 				ESCALATION_EMAIL));
@@ -153,30 +151,30 @@ class ErrandMapperTest {
 			.extracting(
 				ErrandEntity::getAssignedGroupId,
 				ErrandEntity::getAssignedUserId,
-				ErrandEntity::getCategoryTag,
+				ErrandEntity::getCategory,
 				ErrandEntity::getExternalTags,
 				ErrandEntity::getMunicipalityId,
 				ErrandEntity::getNamespace,
 				ErrandEntity::getPriority,
 				ErrandEntity::getReporterUserId,
-				ErrandEntity::getStatusTag,
+				ErrandEntity::getStatus,
 				ErrandEntity::getTitle,
-				ErrandEntity::getTypeTag,
+				ErrandEntity::getType,
 				ErrandEntity::getResolution,
 				ErrandEntity::getDescription,
 				ErrandEntity::getEscalationEmail)
 			.containsExactly(
 				ASSIGNED_GROUP_ID,
 				ASSIGNED_USER_ID,
-				CATEGORY_TAG,
+				CATEGORY,
 				List.of(DbExternalTag.create().withKey(TAG_KEY).withValue(TAG_VALUE)),
 				MUNICIPALITY_ID,
 				NAMESPACE,
 				PRIORITY,
 				REPORTER_USER_ID,
-				STATUS_TAG,
+				STATUS,
 				TITLE,
-				TYPE_TAG,
+				TYPE,
 				RESOLUTION,
 				DESCRIPTION,
 				ESCALATION_EMAIL);
@@ -186,7 +184,7 @@ class ErrandMapperTest {
 			StakeholderEntity::getCareOf,
 			StakeholderEntity::getCountry,
 			StakeholderEntity::getExternalId,
-			StakeholderEntity::getExternalIdTypeTag,
+			StakeholderEntity::getExternalIdType,
 			StakeholderEntity::getFirstName,
 			StakeholderEntity::getLastName,
 			StakeholderEntity::getZipCode,
@@ -236,24 +234,24 @@ class ErrandMapperTest {
 			.extracting(
 				ErrandEntity::getAssignedGroupId,
 				ErrandEntity::getAssignedUserId,
-				ErrandEntity::getCategoryTag,
+				ErrandEntity::getCategory,
 				ErrandEntity::getExternalTags,
 				ErrandEntity::getPriority,
-				ErrandEntity::getStatusTag,
+				ErrandEntity::getStatus,
 				ErrandEntity::getTitle,
-				ErrandEntity::getTypeTag,
+				ErrandEntity::getType,
 				ErrandEntity::getResolution,
 				ErrandEntity::getDescription,
 				ErrandEntity::getEscalationEmail)
 			.containsExactly(
 				ASSIGNED_GROUP_ID,
 				ASSIGNED_USER_ID,
-				CATEGORY_TAG,
+				CATEGORY,
 				List.of(DbExternalTag.create().withKey(TAG_KEY).withValue(TAG_VALUE)),
 				PRIORITY,
-				STATUS_TAG,
+				STATUS,
 				TITLE,
-				TYPE_TAG,
+				TYPE,
 				RESOLUTION,
 				DESCRIPTION,
 				ESCALATION_EMAIL);
@@ -263,7 +261,7 @@ class ErrandMapperTest {
 			StakeholderEntity::getCareOf,
 			StakeholderEntity::getCountry,
 			StakeholderEntity::getExternalId,
-			StakeholderEntity::getExternalIdTypeTag,
+			StakeholderEntity::getExternalIdType,
 			StakeholderEntity::getFirstName,
 			StakeholderEntity::getLastName,
 			StakeholderEntity::getZipCode,
@@ -320,7 +318,7 @@ class ErrandMapperTest {
 		return Errand.create()
 			.withAssignedGroupId(ASSIGNED_GROUP_ID)
 			.withAssignedUserId(ASSIGNED_USER_ID)
-			.withCategoryTag(CATEGORY_TAG)
+			.withClassification(Classification.create().withCategory(CATEGORY).withType(TYPE))
 			.withCreated(CREATED)
 			.withStakeholders(List.of(createStakeHolder()))
 			.withExternalTags(List.of(ExternalTag.create().withKey(TAG_KEY).withValue(TAG_VALUE)))
@@ -328,10 +326,9 @@ class ErrandMapperTest {
 			.withModified(MODIFIED)
 			.withPriority(Priority.valueOf(PRIORITY))
 			.withReporterUserId(REPORTER_USER_ID)
-			.withStatusTag(STATUS_TAG)
+			.withStatus(STATUS)
 			.withTitle(TITLE)
 			.withTouched(TOUCHED)
-			.withTypeTag(TYPE_TAG)
 			.withResolution(RESOLUTION)
 			.withDescription(DESCRIPTION)
 			.withEscalationEmail(ESCALATION_EMAIL);
@@ -340,22 +337,22 @@ class ErrandMapperTest {
 	private static Stakeholder createStakeHolder() {
 		return Stakeholder.create()
 			.withExternalId(EXTERNAL_ID)
-			.withExternalIdTypeTag("PRIVATE")
-			.withRole(STAKEHOLDER_ROLE)
+			.withExternalIdType("PRIVATE")
 			.withFirstName(FIRST_NAME)
 			.withLastName(LAST_NAME)
 			.withAddress(ADDRESS)
 			.withCareOf(CARE_OF)
 			.withZipCode(ZIP_CODE)
 			.withCountry(COUNTRY)
-			.withContactChannels(List.of(ContactChannel.create().withType(CONTACT_CHANNEL_TYPE).withValue(CONTACT_CHANNEL_VALUE)));
+			.withContactChannels(List.of(ContactChannel.create().withType(CONTACT_CHANNEL_TYPE).withValue(CONTACT_CHANNEL_VALUE)))
+			.withRole(STAKEHOLDER_ROLE);
 	}
 
 	private static ErrandEntity createEntity() {
 		return ErrandEntity.create()
 			.withAssignedGroupId(ASSIGNED_GROUP_ID)
 			.withAssignedUserId(ASSIGNED_USER_ID)
-			.withCategoryTag(CATEGORY_TAG)
+			.withCategory(CATEGORY)
 			.withNamespace(CLIENT_ID_TAG)
 			.withCreated(CREATED)
 			.withStakeholders(List.of(createStakeHolderEntity()))
@@ -364,9 +361,9 @@ class ErrandMapperTest {
 			.withMunicipalityId(MUNICIPALITY_ID)
 			.withPriority(PRIORITY)
 			.withReporterUserId(REPORTER_USER_ID)
-			.withStatusTag(STATUS_TAG)
+			.withStatus(STATUS)
 			.withTitle(TITLE)
-			.withTypeTag(TYPE_TAG)
+			.withType(TYPE)
 			.withTouched(TOUCHED)
 			.withModified(MODIFIED)
 			.withResolution(RESOLUTION)
@@ -377,14 +374,14 @@ class ErrandMapperTest {
 	private static StakeholderEntity createStakeHolderEntity() {
 		return StakeholderEntity.create()
 			.withExternalId(EXTERNAL_ID)
-			.withExternalIdTypeTag(EXTERNAL_ID_TYPE_TAG)
-			.withRole(STAKEHOLDER_ROLE)
+			.withExternalIdType(EXTERNAL_ID_TYPE_TAG)
 			.withFirstName(FIRST_NAME)
 			.withLastName(LAST_NAME)
 			.withAddress(ADDRESS)
 			.withCareOf(CARE_OF)
 			.withZipCode(ZIP_CODE)
 			.withCountry(COUNTRY)
-			.withContactChannels(List.of(ContactChannelEntity.create().withType(CONTACT_CHANNEL_TYPE).withValue(CONTACT_CHANNEL_VALUE)));
+			.withContactChannels(List.of(ContactChannelEntity.create().withType(CONTACT_CHANNEL_TYPE).withValue(CONTACT_CHANNEL_VALUE)))
+			.withRole(STAKEHOLDER_ROLE);
 	}
 }

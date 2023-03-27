@@ -1,20 +1,18 @@
 package se.sundsvall.supportmanagement.api.validation.impl;
 
-import static java.util.Collections.emptyList;
-import static java.util.Optional.ofNullable;
-
-import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
+import se.sundsvall.supportmanagement.api.model.metadata.Status;
+import se.sundsvall.supportmanagement.api.validation.ValidStatus;
+import se.sundsvall.supportmanagement.service.MetadataService;
 
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
+import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import static java.util.Collections.emptyList;
+import static java.util.Optional.ofNullable;
 
-import se.sundsvall.supportmanagement.api.model.metadata.Status;
-import se.sundsvall.supportmanagement.api.validation.ValidStatusTag;
-import se.sundsvall.supportmanagement.service.MetadataService;
-
-public class ValidStatusTagConstraintValidator extends AbstractTagConstraintValidator implements ConstraintValidator<ValidStatusTag, String> {
+public class ValidStatusConstraintValidator extends AbstractTagConstraintValidator implements ConstraintValidator<ValidStatus, String> {
 	@Autowired
 	private MetadataService metadataService;
 
