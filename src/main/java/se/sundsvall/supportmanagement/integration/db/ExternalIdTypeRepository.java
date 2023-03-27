@@ -13,4 +13,11 @@ import se.sundsvall.supportmanagement.integration.db.model.ExternalIdTypeEntity;
 @CircuitBreaker(name = "externalIdTypeRepository")
 public interface ExternalIdTypeRepository extends JpaRepository<ExternalIdTypeEntity, Long> {
 	List<ExternalIdTypeEntity> findAllByNamespaceAndMunicipalityId(String namespace, String municipalityId);
+
+	boolean existsByNamespaceAndMunicipalityIdAndName(String namespace, String municipalityId, String name);
+
+	ExternalIdTypeEntity getByNamespaceAndMunicipalityIdAndName(String namespace, String municipalityId, String name);
+
+	void deleteByNamespaceAndMunicipalityIdAndName(String namespace, String municipalityId, String name);
+
 }

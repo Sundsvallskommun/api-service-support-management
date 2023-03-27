@@ -16,7 +16,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.zalando.problem.violations.ConstraintViolationProblem;
@@ -36,9 +35,6 @@ class MetadataStatusResourceFailureTest {
 
 	@Autowired
 	private WebTestClient webTestClient;
-
-	@LocalServerPort
-	private int port;
 
 	@ParameterizedTest
 	@MethodSource("createStatusArguments")
@@ -139,5 +135,4 @@ class MetadataStatusResourceFailureTest {
 			Arguments.of("my.namespace", "666", tuple("deleteStatus.municipalityId", "not a valid municipality ID")),
 			Arguments.of("invalid,namespace", "2281", tuple("deleteStatus.namespace", "can only contain A-Z, a-z, 0-9, -, _ and .")));
 	}
-
 }

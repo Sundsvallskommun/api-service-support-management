@@ -91,7 +91,6 @@ class MetadataStatusResourceTest {
 
 	@Test
 	void getStatuses() {
-
 		// Call
 		webTestClient.get().uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
 			.exchange()

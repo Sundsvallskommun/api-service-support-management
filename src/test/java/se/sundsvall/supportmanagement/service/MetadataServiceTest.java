@@ -55,7 +55,6 @@ class MetadataServiceTest {
 
 	@Test
 	void createStatus() {
-
 		// Setup
 		final var name = "name";
 		final var namespace = "namespace";
@@ -76,7 +75,6 @@ class MetadataServiceTest {
 
 	@Test
 	void createExistingStatus() {
-
 		// Setup
 		final var name = "name";
 		final var namespace = "namespace";
@@ -99,7 +97,6 @@ class MetadataServiceTest {
 
 	@Test
 	void getStatus() {
-		// Setup
 		// Setup
 		final var name = "name";
 		final var namespace = "namespace";
@@ -140,7 +137,6 @@ class MetadataServiceTest {
 
 	@Test
 	void findStatuses() {
-
 		// Setup
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
@@ -163,7 +159,6 @@ class MetadataServiceTest {
 
 	@Test
 	void deleteStatus() {
-
 		// Setup
 		final var name = "name";
 		final var namespace = "namespace";
@@ -183,7 +178,6 @@ class MetadataServiceTest {
 
 	@Test
 	void deleteNonExistingStatus() {
-
 		// Setup
 		final var name = "name";
 		final var namespace = "namespace";
@@ -202,7 +196,6 @@ class MetadataServiceTest {
 
 	@Test
 	void findCategories() {
-
 		// Setup
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
@@ -226,7 +219,6 @@ class MetadataServiceTest {
 
 	@Test
 	void findTypesForCategory() {
-
 		// Setup
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
@@ -252,8 +244,89 @@ class MetadataServiceTest {
 	}
 
 	@Test
-	void findExternalIdTypes() {
+	void createExternalIdType() {
+		// Setup
+		final var name = "name";
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var externalIdType = ExternalIdType.create().withName(name);
 
+		// Mock
+		when(externalIdTypeRepositoryMock.save(any())).thenReturn(ExternalIdTypeEntity.create().withName(name));
+
+		// Call
+		assertThat(metadataService.createExternalIdType(namespace, municipalityId, externalIdType)).isEqualTo(name);
+
+		// Verifications
+		verify(externalIdTypeRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
+		verify(externalIdTypeRepositoryMock).save(any());
+		verifyNoInteractions(categoryRepositoryMock, statusRepositoryMock, validationRepositoryMock);
+	}
+
+	@Test
+	void createExistingExternalIdType() {
+		// Setup
+		final var name = "name";
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var externalIdType = ExternalIdType.create().withName(name);
+
+		// Mock
+		when(externalIdTypeRepositoryMock.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)).thenReturn(true);
+
+		// Call
+		final var e = assertThrows(ThrowableProblem.class, () -> metadataService.createExternalIdType(namespace, municipalityId, externalIdType));
+
+		// Verifications
+		assertThat(e.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(e.getMessage()).isEqualTo("Bad Request: ExternalIdType 'name' already exists in namespace 'namespace' for municipalityId 'municipalityId'");
+		verify(externalIdTypeRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
+		verifyNoMoreInteractions(externalIdTypeRepositoryMock);
+		verifyNoInteractions(categoryRepositoryMock, statusRepositoryMock, validationRepositoryMock);
+	}
+
+	@Test
+	void getExternalIdType() {
+		// Setup
+		final var name = "name";
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+
+		// Mock
+		when(externalIdTypeRepositoryMock.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)).thenReturn(true);
+		when(externalIdTypeRepositoryMock.getByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)).thenReturn(ExternalIdTypeEntity.create().withName(name));
+
+		// Call
+		final var status = metadataService.getExternalIdType(namespace, municipalityId, name);
+
+		// Verifications
+		assertThat(status.getName()).isEqualTo(name);
+		verify(externalIdTypeRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
+		verify(externalIdTypeRepositoryMock).getByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
+		verifyNoMoreInteractions(externalIdTypeRepositoryMock);
+		verifyNoInteractions(categoryRepositoryMock, statusRepositoryMock, validationRepositoryMock);
+	}
+
+	@Test
+	void getNonExistingExternalIdType() {
+		// Setup
+		final var name = "name";
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+
+		// Call
+		final var e = assertThrows(ThrowableProblem.class, () -> metadataService.getExternalIdType(namespace, municipalityId, name));
+
+		// Verifications
+		assertThat(e.getStatus()).isEqualTo(NOT_FOUND);
+		assertThat(e.getMessage()).isEqualTo("Not Found: ExternalIdType 'name' is not present in namespace 'namespace' for municipalityId 'municipalityId'");
+		verify(externalIdTypeRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
+		verifyNoMoreInteractions(externalIdTypeRepositoryMock);
+		verifyNoInteractions(categoryRepositoryMock, statusRepositoryMock, validationRepositoryMock);
+	}
+
+	@Test
+	void findExternalIdTypes() {
 		// Setup
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
@@ -275,8 +348,44 @@ class MetadataServiceTest {
 	}
 
 	@Test
-	void findAll() {
+	void deleteExternalIdType() {
+		// Setup
+		final var name = "name";
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
 
+		// Mock
+		when(externalIdTypeRepositoryMock.existsByNamespaceAndMunicipalityIdAndName(any(), any(), any())).thenReturn(true);
+
+		// Call
+		metadataService.deleteExternalIdType(namespace, municipalityId, name);
+
+		// Verifications
+		verify(externalIdTypeRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
+		verify(externalIdTypeRepositoryMock).deleteByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
+		verifyNoInteractions(categoryRepositoryMock, statusRepositoryMock, validationRepositoryMock);
+	}
+
+	@Test
+	void deleteNonExistingExternalIdType() {
+		// Setup
+		final var name = "name";
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+
+		// Call
+		final var e = assertThrows(ThrowableProblem.class, () -> metadataService.deleteExternalIdType(namespace, municipalityId, name));
+
+		// Verifications
+		assertThat(e.getStatus()).isEqualTo(NOT_FOUND);
+		assertThat(e.getMessage()).isEqualTo("Not Found: ExternalIdType 'name' is not present in namespace 'namespace' for municipalityId 'municipalityId'");
+		verify(externalIdTypeRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
+		verifyNoMoreInteractions(externalIdTypeRepositoryMock);
+		verifyNoInteractions(categoryRepositoryMock, statusRepositoryMock, validationRepositoryMock);
+	}
+
+	@Test
+	void findAll() {
 		// Setup
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";

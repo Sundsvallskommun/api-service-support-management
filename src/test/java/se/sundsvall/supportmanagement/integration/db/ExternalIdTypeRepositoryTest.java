@@ -90,6 +90,36 @@ class ExternalIdTypeRepositoryTest {
 	}
 
 	@Test
+	void getByNamespaceAndMunicipalityIdAndName() {
+		// Setup
+		final var municipalityId = "municipalityId-1";
+		final var namespace = "namespace-1";
+		final var name = "external-id-type-3";
+
+		// Execution
+		final var entity = externalIdTypeRepository.getByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
+
+		// Assertions
+		assertThat(entity).isNotNull();
+		assertThat(entity.getNamespace()).isEqualTo(namespace);
+		assertThat(entity.getMunicipalityId()).isEqualTo(municipalityId);
+		assertThat(entity.getName()).isEqualTo(name);
+	}
+
+	@Test
+	void existsByNamespaceAndMunicipalityIdAndName() {
+		// Setup
+		final var municipalityId = "municipalityId-1";
+		final var namespace = "namespace-1";
+		final var existing_external_id_type = "external-id-type-3";
+		final var nonexisting_external_id_type = "external-id-type-4";
+
+		// Execution & assertion
+		assertThat(externalIdTypeRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, existing_external_id_type)).isTrue();
+		assertThat(externalIdTypeRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, nonexisting_external_id_type)).isFalse();
+	}
+
+	@Test
 	void findAllByNamespaceAndMunicipalityId() {
 		// Setup
 		final var municipalityId = "municipalityId-1";
@@ -114,7 +144,7 @@ class ExternalIdTypeRepositoryTest {
 		final var existingEntity = externalIdTypeRepository.findById(TEST_ID).orElseThrow();
 
 		// Execution
-		externalIdTypeRepository.delete(existingEntity);
+		externalIdTypeRepository.deleteByNamespaceAndMunicipalityIdAndName(existingEntity.getNamespace(), existingEntity.getMunicipalityId(), existingEntity.getName());
 
 		// Assertions
 		assertThat(externalIdTypeRepository.findById(TEST_ID)).isNotPresent();
