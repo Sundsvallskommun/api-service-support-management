@@ -40,7 +40,7 @@ class StakeholderEntityTest {
 	void hasValidBuilderMethods() {
 		var id = 1;
 		var externalId = "externalId";
-		var externalIdTypeTag = "externalIdTypeTag";
+		var externalIdType = "externalIdTypeTag";
 		var errand = ErrandEntity.create();
 		var firstName = "firstName";
 		var lastName = "lastName";
@@ -48,6 +48,7 @@ class StakeholderEntityTest {
 		var careOf = "careOf";
 		var zipCode = "zipCode";
 		var country = "country";
+		var role = "role";
 		var contactChannel = ContactChannelEntity.create();
 
 		var stakeholderEntity = StakeholderEntity.create()

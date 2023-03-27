@@ -1,5 +1,12 @@
 package se.sundsvall.supportmanagement.api.model.errand;
 
+
+
+
+import org.junit.jupiter.api.Test;
+
+import java.util.List;
+
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanEquals;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanHashCode;
@@ -24,13 +31,14 @@ class StakeholderTest {
 	@Test
 	void testBuilderMethods() {
 		var externalId = "id";
-		var externalIdTypeTag = "EMPLOYEE";
+		var externalIdType = "EMPLOYEE";
 		var firstName = "firstName";
 		var lastName = "lastName";
 		var address = "address";
 		var careOf = "careOf";
 		var zipCode = "zipCode";
 		var country = "country";
+		var role = "role";
 		var contactChannel = ContactChannel.create();
 
 		var bean = Stakeholder.create()

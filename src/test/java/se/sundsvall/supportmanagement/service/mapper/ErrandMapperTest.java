@@ -62,6 +62,7 @@ class ErrandMapperTest {
 	private static final String CONTACT_CHANNEL_VALUE = "contactChannelValue";
 
 	private static final String ESCALATION_EMAIL = "escalation@email.com";
+	private static final String STAKEHOLDER_ROLE = "role";
 
 	@Test
 	void testToErrand() {
@@ -343,7 +344,8 @@ class ErrandMapperTest {
 			.withCareOf(CARE_OF)
 			.withZipCode(ZIP_CODE)
 			.withCountry(COUNTRY)
-			.withContactChannels(List.of(ContactChannel.create().withType(CONTACT_CHANNEL_TYPE).withValue(CONTACT_CHANNEL_VALUE)));
+			.withContactChannels(List.of(ContactChannel.create().withType(CONTACT_CHANNEL_TYPE).withValue(CONTACT_CHANNEL_VALUE)))
+			.withRole(STAKEHOLDER_ROLE);
 	}
 
 	private static ErrandEntity createEntity() {
@@ -379,6 +381,7 @@ class ErrandMapperTest {
 			.withCareOf(CARE_OF)
 			.withZipCode(ZIP_CODE)
 			.withCountry(COUNTRY)
-			.withContactChannels(List.of(ContactChannelEntity.create().withType(CONTACT_CHANNEL_TYPE).withValue(CONTACT_CHANNEL_VALUE)));
+			.withContactChannels(List.of(ContactChannelEntity.create().withType(CONTACT_CHANNEL_TYPE).withValue(CONTACT_CHANNEL_VALUE)))
+			.withRole(STAKEHOLDER_ROLE);
 	}
 }
