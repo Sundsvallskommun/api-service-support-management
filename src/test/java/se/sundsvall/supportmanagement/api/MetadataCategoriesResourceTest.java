@@ -1,10 +1,5 @@
 package se.sundsvall.supportmanagement.api;
 
-import static org.apache.commons.lang3.ArrayUtils.EMPTY_STRING_ARRAY;
-import static org.mockito.Mockito.verify;
-import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
-import static org.springframework.http.MediaType.APPLICATION_JSON;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -13,10 +8,15 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.reactive.server.WebTestClient;
-
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.metadata.Category;
 import se.sundsvall.supportmanagement.service.MetadataService;
+
+import static org.apache.commons.lang3.ArrayUtils.EMPTY_STRING_ARRAY;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
+import static org.springframework.http.MediaType.APPLICATION_JSON;
 
 @SpringBootTest(classes = Application.class, webEnvironment = RANDOM_PORT)
 @ActiveProfiles("junit")
@@ -32,22 +32,25 @@ class MetadataCategoriesResourceTest {
 	private int port;
 
 	@Test
-	void createCatgory() {
+	void createCategory() {
 		// Parameters
 		final var body = Category.create().withName("name");
+
+		//Mock
+		when(metadataServiceMock.createCategory("my.namespace", "2281", body)).thenReturn(body.getName());
 		
 		// Call
 		webTestClient.post().uri("my.namespace/2281/metadata/categories")
 			.contentType(APPLICATION_JSON)
 			.bodyValue(body)
 			.exchange()
-			.expectStatus().isEqualTo(HttpStatus.NOT_IMPLEMENTED);
+			.expectStatus().isEqualTo(HttpStatus.CREATED);
 
-		// TODO: Verify when service layer is ready
+		verify(metadataServiceMock).createCategory("my.namespace", "2281", body);
 	}
 
 	@Test
-	void getCatgories() {
+	void getCategories() {
 
 		webTestClient.get().uri("my.namespace/2281/metadata/categories")
 			.exchange()
@@ -73,29 +76,32 @@ class MetadataCategoriesResourceTest {
 	}
 
 	@Test
-	void updateCatgory() {
+	void updateCategory() {
 		// Parameters
 		final var body = Category.create().withName("name");
-		
+
+		//Mock
+		when(metadataServiceMock.updateCategory("my.namespace", "2281", "category-name", body)).thenReturn(body);
+
 		// Call
 		webTestClient.patch()
 			.uri(builder -> builder.path("my.namespace/2281/metadata/categories/category-name").build())
 			.contentType(APPLICATION_JSON)
 			.bodyValue(body)
 			.exchange()
-			.expectStatus().isEqualTo(HttpStatus.NOT_IMPLEMENTED);
+			.expectStatus().isEqualTo(HttpStatus.OK);
 
-		// TODO: Verify when service layer is ready
+		verify(metadataServiceMock).updateCategory("my.namespace", "2281", "category-name", body);
 	}
 	
 	@Test
-	void deleteCatgory() {
+	void deleteCategory() {
 		// Call
 		webTestClient.delete()
 			.uri(builder -> builder.path("my.namespace/2281/metadata/categories/category-name").build())
 			.exchange()
-			.expectStatus().isEqualTo(HttpStatus.NOT_IMPLEMENTED);
+			.expectStatus().isEqualTo(HttpStatus.NO_CONTENT);
 
-		// TODO: Verify when service layer is ready
+		verify(metadataServiceMock).deleteCategory("my.namespace", "2281", "category-name");
 	}
 }

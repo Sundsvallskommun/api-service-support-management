@@ -6,7 +6,6 @@ import static java.util.Comparator.naturalOrder;
 import static java.util.Comparator.nullsFirst;
 import static org.zalando.problem.Status.BAD_REQUEST;
 import static org.zalando.problem.Status.NOT_FOUND;
-import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toExternalIdTypeEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toStatusEntity;
 
 import java.util.List;
@@ -31,6 +30,20 @@ import se.sundsvall.supportmanagement.integration.db.ValidationRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ValidationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EntityType;
 import se.sundsvall.supportmanagement.service.mapper.MetadataMapper;
+
+import java.util.List;
+import java.util.Objects;
+
+import static java.util.Collections.emptyList;
+import static java.util.Comparator.comparing;
+import static java.util.Comparator.naturalOrder;
+import static java.util.Comparator.nullsFirst;
+import static org.zalando.problem.Status.BAD_REQUEST;
+import static org.zalando.problem.Status.NOT_FOUND;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toCategory;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toCategoryEntity;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toStatusEntity;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateEntity;
 
 @Service
 public class MetadataService {
@@ -165,6 +178,32 @@ public class MetadataService {
 	// Category and Type operations
 	// =================================================================
 
+	@CacheEvict(value = CACHE_NAME, key = "{'findCategories', #namespace, #municipalityId}")
+	public String createCategory(String namespace, String municipalityId, Category category) {
+		if (categoryRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, category.getName())) {
+			throw Problem.valueOf(BAD_REQUEST, String.format(CATEGORY_ALREADY_EXISTS_IN_NAMESPACE_FOR_MUNICIPALITY_ID, category.getName(), namespace, municipalityId));
+		}
+
+		return categoryRepository.save(toCategoryEntity(namespace, municipalityId, category)).getName();
+	}
+
+	public Category getCategory(String namespace, String municipalityId, String name) {
+		if (!categoryRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)) {
+			throw Problem.valueOf(NOT_FOUND, String.format(CATEGORY_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID, name, namespace, municipalityId));
+		}
+
+		return MetadataMapper.toCategory(categoryRepository.getByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name));
+	}
+
+	public Category updateCategory(String namespace, String municipalityId, String name, Category category) {
+		if (!categoryRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)) {
+			throw Problem.valueOf(NOT_FOUND, String.format(CATEGORY_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID, name, namespace, municipalityId));
+		}
+		final var entity = updateEntity(categoryRepository.getByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name), category);
+		return toCategory(categoryRepository.save(entity));
+	}
+
+
 	@Cacheable(value = CACHE_NAME, key = "{#root.methodName, #namespace, #municipalityId}")
 	public List<Category> findCategories(String namespace, String municipalityId) {
 		return categoryRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId)
@@ -186,5 +225,14 @@ public class MetadataService {
 			.stream()
 			.sorted(comparing(Type::getDisplayName, nullsFirst(naturalOrder())))
 			.toList();
+	}
+
+	@CacheEvict(value = CACHE_NAME, key = "{'findCategories', #namespace, #municipalityId}, {'findTypes', #namespace, #municipalityId, #category}")
+	public void deleteCategory(String namespace, String municipalityId, String name) {
+		if (!categoryRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)) {
+			throw Problem.valueOf(NOT_FOUND, String.format(CATEGORY_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID, name, namespace, municipalityId));
+		}
+
+		categoryRepository.deleteByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
 	}
 }

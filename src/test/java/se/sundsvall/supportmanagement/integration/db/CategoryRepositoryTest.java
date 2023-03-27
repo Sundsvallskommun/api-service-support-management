@@ -1,17 +1,5 @@
 package se.sundsvall.supportmanagement.integration.db;
 
-import static java.time.temporal.ChronoUnit.SECONDS;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.within;
-import static org.assertj.core.groups.Tuple.tuple;
-
-import java.time.OffsetDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-
-import javax.transaction.Transactional;
-
 import org.assertj.core.groups.Tuple;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,9 +7,19 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Example;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
-
 import se.sundsvall.supportmanagement.integration.db.model.CategoryEntity;
 import se.sundsvall.supportmanagement.integration.db.model.TypeEntity;
+
+import javax.transaction.Transactional;
+import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import static java.time.temporal.ChronoUnit.SECONDS;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
+import static org.assertj.core.groups.Tuple.tuple;
 
 /**
  * CategoryRepository tests.
@@ -159,8 +157,39 @@ class CategoryRepositoryTest {
 		verifyTypes(matches, verifications);
 	}
 
+	@Test
+	@Transactional
+	void getCategoryByNamespaceAndMunicipalityIdAndName() {
+		// Setup
+		final var municipalityId = "municipalityId-1";
+		final var namespace = "namespace-1";
+		final var category = "category-1";
+
+		final var categoryEntity = categoryRepository.getByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, category);
+
+		assertThat(categoryEntity).isNotNull();
+		assertThat(categoryEntity.getDisplayName()).isEqualTo("category-display-name-1");
+		assertThat(categoryEntity.getId()).isEqualTo(100L);
+		assertThat(categoryEntity.getMunicipalityId()).isEqualTo(municipalityId);
+		assertThat(categoryEntity.getName()).isEqualTo(category);
+		assertThat(categoryEntity.getNamespace()).isEqualTo(namespace);
+	}
+
+	@Test
+	void existsByNamespaceAndMunicipalityIdAndName() {
+		// Setup
+		final var municipalityId = "municipalityId-1";
+		final var namespace = "namespace-1";
+		final var existing_categoryname = "category-3";
+		final var nonexisting_categoryname = "category-4";
+
+		// Execution & assertion
+		assertThat(categoryRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, existing_categoryname)).isTrue();
+		assertThat(categoryRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, nonexisting_categoryname)).isFalse();
+	}
+
 	private void verifyTypes(List<CategoryEntity> matches, Map<String, List<Tuple>> verifications) {
-		verifications.entrySet().stream()
+		verifications.entrySet()
 			.forEach(entry -> {
 				assertThat(extractTypes(matches, entry))
 					.hasSize(entry.getValue().size())
@@ -186,7 +215,7 @@ class CategoryRepositoryTest {
 		final var existingEntity = categoryRepository.findById(TEST_ID).orElseThrow();
 
 		// Execution
-		categoryRepository.delete(existingEntity);
+		categoryRepository.deleteByNamespaceAndMunicipalityIdAndName(existingEntity.getNamespace(), existingEntity.getMunicipalityId(), existingEntity.getName());
 
 		// Assertions
 		assertThat(categoryRepository.findById(TEST_ID)).isNotPresent();
