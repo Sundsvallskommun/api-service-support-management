@@ -1,14 +1,7 @@
 package se.sundsvall.supportmanagement.integration.db.model;
 
-import static java.time.OffsetDateTime.now;
-import static java.time.ZoneId.systemDefault;
-import static java.time.temporal.ChronoUnit.MILLIS;
-
-import java.io.Serializable;
-import java.time.OffsetDateTime;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import org.hibernate.annotations.Formula;
+import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.CascadeType;
 import javax.persistence.CollectionTable;
@@ -26,9 +19,15 @@ import javax.persistence.PrePersist;
 import javax.persistence.PreUpdate;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
+import java.io.Serializable;
+import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
-import org.hibernate.annotations.Formula;
-import org.hibernate.annotations.GenericGenerator;
+import static java.time.OffsetDateTime.now;
+import static java.time.ZoneId.systemDefault;
+import static java.time.temporal.ChronoUnit.MILLIS;
 
 @Entity
 @Table(name = "errand",
@@ -69,14 +68,14 @@ public class ErrandEntity implements Serializable {
 	@Column(name = "title")
 	private String title;
 
-	@Column(name = "category_tag")
-	private String categoryTag;
+	@Column(name = "category")
+	private String category;
 
-	@Column(name = "type_tag")
-	private String typeTag;
+	@Column(name = "type")
+	private String type;
 
-	@Column(name = "status_tag")
-	private String statusTag;
+	@Column(name = "status")
+	private String status;
 
 	@Column(name = "resolution")
 	private String resolution;
@@ -96,6 +95,9 @@ public class ErrandEntity implements Serializable {
 
 	@Column(name = "assigned_group_id")
 	private String assignedGroupId;
+
+	@Column(name = "escalation_email")
+	private String escalationEmail;
 
 	@OneToMany(mappedBy = "errandEntity", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<AttachmentEntity> attachments;
@@ -121,7 +123,7 @@ public class ErrandEntity implements Serializable {
 	}
 
 	@PreUpdate
-	protected void onUpdate() {
+	void onUpdate() {
 		modified = now(systemDefault()).truncatedTo(MILLIS);
 		Optional.ofNullable(stakeholders).ifPresent(st -> st
 				.forEach(s -> s.setErrandEntity(this)));
@@ -205,42 +207,42 @@ public class ErrandEntity implements Serializable {
 		return this;
 	}
 
-	public String getCategoryTag() {
-		return categoryTag;
+	public String getCategory() {
+		return category;
 	}
 
-	public void setCategoryTag(String categoryTag) {
-		this.categoryTag = categoryTag;
+	public void setCategory(String category) {
+		this.category = category;
 	}
 
-	public ErrandEntity withCategoryTag(String categoryTag) {
-		this.categoryTag = categoryTag;
+	public ErrandEntity withCategory(String category) {
+		this.category = category;
 		return this;
 	}
 
-	public String getTypeTag() {
-		return typeTag;
+	public String getType() {
+		return type;
 	}
 
-	public void setTypeTag(String typeTag) {
-		this.typeTag = typeTag;
+	public void setType(String type) {
+		this.type = type;
 	}
 
-	public ErrandEntity withTypeTag(String typeTag) {
-		this.typeTag = typeTag;
+	public ErrandEntity withType(String type) {
+		this.type = type;
 		return this;
 	}
 
-	public String getStatusTag() {
-		return statusTag;
+	public String getStatus() {
+		return status;
 	}
 
-	public void setStatusTag(String statusTag) {
-		this.statusTag = statusTag;
+	public void setStatus(String status) {
+		this.status = status;
 	}
 
-	public ErrandEntity withStatusTag(String statusTag) {
-		this.statusTag = statusTag;
+	public ErrandEntity withStatus(String status) {
+		this.status = status;
 		return this;
 	}
 
@@ -322,6 +324,19 @@ public class ErrandEntity implements Serializable {
 		return this;
 	}
 
+	public String getEscalationEmail() {
+		return escalationEmail;
+	}
+
+	public void setEscalationEmail(String escalationEmail) {
+		this.escalationEmail = escalationEmail;
+	}
+
+	public ErrandEntity withEscalationEmail(String escalationEmail) {
+		this.escalationEmail = escalationEmail;
+		return this;
+	}
+
 	public List<AttachmentEntity> getAttachments() {
 		return attachments;
 	}
@@ -375,35 +390,55 @@ public class ErrandEntity implements Serializable {
 	}
 
 	@Override
-	public int hashCode() {
-		return Objects.hash(assignedGroupId, assignedUserId, attachments, categoryTag, created, stakeholders, description, externalTags, id, modified, municipalityId, namespace, priority, reporterUserId, resolution, statusTag, title, touched, typeTag);
+	public boolean equals(Object o) {
+		if (this == o) {
+			return true;
+		}
+		if (o == null || getClass() != o.getClass()) {
+			return false;
+		}
+		ErrandEntity that = (ErrandEntity) o;
+		return Objects.equals(id, that.id) && Objects.equals(externalTags, that.externalTags) &&
+			Objects.equals(stakeholders, that.stakeholders) && Objects.equals(municipalityId, that.municipalityId) &&
+			Objects.equals(namespace, that.namespace) && Objects.equals(title, that.title) &&
+			Objects.equals(category, that.category) && Objects.equals(type, that.type) &&
+			Objects.equals(status, that.status) && Objects.equals(resolution, that.resolution) &&
+			Objects.equals(description, that.description) && Objects.equals(priority, that.priority) &&
+			Objects.equals(reporterUserId, that.reporterUserId) && Objects.equals(assignedUserId, that.assignedUserId) &&
+			Objects.equals(assignedGroupId, that.assignedGroupId) && Objects.equals(escalationEmail, that.escalationEmail) &&
+			Objects.equals(attachments, that.attachments) && Objects.equals(created, that.created) &&
+			Objects.equals(modified, that.modified) && Objects.equals(touched, that.touched);
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
-			return true;
-		}
-		if (obj == null) {
-			return false;
-		}
-		if (getClass() != obj.getClass()) {
-			return false;
-		}
-		ErrandEntity other = (ErrandEntity) obj;
-		return Objects.equals(assignedGroupId, other.assignedGroupId) && Objects.equals(assignedUserId, other.assignedUserId) && Objects.equals(attachments, other.attachments) && Objects.equals(categoryTag, other.categoryTag) && Objects.equals(
-			created, other.created) && Objects.equals(stakeholders, other.stakeholders) && Objects.equals(description, other.description) && Objects.equals(externalTags, other.externalTags) && Objects.equals(id, other.id) && Objects.equals(modified,
-				other.modified) && Objects.equals(municipalityId, other.municipalityId) && Objects.equals(namespace, other.namespace) && Objects.equals(priority, other.priority) && Objects.equals(reporterUserId, other.reporterUserId) && Objects
-					.equals(resolution, other.resolution) && Objects.equals(statusTag, other.statusTag) && Objects.equals(title, other.title) && Objects.equals(touched, other.touched) && Objects.equals(typeTag, other.typeTag);
+	public int hashCode() {
+		return Objects.hash(id, externalTags, stakeholders, municipalityId, namespace, title, category, type, status, resolution, description, priority, reporterUserId, assignedUserId, assignedGroupId, escalationEmail, attachments, created, modified, touched);
 	}
 
 	@Override
 	public String toString() {
-		StringBuilder builder = new StringBuilder();
-		builder.append("ErrandEntity [id=").append(id).append(", externalTags=").append(externalTags).append(", stakeholders=").append(stakeholders).append(", municipalityId=").append(municipalityId).append(", namespace=").append(namespace).append(
-			", title=").append(title).append(", categoryTag=").append(categoryTag).append(", typeTag=").append(typeTag).append(", statusTag=").append(statusTag).append(", resolution=").append(resolution).append(", description=").append(description)
-			.append(", priority=").append(priority).append(", reporterUserId=").append(reporterUserId).append(", assignedUserId=").append(assignedUserId).append(", assignedGroupId=").append(assignedGroupId).append(", attachments=").append(
-				attachments).append(", created=").append(created).append(", modified=").append(modified).append(", touched=").append(touched).append("]");
-		return builder.toString();
+		final StringBuilder sb = new StringBuilder("ErrandEntity{");
+		sb.append("id='").append(id).append('\'');
+		sb.append(", externalTags=").append(externalTags);
+		sb.append(", stakeholders=").append(stakeholders);
+		sb.append(", municipalityId='").append(municipalityId).append('\'');
+		sb.append(", namespace='").append(namespace).append('\'');
+		sb.append(", title='").append(title).append('\'');
+		sb.append(", category='").append(category).append('\'');
+		sb.append(", type='").append(type).append('\'');
+		sb.append(", status='").append(status).append('\'');
+		sb.append(", resolution='").append(resolution).append('\'');
+		sb.append(", description='").append(description).append('\'');
+		sb.append(", priority='").append(priority).append('\'');
+		sb.append(", reporterUserId='").append(reporterUserId).append('\'');
+		sb.append(", assignedUserId='").append(assignedUserId).append('\'');
+		sb.append(", assignedGroupId='").append(assignedGroupId).append('\'');
+		sb.append(", escalationEmail='").append(escalationEmail).append('\'');
+		sb.append(", attachments=").append(attachments);
+		sb.append(", created=").append(created);
+		sb.append(", modified=").append(modified);
+		sb.append(", touched=").append(touched);
+		sb.append('}');
+		return sb.toString();
 	}
 }

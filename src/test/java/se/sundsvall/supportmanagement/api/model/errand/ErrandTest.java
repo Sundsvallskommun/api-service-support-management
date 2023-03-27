@@ -1,5 +1,12 @@
 package se.sundsvall.supportmanagement.api.model.errand;
 
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.Random;
+
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanEquals;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanHashCode;
@@ -11,13 +18,6 @@ import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.MatcherAssert.assertThat;
-
-import java.time.OffsetDateTime;
-import java.util.List;
-import java.util.Random;
-
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
 
 class ErrandTest {
 
@@ -41,43 +41,45 @@ class ErrandTest {
 
 		final var assignedGroupId = "assignedGroupId";
 		final var assignedUserId = "assignedUserId";
-		final var categoryTag = "categoryTag";
+		final var category = "category";
 		final var created = OffsetDateTime.now();
-		final var stakeholder = Stakeholder.create().withExternalId("id").withExternalIdTypeTag("type");
+		final var stakeholder = Stakeholder.create().withExternalId("id").withExternalIdType("type");
 		final var externalTags = List.of(ExternalTag.create().withKey("externalTagkey").withValue("externalTagValue"));
 		final var id = randomUUID().toString();
 		final var modified = OffsetDateTime.now().plusDays(1);
 		final var priority = Priority.MEDIUM;
 		final var reporterUserId = "reporterUserId";
-		final var statusTag = "statusTag";
+		final var status = "status";
 		final var title = "title";
 		final var touched = OffsetDateTime.now().plusDays(2);
-		final var typeTag = "typeTag";
+		final var type = "type";
 		final var resolution = "resolution";
 		final var description = "description";
+		final var escalationEmail = "escalation@email.com";
 
 		final var bean = Errand.create()
-			.withAssignedGroupId(assignedGroupId)
-			.withAssignedUserId(assignedUserId)
-			.withCategoryTag(categoryTag)
-			.withCreated(created)
-			.withStakeholders(List.of(stakeholder))
-			.withExternalTags(externalTags)
-			.withId(id)
-			.withModified(modified)
-			.withPriority(priority)
-			.withReporterUserId(reporterUserId)
-			.withStatusTag(statusTag)
-			.withTitle(title)
-			.withTouched(touched)
-			.withTypeTag(typeTag)
-			.withResolution(resolution)
-			.withDescription(description);
+				.withAssignedGroupId(assignedGroupId)
+				.withAssignedUserId(assignedUserId)
+				.withClassification(Classification.create().withCategory(category).withType(type))
+				.withCreated(created)
+				.withStakeholders(List.of(stakeholder))
+				.withExternalTags(externalTags)
+				.withId(id)
+				.withModified(modified)
+				.withPriority(priority)
+				.withReporterUserId(reporterUserId)
+				.withStatus(status)
+				.withTitle(title)
+				.withTouched(touched)
+				.withResolution(resolution)
+				.withDescription(description)
+				.withEscalationEmail(escalationEmail);
 
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(bean.getAssignedGroupId()).isEqualTo(assignedGroupId);
 		assertThat(bean.getAssignedUserId()).isEqualTo(assignedUserId);
-		assertThat(bean.getCategoryTag()).isEqualTo(categoryTag);
+		assertThat(bean.getClassification().getCategory()).isEqualTo(category);
+		assertThat(bean.getClassification().getType()).isEqualTo(type);
 		assertThat(bean.getCreated()).isEqualTo(created);
 		assertThat(bean.getStakeholders()).containsExactly(stakeholder);
 		assertThat(bean.getExternalTags()).isEqualTo(externalTags);
@@ -85,12 +87,12 @@ class ErrandTest {
 		assertThat(bean.getModified()).isEqualTo(modified);
 		assertThat(bean.getPriority()).isEqualTo(priority);
 		assertThat(bean.getReporterUserId()).isEqualTo(reporterUserId);
-		assertThat(bean.getStatusTag()).isEqualTo(statusTag);
+		assertThat(bean.getStatus()).isEqualTo(status);
 		assertThat(bean.getTitle()).isEqualTo(title);
 		assertThat(bean.getTouched()).isEqualTo(touched);
-		assertThat(bean.getTypeTag()).isEqualTo(typeTag);
 		assertThat(bean.getResolution()).isEqualTo(resolution);
 		assertThat(bean.getDescription()).isEqualTo(description);
+		assertThat(bean.getEscalationEmail()).isEqualTo(escalationEmail);
 	}
 
 	@Test

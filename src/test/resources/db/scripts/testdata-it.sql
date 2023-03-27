@@ -1,37 +1,71 @@
 -------------------------------------
--- Tag
+-- Category and Type
 -------------------------------------
-INSERT INTO tag(id, type, name) VALUES
-      (1, 'CATEGORY', 'CATEGORY-1'),
-      (2, 'CATEGORY', 'CATEGORY-2'),
-      (3, 'CATEGORY', 'CATEGORY-3'),
-      (4, 'TYPE', 'TYPE-1'),
-      (5, 'TYPE', 'TYPE-2'),
-      (6, 'TYPE', 'TYPE-3'),
-      (7, 'STATUS', 'STATUS-1'),
-      (8, 'STATUS', 'STATUS-2'),
-      (9, 'STATUS', 'STATUS-3');
+INSERT INTO category(id, created, display_name, modified, municipality_id, name, namespace) 
+VALUES (100, '2023-01-01 12:00:00.000', 'CATEGORY-DISPLAY-NAME-1', null, '2281', 'CATEGORY-1', 'NAMESPACE.1'),
+       (101, '2023-01-01 12:00:00.000', 'CATEGORY-DISPLAY-NAME-2', null, '2281', 'CATEGORY-2', 'NAMESPACE.1'),
+       (102, '2023-01-01 12:00:00.000', 'CATEGORY-DISPLAY-NAME-3', null, '2281', 'CATEGORY-3', 'NAMESPACE.1');
+
+INSERT INTO type(id, created, display_name, escalation_email, modified, name, category_id) 
+VALUES (100, '2023-01-01 12:00:00.000', 'TYPE-DISPLAY-NAME-1', 'ESCALATION-EMAIL-1', null, 'TYPE-1', 100),
+       (101, '2023-01-01 12:00:00.000', 'TYPE-DISPLAY-NAME-2', 'ESCALATION-EMAIL-2', null, 'TYPE-2', 100),
+       (102, '2023-01-01 12:00:00.000', 'TYPE-DISPLAY-NAME-3', 'ESCALATION-EMAIL-3', null, 'TYPE-3', 100),
+       (103, '2023-01-01 12:00:00.000', 'TYPE-DISPLAY-NAME-1', 'ESCALATION-EMAIL-1', null, 'TYPE-1', 101),
+       (104, '2023-01-01 12:00:00.000', 'TYPE-DISPLAY-NAME-2', 'ESCALATION-EMAIL-2', null, 'TYPE-2', 101),
+       (105, '2023-01-01 12:00:00.000', 'TYPE-DISPLAY-NAME-1', 'ESCALATION-EMAIL-1', null, 'TYPE-1', 102);
+       
+-------------------------------------
+-- ExternalIdType
+-------------------------------------
+INSERT INTO external_id_type(id, created, modified, municipality_id, name, namespace) 
+VALUES (100, '2023-01-01 12:00:00.000', null, '2281', 'EXTERNAL-ID-TYPE-1', 'NAMESPACE.1'),
+       (101, '2023-01-01 12:00:00.000', null, '2281', 'EXTERNAL-ID-TYPE-2', 'NAMESPACE.1'),
+       (102, '2023-01-01 12:00:00.000', null, '2281', 'EXTERNAL-ID-TYPE-3', 'NAMESPACE.1'),
+       (104, '2023-01-01 12:00:00.000', null, '2281', 'EXTERNAL-ID-TYPE-1', 'NAMESPACE.2'),
+       (105, '2023-01-01 12:00:00.000', null, '2305', 'EXTERNAL-ID-TYPE-1', 'NAMESPACE.1'),
+       (106, '2023-01-01 12:00:00.000', null, '2305', 'EXTERNAL-ID-TYPE-2', 'NAMESPACE.1');
+
+-------------------------------------
+-- Status
+-------------------------------------
+INSERT INTO status(id, created, modified, municipality_id, name, namespace) 
+VALUES (100, '2023-01-01 12:00:00.000', null, '2281', 'STATUS-1', 'NAMESPACE.1'),
+       (101, '2023-01-01 12:00:00.000', null, '2281', 'STATUS-2', 'NAMESPACE.1'),
+       (102, '2023-01-01 12:00:00.000', null, '2281', 'STATUS-3', 'NAMESPACE.1'),
+       (104, '2023-01-01 12:00:00.000', null, '2281', 'STATUS-1', 'NAMESPACE.2'),
+       (105, '2023-01-01 12:00:00.000', null, '2305', 'STATUS-1', 'NAMESPACE.1'),
+       (106, '2023-01-01 12:00:00.000', null, '2305', 'STATUS-2', 'NAMESPACE.1');
+
+-------------------------------------
+-- Validation
+-------------------------------------
+INSERT INTO validation(id, municipality_id, namespace, `type`, created, modified, validated)
+VALUES (100, '2281', 'NAMESPACE.1', 'CATEGORY', '2023-01-01 12:00:00.000', null, true),
+       (101, '2281', 'NAMESPACE.1', 'TYPE', '2023-01-01 12:00:00.000', null, false),
+       (102, '2281', 'NAMESPACE.2', 'CATEGORY', '2023-01-01 12:00:00.000', null, false),
+       (103, '2281', 'NAMESPACE.2', 'STATUS', '2023-01-01 12:00:00.000', null, true);
 
 -------------------------------------
 -- Errand
 -------------------------------------
-INSERT INTO errand(municipality_id, id, assigned_group_id, assigned_user_id, category_tag, namespace, priority, reporter_user_id, status_tag, title, type_tag, created, modified, resolution, description) VALUES
-      ('2281', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', 'ASSIGNED_GROUP_ID-1', 'ASSIGNED_USER_ID-1', 'CATEGORY-1', 'NAMESPACE.1', 'LOW', 'REPORTER_USER_ID-1', 'STATUS-1', 'TITLE-1', 'TYPE-1', '2022-01-01 12:00:00.000', null, null, null),
-      ('2281', 'cc236cf1-c00f-4479-8341-ecf5dd90b5b9', 'ASSIGNED_GROUP_ID-1', 'ASSIGNED_USER_ID-1', 'CATEGORY-1', 'NAMESPACE.1', 'LOW', 'REPORTER_USER_ID-1', 'STATUS-1', 'TITLE-1', 'TYPE-1', '2022-02-01 12:00:00.000', '2022-04-01 12:00:00.000', null, null),
-      ('2281', '1be673c0-6ba3-4fb0-af4a-43acf23389f6', 'ASSIGNED_GROUP_ID-3', 'ASSIGNED_USER_ID-3', 'CATEGORY-3', 'NAMESPACE.1', 'HIGH', 'REPORTER_USER_ID-3', 'STATUS-3', 'TITLE-3', 'TYPE-3', '2022-03-01 12:00:00.000', null, "RESOLUTION", "DESCRIPTION"),
-      ('2281', 'f4a7a771-bb75-487b-b7d8-2684a0c3512c', 'ASSIGNED_GROUP_ID-3', 'ASSIGNED_USER_ID-3', 'CATEGORY-3', 'NAMESPACE.2', 'HIGH', 'REPORTER_USER_ID-3', 'STATUS-3', 'TITLE-3', 'TYPE-3', '2022-03-01 12:00:00.000', null, "RESOLUTION", "DESCRIPTION"),
-      ('2305', 'e29906af-3083-4dcf-bb8a-d787ccf2dcc4', 'ASSIGNED_GROUP_ID-3', 'ASSIGNED_USER_ID-3', 'CATEGORY-3', 'NAMESPACE.1', 'HIGH', 'REPORTER_USER_ID-1', 'STATUS-3', 'TITLE-3', 'TYPE-3', '2022-03-01 12:00:00.000', null, null, null);
+INSERT INTO errand(municipality_id, id, assigned_group_id, assigned_user_id, category, namespace, priority, reporter_user_id, status, title, type, created, modified, resolution, description, escalation_email) VALUES
+      ('2281', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', 'ASSIGNED_GROUP_ID-1', 'ASSIGNED_USER_ID-1', 'CATEGORY-1', 'NAMESPACE.1', 'LOW', 'REPORTER_USER_ID-1', 'STATUS-1', 'TITLE-1', 'TYPE-1', '2022-01-01 12:00:00.000', null, null, null, "ESCALATION_EMAIL_1"),
+      ('2281', 'cc236cf1-c00f-4479-8341-ecf5dd90b5b9', 'ASSIGNED_GROUP_ID-1', 'ASSIGNED_USER_ID-1', 'CATEGORY-1', 'NAMESPACE.1', 'LOW', 'REPORTER_USER_ID-1', 'STATUS-1', 'TITLE-1', 'TYPE-1', '2022-02-01 12:00:00.000', '2022-04-01 12:00:00.000', null, null, null),
+      ('2281', '1be673c0-6ba3-4fb0-af4a-43acf23389f6', 'ASSIGNED_GROUP_ID-3', 'ASSIGNED_USER_ID-3', 'CATEGORY-3', 'NAMESPACE.1', 'HIGH', 'REPORTER_USER_ID-3', 'STATUS-3', 'TITLE-3', 'TYPE-3', '2022-03-01 12:00:00.000', null, "RESOLUTION", "DESCRIPTION", null),
+      ('2281', 'f4a7a771-bb75-487b-b7d8-2684a0c3512c', 'ASSIGNED_GROUP_ID-3', 'ASSIGNED_USER_ID-3', 'CATEGORY-3', 'NAMESPACE.2', 'HIGH', 'REPORTER_USER_ID-3', 'STATUS-3', 'TITLE-3', 'TYPE-3', '2022-03-01 12:00:00.000', null, "RESOLUTION", "DESCRIPTION", null),
+      ('2305', 'e29906af-3083-4dcf-bb8a-d787ccf2dcc4', 'ASSIGNED_GROUP_ID-3', 'ASSIGNED_USER_ID-3', 'CATEGORY-3', 'NAMESPACE.1', 'HIGH', 'REPORTER_USER_ID-1', 'STATUS-3', 'TITLE-3', 'TYPE-3', '2022-03-01 12:00:00.000', null, null, null, null);
 
 -------------------------------------
 -- Stakeholder
 ------------------------------------
-INSERT INTO stakeholder(id, external_id, external_id_type_tag, errand_id, address, care_of, country, first_name, last_name, zip_code) VALUES
-	('3001', 'USER_ID', 'EMPLOYEE', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', 'ADDRESS-1', 'CARE_OF-1','COUNTRY-1','FIRST_NAME-1', 'LAST_NAME-1', 'ZIP_CODE-1');
-INSERT INTO stakeholder(id, external_id, external_id_type_tag, errand_id) VALUES
-	('3002', 'def57969-9b83-4e54-9351-667dc896a19d', 'PRIVATE', 'cc236cf1-c00f-4479-8341-ecf5dd90b5b9'),
-	('3003', '7fba994b-e99e-4beb-8ab5-63cc74483b66', 'ENTERPRISE', '1be673c0-6ba3-4fb0-af4a-43acf23389f6'),
-	('3004', '83793ee4-4b33-467a-ac56-570d6babcc5b', 'ENTERPRISE', 'f4a7a771-bb75-487b-b7d8-2684a0c3512c'),
-	('3005', '76bf1aa0-6596-4dca-88ee-25d8a1a47e60', 'PRIVATE', 'e29906af-3083-4dcf-bb8a-d787ccf2dcc4');
+INSERT INTO stakeholder(id, external_id, external_id_type, errand_id, address, care_of, country, first_name, last_name, zip_code, role) VALUES
+	('3001', 'USER_ID', 'EMPLOYEE', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', 'ADDRESS-1', 'CARE_OF-1','COUNTRY-1','FIRST_NAME-1', 'LAST_NAME-1', 'ZIP_CODE-1', 'ROLE-1'),
+	('3002', '01e159b4-724d-40f9-91a4-9a7d021b8563', 'PRIVATE', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', 'ADDRESS-2', 'CARE_OF-2','COUNTRY-2','FIRST_NAME-1', 'LAST_NAME-1', 'ZIP_CODE-2', 'ROLE-2');
+INSERT INTO stakeholder(id, external_id, external_id_type, errand_id) VALUES
+	('3003', 'def57969-9b83-4e54-9351-667dc896a19d', 'PRIVATE', 'cc236cf1-c00f-4479-8341-ecf5dd90b5b9'),
+	('3004', '7fba994b-e99e-4beb-8ab5-63cc74483b66', 'ENTERPRISE', '1be673c0-6ba3-4fb0-af4a-43acf23389f6'),
+	('3005', '83793ee4-4b33-467a-ac56-570d6babcc5b', 'ENTERPRISE', 'f4a7a771-bb75-487b-b7d8-2684a0c3512c'),
+	('3006', '76bf1aa0-6596-4dca-88ee-25d8a1a47e60', 'PRIVATE', 'e29906af-3083-4dcf-bb8a-d787ccf2dcc4');
 
 -------------------------------------
 -- ContactChannel

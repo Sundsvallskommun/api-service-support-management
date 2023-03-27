@@ -6,20 +6,33 @@
 			"priority": "LOW",
 			"stakeholders": [
 				{
+					"externalId": "USER_ID",
+					"externalIdType": "EMPLOYEE",
+					"role": "ROLE-1",
+					"firstName": "FIRST_NAME-1",
+					"lastName": "LAST_NAME-1",
 					"address": "ADDRESS-1",
 					"careOf": "CARE_OF-1",
+					"zipCode": "ZIP_CODE-1",
+					"country": "COUNTRY-1",
 					"contactChannels": [
 						{
 							"type": "TYPE-1",
 							"value": "VALUE-1"
 						}
-					],
-					"country": "COUNTRY-1",
+					]
+				},
+				{
+					"externalId": "01e159b4-724d-40f9-91a4-9a7d021b8563",
+					"externalIdType": "PRIVATE",
+					"role": "ROLE-2",
 					"firstName": "FIRST_NAME-1",
 					"lastName": "LAST_NAME-1",
-					"externalId": "USER_ID",
-					"externalIdTypeTag": "EMPLOYEE",
-					"zipCode": "ZIP_CODE-1"
+					"address": "ADDRESS-2",
+					"careOf": "CARE_OF-2",
+					"zipCode": "ZIP_CODE-2",
+					"country": "COUNTRY-2",
+					"contactChannels": []
 				}
 			],
 			"externalTags": [
@@ -32,12 +45,15 @@
 					"value": "VALUE-2"
 				}
 			],
-			"categoryTag": "CATEGORY-1",
-			"typeTag": "TYPE-1",
-			"statusTag": "STATUS-1",
+			"classification": {
+				"category": "CATEGORY-1",
+				"type": "TYPE-1"
+			},
+			"status": "STATUS-1",
 			"reporterUserId": "REPORTER_USER_ID-1",
 			"assignedUserId": "ASSIGNED_USER_ID-1",
 			"assignedGroupId": "ASSIGNED_GROUP_ID-1",
+			"escalationEmail": "ESCALATION_EMAIL_1",
 			"created": "2022-01-01T12:00:00+01:00",
 			"touched": "2022-01-01T12:00:00+01:00"
 		}
@@ -51,12 +67,12 @@
 		"offset": 0,
 		"pageSize": 20,
 		"pageNumber": 0,
-		"unpaged": false,
-		"paged": true
+		"paged": true,
+		"unpaged": false
 	},
-	"totalElements": 1,
-	"totalPages": 1,
 	"last": true,
+	"totalPages": 1,
+	"totalElements": 1,
 	"size": 20,
 	"number": 0,
 	"sort": {
@@ -64,7 +80,7 @@
 		"sorted": false,
 		"unsorted": true
 	},
-	"numberOfElements": 1,
 	"first": true,
+	"numberOfElements": 1,
 	"empty": false
 }

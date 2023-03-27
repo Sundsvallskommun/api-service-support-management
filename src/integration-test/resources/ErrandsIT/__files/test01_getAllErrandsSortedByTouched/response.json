@@ -6,9 +6,9 @@
 			"priority": "LOW",
 			"stakeholders": [
 				{
-					"contactChannels": [],
 					"externalId": "def57969-9b83-4e54-9351-667dc896a19d",
-					"externalIdTypeTag": "PRIVATE"
+					"externalIdType": "PRIVATE",
+					"contactChannels": []
 				}
 			],
 			"externalTags": [
@@ -17,9 +17,11 @@
 					"value": "VALUE-3"
 				}
 			],
-			"categoryTag": "CATEGORY-1",
-			"typeTag": "TYPE-1",
-			"statusTag": "STATUS-1",
+			"classification": {
+				"category": "CATEGORY-1",
+				"type": "TYPE-1"
+			},
+			"status": "STATUS-1",
 			"reporterUserId": "REPORTER_USER_ID-1",
 			"assignedUserId": "ASSIGNED_USER_ID-1",
 			"assignedGroupId": "ASSIGNED_GROUP_ID-1",
@@ -33,12 +35,11 @@
 			"priority": "HIGH",
 			"stakeholders": [
 				{
-					"contactChannels": [],
 					"externalId": "7fba994b-e99e-4beb-8ab5-63cc74483b66",
-					"externalIdTypeTag": "ENTERPRISE"
+					"externalIdType": "ENTERPRISE",
+					"contactChannels": []
 				}
 			],
-			"description": "DESCRIPTION",
 			"externalTags": [
 				{
 					"key": "KEY-4",
@@ -49,11 +50,14 @@
 					"value": "VALUE-5"
 				}
 			],
-			"categoryTag": "CATEGORY-3",
-			"typeTag": "TYPE-3",
-			"statusTag": "STATUS-3",
-			"reporterUserId": "REPORTER_USER_ID-3",
+			"classification": {
+				"category": "CATEGORY-3",
+				"type": "TYPE-3"
+			},
+			"status": "STATUS-3",
 			"resolution": "RESOLUTION",
+			"description": "DESCRIPTION",
+			"reporterUserId": "REPORTER_USER_ID-3",
 			"assignedUserId": "ASSIGNED_USER_ID-3",
 			"assignedGroupId": "ASSIGNED_GROUP_ID-3",
 			"created": "2022-03-01T12:00:00+01:00",
@@ -65,20 +69,33 @@
 			"priority": "LOW",
 			"stakeholders": [
 				{
+					"externalId": "USER_ID",
+					"externalIdType": "EMPLOYEE",
+					"role": "ROLE-1",
+					"firstName": "FIRST_NAME-1",
+					"lastName": "LAST_NAME-1",
 					"address": "ADDRESS-1",
 					"careOf": "CARE_OF-1",
+					"zipCode": "ZIP_CODE-1",
+					"country": "COUNTRY-1",
 					"contactChannels": [
 						{
 							"type": "TYPE-1",
 							"value": "VALUE-1"
 						}
-					],
-					"country": "COUNTRY-1",
+					]
+				},
+				{
+					"externalId": "01e159b4-724d-40f9-91a4-9a7d021b8563",
+					"externalIdType": "PRIVATE",
+					"role": "ROLE-2",
 					"firstName": "FIRST_NAME-1",
 					"lastName": "LAST_NAME-1",
-					"externalId": "USER_ID",
-					"externalIdTypeTag": "EMPLOYEE",
-					"zipCode": "ZIP_CODE-1"
+					"address": "ADDRESS-2",
+					"careOf": "CARE_OF-2",
+					"zipCode": "ZIP_CODE-2",
+					"country": "COUNTRY-2",
+					"contactChannels": []
 				}
 			],
 			"externalTags": [
@@ -91,12 +108,15 @@
 					"value": "VALUE-2"
 				}
 			],
-			"categoryTag": "CATEGORY-1",
-			"typeTag": "TYPE-1",
-			"statusTag": "STATUS-1",
+			"classification": {
+				"category": "CATEGORY-1",
+				"type": "TYPE-1"
+			},
+			"status": "STATUS-1",
 			"reporterUserId": "REPORTER_USER_ID-1",
 			"assignedUserId": "ASSIGNED_USER_ID-1",
 			"assignedGroupId": "ASSIGNED_GROUP_ID-1",
+			"escalationEmail": "ESCALATION_EMAIL_1",
 			"created": "2022-01-01T12:00:00+01:00",
 			"touched": "2022-01-01T12:00:00+01:00"
 		}
@@ -104,26 +124,26 @@
 	"pageable": {
 		"sort": {
 			"empty": false,
-			"sorted": true,
-			"unsorted": false
+			"unsorted": false,
+			"sorted": true
 		},
 		"offset": 0,
-		"pageSize": 20,
 		"pageNumber": 0,
-		"unpaged": false,
-		"paged": true
+		"pageSize": 20,
+		"paged": true,
+		"unpaged": false
 	},
+	"last": true,
 	"totalPages": 1,
 	"totalElements": 3,
-	"last": true,
 	"size": 20,
 	"number": 0,
 	"sort": {
 		"empty": false,
-		"sorted": true,
-		"unsorted": false
+		"unsorted": false,
+		"sorted": true
 	},
-	"numberOfElements": 3,
 	"first": true,
+	"numberOfElements": 3,
 	"empty": false
 }

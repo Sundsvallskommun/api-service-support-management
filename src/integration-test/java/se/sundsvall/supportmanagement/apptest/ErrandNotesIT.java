@@ -21,7 +21,7 @@ import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.supportmanagement.Application;
 
 /**
- * Tags IT tests.
+ * ErrandNotes IT tests.
  */
 @WireMockAppTestSuite(files = "classpath:/ErrandNotesIT/", classes = Application.class)
 @Sql({

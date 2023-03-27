@@ -1,17 +1,6 @@
 package se.sundsvall.supportmanagement.integration.db;
 
-import static java.time.temporal.ChronoUnit.SECONDS;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.tuple;
-import static org.assertj.core.api.Assertions.within;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
-import java.time.OffsetDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
-
-import javax.transaction.Transactional;
-
+import com.turkraft.springfilter.boot.FilterSpecification;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -22,13 +11,21 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
-
-import com.turkraft.springfilter.boot.FilterSpecification;
-
 import se.sundsvall.supportmanagement.integration.db.model.ContactChannelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
+
+import javax.transaction.Transactional;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+
+import static java.time.temporal.ChronoUnit.SECONDS;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
+import static org.assertj.core.api.Assertions.within;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tag repository tests.
@@ -49,31 +46,33 @@ class ErrandsRepositoryTest {
 	@Test
 	void create() {
 		final var externalTag = DbExternalTag.create().withKey("key").withValue("value");
-		final var stakeholder = StakeholderEntity.create().withExternalId("id").withExternalIdTypeTag("EMPLOYEE").withContactChannels(List.of(ContactChannelEntity.create().withType("type").withValue("value")));
+		final var stakeholder = StakeholderEntity.create().withExternalId("id").withExternalIdType("EMPLOYEE").withRole("ROLE").withContactChannels(List.of(ContactChannelEntity.create().withType("type").withValue("value")));
 		final var namespace = "namespace";
 		final var title = "title";
-		final var categoryTag = "categoryTag";
-		final var typeTag = "typeTag";
-		final var statusTag = "statusTag";
+		final var category = "category";
+		final var type = "type";
+		final var status = "status";
 		final var priority = "priority";
 		final var reporterUserId = "reporterUserId";
 		final var assignedUserId = "assignedUserId";
 		final var assignedGroupId = "assignedGroupId";
 		final var municipalityId = "municipalityId";
+		final var escalationEmail = "escalation@email.com";
 
 		var errandEntity = ErrandEntity.create()
 			.withNamespace(namespace)
 			.withTitle(title)
-			.withCategoryTag(categoryTag)
-			.withTypeTag(typeTag)
-			.withStatusTag(statusTag)
+			.withCategory(category)
+			.withType(type)
+			.withStatus(status)
 			.withPriority(priority)
 			.withReporterUserId(reporterUserId)
 			.withAssignedUserId(assignedUserId)
 			.withAssignedGroupId(assignedGroupId)
 			.withExternalTags(List.of(externalTag))
 			.withStakeholders(List.of(stakeholder))
-			.withMunicipalityId(municipalityId);
+			.withMunicipalityId(municipalityId)
+			.withEscalationEmail(escalationEmail);
 
 		// Execution
 		final var persistedEntity = errandsRepository.save(errandEntity);
@@ -82,9 +81,9 @@ class ErrandsRepositoryTest {
 		assertThat(persistedEntity.getId()).isNotNull();
 		assertThat(persistedEntity.getNamespace()).isEqualTo(namespace);
 		assertThat(persistedEntity.getTitle()).isEqualTo(title);
-		assertThat(persistedEntity.getCategoryTag()).isEqualTo(categoryTag);
-		assertThat(persistedEntity.getTypeTag()).isEqualTo(typeTag);
-		assertThat(persistedEntity.getStatusTag()).isEqualTo(statusTag);
+		assertThat(persistedEntity.getCategory()).isEqualTo(category);
+		assertThat(persistedEntity.getType()).isEqualTo(type);
+		assertThat(persistedEntity.getStatus()).isEqualTo(status);
 		assertThat(persistedEntity.getPriority()).isEqualTo(priority);
 		assertThat(persistedEntity.getReporterUserId()).isEqualTo(reporterUserId);
 		assertThat(persistedEntity.getAssignedUserId()).isEqualTo(assignedUserId);
@@ -94,6 +93,7 @@ class ErrandsRepositoryTest {
 		assertThat(persistedEntity.getMunicipalityId()).isEqualTo(municipalityId);
 		assertThat(persistedEntity.getCreated()).isCloseTo(OffsetDateTime.now(), within(2, SECONDS));
 		assertThat(persistedEntity.getModified()).isNull();
+		assertThat(persistedEntity.getEscalationEmail()).isEqualTo(escalationEmail);
 	}
 
 	@Test
@@ -108,9 +108,9 @@ class ErrandsRepositoryTest {
 		assertThat(errandEntities.getTotalElements()).isEqualTo(2);
 
 		assertThat(errandEntities)
-			.extracting(ErrandEntity::getId, ErrandEntity::getAssignedGroupId, ErrandEntity::getAssignedUserId).containsExactlyInAnyOrder(
-				tuple("ERRAND_ID-1", "ASSIGNED_GROUP_ID-1", "ASSIGNED_USER_ID-1"),
-				tuple("ERRAND_ID-2", "ASSIGNED_GROUP_ID-1", "ASSIGNED_USER_ID-1"));
+			.extracting(ErrandEntity::getId, ErrandEntity::getAssignedGroupId, ErrandEntity::getAssignedUserId, ErrandEntity::getEscalationEmail).containsExactlyInAnyOrder(
+				tuple("ERRAND_ID-1", "ASSIGNED_GROUP_ID-1", "ASSIGNED_USER_ID-1", "ESCALATION_EMAIL_1"),
+				tuple("ERRAND_ID-2", "ASSIGNED_GROUP_ID-1", "ASSIGNED_USER_ID-1", "ESCALATION_EMAIL_2"));
 	}
 
 	@Test
@@ -120,8 +120,8 @@ class ErrandsRepositoryTest {
 
 		assertThat(errandEntity.get().getStakeholders()).hasSize(1);
 		assertThat(errandEntity.get().getStakeholders())
-				.extracting(StakeholderEntity::getId, StakeholderEntity::getExternalIdTypeTag, StakeholderEntity::getExternalId, StakeholderEntity::getFirstName, StakeholderEntity::getLastName, StakeholderEntity::getAddress, StakeholderEntity::getCareOf, StakeholderEntity::getZipCode, StakeholderEntity::getCountry)
-				.containsExactly(tuple(3001L, "EMPLOYEE", "EXTERNAL_ID-1", "FIRST_NAME-1", "LAST_NAME-1", "ADDRESS-1", "CARE_OF-1", "ZIP_CODE-1", "COUNTRY-1"));
+				.extracting(StakeholderEntity::getId, StakeholderEntity::getExternalIdType, StakeholderEntity::getExternalId, StakeholderEntity::getFirstName, StakeholderEntity::getLastName, StakeholderEntity::getAddress, StakeholderEntity::getCareOf, StakeholderEntity::getZipCode, StakeholderEntity::getCountry, StakeholderEntity::getRole)
+				.containsExactly(tuple(3001L, "EMPLOYEE", "EXTERNAL_ID-1", "FIRST_NAME-1", "LAST_NAME-1", "ADDRESS-1", "CARE_OF-1", "ZIP_CODE-1", "COUNTRY-1", "ROLE-1"));
 		assertThat(errandEntity.get().getStakeholders().get(0).getContactChannels()).hasSize(1);
 		assertThat(errandEntity.get().getStakeholders().get(0).getContactChannels())
 				.extracting(ContactChannelEntity::getType, ContactChannelEntity::getValue)
