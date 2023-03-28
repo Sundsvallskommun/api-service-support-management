@@ -1,10 +1,5 @@
 package se.sundsvall.supportmanagement.api;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.groups.Tuple.tuple;
-import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
-import static org.zalando.problem.Status.BAD_REQUEST;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -13,11 +8,16 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.zalando.problem.violations.ConstraintViolationProblem;
 import org.zalando.problem.violations.Violation;
-
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.metadata.Category;
 import se.sundsvall.supportmanagement.api.model.metadata.ExternalIdType;
 import se.sundsvall.supportmanagement.service.MetadataService;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.groups.Tuple.tuple;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
+import static org.zalando.problem.Status.BAD_REQUEST;
 
 @SpringBootTest(classes = Application.class, webEnvironment = RANDOM_PORT)
 @ActiveProfiles("junit")
@@ -46,7 +46,7 @@ class MetadataCategoriesResourceFailureTest {
 		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
 			tuple("createCategory.namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."));
 
-		// TODO: Verify when service layer is ready
+		verifyNoInteractions(metadataServiceMock);
 	}
 
 	@Test
@@ -66,8 +66,46 @@ class MetadataCategoriesResourceFailureTest {
 		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
 			tuple("createCategory.municipalityId", "not a valid municipality ID"));
 
-		// TODO: Verify when service layer is ready
+		verifyNoInteractions(metadataServiceMock);
 	}
+
+	@Test
+	void getCategoryWithInvalidNamespace() {
+
+		final var response = webTestClient.get().uri("invalid,namespace/2281/metadata/categories/category-name")
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
+			tuple("getCategory.namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."));
+
+		verifyNoInteractions(metadataServiceMock);
+	}
+
+	@Test
+	void getCategoryWithInvalidMunicipalityId() {
+		final var response = webTestClient.get().uri("my.namespace/666/metadata/categories/category-name")
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
+			tuple("getCategory.municipalityId", "not a valid municipality ID"));
+
+		verifyNoInteractions(metadataServiceMock);
+	}
+
 
 	@Test
 	void getCategoriesWithInvalidNamespace() {
@@ -85,7 +123,7 @@ class MetadataCategoriesResourceFailureTest {
 		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
 			tuple("getCategories.namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."));
 
-		// TODO: Verify when service layer is ready
+		verifyNoInteractions(metadataServiceMock);
 	}
 
 	@Test
@@ -103,7 +141,7 @@ class MetadataCategoriesResourceFailureTest {
 		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
 			tuple("getCategories.municipalityId", "not a valid municipality ID"));
 
-		// TODO: Verify when service layer is ready
+		verifyNoInteractions(metadataServiceMock);
 	}
 
 	@Test
@@ -122,7 +160,7 @@ class MetadataCategoriesResourceFailureTest {
 		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
 			tuple("getCategoryTypes.namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."));
 
-		// TODO: Verify when service layer is ready
+		verifyNoInteractions(metadataServiceMock);
 	}
 
 	@Test
@@ -140,7 +178,7 @@ class MetadataCategoriesResourceFailureTest {
 		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
 			tuple("getCategoryTypes.municipalityId", "not a valid municipality ID"));
 
-		// TODO: Verify when service layer is ready
+		verifyNoInteractions(metadataServiceMock);
 	}
 
 	@Test
@@ -160,7 +198,7 @@ class MetadataCategoriesResourceFailureTest {
 		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
 			tuple("updateCategory.namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."));
 
-		// TODO: Verify when service layer is ready
+		verifyNoInteractions(metadataServiceMock);
 	}
 
 	@Test
@@ -180,7 +218,7 @@ class MetadataCategoriesResourceFailureTest {
 		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
 			tuple("updateCategory.municipalityId", "not a valid municipality ID"));
 
-		// TODO: Verify when service layer is ready
+		verifyNoInteractions(metadataServiceMock);
 	}
 
 	@Test
@@ -199,7 +237,7 @@ class MetadataCategoriesResourceFailureTest {
 		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
 			tuple("deleteCategory.namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."));
 
-		// TODO: Verify when service layer is ready
+		verifyNoInteractions(metadataServiceMock);
 	}
 
 	@Test
@@ -218,6 +256,6 @@ class MetadataCategoriesResourceFailureTest {
 		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
 			tuple("deleteCategory.municipalityId", "not a valid municipality ID"));
 
-		// TODO: Verify when service layer is ready
+		verifyNoInteractions(metadataServiceMock);
 	}
 }
