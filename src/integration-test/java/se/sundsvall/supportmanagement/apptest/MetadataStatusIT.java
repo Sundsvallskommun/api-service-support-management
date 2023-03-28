@@ -43,6 +43,8 @@ class MetadataStatusIT extends AbstractAppTest {
 
 	@Test
 	void test01_createStatus() throws Exception {
+		assertThat(statusRepository.existsByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_2281, "A_BRAND_NEW_STATUS")).isFalse();
+
 		setupCall()
 			.withServicePath(PATH)
 			.withHttpMethod(POST)

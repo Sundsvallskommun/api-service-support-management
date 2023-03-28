@@ -43,6 +43,8 @@ class MetadataExternalIdTypeIT extends AbstractAppTest {
 
 	@Test
 	void test01_createExternalIdType() throws Exception {
+		assertThat(externalIdTypeRepository.existsByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_2281, "A_BRAND_NEW_EXTERNAL_ID_TYPE")).isFalse();
+
 		setupCall()
 			.withServicePath(PATH)
 			.withHttpMethod(POST)
