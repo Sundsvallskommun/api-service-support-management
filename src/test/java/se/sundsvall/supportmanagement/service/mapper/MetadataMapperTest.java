@@ -13,6 +13,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import se.sundsvall.supportmanagement.api.model.metadata.ExternalIdType;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
 import se.sundsvall.supportmanagement.api.model.metadata.Type;
 import se.sundsvall.supportmanagement.integration.db.model.CategoryEntity;
@@ -90,6 +91,20 @@ class MetadataMapperTest {
 	@Test
 	void toExternalIdTypeForNull() {
 		assertThat(MetadataMapper.toExternalIdType(null)).isNull();
+	}
+
+	@ParameterizedTest
+	@MethodSource(value = "toExternalIdTypeEntityArguments")
+	void toExternalIdTypeEntity(String namespace, String municipalityId, ExternalIdType externalIdType, ExternalIdTypeEntity expectedResult) {
+		assertThat(MetadataMapper.toExternalIdTypeEntity(namespace, municipalityId, externalIdType)).isEqualTo(expectedResult);
+	}
+
+	private static Stream<Arguments> toExternalIdTypeEntityArguments() {
+		return Stream.of(
+			Arguments.of("namespace", "municipalityId", null, null),
+			Arguments.of("namespace", null, ExternalIdType.create().withName("name"), null),
+			Arguments.of(null, "municipalityId", ExternalIdType.create().withName("name"), null),
+			Arguments.of("namespace", "municipalityId", ExternalIdType.create().withName("name"), ExternalIdTypeEntity.create().withNamespace("namespace").withMunicipalityId("municipalityId").withName("name")));
 	}
 
 	@Test

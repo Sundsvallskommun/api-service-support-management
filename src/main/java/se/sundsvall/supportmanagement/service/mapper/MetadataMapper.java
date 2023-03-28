@@ -8,8 +8,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import org.apache.commons.lang3.ObjectUtils;
-
 import se.sundsvall.supportmanagement.api.model.metadata.Category;
 import se.sundsvall.supportmanagement.api.model.metadata.ExternalIdType;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
@@ -39,9 +37,6 @@ public class MetadataMapper {
 		return Optional.ofNullable(typeEntities).orElse(Collections.emptyList()).stream()
 			.map(MetadataMapper::toType)
 			.filter(Objects::nonNull)
-			.sorted((o1, o2) -> ObjectUtils.compare(
-				o1.getDisplayName(),
-				o2.getDisplayName()))
 			.toList();
 	}
 
@@ -83,5 +78,16 @@ public class MetadataMapper {
 				.withModified(e.getModified())
 				.withName(e.getName()))
 			.orElse(null);
+	}
+
+	public static ExternalIdTypeEntity toExternalIdTypeEntity(String namespace, String municipalityId, ExternalIdType externalIdType) {
+		if (anyNull(namespace, municipalityId, externalIdType)) {
+			return null;
+		}
+
+		return ExternalIdTypeEntity.create()
+			.withMunicipalityId(municipalityId)
+			.withName(externalIdType.getName())
+			.withNamespace(namespace);
 	}
 }
