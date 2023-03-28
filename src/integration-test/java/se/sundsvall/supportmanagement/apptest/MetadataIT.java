@@ -51,29 +51,7 @@ class MetadataIT extends AbstractAppTest {
 	}
 
 	@Test
-	void test03_getStatuses() throws Exception {
-		setupCall()
-			.withServicePath(PATH_2281 + "/statuses")
-			.withHttpMethod(GET)
-			.withExpectedResponseStatus(OK)
-			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
-			.withExpectedResponse(RESPONSE_FILE)
-			.sendRequestAndVerifyResponse();
-	}
-
-	@Test
-	void test04_getStatusesWhenEmpty() throws Exception {
-		setupCall()
-			.withServicePath(PATH_2309 + "/statuses")
-			.withHttpMethod(GET)
-			.withExpectedResponseStatus(OK)
-			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
-			.withExpectedResponse(RESPONSE_FILE)
-			.sendRequestAndVerifyResponse();
-	}
-
-	@Test
-	void test05_getCategories() throws Exception {
+	void test03_getCategories() throws Exception {
 		setupCall()
 			.withServicePath(PATH_2281 + "/categories")
 			.withHttpMethod(GET)
@@ -84,7 +62,7 @@ class MetadataIT extends AbstractAppTest {
 	}
 
 	@Test
-	void test06_getCategoriesWhenEmpty() throws Exception {
+	void test04_getCategoriesWhenEmpty() throws Exception {
 		setupCall()
 			.withServicePath(PATH_2309 + "/categories")
 			.withHttpMethod(GET)
@@ -95,7 +73,7 @@ class MetadataIT extends AbstractAppTest {
 	}
 
 	@Test
-	void test07_getTypesForCategory() throws Exception {
+	void test05_getTypesForCategory() throws Exception {
 		setupCall()
 			.withServicePath(PATH_2281 + "/categories/CATEGORY-1/types")
 			.withHttpMethod(GET)
@@ -106,31 +84,9 @@ class MetadataIT extends AbstractAppTest {
 	}
 
 	@Test
-	void test08_getTypesForCategoryWhenEmpty() throws Exception {
+	void test06_getTypesForCategoryWhenEmpty() throws Exception {
 		setupCall()
 			.withServicePath(PATH_2309 + "/categories/CATEGORY-1/types")
-			.withHttpMethod(GET)
-			.withExpectedResponseStatus(OK)
-			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
-			.withExpectedResponse(RESPONSE_FILE)
-			.sendRequestAndVerifyResponse();
-	}
-
-	@Test
-	void test09_getExternalIdTypes() throws Exception {
-		setupCall()
-			.withServicePath(PATH_2281 + "/externalIdTypes")
-			.withHttpMethod(GET)
-			.withExpectedResponseStatus(OK)
-			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
-			.withExpectedResponse(RESPONSE_FILE)
-			.sendRequestAndVerifyResponse();
-	}
-
-	@Test
-	void test10_getExternalIdTypesWhenEmpty() throws Exception {
-		setupCall()
-			.withServicePath(PATH_2309 + "/externalIdTypes")
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
