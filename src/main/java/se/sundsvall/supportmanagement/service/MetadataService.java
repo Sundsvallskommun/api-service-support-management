@@ -1,23 +1,11 @@
 package se.sundsvall.supportmanagement.service;
 
-import static java.util.Collections.emptyList;
-import static java.util.Comparator.comparing;
-import static java.util.Comparator.naturalOrder;
-import static java.util.Comparator.nullsFirst;
-import static org.zalando.problem.Status.BAD_REQUEST;
-import static org.zalando.problem.Status.NOT_FOUND;
-import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toStatusEntity;
-
-import java.util.List;
-import java.util.Objects;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.zalando.problem.Problem;
-
 import se.sundsvall.supportmanagement.api.model.metadata.Category;
 import se.sundsvall.supportmanagement.api.model.metadata.ExternalIdType;
 import se.sundsvall.supportmanagement.api.model.metadata.MetadataResponse;
@@ -42,6 +30,7 @@ import static org.zalando.problem.Status.BAD_REQUEST;
 import static org.zalando.problem.Status.NOT_FOUND;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toCategory;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toCategoryEntity;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toExternalIdTypeEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toStatusEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateEntity;
 
@@ -50,6 +39,10 @@ public class MetadataService {
 	private static final String CACHE_NAME = "metadataCache";
 	private static final String ITEM_ALREADY_EXISTS_IN_NAMESPACE_FOR_MUNICIPALITY_ID = "%s '%s' already exists in namespace '%s' for municipalityId '%s'";
 	private static final String ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID = "%s '%s' is not present in namespace '%s' for municipalityId '%s'";
+
+	private static final String CATEGORY = "Category";
+	private static final String STATUS = "Status";
+	private static final String EXTERNAL_ID_TYPE = "ExternalIdType";
 
 	@Autowired
 	private StatusRepository statusRepository;
@@ -92,7 +85,7 @@ public class MetadataService {
 	})
 	public String createExternalIdType(String namespace, String municipalityId, ExternalIdType externalIdType) {
 		if (externalIdTypeRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, externalIdType.getName())) {
-			throw Problem.valueOf(BAD_REQUEST, String.format(ITEM_ALREADY_EXISTS_IN_NAMESPACE_FOR_MUNICIPALITY_ID, "ExternalIdType", externalIdType.getName(), namespace, municipalityId));
+			throw Problem.valueOf(BAD_REQUEST, String.format(ITEM_ALREADY_EXISTS_IN_NAMESPACE_FOR_MUNICIPALITY_ID, EXTERNAL_ID_TYPE, externalIdType.getName(), namespace, municipalityId));
 		}
 
 		return externalIdTypeRepository.save(toExternalIdTypeEntity(namespace, municipalityId, externalIdType)).getName();
@@ -100,7 +93,7 @@ public class MetadataService {
 
 	public ExternalIdType getExternalIdType(String namespace, String municipalityId, String name) {
 		if (!externalIdTypeRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)) {
-			throw Problem.valueOf(NOT_FOUND, String.format(ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID, "ExternalIdType", name, namespace, municipalityId));
+			throw Problem.valueOf(NOT_FOUND, String.format(ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID, EXTERNAL_ID_TYPE, name, namespace, municipalityId));
 		}
 
 		return MetadataMapper.toExternalIdType(externalIdTypeRepository.getByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name));
@@ -122,7 +115,7 @@ public class MetadataService {
 	})
 	public void deleteExternalIdType(String namespace, String municipalityId, String name) {
 		if (!externalIdTypeRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)) {
-			throw Problem.valueOf(NOT_FOUND, String.format(ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID, "ExternalIdType", name, namespace, municipalityId));
+			throw Problem.valueOf(NOT_FOUND, String.format(ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID, EXTERNAL_ID_TYPE, name, namespace, municipalityId));
 		}
 
 		externalIdTypeRepository.deleteByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
@@ -138,7 +131,7 @@ public class MetadataService {
 	})
 	public String createStatus(String namespace, String municipalityId, Status status) {
 		if (statusRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, status.getName())) {
-			throw Problem.valueOf(BAD_REQUEST, String.format(ITEM_ALREADY_EXISTS_IN_NAMESPACE_FOR_MUNICIPALITY_ID, "Status", status.getName(), namespace, municipalityId));
+			throw Problem.valueOf(BAD_REQUEST, String.format(ITEM_ALREADY_EXISTS_IN_NAMESPACE_FOR_MUNICIPALITY_ID, STATUS, status.getName(), namespace, municipalityId));
 		}
 
 		return statusRepository.save(toStatusEntity(namespace, municipalityId, status)).getName();
@@ -146,7 +139,7 @@ public class MetadataService {
 
 	public Status getStatus(String namespace, String municipalityId, String name) {
 		if (!statusRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)) {
-			throw Problem.valueOf(NOT_FOUND, String.format(ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID, "Status", name, namespace, municipalityId));
+			throw Problem.valueOf(NOT_FOUND, String.format(ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID, STATUS, name, namespace, municipalityId));
 		}
 
 		return MetadataMapper.toStatus(statusRepository.getByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name));
@@ -168,7 +161,7 @@ public class MetadataService {
 	})
 	public void deleteStatus(String namespace, String municipalityId, String name) {
 		if (!statusRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)) {
-			throw Problem.valueOf(NOT_FOUND, String.format(ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID, "Status", name, namespace, municipalityId));
+			throw Problem.valueOf(NOT_FOUND, String.format(ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID, STATUS, name, namespace, municipalityId));
 		}
 
 		statusRepository.deleteByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
@@ -178,10 +171,14 @@ public class MetadataService {
 	// Category and Type operations
 	// =================================================================
 
-	@CacheEvict(value = CACHE_NAME, key = "{'findCategories', #namespace, #municipalityId}")
+	@Caching(evict = {
+		@CacheEvict(value = CACHE_NAME, key = "{'findCategories', #namespace, #municipalityId}"),
+		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}"),
+		@CacheEvict(value = CACHE_NAME, key = "{'findTypes', #namespace, #municipalityId}")
+	})
 	public String createCategory(String namespace, String municipalityId, Category category) {
 		if (categoryRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, category.getName())) {
-			throw Problem.valueOf(BAD_REQUEST, String.format(CATEGORY_ALREADY_EXISTS_IN_NAMESPACE_FOR_MUNICIPALITY_ID, category.getName(), namespace, municipalityId));
+			throw Problem.valueOf(BAD_REQUEST, String.format(ITEM_ALREADY_EXISTS_IN_NAMESPACE_FOR_MUNICIPALITY_ID, CATEGORY, category.getName(), namespace, municipalityId));
 		}
 
 		return categoryRepository.save(toCategoryEntity(namespace, municipalityId, category)).getName();
@@ -189,20 +186,24 @@ public class MetadataService {
 
 	public Category getCategory(String namespace, String municipalityId, String name) {
 		if (!categoryRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)) {
-			throw Problem.valueOf(NOT_FOUND, String.format(CATEGORY_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID, name, namespace, municipalityId));
+			throw Problem.valueOf(NOT_FOUND, String.format(ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID, CATEGORY, name, namespace, municipalityId));
 		}
 
 		return MetadataMapper.toCategory(categoryRepository.getByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name));
 	}
 
+	@Caching(evict = {
+		@CacheEvict(value = CACHE_NAME, key = "{'findCategories', #namespace, #municipalityId}"),
+		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}"),
+		@CacheEvict(value = CACHE_NAME, key = "{'findTypes', #namespace, #municipalityId}")
+	})
 	public Category updateCategory(String namespace, String municipalityId, String name, Category category) {
 		if (!categoryRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)) {
-			throw Problem.valueOf(NOT_FOUND, String.format(CATEGORY_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID, name, namespace, municipalityId));
+			throw Problem.valueOf(NOT_FOUND, String.format(ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID, CATEGORY, name, namespace, municipalityId));
 		}
 		final var entity = updateEntity(categoryRepository.getByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name), category);
 		return toCategory(categoryRepository.save(entity));
 	}
-
 
 	@Cacheable(value = CACHE_NAME, key = "{#root.methodName, #namespace, #municipalityId}")
 	public List<Category> findCategories(String namespace, String municipalityId) {
@@ -227,10 +228,14 @@ public class MetadataService {
 			.toList();
 	}
 
-	@CacheEvict(value = CACHE_NAME, key = "{'findCategories', #namespace, #municipalityId}, {'findTypes', #namespace, #municipalityId, #category}")
+	@Caching(evict = {
+		@CacheEvict(value = CACHE_NAME, key = "{'findCategories', #namespace, #municipalityId}"),
+		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}"),
+		@CacheEvict(value = CACHE_NAME, key = "{'findTypes', #namespace, #municipalityId}")
+	})
 	public void deleteCategory(String namespace, String municipalityId, String name) {
 		if (!categoryRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)) {
-			throw Problem.valueOf(NOT_FOUND, String.format(CATEGORY_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID, name, namespace, municipalityId));
+			throw Problem.valueOf(NOT_FOUND, String.format(ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID, CATEGORY, name, namespace, municipalityId));
 		}
 
 		categoryRepository.deleteByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);

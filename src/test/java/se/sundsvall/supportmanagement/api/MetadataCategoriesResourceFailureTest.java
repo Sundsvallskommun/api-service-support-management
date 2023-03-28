@@ -70,6 +70,44 @@ class MetadataCategoriesResourceFailureTest {
 	}
 
 	@Test
+	void getCategoryWithInvalidNamespace() {
+
+		final var response = webTestClient.get().uri("invalid,namespace/2281/metadata/categories/category-name")
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
+			tuple("getCategory.namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."));
+
+		verifyNoInteractions(metadataServiceMock);
+	}
+
+	@Test
+	void getCategoryWithInvalidMunicipalityId() {
+		final var response = webTestClient.get().uri("my.namespace/666/metadata/categories/category-name")
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
+			tuple("getCategory.municipalityId", "not a valid municipality ID"));
+
+		verifyNoInteractions(metadataServiceMock);
+	}
+
+
+	@Test
 	void getCategoriesWithInvalidNamespace() {
 
 		final var response = webTestClient.get().uri("invalid,namespace/2281/metadata/categories")

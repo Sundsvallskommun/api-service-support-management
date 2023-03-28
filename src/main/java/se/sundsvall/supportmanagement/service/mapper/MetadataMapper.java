@@ -1,15 +1,6 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
-import static java.util.Optional.ofNullable;
-import static org.apache.commons.lang3.ObjectUtils.anyNull;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-
 import org.apache.commons.lang3.ObjectUtils;
-
 import se.sundsvall.supportmanagement.api.model.metadata.Category;
 import se.sundsvall.supportmanagement.api.model.metadata.ExternalIdType;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
@@ -51,9 +42,9 @@ public class MetadataMapper {
 			return null;
 		}
 		return CategoryEntity.create()
-				.withCreated(category.getCreated())
+				.withNamespace(namespace)
+				.withMunicipalityId(municipalityId)
 				.withDisplayName(category.getDisplayName())
-				.withModified(category.getModified())
 				.withName(category.getName())
 				.withTypes(toTypeEntities(category.getTypes()));
 	}
@@ -83,19 +74,14 @@ public class MetadataMapper {
 		return Optional.ofNullable(types).orElse(emptyList()).stream()
 			.map(MetadataMapper::toTypeEntity)
 			.filter(Objects::nonNull)
-			.sorted((o1, o2) -> ObjectUtils.compare(
-				o1.getDisplayName(),
-				o2.getDisplayName()))
 			.toList();
 	}
 
 	private static TypeEntity toTypeEntity(Type type) {
 		return ofNullable(type)
 			.map(e -> TypeEntity.create()
-				.withCreated(e.getCreated())
 				.withDisplayName(e.getDisplayName())
 				.withEscalationEmail(e.getEscalationEmail())
-				.withModified(e.getModified())
 				.withName(e.getName()))
 			.orElse(null);
 	}
@@ -127,6 +113,17 @@ public class MetadataMapper {
 				.withModified(e.getModified())
 				.withName(e.getName()))
 			.orElse(null);
+	}
+
+	public static ExternalIdTypeEntity toExternalIdTypeEntity(String namespace, String municipalityId, ExternalIdType externalIdType) {
+		if (anyNull(namespace, municipalityId, externalIdType)) {
+			return null;
+		}
+
+		return ExternalIdTypeEntity.create()
+			.withMunicipalityId(municipalityId)
+			.withName(externalIdType.getName())
+			.withNamespace(namespace);
 	}
 
 	public static CategoryEntity updateEntity(CategoryEntity entity, Category category) {
