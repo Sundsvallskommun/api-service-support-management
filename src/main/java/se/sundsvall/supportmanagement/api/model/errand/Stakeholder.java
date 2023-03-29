@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.api.model.errand;
 
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
+import se.sundsvall.supportmanagement.api.validation.ValidRole;
 
 import java.util.List;
 import java.util.Objects;
@@ -16,6 +17,7 @@ public class Stakeholder {
 	private String externalIdType;
 
 	@Schema(description = "Role of stakeholder", example = "ADMINISTRATOR")
+	@ValidRole
 	private String role;
 
 	@Schema(description = "First name", example = "Aurthur")
