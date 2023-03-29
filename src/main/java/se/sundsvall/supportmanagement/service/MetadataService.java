@@ -6,7 +6,11 @@ import static java.util.Comparator.naturalOrder;
 import static java.util.Comparator.nullsFirst;
 import static org.zalando.problem.Status.BAD_REQUEST;
 import static org.zalando.problem.Status.NOT_FOUND;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toExternalIdType;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toExternalIdTypeEntity;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toRole;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toRoleEntity;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toStatus;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toStatusEntity;
 
 import java.util.List;
@@ -22,10 +26,12 @@ import org.zalando.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.metadata.Category;
 import se.sundsvall.supportmanagement.api.model.metadata.ExternalIdType;
 import se.sundsvall.supportmanagement.api.model.metadata.MetadataResponse;
+import se.sundsvall.supportmanagement.api.model.metadata.Role;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
 import se.sundsvall.supportmanagement.api.model.metadata.Type;
 import se.sundsvall.supportmanagement.integration.db.CategoryRepository;
 import se.sundsvall.supportmanagement.integration.db.ExternalIdTypeRepository;
+import se.sundsvall.supportmanagement.integration.db.RoleRepository;
 import se.sundsvall.supportmanagement.integration.db.StatusRepository;
 import se.sundsvall.supportmanagement.integration.db.ValidationRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ValidationEntity;
@@ -34,12 +40,20 @@ import se.sundsvall.supportmanagement.service.mapper.MetadataMapper;
 
 @Service
 public class MetadataService {
+
+	private static final String EXTERNAL_ID_TYPE = ExternalIdType.class.getSimpleName();
+	private static final String STATUS = Status.class.getSimpleName();
+	private static final String ROLE = Role.class.getSimpleName();
+
 	private static final String CACHE_NAME = "metadataCache";
 	private static final String ITEM_ALREADY_EXISTS_IN_NAMESPACE_FOR_MUNICIPALITY_ID = "%s '%s' already exists in namespace '%s' for municipalityId '%s'";
 	private static final String ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID = "%s '%s' is not present in namespace '%s' for municipalityId '%s'";
 
 	@Autowired
 	private StatusRepository statusRepository;
+
+	@Autowired
+	private RoleRepository roleRepository;
 
 	@Autowired
 	private CategoryRepository categoryRepository;
@@ -55,15 +69,16 @@ public class MetadataService {
 	// =================================================================
 
 	@Cacheable(value = CACHE_NAME, key = "{#root.methodName, #namespace, #municipalityId}")
-	public MetadataResponse findAll(String namespace, String municipalityId) {
+	public MetadataResponse findAll(final String namespace, final String municipalityId) {
 		return MetadataResponse.create()
 			.withCategories(findCategories(namespace, municipalityId))
 			.withStatuses(findStatuses(namespace, municipalityId))
+			.withRoles(findRoles(namespace, municipalityId))
 			.withExternalIdTypes(findExternalIdTypes(namespace, municipalityId));
 	}
 
 	@Cacheable(value = CACHE_NAME, key = "{#root.methodName, #namespace, #municipalityId, #type}")
-	public boolean isValidated(String namespace, String municipalityId, EntityType type) {
+	public boolean isValidated(final String namespace, final String municipalityId, final EntityType type) {
 		return validationRepository.findByNamespaceAndMunicipalityIdAndType(namespace, municipalityId, type)
 			.map(ValidationEntity::isValidated)
 			.orElse(false);
@@ -77,24 +92,24 @@ public class MetadataService {
 		@CacheEvict(value = CACHE_NAME, key = "{'findExternalIdTypes', #namespace, #municipalityId}"),
 		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}")
 	})
-	public String createExternalIdType(String namespace, String municipalityId, ExternalIdType externalIdType) {
+	public String createExternalIdType(final String namespace, final String municipalityId, final ExternalIdType externalIdType) {
 		if (externalIdTypeRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, externalIdType.getName())) {
-			throw Problem.valueOf(BAD_REQUEST, String.format(ITEM_ALREADY_EXISTS_IN_NAMESPACE_FOR_MUNICIPALITY_ID, "ExternalIdType", externalIdType.getName(), namespace, municipalityId));
+			throw Problem.valueOf(BAD_REQUEST, String.format(ITEM_ALREADY_EXISTS_IN_NAMESPACE_FOR_MUNICIPALITY_ID, EXTERNAL_ID_TYPE, externalIdType.getName(), namespace, municipalityId));
 		}
 
 		return externalIdTypeRepository.save(toExternalIdTypeEntity(namespace, municipalityId, externalIdType)).getName();
 	}
 
-	public ExternalIdType getExternalIdType(String namespace, String municipalityId, String name) {
+	public ExternalIdType getExternalIdType(final String namespace, final String municipalityId, final String name) {
 		if (!externalIdTypeRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)) {
-			throw Problem.valueOf(NOT_FOUND, String.format(ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID, "ExternalIdType", name, namespace, municipalityId));
+			throw Problem.valueOf(NOT_FOUND, String.format(ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID, EXTERNAL_ID_TYPE, name, namespace, municipalityId));
 		}
 
-		return MetadataMapper.toExternalIdType(externalIdTypeRepository.getByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name));
+		return toExternalIdType(externalIdTypeRepository.getByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name));
 	}
 
 	@Cacheable(value = CACHE_NAME, key = "{#root.methodName, #namespace, #municipalityId}")
-	public List<ExternalIdType> findExternalIdTypes(String namespace, String municipalityId) {
+	public List<ExternalIdType> findExternalIdTypes(final String namespace, final String municipalityId) {
 		return externalIdTypeRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId)
 			.stream()
 			.map(MetadataMapper::toExternalIdType)
@@ -107,9 +122,9 @@ public class MetadataService {
 		@CacheEvict(value = CACHE_NAME, key = "{'findExternalIdTypes', #namespace, #municipalityId}"),
 		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}")
 	})
-	public void deleteExternalIdType(String namespace, String municipalityId, String name) {
+	public void deleteExternalIdType(final String namespace, final String municipalityId, final String name) {
 		if (!externalIdTypeRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)) {
-			throw Problem.valueOf(NOT_FOUND, String.format(ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID, "ExternalIdType", name, namespace, municipalityId));
+			throw Problem.valueOf(NOT_FOUND, String.format(ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID, EXTERNAL_ID_TYPE, name, namespace, municipalityId));
 		}
 
 		externalIdTypeRepository.deleteByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
@@ -123,24 +138,24 @@ public class MetadataService {
 		@CacheEvict(value = CACHE_NAME, key = "{'findStatuses', #namespace, #municipalityId}"),
 		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}")
 	})
-	public String createStatus(String namespace, String municipalityId, Status status) {
+	public String createStatus(final String namespace, final String municipalityId, final Status status) {
 		if (statusRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, status.getName())) {
-			throw Problem.valueOf(BAD_REQUEST, String.format(ITEM_ALREADY_EXISTS_IN_NAMESPACE_FOR_MUNICIPALITY_ID, "Status", status.getName(), namespace, municipalityId));
+			throw Problem.valueOf(BAD_REQUEST, String.format(ITEM_ALREADY_EXISTS_IN_NAMESPACE_FOR_MUNICIPALITY_ID, STATUS, status.getName(), namespace, municipalityId));
 		}
 
 		return statusRepository.save(toStatusEntity(namespace, municipalityId, status)).getName();
 	}
 
-	public Status getStatus(String namespace, String municipalityId, String name) {
+	public Status getStatus(final String namespace, final String municipalityId, final String name) {
 		if (!statusRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)) {
-			throw Problem.valueOf(NOT_FOUND, String.format(ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID, "Status", name, namespace, municipalityId));
+			throw Problem.valueOf(NOT_FOUND, String.format(ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID, STATUS, name, namespace, municipalityId));
 		}
 
-		return MetadataMapper.toStatus(statusRepository.getByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name));
+		return toStatus(statusRepository.getByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name));
 	}
 
 	@Cacheable(value = CACHE_NAME, key = "{#root.methodName, #namespace, #municipalityId}")
-	public List<Status> findStatuses(String namespace, String municipalityId) {
+	public List<Status> findStatuses(final String namespace, final String municipalityId) {
 		return statusRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId)
 			.stream()
 			.map(MetadataMapper::toStatus)
@@ -153,12 +168,58 @@ public class MetadataService {
 		@CacheEvict(value = CACHE_NAME, key = "{'findStatuses', #namespace, #municipalityId}"),
 		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}")
 	})
-	public void deleteStatus(String namespace, String municipalityId, String name) {
+	public void deleteStatus(final String namespace, final String municipalityId, final String name) {
 		if (!statusRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)) {
-			throw Problem.valueOf(NOT_FOUND, String.format(ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID, "Status", name, namespace, municipalityId));
+			throw Problem.valueOf(NOT_FOUND, String.format(ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID, STATUS, name, namespace, municipalityId));
 		}
 
 		statusRepository.deleteByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
+	}
+
+	// =================================================================
+	// Role operations
+	// =================================================================
+
+	@Caching(evict = {
+		@CacheEvict(value = CACHE_NAME, key = "{'findRoles', #namespace, #municipalityId}"),
+		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}")
+	})
+	public String createRole(final String namespace, final String municipalityId, final Role role) {
+		if (roleRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, role.getName())) {
+			throw Problem.valueOf(BAD_REQUEST, String.format(ITEM_ALREADY_EXISTS_IN_NAMESPACE_FOR_MUNICIPALITY_ID, ROLE, role.getName(), namespace, municipalityId));
+		}
+
+		return roleRepository.save(toRoleEntity(namespace, municipalityId, role)).getName();
+	}
+
+	public Role getRole(final String namespace, final String municipalityId, final String name) {
+		if (!roleRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)) {
+			throw Problem.valueOf(NOT_FOUND, String.format(ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID, ROLE, name, namespace, municipalityId));
+		}
+
+		return toRole(roleRepository.getByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name));
+	}
+
+	@Cacheable(value = CACHE_NAME, key = "{#root.methodName, #namespace, #municipalityId}")
+	public List<Role> findRoles(final String namespace, final String municipalityId) {
+		return roleRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId)
+			.stream()
+			.map(MetadataMapper::toRole)
+			.filter(Objects::nonNull)
+			.sorted(comparing(Role::getName))
+			.toList();
+	}
+
+	@Caching(evict = {
+		@CacheEvict(value = CACHE_NAME, key = "{'findRoles', #namespace, #municipalityId}"),
+		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}")
+	})
+	public void deleteRole(final String namespace, final String municipalityId, final String name) {
+		if (!roleRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)) {
+			throw Problem.valueOf(NOT_FOUND, String.format(ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID, ROLE, name, namespace, municipalityId));
+		}
+
+		roleRepository.deleteByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
 	}
 
 	// =================================================================
@@ -166,7 +227,7 @@ public class MetadataService {
 	// =================================================================
 
 	@Cacheable(value = CACHE_NAME, key = "{#root.methodName, #namespace, #municipalityId}")
-	public List<Category> findCategories(String namespace, String municipalityId) {
+	public List<Category> findCategories(final String namespace, final String municipalityId) {
 		return categoryRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId)
 			.stream()
 			.map(MetadataMapper::toCategory)
@@ -176,7 +237,7 @@ public class MetadataService {
 	}
 
 	@Cacheable(value = CACHE_NAME, key = "{#root.methodName, #namespace, #municipalityId, #category}")
-	public List<Type> findTypes(String namespace, String municipalityId, String category) {
+	public List<Type> findTypes(final String namespace, final String municipalityId, final String category) {
 		return findCategories(namespace, municipalityId)
 			.stream()
 			.filter(entry -> Objects.equals(category, entry.getName()))

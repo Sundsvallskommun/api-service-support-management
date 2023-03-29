@@ -14,14 +14,20 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import se.sundsvall.supportmanagement.api.model.metadata.ExternalIdType;
+import se.sundsvall.supportmanagement.api.model.metadata.Role;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
 import se.sundsvall.supportmanagement.api.model.metadata.Type;
 import se.sundsvall.supportmanagement.integration.db.model.CategoryEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ExternalIdTypeEntity;
+import se.sundsvall.supportmanagement.integration.db.model.RoleEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StatusEntity;
 import se.sundsvall.supportmanagement.integration.db.model.TypeEntity;
 
 class MetadataMapperTest {
+
+	// =================================================================
+	// Category and Type tests
+	// =================================================================
 
 	@Test
 	void toCategory() {
@@ -57,13 +63,17 @@ class MetadataMapperTest {
 	void toCategoryForEmptyEntity() {
 		assertThat(MetadataMapper.toCategory(CategoryEntity.create()))
 			.hasAllNullFieldsOrPropertiesExcept("types")
-			.hasFieldOrPropertyWithValue("types", emptyList());;
+			.hasFieldOrPropertyWithValue("types", emptyList());
 	}
 
 	@Test
 	void toCategoryForNull() {
 		assertThat(MetadataMapper.toCategory(null)).isNull();
 	}
+
+	// =================================================================
+	// ExternalIdType tests
+	// =================================================================
 
 	@Test
 	void toExternalIdType() {
@@ -95,7 +105,7 @@ class MetadataMapperTest {
 
 	@ParameterizedTest
 	@MethodSource(value = "toExternalIdTypeEntityArguments")
-	void toExternalIdTypeEntity(String namespace, String municipalityId, ExternalIdType externalIdType, ExternalIdTypeEntity expectedResult) {
+	void toExternalIdTypeEntity(final String namespace, final String municipalityId, final ExternalIdType externalIdType, final ExternalIdTypeEntity expectedResult) {
 		assertThat(MetadataMapper.toExternalIdTypeEntity(namespace, municipalityId, externalIdType)).isEqualTo(expectedResult);
 	}
 
@@ -107,11 +117,15 @@ class MetadataMapperTest {
 			Arguments.of("namespace", "municipalityId", ExternalIdType.create().withName("name"), ExternalIdTypeEntity.create().withNamespace("namespace").withMunicipalityId("municipalityId").withName("name")));
 	}
 
+	// =================================================================
+	// Status tests
+	// =================================================================
+
 	@Test
 	void toStatus() {
 		final var created = OffsetDateTime.now().minusDays(1);
 		final var modified = OffsetDateTime.now();
-		final var name = "categoryName";
+		final var name = "statusName";
 
 		final var entity = StatusEntity.create()
 			.withCreated(created)
@@ -137,7 +151,7 @@ class MetadataMapperTest {
 
 	@ParameterizedTest
 	@MethodSource(value = "toStatusEntityArguments")
-	void toStatusEntity(String namespace, String municipalityId, Status status, StatusEntity expectedResult) {
+	void toStatusEntity(final String namespace, final String municipalityId, final Status status, final StatusEntity expectedResult) {
 		assertThat(MetadataMapper.toStatusEntity(namespace, municipalityId, status)).isEqualTo(expectedResult);
 	}
 
@@ -149,8 +163,54 @@ class MetadataMapperTest {
 			Arguments.of("namespace", "municipalityId", Status.create().withName("name"), StatusEntity.create().withNamespace("namespace").withMunicipalityId("municipalityId").withName("name")));
 	}
 
-	private static CategoryEntity createCategoryEntity(OffsetDateTime categoryCreated, String categoryDisplayName, OffsetDateTime categoryModified, String categoryName,
-		OffsetDateTime typeCreated, String typeDisplayName, String typeEscalationEmail, OffsetDateTime typeModified, String typeName) {
+	// =================================================================
+	// Role tests
+	// =================================================================
+
+	@Test
+	void toRole() {
+		final var created = OffsetDateTime.now().minusDays(1);
+		final var modified = OffsetDateTime.now();
+		final var name = "roleName";
+
+		final var entity = RoleEntity.create()
+			.withCreated(created)
+			.withModified(modified)
+			.withName(name);
+
+		final var bean = MetadataMapper.toRole(entity);
+
+		assertThat(bean.getCreated()).isEqualTo(created);
+		assertThat(bean.getModified()).isEqualTo(modified);
+		assertThat(bean.getName()).isEqualTo(name);
+	}
+
+	@Test
+	void toRoleForEmptyEntity() {
+		assertThat(MetadataMapper.toRole(RoleEntity.create())).hasAllNullFieldsOrProperties();
+	}
+
+	@Test
+	void toRoleForNull() {
+		assertThat(MetadataMapper.toRole(null)).isNull();
+	}
+
+	@ParameterizedTest
+	@MethodSource(value = "toRoleEntityArguments")
+	void toRoleEntity(final String namespace, final String municipalityId, final Role role, final RoleEntity expectedResult) {
+		assertThat(MetadataMapper.toRoleEntity(namespace, municipalityId, role)).isEqualTo(expectedResult);
+	}
+
+	private static Stream<Arguments> toRoleEntityArguments() {
+		return Stream.of(
+			Arguments.of("namespace", "municipalityId", null, null),
+			Arguments.of("namespace", null, Role.create().withName("name"), null),
+			Arguments.of(null, "municipalityId", Role.create().withName("name"), null),
+			Arguments.of("namespace", "municipalityId", Role.create().withName("name"), RoleEntity.create().withNamespace("namespace").withMunicipalityId("municipalityId").withName("name")));
+	}
+
+	private static CategoryEntity createCategoryEntity(final OffsetDateTime categoryCreated, final String categoryDisplayName, final OffsetDateTime categoryModified, final String categoryName,
+		final OffsetDateTime typeCreated, final String typeDisplayName, final String typeEscalationEmail, final OffsetDateTime typeModified, final String typeName) {
 		return CategoryEntity.create()
 			.withCreated(categoryCreated)
 			.withDisplayName(categoryDisplayName)
@@ -159,7 +219,7 @@ class MetadataMapperTest {
 			.withTypes(List.of(createTypeEntity(typeCreated, typeDisplayName, typeEscalationEmail, typeModified, typeName)));
 	}
 
-	private static TypeEntity createTypeEntity(OffsetDateTime typeCreated, String typeDisplayName, String typeEscalationEmail, OffsetDateTime typeModified, String typeName) {
+	private static TypeEntity createTypeEntity(final OffsetDateTime typeCreated, final String typeDisplayName, final String typeEscalationEmail, final OffsetDateTime typeModified, final String typeName) {
 		return TypeEntity.create()
 			.withCreated(typeCreated)
 			.withDisplayName(typeDisplayName)
