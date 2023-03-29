@@ -1,24 +1,5 @@
 package se.sundsvall.supportmanagement.api.validation.impl;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.web.context.request.RequestAttributes;
-import org.springframework.web.context.request.RequestContextHolder;
-import se.sundsvall.supportmanagement.api.model.errand.Classification;
-import se.sundsvall.supportmanagement.api.model.metadata.Category;
-import se.sundsvall.supportmanagement.api.model.metadata.Type;
-import se.sundsvall.supportmanagement.service.MetadataService;
-
-import javax.validation.ConstraintValidatorContext;
-import javax.validation.ConstraintValidatorContext.ConstraintViolationBuilder;
-import java.util.List;
-import java.util.Map;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
@@ -29,6 +10,27 @@ import static se.sundsvall.supportmanagement.api.validation.impl.AbstractTagCons
 import static se.sundsvall.supportmanagement.api.validation.impl.AbstractTagConstraintValidator.PATHVARIABLE_NAMESPACE;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EntityType.CATEGORY;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EntityType.TYPE;
+
+import java.util.List;
+import java.util.Map;
+
+import javax.validation.ConstraintValidatorContext;
+import javax.validation.ConstraintValidatorContext.ConstraintViolationBuilder;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.web.context.request.RequestAttributes;
+import org.springframework.web.context.request.RequestContextHolder;
+
+import se.sundsvall.supportmanagement.api.model.errand.Classification;
+import se.sundsvall.supportmanagement.api.model.metadata.Category;
+import se.sundsvall.supportmanagement.api.model.metadata.Type;
+import se.sundsvall.supportmanagement.service.MetadataService;
 
 @ExtendWith(MockitoExtension.class)
 class ValidClassificationConstraintValidatorTest {
@@ -117,10 +119,6 @@ class ValidClassificationConstraintValidatorTest {
 
 	@Test
 	void classificationNullValue() {
-		final var namespace = "namespace";
-		final var municipalityId = "municipalityId";
-		final var attributes = Map.of(PATHVARIABLE_NAMESPACE, namespace, PATHVARIABLE_MUNICIPALITY_ID, municipalityId);
-
 		try (MockedStatic<RequestContextHolder> requestContextHolderMock = Mockito.mockStatic(RequestContextHolder.class)) {
 			requestContextHolderMock.when(RequestContextHolder::getRequestAttributes).thenReturn(requestAttributesMock);
 
