@@ -39,6 +39,17 @@ VALUES (100, now(), null, 'municipalityId-1', 'status-1', 'namespace-1'),
        (106, now(), null, 'municipalityId-2', 'status-2', 'namespace-1');
 
 -------------------------------------
+-- Role
+-------------------------------------
+INSERT INTO role(id, created, modified, municipality_id, name, namespace) 
+VALUES (100, now(), null, 'municipalityId-1', 'role-1', 'namespace-1'),
+       (101, now(), null, 'municipalityId-1', 'role-2', 'namespace-1'),
+       (102, now(), null, 'municipalityId-1', 'role-3', 'namespace-1'),
+       (104, now(), null, 'municipalityId-1', 'role-1', 'namespace-2'),
+       (105, now(), null, 'municipalityId-2', 'role-1', 'namespace-1'),
+       (106, now(), null, 'municipalityId-2', 'role-2', 'namespace-1');
+       
+-------------------------------------
 -- Validation
 -------------------------------------
 INSERT INTO validation(id, municipality_id, namespace, `type`, created, modified, validated)

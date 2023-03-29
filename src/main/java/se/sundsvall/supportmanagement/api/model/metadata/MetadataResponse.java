@@ -21,6 +21,9 @@ public class MetadataResponse {
 	@ArraySchema(schema = @Schema(implementation = Status.class))
 	private List<Status> statuses;
 
+	@ArraySchema(schema = @Schema(implementation = Role.class))
+	private List<Role> roles;
+
 	public static MetadataResponse create() {
 		return new MetadataResponse();
 	}
@@ -29,11 +32,11 @@ public class MetadataResponse {
 		return categories;
 	}
 
-	public void setCategories(List<Category> categories) {
+	public void setCategories(final List<Category> categories) {
 		this.categories = categories;
 	}
 
-	public MetadataResponse withCategories(List<Category> categories) {
+	public MetadataResponse withCategories(final List<Category> categories) {
 		this.categories = categories;
 		return this;
 	}
@@ -42,11 +45,11 @@ public class MetadataResponse {
 		return externalIdTypes;
 	}
 
-	public void setExternalIdTypes(List<ExternalIdType> externalIdTypes) {
+	public void setExternalIdTypes(final List<ExternalIdType> externalIdTypes) {
 		this.externalIdTypes = externalIdTypes;
 	}
 
-	public MetadataResponse withExternalIdTypes(List<ExternalIdType> externalIdTypes) {
+	public MetadataResponse withExternalIdTypes(final List<ExternalIdType> externalIdTypes) {
 		this.externalIdTypes = externalIdTypes;
 		return this;
 	}
@@ -55,39 +58,48 @@ public class MetadataResponse {
 		return statuses;
 	}
 
-	public void setStatuses(List<Status> statuses) {
+	public void setStatuses(final List<Status> statuses) {
 		this.statuses = statuses;
 	}
 
-	public MetadataResponse withStatuses(List<Status> statuses) {
+	public MetadataResponse withStatuses(final List<Status> statuses) {
 		this.statuses = statuses;
+		return this;
+	}
+
+	public List<Role> getRoles() {
+		return roles;
+	}
+
+	public void setRoles(final List<Role> roles) {
+		this.roles = roles;
+	}
+
+	public MetadataResponse withRoles(final List<Role> roles) {
+		this.roles = roles;
 		return this;
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(categories, externalIdTypes, statuses);
+		return Objects.hash(categories, externalIdTypes, roles, statuses);
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(final Object obj) {
 		if (this == obj) {
 			return true;
 		}
-		if (obj == null) {
+		if (!(obj instanceof MetadataResponse other)) {
 			return false;
 		}
-		if (getClass() != obj.getClass()) {
-			return false;
-		}
-		MetadataResponse other = (MetadataResponse) obj;
-		return Objects.equals(categories, other.categories) && Objects.equals(externalIdTypes, other.externalIdTypes) && Objects.equals(statuses, other.statuses);
+		return Objects.equals(categories, other.categories) && Objects.equals(externalIdTypes, other.externalIdTypes) && Objects.equals(roles, other.roles) && Objects.equals(statuses, other.statuses);
 	}
 
 	@Override
 	public String toString() {
-		StringBuilder builder = new StringBuilder();
-		builder.append("MetadataResponse [categories=").append(categories).append(", externalIdTypes=").append(externalIdTypes).append(", statuses=").append(statuses).append("]");
+		final StringBuilder builder = new StringBuilder();
+		builder.append("MetadataResponse [categories=").append(categories).append(", externalIdTypes=").append(externalIdTypes).append(", statuses=").append(statuses).append(", roles=").append(roles).append("]");
 		return builder.toString();
 	}
 }
