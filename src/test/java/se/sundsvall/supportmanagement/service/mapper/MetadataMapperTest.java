@@ -156,7 +156,6 @@ class MetadataMapperTest {
 
 	@Test
 	void toStatus() {
-
 		final var created = now().minusDays(1);
 		final var modified = now();
 		final var name = "statusName";
