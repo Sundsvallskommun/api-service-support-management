@@ -31,15 +31,18 @@ class MetadataResponseTest {
 		final var categories = List.of(Category.create().withName("CATEGORY").withTypes(List.of(Type.create().withName("TYPE"))));
 		final var externalIdTypes = List.of(ExternalIdType.create().withName("EXTERNAL_ID_TYPE"));
 		final var statuses = List.of(Status.create().withName("STATUS"));
+		final var roles = List.of(Role.create().withName("ROLE"));
 
 		final var response = MetadataResponse.create()
 			.withCategories(categories)
 			.withExternalIdTypes(externalIdTypes)
-			.withStatuses(statuses);
+			.withStatuses(statuses)
+			.withRoles(roles);
 
 		assertThat(response.getCategories()).isEqualTo(categories);
 		assertThat(response.getExternalIdTypes()).isEqualTo(externalIdTypes);
 		assertThat(response.getStatuses()).isEqualTo(statuses);
+		assertThat(response.getRoles()).isEqualTo(roles);
 	}
 
 	@Test

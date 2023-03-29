@@ -7,6 +7,7 @@ TRUNCATE table contact_channel;
 TRUNCATE table category;
 TRUNCATE table external_id_type;
 TRUNCATE table status;
+TRUNCATE table role;
 TRUNCATE table `type`;
 TRUNCATE table validation;
 SET FOREIGN_KEY_CHECKS = 1;
