@@ -5,10 +5,7 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "2.6"
-servers:
-- url: https://api-i-test.sundsvall.se/messaging-v2
-  description: Generated server url
+  version: "2.8"
 paths:
   /webmessage:
     post:
@@ -152,15 +149,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-        "200":
-          description: Successful Operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/MessagesResponse'
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/MessagesResponse'
         "400":
           description: Bad Request
           content:
@@ -170,6 +158,15 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+        "200":
+          description: Successful Operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessagesResponse'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/MessagesResponse'
   /letter:
     post:
       tags:
@@ -272,15 +269,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-        "200":
-          description: Successful Operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/MessagesResponse'
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/MessagesResponse'
         "400":
           description: Bad Request
           content:
@@ -290,6 +278,15 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+        "200":
+          description: Successful Operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessagesResponse'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/MessagesResponse'
   /status/{messageId}:
     get:
       tags:
@@ -303,6 +300,19 @@ paths:
         schema:
           type: string
       responses:
+        "200":
+          description: Successful Operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MessageStatusResponse'
+            application/problem+json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MessageStatusResponse'
         "500":
           description: Internal Server Error
           content:
@@ -312,15 +322,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-        "200":
-          description: Successful Operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/MessageStatusResponse'
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/MessageStatusResponse'
         "404":
           description: Not Found
           content:
@@ -352,6 +353,19 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+        "200":
+          description: Successful Operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HistoryResponse'
+            application/problem+json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HistoryResponse'
         "404":
           description: Not Found
           content:
@@ -361,15 +375,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-        "200":
-          description: Successful Operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HistoryResponse'
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/HistoryResponse'
   /conversation-history/{partyId}:
     get:
       tags:
@@ -411,10 +416,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HistoryResponse'
+                type: array
+                items:
+                  $ref: '#/components/schemas/HistoryResponse'
             application/problem+json:
               schema:
-                $ref: '#/components/schemas/HistoryResponse'
+                type: array
+                items:
+                  $ref: '#/components/schemas/HistoryResponse'
   /batch-status/{batchId}:
     get:
       tags:
@@ -437,15 +446,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-        "404":
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
         "200":
           description: Successful Operation
           content:
@@ -455,6 +455,15 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/BatchStatusResponse'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
   /api-docs:
     get:
       tags:
@@ -508,20 +517,24 @@ components:
             type: string
             description: The header values
       description: Headers
-    Party:
+    PartyWithRequiredPartyId:
+      required:
+      - partyId
       type: object
       properties:
-        partyId:
-          type: string
-          description: The message party ID
-          example: f427952b-247c-4d3b-b081-675a467b3619
         externalReferences:
           type: array
           description: External references
           items:
             $ref: '#/components/schemas/ExternalReference'
+        partyId:
+          type: string
+          description: The message party ID
+          example: f427952b-247c-4d3b-b081-675a467b3619
       description: Party
     WebMessageAttachment:
+      required:
+      - fileName
       type: object
       properties:
         fileName:
@@ -537,15 +550,16 @@ components:
     WebMessageRequest:
       required:
       - message
+      - party
       type: object
       properties:
-        party:
-          $ref: '#/components/schemas/Party'
         headers:
           type: array
           description: Headers
           items:
             $ref: '#/components/schemas/Header'
+        party:
+          $ref: '#/components/schemas/PartyWithRequiredPartyId'
         message:
           type: string
           description: Message
@@ -586,6 +600,19 @@ components:
       properties:
         messageId:
           type: string
+    PartyWithOptionalPartyId:
+      type: object
+      properties:
+        externalReferences:
+          type: array
+          description: External references
+          items:
+            $ref: '#/components/schemas/ExternalReference'
+        partyId:
+          type: string
+          description: The message party ID
+          example: f427952b-247c-4d3b-b081-675a467b3619
+      description: Party
     SnailmailAttachment:
       required:
       - content
@@ -607,16 +634,17 @@ components:
       description: Attachment
     SnailmailRequest:
       required:
+      - attachments
       - department
       type: object
       properties:
-        party:
-          $ref: '#/components/schemas/Party'
         headers:
           type: array
           description: Headers
           items:
             $ref: '#/components/schemas/Header'
+        party:
+          $ref: '#/components/schemas/PartyWithOptionalPartyId'
         department:
           type: string
           description: Department and unit that should be billed
@@ -626,6 +654,7 @@ components:
           description: If the letter to send deviates from the standard
           example: A3 Ritning
         attachments:
+          minItems: 1
           type: array
           items:
             $ref: '#/components/schemas/SnailmailAttachment'
@@ -647,13 +676,13 @@ components:
       - mobileNumber
       type: object
       properties:
-        party:
-          $ref: '#/components/schemas/Party'
         headers:
           type: array
           description: Headers
           items:
             $ref: '#/components/schemas/Header'
+        party:
+          $ref: '#/components/schemas/PartyWithOptionalPartyId'
         sender:
           $ref: '#/components/schemas/Sms'
         mobileNumber:
@@ -662,13 +691,6 @@ components:
         message:
           type: string
           description: Message
-    DigitalMail:
-      required:
-      - supportInfo
-      type: object
-      properties:
-        supportInfo:
-          $ref: '#/components/schemas/SupportInfo'
     Email:
       required:
       - address
@@ -689,15 +711,16 @@ components:
     Message:
       required:
       - message
+      - party
       type: object
       properties:
-        party:
-          $ref: '#/components/schemas/Party'
         headers:
           type: array
           description: Headers
           items:
             $ref: '#/components/schemas/Header'
+        party:
+          $ref: '#/components/schemas/PartyWithRequiredPartyId'
         sender:
           $ref: '#/components/schemas/Sender'
         subject:
@@ -726,25 +749,7 @@ components:
           $ref: '#/components/schemas/Sms'
         email:
           $ref: '#/components/schemas/Email'
-        digitalMail:
-          $ref: '#/components/schemas/DigitalMail'
       description: Sender
-    SupportInfo:
-      required:
-      - emailAddress
-      - phoneNumber
-      - text
-      - url
-      type: object
-      properties:
-        text:
-          type: string
-        emailAddress:
-          type: string
-        phoneNumber:
-          type: string
-        url:
-          type: string
     MessagesResponse:
       type: object
       properties:
@@ -754,6 +759,14 @@ components:
           type: array
           items:
             type: string
+    DigitalMail:
+      required:
+      - supportInfo
+      type: object
+      properties:
+        supportInfo:
+          $ref: '#/components/schemas/SupportInfo'
+      description: Sender
     LetterAttachment:
       required:
       - content
@@ -784,9 +797,11 @@ components:
       description: Attachments
     LetterRequest:
       required:
+      - attachments
       - body
       - contentType
       - department
+      - party
       type: object
       properties:
         party:
@@ -821,8 +836,8 @@ components:
           description: If the letter to send deviates from the standard
           example: A3 Ritning
         attachments:
+          minItems: 1
           type: array
-          description: Attachments
           items:
             $ref: '#/components/schemas/LetterAttachment'
     Parties:
@@ -842,6 +857,22 @@ components:
           items:
             $ref: '#/components/schemas/ExternalReference'
       description: Parties
+    SupportInfo:
+      required:
+      - emailAddress
+      - phoneNumber
+      - text
+      - url
+      type: object
+      properties:
+        text:
+          type: string
+        emailAddress:
+          type: string
+        phoneNumber:
+          type: string
+        url:
+          type: string
     EmailAttachment:
       required:
       - content
@@ -867,13 +898,13 @@ components:
       - subject
       type: object
       properties:
-        party:
-          $ref: '#/components/schemas/Party'
         headers:
           type: array
           description: Headers
           items:
             $ref: '#/components/schemas/Header'
+        party:
+          $ref: '#/components/schemas/PartyWithOptionalPartyId'
         emailAddress:
           type: string
           description: Recipient e-mail address
@@ -914,6 +945,7 @@ components:
       required:
       - body
       - contentType
+      - party
       type: object
       properties:
         party:
@@ -951,6 +983,16 @@ components:
           type: string
         deliveryId:
           type: string
+        type:
+          type: string
+          enum:
+          - MESSAGE
+          - EMAIL
+          - SMS
+          - WEB_MESSAGE
+          - DIGITAL_MAIL
+          - SNAIL_MAIL
+          - LETTER
         status:
           type: string
           enum:
