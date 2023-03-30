@@ -15,7 +15,7 @@ import generated.se.sundsvall.messaging.Email;
 import generated.se.sundsvall.messaging.EmailAttachment;
 import generated.se.sundsvall.messaging.EmailRequest;
 import generated.se.sundsvall.messaging.ExternalReference;
-import generated.se.sundsvall.messaging.Party;
+import generated.se.sundsvall.messaging.PartyWithOptionalPartyId;
 import generated.se.sundsvall.messaging.Sms;
 import generated.se.sundsvall.messaging.SmsRequest;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
@@ -62,8 +62,8 @@ public class MessagingMapper {
 			.name(attachment.getName());
 	}
 
-	private static Party toParty(ErrandEntity errandEntity) {
-		return new Party().addExternalReferencesItem(toExternalReference(errandEntity.getId()));
+	private static PartyWithOptionalPartyId toParty(ErrandEntity errandEntity) {
+		return new PartyWithOptionalPartyId().addExternalReferencesItem(toExternalReference(errandEntity.getId()));
 	}
 
 	private static ExternalReference toExternalReference(String id) {
