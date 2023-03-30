@@ -37,6 +37,17 @@ VALUES (100, '2023-01-01 12:00:00.000', null, '2281', 'STATUS-1', 'NAMESPACE.1')
        (106, '2023-01-01 12:00:00.000', null, '2305', 'STATUS-2', 'NAMESPACE.1');
 
 -------------------------------------
+-- Role
+-------------------------------------
+INSERT INTO role(id, created, modified, municipality_id, name, namespace) 
+VALUES (100, '2023-01-01 12:00:00.000', null, '2281', 'ROLE-1', 'NAMESPACE.1'),
+       (101, '2023-01-01 12:00:00.000', null, '2281', 'ROLE-2', 'NAMESPACE.1'),
+       (102, '2023-01-01 12:00:00.000', null, '2281', 'ROLE-3', 'NAMESPACE.1'),
+       (104, '2023-01-01 12:00:00.000', null, '2281', 'ROLE-1', 'NAMESPACE.2'),
+       (105, '2023-01-01 12:00:00.000', null, '2305', 'ROLE-1', 'NAMESPACE.1'),
+       (106, '2023-01-01 12:00:00.000', null, '2305', 'ROLE-2', 'NAMESPACE.1');
+       
+-------------------------------------
 -- Validation
 -------------------------------------
 INSERT INTO validation(id, municipality_id, namespace, `type`, created, modified, validated)
