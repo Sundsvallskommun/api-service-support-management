@@ -4,5 +4,6 @@ public enum EntityType {
 	CATEGORY,
 	EXTERNAL_ID_TYPE,
 	STATUS,
-	TYPE;
+	TYPE,
+	ROLE
 }
