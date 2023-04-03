@@ -37,8 +37,7 @@
 						"contentType" : "image/png",
 						"name" : "those_happy_days.png"
 					}
-				],
-				"headers": []
+				]
 			},
 			"ignoreArrayOrder" : true
 		} ]
