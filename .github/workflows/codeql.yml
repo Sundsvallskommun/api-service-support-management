@@ -15,7 +15,8 @@ on:
   push:
   schedule:
     - cron: '43 4 * * 5'
-
+env:
+  JAVA_TOOL_OPTIONS: -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.http.retryHandler.class=standard -Dmaven.wagon.http.retryHandler.count=3 -Dmaven.wagon.httpconnectionManager.ttlSeconds=60
 jobs:
   analyze:
     name: Analyze
