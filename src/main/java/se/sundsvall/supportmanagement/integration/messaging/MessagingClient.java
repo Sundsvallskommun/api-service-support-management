@@ -6,9 +6,10 @@ import static se.sundsvall.supportmanagement.integration.messaging.configuration
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import generated.se.sundsvall.messaging.EmailRequest;
-import generated.se.sundsvall.messaging.MessageResponse;
+import generated.se.sundsvall.messaging.MessageResult;
 import generated.se.sundsvall.messaging.SmsRequest;
 import se.sundsvall.supportmanagement.integration.messaging.configuration.MessagingConfiguration;
 
@@ -18,18 +19,20 @@ public interface MessagingClient {
 	/**
 	 * Send a single e-mail
 	 * 
-	 * @param emailRequest containing email information
+	 * @param sendAsynchronously how to send the message (true to send asynchronously, false to wait for response)
+	 * @param emailRequest       containing email information
 	 * @return response containing id for sent message
 	 */
 	@PostMapping(path = "/email", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
-	MessageResponse sendEmail(@RequestBody EmailRequest emailRequest);
+	MessageResult sendEmail(@RequestParam("async") boolean sendAsynchronously, @RequestBody EmailRequest emailRequest);
 
 	/**
 	 * Send a single sms
 	 * 
-	 * @param smsRequest containing sms information
+	 * @param sendAsynchronously how to send the message (true to send asynchronously, false to wait for response)
+	 * @param smsRequest         containing sms information
 	 * @return response containing id for sent message
 	 */
 	@PostMapping(path = "/sms", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
-	MessageResponse sendSms(@RequestBody SmsRequest smsRequest);
+	MessageResult sendSms(@RequestParam("async") boolean sendAsynchronously, @RequestBody SmsRequest smsRequest);
 }

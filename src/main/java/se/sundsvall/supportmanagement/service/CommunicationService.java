@@ -18,7 +18,7 @@ import se.sundsvall.supportmanagement.integration.messaging.MessagingClient;
 public class CommunicationService {
 
 	private static final String ERRAND_ENTITY_NOT_FOUND = "An errand with id '%s' could not be found in namespace '%s' for municipality with id '%s'";
-
+	private static final boolean ASYNCHRONOUSLY = true;
 	@Autowired
 	private ErrandsRepository repository;
 
@@ -26,11 +26,11 @@ public class CommunicationService {
 	private MessagingClient messagingClient;
 
 	public void sendEmail(String namespace, String municipalityId, String id, EmailRequest request) {
-		messagingClient.sendEmail(toEmailRequest(fetchEntity(id, namespace, municipalityId), request));
+		messagingClient.sendEmail(ASYNCHRONOUSLY, toEmailRequest(fetchEntity(id, namespace, municipalityId), request));
 	}
 
 	public void sendSms(String namespace, String municipalityId, String id, SmsRequest request) {
-		messagingClient.sendSms(toSmsRequest(fetchEntity(id, namespace, municipalityId), request));
+		messagingClient.sendSms(ASYNCHRONOUSLY, toSmsRequest(fetchEntity(id, namespace, municipalityId), request));
 	}
 
 	private ErrandEntity fetchEntity(String id, String namespace, String municipalityId) {

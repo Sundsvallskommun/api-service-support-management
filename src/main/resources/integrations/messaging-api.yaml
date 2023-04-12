@@ -5,7 +5,7 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "2.8"
+  version: "3.0"
 paths:
   /webmessage:
     post:
@@ -13,6 +13,14 @@ paths:
       - Sending Resources
       summary: Send a single web message
       operationId: sendWebMessage
+      parameters:
+      - name: async
+        in: query
+        description: Whether to send the message asynchronously
+        required: false
+        schema:
+          type: boolean
+          default: false
       requestBody:
         content:
           application/json:
@@ -20,6 +28,29 @@ paths:
               $ref: '#/components/schemas/WebMessageRequest'
         required: true
       responses:
+        "201":
+          description: Successful Operation
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResult'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/MessageResult'
+        "502":
+          description: Bad Gateway
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
         "500":
           description: Internal Server Error
           content:
@@ -29,15 +60,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-        "200":
-          description: Successful Operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/MessageResponse'
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/MessageResponse'
         "400":
           description: Bad Request
           content:
@@ -47,12 +69,20 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-  /snailmail:
+  /snail-mail:
     post:
       tags:
       - Sending Resources
       summary: Send a single snailmail
-      operationId: sendSnailmail
+      operationId: sendSnailMail
+      parameters:
+      - name: async
+        in: query
+        description: Whether to send the message asynchronously
+        required: false
+        schema:
+          type: boolean
+          default: false
       requestBody:
         content:
           application/json:
@@ -60,6 +90,29 @@ paths:
               $ref: '#/components/schemas/SnailmailRequest'
         required: true
       responses:
+        "201":
+          description: Successful Operation
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResult'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/MessageResult'
+        "502":
+          description: Bad Gateway
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
         "500":
           description: Internal Server Error
           content:
@@ -69,15 +122,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-        "200":
-          description: Successful Operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/MessageResponse'
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/MessageResponse'
         "400":
           description: Bad Request
           content:
@@ -93,6 +137,14 @@ paths:
       - Sending Resources
       summary: Send a single SMS
       operationId: sendSms
+      parameters:
+      - name: async
+        in: query
+        description: Whether to send the message asynchronously
+        required: false
+        schema:
+          type: boolean
+          default: false
       requestBody:
         content:
           application/json:
@@ -100,6 +152,15 @@ paths:
               $ref: '#/components/schemas/SmsRequest'
         required: true
       responses:
+        "502":
+          description: Bad Gateway
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
         "500":
           description: Internal Server Error
           content:
@@ -109,15 +170,20 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-        "200":
+        "201":
           description: Successful Operation
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MessageResponse'
+                $ref: '#/components/schemas/MessageResult'
             application/problem+json:
               schema:
-                $ref: '#/components/schemas/MessageResponse'
+                $ref: '#/components/schemas/MessageResult'
         "400":
           description: Bad Request
           content:
@@ -133,6 +199,14 @@ paths:
       - Sending Resources
       summary: Send a batch of messages as e-mail or SMS to a list of parties
       operationId: sendMessages
+      parameters:
+      - name: async
+        in: query
+        description: Whether to send the message asynchronously
+        required: false
+        schema:
+          type: boolean
+          default: false
       requestBody:
         content:
           application/json:
@@ -140,6 +214,29 @@ paths:
               $ref: '#/components/schemas/MessageRequest'
         required: true
       responses:
+        "201":
+          description: Successful Operation
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResult'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/MessageResult'
+        "502":
+          description: Bad Gateway
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
         "500":
           description: Internal Server Error
           content:
@@ -158,21 +255,20 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-        "200":
-          description: Successful Operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/MessagesResponse'
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/MessagesResponse'
   /letter:
     post:
       tags:
       - Sending Resources
       summary: Send a single letter as digital mail or snail mail
       operationId: sendLetter
+      parameters:
+      - name: async
+        in: query
+        description: Whether to send the message asynchronously
+        required: false
+        schema:
+          type: boolean
+          default: false
       requestBody:
         content:
           application/json:
@@ -180,6 +276,29 @@ paths:
               $ref: '#/components/schemas/LetterRequest'
         required: true
       responses:
+        "201":
+          description: Successful Operation
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResult'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/MessageResult'
+        "502":
+          description: Bad Gateway
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
         "500":
           description: Internal Server Error
           content:
@@ -189,15 +308,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-        "200":
-          description: Successful Operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/MessageResponse'
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/MessageResponse'
         "400":
           description: Bad Request
           content:
@@ -213,6 +323,14 @@ paths:
       - Sending Resources
       summary: Send a single e-mail
       operationId: sendEmail
+      parameters:
+      - name: async
+        in: query
+        description: Whether to send the message asynchronously
+        required: false
+        schema:
+          type: boolean
+          default: false
       requestBody:
         content:
           application/json:
@@ -220,6 +338,29 @@ paths:
               $ref: '#/components/schemas/EmailRequest'
         required: true
       responses:
+        "201":
+          description: Successful Operation
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResult'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/MessageResult'
+        "502":
+          description: Bad Gateway
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
         "500":
           description: Internal Server Error
           content:
@@ -229,15 +370,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-        "200":
-          description: Successful Operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/MessageResponse'
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/MessageResponse'
         "400":
           description: Bad Request
           content:
@@ -247,12 +379,20 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-  /digitalmail:
+  /digital-mail:
     post:
       tags:
       - Sending Resources
       summary: Send a single digital mail to one or more parties
       operationId: sendDigitalMail
+      parameters:
+      - name: async
+        in: query
+        description: Whether to send the message asynchronously
+        required: false
+        schema:
+          type: boolean
+          default: false
       requestBody:
         content:
           application/json:
@@ -260,6 +400,29 @@ paths:
               $ref: '#/components/schemas/DigitalMailRequest'
         required: true
       responses:
+        "201":
+          description: Successful Operation
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResult'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/MessageResult'
+        "502":
+          description: Bad Gateway
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
         "500":
           description: Internal Server Error
           content:
@@ -278,16 +441,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-        "200":
-          description: Successful Operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/MessagesResponse'
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/MessagesResponse'
-  /status/{messageId}:
+  /status/message/{messageId}:
     get:
       tags:
       - Status and History Resources
@@ -299,20 +453,26 @@ paths:
         required: true
         schema:
           type: string
+          format: uuid
       responses:
         "200":
           description: Successful Operation
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/MessageStatusResponse'
+                $ref: '#/components/schemas/MessageResult'
             application/problem+json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/MessageStatusResponse'
+                $ref: '#/components/schemas/MessageResult'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
         "500":
           description: Internal Server Error
           content:
@@ -322,8 +482,139 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+  /status/delivery/{deliveryId}:
+    get:
+      tags:
+      - Status and History Resources
+      summary: Get the status for a single delivery
+      operationId: getDeliveryStatus
+      parameters:
+      - name: deliveryId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: Successful Operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeliveryResult'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/DeliveryResult'
         "404":
           description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /status/batch/{batchId}:
+    get:
+      tags:
+      - Status and History Resources
+      summary: "Get the status for a message batch, its messages and their deliveries"
+      operationId: getBatchStatus
+      parameters:
+      - name: batchId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: Successful Operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageBatchResult'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/MessageBatchResult'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /statistics:
+    get:
+      tags:
+      - Status and History Resources
+      summary: Get delivery statistics
+      operationId: getStats
+      parameters:
+      - name: messageType
+        in: query
+        description: Message type
+        required: false
+        schema:
+          type: string
+          enum:
+          - MESSAGE
+          - EMAIL
+          - SMS
+          - WEB_MESSAGE
+          - DIGITAL_MAIL
+          - SNAIL_MAIL
+          - LETTER
+      - name: from
+        in: query
+        description: "From-date (inclusive). Format: yyyy-MM-dd (ISO8601)"
+        required: false
+        schema:
+          type: string
+          format: date
+      - name: to
+        in: query
+        description: "To-date (inclusive). Format: yyyy-MM-dd (ISO8601)"
+        required: false
+        schema:
+          type: string
+          format: date
+      responses:
+        "200":
+          description: Successful Operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Statistics'
+            application/problem+json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Statistics'
+        "500":
+          description: Internal Server Error
           content:
             application/json:
               schema:
@@ -343,16 +634,8 @@ paths:
         required: true
         schema:
           type: string
+          format: uuid
       responses:
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
         "200":
           description: Successful Operation
           content:
@@ -368,6 +651,15 @@ paths:
                   $ref: '#/components/schemas/HistoryResponse'
         "404":
           description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        "500":
+          description: Internal Server Error
           content:
             application/json:
               schema:
@@ -387,6 +679,7 @@ paths:
         required: true
         schema:
           type: string
+          format: uuid
       - name: from
         in: query
         description: "From-date (inclusive). Format: yyyy-MM-dd (ISO8601)"
@@ -402,15 +695,6 @@ paths:
           type: string
           format: date
       responses:
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
         "200":
           description: Successful Operation
           content:
@@ -424,39 +708,8 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/HistoryResponse'
-  /batch-status/{batchId}:
-    get:
-      tags:
-      - Status and History Resources
-      summary: "Get the status for a message batch, its messages and their deliveries"
-      operationId: getBatchStatus
-      parameters:
-      - name: batchId
-        in: path
-        required: true
-        schema:
-          type: string
-      responses:
         "500":
           description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        "200":
-          description: Successful Operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BatchStatusResponse'
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/BatchStatusResponse'
-        "404":
-          description: Not Found
           content:
             application/json:
               schema:
@@ -482,6 +735,53 @@ paths:
       x-wso2-mutual-ssl: Optional
 components:
   schemas:
+    DeliveryResult:
+      type: object
+      properties:
+        deliveryId:
+          type: string
+          description: The delivery id
+          format: uuid
+        messageType:
+          $ref: '#/components/schemas/MessageType'
+        status:
+          $ref: '#/components/schemas/MessageStatus'
+      description: Delivery result
+    MessageResult:
+      type: object
+      properties:
+        messageId:
+          type: string
+          description: The message id
+          format: uuid
+        deliveries:
+          type: array
+          description: The message deliveries
+          items:
+            $ref: '#/components/schemas/DeliveryResult'
+      description: Message result
+    MessageStatus:
+      type: string
+      description: Status
+      enum:
+      - PENDING
+      - AWAITING_FEEDBACK
+      - SENT
+      - NOT_SENT
+      - FAILED
+      - NO_FEEDBACK_SETTINGS_FOUND
+      - NO_FEEDBACK_WANTED
+    MessageType:
+      type: string
+      description: Message type
+      enum:
+      - MESSAGE
+      - EMAIL
+      - SMS
+      - WEB_MESSAGE
+      - DIGITAL_MAIL
+      - SNAIL_MAIL
+      - LETTER
     ExternalReference:
       required:
       - key
@@ -517,24 +817,7 @@ components:
             type: string
             description: The header values
       description: Headers
-    PartyWithRequiredPartyId:
-      required:
-      - partyId
-      type: object
-      properties:
-        externalReferences:
-          type: array
-          description: External references
-          items:
-            $ref: '#/components/schemas/ExternalReference'
-        partyId:
-          type: string
-          description: The message party ID
-          example: f427952b-247c-4d3b-b081-675a467b3619
-      description: Party
     WebMessageAttachment:
-      required:
-      - fileName
       type: object
       properties:
         fileName:
@@ -547,24 +830,40 @@ components:
           type: string
           description: "BASE64-encoded file, max size 10 MB"
       description: Attachment
+    WebMessageParty:
+      required:
+      - partyId
+      type: object
+      properties:
+        partyId:
+          type: string
+          description: The message party id
+          format: uuid
+        externalReferences:
+          type: array
+          description: External references
+          items:
+            $ref: '#/components/schemas/ExternalReference'
+      description: Party
     WebMessageRequest:
       required:
       - message
       - party
       type: object
       properties:
+        party:
+          $ref: '#/components/schemas/WebMessageParty'
         headers:
           type: array
           description: Headers
           items:
             $ref: '#/components/schemas/Header'
-        party:
-          $ref: '#/components/schemas/PartyWithRequiredPartyId'
         message:
           type: string
           description: Message
         attachments:
           maxItems: 10
+          minItems: 0
           type: array
           items:
             $ref: '#/components/schemas/WebMessageAttachment'
@@ -595,34 +894,12 @@ components:
           format: int32
         reasonPhrase:
           type: string
-    MessageResponse:
-      type: object
-      properties:
-        messageId:
-          type: string
-    PartyWithOptionalPartyId:
-      type: object
-      properties:
-        externalReferences:
-          type: array
-          description: External references
-          items:
-            $ref: '#/components/schemas/ExternalReference'
-        partyId:
-          type: string
-          description: The message party ID
-          example: f427952b-247c-4d3b-b081-675a467b3619
-      description: Party
     SnailmailAttachment:
       required:
       - content
       - name
       type: object
       properties:
-        content:
-          type: string
-          description: The attachment (file) content as a BASE64-encoded string
-          example: aGVsbG8gd29ybGQK
         name:
           type: string
           description: The attachment filename
@@ -631,20 +908,36 @@ components:
           type: string
           description: The attachment content type
           example: text/plain
+        content:
+          type: string
+          description: The attachment (file) content as a BASE64-encoded string
+          example: aGVsbG8gd29ybGQK
       description: Attachment
+    SnailmailParty:
+      type: object
+      properties:
+        partyId:
+          type: string
+          description: The message party id
+          example: f427952b-247c-4d3b-b081-675a467b3619
+        externalReferences:
+          type: array
+          description: External references
+          items:
+            $ref: '#/components/schemas/ExternalReference'
+      description: Party
     SnailmailRequest:
       required:
-      - attachments
       - department
       type: object
       properties:
+        party:
+          $ref: '#/components/schemas/SnailmailParty'
         headers:
           type: array
           description: Headers
           items:
             $ref: '#/components/schemas/Header'
-        party:
-          $ref: '#/components/schemas/PartyWithOptionalPartyId'
         department:
           type: string
           description: Department and unit that should be billed
@@ -658,39 +951,54 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SnailmailAttachment'
-    Sms:
-      required:
-      - name
-      type: object
-      properties:
-        name:
-          maxLength: 11
-          minLength: 0
-          type: string
-          description: The sender of the SMS
-          example: sender
-      description: Sender
     SmsRequest:
       required:
       - message
       - mobileNumber
       type: object
       properties:
+        party:
+          $ref: '#/components/schemas/SmsRequestParty'
         headers:
           type: array
           description: Headers
           items:
             $ref: '#/components/schemas/Header'
-        party:
-          $ref: '#/components/schemas/PartyWithOptionalPartyId'
         sender:
-          $ref: '#/components/schemas/Sms'
+          type: string
+          description: Sender
         mobileNumber:
           type: string
           description: Mobile number. Should start with +467x
         message:
           type: string
           description: Message
+    SmsRequestParty:
+      type: object
+      properties:
+        partyId:
+          type: string
+          description: The message party id
+          example: f427952b-247c-4d3b-b081-675a467b3619
+        externalReferences:
+          type: array
+          description: External references
+          items:
+            $ref: '#/components/schemas/ExternalReference'
+      description: Party
+    MessageBatchResult:
+      type: object
+      properties:
+        batchId:
+          type: string
+          description: The batch id
+          format: uuid
+        messages:
+          type: array
+          description: The individual message results
+          items:
+            $ref: '#/components/schemas/MessageResult'
+      description: Message batch result
     Email:
       required:
       - address
@@ -714,15 +1022,15 @@ components:
       - party
       type: object
       properties:
+        party:
+          $ref: '#/components/schemas/MessageParty'
         headers:
           type: array
           description: Headers
           items:
             $ref: '#/components/schemas/Header'
-        party:
-          $ref: '#/components/schemas/PartyWithRequiredPartyId'
         sender:
-          $ref: '#/components/schemas/Sender'
+          $ref: '#/components/schemas/MessageSender'
         subject:
           type: string
           description: The message subject (for E-mails)
@@ -732,8 +1040,25 @@ components:
         htmlMessage:
           type: string
           description: "HTML message text, for e-mails (BASE64-encoded)"
-      description: A message to be sent
+      description: The messages to be sent
+    MessageParty:
+      required:
+      - partyId
+      type: object
+      properties:
+        partyId:
+          type: string
+          description: The message party id
+          format: uuid
+        externalReferences:
+          type: array
+          description: External references
+          items:
+            $ref: '#/components/schemas/ExternalReference'
+      description: Party
     MessageRequest:
+      required:
+      - messages
       type: object
       properties:
         messages:
@@ -741,32 +1066,25 @@ components:
           description: The messages to be sent
           items:
             $ref: '#/components/schemas/Message'
-      description: Message representation
-    Sender:
+    MessageSender:
       type: object
       properties:
-        sms:
-          $ref: '#/components/schemas/Sms'
         email:
           $ref: '#/components/schemas/Email'
+        sms:
+          $ref: '#/components/schemas/Sms'
       description: Sender
-    MessagesResponse:
-      type: object
-      properties:
-        batchId:
-          type: string
-        messageIds:
-          type: array
-          items:
-            type: string
-    DigitalMail:
+    Sms:
       required:
-      - supportInfo
+      - name
       type: object
       properties:
-        supportInfo:
-          $ref: '#/components/schemas/SupportInfo'
-      description: Sender
+        name:
+          maxLength: 11
+          minLength: 0
+          type: string
+          description: The sender of the SMS
+          example: sender
     LetterAttachment:
       required:
       - content
@@ -778,11 +1096,14 @@ components:
           type: string
           description: |
             Delivery mode, to indicate whether an attachment is intended/allowed to be used for
-            digital mail, snail-mail or both
+            digital mail, snail-mail or any of them
           enum:
-          - BOTH
+          - ANY
           - DIGITAL_MAIL
           - SNAIL_MAIL
+        filename:
+          type: string
+          description: Filename
         contentType:
           type: string
           description: Content type
@@ -791,10 +1112,25 @@ components:
         content:
           type: string
           description: Content (BASE64-encoded)
-        filename:
-          type: string
-          description: Filename
       description: Attachments
+    LetterParty:
+      required:
+      - partyIds
+      type: object
+      properties:
+        partyIds:
+          minItems: 1
+          type: array
+          items:
+            type: string
+            description: The message party ids
+            format: uuid
+        externalReferences:
+          type: array
+          description: External references
+          items:
+            $ref: '#/components/schemas/ExternalReference'
+      description: Party
     LetterRequest:
       required:
       - attachments
@@ -802,10 +1138,11 @@ components:
       - contentType
       - department
       - party
+      - subject
       type: object
       properties:
         party:
-          $ref: '#/components/schemas/Parties'
+          $ref: '#/components/schemas/LetterParty'
         headers:
           type: array
           description: Headers
@@ -814,9 +1151,8 @@ components:
         subject:
           type: string
           description: Subject
-          nullable: true
         sender:
-          $ref: '#/components/schemas/DigitalMail'
+          $ref: '#/components/schemas/LetterSender'
         contentType:
           type: string
           description: Content type
@@ -840,24 +1176,15 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/LetterAttachment'
-    Parties:
+    LetterSender:
       required:
-      - partyIds
+      - supportInfo
       type: object
       properties:
-        partyIds:
-          type: array
-          description: The message party ID:s
-          items:
-            type: string
-            description: The message party ID:s
-        externalReferences:
-          type: array
-          description: External references
-          items:
-            $ref: '#/components/schemas/ExternalReference'
-      description: Parties
-    SupportInfo:
+        supportInfo:
+          $ref: '#/components/schemas/LetterSenderSupportInfo'
+      description: Sender
+    LetterSenderSupportInfo:
       required:
       - emailAddress
       - phoneNumber
@@ -879,10 +1206,6 @@ components:
       - name
       type: object
       properties:
-        content:
-          type: string
-          description: The attachment (file) content as a BASE64-encoded string
-          example: aGVsbG8gd29ybGQK
         name:
           type: string
           description: The attachment filename
@@ -891,6 +1214,10 @@ components:
           type: string
           description: The attachment content type
           example: text/plain
+        content:
+          type: string
+          description: The attachment (file) content as a BASE64-encoded string
+          example: aGVsbG8gd29ybGQK
       description: Attachment
     EmailRequest:
       required:
@@ -898,13 +1225,13 @@ components:
       - subject
       type: object
       properties:
+        party:
+          $ref: '#/components/schemas/EmailRequestParty'
         headers:
           type: array
           description: Headers
           items:
             $ref: '#/components/schemas/Header'
-        party:
-          $ref: '#/components/schemas/PartyWithOptionalPartyId'
         emailAddress:
           type: string
           description: Recipient e-mail address
@@ -918,11 +1245,42 @@ components:
           type: string
           description: E-mail HTML body (BASE64-encoded)
         sender:
-          $ref: '#/components/schemas/Email'
+          $ref: '#/components/schemas/EmailSender'
         attachments:
           type: array
           items:
             $ref: '#/components/schemas/EmailAttachment'
+    EmailRequestParty:
+      type: object
+      properties:
+        partyId:
+          type: string
+          description: The message party id
+          format: uuid
+        externalReferences:
+          type: array
+          description: External references
+          items:
+            $ref: '#/components/schemas/ExternalReference'
+      description: Party
+    EmailSender:
+      required:
+      - address
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+          description: The sender of the e-mail
+        address:
+          type: string
+          description: Sender e-mail address
+          example: sender@sender.se
+        replyTo:
+          type: string
+          description: Reply-to e-mail address
+          example: sender@sender.se
+      description: Attachment
     DigitalMailAttachment:
       required:
       - content
@@ -941,6 +1299,24 @@ components:
           type: string
           description: Filename
       description: Attachments
+    DigitalMailParty:
+      required:
+      - partyIds
+      type: object
+      properties:
+        partyIds:
+          minItems: 1
+          type: array
+          items:
+            type: string
+            description: The message party ids
+            format: uuid
+        externalReferences:
+          type: array
+          description: External references
+          items:
+            $ref: '#/components/schemas/ExternalReference'
+      description: Party
     DigitalMailRequest:
       required:
       - body
@@ -949,14 +1325,14 @@ components:
       type: object
       properties:
         party:
-          $ref: '#/components/schemas/Parties'
+          $ref: '#/components/schemas/DigitalMailParty'
         headers:
           type: array
           description: Headers
           items:
             $ref: '#/components/schemas/Header'
         sender:
-          $ref: '#/components/schemas/DigitalMail'
+          $ref: '#/components/schemas/DigitalMailSender'
         subject:
           type: string
           description: Subject
@@ -976,37 +1352,76 @@ components:
           description: Attachments
           items:
             $ref: '#/components/schemas/DigitalMailAttachment'
-    MessageStatusResponse:
+    DigitalMailSender:
+      required:
+      - supportInfo
       type: object
       properties:
-        messageId:
+        supportInfo:
+          $ref: '#/components/schemas/DigitalMailSenderSupportInfo'
+      description: Sender
+    DigitalMailSenderSupportInfo:
+      required:
+      - emailAddress
+      - phoneNumber
+      - text
+      - url
+      type: object
+      properties:
+        text:
           type: string
-        deliveryId:
+        emailAddress:
           type: string
-        type:
+        phoneNumber:
           type: string
-          enum:
-          - MESSAGE
-          - EMAIL
-          - SMS
-          - WEB_MESSAGE
-          - DIGITAL_MAIL
-          - SNAIL_MAIL
-          - LETTER
-        status:
+        url:
           type: string
-          enum:
-          - AWAITING_FEEDBACK
-          - PENDING
-          - SENT
-          - FAILED
-          - NO_FEEDBACK_SETTINGS_FOUND
-          - NO_FEEDBACK_WANTED
+    LetterStatistics:
+      type: object
+      properties:
+        SNAIL_MAIL:
+          $ref: '#/components/schemas/StatisticsCounter'
+        DIGITAL_MAIL:
+          $ref: '#/components/schemas/StatisticsCounter'
+    MessageStatistics:
+      type: object
+      properties:
+        EMAIL:
+          $ref: '#/components/schemas/StatisticsCounter'
+        SMS:
+          $ref: '#/components/schemas/StatisticsCounter'
+        UNDELIVERABLE:
+          type: integer
+          format: int32
+    Statistics:
+      type: object
+      properties:
+        EMAIL:
+          $ref: '#/components/schemas/StatisticsCounter'
+        SMS:
+          $ref: '#/components/schemas/StatisticsCounter'
+        WEB_MESSAGE:
+          $ref: '#/components/schemas/StatisticsCounter'
+        DIGITAL_MAIL:
+          $ref: '#/components/schemas/StatisticsCounter'
+        SNAIL_MAIL:
+          $ref: '#/components/schemas/StatisticsCounter'
+        MESSAGE:
+          $ref: '#/components/schemas/MessageStatistics'
+        LETTER:
+          $ref: '#/components/schemas/LetterStatistics'
+    StatisticsCounter:
+      type: object
+      properties:
+        sent:
+          type: integer
+          format: int32
+        failed:
+          type: integer
+          format: int32
     HistoryResponse:
       type: object
       properties:
-        content:
-          type: object
         messageType:
           type: string
           enum:
@@ -1020,22 +1435,16 @@ components:
         status:
           type: string
           enum:
-          - AWAITING_FEEDBACK
           - PENDING
+          - AWAITING_FEEDBACK
           - SENT
+          - NOT_SENT
           - FAILED
           - NO_FEEDBACK_SETTINGS_FOUND
           - NO_FEEDBACK_WANTED
+        content:
+          type: object
         timestamp:
           type: string
           format: date-time
-    BatchStatusResponse:
-      type: object
-      properties:
-        batchId:
-          type: string
-        messages:
-          type: array
-          items:
-            $ref: '#/components/schemas/MessageStatusResponse'
   securitySchemes: {}
