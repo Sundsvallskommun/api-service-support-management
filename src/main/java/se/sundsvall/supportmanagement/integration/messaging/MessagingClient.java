@@ -21,7 +21,7 @@ public interface MessagingClient {
 	 * 
 	 * @param sendAsynchronously how to send the message (true to send asynchronously, false to wait for response)
 	 * @param emailRequest       containing email information
-	 * @return response containing id for sent message
+	 * @return response containing id and delivery results for sent message
 	 */
 	@PostMapping(path = "/email", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
 	MessageResult sendEmail(@RequestParam("async") boolean sendAsynchronously, @RequestBody EmailRequest emailRequest);
@@ -31,7 +31,7 @@ public interface MessagingClient {
 	 * 
 	 * @param sendAsynchronously how to send the message (true to send asynchronously, false to wait for response)
 	 * @param smsRequest         containing sms information
-	 * @return response containing id for sent message
+	 * @return response containing id and delivery results for sent message
 	 */
 	@PostMapping(path = "/sms", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
 	MessageResult sendSms(@RequestParam("async") boolean sendAsynchronously, @RequestBody SmsRequest smsRequest);

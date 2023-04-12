@@ -19,6 +19,7 @@ public class CommunicationService {
 
 	private static final String ERRAND_ENTITY_NOT_FOUND = "An errand with id '%s' could not be found in namespace '%s' for municipality with id '%s'";
 	private static final boolean ASYNCHRONOUSLY = true;
+
 	@Autowired
 	private ErrandsRepository repository;
 
