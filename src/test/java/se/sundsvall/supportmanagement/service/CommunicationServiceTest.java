@@ -4,6 +4,7 @@ import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -82,7 +83,7 @@ class CommunicationServiceTest {
 		// Verifications and assertions
 		verify(repositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(repositoryMock).getReferenceById(ERRAND_ID);
-		verify(messagingClientMock).sendEmail(messagingEmailCaptor.capture());
+		verify(messagingClientMock).sendEmail(eq(true), messagingEmailCaptor.capture());
 
 		final var arguments = messagingEmailCaptor.getValue();
 		assertThat(arguments.getEmailAddress()).isEqualTo(RECIPIENT);
@@ -118,7 +119,7 @@ class CommunicationServiceTest {
 		// Verifications and assertions
 		verify(repositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(repositoryMock).getReferenceById(ERRAND_ID);
-		verify(messagingClientMock).sendSms(messagingSmsCaptor.capture());
+		verify(messagingClientMock).sendSms(eq(true), messagingSmsCaptor.capture());
 
 		final var arguments = messagingSmsCaptor.getValue();
 		assertThat(arguments.getHeaders()).isNullOrEmpty();
@@ -127,7 +128,7 @@ class CommunicationServiceTest {
 		assertThat(arguments.getParty().getExternalReferences()).isNotEmpty().extracting(
 			ExternalReference::getKey,
 			ExternalReference::getValue).containsExactly(tuple(ERRAND_ID_KEY, ERRAND_ID));
-		assertThat(arguments.getSender().getName()).isEqualTo(SENDER_NAME);
+		assertThat(arguments.getSender()).isEqualTo(SENDER_NAME);
 	}
 
 	@Test

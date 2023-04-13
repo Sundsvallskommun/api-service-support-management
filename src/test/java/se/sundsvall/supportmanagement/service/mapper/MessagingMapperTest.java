@@ -9,7 +9,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Base64.Decoder;
 import java.util.List;
+
 import org.junit.jupiter.api.Test;
+
 import generated.se.sundsvall.messaging.ExternalReference;
 import se.sundsvall.supportmanagement.api.model.communication.EmailAttachment;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
@@ -78,7 +80,7 @@ class MessagingMapperTest {
 		assertThat(result.getHeaders()).isNullOrEmpty();
 		assertThat(result.getMessage()).isEqualTo(MESSAGE);
 		assertThat(result.getMobileNumber()).isEqualTo(RECIPIENT);
-		assertThat(result.getSender().getName()).isEqualTo(SENDER_NAME);
+		assertThat(result.getSender()).isEqualTo(SENDER_NAME);
 		assertThat(result.getParty().getPartyId()).isNull();
 		assertThat(result.getParty().getExternalReferences())
 				.extracting(ExternalReference::getKey, ExternalReference::getValue)

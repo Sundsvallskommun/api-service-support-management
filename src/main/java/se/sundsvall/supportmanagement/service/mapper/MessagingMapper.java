@@ -11,13 +11,13 @@ import java.util.Base64.Decoder;
 import java.util.Base64.Encoder;
 import java.util.List;
 
-import generated.se.sundsvall.messaging.Email;
 import generated.se.sundsvall.messaging.EmailAttachment;
 import generated.se.sundsvall.messaging.EmailRequest;
+import generated.se.sundsvall.messaging.EmailRequestParty;
+import generated.se.sundsvall.messaging.EmailSender;
 import generated.se.sundsvall.messaging.ExternalReference;
-import generated.se.sundsvall.messaging.PartyWithOptionalPartyId;
-import generated.se.sundsvall.messaging.Sms;
 import generated.se.sundsvall.messaging.SmsRequest;
+import generated.se.sundsvall.messaging.SmsRequestParty;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 
 public class MessagingMapper {
@@ -34,8 +34,8 @@ public class MessagingMapper {
 			.emailAddress(emailRequest.getRecipient())
 			.htmlMessage(addBase64Encoding(emailRequest.getHtmlMessage()))
 			.message(emailRequest.getMessage())
-			.party(toParty(errandEntity))
-			.sender(toEmail(emailRequest))
+			.party(toEmailRequestParty(errandEntity))
+			.sender(toEmailSender(emailRequest))
 			.subject(emailRequest.getSubject());
 	}
 
@@ -43,8 +43,8 @@ public class MessagingMapper {
 		return new SmsRequest()
 			.message(smsRequest.getMessage())
 			.mobileNumber(smsRequest.getRecipient())
-			.party(toParty(errandEntity))
-			.sender(toSms(smsRequest));
+			.party(toSmsRequestParty(errandEntity))
+			.sender(smsRequest.getSender());
 	}
 
 	private static List<EmailAttachment> toAttachments(List<se.sundsvall.supportmanagement.api.model.communication.EmailAttachment> attachments) {
@@ -62,8 +62,12 @@ public class MessagingMapper {
 			.name(attachment.getName());
 	}
 
-	private static PartyWithOptionalPartyId toParty(ErrandEntity errandEntity) {
-		return new PartyWithOptionalPartyId().addExternalReferencesItem(toExternalReference(errandEntity.getId()));
+	private static EmailRequestParty toEmailRequestParty(ErrandEntity errandEntity) {
+		return new EmailRequestParty().addExternalReferencesItem(toExternalReference(errandEntity.getId()));
+	}
+
+	private static SmsRequestParty toSmsRequestParty(ErrandEntity errandEntity) {
+		return new SmsRequestParty().addExternalReferencesItem(toExternalReference(errandEntity.getId()));
 	}
 
 	private static ExternalReference toExternalReference(String id) {
@@ -72,15 +76,10 @@ public class MessagingMapper {
 			.value(id);
 	}
 
-	private static Email toEmail(se.sundsvall.supportmanagement.api.model.communication.EmailRequest emailRequest) {
-		return new Email()
+	private static EmailSender toEmailSender(se.sundsvall.supportmanagement.api.model.communication.EmailRequest emailRequest) {
+		return new EmailSender()
 			.name(ofNullable(emailRequest.getSenderName()).orElse(emailRequest.getSender()))
 			.address(emailRequest.getSender());
-	}
-
-	private static Sms toSms(se.sundsvall.supportmanagement.api.model.communication.SmsRequest smsRequest) {
-		return new Sms()
-			.name(smsRequest.getSender());
 	}
 
 	private static String addBase64Encoding(String message) {
