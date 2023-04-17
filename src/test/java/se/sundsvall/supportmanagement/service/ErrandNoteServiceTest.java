@@ -1,5 +1,25 @@
 package se.sundsvall.supportmanagement.service;
 
+import generated.se.sundsvall.notes.FindNotesResponse;
+import generated.se.sundsvall.notes.Note;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
+import org.springframework.test.util.ReflectionTestUtils;
+import org.zalando.problem.ThrowableProblem;
+import se.sundsvall.supportmanagement.api.model.note.CreateErrandNoteRequest;
+import se.sundsvall.supportmanagement.api.model.note.FindErrandNotesRequest;
+import se.sundsvall.supportmanagement.api.model.note.UpdateErrandNoteRequest;
+import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.notes.NotesClient;
+import se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper;
+
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -10,27 +30,6 @@ import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpHeaders.LOCATION;
 import static org.zalando.problem.Status.NOT_FOUND;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper.toCreateNoteRequest;
-
-import java.util.List;
-
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseEntity;
-import org.springframework.test.util.ReflectionTestUtils;
-import org.zalando.problem.ThrowableProblem;
-
-import generated.se.sundsvall.notes.FindNotesResponse;
-import generated.se.sundsvall.notes.Note;
-import se.sundsvall.supportmanagement.api.model.note.CreateErrandNoteRequest;
-import se.sundsvall.supportmanagement.api.model.note.FindErrandNotesRequest;
-import se.sundsvall.supportmanagement.api.model.note.UpdateErrandNoteRequest;
-import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
-import se.sundsvall.supportmanagement.integration.notes.NotesClient;
-import se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper;
 
 @ExtendWith(MockitoExtension.class)
 class ErrandNoteServiceTest {
@@ -71,7 +70,7 @@ class ErrandNoteServiceTest {
 		// Setup
 		final var locationUrl = "http://localhost/notes/" + NOTE_ID;
 		final var errandNote = buildCreateErrandNoteRequest();
-		final var createNoteRequest = toCreateNoteRequest(ERRAND_ID, APPLICATION_NAME, errandNote);
+		final var createNoteRequest = toCreateNoteRequest(MUNICIPALITY_ID, ERRAND_ID, APPLICATION_NAME, errandNote);
 
 		// Mock
 		ReflectionTestUtils.setField(service, "clientId", APPLICATION_NAME);
@@ -136,7 +135,7 @@ class ErrandNoteServiceTest {
 		// Mock
 		ReflectionTestUtils.setField(service, "clientId", APPLICATION_NAME);
 		when(repositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
-		when(notesClientMock.findNotes(anyString(), anyString(), anyString(), anyString(), anyString(), anyInt(), anyInt()))
+		when(notesClientMock.findNotes(anyString(), anyString(), anyString(), anyString(), anyString(), anyString(), anyInt(), anyInt()))
 			.thenReturn(new FindNotesResponse().notes(List.of(new Note())));
 
 		// Call
@@ -145,7 +144,7 @@ class ErrandNoteServiceTest {
 		// Assertions and verifications
 		assertThat(result).isNotNull();
 		verify(repositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
-		verify(notesClientMock).findNotes(CONTEXT, ROLE, ERRAND_ID, APPLICATION_NAME, PARTY_ID, PAGE, LIMIT);
+		verify(notesClientMock).findNotes(MUNICIPALITY_ID, CONTEXT, ROLE, ERRAND_ID, APPLICATION_NAME, PARTY_ID, PAGE, LIMIT);
 	}
 
 	@Test
