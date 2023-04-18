@@ -21,7 +21,7 @@ public class RevisionMapper {
 			.withEntityId(entity.getId())
 			.withEntityType(entity.getClass().getSimpleName())
 			.withVersion(version)
-			.withSerializedSnapshot(GSON.toJson(entity));
+			.withSerializedSnapshot(toSerializedSnapshot(entity));
 	}
 
 	public static String toSerializedSnapshot(ErrandEntity entity) {

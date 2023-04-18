@@ -32,13 +32,13 @@ class CircularReferenceExclusionStrategyTest {
 	}
 
 	@Test
-	void shouldNotSkipFieldForNonDeclaredMethodInDeclaredClass() {
+	void shouldNotSkipFieldForNonDeclaredFieldInDeclaredClass() {
 		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(AttachmentEntity.class, "id", true)))).isFalse();
 		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(StakeholderEntity.class, "id", true)))).isFalse();
 	}
 
 	@Test
-	void shouldSkipFieldForDeclaredMethodInDeclaredClass() {
+	void shouldSkipFieldForDeclaredFieldInDeclaredClass() {
 		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(AttachmentEntity.class, "errandEntity", true)))).isTrue();
 		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(StakeholderEntity.class, "errandEntity", true)))).isTrue();
 	}
