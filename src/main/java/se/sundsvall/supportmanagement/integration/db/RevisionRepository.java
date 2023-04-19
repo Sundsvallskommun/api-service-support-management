@@ -17,7 +17,7 @@ public interface RevisionRepository extends CrudRepository<RevisionEntity, Strin
 	/**
 	 * Find the revision matching provided entityId and version.
 	 *
-	 * @param entityId the entityId for the entity to fetch revision for.
+	 * @param entityId the id for the errand entity to fetch revision for.
 	 * @param version  the version to fetch.
 	 * @return an optional entity that matches the provided parameters.
 	 */
@@ -26,7 +26,7 @@ public interface RevisionRepository extends CrudRepository<RevisionEntity, Strin
 	/**
 	 * Find the last revision by entityId.
 	 *
-	 * @param entityId the entityId to find the last revision version for.
+	 * @param entityId the id for the errand entity to find the last revision version for.
 	 * @return an optional entity that matches the provided parameters (i.e. last created revision for an entity).
 	 */
 	Optional<RevisionEntity> findFirstByEntityIdOrderByVersionDesc(String entityId);
@@ -34,17 +34,17 @@ public interface RevisionRepository extends CrudRepository<RevisionEntity, Strin
 	/**
 	 * Find all RevisionEntity-objects with a version matching the provided list.
 	 *
-	 * @param entityId the entityId for the entity to fetch revision for.
+	 * @param entityId the id for the errand entity to fetch revision for.
 	 * @param versions the list of versions to return.
 	 * @return a list of RevisionEntity objects.
 	 */
-	List<RevisionEntity> findByEntityIdAndVersionIn(String errandEntityId, Integer... versions);
+	List<RevisionEntity> findByEntityIdAndVersionIn(String entityId, Integer... versions);
 
 	/**
-	 * Find all revisions for an entity.
+	 * Find all revisions for an errand entity.
 	 *
-	 * @param entityId the entityId for the entity to find all revision versions for.
+	 * @param entityId the id for the errand entity to find all revision versions for.
 	 * @return a list of RevisionEntity objects.
 	 */
-	List<RevisionEntity> findByEntityId(String errandEntityId);
+	List<RevisionEntity> findByEntityId(String entityId);
 }
