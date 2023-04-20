@@ -16,12 +16,17 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Example;
 import org.springframework.test.context.jdbc.Sql;
 
 import se.sundsvall.dept44.test.AbstractAppTest;
 import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.RevisionRepository;
+import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.RevisionEntity;
 
 /**
  * Errand notes IT tests.
@@ -39,6 +44,9 @@ class ErrandsIT extends AbstractAppTest {
 
 	@Autowired
 	private ErrandsRepository errandsRepository;
+
+	@Autowired
+	private RevisionRepository revisionRepository;
 
 	@Test
 	void test01_getAllErrandsSortedByTouched() {
@@ -75,6 +83,8 @@ class ErrandsIT extends AbstractAppTest {
 
 	@Test
 	void test04_postErrand() {
+		assertThat(revisionRepository.findAll()).hasSize(1);
+
 		setupCall()
 			.withServicePath(PATH)
 			.withHttpMethod(POST)
@@ -82,10 +92,26 @@ class ErrandsIT extends AbstractAppTest {
 			.withExpectedResponseStatus(CREATED)
 			.withExpectedResponseHeader(LOCATION, List.of("^http://(.*)/errands/(.*)$"))
 			.sendRequestAndVerifyResponse();
+
+		final var entityId = errandsRepository.findAll(Example.of(ErrandEntity.create().withExternalTags(List.of(DbExternalTag.create().withKey("caseid").withValue("8849-2848"))))).stream()
+			.findAny()
+			.map(ErrandEntity::getId)
+			.orElse(null);
+
+		assertThat(revisionRepository.findAll()).hasSize(2);
+		assertThat(revisionRepository.findByEntityId(entityId))
+			.hasSize(1)
+			.extracting(RevisionEntity::getVersion)
+			.containsExactly(0);
 	}
 
 	@Test
 	void test05_patchErrand() {
+		assertThat(revisionRepository.findAll()).hasSize(1);
+		assertThat(revisionRepository.findByEntityId("1be673c0-6ba3-4fb0-af4a-43acf23389f6")).hasSize(1)
+			.extracting(RevisionEntity::getVersion)
+			.containsExactly(0);
+
 		setupCall()
 			.withServicePath(PATH + "/1be673c0-6ba3-4fb0-af4a-43acf23389f6")
 			.withHttpMethod(PATCH)
@@ -94,12 +120,17 @@ class ErrandsIT extends AbstractAppTest {
 			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
+
+		assertThat(revisionRepository.findAll()).hasSize(2);
+		assertThat(revisionRepository.findByEntityId("1be673c0-6ba3-4fb0-af4a-43acf23389f6")).hasSize(2)
+			.extracting(RevisionEntity::getVersion)
+			.containsExactlyInAnyOrder(0, 1);
 	}
 
 	@Test
 	void test06_deleteErrand() {
-
 		final var id = "1be673c0-6ba3-4fb0-af4a-43acf23389f6";
+		assertThat(revisionRepository.findAll()).hasSize(1);
 		assertThat(errandsRepository.existsById(id)).isTrue();
 
 		setupCall()
@@ -109,5 +140,6 @@ class ErrandsIT extends AbstractAppTest {
 			.sendRequestAndVerifyResponse();
 
 		assertThat(errandsRepository.existsById(id)).isFalse();
+		assertThat(revisionRepository.findAll()).hasSize(1);
 	}
 }

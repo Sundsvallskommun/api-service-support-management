@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
 import java.time.OffsetDateTime;
+import java.util.Optional;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -25,6 +26,8 @@ public class RevisionMapper {
 	}
 
 	public static String toSerializedSnapshot(ErrandEntity entity) {
-		return GSON.toJson(entity);
+		return Optional.ofNullable(entity)
+			.map(GSON::toJson)
+			.orElse(null);
 	}
 }

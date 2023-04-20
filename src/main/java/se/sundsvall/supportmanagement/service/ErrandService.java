@@ -9,6 +9,8 @@ import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.d
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withMunicipalityId;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withNamespace;
 
+import javax.transaction.Transactional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -22,6 +24,7 @@ import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 
 @Service
+@Transactional
 public class ErrandService {
 
 	private static final String ENTITY_NOT_FOUND = "An errand with id '%s' could not be found in namespace '%s' for municipality with id '%s'";
@@ -29,25 +32,35 @@ public class ErrandService {
 	@Autowired
 	private ErrandsRepository repository;
 
+	@Autowired
+	private RevisionService revisionService;
+
 	public String createErrand(String namespace, String municipalityId, Errand errand) {
-		return repository.save(toErrandEntity(namespace, municipalityId, errand)).getId();
+		final var entity = repository.save(toErrandEntity(namespace, municipalityId, errand));
+		revisionService.createRevision(entity);
+
+		return entity.getId();
 	}
 
 	public Page<Errand> findErrands(String namespace, String municipalityId, Specification<ErrandEntity> filter, Pageable pageable) {
 		final var fullFilter = distinct().and(withNamespace(namespace)).and(withMunicipalityId(municipalityId)).and(filter);
 		final var matches = repository.findAll(fullFilter, pageable);
+
 		return new PageImpl<>(toErrands(matches.getContent()), pageable, repository.count(fullFilter));
 	}
 
 	public Errand readErrand(String namespace, String municipalityId, String id) {
 		verifyExistingErrand(id, namespace, municipalityId);
+
 		return toErrand(repository.getReferenceById(id));
 	}
 
 	public Errand updateErrand(String namespace, String municipalityId, String id, Errand errand) {
 		verifyExistingErrand(id, namespace, municipalityId);
-		final var entity = updateEntity(repository.getReferenceById(id), errand);
-		return toErrand(repository.save(entity));
+		final var updatedEntity = repository.save(updateEntity(repository.getReferenceById(id), errand));
+		revisionService.createRevision(updatedEntity);
+
+		return toErrand(updatedEntity);
 	}
 
 	public void deleteErrand(String namespace, String municipalityId, String id) {

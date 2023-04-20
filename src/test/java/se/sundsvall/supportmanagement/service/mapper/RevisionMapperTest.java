@@ -31,6 +31,11 @@ class RevisionMapperTest {
 		assertThat(serializedSnapshot).isEqualToIgnoringNewLines("{\"id\":\"" + UUID + "\",\"description\":\"" + DESCRIPTION_VALUE + "\"}");
 	}
 
+	@Test
+	void toSerializedSnapshotFromNull() {
+		assertThat(RevisionMapper.toSerializedSnapshot(null)).isNull();
+	}
+
 	private ErrandEntity createEntity() {
 		return ErrandEntity.create()
 			.withId(UUID)
