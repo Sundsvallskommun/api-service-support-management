@@ -10,4 +10,5 @@ TRUNCATE table status;
 TRUNCATE table role;
 TRUNCATE table `type`;
 TRUNCATE table validation;
+TRUNCATE table revision;
 SET FOREIGN_KEY_CHECKS = 1;
