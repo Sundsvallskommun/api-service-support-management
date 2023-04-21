@@ -1,14 +1,15 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
-import org.junit.jupiter.api.Test;
-
-import java.util.List;
-
 import static org.apache.commons.codec.binary.Base64.encodeBase64String;
 import static org.assertj.core.api.Assertions.assertThat;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildAttachmentEntity;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrandAttachment;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrandEntity;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.junit.jupiter.api.Test;
 
 class ErrandAttachmentMapperTest {
 
@@ -20,7 +21,7 @@ class ErrandAttachmentMapperTest {
 	@Test
 	void toAttachmentEntity() {
 
-		final var errandEntity = buildErrandEntity();
+		final var errandEntity = buildErrandEntity().withAttachments(new ArrayList<>());
 
 		final var result = ErrandAttachmentMapper.toAttachmentEntity(errandEntity, buildErrandAttachment());
 
@@ -30,6 +31,7 @@ class ErrandAttachmentMapperTest {
 		assertThat(result.getFile()).isEqualTo(FILE.getBytes());
 		assertThat(result.getMimeType()).isEqualTo("text/plain");
 		assertThat(result.getErrandEntity()).isSameAs(errandEntity);
+		assertThat(errandEntity.getAttachments()).containsExactly(result);
 	}
 
 	@Test

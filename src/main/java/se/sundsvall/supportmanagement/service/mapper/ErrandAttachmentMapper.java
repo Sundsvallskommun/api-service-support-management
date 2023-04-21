@@ -26,12 +26,16 @@ public class ErrandAttachmentMapper {
 
 		byte[] byteArray = decodeBase64(errandAttachment.getBase64EncodedString());
 
-		return AttachmentEntity.create()
+		final var attachmentEntity = AttachmentEntity.create()
 			.withId(toAttachmentId(errandAttachment.getErrandAttachmentHeader()))
 			.withErrandEntity(errandEntity)
 			.withFile(byteArray)
 			.withFileName(toFileName(errandAttachment.getErrandAttachmentHeader()))
 			.withMimeType(detectMimeType(toFileName(errandAttachment.getErrandAttachmentHeader()), byteArray));
+
+		errandEntity.getAttachments().add(attachmentEntity);
+
+		return attachmentEntity;
 	}
 
 	public static List<ErrandAttachmentHeader> toErrandAttachmentHeaders(final List<AttachmentEntity> attachmentEntities) {
