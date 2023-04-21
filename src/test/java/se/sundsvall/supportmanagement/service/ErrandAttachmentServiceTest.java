@@ -5,6 +5,7 @@ import static org.apache.commons.codec.binary.Base64.encodeBase64String;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -23,7 +24,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.zalando.problem.ThrowableProblem;
 
-import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
@@ -49,9 +49,6 @@ class ErrandAttachmentServiceTest {
 	private AttachmentEntity attachmentMock;
 
 	@Mock
-	private AttachmentRepository attachmentRepositoryMock;
-
-	@Mock
 	private RevisionService revisionServiceMock;
 
 	@InjectMocks
@@ -64,7 +61,7 @@ class ErrandAttachmentServiceTest {
 		when(errandMock.getMunicipalityId()).thenReturn(MUNICIPALITY_ID);
 		when(errandMock.getNamespace()).thenReturn(NAMESPACE);
 		when(errandMock.getAttachments()).thenReturn(new ArrayList<>());
-		when(attachmentRepositoryMock.save(any(AttachmentEntity.class))).thenReturn(buildAttachmentEntity(buildErrandEntity()));
+		when(errandsRepositoryMock.save(any(ErrandEntity.class))).thenReturn(errandMock);
 
 		// Call
 		final var result = service.createErrandAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, buildErrandAttachment());
@@ -73,7 +70,7 @@ class ErrandAttachmentServiceTest {
 		assertThat(result).isNotNull().isEqualTo(ATTACHMENT_ID);
 
 		verify(errandsRepositoryMock).findById(ERRAND_ID);
-		verify(attachmentRepositoryMock).save(any(AttachmentEntity.class));
+		verify(errandsRepositoryMock).save(any(ErrandEntity.class));
 		verify(revisionServiceMock).createRevision(errandMock);
 	}
 
@@ -95,7 +92,8 @@ class ErrandAttachmentServiceTest {
 		assertThat(exception.getMessage()).isEqualTo("Not Found: An errand with id 'errandId' could not be found in namespace 'namespace' for municipality with id 'other_municipalityId'");
 
 		verify(errandsRepositoryMock).findById(ERRAND_ID);
-		verifyNoInteractions(attachmentRepositoryMock, revisionServiceMock);
+		verify(errandsRepositoryMock, never()).save(any());
+		verifyNoInteractions(revisionServiceMock);
 	}
 
 	@Test
@@ -175,7 +173,7 @@ class ErrandAttachmentServiceTest {
 		assertThat(exception.getMessage()).isEqualTo("Not Found: An errand with id 'errandId' could not be found in namespace 'namespace' for municipality with id 'municipalityId'");
 
 		verify(errandsRepositoryMock).findById(ERRAND_ID);
-		verifyNoInteractions(attachmentRepositoryMock, revisionServiceMock);
+		verifyNoInteractions(revisionServiceMock);
 	}
 
 	@Test
@@ -187,6 +185,7 @@ class ErrandAttachmentServiceTest {
 		when(errandMock.getNamespace()).thenReturn(NAMESPACE);
 		when(errandMock.getAttachments()).thenReturn(new ArrayList<>(List.of(attachmentMock)));
 		when(attachmentMock.getId()).thenReturn(ATTACHMENT_ID);
+		when(errandsRepositoryMock.save(any(ErrandEntity.class))).thenReturn(errandMock);
 
 		// Call
 		service.deleteErrandAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ATTACHMENT_ID);
@@ -195,7 +194,7 @@ class ErrandAttachmentServiceTest {
 		assertThat(errandMock.getAttachments()).isEmpty();
 
 		verify(errandsRepositoryMock).findById(ERRAND_ID);
-		verify(attachmentRepositoryMock).deleteById(ATTACHMENT_ID);
+		verify(errandsRepositoryMock).save(any(ErrandEntity.class));
 		verify(revisionServiceMock).createRevision(errandMock);
 	}
 
@@ -211,7 +210,8 @@ class ErrandAttachmentServiceTest {
 		assertThat(exception.getMessage()).isEqualTo("Not Found: An errand with id 'errandId' could not be found in namespace 'namespace' for municipality with id 'municipalityId'");
 
 		verify(errandsRepositoryMock).findById(ERRAND_ID);
-		verifyNoInteractions(attachmentRepositoryMock, revisionServiceMock);
+		verify(errandsRepositoryMock, never()).save(any());
+		verifyNoInteractions(revisionServiceMock);
 	}
 
 	@Test
@@ -233,6 +233,7 @@ class ErrandAttachmentServiceTest {
 		assertThat(exception.getMessage()).isEqualTo("Not Found: An attachment with id 'attachmentId' could not be found on errand with id 'errandId'");
 
 		verify(errandsRepositoryMock).findById(ERRAND_ID);
-		verifyNoInteractions(attachmentRepositoryMock, revisionServiceMock);
+		verify(errandsRepositoryMock, never()).save(any());
+		verifyNoInteractions(revisionServiceMock);
 	}
 }

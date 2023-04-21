@@ -23,18 +23,15 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 @Service
 public class RevisionService {
 	private static final String ERROR_MESSAGE = "An error occured when comparing previous and current entity as json";
-	private static final List<String> EXCLUDED_ATTRIBUTES = List.of("$.created", "$.modified", "$.touched", "$..stakeholders[*].id", "$..attachments[*].id");
+	private static final List<String> EXCLUDED_ATTRIBUTES = List.of("$..stakeholders[*].id", "$..attachments[*].id");
 	private static final Configuration JSONPATH_CONFIG = defaultConfiguration().addOptions(SUPPRESS_EXCEPTIONS);
 	private static final Logger LOG = LoggerFactory.getLogger(RevisionService.class);
 
-	private final ObjectMapper objectMapper;
+	@Autowired
+	private ObjectMapper objectMapper;
 
 	@Autowired
 	private RevisionRepository revisionRepository;
-
-	public RevisionService() {
-		objectMapper = new ObjectMapper();
-	}
 
 	/**
 	 * Create a new revision.
@@ -44,17 +41,29 @@ public class RevisionService {
 	 * - no previous revisions exist for the provided entity.
 	 *
 	 * @param entity the entity that will have a new revision.
+	 * @return the id (uuid) of the created revision.
 	 */
-	public void createRevision(ErrandEntity entity) {
-		revisionRepository.findFirstByEntityIdOrderByVersionDesc(entity.getId()).ifPresentOrElse(
-			latestRevision -> {
-				if (!jsonEquals(toSerializedSnapshot(entity), latestRevision.getSerializedSnapshot())) {
-					// Differences exists, create new revision <lastRevision.version + 1>
-					revisionRepository.save(toRevisionEntity(entity, latestRevision.getVersion() + 1));
-				}
-			},
-			() -> // No previous revisions exist. Create revision 0
-			revisionRepository.save(toRevisionEntity(entity, 0)));
+	public String createRevision(ErrandEntity entity) {
+
+		final var lastRevision = revisionRepository.findFirstByEntityIdOrderByVersionDesc(entity.getId());
+
+		if (lastRevision.isPresent()) {
+
+			// No changes since last revision, return.
+			if (jsonEquals(lastRevision.get().getSerializedSnapshot(), toSerializedSnapshot(entity))) {
+				return null;
+			}
+
+			// Create revision <lastRevision.version + 1>
+			return createRevision(entity, lastRevision.get().getVersion() + 1);
+		}
+
+		// No previous revisions exist. Create revision 0
+		return createRevision(entity, 0);
+	}
+
+	private String createRevision(final ErrandEntity entity, final int version) {
+		return revisionRepository.save(toRevisionEntity(entity, version)).getId();
 	}
 
 	private boolean jsonEquals(String currentSnapshot, String previousSnapshot) {
