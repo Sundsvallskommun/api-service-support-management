@@ -9,7 +9,7 @@
 	</parent>
 	<groupId>se.sundsvall</groupId>
 	<artifactId>api-service-support-management</artifactId>
-	<version>4.2</version>
+	<version>4.3</version>
 	<name>api-service-support-management</name>
 	<properties>
 		<!-- Pipeline properties -->
