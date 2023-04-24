@@ -1,12 +1,12 @@
 package se.sundsvall.supportmanagement.api.model.revision;
 
-import io.swagger.v3.oas.annotations.media.ArraySchema;
-import io.swagger.v3.oas.annotations.media.Schema;
+import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 
 import java.util.List;
 import java.util.Objects;
 
-import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "DifferenceResponse model")
 public class DifferenceResponse {
@@ -18,15 +18,15 @@ public class DifferenceResponse {
 		return new DifferenceResponse();
 	}
 
-	public List<Operation> getEvents() {
+	public List<Operation> getOperations() {
 		return operations;
 	}
 
-	public void setEvents(List<Operation> operations) {
+	public void setOperations(List<Operation> operations) {
 		this.operations = operations;
 	}
 
-	public DifferenceResponse withEvents(List<Operation> operations) {
+	public DifferenceResponse withOperations(List<Operation> operations) {
 		this.operations = operations;
 		return this;
 	}
@@ -54,7 +54,7 @@ public class DifferenceResponse {
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
-		builder.append("DifferenceResponse [events=").append(operations).append("]");
+		builder.append("DifferenceResponse [operations=").append(operations).append("]");
 		return builder.toString();
 	}
 }

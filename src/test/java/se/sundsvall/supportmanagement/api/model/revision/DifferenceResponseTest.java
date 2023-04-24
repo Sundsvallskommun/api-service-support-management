@@ -27,13 +27,13 @@ class DifferenceResponseTest {
 
 	@Test
 	void testBuilderMethods() {
-		final var events = List.of(Operation.create().withOp("op").withPath("path").withValue("value").withFromValue("fromValue"));
+		final var operations = List.of(Operation.create().withOp("op").withPath("path").withValue("value").withFromValue("fromValue"));
 
 		final var bean = DifferenceResponse.create()
-				.withEvents(events);
+				.withOperations(operations);
 
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
-		assertThat(bean.getEvents()).isEqualTo(events);
+		assertThat(bean.getOperations()).isEqualTo(operations);
 	}
 
 	@Test
