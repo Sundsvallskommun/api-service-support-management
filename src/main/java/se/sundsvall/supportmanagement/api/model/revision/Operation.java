@@ -1,9 +1,12 @@
 package se.sundsvall.supportmanagement.api.model.revision;
 
-import io.swagger.v3.oas.annotations.media.Schema;
+import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 
 import java.util.Objects;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(description = "Operation model", accessMode = READ_ONLY)
 public class Operation {
 
 	@Schema(description = "Type of operation", example = "replace")
@@ -12,7 +15,7 @@ public class Operation {
 	@Schema(description = "Path to attribute", example = "/name/firstName")
 	private String path;
 
-	@Schema(description = "Value of attribute", example = "John")
+	@Schema(description = "Value of attribute", example = "Jane")
 	private String value;
 
 	@Schema(description = "Previous value of attribute", example = "John")

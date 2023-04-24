@@ -8,10 +8,10 @@ import java.util.Objects;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-@Schema(description = "DifferenceResponse model")
+@Schema(description = "DifferenceResponse model", accessMode = READ_ONLY)
 public class DifferenceResponse {
 
-	@ArraySchema(schema = @Schema(implementation = Operation.class, accessMode = READ_ONLY))
+	@ArraySchema(schema = @Schema(implementation = Operation.class))
 	private List<Operation> operations;
 
 	public static DifferenceResponse create() {
