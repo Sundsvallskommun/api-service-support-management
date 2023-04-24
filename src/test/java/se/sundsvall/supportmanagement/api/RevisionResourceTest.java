@@ -49,25 +49,6 @@ class RevisionResourceTest {
 	}
 
 	@Test
-	void getSpecificErrandRevision() {
-		// Parameter values
-		final var id = UUID.randomUUID().toString();
-		final var revisionId = UUID.randomUUID().toString();
-
-		final var response = webTestClient.get().uri(builder -> builder.path(ERRANDS_PATH + "/{revisionId}").build(Map.of("id", id, "revisionId", revisionId)))
-			.exchange()
-			.expectStatus().isOk()
-			.expectHeader().contentType(APPLICATION_JSON)
-			.expectBody(String.class)
-			.returnResult()
-			.getResponseBody();
-
-		// Verification
-		assertThat(response).isNotNull();
-		//TODO: Add verification for call to service
-	}
-
-	@Test
 	void getErrandDifference() {
 		// Parameter values
 		final var id = UUID.randomUUID().toString();
@@ -102,26 +83,6 @@ class RevisionResourceTest {
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)
 			.expectBodyList(Revision.class)
-			.returnResult()
-			.getResponseBody();
-
-		// Verification
-		assertThat(response).isNotNull();
-		// TODO: Add verification for call to service
-	}
-
-	@Test
-	void getSpecificErrandNoteRevision() {
-		// Parameter values
-		final var id = UUID.randomUUID().toString();
-		final var noteId = UUID.randomUUID().toString();
-		final var revisionId = UUID.randomUUID().toString();
-
-		final var response = webTestClient.get().uri(builder -> builder.path(ERRAND_NOTES_PATH + "/{revisionId}").build(Map.of("id", id, "noteId", noteId, "revisionId", revisionId)))
-			.exchange()
-			.expectStatus().isOk()
-			.expectHeader().contentType(APPLICATION_JSON)
-			.expectBody(String.class)
 			.returnResult()
 			.getResponseBody();
 

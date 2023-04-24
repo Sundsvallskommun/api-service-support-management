@@ -56,52 +56,6 @@ class RevisionResourceFailuresTest {
 	}
 
 	@Test
-	void getSpecificErrandRevisionByInvalidErrandId() {
-
-		// Parameter values
-		final var id = "invalid";
-		final var revisionId = UUID.randomUUID().toString();
-
-		final var response = webTestClient.get().uri(builder -> builder.path(ERRANDS_PATH + "/{revisionId}").build(Map.of("id", id, "revisionId", revisionId)))
-			.exchange()
-			.expectStatus().isBadRequest()
-			.expectHeader().contentType(APPLICATION_PROBLEM_JSON)
-			.expectBody(ConstraintViolationProblem.class)
-			.returnResult()
-			.getResponseBody();
-
-		assertThat(response).isNotNull();
-		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
-		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
-		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactly(tuple("getErrandRevision.id", "not a valid UUID"));
-	}
-
-	@Test
-	void getSpecificErrandRevisionByInvalidRevisionId() {
-
-		// Parameter values
-		final var id = UUID.randomUUID().toString();
-		final var revisionId = "invalid";
-
-		final var response = webTestClient.get().uri(builder -> builder.path(ERRANDS_PATH + "/{revisionId}").build(Map.of("id", id, "revisionId", revisionId)))
-			.exchange()
-			.expectStatus().isBadRequest()
-			.expectHeader().contentType(APPLICATION_PROBLEM_JSON)
-			.expectBody(ConstraintViolationProblem.class)
-			.returnResult()
-			.getResponseBody();
-
-		assertThat(response).isNotNull();
-		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
-		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
-		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactly(tuple("getErrandRevision.revisionId", "not a valid UUID"));
-	}
-
-	@Test
 	void getErrandRevisionDifferencesByInvalidId() {
 
 		// Parameter values
@@ -251,78 +205,6 @@ class RevisionResourceFailuresTest {
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
 			.containsExactly(tuple("getErrandNoteRevisions.noteId", "not a valid UUID"));
-	}
-
-	@Test
-	void getSpecificErrandNoteRevisionByInvalidErrandId() {
-
-		// Parameter values
-		final var id = "invalid";
-		final var noteId = UUID.randomUUID().toString();
-		final var revisionId = UUID.randomUUID().toString();
-
-		final var response = webTestClient.get().uri(builder -> builder.path(ERRAND_NOTES_PATH + "/{revisionId}").build(Map.of("id", id, "noteId", noteId, "revisionId", revisionId)))
-			.exchange()
-			.expectStatus().isBadRequest()
-			.expectHeader().contentType(APPLICATION_PROBLEM_JSON)
-			.expectBody(ConstraintViolationProblem.class)
-			.returnResult()
-			.getResponseBody();
-
-		assertThat(response).isNotNull();
-		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
-		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
-		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactly(tuple("getErrandNoteRevision.id", "not a valid UUID"));
-	}
-
-	@Test
-	void getSpecificErrandNoteRevisionByInvalidNoteId() {
-
-		// Parameter values
-		final var id = UUID.randomUUID().toString();
-		final var noteId = "invalid";
-		final var revisionId = UUID.randomUUID().toString();
-
-		final var response = webTestClient.get().uri(builder -> builder.path(ERRAND_NOTES_PATH + "/{revisionId}").build(Map.of("id", id, "noteId", noteId, "revisionId", revisionId)))
-			.exchange()
-			.expectStatus().isBadRequest()
-			.expectHeader().contentType(APPLICATION_PROBLEM_JSON)
-			.expectBody(ConstraintViolationProblem.class)
-			.returnResult()
-			.getResponseBody();
-
-		assertThat(response).isNotNull();
-		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
-		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
-		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactly(tuple("getErrandNoteRevision.noteId", "not a valid UUID"));
-	}
-
-	@Test
-	void getSpecificErrandNoteRevisionByInvalidRevisionId() {
-
-		// Parameter values
-		final var id = UUID.randomUUID().toString();
-		final var noteId = UUID.randomUUID().toString();
-		final var revisionId = "invalid";
-
-		final var response = webTestClient.get().uri(builder -> builder.path(ERRAND_NOTES_PATH + "/{revisionId}").build(Map.of("id", id, "noteId", noteId, "revisionId", revisionId)))
-			.exchange()
-			.expectStatus().isBadRequest()
-			.expectHeader().contentType(APPLICATION_PROBLEM_JSON)
-			.expectBody(ConstraintViolationProblem.class)
-			.returnResult()
-			.getResponseBody();
-
-		assertThat(response).isNotNull();
-		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
-		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
-		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactly(tuple("getErrandNoteRevision.revisionId", "not a valid UUID"));
 	}
 
 	@Test
