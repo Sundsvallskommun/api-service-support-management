@@ -7,6 +7,7 @@ import static org.springframework.http.ResponseEntity.ok;
 import java.util.List;
 
 import org.hibernate.validator.constraints.Range;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,11 +27,15 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 import se.sundsvall.supportmanagement.api.model.revision.DifferenceResponse;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
+import se.sundsvall.supportmanagement.service.RevisionService;
 
 @RestController
 @Validated
 @Tag(name = "Revisions", description = "Errand and errand note revision operations")
 public class RevisionResource {
+
+	@Autowired
+	private RevisionService revisionService;
 
 	@GetMapping(path = "/errands/{id}/revisions", produces = { APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE })
 	@Operation(summary = "Read errand revisions", description = "Returns all existing revisions for the errand that matches the provided id")
@@ -41,8 +46,7 @@ public class RevisionResource {
 	public ResponseEntity<List<Revision>> getErrandRevisions(
 		@Parameter(name = "id", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable final String id) {
 
-		// TODO Implement
-		return ok(List.of(Revision.create()));
+		return ok(revisionService.getRevisions(id));
 	}
 
 	@GetMapping(path = "/errands/{id}/revisions/difference", produces = { APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE })
@@ -56,8 +60,7 @@ public class RevisionResource {
 		@Parameter(name = "source", description = "Source version to compare", example = "0", required = true) @Range(min = 0, max = Integer.MAX_VALUE) @RequestParam final Integer source,
 		@Parameter(name = "target", description = "Target version to compare", example = "1", required = true) @Range(min = 0, max = Integer.MAX_VALUE) @RequestParam final Integer target) {
 
-		// TODO Implement
-		return ok(DifferenceResponse.create());
+		return ok(revisionService.compareRevisionVersions(id, source, target));
 	}
 
 	@GetMapping(path = "/errands/{id}/notes/{noteId}/revisions", produces = { APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE })
@@ -70,7 +73,7 @@ public class RevisionResource {
 		@Parameter(name = "id", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable final String id,
 		@Parameter(name = "noteId", description = "Errand note id", example = "22a57c09-47ca-45bf-ab02-819011c6fd8d") @ValidUuid @PathVariable final String noteId) {
 
-		// TODO Implement
+		// TODO: Will be implemented in task UF-5000
 		return ok(List.of(Revision.create()));
 	}
 
@@ -86,7 +89,7 @@ public class RevisionResource {
 		@Parameter(name = "source", description = "Source version to compare", example = "0", required = true) @Range(min = 0, max = Integer.MAX_VALUE) @RequestParam final Integer source,
 		@Parameter(name = "target", description = "Target version to compare", example = "1", required = true) @Range(min = 0, max = Integer.MAX_VALUE) @RequestParam final Integer target) {
 
-		// TODO Implement
+		// TODO: Will be implemented in task UF-5000
 		return ok(DifferenceResponse.create());
 	}
 }

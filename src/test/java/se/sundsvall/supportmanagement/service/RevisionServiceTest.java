@@ -1,12 +1,19 @@
 package se.sundsvall.supportmanagement.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.groups.Tuple.tuple;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
+import static org.zalando.problem.Status.NOT_FOUND;
 import static se.sundsvall.supportmanagement.service.mapper.RevisionMapper.toSerializedSnapshot;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -21,10 +28,14 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.zalando.problem.ThrowableProblem;
 
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import se.sundsvall.supportmanagement.api.model.revision.Operation;
+import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.RevisionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
@@ -35,7 +46,13 @@ import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 class RevisionServiceTest {
 
 	@Mock
-	private RevisionRepository repositoryMock;
+	private RevisionRepository revisionRepositoryMock;
+
+	@Mock
+	private ErrandsRepository errandsRepositoryMock;
+
+	@Mock
+	private JsonProcessingException jsonProcessingExceptionMock;
 
 	@InjectMocks
 	private RevisionService service;
@@ -59,15 +76,15 @@ class RevisionServiceTest {
 		final var revisionId = UUID.randomUUID().toString();
 
 		// Mock
-		when(repositoryMock.findFirstByEntityIdOrderByVersionDesc(entityId)).thenReturn(Optional.empty());
-		when(repositoryMock.save(any(RevisionEntity.class))).thenReturn(RevisionEntity.create().withId(revisionId));
+		when(revisionRepositoryMock.findFirstByEntityIdOrderByVersionDesc(entityId)).thenReturn(Optional.empty());
+		when(revisionRepositoryMock.save(any(RevisionEntity.class))).thenReturn(RevisionEntity.create().withId(revisionId));
 
 		// Call
 		final var response = service.createRevision(entity);
 
 		// Assertions and verifications
-		verify(repositoryMock).findFirstByEntityIdOrderByVersionDesc(entityId);
-		verify(repositoryMock).save(entityCaptor.capture());
+		verify(revisionRepositoryMock).findFirstByEntityIdOrderByVersionDesc(entityId);
+		verify(revisionRepositoryMock).save(entityCaptor.capture());
 
 		assertThat(entityCaptor.getValue().getEntityType()).isEqualTo("ErrandEntity");
 		assertThat(entityCaptor.getValue().getSerializedSnapshot()).isEqualTo(objectMapperSpy.writeValueAsString(entity));
@@ -84,14 +101,14 @@ class RevisionServiceTest {
 		final var revisionId = UUID.randomUUID().toString();
 
 		// Mock
-		when(repositoryMock.findFirstByEntityIdOrderByVersionDesc(entityId)).thenReturn(Optional.of(RevisionEntity.create().withVersion(version).withSerializedSnapshot("{\someKey\":\"someValue\"}")));
-		when(repositoryMock.save(any(RevisionEntity.class))).thenReturn(RevisionEntity.create().withId(revisionId));
+		when(revisionRepositoryMock.findFirstByEntityIdOrderByVersionDesc(entityId)).thenReturn(Optional.of(RevisionEntity.create().withVersion(version).withSerializedSnapshot("{\someKey\":\"someValue\"}")));
+		when(revisionRepositoryMock.save(any(RevisionEntity.class))).thenReturn(RevisionEntity.create().withId(revisionId));
 
 		// Call
 		final var response = service.createRevision(entity);
 
 		// Assertions and verifications
-		verify(repositoryMock).save(entityCaptor.capture());
+		verify(revisionRepositoryMock).save(entityCaptor.capture());
 
 		assertThat(entityCaptor.getValue().getEntityType()).isEqualTo("ErrandEntity");
 		assertThat(entityCaptor.getValue().getSerializedSnapshot()).isEqualTo(objectMapperSpy.writeValueAsString(entity));
@@ -109,14 +126,14 @@ class RevisionServiceTest {
 		final var revisionId = UUID.randomUUID().toString();
 
 		// Mock
-		when(repositoryMock.findFirstByEntityIdOrderByVersionDesc(entityId)).thenReturn(Optional.of(revisionEntity));
-		when(repositoryMock.save(any(RevisionEntity.class))).thenReturn(RevisionEntity.create().withId(revisionId));
+		when(revisionRepositoryMock.findFirstByEntityIdOrderByVersionDesc(entityId)).thenReturn(Optional.of(revisionEntity));
+		when(revisionRepositoryMock.save(any(RevisionEntity.class))).thenReturn(RevisionEntity.create().withId(revisionId));
 
 		// Call
 		final var response = service.createRevision(errandEntity);
 
 		// Assertions and verifications
-		verify(repositoryMock).save(entityCaptor.capture());
+		verify(revisionRepositoryMock).save(entityCaptor.capture());
 
 		assertThat(entityCaptor.getValue().getEntityType()).isEqualTo("ErrandEntity");
 		assertThat(entityCaptor.getValue().getSerializedSnapshot()).isEqualTo(objectMapperSpy.writeValueAsString(errandEntity));
@@ -133,14 +150,14 @@ class RevisionServiceTest {
 		final var revisionId = UUID.randomUUID().toString();
 
 		// Mock
-		when(repositoryMock.findFirstByEntityIdOrderByVersionDesc(entityId)).thenReturn(Optional.of(RevisionEntity.create().withVersion(version).withSerializedSnapshot("{\"id\":\"entityId\"")));
-		when(repositoryMock.save(any(RevisionEntity.class))).thenReturn(RevisionEntity.create().withId(revisionId));
+		when(revisionRepositoryMock.findFirstByEntityIdOrderByVersionDesc(entityId)).thenReturn(Optional.of(RevisionEntity.create().withVersion(version).withSerializedSnapshot("{\"id\":\"entityId\"")));
+		when(revisionRepositoryMock.save(any(RevisionEntity.class))).thenReturn(RevisionEntity.create().withId(revisionId));
 
 		// Call
 		final var response = service.createRevision(entity);
 
 		// Assertions and verifications
-		verify(repositoryMock).save(entityCaptor.capture());
+		verify(revisionRepositoryMock).save(entityCaptor.capture());
 
 		assertThat(entityCaptor.getValue().getEntityType()).isEqualTo("ErrandEntity");
 		assertThat(entityCaptor.getValue().getSerializedSnapshot()).isEqualTo(objectMapperSpy.writeValueAsString(entity));
@@ -156,13 +173,13 @@ class RevisionServiceTest {
 		final var version = 4;
 
 		// Mock
-		when(repositoryMock.findFirstByEntityIdOrderByVersionDesc(entityId)).thenReturn(Optional.of(RevisionEntity.create().withVersion(version).withSerializedSnapshot("{\"id\":\"entityId\"}")));
+		when(revisionRepositoryMock.findFirstByEntityIdOrderByVersionDesc(entityId)).thenReturn(Optional.of(RevisionEntity.create().withVersion(version).withSerializedSnapshot("{\"id\":\"entityId\"}")));
 
 		// Call
 		service.createRevision(entity);
 
 		// Assertions and verifications
-		verify(repositoryMock, never()).save(any());
+		verify(revisionRepositoryMock, never()).save(any());
 	}
 
 	@Test
@@ -175,19 +192,207 @@ class RevisionServiceTest {
 		final var currentEntity = createErrandEntity(entityId);
 
 		// Mock
-		when(repositoryMock.findFirstByEntityIdOrderByVersionDesc(entityId)).thenReturn(Optional.of(RevisionEntity.create().withVersion(version).withSerializedSnapshot(previousSnapshot)));
+		when(revisionRepositoryMock.findFirstByEntityIdOrderByVersionDesc(entityId)).thenReturn(Optional.of(RevisionEntity.create().withVersion(version).withSerializedSnapshot(previousSnapshot)));
 
 		// Call
 		service.createRevision(currentEntity);
 
 		// Assertions and verifications
-		verify(repositoryMock, never()).save(any());
+		verify(revisionRepositoryMock, never()).save(any());
+	}
+
+	@Test
+	void getRevisionsForExistingErrand() {
+		// Setup
+		final var errandId = "errandId";
+
+		// Mock
+		when(errandsRepositoryMock.existsById(errandId)).thenReturn(true);
+		when(revisionRepositoryMock.findAllByEntityIdOrderByVersion(errandId)).thenReturn(List.of(createRevisionEntity(), createRevisionEntity(), createRevisionEntity()));
+
+		final var result = service.getRevisions(errandId);
+
+		verify(errandsRepositoryMock).existsById(errandId);
+		verify(revisionRepositoryMock).findAllByEntityIdOrderByVersion(errandId);
+
+		assertThat(result).hasSize(3);
+	}
+
+	@Test
+	void getRevisionsForNonExistingErrand() {
+		// Setup
+		final var errandId = "errandId";
+
+		// Call
+		final var e = assertThrows(ThrowableProblem.class, () -> service.getRevisions(errandId));
+
+		// Assertions and verifications
+		verify(errandsRepositoryMock).existsById(errandId);
+		verifyNoInteractions(revisionRepositoryMock);
+
+		assertThat(e.getStatus()).isEqualTo(NOT_FOUND);
+		assertThat(e.getMessage()).isEqualTo("Not Found: An errand with id 'errandId' could not be found");
+	}
+
+	@Test
+	void compareRevisionVersionsNonExistingErrand() {
+		// Setup
+		final var errandId = "errandId";
+
+		// Call
+		final var e = assertThrows(ThrowableProblem.class, () -> service.compareRevisionVersions(errandId, 0, 0));
+
+		// Assertions and verifications
+		verify(errandsRepositoryMock).existsById(errandId);
+		verifyNoInteractions(revisionRepositoryMock);
+
+		assertThat(e.getStatus()).isEqualTo(NOT_FOUND);
+		assertThat(e.getMessage()).isEqualTo("Not Found: An errand with id 'errandId' could not be found");
+	}
+
+	@Test
+	void compareRevisionVersionsNonExistingSourceVersion() {
+		// Setup
+		final var errandId = "errandId";
+		final var sourceVersion = 5;
+		final var targetVersion = 6;
+
+		// Mock
+		when(errandsRepositoryMock.existsById(errandId)).thenReturn(true);
+
+		// Call
+		final var e = assertThrows(ThrowableProblem.class, () -> service.compareRevisionVersions(errandId, sourceVersion, targetVersion));
+
+		// Assertions and verifications
+		verify(errandsRepositoryMock).existsById(errandId);
+		verify(revisionRepositoryMock).findByEntityIdAndVersion(errandId, sourceVersion);
+		verify(revisionRepositoryMock, never()).findByEntityIdAndVersion(errandId, targetVersion);
+
+		assertThat(e.getStatus()).isEqualTo(NOT_FOUND);
+		assertThat(e.getMessage()).isEqualTo("Not Found: The version requested for the source revision does not exist");
+	}
+
+	@Test
+	void compareRevisionVersionsNonExistingTargetVersion() {
+		// Setup
+		final var errandId = "errandId";
+		final var sourceVersion = 5;
+		final var targetVersion = 6;
+
+		// Mock
+		when(errandsRepositoryMock.existsById(errandId)).thenReturn(true);
+		when(revisionRepositoryMock.findByEntityIdAndVersion(errandId, sourceVersion)).thenReturn(Optional.of(createRevisionEntity()));
+
+		// Call
+		final var e = assertThrows(ThrowableProblem.class, () -> service.compareRevisionVersions(errandId, sourceVersion, targetVersion));
+
+		// Assertions and verifications
+		verify(errandsRepositoryMock).existsById(errandId);
+		verify(revisionRepositoryMock).findByEntityIdAndVersion(errandId, sourceVersion);
+		verify(revisionRepositoryMock).findByEntityIdAndVersion(errandId, targetVersion);
+
+		assertThat(e.getStatus()).isEqualTo(NOT_FOUND);
+		assertThat(e.getMessage()).isEqualTo("Not Found: The version requested for the target revision does not exist");
+
+	}
+
+	@Test
+	void compareRevisionVersionsWithNoDiff() {
+		// Setup
+		final var errandId = "errandId";
+		final var sourceVersion = 5;
+
+		// Mock
+		when(errandsRepositoryMock.existsById(errandId)).thenReturn(true);
+		when(revisionRepositoryMock.findByEntityIdAndVersion(errandId, sourceVersion)).thenReturn(Optional.of(createRevisionEntity()));
+
+		// Call
+		final var result = service.compareRevisionVersions(errandId, sourceVersion, sourceVersion);
+
+		// Assertions and verifications
+		verify(errandsRepositoryMock).existsById(errandId);
+		verify(revisionRepositoryMock, times(2)).findByEntityIdAndVersion(errandId, sourceVersion);
+
+		assertThat(result.getOperations()).isEmpty();
+	}
+
+	@Test
+	void compareRevisionVersionsWithDiff() {
+		// Setup
+		final var errandId = "errandId";
+		final var sourceVersion = 5;
+		final var targetVersion = 6;
+
+		// Mock
+		when(errandsRepositoryMock.existsById(errandId)).thenReturn(true);
+		when(revisionRepositoryMock.findByEntityIdAndVersion(errandId, sourceVersion)).thenReturn(Optional.of(createRevisionEntity("key", "oldValue")));
+		when(revisionRepositoryMock.findByEntityIdAndVersion(errandId, targetVersion)).thenReturn(Optional.of(createRevisionEntity("key", "newValue")));
+
+		// Call
+		final var result = service.compareRevisionVersions(errandId, sourceVersion, targetVersion);
+
+		// Assertions and verifications
+		verify(errandsRepositoryMock).existsById(errandId);
+		verify(revisionRepositoryMock).findByEntityIdAndVersion(errandId, sourceVersion);
+		verify(revisionRepositoryMock).findByEntityIdAndVersion(errandId, targetVersion);
+
+		assertThat(result.getOperations()).hasSize(1)
+			.extracting(
+				Operation::getOp,
+				Operation::getPath,
+				Operation::getValue,
+				Operation::getFromValue)
+			.containsExactly(tuple(
+				"replace",
+				"/key",
+				"newValue",
+				"oldValue"));
+	}
+
+	@Test
+	void compareRevisionVersionsThrowsException() throws Exception {
+		// Setup
+		final var errandId = "errandId";
+		final var sourceVersion = 5;
+		final var targetVersion = 6;
+
+		// Mock
+		when(errandsRepositoryMock.existsById(errandId)).thenReturn(true);
+		when(revisionRepositoryMock.findByEntityIdAndVersion(errandId, sourceVersion)).thenReturn(Optional.of(createRevisionEntity("key", "oldValue")));
+		when(revisionRepositoryMock.findByEntityIdAndVersion(errandId, targetVersion)).thenReturn(Optional.of(createRevisionEntity("key", "newValue\"")));
+
+		// Call
+		final var e = assertThrows(ThrowableProblem.class, () -> service.compareRevisionVersions(errandId, sourceVersion, targetVersion));
+
+		// Assertions and verifications
+		verify(errandsRepositoryMock).existsById(errandId);
+		verify(revisionRepositoryMock).findByEntityIdAndVersion(errandId, sourceVersion);
+		verify(revisionRepositoryMock).findByEntityIdAndVersion(errandId, targetVersion);
+
+		assertThat(e.getStatus()).isEqualTo(INTERNAL_SERVER_ERROR);
+		assertThat(e.getMessage()).isEqualTo("Internal Server Error: An error occured when comparing version 5 to version 6 of entityId 'errandId'");
+
 	}
 
 	private ErrandEntity createErrandEntity(String entityId) {
 		return ErrandEntity.create()
 			.withId(entityId)
-			.withAttachments(List.of(AttachmentEntity.create().withId(UUID.randomUUID().toString())))
+			.withAttachments(List.of(AttachmentEntity.create().withId(UUID.randomUUID().toString()).withFile(RandomUtils.nextBytes(30))))
 			.withStakeholders(List.of(StakeholderEntity.create().withId(RandomUtils.nextLong())));
+	}
+
+	private RevisionEntity createRevisionEntity(String key, String value) {
+		return createRevisionEntity()
+			.withSerializedSnapshot("{\"" + key + "\": \"" + value + "\"}");
+	}
+
+	private RevisionEntity createRevisionEntity() {
+		return RevisionEntity.create()
+			.withCreated(OffsetDateTime.now())
+			.withEntityId("entityId")
+			.withEntityType("EntityType")
+			.withId("revisionId")
+			.withSerializedSnapshot("{}")
+			.withVersion(0);
 	}
 }
