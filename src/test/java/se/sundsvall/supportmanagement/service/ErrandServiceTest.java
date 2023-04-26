@@ -74,7 +74,7 @@ class ErrandServiceTest {
 		assertThat(result).isEqualTo(ID);
 
 		verify(repositoryMock).save(any(ErrandEntity.class));
-		verify(revisionServiceMock).createRevision(any(ErrandEntity.class));
+		verify(revisionServiceMock).createErrandRevision(any(ErrandEntity.class));
 		verifyNoMoreInteractions(repositoryMock);
 	}
 
@@ -196,7 +196,7 @@ class ErrandServiceTest {
 		verify(repositoryMock).existsByIdAndNamespaceAndMunicipalityId(ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(repositoryMock).getReferenceById(ID);
 		verify(repositoryMock).save(entity);
-		verify(revisionServiceMock).createRevision(entity);
+		verify(revisionServiceMock).createErrandRevision(entity);
 		verifyNoMoreInteractions(repositoryMock);
 	}
 

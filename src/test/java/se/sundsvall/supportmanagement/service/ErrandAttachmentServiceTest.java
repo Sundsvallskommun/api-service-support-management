@@ -71,7 +71,7 @@ class ErrandAttachmentServiceTest {
 
 		verify(errandsRepositoryMock).findById(ERRAND_ID);
 		verify(errandsRepositoryMock).save(any(ErrandEntity.class));
-		verify(revisionServiceMock).createRevision(errandMock);
+		verify(revisionServiceMock).createErrandRevision(errandMock);
 	}
 
 	@Test
@@ -195,7 +195,7 @@ class ErrandAttachmentServiceTest {
 
 		verify(errandsRepositoryMock).findById(ERRAND_ID);
 		verify(errandsRepositoryMock).save(any(ErrandEntity.class));
-		verify(revisionServiceMock).createRevision(errandMock);
+		verify(revisionServiceMock).createErrandRevision(errandMock);
 	}
 
 	@Test

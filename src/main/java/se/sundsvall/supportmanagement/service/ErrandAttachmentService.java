@@ -40,7 +40,7 @@ public class ErrandAttachmentService {
 		final var errandEntity = getErrand(errandId, namespace, municipalityId);
 		final var attachmentEntity = ofNullable(toAttachmentEntity(errandEntity, errandAttachment)).orElseThrow(() -> Problem.valueOf(BAD_GATEWAY, ATTACHMENT_ENTITY_NOT_CREATED));
 		
-		revisionService.createRevision(errandsRepository.save(errandEntity));
+		revisionService.createErrandRevision(errandsRepository.save(errandEntity));
 		return attachmentEntity.getId();
 	}
 
@@ -66,7 +66,7 @@ public class ErrandAttachmentService {
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, String.format(ATTACHMENT_ENTITY_NOT_FOUND, attachmentId, errandId)));
 
 		errandEntity.getAttachments().remove(attachmentEntity);
-		revisionService.createRevision(errandsRepository.save(errandEntity));
+		revisionService.createErrandRevision(errandsRepository.save(errandEntity));
 	}
 
 	private ErrandEntity getErrand(String errandId, String namespace, String municipalityId) {
