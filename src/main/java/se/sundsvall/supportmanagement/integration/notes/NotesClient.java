@@ -1,9 +1,10 @@
 package se.sundsvall.supportmanagement.integration.notes;
 
-import generated.se.sundsvall.notes.CreateNoteRequest;
-import generated.se.sundsvall.notes.FindNotesResponse;
-import generated.se.sundsvall.notes.Note;
-import generated.se.sundsvall.notes.UpdateNoteRequest;
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import static se.sundsvall.supportmanagement.integration.notes.configuration.NotesConfiguration.CLIENT_ID;
+
+import java.util.List;
+
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -13,10 +14,14 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
-import se.sundsvall.supportmanagement.integration.notes.configuration.NotesConfiguration;
 
-import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
-import static se.sundsvall.supportmanagement.integration.notes.configuration.NotesConfiguration.CLIENT_ID;
+import generated.se.sundsvall.notes.CreateNoteRequest;
+import generated.se.sundsvall.notes.DifferenceResponse;
+import generated.se.sundsvall.notes.FindNotesResponse;
+import generated.se.sundsvall.notes.Note;
+import generated.se.sundsvall.notes.Revision;
+import generated.se.sundsvall.notes.UpdateNoteRequest;
+import se.sundsvall.supportmanagement.integration.notes.configuration.NotesConfiguration;
 
 @FeignClient(name = CLIENT_ID, url = "${integration.notes.url}", configuration = NotesConfiguration.class)
 public interface NotesClient {
@@ -77,4 +82,24 @@ public interface NotesClient {
 	 */
 	@PostMapping(path = "/notes", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
 	ResponseEntity<Void> createNote(@RequestBody CreateNoteRequest createNoteRequest);
+
+	/**
+	 * Find all revisions for a note by id.
+	 *
+	 * @param id the id of the note to find revisions for
+	 * @return a list of revisions connected to the note
+	 */
+	@GetMapping(path = "/notes/{id}/revisions", produces = APPLICATION_JSON_VALUE)
+	List<Revision> findAllNoteRevisions(@PathVariable(name = "id") String id);
+
+	/**
+	 * Compare two revision versions of a note to each other.
+	 *
+	 * @param id            the id of the note to compare
+	 * @param sourceVersion the version to use as source
+	 * @param targetVersion the version to use as target
+	 * @return all found differences between the source and target version of the note
+	 */
+	@GetMapping(path = "/notes/{id}/revisions/difference", produces = APPLICATION_JSON_VALUE)
+	DifferenceResponse compareNoteRevisions(@PathVariable(name = "id") String id, @RequestParam(name = "source") Integer sourceVersion, @RequestParam(name = "target") Integer targetVersion);
 }

@@ -34,6 +34,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import generated.se.sundsvall.notes.DifferenceResponse;
 import se.sundsvall.supportmanagement.api.model.revision.Operation;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.RevisionRepository;
@@ -41,6 +42,7 @@ import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.RevisionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
+import se.sundsvall.supportmanagement.integration.notes.NotesClient;
 
 @ExtendWith(MockitoExtension.class)
 class RevisionServiceTest {
@@ -50,6 +52,9 @@ class RevisionServiceTest {
 
 	@Mock
 	private ErrandsRepository errandsRepositoryMock;
+
+	@Mock
+	private NotesClient notesClientMock;
 
 	@Mock
 	private JsonProcessingException jsonProcessingExceptionMock;
@@ -69,7 +74,7 @@ class RevisionServiceTest {
 	}
 
 	@Test
-	void shouldCreateRevisionWhenNoPreviousRevisionExists() throws Exception {
+	void shouldCreateErrandRevisionWhenNoPreviousRevisionExists() throws Exception {
 		// Setup
 		final var entityId = "entityId";
 		final var entity = ErrandEntity.create().withId(entityId);
@@ -80,7 +85,7 @@ class RevisionServiceTest {
 		when(revisionRepositoryMock.save(any(RevisionEntity.class))).thenReturn(RevisionEntity.create().withId(revisionId));
 
 		// Call
-		final var response = service.createRevision(entity);
+		final var response = service.createErrandRevision(entity);
 
 		// Assertions and verifications
 		verify(revisionRepositoryMock).findFirstByEntityIdOrderByVersionDesc(entityId);
@@ -93,7 +98,7 @@ class RevisionServiceTest {
 	}
 
 	@Test
-	void shouldCreateRevisionWhenPreviousRevisionSnapshotDiffersFromCurrent() throws Exception {
+	void shouldCreateErrandRevisionWhenPreviousRevisionSnapshotDiffersFromCurrent() throws Exception {
 		// Setup
 		final var entityId = "entityId";
 		final var entity = ErrandEntity.create().withId(entityId);
@@ -105,7 +110,7 @@ class RevisionServiceTest {
 		when(revisionRepositoryMock.save(any(RevisionEntity.class))).thenReturn(RevisionEntity.create().withId(revisionId));
 
 		// Call
-		final var response = service.createRevision(entity);
+		final var response = service.createErrandRevision(entity);
 
 		// Assertions and verifications
 		verify(revisionRepositoryMock).save(entityCaptor.capture());
@@ -117,7 +122,7 @@ class RevisionServiceTest {
 	}
 
 	@Test
-	void shouldCreateRevisionWhenPreviousRevisionSnapshotIsNull() throws Exception {
+	void shouldCreateErrandRevisionWhenPreviousRevisionSnapshotIsNull() throws Exception {
 		// Setup
 		final var entityId = "entityId";
 		final var errandEntity = ErrandEntity.create().withId(entityId);
@@ -130,7 +135,7 @@ class RevisionServiceTest {
 		when(revisionRepositoryMock.save(any(RevisionEntity.class))).thenReturn(RevisionEntity.create().withId(revisionId));
 
 		// Call
-		final var response = service.createRevision(errandEntity);
+		final var response = service.createErrandRevision(errandEntity);
 
 		// Assertions and verifications
 		verify(revisionRepositoryMock).save(entityCaptor.capture());
@@ -142,7 +147,7 @@ class RevisionServiceTest {
 	}
 
 	@Test
-	void shouldCreateRevisionWhenExceptionOccursInSnapshotComparison() throws Exception {
+	void shouldCreateErrandRevisionWhenExceptionOccursInSnapshotComparison() throws Exception {
 		// Setup
 		final var entityId = "entityId";
 		final var entity = ErrandEntity.create().withId(entityId);
@@ -154,7 +159,7 @@ class RevisionServiceTest {
 		when(revisionRepositoryMock.save(any(RevisionEntity.class))).thenReturn(RevisionEntity.create().withId(revisionId));
 
 		// Call
-		final var response = service.createRevision(entity);
+		final var response = service.createErrandRevision(entity);
 
 		// Assertions and verifications
 		verify(revisionRepositoryMock).save(entityCaptor.capture());
@@ -166,7 +171,7 @@ class RevisionServiceTest {
 	}
 
 	@Test
-	void shouldNotCreateRevisionWhenPreviousRevisionSnapshotIsEqualToCurrent() {
+	void shouldNotErrandCreateRevisionWhenPreviousRevisionSnapshotIsEqualToCurrent() {
 		// Setup
 		final var entityId = "entityId";
 		final var entity = ErrandEntity.create().withId(entityId);
@@ -176,14 +181,14 @@ class RevisionServiceTest {
 		when(revisionRepositoryMock.findFirstByEntityIdOrderByVersionDesc(entityId)).thenReturn(Optional.of(RevisionEntity.create().withVersion(version).withSerializedSnapshot("{\"id\":\"entityId\"}")));
 
 		// Call
-		service.createRevision(entity);
+		service.createErrandRevision(entity);
 
 		// Assertions and verifications
 		verify(revisionRepositoryMock, never()).save(any());
 	}
 
 	@Test
-	void shouldNotCreateRevisionWhenNonComparedAttributesDiffers() {
+	void shouldNotCreateErrandRevisionWhenNonComparedAttributesDiffers() {
 		// Setup
 		final var entityId = "entityId";
 		final var version = 5;
@@ -195,14 +200,14 @@ class RevisionServiceTest {
 		when(revisionRepositoryMock.findFirstByEntityIdOrderByVersionDesc(entityId)).thenReturn(Optional.of(RevisionEntity.create().withVersion(version).withSerializedSnapshot(previousSnapshot)));
 
 		// Call
-		service.createRevision(currentEntity);
+		service.createErrandRevision(currentEntity);
 
 		// Assertions and verifications
 		verify(revisionRepositoryMock, never()).save(any());
 	}
 
 	@Test
-	void getRevisionsForExistingErrand() {
+	void getErrandRevisionsForExistingErrand() {
 		// Setup
 		final var errandId = "errandId";
 
@@ -210,7 +215,7 @@ class RevisionServiceTest {
 		when(errandsRepositoryMock.existsById(errandId)).thenReturn(true);
 		when(revisionRepositoryMock.findAllByEntityIdOrderByVersion(errandId)).thenReturn(List.of(createRevisionEntity(), createRevisionEntity(), createRevisionEntity()));
 
-		final var result = service.getRevisions(errandId);
+		final var result = service.getErrandRevisions(errandId);
 
 		verify(errandsRepositoryMock).existsById(errandId);
 		verify(revisionRepositoryMock).findAllByEntityIdOrderByVersion(errandId);
@@ -219,12 +224,12 @@ class RevisionServiceTest {
 	}
 
 	@Test
-	void getRevisionsForNonExistingErrand() {
+	void getErrandRevisionsForNonExistingErrand() {
 		// Setup
 		final var errandId = "errandId";
 
 		// Call
-		final var e = assertThrows(ThrowableProblem.class, () -> service.getRevisions(errandId));
+		final var e = assertThrows(ThrowableProblem.class, () -> service.getErrandRevisions(errandId));
 
 		// Assertions and verifications
 		verify(errandsRepositoryMock).existsById(errandId);
@@ -235,12 +240,12 @@ class RevisionServiceTest {
 	}
 
 	@Test
-	void compareRevisionVersionsNonExistingErrand() {
+	void compareErrandRevisionVersionsNonExistingErrand() {
 		// Setup
 		final var errandId = "errandId";
 
 		// Call
-		final var e = assertThrows(ThrowableProblem.class, () -> service.compareRevisionVersions(errandId, 0, 0));
+		final var e = assertThrows(ThrowableProblem.class, () -> service.compareErrandRevisionVersions(errandId, 0, 0));
 
 		// Assertions and verifications
 		verify(errandsRepositoryMock).existsById(errandId);
@@ -251,7 +256,7 @@ class RevisionServiceTest {
 	}
 
 	@Test
-	void compareRevisionVersionsNonExistingSourceVersion() {
+	void compareErrandRevisionVersionsNonExistingSourceVersion() {
 		// Setup
 		final var errandId = "errandId";
 		final var sourceVersion = 5;
@@ -261,7 +266,7 @@ class RevisionServiceTest {
 		when(errandsRepositoryMock.existsById(errandId)).thenReturn(true);
 
 		// Call
-		final var e = assertThrows(ThrowableProblem.class, () -> service.compareRevisionVersions(errandId, sourceVersion, targetVersion));
+		final var e = assertThrows(ThrowableProblem.class, () -> service.compareErrandRevisionVersions(errandId, sourceVersion, targetVersion));
 
 		// Assertions and verifications
 		verify(errandsRepositoryMock).existsById(errandId);
@@ -273,7 +278,7 @@ class RevisionServiceTest {
 	}
 
 	@Test
-	void compareRevisionVersionsNonExistingTargetVersion() {
+	void compareErrandRevisionVersionsNonExistingTargetVersion() {
 		// Setup
 		final var errandId = "errandId";
 		final var sourceVersion = 5;
@@ -284,7 +289,7 @@ class RevisionServiceTest {
 		when(revisionRepositoryMock.findByEntityIdAndVersion(errandId, sourceVersion)).thenReturn(Optional.of(createRevisionEntity()));
 
 		// Call
-		final var e = assertThrows(ThrowableProblem.class, () -> service.compareRevisionVersions(errandId, sourceVersion, targetVersion));
+		final var e = assertThrows(ThrowableProblem.class, () -> service.compareErrandRevisionVersions(errandId, sourceVersion, targetVersion));
 
 		// Assertions and verifications
 		verify(errandsRepositoryMock).existsById(errandId);
@@ -297,7 +302,7 @@ class RevisionServiceTest {
 	}
 
 	@Test
-	void compareRevisionVersionsWithNoDiff() {
+	void compareErrandRevisionVersionsWithNoDiff() {
 		// Setup
 		final var errandId = "errandId";
 		final var sourceVersion = 5;
@@ -307,7 +312,7 @@ class RevisionServiceTest {
 		when(revisionRepositoryMock.findByEntityIdAndVersion(errandId, sourceVersion)).thenReturn(Optional.of(createRevisionEntity()));
 
 		// Call
-		final var result = service.compareRevisionVersions(errandId, sourceVersion, sourceVersion);
+		final var result = service.compareErrandRevisionVersions(errandId, sourceVersion, sourceVersion);
 
 		// Assertions and verifications
 		verify(errandsRepositoryMock).existsById(errandId);
@@ -317,7 +322,7 @@ class RevisionServiceTest {
 	}
 
 	@Test
-	void compareRevisionVersionsWithDiff() {
+	void compareErrandRevisionVersionsWithDiff() {
 		// Setup
 		final var errandId = "errandId";
 		final var sourceVersion = 5;
@@ -329,7 +334,7 @@ class RevisionServiceTest {
 		when(revisionRepositoryMock.findByEntityIdAndVersion(errandId, targetVersion)).thenReturn(Optional.of(createRevisionEntity("key", "newValue")));
 
 		// Call
-		final var result = service.compareRevisionVersions(errandId, sourceVersion, targetVersion);
+		final var result = service.compareErrandRevisionVersions(errandId, sourceVersion, targetVersion);
 
 		// Assertions and verifications
 		verify(errandsRepositoryMock).existsById(errandId);
@@ -350,7 +355,7 @@ class RevisionServiceTest {
 	}
 
 	@Test
-	void compareRevisionVersionsThrowsException() throws Exception {
+	void compareErrandRevisionVersionsThrowsException() throws Exception {
 		// Setup
 		final var errandId = "errandId";
 		final var sourceVersion = 5;
@@ -362,7 +367,7 @@ class RevisionServiceTest {
 		when(revisionRepositoryMock.findByEntityIdAndVersion(errandId, targetVersion)).thenReturn(Optional.of(createRevisionEntity("key", "newValue\"")));
 
 		// Call
-		final var e = assertThrows(ThrowableProblem.class, () -> service.compareRevisionVersions(errandId, sourceVersion, targetVersion));
+		final var e = assertThrows(ThrowableProblem.class, () -> service.compareErrandRevisionVersions(errandId, sourceVersion, targetVersion));
 
 		// Assertions and verifications
 		verify(errandsRepositoryMock).existsById(errandId);
@@ -372,6 +377,83 @@ class RevisionServiceTest {
 		assertThat(e.getStatus()).isEqualTo(INTERNAL_SERVER_ERROR);
 		assertThat(e.getMessage()).isEqualTo("Internal Server Error: An error occured when comparing version 5 to version 6 of entityId 'errandId'");
 
+	}
+
+	@Test
+	void getNoteRevisionsForExistingErrand() {
+		// Setup
+		final var errandId = "errandId";
+		final var noteId = "noteId";
+
+		// Mock
+		when(errandsRepositoryMock.existsById(errandId)).thenReturn(true);
+		when(notesClientMock.findAllNoteRevisions(noteId)).thenReturn(List.of(new generated.se.sundsvall.notes.Revision()));
+
+		// Call
+		final var result = service.getNoteRevisions(errandId, noteId);
+
+		// Assertions and verifications
+		verify(errandsRepositoryMock).existsById(errandId);
+		verify(notesClientMock).findAllNoteRevisions(noteId);
+
+		assertThat(result).hasSize(1);
+	}
+
+	@Test
+	void getNoteRevisionsForNonExistingErrand() {
+		// Setup
+		final var errandId = "errandId";
+		final var noteId = "noteId";
+
+		// Call
+		final var e = assertThrows(ThrowableProblem.class, () -> service.getNoteRevisions(errandId, noteId));
+
+		// Assertions and verifications
+		verify(errandsRepositoryMock).existsById(errandId);
+		verifyNoInteractions(notesClientMock);
+
+		assertThat(e.getStatus()).isEqualTo(NOT_FOUND);
+		assertThat(e.getMessage()).isEqualTo("Not Found: An errand with id 'errandId' could not be found");
+	}
+
+	@Test
+	void compareNoteRevisionVersionsExistingErrand() {
+		// Setup
+		final var errandId = "errandId";
+		final var noteId = "noteId";
+		final var sourceVersion = 1;
+		final var targetVersion = 2;
+
+		// Mock
+		when(errandsRepositoryMock.existsById(errandId)).thenReturn(true);
+		when(notesClientMock.compareNoteRevisions(noteId, sourceVersion, targetVersion)).thenReturn(new DifferenceResponse().addOperationsItem(new generated.se.sundsvall.notes.Operation()));
+
+		// Call
+		final var result = service.compareNoteRevisionVersions(errandId, noteId, sourceVersion, targetVersion);
+
+		// Assertions and verifications
+		verify(errandsRepositoryMock).existsById(errandId);
+		verify(notesClientMock).compareNoteRevisions(noteId, sourceVersion, targetVersion);
+
+		assertThat(result).isNotNull();
+		assertThat(result.getOperations()).hasSize(1);
+	}
+
+	@Test
+	void compareNoteRevisionVersionsNonExistingErrand() {
+		// Setup
+		final var errandId = "errandId";
+		final var noteId = "noteId";
+
+		// Call
+		final var e = assertThrows(ThrowableProblem.class, () -> service.compareNoteRevisionVersions(errandId, noteId, 0, 1));
+
+		// Assertions and verifications
+		verify(errandsRepositoryMock).existsById(errandId);
+		verifyNoInteractions(notesClientMock);
+
+		assertThat(e.getStatus()).isEqualTo(NOT_FOUND);
+		assertThat(e.getMessage()).isEqualTo("Not Found: An errand with id 'errandId' could not be found");
 	}
 
 	private ErrandEntity createErrandEntity(String entityId) {

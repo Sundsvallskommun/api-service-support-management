@@ -44,8 +44,9 @@ class RevisionResourceTest {
 		final var id = UUID.randomUUID().toString();
 
 		// Mock
-		when(revisionServiceMock.getRevisions(id)).thenReturn(List.of(Revision.create()));
+		when(revisionServiceMock.getErrandRevisions(id)).thenReturn(List.of(Revision.create()));
 
+		// Call
 		final var response = webTestClient.get().uri(builder -> builder.path(ERRANDS_PATH).build(Map.of("id", id)))
 			.exchange()
 			.expectStatus().isOk()
@@ -56,7 +57,7 @@ class RevisionResourceTest {
 
 		// Verification
 		assertThat(response).isNotNull();
-		verify(revisionServiceMock).getRevisions(id);
+		verify(revisionServiceMock).getErrandRevisions(id);
 
 	}
 
@@ -68,8 +69,9 @@ class RevisionResourceTest {
 		final var target = 2;
 
 		// Mock
-		when(revisionServiceMock.compareRevisionVersions(id, source, target)).thenReturn(DifferenceResponse.create());
+		when(revisionServiceMock.compareErrandRevisionVersions(id, source, target)).thenReturn(DifferenceResponse.create());
 
+		// Call
 		final var response = webTestClient.get().uri(builder -> builder.path(ERRANDS_PATH + "/difference").queryParam("source", source).queryParam("target", target).build(Map.of("id", id)))
 			.exchange()
 			.expectStatus().isOk()
@@ -80,7 +82,7 @@ class RevisionResourceTest {
 
 		// Verification
 		assertThat(response).isNotNull();
-		verify(revisionServiceMock).compareRevisionVersions(id, source, target);
+		verify(revisionServiceMock).compareErrandRevisionVersions(id, source, target);
 	}
 
 	// ==============================================================================================================
@@ -93,6 +95,10 @@ class RevisionResourceTest {
 		final var id = UUID.randomUUID().toString();
 		final var noteId = UUID.randomUUID().toString();
 
+		// Mock
+		when(revisionServiceMock.getNoteRevisions(id, noteId)).thenReturn(List.of(Revision.create()));
+
+		// Call
 		final var response = webTestClient.get().uri(builder -> builder.path(ERRAND_NOTES_PATH).build(Map.of("id", id, "noteId", noteId)))
 			.exchange()
 			.expectStatus().isOk()
@@ -103,7 +109,7 @@ class RevisionResourceTest {
 
 		// Verification
 		assertThat(response).isNotNull();
-		// TODO: Will be verified in task UF-5000
+		verify(revisionServiceMock).getNoteRevisions(id, noteId);
 	}
 
 	@Test
@@ -114,6 +120,10 @@ class RevisionResourceTest {
 		final var source = 1;
 		final var target = 2;
 
+		// Mock
+		when(revisionServiceMock.compareNoteRevisionVersions(id, noteId, source, target)).thenReturn(DifferenceResponse.create());
+
+		// Call
 		final var response = webTestClient.get().uri(builder -> builder.path(ERRAND_NOTES_PATH + "/difference").queryParam("source", source).queryParam("target", target).build(Map.of("id", id, "noteId", noteId)))
 			.exchange()
 			.expectStatus().isOk()
@@ -124,6 +134,6 @@ class RevisionResourceTest {
 
 		// Verification
 		assertThat(response).isNotNull();
-		// TODO: Will be verified in task UF-5000
+		verify(revisionServiceMock).compareNoteRevisionVersions(id, noteId, source, target);
 	}
 }

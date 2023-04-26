@@ -46,7 +46,7 @@ public class RevisionResource {
 	public ResponseEntity<List<Revision>> getErrandRevisions(
 		@Parameter(name = "id", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable final String id) {
 
-		return ok(revisionService.getRevisions(id));
+		return ok(revisionService.getErrandRevisions(id));
 	}
 
 	@GetMapping(path = "/errands/{id}/revisions/difference", produces = { APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE })
@@ -60,7 +60,7 @@ public class RevisionResource {
 		@Parameter(name = "source", description = "Source version to compare", example = "0", required = true) @Range(min = 0, max = Integer.MAX_VALUE) @RequestParam final Integer source,
 		@Parameter(name = "target", description = "Target version to compare", example = "1", required = true) @Range(min = 0, max = Integer.MAX_VALUE) @RequestParam final Integer target) {
 
-		return ok(revisionService.compareRevisionVersions(id, source, target));
+		return ok(revisionService.compareErrandRevisionVersions(id, source, target));
 	}
 
 	@GetMapping(path = "/errands/{id}/notes/{noteId}/revisions", produces = { APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE })
@@ -73,8 +73,7 @@ public class RevisionResource {
 		@Parameter(name = "id", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable final String id,
 		@Parameter(name = "noteId", description = "Errand note id", example = "22a57c09-47ca-45bf-ab02-819011c6fd8d") @ValidUuid @PathVariable final String noteId) {
 
-		// TODO: Will be implemented in task UF-5000
-		return ok(List.of(Revision.create()));
+		return ok(revisionService.getNoteRevisions(id, noteId));
 	}
 
 	@GetMapping(path = "/errands/{id}/notes/{noteId}/revisions/difference", produces = { APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE })
@@ -89,7 +88,6 @@ public class RevisionResource {
 		@Parameter(name = "source", description = "Source version to compare", example = "0", required = true) @Range(min = 0, max = Integer.MAX_VALUE) @RequestParam final Integer source,
 		@Parameter(name = "target", description = "Target version to compare", example = "1", required = true) @Range(min = 0, max = Integer.MAX_VALUE) @RequestParam final Integer target) {
 
-		// TODO: Will be implemented in task UF-5000
-		return ok(DifferenceResponse.create());
+		return ok(revisionService.compareNoteRevisionVersions(id, noteId, source, target));
 	}
 }

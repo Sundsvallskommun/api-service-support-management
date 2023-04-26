@@ -37,7 +37,7 @@ public class ErrandService {
 
 	public String createErrand(String namespace, String municipalityId, Errand errand) {
 		final var entity = repository.save(toErrandEntity(namespace, municipalityId, errand));
-		revisionService.createRevision(entity);
+		revisionService.createErrandRevision(entity);
 
 		return entity.getId();
 	}
@@ -58,7 +58,7 @@ public class ErrandService {
 	public Errand updateErrand(String namespace, String municipalityId, String id, Errand errand) {
 		verifyExistingErrand(id, namespace, municipalityId);
 		final var updatedEntity = repository.save(updateEntity(repository.getReferenceById(id), errand));
-		revisionService.createRevision(updatedEntity);
+		revisionService.createErrandRevision(updatedEntity);
 
 		return toErrand(updatedEntity);
 	}

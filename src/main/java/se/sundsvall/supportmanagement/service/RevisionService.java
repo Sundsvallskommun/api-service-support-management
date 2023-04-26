@@ -9,7 +9,6 @@ import static org.apache.commons.lang3.ObjectUtils.anyNull;
 import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
 import static org.zalando.problem.Status.NOT_FOUND;
 import static se.sundsvall.supportmanagement.service.mapper.RevisionMapper.toRevisionEntity;
-import static se.sundsvall.supportmanagement.service.mapper.RevisionMapper.toRevisions;
 import static se.sundsvall.supportmanagement.service.mapper.RevisionMapper.toSerializedSnapshot;
 
 import java.util.EnumSet;
@@ -34,6 +33,9 @@ import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.RevisionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.notes.NotesClient;
+import se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper;
+import se.sundsvall.supportmanagement.service.mapper.RevisionMapper;
 
 @Service
 public class RevisionService {
@@ -43,8 +45,8 @@ public class RevisionService {
 
 	private static final List<String> EXCLUDED_ATTRIBUTES = List.of("$..stakeholders[*].id", "$..attachments[*].id", "$..attachments[*].file");
 	private static final String COMPARISON_ERROR_LOG_MESSAGE = "An error occured during comparison";
-	private static final String COMPARISON_ERROR_PROBLEM_MESSAGE = "An error occured when comparing version %s to version %s of entityId '%s'";
-	private static final String VERSION_DOES_NOT_EXIST_MESSAGE = "The version requested for the %s revision does not exist";
+	private static final String COMPARISON_ERROR_PROBLEM = "An error occured when comparing version %s to version %s of entityId '%s'";
+	private static final String VERSION_DOES_NOT_EXIST = "The version requested for the %s revision does not exist";
 	private static final String ERRAND_NOT_FOUND = "An errand with id '%s' could not be found";
 
 	@Autowired
@@ -56,6 +58,9 @@ public class RevisionService {
 	@Autowired
 	private RevisionRepository revisionRepository;
 
+	@Autowired
+	private NotesClient notesClient;
+
 	/**
 	 * Create a new revision.
 	 *
@@ -66,7 +71,7 @@ public class RevisionService {
 	 * @param entity the entity that will have a new revision.
 	 * @return the id (uuid) of the created revision.
 	 */
-	public String createRevision(ErrandEntity entity) {
+	public String createErrandRevision(ErrandEntity entity) {
 
 		final var lastRevision = revisionRepository.findFirstByEntityIdOrderByVersionDesc(entity.getId());
 
@@ -108,12 +113,10 @@ public class RevisionService {
 	 * @param errandId id of the errand to fetch revisions for.
 	 * @return a list of Revision objects containing information on every revision of the errand.
 	 */
-	public List<Revision> getRevisions(String errandId) {
-		if (!errandsRepository.existsById(errandId)) {
-			throw Problem.valueOf(NOT_FOUND, String.format(ERRAND_NOT_FOUND, errandId));
-		}
+	public List<Revision> getErrandRevisions(String errandId) {
+		verifyExistingErrand(errandId);
 
-		return toRevisions(revisionRepository.findAllByEntityIdOrderByVersion(errandId));
+		return RevisionMapper.toRevisions(revisionRepository.findAllByEntityIdOrderByVersion(errandId));
 	}
 
 	/**
@@ -124,16 +127,14 @@ public class RevisionService {
 	 * @param targetVersion version that will act as target in the comparison.
 	 * @return response containing the difference between the source version and the target version.
 	 */
-	public DifferenceResponse compareRevisionVersions(String errandId, int sourceVersion, int targetVersion) {
-		if (!errandsRepository.existsById(errandId)) {
-			throw Problem.valueOf(NOT_FOUND, String.format(ERRAND_NOT_FOUND, errandId));
-		}
+	public DifferenceResponse compareErrandRevisionVersions(String errandId, int sourceVersion, int targetVersion) {
+		verifyExistingErrand(errandId);
 
 		final var sourceRevision = revisionRepository.findByEntityIdAndVersion(errandId, sourceVersion)
-			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, String.format(VERSION_DOES_NOT_EXIST_MESSAGE, "source")));
+			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, String.format(VERSION_DOES_NOT_EXIST, "source")));
 
 		final var targetRevision = revisionRepository.findByEntityIdAndVersion(errandId, targetVersion)
-			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, String.format(VERSION_DOES_NOT_EXIST_MESSAGE, "target")));
+			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, String.format(VERSION_DOES_NOT_EXIST, "target")));
 
 		try {
 			// Deserialize revisions to JsonNodes
@@ -147,7 +148,41 @@ public class RevisionService {
 			return DifferenceResponse.create().withOperations(List.of(objectMapper.readValue(differences.toString(), Operation[].class)));
 		} catch (Exception e) {
 			LOG.error(COMPARISON_ERROR_LOG_MESSAGE, e);
-			throw Problem.valueOf(INTERNAL_SERVER_ERROR, String.format(COMPARISON_ERROR_PROBLEM_MESSAGE, sourceVersion, targetVersion, errandId));
+			throw Problem.valueOf(INTERNAL_SERVER_ERROR, String.format(COMPARISON_ERROR_PROBLEM, sourceVersion, targetVersion, errandId));
+		}
+	}
+
+	/**
+	 * Returns all existing revisions for a note.
+	 * 
+	 * @param errandId id of the errand owning the note to compare.
+	 * @param noteId   id of the note to fetch revisions for.
+	 * @return a list of Revision objects containing information on every revision of the note.
+	 */
+	public List<Revision> getNoteRevisions(String errandId, String noteId) {
+		verifyExistingErrand(errandId);
+
+		return ErrandNoteMapper.toRevisions(notesClient.findAllNoteRevisions(noteId));
+	}
+
+	/**
+	 * Compares two revision versions of a note.
+	 * 
+	 * @param errandId      id of the errand owning the note to compare.
+	 * @param noteId        id of the note to compare.
+	 * @param sourceVersion version that will act as source in the comparison.
+	 * @param targetVersion version that will act as target in the comparison.
+	 * @return response containing the difference between the source version and the target version.
+	 */
+	public DifferenceResponse compareNoteRevisionVersions(String errandId, String noteId, int sourceVersion, int targetVersion) {
+		verifyExistingErrand(errandId);
+
+		return ErrandNoteMapper.toDifferenceResponse(notesClient.compareNoteRevisions(noteId, sourceVersion, targetVersion));
+	}
+
+	private void verifyExistingErrand(String errandId) {
+		if (!errandsRepository.existsById(errandId)) {
+			throw Problem.valueOf(NOT_FOUND, String.format(ERRAND_NOT_FOUND, errandId));
 		}
 	}
 
