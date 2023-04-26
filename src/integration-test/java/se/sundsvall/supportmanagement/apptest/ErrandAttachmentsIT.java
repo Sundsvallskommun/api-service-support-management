@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.apptest;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpHeaders.LOCATION;
 import static org.springframework.http.HttpMethod.DELETE;
@@ -13,11 +14,14 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.jdbc.Sql;
 
 import se.sundsvall.dept44.test.AbstractAppTest;
 import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.supportmanagement.Application;
+import se.sundsvall.supportmanagement.integration.db.RevisionRepository;
+import se.sundsvall.supportmanagement.integration.db.model.RevisionEntity;
 
 /**
  * ErrandAttachments IT tests.
@@ -32,6 +36,9 @@ class ErrandAttachmentsIT extends AbstractAppTest {
 	private static final String PATH = "/NAMESPACE.1/2281/errands/"; // 2281 is the municipalityId of Sundsvalls kommun
 	private static final String REQUEST_FILE = "request.json";
 	private static final String RESPONSE_FILE = "response.json";
+
+	@Autowired
+	private RevisionRepository revisionRepository;
 
 	@Test
 	void test01_readErrandAttachment() throws Exception {
@@ -57,21 +64,43 @@ class ErrandAttachmentsIT extends AbstractAppTest {
 
 	@Test
 	void test03_createErrandAttachment() throws Exception {
+		final var entityId = "1be673c0-6ba3-4fb0-af4a-43acf23389f6";
+
+		assertThat(revisionRepository.findAll()).hasSize(1);
+		assertThat(revisionRepository.findByEntityId(entityId)).hasSize(1)
+			.extracting(RevisionEntity::getVersion)
+			.containsExactly(0);
+
 		setupCall()
-			.withServicePath(PATH + "1be673c0-6ba3-4fb0-af4a-43acf23389f6/attachments")
+			.withServicePath(PATH + entityId + "/attachments")
 			.withHttpMethod(POST)
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(CREATED)
 			.withExpectedResponseHeader(LOCATION, List.of("^http://(.*)/errands/(.*)$"))
 			.sendRequestAndVerifyResponse();
+
+		assertThat(revisionRepository.findByEntityId(entityId)).hasSize(2)
+			.extracting(RevisionEntity::getVersion)
+			.containsExactlyInAnyOrder(0, 1);
 	}
 
 	@Test
 	void test04_deleteErrandAttachment() throws Exception {
+		final var entityId = "1be673c0-6ba3-4fb0-af4a-43acf23389f6";
+
+		assertThat(revisionRepository.findAll()).hasSize(1);
+		assertThat(revisionRepository.findByEntityId(entityId)).hasSize(1)
+			.extracting(RevisionEntity::getVersion)
+			.containsExactly(0);
+
 		setupCall()
-			.withServicePath(PATH + "1be673c0-6ba3-4fb0-af4a-43acf23389f6/attachments/99fa4dd0-9308-4d45-bb8e-4bb881a9a536")
+			.withServicePath(PATH + entityId + "/attachments/99fa4dd0-9308-4d45-bb8e-4bb881a9a536")
 			.withHttpMethod(DELETE)
 			.withExpectedResponseStatus(NO_CONTENT)
 			.sendRequestAndVerifyResponse();
+
+		assertThat(revisionRepository.findByEntityId(entityId)).hasSize(2)
+			.extracting(RevisionEntity::getVersion)
+			.containsExactlyInAnyOrder(0, 1);
 	}
 }

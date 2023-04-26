@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.data.domain.Sort.Direction.DESC;
@@ -49,6 +50,9 @@ class ErrandServiceTest {
 	@Mock
 	private ErrandsRepository repositoryMock;
 
+	@Mock
+	private RevisionService revisionServiceMock;
+
 	@InjectMocks
 	private ErrandService service;
 
@@ -70,6 +74,7 @@ class ErrandServiceTest {
 		assertThat(result).isEqualTo(ID);
 
 		verify(repositoryMock).save(any(ErrandEntity.class));
+		verify(revisionServiceMock).createRevision(any(ErrandEntity.class));
 		verifyNoMoreInteractions(repositoryMock);
 	}
 
@@ -102,6 +107,7 @@ class ErrandServiceTest {
 		assertThat(specificationCaptor.getValue()).usingRecursiveComparison().isEqualTo(distinct().and(withNamespace(NAMESPACE)).and(withMunicipalityId(MUNICIPALITY_ID)).and(filter));
 
 		verifyNoMoreInteractions(repositoryMock);
+		verifyNoInteractions(revisionServiceMock);
 	}
 
 	@Test
@@ -132,6 +138,7 @@ class ErrandServiceTest {
 		assertThat(specificationCaptor.getValue()).usingRecursiveComparison().isEqualTo(distinct().and(withNamespace(NAMESPACE)).and(withMunicipalityId(MUNICIPALITY_ID)).and(filter));
 
 		verifyNoMoreInteractions(repositoryMock);
+		verifyNoInteractions(revisionServiceMock);
 	}
 
 	@Test
@@ -152,6 +159,7 @@ class ErrandServiceTest {
 		verify(repositoryMock).existsByIdAndNamespaceAndMunicipalityId(ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(repositoryMock).getReferenceById(ID);
 		verifyNoMoreInteractions(repositoryMock);
+		verifyNoInteractions(revisionServiceMock);
 	}
 
 	@Test
@@ -166,6 +174,7 @@ class ErrandServiceTest {
 
 		verify(repositoryMock).existsByIdAndNamespaceAndMunicipalityId(ID, NAMESPACE, MUNICIPALITY_ID);
 		verifyNoMoreInteractions(repositoryMock);
+		verifyNoInteractions(revisionServiceMock);
 	}
 
 	@Test
@@ -187,6 +196,7 @@ class ErrandServiceTest {
 		verify(repositoryMock).existsByIdAndNamespaceAndMunicipalityId(ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(repositoryMock).getReferenceById(ID);
 		verify(repositoryMock).save(entity);
+		verify(revisionServiceMock).createRevision(entity);
 		verifyNoMoreInteractions(repositoryMock);
 	}
 
@@ -203,6 +213,7 @@ class ErrandServiceTest {
 
 		verify(repositoryMock).existsByIdAndNamespaceAndMunicipalityId(ID, NAMESPACE, MUNICIPALITY_ID);
 		verifyNoMoreInteractions(repositoryMock);
+		verifyNoInteractions(revisionServiceMock);
 	}
 
 	@Test
@@ -217,6 +228,7 @@ class ErrandServiceTest {
 		verify(repositoryMock).existsByIdAndNamespaceAndMunicipalityId(ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(repositoryMock).deleteById(ID);
 		verifyNoMoreInteractions(repositoryMock);
+		verifyNoInteractions(revisionServiceMock);
 	}
 
 	@Test
@@ -231,5 +243,6 @@ class ErrandServiceTest {
 
 		verify(repositoryMock).existsByIdAndNamespaceAndMunicipalityId(ID, NAMESPACE, MUNICIPALITY_ID);
 		verifyNoMoreInteractions(repositoryMock);
+		verifyNoInteractions(revisionServiceMock);
 	}
 }

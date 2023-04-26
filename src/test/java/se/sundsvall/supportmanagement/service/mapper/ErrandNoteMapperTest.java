@@ -1,25 +1,25 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
-import static java.time.OffsetDateTime.now;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.groups.Tuple.tuple;
+import generated.se.sundsvall.notes.FindNotesResponse;
+import generated.se.sundsvall.notes.Note;
+import org.junit.jupiter.api.Test;
+import se.sundsvall.supportmanagement.api.model.note.CreateErrandNoteRequest;
+import se.sundsvall.supportmanagement.api.model.note.ErrandNote;
+import se.sundsvall.supportmanagement.api.model.note.UpdateErrandNoteRequest;
 
 import java.time.OffsetDateTime;
 import java.util.List;
 
-import org.junit.jupiter.api.Test;
-
-import generated.se.sundsvall.notes.FindNotesResponse;
-import generated.se.sundsvall.notes.Note;
-import se.sundsvall.supportmanagement.api.model.note.CreateErrandNoteRequest;
-import se.sundsvall.supportmanagement.api.model.note.ErrandNote;
-import se.sundsvall.supportmanagement.api.model.note.UpdateErrandNoteRequest;
+import static java.time.OffsetDateTime.now;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.groups.Tuple.tuple;
 
 class ErrandNoteMapperTest {
 
 	private static final String BODY = "body";
 	private static final String CASE_ID = "caseId";
 	private static final String CLIENT_ID = "clientId";
+	private static final String MUNICIPALITY_ID = "municipalityId";
 	private static final String CONTEXT = "context";
 	private static final OffsetDateTime CREATED = now().minusWeeks(1);
 	private static final String CREATED_BY = "createdBy";
@@ -38,7 +38,7 @@ class ErrandNoteMapperTest {
 	@Test
 	void toCreateNoteRequest() {
 
-		final var result = ErrandNoteMapper.toCreateNoteRequest(CASE_ID, CLIENT_ID, buildCreateErrandNoteRequest());
+		final var result = ErrandNoteMapper.toCreateNoteRequest(MUNICIPALITY_ID, CASE_ID, CLIENT_ID, buildCreateErrandNoteRequest());
 
 		assertThat(result.getBody()).isEqualTo(BODY);
 		assertThat(result.getCaseId()).isEqualTo(CASE_ID);
@@ -51,12 +51,13 @@ class ErrandNoteMapperTest {
 		assertThat(result.getPartyId()).isEqualTo(PARTY_ID);
 		assertThat(result.getRole()).isEqualTo(ROLE);
 		assertThat(result.getSubject()).isEqualTo(SUBJECT);
+		assertThat(result.getMunicipalityId()).isEqualTo(MUNICIPALITY_ID);
 	}
 
 	@Test
 	void toCreateNoteRequestAllNulls() {
 
-		assertThat(ErrandNoteMapper.toCreateNoteRequest(null, null, null))
+		assertThat(ErrandNoteMapper.toCreateNoteRequest(null, null, null, null))
 			.isNotNull()
 			.hasAllNullFieldsOrProperties();
 	}

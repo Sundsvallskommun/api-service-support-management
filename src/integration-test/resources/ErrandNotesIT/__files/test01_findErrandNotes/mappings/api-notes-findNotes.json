@@ -9,6 +9,9 @@
 			}
 		},
         "queryParameters": {
+	        "municipalityId": {
+		        "equalTo": "2281"
+	        },
             "context": {
                 "equalTo": "SUPPORT"
             },
