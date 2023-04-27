@@ -14,6 +14,8 @@ import static se.sundsvall.supportmanagement.service.mapper.RevisionMapper.toSer
 import java.util.EnumSet;
 import java.util.List;
 
+import javax.transaction.Transactional;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,12 +40,13 @@ import se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper;
 import se.sundsvall.supportmanagement.service.mapper.RevisionMapper;
 
 @Service
+@Transactional
 public class RevisionService {
 	private static final EnumSet<DiffFlags> DIFF_SETTINGS = EnumSet.of(ADD_ORIGINAL_VALUE_ON_REPLACE, OMIT_COPY_OPERATION, OMIT_MOVE_OPERATION);
 	private static final Configuration JSONPATH_CONFIG = defaultConfiguration().addOptions(SUPPRESS_EXCEPTIONS);
 	private static final Logger LOG = LoggerFactory.getLogger(RevisionService.class);
 
-	private static final List<String> EXCLUDED_ATTRIBUTES = List.of("$..stakeholders[*].id", "$..attachments[*].id", "$..attachments[*].file");
+	private static final List<String> EXCLUDED_ATTRIBUTES = List.of("$..stakeholders[*].id", "$..attachments[*].id", "$..attachments[*].file", "$..created", "$..modified", "$..touched");
 	private static final String COMPARISON_ERROR_LOG_MESSAGE = "An error occured during comparison";
 	private static final String COMPARISON_ERROR_PROBLEM = "An error occured when comparing version %s to version %s of entityId '%s'";
 	private static final String VERSION_DOES_NOT_EXIST = "The version requested for the %s revision does not exist";
