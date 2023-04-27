@@ -1,18 +1,23 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
-import generated.se.sundsvall.notes.FindNotesResponse;
-import generated.se.sundsvall.notes.Note;
-import org.junit.jupiter.api.Test;
-import se.sundsvall.supportmanagement.api.model.note.CreateErrandNoteRequest;
-import se.sundsvall.supportmanagement.api.model.note.ErrandNote;
-import se.sundsvall.supportmanagement.api.model.note.UpdateErrandNoteRequest;
-
-import java.time.OffsetDateTime;
-import java.util.List;
-
 import static java.time.OffsetDateTime.now;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
+
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.junit.jupiter.api.Test;
+
+import generated.se.sundsvall.notes.FindNotesResponse;
+import generated.se.sundsvall.notes.Note;
+import se.sundsvall.supportmanagement.api.model.note.CreateErrandNoteRequest;
+import se.sundsvall.supportmanagement.api.model.note.ErrandNote;
+import se.sundsvall.supportmanagement.api.model.note.UpdateErrandNoteRequest;
+import se.sundsvall.supportmanagement.api.model.revision.DifferenceResponse;
+import se.sundsvall.supportmanagement.api.model.revision.Operation;
+import se.sundsvall.supportmanagement.api.model.revision.Revision;
 
 class ErrandNoteMapperTest {
 
@@ -34,7 +39,13 @@ class ErrandNoteMapperTest {
 	private static final int PAGE = 33;
 	private static final int TOTAL_PAGES = 44;
 	private static final long TOTAL_RECORDS = 55;
-
+	private static final String ENTITY_ID = "EntityId";
+	private static final String ENTITY_TYPE = "EntityType";
+	private static final int VERSION = 66;
+	private static final String FROM_VALUE = "fromValue";
+	private static final String OP = "op";
+	private static final String PATH = "path";
+	private static final String VALUE = "value";
 	@Test
 	void toCreateNoteRequest() {
 
@@ -175,6 +186,136 @@ class ErrandNoteMapperTest {
 	@Test
 	void toMetaDataFromNullInput() {
 		assertThat(ErrandNoteMapper.toMetaData(null)).isNull();
+	}
+
+	@Test
+	void toRevisions() {
+		final var noteRevisions = List.of(createRevision());
+		final var result = ErrandNoteMapper.toRevisions(noteRevisions);
+
+		assertThat(result).hasSize(1)
+			.extracting(Revision::getCreated,
+				Revision::getEntityId,
+				Revision::getEntityType,
+				Revision::getId,
+				Revision::getVersion)
+			.containsExactly(tuple(
+				CREATED,
+				ENTITY_ID,
+				ENTITY_TYPE,
+				ID,
+				VERSION));
+	}
+
+	@Test
+	void toRevisionWhenListContainsNullValues() {
+		final var noteRevisions = new ArrayList<generated.se.sundsvall.notes.Revision>();
+		noteRevisions.add(null);
+		noteRevisions.add(createRevision());
+		noteRevisions.add(null);
+
+		final var result = ErrandNoteMapper.toRevisions(noteRevisions);
+
+		assertThat(result).hasSize(1)
+			.extracting(Revision::getCreated,
+				Revision::getEntityId,
+				Revision::getEntityType,
+				Revision::getId,
+				Revision::getVersion)
+			.containsExactly(tuple(
+				CREATED,
+				ENTITY_ID,
+				ENTITY_TYPE,
+				ID,
+				VERSION));
+	}
+
+	@Test
+	void toDifferenceResponse() {
+		final var noteDifferenceResponse = createDifferenceResponse(true, false);
+		final var result = ErrandNoteMapper.toDifferenceResponse(noteDifferenceResponse);
+
+		assertThat(result).isNotNull();
+		assertThat(result.getOperations()).hasSize(1)
+			.extracting(
+				Operation::getFromValue,
+				Operation::getOp,
+				Operation::getPath,
+				Operation::getValue)
+			.containsExactly(tuple(
+				FROM_VALUE,
+				OP,
+				PATH,
+				VALUE));
+	}
+
+	@Test
+	void toDifferenceResponseWhenOperationsContainsNull() {
+		final var noteDifferenceResponse = createDifferenceResponse(true, true);
+		final var result = ErrandNoteMapper.toDifferenceResponse(noteDifferenceResponse);
+
+		assertThat(result).isNotNull();
+		assertThat(result.getOperations()).hasSize(1)
+			.extracting(
+				Operation::getFromValue,
+				Operation::getOp,
+				Operation::getPath,
+				Operation::getValue)
+			.containsExactly(tuple(
+				FROM_VALUE,
+				OP,
+				PATH,
+				VALUE));
+	}
+
+	@Test
+	void toDifferenceResponseWhenOperationsAreNull() {
+		final var noteDifferenceResponse = createDifferenceResponse(false, false);
+		final var result = ErrandNoteMapper.toDifferenceResponse(noteDifferenceResponse);
+
+		assertThat(result).isNotNull()
+			.extracting(DifferenceResponse::getOperations)
+			.asList().isEmpty();
+	}
+
+	@Test
+	void toDifferenceResponseFromNull() {
+		assertThat(ErrandNoteMapper.toDifferenceResponse(null)).isNull();
+	}
+
+	@Test
+	void RevisionFromNull() {
+		assertThat(ErrandNoteMapper.toRevisions(null)).isEmpty();
+	}
+
+	private static generated.se.sundsvall.notes.DifferenceResponse createDifferenceResponse(boolean containingDiffs, boolean containingNullDiffObjects) {
+		final var response = new generated.se.sundsvall.notes.DifferenceResponse();
+
+		if (containingDiffs) {
+			if (containingNullDiffObjects) {
+				response.addOperationsItem(null);
+			}
+			response.addOperationsItem(createOperation());
+		}
+
+		return response;
+	}
+
+	private static generated.se.sundsvall.notes.Operation createOperation() {
+		return new generated.se.sundsvall.notes.Operation()
+			.fromValue(FROM_VALUE)
+			.op(OP)
+			.path(PATH)
+			.value(VALUE);
+	}
+
+	private static generated.se.sundsvall.notes.Revision createRevision() {
+		return new generated.se.sundsvall.notes.Revision()
+			.created(CREATED)
+			.entityId(ENTITY_ID)
+			.entityType(ENTITY_TYPE)
+			.id(ID)
+			.version(VERSION);
 	}
 
 	private static CreateErrandNoteRequest buildCreateErrandNoteRequest() {

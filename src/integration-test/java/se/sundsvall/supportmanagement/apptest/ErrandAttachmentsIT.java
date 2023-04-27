@@ -67,7 +67,7 @@ class ErrandAttachmentsIT extends AbstractAppTest {
 		final var entityId = "1be673c0-6ba3-4fb0-af4a-43acf23389f6";
 
 		assertThat(revisionRepository.findAll()).hasSize(1);
-		assertThat(revisionRepository.findByEntityId(entityId)).hasSize(1)
+		assertThat(revisionRepository.findAllByEntityIdOrderByVersion(entityId)).hasSize(1)
 			.extracting(RevisionEntity::getVersion)
 			.containsExactly(0);
 
@@ -79,7 +79,7 @@ class ErrandAttachmentsIT extends AbstractAppTest {
 			.withExpectedResponseHeader(LOCATION, List.of("^http://(.*)/errands/(.*)$"))
 			.sendRequestAndVerifyResponse();
 
-		assertThat(revisionRepository.findByEntityId(entityId)).hasSize(2)
+		assertThat(revisionRepository.findAllByEntityIdOrderByVersion(entityId)).hasSize(2)
 			.extracting(RevisionEntity::getVersion)
 			.containsExactlyInAnyOrder(0, 1);
 	}
@@ -89,7 +89,7 @@ class ErrandAttachmentsIT extends AbstractAppTest {
 		final var entityId = "1be673c0-6ba3-4fb0-af4a-43acf23389f6";
 
 		assertThat(revisionRepository.findAll()).hasSize(1);
-		assertThat(revisionRepository.findByEntityId(entityId)).hasSize(1)
+		assertThat(revisionRepository.findAllByEntityIdOrderByVersion(entityId)).hasSize(1)
 			.extracting(RevisionEntity::getVersion)
 			.containsExactly(0);
 
@@ -99,7 +99,7 @@ class ErrandAttachmentsIT extends AbstractAppTest {
 			.withExpectedResponseStatus(NO_CONTENT)
 			.sendRequestAndVerifyResponse();
 
-		assertThat(revisionRepository.findByEntityId(entityId)).hasSize(2)
+		assertThat(revisionRepository.findAllByEntityIdOrderByVersion(entityId)).hasSize(2)
 			.extracting(RevisionEntity::getVersion)
 			.containsExactlyInAnyOrder(0, 1);
 	}

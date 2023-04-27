@@ -99,7 +99,7 @@ class ErrandsIT extends AbstractAppTest {
 			.orElse(null);
 
 		assertThat(revisionRepository.findAll()).hasSize(2);
-		assertThat(revisionRepository.findByEntityId(entityId))
+		assertThat(revisionRepository.findAllByEntityIdOrderByVersion(entityId))
 			.hasSize(1)
 			.extracting(RevisionEntity::getVersion)
 			.containsExactly(0);
@@ -108,7 +108,7 @@ class ErrandsIT extends AbstractAppTest {
 	@Test
 	void test05_patchErrand() {
 		assertThat(revisionRepository.findAll()).hasSize(1);
-		assertThat(revisionRepository.findByEntityId("1be673c0-6ba3-4fb0-af4a-43acf23389f6")).hasSize(1)
+		assertThat(revisionRepository.findAllByEntityIdOrderByVersion("1be673c0-6ba3-4fb0-af4a-43acf23389f6")).hasSize(1)
 			.extracting(RevisionEntity::getVersion)
 			.containsExactly(0);
 
@@ -122,7 +122,7 @@ class ErrandsIT extends AbstractAppTest {
 			.sendRequestAndVerifyResponse();
 
 		assertThat(revisionRepository.findAll()).hasSize(2);
-		assertThat(revisionRepository.findByEntityId("1be673c0-6ba3-4fb0-af4a-43acf23389f6")).hasSize(2)
+		assertThat(revisionRepository.findAllByEntityIdOrderByVersion("1be673c0-6ba3-4fb0-af4a-43acf23389f6")).hasSize(2)
 			.extracting(RevisionEntity::getVersion)
 			.containsExactlyInAnyOrder(0, 1);
 	}

@@ -3,8 +3,9 @@ package se.sundsvall.supportmanagement.api.model.revision;
 import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 
 import java.util.Objects;
-
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import io.swagger.v3.oas.annotations.media.Schema;
+import se.sundsvall.supportmanagement.api.model.revision.deserializer.RawDataDeserializer;
 
 @Schema(description = "Operation model", accessMode = READ_ONLY)
 public class Operation {
@@ -16,6 +17,7 @@ public class Operation {
 	private String path;
 
 	@Schema(description = "Value of attribute", example = "Jane")
+	@JsonDeserialize(using = RawDataDeserializer.class)
 	private String value;
 
 	@Schema(description = "Previous value of attribute", example = "John")

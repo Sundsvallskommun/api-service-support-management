@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON;
 import static org.zalando.problem.Status.BAD_REQUEST;
 
@@ -11,6 +12,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.zalando.problem.Problem;
@@ -18,6 +20,7 @@ import org.zalando.problem.violations.ConstraintViolationProblem;
 import org.zalando.problem.violations.Violation;
 
 import se.sundsvall.supportmanagement.Application;
+import se.sundsvall.supportmanagement.service.RevisionService;
 
 @SpringBootTest(classes = Application.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("junit")
@@ -25,6 +28,9 @@ class RevisionResourceFailuresTest {
 
 	private static final String ERRANDS_PATH = "/errands/{id}/revisions";
 	private static final String ERRAND_NOTES_PATH = "/errands/{id}/notes/{noteId}/revisions";
+
+	@MockBean
+	private RevisionService revisionServiceMock;
 
 	@Autowired
 	private WebTestClient webTestClient;
@@ -53,6 +59,8 @@ class RevisionResourceFailuresTest {
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
 			.containsExactly(tuple("getErrandRevisions.id", "not a valid UUID"));
+
+		verifyNoInteractions(revisionServiceMock);
 	}
 
 	@Test
@@ -75,6 +83,8 @@ class RevisionResourceFailuresTest {
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
 			.containsExactly(tuple("getErrandDiffByVersions.id", "not a valid UUID"));
+
+		verifyNoInteractions(revisionServiceMock);
 	}
 
 	@Test
@@ -94,6 +104,8 @@ class RevisionResourceFailuresTest {
 		assertThat(response.getTitle()).isEqualTo("Bad Request");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getDetail()).isEqualTo("Required request parameter 'source' for method parameter type Integer is not present");
+
+		verifyNoInteractions(revisionServiceMock);
 	}
 
 	@Test
@@ -113,6 +125,8 @@ class RevisionResourceFailuresTest {
 		assertThat(response.getTitle()).isEqualTo("Bad Request");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getDetail()).isEqualTo("Required request parameter 'target' for method parameter type Integer is not present");
+
+		verifyNoInteractions(revisionServiceMock);
 	}
 
 	@Test
@@ -134,6 +148,8 @@ class RevisionResourceFailuresTest {
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
 			.containsExactly(tuple("getErrandDiffByVersions.source", "must be between 0 and 2147483647"));
+
+		verifyNoInteractions(revisionServiceMock);
 	}
 
 	@Test
@@ -155,6 +171,8 @@ class RevisionResourceFailuresTest {
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
 			.containsExactly(tuple("getErrandDiffByVersions.target", "must be between 0 and 2147483647"));
+
+		verifyNoInteractions(revisionServiceMock);
 	}
 
 	// ==============================================================================================================
@@ -182,6 +200,8 @@ class RevisionResourceFailuresTest {
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
 			.containsExactly(tuple("getErrandNoteRevisions.id", "not a valid UUID"));
+
+		verifyNoInteractions(revisionServiceMock);
 	}
 
 	@Test
@@ -205,6 +225,8 @@ class RevisionResourceFailuresTest {
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
 			.containsExactly(tuple("getErrandNoteRevisions.noteId", "not a valid UUID"));
+
+		verifyNoInteractions(revisionServiceMock);
 	}
 
 	@Test
@@ -228,6 +250,8 @@ class RevisionResourceFailuresTest {
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
 			.containsExactly(tuple("getErrandNoteDiffByVersions.id", "not a valid UUID"));
+
+		verifyNoInteractions(revisionServiceMock);
 	}
 
 	@Test
@@ -251,6 +275,8 @@ class RevisionResourceFailuresTest {
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
 			.containsExactly(tuple("getErrandNoteDiffByVersions.noteId", "not a valid UUID"));
+
+		verifyNoInteractions(revisionServiceMock);
 	}
 
 	@Test
@@ -271,6 +297,8 @@ class RevisionResourceFailuresTest {
 		assertThat(response.getTitle()).isEqualTo("Bad Request");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getDetail()).isEqualTo("Required request parameter 'source' for method parameter type Integer is not present");
+
+		verifyNoInteractions(revisionServiceMock);
 	}
 
 	@Test
@@ -291,6 +319,8 @@ class RevisionResourceFailuresTest {
 		assertThat(response.getTitle()).isEqualTo("Bad Request");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getDetail()).isEqualTo("Required request parameter 'target' for method parameter type Integer is not present");
+
+		verifyNoInteractions(revisionServiceMock);
 	}
 
 	@Test
@@ -313,6 +343,8 @@ class RevisionResourceFailuresTest {
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
 			.containsExactly(tuple("getErrandNoteDiffByVersions.source", "must be between 0 and 2147483647"));
+
+		verifyNoInteractions(revisionServiceMock);
 	}
 
 	@Test
@@ -335,5 +367,7 @@ class RevisionResourceFailuresTest {
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
 			.containsExactly(tuple("getErrandNoteDiffByVersions.target", "must be between 0 and 2147483647"));
+
+		verifyNoInteractions(revisionServiceMock);
 	}
 }

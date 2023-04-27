@@ -23,6 +23,7 @@
 		<spring-filter.version>2.1.5</spring-filter.version>
 		<openapi-generator-maven-plugin.version>6.5.0</openapi-generator-maven-plugin.version>
 		<overviewproject.mimetypes.version>1.0.4</overviewproject.mimetypes.version>
+		<flipkart.zjsonpatch.version>0.4.14</flipkart.zjsonpatch.version>
 		<generated-sources-path>${project.build.directory}/generated-sources</generated-sources-path>
 		<generated-sources-java-path>src/main/java</generated-sources-java-path>
 	</properties>
@@ -74,6 +75,11 @@
 			<groupId>org.overviewproject</groupId>
 			<artifactId>mime-types</artifactId>
 			<version>${overviewproject.mimetypes.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.flipkart.zjsonpatch</groupId>
+			<artifactId>zjsonpatch</artifactId>
+			<version>${flipkart.zjsonpatch.version}</version>
 		</dependency>
 
 		<!-- Test -->
