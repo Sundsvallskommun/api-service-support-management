@@ -1,0 +1,21 @@
+{
+  "operations": [
+    {
+      "op": "add",
+      "path": "/attachments/0",
+      "value": "{ \"fileName\" : \"birthday-card.txt\", \"mimeType\" : \"text/plain\", \"created\" : \"2023-04-26T16:07:32.874+02:00\"}"
+    },
+    {
+      "op": "replace",
+      "path": "/modified",
+      "value": "2023-04-26T16:05:08.806+02:00",
+      "fromValue": "2023-04-26T16:05:08.795+02:00"
+    },
+    {
+      "op": "replace",
+      "path": "/touched",
+      "value": "2023-04-26T16:05:08.806+02:00",
+      "fromValue": "2023-04-26T15:48:17.124+02:00"
+    }
+  ]
+}
