@@ -3,14 +3,11 @@ package se.sundsvall.supportmanagement.integration.db;
 import java.util.List;
 import java.util.Optional;
 
-import javax.transaction.Transactional;
-
 import org.springframework.data.repository.CrudRepository;
 
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import se.sundsvall.supportmanagement.integration.db.model.RevisionEntity;
 
-@Transactional
 @CircuitBreaker(name = "revisionRepository")
 public interface RevisionRepository extends CrudRepository<RevisionEntity, String> {
 

@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.service;
 
+import static java.time.Instant.ofEpochMilli;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -14,6 +15,7 @@ import static org.zalando.problem.Status.NOT_FOUND;
 import static se.sundsvall.supportmanagement.service.mapper.RevisionMapper.toSerializedSnapshot;
 
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -459,7 +461,14 @@ class RevisionServiceTest {
 	private ErrandEntity createErrandEntity(String entityId) {
 		return ErrandEntity.create()
 			.withId(entityId)
-			.withAttachments(List.of(AttachmentEntity.create().withId(UUID.randomUUID().toString()).withFile(RandomUtils.nextBytes(30))))
+			.withCreated(OffsetDateTime.ofInstant(ofEpochMilli(RandomUtils.nextLong()), ZoneId.systemDefault()))
+			.withModified(OffsetDateTime.ofInstant(ofEpochMilli(RandomUtils.nextLong()), ZoneId.systemDefault()))
+			.withTouched(OffsetDateTime.ofInstant(ofEpochMilli(RandomUtils.nextLong()), ZoneId.systemDefault()))
+			.withAttachments(List.of(AttachmentEntity.create()
+				.withId(UUID.randomUUID().toString())
+				.withCreated(OffsetDateTime.ofInstant(ofEpochMilli(RandomUtils.nextLong()), ZoneId.systemDefault()))
+				.withModified(OffsetDateTime.ofInstant(ofEpochMilli(RandomUtils.nextLong()), ZoneId.systemDefault()))
+				.withFile(RandomUtils.nextBytes(30))))
 			.withStakeholders(List.of(StakeholderEntity.create().withId(RandomUtils.nextLong())));
 	}
 
