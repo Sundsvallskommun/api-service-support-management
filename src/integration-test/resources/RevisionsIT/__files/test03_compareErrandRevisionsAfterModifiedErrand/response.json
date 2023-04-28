@@ -38,16 +38,6 @@
       "op": "add",
       "path": "/attachments",
       "value": "[ ]"
-    },
-    {
-      "op": "add",
-      "path": "/modified",
-      "value": "2023-04-26T16:05:08.795+02:00"
-    },
-    {
-      "op": "add",
-      "path": "/touched",
-      "value": "2023-04-26T15:48:17.124+02:00"
     }
   ]
 }
