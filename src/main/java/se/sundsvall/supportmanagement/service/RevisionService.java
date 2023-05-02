@@ -46,7 +46,7 @@ public class RevisionService {
 	private static final Configuration JSONPATH_CONFIG = defaultConfiguration().addOptions(SUPPRESS_EXCEPTIONS);
 	private static final Logger LOG = LoggerFactory.getLogger(RevisionService.class);
 
-	private static final List<String> EXCLUDED_ATTRIBUTES = List.of("$..stakeholders[*].id", "$..attachments[*].id", "$..attachments[*].file", "$..created", "$..modified", "$..touched");
+	private static final List<String> EXCLUDED_ATTRIBUTES = List.of("$..stakeholders[*].id", "$..attachments[*].id", "$..attachments[*].file", "$..modified", "$..touched");
 	private static final String COMPARISON_ERROR_LOG_MESSAGE = "An error occured during comparison";
 	private static final String COMPARISON_ERROR_PROBLEM = "An error occured when comparing version %s to version %s of entityId '%s'";
 	private static final String VERSION_DOES_NOT_EXIST = "The version requested for the %s revision does not exist";

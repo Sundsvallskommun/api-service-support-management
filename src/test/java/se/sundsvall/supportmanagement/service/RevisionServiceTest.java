@@ -461,12 +461,10 @@ class RevisionServiceTest {
 	private ErrandEntity createErrandEntity(String entityId) {
 		return ErrandEntity.create()
 			.withId(entityId)
-			.withCreated(OffsetDateTime.ofInstant(ofEpochMilli(RandomUtils.nextLong()), ZoneId.systemDefault()))
 			.withModified(OffsetDateTime.ofInstant(ofEpochMilli(RandomUtils.nextLong()), ZoneId.systemDefault()))
 			.withTouched(OffsetDateTime.ofInstant(ofEpochMilli(RandomUtils.nextLong()), ZoneId.systemDefault()))
 			.withAttachments(List.of(AttachmentEntity.create()
 				.withId(UUID.randomUUID().toString())
-				.withCreated(OffsetDateTime.ofInstant(ofEpochMilli(RandomUtils.nextLong()), ZoneId.systemDefault()))
 				.withModified(OffsetDateTime.ofInstant(ofEpochMilli(RandomUtils.nextLong()), ZoneId.systemDefault()))
 				.withFile(RandomUtils.nextBytes(30))))
 			.withStakeholders(List.of(StakeholderEntity.create().withId(RandomUtils.nextLong())));

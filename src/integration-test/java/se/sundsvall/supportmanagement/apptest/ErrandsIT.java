@@ -24,7 +24,6 @@ import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.RevisionRepository;
-import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.RevisionEntity;
 
@@ -83,8 +82,6 @@ class ErrandsIT extends AbstractAppTest {
 
 	@Test
 	void test04_postErrand() {
-		assertThat(revisionRepository.findAll()).hasSize(1);
-
 		setupCall()
 			.withServicePath(PATH)
 			.withHttpMethod(POST)
@@ -93,12 +90,11 @@ class ErrandsIT extends AbstractAppTest {
 			.withExpectedResponseHeader(LOCATION, List.of("^http://(.*)/errands/(.*)$"))
 			.sendRequestAndVerifyResponse();
 
-		final var entityId = errandsRepository.findAll(Example.of(ErrandEntity.create().withExternalTags(List.of(DbExternalTag.create().withKey("caseid").withValue("8849-2848"))))).stream()
+		final var entityId = errandsRepository.findAll(Example.of(ErrandEntity.create().withTitle("test04_postErrand"))).stream()
 			.findAny()
 			.map(ErrandEntity::getId)
-			.orElse(null);
+			.orElseThrow();
 
-		assertThat(revisionRepository.findAll()).hasSize(2);
 		assertThat(revisionRepository.findAllByEntityIdOrderByVersion(entityId))
 			.hasSize(1)
 			.extracting(RevisionEntity::getVersion)
@@ -107,13 +103,14 @@ class ErrandsIT extends AbstractAppTest {
 
 	@Test
 	void test05_patchErrand() {
-		assertThat(revisionRepository.findAll()).hasSize(1);
-		assertThat(revisionRepository.findAllByEntityIdOrderByVersion("1be673c0-6ba3-4fb0-af4a-43acf23389f6")).hasSize(1)
+		final var id = "1be673c0-6ba3-4fb0-af4a-43acf23389f6";
+
+		assertThat(revisionRepository.findAllByEntityIdOrderByVersion(id)).hasSize(1)
 			.extracting(RevisionEntity::getVersion)
 			.containsExactly(0);
 
 		setupCall()
-			.withServicePath(PATH + "/1be673c0-6ba3-4fb0-af4a-43acf23389f6")
+			.withServicePath(PATH + "/" + id)
 			.withHttpMethod(PATCH)
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(OK)
@@ -121,8 +118,7 @@ class ErrandsIT extends AbstractAppTest {
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 
-		assertThat(revisionRepository.findAll()).hasSize(2);
-		assertThat(revisionRepository.findAllByEntityIdOrderByVersion("1be673c0-6ba3-4fb0-af4a-43acf23389f6")).hasSize(2)
+		assertThat(revisionRepository.findAllByEntityIdOrderByVersion(id)).hasSize(2)
 			.extracting(RevisionEntity::getVersion)
 			.containsExactlyInAnyOrder(0, 1);
 	}
@@ -130,7 +126,8 @@ class ErrandsIT extends AbstractAppTest {
 	@Test
 	void test06_deleteErrand() {
 		final var id = "1be673c0-6ba3-4fb0-af4a-43acf23389f6";
-		assertThat(revisionRepository.findAll()).hasSize(1);
+
+		assertThat(revisionRepository.findAllByEntityIdOrderByVersion(id)).hasSize(1);
 		assertThat(errandsRepository.existsById(id)).isTrue();
 
 		setupCall()
@@ -140,6 +137,6 @@ class ErrandsIT extends AbstractAppTest {
 			.sendRequestAndVerifyResponse();
 
 		assertThat(errandsRepository.existsById(id)).isFalse();
-		assertThat(revisionRepository.findAll()).hasSize(1);
+		assertThat(revisionRepository.findAllByEntityIdOrderByVersion(id)).hasSize(1);
 	}
 }

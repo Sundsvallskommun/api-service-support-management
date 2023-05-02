@@ -1,0 +1,26 @@
+{
+	"operations": [
+		{
+			"op": "replace",
+			"path": "/role",
+			"value": "SECOND_LINE_SUPPORT",
+			"fromValue": "FIRST_LINE_SUPPORT"
+		},
+		{
+			"op": "replace",
+			"path": "/body",
+			"value": "This is a changed note",
+			"fromValue": "This is a note"
+		},
+		{
+			"op": "add",
+			"path": "/modified",
+			"value": "2023-04-27T09:09:42.555+02:00"
+		},
+		{
+			"op": "add",
+			"path": "/modifiedBy",
+			"value": "The Dragon"
+		}
+	]
+}
