@@ -1,0 +1,23 @@
+[
+  {
+    "id": "84e0f78f-a857-4325-adff-04d2c0609a64",
+    "entityId": "147d355f-dc94-4fde-a4cb-9ddd16cb1946",
+    "entityType": "ErrandEntity",
+    "version": 0,
+    "created": "2023-04-26T15:48:17.164+02:00"
+  },
+  {
+    "id": "b69b0c4a-4a43-4753-ab6d-f5b8eeca1dcd",
+    "entityId": "147d355f-dc94-4fde-a4cb-9ddd16cb1946",
+    "entityType": "ErrandEntity",
+    "version": 1,
+    "created": "2023-04-26T16:05:08.805+02:00"
+  },
+  {
+    "id": "43a5b3c8-9010-4518-ab1b-d365bd7d6bb1",
+    "entityId": "147d355f-dc94-4fde-a4cb-9ddd16cb1946",
+    "entityType": "ErrandEntity",
+    "version": 2,
+    "created": "2023-04-26T16:07:32.884+02:00"
+  }
+]

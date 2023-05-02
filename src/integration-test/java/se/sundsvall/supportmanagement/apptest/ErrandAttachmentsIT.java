@@ -66,7 +66,6 @@ class ErrandAttachmentsIT extends AbstractAppTest {
 	void test03_createErrandAttachment() throws Exception {
 		final var entityId = "1be673c0-6ba3-4fb0-af4a-43acf23389f6";
 
-		assertThat(revisionRepository.findAll()).hasSize(1);
 		assertThat(revisionRepository.findAllByEntityIdOrderByVersion(entityId)).hasSize(1)
 			.extracting(RevisionEntity::getVersion)
 			.containsExactly(0);
@@ -88,7 +87,6 @@ class ErrandAttachmentsIT extends AbstractAppTest {
 	void test04_deleteErrandAttachment() throws Exception {
 		final var entityId = "1be673c0-6ba3-4fb0-af4a-43acf23389f6";
 
-		assertThat(revisionRepository.findAll()).hasSize(1);
 		assertThat(revisionRepository.findAllByEntityIdOrderByVersion(entityId)).hasSize(1)
 			.extracting(RevisionEntity::getVersion)
 			.containsExactly(0);
