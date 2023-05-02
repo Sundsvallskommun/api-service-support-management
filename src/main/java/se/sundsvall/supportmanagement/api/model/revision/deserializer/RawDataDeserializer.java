@@ -12,7 +12,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class RawDataDeserializer extends JsonDeserializer<String> {
-	private static final String UNWANTED_CHARACTERS = "\\r\\n";
+	private static final String UNWANTED_CHARACTERS = "(\\r)|(\\n)";
 	private static final String EXCESSIVE_SPACES = " {2,}";
 
 	@Override
@@ -22,7 +22,7 @@ public class RawDataDeserializer extends JsonDeserializer<String> {
 		// if node is interpreted as a container node the node content is formatted and returned as raw data
 		if (node.isContainerNode()) {
 			return mapper.writeValueAsString(node)
-				.replaceAll(UNWANTED_CHARACTERS, EMPTY) // NOSONAR
+				.replaceAll(UNWANTED_CHARACTERS, EMPTY)
 				.replaceAll(EXCESSIVE_SPACES, SPACE);
 		}
 
