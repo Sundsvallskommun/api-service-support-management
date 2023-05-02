@@ -7,6 +7,8 @@ import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -28,9 +30,12 @@ class RawDataDeserializerTest {
 
 	private RawDataDeserializer deserializer = new RawDataDeserializer();
 
-	@Test
-	void testDeserializingContainerNode() throws Exception {
-		final var testString = "{\r\n    \"key-1\"  :  \"value-1\", \r\n    \"key-2\" : \"value-2\"}";
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"{\r\n    \"key-1\"  :  \"value-1\", \r\n    \"key-2\" : \"value-2\"}",
+		"{  \n    \"key-1\"  :  \"value-1\",   \n    \"key-2\" : \"value-2\"}"
+	})
+	void testDeserializingContainerNode(final String testString) throws Exception {
 		final var wantedString = "{ \"key-1\" : \"value-1\", \"key-2\" : \"value-2\"}";
 
 		when(jsonParserMock.getCodec()).thenReturn(objectMapperMock);
