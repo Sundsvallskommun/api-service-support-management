@@ -1,12 +1,13 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
+import static java.time.OffsetDateTime.now;
+import static java.time.ZoneId.systemDefault;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static org.assertj.core.groups.Tuple.tuple;
 
-import java.time.OffsetDateTime;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
@@ -52,7 +53,7 @@ class EventlogMapperTest {
 		final var result = EventlogMapper.toEvent(EVENT_TYPE, MESSAGE, REVISION, META_DATA, userId);
 
 		// Assert
-		assertThat(result.getCreated()).isCloseTo(OffsetDateTime.now(), within(2, SECONDS));
+		assertThat(result.getCreated()).isCloseTo(now(systemDefault()), within(2, SECONDS));
 		assertThat(result.getExpires()).isNull();
 		assertThat(result.getHistoryReference()).isEqualTo(REVISION);
 		assertThat(result.getMessage()).isEqualTo(MESSAGE);
@@ -73,7 +74,7 @@ class EventlogMapperTest {
 		final var result = EventlogMapper.toEvent(EVENT_TYPE, MESSAGE, REVISION, META_DATA, null);
 
 		// Assert
-		assertThat(result.getCreated()).isCloseTo(OffsetDateTime.now(), within(2, SECONDS));
+		assertThat(result.getCreated()).isCloseTo(now(systemDefault()), within(2, SECONDS));
 		assertThat(result.getExpires()).isNull();
 		assertThat(result.getHistoryReference()).isEqualTo(REVISION);
 		assertThat(result.getMessage()).isEqualTo(MESSAGE);

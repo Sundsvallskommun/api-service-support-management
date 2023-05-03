@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
 import static java.time.OffsetDateTime.now;
+import static java.time.ZoneId.systemDefault;
 import static java.util.Collections.emptyMap;
 import static java.util.Map.entry;
 import static java.util.Optional.ofNullable;
@@ -26,7 +27,7 @@ public class EventlogMapper {
 
 	public static Event toEvent(EventType eventType, String message, String revision, Map<String, String> metaData, String executedByUserId) {
 		return new Event()
-			.created(now())
+			.created(now(systemDefault()))
 			.historyReference(revision)
 			.message(message)
 			.owner(OWNER)
