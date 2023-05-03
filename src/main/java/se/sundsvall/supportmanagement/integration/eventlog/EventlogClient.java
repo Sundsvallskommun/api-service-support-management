@@ -25,7 +25,7 @@ public interface EventlogClient {
 	 * @param event the event to create
 	 */
 	@PostMapping(path = "/notes", consumes = APPLICATION_JSON_VALUE)
-	ResponseEntity<Void> createNote(@RequestBody Event event);
+	ResponseEntity<Void> createEvent(@RequestBody Event event);
 
 	/**
 	 * Fetch log events.

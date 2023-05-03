@@ -14,12 +14,12 @@ public class EventlogConfiguration {
 
 	public static final String CLIENT_ID = "eventlog";
 
-    @Bean
+	@Bean
 	FeignBuilderCustomizer feignBuilderCustomizer(EventlogProperties eventlogProperties, ClientRegistrationRepository clientRegistrationRepository) {
-        return FeignMultiCustomizer.create()
+		return FeignMultiCustomizer.create()
 			.withErrorDecoder(new ProblemErrorDecoder(CLIENT_ID))
 			.withRequestTimeoutsInSeconds(eventlogProperties.connectTimeout(), eventlogProperties.readTimeout())
 			.withRetryableOAuth2InterceptorForClientRegistration(clientRegistrationRepository.findByRegistrationId(CLIENT_ID))
 			.composeCustomizersToOne();
-    }
+	}
 }

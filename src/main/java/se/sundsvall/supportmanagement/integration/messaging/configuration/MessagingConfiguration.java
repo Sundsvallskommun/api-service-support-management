@@ -12,14 +12,14 @@ import se.sundsvall.dept44.configuration.feign.decoder.ProblemErrorDecoder;
 @Import(FeignConfiguration.class)
 public class MessagingConfiguration {
 
-    public static final String CLIENT_ID = "messaging";
+	public static final String CLIENT_ID = "messaging";
 
-    @Bean
+	@Bean
 	FeignBuilderCustomizer feignBuilderCustomizer(MessagingProperties messagingProperties, ClientRegistrationRepository clientRegistrationRepository) {
-        return FeignMultiCustomizer.create()
+		return FeignMultiCustomizer.create()
 			.withErrorDecoder(new ProblemErrorDecoder(CLIENT_ID))
 			.withRequestTimeoutsInSeconds(messagingProperties.connectTimeout(), messagingProperties.readTimeout())
 			.withRetryableOAuth2InterceptorForClientRegistration(clientRegistrationRepository.findByRegistrationId(CLIENT_ID))
 			.composeCustomizersToOne();
-    }
+	}
 }

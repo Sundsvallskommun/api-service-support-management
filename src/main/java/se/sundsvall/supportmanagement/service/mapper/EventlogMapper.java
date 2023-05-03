@@ -46,8 +46,6 @@ public class EventlogMapper {
 
 	private static List<Metadata> toMetadatas(Map<String, String> metadata) {
 		return ofNullable(metadata).orElse(emptyMap()).entrySet().stream()
-			.toList()
-			.stream()
 			.map(EventlogMapper::toMetadata)
 			.toList();
 	}
