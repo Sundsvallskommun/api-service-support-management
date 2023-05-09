@@ -60,9 +60,9 @@ class ErrandServiceTest {
 	private static final String REVISION_ID = "revisionId";
 	private static final String OWNER = "SupportManagement";
 	private static final String SOURCE_TYPE = Errand.class.getSimpleName();
-	private static final String CREATE_MESSAGE = "Ärendet har skapats.";
-	private static final String UPDATE_MESSAGE = "Ärendet har uppdaterats.";
-	private static final String DELETE_MESSAGE = "Ärendet har raderats.";
+	private static final String EVENT_LOG_CREATE_ERRAND = "Ärendet har skapats.";
+	private static final String EVENT_LOG_UPDATE_ERRAND = "Ärendet har uppdaterats.";
+	private static final String EVENT_LOG_DELETE_ERRAND = "Ärendet har raderats.";
 
 	@Mock
 	private ErrandsRepository errandRepositoryMock;
@@ -112,7 +112,7 @@ class ErrandServiceTest {
 		assertThat(event.getCreated()).isCloseTo(now(), within(2, SECONDS));
 		assertThat(event.getExpires()).isNull();
 		assertThat(event.getHistoryReference()).isEqualTo(REVISION_ID);
-		assertThat(event.getMessage()).isEqualTo(CREATE_MESSAGE);
+		assertThat(event.getMessage()).isEqualTo(EVENT_LOG_CREATE_ERRAND);
 		assertThat(event.getMetadata()).isNotNull()
 			.extracting(
 				Metadata::getKey,
@@ -249,7 +249,7 @@ class ErrandServiceTest {
 		assertThat(event.getCreated()).isCloseTo(now(), within(2, SECONDS));
 		assertThat(event.getExpires()).isNull();
 		assertThat(event.getHistoryReference()).isEqualTo(currentRevision);
-		assertThat(event.getMessage()).isEqualTo(UPDATE_MESSAGE);
+		assertThat(event.getMessage()).isEqualTo(EVENT_LOG_UPDATE_ERRAND);
 		assertThat(event.getMetadata()).isNotNull()
 			.extracting(
 				Metadata::getKey,
@@ -297,7 +297,7 @@ class ErrandServiceTest {
 		assertThat(event.getCreated()).isCloseTo(now(), within(2, SECONDS));
 		assertThat(event.getExpires()).isNull();
 		assertThat(event.getHistoryReference()).isEqualTo(REVISION_ID);
-		assertThat(event.getMessage()).isEqualTo(DELETE_MESSAGE);
+		assertThat(event.getMessage()).isEqualTo(EVENT_LOG_DELETE_ERRAND);
 		assertThat(event.getMetadata()).isNullOrEmpty();
 		assertThat(event.getOwner()).isEqualTo(OWNER);
 		assertThat(event.getSourceType()).isEqualTo(SOURCE_TYPE);

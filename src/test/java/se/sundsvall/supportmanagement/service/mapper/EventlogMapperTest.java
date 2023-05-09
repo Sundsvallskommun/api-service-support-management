@@ -4,17 +4,26 @@ import static java.time.OffsetDateTime.now;
 import static java.time.ZoneId.systemDefault;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static org.assertj.core.groups.Tuple.tuple;
 
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import generated.se.sundsvall.eventlog.Event;
 import generated.se.sundsvall.eventlog.EventType;
 import generated.se.sundsvall.eventlog.Metadata;
+import se.sundsvall.supportmanagement.api.model.revision.Revision;
+import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 
 class EventlogMapperTest {
 
@@ -27,6 +36,17 @@ class EventlogMapperTest {
 	private static final String META_KEY = "metaKey";
 	private static final String META_VALUE = "metaValue";
 	private static final Map<String, String> META_DATA = Map.of(META_KEY, META_VALUE);
+	private static final String KEY_CASE_ID = "CaseId";
+	private static final String KEY_PREVIOUS_REVISION = "PreviousRevision";
+	private static final String KEY_PREVIOUS_VERSION = "PreviousVersion";
+	private static final String KEY_CURRENT_REVISION = "CurrentRevision";
+	private static final String KEY_CURRENT_VERSION = "CurrentVersion";
+	private final static String CASE_ID = "caseId";
+	private final static String PREVIOUS_ID = "previousRevisionId";
+	private final static int PREVIOUS_VERSION = 123;
+	private final static String CURRENT_ID = "currentRevisionId";
+	private final static int CURRENT_VERSION = 456;
+
 
 	@Test
 	void toEventAllNulls() {
@@ -87,8 +107,17 @@ class EventlogMapperTest {
 				tuple(META_KEY, META_VALUE));
 	}
 
-	@Test
-	void toMetadataMap() {
+	@ParameterizedTest
+	@MethodSource("metadataMapArgumentProvider")
+	void toMetadataMap(ErrandEntity errandEntity, Revision currentRevision, Revision previousRevision, Map<String, String> result) {
+		assertThat(EventlogMapper.toMetadataMap(errandEntity, currentRevision, previousRevision)).containsExactlyInAnyOrderEntriesOf(result);
+	}
 
+	private static Stream<Arguments> metadataMapArgumentProvider() {
+		return Stream.of(
+			Arguments.of(ErrandEntity.create().withExternalTags(List.of(DbExternalTag.create().withKey(KEY_CASE_ID).withValue(CASE_ID))), null, null, Map.of(KEY_CASE_ID, CASE_ID)),
+			Arguments.of(null, null, Revision.create().withId(PREVIOUS_ID).withVersion(PREVIOUS_VERSION), Map.of(KEY_PREVIOUS_REVISION, PREVIOUS_ID, KEY_PREVIOUS_VERSION, String.valueOf(PREVIOUS_VERSION))),
+			Arguments.of(null, Revision.create().withId(CURRENT_ID).withVersion(CURRENT_VERSION), null, Map.of(KEY_CURRENT_REVISION, CURRENT_ID, KEY_CURRENT_VERSION, String.valueOf(CURRENT_VERSION))),
+			Arguments.of(null, null, null, emptyMap()));
 	}
 }

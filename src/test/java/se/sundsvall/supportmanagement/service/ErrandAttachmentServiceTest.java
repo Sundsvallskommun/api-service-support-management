@@ -57,8 +57,8 @@ class ErrandAttachmentServiceTest {
 	private static final int PREVIOUS_REVISION_VERSION = 1;
 	private static final String OWNER = "SupportManagement";
 	private static final String SOURCE_TYPE = Errand.class.getSimpleName();
-	private static final String ADD_ATTACHMENT_MESSAGE = "En bilaga har lagts till i ärendet.";
-	private static final String REMOVE_ATTACHMENT_MESSAGE = "En bilaga har tagits bort från ärendet.";
+	private static final String EVENT_LOG_ADD_ATTACHMENT = "En bilaga har lagts till i ärendet.";
+	private static final String EVENT_LOG_REMOVE_ATTACHMENT = "En bilaga har tagits bort från ärendet.";
 
 	@Mock
 	private ErrandsRepository errandsRepositoryMock;
@@ -118,7 +118,7 @@ class ErrandAttachmentServiceTest {
 		assertThat(event.getCreated()).isCloseTo(now(), within(2, SECONDS));
 		assertThat(event.getExpires()).isNull();
 		assertThat(event.getHistoryReference()).isEqualTo(CURRENT_REVISION_ID);
-		assertThat(event.getMessage()).isEqualTo(ADD_ATTACHMENT_MESSAGE);
+		assertThat(event.getMessage()).isEqualTo(EVENT_LOG_ADD_ATTACHMENT);
 		assertThat(event.getMetadata()).isNotNull()
 			.extracting(
 				Metadata::getKey,
@@ -269,7 +269,7 @@ class ErrandAttachmentServiceTest {
 		assertThat(event.getCreated()).isCloseTo(now(), within(2, SECONDS));
 		assertThat(event.getExpires()).isNull();
 		assertThat(event.getHistoryReference()).isEqualTo(CURRENT_REVISION_ID);
-		assertThat(event.getMessage()).isEqualTo(REMOVE_ATTACHMENT_MESSAGE);
+		assertThat(event.getMessage()).isEqualTo(EVENT_LOG_REMOVE_ATTACHMENT);
 		assertThat(event.getMetadata()).isNotNull()
 			.extracting(
 				Metadata::getKey,

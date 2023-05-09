@@ -33,8 +33,8 @@ public class ErrandAttachmentService {
 	private static final String ERRAND_ENTITY_NOT_FOUND = "An errand with id '%s' could not be found in namespace '%s' for municipality with id '%s'";
 	private static final String ATTACHMENT_ENTITY_NOT_FOUND = "An attachment with id '%s' could not be found on errand with id '%s'";
 	private static final String ATTACHMENT_ENTITY_NOT_CREATED = "Attachment could not be created";
-	private static final String ADD_ATTACHMENT_MESSAGE = "En bilaga har lagts till i ärendet.";
-	private static final String REMOVE_ATTACHMENT_MESSAGE = "En bilaga har tagits bort från ärendet.";
+	private static final String EVENT_LOG_ADD_ATTACHMENT = "En bilaga har lagts till i ärendet.";
+	private static final String EVENT_LOG_REMOVE_ATTACHMENT = "En bilaga har tagits bort från ärendet.";
 
 	@Autowired
 	private ErrandsRepository errandsRepository;
@@ -49,12 +49,12 @@ public class ErrandAttachmentService {
 		final var errandEntity = getErrand(errandId, namespace, municipalityId);
 		final var attachmentEntity = ofNullable(toAttachmentEntity(errandEntity, errandAttachment)).orElseThrow(() -> Problem.valueOf(BAD_GATEWAY, ATTACHMENT_ENTITY_NOT_CREATED));
 		
-		// Updated errand with new attachment and create new revision
+		// Update errand with new attachment and create new revision
 		final var revision = revisionService.createErrandRevision(errandsRepository.save(errandEntity));
 
 		// Create log event
 		final var metadata = toMetadataMap(errandEntity, revision, revisionService.getErrandRevisionByVersion(errandId, revision.getVersion() - 1));
-		eventLogClient.createEvent(errandId, toEvent(UPDATE, ADD_ATTACHMENT_MESSAGE, revision.getId(), metadata, null));
+		eventLogClient.createEvent(errandId, toEvent(UPDATE, EVENT_LOG_ADD_ATTACHMENT, revision.getId(), metadata, null));
 
 		return attachmentEntity.getId();
 	}
@@ -80,13 +80,13 @@ public class ErrandAttachmentService {
 			.findAny()
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, String.format(ATTACHMENT_ENTITY_NOT_FOUND, attachmentId, errandId)));
 
-		// Updated errand after removal of attachment and create new revision
+		// Update errand after removal of attachment and create new revision
 		errandEntity.getAttachments().remove(attachmentEntity);
 		final var revision = revisionService.createErrandRevision(errandsRepository.save(errandEntity));
 
 		// Create log event
 		final var metadata = toMetadataMap(errandEntity, revision, revisionService.getErrandRevisionByVersion(errandId, revision.getVersion() - 1));
-		eventLogClient.createEvent(errandId, toEvent(UPDATE, REMOVE_ATTACHMENT_MESSAGE, revision.getId(), metadata, null));
+		eventLogClient.createEvent(errandId, toEvent(UPDATE, EVENT_LOG_REMOVE_ATTACHMENT, revision.getId(), metadata, null));
 	}
 
 	private ErrandEntity getErrand(String errandId, String namespace, String municipalityId) {
