@@ -30,7 +30,6 @@ class EventlogMapperTest {
 
 	@Test
 	void toEventAllNulls() {
-
 		assertThat(EventlogMapper.toEvent(null, null, null, null, null))
 			.isNotNull()
 			.hasAllNullFieldsOrPropertiesExcept("created", "owner", "sourceType", "metadata")
@@ -86,5 +85,10 @@ class EventlogMapperTest {
 				Metadata::getKey, Metadata::getValue)
 			.containsExactly(
 				tuple(META_KEY, META_VALUE));
+	}
+
+	@Test
+	void toMetadataMap() {
+
 	}
 }

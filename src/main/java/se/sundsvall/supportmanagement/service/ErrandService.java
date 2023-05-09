@@ -1,10 +1,15 @@
 package se.sundsvall.supportmanagement.service;
 
+import static generated.se.sundsvall.eventlog.EventType.CREATE;
+import static generated.se.sundsvall.eventlog.EventType.DELETE;
+import static generated.se.sundsvall.eventlog.EventType.UPDATE;
 import static org.zalando.problem.Status.NOT_FOUND;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrand;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrands;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.updateEntity;
+import static se.sundsvall.supportmanagement.service.mapper.EventlogMapper.toEvent;
+import static se.sundsvall.supportmanagement.service.mapper.EventlogMapper.toMetadataMap;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.distinct;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withMunicipalityId;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withNamespace;
@@ -22,12 +27,16 @@ import org.zalando.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.eventlog.EventlogClient;
 
 @Service
 @Transactional
 public class ErrandService {
 
 	private static final String ENTITY_NOT_FOUND = "An errand with id '%s' could not be found in namespace '%s' for municipality with id '%s'";
+	private static final String CREATE_MESSAGE = "Ärendet har skapats.";
+	private static final String UPDATE_MESSAGE = "Ärendet har uppdaterats.";
+	private static final String DELETE_MESSAGE = "Ärendet har raderats.";
 
 	@Autowired
 	private ErrandsRepository repository;
@@ -35,9 +44,17 @@ public class ErrandService {
 	@Autowired
 	private RevisionService revisionService;
 
+	@Autowired
+	private EventlogClient eventLogClient;
+
 	public String createErrand(String namespace, String municipalityId, Errand errand) {
+		// Create new errand and revision
 		final var entity = repository.save(toErrandEntity(namespace, municipalityId, errand));
-		revisionService.createErrandRevision(entity);
+		final var revision = revisionService.createErrandRevision(entity);
+
+		// Create log event
+		final var metadata = toMetadataMap(entity, revision, null);
+		eventLogClient.createEvent(entity.getId(), toEvent(CREATE, CREATE_MESSAGE, revision.getId(), metadata, null));
 
 		return entity.getId();
 	}
@@ -57,15 +74,27 @@ public class ErrandService {
 
 	public Errand updateErrand(String namespace, String municipalityId, String id, Errand errand) {
 		verifyExistingErrand(id, namespace, municipalityId);
+
+		// Updated errand and create new revision
 		final var updatedEntity = repository.save(updateEntity(repository.getReferenceById(id), errand));
-		revisionService.createErrandRevision(updatedEntity);
+		final var revision = revisionService.createErrandRevision(updatedEntity);
+
+		// Create log event
+		final var metadata = toMetadataMap(updatedEntity, revision, revisionService.getErrandRevisionByVersion(id, revision.getVersion() - 1));
+		eventLogClient.createEvent(id, toEvent(UPDATE, UPDATE_MESSAGE, revision.getId(), metadata, null));
 
 		return toErrand(updatedEntity);
 	}
 
 	public void deleteErrand(String namespace, String municipalityId, String id) {
 		verifyExistingErrand(id, namespace, municipalityId);
+
+		// Delete errand
 		repository.deleteById(id);
+
+		// Create log event
+		final var metadata = toMetadataMap(null, null, null);
+		eventLogClient.createEvent(id, toEvent(DELETE, DELETE_MESSAGE, revisionService.getLatestErrandRevision(id).getId(), metadata, null));
 	}
 
 	private void verifyExistingErrand(String id, String namespace, String municipalityId) {

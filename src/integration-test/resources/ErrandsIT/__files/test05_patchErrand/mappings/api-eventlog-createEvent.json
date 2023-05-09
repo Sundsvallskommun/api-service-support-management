@@ -1,0 +1,49 @@
+{
+	"name": "api-eventlog-createEvent",
+	"request": {
+		"method": "POST",
+		"urlPath": "/api-eventlog/1be673c0-6ba3-4fb0-af4a-43acf23389f6",
+		"headers": {
+			"Authorization": {
+				"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
+			}
+		},
+		"bodyPatterns": [
+			{
+				"ignoreArrayOrder" : true,
+				"equalToJson": {
+					"type": "UPDATE",
+					"message": "Ärendet har uppdaterats.",
+					"owner": "SupportManagement",
+					"created": "${json-unit.any-string}",
+					"historyReference": "${json-unit.regex}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+					"sourceType": "Errand",
+					"metadata": [
+						{
+							"key": "PreviousVersion",
+							"value": "0"
+						},
+						{
+							"key": "PreviousRevision",
+							"value": "59328e70-4297-4bb5-ba69-cb17f2d15a17"
+						},
+						{
+							"key": "CurrentVersion",
+							"value": "1"
+						},
+						{
+							"key": "CurrentRevision",
+							"value": "${json-unit.regex}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+						}
+					]
+				}
+			}
+		]
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "*/*"
+		},
+		"status": 202
+	}
+}

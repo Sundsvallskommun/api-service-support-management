@@ -1,10 +1,16 @@
 package se.sundsvall.supportmanagement.service;
 
+import static generated.se.sundsvall.eventlog.EventType.UPDATE;
+import static java.time.OffsetDateTime.now;
+import static java.time.temporal.ChronoUnit.SECONDS;
 import static java.util.Optional.of;
 import static org.apache.commons.codec.binary.Base64.encodeBase64String;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
+import static org.assertj.core.groups.Tuple.tuple;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -19,14 +25,21 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.zalando.problem.ThrowableProblem;
 
+import generated.se.sundsvall.eventlog.Event;
+import generated.se.sundsvall.eventlog.Metadata;
+import se.sundsvall.supportmanagement.api.model.errand.Errand;
+import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.eventlog.EventlogClient;
 
 @ExtendWith(MockitoExtension.class)
 class ErrandAttachmentServiceTest {
@@ -38,6 +51,14 @@ class ErrandAttachmentServiceTest {
 	private static final String FILE = "file";
 	private static final String FILE_NAME = "fileName";
 	private static final String MIME_TYPE = "mimeType";
+	private static final String CURRENT_REVISION_ID = "currentRevisionId";
+	private static final int CURRENT_REVISION_VERSION = 2;
+	private static final String PREVIOUS_REVISION_ID = "previousRevisionId";
+	private static final int PREVIOUS_REVISION_VERSION = 1;
+	private static final String OWNER = "SupportManagement";
+	private static final String SOURCE_TYPE = Errand.class.getSimpleName();
+	private static final String ADD_ATTACHMENT_MESSAGE = "En bilaga har lagts till i ärendet.";
+	private static final String REMOVE_ATTACHMENT_MESSAGE = "En bilaga har tagits bort från ärendet.";
 
 	@Mock
 	private ErrandsRepository errandsRepositoryMock;
@@ -51,8 +72,20 @@ class ErrandAttachmentServiceTest {
 	@Mock
 	private RevisionService revisionServiceMock;
 
+	@Mock
+	private Revision currentRevisionMock;
+
+	@Mock
+	private Revision previousRevisionMock;
+
+	@Mock
+	private EventlogClient eventLogClientMock;
+
 	@InjectMocks
 	private ErrandAttachmentService service;
+
+	@Captor
+	private ArgumentCaptor<Event> eventCaptor;
 
 	@Test
 	void createErrandAttachment() {
@@ -62,6 +95,12 @@ class ErrandAttachmentServiceTest {
 		when(errandMock.getNamespace()).thenReturn(NAMESPACE);
 		when(errandMock.getAttachments()).thenReturn(new ArrayList<>());
 		when(errandsRepositoryMock.save(any(ErrandEntity.class))).thenReturn(errandMock);
+		when(revisionServiceMock.createErrandRevision(errandMock)).thenReturn(currentRevisionMock);
+		when(currentRevisionMock.getId()).thenReturn(CURRENT_REVISION_ID);
+		when(currentRevisionMock.getVersion()).thenReturn(CURRENT_REVISION_VERSION);
+		when(revisionServiceMock.getErrandRevisionByVersion(ERRAND_ID, PREVIOUS_REVISION_VERSION)).thenReturn(previousRevisionMock);
+		when(previousRevisionMock.getId()).thenReturn(PREVIOUS_REVISION_ID);
+		when(previousRevisionMock.getVersion()).thenReturn(PREVIOUS_REVISION_VERSION);
 
 		// Call
 		final var result = service.createErrandAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, buildErrandAttachment());
@@ -72,6 +111,26 @@ class ErrandAttachmentServiceTest {
 		verify(errandsRepositoryMock).findById(ERRAND_ID);
 		verify(errandsRepositoryMock).save(any(ErrandEntity.class));
 		verify(revisionServiceMock).createErrandRevision(errandMock);
+		verify(revisionServiceMock).getErrandRevisionByVersion(ERRAND_ID, PREVIOUS_REVISION_VERSION);
+		verify(eventLogClientMock).createEvent(eq(ERRAND_ID), eventCaptor.capture());
+
+		final var event = eventCaptor.getValue();
+		assertThat(event.getCreated()).isCloseTo(now(), within(2, SECONDS));
+		assertThat(event.getExpires()).isNull();
+		assertThat(event.getHistoryReference()).isEqualTo(CURRENT_REVISION_ID);
+		assertThat(event.getMessage()).isEqualTo(ADD_ATTACHMENT_MESSAGE);
+		assertThat(event.getMetadata()).isNotNull()
+			.extracting(
+				Metadata::getKey,
+				Metadata::getValue)
+			.containsExactlyInAnyOrder(
+				tuple("CurrentVersion", String.valueOf(CURRENT_REVISION_VERSION)),
+				tuple("CurrentRevision", CURRENT_REVISION_ID),
+				tuple("PreviousVersion", String.valueOf(PREVIOUS_REVISION_VERSION)),
+				tuple("PreviousRevision", PREVIOUS_REVISION_ID));
+		assertThat(event.getOwner()).isEqualTo(OWNER);
+		assertThat(event.getSourceType()).isEqualTo(SOURCE_TYPE);
+		assertThat(event.getType()).isEqualTo(UPDATE);
 	}
 
 	@Test
@@ -93,7 +152,7 @@ class ErrandAttachmentServiceTest {
 
 		verify(errandsRepositoryMock).findById(ERRAND_ID);
 		verify(errandsRepositoryMock, never()).save(any());
-		verifyNoInteractions(revisionServiceMock);
+		verifyNoInteractions(revisionServiceMock, eventLogClientMock);
 	}
 
 	@Test
@@ -116,7 +175,7 @@ class ErrandAttachmentServiceTest {
 		assertThat(result.getBase64EncodedString()).isEqualTo(encodeBase64String(FILE.getBytes()));
 
 		verify(errandsRepositoryMock).findById(ERRAND_ID);
-		verifyNoInteractions(revisionServiceMock);
+		verifyNoInteractions(revisionServiceMock, eventLogClientMock);
 	}
 
 	@Test
@@ -158,7 +217,7 @@ class ErrandAttachmentServiceTest {
 		assertThat(exception.getMessage()).isEqualTo("Not Found: An attachment with id 'attachmentId' could not be found on errand with id 'errandId'");
 
 		verify(errandsRepositoryMock).findById(ERRAND_ID);
-		verifyNoInteractions(revisionServiceMock);
+		verifyNoInteractions(revisionServiceMock, eventLogClientMock);
 	}
 
 	@Test
@@ -173,7 +232,7 @@ class ErrandAttachmentServiceTest {
 		assertThat(exception.getMessage()).isEqualTo("Not Found: An errand with id 'errandId' could not be found in namespace 'namespace' for municipality with id 'municipalityId'");
 
 		verify(errandsRepositoryMock).findById(ERRAND_ID);
-		verifyNoInteractions(revisionServiceMock);
+		verifyNoInteractions(revisionServiceMock, eventLogClientMock);
 	}
 
 	@Test
@@ -186,6 +245,12 @@ class ErrandAttachmentServiceTest {
 		when(errandMock.getAttachments()).thenReturn(new ArrayList<>(List.of(attachmentMock)));
 		when(attachmentMock.getId()).thenReturn(ATTACHMENT_ID);
 		when(errandsRepositoryMock.save(any(ErrandEntity.class))).thenReturn(errandMock);
+		when(revisionServiceMock.createErrandRevision(errandMock)).thenReturn(currentRevisionMock);
+		when(currentRevisionMock.getId()).thenReturn(CURRENT_REVISION_ID);
+		when(currentRevisionMock.getVersion()).thenReturn(CURRENT_REVISION_VERSION);
+		when(revisionServiceMock.getErrandRevisionByVersion(ERRAND_ID, PREVIOUS_REVISION_VERSION)).thenReturn(previousRevisionMock);
+		when(previousRevisionMock.getId()).thenReturn(PREVIOUS_REVISION_ID);
+		when(previousRevisionMock.getVersion()).thenReturn(PREVIOUS_REVISION_VERSION);
 
 		// Call
 		service.deleteErrandAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ATTACHMENT_ID);
@@ -196,6 +261,27 @@ class ErrandAttachmentServiceTest {
 		verify(errandsRepositoryMock).findById(ERRAND_ID);
 		verify(errandsRepositoryMock).save(any(ErrandEntity.class));
 		verify(revisionServiceMock).createErrandRevision(errandMock);
+
+		verify(revisionServiceMock).getErrandRevisionByVersion(ERRAND_ID, PREVIOUS_REVISION_VERSION);
+		verify(eventLogClientMock).createEvent(eq(ERRAND_ID), eventCaptor.capture());
+
+		final var event = eventCaptor.getValue();
+		assertThat(event.getCreated()).isCloseTo(now(), within(2, SECONDS));
+		assertThat(event.getExpires()).isNull();
+		assertThat(event.getHistoryReference()).isEqualTo(CURRENT_REVISION_ID);
+		assertThat(event.getMessage()).isEqualTo(REMOVE_ATTACHMENT_MESSAGE);
+		assertThat(event.getMetadata()).isNotNull()
+			.extracting(
+				Metadata::getKey,
+				Metadata::getValue)
+			.containsExactlyInAnyOrder(
+				tuple("CurrentVersion", String.valueOf(CURRENT_REVISION_VERSION)),
+				tuple("CurrentRevision", CURRENT_REVISION_ID),
+				tuple("PreviousVersion", String.valueOf(PREVIOUS_REVISION_VERSION)),
+				tuple("PreviousRevision", PREVIOUS_REVISION_ID));
+		assertThat(event.getOwner()).isEqualTo(OWNER);
+		assertThat(event.getSourceType()).isEqualTo(SOURCE_TYPE);
+		assertThat(event.getType()).isEqualTo(UPDATE);
 	}
 
 	@Test
@@ -211,7 +297,7 @@ class ErrandAttachmentServiceTest {
 
 		verify(errandsRepositoryMock).findById(ERRAND_ID);
 		verify(errandsRepositoryMock, never()).save(any());
-		verifyNoInteractions(revisionServiceMock);
+		verifyNoInteractions(revisionServiceMock, eventLogClientMock);
 	}
 
 	@Test
@@ -234,6 +320,6 @@ class ErrandAttachmentServiceTest {
 
 		verify(errandsRepositoryMock).findById(ERRAND_ID);
 		verify(errandsRepositoryMock, never()).save(any());
-		verifyNoInteractions(revisionServiceMock);
+		verifyNoInteractions(revisionServiceMock, eventLogClientMock);
 	}
 }
