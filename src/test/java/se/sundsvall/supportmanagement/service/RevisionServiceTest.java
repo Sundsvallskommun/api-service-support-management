@@ -38,6 +38,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import generated.se.sundsvall.notes.DifferenceResponse;
 import se.sundsvall.supportmanagement.api.model.revision.Operation;
+import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.RevisionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
@@ -96,7 +97,7 @@ class RevisionServiceTest {
 		assertThat(entityCaptor.getValue().getEntityType()).isEqualTo("ErrandEntity");
 		assertThat(entityCaptor.getValue().getSerializedSnapshot()).isEqualTo(objectMapperSpy.writeValueAsString(entity));
 		assertThat(entityCaptor.getValue().getVersion()).isZero();
-		assertThat(response).isEqualTo(revisionId);
+		assertThat(response).isNotNull().extracting(Revision::getId).isEqualTo(revisionId);
 	}
 
 	@Test
@@ -120,7 +121,7 @@ class RevisionServiceTest {
 		assertThat(entityCaptor.getValue().getEntityType()).isEqualTo("ErrandEntity");
 		assertThat(entityCaptor.getValue().getSerializedSnapshot()).isEqualTo(objectMapperSpy.writeValueAsString(entity));
 		assertThat(entityCaptor.getValue().getVersion()).isEqualTo(version + 1);
-		assertThat(response).isEqualTo(revisionId);
+		assertThat(response).isNotNull().extracting(Revision::getId).isEqualTo(revisionId);
 	}
 
 	@Test
@@ -145,7 +146,7 @@ class RevisionServiceTest {
 		assertThat(entityCaptor.getValue().getEntityType()).isEqualTo("ErrandEntity");
 		assertThat(entityCaptor.getValue().getSerializedSnapshot()).isEqualTo(objectMapperSpy.writeValueAsString(errandEntity));
 		assertThat(entityCaptor.getValue().getVersion()).isEqualTo(version + 1);
-		assertThat(response).isEqualTo(revisionId);
+		assertThat(response).isNotNull().extracting(Revision::getId).isEqualTo(revisionId);
 	}
 
 	@Test
@@ -169,7 +170,7 @@ class RevisionServiceTest {
 		assertThat(entityCaptor.getValue().getEntityType()).isEqualTo("ErrandEntity");
 		assertThat(entityCaptor.getValue().getSerializedSnapshot()).isEqualTo(objectMapperSpy.writeValueAsString(entity));
 		assertThat(entityCaptor.getValue().getVersion()).isEqualTo(version + 1);
-		assertThat(response).isEqualTo(revisionId);
+		assertThat(response).isNotNull().extracting(Revision::getId).isEqualTo(revisionId);
 	}
 
 	@Test
@@ -217,6 +218,7 @@ class RevisionServiceTest {
 		when(errandsRepositoryMock.existsById(errandId)).thenReturn(true);
 		when(revisionRepositoryMock.findAllByEntityIdOrderByVersion(errandId)).thenReturn(List.of(createRevisionEntity(), createRevisionEntity(), createRevisionEntity()));
 
+		// Call
 		final var result = service.getErrandRevisions(errandId);
 
 		verify(errandsRepositoryMock).existsById(errandId);
@@ -255,6 +257,66 @@ class RevisionServiceTest {
 
 		assertThat(e.getStatus()).isEqualTo(NOT_FOUND);
 		assertThat(e.getMessage()).isEqualTo("Not Found: An errand with id 'errandId' could not be found");
+	}
+
+	@Test
+	void getLatestErrandRevision() {
+		// Setup
+		final var errandId = "errandId";
+
+		// Mock
+		when(revisionRepositoryMock.findFirstByEntityIdOrderByVersionDesc(errandId)).thenReturn(Optional.of(createRevisionEntity()));
+
+		// Call
+		final var result = service.getLatestErrandRevision(errandId);
+
+		// Assertions and verifications
+		verify(revisionRepositoryMock).findFirstByEntityIdOrderByVersionDesc(errandId);
+		assertThat(result).isNotNull();
+	}
+
+	@Test
+	void getLatestErrandRevisionNonExistingErrand() {
+		// Setup
+		final var errandId = "errandId";
+
+		// Call
+		final var result = service.getLatestErrandRevision(errandId);
+
+		// Assertions and verifications
+		verify(revisionRepositoryMock).findFirstByEntityIdOrderByVersionDesc(errandId);
+		assertThat(result).isNull();
+	}
+
+	@Test
+	void getErrandRevisionByVersion() {
+		// Setup
+		final var errandId = "errandId";
+		final var version = 123;
+
+		// Mock
+		when(revisionRepositoryMock.findByEntityIdAndVersion(errandId, version)).thenReturn(Optional.of(createRevisionEntity()));
+
+		// Call
+		final var result = service.getErrandRevisionByVersion(errandId, version);
+
+		// Assertions and verifications
+		verify(revisionRepositoryMock).findByEntityIdAndVersion(errandId, version);
+		assertThat(result).isNotNull();
+	}
+
+	@Test
+	void getErrandRevisionByVersionNonExistingErrand() {
+		// Setup
+		final var errandId = "errandId";
+		final var version = 123;
+
+		// Call
+		final var result = service.getErrandRevisionByVersion(errandId, version);
+
+		// Assertions and verifications
+		verify(revisionRepositoryMock).findByEntityIdAndVersion(errandId, version);
+		assertThat(result).isNull();
 	}
 
 	@Test

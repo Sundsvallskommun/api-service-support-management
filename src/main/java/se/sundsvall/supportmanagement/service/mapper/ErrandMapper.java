@@ -1,5 +1,16 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
+import static java.util.Collections.emptyList;
+import static java.util.Objects.isNull;
+import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toCollection;
+import static org.apache.commons.lang3.ObjectUtils.anyNull;
+import static org.apache.commons.lang3.StringUtils.isEmpty;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
 import se.sundsvall.supportmanagement.api.model.errand.Classification;
 import se.sundsvall.supportmanagement.api.model.errand.ContactChannel;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
@@ -10,17 +21,6 @@ import se.sundsvall.supportmanagement.integration.db.model.ContactChannelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-
-import static java.util.Collections.emptyList;
-import static java.util.Objects.isNull;
-import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.toCollection;
-import static org.apache.commons.lang3.ObjectUtils.anyNull;
-import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 public class ErrandMapper {
 
@@ -35,19 +35,20 @@ public class ErrandMapper {
 		return errandEntity
 			.withAssignedGroupId(errand.getAssignedGroupId())
 			.withAssignedUserId(errand.getAssignedUserId())
+			.withAttachments(emptyList())
 			.withCategory(errand.getClassification().getCategory())
-			.withStakeholders(toStakeholderEntities(errandEntity, errand.getStakeholders()))
+			.withDescription(errand.getDescription())
+			.withEscalationEmail(errand.getEscalationEmail())
 			.withExternalTags(toExternalTag(errand.getExternalTags()))
 			.withMunicipalityId(municipalityId)
 			.withNamespace(namespace)
 			.withPriority(errand.getPriority().name())
 			.withReporterUserId(errand.getReporterUserId())
+			.withResolution(errand.getResolution())
+			.withStakeholders(toStakeholderEntities(errandEntity, errand.getStakeholders()))
 			.withStatus(errand.getStatus())
 			.withTitle(errand.getTitle())
-			.withType(errand.getClassification().getType())
-			.withResolution(errand.getResolution())
-			.withDescription(errand.getDescription())
-			.withEscalationEmail(errand.getEscalationEmail());
+			.withType(errand.getClassification().getType());
 	}
 
 	public static ErrandEntity updateEntity(ErrandEntity entity, Errand errand) {

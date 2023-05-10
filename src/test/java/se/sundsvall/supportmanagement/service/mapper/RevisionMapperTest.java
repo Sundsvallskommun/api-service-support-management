@@ -50,6 +50,30 @@ class RevisionMapperTest {
 	}
 
 	@Test
+	void toRevision() {
+		final var revision = RevisionMapper.toRevision(createRevisionEntity());
+
+		assertThat(revision).isNotNull()
+			.extracting(
+				Revision::getCreated,
+				Revision::getEntityId,
+				Revision::getEntityType,
+				Revision::getId,
+				Revision::getVersion)
+			.containsExactly(
+				CREATED,
+				ENTITY_UUID,
+				ENTITY_TYPE,
+				REVISION_UUID,
+				VERSION);
+	}
+
+	@Test
+	void toRevisionFromNull() {
+		assertThat(RevisionMapper.toRevision(null)).isNull();
+	}
+
+	@Test
 	void toRevisions() {
 		final var revisions = RevisionMapper.toRevisions(List.of(createRevisionEntity()));
 
