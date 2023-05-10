@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.service.mapper;
 
 import static java.time.OffsetDateTime.now;
 import static java.time.temporal.ChronoUnit.SECONDS;
+import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static org.assertj.core.groups.Tuple.tuple;
@@ -23,6 +24,7 @@ import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
 import se.sundsvall.supportmanagement.api.model.errand.Priority;
 import se.sundsvall.supportmanagement.api.model.errand.Stakeholder;
+import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ContactChannelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
@@ -149,6 +151,7 @@ class ErrandMapperTest {
 			.extracting(
 				ErrandEntity::getAssignedGroupId,
 				ErrandEntity::getAssignedUserId,
+				ErrandEntity::getAttachments,
 				ErrandEntity::getCategory,
 				ErrandEntity::getExternalTags,
 				ErrandEntity::getMunicipalityId,
@@ -164,6 +167,7 @@ class ErrandMapperTest {
 			.containsExactly(
 				ASSIGNED_GROUP_ID,
 				ASSIGNED_USER_ID,
+				emptyList(),
 				CATEGORY,
 				List.of(DbExternalTag.create().withKey(TAG_KEY).withValue(TAG_VALUE)),
 				MUNICIPALITY_ID,
@@ -224,9 +228,11 @@ class ErrandMapperTest {
 
 	@Test
 	void testUpdateEmptyEntity() {
+		final List<AttachmentEntity> attachments = new ArrayList<>();
 		final List<StakeholderEntity> stakeholders = new ArrayList<>();
-		final var entity = updateEntity(ErrandEntity.create().withStakeholders(stakeholders), createErrand());
+		final var entity = updateEntity(ErrandEntity.create().withAttachments(attachments).withStakeholders(stakeholders), createErrand());
 
+		assertThat(entity.getAttachments()).isSameAs(attachments); // Test to verify that list has not been replaced
 		assertThat(entity.getStakeholders()).isSameAs(stakeholders); // Test to verify that list has not been replaced
 		assertThat(entity)
 			.extracting(

@@ -7,8 +7,6 @@ import static org.zalando.problem.Status.BAD_GATEWAY;
 import static org.zalando.problem.Status.NOT_FOUND;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapper.toAttachmentEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapper.toErrandAttachmentHeaders;
-import static se.sundsvall.supportmanagement.service.mapper.EventlogMapper.toEvent;
-import static se.sundsvall.supportmanagement.service.mapper.EventlogMapper.toMetadataMap;
 
 import java.util.List;
 import java.util.Objects;
@@ -23,7 +21,6 @@ import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
 import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachmentHeader;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.integration.eventlog.EventlogClient;
 import se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapper;
 
 @Service
@@ -43,18 +40,18 @@ public class ErrandAttachmentService {
 	private RevisionService revisionService;
 
 	@Autowired
-	private EventlogClient eventLogClient;
+	private EventService eventService;
 
 	public String createErrandAttachment(String namespace, String municipalityId, String errandId, ErrandAttachment errandAttachment) {
 		final var errandEntity = getErrand(errandId, namespace, municipalityId);
 		final var attachmentEntity = ofNullable(toAttachmentEntity(errandEntity, errandAttachment)).orElseThrow(() -> Problem.valueOf(BAD_GATEWAY, ATTACHMENT_ENTITY_NOT_CREATED));
 		
 		// Update errand with new attachment and create new revision
-		final var revision = revisionService.createErrandRevision(errandsRepository.save(errandEntity));
+		final var latestRevision = revisionService.createErrandRevision(errandsRepository.save(errandEntity));
 
 		// Create log event
-		final var metadata = toMetadataMap(errandEntity, revision, revisionService.getErrandRevisionByVersion(errandId, revision.getVersion() - 1));
-		eventLogClient.createEvent(errandId, toEvent(UPDATE, EVENT_LOG_ADD_ATTACHMENT, revision.getId(), metadata, null));
+		final var previousRevision = revisionService.getErrandRevisionByVersion(errandId, latestRevision.getVersion() - 1);
+		eventService.createEvent(UPDATE, EVENT_LOG_ADD_ATTACHMENT, errandEntity, latestRevision, previousRevision, null);
 
 		return attachmentEntity.getId();
 	}
@@ -82,11 +79,11 @@ public class ErrandAttachmentService {
 
 		// Update errand after removal of attachment and create new revision
 		errandEntity.getAttachments().remove(attachmentEntity);
-		final var revision = revisionService.createErrandRevision(errandsRepository.save(errandEntity));
+		final var latestRevision = revisionService.createErrandRevision(errandsRepository.save(errandEntity));
 
 		// Create log event
-		final var metadata = toMetadataMap(errandEntity, revision, revisionService.getErrandRevisionByVersion(errandId, revision.getVersion() - 1));
-		eventLogClient.createEvent(errandId, toEvent(UPDATE, EVENT_LOG_REMOVE_ATTACHMENT, revision.getId(), metadata, null));
+		final var previousRevision = revisionService.getErrandRevisionByVersion(errandId, latestRevision.getVersion() - 1);
+		eventService.createEvent(UPDATE, EVENT_LOG_REMOVE_ATTACHMENT, errandEntity, latestRevision, previousRevision, null);
 	}
 
 	private ErrandEntity getErrand(String errandId, String namespace, String municipalityId) {

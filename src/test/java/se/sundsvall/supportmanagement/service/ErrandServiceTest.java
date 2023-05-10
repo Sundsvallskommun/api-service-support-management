@@ -3,12 +3,8 @@ package se.sundsvall.supportmanagement.service;
 import static generated.se.sundsvall.eventlog.EventType.CREATE;
 import static generated.se.sundsvall.eventlog.EventType.DELETE;
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
-import static java.time.OffsetDateTime.now;
-import static java.time.temporal.ChronoUnit.SECONDS;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.within;
-import static org.assertj.core.groups.Tuple.tuple;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -44,12 +40,10 @@ import org.zalando.problem.ThrowableProblem;
 import com.turkraft.springfilter.boot.FilterSpecification;
 
 import generated.se.sundsvall.eventlog.Event;
-import generated.se.sundsvall.eventlog.Metadata;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.integration.eventlog.EventlogClient;
 
 @ExtendWith(MockitoExtension.class)
 class ErrandServiceTest {
@@ -57,9 +51,6 @@ class ErrandServiceTest {
 	private static final String NAMESPACE = "namespace";
 	private static final String MUNICIPALITY_ID = "municipalityId";
 	private static final String ERRAND_ID = "errandId";
-	private static final String REVISION_ID = "revisionId";
-	private static final String OWNER = "SupportManagement";
-	private static final String SOURCE_TYPE = Errand.class.getSimpleName();
 	private static final String EVENT_LOG_CREATE_ERRAND = "Ärendet har skapats.";
 	private static final String EVENT_LOG_UPDATE_ERRAND = "Ärendet har uppdaterats.";
 	private static final String EVENT_LOG_DELETE_ERRAND = "Ärendet har raderats.";
@@ -77,7 +68,7 @@ class ErrandServiceTest {
 	private Revision previousRevisionMock;
 
 	@Mock
-	private EventlogClient eventLogClientMock;
+	private EventService eventServiceMock;
 
 	@InjectMocks
 	private ErrandService service;
@@ -92,11 +83,11 @@ class ErrandServiceTest {
 	void createErrand() {
 		// Setup
 		final var errand = buildErrand();
+		final var errandEntity = ErrandEntity.create().withId(ERRAND_ID);
 
 		// Mock
-		when(errandRepositoryMock.save(any(ErrandEntity.class))).thenReturn(ErrandEntity.create().withId(ERRAND_ID));
+		when(errandRepositoryMock.save(any(ErrandEntity.class))).thenReturn(errandEntity);
 		when(revisionServiceMock.createErrandRevision(any())).thenReturn(currentRevisionMock);
-		when(currentRevisionMock.getId()).thenReturn(REVISION_ID);
 
 		// Call
 		final var result = service.createErrand(NAMESPACE, MUNICIPALITY_ID, errand);
@@ -106,23 +97,7 @@ class ErrandServiceTest {
 
 		verify(errandRepositoryMock).save(any(ErrandEntity.class));
 		verify(revisionServiceMock).createErrandRevision(any(ErrandEntity.class));
-		verify(eventLogClientMock).createEvent(eq(ERRAND_ID), eventCaptor.capture());
-
-		final var event = eventCaptor.getValue();
-		assertThat(event.getCreated()).isCloseTo(now(), within(2, SECONDS));
-		assertThat(event.getExpires()).isNull();
-		assertThat(event.getHistoryReference()).isEqualTo(REVISION_ID);
-		assertThat(event.getMessage()).isEqualTo(EVENT_LOG_CREATE_ERRAND);
-		assertThat(event.getMetadata()).isNotNull()
-			.extracting(
-				Metadata::getKey,
-				Metadata::getValue)
-			.containsExactlyInAnyOrder(
-				tuple("CurrentVersion", "0"),
-				tuple("CurrentRevision", REVISION_ID));
-		assertThat(event.getOwner()).isEqualTo(OWNER);
-		assertThat(event.getSourceType()).isEqualTo(SOURCE_TYPE);
-		assertThat(event.getType()).isEqualTo(CREATE);
+		verify(eventServiceMock).createEvent(CREATE, EVENT_LOG_CREATE_ERRAND, errandEntity, currentRevisionMock, null, null);
 	}
 
 	@Test
@@ -218,7 +193,6 @@ class ErrandServiceTest {
 	void updateExistingErrand() {
 		// Setup
 		final var entity = buildErrandEntity();
-		final var currentRevision = "currentRevision";
 		final var currentVersion = 1;
 
 		// Mock
@@ -226,11 +200,8 @@ class ErrandServiceTest {
 		when(errandRepositoryMock.getReferenceById(ERRAND_ID)).thenReturn(entity);
 		when(errandRepositoryMock.save(entity)).thenReturn(entity);
 		when(revisionServiceMock.createErrandRevision(any())).thenReturn(currentRevisionMock);
-		when(currentRevisionMock.getId()).thenReturn(currentRevision);
 		when(currentRevisionMock.getVersion()).thenReturn(currentVersion);
 		when(revisionServiceMock.getErrandRevisionByVersion(ERRAND_ID, currentVersion - 1)).thenReturn(previousRevisionMock);
-		when(previousRevisionMock.getId()).thenReturn(REVISION_ID);
-		when(previousRevisionMock.getVersion()).thenReturn(currentVersion - 1);
 
 		// Call
 		final var response = service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, buildErrand());
@@ -243,25 +214,7 @@ class ErrandServiceTest {
 		verify(errandRepositoryMock).save(entity);
 		verify(revisionServiceMock).createErrandRevision(entity);
 		verify(revisionServiceMock).getErrandRevisionByVersion(ERRAND_ID, currentVersion - 1);
-		verify(eventLogClientMock).createEvent(eq(ERRAND_ID), eventCaptor.capture());
-
-		final var event = eventCaptor.getValue();
-		assertThat(event.getCreated()).isCloseTo(now(), within(2, SECONDS));
-		assertThat(event.getExpires()).isNull();
-		assertThat(event.getHistoryReference()).isEqualTo(currentRevision);
-		assertThat(event.getMessage()).isEqualTo(EVENT_LOG_UPDATE_ERRAND);
-		assertThat(event.getMetadata()).isNotNull()
-			.extracting(
-				Metadata::getKey,
-				Metadata::getValue)
-			.containsExactlyInAnyOrder(
-				tuple("CurrentVersion", String.valueOf(currentVersion)),
-				tuple("CurrentRevision", currentRevision),
-				tuple("PreviousVersion", String.valueOf(currentVersion - 1)),
-				tuple("PreviousRevision", REVISION_ID));
-		assertThat(event.getOwner()).isEqualTo(OWNER);
-		assertThat(event.getSourceType()).isEqualTo(SOURCE_TYPE);
-		assertThat(event.getType()).isEqualTo(UPDATE);
+		verify(eventServiceMock).createEvent(UPDATE, EVENT_LOG_UPDATE_ERRAND, entity, currentRevisionMock, previousRevisionMock, null);
 	}
 
 	@Test
@@ -280,10 +233,13 @@ class ErrandServiceTest {
 
 	@Test
 	void deleteExistingErrand() {
+		// Setup
+		final var entity = buildErrandEntity();
+
 		// Mock
 		when(errandRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
+		when(errandRepositoryMock.getReferenceById(ERRAND_ID)).thenReturn(entity);
 		when(revisionServiceMock.getLatestErrandRevision(ERRAND_ID)).thenReturn(currentRevisionMock);
-		when(currentRevisionMock.getId()).thenReturn(REVISION_ID);
 
 		// Call
 		service.deleteErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
@@ -291,17 +247,7 @@ class ErrandServiceTest {
 		// Assertions and verifications
 		verify(errandRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(errandRepositoryMock).deleteById(ERRAND_ID);
-		verify(eventLogClientMock).createEvent(eq(ERRAND_ID), eventCaptor.capture());
-
-		final var event = eventCaptor.getValue();
-		assertThat(event.getCreated()).isCloseTo(now(), within(2, SECONDS));
-		assertThat(event.getExpires()).isNull();
-		assertThat(event.getHistoryReference()).isEqualTo(REVISION_ID);
-		assertThat(event.getMessage()).isEqualTo(EVENT_LOG_DELETE_ERRAND);
-		assertThat(event.getMetadata()).isNullOrEmpty();
-		assertThat(event.getOwner()).isEqualTo(OWNER);
-		assertThat(event.getSourceType()).isEqualTo(SOURCE_TYPE);
-		assertThat(event.getType()).isEqualTo(DELETE);
+		verify(eventServiceMock).createEvent(DELETE, EVENT_LOG_DELETE_ERRAND, entity, currentRevisionMock, null, null);
 	}
 
 	@Test
@@ -319,6 +265,6 @@ class ErrandServiceTest {
 
 	@AfterEach
 	void verifyNoMoreInteractionsOnMocks() {
-		verifyNoMoreInteractions(errandRepositoryMock, revisionServiceMock, eventLogClientMock);
+		verifyNoMoreInteractions(errandRepositoryMock, revisionServiceMock, eventServiceMock);
 	}
 }

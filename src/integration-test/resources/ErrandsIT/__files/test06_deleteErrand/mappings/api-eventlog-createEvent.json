@@ -18,7 +18,16 @@
 					"created": "${json-unit.any-string}",
 					"historyReference": "59328e70-4297-4bb5-ba69-cb17f2d15a17",
 					"sourceType": "Errand",
-					"metadata": [ ]
+					"metadata": [
+						{
+							"key": "CurrentVersion",
+							"value": "0"
+						},
+						{
+							"key": "CurrentRevision",
+							"value": "59328e70-4297-4bb5-ba69-cb17f2d15a17"
+						}
+					]
 				}
 			}
 		]
