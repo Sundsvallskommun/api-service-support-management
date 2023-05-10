@@ -25,7 +25,6 @@ class EventMetadataTest {
 
 	@Test
 	void testBuilderMethods() {
-
 		final var key = "key";
 		final var value = "value";
 

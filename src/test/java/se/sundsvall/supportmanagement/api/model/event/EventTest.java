@@ -37,7 +37,6 @@ class EventTest {
 
 	@Test
 	void testBuilderMethods() {
-
 		final var eventType = EventType.CREATE;
 		final var message = "message";
 		final var owner = "owner";

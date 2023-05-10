@@ -32,7 +32,7 @@ public interface EventlogClient {
 		@RequestBody Event event);
 
 	/**
-	 * Fetch log created events for a logKey.
+	 * Fetch created log events for a logKey.
 	 * 
 	 * @param logKey   containing UUID to fetch events for
 	 * @param pageable information of page, size and sorting options for the request
