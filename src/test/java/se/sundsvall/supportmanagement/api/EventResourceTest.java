@@ -55,7 +55,7 @@ class EventResourceTest {
 
 	@Test
 	void testAPIDocumentationClass() {
-		assertThat(new EventResource.APIDocumentationClass()).isInstanceOf(Page.class);
+		assertThat(new EventResource.PagedEvent()).isInstanceOf(Page.class);
 	}
 
 	@Test

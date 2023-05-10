@@ -40,17 +40,17 @@ public class EventResource {
 	/**
 	 * Class needed to solve swagger implementation schema
 	 */
-	static class APIDocumentationClass extends PageImpl<Event> {
+	static class PagedEvent extends PageImpl<Event> {
 		private static final long serialVersionUID = 1L;
 
-		public APIDocumentationClass() {
+		public PagedEvent() {
 			super(Collections.emptyList());
 		}
 	}
 
 	@GetMapping(path = "/errands/{id}/events", produces = { APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE })
 	@Operation(summary = "Read errand events", description = "Returns all existing events for the errand that matches the provided id")
-	@ApiResponse(responseCode = "200", description = "Successful operation", content = @Content(mediaType = APPLICATION_JSON_VALUE, schema = @Schema(implementation = APIDocumentationClass.class)))
+	@ApiResponse(responseCode = "200", description = "Successful operation", content = @Content(mediaType = APPLICATION_JSON_VALUE, schema = @Schema(implementation = PagedEvent.class)))
 	@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = { Problem.class, ConstraintViolationProblem.class })))
 	@ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
