@@ -71,9 +71,9 @@ class EventResourceTest {
 			.exchange()
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)
-			.returnResult(new ParameterizedTypeReference<RestResponsePage<Event>>() {})
-			.getResponseBody()
-			.blockFirst();
+			.expectBody(new ParameterizedTypeReference<RestResponsePage<Event>>() {})
+			.returnResult()
+			.getResponseBody();
 
 		// Verification
 		verify(eventServiceMock).readEvents(eq(id), pageableCaptor.capture());
@@ -103,9 +103,9 @@ class EventResourceTest {
 			.exchange()
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)
-			.returnResult(new ParameterizedTypeReference<RestResponsePage<Event>>() {})
-			.getResponseBody()
-			.blockFirst();
+			.expectBody(new ParameterizedTypeReference<RestResponsePage<Event>>() {})
+			.returnResult()
+			.getResponseBody();
 
 		// Verification
 		verify(eventServiceMock).readEvents(eq(id), pageableCaptor.capture());
