@@ -1,23 +1,8 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
-import org.junit.jupiter.api.Test;
-import se.sundsvall.supportmanagement.api.model.errand.Classification;
-import se.sundsvall.supportmanagement.api.model.errand.ContactChannel;
-import se.sundsvall.supportmanagement.api.model.errand.Errand;
-import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
-import se.sundsvall.supportmanagement.api.model.errand.Priority;
-import se.sundsvall.supportmanagement.api.model.errand.Stakeholder;
-import se.sundsvall.supportmanagement.integration.db.model.ContactChannelEntity;
-import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
-import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
-
-import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.List;
-
 import static java.time.OffsetDateTime.now;
 import static java.time.temporal.ChronoUnit.SECONDS;
+import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static org.assertj.core.groups.Tuple.tuple;
@@ -26,6 +11,24 @@ import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErran
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrands;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.updateEntity;
+
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.junit.jupiter.api.Test;
+
+import se.sundsvall.supportmanagement.api.model.errand.Classification;
+import se.sundsvall.supportmanagement.api.model.errand.ContactChannel;
+import se.sundsvall.supportmanagement.api.model.errand.Errand;
+import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
+import se.sundsvall.supportmanagement.api.model.errand.Priority;
+import se.sundsvall.supportmanagement.api.model.errand.Stakeholder;
+import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ContactChannelEntity;
+import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 
 class ErrandMapperTest {
 
@@ -48,10 +51,8 @@ class ErrandMapperTest {
 	private static final String TITLE = "title";
 	private static final OffsetDateTime TOUCHED = now().plusWeeks(1);
 	private static final String TYPE = "type";
-
 	private static final String DESCRIPTION = "description";
 	private static final String RESOLUTION = "resolution";
-
 	private static final String FIRST_NAME = "firstName";
 	private static final String LAST_NAME = "lastName";
 	private static final String ADDRESS = "address";
@@ -60,7 +61,6 @@ class ErrandMapperTest {
 	private static final String COUNTRY = "country";
 	private static final String CONTACT_CHANNEL_TYPE = "contactChannelType";
 	private static final String CONTACT_CHANNEL_VALUE = "contactChannelValue";
-
 	private static final String ESCALATION_EMAIL = "escalation@email.com";
 	private static final String STAKEHOLDER_ROLE = "role";
 
@@ -151,6 +151,7 @@ class ErrandMapperTest {
 			.extracting(
 				ErrandEntity::getAssignedGroupId,
 				ErrandEntity::getAssignedUserId,
+				ErrandEntity::getAttachments,
 				ErrandEntity::getCategory,
 				ErrandEntity::getExternalTags,
 				ErrandEntity::getMunicipalityId,
@@ -166,6 +167,7 @@ class ErrandMapperTest {
 			.containsExactly(
 				ASSIGNED_GROUP_ID,
 				ASSIGNED_USER_ID,
+				emptyList(),
 				CATEGORY,
 				List.of(DbExternalTag.create().withKey(TAG_KEY).withValue(TAG_VALUE)),
 				MUNICIPALITY_ID,
@@ -226,9 +228,11 @@ class ErrandMapperTest {
 
 	@Test
 	void testUpdateEmptyEntity() {
+		final List<AttachmentEntity> attachments = new ArrayList<>();
 		final List<StakeholderEntity> stakeholders = new ArrayList<>();
-		final var entity = updateEntity(ErrandEntity.create().withStakeholders(stakeholders), createErrand());
+		final var entity = updateEntity(ErrandEntity.create().withAttachments(attachments).withStakeholders(stakeholders), createErrand());
 
+		assertThat(entity.getAttachments()).isSameAs(attachments); // Test to verify that list has not been replaced
 		assertThat(entity.getStakeholders()).isSameAs(stakeholders); // Test to verify that list has not been replaced
 		assertThat(entity)
 			.extracting(

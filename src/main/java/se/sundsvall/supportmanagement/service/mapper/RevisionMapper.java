@@ -44,7 +44,7 @@ public class RevisionMapper {
 			.toList();
 	}
 
-	private static Revision toRevision(RevisionEntity entity) {
+	public static Revision toRevision(RevisionEntity entity) {
 		return ofNullable(entity)
 			.map(e -> Revision.create()
 				.withCreated(e.getCreated())

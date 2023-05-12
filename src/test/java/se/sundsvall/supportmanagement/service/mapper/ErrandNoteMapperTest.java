@@ -46,6 +46,7 @@ class ErrandNoteMapperTest {
 	private static final String OP = "op";
 	private static final String PATH = "path";
 	private static final String VALUE = "value";
+
 	@Test
 	void toCreateNoteRequest() {
 

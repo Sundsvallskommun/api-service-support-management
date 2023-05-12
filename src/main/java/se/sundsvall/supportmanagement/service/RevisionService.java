@@ -8,6 +8,7 @@ import static com.jayway.jsonpath.Option.SUPPRESS_EXCEPTIONS;
 import static org.apache.commons.lang3.ObjectUtils.anyNull;
 import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
 import static org.zalando.problem.Status.NOT_FOUND;
+import static se.sundsvall.supportmanagement.service.mapper.RevisionMapper.toRevision;
 import static se.sundsvall.supportmanagement.service.mapper.RevisionMapper.toRevisionEntity;
 import static se.sundsvall.supportmanagement.service.mapper.RevisionMapper.toSerializedSnapshot;
 
@@ -35,6 +36,7 @@ import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.RevisionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.RevisionEntity;
 import se.sundsvall.supportmanagement.integration.notes.NotesClient;
 import se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper;
 import se.sundsvall.supportmanagement.service.mapper.RevisionMapper;
@@ -72,9 +74,9 @@ public class RevisionService {
 	 * - no previous revisions exist for the provided entity.
 	 *
 	 * @param entity the entity that will have a new revision.
-	 * @return the id (uuid) of the created revision.
+	 * @return the created revision.
 	 */
-	public String createErrandRevision(ErrandEntity entity) {
+	public Revision createErrandRevision(ErrandEntity entity) {
 
 		final var lastRevision = revisionRepository.findFirstByEntityIdOrderByVersionDesc(entity.getId());
 
@@ -86,15 +88,15 @@ public class RevisionService {
 			}
 
 			// Create revision <lastRevision.version + 1>
-			return createRevision(entity, lastRevision.get().getVersion() + 1);
+			return toRevision(createRevision(entity, lastRevision.get().getVersion() + 1));
 		}
 
 		// No previous revisions exist. Create revision 0
-		return createRevision(entity, 0);
+		return toRevision(createRevision(entity, 0));
 	}
 
-	private String createRevision(final ErrandEntity entity, final int version) {
-		return revisionRepository.save(toRevisionEntity(entity, version)).getId();
+	private RevisionEntity createRevision(final ErrandEntity entity, final int version) {
+		return revisionRepository.save(toRevisionEntity(entity, version));
 	}
 
 	private boolean jsonEquals(String currentSnapshot, String previousSnapshot) {
@@ -120,6 +122,31 @@ public class RevisionService {
 		verifyExistingErrand(errandId);
 
 		return RevisionMapper.toRevisions(revisionRepository.findAllByEntityIdOrderByVersion(errandId));
+	}
+
+	/**
+	 * Returns the lastest (current) revision of the errand
+	 * 
+	 * @param errandId id of the errand to fetch latest revision for.
+	 * @return the latest revision for the errand or null if errand does not exist.
+	 */
+	public Revision getLatestErrandRevision(String errandId) {
+		return revisionRepository.findFirstByEntityIdOrderByVersionDesc(errandId)
+			.map(RevisionMapper::toRevision)
+			.orElse(null);
+	}
+
+	/**
+	 * Returns requested revision of the errand
+	 * 
+	 * @param errandId id of the errand to fetch revision for.
+	 * @param version  the revision version to fetch.
+	 * @return requested revision for the errand or null if errand or revision does not exist.
+	 */
+	public Revision getErrandRevisionByVersion(String errandId, int version) {
+		return revisionRepository.findByEntityIdAndVersion(errandId, version)
+			.map(RevisionMapper::toRevision)
+			.orElse(null);
 	}
 
 	/**

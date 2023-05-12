@@ -1,4 +1,4 @@
-package se.sundsvall.supportmanagement.integration.messaging.configuration;
+package se.sundsvall.supportmanagement.integration.eventlog.configuration;
 
 import org.springframework.cloud.openfeign.FeignBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
@@ -10,15 +10,15 @@ import se.sundsvall.dept44.configuration.feign.FeignMultiCustomizer;
 import se.sundsvall.dept44.configuration.feign.decoder.ProblemErrorDecoder;
 
 @Import(FeignConfiguration.class)
-public class MessagingConfiguration {
+public class EventlogConfiguration {
 
-	public static final String CLIENT_ID = "messaging";
+	public static final String CLIENT_ID = "eventlog";
 
 	@Bean
-	FeignBuilderCustomizer feignBuilderCustomizer(MessagingProperties messagingProperties, ClientRegistrationRepository clientRegistrationRepository) {
+	FeignBuilderCustomizer feignBuilderCustomizer(EventlogProperties eventlogProperties, ClientRegistrationRepository clientRegistrationRepository) {
 		return FeignMultiCustomizer.create()
 			.withErrorDecoder(new ProblemErrorDecoder(CLIENT_ID))
-			.withRequestTimeoutsInSeconds(messagingProperties.connectTimeout(), messagingProperties.readTimeout())
+			.withRequestTimeoutsInSeconds(eventlogProperties.connectTimeout(), eventlogProperties.readTimeout())
 			.withRetryableOAuth2InterceptorForClientRegistration(clientRegistrationRepository.findByRegistrationId(CLIENT_ID))
 			.composeCustomizersToOne();
 	}
