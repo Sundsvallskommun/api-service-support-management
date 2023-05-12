@@ -8,6 +8,7 @@ import static java.util.Map.entry;
 import static java.util.Optional.ofNullable;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,6 +20,7 @@ import generated.se.sundsvall.eventlog.Event;
 import generated.se.sundsvall.eventlog.EventType;
 import generated.se.sundsvall.eventlog.Metadata;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
+import se.sundsvall.supportmanagement.api.model.event.EventMetaData;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
@@ -69,6 +71,16 @@ public class EventlogMapper {
 	public static Map<String, String> toMetadataMap(ErrandEntity errandEntity, Revision currentRevision, Revision previousRevision) {
 		final var metadata = new HashMap<String, String>();
 
+		// Add caseId to metadata if errand and external tag with caseId are present
+		ofNullable(errandEntity)
+			.map(ErrandEntity::getExternalTags)
+			.orElse(emptyList())
+			.stream()
+			.filter(et -> Objects.equals(KEY_CASE_ID, et.getKey()))
+			.map(DbExternalTag::getValue)
+			.findAny()
+			.ifPresent(value -> metadata.put(KEY_CASE_ID, value));
+
 		// Add information for current revision of errand
 		ofNullable(currentRevision).ifPresent(rev -> {
 			metadata.put(KEY_CURRENT_REVISION, rev.getId());
@@ -81,16 +93,42 @@ public class EventlogMapper {
 			metadata.put(KEY_PREVIOUS_VERSION, String.valueOf(rev.getVersion()));
 		});
 
-		// Add caseId to metadata if errand and external tag with caseId are present
-		ofNullable(errandEntity)
-			.map(ErrandEntity::getExternalTags)
-			.orElse(emptyList())
-			.stream()
-			.filter(et -> Objects.equals(KEY_CASE_ID, et.getKey()))
-			.map(DbExternalTag::getValue)
-			.findAny()
-			.ifPresent(value -> metadata.put(KEY_CASE_ID, value));
-
 		return metadata;
+	}
+
+	public static se.sundsvall.supportmanagement.api.model.event.Event toEvent(Event event) {
+		return se.sundsvall.supportmanagement.api.model.event.Event.create()
+			.withCreated(event.getCreated())
+			.withHistoryReference(event.getHistoryReference())
+			.withMessage(event.getMessage())
+			.withMetadata(toMetadatas(event.getMetadata()))
+			.withOwner(event.getOwner())
+			.withSourceType(event.getSourceType())
+			.withType(toEventType(event.getType()));
+	}
+
+	private static se.sundsvall.supportmanagement.api.model.event.EventType toEventType(EventType eventType) {
+		if (eventType == null) {
+			return se.sundsvall.supportmanagement.api.model.event.EventType.UNKNOWN;
+		}
+
+		return switch (eventType) {
+			case CREATE -> se.sundsvall.supportmanagement.api.model.event.EventType.CREATE;
+			case UPDATE -> se.sundsvall.supportmanagement.api.model.event.EventType.UPDATE;
+			case DELETE -> se.sundsvall.supportmanagement.api.model.event.EventType.DELETE;
+			default -> se.sundsvall.supportmanagement.api.model.event.EventType.UNKNOWN;
+		};
+	}
+
+	private static List<EventMetaData> toMetadatas(List<Metadata> metadatas) {
+		return Optional.ofNullable(metadatas).orElse(Collections.emptyList()).stream()
+			.map(EventlogMapper::toMetadata)
+			.toList();
+	}
+
+	private static EventMetaData toMetadata(Metadata metadata) {
+		return EventMetaData.create()
+			.withKey(metadata.getKey())
+			.withValue(metadata.getValue());
 	}
 }

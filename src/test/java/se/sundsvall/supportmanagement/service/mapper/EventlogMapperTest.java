@@ -21,6 +21,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import generated.se.sundsvall.eventlog.Event;
 import generated.se.sundsvall.eventlog.EventType;
 import generated.se.sundsvall.eventlog.Metadata;
+import se.sundsvall.supportmanagement.api.model.event.EventMetaData;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
@@ -46,7 +47,6 @@ class EventlogMapperTest {
 	private final static int PREVIOUS_VERSION = 123;
 	private final static String CURRENT_ID = "currentRevisionId";
 	private final static int CURRENT_VERSION = 456;
-
 
 	@Test
 	void toEventAllNulls() {
@@ -119,5 +119,64 @@ class EventlogMapperTest {
 			Arguments.of(null, null, Revision.create().withId(PREVIOUS_ID).withVersion(PREVIOUS_VERSION), Map.of(KEY_PREVIOUS_REVISION, PREVIOUS_ID, KEY_PREVIOUS_VERSION, String.valueOf(PREVIOUS_VERSION))),
 			Arguments.of(null, Revision.create().withId(CURRENT_ID).withVersion(CURRENT_VERSION), null, Map.of(KEY_CURRENT_REVISION, CURRENT_ID, KEY_CURRENT_VERSION, String.valueOf(CURRENT_VERSION))),
 			Arguments.of(null, null, null, emptyMap()));
+	}
+
+	@ParameterizedTest
+	@MethodSource("eventFromEventlogEventArgumentProvider")
+	void toEventFromEventlogEvent(EventType returnedType, se.sundsvall.supportmanagement.api.model.event.EventType mappedType) {
+		final var created = now(systemDefault());
+		final var eventlogEvent = new Event()
+			.created(created)
+			.historyReference(CURRENT_ID)
+			.message(MESSAGE)
+			.metadata(List.of(new Metadata().key(META_KEY).value(META_VALUE)))
+			.owner(OWNER)
+			.sourceType(SOURCE_TYPE)
+			.type(returnedType);
+
+		final var event = EventlogMapper.toEvent(eventlogEvent);
+
+		assertThat(event).isNotNull()
+			.extracting(
+				se.sundsvall.supportmanagement.api.model.event.Event::getCreated,
+				se.sundsvall.supportmanagement.api.model.event.Event::getHistoryReference,
+				se.sundsvall.supportmanagement.api.model.event.Event::getMessage,
+				se.sundsvall.supportmanagement.api.model.event.Event::getMetadata,
+				se.sundsvall.supportmanagement.api.model.event.Event::getOwner,
+				se.sundsvall.supportmanagement.api.model.event.Event::getSourceType,
+				se.sundsvall.supportmanagement.api.model.event.Event::getType)
+			.containsExactly(
+				created,
+				CURRENT_ID,
+				MESSAGE,
+				List.of(EventMetaData.create().withKey(META_KEY).withValue(META_VALUE)),
+				OWNER,
+				SOURCE_TYPE,
+				mappedType);
+	}
+
+	private static Stream<Arguments> eventFromEventlogEventArgumentProvider() {
+		return Stream.of(
+			Arguments.of(EventType.ACCESS, se.sundsvall.supportmanagement.api.model.event.EventType.UNKNOWN),
+			Arguments.of(EventType.CANCEL, se.sundsvall.supportmanagement.api.model.event.EventType.UNKNOWN),
+			Arguments.of(EventType.CREATE, se.sundsvall.supportmanagement.api.model.event.EventType.CREATE),
+			Arguments.of(EventType.DELETE, se.sundsvall.supportmanagement.api.model.event.EventType.DELETE),
+			Arguments.of(EventType.DROP, se.sundsvall.supportmanagement.api.model.event.EventType.UNKNOWN),
+			Arguments.of(EventType.EXECUTE, se.sundsvall.supportmanagement.api.model.event.EventType.UNKNOWN),
+			Arguments.of(EventType.READ, se.sundsvall.supportmanagement.api.model.event.EventType.UNKNOWN),
+			Arguments.of(EventType.UPDATE, se.sundsvall.supportmanagement.api.model.event.EventType.UPDATE));
+	}
+
+	@Test
+	void toEventFromEmptyEventlogEvent() {
+		assertThat(EventlogMapper.toEvent(new Event()))
+			.isNotNull()
+			.hasAllNullFieldsOrPropertiesExcept("type", "metadata")
+			.extracting(
+				se.sundsvall.supportmanagement.api.model.event.Event::getType,
+				se.sundsvall.supportmanagement.api.model.event.Event::getMetadata)
+			.contains(
+				se.sundsvall.supportmanagement.api.model.event.EventType.UNKNOWN,
+				emptyList());
 	}
 }
