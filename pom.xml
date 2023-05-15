@@ -19,7 +19,7 @@
 		<published.container.port.production>9094</published.container.port.production>
 		<sandbox.db>true</sandbox.db>
 		<!-- Service properties -->
-		<testcontainers.version>1.18.0</testcontainers.version>
+		<testcontainers.version>1.18.1</testcontainers.version>
 		<spring-filter.version>2.1.5</spring-filter.version>
 		<openapi-generator-maven-plugin.version>6.5.0</openapi-generator-maven-plugin.version>
 		<overviewproject.mimetypes.version>1.0.4</overviewproject.mimetypes.version>
