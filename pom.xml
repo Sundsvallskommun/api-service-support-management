@@ -21,7 +21,7 @@
 		<!-- Service properties -->
 		<testcontainers.version>1.18.1</testcontainers.version>
 		<spring-filter.version>2.1.5</spring-filter.version>
-		<openapi-generator-maven-plugin.version>6.5.0</openapi-generator-maven-plugin.version>
+		<openapi-generator-maven-plugin.version>6.6.0</openapi-generator-maven-plugin.version>
 		<overviewproject.mimetypes.version>1.0.4</overviewproject.mimetypes.version>
 		<flipkart.zjsonpatch.version>0.4.14</flipkart.zjsonpatch.version>
 		<generated-sources-path>${project.build.directory}/generated-sources</generated-sources-path>
