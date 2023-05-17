@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
 import java.util.ArrayList;
@@ -20,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -37,7 +39,7 @@ import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.event.Event;
 import se.sundsvall.supportmanagement.service.EventService;
 
-@SpringBootTest(classes = Application.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes = Application.class, webEnvironment = RANDOM_PORT)
 @ActiveProfiles("junit")
 class EventResourceTest {
 
@@ -58,14 +60,14 @@ class EventResourceTest {
 		final var id = UUID.randomUUID().toString();
 
 		// Mock
-		when(eventServiceMock.readEvents(eq(id), any(Pageable.class))).thenReturn(new PageImpl<>(List.of(Event.create())));
+		when(eventServiceMock.readEvents(eq(id), any(Pageable.class))).thenReturn(new RestResponsePage<>(List.of(Event.create()), PageRequest.of(0, 20), 1));
 
 		// Call
 		final var response = webTestClient.get().uri(builder -> builder.path(PATH).build(Map.of("id", id)))
 			.exchange()
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)
-			.expectBody(new ParameterizedTypeReference<RestResponsePage<Event>>() {})
+			.expectBody(new ParameterizedTypeReference<Page<Event>>() {})
 			.returnResult()
 			.getResponseBody();
 
@@ -86,7 +88,7 @@ class EventResourceTest {
 		final var id = UUID.randomUUID().toString();
 
 		// Mock
-		when(eventServiceMock.readEvents(eq(id), any(Pageable.class))).thenReturn(new PageImpl<>(List.of(Event.create(), Event.create())));
+		when(eventServiceMock.readEvents(eq(id), any(Pageable.class))).thenReturn(new RestResponsePage<>(List.of(Event.create(), Event.create())));
 
 		// Call
 		final var response = webTestClient.get().uri(builder -> builder.path(PATH)
@@ -97,7 +99,7 @@ class EventResourceTest {
 			.exchange()
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)
-			.expectBody(new ParameterizedTypeReference<RestResponsePage<Event>>() {})
+			.expectBody(new ParameterizedTypeReference<Page<Event>>() {})
 			.returnResult()
 			.getResponseBody();
 

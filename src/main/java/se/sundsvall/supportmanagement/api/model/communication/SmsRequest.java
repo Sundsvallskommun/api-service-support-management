@@ -4,13 +4,13 @@ import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 
 import java.util.Objects;
 
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
-
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import se.sundsvall.dept44.common.validators.annotation.ValidMobileNumber;
 
+@Schema(description = "SmsRequest model")
 public class SmsRequest {
 
 	@NotNull
@@ -85,7 +85,7 @@ public class SmsRequest {
 		if (getClass() != obj.getClass()) {
 			return false;
 		}
-		SmsRequest other = (SmsRequest) obj;
+		final SmsRequest other = (SmsRequest) obj;
 		return Objects.equals(sender, other.sender) &&
 			Objects.equals(recipient, other.recipient) &&
 			Objects.equals(message, other.message);
@@ -93,7 +93,7 @@ public class SmsRequest {
 
 	@Override
 	public String toString() {
-		StringBuilder builder = new StringBuilder();
+		final StringBuilder builder = new StringBuilder();
 		builder.append("SmsRequest [sender=").append(sender).append("recipient=").append(recipient).append(", message=").append(message).append("]");
 		return builder.toString();
 	}

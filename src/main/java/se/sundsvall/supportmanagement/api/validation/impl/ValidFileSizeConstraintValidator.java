@@ -3,8 +3,8 @@ package se.sundsvall.supportmanagement.api.validation.impl;
 import org.springframework.beans.factory.annotation.Value;
 import se.sundsvall.supportmanagement.api.validation.ValidFileSize;
 
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.nonNull;

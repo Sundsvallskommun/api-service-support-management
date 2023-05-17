@@ -34,7 +34,7 @@ class ErrandNotesResourceFailureTest {
 	private static final String ERRAND_ID = randomUUID().toString();
 	private static final String NOTE_ID = randomUUID().toString();
 	private static final String INVALID = "#invalid#";
-	private static final String PATH = "/{namespace}/{municipalityId}/errands/{id}/notes/";
+	private static final String PATH = "/{namespace}/{municipalityId}/errands/{id}/notes";
 
 	@Autowired
 	private WebTestClient webTestClient;
@@ -47,7 +47,7 @@ class ErrandNotesResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.get()
-			.uri(builder -> builder.path(PATH.concat("{noteId}")).build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "noteId", NOTE_ID)))
+			.uri(builder -> builder.path(PATH.concat("/{noteId}")).build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "noteId", NOTE_ID)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -70,7 +70,7 @@ class ErrandNotesResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.get()
-			.uri(builder -> builder.path(PATH.concat("{noteId}")).build(Map.of("namespace", NAMESPACE, "municipalityId", INVALID, "id", ERRAND_ID, "noteId", NOTE_ID)))
+			.uri(builder -> builder.path(PATH.concat("/{noteId}")).build(Map.of("namespace", NAMESPACE, "municipalityId", INVALID, "id", ERRAND_ID, "noteId", NOTE_ID)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -93,7 +93,7 @@ class ErrandNotesResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.get()
-			.uri(builder -> builder.path(PATH.concat("{noteId}")).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", INVALID, "noteId", NOTE_ID)))
+			.uri(builder -> builder.path(PATH.concat("/{noteId}")).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", INVALID, "noteId", NOTE_ID)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -116,7 +116,7 @@ class ErrandNotesResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.get()
-			.uri(builder -> builder.path(PATH.concat("{noteId}")).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "noteId", INVALID)))
+			.uri(builder -> builder.path(PATH.concat("/{noteId}")).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "noteId", INVALID)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -316,7 +316,7 @@ class ErrandNotesResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.patch()
-			.uri(builder -> builder.path(PATH.concat("{noteId}")).build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "noteId", NOTE_ID)))
+			.uri(builder -> builder.path(PATH.concat("/{noteId}")).build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "noteId", NOTE_ID)))
 			.contentType(APPLICATION_JSON)
 			.accept(APPLICATION_JSON)
 			.bodyValue(updateErrandNoteRequest())
@@ -342,7 +342,7 @@ class ErrandNotesResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.patch()
-			.uri(builder -> builder.path(PATH.concat("{noteId}")).build(Map.of("namespace", NAMESPACE, "municipalityId", INVALID, "id", ERRAND_ID, "noteId", NOTE_ID)))
+			.uri(builder -> builder.path(PATH.concat("/{noteId}")).build(Map.of("namespace", NAMESPACE, "municipalityId", INVALID, "id", ERRAND_ID, "noteId", NOTE_ID)))
 			.contentType(APPLICATION_JSON)
 			.accept(APPLICATION_JSON)
 			.bodyValue(updateErrandNoteRequest())
@@ -368,7 +368,7 @@ class ErrandNotesResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.patch()
-			.uri(builder -> builder.path(PATH.concat("{noteId}")).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", INVALID, "noteId", NOTE_ID)))
+			.uri(builder -> builder.path(PATH.concat("/{noteId}")).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", INVALID, "noteId", NOTE_ID)))
 			.contentType(APPLICATION_JSON)
 			.accept(APPLICATION_JSON)
 			.bodyValue(updateErrandNoteRequest())
@@ -394,7 +394,7 @@ class ErrandNotesResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.patch()
-			.uri(builder -> builder.path(PATH.concat("{noteId}")).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "noteId", INVALID)))
+			.uri(builder -> builder.path(PATH.concat("/{noteId}")).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "noteId", INVALID)))
 			.contentType(APPLICATION_JSON)
 			.accept(APPLICATION_JSON)
 			.bodyValue(updateErrandNoteRequest())
@@ -420,7 +420,7 @@ class ErrandNotesResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.patch()
-			.uri(builder -> builder.path(PATH.concat("{noteId}")).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "noteId", NOTE_ID)))
+			.uri(builder -> builder.path(PATH.concat("/{noteId}")).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "noteId", NOTE_ID)))
 			.contentType(APPLICATION_JSON)
 			.accept(APPLICATION_JSON)
 			.bodyValue(UpdateErrandNoteRequest.create())
@@ -449,7 +449,7 @@ class ErrandNotesResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.delete()
-			.uri(builder -> builder.path(PATH.concat("{noteId}")).build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "noteId", NOTE_ID)))
+			.uri(builder -> builder.path(PATH.concat("/{noteId}")).build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "noteId", NOTE_ID)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -472,7 +472,7 @@ class ErrandNotesResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.delete()
-			.uri(builder -> builder.path(PATH.concat("{noteId}")).build(Map.of("namespace", NAMESPACE, "municipalityId", INVALID, "id", ERRAND_ID, "noteId", NOTE_ID)))
+			.uri(builder -> builder.path(PATH.concat("/{noteId}")).build(Map.of("namespace", NAMESPACE, "municipalityId", INVALID, "id", ERRAND_ID, "noteId", NOTE_ID)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -495,7 +495,7 @@ class ErrandNotesResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.delete()
-			.uri(builder -> builder.path(PATH.concat("{noteId}")).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", INVALID, "noteId", NOTE_ID)))
+			.uri(builder -> builder.path(PATH.concat("/{noteId}")).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", INVALID, "noteId", NOTE_ID)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -518,7 +518,7 @@ class ErrandNotesResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.delete()
-			.uri(builder -> builder.path(PATH.concat("{noteId}")).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "noteId", INVALID)))
+			.uri(builder -> builder.path(PATH.concat("/{noteId}")).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "noteId", INVALID)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)

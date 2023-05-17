@@ -16,7 +16,6 @@ import static org.hamcrest.core.AllOf.allOf;
 import java.time.OffsetDateTime;
 import java.util.Random;
 
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -69,8 +68,8 @@ class ExternalIdTypeEntityTest {
 		final var entity = TypeEntity.create();
 		entity.onCreate();
 
-		Assertions.assertThat(entity.getCreated()).isCloseTo(now(), within(1, SECONDS));
-		Assertions.assertThat(entity).hasAllNullFieldsOrPropertiesExcept("created");
+		assertThat(entity.getCreated()).isCloseTo(now(), within(1, SECONDS));
+		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("created");
 	}
 
 	@Test
@@ -78,8 +77,8 @@ class ExternalIdTypeEntityTest {
 		final var entity = TypeEntity.create();
 		entity.onUpdate();
 
-		Assertions.assertThat(entity.getModified()).isCloseTo(now(), within(1, SECONDS));
-		Assertions.assertThat(entity).hasAllNullFieldsOrPropertiesExcept("modified");
+		assertThat(entity.getModified()).isCloseTo(now(), within(1, SECONDS));
+		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("modified");
 	}
 
 	@Test

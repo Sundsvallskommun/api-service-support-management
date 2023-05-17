@@ -27,6 +27,7 @@ import se.sundsvall.supportmanagement.service.MetadataService;
 @SpringBootTest(classes = Application.class, webEnvironment = RANDOM_PORT)
 @ActiveProfiles("junit")
 class MetadataExternalIdTypeResourceTest {
+
 	private static final String PATH = "/{namespace}/{municipalityId}/metadata/externalIdTypes";
 	private static final String NAMESPACE = "namespace";
 	private static final String MUNICIPALITY_ID = "2281";

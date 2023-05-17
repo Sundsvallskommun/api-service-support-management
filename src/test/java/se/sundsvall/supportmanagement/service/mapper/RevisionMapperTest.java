@@ -104,7 +104,7 @@ class RevisionMapperTest {
 
 	@Test
 	void toRevisionsListContainingNulls() {
-		List<RevisionEntity> arrayWithNulls = new ArrayList<>();
+		final List<RevisionEntity> arrayWithNulls = new ArrayList<>();
 		arrayWithNulls.add(null);
 
 		assertThat(RevisionMapper.toRevisions(arrayWithNulls)).isEmpty();

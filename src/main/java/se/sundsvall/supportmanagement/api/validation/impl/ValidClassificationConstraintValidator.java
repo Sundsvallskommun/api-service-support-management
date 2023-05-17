@@ -8,8 +8,8 @@ import se.sundsvall.supportmanagement.api.validation.ValidClassification;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EntityType;
 import se.sundsvall.supportmanagement.service.MetadataService;
 
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
 import java.util.List;
 
 import static java.util.Collections.emptyList;

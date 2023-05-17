@@ -7,8 +7,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import javax.validation.ConstraintValidatorContext;
-import javax.validation.ConstraintValidatorContext.ConstraintViolationBuilder;
+import jakarta.validation.ConstraintValidatorContext;
+import jakarta.validation.ConstraintValidatorContext.ConstraintViolationBuilder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;

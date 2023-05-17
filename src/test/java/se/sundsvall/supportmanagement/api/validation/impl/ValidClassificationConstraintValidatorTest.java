@@ -14,8 +14,8 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.EntityTy
 import java.util.List;
 import java.util.Map;
 
-import javax.validation.ConstraintValidatorContext;
-import javax.validation.ConstraintValidatorContext.ConstraintViolationBuilder;
+import jakarta.validation.ConstraintValidatorContext;
+import jakarta.validation.ConstraintValidatorContext.ConstraintViolationBuilder;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

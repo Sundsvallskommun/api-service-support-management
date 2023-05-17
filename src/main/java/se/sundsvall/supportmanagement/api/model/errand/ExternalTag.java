@@ -1,9 +1,9 @@
 package se.sundsvall.supportmanagement.api.model.errand;
 
-import io.swagger.v3.oas.annotations.media.Schema;
-
-import javax.validation.constraints.NotBlank;
 import java.util.Objects;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
 
 @Schema(description = "External tag model")
 public class ExternalTag {
@@ -53,19 +53,22 @@ public class ExternalTag {
 
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj)
+		if (this == obj) {
 			return true;
-		if (obj == null)
+		}
+		if (obj == null) {
 			return false;
-		if (getClass() != obj.getClass())
+		}
+		if (getClass() != obj.getClass()) {
 			return false;
-		var other = (ExternalTag) obj;
+		}
+		final var other = (ExternalTag) obj;
 		return Objects.equals(key, other.key) && Objects.equals(value, other.value);
 	}
 
 	@Override
 	public String toString() {
-		var builder = new StringBuilder();
+		final var builder = new StringBuilder();
 		builder.append("ExternalTag [key=").append(key).append(", value=").append(value).append("]");
 		return builder.toString();
 	}

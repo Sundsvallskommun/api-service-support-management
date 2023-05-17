@@ -29,6 +29,7 @@ import org.mockito.ArgumentMatchers;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -37,7 +38,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.zalando.problem.ThrowableProblem;
 
-import com.turkraft.springfilter.boot.FilterSpecification;
+import com.turkraft.springfilter.converter.FilterSpecificationConverter;
 
 import generated.se.sundsvall.eventlog.Event;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
@@ -69,6 +70,9 @@ class ErrandServiceTest {
 
 	@Mock
 	private EventService eventServiceMock;
+
+	@Spy
+	private FilterSpecificationConverter filterSpecificationConverterSpy;
 
 	@InjectMocks
 	private ErrandService service;
@@ -103,7 +107,7 @@ class ErrandServiceTest {
 	@Test
 	void findErrandWithMatches() {
 		// Setup
-		final Specification<ErrandEntity> filter = new FilterSpecification<>("id: 'uuid'");
+		final Specification<ErrandEntity> filter = filterSpecificationConverterSpy.convert("id: 'uuid'");
 		final var sort = Sort.by(DESC, "attribute.1", "attribute.2");
 		final Pageable pageable = PageRequest.of(1, 2, sort);
 
@@ -132,7 +136,7 @@ class ErrandServiceTest {
 	@Test
 	void findErrandWithoutMatches() {
 		// Setup
-		final Specification<ErrandEntity> filter = new FilterSpecification<>("id: 'uuid'");
+		final Specification<ErrandEntity> filter = filterSpecificationConverterSpy.convert("id: 'uuid'");
 		final var sort = Sort.by(DESC, "attribute.1", "attribute.2");
 		final Pageable pageable = PageRequest.of(3, 7, sort);
 

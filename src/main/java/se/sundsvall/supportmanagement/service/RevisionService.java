@@ -15,12 +15,11 @@ import static se.sundsvall.supportmanagement.service.mapper.RevisionMapper.toSer
 import java.util.EnumSet;
 import java.util.List;
 
-import javax.transaction.Transactional;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.zalando.problem.Problem;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -44,6 +43,7 @@ import se.sundsvall.supportmanagement.service.mapper.RevisionMapper;
 @Service
 @Transactional
 public class RevisionService {
+
 	private static final EnumSet<DiffFlags> DIFF_SETTINGS = EnumSet.of(ADD_ORIGINAL_VALUE_ON_REPLACE, OMIT_COPY_OPERATION, OMIT_MOVE_OPERATION);
 	private static final Configuration JSONPATH_CONFIG = defaultConfiguration().addOptions(SUPPRESS_EXCEPTIONS);
 	private static final Logger LOG = LoggerFactory.getLogger(RevisionService.class);
@@ -106,7 +106,7 @@ public class RevisionService {
 
 		try {
 			return toJsonNode(currentSnapshot).equals(toJsonNode(previousSnapshot));
-		} catch (Exception e) { // If something fails, log and return the json objects as unequal to force creation of a new revision
+		} catch (final Exception e) { // If something fails, log and return the json objects as unequal to force creation of a new revision
 			LOG.error(COMPARISON_ERROR_LOG_MESSAGE, e);
 			return false;
 		}
@@ -114,7 +114,7 @@ public class RevisionService {
 
 	/**
 	 * Returns all existing revisions for an errand.
-	 * 
+	 *
 	 * @param errandId id of the errand to fetch revisions for.
 	 * @return a list of Revision objects containing information on every revision of the errand.
 	 */
@@ -126,7 +126,7 @@ public class RevisionService {
 
 	/**
 	 * Returns the lastest (current) revision of the errand
-	 * 
+	 *
 	 * @param errandId id of the errand to fetch latest revision for.
 	 * @return the latest revision for the errand or null if errand does not exist.
 	 */
@@ -138,7 +138,7 @@ public class RevisionService {
 
 	/**
 	 * Returns requested revision of the errand
-	 * 
+	 *
 	 * @param errandId id of the errand to fetch revision for.
 	 * @param version  the revision version to fetch.
 	 * @return requested revision for the errand or null if errand or revision does not exist.
@@ -151,7 +151,7 @@ public class RevisionService {
 
 	/**
 	 * Compares two revision versions of an errand.
-	 * 
+	 *
 	 * @param errandId      id of the errand to compare.
 	 * @param sourceVersion version that will act as source in the comparison.
 	 * @param targetVersion version that will act as target in the comparison.
@@ -176,7 +176,7 @@ public class RevisionService {
 
 			// Return result
 			return DifferenceResponse.create().withOperations(List.of(objectMapper.readValue(differences.toString(), Operation[].class)));
-		} catch (Exception e) {
+		} catch (final Exception e) {
 			LOG.error(COMPARISON_ERROR_LOG_MESSAGE, e);
 			throw Problem.valueOf(INTERNAL_SERVER_ERROR, String.format(COMPARISON_ERROR_PROBLEM, sourceVersion, targetVersion, errandId));
 		}
@@ -184,7 +184,7 @@ public class RevisionService {
 
 	/**
 	 * Returns all existing revisions for a note.
-	 * 
+	 *
 	 * @param errandId id of the errand owning the note to compare.
 	 * @param noteId   id of the note to fetch revisions for.
 	 * @return a list of Revision objects containing information on every revision of the note.
@@ -197,7 +197,7 @@ public class RevisionService {
 
 	/**
 	 * Compares two revision versions of a note.
-	 * 
+	 *
 	 * @param errandId      id of the errand owning the note to compare.
 	 * @param noteId        id of the note to compare.
 	 * @param sourceVersion version that will act as source in the comparison.
@@ -221,7 +221,7 @@ public class RevisionService {
 			final var document = JsonPath.using(JSONPATH_CONFIG).parse(value);
 			EXCLUDED_ATTRIBUTES.forEach(document::delete);
 			return objectMapper.readTree(document.jsonString());
-		} catch (Exception e) {
+		} catch (final Exception e) {
 			throw Problem.valueOf(INTERNAL_SERVER_ERROR, e.getMessage());
 		}
 	}

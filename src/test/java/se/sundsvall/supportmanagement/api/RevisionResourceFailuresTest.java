@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.api;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON;
 import static org.zalando.problem.Status.BAD_REQUEST;
 
@@ -22,7 +23,7 @@ import org.zalando.problem.violations.Violation;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.service.RevisionService;
 
-@SpringBootTest(classes = Application.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes = Application.class, webEnvironment = RANDOM_PORT)
 @ActiveProfiles("junit")
 class RevisionResourceFailuresTest {
 

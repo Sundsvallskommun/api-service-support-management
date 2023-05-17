@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>se.sundsvall.dept44</groupId>
 		<artifactId>dept44-service-parent</artifactId>
-		<version>1.35</version>
+		<version>2.0.2</version>
 		<relativePath /> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>se.sundsvall</groupId>
@@ -20,7 +20,7 @@
 		<sandbox.db>true</sandbox.db>
 		<!-- Service properties -->
 		<testcontainers.version>1.18.1</testcontainers.version>
-		<spring-filter.version>2.1.5</spring-filter.version>
+		<spring-filter.version>3.0.7</spring-filter.version>
 		<openapi-generator-maven-plugin.version>6.6.0</openapi-generator-maven-plugin.version>
 		<overviewproject.mimetypes.version>1.0.4</overviewproject.mimetypes.version>
 		<flipkart.zjsonpatch.version>0.4.14</flipkart.zjsonpatch.version>
@@ -67,8 +67,8 @@
 			<artifactId>caffeine</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>com.turkraft</groupId>
-			<artifactId>spring-filter</artifactId>
+			<groupId>com.turkraft.springfilter</groupId>
+			<artifactId>jpa</artifactId>
 			<version>${spring-filter.version}</version>
 		</dependency>
 		<dependency>
@@ -142,13 +142,14 @@
 							<generateApis>false</generateApis>
 							<generateSupportingFiles>false</generateSupportingFiles>
 							<configOptions>
+								<useSpringBoot3>true</useSpringBoot3>
+								<useBeanValidation>false</useBeanValidation>
+								<useSwaggerAnnotations>false</useSwaggerAnnotations>
 								<sourceFolder>${generated-sources-java-path}</sourceFolder>
 								<dateLibrary>java8</dateLibrary>
 								<modelPackage>generated.se.sundsvall.notes</modelPackage>
 								<openApiNullable>false</openApiNullable>
 								<generatePom>false</generatePom>
-								<useBeanValidation>false</useBeanValidation>
-								<useSwaggerAnnotations>false</useSwaggerAnnotations>
 								<interfaceOnly>true</interfaceOnly>
 							</configOptions>
 						</configuration>
@@ -165,13 +166,14 @@
 							<generateApis>false</generateApis>
 							<generateSupportingFiles>false</generateSupportingFiles>
 							<configOptions>
+								<useSpringBoot3>true</useSpringBoot3>
+								<useBeanValidation>false</useBeanValidation>
+								<useSwaggerAnnotations>false</useSwaggerAnnotations>
 								<sourceFolder>${generated-sources-java-path}</sourceFolder>
 								<dateLibrary>java8</dateLibrary>
 								<modelPackage>generated.se.sundsvall.messaging</modelPackage>
 								<openApiNullable>false</openApiNullable>
 								<generatePom>false</generatePom>
-								<useBeanValidation>false</useBeanValidation>
-								<useSwaggerAnnotations>false</useSwaggerAnnotations>
 								<interfaceOnly>true</interfaceOnly>
 							</configOptions>
 						</configuration>
@@ -188,13 +190,14 @@
 							<generateApis>false</generateApis>
 							<generateSupportingFiles>false</generateSupportingFiles>
 							<configOptions>
+								<useSpringBoot3>true</useSpringBoot3>
+								<useBeanValidation>false</useBeanValidation>
+								<useSwaggerAnnotations>false</useSwaggerAnnotations>
 								<sourceFolder>${generated-sources-java-path}</sourceFolder>
 								<dateLibrary>java8</dateLibrary>
 								<modelPackage>generated.se.sundsvall.eventlog</modelPackage>
 								<openApiNullable>false</openApiNullable>
 								<generatePom>false</generatePom>
-								<useBeanValidation>false</useBeanValidation>
-								<useSwaggerAnnotations>false</useSwaggerAnnotations>
 								<interfaceOnly>true</interfaceOnly>
 							</configOptions>
 						</configuration>

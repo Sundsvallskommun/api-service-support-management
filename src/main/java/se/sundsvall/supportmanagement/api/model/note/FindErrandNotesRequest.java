@@ -4,8 +4,8 @@ import static java.lang.Integer.parseInt;
 
 import java.util.Objects;
 
-import javax.validation.constraints.Max;
-import javax.validation.constraints.Min;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import se.sundsvall.dept44.common.validators.annotation.ValidUuid;

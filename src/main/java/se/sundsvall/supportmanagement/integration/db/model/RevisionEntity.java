@@ -2,22 +2,22 @@ package se.sundsvall.supportmanagement.integration.db.model;
 
 import static java.time.OffsetDateTime.now;
 import static java.time.temporal.ChronoUnit.MILLIS;
+import static org.hibernate.Length.LONG32;
 
 import java.io.Serializable;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.Objects;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.Index;
-import javax.persistence.Lob;
-import javax.persistence.PrePersist;
-import javax.persistence.Table;
-
 import org.hibernate.annotations.GenericGenerator;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "revision",
@@ -44,8 +44,7 @@ public class RevisionEntity implements Serializable {
 	@Column(name = "version")
 	private Integer version;
 
-	@Column(name = "serialized_snapshot")
-	@Lob
+	@Column(name = "serialized_snapshot", length = LONG32)
 	private String serializedSnapshot;
 
 	@Column(name = "created")
@@ -148,17 +147,16 @@ public class RevisionEntity implements Serializable {
 		if (this == obj) {
 			return true;
 		}
-		if (!(obj instanceof RevisionEntity)) {
+		if (!(obj instanceof RevisionEntity other)) {
 			return false;
 		}
-		RevisionEntity other = (RevisionEntity) obj;
 		return Objects.equals(created, other.created) && Objects.equals(entityId, other.entityId) && Objects.equals(entityType, other.entityType) && Objects.equals(id, other.id) && Objects.equals(serializedSnapshot, other.serializedSnapshot)
 			&& Objects.equals(version, other.version);
 	}
 
 	@Override
 	public String toString() {
-		StringBuilder builder = new StringBuilder();
+		final StringBuilder builder = new StringBuilder();
 		builder.append("RevisionEntity [id=").append(id).append(", entityId=").append(entityId).append(", entityType=").append(entityType).append(", version=").append(version).append(", serializedSnapshot=").append(serializedSnapshot).append(
 			", created=").append(created).append("]");
 		return builder.toString();

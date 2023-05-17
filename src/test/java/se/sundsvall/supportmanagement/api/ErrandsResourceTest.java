@@ -1,9 +1,24 @@
 package se.sundsvall.supportmanagement.api;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.JsonNode;
+import static com.fasterxml.jackson.annotation.JsonCreator.Mode.PROPERTIES;
+import static java.util.UUID.randomUUID;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
+import static org.springframework.http.MediaType.ALL;
+import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.web.util.UriComponentsBuilder.fromPath;
+
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
@@ -12,12 +27,19 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.reactive.server.WebTestClient;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
+
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.errand.Classification;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
@@ -30,25 +52,6 @@ import se.sundsvall.supportmanagement.api.model.metadata.Type;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.service.ErrandService;
 import se.sundsvall.supportmanagement.service.MetadataService;
-
-import java.time.OffsetDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import static com.fasterxml.jackson.annotation.JsonCreator.Mode.PROPERTIES;
-import static java.util.UUID.randomUUID;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
-import static org.springframework.http.MediaType.ALL;
-import static org.springframework.http.MediaType.APPLICATION_JSON;
-import static org.springframework.web.util.UriComponentsBuilder.fromPath;
 
 @SpringBootTest(classes = Application.class, webEnvironment = RANDOM_PORT)
 @ActiveProfiles("junit")
@@ -143,17 +146,17 @@ class ErrandsResourceTest {
 
 		// Call
 		webTestClient.post()
-				.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
-				.contentType(APPLICATION_JSON)
-				.bodyValue(errandInstance)
-				.exchange()
-				.expectStatus().isCreated()
-				.expectHeader().contentType(ALL)
-				.expectHeader().location("http://localhost:".concat(String.valueOf(port)).concat(fromPath(PATH + "/{id}")
-						.build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)).toString()))
-				.expectBody().isEmpty();
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(errandInstance)
+			.exchange()
+			.expectStatus().isCreated()
+			.expectHeader().contentType(ALL)
+			.expectHeader().location("http://localhost:".concat(String.valueOf(port)).concat(fromPath(PATH + "/{id}")
+				.build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)).toString()))
+			.expectBody().isEmpty();
 
-		// Verification 
+		// Verification
 		verify(metadataServiceMock).findCategories(any(), any());
 		verify(metadataServiceMock).findStatuses(any(), any());
 		verify(metadataServiceMock).findTypes(any(), any(), any());
@@ -190,7 +193,7 @@ class ErrandsResourceTest {
 		final var matches = new RestResponsePage<>(List.of(Errand.create()), pageable, 1);
 
 		// Mock
-		when(errandServiceMock.findErrands(NAMESPACE, MUNICIPALITY_ID, null, pageable)).thenReturn(matches);
+		when(errandServiceMock.findErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), any(), any())).thenReturn(matches);
 
 		// Call
 		final var response = webTestClient.get()
@@ -198,13 +201,12 @@ class ErrandsResourceTest {
 			.exchange()
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)
-			.returnResult(new ParameterizedTypeReference<RestResponsePage<Errand>>() {
-			})
-			.getResponseBody()
-			.blockFirst();
+			.expectBody(new ParameterizedTypeReference<Page<Errand>>() {})
+			.returnResult()
+			.getResponseBody();
 
 		// Verification
-		verify(errandServiceMock).findErrands(NAMESPACE, MUNICIPALITY_ID, null, pageable);
+		verify(errandServiceMock).findErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), any(), eq(pageable));
 		assertThat(response).isNotNull();
 		assertThat(response.getContent()).hasSize(1);
 	}
@@ -231,10 +233,9 @@ class ErrandsResourceTest {
 			.exchange()
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)
-			.returnResult(new ParameterizedTypeReference<RestResponsePage<Errand>>() {
-			})
-			.getResponseBody()
-			.blockFirst();
+			.expectBody(new ParameterizedTypeReference<Page<Errand>>() {})
+			.returnResult()
+			.getResponseBody();
 
 		// Verification
 		verify(errandServiceMock).findErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), ArgumentMatchers.<Specification<ErrandEntity>>any(), eq(pageable));
@@ -259,17 +260,16 @@ class ErrandsResourceTest {
 
 		// Call
 		final var response = webTestClient.get().uri(builder -> builder.path(PATH)
-				.queryParam("filter", filter)
-				.queryParam("page", page)
+			.queryParam("filter", filter)
+			.queryParam("page", page)
 			.queryParam("size", size)
 			.build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
 			.exchange()
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)
-			.returnResult(new ParameterizedTypeReference<RestResponsePage<Errand>>() {
-			})
-			.getResponseBody()
-			.blockFirst();
+			.expectBody(new ParameterizedTypeReference<Page<Errand>>() {})
+			.returnResult()
+			.getResponseBody();
 
 		// Verification
 		verify(errandServiceMock).findErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), ArgumentMatchers.<Specification<ErrandEntity>>any(), eq(pageable));

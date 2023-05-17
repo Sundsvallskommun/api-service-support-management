@@ -40,14 +40,14 @@ class ServiceUtilTest {
 	void detectMimeTypeThrowsException() {
 		assertThat(ServiceUtil.detectMimeType(null, null)).isEqualTo("application/octet-stream");
 	}
-	
+
 	@ParameterizedTest
 	@MethodSource("mimeTypeArguments")
 	void detectMimeType(String fileName, byte[] fileBytes, String expectedTypeWithFilename, String expectedTypeWithoutFilename) {
 		assertThat(ServiceUtil.detectMimeType(fileName, fileBytes)).isEqualTo(expectedTypeWithFilename);
 		assertThat(ServiceUtil.detectMimeType(null, fileBytes)).isEqualTo(expectedTypeWithoutFilename);
 	}
-	
+
 	private static Stream<Arguments> mimeTypeArguments() throws IOException {
 		return Stream.of(
 			Arguments.of(IMG_FILE_NAME, copyToByteArray(new ClassPathResource(PATH + IMG_FILE_NAME).getInputStream()), "image/jpeg", "image/jpeg"),

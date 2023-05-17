@@ -118,7 +118,7 @@ class ErrandsReadResourceFailureTest {
 		assertThat(response).isNotNull();
 		assertThat(response.getTitle()).isEqualTo("Invalid Filter Content");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
-		assertThat(response.getDetail()).isEqualTo("mismatched input '<EOF>' expecting {NOT, TRUE, FALSE, '(', ID, NUMBER, STRING}");
+		assertThat(response.getDetail()).isEqualTo("mismatched input '<EOF>' expecting {PREFIX_OPERATOR, TRUE, FALSE, '(', '[', '`', ID, NUMBER, STRING}");
 
 		// Verification
 		verifyNoInteractions(errandServiceMock);
