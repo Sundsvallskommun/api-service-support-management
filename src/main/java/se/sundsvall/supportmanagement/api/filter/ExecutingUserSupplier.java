@@ -12,10 +12,10 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import static se.sundsvall.supportmanagement.Constants.AD_USER_HEADER_KEY;
 
 @Component
 public class ExecutingUserSupplier extends OncePerRequestFilter {
-	private static final String AD_USER_HEADER_KEY = "sentbyuser";
 	private static final String UNKNOWN = "UNKNOWN";
 
 	private static final ThreadLocal<String> THREAD_LOCAL_AD_USER = new ThreadLocal<>();

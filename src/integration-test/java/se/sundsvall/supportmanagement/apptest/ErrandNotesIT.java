@@ -59,6 +59,7 @@ class ErrandNotesIT extends AbstractAppTest {
 	@Test
 	void test03_createErrandNote() throws Exception {
 		setupCall()
+			.withHeader("sentbyuser", "cre03ate")
 			.withServicePath(PATH + "ec677eb3-604c-4935-bff7-f8f0b500c8f4/notes")
 			.withHttpMethod(POST)
 			.withRequest(REQUEST_FILE)
@@ -82,6 +83,7 @@ class ErrandNotesIT extends AbstractAppTest {
 	@Test
 	void test05_deleteErrandNote() throws Exception {
 		setupCall()
+			.withHeader("sentbyuser", "del05ete")
 			.withServicePath(PATH + "ec677eb3-604c-4935-bff7-f8f0b500c8f4/notes/d1f2c8d4-d234-4504-a483-b74570a7941d")
 			.withHttpMethod(DELETE)
 			.withExpectedResponseStatus(NO_CONTENT)
