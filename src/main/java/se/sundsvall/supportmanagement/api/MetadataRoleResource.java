@@ -13,10 +13,6 @@ import static se.sundsvall.supportmanagement.Constants.NAMESPACE_VALIDATON_MESSA
 
 import java.util.List;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -39,6 +35,9 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import se.sundsvall.dept44.common.validators.annotation.ValidMunicipalityId;
 import se.sundsvall.supportmanagement.api.model.metadata.Role;
 import se.sundsvall.supportmanagement.service.MetadataService;
@@ -61,6 +60,7 @@ public class MetadataRoleResource {
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATON_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Valid @NotNull @RequestBody final Role body) {
+
 		return created(uriComponentsBuilder.path("/{namespace}/{municipalityId}/metadata/roles/{role}")
 			.buildAndExpand(namespace, municipalityId, metadataService.createRole(namespace, municipalityId, body)).toUri()).header(CONTENT_TYPE, ALL_VALUE).build();
 	}
@@ -75,6 +75,7 @@ public class MetadataRoleResource {
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATON_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "role", description = "Name of role", example = "ROLE-1") @PathVariable final String role) {
+
 		return ok(metadataService.getRole(namespace, municipalityId, role));
 	}
 

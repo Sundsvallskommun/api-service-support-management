@@ -132,59 +132,59 @@
 create index idx_attachment_file_name on attachment (file_name);
 create index idx_namespace_municipality_id on category (namespace, municipality_id);
 
-    alter table category 
+    alter table if exists category 
        add constraint uq_namespace_municipality_id_name unique (namespace, municipality_id, name);
 create index idx_errand_id on errand (id);
 create index idx_errand_namespace on errand (namespace);
 create index idx_errand_municipality_id on errand (municipality_id);
 create index idx_namespace_municipality_id on external_id_type (namespace, municipality_id);
 
-    alter table external_id_type 
+    alter table if exists external_id_type 
        add constraint uq_namespace_municipality_id_name unique (namespace, municipality_id, name);
 create index idx_external_tag_errand_id on external_tag (errand_id);
 create index idx_external_tag_key on external_tag (`key`);
 
-    alter table external_tag 
+    alter table if exists external_tag 
        add constraint uq_external_tag_errand_id_key unique (errand_id, `key`);
 create index revision_entity_id_index on revision (entity_id);
 create index revision_entity_type_index on revision (entity_type);
 create index idx_namespace_municipality_id on role (namespace, municipality_id);
 
-    alter table role 
+    alter table if exists role 
        add constraint uq_namespace_municipality_id_name unique (namespace, municipality_id, name);
 create index idx_namespace_municipality_id on status (namespace, municipality_id);
 
-    alter table status 
+    alter table if exists status 
        add constraint uq_namespace_municipality_id_name unique (namespace, municipality_id, name);
 
-    alter table `type` 
+    alter table if exists `type` 
        add constraint uq_category_id_name unique (category_id, name);
 create index idx_namespace_municipality_id_type on validation (namespace, municipality_id, `type`);
 
-    alter table validation 
+    alter table if exists validation 
        add constraint uq_namespace_municipality_id_type unique (namespace, municipality_id, `type`);
 
-    alter table attachment 
+    alter table if exists attachment 
        add constraint fk_errand_attachment_errand_id 
        foreign key (errand_id) 
        references errand (id);
 
-    alter table contact_channel 
+    alter table if exists contact_channel 
        add constraint fk_stakeholder_contact_channel_stakeholder_id 
        foreign key (stakeholder_id) 
        references stakeholder (id);
 
-    alter table external_tag 
+    alter table if exists external_tag 
        add constraint fk_errand_external_tag_errand_id 
        foreign key (errand_id) 
        references errand (id);
 
-    alter table stakeholder 
+    alter table if exists stakeholder 
        add constraint fk_errand_stakeholder_errand_id 
        foreign key (errand_id) 
        references errand (id);
 
-    alter table `type` 
+    alter table if exists `type` 
        add constraint fk_category_id 
        foreign key (category_id) 
        references category (id);

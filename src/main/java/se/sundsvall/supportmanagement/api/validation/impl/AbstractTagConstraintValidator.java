@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-import javax.validation.ConstraintValidatorContext;
+import jakarta.validation.ConstraintValidatorContext;
 
 import org.hibernate.validator.internal.engine.messageinterpolation.util.InterpolationHelper;
 import org.springframework.web.context.request.RequestContextHolder;

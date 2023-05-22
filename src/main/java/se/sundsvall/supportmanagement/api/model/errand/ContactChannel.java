@@ -1,8 +1,8 @@
 package se.sundsvall.supportmanagement.api.model.errand;
 
-import io.swagger.v3.oas.annotations.media.Schema;
-
 import java.util.Objects;
+
+import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "Contact channel model")
 public class ContactChannel {
@@ -48,10 +48,10 @@ public class ContactChannel {
 		if (this == o) {
 			return true;
 		}
-		if (o == null || getClass() != o.getClass()) {
+		if ((o == null) || (getClass() != o.getClass())) {
 			return false;
 		}
-		ContactChannel that = (ContactChannel) o;
+		final ContactChannel that = (ContactChannel) o;
 		return Objects.equals(type, that.type) && Objects.equals(value, that.value);
 	}
 

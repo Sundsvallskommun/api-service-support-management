@@ -34,7 +34,7 @@ class ErrandAttachmentsResourceFailureTest {
 	private static final String ATTACHMENT_ID = randomUUID().toString();
 	private static final String INVALID = "#invalid#";
 
-	private static final String PATH = "/{namespace}/{municipalityId}/errands/{id}/attachments/";
+	private static final String PATH = "/{namespace}/{municipalityId}/errands/{id}/attachments";
 
 	@Autowired
 	private WebTestClient webTestClient;
@@ -47,7 +47,7 @@ class ErrandAttachmentsResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.get()
-			.uri(builder -> builder.path(PATH.concat("{attachmentId}")).build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "attachmentId", ATTACHMENT_ID)))
+			.uri(builder -> builder.path(PATH.concat("/{attachmentId}")).build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "attachmentId", ATTACHMENT_ID)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -70,7 +70,7 @@ class ErrandAttachmentsResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.get()
-			.uri(builder -> builder.path(PATH.concat("{attachmentId}")).build(Map.of("namespace", NAMESPACE, "municipalityId", INVALID, "id", ERRAND_ID, "attachmentId", ATTACHMENT_ID)))
+			.uri(builder -> builder.path(PATH.concat("/{attachmentId}")).build(Map.of("namespace", NAMESPACE, "municipalityId", INVALID, "id", ERRAND_ID, "attachmentId", ATTACHMENT_ID)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -93,7 +93,7 @@ class ErrandAttachmentsResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.get()
-			.uri(builder -> builder.path(PATH.concat("{attachmentId}")).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", INVALID, "attachmentId", ATTACHMENT_ID)))
+			.uri(builder -> builder.path(PATH.concat("/{attachmentId}")).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", INVALID, "attachmentId", ATTACHMENT_ID)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -116,7 +116,7 @@ class ErrandAttachmentsResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.get()
-			.uri(builder -> builder.path(PATH.concat("{attachmentId}")).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "attachmentId", INVALID)))
+			.uri(builder -> builder.path(PATH.concat("/{attachmentId}")).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "attachmentId", INVALID)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -337,7 +337,7 @@ class ErrandAttachmentsResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.delete()
-			.uri(builder -> builder.path(PATH.concat("{attachmentId}")).build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "attachmentId", ATTACHMENT_ID)))
+			.uri(builder -> builder.path(PATH.concat("/{attachmentId}")).build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "attachmentId", ATTACHMENT_ID)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -360,7 +360,7 @@ class ErrandAttachmentsResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.delete()
-			.uri(builder -> builder.path(PATH.concat("{attachmentId}")).build(Map.of("namespace", NAMESPACE, "municipalityId", INVALID, "id", ERRAND_ID, "attachmentId", ATTACHMENT_ID)))
+			.uri(builder -> builder.path(PATH.concat("/{attachmentId}")).build(Map.of("namespace", NAMESPACE, "municipalityId", INVALID, "id", ERRAND_ID, "attachmentId", ATTACHMENT_ID)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -383,7 +383,7 @@ class ErrandAttachmentsResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.delete()
-			.uri(builder -> builder.path(PATH.concat("{attachmentId}")).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", INVALID, "attachmentId", ATTACHMENT_ID)))
+			.uri(builder -> builder.path(PATH.concat("/{attachmentId}")).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", INVALID, "attachmentId", ATTACHMENT_ID)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -406,7 +406,7 @@ class ErrandAttachmentsResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.delete()
-			.uri(builder -> builder.path(PATH.concat("{attachmentId}")).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "attachmentId", INVALID)))
+			.uri(builder -> builder.path(PATH.concat("/{attachmentId}")).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "attachmentId", INVALID)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)

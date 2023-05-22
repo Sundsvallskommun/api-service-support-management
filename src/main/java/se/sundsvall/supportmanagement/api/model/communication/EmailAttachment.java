@@ -4,12 +4,12 @@ import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 
 import java.util.Objects;
 
-import javax.validation.constraints.NotBlank;
-
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
 import se.sundsvall.dept44.common.validators.annotation.ValidBase64;
 import se.sundsvall.supportmanagement.api.validation.ValidFileSize;
 
+@Schema(description = "EmailAttachment model")
 public class EmailAttachment {
 
 	@NotBlank
@@ -67,13 +67,13 @@ public class EmailAttachment {
 		if (getClass() != obj.getClass()) {
 			return false;
 		}
-var other = (EmailAttachment) obj;
+		final var other = (EmailAttachment) obj;
 		return Objects.equals(base64EncodedString, other.base64EncodedString) && Objects.equals(name, other.name);
 	}
 
 	@Override
 	public String toString() {
-		StringBuilder builder = new StringBuilder();
+		final StringBuilder builder = new StringBuilder();
 		builder.append("EmailAttachment [name=").append(name).append(", base64EncodedString=").append(base64EncodedString).append("]");
 		return builder.toString();
 	}

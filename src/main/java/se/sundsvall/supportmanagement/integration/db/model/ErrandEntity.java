@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.integration.db.model;
 import static java.time.OffsetDateTime.now;
 import static java.time.ZoneId.systemDefault;
 import static java.time.temporal.ChronoUnit.MILLIS;
+import static org.hibernate.Length.LONG32;
 
 import java.io.Serializable;
 import java.time.OffsetDateTime;
@@ -10,26 +11,25 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import javax.persistence.CascadeType;
-import javax.persistence.CollectionTable;
-import javax.persistence.Column;
-import javax.persistence.ElementCollection;
-import javax.persistence.Entity;
-import javax.persistence.ForeignKey;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.Index;
-import javax.persistence.JoinColumn;
-import javax.persistence.Lob;
-import javax.persistence.OneToMany;
-import javax.persistence.OrderBy;
-import javax.persistence.PrePersist;
-import javax.persistence.PreUpdate;
-import javax.persistence.Table;
-import javax.persistence.UniqueConstraint;
-
 import org.hibernate.annotations.Formula;
 import org.hibernate.annotations.GenericGenerator;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Entity;
+import jakarta.persistence.ForeignKey;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 
 @Entity
 @Table(name = "errand",
@@ -83,8 +83,7 @@ public class ErrandEntity implements Serializable {
 	@Column(name = "resolution")
 	private String resolution;
 
-	@Column(name = "description")
-	@Lob
+	@Column(name = "description", length = LONG32)
 	private String description;
 
 	@Column(name = "priority")
@@ -123,14 +122,14 @@ public class ErrandEntity implements Serializable {
 	void onCreate() {
 		created = now(systemDefault()).truncatedTo(MILLIS);
 		Optional.ofNullable(stakeholders).ifPresent(st -> st
-				.forEach(s -> s.setErrandEntity(this)));
+			.forEach(s -> s.setErrandEntity(this)));
 	}
 
 	@PreUpdate
 	void onUpdate() {
 		modified = now(systemDefault()).truncatedTo(MILLIS);
 		Optional.ofNullable(stakeholders).ifPresent(st -> st
-				.forEach(s -> s.setErrandEntity(this)));
+			.forEach(s -> s.setErrandEntity(this)));
 	}
 
 	public String getId() {
@@ -398,10 +397,10 @@ public class ErrandEntity implements Serializable {
 		if (this == o) {
 			return true;
 		}
-		if (o == null || getClass() != o.getClass()) {
+		if ((o == null) || (getClass() != o.getClass())) {
 			return false;
 		}
-		ErrandEntity that = (ErrandEntity) o;
+		final ErrandEntity that = (ErrandEntity) o;
 		return Objects.equals(id, that.id) && Objects.equals(externalTags, that.externalTags) &&
 			Objects.equals(stakeholders, that.stakeholders) && Objects.equals(municipalityId, that.municipalityId) &&
 			Objects.equals(namespace, that.namespace) && Objects.equals(title, that.title) &&
@@ -416,7 +415,8 @@ public class ErrandEntity implements Serializable {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, externalTags, stakeholders, municipalityId, namespace, title, category, type, status, resolution, description, priority, reporterUserId, assignedUserId, assignedGroupId, escalationEmail, attachments, created, modified, touched);
+		return Objects.hash(id, externalTags, stakeholders, municipalityId, namespace, title, category, type, status, resolution, description, priority, reporterUserId, assignedUserId, assignedGroupId, escalationEmail, attachments, created, modified,
+			touched);
 	}
 
 	@Override

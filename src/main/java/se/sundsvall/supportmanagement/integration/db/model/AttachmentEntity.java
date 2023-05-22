@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.integration.db.model;
 
 import static java.time.OffsetDateTime.now;
 import static java.time.temporal.ChronoUnit.MILLIS;
+import static org.hibernate.Length.LONG32;
 
 import java.io.Serializable;
 import java.time.OffsetDateTime;
@@ -10,21 +11,20 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.ForeignKey;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.Index;
-import javax.persistence.JoinColumn;
-import javax.persistence.Lob;
-import javax.persistence.ManyToOne;
-import javax.persistence.PrePersist;
-import javax.persistence.PreUpdate;
-import javax.persistence.Table;
-
 import org.hibernate.annotations.GenericGenerator;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "attachment",
@@ -47,8 +47,7 @@ public class AttachmentEntity implements Serializable {
 	@Column(name = "mime_type")
 	private String mimeType;
 
-	@Lob
-	@Column(name = "file")
+	@Column(name = "file", length = LONG32)
 	private byte[] file;
 
 	@Column(name = "created")
@@ -101,7 +100,8 @@ public class AttachmentEntity implements Serializable {
 		return this;
 	}
 
-	public String getMimeType() {return mimeType;
+	public String getMimeType() {
+		return mimeType;
 	}
 
 	public void setMimeType(String mimeType) {
@@ -167,16 +167,20 @@ public class AttachmentEntity implements Serializable {
 
 	@Override
 	public boolean equals(Object o) {
-		if (this == o) return true;
-		if (o == null || getClass() != o.getClass()) return false;
-		var that = (AttachmentEntity) o;
+		if (this == o) {
+			return true;
+		}
+		if ((o == null) || (getClass() != o.getClass())) {
+			return false;
+		}
+		final var that = (AttachmentEntity) o;
 		return Objects.equals(id, that.id) &&
-				Objects.equals(fileName, that.fileName) &&
-				Objects.equals(mimeType, that.mimeType) &&
-				Arrays.equals(file, that.file) &&
-				Objects.equals(created, that.created) &&
-				Objects.equals(modified, that.modified) &&
-				Objects.equals(errandEntity, that.errandEntity);
+			Objects.equals(fileName, that.fileName) &&
+			Objects.equals(mimeType, that.mimeType) &&
+			Arrays.equals(file, that.file) &&
+			Objects.equals(created, that.created) &&
+			Objects.equals(modified, that.modified) &&
+			Objects.equals(errandEntity, that.errandEntity);
 	}
 
 	@Override
@@ -186,10 +190,10 @@ public class AttachmentEntity implements Serializable {
 
 	@Override
 	public String toString() {
-		var errandId = Optional.ofNullable(errandEntity).map(ErrandEntity::getId).orElse(null);
+		final var errandId = Optional.ofNullable(errandEntity).map(ErrandEntity::getId).orElse(null);
 		return "AttachmentEntity[" +
-				"id=" + id +
-				", fileName=" + fileName + ", mimeType='" + mimeType + ", file=" + Arrays.toString(file) +
-				", created=" + created + ", modified=" + modified + ", errandEntity.id=" + errandId + ']';
+			"id=" + id +
+			", fileName=" + fileName + ", mimeType='" + mimeType + ", file=" + Arrays.toString(file) +
+			", created=" + created + ", modified=" + modified + ", errandEntity.id=" + errandId + ']';
 	}
 }

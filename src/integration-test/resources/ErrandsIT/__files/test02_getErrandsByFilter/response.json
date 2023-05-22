@@ -6,6 +6,18 @@
 			"priority": "LOW",
 			"stakeholders": [
 				{
+					"externalId": "01e159b4-724d-40f9-91a4-9a7d021b8563",
+					"externalIdType": "PRIVATE",
+					"role": "ROLE-2",
+					"firstName": "FIRST_NAME-1",
+					"lastName": "LAST_NAME-1",
+					"address": "ADDRESS-2",
+					"careOf": "CARE_OF-2",
+					"zipCode": "ZIP_CODE-2",
+					"country": "COUNTRY-2",
+					"contactChannels": []
+				},
+				{
 					"externalId": "USER_ID",
 					"externalIdType": "EMPLOYEE",
 					"role": "ROLE-1",
@@ -21,18 +33,6 @@
 							"value": "VALUE-1"
 						}
 					]
-				},
-				{
-					"externalId": "01e159b4-724d-40f9-91a4-9a7d021b8563",
-					"externalIdType": "PRIVATE",
-					"role": "ROLE-2",
-					"firstName": "FIRST_NAME-1",
-					"lastName": "LAST_NAME-1",
-					"address": "ADDRESS-2",
-					"careOf": "CARE_OF-2",
-					"zipCode": "ZIP_CODE-2",
-					"country": "COUNTRY-2",
-					"contactChannels": []
 				}
 			],
 			"externalTags": [
@@ -59,28 +59,20 @@
 		}
 	],
 	"pageable": {
-		"sort": {
-			"empty": true,
-			"sorted": false,
-			"unsorted": true
-		},
-		"offset": 0,
+		"sort": [],
 		"pageSize": 20,
 		"pageNumber": 0,
-		"paged": true,
-		"unpaged": false
+		"offset": 0,
+		"unpaged": false,
+		"paged": true
 	},
 	"last": true,
 	"totalPages": 1,
 	"totalElements": 1,
-	"size": 20,
-	"number": 0,
-	"sort": {
-		"empty": true,
-		"sorted": false,
-		"unsorted": true
-	},
+	"sort": [],
 	"first": true,
 	"numberOfElements": 1,
+	"size": 20,
+	"number": 0,
 	"empty": false
 }

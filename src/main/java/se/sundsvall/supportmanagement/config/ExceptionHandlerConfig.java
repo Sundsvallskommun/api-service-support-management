@@ -1,6 +1,9 @@
 package se.sundsvall.supportmanagement.config;
 
-import com.turkraft.springfilter.exception.BadFilterSyntaxException;
+import static org.zalando.problem.Status.BAD_REQUEST;
+
+import java.util.Optional;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Configuration;
@@ -11,9 +14,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.zalando.problem.Problem;
 
-import java.util.Optional;
-
-import static org.zalando.problem.Status.BAD_REQUEST;
+import com.turkraft.springfilter.parser.InvalidSyntaxException;
 
 @Configuration
 public class ExceptionHandlerConfig {
@@ -27,10 +28,10 @@ public class ExceptionHandlerConfig {
 
 		@ExceptionHandler
 		@ResponseBody
-		public ResponseEntity<Problem> handleBadFilterSyntaxException(BadFilterSyntaxException exception) {
+		public ResponseEntity<Problem> handleInvalidSyntaxException(InvalidSyntaxException exception) {
 			LOGGER.info(LOG_MESSAGE, exception);
 
-			var errorResponse = Problem.builder()
+			final var errorResponse = Problem.builder()
 				.withStatus(BAD_REQUEST)
 				.withTitle(TITLE)
 				.withDetail(extractMessage(exception))

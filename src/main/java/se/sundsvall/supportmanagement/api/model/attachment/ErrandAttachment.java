@@ -5,7 +5,7 @@ import se.sundsvall.dept44.common.validators.annotation.ValidBase64;
 import se.sundsvall.supportmanagement.api.validation.ValidFileSize;
 import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import java.util.Objects;
 
 @Schema(description = "ErrandAttachment model")
