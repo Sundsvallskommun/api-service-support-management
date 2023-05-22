@@ -1,12 +1,12 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
 import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -104,10 +104,7 @@ class RevisionMapperTest {
 
 	@Test
 	void toRevisionsListContainingNulls() {
-		List<RevisionEntity> arrayWithNulls = new ArrayList<>();
-		arrayWithNulls.add(null);
-
-		assertThat(RevisionMapper.toRevisions(arrayWithNulls)).isEmpty();
+		assertThat(RevisionMapper.toRevisions(singletonList(null))).isEmpty();
 	}
 
 	private RevisionEntity createRevisionEntity() {

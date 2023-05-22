@@ -3,8 +3,8 @@ package se.sundsvall.supportmanagement.api.model.attachment;
 import io.swagger.v3.oas.annotations.media.Schema;
 import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
 
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.Null;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Null;
 import java.util.Objects;
 
 import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;

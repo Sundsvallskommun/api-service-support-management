@@ -67,5 +67,6 @@ class EventTest {
 	@Test
 	void testNoDirtOnCreatedBean() {
 		assertThat(Event.create()).hasAllNullFieldsOrProperties();
+		assertThat(new Event()).hasAllNullFieldsOrProperties();
 	}
 }

@@ -11,10 +11,9 @@ import static se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapp
 import java.util.List;
 import java.util.Objects;
 
-import javax.transaction.Transactional;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.zalando.problem.Problem;
 
 import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
@@ -45,7 +44,7 @@ public class ErrandAttachmentService {
 	public String createErrandAttachment(String namespace, String municipalityId, String errandId, ErrandAttachment errandAttachment) {
 		final var errandEntity = getErrand(errandId, namespace, municipalityId);
 		final var attachmentEntity = ofNullable(toAttachmentEntity(errandEntity, errandAttachment)).orElseThrow(() -> Problem.valueOf(BAD_GATEWAY, ATTACHMENT_ENTITY_NOT_CREATED));
-		
+
 		// Update errand with new attachment and create new revision
 		final var latestRevision = revisionService.createErrandRevision(errandsRepository.save(errandEntity));
 

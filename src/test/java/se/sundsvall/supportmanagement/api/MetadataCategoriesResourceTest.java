@@ -1,19 +1,5 @@
 package se.sundsvall.supportmanagement.api;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.http.HttpStatus;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.web.reactive.server.WebTestClient;
-import se.sundsvall.supportmanagement.Application;
-import se.sundsvall.supportmanagement.api.model.metadata.Category;
-import se.sundsvall.supportmanagement.service.MetadataService;
-
-import java.util.Map;
-
 import static org.apache.commons.lang3.ArrayUtils.EMPTY_STRING_ARRAY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
@@ -23,6 +9,21 @@ import static org.springframework.http.MediaType.ALL;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.web.util.UriComponentsBuilder.fromPath;
 
+import java.util.Map;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.http.HttpStatus;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.reactive.server.WebTestClient;
+
+import se.sundsvall.supportmanagement.Application;
+import se.sundsvall.supportmanagement.api.model.metadata.Category;
+import se.sundsvall.supportmanagement.service.MetadataService;
+
 @SpringBootTest(classes = Application.class, webEnvironment = RANDOM_PORT)
 @ActiveProfiles("junit")
 class MetadataCategoriesResourceTest {
@@ -30,6 +31,7 @@ class MetadataCategoriesResourceTest {
 	private static final String PATH = "/{namespace}/{municipalityId}/metadata/categories";
 	private static final String NAMESPACE = "namespace";
 	private static final String MUNICIPALITY_ID = "2281";
+
 	@MockBean
 	private MetadataService metadataServiceMock;
 
@@ -44,9 +46,9 @@ class MetadataCategoriesResourceTest {
 		// Parameters
 		final var body = Category.create().withName("name");
 
-		//Mock
+		// Mock
 		when(metadataServiceMock.createCategory(NAMESPACE, MUNICIPALITY_ID, body)).thenReturn(body.getName());
-		
+
 		// Call
 		webTestClient.post().uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
 			.contentType(APPLICATION_JSON)
@@ -66,7 +68,7 @@ class MetadataCategoriesResourceTest {
 		final var name = "name";
 		final var body = Category.create().withName(name);
 
-		//Mock
+		// Mock
 		when(metadataServiceMock.getCategory(NAMESPACE, MUNICIPALITY_ID, name)).thenReturn(body);
 
 		// Call
@@ -98,7 +100,7 @@ class MetadataCategoriesResourceTest {
 
 	@Test
 	void getCategoryTypes() {
-        //Parameters
+		// Parameters
 		final var name = "name";
 		webTestClient.get().uri(builder -> builder.path(PATH + "/{category}/types").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "category", name)))
 			.exchange()
@@ -116,7 +118,7 @@ class MetadataCategoriesResourceTest {
 		final var name = "name";
 		final var body = Category.create().withName("name");
 
-		//Mock
+		// Mock
 		when(metadataServiceMock.updateCategory(NAMESPACE, MUNICIPALITY_ID, name, body)).thenReturn(body);
 
 		// Call
@@ -129,14 +131,14 @@ class MetadataCategoriesResourceTest {
 
 		verify(metadataServiceMock).updateCategory(NAMESPACE, MUNICIPALITY_ID, name, body);
 	}
-	
+
 	@Test
 	void deleteCategory() {
-		//Parameters
+		// Parameters
 		final var name = "name";
 		// Call
 		webTestClient.delete()
-			.uri(builder -> builder.path(PATH + "/{category}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID,   "category", name)))
+			.uri(builder -> builder.path(PATH + "/{category}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "category", name)))
 			.exchange()
 			.expectStatus().isEqualTo(HttpStatus.NO_CONTENT);
 

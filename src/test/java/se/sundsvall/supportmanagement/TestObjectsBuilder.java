@@ -1,5 +1,13 @@
 package se.sundsvall.supportmanagement;
 
+import static java.time.OffsetDateTime.now;
+import static org.apache.commons.codec.binary.Base64.encodeBase64String;
+import static se.sundsvall.supportmanagement.api.model.errand.Priority.HIGH;
+
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
 import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
 import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachmentHeader;
 import se.sundsvall.supportmanagement.api.model.errand.Classification;
@@ -12,15 +20,8 @@ import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 
-import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.List;
-
-import static java.time.OffsetDateTime.now;
-import static org.apache.commons.codec.binary.Base64.encodeBase64String;
-import static se.sundsvall.supportmanagement.api.model.errand.Priority.HIGH;
-
 public class TestObjectsBuilder {
+
 	private static final String MUNICIPALITY_ID = "municipalityId";
 	private static final String ERRAND_ID = "errandId";
 	private static final String ASSIGNED_GROUP_ID = "assignedGroupId";

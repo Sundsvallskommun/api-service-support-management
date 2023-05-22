@@ -33,7 +33,7 @@ class ErrandAttachmentsResourceTest {
 	private static final String NAMESPACE = "namespace";
 	private static final String MUNICIPALITY_ID = "2281";
 	private static final String ERRAND_ID = randomUUID().toString();
-	private static final String PATH = "/" + NAMESPACE + "/{municipalityId}/errands/{id}/attachments/";
+	private static final String PATH = "/" + NAMESPACE + "/{municipalityId}/errands/{id}/attachments";
 
 	@MockBean
 	private ErrandAttachmentService errandAttachmentServiceMock;
@@ -69,7 +69,7 @@ class ErrandAttachmentsResourceTest {
 			.exchange()
 			.expectStatus().isCreated()
 			.expectHeader().contentType(ALL)
-			.expectHeader().location("http://localhost:".concat(String.valueOf(port)).concat(fromPath(PATH + "{attachmentId}")
+			.expectHeader().location("http://localhost:".concat(String.valueOf(port)).concat(fromPath(PATH + "/{attachmentId}")
 				.build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "attachmentId", attachmentId)).toString()))
 			.expectBody().isEmpty();
 
@@ -92,7 +92,7 @@ class ErrandAttachmentsResourceTest {
 		// Mock
 		when(errandAttachmentServiceMock.readErrandAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, attachmentId)).thenReturn(errandAttachment);
 
-		final var response = webTestClient.get().uri(builder -> builder.path(PATH.concat("{attachmentId}")).build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "attachmentId", attachmentId)))
+		final var response = webTestClient.get().uri(builder -> builder.path(PATH.concat("/{attachmentId}")).build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "attachmentId", attachmentId)))
 			.accept(APPLICATION_JSON)
 			.exchange()
 			.expectStatus().isOk()
@@ -108,11 +108,11 @@ class ErrandAttachmentsResourceTest {
 
 	@Test
 	void readErrandAttachments() {
-		//Parameter values
+		// Parameter values
 		final var errandAttachments = List.of(ErrandAttachmentHeader.create()
-				.withFileName("test.txt")
-				.withId(randomUUID().toString())
-				.withMimeType("text/plain"));
+			.withFileName("test.txt")
+			.withId(randomUUID().toString())
+			.withMimeType("text/plain"));
 
 		when(errandAttachmentServiceMock.readErrandAttachmentHeaders(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID)).thenReturn(errandAttachments);
 
@@ -135,7 +135,7 @@ class ErrandAttachmentsResourceTest {
 		// Parameter values
 		final var attachmentId = randomUUID().toString();
 
-		webTestClient.delete().uri(builder -> builder.path(PATH.concat("{attachmentId}")).build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "attachmentId", attachmentId)))
+		webTestClient.delete().uri(builder -> builder.path(PATH.concat("/{attachmentId}")).build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "attachmentId", attachmentId)))
 			.exchange()
 			.expectStatus().isNoContent()
 			.expectHeader().doesNotExist(CONTENT_TYPE);

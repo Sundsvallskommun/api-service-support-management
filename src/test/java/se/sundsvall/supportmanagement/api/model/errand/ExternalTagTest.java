@@ -40,6 +40,7 @@ class ExternalTagTest {
 	@Test
 	void testNoDirtOnCreatedBean() {
 		assertThat(ExternalTag.create()).hasAllNullFieldsOrProperties();
+		assertThat(new ExternalTag()).hasAllNullFieldsOrProperties();
 	}
 
 }

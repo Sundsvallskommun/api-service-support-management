@@ -19,6 +19,7 @@ import se.sundsvall.supportmanagement.api.model.communication.SmsRequest;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 
 class MessagingMapperTest {
+
 	private static final Decoder BASE64_DECODER = Base64.getDecoder();
 	private static final String ERRAND_ID = randomUUID().toString();
 	private static final String HTML_MESSAGE = "<html>htmlMessage</html>";
@@ -46,13 +47,13 @@ class MessagingMapperTest {
 		assertThat(result.getSender().getReplyTo()).isNull();
 		assertThat(result.getParty().getPartyId()).isNull();
 		assertThat(result.getParty().getExternalReferences())
-				.extracting(ExternalReference::getKey, ExternalReference::getValue)
-				.contains(tuple(ERRAND_ID_KEY, ERRAND_ID));
+			.extracting(ExternalReference::getKey, ExternalReference::getValue)
+			.contains(tuple(ERRAND_ID_KEY, ERRAND_ID));
 
 		assertThat(result.getAttachments()).isNotNull().extracting(
-				generated.se.sundsvall.messaging.EmailAttachment::getContent,
-				generated.se.sundsvall.messaging.EmailAttachment::getContentType,
-				generated.se.sundsvall.messaging.EmailAttachment::getName).containsExactly(tuple(FILE_CONTENT, IMAGE_PNG_VALUE, FILE_NAME));
+			generated.se.sundsvall.messaging.EmailAttachment::getContent,
+			generated.se.sundsvall.messaging.EmailAttachment::getContentType,
+			generated.se.sundsvall.messaging.EmailAttachment::getName).containsExactly(tuple(FILE_CONTENT, IMAGE_PNG_VALUE, FILE_NAME));
 	}
 
 	@Test
@@ -68,9 +69,9 @@ class MessagingMapperTest {
 		assertThat(result.getSender().getName()).isEqualTo(SENDER_EMAIL);
 		assertThat(result.getSender().getReplyTo()).isNull();
 		assertThat(result.getAttachments()).isNotNull().extracting(
-				generated.se.sundsvall.messaging.EmailAttachment::getContent,
-				generated.se.sundsvall.messaging.EmailAttachment::getContentType,
-				generated.se.sundsvall.messaging.EmailAttachment::getName).containsExactly(tuple(FILE_CONTENT, IMAGE_PNG_VALUE, FILE_NAME));
+			generated.se.sundsvall.messaging.EmailAttachment::getContent,
+			generated.se.sundsvall.messaging.EmailAttachment::getContentType,
+			generated.se.sundsvall.messaging.EmailAttachment::getName).containsExactly(tuple(FILE_CONTENT, IMAGE_PNG_VALUE, FILE_NAME));
 	}
 
 	@Test
@@ -83,32 +84,32 @@ class MessagingMapperTest {
 		assertThat(result.getSender()).isEqualTo(SENDER_NAME);
 		assertThat(result.getParty().getPartyId()).isNull();
 		assertThat(result.getParty().getExternalReferences())
-				.extracting(ExternalReference::getKey, ExternalReference::getValue)
-				.contains(tuple(ERRAND_ID_KEY, ERRAND_ID));
+			.extracting(ExternalReference::getKey, ExternalReference::getValue)
+			.contains(tuple(ERRAND_ID_KEY, ERRAND_ID));
 	}
 
 	private SmsRequest createSmsRequest() {
 		return SmsRequest.create()
-				.withMessage(MESSAGE)
-				.withRecipient(RECIPIENT)
-				.withSender(SENDER_NAME);
+			.withMessage(MESSAGE)
+			.withRecipient(RECIPIENT)
+			.withSender(SENDER_NAME);
 	}
 
 	private static EmailRequest createEmailRequest(boolean hasSenderName, String htmlMessage) {
 		return EmailRequest.create()
-				.withAttachments(List.of(EmailAttachment.create()
-						.withBase64EncodedString(FILE_CONTENT)
-						.withName(FILE_NAME)))
-				.withHtmlMessage(htmlMessage)
+			.withAttachments(List.of(EmailAttachment.create()
+				.withBase64EncodedString(FILE_CONTENT)
+				.withName(FILE_NAME)))
+			.withHtmlMessage(htmlMessage)
 			.withMessage(MESSAGE)
-				.withRecipient(RECIPIENT)
-				.withSender(SENDER_EMAIL)
-				.withSenderName(hasSenderName ? SENDER_NAME : null)
-				.withSubject(SUBJECT);
+			.withRecipient(RECIPIENT)
+			.withSender(SENDER_EMAIL)
+			.withSenderName(hasSenderName ? SENDER_NAME : null)
+			.withSubject(SUBJECT);
 	}
 
 	private static ErrandEntity createErrandEntity() {
 		return ErrandEntity.create()
-				.withId(ERRAND_ID);
+			.withId(ERRAND_ID);
 	}
 }

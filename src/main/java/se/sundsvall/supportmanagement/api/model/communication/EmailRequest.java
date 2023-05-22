@@ -6,14 +6,14 @@ import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 import java.util.List;
 import java.util.Objects;
 
-import javax.validation.Valid;
-import javax.validation.constraints.Email;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
-
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
+@Schema(description = "EmailRequest model")
 public class EmailRequest {
 
 	@NotNull
@@ -155,14 +155,14 @@ public class EmailRequest {
 		if (getClass() != obj.getClass()) {
 			return false;
 		}
-		EmailRequest other = (EmailRequest) obj;
+		final EmailRequest other = (EmailRequest) obj;
 		return Objects.equals(attachments, other.attachments) && Objects.equals(htmlMessage, other.htmlMessage) && Objects.equals(message, other.message) && Objects.equals(recipient, other.recipient) && Objects.equals(sender, other.sender) && Objects
 			.equals(senderName, other.senderName) && Objects.equals(subject, other.subject);
 	}
 
 	@Override
 	public String toString() {
-		StringBuilder builder = new StringBuilder();
+		final StringBuilder builder = new StringBuilder();
 		builder.append("EmailRequest [sender=").append(sender).append(", senderName=").append(senderName).append(", recipient=").append(recipient).append(", subject=").append(subject).append(", htmlMessage=").append(htmlMessage).append(", message=")
 			.append(message).append(", attachments=").append(attachments).append("]");
 		return builder.toString();

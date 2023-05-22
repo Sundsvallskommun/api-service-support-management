@@ -13,10 +13,6 @@ import static se.sundsvall.supportmanagement.Constants.NAMESPACE_VALIDATON_MESSA
 
 import java.util.List;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -39,6 +35,9 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import se.sundsvall.dept44.common.validators.annotation.ValidMunicipalityId;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
 import se.sundsvall.supportmanagement.service.MetadataService;
@@ -61,6 +60,7 @@ public class MetadataStatusResource {
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATON_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Valid @NotNull @RequestBody final Status body) {
+
 		return created(uriComponentsBuilder.path("/{namespace}/{municipalityId}/metadata/statuses/{status}")
 			.buildAndExpand(namespace, municipalityId, metadataService.createStatus(namespace, municipalityId, body)).toUri()).header(CONTENT_TYPE, ALL_VALUE).build();
 	}
@@ -75,6 +75,7 @@ public class MetadataStatusResource {
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATON_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "status", description = "Name of status", example = "NEW") @PathVariable final String status) {
+
 		return ok(metadataService.getStatus(namespace, municipalityId, status));
 	}
 
@@ -86,6 +87,7 @@ public class MetadataStatusResource {
 	ResponseEntity<List<Status>> getStatuses(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATON_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId) {
+
 		return ok(metadataService.findStatuses(namespace, municipalityId));
 	}
 
@@ -99,6 +101,7 @@ public class MetadataStatusResource {
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATON_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "status", description = "Name of status", example = "PRIVATE") @PathVariable final String status) {
+
 		metadataService.deleteStatus(namespace, municipalityId, status);
 		return noContent().build();
 	}
