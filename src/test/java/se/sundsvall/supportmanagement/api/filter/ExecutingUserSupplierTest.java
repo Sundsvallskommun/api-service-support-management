@@ -1,12 +1,15 @@
 package se.sundsvall.supportmanagement.api.filter;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
@@ -40,32 +43,39 @@ class ExecutingUserSupplierTest {
 
 	@Test
 	void doFilterInternal() throws Exception {
-		executingUserSupplier.doFilterInternal(requestMock, responseMock, filterChainMock);
-
-		verify(requestMock).getHeader(AD_USER_HEADER_KEY);
-		verify(filterChainMock).doFilter(requestMock, responseMock);
-	}
-
-	@Test
-	void extractUserWhenPresent() throws Exception {
 		final var adUser = "adUser";
 
 		when(requestMock.getHeader(AD_USER_HEADER_KEY)).thenReturn(adUser);
 
-		executingUserSupplier.extractAdUser(requestMock);
+		doAnswer(new Answer<>() {
+			public Object answer(InvocationOnMock invocation) {
+				assertThat(executingUserSupplier.getAdUser()).isEqualTo(adUser);
+				return null;
+			}
+		}).when(filterChainMock).doFilter(requestMock, responseMock);
 
+		executingUserSupplier.doFilterInternal(requestMock, responseMock, filterChainMock);
+
+		assertThat(executingUserSupplier.getAdUser()).isNull();
 		verify(requestMock).getHeader(AD_USER_HEADER_KEY);
-		assertThat(executingUserSupplier.getAdUser()).isEqualTo(adUser);
+		verify(filterChainMock).doFilter(requestMock, responseMock);
 	}
 
 	@ParameterizedTest
 	@NullAndEmptySource
-	void extractUserWhenNotPresent(String adUser) throws Exception {
-		when(requestMock.getHeader(AD_USER_HEADER_KEY)).thenReturn(adUser);
+	void doFilterInternalWhenNoUserPresent(String adUser) throws Exception {
 
-		executingUserSupplier.extractAdUser(requestMock);
+		doAnswer(new Answer<>() {
+			public Object answer(InvocationOnMock invocation) {
+				assertThat(executingUserSupplier.getAdUser()).isEqualTo(UNKNOWN);
+				return null;
+			}
+		}).when(filterChainMock).doFilter(requestMock, responseMock);
 
+		executingUserSupplier.doFilterInternal(requestMock, responseMock, filterChainMock);
+
+		assertThat(executingUserSupplier.getAdUser()).isNull();
 		verify(requestMock).getHeader(AD_USER_HEADER_KEY);
-		assertThat(executingUserSupplier.getAdUser()).isEqualTo(UNKNOWN);
+		verify(filterChainMock).doFilter(requestMock, responseMock);
 	}
 }
