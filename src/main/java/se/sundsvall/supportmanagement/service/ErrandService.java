@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.zalando.problem.Problem;
 
+import se.sundsvall.supportmanagement.api.filter.ExecutingUserSupplier;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
@@ -43,13 +44,16 @@ public class ErrandService {
 	@Autowired
 	private EventService eventService;
 
+	@Autowired
+	private ExecutingUserSupplier executingUserSupplier;
+
 	public String createErrand(String namespace, String municipalityId, Errand errand) {
 		// Create new errand and revision
 		final var entity = repository.save(toErrandEntity(namespace, municipalityId, errand));
 		final var revision = revisionService.createErrandRevision(entity);
 
 		// Create log event
-		eventService.createEvent(CREATE, EVENT_LOG_CREATE_ERRAND, entity, revision, null, null);
+		eventService.createEvent(CREATE, EVENT_LOG_CREATE_ERRAND, entity, revision, null, executingUserSupplier.getAdUser());
 
 		return entity.getId();
 	}
@@ -76,7 +80,7 @@ public class ErrandService {
 
 		// Create log event
 		final var previousRevision = revisionService.getErrandRevisionByVersion(id, latestRevision.getVersion() - 1);
-		eventService.createEvent(UPDATE, EVENT_LOG_UPDATE_ERRAND, entity, latestRevision, previousRevision, null);
+		eventService.createEvent(UPDATE, EVENT_LOG_UPDATE_ERRAND, entity, latestRevision, previousRevision, executingUserSupplier.getAdUser());
 
 		return toErrand(entity);
 	}
@@ -91,7 +95,7 @@ public class ErrandService {
 
 		// Create log event
 		final var latestRevision = revisionService.getLatestErrandRevision(id);
-		eventService.createEvent(DELETE, EVENT_LOG_DELETE_ERRAND, entity, latestRevision, null, null);
+		eventService.createEvent(DELETE, EVENT_LOG_DELETE_ERRAND, entity, latestRevision, null, executingUserSupplier.getAdUser());
 	}
 
 	private void verifyExistingErrand(String id, String namespace, String municipalityId) {
