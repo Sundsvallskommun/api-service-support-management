@@ -4,6 +4,7 @@ import static java.time.OffsetDateTime.now;
 import static java.time.ZoneId.systemDefault;
 import static java.time.temporal.ChronoUnit.MILLIS;
 import static org.hibernate.Length.LONG32;
+import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 
 import java.io.Serializable;
 import java.time.OffsetDateTime;
@@ -12,7 +13,8 @@ import java.util.Objects;
 import java.util.Optional;
 
 import org.hibernate.annotations.Formula;
-import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.TimeZoneStorage;
+import org.hibernate.annotations.UuidGenerator;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.CollectionTable;
@@ -20,7 +22,6 @@ import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.ForeignKey;
-import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
@@ -43,8 +44,7 @@ public class ErrandEntity implements Serializable {
 	private static final long serialVersionUID = -4433880592443933243L;
 
 	@Id
-	@GeneratedValue(generator = "uuid2")
-	@GenericGenerator(name = "uuid2", strategy = "org.hibernate.id.UUIDGenerator")
+	@UuidGenerator
 	@Column(name = "id")
 	private String id;
 
@@ -106,12 +106,15 @@ public class ErrandEntity implements Serializable {
 	private List<AttachmentEntity> attachments;
 
 	@Column(name = "created")
+	@TimeZoneStorage(NORMALIZE)
 	private OffsetDateTime created;
 
 	@Column(name = "modified")
+	@TimeZoneStorage(NORMALIZE)
 	private OffsetDateTime modified;
 
 	@Formula("greatest(coalesce(created, 0), coalesce(modified, 0))")
+	@TimeZoneStorage(NORMALIZE)
 	private OffsetDateTime touched;
 
 	public static ErrandEntity create() {

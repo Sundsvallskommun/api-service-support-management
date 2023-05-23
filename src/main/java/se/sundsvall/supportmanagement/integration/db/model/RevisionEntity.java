@@ -3,17 +3,18 @@ package se.sundsvall.supportmanagement.integration.db.model;
 import static java.time.OffsetDateTime.now;
 import static java.time.temporal.ChronoUnit.MILLIS;
 import static org.hibernate.Length.LONG32;
+import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 
 import java.io.Serializable;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.Objects;
 
-import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.TimeZoneStorage;
+import org.hibernate.annotations.UuidGenerator;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.PrePersist;
@@ -30,8 +31,7 @@ public class RevisionEntity implements Serializable {
 	private static final long serialVersionUID = 7389828147898967316L;
 
 	@Id
-	@GeneratedValue(generator = "uuid2")
-	@GenericGenerator(name = "uuid2", strategy = "org.hibernate.id.UUIDGenerator")
+	@UuidGenerator
 	@Column(name = "id")
 	private String id;
 
@@ -48,6 +48,7 @@ public class RevisionEntity implements Serializable {
 	private String serializedSnapshot;
 
 	@Column(name = "created")
+	@TimeZoneStorage(NORMALIZE)
 	private OffsetDateTime created;
 
 	public static RevisionEntity create() {
@@ -147,7 +148,7 @@ public class RevisionEntity implements Serializable {
 		if (this == obj) {
 			return true;
 		}
-		if (!(obj instanceof RevisionEntity other)) {
+		if (!(obj instanceof final RevisionEntity other)) {
 			return false;
 		}
 		return Objects.equals(created, other.created) && Objects.equals(entityId, other.entityId) && Objects.equals(entityType, other.entityType) && Objects.equals(id, other.id) && Objects.equals(serializedSnapshot, other.serializedSnapshot)
