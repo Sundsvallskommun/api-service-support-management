@@ -19,8 +19,7 @@
 		<published.container.port.production>9094</published.container.port.production>
 		<sandbox.db>true</sandbox.db>
 		<!-- Service properties -->
-		<testcontainers.version>1.18.1</testcontainers.version>
-		<spring-filter.version>3.0.7</spring-filter.version>
+		<spring-filter.version>3.1.0</spring-filter.version>
 		<openapi-generator-maven-plugin.version>6.6.0</openapi-generator-maven-plugin.version>
 		<overviewproject.mimetypes.version>1.0.4</overviewproject.mimetypes.version>
 		<flipkart.zjsonpatch.version>0.4.14</flipkart.zjsonpatch.version>
@@ -81,18 +80,10 @@
 			<artifactId>zjsonpatch</artifactId>
 			<version>${flipkart.zjsonpatch.version}</version>
 		</dependency>
-
 		<!-- Test -->
 		<dependency>
 			<groupId>org.testcontainers</groupId>
-			<artifactId>testcontainers</artifactId>
-			<version>${testcontainers.version}</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.testcontainers</groupId>
 			<artifactId>mariadb</artifactId>
-			<version>${testcontainers.version}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>

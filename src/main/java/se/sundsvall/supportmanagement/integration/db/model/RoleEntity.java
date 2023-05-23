@@ -1,12 +1,15 @@
 package se.sundsvall.supportmanagement.integration.db.model;
 
+import static jakarta.persistence.GenerationType.IDENTITY;
 import static java.time.OffsetDateTime.now;
 import static java.time.ZoneId.systemDefault;
 import static java.time.temporal.ChronoUnit.MILLIS;
-import static jakarta.persistence.GenerationType.IDENTITY;
+import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 
 import java.time.OffsetDateTime;
 import java.util.Objects;
+
+import org.hibernate.annotations.TimeZoneStorage;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -43,9 +46,11 @@ public class RoleEntity {
 	private String namespace;
 
 	@Column(name = "created")
+	@TimeZoneStorage(NORMALIZE)
 	private OffsetDateTime created;
 
 	@Column(name = "modified")
+	@TimeZoneStorage(NORMALIZE)
 	private OffsetDateTime modified;
 
 	public static RoleEntity create() {
@@ -150,7 +155,7 @@ public class RoleEntity {
 		if (this == obj) {
 			return true;
 		}
-		if (!(obj instanceof RoleEntity other)) {
+		if (!(obj instanceof final RoleEntity other)) {
 			return false;
 		}
 		return Objects.equals(created, other.created) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(municipalityId, other.municipalityId) && Objects.equals(name, other.name) && Objects.equals(namespace,

@@ -1,9 +1,10 @@
 package se.sundsvall.supportmanagement.integration.db.model;
 
+import static jakarta.persistence.GenerationType.IDENTITY;
 import static java.time.OffsetDateTime.now;
 import static java.time.ZoneId.systemDefault;
 import static java.time.temporal.ChronoUnit.MILLIS;
-import static jakarta.persistence.GenerationType.IDENTITY;
+import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 
 import java.io.Serializable;
 import java.time.OffsetDateTime;
@@ -12,6 +13,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+
+import org.hibernate.annotations.TimeZoneStorage;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -26,11 +29,13 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
 @Entity
-@Table(name = "category", indexes = {
-	@Index(name = "idx_namespace_municipality_id", columnList = "namespace, municipality_id")
-}, uniqueConstraints = {
-	@UniqueConstraint(name = "uq_namespace_municipality_id_name", columnNames = { "namespace", "municipality_id", "name" })
-})
+@Table(name = "category",
+	indexes = {
+		@Index(name = "idx_namespace_municipality_id", columnList = "namespace, municipality_id")
+	},
+	uniqueConstraints = {
+		@UniqueConstraint(name = "uq_namespace_municipality_id_name", columnNames = { "namespace", "municipality_id", "name" })
+	})
 public class CategoryEntity implements Serializable {
 
 	private static final long serialVersionUID = -5979976910282343331L;
@@ -56,9 +61,11 @@ public class CategoryEntity implements Serializable {
 	private String namespace;
 
 	@Column(name = "created")
+	@TimeZoneStorage(NORMALIZE)
 	private OffsetDateTime created;
 
 	@Column(name = "modified")
+	@TimeZoneStorage(NORMALIZE)
 	private OffsetDateTime modified;
 
 	public static CategoryEntity create() {
@@ -205,14 +212,14 @@ public class CategoryEntity implements Serializable {
 		if (getClass() != obj.getClass()) {
 			return false;
 		}
-		CategoryEntity other = (CategoryEntity) obj;
+		final CategoryEntity other = (CategoryEntity) obj;
 		return Objects.equals(created, other.created) && Objects.equals(displayName, other.displayName) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(municipalityId, other.municipalityId) && Objects
 			.equals(name, other.name) && Objects.equals(namespace, other.namespace) && Objects.equals(types, other.types);
 	}
 
 	@Override
 	public String toString() {
-		StringBuilder builder = new StringBuilder();
+		final StringBuilder builder = new StringBuilder();
 		builder.append("CategoryEntity [id=").append(id).append(", name=").append(name).append(", displayName=").append(displayName).append(", types=").append(types).append(", municipalityId=").append(municipalityId).append(", namespace=")
 			.append(namespace).append(", created=").append(created).append(", modified=").append(modified).append("]");
 		return builder.toString();

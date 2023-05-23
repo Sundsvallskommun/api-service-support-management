@@ -1,13 +1,16 @@
 package se.sundsvall.supportmanagement.integration.db.model;
 
+import static jakarta.persistence.GenerationType.IDENTITY;
 import static java.time.OffsetDateTime.now;
 import static java.time.ZoneId.systemDefault;
 import static java.time.temporal.ChronoUnit.MILLIS;
-import static jakarta.persistence.GenerationType.IDENTITY;
+import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 
 import java.io.Serializable;
 import java.time.OffsetDateTime;
 import java.util.Objects;
+
+import org.hibernate.annotations.TimeZoneStorage;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -20,11 +23,13 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
 @Entity
-@Table(name = "status", indexes = {
-	@Index(name = "idx_namespace_municipality_id", columnList = "namespace, municipality_id")
-}, uniqueConstraints = {
-	@UniqueConstraint(name = "uq_namespace_municipality_id_name", columnNames = { "namespace", "municipality_id", "name" })
-})
+@Table(name = "status",
+	indexes = {
+		@Index(name = "idx_namespace_municipality_id", columnList = "namespace, municipality_id")
+	},
+	uniqueConstraints = {
+		@UniqueConstraint(name = "uq_namespace_municipality_id_name", columnNames = { "namespace", "municipality_id", "name" })
+	})
 public class StatusEntity implements Serializable {
 
 	private static final long serialVersionUID = -5979976910282343331L;
@@ -44,9 +49,11 @@ public class StatusEntity implements Serializable {
 	private String namespace;
 
 	@Column(name = "created")
+	@TimeZoneStorage(NORMALIZE)
 	private OffsetDateTime created;
 
 	@Column(name = "modified")
+	@TimeZoneStorage(NORMALIZE)
 	private OffsetDateTime modified;
 
 	public static StatusEntity create() {
@@ -157,14 +164,14 @@ public class StatusEntity implements Serializable {
 		if (getClass() != obj.getClass()) {
 			return false;
 		}
-		StatusEntity other = (StatusEntity) obj;
+		final StatusEntity other = (StatusEntity) obj;
 		return Objects.equals(created, other.created) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(municipalityId, other.municipalityId) && Objects.equals(name, other.name) && Objects.equals(namespace,
 			other.namespace);
 	}
 
 	@Override
 	public String toString() {
-		StringBuilder builder = new StringBuilder();
+		final StringBuilder builder = new StringBuilder();
 		builder.append("StatusEntity [id=").append(id).append(", name=").append(name).append(", municipalityId=").append(municipalityId).append(", namespace=").append(namespace).append(", created=").append(created).append(", modified=").append(
 			modified).append("]");
 		return builder.toString();

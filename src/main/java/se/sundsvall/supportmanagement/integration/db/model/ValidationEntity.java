@@ -1,14 +1,17 @@
 package se.sundsvall.supportmanagement.integration.db.model;
 
-import static java.time.OffsetDateTime.now;
-import static java.time.temporal.ChronoUnit.MILLIS;
 import static jakarta.persistence.EnumType.STRING;
 import static jakarta.persistence.GenerationType.IDENTITY;
+import static java.time.OffsetDateTime.now;
+import static java.time.temporal.ChronoUnit.MILLIS;
+import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 
 import java.io.Serializable;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.Objects;
+
+import org.hibernate.annotations.TimeZoneStorage;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -20,15 +23,16 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
-
 import se.sundsvall.supportmanagement.integration.db.model.enums.EntityType;
 
 @Entity
-@Table(name = "validation", indexes = {
-	@Index(name = "idx_namespace_municipality_id_type", columnList = "namespace, municipality_id, type")
-}, uniqueConstraints = {
-	@UniqueConstraint(name = "uq_namespace_municipality_id_type", columnNames = { "namespace", "municipality_id", "type" })
-})
+@Table(name = "validation",
+	indexes = {
+		@Index(name = "idx_namespace_municipality_id_type", columnList = "namespace, municipality_id, type")
+	},
+	uniqueConstraints = {
+		@UniqueConstraint(name = "uq_namespace_municipality_id_type", columnNames = { "namespace", "municipality_id", "type" })
+	})
 public class ValidationEntity implements Serializable {
 	private static final long serialVersionUID = -6163643004292601360L;
 
@@ -51,9 +55,11 @@ public class ValidationEntity implements Serializable {
 	private String namespace;
 
 	@Column(name = "created")
+	@TimeZoneStorage(NORMALIZE)
 	private OffsetDateTime created;
 
 	@Column(name = "modified")
+	@TimeZoneStorage(NORMALIZE)
 	private OffsetDateTime modified;
 
 	public static ValidationEntity create() {
@@ -177,14 +183,14 @@ public class ValidationEntity implements Serializable {
 		if (getClass() != obj.getClass()) {
 			return false;
 		}
-		ValidationEntity other = (ValidationEntity) obj;
+		final ValidationEntity other = (ValidationEntity) obj;
 		return Objects.equals(created, other.created) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(municipalityId, other.municipalityId) && Objects.equals(namespace, other.namespace)
-			&& type == other.type && validated == other.validated;
+			&& (type == other.type) && (validated == other.validated);
 	}
 
 	@Override
 	public String toString() {
-		StringBuilder builder = new StringBuilder();
+		final StringBuilder builder = new StringBuilder();
 		builder.append("ValidationEntity [id=").append(id).append(", type=").append(type).append(", validated=").append(validated).append(", municipalityId=").append(municipalityId).append(", namespace=").append(namespace).append(", created=")
 			.append(created).append(", modified=").append(modified).append("]");
 		return builder.toString();
