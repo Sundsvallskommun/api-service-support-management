@@ -83,6 +83,7 @@ class ErrandsIT extends AbstractAppTest {
 	@Test
 	void test04_postErrand() {
 		setupCall()
+			.withHeader("sentbyuser", "joe01doe")
 			.withServicePath(PATH)
 			.withHttpMethod(POST)
 			.withRequest(REQUEST_FILE)
@@ -131,6 +132,7 @@ class ErrandsIT extends AbstractAppTest {
 		assertThat(errandsRepository.existsById(id)).isTrue();
 
 		setupCall()
+			.withHeader("sentbyuser", "smo02key")
 			.withServicePath(PATH + "/" + id)
 			.withHttpMethod(DELETE)
 			.withExpectedResponseStatus(NO_CONTENT)

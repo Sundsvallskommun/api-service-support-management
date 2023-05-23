@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.integration.notes;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import static se.sundsvall.supportmanagement.Constants.AD_USER_HEADER_KEY;
 import static se.sundsvall.supportmanagement.integration.notes.configuration.NotesConfiguration.CLIENT_ID;
 
 import java.util.List;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import generated.se.sundsvall.notes.CreateNoteRequest;
@@ -63,7 +65,7 @@ public interface NotesClient {
 	 * @param id the id of the note to delete
 	 */
 	@DeleteMapping(path = "/notes/{id}")
-	ResponseEntity<Void> deleteNoteById(@PathVariable(name = "id") String id);
+	ResponseEntity<Void> deleteNoteById(@RequestHeader(AD_USER_HEADER_KEY) String executingUser, @PathVariable(name = "id") String id);
 
 	/**
 	 * Update note by id.
@@ -73,7 +75,7 @@ public interface NotesClient {
 	 * @return the updated note
 	 */
 	@PatchMapping(path = "/notes/{id}", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
-	Note updateNoteById(@PathVariable(name = "id") String id, @RequestBody UpdateNoteRequest updateNoteRequest);
+	Note updateNoteById(@RequestHeader(AD_USER_HEADER_KEY) String executingUser, @PathVariable(name = "id") String id, @RequestBody UpdateNoteRequest updateNoteRequest);
 
 	/**
 	 * Create note.
@@ -81,7 +83,7 @@ public interface NotesClient {
 	 * @param createNoteRequest the note to create
 	 */
 	@PostMapping(path = "/notes", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
-	ResponseEntity<Void> createNote(@RequestBody CreateNoteRequest createNoteRequest);
+	ResponseEntity<Void> createNote(@RequestHeader(AD_USER_HEADER_KEY) String executingUser, @RequestBody CreateNoteRequest createNoteRequest);
 
 	/**
 	 * Find all revisions for a note by id.
