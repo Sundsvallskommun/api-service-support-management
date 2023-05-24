@@ -28,6 +28,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.zalando.problem.ThrowableProblem;
 
 import generated.se.sundsvall.eventlog.Event;
+import se.sundsvall.supportmanagement.api.filter.ExecutingUserSupplier;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
@@ -47,6 +48,7 @@ class ErrandAttachmentServiceTest {
 	private static final int PREVIOUS_REVISION_VERSION = 1;
 	private static final String EVENT_LOG_ADD_ATTACHMENT = "En bilaga har lagts till i ärendet.";
 	private static final String EVENT_LOG_REMOVE_ATTACHMENT = "En bilaga har tagits bort från ärendet.";
+	private static final String EXECUTING_USER = "executingUser";
 
 	@Mock
 	private ErrandsRepository errandsRepositoryMock;
@@ -69,6 +71,9 @@ class ErrandAttachmentServiceTest {
 	@Mock
 	private EventService eventServiceMock;
 
+	@Mock
+	private ExecutingUserSupplier executingUserSupplierMock;
+
 	@InjectMocks
 	private ErrandAttachmentService service;
 
@@ -86,6 +91,7 @@ class ErrandAttachmentServiceTest {
 		when(revisionServiceMock.createErrandRevision(errandMock)).thenReturn(currentRevisionMock);
 		when(currentRevisionMock.getVersion()).thenReturn(CURRENT_REVISION_VERSION);
 		when(revisionServiceMock.getErrandRevisionByVersion(ERRAND_ID, PREVIOUS_REVISION_VERSION)).thenReturn(previousRevisionMock);
+		when(executingUserSupplierMock.getAdUser()).thenReturn(EXECUTING_USER);
 
 		// Call
 		final var result = service.createErrandAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, buildErrandAttachment());
@@ -97,7 +103,7 @@ class ErrandAttachmentServiceTest {
 		verify(errandsRepositoryMock).save(any(ErrandEntity.class));
 		verify(revisionServiceMock).createErrandRevision(errandMock);
 		verify(revisionServiceMock).getErrandRevisionByVersion(ERRAND_ID, PREVIOUS_REVISION_VERSION);
-		verify(eventServiceMock).createEvent(UPDATE, EVENT_LOG_ADD_ATTACHMENT, errandMock, currentRevisionMock, previousRevisionMock, null);
+		verify(eventServiceMock).createEvent(UPDATE, EVENT_LOG_ADD_ATTACHMENT, errandMock, currentRevisionMock, previousRevisionMock, EXECUTING_USER);
 	}
 
 	@Test
@@ -215,6 +221,7 @@ class ErrandAttachmentServiceTest {
 		when(revisionServiceMock.createErrandRevision(errandMock)).thenReturn(currentRevisionMock);
 		when(currentRevisionMock.getVersion()).thenReturn(CURRENT_REVISION_VERSION);
 		when(revisionServiceMock.getErrandRevisionByVersion(ERRAND_ID, PREVIOUS_REVISION_VERSION)).thenReturn(previousRevisionMock);
+		when(executingUserSupplierMock.getAdUser()).thenReturn(EXECUTING_USER);
 
 		// Call
 		service.deleteErrandAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ATTACHMENT_ID);
@@ -227,7 +234,7 @@ class ErrandAttachmentServiceTest {
 		verify(revisionServiceMock).createErrandRevision(errandMock);
 
 		verify(revisionServiceMock).getErrandRevisionByVersion(ERRAND_ID, PREVIOUS_REVISION_VERSION);
-		verify(eventServiceMock).createEvent(UPDATE, EVENT_LOG_REMOVE_ATTACHMENT, errandMock, currentRevisionMock, previousRevisionMock, null);
+		verify(eventServiceMock).createEvent(UPDATE, EVENT_LOG_REMOVE_ATTACHMENT, errandMock, currentRevisionMock, previousRevisionMock, EXECUTING_USER);
 	}
 
 	@Test

@@ -1,14 +1,17 @@
 package se.sundsvall.supportmanagement.integration.db.model;
 
+import static jakarta.persistence.GenerationType.IDENTITY;
 import static java.time.OffsetDateTime.now;
 import static java.time.temporal.ChronoUnit.MILLIS;
-import static jakarta.persistence.GenerationType.IDENTITY;
+import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 
 import java.io.Serializable;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.Objects;
 import java.util.Optional;
+
+import org.hibernate.annotations.TimeZoneStorage;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -24,9 +27,10 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
 @Entity
-@Table(name = "`type`", uniqueConstraints = {
-	@UniqueConstraint(name = "uq_category_id_name", columnNames = { "category_id", "name" })
-})
+@Table(name = "`type`",
+	uniqueConstraints = {
+		@UniqueConstraint(name = "uq_category_id_name", columnNames = { "category_id", "name" })
+	})
 public class TypeEntity implements Serializable {
 	private static final long serialVersionUID = -6163643004292601360L;
 
@@ -45,9 +49,11 @@ public class TypeEntity implements Serializable {
 	private String escalationEmail;
 
 	@Column(name = "created")
+	@TimeZoneStorage(NORMALIZE)
 	private OffsetDateTime created;
 
 	@Column(name = "modified")
+	@TimeZoneStorage(NORMALIZE)
 	private OffsetDateTime modified;
 
 	@ManyToOne(fetch = FetchType.LAZY)
@@ -161,7 +167,7 @@ public class TypeEntity implements Serializable {
 
 	@Override
 	public int hashCode() {
-		var categoryId = Optional.ofNullable(categoryEntity).map(CategoryEntity::getId).orElse(null);
+		final var categoryId = Optional.ofNullable(categoryEntity).map(CategoryEntity::getId).orElse(null);
 		return Objects.hash(categoryId, created, displayName, escalationEmail, id, modified, name);
 	}
 
@@ -176,18 +182,18 @@ public class TypeEntity implements Serializable {
 		if (getClass() != obj.getClass()) {
 			return false;
 		}
-		TypeEntity other = (TypeEntity) obj;
+		final TypeEntity other = (TypeEntity) obj;
 
-		var thisCategoryId = Optional.ofNullable(categoryEntity).map(CategoryEntity::getId).orElse(null);
-		var otherCategoryId = Optional.ofNullable(other.categoryEntity).map(CategoryEntity::getId).orElse(null);
+		final var thisCategoryId = Optional.ofNullable(categoryEntity).map(CategoryEntity::getId).orElse(null);
+		final var otherCategoryId = Optional.ofNullable(other.categoryEntity).map(CategoryEntity::getId).orElse(null);
 		return Objects.equals(thisCategoryId, otherCategoryId) && Objects.equals(created, other.created) && Objects.equals(displayName, other.displayName) && Objects.equals(escalationEmail, other.escalationEmail) && Objects.equals(id, other.id)
 			&& Objects.equals(modified, other.modified) && Objects.equals(name, other.name);
 	}
 
 	@Override
 	public String toString() {
-		var categoryId = Optional.ofNullable(categoryEntity).map(CategoryEntity::getId).orElse(null);
-		StringBuilder builder = new StringBuilder();
+		final var categoryId = Optional.ofNullable(categoryEntity).map(CategoryEntity::getId).orElse(null);
+		final StringBuilder builder = new StringBuilder();
 		builder.append("TypeEntity [id=").append(id).append(", name=").append(name).append(", displayName=").append(displayName).append(", escalationEmail=").append(escalationEmail).append(", created=").append(created).append(", modified=")
 			.append(modified).append(", categoryEntity.id=").append(categoryId).append("]");
 		return builder.toString();

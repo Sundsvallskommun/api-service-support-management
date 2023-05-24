@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.integration.db.model;
 import static java.time.OffsetDateTime.now;
 import static java.time.temporal.ChronoUnit.MILLIS;
 import static org.hibernate.Length.LONG32;
+import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 
 import java.io.Serializable;
 import java.time.OffsetDateTime;
@@ -11,13 +12,13 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 
-import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.TimeZoneStorage;
+import org.hibernate.annotations.UuidGenerator;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.ForeignKey;
-import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
@@ -36,8 +37,7 @@ public class AttachmentEntity implements Serializable {
 	private static final long serialVersionUID = 2481905635449078631L;
 
 	@Id
-	@GeneratedValue(generator = "uuid2")
-	@GenericGenerator(name = "uuid2", strategy = "org.hibernate.id.UUIDGenerator")
+	@UuidGenerator
 	@Column(name = "id")
 	private String id;
 
@@ -51,9 +51,11 @@ public class AttachmentEntity implements Serializable {
 	private byte[] file;
 
 	@Column(name = "created")
+	@TimeZoneStorage(NORMALIZE)
 	private OffsetDateTime created;
 
 	@Column(name = "modified")
+	@TimeZoneStorage(NORMALIZE)
 	private OffsetDateTime modified;
 
 	@ManyToOne(fetch = FetchType.LAZY)

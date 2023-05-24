@@ -41,6 +41,7 @@ import org.zalando.problem.ThrowableProblem;
 import com.turkraft.springfilter.converter.FilterSpecificationConverter;
 
 import generated.se.sundsvall.eventlog.Event;
+import se.sundsvall.supportmanagement.api.filter.ExecutingUserSupplier;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
@@ -55,6 +56,7 @@ class ErrandServiceTest {
 	private static final String EVENT_LOG_CREATE_ERRAND = "Ärendet har skapats.";
 	private static final String EVENT_LOG_UPDATE_ERRAND = "Ärendet har uppdaterats.";
 	private static final String EVENT_LOG_DELETE_ERRAND = "Ärendet har raderats.";
+	private static final String EXECUTING_USER = "executingUser";
 
 	@Mock
 	private ErrandsRepository errandRepositoryMock;
@@ -70,6 +72,9 @@ class ErrandServiceTest {
 
 	@Mock
 	private EventService eventServiceMock;
+
+	@Mock
+	private ExecutingUserSupplier executingUserSupplierMock;
 
 	@Spy
 	private FilterSpecificationConverter filterSpecificationConverterSpy;
@@ -92,6 +97,7 @@ class ErrandServiceTest {
 		// Mock
 		when(errandRepositoryMock.save(any(ErrandEntity.class))).thenReturn(errandEntity);
 		when(revisionServiceMock.createErrandRevision(any())).thenReturn(currentRevisionMock);
+		when(executingUserSupplierMock.getAdUser()).thenReturn(EXECUTING_USER);
 
 		// Call
 		final var result = service.createErrand(NAMESPACE, MUNICIPALITY_ID, errand);
@@ -101,7 +107,7 @@ class ErrandServiceTest {
 
 		verify(errandRepositoryMock).save(any(ErrandEntity.class));
 		verify(revisionServiceMock).createErrandRevision(any(ErrandEntity.class));
-		verify(eventServiceMock).createEvent(CREATE, EVENT_LOG_CREATE_ERRAND, errandEntity, currentRevisionMock, null, null);
+		verify(eventServiceMock).createEvent(CREATE, EVENT_LOG_CREATE_ERRAND, errandEntity, currentRevisionMock, null, EXECUTING_USER);
 	}
 
 	@Test
@@ -206,6 +212,7 @@ class ErrandServiceTest {
 		when(revisionServiceMock.createErrandRevision(any())).thenReturn(currentRevisionMock);
 		when(currentRevisionMock.getVersion()).thenReturn(currentVersion);
 		when(revisionServiceMock.getErrandRevisionByVersion(ERRAND_ID, currentVersion - 1)).thenReturn(previousRevisionMock);
+		when(executingUserSupplierMock.getAdUser()).thenReturn(EXECUTING_USER);
 
 		// Call
 		final var response = service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, buildErrand());
@@ -218,7 +225,7 @@ class ErrandServiceTest {
 		verify(errandRepositoryMock).save(entity);
 		verify(revisionServiceMock).createErrandRevision(entity);
 		verify(revisionServiceMock).getErrandRevisionByVersion(ERRAND_ID, currentVersion - 1);
-		verify(eventServiceMock).createEvent(UPDATE, EVENT_LOG_UPDATE_ERRAND, entity, currentRevisionMock, previousRevisionMock, null);
+		verify(eventServiceMock).createEvent(UPDATE, EVENT_LOG_UPDATE_ERRAND, entity, currentRevisionMock, previousRevisionMock, EXECUTING_USER);
 	}
 
 	@Test
@@ -244,6 +251,7 @@ class ErrandServiceTest {
 		when(errandRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
 		when(errandRepositoryMock.getReferenceById(ERRAND_ID)).thenReturn(entity);
 		when(revisionServiceMock.getLatestErrandRevision(ERRAND_ID)).thenReturn(currentRevisionMock);
+		when(executingUserSupplierMock.getAdUser()).thenReturn(EXECUTING_USER);
 
 		// Call
 		service.deleteErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
@@ -251,7 +259,7 @@ class ErrandServiceTest {
 		// Assertions and verifications
 		verify(errandRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(errandRepositoryMock).deleteById(ERRAND_ID);
-		verify(eventServiceMock).createEvent(DELETE, EVENT_LOG_DELETE_ERRAND, entity, currentRevisionMock, null, null);
+		verify(eventServiceMock).createEvent(DELETE, EVENT_LOG_DELETE_ERRAND, entity, currentRevisionMock, null, EXECUTING_USER);
 	}
 
 	@Test

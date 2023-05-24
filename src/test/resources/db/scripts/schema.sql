@@ -1,20 +1,20 @@
 
     create table attachment (
-       id varchar(255) not null,
         created datetime(6),
-        file longblob,
-        file_name varchar(255),
-        mime_type varchar(255),
         modified datetime(6),
         errand_id varchar(255) not null,
+        file_name varchar(255),
+        id varchar(255) not null,
+        mime_type varchar(255),
+        file longblob,
         primary key (id)
     ) engine=InnoDB;
 
     create table category (
-       id bigint not null auto_increment,
         created datetime(6),
-        display_name varchar(255),
+        id bigint not null auto_increment,
         modified datetime(6),
+        display_name varchar(255),
         municipality_id varchar(255) not null,
         name varchar(255) not null,
         namespace varchar(255) not null,
@@ -22,20 +22,19 @@
     ) engine=InnoDB;
 
     create table contact_channel (
-       stakeholder_id bigint not null,
+        stakeholder_id bigint not null,
         type varchar(255),
         value varchar(255)
     ) engine=InnoDB;
 
     create table errand (
-       id varchar(255) not null,
+        created datetime(6),
+        modified datetime(6),
         assigned_group_id varchar(255),
         assigned_user_id varchar(255),
         category varchar(255),
-        created datetime(6),
-        description longtext,
         escalation_email varchar(255),
-        modified datetime(6),
+        id varchar(255) not null,
         municipality_id varchar(255) not null,
         namespace varchar(255) not null,
         priority varchar(255),
@@ -44,12 +43,13 @@
         status varchar(255),
         title varchar(255),
         type varchar(255),
+        description longtext,
         primary key (id)
     ) engine=InnoDB;
 
     create table external_id_type (
-       id bigint not null auto_increment,
         created datetime(6),
+        id bigint not null auto_increment,
         modified datetime(6),
         municipality_id varchar(255) not null,
         name varchar(255) not null,
@@ -58,24 +58,24 @@
     ) engine=InnoDB;
 
     create table external_tag (
-       errand_id varchar(255) not null,
+        errand_id varchar(255) not null,
         `key` varchar(255),
         `value` varchar(255)
     ) engine=InnoDB;
 
     create table revision (
-       id varchar(255) not null,
+        version integer,
         created datetime(6),
         entity_id varchar(255),
         entity_type varchar(255),
+        id varchar(255) not null,
         serialized_snapshot longtext,
-        version integer,
         primary key (id)
     ) engine=InnoDB;
 
     create table role (
-       id bigint not null auto_increment,
         created datetime(6),
+        id bigint not null auto_increment,
         modified datetime(6),
         municipality_id varchar(255) not null,
         name varchar(255) not null,
@@ -84,23 +84,23 @@
     ) engine=InnoDB;
 
     create table stakeholder (
-       id bigint not null auto_increment,
+        id bigint not null auto_increment,
         address varchar(255),
         care_of varchar(255),
         country varchar(255),
+        errand_id varchar(255) not null,
         external_id varchar(255),
         external_id_type varchar(255),
         first_name varchar(255),
         last_name varchar(255),
         role varchar(255),
         zip_code varchar(255),
-        errand_id varchar(255) not null,
         primary key (id)
     ) engine=InnoDB;
 
     create table status (
-       id bigint not null auto_increment,
         created datetime(6),
+        id bigint not null auto_increment,
         modified datetime(6),
         municipality_id varchar(255) not null,
         name varchar(255) not null,
@@ -109,60 +109,86 @@
     ) engine=InnoDB;
 
     create table `type` (
-       id bigint not null auto_increment,
+        category_id bigint not null,
         created datetime(6),
+        id bigint not null auto_increment,
+        modified datetime(6),
         display_name varchar(255),
         escalation_email varchar(255),
-        modified datetime(6),
         name varchar(255) not null,
-        category_id bigint not null,
         primary key (id)
     ) engine=InnoDB;
 
     create table validation (
-       id bigint not null auto_increment,
+        validated bit,
         created datetime(6),
+        id bigint not null auto_increment,
         modified datetime(6),
         municipality_id varchar(255) not null,
         namespace varchar(255) not null,
-        `type` varchar(255) not null,
-        validated bit,
+        `type` enum ('CATEGORY','EXTERNAL_ID_TYPE','ROLE','STATUS','TYPE') not null,
         primary key (id)
     ) engine=InnoDB;
-create index idx_attachment_file_name on attachment (file_name);
-create index idx_namespace_municipality_id on category (namespace, municipality_id);
+
+    create index idx_attachment_file_name 
+       on attachment (file_name);
+
+    create index idx_namespace_municipality_id 
+       on category (namespace, municipality_id);
 
     alter table if exists category 
-       add constraint uq_namespace_municipality_id_name unique (namespace, municipality_id, name);
-create index idx_errand_id on errand (id);
-create index idx_errand_namespace on errand (namespace);
-create index idx_errand_municipality_id on errand (municipality_id);
-create index idx_namespace_municipality_id on external_id_type (namespace, municipality_id);
+       add constraint uq_namespace_municipality_id_name unique (municipality_id, name, namespace);
+
+    create index idx_errand_id 
+       on errand (id);
+
+    create index idx_errand_namespace 
+       on errand (namespace);
+
+    create index idx_errand_municipality_id 
+       on errand (municipality_id);
+
+    create index idx_namespace_municipality_id 
+       on external_id_type (namespace, municipality_id);
 
     alter table if exists external_id_type 
-       add constraint uq_namespace_municipality_id_name unique (namespace, municipality_id, name);
-create index idx_external_tag_errand_id on external_tag (errand_id);
-create index idx_external_tag_key on external_tag (`key`);
+       add constraint uq_namespace_municipality_id_name unique (municipality_id, name, namespace);
+
+    create index idx_external_tag_errand_id 
+       on external_tag (errand_id);
+
+    create index idx_external_tag_key 
+       on external_tag (`key`);
 
     alter table if exists external_tag 
        add constraint uq_external_tag_errand_id_key unique (errand_id, `key`);
-create index revision_entity_id_index on revision (entity_id);
-create index revision_entity_type_index on revision (entity_type);
-create index idx_namespace_municipality_id on role (namespace, municipality_id);
+
+    create index revision_entity_id_index 
+       on revision (entity_id);
+
+    create index revision_entity_type_index 
+       on revision (entity_type);
+
+    create index idx_namespace_municipality_id 
+       on role (namespace, municipality_id);
 
     alter table if exists role 
-       add constraint uq_namespace_municipality_id_name unique (namespace, municipality_id, name);
-create index idx_namespace_municipality_id on status (namespace, municipality_id);
+       add constraint uq_namespace_municipality_id_name unique (municipality_id, name, namespace);
+
+    create index idx_namespace_municipality_id 
+       on status (namespace, municipality_id);
 
     alter table if exists status 
-       add constraint uq_namespace_municipality_id_name unique (namespace, municipality_id, name);
+       add constraint uq_namespace_municipality_id_name unique (municipality_id, name, namespace);
 
     alter table if exists `type` 
        add constraint uq_category_id_name unique (category_id, name);
-create index idx_namespace_municipality_id_type on validation (namespace, municipality_id, `type`);
+
+    create index idx_namespace_municipality_id_type 
+       on validation (namespace, municipality_id, `type`);
 
     alter table if exists validation 
-       add constraint uq_namespace_municipality_id_type unique (namespace, municipality_id, `type`);
+       add constraint uq_namespace_municipality_id_type unique (municipality_id, namespace, `type`);
 
     alter table if exists attachment 
        add constraint fk_errand_attachment_errand_id 

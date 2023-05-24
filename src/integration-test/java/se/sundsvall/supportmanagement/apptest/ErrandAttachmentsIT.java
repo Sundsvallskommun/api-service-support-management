@@ -71,6 +71,7 @@ class ErrandAttachmentsIT extends AbstractAppTest {
 			.containsExactly(0);
 
 		setupCall()
+			.withHeader("sentbyuser", "cre03ate")
 			.withServicePath(PATH + entityId + "/attachments")
 			.withHttpMethod(POST)
 			.withRequest(REQUEST_FILE)
@@ -92,6 +93,7 @@ class ErrandAttachmentsIT extends AbstractAppTest {
 			.containsExactly(0);
 
 		setupCall()
+			.withHeader("sentbyuser", "del04ete")
 			.withServicePath(PATH + entityId + "/attachments/99fa4dd0-9308-4d45-bb8e-4bb881a9a536")
 			.withHttpMethod(DELETE)
 			.withExpectedResponseStatus(NO_CONTENT)
