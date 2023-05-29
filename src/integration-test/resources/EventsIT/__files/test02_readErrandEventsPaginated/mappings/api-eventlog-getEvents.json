@@ -1,0 +1,30 @@
+{
+	"name": "api-eventlog-getEvents",
+	"request": {
+		"method": "GET",
+		"urlPath": "/api-eventlog/147d355f-dc94-4fde-a4cb-9ddd16cb1946",
+		"headers": {
+			"Authorization": {
+				"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
+			}
+        },
+        "queryParameters": {
+            "page": {
+                "equalTo": "1"
+            },
+            "size": {
+                "equalTo": "2"
+            },
+            "sort": {
+            	"equalTo": "created,ASC"
+            }
+        }
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/json"
+		},
+		"status": 200,
+		"bodyFileName": "test02_readErrandEventsPaginated/responses/api-eventlog-getEvents-response.json"
+	}
+}
