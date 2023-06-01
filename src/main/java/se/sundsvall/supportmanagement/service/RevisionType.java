@@ -4,7 +4,7 @@ public enum RevisionType {
 	CURRENT("current"),
 	PREVIOUS("previous");
 
-	private String value;
+	private final String value;
 
 	private RevisionType(String value) {
 		this.value = value;
