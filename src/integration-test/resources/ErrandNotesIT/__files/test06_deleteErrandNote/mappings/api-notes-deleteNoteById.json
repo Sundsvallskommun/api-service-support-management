@@ -8,11 +8,15 @@
 				"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
 			},
 			"sentbyuser": {
-				"equalTo": "del05ete"
+				"equalTo": "del06ete"
 			}
 		}
 	},
 	"response": {
+		"headers": {
+			"x-current-version": "1",
+			"x-current-revision": "64c692d3-5384-434d-9cd5-ffb6806cc43d"
+		},
 		"status": 204
 	}
 }

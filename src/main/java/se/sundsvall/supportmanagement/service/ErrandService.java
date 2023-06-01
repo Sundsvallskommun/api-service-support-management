@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.service;
 import static generated.se.sundsvall.eventlog.EventType.CREATE;
 import static generated.se.sundsvall.eventlog.EventType.DELETE;
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
+import static java.util.Objects.nonNull;
 import static org.zalando.problem.Status.NOT_FOUND;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrand;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandEntity;
@@ -21,7 +22,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.zalando.problem.Problem;
 
-import se.sundsvall.supportmanagement.api.filter.ExecutingUserSupplier;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
@@ -44,16 +44,13 @@ public class ErrandService {
 	@Autowired
 	private EventService eventService;
 
-	@Autowired
-	private ExecutingUserSupplier executingUserSupplier;
-
 	public String createErrand(String namespace, String municipalityId, Errand errand) {
 		// Create new errand and revision
 		final var entity = repository.save(toErrandEntity(namespace, municipalityId, errand));
 		final var revision = revisionService.createErrandRevision(entity);
 
 		// Create log event
-		eventService.createEvent(CREATE, EVENT_LOG_CREATE_ERRAND, entity, revision, null, executingUserSupplier.getAdUser());
+		eventService.createErrandEvent(CREATE, EVENT_LOG_CREATE_ERRAND, entity, revision, null);
 
 		return entity.getId();
 	}
@@ -78,9 +75,11 @@ public class ErrandService {
 		final var entity = repository.save(updateEntity(repository.getReferenceById(id), errand));
 		final var latestRevision = revisionService.createErrandRevision(entity);
 
-		// Create log event
-		final var previousRevision = revisionService.getErrandRevisionByVersion(id, latestRevision.getVersion() - 1);
-		eventService.createEvent(UPDATE, EVENT_LOG_UPDATE_ERRAND, entity, latestRevision, previousRevision, executingUserSupplier.getAdUser());
+		// Create log event if the update has modified the errand (and thus has created a new revision)
+		if (nonNull(latestRevision)) {
+			final var previousRevision = revisionService.getErrandRevisionByVersion(id, latestRevision.getVersion() - 1);
+			eventService.createErrandEvent(UPDATE, EVENT_LOG_UPDATE_ERRAND, entity, latestRevision, previousRevision);
+		}
 
 		return toErrand(entity);
 	}
@@ -95,7 +94,7 @@ public class ErrandService {
 
 		// Create log event
 		final var latestRevision = revisionService.getLatestErrandRevision(id);
-		eventService.createEvent(DELETE, EVENT_LOG_DELETE_ERRAND, entity, latestRevision, null, executingUserSupplier.getAdUser());
+		eventService.createErrandEvent(DELETE, EVENT_LOG_DELETE_ERRAND, entity, latestRevision, null);
 	}
 
 	private void verifyExistingErrand(String id, String namespace, String municipalityId) {
