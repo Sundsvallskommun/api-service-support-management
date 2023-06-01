@@ -6,6 +6,12 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Map.entry;
 import static java.util.Optional.ofNullable;
+import static se.sundsvall.supportmanagement.Constants.EXTERNAL_TAG_KEY_CASE_ID;
+import static se.sundsvall.supportmanagement.Constants.EXTERNAL_TAG_KEY_CURRENT_REVISION;
+import static se.sundsvall.supportmanagement.Constants.EXTERNAL_TAG_KEY_CURRENT_VERSION;
+import static se.sundsvall.supportmanagement.Constants.EXTERNAL_TAG_KEY_EXECUTED_BY;
+import static se.sundsvall.supportmanagement.Constants.EXTERNAL_TAG_KEY_PREVIOUS_REVISION;
+import static se.sundsvall.supportmanagement.Constants.EXTERNAL_TAG_KEY_PREVIOUS_VERSION;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -19,7 +25,6 @@ import java.util.Optional;
 import generated.se.sundsvall.eventlog.Event;
 import generated.se.sundsvall.eventlog.EventType;
 import generated.se.sundsvall.eventlog.Metadata;
-import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.event.EventMetaData;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
@@ -28,24 +33,16 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 public class EventlogMapper {
 
 	private static final String OWNER = "SupportManagement";
-	private static final String SOURCE_TYPE = Errand.class.getSimpleName();
-
-	private static final String KEY_EXECUTED_BY = "ExecutedBy";
-	private static final String KEY_CASE_ID = "CaseId";
-	private static final String KEY_PREVIOUS_REVISION = "PreviousRevision";
-	private static final String KEY_PREVIOUS_VERSION = "PreviousVersion";
-	private static final String KEY_CURRENT_REVISION = "CurrentRevision";
-	private static final String KEY_CURRENT_VERSION = "CurrentVersion";
 
 	private EventlogMapper() {}
 
-	public static Event toEvent(EventType eventType, String message, String revision, Map<String, String> metaData, String executedByUserId) {
+	public static Event toEvent(EventType eventType, String message, String revision, Class<?> sourceType, Map<String, String> metaData, String executedByUserId) {
 		return new Event()
 			.created(now(systemDefault()))
 			.historyReference(revision)
 			.message(message)
 			.owner(OWNER)
-			.sourceType(SOURCE_TYPE)
+			.sourceType(ofNullable(sourceType).map(Class::getSimpleName).orElse(null))
 			.type(eventType)
 			.metadata(toMetadata(metaData, ofNullable(executedByUserId)));
 	}
@@ -53,7 +50,7 @@ public class EventlogMapper {
 	private static List<Metadata> toMetadata(Map<String, String> metadata, Optional<String> executedByUserId) {
 		final var metadataList = new ArrayList<Metadata>();
 		metadataList.addAll(toMetadatas(metadata));
-		executedByUserId.ifPresent(userId -> metadataList.add(toMetadata(entry(KEY_EXECUTED_BY, userId))));
+		executedByUserId.ifPresent(userId -> metadataList.add(toMetadata(entry(EXTERNAL_TAG_KEY_EXECUTED_BY, userId))));
 
 		return metadataList;
 	}
@@ -69,28 +66,34 @@ public class EventlogMapper {
 	}
 
 	public static Map<String, String> toMetadataMap(ErrandEntity errandEntity, Revision currentRevision, Revision previousRevision) {
-		final var metadata = new HashMap<String, String>();
-
-		// Add caseId to metadata if errand and external tag with caseId are present
-		ofNullable(errandEntity)
+		String caseId = ofNullable(errandEntity)
 			.map(ErrandEntity::getExternalTags)
 			.orElse(emptyList())
 			.stream()
-			.filter(et -> Objects.equals(KEY_CASE_ID, et.getKey()))
+			.filter(et -> Objects.equals(EXTERNAL_TAG_KEY_CASE_ID, et.getKey()))
 			.map(DbExternalTag::getValue)
 			.findAny()
-			.ifPresent(value -> metadata.put(KEY_CASE_ID, value));
+			.orElse(null);
 
-		// Add information for current revision of errand
+		return toMetadataMap(caseId, currentRevision, previousRevision);
+	}
+
+	public static Map<String, String> toMetadataMap(String caseId, Revision currentRevision, Revision previousRevision) {
+		final var metadata = new HashMap<String, String>();
+
+		// Add caseId to metadata if present
+		ofNullable(caseId).ifPresent(value -> metadata.put(EXTERNAL_TAG_KEY_CASE_ID, value));
+
+		// Add information for current revision of note
 		ofNullable(currentRevision).ifPresent(rev -> {
-			metadata.put(KEY_CURRENT_REVISION, rev.getId());
-			metadata.put(KEY_CURRENT_VERSION, String.valueOf(rev.getVersion()));
+			metadata.put(EXTERNAL_TAG_KEY_CURRENT_REVISION, rev.getId());
+			metadata.put(EXTERNAL_TAG_KEY_CURRENT_VERSION, String.valueOf(rev.getVersion()));
 		});
 
 		// Add information for previous revision of errand
 		ofNullable(previousRevision).ifPresent(rev -> {
-			metadata.put(KEY_PREVIOUS_REVISION, rev.getId());
-			metadata.put(KEY_PREVIOUS_VERSION, String.valueOf(rev.getVersion()));
+			metadata.put(EXTERNAL_TAG_KEY_PREVIOUS_REVISION, rev.getId());
+			metadata.put(EXTERNAL_TAG_KEY_PREVIOUS_VERSION, String.valueOf(rev.getVersion()));
 		});
 
 		return metadata;

@@ -14,8 +14,8 @@
 		"bodyPatterns": [
 			{
 				"equalToJson": {
-					"subject": "This is an updated subject",
-					"body": "This is an updated note",
+					"subject": "This is a subject",
+					"body": "This is a note",
 					"modifiedBy": "Santa Claus"
 				}
 			}
@@ -23,13 +23,9 @@
 	},
 	"response": {
 		"headers": {
-			"Content-Type": "application/json",
-			"x-current-version": "1",
-			"x-current-revision": "64c692d3-5384-434d-9cd5-ffb6806cc43d",
-			"x-previous-version": "0",
-			"x-previous-revision": "90572753-e8b0-48f8-b200-3623eaa76f9a"
+			"Content-Type": "application/json"
 		},
 		"status": 200,
-		"bodyFileName": "test04_updateErrandNote/responses/api-notes-updateNoteById-response.json"
+		"bodyFileName": "test05_updateErrandNoteWithoutChanges/responses/api-notes-updateNoteById-response.json"
 	}
 }

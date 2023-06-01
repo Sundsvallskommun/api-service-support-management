@@ -16,7 +16,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.zalando.problem.Problem;
 
-import se.sundsvall.supportmanagement.api.filter.ExecutingUserSupplier;
 import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
 import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachmentHeader;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
@@ -42,9 +41,6 @@ public class ErrandAttachmentService {
 	@Autowired
 	private EventService eventService;
 
-	@Autowired
-	private ExecutingUserSupplier executingUserSupplier;
-
 	public String createErrandAttachment(String namespace, String municipalityId, String errandId, ErrandAttachment errandAttachment) {
 		final var errandEntity = getErrand(errandId, namespace, municipalityId);
 		final var attachmentEntity = ofNullable(toAttachmentEntity(errandEntity, errandAttachment)).orElseThrow(() -> Problem.valueOf(BAD_GATEWAY, ATTACHMENT_ENTITY_NOT_CREATED));
@@ -54,7 +50,7 @@ public class ErrandAttachmentService {
 
 		// Create log event
 		final var previousRevision = revisionService.getErrandRevisionByVersion(errandId, latestRevision.getVersion() - 1);
-		eventService.createEvent(UPDATE, EVENT_LOG_ADD_ATTACHMENT, errandEntity, latestRevision, previousRevision, executingUserSupplier.getAdUser());
+		eventService.createErrandEvent(UPDATE, EVENT_LOG_ADD_ATTACHMENT, errandEntity, latestRevision, previousRevision);
 
 		return attachmentEntity.getId();
 	}
@@ -86,7 +82,7 @@ public class ErrandAttachmentService {
 
 		// Create log event
 		final var previousRevision = revisionService.getErrandRevisionByVersion(errandId, latestRevision.getVersion() - 1);
-		eventService.createEvent(UPDATE, EVENT_LOG_REMOVE_ATTACHMENT, errandEntity, latestRevision, previousRevision, executingUserSupplier.getAdUser());
+		eventService.createErrandEvent(UPDATE, EVENT_LOG_REMOVE_ATTACHMENT, errandEntity, latestRevision, previousRevision);
 	}
 
 	private ErrandEntity getErrand(String errandId, String namespace, String municipalityId) {

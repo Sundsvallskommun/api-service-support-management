@@ -17,10 +17,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import generated.se.sundsvall.eventlog.Event;
 import generated.se.sundsvall.eventlog.EventType;
 import generated.se.sundsvall.eventlog.Metadata;
+import generated.se.sundsvall.notes.Note;
+import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.event.EventMetaData;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
@@ -50,26 +53,25 @@ class EventlogMapperTest {
 
 	@Test
 	void toEventAllNulls() {
-		assertThat(EventlogMapper.toEvent(null, null, null, null, null))
+		assertThat(EventlogMapper.toEvent(null, null, null, null, null, null))
 			.isNotNull()
-			.hasAllNullFieldsOrPropertiesExcept("created", "owner", "sourceType", "metadata")
+			.hasAllNullFieldsOrPropertiesExcept("created", "owner", "metadata")
 			.extracting(
 				Event::getOwner,
-				Event::getSourceType,
 				Event::getMetadata)
 			.containsExactly(
 				OWNER,
-				SOURCE_TYPE,
 				emptyList());
 	}
 
-	@Test
-	void toEventWithExecutingUserId() {
+	@ParameterizedTest
+	@ValueSource(classes = { Errand.class, Note.class })
+	void toEventWithExecutingUserId(Class<?> clazz) {
 		// Setup
 		final var userId = "userId";
 
 		// Execute
-		final var result = EventlogMapper.toEvent(EVENT_TYPE, MESSAGE, REVISION, META_DATA, userId);
+		final var result = EventlogMapper.toEvent(EVENT_TYPE, MESSAGE, REVISION, clazz, META_DATA, userId);
 
 		// Assert
 		assertThat(result.getCreated()).isCloseTo(now(systemDefault()), within(2, SECONDS));
@@ -77,7 +79,7 @@ class EventlogMapperTest {
 		assertThat(result.getHistoryReference()).isEqualTo(REVISION);
 		assertThat(result.getMessage()).isEqualTo(MESSAGE);
 		assertThat(result.getOwner()).isEqualTo(OWNER);
-		assertThat(result.getSourceType()).isEqualTo(SOURCE_TYPE);
+		assertThat(result.getSourceType()).isEqualTo(clazz.getSimpleName());
 		assertThat(result.getType()).isEqualTo(EVENT_TYPE);
 		assertThat(result.getMetadata()).hasSize(2)
 			.extracting(
@@ -87,10 +89,11 @@ class EventlogMapperTest {
 				tuple(EXECUTED_BY, userId));
 	}
 
-	@Test
-	void toEventWithoutExecutingUserId() {
+	@ParameterizedTest
+	@ValueSource(classes = { Errand.class, Note.class })
+	void toEventWithoutExecutingUserId(Class<?> clazz) {
 		// Execute
-		final var result = EventlogMapper.toEvent(EVENT_TYPE, MESSAGE, REVISION, META_DATA, null);
+		final var result = EventlogMapper.toEvent(EVENT_TYPE, MESSAGE, REVISION, clazz, META_DATA, null);
 
 		// Assert
 		assertThat(result.getCreated()).isCloseTo(now(systemDefault()), within(2, SECONDS));
@@ -98,7 +101,7 @@ class EventlogMapperTest {
 		assertThat(result.getHistoryReference()).isEqualTo(REVISION);
 		assertThat(result.getMessage()).isEqualTo(MESSAGE);
 		assertThat(result.getOwner()).isEqualTo(OWNER);
-		assertThat(result.getSourceType()).isEqualTo(SOURCE_TYPE);
+		assertThat(result.getSourceType()).isEqualTo(clazz.getSimpleName());
 		assertThat(result.getType()).isEqualTo(EVENT_TYPE);
 		assertThat(result.getMetadata()).hasSize(1)
 			.extracting(
