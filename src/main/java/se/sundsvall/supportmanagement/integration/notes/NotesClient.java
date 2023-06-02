@@ -75,7 +75,7 @@ public interface NotesClient {
 	 * @return the updated note
 	 */
 	@PatchMapping(path = "/notes/{id}", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
-	Note updateNoteById(@RequestHeader(AD_USER_HEADER_KEY) String executingUser, @PathVariable(name = "id") String id, @RequestBody UpdateNoteRequest updateNoteRequest);
+	ResponseEntity<Note> updateNoteById(@RequestHeader(AD_USER_HEADER_KEY) String executingUser, @PathVariable(name = "id") String id, @RequestBody UpdateNoteRequest updateNoteRequest);
 
 	/**
 	 * Create note.

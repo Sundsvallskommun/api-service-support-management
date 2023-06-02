@@ -26,6 +26,8 @@ import generated.se.sundsvall.eventlog.Event;
 import generated.se.sundsvall.eventlog.EventType;
 import generated.se.sundsvall.eventlog.Metadata;
 import generated.se.sundsvall.eventlog.PageEvent;
+import generated.se.sundsvall.notes.Note;
+import se.sundsvall.supportmanagement.api.filter.ExecutingUserSupplier;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
@@ -43,6 +45,9 @@ class EventServiceTest {
 	@Mock
 	private Event eventMock;
 
+	@Mock
+	private ExecutingUserSupplier executingUserSupplierMock;
+
 	@InjectMocks
 	private EventService service;
 
@@ -50,7 +55,7 @@ class EventServiceTest {
 	private ArgumentCaptor<Event> eventCaptor;
 
 	@Test
-	void createEventWithAllDataPresent() {
+	void createErrandEventWithAllDataPresent() {
 		// Setup
 		final var eventType = EventType.UPDATE;
 		final var message = "message";
@@ -67,8 +72,11 @@ class EventServiceTest {
 		final var previousRevision = Revision.create().withId(previousRevisionId).withVersion(previousRevisionVersion);
 		final var executingUserId = "executingUserId";
 
+		// Mock
+		when(executingUserSupplierMock.getAdUser()).thenReturn(executingUserId);
+
 		// Call
-		service.createEvent(eventType, message, entity, currentRevision, previousRevision, executingUserId);
+		service.createErrandEvent(eventType, message, entity, currentRevision, previousRevision);
 
 		// Verifications and assertions
 		verify(eventLogClientMock).createEvent(eq(errandId), eventCaptor.capture());
@@ -94,7 +102,7 @@ class EventServiceTest {
 	}
 
 	@Test
-	void createEventWithNoCurrentRevisionOrExecutingUser() {
+	void createErrandEventWithNoCurrentRevisionOrExecutingUser() {
 		// Setup
 		final var eventType = EventType.CREATE;
 		final var message = "message";
@@ -105,7 +113,7 @@ class EventServiceTest {
 		final var entity = ErrandEntity.create().withId(errandId);
 
 		// Call
-		service.createEvent(eventType, message, entity, null, null, null);
+		service.createErrandEvent(eventType, message, entity, null, null);
 
 		// Verifications and assertions
 		verify(eventLogClientMock).createEvent(eq(errandId), eventCaptor.capture());
@@ -122,7 +130,7 @@ class EventServiceTest {
 	}
 
 	@Test
-	void createEventWithNoPreviousRevisionOrExecutingUser() {
+	void createErrandEventWithNoPreviousRevisionOrExecutingUser() {
 		// Setup
 		final var eventType = EventType.CREATE;
 		final var message = "message";
@@ -136,7 +144,7 @@ class EventServiceTest {
 		final var currentRevision = Revision.create().withId(currentRevisionId).withVersion(currentRevisionVersion);
 
 		// Call
-		service.createEvent(eventType, message, entity, currentRevision, null, null);
+		service.createErrandEvent(eventType, message, entity, currentRevision, null);
 
 		// Verifications and assertions
 		verify(eventLogClientMock).createEvent(eq(errandId), eventCaptor.capture());
@@ -151,6 +159,92 @@ class EventServiceTest {
 				Metadata::getKey,
 				Metadata::getValue)
 			.containsExactlyInAnyOrder(
+				tuple("CurrentVersion", String.valueOf(currentRevisionVersion)),
+				tuple("CurrentRevision", currentRevisionId));
+		assertThat(event.getOwner()).isEqualTo(owner);
+		assertThat(event.getSourceType()).isEqualTo(sourceType);
+		assertThat(event.getType()).isEqualTo(eventType);
+	}
+
+	@Test
+	void createErrandNoteEventWithAllDataPresent() {
+		// Setup
+		final var eventType = EventType.UPDATE;
+		final var message = "message";
+		final var logKey = randomUUID().toString();
+		final var caseId = randomUUID().toString();
+		final var currentRevisionId = randomUUID().toString();
+		final var currentRevisionVersion = 14;
+		final var previousRevisionId = randomUUID().toString();
+		final var previousRevisionVersion = 13;
+		final var owner = "SupportManagement";
+		final var sourceType = Note.class.getSimpleName();
+
+		final var currentRevision = Revision.create().withId(currentRevisionId).withVersion(currentRevisionVersion);
+		final var previousRevision = Revision.create().withId(previousRevisionId).withVersion(previousRevisionVersion);
+		final var executingUserId = "executingUserId";
+
+		// Mock
+		when(executingUserSupplierMock.getAdUser()).thenReturn(executingUserId);
+
+		// Call
+		service.createErrandNoteEvent(eventType, message, logKey, caseId, currentRevision, previousRevision);
+
+		// Verifications and assertions
+		verify(eventLogClientMock).createEvent(eq(logKey), eventCaptor.capture());
+
+		final var event = eventCaptor.getValue();
+		assertThat(event.getCreated()).isCloseTo(now(), within(2, SECONDS));
+		assertThat(event.getExpires()).isNull();
+		assertThat(event.getHistoryReference()).isEqualTo(currentRevisionId);
+		assertThat(event.getMessage()).isEqualTo(message);
+		assertThat(event.getMetadata()).isNotNull()
+			.extracting(
+				Metadata::getKey,
+				Metadata::getValue)
+			.containsExactlyInAnyOrder(
+				tuple("CaseId", caseId),
+				tuple("CurrentVersion", String.valueOf(currentRevisionVersion)),
+				tuple("CurrentRevision", currentRevisionId),
+				tuple("PreviousVersion", String.valueOf(previousRevisionVersion)),
+				tuple("PreviousRevision", previousRevisionId),
+				tuple("ExecutedBy", executingUserId));
+		assertThat(event.getOwner()).isEqualTo(owner);
+		assertThat(event.getSourceType()).isEqualTo(sourceType);
+		assertThat(event.getType()).isEqualTo(eventType);
+	}
+
+	@Test
+	void createErrandNoteEventWithNoPreviousRevisionOrExecutingUser() {
+		// Setup
+		final var eventType = EventType.CREATE;
+		final var message = "message";
+		final var logKey = randomUUID().toString();
+		final var caseId = randomUUID().toString();
+		final var currentRevisionId = randomUUID().toString();
+		final var currentRevisionVersion = 0;
+		final var owner = "SupportManagement";
+		final var sourceType = Note.class.getSimpleName();
+
+		final var currentRevision = Revision.create().withId(currentRevisionId).withVersion(currentRevisionVersion);
+
+		// Call
+		service.createErrandNoteEvent(eventType, message, logKey, caseId, currentRevision, null);
+
+		// Verifications and assertions
+		verify(eventLogClientMock).createEvent(eq(logKey), eventCaptor.capture());
+
+		final var event = eventCaptor.getValue();
+		assertThat(event.getCreated()).isCloseTo(now(), within(2, SECONDS));
+		assertThat(event.getExpires()).isNull();
+		assertThat(event.getHistoryReference()).isEqualTo(currentRevisionId);
+		assertThat(event.getMessage()).isEqualTo(message);
+		assertThat(event.getMetadata()).isNotNull()
+			.extracting(
+				Metadata::getKey,
+				Metadata::getValue)
+			.containsExactlyInAnyOrder(
+				tuple("CaseId", caseId),
 				tuple("CurrentVersion", String.valueOf(currentRevisionVersion)),
 				tuple("CurrentRevision", currentRevisionId));
 		assertThat(event.getOwner()).isEqualTo(owner);

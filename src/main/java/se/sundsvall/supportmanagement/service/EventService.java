@@ -12,6 +12,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import generated.se.sundsvall.eventlog.EventType;
+import generated.se.sundsvall.notes.Note;
+import se.sundsvall.supportmanagement.api.filter.ExecutingUserSupplier;
+import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.event.Event;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
@@ -22,14 +25,23 @@ import se.sundsvall.supportmanagement.service.mapper.EventlogMapper;
 public class EventService {
 
 	@Autowired
+	private ExecutingUserSupplier executingUserSupplier;
+
+	@Autowired
 	private EventlogClient eventLogClient;
 
-	public void createEvent(EventType eventType, String message, ErrandEntity errandEntity, Revision currentRevision, Revision previousRevision, String executedByUserId) {
-
+	public void createErrandEvent(EventType eventType, String message, ErrandEntity errandEntity, Revision currentRevision, Revision previousRevision) {
 		final var metadata = toMetadataMap(errandEntity, currentRevision, previousRevision);
 		eventLogClient.createEvent(
 			errandEntity.getId(),
-			toEvent(eventType, message, ofNullable(currentRevision).map(Revision::getId).orElse(null), metadata, executedByUserId));
+			toEvent(eventType, message, extractId(currentRevision), Errand.class, metadata, executingUserSupplier.getAdUser()));
+	}
+
+	public void createErrandNoteEvent(EventType eventType, String message, String logKey, String caseId, Revision currentRevision, Revision previousRevision) {
+		final var metadata = toMetadataMap(caseId, currentRevision, previousRevision);
+		eventLogClient.createEvent(
+			logKey,
+			toEvent(eventType, message, extractId(currentRevision), Note.class, metadata, executingUserSupplier.getAdUser()));
 	}
 
 	public Page<Event> readEvents(String id, Pageable pageable) {
@@ -39,5 +51,9 @@ public class EventService {
 			.map(EventlogMapper::toEvent)
 			.filter(event -> nonNull(event.getType()))
 			.toList(), pageable, response.getTotalElements());
+	}
+
+	private String extractId(Revision currentRevision) {
+		return ofNullable(currentRevision).map(Revision::getId).orElse(null);
 	}
 }

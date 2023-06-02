@@ -1,0 +1,45 @@
+{
+	"name": "api-eventlog-createEvent",
+	"request": {
+		"method": "POST",
+		"urlPattern": "/api-eventlog/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+		"headers": {
+			"Authorization": {
+				"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
+			}
+		},
+		"bodyPatterns": [
+			{
+				"ignoreArrayOrder" : true,
+				"equalToJson": {
+					"type": "CREATE",
+					"message": "Ärendenotering har skapats.",
+					"owner": "SupportManagement",
+					"created": "${json-unit.any-string}",
+					"historyReference": "90572753-e8b0-48f8-b200-3623eaa76f9a",
+					"sourceType": "Note",
+					"metadata": [
+						{
+							"key": "CurrentVersion",
+							"value": "0"
+						},
+						{
+							"key": "CurrentRevision",
+							"value": "90572753-e8b0-48f8-b200-3623eaa76f9a"
+						},
+						{
+							"key":"ExecutedBy",
+							"value":"cre03ate"
+						}
+					]
+				}
+			}
+		]
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "*/*"
+		},
+		"status": 202
+	}
+}

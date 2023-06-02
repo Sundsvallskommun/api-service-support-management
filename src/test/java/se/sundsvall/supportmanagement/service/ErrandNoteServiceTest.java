@@ -2,13 +2,16 @@ package se.sundsvall.supportmanagement.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpHeaders.LOCATION;
 import static org.zalando.problem.Status.NOT_FOUND;
+import static se.sundsvall.supportmanagement.Constants.EXTERNAL_TAG_KEY_CASE_ID;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper.toCreateNoteRequest;
 
 import java.util.List;
@@ -17,19 +20,25 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.invocation.InvocationOnMock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.stubbing.Answer;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.zalando.problem.ThrowableProblem;
 
+import generated.se.sundsvall.eventlog.EventType;
 import generated.se.sundsvall.notes.FindNotesResponse;
 import generated.se.sundsvall.notes.Note;
 import se.sundsvall.supportmanagement.api.filter.ExecutingUserSupplier;
 import se.sundsvall.supportmanagement.api.model.note.CreateErrandNoteRequest;
 import se.sundsvall.supportmanagement.api.model.note.FindErrandNotesRequest;
 import se.sundsvall.supportmanagement.api.model.note.UpdateErrandNoteRequest;
+import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.notes.NotesClient;
 import se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper;
 
@@ -42,6 +51,7 @@ class ErrandNoteServiceTest {
 	private static final String MUNICIPALITY_ID = "municipalityId";
 	private static final String ERRAND_ID = "errandId";
 	private static final String BODY = "body";
+	private static final String CASE_ID = "caseId";
 	private static final String CONTEXT = "context";
 	private static final String CREATED_BY = "createdBy";
 	private static final String NOTE_ID = "noteId";
@@ -62,10 +72,16 @@ class ErrandNoteServiceTest {
 	private HttpHeaders httpHeadersMock;
 
 	@Mock
-	private ResponseEntity<Void> responseEntityMock;
+	private ResponseEntity<Void> responseEntityWithVoidMock;
+
+	@Mock
+	private ResponseEntity<Note> responseEntityWithNoteMock;
 
 	@Mock
 	private ExecutingUserSupplier executingUserSupplierMock;
+
+	@Mock
+	private EventService eventServiceMock;
 
 	@InjectMocks
 	private ErrandNoteService service;
@@ -80,11 +96,25 @@ class ErrandNoteServiceTest {
 
 		// Mock
 		ReflectionTestUtils.setField(service, "clientId", APPLICATION_NAME);
+
 		when(repositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
-		when(httpHeadersMock.get(LOCATION)).thenReturn(List.of(locationUrl));
-		when(responseEntityMock.getHeaders()).thenReturn(httpHeadersMock);
+		when(repositoryMock.getReferenceById(ERRAND_ID)).thenReturn(new ErrandEntity().withExternalTags(List.of(DbExternalTag.create().withKey(EXTERNAL_TAG_KEY_CASE_ID).withValue(CASE_ID))));
 		when(executingUserSupplierMock.getAdUser()).thenReturn(EXECUTING_USER);
-		when(notesClientMock.createNote(EXECUTING_USER, createNoteRequest)).thenReturn(responseEntityMock);
+		when(notesClientMock.createNote(EXECUTING_USER, createNoteRequest)).thenReturn(responseEntityWithVoidMock);
+		when(responseEntityWithVoidMock.getHeaders()).thenReturn(httpHeadersMock);
+		when(httpHeadersMock.get(anyString())).thenAnswer(
+			new Answer<List<String>>() {
+				@Override
+				public List<String> answer(InvocationOnMock invocation) {
+					String argument = invocation.getArgument(0);
+					return switch (argument) {
+						case "x-current-revision" -> List.of("currentRevision");
+						case "x-current-version" -> List.of("0");
+						case LOCATION -> List.of(locationUrl);
+						default -> null;
+					};
+				}
+			});
 
 		// Call
 		final var result = service.createErrandNote(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, errandNote);
@@ -93,7 +123,9 @@ class ErrandNoteServiceTest {
 		assertThat(result).isEqualTo(NOTE_ID);
 
 		verify(repositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
+		verify(repositoryMock).getReferenceById(ERRAND_ID);
 		verify(notesClientMock).createNote(EXECUTING_USER, createNoteRequest);
+		verify(eventServiceMock).createErrandNoteEvent(EventType.CREATE, "Ärendenotering har skapats.", ERRAND_ID, CASE_ID, Revision.create().withId("currentRevision").withVersion(0), null);
 	}
 
 	@Test
@@ -186,8 +218,52 @@ class ErrandNoteServiceTest {
 
 		// Mock
 		when(repositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
+		when(repositoryMock.getReferenceById(ERRAND_ID)).thenReturn(new ErrandEntity().withExternalTags(List.of(DbExternalTag.create().withKey(EXTERNAL_TAG_KEY_CASE_ID).withValue(CASE_ID))));
 		when(executingUserSupplierMock.getAdUser()).thenReturn(EXECUTING_USER);
-		when(notesClientMock.updateNoteById(EXECUTING_USER, NOTE_ID, updateNoteRequest)).thenReturn(new Note());
+		when(notesClientMock.updateNoteById(EXECUTING_USER, NOTE_ID, updateNoteRequest)).thenReturn(responseEntityWithNoteMock);
+		when(responseEntityWithNoteMock.getHeaders()).thenReturn(httpHeadersMock);
+		when(responseEntityWithNoteMock.getBody()).thenReturn(new Note());
+
+		when(httpHeadersMock.get(anyString())).thenAnswer(
+			new Answer<List<String>>() {
+				@Override
+				public List<String> answer(InvocationOnMock invocation) {
+					String argument = invocation.getArgument(0);
+					return switch (argument) {
+						case "x-current-revision" -> List.of("currentRevision");
+						case "x-current-version" -> List.of("1");
+						case "x-previous-revision" -> List.of("previousRevision");
+						case "x-previous-version" -> List.of("0");
+						default -> null;
+					};
+				}
+			});
+
+		// Call
+		final var result = service.updateErrandNote(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, NOTE_ID, errandNote);
+
+		// Assertions and verifications
+		assertThat(result).isNotNull();
+
+		verify(repositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
+		verify(repositoryMock).getReferenceById(ERRAND_ID);
+		verify(notesClientMock).updateNoteById(EXECUTING_USER, NOTE_ID, updateNoteRequest);
+		verify(eventServiceMock).createErrandNoteEvent(EventType.UPDATE, "Ärendenotering har uppdaterats.", ERRAND_ID, CASE_ID, Revision.create().withId("currentRevision").withVersion(1), Revision.create().withId("previousRevision").withVersion(0));
+	}
+
+	@Test
+	void updateErrandWithNoChangedNote() {
+
+		// Setup
+		final var errandNote = buildUpdateErrandNoteRequest();
+		final var updateNoteRequest = ErrandNoteMapper.toUpdateNoteRequest(errandNote);
+
+		// Mock
+		when(repositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
+		when(executingUserSupplierMock.getAdUser()).thenReturn(EXECUTING_USER);
+		when(notesClientMock.updateNoteById(EXECUTING_USER, NOTE_ID, updateNoteRequest)).thenReturn(responseEntityWithNoteMock);
+		when(responseEntityWithNoteMock.getHeaders()).thenReturn(httpHeadersMock);
+		when(responseEntityWithNoteMock.getBody()).thenReturn(new Note());
 
 		// Call
 		final var result = service.updateErrandNote(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, NOTE_ID, errandNote);
@@ -197,6 +273,8 @@ class ErrandNoteServiceTest {
 
 		verify(repositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(notesClientMock).updateNoteById(EXECUTING_USER, NOTE_ID, updateNoteRequest);
+		verify(repositoryMock, never()).getReferenceById(ERRAND_ID);
+		verify(eventServiceMock, never()).createErrandNoteEvent(any(), any(), any(), any(), any(), any());
 	}
 
 	@Test
@@ -222,15 +300,31 @@ class ErrandNoteServiceTest {
 
 		// Mock
 		when(repositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
+		when(repositoryMock.getReferenceById(ERRAND_ID)).thenReturn(new ErrandEntity().withExternalTags(List.of(DbExternalTag.create().withKey(EXTERNAL_TAG_KEY_CASE_ID).withValue(CASE_ID))));
 		when(executingUserSupplierMock.getAdUser()).thenReturn(EXECUTING_USER);
-		when(notesClientMock.deleteNoteById(EXECUTING_USER, NOTE_ID)).thenReturn(responseEntityMock);
+		when(notesClientMock.deleteNoteById(EXECUTING_USER, NOTE_ID)).thenReturn(responseEntityWithVoidMock);
+		when(responseEntityWithVoidMock.getHeaders()).thenReturn(httpHeadersMock);
+		when(httpHeadersMock.get(anyString())).thenAnswer(
+			new Answer<List<String>>() {
+				@Override
+				public List<String> answer(InvocationOnMock invocation) {
+					String argument = invocation.getArgument(0);
+					return switch (argument) {
+						case "x-current-revision" -> List.of("currentRevision");
+						case "x-current-version" -> List.of("1");
+						default -> null;
+					};
+				}
+			});
 
 		// Call
 		service.deleteErrandNote(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, NOTE_ID);
 
 		// Assertions and verifications
 		verify(repositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
+		verify(repositoryMock).getReferenceById(ERRAND_ID);
 		verify(notesClientMock).deleteNoteById(EXECUTING_USER, NOTE_ID);
+		verify(eventServiceMock).createErrandNoteEvent(EventType.DELETE, "Ärendenotering har raderats.", ERRAND_ID, CASE_ID, Revision.create().withId("currentRevision").withVersion(1), null);
 	}
 
 	@Test
