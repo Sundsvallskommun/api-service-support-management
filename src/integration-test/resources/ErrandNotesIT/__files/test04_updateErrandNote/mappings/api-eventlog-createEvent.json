@@ -20,6 +20,10 @@
 					"sourceType": "Note",
 					"metadata": [
 						{
+							"key": "NoteId",
+							"value": "d1f2c8d4-d234-4504-a483-b74570a7941d"
+						},
+						{
 							"key": "CurrentVersion",
 							"value": "1"
 						},

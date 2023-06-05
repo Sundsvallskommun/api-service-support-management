@@ -1,18 +1,12 @@
 package se.sundsvall.supportmanagement.service;
 
-import static java.util.Objects.nonNull;
-import static java.util.Optional.ofNullable;
-import static se.sundsvall.supportmanagement.service.mapper.EventlogMapper.toEvent;
-import static se.sundsvall.supportmanagement.service.mapper.EventlogMapper.toMetadataMap;
-
+import generated.se.sundsvall.eventlog.EventType;
+import generated.se.sundsvall.notes.Note;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-
-import generated.se.sundsvall.eventlog.EventType;
-import generated.se.sundsvall.notes.Note;
 import se.sundsvall.supportmanagement.api.filter.ExecutingUserSupplier;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.event.Event;
@@ -20,6 +14,11 @@ import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.eventlog.EventlogClient;
 import se.sundsvall.supportmanagement.service.mapper.EventlogMapper;
+
+import static java.util.Objects.nonNull;
+import static java.util.Optional.ofNullable;
+import static se.sundsvall.supportmanagement.service.mapper.EventlogMapper.toEvent;
+import static se.sundsvall.supportmanagement.service.mapper.EventlogMapper.toMetadataMap;
 
 @Service
 public class EventService {
@@ -37,8 +36,8 @@ public class EventService {
 			toEvent(eventType, message, extractId(currentRevision), Errand.class, metadata, executingUserSupplier.getAdUser()));
 	}
 
-	public void createErrandNoteEvent(EventType eventType, String message, String logKey, String caseId, Revision currentRevision, Revision previousRevision) {
-		final var metadata = toMetadataMap(caseId, currentRevision, previousRevision);
+	public void createErrandNoteEvent(EventType eventType, String message, String logKey, String caseId, String noteId, Revision currentRevision, Revision previousRevision) {
+		final var metadata = toMetadataMap(caseId, noteId, currentRevision, previousRevision);
 		eventLogClient.createEvent(
 			logKey,
 			toEvent(eventType, message, extractId(currentRevision), Note.class, metadata, executingUserSupplier.getAdUser()));

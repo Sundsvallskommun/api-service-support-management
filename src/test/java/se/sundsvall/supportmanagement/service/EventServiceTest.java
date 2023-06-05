@@ -1,5 +1,26 @@
 package se.sundsvall.supportmanagement.service;
 
+import generated.se.sundsvall.eventlog.Event;
+import generated.se.sundsvall.eventlog.EventType;
+import generated.se.sundsvall.eventlog.Metadata;
+import generated.se.sundsvall.eventlog.PageEvent;
+import generated.se.sundsvall.notes.Note;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Pageable;
+import se.sundsvall.supportmanagement.api.filter.ExecutingUserSupplier;
+import se.sundsvall.supportmanagement.api.model.errand.Errand;
+import se.sundsvall.supportmanagement.api.model.revision.Revision;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.eventlog.EventlogClient;
+
+import java.util.List;
+
 import static java.time.OffsetDateTime.now;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static java.util.UUID.randomUUID;
@@ -10,28 +31,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-
-import java.util.List;
-
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Pageable;
-
-import generated.se.sundsvall.eventlog.Event;
-import generated.se.sundsvall.eventlog.EventType;
-import generated.se.sundsvall.eventlog.Metadata;
-import generated.se.sundsvall.eventlog.PageEvent;
-import generated.se.sundsvall.notes.Note;
-import se.sundsvall.supportmanagement.api.filter.ExecutingUserSupplier;
-import se.sundsvall.supportmanagement.api.model.errand.Errand;
-import se.sundsvall.supportmanagement.api.model.revision.Revision;
-import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.integration.eventlog.EventlogClient;
 
 @ExtendWith(MockitoExtension.class)
 class EventServiceTest {
@@ -173,6 +172,7 @@ class EventServiceTest {
 		final var message = "message";
 		final var logKey = randomUUID().toString();
 		final var caseId = randomUUID().toString();
+		final var noteId = randomUUID().toString();
 		final var currentRevisionId = randomUUID().toString();
 		final var currentRevisionVersion = 14;
 		final var previousRevisionId = randomUUID().toString();
@@ -188,7 +188,7 @@ class EventServiceTest {
 		when(executingUserSupplierMock.getAdUser()).thenReturn(executingUserId);
 
 		// Call
-		service.createErrandNoteEvent(eventType, message, logKey, caseId, currentRevision, previousRevision);
+		service.createErrandNoteEvent(eventType, message, logKey, caseId, noteId, currentRevision, previousRevision);
 
 		// Verifications and assertions
 		verify(eventLogClientMock).createEvent(eq(logKey), eventCaptor.capture());
@@ -204,6 +204,7 @@ class EventServiceTest {
 				Metadata::getValue)
 			.containsExactlyInAnyOrder(
 				tuple("CaseId", caseId),
+				tuple("NoteId", noteId),
 				tuple("CurrentVersion", String.valueOf(currentRevisionVersion)),
 				tuple("CurrentRevision", currentRevisionId),
 				tuple("PreviousVersion", String.valueOf(previousRevisionVersion)),
@@ -221,6 +222,7 @@ class EventServiceTest {
 		final var message = "message";
 		final var logKey = randomUUID().toString();
 		final var caseId = randomUUID().toString();
+		final var noteId = randomUUID().toString();
 		final var currentRevisionId = randomUUID().toString();
 		final var currentRevisionVersion = 0;
 		final var owner = "SupportManagement";
@@ -229,7 +231,7 @@ class EventServiceTest {
 		final var currentRevision = Revision.create().withId(currentRevisionId).withVersion(currentRevisionVersion);
 
 		// Call
-		service.createErrandNoteEvent(eventType, message, logKey, caseId, currentRevision, null);
+		service.createErrandNoteEvent(eventType, message, logKey, caseId, noteId, currentRevision, null);
 
 		// Verifications and assertions
 		verify(eventLogClientMock).createEvent(eq(logKey), eventCaptor.capture());
@@ -245,6 +247,7 @@ class EventServiceTest {
 				Metadata::getValue)
 			.containsExactlyInAnyOrder(
 				tuple("CaseId", caseId),
+				tuple("NoteId", noteId),
 				tuple("CurrentVersion", String.valueOf(currentRevisionVersion)),
 				tuple("CurrentRevision", currentRevisionId));
 		assertThat(event.getOwner()).isEqualTo(owner);
