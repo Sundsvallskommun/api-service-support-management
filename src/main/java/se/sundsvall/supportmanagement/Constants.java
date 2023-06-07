@@ -8,6 +8,8 @@ public class Constants {
 	public static final String AD_USER_HEADER_KEY = "sentbyuser";
 
 	public static final String EXTERNAL_TAG_KEY_CASE_ID = "CaseId";
+
+	public static final String EXTERNAL_TAG_KEY_NOTE_ID = "NoteId";
 	public static final String EXTERNAL_TAG_KEY_EXECUTED_BY = "ExecutedBy";
 	public static final String EXTERNAL_TAG_KEY_PREVIOUS_REVISION = "PreviousRevision";
 	public static final String EXTERNAL_TAG_KEY_PREVIOUS_VERSION = "PreviousVersion";
