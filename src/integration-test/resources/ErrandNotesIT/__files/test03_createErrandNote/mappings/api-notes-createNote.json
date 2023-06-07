@@ -30,6 +30,7 @@
 	"response": {
 		"headers": {
 			"Content-Type": "*/*",
+			"Location": "/api-notes/notes/90572753-e8b0-48f8-b200-3623eaa76f8b",
 			"x-current-version": "0",
 			"x-current-revision": "90572753-e8b0-48f8-b200-3623eaa76f9a"
 		},

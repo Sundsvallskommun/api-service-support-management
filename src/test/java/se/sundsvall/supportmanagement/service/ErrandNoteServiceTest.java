@@ -1,5 +1,32 @@
 package se.sundsvall.supportmanagement.service;
 
+import generated.se.sundsvall.eventlog.EventType;
+import generated.se.sundsvall.notes.FindNotesResponse;
+import generated.se.sundsvall.notes.Note;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.stubbing.Answer;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
+import org.springframework.test.util.ReflectionTestUtils;
+import org.zalando.problem.ThrowableProblem;
+import se.sundsvall.supportmanagement.api.filter.ExecutingUserSupplier;
+import se.sundsvall.supportmanagement.api.model.note.CreateErrandNoteRequest;
+import se.sundsvall.supportmanagement.api.model.note.FindErrandNotesRequest;
+import se.sundsvall.supportmanagement.api.model.note.UpdateErrandNoteRequest;
+import se.sundsvall.supportmanagement.api.model.revision.Revision;
+import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.notes.NotesClient;
+import se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper;
+
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -13,34 +40,6 @@ import static org.springframework.http.HttpHeaders.LOCATION;
 import static org.zalando.problem.Status.NOT_FOUND;
 import static se.sundsvall.supportmanagement.Constants.EXTERNAL_TAG_KEY_CASE_ID;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper.toCreateNoteRequest;
-
-import java.util.List;
-
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.stubbing.Answer;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseEntity;
-import org.springframework.test.util.ReflectionTestUtils;
-import org.zalando.problem.ThrowableProblem;
-
-import generated.se.sundsvall.eventlog.EventType;
-import generated.se.sundsvall.notes.FindNotesResponse;
-import generated.se.sundsvall.notes.Note;
-import se.sundsvall.supportmanagement.api.filter.ExecutingUserSupplier;
-import se.sundsvall.supportmanagement.api.model.note.CreateErrandNoteRequest;
-import se.sundsvall.supportmanagement.api.model.note.FindErrandNotesRequest;
-import se.sundsvall.supportmanagement.api.model.note.UpdateErrandNoteRequest;
-import se.sundsvall.supportmanagement.api.model.revision.Revision;
-import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
-import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
-import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.integration.notes.NotesClient;
-import se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper;
 
 @ExtendWith(MockitoExtension.class)
 class ErrandNoteServiceTest {
@@ -125,7 +124,7 @@ class ErrandNoteServiceTest {
 		verify(repositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(repositoryMock).getReferenceById(ERRAND_ID);
 		verify(notesClientMock).createNote(EXECUTING_USER, createNoteRequest);
-		verify(eventServiceMock).createErrandNoteEvent(EventType.CREATE, "Ärendenotering har skapats.", ERRAND_ID, CASE_ID, Revision.create().withId("currentRevision").withVersion(0), null);
+		verify(eventServiceMock).createErrandNoteEvent(EventType.CREATE, "Ärendenotering har skapats.", ERRAND_ID, CASE_ID, NOTE_ID, Revision.create().withId("currentRevision").withVersion(0), null);
 	}
 
 	@Test
@@ -248,7 +247,7 @@ class ErrandNoteServiceTest {
 		verify(repositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(repositoryMock).getReferenceById(ERRAND_ID);
 		verify(notesClientMock).updateNoteById(EXECUTING_USER, NOTE_ID, updateNoteRequest);
-		verify(eventServiceMock).createErrandNoteEvent(EventType.UPDATE, "Ärendenotering har uppdaterats.", ERRAND_ID, CASE_ID, Revision.create().withId("currentRevision").withVersion(1), Revision.create().withId("previousRevision").withVersion(0));
+		verify(eventServiceMock).createErrandNoteEvent(EventType.UPDATE, "Ärendenotering har uppdaterats.", ERRAND_ID, CASE_ID, NOTE_ID, Revision.create().withId("currentRevision").withVersion(1), Revision.create().withId("previousRevision").withVersion(0));
 	}
 
 	@Test
@@ -274,7 +273,7 @@ class ErrandNoteServiceTest {
 		verify(repositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(notesClientMock).updateNoteById(EXECUTING_USER, NOTE_ID, updateNoteRequest);
 		verify(repositoryMock, never()).getReferenceById(ERRAND_ID);
-		verify(eventServiceMock, never()).createErrandNoteEvent(any(), any(), any(), any(), any(), any());
+		verify(eventServiceMock, never()).createErrandNoteEvent(any(), any(), any(), any(), any(), any(), any());
 	}
 
 	@Test
@@ -324,7 +323,7 @@ class ErrandNoteServiceTest {
 		verify(repositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(repositoryMock).getReferenceById(ERRAND_ID);
 		verify(notesClientMock).deleteNoteById(EXECUTING_USER, NOTE_ID);
-		verify(eventServiceMock).createErrandNoteEvent(EventType.DELETE, "Ärendenotering har raderats.", ERRAND_ID, CASE_ID, Revision.create().withId("currentRevision").withVersion(1), null);
+		verify(eventServiceMock).createErrandNoteEvent(EventType.DELETE, "Ärendenotering har raderats.", ERRAND_ID, CASE_ID, NOTE_ID, Revision.create().withId("currentRevision").withVersion(1), null);
 	}
 
 	@Test
