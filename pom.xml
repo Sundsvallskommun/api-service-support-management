@@ -19,7 +19,7 @@
 		<published.container.port.production>9094</published.container.port.production>
 		<sandbox.db>true</sandbox.db>
 		<!-- Service properties -->
-		<spring-filter.version>3.1.1</spring-filter.version>
+		<spring-filter.version>3.1.2</spring-filter.version>
 		<openapi-generator-maven-plugin.version>6.6.0</openapi-generator-maven-plugin.version>
 		<overviewproject.mimetypes.version>1.0.4</overviewproject.mimetypes.version>
 		<flipkart.zjsonpatch.version>0.4.14</flipkart.zjsonpatch.version>
