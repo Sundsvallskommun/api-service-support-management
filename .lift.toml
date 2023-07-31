@@ -1,8 +1,0 @@
-ignoreFiles = """
-target/
-bin/
-"""
-
-ignoreRules = ["InlineFormatString", "UnnecessaryParenthesis", "UnnecessaryFinal", "YodaCondition" ]
-
-jdkVersion = "17"
