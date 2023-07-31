@@ -73,8 +73,8 @@ public class RevisionService {
 	 * - the last revisions serialized-snapshot differs from the current (i.e. provided) entity.
 	 * - no previous revisions exist for the provided entity.
 	 *
-	 * @param entity the entity that will have a new revision.
-	 * @return the created revision.
+	 * @param  entity the entity that will have a new revision.
+	 * @return        the created revision.
 	 */
 	public Revision createErrandRevision(ErrandEntity entity) {
 
@@ -108,15 +108,16 @@ public class RevisionService {
 			return toJsonNode(currentSnapshot).equals(toJsonNode(previousSnapshot));
 		} catch (final Exception e) { // If something fails, log and return the json objects as unequal to force creation of a new revision
 			LOG.error(COMPARISON_ERROR_LOG_MESSAGE, e);
-			return false;
 		}
+
+		return false;
 	}
 
 	/**
 	 * Returns all existing revisions for an errand.
 	 *
-	 * @param errandId id of the errand to fetch revisions for.
-	 * @return a list of Revision objects containing information on every revision of the errand.
+	 * @param  errandId id of the errand to fetch revisions for.
+	 * @return          a list of Revision objects containing information on every revision of the errand.
 	 */
 	public List<Revision> getErrandRevisions(String errandId) {
 		verifyExistingErrand(errandId);
@@ -127,8 +128,8 @@ public class RevisionService {
 	/**
 	 * Returns the lastest (current) revision of the errand
 	 *
-	 * @param errandId id of the errand to fetch latest revision for.
-	 * @return the latest revision for the errand or null if errand does not exist.
+	 * @param  errandId id of the errand to fetch latest revision for.
+	 * @return          the latest revision for the errand or null if errand does not exist.
 	 */
 	public Revision getLatestErrandRevision(String errandId) {
 		return revisionRepository.findFirstByEntityIdOrderByVersionDesc(errandId)
@@ -139,9 +140,9 @@ public class RevisionService {
 	/**
 	 * Returns requested revision of the errand
 	 *
-	 * @param errandId id of the errand to fetch revision for.
-	 * @param version  the revision version to fetch.
-	 * @return requested revision for the errand or null if errand or revision does not exist.
+	 * @param  errandId id of the errand to fetch revision for.
+	 * @param  version  the revision version to fetch.
+	 * @return          requested revision for the errand or null if errand or revision does not exist.
 	 */
 	public Revision getErrandRevisionByVersion(String errandId, int version) {
 		return revisionRepository.findByEntityIdAndVersion(errandId, version)
@@ -152,10 +153,10 @@ public class RevisionService {
 	/**
 	 * Compares two revision versions of an errand.
 	 *
-	 * @param errandId      id of the errand to compare.
-	 * @param sourceVersion version that will act as source in the comparison.
-	 * @param targetVersion version that will act as target in the comparison.
-	 * @return response containing the difference between the source version and the target version.
+	 * @param  errandId      id of the errand to compare.
+	 * @param  sourceVersion version that will act as source in the comparison.
+	 * @param  targetVersion version that will act as target in the comparison.
+	 * @return               response containing the difference between the source version and the target version.
 	 */
 	public DifferenceResponse compareErrandRevisionVersions(String errandId, int sourceVersion, int targetVersion) {
 		verifyExistingErrand(errandId);
@@ -185,9 +186,9 @@ public class RevisionService {
 	/**
 	 * Returns all existing revisions for a note.
 	 *
-	 * @param errandId id of the errand owning the note to compare.
-	 * @param noteId   id of the note to fetch revisions for.
-	 * @return a list of Revision objects containing information on every revision of the note.
+	 * @param  errandId id of the errand owning the note to compare.
+	 * @param  noteId   id of the note to fetch revisions for.
+	 * @return          a list of Revision objects containing information on every revision of the note.
 	 */
 	public List<Revision> getNoteRevisions(String errandId, String noteId) {
 		verifyExistingErrand(errandId);
@@ -198,11 +199,11 @@ public class RevisionService {
 	/**
 	 * Compares two revision versions of a note.
 	 *
-	 * @param errandId      id of the errand owning the note to compare.
-	 * @param noteId        id of the note to compare.
-	 * @param sourceVersion version that will act as source in the comparison.
-	 * @param targetVersion version that will act as target in the comparison.
-	 * @return response containing the difference between the source version and the target version.
+	 * @param  errandId      id of the errand owning the note to compare.
+	 * @param  noteId        id of the note to compare.
+	 * @param  sourceVersion version that will act as source in the comparison.
+	 * @param  targetVersion version that will act as target in the comparison.
+	 * @return               response containing the difference between the source version and the target version.
 	 */
 	public DifferenceResponse compareNoteRevisionVersions(String errandId, String noteId, int sourceVersion, int targetVersion) {
 		verifyExistingErrand(errandId);
