@@ -67,9 +67,9 @@ public class ErrandAttachmentsResource {
 		@Parameter(name = "id", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid(groups = OnCreate.class) @PathVariable("id") final String id,
 		@Valid @NotNull @RequestBody final ErrandAttachment errandAttachment) {
 
-		final var attachmentId = errandAttachmentService.createErrandAttachment(namespace, municipalityId, id, errandAttachment);
-		return created(uriComponentsBuilder.path("/{namespace}/{municipalityId}/errands/{id}/attachments/{attachmentId}")
-			.buildAndExpand(namespace, municipalityId, id, attachmentId).toUri()).header(CONTENT_TYPE, ALL_VALUE).build();
+		errandAttachmentService.createErrandAttachment(namespace, municipalityId, id, errandAttachment);
+		return created(uriComponentsBuilder.path("/{namespace}/{municipalityId}/errands/{id}/attachments")
+			.buildAndExpand(namespace, municipalityId, id).toUri()).header(CONTENT_TYPE, ALL_VALUE).build();
 	}
 
 	@GetMapping(path = "/{attachmentId}", produces = { APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE })
