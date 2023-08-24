@@ -169,6 +169,9 @@
     create index revision_entity_type_index 
        on revision (entity_type);
 
+    alter table if exists revision 
+       add constraint uq_entity_id_version unique (version, entity_id);
+
     create index idx_namespace_municipality_id 
        on role (namespace, municipality_id);
 
