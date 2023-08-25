@@ -69,7 +69,7 @@ class ErrandAttachmentsResourceTest {
 			.exchange()
 			.expectStatus().isCreated()
 			.expectHeader().contentType(ALL)
-			.expectHeader().location("http://localhost:".concat(String.valueOf(port)).concat(fromPath(PATH + "/{attachmentId}")
+			.expectHeader().location("http://localhost:".concat(String.valueOf(port)).concat(fromPath(PATH)
 				.build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "attachmentId", attachmentId)).toString()))
 			.expectBody().isEmpty();
 

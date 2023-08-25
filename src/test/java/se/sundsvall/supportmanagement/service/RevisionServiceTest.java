@@ -18,9 +18,9 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 import java.util.UUID;
 
-import org.apache.commons.lang3.RandomUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -521,15 +521,18 @@ class RevisionServiceTest {
 	}
 
 	private ErrandEntity createErrandEntity(String entityId) {
+		final var randomBytes = new byte[30];
+		new Random().nextBytes(randomBytes);
+
 		return ErrandEntity.create()
 			.withId(entityId)
-			.withModified(OffsetDateTime.ofInstant(ofEpochMilli(RandomUtils.nextLong()), ZoneId.systemDefault()))
-			.withTouched(OffsetDateTime.ofInstant(ofEpochMilli(RandomUtils.nextLong()), ZoneId.systemDefault()))
+			.withModified(OffsetDateTime.ofInstant(ofEpochMilli(new Random().nextLong()), ZoneId.systemDefault()))
+			.withTouched(OffsetDateTime.ofInstant(ofEpochMilli(new Random().nextLong()), ZoneId.systemDefault()))
 			.withAttachments(List.of(AttachmentEntity.create()
 				.withId(UUID.randomUUID().toString())
-				.withModified(OffsetDateTime.ofInstant(ofEpochMilli(RandomUtils.nextLong()), ZoneId.systemDefault()))
-				.withFile(RandomUtils.nextBytes(30))))
-			.withStakeholders(List.of(StakeholderEntity.create().withId(RandomUtils.nextLong())));
+				.withModified(OffsetDateTime.ofInstant(ofEpochMilli(new Random().nextLong()), ZoneId.systemDefault()))
+				.withFile(randomBytes)))
+			.withStakeholders(List.of(StakeholderEntity.create().withId(new Random().nextLong())));
 	}
 
 	private RevisionEntity createRevisionEntity(String key, String value) {

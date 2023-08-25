@@ -19,12 +19,16 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 
 @Entity
 @Table(name = "revision",
 	indexes = {
 		@Index(name = "revision_entity_id_index", columnList = "entity_id"),
 		@Index(name = "revision_entity_type_index", columnList = "entity_type")
+	},
+	uniqueConstraints = {
+		@UniqueConstraint(name = "uq_entity_id_version", columnNames = { "entity_id", "version" })
 	})
 public class RevisionEntity implements Serializable {
 

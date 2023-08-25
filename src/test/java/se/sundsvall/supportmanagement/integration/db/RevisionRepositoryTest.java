@@ -4,6 +4,7 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase.Replace.NONE;
 
 import java.time.OffsetDateTime;
@@ -13,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 
@@ -51,6 +53,34 @@ class RevisionRepositoryTest {
 		assertThat(result.getEntityType()).isEqualTo("ErrandEntity");
 		assertThat(isValidUUID(result.getId())).isTrue();
 		assertThat(isValidUUID(result.getEntityId())).isTrue();
+	}
+
+	@Test
+	void createFailsDueToUniqueConstraintViolation() {
+
+		// Arrange
+		final var entityId = randomUUID().toString();
+		final var version = 2;
+		final var entity1 = RevisionEntity.create()
+			.withEntityId(entityId)
+			.withEntityType(ErrandEntity.class.getSimpleName())
+			.withSerializedSnapshot("{}")
+			.withVersion(version);
+		final var entity2 = RevisionEntity.create()
+			.withEntityId(entityId)
+			.withEntityType(ErrandEntity.class.getSimpleName())
+			.withSerializedSnapshot("{}")
+			.withVersion(version);
+
+		// First save.
+		final var firstEntity = repository.saveAndFlush(entity1);
+
+		System.out.println(firstEntity);
+
+		// Second save. Will fail due to to unique constraint violation on entityId and version.
+		final var exception = assertThrows(DataIntegrityViolationException.class, () -> repository.saveAndFlush(entity2));
+
+		assertThat(exception.getMessage()).contains("Duplicate entry '" + version + "-" + entityId + "' for key 'uq_entity_id_version']");
 	}
 
 	@Test
