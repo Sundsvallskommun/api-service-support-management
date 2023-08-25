@@ -21,7 +21,7 @@
 		<!-- Service properties -->
 		<spring-filter.version>3.1.2</spring-filter.version>
 		<openapi-generator-maven-plugin.version>6.6.0</openapi-generator-maven-plugin.version>
-		<overviewproject.mimetypes.version>1.0.4</overviewproject.mimetypes.version>
+		<tika-core.version>2.8.0</tika-core.version>
 		<flipkart.zjsonpatch.version>0.4.14</flipkart.zjsonpatch.version>
 		<generated-sources-path>${project.build.directory}/generated-sources</generated-sources-path>
 		<generated-sources-java-path>src/main/java</generated-sources-java-path>
@@ -71,9 +71,10 @@
 			<version>${spring-filter.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>org.overviewproject</groupId>
-			<artifactId>mime-types</artifactId>
-			<version>${overviewproject.mimetypes.version}</version>
+			<!-- Necessary for the mime-type detection in ServiceUtil -->
+    		<groupId>org.apache.tika</groupId>
+    		<artifactId>tika-core</artifactId>
+    		<version>${tika-core.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.flipkart.zjsonpatch</groupId>

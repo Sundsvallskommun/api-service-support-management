@@ -1,7 +1,6 @@
 package se.sundsvall.supportmanagement.service.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.util.StreamUtils.copyToByteArray;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -41,19 +40,30 @@ class ServiceUtilTest {
 		assertThat(ServiceUtil.detectMimeType(null, null)).isEqualTo("application/octet-stream");
 	}
 
-	@ParameterizedTest
-	@MethodSource("mimeTypeArguments")
-	void detectMimeType(String fileName, byte[] fileBytes, String expectedTypeWithFilename, String expectedTypeWithoutFilename) {
-		assertThat(ServiceUtil.detectMimeType(fileName, fileBytes)).isEqualTo(expectedTypeWithFilename);
-		assertThat(ServiceUtil.detectMimeType(null, fileBytes)).isEqualTo(expectedTypeWithoutFilename);
+	@Test
+	void detectMimeType() throws IOException {
+		// IMAGE
+		assertThat(ServiceUtil.detectMimeType(IMG_FILE_NAME, getBytes(PATH + IMG_FILE_NAME))).isEqualTo("image/jpeg");
+		assertThat(ServiceUtil.detectMimeType(null, getBytes(PATH + IMG_FILE_NAME))).isEqualTo("image/jpeg");
+
+		// DOC
+		assertThat(ServiceUtil.detectMimeType(DOC_FILE_NAME, getBytes(PATH + DOC_FILE_NAME))).isEqualTo("application/msword");
+		assertThat(ServiceUtil.detectMimeType(null, getBytes(PATH + DOC_FILE_NAME))).isEqualTo("application/x-tika-msoffice");
+
+		// DOCX
+		assertThat(ServiceUtil.detectMimeType(DOCX_FILE_NAME, getBytes(PATH + DOCX_FILE_NAME))).isEqualTo("application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+		assertThat(ServiceUtil.detectMimeType(null, getBytes(PATH + DOCX_FILE_NAME))).isEqualTo("application/x-tika-ooxml");
+
+		// PDF
+		assertThat(ServiceUtil.detectMimeType(PDF_FILE_NAME, getBytes(PATH + PDF_FILE_NAME))).isEqualTo("application/pdf");
+		assertThat(ServiceUtil.detectMimeType(null, getBytes(PATH + PDF_FILE_NAME))).isEqualTo("application/pdf");
+
+		// TEXT
+		assertThat(ServiceUtil.detectMimeType(TXT_FILE_NAME, getBytes(PATH + TXT_FILE_NAME))).isEqualTo("text/plain");
+		assertThat(ServiceUtil.detectMimeType(null, getBytes(PATH + TXT_FILE_NAME))).isEqualTo("text/plain");
 	}
 
-	private static Stream<Arguments> mimeTypeArguments() throws IOException {
-		return Stream.of(
-			Arguments.of(IMG_FILE_NAME, copyToByteArray(new ClassPathResource(PATH + IMG_FILE_NAME).getInputStream()), "image/jpeg", "image/jpeg"),
-			Arguments.of(DOC_FILE_NAME, copyToByteArray(new ClassPathResource(PATH + DOC_FILE_NAME).getInputStream()), "application/msword", "application/msword"),
-			Arguments.of(DOCX_FILE_NAME, copyToByteArray(new ClassPathResource(PATH + DOC_FILE_NAME).getInputStream()), "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/msword"),
-			Arguments.of(PDF_FILE_NAME, copyToByteArray(new ClassPathResource(PATH + PDF_FILE_NAME).getInputStream()), "application/pdf", "application/pdf"),
-			Arguments.of(TXT_FILE_NAME, copyToByteArray(new ClassPathResource(PATH + TXT_FILE_NAME).getInputStream()), "text/plain", "text/plain"));
+	private byte[] getBytes(String path) throws IOException {
+		return new ClassPathResource(path).getInputStream().readAllBytes();
 	}
 }
