@@ -12,6 +12,7 @@ public interface ErrandsRepository extends JpaRepository<ErrandEntity, String>, 
 
 	boolean existsByIdAndNamespaceAndMunicipalityId(String id, String namespace, String municipalityId);
 
+	// Locks row in transaction. Other threads will wait until lock is released.  
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
 	boolean existsWithLockingByIdAndNamespaceAndMunicipalityId(String id, String namespace, String municipalityId);
 }
