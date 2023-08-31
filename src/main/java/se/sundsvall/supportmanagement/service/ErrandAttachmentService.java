@@ -1,5 +1,18 @@
 package se.sundsvall.supportmanagement.service;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.zalando.problem.Problem;
+import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
+import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachmentHeader;
+import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapper;
+
+import java.util.List;
+import java.util.Objects;
+
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
@@ -7,20 +20,6 @@ import static org.zalando.problem.Status.BAD_GATEWAY;
 import static org.zalando.problem.Status.NOT_FOUND;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapper.toAttachmentEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapper.toErrandAttachmentHeaders;
-
-import java.util.List;
-import java.util.Objects;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.zalando.problem.Problem;
-
-import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
-import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachmentHeader;
-import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
-import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapper;
 
 @Service
 @Transactional
@@ -46,11 +45,10 @@ public class ErrandAttachmentService {
 		final var attachmentEntity = ofNullable(toAttachmentEntity(errandEntity, errandAttachment)).orElseThrow(() -> Problem.valueOf(BAD_GATEWAY, ATTACHMENT_ENTITY_NOT_CREATED));
 
 		// Update errand with new attachment and create new revision
-		final var latestRevision = revisionService.createErrandRevision(errandsRepository.save(errandEntity));
+		final var revisionResult = revisionService.createErrandRevision(errandsRepository.save(errandEntity));
 
 		// Create log event
-		final var previousRevision = revisionService.getErrandRevisionByVersion(errandId, latestRevision.getVersion() - 1);
-		eventService.createErrandEvent(UPDATE, EVENT_LOG_ADD_ATTACHMENT, errandEntity, latestRevision, previousRevision);
+		eventService.createErrandEvent(UPDATE, EVENT_LOG_ADD_ATTACHMENT, errandEntity, revisionResult.latest(), revisionResult.previous());
 
 		return attachmentEntity.getId();
 	}
@@ -78,11 +76,10 @@ public class ErrandAttachmentService {
 
 		// Update errand after removal of attachment and create new revision
 		errandEntity.getAttachments().remove(attachmentEntity);
-		final var latestRevision = revisionService.createErrandRevision(errandsRepository.save(errandEntity));
+		final var revisionResult = revisionService.createErrandRevision(errandsRepository.save(errandEntity));
 
 		// Create log event
-		final var previousRevision = revisionService.getErrandRevisionByVersion(errandId, latestRevision.getVersion() - 1);
-		eventService.createErrandEvent(UPDATE, EVENT_LOG_REMOVE_ATTACHMENT, errandEntity, latestRevision, previousRevision);
+		eventService.createErrandEvent(UPDATE, EVENT_LOG_REMOVE_ATTACHMENT, errandEntity, revisionResult.latest(), revisionResult.previous());
 	}
 
 	private ErrandEntity getErrand(String errandId, String namespace, String municipalityId) {

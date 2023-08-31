@@ -1,5 +1,22 @@
 package se.sundsvall.supportmanagement.service;
 
+import generated.se.sundsvall.eventlog.Event;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.zalando.problem.ThrowableProblem;
+import se.sundsvall.supportmanagement.api.model.revision.Revision;
+import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+
+import java.util.ArrayList;
+import java.util.List;
+
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
 import static java.util.Optional.of;
 import static org.apache.commons.codec.binary.Base64.encodeBase64String;
@@ -14,24 +31,6 @@ import static org.zalando.problem.Status.NOT_FOUND;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildAttachmentEntity;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrandAttachment;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrandEntity;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.zalando.problem.ThrowableProblem;
-
-import generated.se.sundsvall.eventlog.Event;
-import se.sundsvall.supportmanagement.api.model.revision.Revision;
-import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
-import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
-import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 
 @ExtendWith(MockitoExtension.class)
 class ErrandAttachmentServiceTest {
@@ -83,9 +82,7 @@ class ErrandAttachmentServiceTest {
 		when(errandMock.getNamespace()).thenReturn(NAMESPACE);
 		when(errandMock.getAttachments()).thenReturn(new ArrayList<>());
 		when(errandsRepositoryMock.save(any(ErrandEntity.class))).thenReturn(errandMock);
-		when(revisionServiceMock.createErrandRevision(errandMock)).thenReturn(currentRevisionMock);
-		when(currentRevisionMock.getVersion()).thenReturn(CURRENT_REVISION_VERSION);
-		when(revisionServiceMock.getErrandRevisionByVersion(ERRAND_ID, PREVIOUS_REVISION_VERSION)).thenReturn(previousRevisionMock);
+		when(revisionServiceMock.createErrandRevision(errandMock)).thenReturn(new RevisionResult(previousRevisionMock, currentRevisionMock));
 
 		// Call
 		final var result = service.createErrandAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, buildErrandAttachment());
@@ -96,7 +93,6 @@ class ErrandAttachmentServiceTest {
 		verify(errandsRepositoryMock).findById(ERRAND_ID);
 		verify(errandsRepositoryMock).save(any(ErrandEntity.class));
 		verify(revisionServiceMock).createErrandRevision(errandMock);
-		verify(revisionServiceMock).getErrandRevisionByVersion(ERRAND_ID, PREVIOUS_REVISION_VERSION);
 		verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_ADD_ATTACHMENT, errandMock, currentRevisionMock, previousRevisionMock);
 	}
 
@@ -212,9 +208,7 @@ class ErrandAttachmentServiceTest {
 		when(errandMock.getAttachments()).thenReturn(new ArrayList<>(List.of(attachmentMock)));
 		when(attachmentMock.getId()).thenReturn(ATTACHMENT_ID);
 		when(errandsRepositoryMock.save(any(ErrandEntity.class))).thenReturn(errandMock);
-		when(revisionServiceMock.createErrandRevision(errandMock)).thenReturn(currentRevisionMock);
-		when(currentRevisionMock.getVersion()).thenReturn(CURRENT_REVISION_VERSION);
-		when(revisionServiceMock.getErrandRevisionByVersion(ERRAND_ID, PREVIOUS_REVISION_VERSION)).thenReturn(previousRevisionMock);
+		when(revisionServiceMock.createErrandRevision(errandMock)).thenReturn(new RevisionResult(previousRevisionMock,currentRevisionMock));
 
 		// Call
 		service.deleteErrandAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ATTACHMENT_ID);
@@ -226,7 +220,6 @@ class ErrandAttachmentServiceTest {
 		verify(errandsRepositoryMock).save(any(ErrandEntity.class));
 		verify(revisionServiceMock).createErrandRevision(errandMock);
 
-		verify(revisionServiceMock).getErrandRevisionByVersion(ERRAND_ID, PREVIOUS_REVISION_VERSION);
 		verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_REMOVE_ATTACHMENT, errandMock, currentRevisionMock, previousRevisionMock);
 	}
 
