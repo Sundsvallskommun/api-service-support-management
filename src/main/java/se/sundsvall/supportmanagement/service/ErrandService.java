@@ -1,5 +1,19 @@
 package se.sundsvall.supportmanagement.service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.zalando.problem.Problem;
+import se.sundsvall.supportmanagement.api.model.errand.Errand;
+import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+
 import static generated.se.sundsvall.eventlog.EventType.CREATE;
 import static generated.se.sundsvall.eventlog.EventType.DELETE;
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
@@ -13,22 +27,10 @@ import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.d
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withMunicipalityId;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withNamespace;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.zalando.problem.Problem;
-
-import se.sundsvall.supportmanagement.api.model.errand.Errand;
-import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
-import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-
 @Service
 @Transactional
 public class ErrandService {
+	private static final Logger LOG = LoggerFactory.getLogger(ErrandService.class);
 
 	private static final String ENTITY_NOT_FOUND = "An errand with id '%s' could not be found in namespace '%s' for municipality with id '%s'";
 	private static final String EVENT_LOG_CREATE_ERRAND = "Ärendet har skapats.";
@@ -50,7 +52,7 @@ public class ErrandService {
 		final var revision = revisionService.createErrandRevision(entity);
 
 		// Create log event
-		eventService.createErrandEvent(CREATE, EVENT_LOG_CREATE_ERRAND, entity, revision, null);
+		eventService.createErrandEvent(CREATE, EVENT_LOG_CREATE_ERRAND, entity, revision.latest(), null);
 
 		return entity.getId();
 	}
@@ -73,12 +75,11 @@ public class ErrandService {
 
 		// Update errand and create new revision
 		final var entity = repository.save(updateEntity(repository.getReferenceById(id), errand));
-		final var latestRevision = revisionService.createErrandRevision(entity);
+		final var revisionResult = revisionService.createErrandRevision(entity);
 
 		// Create log event if the update has modified the errand (and thus has created a new revision)
-		if (nonNull(latestRevision)) {
-			final var previousRevision = revisionService.getErrandRevisionByVersion(id, latestRevision.getVersion() - 1);
-			eventService.createErrandEvent(UPDATE, EVENT_LOG_UPDATE_ERRAND, entity, latestRevision, previousRevision);
+		if (nonNull(revisionResult)) {
+			eventService.createErrandEvent(UPDATE, EVENT_LOG_UPDATE_ERRAND, entity, revisionResult.latest(), revisionResult.previous());
 		}
 
 		return toErrand(entity);
@@ -98,7 +99,7 @@ public class ErrandService {
 	}
 
 	private void verifyExistingErrand(String id, String namespace, String municipalityId) {
-		if (!repository.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)) {
+		if (!repository.existsWithLockingByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)) {
 			throw Problem.valueOf(NOT_FOUND, String.format(ENTITY_NOT_FOUND, id, namespace, municipalityId));
 		}
 	}
