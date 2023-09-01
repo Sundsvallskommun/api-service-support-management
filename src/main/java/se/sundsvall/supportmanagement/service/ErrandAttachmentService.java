@@ -12,6 +12,8 @@ import se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapper;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Supplier;
 
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
 import static java.util.Collections.emptyList;
@@ -41,7 +43,7 @@ public class ErrandAttachmentService {
 	private EventService eventService;
 
 	public String createErrandAttachment(String namespace, String municipalityId, String errandId, ErrandAttachment errandAttachment) {
-		final var errandEntity = getErrand(errandId, namespace, municipalityId);
+		final var errandEntity = getErrand(errandId, namespace, municipalityId, true);
 		final var attachmentEntity = ofNullable(toAttachmentEntity(errandEntity, errandAttachment)).orElseThrow(() -> Problem.valueOf(BAD_GATEWAY, ATTACHMENT_ENTITY_NOT_CREATED));
 
 		// Update errand with new attachment and create new revision
@@ -54,7 +56,7 @@ public class ErrandAttachmentService {
 	}
 
 	public ErrandAttachment readErrandAttachment(String namespace, String municipalityId, String errandId, String attachmentId) {
-		final var errandEntity = getErrand(errandId, namespace, municipalityId);
+		final var errandEntity = getErrand(errandId, namespace, municipalityId, false);
 		return ofNullable(errandEntity.getAttachments()).orElse(emptyList()).stream()
 			.filter(attachment -> attachment.getId().equalsIgnoreCase(attachmentId))
 			.findAny()
@@ -63,12 +65,12 @@ public class ErrandAttachmentService {
 	}
 
 	public List<ErrandAttachmentHeader> readErrandAttachmentHeaders(String namespace, String municipalityId, String errandId) {
-		final var errandEntity = getErrand(errandId, namespace, municipalityId);
+		final var errandEntity = getErrand(errandId, namespace, municipalityId, false);
 		return toErrandAttachmentHeaders(errandEntity.getAttachments());
 	}
 
 	public void deleteErrandAttachment(String namespace, String municipalityId, String errandId, String attachmentId) {
-		final var errandEntity = getErrand(errandId, namespace, municipalityId);
+		final var errandEntity = getErrand(errandId, namespace, municipalityId, true);
 		final var attachmentEntity = ofNullable(errandEntity.getAttachments()).orElse(emptyList()).stream()
 			.filter(attachment -> attachment.getId().equalsIgnoreCase(attachmentId))
 			.findAny()
@@ -82,9 +84,16 @@ public class ErrandAttachmentService {
 		eventService.createErrandEvent(UPDATE, EVENT_LOG_REMOVE_ATTACHMENT, errandEntity, revisionResult.latest(), revisionResult.previous());
 	}
 
-	private ErrandEntity getErrand(String errandId, String namespace, String municipalityId) {
-		return errandsRepository.findById(errandId)
-			.filter(entity -> Objects.equals(namespace, entity.getNamespace()))
+	private ErrandEntity getErrand(String errandId, String namespace, String municipalityId, boolean lock) {
+
+		Supplier<Optional<ErrandEntity>> optionalErrand;
+		if(lock) {
+			optionalErrand = () -> errandsRepository.findWithLockingById(errandId);
+		} else {
+			optionalErrand = () -> errandsRepository.findById(errandId);
+		}
+
+		return optionalErrand.get().filter(entity -> Objects.equals(namespace, entity.getNamespace()))
 			.filter(entity -> Objects.equals(municipalityId, entity.getMunicipalityId()))
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, String.format(ERRAND_ENTITY_NOT_FOUND, errandId, namespace, municipalityId)));
 	}

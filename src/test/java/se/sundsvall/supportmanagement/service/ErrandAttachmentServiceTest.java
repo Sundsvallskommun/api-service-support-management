@@ -77,7 +77,7 @@ class ErrandAttachmentServiceTest {
 	@Test
 	void createErrandAttachment() {
 		// Mock
-		when(errandsRepositoryMock.findById(ERRAND_ID)).thenReturn(of(errandMock));
+		when(errandsRepositoryMock.findWithLockingById(ERRAND_ID)).thenReturn(of(errandMock));
 		when(errandMock.getMunicipalityId()).thenReturn(MUNICIPALITY_ID);
 		when(errandMock.getNamespace()).thenReturn(NAMESPACE);
 		when(errandMock.getAttachments()).thenReturn(new ArrayList<>());
@@ -90,7 +90,7 @@ class ErrandAttachmentServiceTest {
 		// Assertions and verifications
 		assertThat(result).isNotNull().isEqualTo(ATTACHMENT_ID);
 
-		verify(errandsRepositoryMock).findById(ERRAND_ID);
+		verify(errandsRepositoryMock).findWithLockingById(ERRAND_ID);
 		verify(errandsRepositoryMock).save(any(ErrandEntity.class));
 		verify(revisionServiceMock).createErrandRevision(errandMock);
 		verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_ADD_ATTACHMENT, errandMock, currentRevisionMock, previousRevisionMock);
@@ -104,7 +104,7 @@ class ErrandAttachmentServiceTest {
 		final var errandAttachment = buildErrandAttachment();
 
 		// Mock
-		when(errandsRepositoryMock.findById(ERRAND_ID)).thenReturn(of(errandEntity));
+		when(errandsRepositoryMock.findWithLockingById(ERRAND_ID)).thenReturn(of(errandEntity));
 
 		// Call
 		final var exception = assertThrows(ThrowableProblem.class, () -> service.createErrandAttachment(NAMESPACE, "other_" + MUNICIPALITY_ID, ERRAND_ID, errandAttachment));
@@ -113,7 +113,7 @@ class ErrandAttachmentServiceTest {
 		assertThat(exception.getTitle()).isEqualTo(NOT_FOUND.getReasonPhrase());
 		assertThat(exception.getMessage()).isEqualTo("Not Found: An errand with id 'errandId' could not be found in namespace 'namespace' for municipality with id 'other_municipalityId'");
 
-		verify(errandsRepositoryMock).findById(ERRAND_ID);
+		verify(errandsRepositoryMock).findWithLockingById(ERRAND_ID);
 		verify(errandsRepositoryMock, never()).save(any());
 		verifyNoInteractions(revisionServiceMock, eventServiceMock);
 	}
@@ -202,7 +202,7 @@ class ErrandAttachmentServiceTest {
 	void deleteErrandAttachment() {
 
 		// Mock
-		when(errandsRepositoryMock.findById(ERRAND_ID)).thenReturn(of(errandMock));
+		when(errandsRepositoryMock.findWithLockingById(ERRAND_ID)).thenReturn(of(errandMock));
 		when(errandMock.getMunicipalityId()).thenReturn(MUNICIPALITY_ID);
 		when(errandMock.getNamespace()).thenReturn(NAMESPACE);
 		when(errandMock.getAttachments()).thenReturn(new ArrayList<>(List.of(attachmentMock)));
@@ -216,7 +216,7 @@ class ErrandAttachmentServiceTest {
 		// Assertions and verifications
 		assertThat(errandMock.getAttachments()).isEmpty();
 
-		verify(errandsRepositoryMock).findById(ERRAND_ID);
+		verify(errandsRepositoryMock).findWithLockingById(ERRAND_ID);
 		verify(errandsRepositoryMock).save(any(ErrandEntity.class));
 		verify(revisionServiceMock).createErrandRevision(errandMock);
 
@@ -234,7 +234,7 @@ class ErrandAttachmentServiceTest {
 		assertThat(exception.getTitle()).isEqualTo(NOT_FOUND.getReasonPhrase());
 		assertThat(exception.getMessage()).isEqualTo("Not Found: An errand with id 'errandId' could not be found in namespace 'namespace' for municipality with id 'municipalityId'");
 
-		verify(errandsRepositoryMock).findById(ERRAND_ID);
+		verify(errandsRepositoryMock).findWithLockingById(ERRAND_ID);
 		verify(errandsRepositoryMock, never()).save(any());
 		verifyNoInteractions(revisionServiceMock, eventServiceMock);
 	}
@@ -243,7 +243,7 @@ class ErrandAttachmentServiceTest {
 	void deleteErrandAttachmentAttachmentIdNotFound() {
 
 		// Mock
-		when(errandsRepositoryMock.findById(ERRAND_ID)).thenReturn(of(errandMock));
+		when(errandsRepositoryMock.findWithLockingById(ERRAND_ID)).thenReturn(of(errandMock));
 		when(errandMock.getMunicipalityId()).thenReturn(MUNICIPALITY_ID);
 		when(errandMock.getNamespace()).thenReturn(NAMESPACE);
 		when(errandMock.getAttachments()).thenReturn(new ArrayList<>(List.of(attachmentMock)));
@@ -257,7 +257,7 @@ class ErrandAttachmentServiceTest {
 		assertThat(exception.getTitle()).isEqualTo(NOT_FOUND.getReasonPhrase());
 		assertThat(exception.getMessage()).isEqualTo("Not Found: An attachment with id 'attachmentId' could not be found on errand with id 'errandId'");
 
-		verify(errandsRepositoryMock).findById(ERRAND_ID);
+		verify(errandsRepositoryMock).findWithLockingById(ERRAND_ID);
 		verify(errandsRepositoryMock, never()).save(any());
 		verifyNoInteractions(revisionServiceMock, eventServiceMock);
 	}
