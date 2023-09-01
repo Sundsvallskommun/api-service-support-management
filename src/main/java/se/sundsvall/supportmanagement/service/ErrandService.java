@@ -14,6 +14,8 @@ import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 
+import java.util.function.Supplier;
+
 import static generated.se.sundsvall.eventlog.EventType.CREATE;
 import static generated.se.sundsvall.eventlog.EventType.DELETE;
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
@@ -65,13 +67,13 @@ public class ErrandService {
 	}
 
 	public Errand readErrand(String namespace, String municipalityId, String id) {
-		verifyExistingErrand(id, namespace, municipalityId);
+		verifyExistingErrand(id, namespace, municipalityId, false);
 
 		return toErrand(repository.getReferenceById(id));
 	}
 
 	public Errand updateErrand(String namespace, String municipalityId, String id, Errand errand) {
-		verifyExistingErrand(id, namespace, municipalityId);
+		verifyExistingErrand(id, namespace, municipalityId, true);
 
 		// Update errand and create new revision
 		final var entity = repository.save(updateEntity(repository.getReferenceById(id), errand));
@@ -86,7 +88,7 @@ public class ErrandService {
 	}
 
 	public void deleteErrand(String namespace, String municipalityId, String id) {
-		verifyExistingErrand(id, namespace, municipalityId);
+		verifyExistingErrand(id, namespace, municipalityId, true);
 
 		final var entity = repository.getReferenceById(id);
 
@@ -98,8 +100,16 @@ public class ErrandService {
 		eventService.createErrandEvent(DELETE, EVENT_LOG_DELETE_ERRAND, entity, latestRevision, null);
 	}
 
-	private void verifyExistingErrand(String id, String namespace, String municipalityId) {
-		if (!repository.existsWithLockingByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)) {
+	private void verifyExistingErrand(String id, String namespace, String municipalityId, boolean lock) {
+
+		Supplier<Boolean> exists;
+		if(lock) {
+			exists = () -> repository.existsWithLockingByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		} else {
+			exists = () -> repository.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		}
+
+		if(!exists.get()) {
 			throw Problem.valueOf(NOT_FOUND, String.format(ENTITY_NOT_FOUND, id, namespace, municipalityId));
 		}
 	}
