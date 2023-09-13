@@ -137,7 +137,7 @@
        on category (namespace, municipality_id);
 
     alter table if exists category 
-       add constraint uq_namespace_municipality_id_name unique (municipality_id, name, namespace);
+       add constraint uq_namespace_municipality_id_name unique (namespace, municipality_id, name);
 
     create index idx_errand_id 
        on errand (id);
@@ -148,11 +148,26 @@
     create index idx_errand_municipality_id 
        on errand (municipality_id);
 
+    create index idx_errand_status 
+       on errand (status);
+
+    create index idx_errand_category 
+       on errand (category);
+
+    create index idx_errand_type 
+       on errand (type);
+
+    create index idx_errand_assigned_user_id 
+       on errand (assigned_user_id);
+
+    create index idx_errand_reporter_user_id 
+       on errand (reporter_user_id);
+
     create index idx_namespace_municipality_id 
        on external_id_type (namespace, municipality_id);
 
     alter table if exists external_id_type 
-       add constraint uq_namespace_municipality_id_name unique (municipality_id, name, namespace);
+       add constraint uq_namespace_municipality_id_name unique (namespace, municipality_id, name);
 
     create index idx_external_tag_errand_id 
        on external_tag (errand_id);
@@ -170,19 +185,19 @@
        on revision (entity_type);
 
     alter table if exists revision 
-       add constraint uq_entity_id_version unique (version, entity_id);
+       add constraint uq_entity_id_version unique (entity_id, version);
 
     create index idx_namespace_municipality_id 
        on role (namespace, municipality_id);
 
     alter table if exists role 
-       add constraint uq_namespace_municipality_id_name unique (municipality_id, name, namespace);
+       add constraint uq_namespace_municipality_id_name unique (namespace, municipality_id, name);
 
     create index idx_namespace_municipality_id 
        on status (namespace, municipality_id);
 
     alter table if exists status 
-       add constraint uq_namespace_municipality_id_name unique (municipality_id, name, namespace);
+       add constraint uq_namespace_municipality_id_name unique (namespace, municipality_id, name);
 
     alter table if exists `type` 
        add constraint uq_category_id_name unique (category_id, name);
@@ -191,7 +206,7 @@
        on validation (namespace, municipality_id, `type`);
 
     alter table if exists validation 
-       add constraint uq_namespace_municipality_id_type unique (municipality_id, namespace, `type`);
+       add constraint uq_namespace_municipality_id_type unique (namespace, municipality_id, `type`);
 
     alter table if exists attachment 
        add constraint fk_errand_attachment_errand_id 

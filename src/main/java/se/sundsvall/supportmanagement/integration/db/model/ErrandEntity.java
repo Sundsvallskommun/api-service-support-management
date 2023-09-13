@@ -37,7 +37,12 @@ import jakarta.persistence.UniqueConstraint;
 	indexes = {
 		@Index(name = "idx_errand_id", columnList = "id"),
 		@Index(name = "idx_errand_namespace", columnList = "namespace"),
-		@Index(name = "idx_errand_municipality_id", columnList = "municipality_id")
+		@Index(name = "idx_errand_municipality_id", columnList = "municipality_id"),
+		@Index(name = "idx_errand_status", columnList = "status"),
+		@Index(name = "idx_errand_category", columnList = "category"),
+		@Index(name = "idx_errand_type", columnList = "type"),
+		@Index(name = "idx_errand_assigned_user_id", columnList = "assigned_user_id"),
+		@Index(name = "idx_errand_reporter_user_id", columnList = "reporter_user_id")
 	})
 public class ErrandEntity implements Serializable {
 

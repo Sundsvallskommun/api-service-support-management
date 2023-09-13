@@ -1,22 +1,5 @@
 package se.sundsvall.supportmanagement.service;
 
-import generated.se.sundsvall.eventlog.Event;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.zalando.problem.ThrowableProblem;
-import se.sundsvall.supportmanagement.api.model.revision.Revision;
-import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
-import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
-import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-
-import java.util.ArrayList;
-import java.util.List;
-
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
 import static java.util.Optional.of;
 import static org.apache.commons.codec.binary.Base64.encodeBase64String;
@@ -32,6 +15,24 @@ import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildAttachmentE
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrandAttachment;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrandEntity;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.zalando.problem.ThrowableProblem;
+
+import generated.se.sundsvall.eventlog.Event;
+import se.sundsvall.supportmanagement.api.model.revision.Revision;
+import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+
 @ExtendWith(MockitoExtension.class)
 class ErrandAttachmentServiceTest {
 
@@ -42,8 +43,6 @@ class ErrandAttachmentServiceTest {
 	private static final String FILE = "file";
 	private static final String FILE_NAME = "fileName";
 	private static final String MIME_TYPE = "mimeType";
-	private static final int CURRENT_REVISION_VERSION = 2;
-	private static final int PREVIOUS_REVISION_VERSION = 1;
 	private static final String EVENT_LOG_ADD_ATTACHMENT = "En bilaga har lagts till i ärendet.";
 	private static final String EVENT_LOG_REMOVE_ATTACHMENT = "En bilaga har tagits bort från ärendet.";
 
