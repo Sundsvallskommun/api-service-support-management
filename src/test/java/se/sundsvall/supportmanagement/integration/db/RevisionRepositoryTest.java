@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.integration.db;
 
+import static java.lang.Integer.parseInt;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -60,24 +61,24 @@ class RevisionRepositoryTest {
 
 		// Arrange
 		final var entityId = randomUUID().toString();
-		final var version = 2;
+		final var version = "2";
 		final var entity1 = RevisionEntity.create()
 			.withEntityId(entityId)
 			.withEntityType(ErrandEntity.class.getSimpleName())
 			.withSerializedSnapshot("{}")
-			.withVersion(version);
+			.withVersion(parseInt(version));
 		final var entity2 = RevisionEntity.create()
 			.withEntityId(entityId)
 			.withEntityType(ErrandEntity.class.getSimpleName())
 			.withSerializedSnapshot("{}")
-			.withVersion(version);
+			.withVersion(parseInt(version));
 
 		repository.saveAndFlush(entity1);
 
 		// Second save. Will fail due to to unique constraint violation on entityId and version.
 		final var exception = assertThrows(DataIntegrityViolationException.class, () -> repository.saveAndFlush(entity2));
 
-		assertThat(exception.getMessage()).contains("Duplicate entry", "for key 'uq_entity_id_version']");
+		assertThat(exception.getMessage()).contains("Duplicate entry", version, entityId, "for key 'uq_entity_id_version']");
 	}
 
 	@Test
