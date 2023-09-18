@@ -48,7 +48,8 @@ public class ErrandMapper {
 			.withStakeholders(toStakeholderEntities(errandEntity, errand.getStakeholders()))
 			.withStatus(errand.getStatus())
 			.withTitle(errand.getTitle())
-			.withType(errand.getClassification().getType());
+			.withType(errand.getClassification().getType())
+			.withErrandNumber(errand.getErrandNumber());
 	}
 
 	public static ErrandEntity updateEntity(ErrandEntity entity, Errand errand) {
@@ -108,6 +109,7 @@ public class ErrandMapper {
 				.withStakeholders(toStakeholders(e.getStakeholders()))
 				.withExternalTags(toExternalTags(e.getExternalTags()))
 				.withId(e.getId())
+				.withErrandNumber(e.getErrandNumber())
 				.withModified(e.getModified())
 				.withPriority(Priority.valueOf(e.getPriority()))
 				.withReporterUserId(e.getReporterUserId())

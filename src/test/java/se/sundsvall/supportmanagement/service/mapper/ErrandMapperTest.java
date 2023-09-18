@@ -64,6 +64,8 @@ class ErrandMapperTest {
 	private static final String ESCALATION_EMAIL = "escalation@email.com";
 	private static final String STAKEHOLDER_ROLE = "role";
 
+	private static final String ERRAND_NUMBER = "errandNumber";
+
 	@Test
 	void testToErrand() {
 		final var errand = toErrand(createEntity());
@@ -90,6 +92,7 @@ class ErrandMapperTest {
 		assertThat(errand.getResolution()).isEqualTo(RESOLUTION);
 		assertThat(errand.getDescription()).isEqualTo(DESCRIPTION);
 		assertThat(errand.getEscalationEmail()).isEqualTo(ESCALATION_EMAIL);
+		assertThat(errand.getErrandNumber()).isEqualTo(ERRAND_NUMBER);
 	}
 
 	@Test
@@ -118,7 +121,8 @@ class ErrandMapperTest {
 				Errand::getTouched,
 				Errand::getResolution,
 				Errand::getDescription,
-				Errand::getEscalationEmail)
+				Errand::getEscalationEmail,
+				Errand::getErrandNumber)
 			.containsExactly(tuple(
 				ASSIGNED_GROUP_ID,
 				ASSIGNED_USER_ID,
@@ -135,7 +139,8 @@ class ErrandMapperTest {
 				TOUCHED,
 				RESOLUTION,
 				DESCRIPTION,
-				ESCALATION_EMAIL));
+				ESCALATION_EMAIL,
+				ERRAND_NUMBER));
 	}
 
 	@Test
@@ -163,7 +168,8 @@ class ErrandMapperTest {
 				ErrandEntity::getType,
 				ErrandEntity::getResolution,
 				ErrandEntity::getDescription,
-				ErrandEntity::getEscalationEmail)
+				ErrandEntity::getEscalationEmail,
+				ErrandEntity::getErrandNumber)
 			.containsExactly(
 				ASSIGNED_GROUP_ID,
 				ASSIGNED_USER_ID,
@@ -179,7 +185,8 @@ class ErrandMapperTest {
 				TYPE,
 				RESOLUTION,
 				DESCRIPTION,
-				ESCALATION_EMAIL);
+				ESCALATION_EMAIL,
+				ERRAND_NUMBER);
 
 		assertThat(entity.getStakeholders()).hasSize(1).extracting(
 			StakeholderEntity::getAddress,
@@ -230,10 +237,11 @@ class ErrandMapperTest {
 	void testUpdateEmptyEntity() {
 		final List<AttachmentEntity> attachments = new ArrayList<>();
 		final List<StakeholderEntity> stakeholders = new ArrayList<>();
-		final var entity = updateEntity(ErrandEntity.create().withAttachments(attachments).withStakeholders(stakeholders), createErrand());
+		final var entity = updateEntity(ErrandEntity.create().withErrandNumber(ERRAND_NUMBER).withAttachments(attachments).withStakeholders(stakeholders), createErrand());
 
 		assertThat(entity.getAttachments()).isSameAs(attachments); // Test to verify that list has not been replaced
 		assertThat(entity.getStakeholders()).isSameAs(stakeholders); // Test to verify that list has not been replaced
+		assertThat(entity.getErrandNumber()).isSameAs(ERRAND_NUMBER); // Test to verify that errandNumber has not been replaced
 		assertThat(entity)
 			.extracting(
 				ErrandEntity::getAssignedGroupId,
@@ -297,7 +305,7 @@ class ErrandMapperTest {
 
 	@Test
 	void testUpdateEntityWithBlank() {
-		final var entity = updateEntity(createEntity(), Errand.create().withAssignedGroupId("").withAssignedUserId("").withResolution("").withDescription("").withEscalationEmail(""));
+		final var entity = updateEntity(createEntity(), Errand.create().withAssignedGroupId("").withAssignedUserId("").withErrandNumber("").withResolution("").withDescription("").withEscalationEmail(""));
 
 		assertThat(entity).hasNoNullFieldsOrPropertiesExcept("assignedGroupId", "assignedUserId", "attachments", "resolution", "description", "escalationEmail");
 		assertThat(entity.getAssignedGroupId()).isNull();
@@ -335,7 +343,8 @@ class ErrandMapperTest {
 			.withTouched(TOUCHED)
 			.withResolution(RESOLUTION)
 			.withDescription(DESCRIPTION)
-			.withEscalationEmail(ESCALATION_EMAIL);
+			.withEscalationEmail(ESCALATION_EMAIL)
+			.withErrandNumber(ERRAND_NUMBER);
 	}
 
 	private static Stakeholder createStakeHolder() {
@@ -372,7 +381,8 @@ class ErrandMapperTest {
 			.withModified(MODIFIED)
 			.withResolution(RESOLUTION)
 			.withDescription(DESCRIPTION)
-			.withEscalationEmail(ESCALATION_EMAIL);
+			.withEscalationEmail(ESCALATION_EMAIL)
+			.withErrandNumber(ERRAND_NUMBER);
 	}
 
 	private static StakeholderEntity createStakeHolderEntity() {

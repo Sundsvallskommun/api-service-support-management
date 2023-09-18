@@ -12,10 +12,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import org.hibernate.annotations.Formula;
-import org.hibernate.annotations.TimeZoneStorage;
-import org.hibernate.annotations.UuidGenerator;
-
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
@@ -32,12 +28,20 @@ import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
+import org.hibernate.annotations.Formula;
+import org.hibernate.annotations.TimeZoneStorage;
+import org.hibernate.annotations.UuidGenerator;
+
 @Entity
 @Table(name = "errand",
 	indexes = {
 		@Index(name = "idx_errand_id", columnList = "id"),
 		@Index(name = "idx_errand_namespace", columnList = "namespace"),
-		@Index(name = "idx_errand_municipality_id", columnList = "municipality_id")
+		@Index(name = "idx_errand_municipality_id", columnList = "municipality_id"),
+		@Index(name = "idx_errand_number", columnList = "errand_number")
+	},
+	uniqueConstraints = {
+		@UniqueConstraint(name = "uq_errand_number", columnNames = {"errand_number"})
 	})
 public class ErrandEntity implements Serializable {
 
@@ -116,6 +120,9 @@ public class ErrandEntity implements Serializable {
 	@Formula("greatest(coalesce(created, 0), coalesce(modified, 0))")
 	@TimeZoneStorage(NORMALIZE)
 	private OffsetDateTime touched;
+
+	@Column(name = "errand_number", nullable = false)
+	private String errandNumber;
 
 	public static ErrandEntity create() {
 		return new ErrandEntity();
@@ -395,6 +402,20 @@ public class ErrandEntity implements Serializable {
 		return this;
 	}
 
+	public String getErrandNumber() {
+		return errandNumber;
+	}
+
+	public void setErrandNumber(final String errandNumber) {
+		this.errandNumber = errandNumber;
+	}
+
+	public ErrandEntity withErrandNumber(final String errandNumber) {
+		this.errandNumber = errandNumber;
+		return this;
+	}
+
+
 	@Override
 	public boolean equals(Object o) {
 		if (this == o) {
@@ -405,6 +426,7 @@ public class ErrandEntity implements Serializable {
 		}
 		final ErrandEntity that = (ErrandEntity) o;
 		return Objects.equals(id, that.id) && Objects.equals(externalTags, that.externalTags) &&
+			Objects.equals(errandNumber, that.errandNumber) &&
 			Objects.equals(stakeholders, that.stakeholders) && Objects.equals(municipalityId, that.municipalityId) &&
 			Objects.equals(namespace, that.namespace) && Objects.equals(title, that.title) &&
 			Objects.equals(category, that.category) && Objects.equals(type, that.type) &&
@@ -418,7 +440,7 @@ public class ErrandEntity implements Serializable {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, externalTags, stakeholders, municipalityId, namespace, title, category, type, status, resolution, description, priority, reporterUserId, assignedUserId, assignedGroupId, escalationEmail, attachments, created, modified,
+		return Objects.hash(id, errandNumber, externalTags, stakeholders, municipalityId, namespace, title, category, type, status, resolution, description, priority, reporterUserId, assignedUserId, assignedGroupId, escalationEmail, attachments, created, modified,
 			touched);
 	}
 
@@ -426,6 +448,7 @@ public class ErrandEntity implements Serializable {
 	public String toString() {
 		final StringBuilder sb = new StringBuilder("ErrandEntity{");
 		sb.append("id='").append(id).append('\'');
+		sb.append(", errandNumber='").append(errandNumber).append('\'');
 		sb.append(", externalTags=").append(externalTags);
 		sb.append(", stakeholders=").append(stakeholders);
 		sb.append(", municipalityId='").append(municipalityId).append('\'');

@@ -1,14 +1,5 @@
 package se.sundsvall.supportmanagement.integration.db.model;
 
-import com.google.code.beanmatchers.BeanMatchers;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-
-import java.time.OffsetDateTime;
-import java.util.List;
-import java.util.Random;
-import java.util.UUID;
-
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanEquals;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanHashCode;
@@ -20,6 +11,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.AllOf.allOf;
+
+import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.Random;
+import java.util.UUID;
+
+import com.google.code.beanmatchers.BeanMatchers;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 class ErrandEntityTest {
 
@@ -63,6 +63,7 @@ class ErrandEntityTest {
 		final var touched = now().plusDays(2);
 		final var type = "type";
 		final var escalationEmail = "escalation@email.com";
+		final var errandNumber = "errandNumber";
 
 		final var errandEntity = ErrandEntity.create()
 			.withAssignedGroupId(assignedGroupId)
@@ -84,7 +85,8 @@ class ErrandEntityTest {
 			.withTitle(title)
 			.withTouched(touched)
 			.withType(type)
-			.withEscalationEmail(escalationEmail);
+			.withEscalationEmail(escalationEmail)
+			.withErrandNumber(errandNumber);
 
 		assertThat(errandEntity).hasNoNullFieldsOrProperties();
 		assertThat(errandEntity.getAssignedGroupId()).isEqualTo(assignedGroupId);
@@ -107,6 +109,7 @@ class ErrandEntityTest {
 		assertThat(errandEntity.getTouched()).isEqualTo(touched);
 		assertThat(errandEntity.getType()).isEqualTo(type);
 		assertThat(errandEntity.getEscalationEmail()).isEqualTo(escalationEmail);
+		assertThat(errandEntity.getErrandNumber()).isEqualTo(errandNumber);
 	}
 
 	@Test

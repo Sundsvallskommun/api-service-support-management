@@ -33,6 +33,7 @@
         assigned_group_id varchar(255),
         assigned_user_id varchar(255),
         category varchar(255),
+        errand_number varchar(255) not null,
         escalation_email varchar(255),
         id varchar(255) not null,
         municipality_id varchar(255) not null,
@@ -44,6 +45,13 @@
         title varchar(255),
         type varchar(255),
         description longtext,
+        primary key (id)
+    ) engine=InnoDB;
+
+    create table errand_number_sequence (
+        last_sequence_number integer,
+        reset_year_month varchar(6),
+        id bigint not null auto_increment,
         primary key (id)
     ) engine=InnoDB;
 
@@ -147,6 +155,12 @@
 
     create index idx_errand_municipality_id 
        on errand (municipality_id);
+
+    create index idx_errand_number 
+       on errand (errand_number);
+
+    alter table if exists errand 
+       add constraint uq_errand_number unique (errand_number);
 
     create index idx_namespace_municipality_id 
        on external_id_type (namespace, municipality_id);

@@ -25,6 +25,7 @@ import org.zalando.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.util.ErrandNumberGeneratorService;
 
 @Service
 @Transactional
@@ -44,7 +45,12 @@ public class ErrandService {
 	@Autowired
 	private EventService eventService;
 
+	@Autowired
+	private ErrandNumberGeneratorService errandNumberGeneratorService;
+
 	public String createErrand(String namespace, String municipalityId, Errand errand) {
+		// Generate unique errand number
+		errand.withErrandNumber(errandNumberGeneratorService.generateErrandNumber(namespace));
 		// Create new errand and revision
 		final var entity = repository.save(toErrandEntity(namespace, municipalityId, errand));
 		final var revision = revisionService.createErrandRevision(entity);
