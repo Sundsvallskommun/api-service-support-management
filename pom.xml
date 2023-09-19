@@ -21,7 +21,7 @@
 		<sandbox.db>true</sandbox.db>
 		<!-- Service properties -->
 		<spring-filter.version>3.1.4</spring-filter.version>
-		<openapi-generator-maven-plugin.version>7.0.0</openapi-generator-maven-plugin.version>
+		<openapi-generator-maven-plugin.version>7.0.1</openapi-generator-maven-plugin.version>
 		<tika-core.version>2.9.0</tika-core.version>
 		<flipkart.zjsonpatch.version>0.4.14</flipkart.zjsonpatch.version>
 		<generated-sources-path>${project.build.directory}/generated-sources</generated-sources-path>
