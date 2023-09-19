@@ -114,3 +114,11 @@ VALUES ('59328e70-4297-4bb5-ba69-cb17f2d15a17', '9791682e-4ba8-4f3a-857a-54e1483
        ('207ef370-607b-4502-9d16-bf38defb1dfd', '9791682e-4ba8-4f3a-857a-54e14836a53b', 'ErrandEntity', '{}', 3, '2022-02-03 12:14:32.234'),
        ('f9e222f3-2476-4ead-bb1a-3e7e25f9c6ee', '9791682e-4ba8-4f3a-857a-54e14836a53b', 'ErrandEntity', '{}', 4, '2022-02-04 12:14:32.234'),
        ('203c924b-dd67-4802-b99f-256ef6f2de69', '9791682e-4ba8-4f3a-857a-54e14836a53b', 'ErrandEntity', '{}', 5, '2022-02-05 12:14:32.234');
+       
+-------------------------------------
+-- Label
+-------------------------------------
+INSERT INTO label(id, created, municipality_id, namespace, json_structure)
+VALUES (1, now(), 'municipalityId-1', 'namespace-1', '[{"key": "value"}]'),
+       (2, now(), 'municipalityId-2', 'namespace-1', '[{"key": "value"}]');
+;
