@@ -27,7 +27,7 @@ import jakarta.persistence.UniqueConstraint;
 	indexes = {
 		@Index(name = "idx_namespace_municipality_id", columnList = "namespace, municipality_id")
 	}, uniqueConstraints = {
-		@UniqueConstraint(name = "uq_namespace_municipality_id_json_structure", columnNames = { "namespace", "municipality_id", "json_structure" })
+		@UniqueConstraint(name = "uq_namespace_municipality_id", columnNames = { "namespace", "municipality_id" })
 	})
 public class LabelEntity implements Serializable {
 	private static final long serialVersionUID = 2715135823516998558L;
@@ -67,7 +67,7 @@ public class LabelEntity implements Serializable {
 	}
 
 	public LabelEntity withId(Long id) {
-		this.id = id;
+		setId(id);
 		return this;
 	}
 
@@ -80,7 +80,7 @@ public class LabelEntity implements Serializable {
 	}
 
 	public LabelEntity withMunicipalityId(String municipalityId) {
-		this.municipalityId = municipalityId;
+		setMunicipalityId(municipalityId);
 		return this;
 	}
 
@@ -93,7 +93,7 @@ public class LabelEntity implements Serializable {
 	}
 
 	public LabelEntity withNamespace(String namespace) {
-		this.namespace = namespace;
+		setNamespace(namespace);
 		return this;
 	}
 
@@ -106,7 +106,7 @@ public class LabelEntity implements Serializable {
 	}
 
 	public LabelEntity withJsonStructure(String jsonStructure) {
-		this.jsonStructure = jsonStructure;
+		setJsonStructure(jsonStructure);
 		return this;
 	}
 
@@ -119,7 +119,7 @@ public class LabelEntity implements Serializable {
 	}
 
 	public LabelEntity withCreated(OffsetDateTime created) {
-		this.created = created;
+		setCreated(created);
 		return this;
 	}
 
@@ -132,7 +132,7 @@ public class LabelEntity implements Serializable {
 	}
 
 	public LabelEntity withModified(OffsetDateTime modified) {
-		this.modified = modified;
+		setModified(modified);
 		return this;
 	}
 
@@ -160,9 +160,8 @@ public class LabelEntity implements Serializable {
 			return false;
 		}
 		LabelEntity other = (LabelEntity) obj;
-		return Objects.equals(created, other.created) && Objects.equals(id, other.id) && Objects.equals(jsonStructure, other.jsonStructure) && Objects.equals(modified, other.modified) && Objects.equals(municipalityId, other.municipalityId) && Objects
-			.equals(
-			namespace, other.namespace);
+		return Objects.equals(created, other.created) && Objects.equals(id, other.id) && Objects.equals(jsonStructure, other.jsonStructure) && Objects.equals(modified, other.modified) && Objects.equals(municipalityId, other.municipalityId) &&
+			Objects.equals(namespace, other.namespace);
 	}
 
 	@Override

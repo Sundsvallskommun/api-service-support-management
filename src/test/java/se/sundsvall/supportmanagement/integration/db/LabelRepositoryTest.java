@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.integration.db;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase.Replace.NONE;
 
 import java.time.OffsetDateTime;
@@ -11,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Example;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
@@ -60,6 +62,21 @@ class LabelRepositoryTest {
 		assertThat(persistedEntity.get().getJsonStructure()).isEqualTo(JSON_STRUCTURE);
 		assertThat(persistedEntity.get().getCreated()).isCloseTo(OffsetDateTime.now(), within(2, SECONDS));
 		assertThat(persistedEntity.get().getModified()).isNull();
+	}
+
+	@Test
+	void createWithDuplicateValues() {
+		// Setup
+		final var municipalityId = "municipalityId-1";
+		final var namespace = "namespace-1";
+
+		final var entity = LabelEntity.create()
+			.withNamespace(namespace)
+			.withMunicipalityId(municipalityId)
+			.withJsonStructure(JSON_STRUCTURE);
+
+		// Act and verify that no duplicates of municipalityId and namespace can exist in table
+		assertThrows(DataIntegrityViolationException.class, () -> labelRepository.save(entity));
 	}
 
 	@Test

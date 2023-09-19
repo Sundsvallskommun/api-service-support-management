@@ -192,7 +192,7 @@
        on label (namespace, municipality_id);
 
     alter table if exists label 
-       add constraint uq_namespace_municipality_id_json_structure unique (namespace, municipality_id, json_structure);
+       add constraint uq_namespace_municipality_id unique (namespace, municipality_id);
 
     create index revision_entity_id_index 
        on revision (entity_id);
