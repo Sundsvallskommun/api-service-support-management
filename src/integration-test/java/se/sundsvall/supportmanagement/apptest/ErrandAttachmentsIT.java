@@ -1,5 +1,16 @@
 package se.sundsvall.supportmanagement.apptest;
 
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.jdbc.Sql;
+import se.sundsvall.dept44.test.AbstractAppTest;
+import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
+import se.sundsvall.supportmanagement.Application;
+import se.sundsvall.supportmanagement.integration.db.RevisionRepository;
+import se.sundsvall.supportmanagement.integration.db.model.RevisionEntity;
+
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpHeaders.LOCATION;
@@ -10,18 +21,9 @@ import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
-
-import java.util.List;
-
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.jdbc.Sql;
-
-import se.sundsvall.dept44.test.AbstractAppTest;
-import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
-import se.sundsvall.supportmanagement.Application;
-import se.sundsvall.supportmanagement.integration.db.RevisionRepository;
-import se.sundsvall.supportmanagement.integration.db.model.RevisionEntity;
+import static org.springframework.http.MediaType.IMAGE_JPEG_VALUE;
+import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
+import static org.springframework.http.MediaType.TEXT_PLAIN_VALUE;
 
 /**
  * ErrandAttachments IT tests.
@@ -46,8 +48,8 @@ class ErrandAttachmentsIT extends AbstractAppTest {
 			.withServicePath(PATH + "ec677eb3-604c-4935-bff7-f8f0b500c8f4/attachments/25d266a7-1ff2-4bf4-b6f3-0473b2b86fcd")
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
-			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
-			.withExpectedResponse(RESPONSE_FILE)
+			.withExpectedResponseHeader(CONTENT_TYPE, List.of(IMAGE_JPEG_VALUE))
+			.withExpectedBinaryResponse("Test_image.jpg")
 			.sendRequestAndVerifyResponse();
 	}
 
@@ -70,18 +72,30 @@ class ErrandAttachmentsIT extends AbstractAppTest {
 			.extracting(RevisionEntity::getVersion)
 			.containsExactly(0);
 
-		setupCall()
+		var headers = setupCall()
 			.withHeader("sentbyuser", "cre03ate")
 			.withServicePath(PATH + entityId + "/attachments")
 			.withHttpMethod(POST)
+			.withContentType(MULTIPART_FORM_DATA)
+			.withRequestFile("errandAttachment", "test.txt")
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(CREATED)
-			.withExpectedResponseHeader(LOCATION, List.of("^http://(.*)/errands/(.*)$"))
-			.sendRequestAndVerifyResponse();
+			.withExpectedResponseHeader(LOCATION, List.of("^http://localhost:(.*)" + PATH + entityId + "/attachments/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"))
+			.sendRequest()
+			.getResponseHeaders();
 
 		assertThat(revisionRepository.findAllByEntityIdOrderByVersion(entityId)).hasSize(2)
 			.extracting(RevisionEntity::getVersion)
 			.containsExactlyInAnyOrder(0, 1);
+
+		setupCall()
+			.withServicePath(headers.get(LOCATION).stream().findFirst().get())
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponseHeader(CONTENT_TYPE, List.of(TEXT_PLAIN_VALUE))
+			.withExpectedBinaryResponse("test.txt")
+			.sendRequestAndVerifyResponse();
+
 	}
 
 	@Test

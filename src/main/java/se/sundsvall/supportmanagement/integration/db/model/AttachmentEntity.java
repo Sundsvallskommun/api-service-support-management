@@ -1,20 +1,6 @@
 package se.sundsvall.supportmanagement.integration.db.model;
 
-import static java.time.OffsetDateTime.now;
-import static java.time.temporal.ChronoUnit.MILLIS;
-import static org.hibernate.Length.LONG32;
-import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
-
-import java.io.Serializable;
-import java.time.OffsetDateTime;
-import java.time.ZoneId;
-import java.util.Arrays;
-import java.util.Objects;
-import java.util.Optional;
-
-import org.hibernate.annotations.TimeZoneStorage;
-import org.hibernate.annotations.UuidGenerator;
-
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -23,9 +9,21 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.TimeZoneStorage;
+import org.hibernate.annotations.UuidGenerator;
+
+import java.io.Serializable;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.util.Objects;
+
+import static java.time.OffsetDateTime.now;
+import static java.time.temporal.ChronoUnit.MILLIS;
+import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 
 @Entity
 @Table(name = "attachment",
@@ -47,8 +45,9 @@ public class AttachmentEntity implements Serializable {
 	@Column(name = "mime_type")
 	private String mimeType;
 
-	@Column(name = "file", length = LONG32)
-	private byte[] file;
+	@OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+	@JoinColumn(name = "attachment_data_id", nullable = false, foreignKey = @ForeignKey(name = "fk_attachment_data_attachment"))
+	private AttachmentDataEntity attachmentData;
 
 	@Column(name = "created")
 	@TimeZoneStorage(NORMALIZE)
@@ -115,16 +114,16 @@ public class AttachmentEntity implements Serializable {
 		return this;
 	}
 
-	public byte[] getFile() {
-		return file;
+	public AttachmentDataEntity getAttachmentData() {
+		return attachmentData;
 	}
 
-	public void setFile(byte[] file) {
-		this.file = file;
+	public void setAttachmentData(AttachmentDataEntity attachmentData) {
+		this.attachmentData = attachmentData;
 	}
 
-	public AttachmentEntity withFile(byte[] file) {
-		this.file = file;
+	public AttachmentEntity withAttachmentData(AttachmentDataEntity attachmentData) {
+		this.attachmentData = attachmentData;
 		return this;
 	}
 
@@ -172,30 +171,29 @@ public class AttachmentEntity implements Serializable {
 		if (this == o) {
 			return true;
 		}
-		if ((o == null) || (getClass() != o.getClass())) {
+		if (o == null || getClass() != o.getClass()) {
 			return false;
 		}
-		final var that = (AttachmentEntity) o;
-		return Objects.equals(id, that.id) &&
-			Objects.equals(fileName, that.fileName) &&
-			Objects.equals(mimeType, that.mimeType) &&
-			Arrays.equals(file, that.file) &&
-			Objects.equals(created, that.created) &&
-			Objects.equals(modified, that.modified) &&
-			Objects.equals(errandEntity, that.errandEntity);
+		AttachmentEntity that = (AttachmentEntity) o;
+		return Objects.equals(id, that.id) && Objects.equals(fileName, that.fileName) && Objects.equals(mimeType, that.mimeType) && Objects.equals(attachmentData, that.attachmentData) && Objects.equals(created, that.created) && Objects.equals(modified, that.modified) && Objects.equals(errandEntity, that.errandEntity);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, fileName, mimeType, Arrays.hashCode(file), created, modified, errandEntity);
+		return Objects.hash(id, fileName, mimeType, attachmentData, created, modified, errandEntity);
 	}
 
 	@Override
 	public String toString() {
-		final var errandId = Optional.ofNullable(errandEntity).map(ErrandEntity::getId).orElse(null);
-		return "AttachmentEntity[" +
-			"id=" + id +
-			", fileName=" + fileName + ", mimeType='" + mimeType + ", file=" + Arrays.toString(file) +
-			", created=" + created + ", modified=" + modified + ", errandEntity.id=" + errandId + ']';
+		final StringBuilder sb = new StringBuilder("AttachmentEntity{");
+		sb.append("id='").append(id).append('\'');
+		sb.append(", fileName='").append(fileName).append('\'');
+		sb.append(", mimeType='").append(mimeType).append('\'');
+		sb.append(", attachmentData=").append(attachmentData);
+		sb.append(", created=").append(created);
+		sb.append(", modified=").append(modified);
+		sb.append(", errandEntity=").append(errandEntity);
+		sb.append('}');
+		return sb.toString();
 	}
 }
