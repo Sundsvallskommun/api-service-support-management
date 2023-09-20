@@ -18,6 +18,9 @@ public class MetadataResponse {
 	@ArraySchema(schema = @Schema(implementation = ExternalIdType.class))
 	private List<ExternalIdType> externalIdTypes;
 
+	@Schema(implementation = Labels.class)
+	private Labels labels;
+
 	@ArraySchema(schema = @Schema(implementation = Status.class))
 	private List<Status> statuses;
 
@@ -54,6 +57,19 @@ public class MetadataResponse {
 		return this;
 	}
 
+	public Labels getLabels() {
+		return labels;
+	}
+
+	public void setLabels(final Labels labels) {
+		this.labels = labels;
+	}
+
+	public MetadataResponse withLabels(final Labels labels) {
+		this.labels = labels;
+		return this;
+	}
+
 	public List<Status> getStatuses() {
 		return statuses;
 	}
@@ -82,24 +98,25 @@ public class MetadataResponse {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(categories, externalIdTypes, roles, statuses);
+		return Objects.hash(categories, externalIdTypes, labels, roles, statuses);
 	}
 
 	@Override
-	public boolean equals(final Object obj) {
+	public boolean equals(Object obj) {
 		if (this == obj) {
 			return true;
 		}
-		if (!(obj instanceof MetadataResponse other)) {
+		if (!(obj instanceof MetadataResponse)) {
 			return false;
 		}
-		return Objects.equals(categories, other.categories) && Objects.equals(externalIdTypes, other.externalIdTypes) && Objects.equals(roles, other.roles) && Objects.equals(statuses, other.statuses);
+		MetadataResponse other = (MetadataResponse) obj;
+		return Objects.equals(categories, other.categories) && Objects.equals(externalIdTypes, other.externalIdTypes) && Objects.equals(labels, other.labels) && Objects.equals(roles, other.roles) && Objects.equals(statuses, other.statuses);
 	}
 
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder();
-		builder.append("MetadataResponse [categories=").append(categories).append(", externalIdTypes=").append(externalIdTypes).append(", statuses=").append(statuses).append(", roles=").append(roles).append("]");
+		StringBuilder builder = new StringBuilder();
+		builder.append("MetadataResponse [categories=").append(categories).append(", externalIdTypes=").append(externalIdTypes).append(", statuses=").append(statuses).append(", roles=").append(roles).append(", labels=").append(labels).append("]");
 		return builder.toString();
 	}
 }
