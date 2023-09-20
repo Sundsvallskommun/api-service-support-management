@@ -63,6 +63,16 @@
         `value` varchar(255)
     ) engine=InnoDB;
 
+    create table label (
+        created datetime(6),
+        id bigint not null auto_increment,
+        modified datetime(6),
+        json_structure json not null,
+        municipality_id varchar(255) not null,
+        namespace varchar(255) not null,
+        primary key (id)
+    ) engine=InnoDB;
+
     create table revision (
         version integer,
         created datetime(6),
@@ -177,6 +187,12 @@
 
     alter table if exists external_tag 
        add constraint uq_external_tag_errand_id_key unique (errand_id, `key`);
+
+    create index idx_namespace_municipality_id 
+       on label (namespace, municipality_id);
+
+    alter table if exists label 
+       add constraint uq_namespace_municipality_id unique (namespace, municipality_id);
 
     create index revision_entity_id_index 
        on revision (entity_id);
