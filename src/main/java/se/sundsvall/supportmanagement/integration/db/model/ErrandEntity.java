@@ -6,7 +6,6 @@ import static java.time.temporal.ChronoUnit.MILLIS;
 import static org.hibernate.Length.LONG32;
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 
-import java.io.Serializable;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Objects;
@@ -44,9 +43,7 @@ import jakarta.persistence.UniqueConstraint;
 		@Index(name = "idx_errand_assigned_user_id", columnList = "assigned_user_id"),
 		@Index(name = "idx_errand_reporter_user_id", columnList = "reporter_user_id")
 	})
-public class ErrandEntity implements Serializable {
-
-	private static final long serialVersionUID = -4433880592443933243L;
+public class ErrandEntity {
 
 	@Id
 	@UuidGenerator

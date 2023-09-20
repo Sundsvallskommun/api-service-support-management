@@ -7,7 +7,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Lob;
 import jakarta.persistence.Table;
 
-import java.io.Serializable;
 import java.sql.Blob;
 import java.util.Objects;
 
@@ -15,9 +14,7 @@ import static jakarta.persistence.GenerationType.IDENTITY;
 
 @Entity
 @Table(name = "attachment_data")
-public class AttachmentDataEntity implements Serializable {
-
-	private static final long serialVersionUID = 4896642593539770958L;
+public class AttachmentDataEntity {
 
 	@Id
 	@GeneratedValue(strategy = IDENTITY)

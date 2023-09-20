@@ -6,7 +6,6 @@ import static java.time.ZoneId.systemDefault;
 import static java.time.temporal.ChronoUnit.MILLIS;
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 
-import java.io.Serializable;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -36,9 +35,7 @@ import jakarta.persistence.UniqueConstraint;
 	uniqueConstraints = {
 		@UniqueConstraint(name = "uq_namespace_municipality_id_name", columnNames = { "namespace", "municipality_id", "name" })
 	})
-public class CategoryEntity implements Serializable {
-
-	private static final long serialVersionUID = -5979976910282343331L;
+public class CategoryEntity {
 
 	@Id
 	@GeneratedValue(strategy = IDENTITY)

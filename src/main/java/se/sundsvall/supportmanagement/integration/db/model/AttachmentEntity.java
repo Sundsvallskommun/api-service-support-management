@@ -16,7 +16,6 @@ import jakarta.persistence.Table;
 import org.hibernate.annotations.TimeZoneStorage;
 import org.hibernate.annotations.UuidGenerator;
 
-import java.io.Serializable;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.Objects;
@@ -30,9 +29,7 @@ import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 	indexes = {
 		@Index(name = "idx_attachment_file_name", columnList = "file_name")
 	})
-public class AttachmentEntity implements Serializable {
-
-	private static final long serialVersionUID = 2481905635449078631L;
+public class AttachmentEntity {
 
 	@Id
 	@UuidGenerator

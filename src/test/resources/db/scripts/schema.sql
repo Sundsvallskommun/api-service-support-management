@@ -197,7 +197,6 @@
     alter table if exists external_tag
        add constraint uq_external_tag_errand_id_key unique (errand_id, `key`);
 
-    create index revision_entity_id_index
     create index idx_namespace_municipality_id
        on label (namespace, municipality_id);
 
