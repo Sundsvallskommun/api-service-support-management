@@ -76,18 +76,15 @@ public class RevisionService {
 	 */
 	public RevisionResult createErrandRevision(ErrandEntity entity) {
 
-		LOG.info("=== findFirstByEntityIdOrderByVersionDesc ===");
 		final var lastRevision = revisionRepository.findFirstByEntityIdOrderByVersionDesc(entity.getId());
 		Revision newRevision = null;
 
 		if (lastRevision.isPresent()) {
 			// No changes since last revision, return.
-			LOG.info("=== jsonEquals ===");
 			if (jsonEquals(lastRevision.get().getSerializedSnapshot(), toSerializedSnapshot(entity))) {
 				return null;
 			}
 
-			LOG.info("=== new Revision");
 			// Create revision <lastRevision.version + 1>
 			newRevision = toRevision(createRevision(entity, lastRevision.get().getVersion() + 1));
 		} else {
@@ -99,7 +96,6 @@ public class RevisionService {
 	}
 
 	private RevisionEntity createRevision(final ErrandEntity entity, final int version) {
-		LOG.info("=== save Revision ===");
 		return revisionRepository.save(toRevisionEntity(entity, version));
 	}
 

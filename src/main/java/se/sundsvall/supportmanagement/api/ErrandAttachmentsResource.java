@@ -3,7 +3,6 @@ package se.sundsvall.supportmanagement.api;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.headers.Header;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -31,6 +30,8 @@ import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachmentHeade
 import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
 import se.sundsvall.supportmanagement.service.ErrandAttachmentService;
 
+import java.io.IOException;
+import java.sql.SQLException;
 import java.util.List;
 
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
@@ -56,7 +57,7 @@ public class ErrandAttachmentsResource {
 
 	@PostMapping(consumes = MULTIPART_FORM_DATA_VALUE, produces = { ALL_VALUE, APPLICATION_PROBLEM_JSON_VALUE })
 	@Operation(summary = "Create errand attachment", description = "Creates a new errand attachment based on the supplied attributes")
-	@ApiResponse(responseCode = "201", headers = @Header(name = LOCATION, schema = @Schema(type = "string")), description = "Successful operation", content = @Content(mediaType = ALL_VALUE, schema = @Schema(implementation = Void.class)))
+	@ApiResponse(responseCode = "201", headers = @Header(name = LOCATION, schema = @Schema(type = "string")), description = "Successful operation", useReturnTypeSchema = true)
 	@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = { Problem.class, ConstraintViolationProblem.class })))
 	@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	@Validated(OnCreate.class)
@@ -75,7 +76,7 @@ public class ErrandAttachmentsResource {
 
 	@GetMapping(path = "/{attachmentId}", produces = { ALL_VALUE, APPLICATION_PROBLEM_JSON_VALUE })
 	@Operation(summary = "Read errand attachment", description = "Fetches the errand attachment that matches the provided errand id and attachment id")
-	@ApiResponse(responseCode = "200", description = "Successful Operation", content = @Content(mediaType = ALL_VALUE))
+	@ApiResponse(responseCode = "200", description = "Successful Operation", useReturnTypeSchema = true)
 	@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = { Problem.class, ConstraintViolationProblem.class })))
 	@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
@@ -85,14 +86,14 @@ public class ErrandAttachmentsResource {
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "id", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("id") final String id,
 		@Parameter(name = "attachmentId", description = "Errand attachment id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable("attachmentId") final String attachmentId,
-		HttpServletResponse response) {
+		HttpServletResponse response) throws SQLException, IOException {
 
 		errandAttachmentService.readErrandAttachment(namespace, municipalityId, id, attachmentId, response);
 	}
 
 	@GetMapping(produces = { APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE })
 	@Operation(summary = "Read errand attachments", description = "Fetches the errand attachments that matches the provided errand id")
-	@ApiResponse(responseCode = "200", description = "Successful Operation", content = @Content(mediaType = APPLICATION_JSON_VALUE, array = @ArraySchema(schema = @Schema(implementation = ErrandAttachmentHeader.class))))
+	@ApiResponse(responseCode = "200", description = "Successful Operation", useReturnTypeSchema = true)
 	@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = { Problem.class, ConstraintViolationProblem.class })))
 	@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))

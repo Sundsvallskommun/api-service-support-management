@@ -15,6 +15,8 @@ import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachmentHeader;
 import se.sundsvall.supportmanagement.service.ErrandAttachmentService;
 
+import java.io.IOException;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
@@ -87,7 +89,7 @@ class ErrandAttachmentsResourceTest {
 	}
 
 	@Test
-	void readErrandAttachment() {
+	void readErrandAttachment() throws SQLException, IOException {
 
 		// Parameter values
 		final var attachmentId = randomUUID().toString();
