@@ -28,6 +28,8 @@ import org.zalando.problem.Problem;
 
 import se.sundsvall.supportmanagement.api.model.metadata.Category;
 import se.sundsvall.supportmanagement.api.model.metadata.ExternalIdType;
+import se.sundsvall.supportmanagement.api.model.metadata.Label;
+import se.sundsvall.supportmanagement.api.model.metadata.Labels;
 import se.sundsvall.supportmanagement.api.model.metadata.MetadataResponse;
 import se.sundsvall.supportmanagement.api.model.metadata.Role;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
@@ -76,6 +78,7 @@ public class MetadataService {
 	public MetadataResponse findAll(final String namespace, final String municipalityId) {
 		return MetadataResponse.create()
 			.withCategories(findCategories(namespace, municipalityId))
+			.withLabels(findLabels(namespace, municipalityId))
 			.withStatuses(findStatuses(namespace, municipalityId))
 			.withRoles(findRoles(namespace, municipalityId))
 			.withExternalIdTypes(findExternalIdTypes(namespace, municipalityId));
@@ -224,6 +227,32 @@ public class MetadataService {
 		}
 
 		roleRepository.deleteByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
+	}
+
+	// =================================================================
+	// Label operations
+	// =================================================================
+
+	@Caching(evict = {
+		@CacheEvict(value = CACHE_NAME, key = "{'findLabels', #namespace, #municipalityId}"),
+		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}")
+	})
+	public void createLabels(final String namespace, final String municipalityId, final List<Label> labels) {
+		// TODO: Implement in UF-5834
+	}
+
+	@Cacheable(value = CACHE_NAME, key = "{#root.methodName, #namespace, #municipalityId}")
+	public Labels findLabels(final String namespace, final String municipalityId) {
+		// TODO: Implement in UF-5834
+		return null;
+	}
+
+	@Caching(evict = {
+		@CacheEvict(value = CACHE_NAME, key = "{'findLabels', #namespace, #municipalityId}"),
+		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}")
+	})
+	public void deleteLabels(final String namespace, final String municipalityId) {
+		// TODO: Implement in UF-5834
 	}
 
 	// =================================================================
