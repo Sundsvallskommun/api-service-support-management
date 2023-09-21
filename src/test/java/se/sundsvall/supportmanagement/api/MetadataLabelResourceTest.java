@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
@@ -43,7 +44,9 @@ class MetadataLabelResourceTest {
 	@Test
 	void createLabels() {
 		// Arrange
-		final var labels = List.of(Label.create().withClassification("classification").withName("name"));
+		final var labels = List.of(
+			Label.create().withClassification("classification").withName("name_1"),
+			Label.create().withClassification("classification").withName("name_2"));
 
 		// Act
 		webTestClient.post()
@@ -56,6 +59,7 @@ class MetadataLabelResourceTest {
 
 		// Assert and verify
 		verify(metadataServiceMock).createLabels(NAMESPACE, MUNICIPALITY_ID, labels);
+		verifyNoMoreInteractions(metadataServiceMock);
 	}
 
 	@Test
@@ -75,6 +79,7 @@ class MetadataLabelResourceTest {
 		// Assert and verify
 		assertThat(response.getResponseBody()).isEqualTo(labels);
 		verify(metadataServiceMock).findLabels(NAMESPACE, MUNICIPALITY_ID);
+		verifyNoMoreInteractions(metadataServiceMock);
 	}
 
 	@Test
@@ -86,5 +91,6 @@ class MetadataLabelResourceTest {
 
 		// Assert and verify
 		verify(metadataServiceMock).deleteLabels(NAMESPACE, MUNICIPALITY_ID);
+		verifyNoMoreInteractions(metadataServiceMock);
 	}
 }

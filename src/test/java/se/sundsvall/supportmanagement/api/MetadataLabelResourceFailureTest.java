@@ -60,10 +60,16 @@ class MetadataLabelResourceFailureTest {
 
 	private static Stream<Arguments> createLabelsArguments() {
 		return Stream.of(
-			Arguments.of("my.namespace", "2281", List.of(Label.create().withClassification("classification")), tuple("createLabels.body[0].name", "must not be blank")),
-			Arguments.of("my.namespace", "2281", List.of(Label.create().withName("name")), tuple("createLabels.body[0].classification", "must not be blank")),
-			Arguments.of("my.namespace", "666", List.of(Label.create().withClassification("classification").withName("name")), tuple("createLabels.municipalityId", "not a valid municipality ID")),
-			Arguments.of("invalid,namespace", "2281", List.of(Label.create().withClassification("classification").withName("name")), tuple("createLabels.namespace", "can only contain A-Z, a-z, 0-9, -, _ and .")));
+			Arguments.of("my.namespace", "2281", List.of(createLabel("class", "name"), createLabel("class", "name")), tuple("createLabels.body", "each entry must have unique name and same classification compared to its siblings")),
+			Arguments.of("my.namespace", "2281", List.of(createLabel("class_1", "name_1"), createLabel("class_2", "name_2")), tuple("createLabels.body", "each entry must have unique name and same classification compared to its siblings")),
+			Arguments.of("my.namespace", "2281", List.of(createLabel("classification", null)), tuple("createLabels.body[0].name", "must not be blank")),
+			Arguments.of("my.namespace", "2281", List.of(createLabel(null, "name")), tuple("createLabels.body[0].classification", "must not be blank")),
+			Arguments.of("my.namespace", "666", List.of(createLabel("classification", "name")), tuple("createLabels.municipalityId", "not a valid municipality ID")),
+			Arguments.of("invalid,namespace", "2281", List.of(createLabel("classification", "name")), tuple("createLabels.namespace", "can only contain A-Z, a-z, 0-9, -, _ and .")));
+	}
+
+	private static Label createLabel(String classification, String name) {
+		return Label.create().withClassification(classification).withName(name);
 	}
 
 	@ParameterizedTest
