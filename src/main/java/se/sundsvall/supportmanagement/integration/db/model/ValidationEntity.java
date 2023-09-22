@@ -34,7 +34,6 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.EntityType;
 	})
 public class ValidationEntity {
 
-
 	@Id
 	@GeneratedValue(strategy = IDENTITY)
 	@Column(name = "id")

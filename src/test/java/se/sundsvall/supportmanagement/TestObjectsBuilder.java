@@ -1,5 +1,12 @@
 package se.sundsvall.supportmanagement;
 
+import static java.time.OffsetDateTime.now;
+import static se.sundsvall.supportmanagement.api.model.errand.Priority.HIGH;
+
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
 import se.sundsvall.supportmanagement.api.model.errand.Classification;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
@@ -9,13 +16,6 @@ import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
-
-import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.List;
-
-import static java.time.OffsetDateTime.now;
-import static se.sundsvall.supportmanagement.api.model.errand.Priority.HIGH;
 
 public class TestObjectsBuilder {
 
@@ -37,7 +37,6 @@ public class TestObjectsBuilder {
 	private static final String TITLE = "title";
 	private static final String TYPE = "type";
 	private static final String ATTACHMENT_ID = "attachmentId";
-	private static final String FILE = "file";
 	private static final String FILE_NAME = "fileName";
 	private static final String MIME_TYPE = "mimeType";
 	private static final String ID = "id";

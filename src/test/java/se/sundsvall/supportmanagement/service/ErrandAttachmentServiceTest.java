@@ -1,36 +1,5 @@
 package se.sundsvall.supportmanagement.service;
 
-import generated.se.sundsvall.eventlog.Event;
-import jakarta.persistence.EntityManager;
-import jakarta.servlet.ServletOutputStream;
-import jakarta.servlet.http.HttpServletResponse;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.util.StreamUtils;
-import org.springframework.web.multipart.MultipartFile;
-import org.zalando.problem.ThrowableProblem;
-import se.sundsvall.supportmanagement.api.model.revision.Revision;
-import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
-import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
-import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
-import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
-import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapper;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.sql.Blob;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
 import static java.util.Optional.of;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -47,6 +16,38 @@ import static org.zalando.problem.Status.NOT_FOUND;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildAttachmentEntity;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrandEntity;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.sql.Blob;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.util.StreamUtils;
+import org.springframework.web.multipart.MultipartFile;
+import org.zalando.problem.ThrowableProblem;
+
+import generated.se.sundsvall.eventlog.Event;
+import jakarta.persistence.EntityManager;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.http.HttpServletResponse;
+import se.sundsvall.supportmanagement.api.model.revision.Revision;
+import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
+import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
+import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapper;
+
 @ExtendWith(MockitoExtension.class)
 class ErrandAttachmentServiceTest {
 
@@ -54,7 +55,6 @@ class ErrandAttachmentServiceTest {
 	private static final String MUNICIPALITY_ID = "municipalityId";
 	private static final String ERRAND_ID = "errandId";
 	private static final String ATTACHMENT_ID = "attachmentId";
-	private static final String FILE = "file";
 	private static final String FILE_NAME = "fileName";
 	private static final String MIME_TYPE = "mimeType";
 	private static final String EVENT_LOG_ADD_ATTACHMENT = "En bilaga har lagts till i ärendet.";

@@ -11,19 +11,16 @@ import org.springframework.format.annotation.DateTimeFormat.ISO;
 
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.Null;
 
-@Schema(description = "Labels model")
+@Schema(description = "Labels model", accessMode = READ_ONLY)
 public class Labels {
 
 	@Schema(description = "Timestamp when the labels was created", example = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	@DateTimeFormat(iso = ISO.DATE_TIME)
-	@Null
 	private OffsetDateTime created;
 
 	@Schema(description = "Timestamp when the labels was last modified", example = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	@DateTimeFormat(iso = ISO.DATE_TIME)
-	@Null
 	private OffsetDateTime modified;
 
 	@ArraySchema(schema = @Schema(implementation = Label.class))

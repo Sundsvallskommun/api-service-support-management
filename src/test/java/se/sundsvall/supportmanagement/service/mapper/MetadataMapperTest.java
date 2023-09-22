@@ -16,11 +16,13 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import se.sundsvall.supportmanagement.api.model.metadata.Category;
 import se.sundsvall.supportmanagement.api.model.metadata.ExternalIdType;
+import se.sundsvall.supportmanagement.api.model.metadata.Label;
 import se.sundsvall.supportmanagement.api.model.metadata.Role;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
 import se.sundsvall.supportmanagement.api.model.metadata.Type;
 import se.sundsvall.supportmanagement.integration.db.model.CategoryEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ExternalIdTypeEntity;
+import se.sundsvall.supportmanagement.integration.db.model.LabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.RoleEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StatusEntity;
 import se.sundsvall.supportmanagement.integration.db.model.TypeEntity;
@@ -260,4 +262,64 @@ class MetadataMapperTest {
 			.withModified(typeModified)
 			.withName(typeName);
 	}
+
+	// =================================================================
+	// Label tests
+	// =================================================================
+
+	@Test
+	void toLabels() {
+		final var created = OffsetDateTime.now().minusDays(1);
+		final var modified = OffsetDateTime.now();
+		final var json = "[{\"classification\":\"classification\",\"displayName\":\"displayName\",\"name\":\"name\"}]";
+
+		final var entity = LabelEntity.create()
+			.withCreated(created)
+			.withModified(modified)
+			.withJsonStructure(json);
+
+		final var bean = MetadataMapper.toLabels(entity);
+
+		assertThat(bean.getCreated()).isEqualTo(created);
+		assertThat(bean.getModified()).isEqualTo(modified);
+		assertThat(bean.getLabelStructure()).hasSize(1)
+			.extracting(
+				Label::getClassification,
+				Label::getDisplayName,
+				Label::getName,
+				Label::getLabels)
+			.containsExactly(tuple(
+				"classification",
+				"displayName",
+				"name",
+				null));
+	}
+
+	@Test
+	void toLabelsForEmptyEntity() {
+		assertThat(MetadataMapper.toLabels(LabelEntity.create())).hasAllNullFieldsOrProperties();
+	}
+
+	@Test
+	void toLabelsForNull() {
+		assertThat(MetadataMapper.toLabels(null)).isNull();
+	}
+
+	@ParameterizedTest
+	@MethodSource(value = "toLabelEntityArguments")
+	void toLabelEntity(final String namespace, final String municipalityId, final List<Label> labels, final LabelEntity expectedResult) {
+		assertThat(MetadataMapper.toLabelEntity(namespace, municipalityId, labels)).isEqualTo(expectedResult);
+	}
+
+	private static Stream<Arguments> toLabelEntityArguments() {
+		final var json = "[{\"classification\":\"classification\",\"displayName\":\"displayName\",\"name\":\"name\"}]";
+
+		return Stream.of(
+			Arguments.of("namespace", "municipalityId", null, null),
+			Arguments.of("namespace", null, List.of(Label.create().withName("name")), null),
+			Arguments.of(null, "municipalityId", List.of(Label.create().withName("name")), null),
+			Arguments.of("namespace", "municipalityId", List.of(Label.create().withName("name").withClassification("classification").withDisplayName("displayName")),
+				LabelEntity.create().withNamespace("namespace").withMunicipalityId("municipalityId").withJsonStructure(json)));
+	}
+
 }

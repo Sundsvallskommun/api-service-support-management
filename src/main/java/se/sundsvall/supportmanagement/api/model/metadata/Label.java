@@ -3,8 +3,7 @@ package se.sundsvall.supportmanagement.api.model.metadata;
 import java.util.List;
 import java.util.Objects;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
-
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 
@@ -22,7 +21,7 @@ public class Label {
 	@NotBlank
 	private String name;
 
-	@JsonBackReference
+	@ArraySchema(schema = @Schema(implementation = Label.class, $anchor = "Label"))
 	private List<Label> labels;
 
 	public static Label create() {

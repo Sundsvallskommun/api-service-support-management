@@ -1,6 +1,18 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
-import jakarta.persistence.EntityManager;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.when;
+import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildAttachmentEntity;
+import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrandEntity;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.sql.Blob;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.hibernate.LobHelper;
 import org.hibernate.Session;
 import org.junit.jupiter.api.Test;
@@ -9,25 +21,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.sql.Blob;
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.when;
-import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildAttachmentEntity;
-import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrandEntity;
+import jakarta.persistence.EntityManager;
 
 @ExtendWith(MockitoExtension.class)
 class ErrandAttachmentMapperTest {
 
 	private static final String ATTACHMENT_ID = "attachmentId";
 	private static final String FILE_NAME = "fileName";
-	private static final String FILE = "file";
 	private static final String MIME_TYPE = "mimeType";
 
 	@Mock
