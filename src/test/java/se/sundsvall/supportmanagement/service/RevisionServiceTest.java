@@ -7,6 +7,7 @@ import generated.se.sundsvall.notes.DifferenceResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mariadb.jdbc.MariaDbBlob;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
@@ -18,6 +19,7 @@ import se.sundsvall.supportmanagement.api.model.revision.Operation;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.RevisionRepository;
+import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.RevisionEntity;
@@ -532,7 +534,7 @@ class RevisionServiceTest {
 			.withAttachments(List.of(AttachmentEntity.create()
 				.withId(UUID.randomUUID().toString())
 				.withModified(OffsetDateTime.ofInstant(ofEpochMilli(new Random().nextLong()), ZoneId.systemDefault()))
-				.withFile(randomBytes)))
+				.withAttachmentData(AttachmentDataEntity.create().withFile(new MariaDbBlob(randomBytes)))))
 			.withStakeholders(List.of(StakeholderEntity.create().withId(new Random().nextLong())));
 	}
 

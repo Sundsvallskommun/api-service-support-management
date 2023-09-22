@@ -78,7 +78,7 @@ class RevisionRepositoryTest {
 		// Second save. Will fail due to to unique constraint violation on entityId and version.
 		final var exception = assertThrows(DataIntegrityViolationException.class, () -> repository.saveAndFlush(entity2));
 
-		assertThat(exception.getMessage()).contains("Duplicate entry", version, entityId, "for key 'uq_entity_id_version']");
+		assertThat(exception.getMessage()).contains("Duplicate entry", version , entityId, "for key 'uq_entity_id_version");
 	}
 
 	@Test

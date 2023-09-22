@@ -11,8 +11,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import java.io.Serial;
-import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -21,10 +19,7 @@ import static jakarta.persistence.GenerationType.IDENTITY;
 
 @Entity
 @Table(name = "stakeholder")
-public class StakeholderEntity implements Serializable {
-
-	@Serial
-	private static final long serialVersionUID = 8197399712706968439L;
+public class StakeholderEntity {
 
 	@Id
 	@GeneratedValue(strategy = IDENTITY)

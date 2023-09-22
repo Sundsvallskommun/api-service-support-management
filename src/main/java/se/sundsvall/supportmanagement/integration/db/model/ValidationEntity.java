@@ -6,7 +6,6 @@ import static java.time.OffsetDateTime.now;
 import static java.time.temporal.ChronoUnit.MILLIS;
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 
-import java.io.Serializable;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.Objects;
@@ -33,8 +32,8 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.EntityType;
 	uniqueConstraints = {
 		@UniqueConstraint(name = "uq_namespace_municipality_id_type", columnNames = { "namespace", "municipality_id", "type" })
 	})
-public class ValidationEntity implements Serializable {
-	private static final long serialVersionUID = -6163643004292601360L;
+public class ValidationEntity {
+
 
 	@Id
 	@GeneratedValue(strategy = IDENTITY)

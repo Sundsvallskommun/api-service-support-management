@@ -1,15 +1,5 @@
 package se.sundsvall.supportmanagement;
 
-import static java.time.OffsetDateTime.now;
-import static org.apache.commons.codec.binary.Base64.encodeBase64String;
-import static se.sundsvall.supportmanagement.api.model.errand.Priority.HIGH;
-
-import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.List;
-
-import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
-import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachmentHeader;
 import se.sundsvall.supportmanagement.api.model.errand.Classification;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
@@ -19,6 +9,13 @@ import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
+
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+import static java.time.OffsetDateTime.now;
+import static se.sundsvall.supportmanagement.api.model.errand.Priority.HIGH;
 
 public class TestObjectsBuilder {
 
@@ -50,7 +47,7 @@ public class TestObjectsBuilder {
 			.withId(ERRAND_ID)
 			.withAssignedGroupId(ASSIGNED_GROUP_ID)
 			.withAssignedUserId(ASSIGNED_USER_ID)
-			.withAttachments(List.of(AttachmentEntity.create().withId(ATTACHMENT_ID).withFileName(FILE_NAME).withFile(FILE.getBytes()).withMimeType(MIME_TYPE)))
+			.withAttachments(null)
 			.withCategory(CATEGORY)
 			.withCreated(CREATED)
 			.withNamespace(NAMESPACE)
@@ -69,18 +66,9 @@ public class TestObjectsBuilder {
 		return AttachmentEntity.create()
 			.withId(ATTACHMENT_ID)
 			.withFileName(FILE_NAME)
-			.withFile(FILE.getBytes())
+			.withAttachmentData(null)
 			.withMimeType(MIME_TYPE)
 			.withErrandEntity(errandEntity);
-	}
-
-	public static ErrandAttachment buildErrandAttachment() {
-		return ErrandAttachment.create()
-			.withErrandAttachmentHeader(ErrandAttachmentHeader.create()
-				.withId(ATTACHMENT_ID)
-				.withFileName(FILE_NAME)
-				.withMimeType(MIME_TYPE))
-			.withBase64EncodedString(encodeBase64String(FILE.getBytes()));
 	}
 
 	public static Errand buildErrand() {
