@@ -121,14 +121,31 @@ class LabelRepositoryTest {
 
 	@Test
 	void delete() {
+		// Setup
+		final var municipalityId = "municipalityId-2";
+		final var namespace = "namespace-1";
+
 		// Verify existing label
-		assertThat(labelRepository.existsById(2L)).isTrue();
+		assertThat(labelRepository.existsByNamespaceAndMunicipalityId(namespace, municipalityId)).isTrue();
 		
 		// Act
-		labelRepository.deleteById(2L);
+		labelRepository.deleteByNamespaceAndMunicipalityId(namespace, municipalityId);
 
 		// Assert
-		assertThat(labelRepository.existsById(2L)).isFalse();
+		assertThat(labelRepository.existsByNamespaceAndMunicipalityId(namespace, municipalityId)).isFalse();
+	}
 
+	@Test
+	void existsByNamespaceAndMunicipalityId() {
+		// Setup
+		final var municipalityIdWithLabels = "municipalityId-1";
+		final var municipalityIdWithoutLabels = "municipalityId-3";
+		final var namespaceWithLabels = "namespace-1";
+		final var namespaceWithoutLabels = "namespace-3";
+
+		assertThat(labelRepository.existsByNamespaceAndMunicipalityId(namespaceWithLabels, municipalityIdWithLabels)).isTrue();
+		assertThat(labelRepository.existsByNamespaceAndMunicipalityId(namespaceWithLabels, municipalityIdWithoutLabels)).isFalse();
+		assertThat(labelRepository.existsByNamespaceAndMunicipalityId(namespaceWithoutLabels, municipalityIdWithLabels)).isFalse();
+		assertThat(labelRepository.existsByNamespaceAndMunicipalityId(namespaceWithoutLabels, municipalityIdWithoutLabels)).isFalse();
 	}
 }

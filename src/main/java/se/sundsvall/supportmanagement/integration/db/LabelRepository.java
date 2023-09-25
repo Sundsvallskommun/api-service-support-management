@@ -9,5 +9,9 @@ import se.sundsvall.supportmanagement.integration.db.model.LabelEntity;
 @Transactional
 @CircuitBreaker(name = "labelRepository")
 public interface LabelRepository extends JpaRepository<LabelEntity, Long> {
+	boolean existsByNamespaceAndMunicipalityId(String namespace, String municipalityId);
+
 	LabelEntity findOneByNamespaceAndMunicipalityId(String namespace, String municipalityId);
+
+	void deleteByNamespaceAndMunicipalityId(String namespace, String municipalityId);
 }

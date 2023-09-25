@@ -55,7 +55,7 @@ public class MetadataLabelResource {
 	ResponseEntity<Void> createLabels(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATON_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
-		@Valid @NotNull @ValidLabelSiblings @RequestBody final List<Label> body) {
+		@Valid @ValidLabelSiblings @NotNull @RequestBody final List<Label> body) {
 
 		metadataService.createLabels(namespace, municipalityId, body);
 		return accepted().build();
