@@ -1,19 +1,18 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
-import static java.util.Collections.emptyList;
-import static java.util.Optional.ofNullable;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import se.sundsvall.supportmanagement.api.model.revision.Revision;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.RevisionEntity;
 
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-
-import se.sundsvall.supportmanagement.api.model.revision.Revision;
-import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.integration.db.model.RevisionEntity;
+import static java.util.Collections.emptyList;
+import static java.util.Optional.ofNullable;
 
 public class RevisionMapper {
 	private RevisionMapper() {}
@@ -21,6 +20,7 @@ public class RevisionMapper {
 	private static final Gson GSON = new GsonBuilder()
 		.registerTypeAdapter(OffsetDateTime.class, OffsetDateTimeSerializer.create())
 		.addSerializationExclusionStrategy(CircularReferenceExclusionStrategy.create())
+		.addSerializationExclusionStrategy(AttachmentExclusionStrategy.create())
 		.create();
 
 	public static RevisionEntity toRevisionEntity(ErrandEntity entity, int version) {

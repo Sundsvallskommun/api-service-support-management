@@ -1,5 +1,15 @@
 package se.sundsvall.supportmanagement.integration.db.model;
 
+import com.google.code.beanmatchers.BeanMatchers;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.mariadb.jdbc.MariaDbBlob;
+
+import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.Random;
+import java.util.UUID;
+
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanEquals;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanHashCode;
@@ -12,14 +22,6 @@ import static org.assertj.core.api.Assertions.within;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.AllOf.allOf;
 
-import java.time.OffsetDateTime;
-import java.util.List;
-import java.util.Random;
-import java.util.UUID;
-
-import com.google.code.beanmatchers.BeanMatchers;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
 
 class ErrandEntityTest {
 
@@ -45,7 +47,7 @@ class ErrandEntityTest {
 		final var assignedUserId = "assignedUserId";
 		final var assignedGroupId = "assignedGroupId";
 		final var attachmentId = UUID.randomUUID().toString();
-		final var attachments = List.of(AttachmentEntity.create().withId(attachmentId).withFileName("fileName").withFile("file".getBytes()).withMimeType("mimeType"));
+		final var attachments = List.of(AttachmentEntity.create().withId(attachmentId).withFileName("fileName").withAttachmentData(AttachmentDataEntity.create().withFile(new MariaDbBlob("file".getBytes()))).withMimeType("mimeType"));
 		final var category = "category";
 		final var namespace = "namespace";
 		final var created = now();

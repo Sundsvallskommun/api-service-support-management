@@ -1,15 +1,12 @@
 package se.sundsvall.supportmanagement;
 
 import static java.time.OffsetDateTime.now;
-import static org.apache.commons.codec.binary.Base64.encodeBase64String;
 import static se.sundsvall.supportmanagement.api.model.errand.Priority.HIGH;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
-import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachmentHeader;
 import se.sundsvall.supportmanagement.api.model.errand.Classification;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
@@ -40,7 +37,6 @@ public class TestObjectsBuilder {
 	private static final String TITLE = "title";
 	private static final String TYPE = "type";
 	private static final String ATTACHMENT_ID = "attachmentId";
-	private static final String FILE = "file";
 	private static final String FILE_NAME = "fileName";
 	private static final String MIME_TYPE = "mimeType";
 	private static final String ID = "id";
@@ -50,7 +46,7 @@ public class TestObjectsBuilder {
 			.withId(ERRAND_ID)
 			.withAssignedGroupId(ASSIGNED_GROUP_ID)
 			.withAssignedUserId(ASSIGNED_USER_ID)
-			.withAttachments(List.of(AttachmentEntity.create().withId(ATTACHMENT_ID).withFileName(FILE_NAME).withFile(FILE.getBytes()).withMimeType(MIME_TYPE)))
+			.withAttachments(null)
 			.withCategory(CATEGORY)
 			.withCreated(CREATED)
 			.withNamespace(NAMESPACE)
@@ -69,18 +65,9 @@ public class TestObjectsBuilder {
 		return AttachmentEntity.create()
 			.withId(ATTACHMENT_ID)
 			.withFileName(FILE_NAME)
-			.withFile(FILE.getBytes())
+			.withAttachmentData(null)
 			.withMimeType(MIME_TYPE)
 			.withErrandEntity(errandEntity);
-	}
-
-	public static ErrandAttachment buildErrandAttachment() {
-		return ErrandAttachment.create()
-			.withErrandAttachmentHeader(ErrandAttachmentHeader.create()
-				.withId(ATTACHMENT_ID)
-				.withFileName(FILE_NAME)
-				.withMimeType(MIME_TYPE))
-			.withBase64EncodedString(encodeBase64String(FILE.getBytes()));
 	}
 
 	public static Errand buildErrand() {

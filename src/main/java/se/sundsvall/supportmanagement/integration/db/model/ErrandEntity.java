@@ -6,7 +6,6 @@ import static java.time.temporal.ChronoUnit.MILLIS;
 import static org.hibernate.Length.LONG32;
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 
-import java.io.Serializable;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Objects;
@@ -38,14 +37,17 @@ import org.hibernate.annotations.UuidGenerator;
 		@Index(name = "idx_errand_id", columnList = "id"),
 		@Index(name = "idx_errand_namespace", columnList = "namespace"),
 		@Index(name = "idx_errand_municipality_id", columnList = "municipality_id"),
+		@Index(name = "idx_errand_status", columnList = "status"),
+		@Index(name = "idx_errand_category", columnList = "category"),
+		@Index(name = "idx_errand_type", columnList = "type"),
+		@Index(name = "idx_errand_assigned_user_id", columnList = "assigned_user_id"),
+		@Index(name = "idx_errand_reporter_user_id", columnList = "reporter_user_id")
 		@Index(name = "idx_errand_number", columnList = "errand_number")
 	},
 	uniqueConstraints = {
 		@UniqueConstraint(name = "uq_errand_number", columnNames = {"errand_number"})
 	})
-public class ErrandEntity implements Serializable {
-
-	private static final long serialVersionUID = -4433880592443933243L;
+public class ErrandEntity {
 
 	@Id
 	@UuidGenerator

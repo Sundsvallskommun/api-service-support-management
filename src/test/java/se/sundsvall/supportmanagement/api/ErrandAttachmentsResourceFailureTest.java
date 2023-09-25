@@ -1,28 +1,29 @@
 package se.sundsvall.supportmanagement.api;
 
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.client.MultipartBodyBuilder;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.reactive.server.WebTestClient;
+import org.springframework.web.reactive.function.BodyInserters;
+import org.zalando.problem.Problem;
+import org.zalando.problem.violations.ConstraintViolationProblem;
+import org.zalando.problem.violations.Violation;
+import se.sundsvall.supportmanagement.Application;
+import se.sundsvall.supportmanagement.service.ErrandAttachmentService;
+
+import java.util.Map;
+
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
-import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
+import static org.springframework.http.MediaType.TEXT_PLAIN;
 import static org.zalando.problem.Status.BAD_REQUEST;
-
-import java.util.Map;
-
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.web.reactive.server.WebTestClient;
-import org.zalando.problem.violations.ConstraintViolationProblem;
-import org.zalando.problem.violations.Violation;
-
-import se.sundsvall.supportmanagement.Application;
-import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
-import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachmentHeader;
-import se.sundsvall.supportmanagement.service.ErrandAttachmentService;
 
 @SpringBootTest(classes = Application.class, webEnvironment = RANDOM_PORT)
 @ActiveProfiles("junit")
@@ -207,18 +208,15 @@ class ErrandAttachmentsResourceFailureTest {
 	void createErrandAttachmentInvalidNamespace() {
 
 		// Parameters
-		final var requestBody = ErrandAttachment.create()
-			.withErrandAttachmentHeader(ErrandAttachmentHeader.create()
-				.withId("id")
-				.withFileName("test.txt")
-				.withMimeType("mimeType"))
-			.withBase64EncodedString("file");
+		final var multipartBodyBuilder = new MultipartBodyBuilder();
+		multipartBodyBuilder.part("errandAttachment", "file").filename("test.txt").contentType(TEXT_PLAIN);
+		final var body = multipartBodyBuilder.build();
 
 		// Call
 		final var response = webTestClient.post()
 			.uri(builder -> builder.path(PATH).build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
-			.contentType(APPLICATION_JSON)
-			.bodyValue(requestBody)
+			.contentType(MULTIPART_FORM_DATA)
+			.body(BodyInserters.fromMultipartData(body))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -240,18 +238,15 @@ class ErrandAttachmentsResourceFailureTest {
 	void createErrandAttachmentInvalidMunicipalityId() {
 
 		// Parameters
-		final var requestBody = ErrandAttachment.create()
-			.withErrandAttachmentHeader(ErrandAttachmentHeader.create()
-				.withId("id")
-				.withFileName("test.txt")
-				.withMimeType("mimeType"))
-			.withBase64EncodedString("file");
+		final var multipartBodyBuilder = new MultipartBodyBuilder();
+		multipartBodyBuilder.part("errandAttachment", "file").filename("test.txt").contentType(TEXT_PLAIN);
+		final var body = multipartBodyBuilder.build();
 
 		// Call
 		final var response = webTestClient.post()
 			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", INVALID, "id", ERRAND_ID)))
-			.contentType(APPLICATION_JSON)
-			.bodyValue(requestBody)
+			.contentType(MULTIPART_FORM_DATA)
+			.body(BodyInserters.fromMultipartData(body))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -273,18 +268,15 @@ class ErrandAttachmentsResourceFailureTest {
 	void createErrandAttachmentInvalidId() {
 
 		// Parameters
-		final var requestBody = ErrandAttachment.create()
-			.withErrandAttachmentHeader(ErrandAttachmentHeader.create()
-				.withId("id")
-				.withFileName("test.txt")
-				.withMimeType("mimeType"))
-			.withBase64EncodedString("file");
+		final var multipartBodyBuilder = new MultipartBodyBuilder();
+		multipartBodyBuilder.part("errandAttachment", "file").filename("test.txt").contentType(TEXT_PLAIN);
+		final var body = multipartBodyBuilder.build();
 
 		// Call
 		final var response = webTestClient.post()
 			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", INVALID)))
-			.contentType(APPLICATION_JSON)
-			.bodyValue(requestBody)
+			.contentType(MULTIPART_FORM_DATA)
+			.body(BodyInserters.fromMultipartData(body))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -306,27 +298,25 @@ class ErrandAttachmentsResourceFailureTest {
 	void createErrandAttachmentInvalidRequestBody() {
 
 		// Parameters
-		final var requestBody = ErrandAttachment.create();
+		final var multipartBodyBuilder = new MultipartBodyBuilder();
+		multipartBodyBuilder.part("noSuchPart", "invalid");
+		final var body = multipartBodyBuilder.build();
 
 		// Call
 		final var response = webTestClient.post()
 			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
-			.contentType(APPLICATION_JSON)
-			.bodyValue(requestBody)
+			.contentType(MULTIPART_FORM_DATA)
+			.body(BodyInserters.fromMultipartData(body))
 			.exchange()
 			.expectStatus().isBadRequest()
-			.expectBody(ConstraintViolationProblem.class)
+			.expectBody(Problem.class)
 			.returnResult()
 			.getResponseBody();
 
 		assertThat(response).isNotNull();
-		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getTitle()).isEqualTo("Bad Request");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
-		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactlyInAnyOrder(
-				tuple("base64EncodedString", "must not be null"),
-				tuple("base64EncodedString", "not a valid BASE64-encoded string"));
+		assertThat(response.getDetail()).isEqualTo("Required part 'errandAttachment' is not present.");
 
 		// Verification
 		verifyNoInteractions(errandAttachmentServiceMock);

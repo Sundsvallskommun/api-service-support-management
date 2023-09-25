@@ -1,8 +1,13 @@
 package se.sundsvall.supportmanagement.service.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.spy;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -36,34 +41,43 @@ class ServiceUtilTest {
 	}
 
 	@Test
-	void detectMimeTypeThrowsException() {
+	void detectMimeTypeThrowsException() throws IOException {
 		assertThat(ServiceUtil.detectMimeType(null, null)).isEqualTo("application/octet-stream");
+
+		InputStream inputStream = spy(new ByteArrayInputStream("data".getBytes()));
+		doThrow(new IOException()).when(inputStream).read(any(byte[].class));
+		assertThat(ServiceUtil.detectMimeTypeFromStream(null, inputStream)).isEqualTo("application/octet-stream");
 	}
 
 	@Test
 	void detectMimeType() throws IOException {
 		// IMAGE
-		assertThat(ServiceUtil.detectMimeType(IMG_FILE_NAME, getBytes(PATH + IMG_FILE_NAME))).isEqualTo("image/jpeg");
-		assertThat(ServiceUtil.detectMimeType(null, getBytes(PATH + IMG_FILE_NAME))).isEqualTo("image/jpeg");
+		assertThat(ServiceUtil.detectMimeTypeFromStream(IMG_FILE_NAME, getStream(PATH + IMG_FILE_NAME))).isEqualTo("image/jpeg");
+		assertThat(ServiceUtil.detectMimeType(IMG_FILE_NAME, getStream(PATH + IMG_FILE_NAME).readAllBytes())).isEqualTo("image/jpeg");
+		assertThat(ServiceUtil.detectMimeTypeFromStream(null, getStream(PATH + IMG_FILE_NAME))).isEqualTo("image/jpeg");
 
 		// DOC
-		assertThat(ServiceUtil.detectMimeType(DOC_FILE_NAME, getBytes(PATH + DOC_FILE_NAME))).isEqualTo("application/msword");
-		assertThat(ServiceUtil.detectMimeType(null, getBytes(PATH + DOC_FILE_NAME))).isEqualTo("application/x-tika-msoffice");
+		assertThat(ServiceUtil.detectMimeTypeFromStream(DOC_FILE_NAME, getStream(PATH + DOC_FILE_NAME))).isEqualTo("application/msword");
+		assertThat(ServiceUtil.detectMimeType(DOC_FILE_NAME, getStream(PATH + DOC_FILE_NAME).readAllBytes())).isEqualTo("application/msword");
+		assertThat(ServiceUtil.detectMimeTypeFromStream(null, getStream(PATH + DOC_FILE_NAME))).isEqualTo("application/x-tika-msoffice");
 
 		// DOCX
-		assertThat(ServiceUtil.detectMimeType(DOCX_FILE_NAME, getBytes(PATH + DOCX_FILE_NAME))).isEqualTo("application/vnd.openxmlformats-officedocument.wordprocessingml.document");
-		assertThat(ServiceUtil.detectMimeType(null, getBytes(PATH + DOCX_FILE_NAME))).isEqualTo("application/x-tika-ooxml");
+		assertThat(ServiceUtil.detectMimeTypeFromStream(DOCX_FILE_NAME, getStream(PATH + DOCX_FILE_NAME))).isEqualTo("application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+		assertThat(ServiceUtil.detectMimeType(DOCX_FILE_NAME, getStream(PATH + DOCX_FILE_NAME).readAllBytes())).isEqualTo("application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+		assertThat(ServiceUtil.detectMimeTypeFromStream(null, getStream(PATH + DOCX_FILE_NAME))).isEqualTo("application/x-tika-ooxml");
 
 		// PDF
-		assertThat(ServiceUtil.detectMimeType(PDF_FILE_NAME, getBytes(PATH + PDF_FILE_NAME))).isEqualTo("application/pdf");
-		assertThat(ServiceUtil.detectMimeType(null, getBytes(PATH + PDF_FILE_NAME))).isEqualTo("application/pdf");
+		assertThat(ServiceUtil.detectMimeTypeFromStream(PDF_FILE_NAME, getStream(PATH + PDF_FILE_NAME))).isEqualTo("application/pdf");
+		assertThat(ServiceUtil.detectMimeType(PDF_FILE_NAME, getStream(PATH + PDF_FILE_NAME).readAllBytes())).isEqualTo("application/pdf");
+		assertThat(ServiceUtil.detectMimeTypeFromStream(null, getStream(PATH + PDF_FILE_NAME))).isEqualTo("application/pdf");
 
 		// TEXT
-		assertThat(ServiceUtil.detectMimeType(TXT_FILE_NAME, getBytes(PATH + TXT_FILE_NAME))).isEqualTo("text/plain");
-		assertThat(ServiceUtil.detectMimeType(null, getBytes(PATH + TXT_FILE_NAME))).isEqualTo("text/plain");
+		assertThat(ServiceUtil.detectMimeTypeFromStream(TXT_FILE_NAME, getStream(PATH + TXT_FILE_NAME))).isEqualTo("text/plain");
+		assertThat(ServiceUtil.detectMimeType(TXT_FILE_NAME, getStream(PATH + TXT_FILE_NAME).readAllBytes())).isEqualTo("text/plain");
+		assertThat(ServiceUtil.detectMimeTypeFromStream(null, getStream(PATH + TXT_FILE_NAME))).isEqualTo("text/plain");
 	}
 
-	private byte[] getBytes(String path) throws IOException {
-		return new ClassPathResource(path).getInputStream().readAllBytes();
+	private InputStream getStream(String path) throws IOException {
+		return new ClassPathResource(path).getInputStream();
 	}
 }

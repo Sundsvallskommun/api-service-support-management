@@ -2,13 +2,10 @@ package se.sundsvall.supportmanagement.integration.db.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
-import java.io.Serializable;
 import java.util.Objects;
 
 @Embeddable
-public class DbExternalTag implements Serializable {
-
-	private static final long serialVersionUID = -6197521959635923913L;
+public class DbExternalTag {
 
 	@Column(name = "\"key\"")
 	private String key;

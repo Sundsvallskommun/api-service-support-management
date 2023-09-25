@@ -14,18 +14,27 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
 import se.sundsvall.supportmanagement.api.model.metadata.Category;
 import se.sundsvall.supportmanagement.api.model.metadata.ExternalIdType;
+import se.sundsvall.supportmanagement.api.model.metadata.Label;
+import se.sundsvall.supportmanagement.api.model.metadata.Labels;
 import se.sundsvall.supportmanagement.api.model.metadata.Role;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
 import se.sundsvall.supportmanagement.api.model.metadata.Type;
 import se.sundsvall.supportmanagement.integration.db.model.CategoryEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ExternalIdTypeEntity;
+import se.sundsvall.supportmanagement.integration.db.model.LabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.RoleEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StatusEntity;
 import se.sundsvall.supportmanagement.integration.db.model.TypeEntity;
 
 public class MetadataMapper {
+
+	private static final Gson GSON = new Gson();
+	private static final java.lang.reflect.Type LABEL_LIST_TYPE = new TypeToken<List<Label>>() {}.getType();
 
 	private MetadataMapper() {}
 
@@ -177,5 +186,31 @@ public class MetadataMapper {
 	private static void updateTypes(final CategoryEntity entity, final List<Type> types) {
 		ofNullable(entity.getTypes()).ifPresentOrElse(List::clear, () -> entity.setTypes(new ArrayList<>()));
 		entity.getTypes().addAll(toTypeEntities(types));
+	}
+
+	// =================================================================
+	// Label operations
+	// =================================================================
+
+	public static LabelEntity toLabelEntity(String namespace, String municipalityId, final List<Label> labels) {
+		if (anyNull(namespace, municipalityId, labels)) {
+			return null;
+		}
+
+		return LabelEntity.create()
+			.withJsonStructure(GSON.toJson(labels, LABEL_LIST_TYPE))
+			.withMunicipalityId(municipalityId)
+			.withNamespace(namespace);
+	}
+
+	public static Labels toLabels(LabelEntity entity) {
+		if (isNull(entity)) {
+			return null;
+		}
+
+		return Labels.create()
+			.withCreated(entity.getCreated())
+			.withModified(entity.getModified())
+			.withLabelStructure(GSON.fromJson(entity.getJsonStructure(), LABEL_LIST_TYPE));
 	}
 }
