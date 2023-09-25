@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.integration.db.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
@@ -37,7 +38,7 @@ class ErrandNumberGeneratorTest {
 	@Test
 	void generateErrandNumber_resetSequence() {
 
-		when(repository.findById(1L)).thenReturn(Optional.of(new ErrandNumberSequenceEntity()
+		when(repository.findById(any(String.class))).thenReturn(Optional.of(new ErrandNumberSequenceEntity()
 			.withLastSequenceNumber(1234)
 			.withResetYearMonth(dateFormatter.format(LocalDate.now().minusMonths(2)))));
 
@@ -49,7 +50,7 @@ class ErrandNumberGeneratorTest {
 	@Test
 	void generateErrandNumber_incrementSequence() {
 
-		when(repository.findById(1L)).thenReturn(Optional.of(new ErrandNumberSequenceEntity()
+		when(repository.findById(any(String.class))).thenReturn(Optional.of(new ErrandNumberSequenceEntity()
 			.withLastSequenceNumber(123)
 			.withResetYearMonth(dateFormatter.format(LocalDate.now()))));
 
@@ -61,7 +62,7 @@ class ErrandNumberGeneratorTest {
 	@Test
 	void generateErrandNumber_noSequence() {
 
-		when(repository.findById(1L)).thenReturn(Optional.empty());
+		when(repository.findById(any(String.class))).thenReturn(Optional.empty());
 
 		final var result = stringGeneratorService.generateErrandNumber("CONTACTCENTER");
 
@@ -88,7 +89,7 @@ class ErrandNumberGeneratorTest {
 		final var namespaces = List.of("CONTACTCENTER");
 		final var maxCount = 99999;
 		final var random = new Random();
-		when(repository.findById(1L)).thenReturn(Optional.of(entity));
+		when(repository.findById(any(String.class))).thenReturn(Optional.of(entity));
 
 		final var result = IntStream.range(0, maxCount).mapToObj(i ->
 				stringGeneratorService.generateErrandNumber(namespaces.get(random.nextInt(namespaces.size()))))

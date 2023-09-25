@@ -41,7 +41,7 @@ import org.hibernate.annotations.UuidGenerator;
 		@Index(name = "idx_errand_category", columnList = "category"),
 		@Index(name = "idx_errand_type", columnList = "type"),
 		@Index(name = "idx_errand_assigned_user_id", columnList = "assigned_user_id"),
-		@Index(name = "idx_errand_reporter_user_id", columnList = "reporter_user_id")
+		@Index(name = "idx_errand_reporter_user_id", columnList = "reporter_user_id"),
 		@Index(name = "idx_errand_number", columnList = "errand_number")
 	},
 	uniqueConstraints = {

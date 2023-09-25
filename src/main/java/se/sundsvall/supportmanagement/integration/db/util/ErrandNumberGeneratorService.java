@@ -26,10 +26,10 @@ public class ErrandNumberGeneratorService {
 
 		final var todayDate = dateFormatter.format(LocalDate.now());
 
-		var sequence = repository.findById(1L).orElse(null);
+		var sequence = repository.findById(namespace).orElse(null);
 
 		if (sequence == null) {
-			sequence = new ErrandNumberSequenceEntity().withId(1L);
+			sequence = new ErrandNumberSequenceEntity().withNamespace(namespace).withLastSequenceNumber(0).withResetYearMonth(todayDate);
 		}
 
 		if (sequence.getResetYearMonth() != null && !sequence.getResetYearMonth().equals(todayDate)) {

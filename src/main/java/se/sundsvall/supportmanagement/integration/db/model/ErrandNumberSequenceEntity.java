@@ -5,8 +5,6 @@ import java.util.Objects;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
@@ -15,10 +13,8 @@ import jakarta.persistence.Table;
 public class ErrandNumberSequenceEntity {
 
 	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "id")
-	private Long id;
-
+	@Column(name = "namespace")
+	private String namespace;
 
 	@Column(name = "last_sequence_number")
 	private int lastSequenceNumber;
@@ -30,16 +26,16 @@ public class ErrandNumberSequenceEntity {
 		return new ErrandNumberSequenceEntity();
 	}
 
-	public Long getId() {
-		return id;
+	public String getNamespace() {
+		return namespace;
 	}
 
-	public void setId(final Long id) {
-		this.id = id;
+	public void setNamespace(final String namespace) {
+		this.namespace = namespace;
 	}
 
-	public ErrandNumberSequenceEntity withId(final Long id) {
-		this.id = id;
+	public ErrandNumberSequenceEntity withNamespace(final String namespace) {
+		this.namespace = namespace;
 		return this;
 	}
 
@@ -74,18 +70,18 @@ public class ErrandNumberSequenceEntity {
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
 		final ErrandNumberSequenceEntity entity = (ErrandNumberSequenceEntity) o;
-		return lastSequenceNumber == entity.lastSequenceNumber && Objects.equals(id, entity.id) && Objects.equals(resetYearMonth, entity.resetYearMonth);
+		return lastSequenceNumber == entity.lastSequenceNumber && Objects.equals(namespace, entity.namespace) && Objects.equals(resetYearMonth, entity.resetYearMonth);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, lastSequenceNumber, resetYearMonth);
+		return Objects.hash(namespace, lastSequenceNumber, resetYearMonth);
 	}
 
 	@Override
 	public String toString() {
 		return "ErrandNumberSequenceEntity{" +
-			"id=" + id +
+			"namespace=" + namespace +
 			", lastSequenceNumber=" + lastSequenceNumber +
 			", resetYearMonth='" + resetYearMonth + '\'' +
 			'}';

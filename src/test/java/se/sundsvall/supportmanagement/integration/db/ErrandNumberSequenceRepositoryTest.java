@@ -32,8 +32,10 @@ class ErrandNumberSequenceRepositoryTest {
 
 		final var lastSequenceNumber = 1;
 		final var resetYearMonth = "2101";
+		final var namespace = "namespace";
 
 		final var entity = ErrandNumberSequenceEntity.create()
+			.withNamespace(namespace)
 			.withLastSequenceNumber(lastSequenceNumber)
 			.withResetYearMonth(resetYearMonth);
 
@@ -41,7 +43,7 @@ class ErrandNumberSequenceRepositoryTest {
 
 
 		assertThat(result).isNotNull();
-		assertThat(result.getId()).isNotNull().isEqualTo(1L);
+		assertThat(result.getNamespace()).isNotNull().isEqualTo(namespace);
 		assertThat(result.getLastSequenceNumber()).isEqualTo(lastSequenceNumber);
 		assertThat(result.getResetYearMonth()).isEqualTo(resetYearMonth);
 	}
@@ -51,15 +53,17 @@ class ErrandNumberSequenceRepositoryTest {
 
 		final var lastSequenceNumber = 1;
 		final var resetYearMonth = "2101";
+		final var namespace = "namespace";
 
 		final var entity = ErrandNumberSequenceEntity.create()
+			.withNamespace(namespace)
 			.withLastSequenceNumber(lastSequenceNumber)
 			.withResetYearMonth(resetYearMonth);
 
 		final var result = errandNumberSequenceRepository.save(entity);
 
 		assertThat(result).isNotNull();
-		assertThat(result.getId()).isNotNull();
+		assertThat(result.getNamespace()).isEqualTo(namespace);
 		assertThat(result.getLastSequenceNumber()).isEqualTo(lastSequenceNumber);
 		assertThat(result.getResetYearMonth()).isEqualTo(resetYearMonth);
 
@@ -72,7 +76,7 @@ class ErrandNumberSequenceRepositoryTest {
 		final var updatedResult = errandNumberSequenceRepository.save(result);
 
 		assertThat(updatedResult).isNotNull();
-		assertThat(updatedResult.getId()).isNotNull();
+		assertThat(updatedResult.getNamespace()).isNotNull();
 		assertThat(updatedResult.getLastSequenceNumber()).isEqualTo(updatedLastSequenceNumber);
 		assertThat(updatedResult.getResetYearMonth()).isEqualTo(updatedResetYearMonth);
 
@@ -83,8 +87,10 @@ class ErrandNumberSequenceRepositoryTest {
 
 		final var lastSequenceNumber = 1;
 		final var resetYearMonth = "2101";
+		final var namespace = "namespace";
 
 		final var entity = ErrandNumberSequenceEntity.create()
+			.withNamespace(namespace)
 			.withLastSequenceNumber(lastSequenceNumber)
 			.withResetYearMonth(resetYearMonth);
 
@@ -92,7 +98,7 @@ class ErrandNumberSequenceRepositoryTest {
 
 		errandNumberSequenceRepository.delete(result);
 
-		assertThat(errandNumberSequenceRepository.findById(result.getId())).isEmpty();
+		assertThat(errandNumberSequenceRepository.findById(result.getNamespace())).isEmpty();
 	}
 
 }
