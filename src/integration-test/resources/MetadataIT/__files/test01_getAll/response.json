@@ -72,6 +72,64 @@
 			"created": "2023-01-01T12:00:00+01:00"
 		}
 	],
+	"labels": {
+		"created": "2023-01-01T12:00:00+01:00",
+		"labelStructure": [
+			{
+				"classification": "CATEGORY",
+				"displayName": "CATEGORY-DISPLAY-NAME-1",
+				"name": "CATEGORY-1",
+				"labels": [
+					{
+						"classification": "TYPE",
+						"displayName": "TYPE-DISPLAY-NAME-1",
+						"name": "TYPE-1",
+						"labels": [
+							{
+								"classification": "SUBTYPE",
+								"displayName": "SUBTYPE-DISPLAY-NAME-1",
+								"name": "SUBTYPE-1"
+							},
+							{
+								"classification": "SUBTYPE",
+								"displayName": "SUBTYPE-DISPLAY-NAME-2",
+								"name": "SUBTYPE-2"
+							}
+						]
+					},
+					{
+						"classification": "TYPE",
+						"displayName": "TYPE-DISPLAY-NAME-2",
+						"name": "TYPE-2",
+						"labels": [
+							{
+								"classification": "SUBTYPE",
+								"displayName": "SUBTYPE-DISPLAY-NAME-1",
+								"name": "SUBTYPE-1"
+							},
+							{
+								"classification": "SUBTYPE",
+								"displayName": "SUBTYPE-DISPLAY-NAME-3",
+								"name": "SUBTYPE-3",
+								"labels": [
+									{
+										"classification": "DEEPSUBTYPE",
+										"displayName": "DEEPSUBTYPE-DISPLAY-NAME-1",
+										"name": "DEEPSUBTYPE-1"
+									},
+									{
+										"classification": "DEEPSUBTYPE",
+										"displayName": "DEEPSUBTYPE-DISPLAY-NAME-2",
+										"name": "DEEPSUBTYPE-2"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
 	"statuses": [
 		{
 			"name": "STATUS-1",
