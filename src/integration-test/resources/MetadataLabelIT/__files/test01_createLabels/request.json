@@ -1,0 +1,26 @@
+[
+	{
+		"classification": "TOP-LEVEL",
+		"displayName": "Nivå 1",
+		"name": "LABEL-1",
+		"labels": [
+			{
+				"classification": "MIDDLE-LEVEL",
+				"displayName": "Nivå 1.1",
+				"name": "LEVEL-1-1",
+				"labels": [
+					{
+						"classification": "LOWEST-LEVEL",
+						"displayName": "Nivå 1.1.1",
+						"name": "LEVEL-1-1-1"
+					},
+					{
+						"classification": "LOWEST-LEVEL",
+						"displayName": "Nivå 1.1.2",
+						"name": "LEVEL-1-1-2"
+					}
+				]
+			}
+		]
+	}
+]

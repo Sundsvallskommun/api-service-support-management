@@ -48,6 +48,13 @@ INSERT INTO role(id, created, modified, municipality_id, name, namespace) VALUES
 	(106, '2023-01-01 12:00:00.000', null, '2305', 'ROLE-2', 'NAMESPACE.1');
        
 -------------------------------------
+-- Label
+-------------------------------------
+INSERT INTO label(id, created, municipality_id, namespace, json_structure)
+VALUES (1, '2023-01-01 12:00:00.000', '2281', 'NAMESPACE.1', '[{"classification":"CATEGORY","displayName":"CATEGORY-DISPLAY-NAME-1","name":"CATEGORY-1","labels":[{"classification":"TYPE","displayName":"TYPE-DISPLAY-NAME-1","name":"TYPE-1","labels":[{"classification":"SUBTYPE","displayName":"SUBTYPE-DISPLAY-NAME-1","name":"SUBTYPE-1"},{"classification":"SUBTYPE","displayName":"SUBTYPE-DISPLAY-NAME-2","name":"SUBTYPE-2"}]},{"classification":"TYPE","displayName":"TYPE-DISPLAY-NAME-2","name":"TYPE-2","labels":[{"classification":"SUBTYPE","displayName":"SUBTYPE-DISPLAY-NAME-1","name":"SUBTYPE-1"},{"classification":"SUBTYPE","displayName":"SUBTYPE-DISPLAY-NAME-3","name":"SUBTYPE-3","labels":[{"classification":"DEEPSUBTYPE","displayName":"DEEPSUBTYPE-DISPLAY-NAME-1","name":"DEEPSUBTYPE-1"},{"classification":"DEEPSUBTYPE","displayName":"DEEPSUBTYPE-DISPLAY-NAME-2","name":"DEEPSUBTYPE-2"}]}]}]}]'),
+       (2, '2023-01-01 12:00:00.000', '2305', 'NAMESPACE.1', '[{"classification":"CATEGORY","displayName":"CATEGORY-DISPLAY-NAME-1","name":"CATEGORY-1","labels":[{"classification":"TYPE","displayName":"TYPE-DISPLAY-NAME-1","name":"TYPE-1","labels":[{"classification":"SUBTYPE","displayName":"SUBTYPE-DISPLAY-NAME-1","name":"SUBTYPE-1"}]},{"classification":"TYPE","displayName":"TYPE-DISPLAY-NAME-2","name":"TYPE-2","labels":[{"classification":"SUBTYPE","displayName":"SUBTYPE-DISPLAY-NAME-1","name":"SUBTYPE-1"}]}]}]');
+
+-------------------------------------
 -- Validation
 -------------------------------------
 INSERT INTO validation(id, municipality_id, namespace, `type`, created, modified, validated) VALUES
