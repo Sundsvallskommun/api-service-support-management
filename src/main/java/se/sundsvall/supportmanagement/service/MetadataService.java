@@ -10,6 +10,8 @@ import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toCat
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toCategoryEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toExternalIdType;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toExternalIdTypeEntity;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toLabelEntity;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toLabels;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toRole;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toRoleEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toStatus;
@@ -28,12 +30,15 @@ import org.zalando.problem.Problem;
 
 import se.sundsvall.supportmanagement.api.model.metadata.Category;
 import se.sundsvall.supportmanagement.api.model.metadata.ExternalIdType;
+import se.sundsvall.supportmanagement.api.model.metadata.Label;
+import se.sundsvall.supportmanagement.api.model.metadata.Labels;
 import se.sundsvall.supportmanagement.api.model.metadata.MetadataResponse;
 import se.sundsvall.supportmanagement.api.model.metadata.Role;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
 import se.sundsvall.supportmanagement.api.model.metadata.Type;
 import se.sundsvall.supportmanagement.integration.db.CategoryRepository;
 import se.sundsvall.supportmanagement.integration.db.ExternalIdTypeRepository;
+import se.sundsvall.supportmanagement.integration.db.LabelRepository;
 import se.sundsvall.supportmanagement.integration.db.RoleRepository;
 import se.sundsvall.supportmanagement.integration.db.StatusRepository;
 import se.sundsvall.supportmanagement.integration.db.ValidationRepository;
@@ -49,21 +54,24 @@ public class MetadataService {
 	private static final String ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID = "%s '%s' is not present in namespace '%s' for municipalityId '%s'";
 
 	private static final String CATEGORY = "Category";
-	private static final String STATUS = "Status";
 	private static final String EXTERNAL_ID_TYPE = "ExternalIdType";
 	private static final String ROLE = "Role";
-
-	@Autowired
-	private StatusRepository statusRepository;
-
-	@Autowired
-	private RoleRepository roleRepository;
+	private static final String STATUS = "Status";
 
 	@Autowired
 	private CategoryRepository categoryRepository;
 
 	@Autowired
 	private ExternalIdTypeRepository externalIdTypeRepository;
+
+	@Autowired
+	private LabelRepository labelRepository;
+
+	@Autowired
+	private RoleRepository roleRepository;
+
+	@Autowired
+	private StatusRepository statusRepository;
 
 	@Autowired
 	private ValidationRepository validationRepository;
@@ -76,6 +84,7 @@ public class MetadataService {
 	public MetadataResponse findAll(final String namespace, final String municipalityId) {
 		return MetadataResponse.create()
 			.withCategories(findCategories(namespace, municipalityId))
+			.withLabels(findLabels(namespace, municipalityId))
 			.withStatuses(findStatuses(namespace, municipalityId))
 			.withRoles(findRoles(namespace, municipalityId))
 			.withExternalIdTypes(findExternalIdTypes(namespace, municipalityId));
@@ -224,6 +233,37 @@ public class MetadataService {
 		}
 
 		roleRepository.deleteByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
+	}
+
+	// =================================================================
+	// Label operations
+	// =================================================================
+
+	@Caching(evict = {
+		@CacheEvict(value = CACHE_NAME, key = "{'findLabels', #namespace, #municipalityId}"),
+		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}")
+	})
+	public void createLabels(final String namespace, final String municipalityId, final List<Label> labels) {
+		if (labelRepository.existsByNamespaceAndMunicipalityId(namespace, municipalityId)) {
+			throw Problem.valueOf(BAD_REQUEST, String.format("Labels already exists in namespace '%s' for municipalityId '%s'", namespace, municipalityId));
+		}
+		labelRepository.save(toLabelEntity(namespace, municipalityId, labels));
+	}
+
+	@Cacheable(value = CACHE_NAME, key = "{#root.methodName, #namespace, #municipalityId}")
+	public Labels findLabels(final String namespace, final String municipalityId) {
+		return toLabels(labelRepository.findOneByNamespaceAndMunicipalityId(namespace, municipalityId));
+	}
+
+	@Caching(evict = {
+		@CacheEvict(value = CACHE_NAME, key = "{'findLabels', #namespace, #municipalityId}"),
+		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}")
+	})
+	public void deleteLabels(final String namespace, final String municipalityId) {
+		if (!labelRepository.existsByNamespaceAndMunicipalityId(namespace, municipalityId)) {
+			throw Problem.valueOf(NOT_FOUND, String.format("Labels are not present in namespace '%s' for municipalityId '%s'", namespace, municipalityId));
+		}
+		labelRepository.deleteByNamespaceAndMunicipalityId(namespace, municipalityId);
 	}
 
 	// =================================================================

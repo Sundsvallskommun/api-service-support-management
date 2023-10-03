@@ -5,7 +5,6 @@ import static java.time.temporal.ChronoUnit.MILLIS;
 import static org.hibernate.Length.LONG32;
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 
-import java.io.Serializable;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.Objects;
@@ -30,9 +29,7 @@ import jakarta.persistence.UniqueConstraint;
 	uniqueConstraints = {
 		@UniqueConstraint(name = "uq_entity_id_version", columnNames = { "entity_id", "version" })
 	})
-public class RevisionEntity implements Serializable {
-
-	private static final long serialVersionUID = 7389828147898967316L;
+public class RevisionEntity {
 
 	@Id
 	@UuidGenerator

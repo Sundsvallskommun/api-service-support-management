@@ -11,4 +11,6 @@ TRUNCATE table role;
 TRUNCATE table `type`;
 TRUNCATE table validation;
 TRUNCATE table revision;
+TRUNCATE table attachment_data;
+TRUNCATE table label;
 SET FOREIGN_KEY_CHECKS = 1;

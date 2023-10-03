@@ -13,6 +13,8 @@ import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.d
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withMunicipalityId;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withNamespace;
 
+import java.util.function.Supplier;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -50,7 +52,7 @@ public class ErrandService {
 		final var revision = revisionService.createErrandRevision(entity);
 
 		// Create log event
-		eventService.createErrandEvent(CREATE, EVENT_LOG_CREATE_ERRAND, entity, revision, null);
+		eventService.createErrandEvent(CREATE, EVENT_LOG_CREATE_ERRAND, entity, revision.latest(), null);
 
 		return entity.getId();
 	}
@@ -63,29 +65,28 @@ public class ErrandService {
 	}
 
 	public Errand readErrand(String namespace, String municipalityId, String id) {
-		verifyExistingErrand(id, namespace, municipalityId);
+		verifyExistingErrand(id, namespace, municipalityId, false);
 
 		return toErrand(repository.getReferenceById(id));
 	}
 
 	public Errand updateErrand(String namespace, String municipalityId, String id, Errand errand) {
-		verifyExistingErrand(id, namespace, municipalityId);
+		verifyExistingErrand(id, namespace, municipalityId, true);
 
 		// Update errand and create new revision
 		final var entity = repository.save(updateEntity(repository.getReferenceById(id), errand));
-		final var latestRevision = revisionService.createErrandRevision(entity);
+		final var revisionResult = revisionService.createErrandRevision(entity);
 
 		// Create log event if the update has modified the errand (and thus has created a new revision)
-		if (nonNull(latestRevision)) {
-			final var previousRevision = revisionService.getErrandRevisionByVersion(id, latestRevision.getVersion() - 1);
-			eventService.createErrandEvent(UPDATE, EVENT_LOG_UPDATE_ERRAND, entity, latestRevision, previousRevision);
+		if (nonNull(revisionResult)) {
+			eventService.createErrandEvent(UPDATE, EVENT_LOG_UPDATE_ERRAND, entity, revisionResult.latest(), revisionResult.previous());
 		}
 
 		return toErrand(entity);
 	}
 
 	public void deleteErrand(String namespace, String municipalityId, String id) {
-		verifyExistingErrand(id, namespace, municipalityId);
+		verifyExistingErrand(id, namespace, municipalityId, true);
 
 		final var entity = repository.getReferenceById(id);
 
@@ -97,8 +98,16 @@ public class ErrandService {
 		eventService.createErrandEvent(DELETE, EVENT_LOG_DELETE_ERRAND, entity, latestRevision, null);
 	}
 
-	private void verifyExistingErrand(String id, String namespace, String municipalityId) {
-		if (!repository.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)) {
+	private void verifyExistingErrand(String id, String namespace, String municipalityId, boolean lock) {
+
+		Supplier<Boolean> exists;
+		if (lock) {
+			exists = () -> repository.existsWithLockingByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		} else {
+			exists = () -> repository.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		}
+
+		if (!exists.get()) {
 			throw Problem.valueOf(NOT_FOUND, String.format(ENTITY_NOT_FOUND, id, namespace, municipalityId));
 		}
 	}

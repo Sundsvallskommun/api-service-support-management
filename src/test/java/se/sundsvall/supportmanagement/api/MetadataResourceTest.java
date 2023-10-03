@@ -20,7 +20,10 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.metadata.Category;
 import se.sundsvall.supportmanagement.api.model.metadata.ExternalIdType;
+import se.sundsvall.supportmanagement.api.model.metadata.Label;
+import se.sundsvall.supportmanagement.api.model.metadata.Labels;
 import se.sundsvall.supportmanagement.api.model.metadata.MetadataResponse;
+import se.sundsvall.supportmanagement.api.model.metadata.Role;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
 import se.sundsvall.supportmanagement.api.model.metadata.Type;
 import se.sundsvall.supportmanagement.service.MetadataService;
@@ -44,8 +47,11 @@ class MetadataResourceTest {
 		// Setup
 		final var metadataResponse = MetadataResponse.create()
 			.withCategories(List.of(Category.create().withName("Category-1").withTypes(List.of(Type.create().withName("Type-1")))))
+			.withExternalIdTypes(List.of(ExternalIdType.create().withName("ExternalIdType-1")))
+			.withLabels(Labels.create().withLabelStructure(List.of(Label.create().withClassification("Classification-1").withName("Name-1"))))
+			.withRoles(List.of(Role.create().withName("Role-1")))
 			.withStatuses(List.of(Status.create().withName("Status-1")))
-			.withExternalIdTypes(List.of(ExternalIdType.create().withName("ExternalIdType-1")));
+		;
 
 		when(metadataServiceMock.findAll(any(), any())).thenReturn(metadataResponse);
 

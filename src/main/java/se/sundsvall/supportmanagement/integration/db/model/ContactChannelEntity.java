@@ -2,15 +2,10 @@ package se.sundsvall.supportmanagement.integration.db.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
-import java.io.Serial;
-import java.io.Serializable;
 import java.util.Objects;
 
 @Embeddable
-public class ContactChannelEntity implements Serializable {
-
-	@Serial
-	private static final long serialVersionUID = -2018618163698478459L;
+public class ContactChannelEntity {
 
 	@Column(name = "type")
 	private String type;

@@ -94,7 +94,7 @@ class ErrandServiceTest {
 
 		// Mock
 		when(errandRepositoryMock.save(any(ErrandEntity.class))).thenReturn(errandEntity);
-		when(revisionServiceMock.createErrandRevision(any())).thenReturn(currentRevisionMock);
+		when(revisionServiceMock.createErrandRevision(any())).thenReturn(new RevisionResult(null, currentRevisionMock));
 
 		// Call
 		final var result = service.createErrand(NAMESPACE, MUNICIPALITY_ID, errand);
@@ -200,15 +200,12 @@ class ErrandServiceTest {
 	void updateExistingErrand() {
 		// Setup
 		final var entity = buildErrandEntity();
-		final var currentVersion = 1;
 
 		// Mock
-		when(errandRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
+		when(errandRepositoryMock.existsWithLockingByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
 		when(errandRepositoryMock.getReferenceById(ERRAND_ID)).thenReturn(entity);
 		when(errandRepositoryMock.save(entity)).thenReturn(entity);
-		when(revisionServiceMock.createErrandRevision(any())).thenReturn(currentRevisionMock);
-		when(currentRevisionMock.getVersion()).thenReturn(currentVersion);
-		when(revisionServiceMock.getErrandRevisionByVersion(ERRAND_ID, currentVersion - 1)).thenReturn(previousRevisionMock);
+		when(revisionServiceMock.createErrandRevision(any())).thenReturn(new RevisionResult(previousRevisionMock, currentRevisionMock));
 
 		// Call
 		final var response = service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, buildErrand());
@@ -216,11 +213,10 @@ class ErrandServiceTest {
 		// Assertions and verifications
 		assertThat(response.getId()).isEqualTo(ERRAND_ID);
 
-		verify(errandRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
+		verify(errandRepositoryMock).existsWithLockingByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(errandRepositoryMock).getReferenceById(ERRAND_ID);
 		verify(errandRepositoryMock).save(entity);
 		verify(revisionServiceMock).createErrandRevision(entity);
-		verify(revisionServiceMock).getErrandRevisionByVersion(ERRAND_ID, currentVersion - 1);
 		verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_UPDATE_ERRAND, entity, currentRevisionMock, previousRevisionMock);
 	}
 
@@ -231,7 +227,7 @@ class ErrandServiceTest {
 		final var entity = buildErrandEntity();
 
 		// Mock
-		when(errandRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
+		when(errandRepositoryMock.existsWithLockingByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
 		when(errandRepositoryMock.getReferenceById(ERRAND_ID)).thenReturn(entity);
 		when(errandRepositoryMock.save(entity)).thenReturn(entity);
 
@@ -241,7 +237,7 @@ class ErrandServiceTest {
 		// Assertions and verifications
 		assertThat(response.getId()).isEqualTo(ERRAND_ID);
 
-		verify(errandRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
+		verify(errandRepositoryMock).existsWithLockingByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(errandRepositoryMock).getReferenceById(ERRAND_ID);
 		verify(errandRepositoryMock).save(entity);
 		verify(revisionServiceMock).createErrandRevision(entity);
@@ -260,7 +256,7 @@ class ErrandServiceTest {
 		assertThat(exception.getTitle()).isEqualTo(NOT_FOUND.getReasonPhrase());
 		assertThat(exception.getMessage()).isEqualTo("Not Found: An errand with id 'errandId' could not be found in namespace 'namespace' for municipality with id 'municipalityId'");
 
-		verify(errandRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
+		verify(errandRepositoryMock).existsWithLockingByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 	}
 
 	@Test
@@ -269,7 +265,7 @@ class ErrandServiceTest {
 		final var entity = buildErrandEntity();
 
 		// Mock
-		when(errandRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
+		when(errandRepositoryMock.existsWithLockingByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
 		when(errandRepositoryMock.getReferenceById(ERRAND_ID)).thenReturn(entity);
 		when(revisionServiceMock.getLatestErrandRevision(ERRAND_ID)).thenReturn(currentRevisionMock);
 
@@ -277,7 +273,7 @@ class ErrandServiceTest {
 		service.deleteErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 
 		// Assertions and verifications
-		verify(errandRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
+		verify(errandRepositoryMock).existsWithLockingByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(errandRepositoryMock).deleteById(ERRAND_ID);
 		verify(eventServiceMock).createErrandEvent(DELETE, EVENT_LOG_DELETE_ERRAND, entity, currentRevisionMock, null);
 	}
@@ -292,7 +288,7 @@ class ErrandServiceTest {
 		assertThat(exception.getTitle()).isEqualTo(NOT_FOUND.getReasonPhrase());
 		assertThat(exception.getMessage()).isEqualTo("Not Found: An errand with id 'errandId' could not be found in namespace 'namespace' for municipality with id 'municipalityId'");
 
-		verify(errandRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
+		verify(errandRepositoryMock).existsWithLockingByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 	}
 
 	@AfterEach

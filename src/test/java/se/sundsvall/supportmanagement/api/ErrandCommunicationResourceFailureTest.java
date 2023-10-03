@@ -169,7 +169,7 @@ class ErrandCommunicationResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
 			tuple("message", "must not be blank"),
-			tuple("recipient", "must match the regular expression ^07[02369]\\d{7}$"),
+			tuple("recipient", "must be a valid MSISDN (example: +46701234567). Regular expression: ^\\+[1-9][\\d]{3,14}$"),
 			tuple("sender", "must not be null"));
 
 		// Verification
@@ -196,7 +196,7 @@ class ErrandCommunicationResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo(CONSTRAINT_VIOLATION);
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
-			tuple("recipient", "must match the regular expression ^07[02369]\\d{7}$"),
+			tuple("recipient", "must be a valid MSISDN (example: +46701234567). Regular expression: ^\\+[1-9][\\d]{3,14}$"),
 			tuple("sender", "size must be between 1 and 11"));
 
 		// Verification
@@ -338,7 +338,7 @@ class ErrandCommunicationResourceFailureTest {
 	private static SmsRequest smsRequest() {
 		return SmsRequest.create()
 			.withMessage("message")
-			.withRecipient("0701234567")
+			.withRecipient("+46701234567")
 			.withSender("sender");
 	}
 

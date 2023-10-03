@@ -1,41 +1,47 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
-import static java.util.Collections.emptyList;
-import static org.apache.commons.codec.binary.Base64.decodeBase64;
-import static org.apache.commons.codec.binary.Base64.encodeBase64String;
-import static org.apache.commons.lang3.ObjectUtils.anyNull;
-import static se.sundsvall.supportmanagement.service.util.ServiceUtil.detectMimeType;
+import jakarta.persistence.EntityManager;
+import org.hibernate.Session;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.web.multipart.MultipartFile;
+import org.zalando.problem.Problem;
+import org.zalando.problem.Status;
+import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachmentHeader;
+import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
+import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
-import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachmentHeader;
-import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
-import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import static java.util.Collections.emptyList;
+import static org.apache.commons.lang3.ObjectUtils.anyNull;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.detectMimeTypeFromStream;
 
 public class ErrandAttachmentMapper {
+	private static final Logger LOGGER = LoggerFactory.getLogger(ErrandAttachmentMapper.class);
 
 	private ErrandAttachmentMapper() {}
 
-	public static AttachmentEntity toAttachmentEntity(final ErrandEntity errandEntity, final ErrandAttachment errandAttachment) {
+	public static AttachmentEntity toAttachmentEntity(final ErrandEntity errandEntity, final MultipartFile errandAttachment, EntityManager entityManager) {
 		if (anyNull(errandEntity, errandAttachment)) {
 			return null;
 		}
 
-		byte[] byteArray = decodeBase64(errandAttachment.getBase64EncodedString());
-
-		final var attachmentEntity = AttachmentEntity.create()
-			.withId(toAttachmentId(errandAttachment.getErrandAttachmentHeader()))
-			.withErrandEntity(errandEntity)
-			.withFile(byteArray)
-			.withFileName(toFileName(errandAttachment.getErrandAttachmentHeader()))
-			.withMimeType(detectMimeType(toFileName(errandAttachment.getErrandAttachmentHeader()), byteArray));
-
-		errandEntity.getAttachments().add(attachmentEntity);
-
-		return attachmentEntity;
+		try {
+			Session session = entityManager.unwrap(Session.class);
+			return AttachmentEntity.create()
+				.withErrandEntity(errandEntity)
+				.withAttachmentData(new AttachmentDataEntity().withFile(session.getLobHelper().createBlob(errandAttachment.getInputStream(), errandAttachment.getSize())))
+				.withFileName(errandAttachment.getOriginalFilename())
+				.withMimeType(detectMimeTypeFromStream(errandAttachment.getOriginalFilename(), errandAttachment.getInputStream()));
+		} catch (IOException e) {
+			LOGGER.warn("Exception when reading file", e);
+			throw Problem.valueOf(Status.BAD_REQUEST, "Could not read input stream!");
+		}
 	}
 
 	public static List<ErrandAttachmentHeader> toErrandAttachmentHeaders(final List<AttachmentEntity> attachmentEntities) {
@@ -45,32 +51,12 @@ public class ErrandAttachmentMapper {
 			.toList();
 	}
 
-	public static ErrandAttachment toErrandAttachment(final AttachmentEntity attachmentEntity) {
-		return Optional.ofNullable(attachmentEntity)
-			.map(e -> ErrandAttachment.create()
-				.withBase64EncodedString(encodeBase64String(e.getFile()))
-				.withErrandAttachmentHeader(toErrandAttachmentHeader(e)))
-			.orElse(null);
-	}
-
-	private static ErrandAttachmentHeader toErrandAttachmentHeader(final AttachmentEntity attachmentEntity) {
+	public static ErrandAttachmentHeader toErrandAttachmentHeader(final AttachmentEntity attachmentEntity) {
 		return Optional.ofNullable(attachmentEntity)
 			.map(e -> ErrandAttachmentHeader.create()
 				.withFileName(e.getFileName())
 				.withId(e.getId())
 				.withMimeType(e.getMimeType()))
-			.orElse(null);
-	}
-
-	private static String toFileName(ErrandAttachmentHeader errandAttachmentHeader) {
-		return Optional.ofNullable(errandAttachmentHeader)
-			.map(ErrandAttachmentHeader::getFileName)
-			.orElse(null);
-	}
-
-	private static String toAttachmentId(ErrandAttachmentHeader errandAttachmentHeader) {
-		return Optional.ofNullable(errandAttachmentHeader)
-			.map(ErrandAttachmentHeader::getId)
 			.orElse(null);
 	}
 }

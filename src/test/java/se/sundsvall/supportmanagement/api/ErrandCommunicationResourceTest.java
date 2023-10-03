@@ -67,7 +67,7 @@ class ErrandCommunicationResourceTest {
 		final var requestBody = emailRequest(false);
 
 		webTestClient.post()
-		.uri(builder -> builder.path(PATH_PREFIX + PATH_EMAIL).build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
+			.uri(builder -> builder.path(PATH_PREFIX + PATH_EMAIL).build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(requestBody)
 			.exchange()
@@ -101,7 +101,7 @@ class ErrandCommunicationResourceTest {
 	private static SmsRequest smsRequest() {
 		return SmsRequest.create()
 			.withMessage("message")
-			.withRecipient("0701234567")
+			.withRecipient("+46701234567")
 			.withSender("sender");
 	}
 
