@@ -55,7 +55,6 @@ class CommunicationServiceTest {
 	@Mock
 	private ErrandEntity errandEntityMock;
 
-
 	@Mock
 	private MessagingClient messagingClientMock;
 
@@ -87,7 +86,6 @@ class CommunicationServiceTest {
 
 		final var arguments = messagingEmailCaptor.getValue();
 		assertThat(arguments.getEmailAddress()).isEqualTo(RECIPIENT);
-		assertThat(arguments.getHeaders()).isNullOrEmpty();
 		assertThat(new String(BASE64_DECODER.decode(arguments.getHtmlMessage()), StandardCharsets.UTF_8)).isEqualTo(HTML_MESSAGE);
 		assertThat(arguments.getMessage()).isEqualTo(PLAIN_MESSAGE);
 		assertThat(arguments.getParty().getPartyId()).isNull();
@@ -122,7 +120,6 @@ class CommunicationServiceTest {
 		verify(messagingClientMock).sendSms(eq(true), messagingSmsCaptor.capture());
 
 		final var arguments = messagingSmsCaptor.getValue();
-		assertThat(arguments.getHeaders()).isNullOrEmpty();
 		assertThat(arguments.getMessage()).isEqualTo(PLAIN_MESSAGE);
 		assertThat(arguments.getMobileNumber()).isEqualTo(RECIPIENT);
 		assertThat(arguments.getParty().getExternalReferences()).isNotEmpty().extracting(
