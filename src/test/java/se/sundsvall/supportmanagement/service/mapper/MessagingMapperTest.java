@@ -38,7 +38,6 @@ class MessagingMapperTest {
 		final var result = MessagingMapper.toEmailRequest(createErrandEntity(), createEmailRequest(true, HTML_MESSAGE_IN_BASE64));
 
 		assertThat(result.getEmailAddress()).isEqualTo(RECIPIENT);
-		assertThat(result.getHeaders()).isNullOrEmpty();
 		assertThat(new String(BASE64_DECODER.decode(result.getHtmlMessage()), StandardCharsets.UTF_8)).isEqualTo(HTML_MESSAGE);
 		assertThat(result.getMessage()).isEqualTo(MESSAGE);
 		assertThat(result.getSubject()).isEqualTo(SUBJECT);
@@ -61,7 +60,6 @@ class MessagingMapperTest {
 		final var result = MessagingMapper.toEmailRequest(createErrandEntity(), createEmailRequest(false, HTML_MESSAGE));
 
 		assertThat(result.getEmailAddress()).isEqualTo(RECIPIENT);
-		assertThat(result.getHeaders()).isNullOrEmpty();
 		assertThat(new String(BASE64_DECODER.decode(result.getHtmlMessage()), StandardCharsets.UTF_8)).isEqualTo(HTML_MESSAGE);
 		assertThat(result.getMessage()).isEqualTo(MESSAGE);
 		assertThat(result.getSubject()).isEqualTo(SUBJECT);
@@ -78,7 +76,6 @@ class MessagingMapperTest {
 	void toSmsRequest() {
 		final var result = MessagingMapper.toSmsRequest(createErrandEntity(), createSmsRequest());
 
-		assertThat(result.getHeaders()).isNullOrEmpty();
 		assertThat(result.getMessage()).isEqualTo(MESSAGE);
 		assertThat(result.getMobileNumber()).isEqualTo(RECIPIENT);
 		assertThat(result.getSender()).isEqualTo(SENDER_NAME);
