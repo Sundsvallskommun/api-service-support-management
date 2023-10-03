@@ -52,7 +52,7 @@ public class ErrandService {
 
 	public String createErrand(String namespace, String municipalityId, Errand errand) {
 		// Generate unique errand number
-		errand.withErrandNumber(errandNumberGeneratorService.generateErrandNumber(namespace));
+		errand.withErrandNumber(errandNumberGeneratorService.generateErrandNumber(namespace, municipalityId));
 		// Create new errand and revision
 		final var entity = repository.save(toErrandEntity(namespace, municipalityId, errand));
 		final var revision = revisionService.createErrandRevision(entity);

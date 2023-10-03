@@ -4,6 +4,8 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 
 import se.sundsvall.supportmanagement.integration.db.ErrandNumberSequenceRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandNumberSequenceEntity;
@@ -19,20 +21,25 @@ public class ErrandNumberGeneratorService {
 		this.repository = errandNumberSequenceRepository;
 	}
 
-	public String generateErrandNumber(final String namespace) {
+	@Transactional(isolation = Isolation.SERIALIZABLE)
+	public String generateErrandNumber(final String namespace, final String municipalityId) {
 
 
-		final var shortcode = NamespaceShortCode.findByNamespace(namespace);
+		final var shortcode = NamespaceShortCode.findByNamespace(namespace, municipalityId);
 
 		final var todayDate = dateFormatter.format(LocalDate.now());
 
-		var sequence = repository.findById(namespace).orElse(null);
+		var sequence = repository.findByNamespaceAndMunicipalityId(namespace, municipalityId).orElse(null);
 
 		if (sequence == null) {
-			sequence = new ErrandNumberSequenceEntity().withNamespace(namespace).withLastSequenceNumber(0).withResetYearMonth(todayDate);
+			sequence = new ErrandNumberSequenceEntity()
+				.withNamespace(namespace)
+				.withMunicipalityId(municipalityId)
+				.withLastSequenceNumber(0)
+				.withResetYearMonth(todayDate);
 		}
 
-		if (sequence.getResetYearMonth() != null && !sequence.getResetYearMonth().equals(todayDate)) {
+		if (!todayDate.equals(sequence.getResetYearMonth())) {
 			sequence.setResetYearMonth(todayDate);
 			sequence.setLastSequenceNumber(1);
 		} else {

@@ -6,15 +6,22 @@ import java.util.Objects;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "errand_number_sequence")
+@Table(name = "errand_number_sequence",
+	indexes = {
+		@Index(name = "idx_errand_number_sequence_namespace_municipality_id", columnList = "namespace, municipality_id"),
+	})
 public class ErrandNumberSequenceEntity {
 
 	@Id
 	@Column(name = "namespace")
 	private String namespace;
+
+	@Column(name = "municipality_id")
+	private String municipalityId;
 
 	@Column(name = "last_sequence_number")
 	private int lastSequenceNumber;
@@ -36,6 +43,19 @@ public class ErrandNumberSequenceEntity {
 
 	public ErrandNumberSequenceEntity withNamespace(final String namespace) {
 		this.namespace = namespace;
+		return this;
+	}
+
+	public String getMunicipalityId() {
+		return municipalityId;
+	}
+
+	public void setMunicipalityId(final String municipalityId) {
+		this.municipalityId = municipalityId;
+	}
+
+	public ErrandNumberSequenceEntity withMunicipalityId(final String municipalityId) {
+		this.municipalityId = municipalityId;
 		return this;
 	}
 
@@ -70,18 +90,22 @@ public class ErrandNumberSequenceEntity {
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
 		final ErrandNumberSequenceEntity entity = (ErrandNumberSequenceEntity) o;
-		return lastSequenceNumber == entity.lastSequenceNumber && Objects.equals(namespace, entity.namespace) && Objects.equals(resetYearMonth, entity.resetYearMonth);
+		return lastSequenceNumber == entity.lastSequenceNumber
+			&& Objects.equals(namespace, entity.namespace)
+			&& Objects.equals(municipalityId, entity.municipalityId)
+			&& Objects.equals(resetYearMonth, entity.resetYearMonth);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(namespace, lastSequenceNumber, resetYearMonth);
+		return Objects.hash(namespace, municipalityId, lastSequenceNumber, resetYearMonth);
 	}
 
 	@Override
 	public String toString() {
 		return "ErrandNumberSequenceEntity{" +
 			"namespace=" + namespace +
+			", municipalityId=" + municipalityId +
 			", lastSequenceNumber=" + lastSequenceNumber +
 			", resetYearMonth='" + resetYearMonth + '\'' +
 			'}';

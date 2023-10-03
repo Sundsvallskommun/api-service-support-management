@@ -17,8 +17,6 @@
 		<published.container.port.test>9094</published.container.port.test>
 		<published.container.port.production>9094</published.container.port.production>
 		<app.jvm.xmx.mb>512</app.jvm.xmx.mb>
-		<sandbox.db>true</sandbox.db>
-
 		<!-- Service properties -->
 		<spring-filter.version>3.1.5</spring-filter.version>
 		<openapi-generator-maven-plugin.version>7.0.1</openapi-generator-maven-plugin.version>

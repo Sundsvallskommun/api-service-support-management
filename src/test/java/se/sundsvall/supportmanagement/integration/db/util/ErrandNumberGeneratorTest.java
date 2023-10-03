@@ -7,10 +7,8 @@ import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
-import java.util.Random;
 import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.Test;
@@ -28,7 +26,9 @@ class ErrandNumberGeneratorTest {
 
 	private static final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyMM");
 
+	private static final String MUNICIPALITY_ID = "2281";
 
+	private static final String NAMESPACE = "CONTACTCENTER";
 	@Mock
 	ErrandNumberSequenceRepository repository;
 
@@ -38,61 +38,73 @@ class ErrandNumberGeneratorTest {
 	@Test
 	void generateErrandNumber_resetSequence() {
 
-		when(repository.findById(any(String.class))).thenReturn(Optional.of(new ErrandNumberSequenceEntity()
+		when(repository.findByNamespaceAndMunicipalityId(any(String.class), any(String.class))).thenReturn(Optional.of(new ErrandNumberSequenceEntity()
+			.withNamespace(NAMESPACE)
+			.withNamespace(MUNICIPALITY_ID)
 			.withLastSequenceNumber(1234)
 			.withResetYearMonth(dateFormatter.format(LocalDate.now().minusMonths(2)))));
 
-		final var result = stringGeneratorService.generateErrandNumber("CONTACTCENTER");
+		final var result = stringGeneratorService.generateErrandNumber(NAMESPACE, MUNICIPALITY_ID);
 
-		assertThat(result).isEqualTo("KC-23090001");
+		assertThat(result).isEqualTo("KC-" + dateFormatter.format(LocalDate.now()) + "0001");
 	}
 
 	@Test
 	void generateErrandNumber_incrementSequence() {
 
-		when(repository.findById(any(String.class))).thenReturn(Optional.of(new ErrandNumberSequenceEntity()
+		when(repository.findByNamespaceAndMunicipalityId(any(String.class), any(String.class))).thenReturn(Optional.of(new ErrandNumberSequenceEntity()
+			.withNamespace(NAMESPACE)
+			.withNamespace(MUNICIPALITY_ID)
 			.withLastSequenceNumber(123)
 			.withResetYearMonth(dateFormatter.format(LocalDate.now()))));
 
-		final var result = stringGeneratorService.generateErrandNumber("CONTACTCENTER");
+		final var result = stringGeneratorService.generateErrandNumber(NAMESPACE, MUNICIPALITY_ID);
 
-		assertThat(result).isEqualTo("KC-23090124");
+		assertThat(result).isEqualTo("KC-" + dateFormatter.format(LocalDate.now()) + "0124");
 	}
 
 	@Test
 	void generateErrandNumber_noSequence() {
 
-		when(repository.findById(any(String.class))).thenReturn(Optional.empty());
+		when(repository.findByNamespaceAndMunicipalityId(any(String.class), any(String.class))).thenReturn(Optional.empty());
 
-		final var result = stringGeneratorService.generateErrandNumber("CONTACTCENTER");
+		final var result = stringGeneratorService.generateErrandNumber(NAMESPACE, MUNICIPALITY_ID);
 
-		assertThat(result).isEqualTo("KC-23090001");
+		assertThat(result).isEqualTo("KC-" + dateFormatter.format(LocalDate.now()) + "0001");
 	}
 
 
 	@Test
 	void generateErrandNumber_unknownNamespace() {
 
-		assertThatThrownBy(() -> stringGeneratorService.generateErrandNumber("OTHER_NAMESPACE"))
+		assertThatThrownBy(() -> stringGeneratorService.generateErrandNumber("OTHER_NAMESPACE", MUNICIPALITY_ID))
 			.isInstanceOf(NoSuchElementException.class)
-			.hasMessage("No namespace shortcode found for OTHER_NAMESPACE");
+			.hasMessage("No namespace shortcode found for namespace: OTHER_NAMESPACE and municipalityId: " + MUNICIPALITY_ID);
+
+	}
+
+	@Test
+	void generateErrandNumber_unknownMunicipalityId() {
+
+		assertThatThrownBy(() -> stringGeneratorService.generateErrandNumber(NAMESPACE, "OTHER_MUNICIPALITY_ID"))
+			.isInstanceOf(NoSuchElementException.class)
+			.hasMessage("No namespace shortcode found for namespace: " + NAMESPACE + " and municipalityId: OTHER_MUNICIPALITY_ID");
 
 	}
 
 	@Test
 	void generateErrandNumber_alwaysUnique() {
 		final var entity = new ErrandNumberSequenceEntity()
+			.withNamespace(NAMESPACE)
+			.withNamespace(MUNICIPALITY_ID)
 			.withLastSequenceNumber(1234)
 			.withResetYearMonth(dateFormatter.format(LocalDate.now().minusMonths(2)));
-
-
-		final var namespaces = List.of("CONTACTCENTER");
 		final var maxCount = 99999;
-		final var random = new Random();
-		when(repository.findById(any(String.class))).thenReturn(Optional.of(entity));
+
+		when(repository.findByNamespaceAndMunicipalityId(any(String.class), any(String.class))).thenReturn(Optional.of(entity));
 
 		final var result = IntStream.range(0, maxCount).mapToObj(i ->
-				stringGeneratorService.generateErrandNumber(namespaces.get(random.nextInt(namespaces.size()))))
+				stringGeneratorService.generateErrandNumber(NAMESPACE, MUNICIPALITY_ID))
 			.toList();
 
 		assertThat(result).hasSize(maxCount).doesNotHaveDuplicates();

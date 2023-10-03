@@ -28,16 +28,19 @@ class ErrandNumberSequenceEntityTest {
 	void hasValidBuilderMethods() {
 
 		final var namespace = "namespace";
+		final var municipalityId = "2281";
 		final var lastSequenceNumber = 1;
 		final var resetYearMonth = "2101";
 
 		final var entity = ErrandNumberSequenceEntity.create()
 			.withNamespace(namespace)
+			.withMunicipalityId(municipalityId)
 			.withLastSequenceNumber(lastSequenceNumber)
 			.withResetYearMonth(resetYearMonth);
 
 		assertThat(entity).hasNoNullFieldsOrProperties();
 		assertThat(entity.getNamespace()).isEqualTo(namespace);
+		assertThat(entity.getMunicipalityId()).isEqualTo(municipalityId);
 		assertThat(entity.getResetYearMonth()).isEqualTo(resetYearMonth);
 	}
 
@@ -47,11 +50,13 @@ class ErrandNumberSequenceEntityTest {
 			assertThat(bean.getNamespace()).isNull();
 			assertThat(bean.getLastSequenceNumber()).isZero();
 			assertThat(bean.getResetYearMonth()).isNull();
+			assertThat(bean.getMunicipalityId()).isNull();
 		});
 		assertThat(new ErrandNumberSequenceEntity()).satisfies(bean -> {
 			assertThat(bean.getNamespace()).isNull();
 			assertThat(bean.getLastSequenceNumber()).isZero();
 			assertThat(bean.getResetYearMonth()).isNull();
+			assertThat(bean.getMunicipalityId()).isNull();
 		});
 	}
 

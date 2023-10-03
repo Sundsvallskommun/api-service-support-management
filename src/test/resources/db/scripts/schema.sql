@@ -57,6 +57,7 @@
     create table errand_number_sequence (
         last_sequence_number integer,
         reset_year_month varchar(6),
+        municipality_id varchar(255),
         namespace varchar(255) not null,
         primary key (namespace)
     ) engine=InnoDB;
@@ -195,6 +196,9 @@
 
     alter table if exists errand 
        add constraint uq_errand_number unique (errand_number);
+
+    create index idx_errand_number_sequence_namespace_municipality_id 
+       on errand_number_sequence (namespace, municipality_id);
 
     create index idx_namespace_municipality_id 
        on external_id_type (namespace, municipality_id);

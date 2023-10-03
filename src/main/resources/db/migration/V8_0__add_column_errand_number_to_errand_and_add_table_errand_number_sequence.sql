@@ -3,17 +3,16 @@ alter table if exists errand
 
 create index idx_errand_number on errand (errand_number);
 
-alter table if exists errand
-    add constraint uq_errand_number unique (errand_number);
-
 create table errand_number_sequence
 (
     namespace varchar(255) not null,
+    municipality_id varchar(255) not null,
     last_sequence_number integer,
     reset_year_month     varchar(6),
     primary key (namespace)
 );
 
+create index idx_errand_number_sequence_namespace_municipality_id on errand_number_sequence (namespace, municipality_id);
 
 START TRANSACTION;
 
@@ -53,11 +52,15 @@ SET errand.errand_number = CONCAT(T.shortcode, '-', T.yearMonth, LPAD(T.sequence
 WHERE T.shortcode IS NOT NULL;
 
 -- Update the errand_number_sequence table with the new values
-INSERT INTO errand_number_sequence (namespace, last_sequence_number, reset_year_month)
-VALUES ('CONTACTCENTER', @sequence_number, @prev_year_month)
+INSERT INTO errand_number_sequence (namespace, municipality_id, last_sequence_number,
+                                    reset_year_month)
+VALUES ('CONTACTCENTER', '2281', @sequence_number, @prev_year_month)
 ON DUPLICATE KEY UPDATE last_sequence_number = VALUES(last_sequence_number),
                         reset_year_month     = VALUES(reset_year_month);
 
 -- Clean up the temporary table
 DROP TEMPORARY TABLE IF EXISTS TempErrandNumbers;
 COMMIT;
+
+alter table if exists errand
+    add constraint uq_errand_number unique (errand_number);

@@ -99,7 +99,7 @@ class ErrandServiceTest {
 		// Mock
 		when(errandRepositoryMock.save(any(ErrandEntity.class))).thenReturn(errandEntity);
 		when(revisionServiceMock.createErrandRevision(any())).thenReturn(new RevisionResult(null, currentRevisionMock));
-		when(stringGeneratorServiceMock.generateErrandNumber(any(String.class))).thenReturn("KC-23090001");
+		when(stringGeneratorServiceMock.generateErrandNumber(any(String.class), any(String.class))).thenReturn("KC-23090001");
 
 		// Call
 		final var result = service.createErrand(NAMESPACE, MUNICIPALITY_ID, errand);
