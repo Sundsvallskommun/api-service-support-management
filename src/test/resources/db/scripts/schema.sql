@@ -39,6 +39,7 @@
         assigned_group_id varchar(255),
         assigned_user_id varchar(255),
         category varchar(255),
+        errand_number varchar(255) not null,
         escalation_email varchar(255),
         id varchar(255) not null,
         municipality_id varchar(255) not null,
@@ -51,6 +52,14 @@
         type varchar(255),
         description longtext,
         primary key (id)
+    ) engine=InnoDB;
+
+    create table errand_number_sequence (
+        last_sequence_number integer,
+        reset_year_month varchar(6),
+        municipality_id varchar(255),
+        namespace varchar(255) not null,
+        primary key (namespace)
     ) engine=InnoDB;
 
     create table external_id_type (
@@ -146,99 +155,108 @@
         primary key (id)
     ) engine=InnoDB;
 
-    create index idx_attachment_file_name
+    create index idx_attachment_file_name 
        on attachment (file_name);
 
-    alter table if exists attachment
+    alter table if exists attachment 
        add constraint UK_scgvw835joke5mqsmk3fhs732 unique (attachment_data_id);
 
-    create index idx_namespace_municipality_id
+    create index idx_namespace_municipality_id 
        on category (namespace, municipality_id);
 
-    alter table if exists category
+    alter table if exists category 
        add constraint uq_namespace_municipality_id_name unique (namespace, municipality_id, name);
 
-    create index idx_errand_id
+    create index idx_errand_id 
        on errand (id);
 
-    create index idx_errand_namespace
+    create index idx_errand_namespace 
        on errand (namespace);
 
-    create index idx_errand_municipality_id
+    create index idx_errand_municipality_id 
        on errand (municipality_id);
 
-    create index idx_errand_status
+    create index idx_errand_status 
        on errand (status);
 
-    create index idx_errand_category
+    create index idx_errand_category 
        on errand (category);
 
-    create index idx_errand_type
+    create index idx_errand_type 
        on errand (type);
 
-    create index idx_errand_assigned_user_id
+    create index idx_errand_assigned_user_id 
        on errand (assigned_user_id);
 
-    create index idx_errand_reporter_user_id
+    create index idx_errand_reporter_user_id 
        on errand (reporter_user_id);
 
-    create index idx_namespace_municipality_id
+    create index idx_errand_number 
+       on errand (errand_number);
+
+    alter table if exists errand 
+       add constraint uq_errand_number unique (errand_number);
+
+    create index idx_errand_number_sequence_namespace_municipality_id 
+       on errand_number_sequence (namespace, municipality_id);
+
+    create index idx_namespace_municipality_id 
        on external_id_type (namespace, municipality_id);
 
-    alter table if exists external_id_type
+    alter table if exists external_id_type 
        add constraint uq_namespace_municipality_id_name unique (namespace, municipality_id, name);
 
-    create index idx_external_tag_errand_id
+    create index idx_external_tag_errand_id 
        on external_tag (errand_id);
 
-    create index idx_external_tag_key
+    create index idx_external_tag_key 
        on external_tag (`key`);
 
-    alter table if exists external_tag
+    alter table if exists external_tag 
        add constraint uq_external_tag_errand_id_key unique (errand_id, `key`);
 
-    create index idx_namespace_municipality_id
+    create index idx_namespace_municipality_id 
        on label (namespace, municipality_id);
 
-    alter table if exists label
+    alter table if exists label 
        add constraint uq_namespace_municipality_id unique (namespace, municipality_id);
 
-    create index revision_entity_id_index
+    create index revision_entity_id_index 
        on revision (entity_id);
 
-    create index revision_entity_type_index
+    create index revision_entity_type_index 
        on revision (entity_type);
 
-    alter table if exists revision
+    alter table if exists revision 
        add constraint uq_entity_id_version unique (entity_id, version);
 
-    create index idx_namespace_municipality_id
+    create index idx_namespace_municipality_id 
        on role (namespace, municipality_id);
 
-    alter table if exists role
+    alter table if exists role 
        add constraint uq_namespace_municipality_id_name unique (namespace, municipality_id, name);
 
-    create index idx_namespace_municipality_id
+    create index idx_namespace_municipality_id 
        on status (namespace, municipality_id);
 
-    alter table if exists status
+    alter table if exists status 
        add constraint uq_namespace_municipality_id_name unique (namespace, municipality_id, name);
 
-    alter table if exists `type`
+    alter table if exists `type` 
        add constraint uq_category_id_name unique (category_id, name);
 
-    create index idx_namespace_municipality_id_type
+    create index idx_namespace_municipality_id_type 
        on validation (namespace, municipality_id, `type`);
 
-    alter table if exists validation
+    alter table if exists validation 
        add constraint uq_namespace_municipality_id_type unique (namespace, municipality_id, `type`);
 
-    alter table if exists attachment
-       add constraint fk_attachment_data_attachment
-       foreign key (attachment_data_id)
+    alter table if exists attachment 
+       add constraint fk_attachment_data_attachment 
+       foreign key (attachment_data_id) 
        references attachment_data (id);
 
-    alter table if exists attachment
+    alter table if exists attachment 
        add constraint fk_errand_attachment_errand_id 
        foreign key (errand_id) 
        references errand (id);

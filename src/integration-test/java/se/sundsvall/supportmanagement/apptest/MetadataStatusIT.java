@@ -98,7 +98,7 @@ class MetadataStatusIT extends AbstractAppTest {
 		final var statusName = "STATUS-2";
 
 		assertThat(statusRepository.existsByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_2281, statusName)).isTrue();
-		assertThat(statusRepository.count()).isEqualTo(6);
+		assertThat(statusRepository.count()).isEqualTo(7);
 		
 		setupCall()
 			.withServicePath(PATH + "/" + statusName)
@@ -108,6 +108,6 @@ class MetadataStatusIT extends AbstractAppTest {
 			.sendRequestAndVerifyResponse();
 
 		assertThat(statusRepository.existsByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_2281, statusName)).isFalse();
-		assertThat(statusRepository.count()).isEqualTo(5);
+		assertThat(statusRepository.count()).isEqualTo(6);
 	}
 }

@@ -61,11 +61,11 @@ VALUES (100, 'municipalityId-1', 'namespace-1', 'CATEGORY', now(), null, true),
 -------------------------------------
 -- Errand
 -------------------------------------
-INSERT INTO errand(municipality_id, id, assigned_group_id, assigned_user_id, category, namespace, priority, reporter_user_id, status, title, type, escalation_email)
-VALUES('2281', 'ERRAND_ID-1', 'ASSIGNED_GROUP_ID-1', 'ASSIGNED_USER_ID-1', 'CATEGORY-1', 'NAMESPACE.1', 'PRIORITY-1', 'REPORTER_USER_ID-1', 'STATUS-1', 'TITLE-1', 'TYPE-1', 'ESCALATION_EMAIL_1'),
-	  ('2281', 'ERRAND_ID-2', 'ASSIGNED_GROUP_ID-1', 'ASSIGNED_USER_ID-1', 'CATEGORY-1', 'NAMESPACE.1', 'PRIORITY-1', 'REPORTER_USER_ID-1', 'STATUS-1', 'TITLE-1', 'TYPE-1', 'ESCALATION_EMAIL_2'),
-	  ('2281', 'ERRAND_ID-3', 'ASSIGNED_GROUP_ID-3', 'ASSIGNED_USER_ID-3', 'CATEGORY-3', 'NAMESPACE.3', 'PRIORITY-3', 'REPORTER_USER_ID-3', 'STATUS-3', 'TITLE-3', 'TYPE-3', 'ESCALATION_EMAIL_3'),
-	  ('2305', 'ERRAND_ID-4', 'ASSIGNED_GROUP_ID-3', 'ASSIGNED_USER_ID-3', 'CATEGORY-3', 'NAMESPACE.3', 'PRIORITY-3', 'REPORTER_USER_ID-3', 'STATUS-3', 'TITLE-3', 'TYPE-3', 'ESCALATION_EMAIL_4');
+INSERT INTO errand(municipality_id, id, assigned_group_id, assigned_user_id, category, namespace, priority, reporter_user_id, status, title, type, escalation_email, errand_number)
+VALUES('2281', 'ERRAND_ID-1', 'ASSIGNED_GROUP_ID-1', 'ASSIGNED_USER_ID-1', 'CATEGORY-1', 'NAMESPACE.1', 'PRIORITY-1', 'REPORTER_USER_ID-1', 'STATUS-1', 'TITLE-1', 'TYPE-1', 'ESCALATION_EMAIL_1', 'KC-23020001'),
+	  ('2281', 'ERRAND_ID-2', 'ASSIGNED_GROUP_ID-1', 'ASSIGNED_USER_ID-1', 'CATEGORY-1', 'NAMESPACE.1', 'PRIORITY-1', 'REPORTER_USER_ID-1', 'STATUS-1', 'TITLE-1', 'TYPE-1', 'ESCALATION_EMAIL_2','KC-23020002'),
+	  ('2281', 'ERRAND_ID-3', 'ASSIGNED_GROUP_ID-3', 'ASSIGNED_USER_ID-3', 'CATEGORY-3', 'NAMESPACE.3', 'PRIORITY-3', 'REPORTER_USER_ID-3', 'STATUS-3', 'TITLE-3', 'TYPE-3', 'ESCALATION_EMAIL_3','KC-23020003'),
+	  ('2305', 'ERRAND_ID-4', 'ASSIGNED_GROUP_ID-3', 'ASSIGNED_USER_ID-3', 'CATEGORY-3', 'NAMESPACE.3', 'PRIORITY-3', 'REPORTER_USER_ID-3', 'STATUS-3', 'TITLE-3', 'TYPE-3', 'ESCALATION_EMAIL_4','KC-23020004');
 
 -------------------------------------
 -- Stakeholder
@@ -117,7 +117,7 @@ VALUES ('59328e70-4297-4bb5-ba69-cb17f2d15a17', '9791682e-4ba8-4f3a-857a-54e1483
        ('207ef370-607b-4502-9d16-bf38defb1dfd', '9791682e-4ba8-4f3a-857a-54e14836a53b', 'ErrandEntity', '{}', 3, '2022-02-03 12:14:32.234'),
        ('f9e222f3-2476-4ead-bb1a-3e7e25f9c6ee', '9791682e-4ba8-4f3a-857a-54e14836a53b', 'ErrandEntity', '{}', 4, '2022-02-04 12:14:32.234'),
        ('203c924b-dd67-4802-b99f-256ef6f2de69', '9791682e-4ba8-4f3a-857a-54e14836a53b', 'ErrandEntity', '{}', 5, '2022-02-05 12:14:32.234');
-       
+
 -------------------------------------
 -- Label
 -------------------------------------

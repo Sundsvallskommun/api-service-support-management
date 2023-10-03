@@ -8,6 +8,7 @@ import static org.assertj.core.api.Assertions.within;
 import java.time.OffsetDateTime;
 import java.util.List;
 
+import com.turkraft.springfilter.converter.FilterSpecificationConverter;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -19,8 +20,6 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.transaction.annotation.Transactional;
-
-import com.turkraft.springfilter.converter.FilterSpecificationConverter;
 
 import se.sundsvall.supportmanagement.integration.db.model.ContactChannelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
@@ -62,6 +61,7 @@ class ErrandsRepositoryTest {
 		final var assignedGroupId = "assignedGroupId";
 		final var municipalityId = "municipalityId";
 		final var escalationEmail = "escalation@email.com";
+		final var errandNumber = "errandNumber";
 
 		final var errandEntity = ErrandEntity.create()
 			.withNamespace(namespace)
@@ -76,13 +76,15 @@ class ErrandsRepositoryTest {
 			.withExternalTags(List.of(externalTag))
 			.withStakeholders(List.of(stakeholder))
 			.withMunicipalityId(municipalityId)
-			.withEscalationEmail(escalationEmail);
+			.withEscalationEmail(escalationEmail)
+			.withErrandNumber(errandNumber);
 
 		// Execution
 		final var persistedEntity = errandsRepository.save(errandEntity);
 
 		assertThat(persistedEntity).isNotNull();
 		assertThat(persistedEntity.getId()).isNotNull();
+		assertThat(persistedEntity.getErrandNumber()).isEqualTo(errandNumber);
 		assertThat(persistedEntity.getNamespace()).isEqualTo(namespace);
 		assertThat(persistedEntity.getTitle()).isEqualTo(title);
 		assertThat(persistedEntity.getCategory()).isEqualTo(category);
