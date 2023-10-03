@@ -8,7 +8,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import se.sundsvall.dept44.common.validators.annotation.ValidMobileNumber;
+import se.sundsvall.dept44.common.validators.annotation.ValidMSISDN;
 
 @Schema(description = "SmsRequest model")
 public class SmsRequest {
@@ -18,8 +18,8 @@ public class SmsRequest {
 	@Schema(description = "The sender of the SMS", maxLength = 11, example = "sender", requiredMode = REQUIRED)
 	private String sender;
 
-	@ValidMobileNumber
-	@Schema(description = "Mobile number to recipient in format 07[02369]\\d{7}", example = "0761234567", requiredMode = REQUIRED)
+	@ValidMSISDN
+	@Schema(description = "Mobile number to recipient in format +467[02369]\\d{7}", example = "+46761234567", requiredMode = REQUIRED)
 	private String recipient;
 
 	@NotBlank
@@ -97,5 +97,4 @@ public class SmsRequest {
 		builder.append("SmsRequest [sender=").append(sender).append("recipient=").append(recipient).append(", message=").append(message).append("]");
 		return builder.toString();
 	}
-
 }
