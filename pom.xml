@@ -19,7 +19,7 @@
 		<app.jvm.xmx.mb>512</app.jvm.xmx.mb>
 		<!-- Service properties -->
 		<spring-filter.version>3.1.5</spring-filter.version>
-		<openapi-generator-maven-plugin.version>7.0.1</openapi-generator-maven-plugin.version>
+		<openapi-generator-maven-plugin.version>7.1.0</openapi-generator-maven-plugin.version>
 		<tika-core.version>2.9.1</tika-core.version>
 		<flipkart.zjsonpatch.version>0.4.14</flipkart.zjsonpatch.version>
 		<generated-sources-path>${project.build.directory}/generated-sources</generated-sources-path>
