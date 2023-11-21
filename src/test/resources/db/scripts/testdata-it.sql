@@ -34,8 +34,8 @@ INSERT INTO status(id, created, modified, municipality_id, name, namespace) VALU
 	(102, '2023-01-01 12:00:00.000', null, '2281', 'STATUS-3', 'NAMESPACE.1'),
 	(104, '2023-01-01 12:00:00.000', null, '2281', 'STATUS-1', 'NAMESPACE.2'),
 	(105, '2023-01-01 12:00:00.000', null, '2305', 'STATUS-1', 'NAMESPACE.1'),
-	(106, '2023-01-01 12:00:00.000', null, '2305', 'STATUS-2', 'NAMESPACE.1');
-
+	(106, '2023-01-01 12:00:00.000', null, '2305', 'STATUS-2', 'NAMESPACE.1'),
+    (107, '2023-01-01 12:00:00.000', null, '2281', 'STATUS-2', 'CONTACTCENTER');
 -------------------------------------
 -- Role
 -------------------------------------
@@ -66,13 +66,13 @@ INSERT INTO validation(id, municipality_id, namespace, `type`, created, modified
 -------------------------------------
 -- Errand
 -------------------------------------
-INSERT INTO errand(municipality_id, id, assigned_group_id, assigned_user_id, category, namespace, priority, reporter_user_id, status, title, type, created, modified, resolution, description, escalation_email) VALUES
-	('2281', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', 'ASSIGNED_GROUP_ID-1', 'ASSIGNED_USER_ID-1', 'CATEGORY-1', 'NAMESPACE.1', 'LOW', 'REPORTER_USER_ID-1', 'STATUS-1', 'TITLE-1', 'TYPE-1', '2022-01-01 12:00:00.000', null, null, null, "ESCALATION_EMAIL_1"),
-	('2281', 'cc236cf1-c00f-4479-8341-ecf5dd90b5b9', 'ASSIGNED_GROUP_ID-1', 'ASSIGNED_USER_ID-1', 'CATEGORY-1', 'NAMESPACE.1', 'LOW', 'REPORTER_USER_ID-1', 'STATUS-1', 'TITLE-1', 'TYPE-1', '2022-02-01 12:00:00.000', '2022-04-01 12:00:00.000', null, null, null),
-	('2281', '1be673c0-6ba3-4fb0-af4a-43acf23389f6', 'ASSIGNED_GROUP_ID-3', 'ASSIGNED_USER_ID-3', 'CATEGORY-3', 'NAMESPACE.1', 'HIGH', 'REPORTER_USER_ID-3', 'STATUS-3', 'TITLE-3', 'TYPE-3', '2022-03-01 12:00:00.000', null, "RESOLUTION", "DESCRIPTION", null),
-	('2281', 'f4a7a771-bb75-487b-b7d8-2684a0c3512c', 'ASSIGNED_GROUP_ID-3', 'ASSIGNED_USER_ID-3', 'CATEGORY-3', 'NAMESPACE.2', 'HIGH', 'REPORTER_USER_ID-3', 'STATUS-3', 'TITLE-3', 'TYPE-3', '2022-03-01 12:00:00.000', null, "RESOLUTION", "DESCRIPTION", null),
-	('2305', 'e29906af-3083-4dcf-bb8a-d787ccf2dcc4', 'ASSIGNED_GROUP_ID-3', 'ASSIGNED_USER_ID-3', 'CATEGORY-3', 'NAMESPACE.1', 'HIGH', 'REPORTER_USER_ID-1', 'STATUS-3', 'TITLE-3', 'TYPE-3', '2022-03-01 12:00:00.000', null, null, null, null),
-    ('2281', '147d355f-dc94-4fde-a4cb-9ddd16cb1946', 'hardware support', 'jane11dane', 'CATEGORY-1', 'NAMESPACE.1', 'HIGH', 'joe01doe', 'STATUS-1', 'It is my birthday', 'TYPE-1', '2023-04-26 15:48:17.124', '2023-04-26 16:05:08.806', 'FIXED', 'Order cake for everyone', 'joe.doe@email.com');
+INSERT INTO errand(municipality_id, id, assigned_group_id, assigned_user_id, category, namespace, priority, reporter_user_id, status, title, type, created, modified, resolution, description, escalation_email, errand_number) VALUES
+	('2281', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', 'ASSIGNED_GROUP_ID-1', 'ASSIGNED_USER_ID-1', 'CATEGORY-1', 'NAMESPACE.1', 'LOW', 'REPORTER_USER_ID-1', 'STATUS-1', 'TITLE-1', 'TYPE-1', '2022-01-01 12:00:00.000', null, null, null, "ESCALATION_EMAIL_1",  'KC-23020001'),
+	('2281', 'cc236cf1-c00f-4479-8341-ecf5dd90b5b9', 'ASSIGNED_GROUP_ID-1', 'ASSIGNED_USER_ID-1', 'CATEGORY-1', 'NAMESPACE.1', 'LOW', 'REPORTER_USER_ID-1', 'STATUS-1', 'TITLE-1', 'TYPE-1', '2022-02-01 12:00:00.000', '2022-04-01 12:00:00.000', null, null, null, 'KC-23020002'),
+	('2281', '1be673c0-6ba3-4fb0-af4a-43acf23389f6', 'ASSIGNED_GROUP_ID-3', 'ASSIGNED_USER_ID-3', 'CATEGORY-3', 'NAMESPACE.1', 'HIGH', 'REPORTER_USER_ID-3', 'STATUS-3', 'TITLE-3', 'TYPE-3', '2022-03-01 12:00:00.000', null, "RESOLUTION", "DESCRIPTION", null,'KC-23020003'),
+	('2281', 'f4a7a771-bb75-487b-b7d8-2684a0c3512c', 'ASSIGNED_GROUP_ID-3', 'ASSIGNED_USER_ID-3', 'CATEGORY-3', 'NAMESPACE.2', 'HIGH', 'REPORTER_USER_ID-3', 'STATUS-3', 'TITLE-3', 'TYPE-3', '2022-03-01 12:00:00.000', null, "RESOLUTION", "DESCRIPTION", null,'KC-23020004'),
+	('2305', 'e29906af-3083-4dcf-bb8a-d787ccf2dcc4', 'ASSIGNED_GROUP_ID-3', 'ASSIGNED_USER_ID-3', 'CATEGORY-3', 'NAMESPACE.1', 'HIGH', 'REPORTER_USER_ID-1', 'STATUS-3', 'TITLE-3', 'TYPE-3', '2022-03-01 12:00:00.000', null, null, null, null,'KC-23020005'),
+    ('2281', '147d355f-dc94-4fde-a4cb-9ddd16cb1946', 'hardware support', 'jane11dane', 'CATEGORY-1', 'NAMESPACE.1', 'HIGH', 'joe01doe', 'STATUS-1', 'It is my birthday', 'TYPE-1', '2023-04-26 15:48:17.124', '2023-04-26 16:05:08.806', 'FIXED', 'Order cake for everyone', 'joe.doe@email.com','KC-23020006');
 
 -------------------------------------
 -- Stakeholder

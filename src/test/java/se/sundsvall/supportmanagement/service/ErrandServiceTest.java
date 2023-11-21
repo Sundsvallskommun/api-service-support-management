@@ -23,6 +23,7 @@ import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.w
 
 import java.util.List;
 
+import com.turkraft.springfilter.converter.FilterSpecificationConverter;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -41,13 +42,13 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.zalando.problem.ThrowableProblem;
 
-import com.turkraft.springfilter.converter.FilterSpecificationConverter;
-
-import generated.se.sundsvall.eventlog.Event;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.util.ErrandNumberGeneratorService;
+
+import generated.se.sundsvall.eventlog.Event;
 
 @ExtendWith(MockitoExtension.class)
 class ErrandServiceTest {
@@ -58,6 +59,9 @@ class ErrandServiceTest {
 	private static final String EVENT_LOG_CREATE_ERRAND = "Ärendet har skapats.";
 	private static final String EVENT_LOG_UPDATE_ERRAND = "Ärendet har uppdaterats.";
 	private static final String EVENT_LOG_DELETE_ERRAND = "Ärendet har raderats.";
+
+	@Mock
+	private ErrandNumberGeneratorService stringGeneratorServiceMock;
 
 	@Mock
 	private ErrandsRepository errandRepositoryMock;
@@ -95,6 +99,7 @@ class ErrandServiceTest {
 		// Mock
 		when(errandRepositoryMock.save(any(ErrandEntity.class))).thenReturn(errandEntity);
 		when(revisionServiceMock.createErrandRevision(any())).thenReturn(new RevisionResult(null, currentRevisionMock));
+		when(stringGeneratorServiceMock.generateErrandNumber(any(String.class), any(String.class))).thenReturn("KC-23090001");
 
 		// Call
 		final var result = service.createErrand(NAMESPACE, MUNICIPALITY_ID, errand);

@@ -4,12 +4,12 @@
 	<parent>
 		<groupId>se.sundsvall.dept44</groupId>
 		<artifactId>dept44-service-parent</artifactId>
-		<version>3.0</version>
+		<version>3.4</version>
 		<relativePath /> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>se.sundsvall</groupId>
 	<artifactId>api-service-support-management</artifactId>
-	<version>5.0</version>
+	<version>5.1</version>
 	<name>api-service-support-management</name>
 	<properties>
 		<!-- Pipeline properties -->
@@ -19,8 +19,8 @@
 		<app.jvm.xmx.mb>512</app.jvm.xmx.mb>
 		<!-- Service properties -->
 		<spring-filter.version>3.1.5</spring-filter.version>
-		<openapi-generator-maven-plugin.version>7.0.1</openapi-generator-maven-plugin.version>
-		<tika-core.version>2.9.0</tika-core.version>
+		<openapi-generator-maven-plugin.version>7.1.0</openapi-generator-maven-plugin.version>
+		<tika-core.version>2.9.1</tika-core.version>
 		<flipkart.zjsonpatch.version>0.4.14</flipkart.zjsonpatch.version>
 		<generated-sources-path>${project.build.directory}/generated-sources</generated-sources-path>
 		<generated-sources-java-path>src/main/java</generated-sources-java-path>

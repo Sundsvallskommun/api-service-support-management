@@ -1,25 +1,28 @@
 package se.sundsvall.supportmanagement.api.model.errand;
 
-import io.swagger.v3.oas.annotations.media.ArraySchema;
-import io.swagger.v3.oas.annotations.media.Schema;
-import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.format.annotation.DateTimeFormat.ISO;
-import se.sundsvall.supportmanagement.api.validation.UniqueExternalTagKeys;
-import se.sundsvall.supportmanagement.api.validation.ValidClassification;
-import se.sundsvall.supportmanagement.api.validation.ValidStatus;
-import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
-import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
+import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
+
+import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.Objects;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Null;
-import java.time.OffsetDateTime;
-import java.util.List;
-import java.util.Objects;
 
-import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.format.annotation.DateTimeFormat.ISO;
+
+import se.sundsvall.supportmanagement.api.validation.UniqueExternalTagKeys;
+import se.sundsvall.supportmanagement.api.validation.ValidClassification;
+import se.sundsvall.supportmanagement.api.validation.ValidStatus;
+import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
+import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
+
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "Errand model")
 public class Errand {
@@ -27,6 +30,10 @@ public class Errand {
 	@Schema(description = "Unique id for the errand", example = "f0882f1d-06bc-47fd-b017-1d8307f5ce95", accessMode = READ_ONLY)
 	@Null(groups = { OnCreate.class, OnUpdate.class })
 	private String id;
+
+	@Schema(description = "Unique number for the errand", example = "KC-23010001", accessMode = READ_ONLY)
+	@Null(groups = {OnCreate.class, OnUpdate.class})
+	private String errandNumber;
 
 	@Schema(description = "Title for the errand", example = "Title for the errand")
 	@NotBlank(groups = OnCreate.class)
@@ -303,6 +310,19 @@ public class Errand {
 		return this;
 	}
 
+	public String getErrandNumber() {
+		return errandNumber;
+	}
+
+	public void setErrandNumber(final String errandNumber) {
+		this.errandNumber = errandNumber;
+	}
+
+	public Errand withErrandNumber(final String errandNumber) {
+		this.errandNumber = errandNumber;
+		return this;
+	}
+
 	@Override
 	public boolean equals(Object o) {
 		if (this == o) {
@@ -318,18 +338,20 @@ public class Errand {
 			Objects.equals(resolution, errand.resolution) && Objects.equals(description, errand.description) &&
 			Objects.equals(reporterUserId, errand.reporterUserId) && Objects.equals(assignedUserId, errand.assignedUserId) &&
 			Objects.equals(assignedGroupId, errand.assignedGroupId) && Objects.equals(escalationEmail, errand.escalationEmail) &&
-			Objects.equals(created, errand.created) && Objects.equals(modified, errand.modified) && Objects.equals(touched, errand.touched);
+			Objects.equals(created, errand.created) && Objects.equals(modified, errand.modified) &&
+			Objects.equals(touched, errand.touched) && Objects.equals(errandNumber, errand.errandNumber);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, title, priority, stakeholders, externalTags, classification, status, resolution, description, reporterUserId, assignedUserId, assignedGroupId, escalationEmail, created, modified, touched);
+		return Objects.hash(id, errandNumber, title, priority, stakeholders, externalTags, classification, status, resolution, description, reporterUserId, assignedUserId, assignedGroupId, escalationEmail, created, modified, touched);
 	}
 
 	@Override
 	public String toString() {
 		final StringBuilder sb = new StringBuilder("Errand{");
 		sb.append("id='").append(id).append('\'');
+		sb.append(", errandNumber='").append(errandNumber).append('\'');
 		sb.append(", title='").append(title).append('\'');
 		sb.append(", priority=").append(priority);
 		sb.append(", stakeholders=").append(stakeholders);

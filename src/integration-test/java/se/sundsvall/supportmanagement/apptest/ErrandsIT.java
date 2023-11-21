@@ -84,7 +84,7 @@ class ErrandsIT extends AbstractAppTest {
 	void test04_postErrand() {
 		setupCall()
 			.withHeader("sentbyuser", "joe01doe")
-			.withServicePath(PATH)
+			.withServicePath(PATH.replace("NAMESPACE.1", "CONTACTCENTER"))
 			.withHttpMethod(POST)
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(CREATED)

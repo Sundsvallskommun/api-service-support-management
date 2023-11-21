@@ -1,12 +1,5 @@
 package se.sundsvall.supportmanagement.api.model.errand;
 
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-
-import java.time.OffsetDateTime;
-import java.util.List;
-import java.util.Random;
-
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanEquals;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanHashCode;
@@ -18,6 +11,13 @@ import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.MatcherAssert.assertThat;
+
+import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.Random;
+
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 class ErrandTest {
 
@@ -56,24 +56,26 @@ class ErrandTest {
 		final var resolution = "resolution";
 		final var description = "description";
 		final var escalationEmail = "escalation@email.com";
+		final var errandNumber = "errandNumber";
 
 		final var bean = Errand.create()
-				.withAssignedGroupId(assignedGroupId)
-				.withAssignedUserId(assignedUserId)
-				.withClassification(Classification.create().withCategory(category).withType(type))
-				.withCreated(created)
-				.withStakeholders(List.of(stakeholder))
-				.withExternalTags(externalTags)
-				.withId(id)
-				.withModified(modified)
-				.withPriority(priority)
-				.withReporterUserId(reporterUserId)
-				.withStatus(status)
-				.withTitle(title)
-				.withTouched(touched)
-				.withResolution(resolution)
-				.withDescription(description)
-				.withEscalationEmail(escalationEmail);
+			.withAssignedGroupId(assignedGroupId)
+			.withAssignedUserId(assignedUserId)
+			.withClassification(Classification.create().withCategory(category).withType(type))
+			.withCreated(created)
+			.withStakeholders(List.of(stakeholder))
+			.withExternalTags(externalTags)
+			.withId(id)
+			.withModified(modified)
+			.withPriority(priority)
+			.withReporterUserId(reporterUserId)
+			.withStatus(status)
+			.withTitle(title)
+			.withErrandNumber(errandNumber)
+			.withTouched(touched)
+			.withResolution(resolution)
+			.withDescription(description)
+			.withEscalationEmail(escalationEmail);
 
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(bean.getAssignedGroupId()).isEqualTo(assignedGroupId);
@@ -93,6 +95,7 @@ class ErrandTest {
 		assertThat(bean.getResolution()).isEqualTo(resolution);
 		assertThat(bean.getDescription()).isEqualTo(description);
 		assertThat(bean.getEscalationEmail()).isEqualTo(escalationEmail);
+		assertThat(bean.getErrandNumber()).isEqualTo(errandNumber);
 	}
 
 	@Test
