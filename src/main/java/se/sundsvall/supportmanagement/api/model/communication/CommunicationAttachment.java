@@ -1,4 +1,4 @@
-package se.sundsvall.supportmanagement.api.model.message;
+package se.sundsvall.supportmanagement.api.model.communication;
 
 import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 
@@ -8,7 +8,7 @@ import jakarta.validation.constraints.NotBlank;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
-public class MessageAttachment {
+public class CommunicationAttachment {
 
 	@NotBlank
 	@Schema(
@@ -29,8 +29,8 @@ public class MessageAttachment {
 	@Schema(description = "The attachment content type", example = "text/plain")
 	private String contentType;
 
-	public static MessageAttachment create() {
-		return new MessageAttachment();
+	public static CommunicationAttachment create() {
+		return new CommunicationAttachment();
 
 	}
 
@@ -42,7 +42,7 @@ public class MessageAttachment {
 		this.attachmentID = attachmentID;
 	}
 
-	public MessageAttachment withAttachmentID(final String attachmentID) {
+	public CommunicationAttachment withAttachmentID(final String attachmentID) {
 		this.attachmentID = attachmentID;
 		return this;
 	}
@@ -55,7 +55,7 @@ public class MessageAttachment {
 		this.name = name;
 	}
 
-	public MessageAttachment withName(final String name) {
+	public CommunicationAttachment withName(final String name) {
 		this.name = name;
 		return this;
 	}
@@ -68,7 +68,7 @@ public class MessageAttachment {
 		this.contentType = contentType;
 	}
 
-	public MessageAttachment withContentType(final String contentType) {
+	public CommunicationAttachment withContentType(final String contentType) {
 		this.contentType = contentType;
 		return this;
 	}
@@ -77,7 +77,7 @@ public class MessageAttachment {
 	public boolean equals(final Object o) {
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
-		final MessageAttachment that = (MessageAttachment) o;
+		final CommunicationAttachment that = (CommunicationAttachment) o;
 		return Objects.equals(attachmentID, that.attachmentID) && Objects.equals(name, that.name) && Objects.equals(contentType, that.contentType);
 	}
 
@@ -88,7 +88,7 @@ public class MessageAttachment {
 
 	@Override
 	public String toString() {
-		return "MessageAttachment{" +
+		return "CommunicationAttachment{" +
 			"attachmentID='" + attachmentID + '\'' +
 			", name='" + name + '\'' +
 			", contentType='" + contentType + '\'' +

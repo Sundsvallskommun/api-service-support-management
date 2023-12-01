@@ -1,4 +1,4 @@
-package se.sundsvall.supportmanagement.api.model.message;
+package se.sundsvall.supportmanagement.api.model.communication;
 
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanEquals;
@@ -18,7 +18,10 @@ import java.util.Random;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-class MessageTest {
+import se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationType;
+import se.sundsvall.supportmanagement.integration.db.model.enums.Direction;
+
+class CommunicationTest {
 
 	@BeforeAll
 	static void setup() {
@@ -27,7 +30,7 @@ class MessageTest {
 
 	@Test
 	void testBean() {
-		assertThat(Message.class, allOf(
+		assertThat(Communication.class, allOf(
 			hasValidBeanConstructor(),
 			hasValidGettersAndSetters(),
 			hasValidBeanHashCode(),
@@ -43,57 +46,45 @@ class MessageTest {
 		final var sent = OffsetDateTime.now();
 		final var errandNumber = "errandNumber";
 		final var subject = "subject";
-		final var username = "username";
-		final var firstName = "firstName";
-		final var lastName = "lastName";
-		final var messageType = MessageType.EMAIL;
+		final var messageType = CommunicationType.EMAIL;
 		final var mobileNumber = "mobileNumber";
 		final var email = "email";
-		final var userID = "userID";
 		final var viewed = true;
 
-		final var messageAttachments = List.of(MessageAttachment.create());
+		final var communicationAttachments = List.of(CommunicationAttachment.create());
 
-		final var bean = Message.create()
-			.withMessageID(id)
+		final var bean = Communication.create()
+			.withCommunicationID(id)
 			.withDirection(direction)
 			.withMessageBody(messageBody)
 			.withSent(sent)
 			.withErrandNumber(errandNumber)
 			.withSubject(subject)
-			.withUsername(username)
-			.withFirstName(firstName)
-			.withLastName(lastName)
-			.withMessageType(messageType)
+			.withCommunicationType(messageType)
 			.withMobileNumber(mobileNumber)
 			.withEmail(email)
-			.withUserID(userID)
 			.withViewed(viewed)
-			.withMessageAttachments(messageAttachments);
+			.withCommunicationAttachments(communicationAttachments);
 
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
-		assertThat(bean.getMessageID()).isEqualTo(id);
+		assertThat(bean.getCommunicationID()).isEqualTo(id);
 		assertThat(bean.getDirection()).isEqualTo(direction);
 		assertThat(bean.getMessageBody()).isEqualTo(messageBody);
 		assertThat(bean.getSent()).isEqualTo(sent);
 		assertThat(bean.getErrandNumber()).isEqualTo(errandNumber);
 		assertThat(bean.getSubject()).isEqualTo(subject);
-		assertThat(bean.getUsername()).isEqualTo(username);
-		assertThat(bean.getFirstName()).isEqualTo(firstName);
-		assertThat(bean.getLastName()).isEqualTo(lastName);
-		assertThat(bean.getMessageType()).isEqualTo(messageType);
+		assertThat(bean.getCommunicationType()).isEqualTo(messageType);
 		assertThat(bean.getMobileNumber()).isEqualTo(mobileNumber);
 		assertThat(bean.getEmail()).isEqualTo(email);
-		assertThat(bean.getUserID()).isEqualTo(userID);
 		assertThat(bean.isViewed()).isEqualTo(viewed);
-		assertThat(bean.getMessageAttachments()).isEqualTo(messageAttachments);
+		assertThat(bean.getCommunicationAttachments()).isEqualTo(communicationAttachments);
 
 	}
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(Message.create()).hasAllNullFieldsOrPropertiesExcept("viewed");
-		assertThat(new Message()).hasAllNullFieldsOrPropertiesExcept("viewed");
+		assertThat(Communication.create()).hasAllNullFieldsOrPropertiesExcept("viewed");
+		assertThat(new Communication()).hasAllNullFieldsOrPropertiesExcept("viewed");
 	}
 
 }

@@ -1,4 +1,4 @@
-package se.sundsvall.supportmanagement.api.model.message;
+package se.sundsvall.supportmanagement.integration.db.model.enums;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

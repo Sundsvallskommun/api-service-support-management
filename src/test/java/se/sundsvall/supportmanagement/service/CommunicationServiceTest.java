@@ -4,9 +4,11 @@ import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.util.MimeTypeUtils.IMAGE_PNG_VALUE;
 import static org.zalando.problem.Status.NOT_FOUND;
@@ -15,6 +17,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Base64.Decoder;
 import java.util.List;
+
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,13 +29,14 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.zalando.problem.ThrowableProblem;
 
-import generated.se.sundsvall.messaging.ExternalReference;
 import se.sundsvall.supportmanagement.api.model.communication.EmailAttachment;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
 import se.sundsvall.supportmanagement.api.model.communication.SmsRequest;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.messaging.MessagingClient;
+
+import generated.se.sundsvall.messaging.ExternalReference;
 
 @ExtendWith(MockitoExtension.class)
 class CommunicationServiceTest {
@@ -66,6 +71,74 @@ class CommunicationServiceTest {
 
 	@Captor
 	private ArgumentCaptor<generated.se.sundsvall.messaging.SmsRequest> messagingSmsCaptor;
+
+
+	@Mock
+	private HttpServletResponse servletResponseMock;
+
+	@Test
+	void readMessages() {
+
+		// TODO extend this test when the method is implemented properly
+
+		// Parameter values
+		final var namespace = "namespace";
+		final var municipalityId = "2281";
+		final var id = randomUUID().toString();
+
+		// Mock
+		when(repositoryMock.existsByIdAndNamespaceAndMunicipalityId(any(String.class), any(String.class), any(String.class)))
+			.thenReturn(true);
+
+		// Call
+		final var response = service.readCommunications(namespace, municipalityId, id);
+
+		// Verification
+		assertThat(response).isNotNull().isEmpty();
+
+		verify(repositoryMock).existsByIdAndNamespaceAndMunicipalityId(any(String.class), any(String.class), any(String.class));
+		verify(repositoryMock).getReferenceById(any(String.class));
+		verifyNoMoreInteractions(repositoryMock);
+	}
+
+	@Test
+	void updateViewedStatus() {
+
+		// TODO extend this test when the method is implemented properly
+
+		// Parameter values
+		final var namespace = "namespace";
+		final var municipalityId = "2281";
+		final var id = randomUUID().toString();
+		final var messageID = randomUUID().toString();
+		final var isViewed = true;
+
+		// Mock
+		when(repositoryMock.existsByIdAndNamespaceAndMunicipalityId(any(String.class), any(String.class), any(String.class)))
+			.thenReturn(true);
+
+		// Call
+		service.updateViewedStatus(namespace, municipalityId, id, messageID, isViewed);
+
+		// Verification
+		verify(repositoryMock).existsByIdAndNamespaceAndMunicipalityId(any(String.class), any(String.class), any(String.class));
+		verify(repositoryMock).getReferenceById(any(String.class));
+		verifyNoMoreInteractions(repositoryMock);
+	}
+
+	@Test
+	void getMessageAttachmentStreamed() {
+
+		// TODO extend this test when the method is implemented properly
+		// Parameter values
+		final var attachmentID = randomUUID().toString();
+
+		//Call
+		service.getMessageAttachmentStreamed(attachmentID, servletResponseMock);
+
+		// Verification
+		verifyNoInteractions(repositoryMock);
+	}
 
 	@Test
 	void sendEmail() {
