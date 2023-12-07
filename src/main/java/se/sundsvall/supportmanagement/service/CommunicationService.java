@@ -4,10 +4,16 @@ import static org.zalando.problem.Status.NOT_FOUND;
 import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toEmailRequest;
 import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toSmsRequest;
 
+import java.util.Collections;
+import java.util.List;
+
+import jakarta.servlet.http.HttpServletResponse;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.zalando.problem.Problem;
 
+import se.sundsvall.supportmanagement.api.model.communication.Communication;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
 import se.sundsvall.supportmanagement.api.model.communication.SmsRequest;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
@@ -25,6 +31,23 @@ public class CommunicationService {
 
 	@Autowired
 	private MessagingClient messagingClient;
+
+
+	public List<Communication> readCommunications(final String namespace, final String municipalityId, final String id) {
+		fetchEntity(id, namespace, municipalityId);
+
+		return Collections.emptyList();
+	}
+
+	public void updateViewedStatus(final String namespace, final String municipalityId, final String id, final String messageID, final boolean isViewed) {
+		fetchEntity(id, namespace, municipalityId);
+	}
+
+	public void getMessageAttachmentStreamed(final String attachmentID, final HttpServletResponse response) {
+
+		// TODO: Implement this method
+
+	}
 
 	public void sendEmail(String namespace, String municipalityId, String id, EmailRequest request) {
 		messagingClient.sendEmail(ASYNCHRONOUSLY, toEmailRequest(fetchEntity(id, namespace, municipalityId), request));
