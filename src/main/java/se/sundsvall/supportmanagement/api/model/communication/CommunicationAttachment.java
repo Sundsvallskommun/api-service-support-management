@@ -1,28 +1,21 @@
 package se.sundsvall.supportmanagement.api.model.communication;
 
-import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
-
 import java.util.Objects;
-
-import jakarta.validation.constraints.NotBlank;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
 public class CommunicationAttachment {
 
-	@NotBlank
 	@Schema(
 		description = "The attachment ID",
-		example = "aGVsbG8gd29ybGQK",
-		requiredMode = REQUIRED
+		example = "aGVsbG8gd29ybGQK"
+
 	)
 	private String attachmentID;
 
-	@NotBlank
 	@Schema(
 		description = "The attachment filename",
-		example = "test.txt",
-		requiredMode = REQUIRED
+		example = "test.txt"
 	)
 	private String name;
 

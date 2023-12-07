@@ -48,8 +48,7 @@ public class Communication {
 
 	@Schema(description = "Signal if the message has been viewed or not", example = "true")
 	private boolean viewed;
-
-
+	
 	@Schema(description = "List of communicationAttachments on the message")
 	private List<CommunicationAttachment> communicationAttachments;
 
