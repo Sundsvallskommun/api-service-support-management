@@ -48,7 +48,7 @@ public class CommunicationEntity {
 	@Column(name = "sent")
 	private OffsetDateTime sent;
 
-	@Column(name = "message_type")
+	@Column(name = "communication_type")
 	@Enumerated(EnumType.STRING)
 	private CommunicationType communicationType;
 
