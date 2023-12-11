@@ -33,7 +33,7 @@ class ErrandCommunicationAttachmentFailuresResourceTest {
 	void getMessageAttachmentStreamedWithInvalidAttachmentID() {
 
 		// Call
-		final var response = webTestClient.get()
+		webTestClient.get()
 			.uri(uriBuilder -> uriBuilder.path(PATH)
 				.build(Map.of("attachmentID", INVALID)))
 			.exchange()
@@ -43,5 +43,4 @@ class ErrandCommunicationAttachmentFailuresResourceTest {
 
 		verifyNoInteractions(messageServiceMock);
 	}
-
 }

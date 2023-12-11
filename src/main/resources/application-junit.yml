@@ -1,0 +1,50 @@
+integration:
+  eventlog:
+    url: http://eventlog.url
+  messaging:
+    url: http://messaging.url
+  notes:
+    url: http://notes.url
+spring:
+  cache:
+    type: none
+  datasource:
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+    url: jdbc:tc:mariadb:10.6.14:///
+  jpa:
+    properties:
+      hibernate:
+        format_sql: true
+        hbm2ddl:
+          schema-generation:
+            script:
+              append: false
+      jakarta:
+        persistence:
+          schema-generation:
+            create-source: metadata
+            database:
+              action: update
+            scripts:
+              action: create
+              create-target: target/database/generated-schema.sql
+  security:
+    oauth2:
+      client:
+        provider:
+          eventlog:
+            token-uri: http://token.url
+          messaging:
+            token-uri: http://token.url
+          notes:
+            token-uri: http://token.url
+        registration:
+          eventlog:
+            client-id: the-client-id
+            client-secret: the-client-secret
+          messaging:
+            client-id: the-client-id
+            client-secret: the-client-secret
+          notes:
+            client-id: the-client-id
+            client-secret: the-client-secret
