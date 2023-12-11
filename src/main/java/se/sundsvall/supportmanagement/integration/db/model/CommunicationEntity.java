@@ -46,6 +46,7 @@ public class CommunicationEntity {
 	private String messageBody;
 
 	@Column(name = "sent")
+	@TimeZoneStorage(NORMALIZE)
 	private OffsetDateTime sent;
 
 	@Column(name = "communication_type")
