@@ -7,8 +7,6 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 
 import java.util.Map;
 
-import jakarta.servlet.http.HttpServletResponse;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -16,6 +14,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
+import jakarta.servlet.http.HttpServletResponse;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.service.CommunicationService;
 
@@ -36,8 +35,8 @@ class ErrandCommunicationAttachmentResourceTest {
 	@Test
 	void getMessageAttachmentStreamed() {
 
-		//ACT
-		final var response = webTestClient.get()
+		// ACT
+		webTestClient.get()
 			.uri(uriBuilder -> uriBuilder.path(PATH)
 				.build(Map.of("attachmentID", ATTACHMENT_ID)))
 			.exchange()

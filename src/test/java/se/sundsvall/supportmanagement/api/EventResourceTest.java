@@ -131,7 +131,7 @@ class EventResourceTest {
 		}
 
 		public RestResponsePage(final List<T> content) {
-			super(content);
+			super(content, PageRequest.of(0, 10), content.size());
 		}
 
 		public RestResponsePage() {

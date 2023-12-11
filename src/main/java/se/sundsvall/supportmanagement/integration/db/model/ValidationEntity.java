@@ -39,7 +39,7 @@ public class ValidationEntity {
 	@Column(name = "id")
 	private Long id;
 
-	@Column(name = "`type`", nullable = false)
+	@Column(name = "`type`", nullable = false, columnDefinition = "varchar(255)")
 	@Enumerated(STRING)
 	private EntityType type;
 

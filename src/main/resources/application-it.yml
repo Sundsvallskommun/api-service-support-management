@@ -1,0 +1,42 @@
+integration:
+  eventlog:
+    url: http://localhost:${wiremock.server.port:}/api-eventlog
+  messaging:
+    url: http://localhost:${wiremock.server.port:}/api-messaging
+  notes:
+    url: http://localhost:${wiremock.server.port:}/api-notes
+spring:
+  cache:
+    type: none
+  datasource:
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+    url: jdbc:tc:mariadb:10.6.14:///
+  flyway:
+    enabled: true
+  jpa:
+    properties:
+      jakarta:
+        persistence:
+          schema-generation:
+            database:
+              action: validate
+  security:
+    oauth2:
+      client:
+        provider:
+          eventlog:
+            token-uri: http://localhost:${wiremock.server.port:}/api-gateway/token
+          messaging:
+            token-uri: http://localhost:${wiremock.server.port:}/api-gateway/token
+          notes:
+            token-uri: http://localhost:${wiremock.server.port:}/api-gateway/token
+        registration:
+          eventlog:
+            client-id: the-client-id
+            client-secret: the-client-secret
+          messaging:
+            client-id: the-client-id
+            client-secret: the-client-secret
+          notes:
+            client-id: the-client-id
+            client-secret: the-client-secret
