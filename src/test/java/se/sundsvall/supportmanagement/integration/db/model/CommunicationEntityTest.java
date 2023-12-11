@@ -41,44 +41,42 @@ class CommunicationEntityTest {
 	@Test
 	void hasValidBuilderMethods() {
 
-		final var communicationId = "communicationId";
+		final var id = "id";
 		final var errandNumber = "errandNumber";
 		final var direction = Direction.OUTBOUND;
 		final var externalCaseID = "externalCaseID";
 		final var subject = "subject";
 		final var messageBody = "messageBody";
 		final var sent = OffsetDateTime.now();
-		final var communicationType = CommunicationType.EMAIL;
-		final var mobileNumber = "mobileNumber";
+		final var type = CommunicationType.EMAIL;
+		final var target = "target";
 		final var email = "email";
 		final var viewed = true;
 		final var attachments = List.of(CommunicationAttachmentEntity.create());
 
 		final var entity = CommunicationEntity.create()
-			.withCommunicationID(communicationId)
+			.withId(id)
 			.withErrandNumber(errandNumber)
 			.withDirection(direction)
 			.withExternalCaseID(externalCaseID)
 			.withSubject(subject)
 			.withMessageBody(messageBody)
 			.withSent(sent)
-			.withCommunicationType(communicationType)
-			.withMobileNumber(mobileNumber)
-			.withEmail(email)
+			.withType(type)
+			.withTarget(target)
 			.withViewed(viewed)
 			.withAttachments(attachments);
 
 		assertThat(entity).hasNoNullFieldsOrProperties();
-		assertThat(entity.getCommunicationID()).isEqualTo(communicationId);
+		assertThat(entity.getId()).isEqualTo(id);
 		assertThat(entity.getErrandNumber()).isEqualTo(errandNumber);
 		assertThat(entity.getDirection()).isEqualTo(direction);
 		assertThat(entity.getExternalCaseID()).isEqualTo(externalCaseID);
 		assertThat(entity.getSubject()).isEqualTo(subject);
 		assertThat(entity.getMessageBody()).isEqualTo(messageBody);
 		assertThat(entity.getSent()).isEqualTo(sent);
-		assertThat(entity.getCommunicationType()).isEqualTo(communicationType);
-		assertThat(entity.getMobileNumber()).isEqualTo(mobileNumber);
-		assertThat(entity.getEmail()).isEqualTo(email);
+		assertThat(entity.getType()).isEqualTo(type);
+		assertThat(entity.getTarget()).isEqualTo(target);
 		assertThat(entity.isViewed()).isEqualTo(viewed);
 		assertThat(entity.getAttachments()).isEqualTo(attachments);
 	}

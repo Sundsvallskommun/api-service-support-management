@@ -18,16 +18,16 @@ import jakarta.persistence.UniqueConstraint;
 @Entity
 @Table(
 	name = "communication_attachment",
-	uniqueConstraints = {@UniqueConstraint(name = "UK_communication_attachment_data_id", columnNames = {"communication_attachment_data_id"})})
+	uniqueConstraints = {@UniqueConstraint(name = "uq_communication_attachment_data_id", columnNames = {"communication_attachment_data_id"})})
 public class CommunicationAttachmentEntity {
 
 	@Id
-	@Column(name = "attachment_id")
-	private String attachmentID;
+	@Column(name = "id")
+	private String id;
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "communication_id", nullable = false, foreignKey = @ForeignKey(name = "fk_communication_attachment_communication_id"))
-	private CommunicationEntity communicationID;
+	private CommunicationEntity communicationEntity;
 
 	@OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
 	@JoinColumn(name = "communication_attachment_data_id", nullable = false, foreignKey = @ForeignKey(name = "fk_communication_attachment_data_communication_attachment"))
@@ -43,16 +43,16 @@ public class CommunicationAttachmentEntity {
 		return new CommunicationAttachmentEntity();
 	}
 
-	public String getAttachmentID() {
-		return attachmentID;
+	public String getId() {
+		return id;
 	}
 
-	public void setAttachmentID(final String attachmentID) {
-		this.attachmentID = attachmentID;
+	public void setId(final String id) {
+		this.id = id;
 	}
 
-	public CommunicationAttachmentEntity withAttachmentID(final String attachmentID) {
-		this.attachmentID = attachmentID;
+	public CommunicationAttachmentEntity withId(final String id) {
+		this.id = id;
 		return this;
 	}
 
@@ -69,16 +69,16 @@ public class CommunicationAttachmentEntity {
 		return this;
 	}
 
-	public CommunicationEntity getCommunicationID() {
-		return communicationID;
+	public CommunicationEntity getCommunicationEntity() {
+		return communicationEntity;
 	}
 
-	public void setCommunicationID(final CommunicationEntity communicationID) {
-		this.communicationID = communicationID;
+	public void setCommunicationEntity(final CommunicationEntity communicationID) {
+		this.communicationEntity = communicationID;
 	}
 
-	public CommunicationAttachmentEntity withCommunicationID(final CommunicationEntity communicationID) {
-		this.communicationID = communicationID;
+	public CommunicationAttachmentEntity withCommunicationEntity(final CommunicationEntity communicationID) {
+		this.communicationEntity = communicationID;
 		return this;
 	}
 
@@ -113,19 +113,19 @@ public class CommunicationAttachmentEntity {
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
 		final CommunicationAttachmentEntity that = (CommunicationAttachmentEntity) o;
-		return Objects.equals(attachmentID, that.attachmentID) && Objects.equals(communicationID, that.communicationID) && Objects.equals(attachmentData, that.attachmentData) && Objects.equals(name, that.name) && Objects.equals(contentType, that.contentType);
+		return Objects.equals(id, that.id) && Objects.equals(communicationEntity, that.communicationEntity) && Objects.equals(attachmentData, that.attachmentData) && Objects.equals(name, that.name) && Objects.equals(contentType, that.contentType);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(attachmentID, communicationID, attachmentData, name, contentType);
+		return Objects.hash(id, communicationEntity, attachmentData, name, contentType);
 	}
 
 	@Override
 	public String toString() {
 		return "CommunicationAttachmentEntity{" +
-			"attachmentID='" + attachmentID + '\'' +
-			", communicationID='" + communicationID + '\'' +
+			"id='" + id + '\'' +
+			", communicationEntity=" + communicationEntity +
 			", attachmentData=" + attachmentData +
 			", name='" + name + '\'' +
 			", contentType='" + contentType + '\'' +

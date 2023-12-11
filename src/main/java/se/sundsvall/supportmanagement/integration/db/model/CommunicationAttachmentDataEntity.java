@@ -18,7 +18,7 @@ public class CommunicationAttachmentDataEntity {
 
 	@Id
 	@GeneratedValue(strategy = IDENTITY)
-	private int id;
+	private Long id;
 
 	@Column(columnDefinition = "longblob")
 	@Lob
@@ -28,15 +28,15 @@ public class CommunicationAttachmentDataEntity {
 		return new CommunicationAttachmentDataEntity();
 	}
 
-	public int getId() {
+	public Long getId() {
 		return id;
 	}
 
-	public void setId(final int id) {
+	public void setId(final Long id) {
 		this.id = id;
 	}
 
-	public CommunicationAttachmentDataEntity withId(final int id) {
+	public CommunicationAttachmentDataEntity withId(final Long id) {
 		this.id = id;
 		return this;
 	}

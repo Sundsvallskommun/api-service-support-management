@@ -1,5 +1,7 @@
 package se.sundsvall.supportmanagement.integration.db.model;
 
+import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
+
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Objects;
@@ -15,6 +17,8 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
+import org.hibernate.annotations.TimeZoneStorage;
+
 import se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.Direction;
 
@@ -26,8 +30,8 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.Direction;
 public class CommunicationEntity {
 
 	@Id
-	@Column(name = "communication_id")
-	private String communicationID;
+	@Column(name = "id")
+	private String id;
 
 	@Column(name = "errand_number")
 	private String errandNumber;
@@ -49,36 +53,33 @@ public class CommunicationEntity {
 	@TimeZoneStorage(NORMALIZE)
 	private OffsetDateTime sent;
 
-	@Column(name = "communication_type")
+	@Column(name = "type")
 	@Enumerated(EnumType.STRING)
-	private CommunicationType communicationType;
+	private CommunicationType type;
 
-	@Column(name = "mobile_number")
-	private String mobileNumber;
-
-	@Column(name = "email")
-	private String email;
+	@Column(name = "target")
+	private String target;
 
 	@Column(name = "viewed")
 	private boolean viewed;
 
-	@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, mappedBy = "communicationID")
+	@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, mappedBy = "communicationEntity")
 	private List<CommunicationAttachmentEntity> attachments;
 
 	public static CommunicationEntity create() {
 		return new CommunicationEntity();
 	}
 
-	public String getCommunicationID() {
-		return communicationID;
+	public String getId() {
+		return id;
 	}
 
-	public void setCommunicationID(final String communicationID) {
-		this.communicationID = communicationID;
+	public void setId(final String id) {
+		this.id = id;
 	}
 
-	public CommunicationEntity withCommunicationID(final String communicationID) {
-		this.communicationID = communicationID;
+	public CommunicationEntity withId(final String id) {
+		this.id = id;
 		return this;
 	}
 
@@ -160,42 +161,29 @@ public class CommunicationEntity {
 		return this;
 	}
 
-	public CommunicationType getCommunicationType() {
-		return communicationType;
+	public CommunicationType getType() {
+		return type;
 	}
 
-	public void setCommunicationType(final CommunicationType communicationType) {
-		this.communicationType = communicationType;
+	public void setType(final CommunicationType type) {
+		this.type = type;
 	}
 
-	public CommunicationEntity withCommunicationType(final CommunicationType communicationType) {
-		this.communicationType = communicationType;
+	public CommunicationEntity withType(final CommunicationType type) {
+		this.type = type;
 		return this;
 	}
 
-	public String getMobileNumber() {
-		return mobileNumber;
+	public String getTarget() {
+		return target;
 	}
 
-	public void setMobileNumber(final String mobileNumber) {
-		this.mobileNumber = mobileNumber;
+	public void setTarget(final String target) {
+		this.target = target;
 	}
 
-	public CommunicationEntity withMobileNumber(final String mobileNumber) {
-		this.mobileNumber = mobileNumber;
-		return this;
-	}
-
-	public String getEmail() {
-		return email;
-	}
-
-	public void setEmail(final String email) {
-		this.email = email;
-	}
-
-	public CommunicationEntity withEmail(final String email) {
-		this.email = email;
+	public CommunicationEntity withTarget(final String target) {
+		this.target = target;
 		return this;
 	}
 
@@ -230,27 +218,26 @@ public class CommunicationEntity {
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
 		final CommunicationEntity that = (CommunicationEntity) o;
-		return viewed == that.viewed && Objects.equals(communicationID, that.communicationID) && Objects.equals(errandNumber, that.errandNumber) && direction == that.direction && Objects.equals(externalCaseID, that.externalCaseID) && Objects.equals(subject, that.subject) && Objects.equals(messageBody, that.messageBody) && Objects.equals(sent, that.sent) && communicationType == that.communicationType && Objects.equals(mobileNumber, that.mobileNumber) && Objects.equals(email, that.email) && Objects.equals(attachments, that.attachments);
+		return viewed == that.viewed && Objects.equals(id, that.id) && Objects.equals(errandNumber, that.errandNumber) && direction == that.direction && Objects.equals(externalCaseID, that.externalCaseID) && Objects.equals(subject, that.subject) && Objects.equals(messageBody, that.messageBody) && Objects.equals(sent, that.sent) && type == that.type && Objects.equals(target, that.target) && Objects.equals(attachments, that.attachments);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(communicationID, errandNumber, direction, externalCaseID, subject, messageBody, sent, communicationType, mobileNumber, email, viewed, attachments);
+		return Objects.hash(id, errandNumber, direction, externalCaseID, subject, messageBody, sent, type, target, viewed, attachments);
 	}
 
 	@Override
 	public String toString() {
 		return "CommunicationEntity{" +
-			"communicationID='" + communicationID + '\'' +
+			"id='" + id + '\'' +
 			", errandNumber='" + errandNumber + '\'' +
 			", direction=" + direction +
 			", externalCaseID='" + externalCaseID + '\'' +
 			", subject='" + subject + '\'' +
 			", messageBody='" + messageBody + '\'' +
 			", sent=" + sent +
-			", communicationType=" + communicationType +
-			", mobileNumber='" + mobileNumber + '\'' +
-			", email='" + email + '\'' +
+			", type=" + type +
+			", target='" + target + '\'' +
 			", viewed=" + viewed +
 			", attachments=" + attachments +
 			'}';

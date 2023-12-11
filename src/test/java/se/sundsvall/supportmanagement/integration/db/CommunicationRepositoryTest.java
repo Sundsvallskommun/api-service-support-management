@@ -36,35 +36,33 @@ class CommunicationRepositoryTest {
 	void create() {
 		// Setup
 		final var communicationEntity = CommunicationEntity.create()
-			.withCommunicationID("communicationID")
+			.withId("id")
 			.withErrandNumber("errandNumber")
 			.withDirection(Direction.INBOUND)
 			.withExternalCaseID("externalCaseID")
 			.withSubject("subject")
 			.withMessageBody("messageBody")
 			.withSent(OffsetDateTime.now())
-			.withCommunicationType(CommunicationType.EMAIL)
-			.withMobileNumber("mobileNumber")
-			.withEmail("email")
+			.withType(CommunicationType.EMAIL)
+			.withTarget("target")
 			.withViewed(true)
-			.withAttachments(List.of(CommunicationAttachmentEntity.create().withAttachmentID(UUID.randomUUID().toString())));
+			.withAttachments(List.of(CommunicationAttachmentEntity.create().withId(UUID.randomUUID().toString())));
 
 		// Execution
 		final var persistedEntity = communicationRepository.save(communicationEntity);
 
 		// Assertions
 		assertThat(persistedEntity).isNotNull();
-		assertThat(persistedEntity.getCommunicationID()).isEqualTo("communicationID");
+		assertThat(persistedEntity.getId()).isEqualTo("id");
 		assertThat(persistedEntity.getErrandNumber()).isEqualTo("errandNumber");
 		assertThat(persistedEntity.getDirection()).isEqualTo(Direction.INBOUND);
 		assertThat(persistedEntity.getExternalCaseID()).isEqualTo("externalCaseID");
 		assertThat(persistedEntity.getSubject()).isEqualTo("subject");
 		assertThat(persistedEntity.getMessageBody()).isEqualTo("messageBody");
 		assertThat(persistedEntity.getSent()).isCloseTo(OffsetDateTime.now(), within(2, SECONDS));
-		assertThat(persistedEntity.getCommunicationType()).isEqualTo(CommunicationType.EMAIL);
-		assertThat(persistedEntity.getMobileNumber()).isEqualTo("mobileNumber");
-		assertThat(persistedEntity.getEmail()).isEqualTo("email");
-		assertThat(persistedEntity.isViewed()).isEqualTo(true);
+		assertThat(persistedEntity.getType()).isEqualTo(CommunicationType.EMAIL);
+		assertThat(persistedEntity.getTarget()).isEqualTo("target");
+		assertThat(persistedEntity.isViewed()).isTrue();
 		assertThat(persistedEntity.getAttachments()).hasSize(1);
 	}
 
@@ -78,7 +76,7 @@ class CommunicationRepositoryTest {
 
 		// Assertions
 		assertThat(communications).isNotEmpty();
-		assertThat(communications.get(0).getErrandNumber()).isEqualTo(errandNumber);
+		assertThat(communications.getFirst().getErrandNumber()).isEqualTo(errandNumber);
 	}
 
 	@Test

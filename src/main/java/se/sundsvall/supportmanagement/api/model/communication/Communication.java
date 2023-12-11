@@ -40,12 +40,9 @@ public class Communication {
 	@Schema(description = "The message was delivered by", example = "EMAIL")
 	private CommunicationType communicationType;
 
-	@Schema(description = "The mobile number of the recipient", example = "+46701234567")
-	private String mobileNumber;
-
-	@Schema(description = "The email of the user that sent the message", example = "kalle.anka@ankeborg.se")
-	private String email;
-
+	@Schema(description = "The mobile number or email adress the communication was sent to", example = "+46701234567")
+	private String target;
+	
 	@Schema(description = "Signal if the message has been viewed or not", example = "true")
 	private boolean viewed;
 	
@@ -148,29 +145,16 @@ public class Communication {
 		return this;
 	}
 
-	public String getMobileNumber() {
-		return mobileNumber;
+	public String getTarget() {
+		return target;
 	}
 
-	public void setMobileNumber(final String mobileNumber) {
-		this.mobileNumber = mobileNumber;
+	public void setTarget(final String target) {
+		this.target = target;
 	}
 
-	public Communication withMobileNumber(final String mobileNumber) {
-		this.mobileNumber = mobileNumber;
-		return this;
-	}
-
-	public String getEmail() {
-		return email;
-	}
-
-	public void setEmail(final String email) {
-		this.email = email;
-	}
-
-	public Communication withEmail(final String email) {
-		this.email = email;
+	public Communication withTarget(final String target) {
+		this.target = target;
 		return this;
 	}
 
@@ -205,12 +189,12 @@ public class Communication {
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
 		final Communication that = (Communication) o;
-		return viewed == that.viewed && Objects.equals(communicationID, that.communicationID) && Objects.equals(errandNumber, that.errandNumber) && direction == that.direction && Objects.equals(messageBody, that.messageBody) && Objects.equals(sent, that.sent) && Objects.equals(subject, that.subject) && communicationType == that.communicationType && Objects.equals(mobileNumber, that.mobileNumber) && Objects.equals(email, that.email) && Objects.equals(communicationAttachments, that.communicationAttachments);
+		return viewed == that.viewed && Objects.equals(communicationID, that.communicationID) && Objects.equals(errandNumber, that.errandNumber) && direction == that.direction && Objects.equals(messageBody, that.messageBody) && Objects.equals(sent, that.sent) && Objects.equals(subject, that.subject) && communicationType == that.communicationType && Objects.equals(target, that.target) && Objects.equals(communicationAttachments, that.communicationAttachments);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(communicationID, errandNumber, direction, messageBody, sent, subject, communicationType, mobileNumber, email, viewed, communicationAttachments);
+		return Objects.hash(communicationID, errandNumber, direction, messageBody, sent, subject, communicationType, target, viewed, communicationAttachments);
 	}
 
 	@Override
@@ -223,8 +207,7 @@ public class Communication {
 			", sent=" + sent +
 			", subject='" + subject + '\'' +
 			", communicationType=" + communicationType +
-			", mobileNumber='" + mobileNumber + '\'' +
-			", email='" + email + '\'' +
+			", target='" + target + '\'' +
 			", viewed=" + viewed +
 			", communicationAttachments=" + communicationAttachments +
 			'}';

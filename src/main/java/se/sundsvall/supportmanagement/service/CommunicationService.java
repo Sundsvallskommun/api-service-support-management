@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.service;
 
 import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
+import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
 import static org.zalando.problem.Status.NOT_FOUND;
 import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toEmailRequest;
 import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toSmsRequest;
@@ -31,6 +32,10 @@ import se.sundsvall.supportmanagement.service.mapper.CommunicationMapper;
 public class CommunicationService {
 
 	private static final String ERRAND_ENTITY_NOT_FOUND = "An errand with id '%s' could not be found in namespace '%s' for municipality with id '%s'";
+
+	private static final String COMMUNICATION_NOT_FOUND = "Communication with id %s not found";
+
+	private static final String ATTACHMENT_NOT_FOUND = "MessageAttachment not found";
 
 	private static final boolean ASYNCHRONOUSLY = true;
 
@@ -63,7 +68,7 @@ public class CommunicationService {
 
 		final var message = communicationRepository
 			.findById(communicationId)
-			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, "Communication with id %s not found".formatted(communicationId)));
+			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, COMMUNICATION_NOT_FOUND.formatted(communicationId)));
 
 		message.setViewed(isViewed);
 		communicationRepository.save(message);
@@ -74,7 +79,7 @@ public class CommunicationService {
 		try {
 			final var attachmentEntity = communicationAttachmentRepository
 				.findById(attachmentID)
-				.orElseThrow(() -> Problem.valueOf(Status.NOT_FOUND, "MessageAttachment not found"));
+				.orElseThrow(() -> Problem.valueOf(Status.NOT_FOUND, ATTACHMENT_NOT_FOUND));
 
 			final var file = attachmentEntity.getAttachmentData().getFile();
 

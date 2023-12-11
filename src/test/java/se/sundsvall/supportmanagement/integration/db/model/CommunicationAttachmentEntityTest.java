@@ -27,24 +27,24 @@ class CommunicationAttachmentEntityTest {
 	@Test
 	void hasValidBuilderMethods() {
 
-		final var attachmentID = "1";
+		final var id = "1";
 		final var content = "content";
 		final var file = new MariaDbBlob(content.getBytes());
-		final var attachmentData = CommunicationAttachmentDataEntity.create().withId(1).withFile(file);
+		final var attachmentData = CommunicationAttachmentDataEntity.create().withId(1L).withFile(file);
 		final var name = "name";
 		final var contentType = "contentType";
-		final var communicationID = CommunicationEntity.create();
+		final var communicationEntity = CommunicationEntity.create();
 
 		final var entity = CommunicationAttachmentEntity.create()
-			.withAttachmentID(attachmentID)
-			.withCommunicationID(communicationID)
+			.withId(id)
+			.withCommunicationEntity(communicationEntity)
 			.withAttachmentData(attachmentData)
 			.withName(name)
 			.withContentType(contentType);
 
 		assertThat(entity).hasNoNullFieldsOrProperties();
-		assertThat(entity.getAttachmentID()).isEqualTo(attachmentID);
-		assertThat(entity.getCommunicationID()).isEqualTo(communicationID);
+		assertThat(entity.getId()).isEqualTo(id);
+		assertThat(entity.getCommunicationEntity()).isEqualTo(communicationEntity);
 		assertThat(entity.getAttachmentData()).isEqualTo(attachmentData);
 		assertThat(entity.getName()).isEqualTo(name);
 		assertThat(entity.getContentType()).isEqualTo(contentType);

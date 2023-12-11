@@ -1,8 +1,8 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
-import static java.util.Collections.emptyList;
-
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import se.sundsvall.supportmanagement.api.model.communication.Communication;
 import se.sundsvall.supportmanagement.api.model.communication.CommunicationAttachment;
@@ -22,34 +22,34 @@ public final class CommunicationMapper {
 	}
 
 	public static Communication toCommunication(final CommunicationEntity entity) {
+		if (entity == null) {
+			return null;
+		}
 		return Communication.create()
-			.withCommunicationID(entity.getCommunicationID())
+			.withCommunicationID(entity.getId())
 			.withErrandNumber(entity.getErrandNumber())
 			.withDirection(entity.getDirection())
 			.withMessageBody(entity.getMessageBody())
 			.withSent(entity.getSent())
 			.withSubject(entity.getSubject())
-			.withCommunicationType(entity.getCommunicationType())
-			.withMobileNumber(entity.getMobileNumber())
-			.withEmail(entity.getEmail())
+			.withCommunicationType(entity.getType())
+			.withTarget(entity.getTarget())
 			.withViewed(entity.isViewed())
 			.withCommunicationAttachments(toAttachments(entity.getAttachments()));
 	}
 
 	public static List<CommunicationAttachment> toAttachments(final List<CommunicationAttachmentEntity> attachments) {
 
-		if (attachments == null) {
-			return emptyList();
-		}
-
-		return attachments.stream()
+		return Optional.ofNullable(attachments)
+			.orElse(Collections.emptyList())
+			.stream()
 			.map(CommunicationMapper::toAttachment)
 			.toList();
 	}
 
 	public static CommunicationAttachment toAttachment(final CommunicationAttachmentEntity entity) {
 		return CommunicationAttachment.create()
-			.withAttachmentID(entity.getAttachmentID())
+			.withAttachmentID(entity.getId())
 			.withName(entity.getName())
 			.withContentType(entity.getContentType());
 	}

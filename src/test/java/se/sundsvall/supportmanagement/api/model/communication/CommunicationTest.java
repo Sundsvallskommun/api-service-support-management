@@ -47,8 +47,7 @@ class CommunicationTest {
 		final var errandNumber = "errandNumber";
 		final var subject = "subject";
 		final var messageType = CommunicationType.EMAIL;
-		final var mobileNumber = "mobileNumber";
-		final var email = "email";
+		final var target = "target";
 		final var viewed = true;
 
 		final var communicationAttachments = List.of(CommunicationAttachment.create());
@@ -61,8 +60,7 @@ class CommunicationTest {
 			.withErrandNumber(errandNumber)
 			.withSubject(subject)
 			.withCommunicationType(messageType)
-			.withMobileNumber(mobileNumber)
-			.withEmail(email)
+			.withTarget(target)
 			.withViewed(viewed)
 			.withCommunicationAttachments(communicationAttachments);
 
@@ -74,8 +72,7 @@ class CommunicationTest {
 		assertThat(bean.getErrandNumber()).isEqualTo(errandNumber);
 		assertThat(bean.getSubject()).isEqualTo(subject);
 		assertThat(bean.getCommunicationType()).isEqualTo(messageType);
-		assertThat(bean.getMobileNumber()).isEqualTo(mobileNumber);
-		assertThat(bean.getEmail()).isEqualTo(email);
+		assertThat(bean.getTarget()).isEqualTo(target);
 		assertThat(bean.isViewed()).isEqualTo(viewed);
 		assertThat(bean.getCommunicationAttachments()).isEqualTo(communicationAttachments);
 

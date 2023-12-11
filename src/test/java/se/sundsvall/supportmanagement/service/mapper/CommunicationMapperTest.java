@@ -35,6 +35,13 @@ class CommunicationMapperTest {
 	}
 
 	@Test
+	void toCommmunicationReturnsNullWhenInputIsNull() {
+		final var communications = CommunicationMapper.toCommunication(null);
+
+		assertThat(communications).isNull();
+	}
+
+	@Test
 	void toAttachmentsReturnsCorrectAttachmentList() {
 		final var entities = singletonList(createCommunicationAttachmentEntity());
 		final var attachments = CommunicationMapper.toAttachments(entities);
@@ -67,15 +74,14 @@ class CommunicationMapperTest {
 
 	private CommunicationEntity createCommunicationEntity() {
 		final CommunicationEntity entity = new CommunicationEntity();
-		entity.setCommunicationID("testID");
+		entity.setId("testid");
 		entity.setErrandNumber("testErrandNumber");
 		entity.setDirection(Direction.INBOUND);
 		entity.setMessageBody("testMessageBody");
 		entity.setSent(OffsetDateTime.now());
 		entity.setSubject("testSubject");
-		entity.setCommunicationType(CommunicationType.EMAIL);
-		entity.setMobileNumber("1234567890");
-		entity.setEmail("test@example.com");
+		entity.setType(CommunicationType.EMAIL);
+		entity.setTarget("target");
 		entity.setViewed(true);
 		entity.setAttachments(Collections.singletonList(createCommunicationAttachmentEntity()));
 		return entity;
@@ -83,29 +89,28 @@ class CommunicationMapperTest {
 
 	private CommunicationAttachmentEntity createCommunicationAttachmentEntity() {
 		final CommunicationAttachmentEntity entity = new CommunicationAttachmentEntity();
-		entity.setAttachmentID("testAttachmentID");
+		entity.setId("testId");
 		entity.setName("testName");
 		entity.setContentType("testContentType");
 		return entity;
 	}
 
 	private void assertCommunicationMatchesEntity(final Communication communication, final CommunicationEntity entity) {
-		assertThat(communication.getCommunicationID()).isEqualTo(entity.getCommunicationID());
+		assertThat(communication.getCommunicationID()).isEqualTo(entity.getId());
 		assertThat(communication.getErrandNumber()).isEqualTo(entity.getErrandNumber());
 		assertThat(communication.getDirection()).isEqualTo(entity.getDirection());
 		assertThat(communication.getMessageBody()).isEqualTo(entity.getMessageBody());
 		assertThat(communication.getSent()).isEqualTo(entity.getSent());
 		assertThat(communication.getSubject()).isEqualTo(entity.getSubject());
-		assertThat(communication.getCommunicationType()).isEqualTo(entity.getCommunicationType());
-		assertThat(communication.getMobileNumber()).isEqualTo(entity.getMobileNumber());
-		assertThat(communication.getEmail()).isEqualTo(entity.getEmail());
+		assertThat(communication.getCommunicationType()).isEqualTo(entity.getType());
+		assertThat(communication.getTarget()).isEqualTo(entity.getTarget());
 		assertThat(communication.isViewed()).isEqualTo(entity.isViewed());
 		assertThat(communication.getCommunicationAttachments()).hasSize(1);
 		assertAttachmentMatchesEntity(communication.getCommunicationAttachments().getFirst(), entity.getAttachments().getFirst());
 	}
 
 	private void assertAttachmentMatchesEntity(final CommunicationAttachment attachment, final CommunicationAttachmentEntity entity) {
-		assertThat(attachment.getAttachmentID()).isEqualTo(entity.getAttachmentID());
+		assertThat(attachment.getAttachmentID()).isEqualTo(entity.getId());
 		assertThat(attachment.getName()).isEqualTo(entity.getName());
 		assertThat(attachment.getContentType()).isEqualTo(entity.getContentType());
 	}

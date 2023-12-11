@@ -27,7 +27,7 @@ class CommunicationAttachmentDataEntityTest {
 	@Test
 	void hasValidBuilderMethods() {
 
-		final var id = 1;
+		final var id = 1L;
 		final var content = "content";
 		final var file = new MariaDbBlob(content.getBytes());
 
