@@ -83,7 +83,8 @@ public class CommunicationService {
 			response.setContentLength((int) file.length());
 			StreamUtils.copy(file.getBinaryStream(), response.getOutputStream());
 		} catch (final IOException | SQLException e) {
-			throw Problem.valueOf(Status.INTERNAL_SERVER_ERROR, "%s occurred when copying file with attachment id '%s' to response: %s".formatted(e.getClass().getSimpleName(), attachmentID, e.getMessage()));
+			throw Problem.valueOf(INTERNAL_SERVER_ERROR, "%s occurred when copying file with attachment id '%s' to response: %s".formatted(e.getClass().getSimpleName(), attachmentID, e.getMessage()));
+
 		}
 	}
 
