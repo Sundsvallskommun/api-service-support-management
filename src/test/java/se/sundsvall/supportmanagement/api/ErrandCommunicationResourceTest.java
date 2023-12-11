@@ -1,9 +1,12 @@
 package se.sundsvall.supportmanagement.api;
 
 import static java.util.UUID.randomUUID;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
@@ -18,6 +21,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
 import se.sundsvall.supportmanagement.Application;
+import se.sundsvall.supportmanagement.api.model.communication.Communication;
 import se.sundsvall.supportmanagement.api.model.communication.EmailAttachment;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
 import se.sundsvall.supportmanagement.api.model.communication.SmsRequest;
@@ -34,11 +38,54 @@ class ErrandCommunicationResourceTest {
 	private static final String PATH_SMS = "/sms";
 	private static final String PATH_EMAIL = "/email";
 
+
 	@MockBean
 	private CommunicationService serviceMock;
 
 	@Autowired
 	private WebTestClient webTestClient;
+
+
+	@Test
+	void getCommunicationsOnErrand() {
+
+		// Mock
+		when(serviceMock.readCommunications(anyString(), anyString(), anyString()))
+			.thenReturn(List.of(Communication.create()));
+
+		// Call
+		final var response = webTestClient.get()
+			.uri(builder -> builder.path(PATH_PREFIX).build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
+			.accept(APPLICATION_JSON)
+			.exchange()
+			.expectStatus().isOk()
+			.expectHeader().contentType(APPLICATION_JSON)
+			.expectBodyList(Communication.class)
+			.returnResult();
+
+		// Verification
+		assertThat(response).isNotNull();
+		assertThat(response.getResponseBody()).isNotNull().hasSize(1);
+		verify(serviceMock).readCommunications(anyString(), anyString(), anyString());
+	}
+
+	@Test
+	void setViewedStatusForCommunication() {
+		// Parameter values
+		final var messageID = randomUUID().toString();
+		final var isViewed = true;
+
+		// Call
+		webTestClient.put()
+			.uri(builder -> builder.path(PATH_PREFIX + "/{messageID}/viewed/{isViewed}").build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "messageID", messageID, "isViewed", isViewed)))
+			.contentType(APPLICATION_JSON)
+			.exchange()
+			.expectStatus().isNoContent()
+			.expectBody().isEmpty();
+
+		// Verification
+		verify(serviceMock).updateViewedStatus(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, messageID, isViewed);
+	}
 
 	@Test
 	void sendSms() {

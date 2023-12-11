@@ -1,0 +1,66 @@
+integration:
+  eventlog:
+    connectTimeout: 5
+    readTimeout: 30
+  messaging:
+    connectTimeout: 5
+    readTimeout: 30
+  notes:
+    connectTimeout: 5
+    readTimeout: 30
+logbook:
+  exclusionfilters:
+    json-path:
+      $..base64EncodedString: [base64]
+      $..content: [binary]
+logging:
+  level:
+    root: INFO
+openapi:
+  name: ${spring.application.name}
+  title: ${spring.application.name}
+  version: '@project.version@'
+resilience4j:
+  circuitbreaker:
+    instances:
+      messaging:
+        ignoreExceptions: se.sundsvall.dept44.exception.ClientProblem
+spring:
+  application:
+    name: api-support-management
+  cache:
+    cache-names: metadataCache
+    caffeine:
+      spec: maximumSize=200, expireAfterWrite=600s
+  datasource:
+    driver-class-name: org.mariadb.jdbc.Driver
+  flyway:
+    enabled: false
+  jpa:
+    properties:
+      jakarta:
+        persistence:
+          schema-generation:
+            database:
+              action: none
+  security:
+    oauth2:
+      client:
+        registration:
+          eventlog:
+            authorization-grant-type: client_credentials
+            provider: eventlog
+          messaging:
+            authorization-grant-type: client_credentials
+            provider: messaging
+          notes:
+            authorization-grant-type: client_credentials
+            provider: notes
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+turkraft:
+  springfilter:
+    offsetdatetimeformatter:
+      pattern: yyyy-MM-dd'T'HH:mm:ss.SSSXXX

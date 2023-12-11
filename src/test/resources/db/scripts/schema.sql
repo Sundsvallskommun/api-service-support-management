@@ -151,7 +151,7 @@
         modified datetime(6),
         municipality_id varchar(255) not null,
         namespace varchar(255) not null,
-        `type` enum ('CATEGORY','EXTERNAL_ID_TYPE','ROLE','STATUS','TYPE') not null,
+        `type` varchar(255) not null,
         primary key (id)
     ) engine=InnoDB;
 
@@ -210,10 +210,10 @@
        on external_tag (errand_id);
 
     create index idx_external_tag_key 
-       on external_tag (`key`);
+       on external_tag (key);
 
     alter table if exists external_tag 
-       add constraint uq_external_tag_errand_id_key unique (errand_id, `key`);
+       add constraint uq_external_tag_errand_id_key unique (errand_id, key);
 
     create index idx_namespace_municipality_id 
        on label (namespace, municipality_id);
@@ -246,10 +246,10 @@
        add constraint uq_category_id_name unique (category_id, name);
 
     create index idx_namespace_municipality_id_type 
-       on validation (namespace, municipality_id, `type`);
+       on validation (namespace, municipality_id, type);
 
     alter table if exists validation 
-       add constraint uq_namespace_municipality_id_type unique (namespace, municipality_id, `type`);
+       add constraint uq_namespace_municipality_id_type unique (namespace, municipality_id, type);
 
     alter table if exists attachment 
        add constraint fk_attachment_data_attachment 
