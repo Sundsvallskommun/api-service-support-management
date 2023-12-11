@@ -1,4 +1,6 @@
 integration:
+  emailreader:
+    url: http://localhost:${wiremock.server.port:}/api-emailreader
   eventlog:
     url: http://localhost:${wiremock.server.port:}/api-eventlog
   messaging:
@@ -24,6 +26,8 @@ spring:
     oauth2:
       client:
         provider:
+          emailreader:
+            token-uri: http://localhost:${wiremock.server.port:}/api-gateway/token
           eventlog:
             token-uri: http://localhost:${wiremock.server.port:}/api-gateway/token
           messaging:
@@ -31,6 +35,9 @@ spring:
           notes:
             token-uri: http://localhost:${wiremock.server.port:}/api-gateway/token
         registration:
+          emailreader:
+            client-id: the-client-id
+            client-secret: the-client-secret
           eventlog:
             client-id: the-client-id
             client-secret: the-client-secret
