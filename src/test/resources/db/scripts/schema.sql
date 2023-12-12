@@ -27,6 +27,35 @@
         primary key (id)
     ) engine=InnoDB;
 
+    create table communication (
+        viewed bit,
+        sent datetime(6),
+        errand_number varchar(255),
+        external_case_id varchar(255),
+        id varchar(255) not null,
+        message_body varchar(255),
+        subject varchar(255),
+        target varchar(255),
+        direction enum ('INBOUND','OUTBOUND'),
+        type enum ('SMS','EMAIL'),
+        primary key (id)
+    ) engine=InnoDB;
+
+    create table communication_attachment (
+        communication_attachment_data_id bigint not null,
+        communication_id varchar(255) not null,
+        content_type varchar(255),
+        id varchar(255) not null,
+        name varchar(255),
+        primary key (id)
+    ) engine=InnoDB;
+
+    create table communication_attachment_data (
+        id bigint not null auto_increment,
+        file longblob,
+        primary key (id)
+    ) engine=InnoDB;
+
     create table contact_channel (
         stakeholder_id bigint not null,
         type varchar(255),
@@ -167,6 +196,15 @@
     alter table if exists category 
        add constraint uq_namespace_municipality_id_name unique (namespace, municipality_id, name);
 
+    create index idx_errand_number 
+       on communication (errand_number);
+
+    alter table if exists communication 
+       add constraint uq_errand_number unique (errand_number);
+
+    alter table if exists communication_attachment 
+       add constraint UK_k3pya9ygw4dkeaqoe4sv733jx unique (communication_attachment_data_id);
+
     create index idx_errand_id 
        on errand (id);
 
@@ -260,6 +298,16 @@
        add constraint fk_errand_attachment_errand_id 
        foreign key (errand_id) 
        references errand (id);
+
+    alter table if exists communication_attachment 
+       add constraint fk_communication_attachment_data_communication_attachment 
+       foreign key (communication_attachment_data_id) 
+       references communication_attachment_data (id);
+
+    alter table if exists communication_attachment 
+       add constraint fk_communication_attachment_communication_id 
+       foreign key (communication_id) 
+       references communication (id);
 
     alter table if exists contact_channel 
        add constraint fk_stakeholder_contact_channel_stakeholder_id 
