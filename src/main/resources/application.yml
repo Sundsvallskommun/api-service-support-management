@@ -1,4 +1,7 @@
 integration:
+  emailreader:
+    connectTimeout: 5
+    readTimeout: 30
   eventlog:
     connectTimeout: 5
     readTimeout: 30
@@ -47,6 +50,9 @@ spring:
     oauth2:
       client:
         registration:
+          emailreader:
+            authorization-grant-type: client_credentials
+            provider: emailreader
           eventlog:
             authorization-grant-type: client_credentials
             provider: eventlog
