@@ -1,0 +1,470 @@
+openapi: 3.0.1
+info:
+  title: api-email-reader
+  contact: { }
+  license:
+    name: MIT License
+    url: https://opensource.org/licenses/MIT
+  version: "1.0"
+servers:
+  - url: http://localhost:8080
+    description: Generated server url
+tags:
+  - name: Email
+    description: Email
+  - name: Credentials
+    description: Credentials
+paths:
+  /credentials/{id}:
+    put:
+      tags:
+        - Credentials
+      summary: Update credentials
+      operationId: update
+      parameters:
+        - name: id
+          in: path
+          description: Email message ID
+          required: true
+          schema:
+            type: string
+          example: 81471222-5798-11e9-ae24-57fa13b361e1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Credentials'
+        required: true
+      responses:
+        "204":
+          description: No content
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        "502":
+          description: Bad Gateway
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+    delete:
+      tags:
+        - Credentials
+      summary: Delete credentials by id
+      operationId: delete
+      parameters:
+        - name: id
+          in: path
+          description: Email message ID
+          required: true
+          schema:
+            type: string
+          example: 81471222-5798-11e9-ae24-57fa13b361e1
+      responses:
+        "204":
+          description: No content
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        "502":
+          description: Bad Gateway
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /credentials:
+    get:
+      tags:
+        - Credentials
+      summary: Get a list of credentials
+      operationId: getAll
+      responses:
+        "200":
+          description: Ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Credentials'
+            application/problem+json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Credentials'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        "502":
+          description: Bad Gateway
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+    post:
+      tags:
+        - Credentials
+      summary: Create credentials
+      operationId: create
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Credentials'
+        required: true
+      responses:
+        "204":
+          description: No content
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        "502":
+          description: Bad Gateway
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /email:
+    get:
+      tags:
+        - Email
+      summary: Get a list of emails
+      operationId: getAllEmails
+      parameters:
+        - name: municipalityId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: namespace
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Email'
+            application/problem+json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Email'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        "502":
+          description: Bad Gateway
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /api-docs:
+    get:
+      tags:
+        - API
+      summary: OpenAPI
+      operationId: getApiDocs
+      responses:
+        "200":
+          description: OK
+          content:
+            application/yaml:
+              schema:
+                type: string
+      x-auth-type: None
+      x-throttling-tier: Unlimited
+      x-wso2-mutual-ssl: Optional
+  /email/{id}:
+    delete:
+      tags:
+        - Email
+      summary: Delete an email by messageID
+      operationId: deleteEmail
+      parameters:
+        - name: id
+          in: path
+          description: Email message ID
+          required: true
+          schema:
+            type: string
+          example: 81471222-5798-11e9-ae24-57fa13b361e1
+      responses:
+        "204":
+          description: No content
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        "502":
+          description: Bad Gateway
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+components:
+  schemas:
+    Credentials:
+      required:
+        - destinationFolder
+        - domain
+        - emailAddress
+        - namespace
+        - password
+        - username
+      type: object
+      properties:
+        id:
+          type: string
+          description: Credentials id
+          readOnly: true
+          example: 74531aac-ffea-42cc-8a0a-52715bb27850
+        username:
+          type: string
+          description: username to use for authentication against the email server
+          example: joe01doe
+        password:
+          type: string
+          description: password to use for authentication against the email server
+          writeOnly: true
+          example: mySecretPassword
+        emailAddress:
+          type: array
+          description: List of email addresses to check for new emails. The provided
+            user must have access to these email addresses.
+          example:
+            - myothersupportemail@sundsvall.se
+            - mysupportemail@sundsvall.se
+          items:
+            type: string
+        domain:
+          type: string
+          description: domain for the email server
+          example: https://mail.example.com/EWS/Exchange.asmx
+        municipalityId:
+          type: string
+          description: Municipality id
+          example: "2281"
+        namespace:
+          type: string
+          description: Namespace
+          example: my.namespace
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+            description: Metadata to add to the email
+            example: "{\"casetype\":\"myCaseType\",\"key2\":\"value2\"}"
+          description: Metadata to add to the email
+          example:
+            casetype: myCaseType
+            key2: value2
+        destinationFolder:
+          type: string
+          description: The folder to move emails to after processing
+          example: Processed
+      description: Email credentials to use for authentication against the email server
+    Problem:
+      type: object
+      properties:
+        instance:
+          type: string
+          format: uri
+        type:
+          type: string
+          format: uri
+        parameters:
+          type: object
+          additionalProperties:
+            type: object
+        status:
+          $ref: '#/components/schemas/StatusType'
+        title:
+          type: string
+        detail:
+          type: string
+    StatusType:
+      type: object
+      properties:
+        reasonPhrase:
+          type: string
+        statusCode:
+          type: integer
+          format: int32
+    Email:
+      type: object
+      properties:
+        recipients:
+          type: array
+          description: Recipient E-Mail addresses
+          example:
+            - myothersupportemail@sundsvall.se
+            - mysupportemail@sundsvall.se
+          items:
+            type: string
+        sender:
+          type: string
+          description: Sender E-Mail address
+          example: sender@sundsvall.se
+        subject:
+          type: string
+          description: E-mail subject
+          example: E-mail subject
+        message:
+          type: string
+          description: E-mail plain-text body
+          example: E-mail body
+        id:
+          type: string
+          description: E-mail message id
+          example: 74531aac-ffea-42cc-8a0a-52715bb27850
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+            description: Metadata for the email
+            example: "{\"casetype\":\"myCaseType\",\"key2\":\"value2\"}"
+          description: Metadata for the email
+          example:
+            casetype: myCaseType
+            key2: value2
+        receivedAt:
+          type: string
+          description: The date and time the email was received
+          format: date-time
+          example: 2021-09-01T12:00:00+02:00
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/EmailAttachment'
+      description: Email
+      readOnly: true
+    EmailAttachment:
+      type: object
+      properties:
+        name:
+          type: string
+          description: The attachment filename
+          example: test.txt
+        contentType:
+          type: string
+          description: The attachment content type
+          example: text/plain
+        content:
+          type: string
+          description: The attachment (file) content as a BASE64-encoded string
+          example: aGVsbG8gd29ybGQK
+      description: Attachment
+  securitySchemes: { }
