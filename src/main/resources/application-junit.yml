@@ -1,6 +1,8 @@
 integration:
   emailreader:
     url: http://emailreader.url
+    municipality-id: 1234
+    namespace: namespace
   eventlog:
     url: http://eventlog.url
   messaging:

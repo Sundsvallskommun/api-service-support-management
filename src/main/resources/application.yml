@@ -1,3 +1,7 @@
+scheduler:
+  emailreader:
+    initialDelay: PT1M
+    fixedRate: PT1M
 integration:
   emailreader:
     connectTimeout: 5

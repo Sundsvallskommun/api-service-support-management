@@ -24,6 +24,7 @@ import se.sundsvall.supportmanagement.api.model.communication.SmsRequest;
 import se.sundsvall.supportmanagement.integration.db.CommunicationAttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.CommunicationRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.model.CommunicationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.messaging.MessagingClient;
 import se.sundsvall.supportmanagement.service.mapper.CommunicationMapper;
@@ -106,6 +107,10 @@ public class CommunicationService {
 			throw Problem.valueOf(NOT_FOUND, String.format(ERRAND_ENTITY_NOT_FOUND, id, namespace, municipalityId));
 		}
 		return errandsRepository.getReferenceById(id);
+	}
+
+	public void saveCommunication(final CommunicationEntity communicationEntity) {
+		communicationRepository.save(communicationEntity);
 	}
 
 }
