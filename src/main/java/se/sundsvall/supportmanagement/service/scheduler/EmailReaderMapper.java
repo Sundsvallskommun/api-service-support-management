@@ -34,9 +34,9 @@ public class EmailReaderMapper {
 
 	List<AttachmentEntity> toAttachments(final Email email) {
 		if (email == null) {
-			return List.of();
+			return Collections.emptyList();
 		}
-		return Optional.ofNullable(email.getAttachments()).orElse(List.of())
+		return Optional.ofNullable(email.getAttachments()).orElse(Collections.emptyList())
 			.stream()
 			.map(emailAttachment ->
 				AttachmentEntity.create()

@@ -34,28 +34,28 @@ import generated.se.sundsvall.emailreader.Email;
 class EmailreaderServiceTest {
 
 	@Mock
-	EmailReaderProperties emailReaderProperties;
+	private EmailReaderProperties emailReaderProperties;
 
 	@Mock
-	EmailReaderClient emailReaderClient;
+	private EmailReaderClient emailReaderClient;
 
 	@Mock
-	ErrandsRepository errandRepository;
+	private ErrandsRepository errandRepository;
 
 	@Mock
-	ErrandService errandService;
+	private ErrandService errandService;
 
 	@Mock
-	CommunicationService communicationService;
+	private CommunicationService communicationService;
 
 	@Mock
-	EmailReaderMapper emailReaderMapper;
+	private EmailReaderMapper emailReaderMapper;
 
 	@Mock
-	AttachmentRepository attachmentRepository;
+	private AttachmentRepository attachmentRepository;
 
 	@InjectMocks
-	EmailreaderService emailreaderService;
+	private EmailreaderService emailreaderService;
 
 	@BeforeEach
 	void setUp() {

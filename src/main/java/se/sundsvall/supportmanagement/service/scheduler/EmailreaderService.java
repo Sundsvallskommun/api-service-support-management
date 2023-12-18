@@ -117,10 +117,8 @@ public class EmailreaderService {
 		return EmailRequest.create()
 			.withSubject(email.getSubject())
 			.withRecipient(email.getSender())
-			.withSender("noreply@sundsvall.se")
-			.withMessage("""
-				Ditt ärende är nu stängt på grund av saknad återkoppling. Vänligen återkom per telefon 060-19 15 00 eller via e-post kundcenter@sundsvall.se för att skapa nytt ärende.
-				Detta e-postmeddelande går ej att svara på.""");
+			.withSender(emailReaderProperties.errandClosedEmailSender())
+			.withMessage(emailReaderProperties.errandClosedEmailTemplate());
 	}
 
 }

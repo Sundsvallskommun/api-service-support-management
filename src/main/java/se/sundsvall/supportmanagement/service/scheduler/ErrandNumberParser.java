@@ -30,9 +30,8 @@ public final class ErrandNumberParser {
 				// If there is no space after '#', return the substring from '#' to the end
 				return subject.substring(hashIndex + 1);
 			}
-		} else {
-			return null;
 		}
+		return null;
 	}
 
 }
