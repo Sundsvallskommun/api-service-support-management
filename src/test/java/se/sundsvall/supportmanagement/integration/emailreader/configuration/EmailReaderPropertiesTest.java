@@ -20,6 +20,13 @@ class EmailReaderPropertiesTest {
 	void testProperties() {
 		assertThat(properties.connectTimeout()).isEqualTo(5);
 		assertThat(properties.readTimeout()).isEqualTo(30);
+		assertThat(properties.namespace()).isEqualTo("namespace");
+		assertThat(properties.municipalityId()).isEqualTo("1234");
+		assertThat(properties.errandClosedEmailTemplate()).isEqualTo("""
+			Ditt ärende är nu stängt på grund av saknad återkoppling. Vänligen återkom per telefon eller via e-post för att skapa nytt ärende.
+			Detta e-postmeddelande går ej att svara på.
+			""");
+		assertThat(properties.errandClosedEmailSender()).isEqualTo("noreply@sundsvall.se");
 	}
 
 }

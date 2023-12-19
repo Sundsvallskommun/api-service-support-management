@@ -317,4 +317,15 @@ class CommunicationServiceTest {
 			.withSenderName(SENDER_NAME)
 			.withSubject(SUBJECT);
 	}
+
+	@Test
+	void saveCommunication() {
+
+		service.saveCommunication(CommunicationEntity.create().withErrandNumber("123"));
+
+		verify(communicationRepositoryMock).save(any(CommunicationEntity.class));
+		verifyNoMoreInteractions(communicationRepositoryMock);
+		verifyNoInteractions(errandsRepositoryMock, communicationAttachmentRepositoryMock, messagingClientMock, communicationMapperMock);
+
+	}
 }

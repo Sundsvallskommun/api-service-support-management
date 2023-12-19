@@ -6,7 +6,10 @@ import static se.sundsvall.supportmanagement.integration.emailreader.configurati
 import java.util.List;
 
 import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import se.sundsvall.supportmanagement.integration.emailreader.configuration.EmailreaderConfiguration;
 
@@ -16,6 +19,9 @@ import generated.se.sundsvall.emailreader.Email;
 public interface EmailReaderClient {
 
 	@GetMapping(path = "/email", produces = APPLICATION_JSON_VALUE)
-	List<Email> getEmails();
+	List<Email> getEmails(@RequestParam("municipalityId") final String municipalityId, @RequestParam("namespace") final String namespace);
 
+
+	@DeleteMapping("/email/{id}")
+	void deleteEmail(@PathVariable String id);
 }
