@@ -17,6 +17,10 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.servlet.http.HttpServletResponse;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,12 +28,10 @@ import org.springframework.util.StreamUtils;
 import org.springframework.web.multipart.MultipartFile;
 import org.zalando.problem.Problem;
 
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
-import jakarta.servlet.http.HttpServletResponse;
 import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachmentHeader;
 import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 
 @Service
@@ -128,4 +130,13 @@ public class ErrandAttachmentService {
 			.filter(entity -> Objects.equals(municipalityId, entity.getMunicipalityId()))
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, String.format(ERRAND_ENTITY_NOT_FOUND, errandId, namespace, municipalityId)));
 	}
+
+	public void createErrandAttachment(final AttachmentEntity attachmentEntity, final ErrandEntity errandEntity) {
+		attachmentRepository.save(attachmentEntity);
+		final var revisionResult = revisionService.createErrandRevision(errandEntity);
+		if (revisionResult != null) {
+			eventService.createErrandEvent(UPDATE, EVENT_LOG_ADD_ATTACHMENT, errandEntity, revisionResult.latest(), revisionResult.previous());
+		}
+	}
+
 }

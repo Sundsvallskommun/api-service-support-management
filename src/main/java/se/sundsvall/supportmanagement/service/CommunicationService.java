@@ -48,20 +48,26 @@ public class CommunicationService {
 
 	private final CommunicationAttachmentRepository communicationAttachmentRepository;
 
+	private final CommunicationMapper communicationMapper;
+
+	private final ErrandAttachmentService errandAttachmentService;
+
 	public CommunicationService(final ErrandsRepository errandsRepository,
 		final MessagingClient messagingClient, final CommunicationRepository communicationRepository,
-		final CommunicationAttachmentRepository communicationAttachmentRepository) {
+		final CommunicationAttachmentRepository communicationAttachmentRepository, final CommunicationMapper communicationMapper, final ErrandAttachmentService errandAttachmentService) {
 		this.errandsRepository = errandsRepository;
 		this.messagingClient = messagingClient;
 		this.communicationRepository = communicationRepository;
 		this.communicationAttachmentRepository = communicationAttachmentRepository;
+		this.communicationMapper = communicationMapper;
+		this.errandAttachmentService = errandAttachmentService;
 	}
 
 
 	public List<Communication> readCommunications(final String namespace, final String municipalityId, final String id) {
 		final var entity = fetchEntity(id, namespace, municipalityId);
 
-		return CommunicationMapper.toCommunications(communicationRepository.findByErrandNumber(entity.getErrandNumber()));
+		return communicationMapper.toCommunications(communicationRepository.findByErrandNumber(entity.getErrandNumber()));
 	}
 
 	public void updateViewedStatus(final String namespace, final String municipalityId, final String id, final String communicationId, final boolean isViewed) {
@@ -95,18 +101,44 @@ public class CommunicationService {
 	}
 
 	public void sendEmail(final String namespace, final String municipalityId, final String id, final EmailRequest request) {
-		messagingClient.sendEmail(ASYNCHRONOUSLY, toEmailRequest(fetchEntity(id, namespace, municipalityId), request));
+
+		final var entity = fetchEntity(id, namespace, municipalityId);
+		messagingClient.sendEmail(ASYNCHRONOUSLY, toEmailRequest(entity, request));
+		
+		final var communicationEntity = communicationMapper.toCommunicationEntity(request)
+			.withErrandNumber(entity.getErrandNumber());
+
+		saveCommunication(communicationEntity);
+		saveAttachment(communicationEntity, entity);
+
 	}
 
 	public void sendSms(final String namespace, final String municipalityId, final String id, final SmsRequest request) {
-		messagingClient.sendSms(ASYNCHRONOUSLY, toSmsRequest(fetchEntity(id, namespace, municipalityId), request));
+
+		final var entity = fetchEntity(id, namespace, municipalityId);
+		messagingClient.sendSms(ASYNCHRONOUSLY, toSmsRequest(entity, request));
+
+		final var communicationEntity = communicationMapper.toCommunicationEntity(request)
+			.withErrandNumber(entity.getErrandNumber());
+
+		saveCommunication(communicationEntity);
+		saveAttachment(communicationEntity, entity);
 	}
+
 
 	private ErrandEntity fetchEntity(final String id, final String namespace, final String municipalityId) {
 		if (!errandsRepository.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)) {
 			throw Problem.valueOf(NOT_FOUND, String.format(ERRAND_ENTITY_NOT_FOUND, id, namespace, municipalityId));
 		}
-		return errandsRepository.getReferenceById(id);
+		return errandsRepository.findById(id).orElseThrow(() -> Problem.valueOf(NOT_FOUND, String.format(ERRAND_ENTITY_NOT_FOUND, id, namespace, municipalityId)));
+	}
+
+	private void saveAttachment(final CommunicationEntity communicationEntity, final ErrandEntity entity) {
+		communicationMapper.toAttachments(communicationEntity)
+			.forEach(attachmentEntity -> {
+				attachmentEntity.withErrandEntity(entity);
+				errandAttachmentService.createErrandAttachment(attachmentEntity, entity);
+			});
 	}
 
 	public void saveCommunication(final CommunicationEntity communicationEntity) {

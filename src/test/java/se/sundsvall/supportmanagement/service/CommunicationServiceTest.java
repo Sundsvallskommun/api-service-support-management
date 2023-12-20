@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -38,12 +39,14 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.zalando.problem.ThrowableProblem;
 
+import se.sundsvall.supportmanagement.api.model.communication.Communication;
 import se.sundsvall.supportmanagement.api.model.communication.EmailAttachment;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
 import se.sundsvall.supportmanagement.api.model.communication.SmsRequest;
 import se.sundsvall.supportmanagement.integration.db.CommunicationAttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.CommunicationRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationAttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationAttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationEntity;
@@ -108,6 +111,9 @@ class CommunicationServiceTest {
 	@Mock
 	private ServletOutputStream servletOutputStreamMock;
 
+	@Mock
+	private ErrandAttachmentService errandAttachmentServiceMock;
+
 	@InjectMocks
 	private CommunicationService service;
 
@@ -123,9 +129,11 @@ class CommunicationServiceTest {
 		// Mock
 		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(any(String.class), any(String.class), any(String.class)))
 			.thenReturn(true);
-		when(errandsRepositoryMock.getReferenceById(any(String.class))).thenReturn(errandEntityMock);
+		when(errandsRepositoryMock.findById(any(String.class))).thenReturn(Optional.of(errandEntityMock));
 		when(errandEntityMock.getErrandNumber()).thenReturn(errandNumber);
 		when(communicationRepositoryMock.findByErrandNumber(any(String.class))).thenReturn(List.of(CommunicationEntity.create()));
+		when(communicationMapperMock.toCommunications(anyList())).thenReturn(List.of(Communication.create()));
+
 
 		// Call
 		final var response = service.readCommunications(namespace, municipalityId, id);
@@ -134,7 +142,9 @@ class CommunicationServiceTest {
 		assertThat(response).isNotNull().hasSize(1);
 
 		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(any(String.class), any(String.class), any(String.class));
-		verify(errandsRepositoryMock).getReferenceById(any(String.class));
+		verify(errandsRepositoryMock).findById(any(String.class));
+		verify(communicationRepositoryMock).findByErrandNumber(any(String.class));
+		verify(communicationMapperMock).toCommunications(anyList());
 
 		verifyNoMoreInteractions(errandsRepositoryMock, communicationMapperMock, communicationRepositoryMock);
 		verifyNoInteractions(communicationAttachmentRepositoryMock, messagingClientMock);
@@ -153,7 +163,7 @@ class CommunicationServiceTest {
 		// Mock
 		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(any(String.class), any(String.class), any(String.class)))
 			.thenReturn(true);
-		when(errandsRepositoryMock.getReferenceById(any(String.class))).thenReturn(errandEntityMock);
+		when(errandsRepositoryMock.findById(any(String.class))).thenReturn(Optional.of(errandEntityMock));
 		when(communicationRepositoryMock.findById(any(String.class))).thenReturn(Optional.of(CommunicationEntity.create()));
 
 		// Call
@@ -161,7 +171,7 @@ class CommunicationServiceTest {
 
 		// Verification
 		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(any(String.class), any(String.class), any(String.class));
-		verify(errandsRepositoryMock).getReferenceById(any(String.class));
+		verify(errandsRepositoryMock).findById(any(String.class));
 		verify(communicationRepositoryMock).findById(any(String.class));
 		verify(communicationRepositoryMock).save(any(CommunicationEntity.class));
 
@@ -213,15 +223,22 @@ class CommunicationServiceTest {
 
 		// Mock
 		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
-		when(errandsRepositoryMock.getReferenceById(ERRAND_ID)).thenReturn(errandEntityMock);
+		when(errandsRepositoryMock.findById(ERRAND_ID)).thenReturn(Optional.of(errandEntityMock));
 		when(errandEntityMock.getId()).thenReturn(ERRAND_ID);
+		when(communicationMapperMock.toCommunicationEntity(request)).thenReturn(CommunicationEntity.create());
+		when(communicationMapperMock.toAttachments(any(CommunicationEntity.class))).thenReturn(List.of(AttachmentEntity.create()));
+
 		// Call
 		service.sendEmail(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, request);
 
 		// Verifications and assertions
 		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
-		verify(errandsRepositoryMock).getReferenceById(ERRAND_ID);
+		verify(errandsRepositoryMock).findById(ERRAND_ID);
 		verify(messagingClientMock).sendEmail(eq(true), messagingEmailCaptor.capture());
+		verify(communicationMapperMock).toCommunicationEntity(request);
+		verify(communicationRepositoryMock).save(any(CommunicationEntity.class));
+		verify(communicationMapperMock).toAttachments(any(CommunicationEntity.class));
+		verify(errandAttachmentServiceMock).createErrandAttachment(any(AttachmentEntity.class), any(ErrandEntity.class));
 
 		final var arguments = messagingEmailCaptor.getValue();
 		assertThat(arguments.getEmailAddress()).isEqualTo(RECIPIENT);
@@ -240,8 +257,8 @@ class CommunicationServiceTest {
 			generated.se.sundsvall.messaging.EmailAttachment::getName).containsExactly(tuple(FILE_CONTENT, IMAGE_PNG_VALUE, FILE_NAME));
 
 		// Verification
-		verifyNoMoreInteractions(errandsRepositoryMock, messagingClientMock);
-		verifyNoInteractions(communicationRepositoryMock, communicationAttachmentRepositoryMock, communicationMapperMock);
+		verifyNoMoreInteractions(errandsRepositoryMock, messagingClientMock, communicationMapperMock, communicationRepositoryMock);
+		verifyNoInteractions(communicationAttachmentRepositoryMock);
 
 
 	}
@@ -253,16 +270,22 @@ class CommunicationServiceTest {
 
 		// Mock
 		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
-		when(errandsRepositoryMock.getReferenceById(ERRAND_ID)).thenReturn(errandEntityMock);
+		when(errandsRepositoryMock.findById(ERRAND_ID)).thenReturn(Optional.of(errandEntityMock));
 		when(errandEntityMock.getId()).thenReturn(ERRAND_ID);
+		when(communicationMapperMock.toCommunicationEntity(request)).thenReturn(CommunicationEntity.create());
+		when(communicationMapperMock.toAttachments(any(CommunicationEntity.class))).thenReturn(List.of(AttachmentEntity.create()));
 
 		// Call
 		service.sendSms(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, request);
 
 		// Verifications and assertions
 		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
-		verify(errandsRepositoryMock).getReferenceById(ERRAND_ID);
+		verify(errandsRepositoryMock).findById(ERRAND_ID);
 		verify(messagingClientMock).sendSms(eq(true), messagingSmsCaptor.capture());
+		verify(communicationMapperMock).toCommunicationEntity(request);
+		verify(communicationRepositoryMock).save(any(CommunicationEntity.class));
+		verify(communicationMapperMock).toAttachments(any(CommunicationEntity.class));
+		verify(errandAttachmentServiceMock).createErrandAttachment(any(AttachmentEntity.class), any(ErrandEntity.class));
 
 		final var arguments = messagingSmsCaptor.getValue();
 		assertThat(arguments.getMessage()).isEqualTo(PLAIN_MESSAGE);
@@ -272,8 +295,8 @@ class CommunicationServiceTest {
 			ExternalReference::getValue).containsExactly(tuple(ERRAND_ID_KEY, ERRAND_ID));
 		assertThat(arguments.getSender()).isEqualTo(SENDER_NAME);
 
-		verifyNoMoreInteractions(errandsRepositoryMock, messagingClientMock);
-		verifyNoInteractions(communicationRepositoryMock, communicationAttachmentRepositoryMock, communicationMapperMock);
+		verifyNoMoreInteractions(communicationRepositoryMock, errandsRepositoryMock, messagingClientMock, communicationMapperMock);
+		verifyNoInteractions(communicationAttachmentRepositoryMock);
 
 
 	}
