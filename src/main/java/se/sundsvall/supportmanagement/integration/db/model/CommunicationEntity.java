@@ -15,7 +15,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 
 import org.hibernate.annotations.TimeZoneStorage;
 
@@ -25,8 +24,7 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.Direction;
 
 @Entity
 @Table(name = "communication",
-	indexes = {@Index(name = "idx_errand_number", columnList = "errand_number")},
-	uniqueConstraints = {@UniqueConstraint(name = "uq_errand_number", columnNames = {"errand_number"})})
+	indexes = {@Index(name = "idx_errand_number", columnList = "errand_number")})
 public class CommunicationEntity {
 
 	@Id

@@ -34,9 +34,6 @@ create table communication_attachment_data
 create index idx_errand_number
     on communication (errand_number);
 
-alter table if exists communication
-    add constraint uq_errand_number unique (errand_number);
-
 alter table if exists communication_attachment
     add constraint uq_communication_attachment_data_id unique (communication_attachment_data_id);
 

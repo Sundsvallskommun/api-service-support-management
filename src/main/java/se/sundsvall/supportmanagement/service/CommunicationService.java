@@ -36,7 +36,7 @@ public class CommunicationService {
 
 	private static final String COMMUNICATION_NOT_FOUND = "Communication with id %s not found";
 
-	private static final String ATTACHMENT_NOT_FOUND = "MessageAttachment not found";
+	private static final String ATTACHMENT_NOT_FOUND = "Communication attachment not found";
 
 	private static final boolean ASYNCHRONOUSLY = true;
 
