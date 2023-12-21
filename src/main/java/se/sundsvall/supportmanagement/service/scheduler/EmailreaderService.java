@@ -9,7 +9,6 @@ import java.util.concurrent.TimeUnit;
 import org.springframework.scheduling.annotation.Scheduled;
 
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
-import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.emailreader.EmailReaderClient;
@@ -36,20 +35,15 @@ public class EmailreaderService {
 	private final EmailReaderMapper emailReaderMapper;
 
 	private final ErrandsRepository errandRepository;
-
-	private final AttachmentRepository attachmentRepository;
-
 	public EmailreaderService(final EmailReaderProperties emailReaderProperties, final EmailReaderClient emailReaderClient,
 		final ErrandsRepository errandRepository, final ErrandService errandService, final CommunicationService communicationService,
-		final EmailReaderMapper emailReaderMapper,
-		final AttachmentRepository attachmentRepository) {
+		final EmailReaderMapper emailReaderMapper) {
 		this.emailReaderProperties = emailReaderProperties;
 		this.emailReaderClient = emailReaderClient;
 		this.errandRepository = errandRepository;
 		this.errandService = errandService;
 		this.communicationService = communicationService;
 		this.emailReaderMapper = emailReaderMapper;
-		this.attachmentRepository = attachmentRepository;
 	}
 
 
@@ -94,10 +88,9 @@ public class EmailreaderService {
 
 	private void saveEmail(final Email email, final ErrandEntity errand, final String errandNumber) {
 
-		communicationService.saveCommunication(emailReaderMapper.toCommunicationEntity(email).withErrandNumber(errandNumber));
-		attachmentRepository.saveAll(emailReaderMapper.toAttachments(email).stream()
-			.map(attachment -> attachment.withErrandEntity(errand))
-			.toList());
+		final var communicationEntity = emailReaderMapper.toCommunicationEntity(email).withErrandNumber(errandNumber);
+		communicationService.saveCommunication(communicationEntity);
+		communicationService.saveAttachment(communicationEntity, errand);
 	}
 
 	private boolean isErrandInactive(final ErrandEntity errand) {

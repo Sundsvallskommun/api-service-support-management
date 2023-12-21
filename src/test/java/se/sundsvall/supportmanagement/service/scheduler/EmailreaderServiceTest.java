@@ -1,6 +1,5 @@
 package se.sundsvall.supportmanagement.service.scheduler;
 
-import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.times;
@@ -20,7 +19,6 @@ import org.mockito.MockitoAnnotations;
 
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
-import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
@@ -50,9 +48,6 @@ class EmailreaderServiceTest {
 
 	@Mock
 	private EmailReaderMapper emailReaderMapper;
-
-	@Mock
-	private AttachmentRepository attachmentRepository;
 
 	@InjectMocks
 	private EmailreaderService emailreaderService;
@@ -89,11 +84,10 @@ class EmailreaderServiceTest {
 		verify(errandRepository, times(1)).save(any(ErrandEntity.class));
 		verify(emailReaderMapper, times(1)).toCommunicationEntity(any(Email.class));
 		verify(emailReaderClient, times(1)).deleteEmail(anyString());
-		verify(emailReaderMapper, times(1)).toAttachments(any(Email.class));
-		verify(attachmentRepository, times(1)).saveAll(anyList());
+		verify(communicationService, times(1)).saveAttachment(any(CommunicationEntity.class), any(ErrandEntity.class));
 		verify(communicationService, times(1)).saveCommunication(any(CommunicationEntity.class));
 
-		verifyNoMoreInteractions(emailReaderClient, errandService, errandRepository, emailReaderMapper, attachmentRepository, communicationService);
+		verifyNoMoreInteractions(emailReaderClient, errandService, errandRepository, emailReaderMapper, communicationService);
 	}
 
 
@@ -119,12 +113,11 @@ class EmailreaderServiceTest {
 		verify(emailReaderClient, times(1)).getEmails(anyString(), anyString());
 		verify(errandRepository, times(1)).findByErrandNumber(anyString());
 		verify(emailReaderMapper, times(1)).toCommunicationEntity(any(Email.class));
-		verify(emailReaderMapper, times(1)).toAttachments(any(Email.class));
-		verify(attachmentRepository, times(1)).saveAll(anyList());
+		verify(communicationService, times(1)).saveAttachment(any(CommunicationEntity.class), any(ErrandEntity.class));
 		verify(communicationService, times(1)).saveCommunication(any(CommunicationEntity.class));
 		verify(emailReaderClient, times(1)).deleteEmail(anyString());
 		verify(communicationService, times(1)).sendEmail(anyString(), anyString(), anyString(), any(EmailRequest.class));
-		verifyNoMoreInteractions(emailReaderClient, errandService, errandRepository, emailReaderMapper, attachmentRepository, communicationService);
+		verifyNoMoreInteractions(emailReaderClient, errandService, errandRepository, emailReaderMapper, communicationService);
 
 	}
 
@@ -160,11 +153,10 @@ class EmailreaderServiceTest {
 		verify(emailReaderMapper, times(1)).toErrand(any(Email.class));
 		verify(emailReaderMapper, times(1)).toCommunicationEntity(any(Email.class));
 		verify(emailReaderClient, times(1)).deleteEmail(anyString());
-		verify(emailReaderMapper, times(1)).toAttachments(any(Email.class));
-		verify(attachmentRepository, times(1)).saveAll(anyList());
+		verify(communicationService, times(1)).saveAttachment(any(CommunicationEntity.class), any(ErrandEntity.class));
 		verify(communicationService, times(1)).saveCommunication(any(CommunicationEntity.class));
 
-		verifyNoMoreInteractions(emailReaderClient, errandService, errandRepository, emailReaderMapper, attachmentRepository, communicationService);
+		verifyNoMoreInteractions(emailReaderClient, errandService, errandRepository, emailReaderMapper, communicationService);
 
 	}
 

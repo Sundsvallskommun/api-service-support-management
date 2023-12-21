@@ -133,7 +133,7 @@ public class CommunicationService {
 		return errandsRepository.findById(id).orElseThrow(() -> Problem.valueOf(NOT_FOUND, String.format(ERRAND_ENTITY_NOT_FOUND, id, namespace, municipalityId)));
 	}
 
-	private void saveAttachment(final CommunicationEntity communicationEntity, final ErrandEntity entity) {
+	public void saveAttachment(final CommunicationEntity communicationEntity, final ErrandEntity entity) {
 		communicationMapper.toAttachments(communicationEntity)
 			.forEach(attachmentEntity -> {
 				attachmentEntity.withErrandEntity(entity);
