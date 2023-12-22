@@ -18,8 +18,8 @@ integration:
 logbook:
   exclusionfilters:
     json-path:
-      $..base64EncodedString: [base64]
-      $..content: [binary]
+      '$..base64EncodedString': '[base64]'
+      '$..content': '[binary]'
 logging:
   level:
     root: INFO
