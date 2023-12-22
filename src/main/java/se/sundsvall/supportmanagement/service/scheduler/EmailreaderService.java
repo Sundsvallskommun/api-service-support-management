@@ -7,6 +7,7 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
 
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
@@ -18,6 +19,8 @@ import se.sundsvall.supportmanagement.service.ErrandService;
 
 import generated.se.sundsvall.emailreader.Email;
 
+
+@Component
 public class EmailreaderService {
 
 	private static final String ERRAND_STATUS_SOLVED = "SOLVED";
@@ -102,7 +105,7 @@ public class EmailreaderService {
 	private void sendEmail(final ErrandEntity errand, final Email email) {
 
 		final var emailRequest = createEmailRequest(email);
-		communicationService.sendEmail(emailReaderProperties.municipalityId(), emailReaderProperties.namespace(), errand.getId(), emailRequest);
+		communicationService.sendEmail(emailReaderProperties.namespace(), emailReaderProperties.municipalityId(), errand.getId(), emailRequest);
 	}
 
 	private EmailRequest createEmailRequest(final Email email) {
