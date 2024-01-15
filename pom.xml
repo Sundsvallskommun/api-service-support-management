@@ -18,7 +18,7 @@
 		<published.container.port.production>9094</published.container.port.production>
 		<app.jvm.xmx.mb>512</app.jvm.xmx.mb>
 		<!-- Service properties -->
-		<spring-filter.version>3.1.6</spring-filter.version>
+		<spring-filter.version>3.1.7</spring-filter.version>
 		<tika-core.version>2.9.1</tika-core.version>
 		<flipkart.zjsonpatch.version>0.4.16</flipkart.zjsonpatch.version>
 		<generated-sources-path>${project.build.directory}/generated-sources</generated-sources-path>
