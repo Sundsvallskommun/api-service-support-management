@@ -188,19 +188,19 @@
        on attachment (file_name);
 
     alter table if exists attachment 
-       add constraint UK_scgvw835joke5mqsmk3fhs732 unique (attachment_data_id);
+       add constraint uq_attachment_data_id unique (attachment_data_id);
 
-    create index idx_namespace_municipality_id 
+    create index idx_namespace_municipality_id
        on category (namespace, municipality_id);
 
-    alter table if exists category 
+    alter table if exists category
        add constraint uq_namespace_municipality_id_name unique (namespace, municipality_id, name);
 
-    create index idx_errand_number 
+    create index idx_errand_number
        on communication (errand_number);
 
-    alter table if exists communication_attachment 
-       add constraint UK_k3pya9ygw4dkeaqoe4sv733jx unique (communication_attachment_data_id);
+    alter table if exists communication_attachment
+       add constraint uq_communication_attachment_data_id unique (communication_attachment_data_id);
 
     create index idx_errand_id 
        on errand (id);
