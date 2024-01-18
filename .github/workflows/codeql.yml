@@ -12,9 +12,13 @@
 name: "CodeQL"
 
 on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened]
   push:
-  schedule:
-    - cron: '43 4 * * 5'
+    branches:
+      - main
+
 env:
   JAVA_TOOL_OPTIONS: -Dmaven.wagon.http.retryHandler.class=standard -Dmaven.wagon.http.retryHandler.count=3 -Dmaven.wagon.httpconnectionManager.ttlSeconds=60
 jobs:
@@ -25,7 +29,7 @@ jobs:
       actions: read
       contents: read
       security-events: write
-
+      
     strategy:
       fail-fast: false
       matrix:
