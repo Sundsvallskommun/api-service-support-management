@@ -26,7 +26,8 @@
 					"name": "Bender Bending Rodriguez",
 					"address": "bender@rodriguez.com"
 				},
-				"attachments": []
+				"attachments": [],
+				"headers": {}
 			}
 		} ]
 	},
