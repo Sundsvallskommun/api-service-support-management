@@ -15,9 +15,11 @@ import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationAttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationAttachmentEntity;
+import se.sundsvall.supportmanagement.integration.db.model.CommunicationEmailHeaderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.Direction;
+import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
 import se.sundsvall.supportmanagement.service.util.BlobBuilder;
 
 import generated.se.sundsvall.emailreader.Email;
@@ -59,7 +61,20 @@ public class EmailReaderMapper {
 			.withSent(email.getReceivedAt())
 			.withType(CommunicationType.EMAIL)
 			.withTarget(email.getSender())
+			.withEmailHeaders(toEmailHeaders(email))
 			.withAttachments(toMessageAttachments(email.getAttachments()));
+	}
+
+	private List<CommunicationEmailHeaderEntity> toEmailHeaders(final Email email) {
+
+		return Optional.ofNullable(email.getHeaders())
+			.orElseGet(Collections::emptyMap)
+			.entrySet()
+			.stream()
+			.map(entry -> CommunicationEmailHeaderEntity.create()
+				.withHeader(EmailHeader.valueOf(entry.getKey()))
+				.withValues(entry.getValue()))
+			.toList();
 	}
 
 	private List<CommunicationAttachmentEntity> toMessageAttachments(final List<EmailAttachment> attachments) {

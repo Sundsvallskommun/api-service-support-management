@@ -17,6 +17,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationType;
+import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
 import se.sundsvall.supportmanagement.service.util.BlobBuilder;
 
 import generated.se.sundsvall.emailreader.Email;
@@ -80,6 +81,7 @@ class EmailReaderMapperTest {
 			.recipients(List.of("someRecipient"))
 			.sender("someSender")
 			.message("someMessage")
+			.headers(Map.of(EmailHeader.MESSAGE_ID.toString(), List.of("someValue")))
 			.receivedAt(OffsetDateTime.now())
 			.attachments(List.of(new EmailAttachment()
 				.name("someName")
@@ -101,6 +103,9 @@ class EmailReaderMapperTest {
 		assertThat(result.getAttachments().getFirst().getName()).isEqualTo("someName");
 		assertThat(result.getAttachments().getFirst().getContentType()).isEqualTo("text/plain");
 		assertThat(result.getAttachments().getFirst().getAttachmentData().getFile()).isNotNull().isEqualTo(blobMock);
+		assertThat(result.getEmailHeaders()).isNotNull().hasSize(1);
+		assertThat(result.getEmailHeaders().getFirst().getHeader()).isEqualTo(EmailHeader.MESSAGE_ID);
+		assertThat(result.getEmailHeaders().getFirst().getValues()).isNotNull().hasSize(1).contains("someValue");
 	}
 
 	@Test
