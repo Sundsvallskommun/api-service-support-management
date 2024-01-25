@@ -9,6 +9,7 @@ import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
@@ -23,6 +24,10 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import jakarta.persistence.EntityManager;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.http.HttpServletResponse;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -36,10 +41,6 @@ import org.springframework.util.StreamUtils;
 import org.springframework.web.multipart.MultipartFile;
 import org.zalando.problem.ThrowableProblem;
 
-import generated.se.sundsvall.eventlog.Event;
-import jakarta.persistence.EntityManager;
-import jakarta.servlet.ServletOutputStream;
-import jakarta.servlet.http.HttpServletResponse;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
@@ -48,16 +49,25 @@ import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapper;
 
+import generated.se.sundsvall.eventlog.Event;
+
 @ExtendWith(MockitoExtension.class)
 class ErrandAttachmentServiceTest {
 
 	private static final String NAMESPACE = "namespace";
+
 	private static final String MUNICIPALITY_ID = "municipalityId";
+
 	private static final String ERRAND_ID = "errandId";
+
 	private static final String ATTACHMENT_ID = "attachmentId";
+
 	private static final String FILE_NAME = "fileName";
+
 	private static final String MIME_TYPE = "mimeType";
+
 	private static final String EVENT_LOG_ADD_ATTACHMENT = "En bilaga har lagts till i ärendet.";
+
 	private static final String EVENT_LOG_REMOVE_ATTACHMENT = "En bilaga har tagits bort från ärendet.";
 
 	@Mock
@@ -173,7 +183,7 @@ class ErrandAttachmentServiceTest {
 
 
 		// Call
-		try (MockedStatic<StreamUtils> streamMock = Mockito.mockStatic(StreamUtils.class)){
+		try (final MockedStatic<StreamUtils> streamMock = Mockito.mockStatic(StreamUtils.class)) {
 
 			service.readErrandAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ATTACHMENT_ID, httpServletResponseMock);
 
@@ -257,7 +267,7 @@ class ErrandAttachmentServiceTest {
 		when(errandMock.getAttachments()).thenReturn(new ArrayList<>(List.of(attachmentMock)));
 		when(attachmentMock.getId()).thenReturn(ATTACHMENT_ID);
 		when(errandsRepositoryMock.save(any(ErrandEntity.class))).thenReturn(errandMock);
-		when(revisionServiceMock.createErrandRevision(errandMock)).thenReturn(new RevisionResult(previousRevisionMock,currentRevisionMock));
+		when(revisionServiceMock.createErrandRevision(errandMock)).thenReturn(new RevisionResult(previousRevisionMock, currentRevisionMock));
 
 		// Call
 		service.deleteErrandAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ATTACHMENT_ID);
@@ -310,4 +320,22 @@ class ErrandAttachmentServiceTest {
 		verify(errandsRepositoryMock, never()).save(any());
 		verifyNoInteractions(revisionServiceMock, eventServiceMock);
 	}
+
+	@Test
+	void createAttachment() {
+
+		// Mock
+		when(revisionServiceMock.createErrandRevision(errandMock)).thenReturn(new RevisionResult(previousRevisionMock, currentRevisionMock));
+
+		// Call
+		service.createErrandAttachment(attachmentMock, errandMock);
+
+		// Assertions and verifications
+		verify(attachmentRepositoryMock).save(attachmentMock);
+		verify(revisionServiceMock).createErrandRevision(errandMock);
+		verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_ADD_ATTACHMENT, errandMock, currentRevisionMock, previousRevisionMock);
+		verifyNoInteractions(errandsRepositoryMock);
+		verifyNoMoreInteractions(attachmentRepositoryMock, revisionServiceMock, eventServiceMock);
+	}
+
 }

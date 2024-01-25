@@ -1,0 +1,45 @@
+{
+  "name": "api-eventlog-createEvent",
+  "request": {
+    "method": "POST",
+    "urlPath": "/api-eventlog/cc236cf1-c00f-4479-8341-ecf5dd90b5b9",
+    "headers": {
+      "Authorization": {
+        "equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
+      }
+    },
+    "bodyPatterns": [
+      {
+        "ignoreArrayOrder": true,
+        "equalToJson": {
+          "type": "UPDATE",
+          "message": "En bilaga har lagts till i ärendet.",
+          "owner": "SupportManagement",
+          "created": "${json-unit.any-string}",
+          "historyReference": "${json-unit.any-string}",
+          "sourceType": "Errand",
+          "metadata": [
+            {
+              "key": "CurrentVersion",
+              "value": "0"
+            },
+            {
+              "key": "CurrentRevision",
+              "value": "${json-unit.any-string}"
+            },
+            {
+              "key": "ExecutedBy",
+              "value": "${json-unit.any-string}"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "response": {
+    "headers": {
+      "Content-Type": "*/*"
+    },
+    "status": 202
+  }
+}

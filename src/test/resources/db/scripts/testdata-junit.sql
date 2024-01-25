@@ -124,4 +124,28 @@ VALUES ('59328e70-4297-4bb5-ba69-cb17f2d15a17', '9791682e-4ba8-4f3a-857a-54e1483
 INSERT INTO label(id, created, municipality_id, namespace, json_structure)
 VALUES (1, now(), 'municipalityId-1', 'namespace-1', '[{"key": "value"}]'),
        (2, now(), 'municipalityId-2', 'namespace-1', '[{"key": "value"}]');
-;
+
+-------------------------------------
+-- Communication
+-------------------------------------
+INSERT INTO communication(viewed, sent, id, errand_number, external_case_id,
+                          message_body, target, subject, direction, type)
+VALUES (0, '2023-01-01 12:00:00.000', 'comm1', 'errand1', 'case1',
+        'message body 1', '1234567890', 'subject1', 'INBOUND', 'SMS'),
+       (1, '2023-01-02 12:00:00.000', 'comm2',  'errand2', 'case2',
+        'message body 2', '0987654321', 'subject2', 'OUTBOUND', 'EMAIL');
+
+-------------------------------------
+-- Communication_attachment_data
+-------------------------------------
+INSERT INTO communication_attachment_data(id, file)
+VALUES (1, UNHEX('48656C6C6F20576F726C6421')), -- 'Hello World!' in hexadecimal
+       (2, UNHEX('546573742046696C652032')); -- 'Test File 2' in hexadecimal
+
+-------------------------------------
+-- Communication_attachment
+-------------------------------------
+INSERT INTO communication_attachment(communication_attachment_data_id, id,
+                                     communication_id, content_type, name)
+VALUES (1, 'attach1', 'comm1', 'text/plain', 'attachment1'),
+       (2, 'attach2', 'comm2', 'image/png', 'attachment2');

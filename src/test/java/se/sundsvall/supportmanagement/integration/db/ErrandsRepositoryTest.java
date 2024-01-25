@@ -4,6 +4,7 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.Assertions.within;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -198,5 +199,21 @@ class ErrandsRepositoryTest {
 		assertThat(errandsRepository.existsByIdAndNamespaceAndMunicipalityId("ERRAND_ID-1", "NAMESPACE.1", "2305")).isFalse();
 		assertThat(errandsRepository.existsByIdAndNamespaceAndMunicipalityId("ERRAND_ID-1", "NAMESPACE.2", "2281")).isFalse();
 		assertThat(errandsRepository.existsByIdAndNamespaceAndMunicipalityId("ERRAND_ID-3", "NAMESPACE.1", "2281")).isFalse();
+	}
+
+	@Test
+	void findByErrandNumber() {
+		final var errandEntities = errandsRepository.findByErrandNumber("KC-23020001");
+		assertThat(errandEntities).isNotNull();
+		errandEntities.ifPresentOrElse(
+			errandEntity -> assertThat(errandEntity.getId()).isEqualTo("ERRAND_ID-1"),
+			() -> fail("Expected errandEntity to be present")
+		);
+	}
+
+	@Test
+	void findByErrandNumberNotFound() {
+		final var errandEntities = errandsRepository.findByErrandNumber("KC-22020002");
+		assertThat(errandEntities).isEmpty();
 	}
 }

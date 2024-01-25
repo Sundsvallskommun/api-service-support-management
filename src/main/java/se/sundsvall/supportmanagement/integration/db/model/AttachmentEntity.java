@@ -13,6 +13,7 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import org.hibernate.annotations.TimeZoneStorage;
 import org.hibernate.annotations.UuidGenerator;
 
@@ -28,6 +29,9 @@ import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 @Table(name = "attachment",
 	indexes = {
 		@Index(name = "idx_attachment_file_name", columnList = "file_name")
+	},
+	uniqueConstraints = {
+		@UniqueConstraint(name = "uq_attachment_data_id", columnNames = { "attachment_data_id" })
 	})
 public class AttachmentEntity {
 
