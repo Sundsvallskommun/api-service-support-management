@@ -1,4 +1,12 @@
 integration:
+  emailreader:
+    url: http://emailreader.url
+    municipality-id: 1234
+    namespace: namespace
+    errand-closed-email-template: |
+      Ditt ärende är nu stängt på grund av saknad återkoppling. Vänligen återkom per telefon eller via e-post för att skapa nytt ärende.
+      Detta e-postmeddelande går ej att svara på.
+    errand-closed-email-sender: noreply@sundsvall.se
   eventlog:
     url: http://eventlog.url
   messaging:
@@ -32,6 +40,8 @@ spring:
     oauth2:
       client:
         provider:
+          emailreader:
+            token-uri: http://token.url
           eventlog:
             token-uri: http://token.url
           messaging:
@@ -39,6 +49,9 @@ spring:
           notes:
             token-uri: http://token.url
         registration:
+          emailreader:
+            client-id: the-client-id
+            client-secret: the-client-secret
           eventlog:
             client-id: the-client-id
             client-secret: the-client-secret

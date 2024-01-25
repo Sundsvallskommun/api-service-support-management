@@ -11,6 +11,8 @@ import java.util.Base64.Decoder;
 import java.util.Base64.Encoder;
 import java.util.List;
 
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+
 import generated.se.sundsvall.messaging.EmailAttachment;
 import generated.se.sundsvall.messaging.EmailRequest;
 import generated.se.sundsvall.messaging.EmailRequestParty;
@@ -18,7 +20,7 @@ import generated.se.sundsvall.messaging.EmailSender;
 import generated.se.sundsvall.messaging.ExternalReference;
 import generated.se.sundsvall.messaging.SmsRequest;
 import generated.se.sundsvall.messaging.SmsRequestParty;
-import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import io.netty.util.internal.StringUtil;
 
 public class MessagingMapper {
 
@@ -83,6 +85,10 @@ public class MessagingMapper {
 	}
 
 	private static String addBase64Encoding(String message) {
+
+		if (StringUtil.isNullOrEmpty(message)) {
+			return message;
+		}
 		try {
 			BASE64_DECODER.decode(message.getBytes(StandardCharsets.UTF_8));
 			return message; // If decoding passes, the message is already in base64 format

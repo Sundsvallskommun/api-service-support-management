@@ -38,12 +38,12 @@ public class ErrandCommunicationsAttachmentResource {
 		this.service = service;
 	}
 
-	@Operation(summary = "Get a streamed communication attachment.", description = "Fetches the message attachment that matches the provided id in a streamed manner")
+	@Operation(summary = "Get a streamed communication attachment.", description = "Fetches the communication attachment that matches the provided id in a streamed manner")
 	@GetMapping(path = "/{attachmentID}/streamed", produces = {ALL_VALUE, APPLICATION_PROBLEM_JSON_VALUE})
 	@ApiResponse(responseCode = "200", description = "Successful Operation", useReturnTypeSchema = true)
 	@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	public void getMessageAttachmentStreamed(
-		@Parameter(name = "messageID", description = "Message attachment id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable final String attachmentID, final HttpServletResponse response) {
+		@Parameter(name = "attachmentID", description = "Message attachment id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable final String attachmentID, final HttpServletResponse response) {
 		service.getMessageAttachmentStreamed(attachmentID, response);
 	}
 
