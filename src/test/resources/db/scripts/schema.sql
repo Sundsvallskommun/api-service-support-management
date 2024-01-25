@@ -56,6 +56,20 @@
         primary key (id)
     ) engine=InnoDB;
 
+    create table communication_email_header (
+        communication_id varchar(255),
+        id varchar(255) not null,
+        header_key enum ('IN_REPLY_TO','REFERENCES','MESSAGE_ID'),
+        primary key (id)
+    ) engine=InnoDB;
+
+    create table communication_email_header_value (
+        order_index integer not null,
+        value varchar(2048),
+        header_id varchar(255) not null,
+        primary key (order_index, header_id)
+    ) engine=InnoDB;
+
     create table contact_channel (
         stakeholder_id bigint not null,
         type varchar(255),
@@ -190,16 +204,16 @@
     alter table if exists attachment 
        add constraint uq_attachment_data_id unique (attachment_data_id);
 
-    create index idx_namespace_municipality_id
+    create index idx_namespace_municipality_id 
        on category (namespace, municipality_id);
 
-    alter table if exists category
+    alter table if exists category 
        add constraint uq_namespace_municipality_id_name unique (namespace, municipality_id, name);
 
-    create index idx_errand_number
+    create index idx_errand_number 
        on communication (errand_number);
 
-    alter table if exists communication_attachment
+    alter table if exists communication_attachment 
        add constraint uq_communication_attachment_data_id unique (communication_attachment_data_id);
 
     create index idx_errand_id 
@@ -305,6 +319,16 @@
        add constraint fk_communication_attachment_communication_id 
        foreign key (communication_id) 
        references communication (id);
+
+    alter table if exists communication_email_header 
+       add constraint fk_email_header_email_id 
+       foreign key (communication_id) 
+       references communication (id);
+
+    alter table if exists communication_email_header_value 
+       add constraint fk_header_value_header_id 
+       foreign key (header_id) 
+       references communication_email_header (id);
 
     alter table if exists contact_channel 
        add constraint fk_stakeholder_contact_channel_stakeholder_id 

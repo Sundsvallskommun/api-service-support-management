@@ -11,8 +11,10 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.ForeignKey;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
@@ -63,6 +65,11 @@ public class CommunicationEntity {
 
 	@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, mappedBy = "communicationEntity")
 	private List<CommunicationAttachmentEntity> attachments;
+
+	@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+	@JoinColumn(name = "communication_id", referencedColumnName = "id",
+		foreignKey = @ForeignKey(name = "fk_email_header_email_id"))
+	private List<CommunicationEmailHeaderEntity> emailHeaders;
 
 	public static CommunicationEntity create() {
 		return new CommunicationEntity();
@@ -211,17 +218,30 @@ public class CommunicationEntity {
 		return this;
 	}
 
+	public List<CommunicationEmailHeaderEntity> getEmailHeaders() {
+		return emailHeaders;
+	}
+
+	public void setEmailHeaders(final List<CommunicationEmailHeaderEntity> emailHeaders) {
+		this.emailHeaders = emailHeaders;
+	}
+
+	public CommunicationEntity withEmailHeaders(final List<CommunicationEmailHeaderEntity> emailHeaders) {
+		this.emailHeaders = emailHeaders;
+		return this;
+	}
+
 	@Override
 	public boolean equals(final Object o) {
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
 		final CommunicationEntity that = (CommunicationEntity) o;
-		return viewed == that.viewed && Objects.equals(id, that.id) && Objects.equals(errandNumber, that.errandNumber) && direction == that.direction && Objects.equals(externalCaseID, that.externalCaseID) && Objects.equals(subject, that.subject) && Objects.equals(messageBody, that.messageBody) && Objects.equals(sent, that.sent) && type == that.type && Objects.equals(target, that.target) && Objects.equals(attachments, that.attachments);
+		return viewed == that.viewed && Objects.equals(id, that.id) && Objects.equals(errandNumber, that.errandNumber) && direction == that.direction && Objects.equals(externalCaseID, that.externalCaseID) && Objects.equals(subject, that.subject) && Objects.equals(messageBody, that.messageBody) && Objects.equals(sent, that.sent) && type == that.type && Objects.equals(target, that.target) && Objects.equals(attachments, that.attachments) && Objects.equals(emailHeaders, that.emailHeaders);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, errandNumber, direction, externalCaseID, subject, messageBody, sent, type, target, viewed, attachments);
+		return Objects.hash(id, errandNumber, direction, externalCaseID, subject, messageBody, sent, type, target, viewed, attachments, emailHeaders);
 	}
 
 	@Override
@@ -238,6 +258,7 @@ public class CommunicationEntity {
 			", target='" + target + '\'' +
 			", viewed=" + viewed +
 			", attachments=" + attachments +
+			", emailHeaders=" + emailHeaders +
 			'}';
 	}
 

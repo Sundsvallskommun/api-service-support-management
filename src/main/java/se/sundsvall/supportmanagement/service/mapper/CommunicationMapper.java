@@ -6,9 +6,12 @@ import static se.sundsvall.supportmanagement.service.util.ServiceUtil.detectMime
 import java.time.OffsetDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import se.sundsvall.supportmanagement.api.model.communication.Communication;
@@ -20,9 +23,11 @@ import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationAttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationAttachmentEntity;
+import se.sundsvall.supportmanagement.integration.db.model.CommunicationEmailHeaderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.Direction;
+import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
 import se.sundsvall.supportmanagement.service.util.BlobBuilder;
 
 @Component
@@ -42,7 +47,9 @@ public class CommunicationMapper {
 		if (entity == null) {
 			return null;
 		}
+		
 		return Communication.create()
+			.withEmailHeaders(toHeaders(entity))
 			.withCommunicationID(entity.getId())
 			.withErrandNumber(entity.getErrandNumber())
 			.withDirection(entity.getDirection())
@@ -53,6 +60,13 @@ public class CommunicationMapper {
 			.withTarget(entity.getTarget())
 			.withViewed(entity.isViewed())
 			.withCommunicationAttachments(toAttachments(entity.getAttachments()));
+	}
+
+	@NotNull
+	private static Map<EmailHeader, List<String>> toHeaders(final CommunicationEntity entity) {
+		return Optional.ofNullable(entity.getEmailHeaders())
+			.orElse(List.of()).stream()
+			.collect(Collectors.toMap(CommunicationEmailHeaderEntity::getHeader, CommunicationEmailHeaderEntity::getValues));
 	}
 
 
@@ -90,6 +104,7 @@ public class CommunicationMapper {
 
 	public CommunicationEntity toCommunicationEntity(final EmailRequest request) {
 		return CommunicationEntity.create()
+			.withEmailHeaders(toEmailHeaders(request.getEmailHeaders()))
 			.withId(UUID.randomUUID().toString())
 			.withDirection(Direction.OUTBOUND)
 			.withMessageBody(request.getMessage())
@@ -99,6 +114,15 @@ public class CommunicationMapper {
 			.withTarget(request.getRecipient())
 			.withAttachments(toMessageAttachments(request.getAttachments()))
 			.withViewed(false);
+	}
+
+	private List<CommunicationEmailHeaderEntity> toEmailHeaders(final Map<EmailHeader, List<String>> emailHeaders) {
+		return Optional.ofNullable(emailHeaders)
+			.orElse(Collections.emptyMap()).entrySet().stream()
+			.map(entry -> CommunicationEmailHeaderEntity.create()
+				.withHeader(entry.getKey())
+				.withValues(entry.getValue()))
+			.toList();
 	}
 
 	public CommunicationEntity toCommunicationEntity(final SmsRequest request) {

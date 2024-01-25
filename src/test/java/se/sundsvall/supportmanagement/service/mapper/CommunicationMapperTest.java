@@ -8,6 +8,8 @@ import static org.mockito.Mockito.when;
 import java.sql.Blob;
 import java.time.OffsetDateTime;
 import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Assertions;
@@ -23,9 +25,11 @@ import se.sundsvall.supportmanagement.api.model.communication.EmailAttachment;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
 import se.sundsvall.supportmanagement.api.model.communication.SmsRequest;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationAttachmentEntity;
+import se.sundsvall.supportmanagement.integration.db.model.CommunicationEmailHeaderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.Direction;
+import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
 import se.sundsvall.supportmanagement.service.util.BlobBuilder;
 
 
@@ -110,6 +114,7 @@ class CommunicationMapperTest {
 			.withSubject("subject")
 			.withMessage("message")
 			.withHtmlMessage("htmlMessage")
+			.withEmailHeaders(Map.of(EmailHeader.MESSAGE_ID, List.of("<test@test.se>")))
 			.withAttachments(singletonList(new EmailAttachment().withName("name").withBase64EncodedString("base64EncodedString")));
 
 		final var communicationEntity = communicationMapper.toCommunicationEntity(emailRequest);
@@ -137,7 +142,7 @@ class CommunicationMapperTest {
 
 		final var communicationEntity = communicationMapper.toCommunicationEntity(smsRequest);
 
-		assertThat(communicationEntity).isNotNull().hasNoNullFieldsOrPropertiesExcept("errandNumber", "externalCaseID", "subject", "attachments");
+		assertThat(communicationEntity).isNotNull().hasNoNullFieldsOrPropertiesExcept("errandNumber", "externalCaseID", "subject", "attachments", "emailHeaders");
 		assertThat(testValidUUID(communicationEntity.getId())).isTrue();
 		assertThat(communicationEntity.getDirection()).isEqualTo(Direction.OUTBOUND);
 		assertThat(communicationEntity.getTarget()).isEqualTo(smsRequest.getRecipient());
@@ -171,6 +176,7 @@ class CommunicationMapperTest {
 		entity.setType(CommunicationType.EMAIL);
 		entity.setTarget("target");
 		entity.setViewed(true);
+		entity.setEmailHeaders(Collections.singletonList(CommunicationEmailHeaderEntity.create().withHeader(EmailHeader.IN_REPLY_TO).withValues(Collections.singletonList("someValue"))));
 		entity.setAttachments(Collections.singletonList(createCommunicationAttachmentEntity()));
 		return entity;
 	}
@@ -195,6 +201,14 @@ class CommunicationMapperTest {
 		assertThat(communication.isViewed()).isEqualTo(entity.isViewed());
 		assertThat(communication.getCommunicationAttachments()).hasSize(1);
 		assertAttachmentMatchesEntity(communication.getCommunicationAttachments().getFirst(), entity.getAttachments().getFirst());
+		assertEmailHeadersMatchesEntity(communication.getEmailHeaders(), entity.getEmailHeaders());
+	}
+
+	private void assertEmailHeadersMatchesEntity(final Map<EmailHeader, List<String>> emailHeaders, final List<CommunicationEmailHeaderEntity> emailHeaderEntities) {
+		assertThat(emailHeaders).hasSize(1);
+		assertThat(emailHeaders.get(EmailHeader.IN_REPLY_TO)).hasSize(1);
+		assertThat(emailHeaders.get(EmailHeader.IN_REPLY_TO).getFirst()).isEqualTo(emailHeaderEntities.getFirst().getValues().getFirst());
+
 	}
 
 	private void assertAttachmentMatchesEntity(final CommunicationAttachment attachment, final CommunicationAttachmentEntity entity) {

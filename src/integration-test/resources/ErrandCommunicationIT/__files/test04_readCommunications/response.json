@@ -9,6 +9,7 @@
     "communicationType": "EMAIL",
     "target": "0987654321",
     "viewed": true,
+    "emailHeaders": {},
     "communicationAttachments": [
       {
         "attachmentID": "05b29c30-4512-46c0-9d82-d0f11cb04bae",
@@ -27,6 +28,12 @@
     "communicationType": "SMS",
     "target": "1234567890",
     "viewed": false,
+    "emailHeaders": {
+      "REFERENCES": [
+        "someValue",
+        "someOtherValue"
+      ]
+    },
     "communicationAttachments": [
       {
         "attachmentID": "896a44d8-724b-11ed-a840-0242ac110002",
