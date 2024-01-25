@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.api.model.communication;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import jakarta.persistence.EnumType;
@@ -11,6 +12,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 
 import se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.Direction;
+import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -45,6 +47,9 @@ public class Communication {
 	
 	@Schema(description = "Signal if the message has been viewed or not", example = "true")
 	private boolean viewed;
+
+	@Schema(description = "Headers for keeping track of email conversations", example = "{\"IN_REPLY_TO\": [\"reply-to@example.com\"], \"REFERENCES\": [\"reference1\", \"reference2\"], \"MESSAGE_ID\": [\"123456789\"]}")
+	private Map<EmailHeader, List<String>> emailHeaders;
 	
 	@Schema(description = "List of communicationAttachments on the message")
 	private List<CommunicationAttachment> communicationAttachments;
@@ -184,17 +189,30 @@ public class Communication {
 		return this;
 	}
 
+	public Map<EmailHeader, List<String>> getEmailHeaders() {
+		return emailHeaders;
+	}
+
+	public void setEmailHeaders(final Map<EmailHeader, List<String>> emailHeaders) {
+		this.emailHeaders = emailHeaders;
+	}
+
+	public Communication withEmailHeaders(final Map<EmailHeader, List<String>> headers) {
+		this.emailHeaders = headers;
+		return this;
+	}
+
 	@Override
 	public boolean equals(final Object o) {
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
 		final Communication that = (Communication) o;
-		return viewed == that.viewed && Objects.equals(communicationID, that.communicationID) && Objects.equals(errandNumber, that.errandNumber) && direction == that.direction && Objects.equals(messageBody, that.messageBody) && Objects.equals(sent, that.sent) && Objects.equals(subject, that.subject) && communicationType == that.communicationType && Objects.equals(target, that.target) && Objects.equals(communicationAttachments, that.communicationAttachments);
+		return viewed == that.viewed && Objects.equals(communicationID, that.communicationID) && Objects.equals(errandNumber, that.errandNumber) && direction == that.direction && Objects.equals(messageBody, that.messageBody) && Objects.equals(sent, that.sent) && Objects.equals(subject, that.subject) && communicationType == that.communicationType && Objects.equals(target, that.target) && Objects.equals(emailHeaders, that.emailHeaders) && Objects.equals(communicationAttachments, that.communicationAttachments);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(communicationID, errandNumber, direction, messageBody, sent, subject, communicationType, target, viewed, communicationAttachments);
+		return Objects.hash(communicationID, errandNumber, direction, messageBody, sent, subject, communicationType, target, viewed, emailHeaders, communicationAttachments);
 	}
 
 	@Override
@@ -209,6 +227,7 @@ public class Communication {
 			", communicationType=" + communicationType +
 			", target='" + target + '\'' +
 			", viewed=" + viewed +
+			", emailHeaders=" + emailHeaders +
 			", communicationAttachments=" + communicationAttachments +
 			'}';
 	}

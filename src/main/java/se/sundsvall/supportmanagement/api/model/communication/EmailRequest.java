@@ -4,14 +4,18 @@ import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.NOT_REQUIR
 import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
-import io.swagger.v3.oas.annotations.media.ArraySchema;
-import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+
+import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
+
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "EmailRequest model")
 public class EmailRequest {
@@ -41,6 +45,9 @@ public class EmailRequest {
 	@Schema(description = "Message in plain text", example = "Message in plain text", requiredMode = REQUIRED)
 	private String message;
 
+	@Schema(description = "Headers for keeping track of email conversations", example = "{\"IN_REPLY_TO\": [\"reply-to@example.com\"], \"REFERENCES\": [\"reference1\", \"reference2\"], \"MESSAGE_ID\": [\"123456789\"]}")
+	private Map<EmailHeader, List<String>> emailHeaders;
+
 	@ArraySchema(schema = @Schema(description = "List with Base64 encoded email attachments"))
 	private List<@Valid EmailAttachment> attachments;
 
@@ -52,11 +59,11 @@ public class EmailRequest {
 		return sender;
 	}
 
-	public void setSender(String sender) {
+	public void setSender(final String sender) {
 		this.sender = sender;
 	}
 
-	public EmailRequest withSender(String sender) {
+	public EmailRequest withSender(final String sender) {
 		this.sender = sender;
 		return this;
 	}
@@ -65,11 +72,11 @@ public class EmailRequest {
 		return senderName;
 	}
 
-	public void setSenderName(String senderName) {
+	public void setSenderName(final String senderName) {
 		this.senderName = senderName;
 	}
 
-	public EmailRequest withSenderName(String senderName) {
+	public EmailRequest withSenderName(final String senderName) {
 		this.senderName = senderName;
 		return this;
 	}
@@ -78,12 +85,12 @@ public class EmailRequest {
 		return recipient;
 	}
 
-	public EmailRequest withRecipient(String recipient) {
+	public EmailRequest withRecipient(final String recipient) {
 		this.recipient = recipient;
 		return this;
 	}
 
-	public void setRecipient(String recipient) {
+	public void setRecipient(final String recipient) {
 		this.recipient = recipient;
 	}
 
@@ -91,11 +98,11 @@ public class EmailRequest {
 		return subject;
 	}
 
-	public void setSubject(String subject) {
+	public void setSubject(final String subject) {
 		this.subject = subject;
 	}
 
-	public EmailRequest withSubject(String subject) {
+	public EmailRequest withSubject(final String subject) {
 		this.subject = subject;
 		return this;
 	}
@@ -104,11 +111,11 @@ public class EmailRequest {
 		return htmlMessage;
 	}
 
-	public void setHtmlMessage(String htmlMessage) {
+	public void setHtmlMessage(final String htmlMessage) {
 		this.htmlMessage = htmlMessage;
 	}
 
-	public EmailRequest withHtmlMessage(String htmlMessage) {
+	public EmailRequest withHtmlMessage(final String htmlMessage) {
 		this.htmlMessage = htmlMessage;
 		return this;
 	}
@@ -117,11 +124,11 @@ public class EmailRequest {
 		return message;
 	}
 
-	public void setMessage(String message) {
+	public void setMessage(final String message) {
 		this.message = message;
 	}
 
-	public EmailRequest withMessage(String message) {
+	public EmailRequest withMessage(final String message) {
 		this.message = message;
 		return this;
 	}
@@ -130,41 +137,53 @@ public class EmailRequest {
 		return attachments;
 	}
 
-	public void setAttachments(List<EmailAttachment> attachments) {
+	public void setAttachments(final List<EmailAttachment> attachments) {
 		this.attachments = attachments;
 	}
 
-	public EmailRequest withAttachments(List<EmailAttachment> attachments) {
+	public EmailRequest withAttachments(final List<EmailAttachment> attachments) {
 		this.attachments = attachments;
 		return this;
 	}
 
-	@Override
-	public int hashCode() {
-		return Objects.hash(attachments, htmlMessage, message, recipient, sender, senderName, subject);
+	public Map<EmailHeader, List<String>> getEmailHeaders() {
+		return emailHeaders;
+	}
+
+	public void setEmailHeaders(final Map<EmailHeader, List<String>> emailHeaders) {
+		this.emailHeaders = emailHeaders;
+	}
+
+	public EmailRequest withEmailHeaders(final Map<EmailHeader, List<String>> headers) {
+		this.emailHeaders = headers;
+		return this;
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
-			return true;
-		}
-		if (obj == null) {
-			return false;
-		}
-		if (getClass() != obj.getClass()) {
-			return false;
-		}
-		final EmailRequest other = (EmailRequest) obj;
-		return Objects.equals(attachments, other.attachments) && Objects.equals(htmlMessage, other.htmlMessage) && Objects.equals(message, other.message) && Objects.equals(recipient, other.recipient) && Objects.equals(sender, other.sender) && Objects
-			.equals(senderName, other.senderName) && Objects.equals(subject, other.subject);
+	public boolean equals(final Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		final EmailRequest that = (EmailRequest) o;
+		return Objects.equals(sender, that.sender) && Objects.equals(senderName, that.senderName) && Objects.equals(recipient, that.recipient) && Objects.equals(subject, that.subject) && Objects.equals(htmlMessage, that.htmlMessage) && Objects.equals(message, that.message) && Objects.equals(emailHeaders, that.emailHeaders) && Objects.equals(attachments, that.attachments);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(sender, senderName, recipient, subject, htmlMessage, message, emailHeaders, attachments);
 	}
 
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder();
-		builder.append("EmailRequest [sender=").append(sender).append(", senderName=").append(senderName).append(", recipient=").append(recipient).append(", subject=").append(subject).append(", htmlMessage=").append(htmlMessage).append(", message=")
-			.append(message).append(", attachments=").append(attachments).append("]");
-		return builder.toString();
+		return "EmailRequest{" +
+			"sender='" + sender + '\'' +
+			", senderName='" + senderName + '\'' +
+			", recipient='" + recipient + '\'' +
+			", subject='" + subject + '\'' +
+			", htmlMessage='" + htmlMessage + '\'' +
+			", message='" + message + '\'' +
+			", emailHeaders=" + emailHeaders +
+			", attachments=" + attachments +
+			'}';
 	}
+
 }

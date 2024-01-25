@@ -10,8 +10,11 @@ import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
+
+import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
 
 class EmailRequestTest {
 
@@ -27,6 +30,7 @@ class EmailRequestTest {
 
 	@Test
 	void testBuilderMethods() {
+		// Arrange
 		final var attachments = List.of(EmailAttachment.create());
 		final var htmlMessage = "htmlMessage";
 		final var message = "message";
@@ -34,7 +38,8 @@ class EmailRequestTest {
 		final var sender = "sender";
 		final var senderName = "senderName";
 		final var subject = "subject";
-
+		final var emailHeaders = Map.of(EmailHeader.REFERENCES, List.of("reference1", "reference2"));
+		// Act
 		final var bean = EmailRequest.create()
 			.withAttachments(attachments)
 			.withHtmlMessage(htmlMessage)
@@ -42,8 +47,9 @@ class EmailRequestTest {
 			.withRecipient(recipient)
 			.withSender(sender)
 			.withSenderName(senderName)
-			.withSubject(subject);
-
+			.withSubject(subject)
+			.withEmailHeaders(emailHeaders);
+		// Assert
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(bean.getAttachments()).isEqualTo(attachments);
 		assertThat(bean.getHtmlMessage()).isEqualTo(htmlMessage);
@@ -52,6 +58,7 @@ class EmailRequestTest {
 		assertThat(bean.getSender()).isEqualTo(sender);
 		assertThat(bean.getSenderName()).isEqualTo(senderName);
 		assertThat(bean.getSubject()).isEqualTo(subject);
+		assertThat(bean.getEmailHeaders()).isEqualTo(emailHeaders);
 	}
 
 	@Test
