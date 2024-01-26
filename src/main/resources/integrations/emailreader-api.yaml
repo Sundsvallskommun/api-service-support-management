@@ -5,9 +5,9 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "1.0"
+  version: "1.1"
 servers:
-  - url: http://localhost:8080
+  - url: http://localhost:54012
     description: Generated server url
 tags:
   - name: Email
@@ -38,15 +38,6 @@ paths:
       responses:
         "204":
           description: No content
-        "400":
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
         "500":
           description: Internal Server Error
           content:
@@ -58,6 +49,15 @@ paths:
                 $ref: '#/components/schemas/Problem'
         "502":
           description: Bad Gateway
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        "400":
+          description: Bad Request
           content:
             application/json:
               schema:
@@ -81,15 +81,6 @@ paths:
       responses:
         "204":
           description: No content
-        "400":
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
         "500":
           description: Internal Server Error
           content:
@@ -101,6 +92,15 @@ paths:
                 $ref: '#/components/schemas/Problem'
         "502":
           description: Bad Gateway
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        "400":
+          description: Bad Request
           content:
             application/json:
               schema:
@@ -128,15 +128,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Credentials'
-        "400":
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
         "500":
           description: Internal Server Error
           content:
@@ -148,6 +139,15 @@ paths:
                 $ref: '#/components/schemas/Problem'
         "502":
           description: Bad Gateway
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        "400":
+          description: Bad Request
           content:
             application/json:
               schema:
@@ -169,15 +169,6 @@ paths:
       responses:
         "204":
           description: No content
-        "400":
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
         "500":
           description: Internal Server Error
           content:
@@ -189,6 +180,15 @@ paths:
                 $ref: '#/components/schemas/Problem'
         "502":
           description: Bad Gateway
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        "400":
+          description: Bad Request
           content:
             application/json:
               schema:
@@ -227,15 +227,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Email'
-        "400":
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
         "500":
           description: Internal Server Error
           content:
@@ -247,6 +238,15 @@ paths:
                 $ref: '#/components/schemas/Problem'
         "502":
           description: Bad Gateway
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        "400":
+          description: Bad Request
           content:
             application/json:
               schema:
@@ -287,15 +287,6 @@ paths:
       responses:
         "204":
           description: No content
-        "400":
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
         "500":
           description: Internal Server Error
           content:
@@ -307,6 +298,15 @@ paths:
                 $ref: '#/components/schemas/Problem'
         "502":
           description: Bad Gateway
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        "400":
+          description: Bad Request
           content:
             application/json:
               schema:
@@ -389,20 +389,20 @@ components:
           type: object
           additionalProperties:
             type: object
-        status:
-          $ref: '#/components/schemas/StatusType'
         title:
           type: string
         detail:
           type: string
+        status:
+          $ref: '#/components/schemas/StatusType'
     StatusType:
       type: object
       properties:
-        reasonPhrase:
-          type: string
         statusCode:
           type: integer
           format: int32
+        reasonPhrase:
+          type: string
     Email:
       type: object
       properties:
@@ -445,6 +445,33 @@ components:
           description: The date and time the email was received
           format: date-time
           example: 2021-09-01T12:00:00+02:00
+        headers:
+          type: object
+          additionalProperties:
+            type: array
+            description: The email headers
+            example:
+              IN_REPLY_TO:
+                - reply-to@example.com
+              REFERENCES:
+                - reference1
+                - reference2
+              MESSAGE_ID:
+                - "123456789"
+            items:
+              type: string
+              description: The email headers
+              example: "{\"IN_REPLY_TO\":[\"reply-to@example.com\"],\"REFERENCES\"\
+                :[\"reference1\",\"reference2\"],\"MESSAGE_ID\":[\"123456789\"]}"
+          description: The email headers
+          example:
+            IN_REPLY_TO:
+              - reply-to@example.com
+            REFERENCES:
+              - reference1
+              - reference2
+            MESSAGE_ID:
+              - "123456789"
         attachments:
           type: array
           items:

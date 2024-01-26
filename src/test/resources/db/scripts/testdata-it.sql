@@ -219,3 +219,13 @@ INSERT INTO communication_attachment(communication_attachment_data_id, id,
                                      communication_id, content_type, name)
 VALUES (1, '896a44d8-724b-11ed-a840-0242ac110002', 'cc236cf1-c00f-4479-8341-ecf5dd90b5b9', 'text/plain', 'attachment1'),
        (2, '05b29c30-4512-46c0-9d82-d0f11cb04bae', '59328e70-4297-4bb5-ba69-cb17f2d15a17', 'image/png', 'attachment2');
+
+-- Insert into communication_email_header
+INSERT INTO communication_email_header (communication_id, id, header_key)
+VALUES ('cc236cf1-c00f-4479-8341-ecf5dd90b5b9', '81471222-5798-11e9-ae24-57fa13b361e1',
+        'REFERENCES');
+
+-- Insert into communication_email_header_value
+INSERT INTO communication_email_header_value (header_id, value, order_index)
+VALUES ('81471222-5798-11e9-ae24-57fa13b361e1', 'someValue', 0),
+       ('81471222-5798-11e9-ae24-57fa13b361e1', 'someOtherValue', 1);

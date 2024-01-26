@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 
 import se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.Direction;
+import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
 
 class CommunicationEntityTest {
 
@@ -50,9 +51,11 @@ class CommunicationEntityTest {
 		final var sent = OffsetDateTime.now();
 		final var type = CommunicationType.EMAIL;
 		final var target = "target";
-		final var email = "email";
 		final var viewed = true;
 		final var attachments = List.of(CommunicationAttachmentEntity.create());
+		final var emailHeaders = List.of(CommunicationEmailHeaderEntity.create()
+			.withHeader(EmailHeader.IN_REPLY_TO)
+			.withValues(List.of("someValue")));
 
 		final var entity = CommunicationEntity.create()
 			.withId(id)
@@ -65,7 +68,8 @@ class CommunicationEntityTest {
 			.withType(type)
 			.withTarget(target)
 			.withViewed(viewed)
-			.withAttachments(attachments);
+			.withAttachments(attachments)
+			.withEmailHeaders(emailHeaders);
 
 		assertThat(entity).hasNoNullFieldsOrProperties();
 		assertThat(entity.getId()).isEqualTo(id);
@@ -79,6 +83,7 @@ class CommunicationEntityTest {
 		assertThat(entity.getTarget()).isEqualTo(target);
 		assertThat(entity.isViewed()).isEqualTo(viewed);
 		assertThat(entity.getAttachments()).isEqualTo(attachments);
+		assertThat(entity.getEmailHeaders()).isEqualTo(emailHeaders);
 	}
 
 	@Test

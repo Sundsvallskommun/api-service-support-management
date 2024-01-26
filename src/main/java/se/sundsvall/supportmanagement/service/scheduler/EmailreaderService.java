@@ -3,8 +3,11 @@ package se.sundsvall.supportmanagement.service.scheduler;
 import static se.sundsvall.supportmanagement.service.scheduler.ErrandNumberParser.parseSubject;
 
 import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -12,6 +15,7 @@ import org.springframework.stereotype.Component;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
 import se.sundsvall.supportmanagement.integration.emailreader.EmailReaderClient;
 import se.sundsvall.supportmanagement.integration.emailreader.configuration.EmailReaderProperties;
 import se.sundsvall.supportmanagement.service.CommunicationService;
@@ -113,8 +117,19 @@ public class EmailreaderService {
 		return EmailRequest.create()
 			.withSubject(email.getSubject())
 			.withRecipient(email.getSender())
+			.withEmailHeaders(toEmailHeaders(email))
 			.withSender(emailReaderProperties.errandClosedEmailSender())
 			.withMessage(emailReaderProperties.errandClosedEmailTemplate());
+	}
+
+	private Map<EmailHeader, List<String>> toEmailHeaders(final Email email) {
+
+		return email.getHeaders().entrySet().stream()
+			.collect(Collectors.toMap(
+				entry -> EmailHeader.valueOf(entry.getKey()),
+				Map.Entry::getValue,
+				(oldValue, newValue) -> newValue
+			));
 	}
 
 }
