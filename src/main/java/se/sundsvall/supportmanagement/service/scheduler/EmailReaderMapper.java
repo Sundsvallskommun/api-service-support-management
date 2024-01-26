@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 import se.sundsvall.supportmanagement.api.model.errand.Classification;
 import se.sundsvall.supportmanagement.api.model.errand.ContactChannel;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
+import se.sundsvall.supportmanagement.api.model.errand.Priority;
 import se.sundsvall.supportmanagement.api.model.errand.Stakeholder;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
@@ -99,6 +100,7 @@ public class EmailReaderMapper {
 			.withTitle(email.getSubject())
 			.withDescription(email.getMessage())
 			.withStatus("NEW")
+			.withPriority(Priority.MEDIUM)
 			.withClassification(Classification.create().withCategory(email.getMetadata().get("classification.category")).withType(email.getMetadata().get("classification.type")))
 			.withStakeholders(List.of(
 				Stakeholder.create().withContactChannels(List.of(
