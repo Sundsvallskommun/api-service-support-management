@@ -10,7 +10,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
@@ -24,7 +25,8 @@ import se.sundsvall.supportmanagement.service.ErrandService;
 import generated.se.sundsvall.emailreader.Email;
 
 
-@Component
+@Service
+@Transactional
 public class EmailreaderService {
 
 	private static final String ERRAND_STATUS_SOLVED = "SOLVED";
