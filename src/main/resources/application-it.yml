@@ -7,6 +7,8 @@ integration:
     url: http://localhost:${wiremock.server.port:}/api-messaging
   notes:
     url: http://localhost:${wiremock.server.port:}/api-notes
+  web-message-collector:
+    url: http://localhost:${wiremock.server.port:}/api-web-message-collector
 spring:
   cache:
     type: none
@@ -34,6 +36,8 @@ spring:
             token-uri: http://localhost:${wiremock.server.port:}/api-gateway/token
           notes:
             token-uri: http://localhost:${wiremock.server.port:}/api-gateway/token
+          web-message-collector:
+            token-uri: http://localhost:${wiremock.server.port:}/api-gateway/token
         registration:
           emailreader:
             client-id: the-client-id
@@ -45,5 +49,8 @@ spring:
             client-id: the-client-id
             client-secret: the-client-secret
           notes:
+            client-id: the-client-id
+            client-secret: the-client-secret
+          web-message-collector:
             client-id: the-client-id
             client-secret: the-client-secret

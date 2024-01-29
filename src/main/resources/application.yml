@@ -15,6 +15,9 @@ integration:
   notes:
     connectTimeout: 5
     readTimeout: 30
+  web-message-collector:
+    connectTimeout: 5
+    readTimeout: 30
 logbook:
   exclusionfilters:
     json-path:
@@ -66,6 +69,9 @@ spring:
           notes:
             authorization-grant-type: client_credentials
             provider: notes
+          web-message-collector:
+            authorization-grant-type: client_credentials
+            provider: web-message-collector
   servlet:
     multipart:
       max-file-size: 10MB

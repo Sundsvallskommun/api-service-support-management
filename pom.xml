@@ -134,18 +134,19 @@
 						<configuration>
 							<inputSpec>src/main/resources/integrations/notes-api.yaml</inputSpec>
 							<output>${generated-sources-path}</output>
-							<generatorName>jaxrs-spec</generatorName>
+							<generatorName>spring</generatorName>
 							<generateApis>false</generateApis>
 							<generateSupportingFiles>false</generateSupportingFiles>
 							<configOptions>
 								<useSpringBoot3>true</useSpringBoot3>
-								<useBeanValidation>false</useBeanValidation>
-								<useSwaggerAnnotations>false</useSwaggerAnnotations>
-								<sourceFolder>${generated-sources-java-path}</sourceFolder>
+								<sourceFolder>models</sourceFolder>
 								<dateLibrary>java8</dateLibrary>
+								<apiPackage>generated</apiPackage>
 								<modelPackage>generated.se.sundsvall.notes</modelPackage>
 								<openApiNullable>false</openApiNullable>
 								<generatePom>false</generatePom>
+								<useBeanValidation>true</useBeanValidation>
+								<useSwaggerAnnotations>true</useSwaggerAnnotations>
 								<interfaceOnly>true</interfaceOnly>
 							</configOptions>
 						</configuration>
@@ -158,18 +159,19 @@
 						<configuration>
 							<inputSpec>src/main/resources/integrations/messaging-api.yaml</inputSpec>
 							<output>${generated-sources-path}</output>
-							<generatorName>jaxrs-spec</generatorName>
+							<generatorName>spring</generatorName>
 							<generateApis>false</generateApis>
 							<generateSupportingFiles>false</generateSupportingFiles>
 							<configOptions>
 								<useSpringBoot3>true</useSpringBoot3>
-								<useBeanValidation>false</useBeanValidation>
-								<useSwaggerAnnotations>false</useSwaggerAnnotations>
-								<sourceFolder>${generated-sources-java-path}</sourceFolder>
+								<sourceFolder>models</sourceFolder>
 								<dateLibrary>java8</dateLibrary>
+								<apiPackage>generated</apiPackage>
 								<modelPackage>generated.se.sundsvall.messaging</modelPackage>
 								<openApiNullable>false</openApiNullable>
 								<generatePom>false</generatePom>
+								<useBeanValidation>true</useBeanValidation>
+								<useSwaggerAnnotations>true</useSwaggerAnnotations>
 								<interfaceOnly>true</interfaceOnly>
 							</configOptions>
 						</configuration>
@@ -182,18 +184,19 @@
 						<configuration>
 							<inputSpec>src/main/resources/integrations/eventlog-api.yaml</inputSpec>
 							<output>${generated-sources-path}</output>
-							<generatorName>jaxrs-spec</generatorName>
+							<generatorName>spring</generatorName>
 							<generateApis>false</generateApis>
 							<generateSupportingFiles>false</generateSupportingFiles>
 							<configOptions>
 								<useSpringBoot3>true</useSpringBoot3>
-								<useBeanValidation>false</useBeanValidation>
-								<useSwaggerAnnotations>false</useSwaggerAnnotations>
-								<sourceFolder>${generated-sources-java-path}</sourceFolder>
+								<sourceFolder>models</sourceFolder>
 								<dateLibrary>java8</dateLibrary>
+								<apiPackage>generated</apiPackage>
 								<modelPackage>generated.se.sundsvall.eventlog</modelPackage>
 								<openApiNullable>false</openApiNullable>
 								<generatePom>false</generatePom>
+								<useBeanValidation>true</useBeanValidation>
+								<useSwaggerAnnotations>true</useSwaggerAnnotations>
 								<interfaceOnly>true</interfaceOnly>
 							</configOptions>
 						</configuration>
@@ -207,18 +210,46 @@
 							<inputSpec>src/main/resources/integrations/emailreader-api.yaml
 							</inputSpec>
 							<output>${generated-sources-path}</output>
-							<generatorName>jaxrs-spec</generatorName>
+							<generatorName>spring</generatorName>
 							<generateApis>false</generateApis>
 							<generateSupportingFiles>false</generateSupportingFiles>
 							<configOptions>
 								<useSpringBoot3>true</useSpringBoot3>
-								<useBeanValidation>false</useBeanValidation>
-								<useSwaggerAnnotations>false</useSwaggerAnnotations>
-								<sourceFolder>${generated-sources-java-path}</sourceFolder>
+								<sourceFolder>models</sourceFolder>
 								<dateLibrary>java8</dateLibrary>
+								<apiPackage>generated</apiPackage>
 								<modelPackage>generated.se.sundsvall.emailreader</modelPackage>
 								<openApiNullable>false</openApiNullable>
 								<generatePom>false</generatePom>
+								<useBeanValidation>true</useBeanValidation>
+								<useSwaggerAnnotations>true</useSwaggerAnnotations>
+								<interfaceOnly>true</interfaceOnly>
+							</configOptions>
+						</configuration>
+					</execution>
+					<execution>
+						<id>web-message-collector-api</id>
+						<goals>
+							<goal>generate</goal>
+						</goals>
+						<configuration>
+							<inputSpec>src/main/resources/integrations/webmessagecollector.yml
+							</inputSpec>
+							<output>${generated-sources-path}</output>
+							<generatorName>spring</generatorName>
+							<generateApis>false</generateApis>
+							<generateSupportingFiles>false</generateSupportingFiles>
+							<configOptions>
+								<useSpringBoot3>true</useSpringBoot3>
+								<sourceFolder>models</sourceFolder>
+								<dateLibrary>java8</dateLibrary>
+								<apiPackage>generated</apiPackage>
+								<modelPackage>generated.se.sundsvall.webmessagecollector
+								</modelPackage>
+								<openApiNullable>false</openApiNullable>
+								<generatePom>false</generatePom>
+								<useBeanValidation>true</useBeanValidation>
+								<useSwaggerAnnotations>true</useSwaggerAnnotations>
 								<interfaceOnly>true</interfaceOnly>
 							</configOptions>
 						</configuration>
