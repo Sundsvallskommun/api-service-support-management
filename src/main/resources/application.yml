@@ -2,6 +2,9 @@ scheduler:
   emailreader:
     initialDelay: PT1M
     fixedRate: PT1M
+  web-message-collector:
+    initialDelay: PT1M
+    fixedRate: PT1M
 integration:
   emailreader:
     connectTimeout: 5

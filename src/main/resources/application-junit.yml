@@ -15,6 +15,7 @@ integration:
     url: http://notes.url
   web-message-collector:
     url: http://web-message-collector.url
+    family-ids: [ "123" ]
 spring:
   cache:
     type: none

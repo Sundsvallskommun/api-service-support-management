@@ -1,4 +1,4 @@
-package se.sundsvall.supportmanagement.service.scheduler;
+package se.sundsvall.supportmanagement.service.scheduler.emailreader;
 
 import java.util.Collections;
 import java.util.List;

@@ -1,6 +1,6 @@
-package se.sundsvall.supportmanagement.service.scheduler;
+package se.sundsvall.supportmanagement.service.scheduler.emailreader;
 
-import static se.sundsvall.supportmanagement.service.scheduler.ErrandNumberParser.parseSubject;
+import static se.sundsvall.supportmanagement.service.scheduler.emailreader.ErrandNumberParser.parseSubject;
 
 import java.time.OffsetDateTime;
 import java.util.List;

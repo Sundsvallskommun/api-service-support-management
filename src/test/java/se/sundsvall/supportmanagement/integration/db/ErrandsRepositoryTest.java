@@ -216,4 +216,13 @@ class ErrandsRepositoryTest {
 		final var errandEntities = errandsRepository.findByErrandNumber("KC-22020002");
 		assertThat(errandEntities).isEmpty();
 	}
+
+	@Test
+	void findByExternalTagValue() {
+		final var errandEntity = errandsRepository.findByExternalTagValue("VALUE-1").orElse(null);
+
+		assertThat(errandEntity).isNotNull();
+		assertThat(errandEntity.getId()).isNotNull();
+		assertThat(errandEntity.getExternalTags()).anyMatch(val -> val.getValue().equals("VALUE-1"));
+	}
 }

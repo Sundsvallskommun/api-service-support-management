@@ -1,4 +1,4 @@
-package se.sundsvall.supportmanagement.service.scheduler;
+package se.sundsvall.supportmanagement.service.scheduler.emailreader;
 
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyString;
