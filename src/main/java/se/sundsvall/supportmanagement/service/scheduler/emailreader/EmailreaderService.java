@@ -1,5 +1,7 @@
 package se.sundsvall.supportmanagement.service.scheduler.emailreader;
 
+import static se.sundsvall.supportmanagement.Constants.ERRAND_STATUS_ONGOING;
+import static se.sundsvall.supportmanagement.Constants.ERRAND_STATUS_SOLVED;
 import static se.sundsvall.supportmanagement.service.scheduler.emailreader.ErrandNumberParser.parseSubject;
 
 import java.time.OffsetDateTime;
@@ -23,16 +25,12 @@ import se.sundsvall.supportmanagement.service.CommunicationService;
 import se.sundsvall.supportmanagement.service.ErrandService;
 
 import generated.se.sundsvall.emailreader.Email;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 
 
 @Service
 @Transactional
 public class EmailreaderService {
-
-	private static final String ERRAND_STATUS_SOLVED = "SOLVED";
-
-	private static final String ERRAND_STATUS_ONGOING = "ONGOING";
-
 	private final EmailReaderProperties emailReaderProperties;
 
 	private final EmailReaderClient emailReaderClient;
@@ -57,6 +55,7 @@ public class EmailreaderService {
 
 
 	@Scheduled(initialDelayString = "${scheduler.emailreader.initialDelay}", fixedRateString = "${scheduler.emailreader.fixedRate}", timeUnit = TimeUnit.SECONDS)
+	@SchedulerLock(name = "fetch_emails", lockAtMostFor = "${scheduler.emailreader.shedlock-lock-at-most-for}")
 	void getAndProcessEmails() {
 
 		emailReaderClient.getEmails(emailReaderProperties.municipalityId(), emailReaderProperties.namespace())

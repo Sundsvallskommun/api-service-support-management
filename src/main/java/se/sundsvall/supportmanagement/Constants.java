@@ -15,4 +15,9 @@ public class Constants {
 	public static final String EXTERNAL_TAG_KEY_PREVIOUS_VERSION = "PreviousVersion";
 	public static final String EXTERNAL_TAG_KEY_CURRENT_REVISION = "CurrentRevision";
 	public static final String EXTERNAL_TAG_KEY_CURRENT_VERSION = "CurrentVersion";
+
+	public static final String ERRAND_STATUS_SOLVED = "SOLVED";
+
+	public static final String ERRAND_STATUS_ONGOING = "ONGOING";
+
 }

@@ -23,6 +23,7 @@
 		<flipkart.zjsonpatch.version>0.4.16</flipkart.zjsonpatch.version>
 		<generated-sources-path>${project.build.directory}/generated-sources</generated-sources-path>
 		<generated-sources-java-path>src/main/java</generated-sources-java-path>
+		<shedlock.version>5.10.2</shedlock.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -78,6 +79,17 @@
 			<groupId>com.flipkart.zjsonpatch</groupId>
 			<artifactId>zjsonpatch</artifactId>
 			<version>${flipkart.zjsonpatch.version}</version>
+		</dependency>
+		<!-- Shedlock -->
+		<dependency>
+			<groupId>net.javacrumbs.shedlock</groupId>
+			<artifactId>shedlock-spring</artifactId>
+			<version>${shedlock.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>net.javacrumbs.shedlock</groupId>
+			<artifactId>shedlock-provider-jdbc-template</artifactId>
+			<version>${shedlock.version}</version>
 		</dependency>
 		<!-- Test -->
 		<dependency>

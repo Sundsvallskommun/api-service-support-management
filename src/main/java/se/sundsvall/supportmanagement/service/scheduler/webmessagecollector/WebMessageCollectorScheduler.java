@@ -7,6 +7,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
+
 @Service
 public class WebMessageCollectorScheduler {
 
@@ -17,7 +19,8 @@ public class WebMessageCollectorScheduler {
 	public WebMessageCollectorScheduler(final WebMessageCollectorWorker webMessageCollectorWorker) {this.webMessageCollectorWorker = webMessageCollectorWorker;}
 
 	@Scheduled(initialDelayString = "${scheduler.web-message-collector.initialDelay}", fixedRateString = "${scheduler.web-message-collector.fixedRate}", timeUnit = TimeUnit.SECONDS)
-	void fetchWebMessages() {
+	@SchedulerLock(name = "fetch_webMessages", lockAtMostFor = "${scheduler.web-message-collector.shedlock-lock-at-most-for}")
+	public void fetchWebMessages() {
 		LOG.info("Fetching messages from WebMessageCollector");
 		webMessageCollectorWorker.fetchWebMessages();
 		LOG.info("Finished fetching from WebMessageCollector");

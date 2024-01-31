@@ -1,6 +1,7 @@
 integration:
   emailreader:
     url: http://localhost:${wiremock.server.port:}/api-emailreader
+    shedlock-lock-at-most-for: PT10M
   eventlog:
     url: http://localhost:${wiremock.server.port:}/api-eventlog
   messaging:

@@ -25,7 +25,7 @@ public final class WebMessageCollectorMapper {
 			.withMessageBody(messageDTO.getMessage())
 			.withSent(OffsetDateTime.of(LocalDateTime.parse(messageDTO.getSent()), OffsetDateTime.now().getOffset()))
 			.withType(CommunicationType.EMAIL)
-			.withViewed(false);
+			.withViewed(true);
 	}
 
 }
