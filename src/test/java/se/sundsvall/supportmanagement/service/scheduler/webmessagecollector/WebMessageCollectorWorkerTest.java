@@ -1,7 +1,6 @@
 package se.sundsvall.supportmanagement.service.scheduler.webmessagecollector;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -32,16 +31,16 @@ import generated.se.sundsvall.webmessagecollector.MessageDTO;
 class WebMessageCollectorWorkerTest {
 
 	@Mock
-	private WebMessageCollectorClient webMessageCollectorClient;
+	private WebMessageCollectorClient webMessageCollectorClientMock;
 
 	@Mock
-	private WebMessageCollectorProperties webMessageCollectorProperties;
+	private WebMessageCollectorProperties webMessageCollectorPropertiesMock;
 
 	@Mock
-	private ErrandsRepository errandsRepository;
+	private ErrandsRepository errandsRepositoryMock;
 
 	@Mock
-	private CommunicationRepository communicationRepository;
+	private CommunicationRepository communicationRepositoryMock;
 
 	@InjectMocks
 	private WebMessageCollectorWorker webMessageCollectorWorker;
@@ -68,26 +67,30 @@ class WebMessageCollectorWorkerTest {
 			.withStatus(Constants.ERRAND_STATUS_SOLVED)
 			.withTouched(OffsetDateTime.now().minusDays(2));
 		// Mock
-		when(webMessageCollectorProperties.familyIds()).thenReturn(List.of("123"));
-		when(webMessageCollectorClient.getMessages(any(String.class))).thenReturn(List.of(messagedto));
-		when(errandsRepository.findByExternalTagValue(anyString())).thenReturn(Optional.of(errandEntity));
+		when(webMessageCollectorPropertiesMock.familyIds()).thenReturn(List.of("123"));
+		when(webMessageCollectorClientMock.getMessages(any(String.class))).thenReturn(List.of(messagedto));
+		when(errandsRepositoryMock.findByExternalTagsValue(any(String.class))).thenReturn(Optional.of(errandEntity));
 		// Act
 		webMessageCollectorWorker.fetchWebMessages();
 		// Verify
-		verify(errandsRepository).save(any(ErrandEntity.class));
-		verify(communicationRepository).save(any(CommunicationEntity.class));
-		verifyNoMoreInteractions(webMessageCollectorClient, webMessageCollectorProperties, errandsRepository, communicationRepository);
+		verify(webMessageCollectorPropertiesMock).familyIds();
+		verify(webMessageCollectorClientMock).getMessages(any(String.class));
+		verify(errandsRepositoryMock).findByExternalTagsValue(any(String.class));
+		verify(errandsRepositoryMock).save(any(ErrandEntity.class));
+		verify(communicationRepositoryMock).save(any(CommunicationEntity.class));
+		verifyNoMoreInteractions(webMessageCollectorClientMock, webMessageCollectorPropertiesMock, errandsRepositoryMock, communicationRepositoryMock);
 	}
 
 	@Test
 	void fetchWebMessage_NothingFromWebMessageCollector() {
 		// Mock
-		when(webMessageCollectorProperties.familyIds()).thenReturn(List.of("123"));
+		when(webMessageCollectorPropertiesMock.familyIds()).thenReturn(List.of("123"));
 		// Act
 		webMessageCollectorWorker.fetchWebMessages();
 		// Verify
-		verify(webMessageCollectorClient).getMessages(anyString());
-		verifyNoMoreInteractions(webMessageCollectorClient, webMessageCollectorProperties, errandsRepository, communicationRepository);
+		verify(webMessageCollectorPropertiesMock).familyIds();
+		verify(webMessageCollectorClientMock).getMessages(any(String.class));
+		verifyNoMoreInteractions(webMessageCollectorClientMock, webMessageCollectorPropertiesMock, errandsRepositoryMock, communicationRepositoryMock);
 
 	}
 
@@ -108,13 +111,15 @@ class WebMessageCollectorWorkerTest {
 			.userId("userId")
 			.username("username");
 		// Mock
-		when(webMessageCollectorProperties.familyIds()).thenReturn(List.of("123"));
-		when(webMessageCollectorClient.getMessages(any(String.class))).thenReturn(List.of(messagedto));
+		when(webMessageCollectorPropertiesMock.familyIds()).thenReturn(List.of("123"));
+		when(webMessageCollectorClientMock.getMessages(any(String.class))).thenReturn(List.of(messagedto));
 		// Act
 		webMessageCollectorWorker.fetchWebMessages();
 		// Verify
-		verify(errandsRepository).findByExternalTagValue(any(String.class));
-		verifyNoMoreInteractions(webMessageCollectorClient, webMessageCollectorProperties, errandsRepository, communicationRepository);
+		verify(webMessageCollectorPropertiesMock).familyIds();
+		verify(webMessageCollectorClientMock).getMessages(any(String.class));
+		verify(errandsRepositoryMock).findByExternalTagsValue(any(String.class));
+		verifyNoMoreInteractions(webMessageCollectorClientMock, webMessageCollectorPropertiesMock, errandsRepositoryMock, communicationRepositoryMock);
 
 	}
 
@@ -142,14 +147,17 @@ class WebMessageCollectorWorkerTest {
 			.withTouched(OffsetDateTime.now().minusDays(5).minusMinutes(1));
 
 		// Mock
-		when(webMessageCollectorProperties.familyIds()).thenReturn(List.of("123"));
-		when(webMessageCollectorClient.getMessages(any(String.class))).thenReturn(List.of(messagedto));
-		when(errandsRepository.findByExternalTagValue(anyString())).thenReturn(Optional.of(errandEntity));
+		when(webMessageCollectorPropertiesMock.familyIds()).thenReturn(List.of("123"));
+		when(webMessageCollectorClientMock.getMessages(any(String.class))).thenReturn(List.of(messagedto));
+		when(errandsRepositoryMock.findByExternalTagsValue(any(String.class))).thenReturn(Optional.of(errandEntity));
 
 		// Act
 		webMessageCollectorWorker.fetchWebMessages();
 		// Verify
-		verifyNoMoreInteractions(webMessageCollectorClient, webMessageCollectorProperties, errandsRepository, communicationRepository);
+		verify(webMessageCollectorPropertiesMock).familyIds();
+		verify(webMessageCollectorClientMock).getMessages(any(String.class));
+		verify(errandsRepositoryMock).findByExternalTagsValue(any(String.class));
+		verifyNoMoreInteractions(webMessageCollectorClientMock, webMessageCollectorPropertiesMock, errandsRepositoryMock, communicationRepositoryMock);
 
 	}
 
@@ -158,9 +166,9 @@ class WebMessageCollectorWorkerTest {
 		// Act
 		webMessageCollectorWorker.fetchWebMessages();
 		// Arrange
-		verify(webMessageCollectorProperties).familyIds();
-		verifyNoMoreInteractions(webMessageCollectorProperties);
-		verifyNoInteractions(webMessageCollectorClient, errandsRepository, communicationRepository);
+		verify(webMessageCollectorPropertiesMock).familyIds();
+		verifyNoMoreInteractions(webMessageCollectorPropertiesMock);
+		verifyNoInteractions(webMessageCollectorClientMock, errandsRepositoryMock, communicationRepositoryMock);
 
 	}
 
@@ -180,14 +188,16 @@ class WebMessageCollectorWorkerTest {
 			.userId("userId")
 			.username("username");
 		// Mock
-		when(webMessageCollectorProperties.familyIds()).thenReturn(List.of("123"));
-		when(webMessageCollectorClient.getMessages(any(String.class))).thenReturn(List.of(messagedto));
+		when(webMessageCollectorPropertiesMock.familyIds()).thenReturn(List.of("123"));
+		when(webMessageCollectorClientMock.getMessages(any(String.class))).thenReturn(List.of(messagedto));
 		// Act
 		webMessageCollectorWorker.fetchWebMessages();
 		//Verify
-		verify(errandsRepository).findByExternalTagValue(null);
-		verifyNoMoreInteractions(webMessageCollectorProperties, webMessageCollectorClient, errandsRepository);
-		verifyNoInteractions(communicationRepository);
+		verify(webMessageCollectorPropertiesMock).familyIds();
+		verify(webMessageCollectorClientMock).getMessages(any(String.class));
+		verify(errandsRepositoryMock).findByExternalTagsValue(null);
+		verifyNoMoreInteractions(webMessageCollectorPropertiesMock, webMessageCollectorClientMock, errandsRepositoryMock);
+		verifyNoInteractions(communicationRepositoryMock);
 	}
 
 }

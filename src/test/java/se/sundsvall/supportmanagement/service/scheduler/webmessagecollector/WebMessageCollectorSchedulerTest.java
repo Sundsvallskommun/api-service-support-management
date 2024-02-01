@@ -14,18 +14,18 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class WebMessageCollectorSchedulerTest {
 
 	@Mock
-	WebMessageCollectorWorker webMessageCollectorWorker;
+	private WebMessageCollectorWorker webMessageCollectorWorkerMock;
 
 	@InjectMocks
-	WebMessageCollectorScheduler scheduler;
+	private WebMessageCollectorScheduler scheduler;
 
 	@Test
 	void fetchWebMessages() {
 		// Act
 		scheduler.fetchWebMessages();
 		//Verify
-		verify(webMessageCollectorWorker).fetchWebMessages();
-		verifyNoMoreInteractions(webMessageCollectorWorker);
+		verify(webMessageCollectorWorkerMock).fetchWebMessages();
+		verifyNoMoreInteractions(webMessageCollectorWorkerMock);
 	}
 
 }

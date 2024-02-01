@@ -51,7 +51,7 @@ public class WebMessageCollectorWorker {
 	private void processMessages(final List<MessageDTO> messages) {
 
 		messages.forEach(messageDTO ->
-			errandsRepository.findByExternalTagValue(messageDTO.getExternalCaseId())
+			errandsRepository.findByExternalTagsValue(messageDTO.getExternalCaseId())
 				.filter(this::shouldBeUpdated)
 				.ifPresent(errand ->
 				{

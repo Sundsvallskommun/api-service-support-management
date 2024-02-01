@@ -5,7 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static se.sundsvall.supportmanagement.integration.emailreader.configuration.EmailreaderConfiguration.CLIENT_ID;
+import static se.sundsvall.supportmanagement.integration.emailreader.configuration.EmailReaderConfiguration.CLIENT_ID;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,7 +24,7 @@ import se.sundsvall.dept44.configuration.feign.decoder.ProblemErrorDecoder;
 
 
 @ExtendWith(MockitoExtension.class)
-class EmailreaderConfigurationTest {
+class EmailReaderConfigurationTest {
 
 	@Mock
 	private ClientRegistrationRepository clientRegistrationRepositoryMock;
@@ -43,7 +43,7 @@ class EmailreaderConfigurationTest {
 
 	@Test
 	void testFeignBuilderCustomizer() {
-		final var configuration = new EmailreaderConfiguration();
+		final var configuration = new EmailReaderConfiguration();
 
 		when(clientRegistrationRepositoryMock.findByRegistrationId(any())).thenReturn(clientRegistrationMock);
 		when(propertiesMock.connectTimeout()).thenReturn(1);

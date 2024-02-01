@@ -7,7 +7,7 @@ import org.springframework.security.oauth2.client.registration.ClientRegistratio
 import se.sundsvall.dept44.configuration.feign.FeignMultiCustomizer;
 import se.sundsvall.dept44.configuration.feign.decoder.ProblemErrorDecoder;
 
-public class EmailreaderConfiguration {
+public class EmailReaderConfiguration {
 
 	public static final String CLIENT_ID = "emailreader";
 

@@ -145,4 +145,36 @@ class EmailReaderMapperTest {
 	}
 
 
+	@Test
+	void createEmailRequest() {
+		// Arrange
+		final var subject = "someSubject";
+		final var recipients = List.of("someRecipient");
+		final var message = "someMessage";
+		final var receivedAt = OffsetDateTime.now();
+		final var sender = "someSender";
+		final var template = "someTemplate";
+		final Map<String, List<String>> emailHeaders = Map.of("MESSAGE_ID", List.of("someValue", "someOtherValue"));
+
+		final var email = new Email()
+			.subject(subject)
+			.recipients(recipients)
+			.sender(sender)
+			.message(message)
+			.headers(emailHeaders)
+			.receivedAt(receivedAt);
+		// Act
+		final var result = emailReaderMapper.createEmailRequest(email, sender, template);
+
+		// Assert
+		assertThat(result).isNotNull().hasNoNullFieldsOrPropertiesExcept("senderName", "htmlMessage", "attachments");
+		assertThat(result.getMessage()).isEqualTo(template);
+		assertThat(result.getSubject()).isEqualTo(subject);
+		assertThat(result.getRecipient()).isEqualTo(sender); // Because we are sending response to the sender
+		assertThat(result.getSender()).isEqualTo(sender);
+		assertThat(result.getMessage()).isEqualTo(template);
+
+	}
+
+
 }

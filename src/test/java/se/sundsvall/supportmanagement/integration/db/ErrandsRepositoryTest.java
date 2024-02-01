@@ -219,7 +219,7 @@ class ErrandsRepositoryTest {
 
 	@Test
 	void findByExternalTagValue() {
-		final var errandEntity = errandsRepository.findByExternalTagValue("VALUE-1").orElse(null);
+		final var errandEntity = errandsRepository.findByExternalTagsValue("VALUE-1").orElse(null);
 
 		assertThat(errandEntity).isNotNull();
 		assertThat(errandEntity.getId()).isNotNull();

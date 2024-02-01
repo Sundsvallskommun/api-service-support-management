@@ -1,5 +1,8 @@
 package se.sundsvall.supportmanagement.service.scheduler.webmessagecollector;
 
+import static java.time.OffsetTime.now;
+import static java.time.ZoneId.systemDefault;
+
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -23,7 +26,7 @@ public final class WebMessageCollectorMapper {
 			.withErrandNumber(errandNumber)
 			.withExternalCaseID(messageDTO.getExternalCaseId())
 			.withMessageBody(messageDTO.getMessage())
-			.withSent(OffsetDateTime.of(LocalDateTime.parse(messageDTO.getSent()), OffsetDateTime.now().getOffset()))
+			.withSent(OffsetDateTime.of(LocalDateTime.parse(messageDTO.getSent()), now(systemDefault()).getOffset()))
 			.withType(CommunicationType.EMAIL)
 			.withViewed(true);
 	}

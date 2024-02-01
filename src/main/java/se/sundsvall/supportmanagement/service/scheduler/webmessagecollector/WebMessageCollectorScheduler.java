@@ -16,14 +16,16 @@ public class WebMessageCollectorScheduler {
 
 	private final WebMessageCollectorWorker webMessageCollectorWorker;
 
-	public WebMessageCollectorScheduler(final WebMessageCollectorWorker webMessageCollectorWorker) {this.webMessageCollectorWorker = webMessageCollectorWorker;}
+	public WebMessageCollectorScheduler(final WebMessageCollectorWorker webMessageCollectorWorker) {
+		this.webMessageCollectorWorker = webMessageCollectorWorker;
+	}
 
 	@Scheduled(initialDelayString = "${scheduler.web-message-collector.initialDelay}", fixedRateString = "${scheduler.web-message-collector.fixedRate}", timeUnit = TimeUnit.SECONDS)
 	@SchedulerLock(name = "fetch_webMessages", lockAtMostFor = "${scheduler.web-message-collector.shedlock-lock-at-most-for}")
 	public void fetchWebMessages() {
-		LOG.info("Fetching messages from WebMessageCollector");
+		LOG.debug("Fetching messages from WebMessageCollector");
 		webMessageCollectorWorker.fetchWebMessages();
-		LOG.info("Finished fetching from WebMessageCollector");
+		LOG.debug("Finished fetching from WebMessageCollector");
 	}
 
 }

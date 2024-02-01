@@ -7,7 +7,6 @@ import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Lock;
-import org.springframework.data.jpa.repository.Query;
 
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 
@@ -28,7 +27,6 @@ public interface ErrandsRepository extends JpaRepository<ErrandEntity, String>, 
 
 	Optional<ErrandEntity> findByErrandNumber(String errandNumber);
 
-	@Query("select e from ErrandEntity e join e.externalTags t where t.value = :value")
-	Optional<ErrandEntity> findByExternalTagValue(String value);
+	Optional<ErrandEntity> findByExternalTagsValue(String value);
 
 }
