@@ -1,4 +1,4 @@
-package se.sundsvall.supportmanagement.service.scheduler;
+package se.sundsvall.supportmanagement.service.scheduler.emailreader;
 
 public final class ErrandNumberParser {
 

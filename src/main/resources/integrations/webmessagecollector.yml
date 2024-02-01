@@ -5,9 +5,9 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "1.1"
+  version: "2.0"
 servers:
-  - url: http://localhost:8080
+  - url: http://localhost:50563
     description: Generated server url
 tags:
   - name: messages
@@ -17,9 +17,17 @@ paths:
     get:
       tags:
         - messages
-      summary: Get a list of message
-      description: Returns a list of messages found
+      summary: Get a list of messages related to a specific familyId
+      description: Returns a list of messages found for the specified familyId
       operationId: getMessages
+      parameters:
+        - name: familyid
+          in: query
+          description: FamilyId to fetch messages for
+          required: true
+          schema:
+            type: string
+          example: 123
       responses:
         "400":
           description: Bad request
@@ -40,7 +48,9 @@ paths:
           content:
             '*/*':
               schema:
-                $ref: '#/components/schemas/MessageDTO'
+                type: array
+                items:
+                  $ref: '#/components/schemas/MessageDTO'
         "404":
           description: Not found
           content:
@@ -77,6 +87,8 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+        "200":
+          description: Successful Operation
         "404":
           description: Not found
           content:
@@ -114,20 +126,20 @@ components:
           type: object
           additionalProperties:
             type: object
-        status:
-          $ref: '#/components/schemas/StatusType'
         title:
           type: string
         detail:
           type: string
+        status:
+          $ref: '#/components/schemas/StatusType'
     StatusType:
       type: object
       properties:
-        reasonPhrase:
-          type: string
         statusCode:
           type: integer
           format: int32
+        reasonPhrase:
+          type: string
     ConstraintViolationProblem:
       type: object
       properties:
@@ -151,10 +163,10 @@ components:
               lineNumber:
                 type: integer
                 format: int32
-              nativeMethod:
-                type: boolean
               className:
                 type: string
+              nativeMethod:
+                type: boolean
         type:
           type: string
           format: uri
@@ -182,35 +194,6 @@ components:
           items:
             type: object
             properties:
-              cause:
-                type: object
-                properties:
-                  stackTrace:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        classLoaderName:
-                          type: string
-                        moduleName:
-                          type: string
-                        moduleVersion:
-                          type: string
-                        methodName:
-                          type: string
-                        fileName:
-                          type: string
-                        lineNumber:
-                          type: integer
-                          format: int32
-                        nativeMethod:
-                          type: boolean
-                        className:
-                          type: string
-                  message:
-                    type: string
-                  localizedMessage:
-                    type: string
               stackTrace:
                 type: array
                 items:
@@ -229,10 +212,10 @@ components:
                     lineNumber:
                       type: integer
                       format: int32
-                    nativeMethod:
-                      type: boolean
                     className:
                       type: string
+                    nativeMethod:
+                      type: boolean
               message:
                 type: string
               localizedMessage:
@@ -262,10 +245,10 @@ components:
               lineNumber:
                 type: integer
                 format: int32
-              nativeMethod:
-                type: boolean
               className:
                 type: string
+              nativeMethod:
+                type: boolean
         message:
           type: string
         instance:
@@ -278,46 +261,17 @@ components:
           type: object
           additionalProperties:
             type: object
-        status:
-          $ref: '#/components/schemas/StatusType'
         title:
           type: string
         detail:
           type: string
+        status:
+          $ref: '#/components/schemas/StatusType'
         suppressed:
           type: array
           items:
             type: object
             properties:
-              cause:
-                type: object
-                properties:
-                  stackTrace:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        classLoaderName:
-                          type: string
-                        moduleName:
-                          type: string
-                        moduleVersion:
-                          type: string
-                        methodName:
-                          type: string
-                        fileName:
-                          type: string
-                        lineNumber:
-                          type: integer
-                          format: int32
-                        nativeMethod:
-                          type: boolean
-                        className:
-                          type: string
-                  message:
-                    type: string
-                  localizedMessage:
-                    type: string
               stackTrace:
                 type: array
                 items:
@@ -336,10 +290,10 @@ components:
                     lineNumber:
                       type: integer
                       format: int32
-                    nativeMethod:
-                      type: boolean
                     className:
                       type: string
+                    nativeMethod:
+                      type: boolean
               message:
                 type: string
               localizedMessage:

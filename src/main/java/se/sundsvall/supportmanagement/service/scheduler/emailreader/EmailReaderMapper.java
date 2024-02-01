@@ -1,12 +1,15 @@
-package se.sundsvall.supportmanagement.service.scheduler;
+package se.sundsvall.supportmanagement.service.scheduler.emailreader;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
+import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
 import se.sundsvall.supportmanagement.api.model.errand.Classification;
 import se.sundsvall.supportmanagement.api.model.errand.ContactChannel;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
@@ -108,6 +111,27 @@ public class EmailReaderMapper {
 					)
 				)));
 
+	}
+
+	public EmailRequest createEmailRequest(final Email email, final String sender, final String messageTemplate) {
+
+		return EmailRequest.create()
+			.withSubject(email.getSubject())
+			.withRecipient(email.getSender()) // Because we are sending a return response
+			.withEmailHeaders(toEmailHeaderMap(email))
+			.withSender(sender)
+			.withSenderName("")
+			.withMessage(messageTemplate);
+	}
+
+	private Map<EmailHeader, List<String>> toEmailHeaderMap(final Email email) {
+
+		return email.getHeaders().entrySet().stream()
+			.collect(Collectors.toMap(
+				entry -> EmailHeader.valueOf(entry.getKey()),
+				Map.Entry::getValue,
+				(oldValue, newValue) -> newValue
+			));
 	}
 
 }

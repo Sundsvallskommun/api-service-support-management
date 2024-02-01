@@ -27,4 +27,6 @@ public interface ErrandsRepository extends JpaRepository<ErrandEntity, String>, 
 
 	Optional<ErrandEntity> findByErrandNumber(String errandNumber);
 
+	Optional<ErrandEntity> findByExternalTagsValue(String value);
+
 }

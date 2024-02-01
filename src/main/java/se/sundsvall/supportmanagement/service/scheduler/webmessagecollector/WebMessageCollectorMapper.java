@@ -1,0 +1,34 @@
+package se.sundsvall.supportmanagement.service.scheduler.webmessagecollector;
+
+import static java.time.OffsetTime.now;
+import static java.time.ZoneId.systemDefault;
+
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.UUID;
+
+import se.sundsvall.supportmanagement.integration.db.model.CommunicationEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationType;
+import se.sundsvall.supportmanagement.integration.db.model.enums.Direction;
+
+import generated.se.sundsvall.webmessagecollector.MessageDTO;
+
+public final class WebMessageCollectorMapper {
+
+	private WebMessageCollectorMapper() {
+		// Intentionally left empty
+	}
+
+	static CommunicationEntity toCommunicationEntity(final MessageDTO messageDTO, final String errandNumber) {
+		return CommunicationEntity.create()
+			.withId(UUID.randomUUID().toString())
+			.withDirection(Direction.INBOUND)
+			.withErrandNumber(errandNumber)
+			.withExternalCaseID(messageDTO.getExternalCaseId())
+			.withMessageBody(messageDTO.getMessage())
+			.withSent(OffsetDateTime.of(LocalDateTime.parse(messageDTO.getSent()), now(systemDefault()).getOffset()))
+			.withType(CommunicationType.EMAIL)
+			.withViewed(true);
+	}
+
+}
