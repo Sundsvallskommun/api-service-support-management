@@ -27,7 +27,7 @@ import generated.se.sundsvall.emailreader.EmailAttachment;
 class EmailReaderMapperTest {
 
 	@Mock
-	private BlobBuilder blobBuilder;
+	private BlobBuilder blobBuilderMock;
 
 	@Mock
 	private Blob blobMock;
@@ -38,7 +38,7 @@ class EmailReaderMapperTest {
 	@Test
 	void toAttachments() {
 
-		when(blobBuilder.createBlob(anyString())).thenReturn(blobMock);
+		when(blobBuilderMock.createBlob(anyString())).thenReturn(blobMock);
 
 		final var email = new Email()
 			.id("someId")
@@ -73,7 +73,7 @@ class EmailReaderMapperTest {
 	@Test
 	void toCommunicationEntity() {
 
-		when(blobBuilder.createBlob(anyString())).thenReturn(blobMock);
+		when(blobBuilderMock.createBlob(anyString())).thenReturn(blobMock);
 
 		final var email = new Email()
 			.id("someId")

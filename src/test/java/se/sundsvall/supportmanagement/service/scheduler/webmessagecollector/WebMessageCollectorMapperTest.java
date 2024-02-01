@@ -16,7 +16,6 @@ import generated.se.sundsvall.webmessagecollector.MessageDTO;
 
 class WebMessageCollectorMapperTest {
 
-
 	@Test
 	void toCommunicationEntity() {
 		// Arrange
