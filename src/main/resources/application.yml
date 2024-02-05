@@ -24,10 +24,12 @@ integration:
     connectTimeout: 5
     readTimeout: 30
 logbook:
-  exclusionfilters:
-    json-path:
-      '$..base64EncodedString': '[base64]'
-      '$..content': '[binary]'
+  body-filters:
+    jsonPath:
+      - key: '$..base64EncodedString'
+        value: '[base64]'
+      - key: '$..content'
+        value: '[binary]'
 logging:
   level:
     root: INFO
