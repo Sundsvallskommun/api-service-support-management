@@ -23,7 +23,7 @@
 		<flipkart.zjsonpatch.version>0.4.16</flipkart.zjsonpatch.version>
 		<generated-sources-path>${project.build.directory}/generated-sources</generated-sources-path>
 		<generated-sources-java-path>src/main/java</generated-sources-java-path>
-		<shedlock.version>5.10.2</shedlock.version>
+		<shedlock.version>5.11.0</shedlock.version>
 	</properties>
 	<dependencies>
 		<dependency>
