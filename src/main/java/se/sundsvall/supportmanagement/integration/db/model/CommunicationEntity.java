@@ -18,6 +18,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
+import org.hibernate.Length;
 import org.hibernate.annotations.TimeZoneStorage;
 
 import se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationType;
@@ -45,8 +46,7 @@ public class CommunicationEntity {
 
 	@Column(name = "subject")
 	private String subject;
-
-	@Column(name = "message_body")
+	@Column(name = "message_body", length = Length.LONG32)
 	private String messageBody;
 
 	@Column(name = "sent")
