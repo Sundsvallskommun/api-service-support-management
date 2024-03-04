@@ -33,10 +33,10 @@
         errand_number varchar(255),
         external_case_id varchar(255),
         id varchar(255) not null,
-        message_body varchar(255),
         subject varchar(255),
         target varchar(255),
         direction enum ('INBOUND','OUTBOUND'),
+        message_body longtext,
         type enum ('SMS','EMAIL'),
         primary key (id)
     ) engine=InnoDB;
