@@ -30,8 +30,6 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -48,8 +46,6 @@ import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapper;
-
-import generated.se.sundsvall.eventlog.Event;
 
 @ExtendWith(MockitoExtension.class)
 class ErrandAttachmentServiceTest {
@@ -112,9 +108,6 @@ class ErrandAttachmentServiceTest {
 	@InjectMocks
 	private ErrandAttachmentService service;
 
-	@Captor
-	private ArgumentCaptor<Event> eventCaptor;
-
 	@Test
 	void createErrandAttachment() {
 		// Mock
@@ -167,7 +160,6 @@ class ErrandAttachmentServiceTest {
 	@Test
 	void readErrandAttachment() throws IOException, SQLException {
 
-
 		// Mock
 		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
 		when(attachmentRepositoryMock.findById(ATTACHMENT_ID)).thenReturn(of(attachmentMock));
@@ -213,9 +205,9 @@ class ErrandAttachmentServiceTest {
 
 		// Assertions and verifications
 		assertThat(result).isNotNull().hasSize(1);
-		assertThat(result.get(0).getId()).isEqualTo(ATTACHMENT_ID);
-		assertThat(result.get(0).getFileName()).isEqualTo(FILE_NAME);
-		assertThat(result.get(0).getMimeType()).isEqualTo(MIME_TYPE);
+		assertThat(result.getFirst().getId()).isEqualTo(ATTACHMENT_ID);
+		assertThat(result.getFirst().getFileName()).isEqualTo(FILE_NAME);
+		assertThat(result.getFirst().getMimeType()).isEqualTo(MIME_TYPE);
 
 		verify(errandsRepositoryMock).findById(ERRAND_ID);
 		verifyNoInteractions(revisionServiceMock);

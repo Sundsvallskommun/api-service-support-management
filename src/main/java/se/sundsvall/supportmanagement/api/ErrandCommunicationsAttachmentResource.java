@@ -30,11 +30,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "MessageAttachments", description = "CommunicationAttachment operations")
 @ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {Problem.class, ConstraintViolationProblem.class})))
 @ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
-public class ErrandCommunicationsAttachmentResource {
+class ErrandCommunicationsAttachmentResource {
 
 	private final CommunicationService service;
 
-	public ErrandCommunicationsAttachmentResource(final CommunicationService service) {
+	ErrandCommunicationsAttachmentResource(final CommunicationService service) {
 		this.service = service;
 	}
 

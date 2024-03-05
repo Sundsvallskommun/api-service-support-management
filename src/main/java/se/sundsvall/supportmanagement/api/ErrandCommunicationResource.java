@@ -13,7 +13,6 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -46,10 +45,13 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "Errand communication", description = "Errand communication operations")
 @ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {Problem.class, ConstraintViolationProblem.class})))
 @ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
-public class ErrandCommunicationResource {
+class ErrandCommunicationResource {
 
-	@Autowired
-	private CommunicationService service;
+	private final CommunicationService service;
+
+	ErrandCommunicationResource(final CommunicationService service) {
+		this.service = service;
+	}
 
 	@Operation(description = "Get all communications for an errand.")
 	@GetMapping(produces = {APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE})
@@ -76,7 +78,7 @@ public class ErrandCommunicationResource {
 		return ResponseEntity.noContent().build();
 	}
 
-	@PostMapping(path = "/email", consumes = APPLICATION_JSON_VALUE, produces = { ALL_VALUE, APPLICATION_PROBLEM_JSON_VALUE })
+	@PostMapping(path = "/email", consumes = APPLICATION_JSON_VALUE, produces = {ALL_VALUE, APPLICATION_PROBLEM_JSON_VALUE})
 	@Operation(summary = "Send email to in context of an errand", description = "Sends an email message to the recipient specified in the request")
 	@ApiResponse(responseCode = "204", description = "Successful operation")
 	public ResponseEntity<Void> sendEmail(
@@ -90,7 +92,7 @@ public class ErrandCommunicationResource {
 
 	}
 
-	@PostMapping(path = "/sms", consumes = APPLICATION_JSON_VALUE, produces = { ALL_VALUE, APPLICATION_PROBLEM_JSON_VALUE })
+	@PostMapping(path = "/sms", consumes = APPLICATION_JSON_VALUE, produces = {ALL_VALUE, APPLICATION_PROBLEM_JSON_VALUE})
 	@Operation(summary = "Send sms to in context of an errand", description = "Sends a sms message to the recipient specified in the request")
 	@ApiResponse(responseCode = "204", description = "Successful operation")
 	public ResponseEntity<Void> sendSms(

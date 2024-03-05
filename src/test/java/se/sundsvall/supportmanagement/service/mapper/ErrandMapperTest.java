@@ -189,15 +189,15 @@ class ErrandMapperTest {
 				ERRAND_NUMBER);
 
 		assertThat(entity.getStakeholders()).hasSize(1).extracting(
-			StakeholderEntity::getAddress,
-			StakeholderEntity::getCareOf,
-			StakeholderEntity::getCountry,
-			StakeholderEntity::getExternalId,
-			StakeholderEntity::getExternalIdType,
-			StakeholderEntity::getFirstName,
-			StakeholderEntity::getLastName,
-			StakeholderEntity::getZipCode,
-			StakeholderEntity::getRole)
+				StakeholderEntity::getAddress,
+				StakeholderEntity::getCareOf,
+				StakeholderEntity::getCountry,
+				StakeholderEntity::getExternalId,
+				StakeholderEntity::getExternalIdType,
+				StakeholderEntity::getFirstName,
+				StakeholderEntity::getLastName,
+				StakeholderEntity::getZipCode,
+				StakeholderEntity::getRole)
 			.containsExactly(tuple(ADDRESS,
 				CARE_OF,
 				COUNTRY,
@@ -208,9 +208,9 @@ class ErrandMapperTest {
 				ZIP_CODE,
 				STAKEHOLDER_ROLE));
 
-		assertThat(entity.getStakeholders().get(0).getContactChannels()).hasSize(1).extracting(
-			ContactChannelEntity::getType,
-			ContactChannelEntity::getValue)
+		assertThat(entity.getStakeholders().getFirst().getContactChannels()).hasSize(1).extracting(
+				ContactChannelEntity::getType,
+				ContactChannelEntity::getValue)
 			.containsExactly(tuple(
 				CONTACT_CHANNEL_TYPE,
 				CONTACT_CHANNEL_VALUE));
@@ -269,15 +269,15 @@ class ErrandMapperTest {
 				ESCALATION_EMAIL);
 
 		assertThat(entity.getStakeholders()).hasSize(1).extracting(
-			StakeholderEntity::getAddress,
-			StakeholderEntity::getCareOf,
-			StakeholderEntity::getCountry,
-			StakeholderEntity::getExternalId,
-			StakeholderEntity::getExternalIdType,
-			StakeholderEntity::getFirstName,
-			StakeholderEntity::getLastName,
-			StakeholderEntity::getZipCode,
-			StakeholderEntity::getRole)
+				StakeholderEntity::getAddress,
+				StakeholderEntity::getCareOf,
+				StakeholderEntity::getCountry,
+				StakeholderEntity::getExternalId,
+				StakeholderEntity::getExternalIdType,
+				StakeholderEntity::getFirstName,
+				StakeholderEntity::getLastName,
+				StakeholderEntity::getZipCode,
+				StakeholderEntity::getRole)
 			.containsExactly(tuple(ADDRESS,
 				CARE_OF,
 				COUNTRY,
@@ -288,9 +288,9 @@ class ErrandMapperTest {
 				ZIP_CODE,
 				STAKEHOLDER_ROLE));
 
-		assertThat(entity.getStakeholders().get(0).getContactChannels()).hasSize(1).extracting(
-			ContactChannelEntity::getType,
-			ContactChannelEntity::getValue)
+		assertThat(entity.getStakeholders().getFirst().getContactChannels()).hasSize(1).extracting(
+				ContactChannelEntity::getType,
+				ContactChannelEntity::getValue)
 			.containsExactly(tuple(
 				CONTACT_CHANNEL_TYPE,
 				CONTACT_CHANNEL_VALUE));

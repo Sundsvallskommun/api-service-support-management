@@ -40,6 +40,14 @@ class CategoryEntityTest {
 	}
 
 	@Test
+	void equalsAndHashCodeTest() {
+		final var category = new CategoryEntity();
+		final var category2 = new CategoryEntity();
+
+		assertThat(category).isEqualTo(category2).hasSameHashCodeAs(category2);
+	}
+
+	@Test
 	void hasValidBuilderMethods() {
 
 		final var created = OffsetDateTime.now().minusDays(1);

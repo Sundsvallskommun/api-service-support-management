@@ -48,8 +48,6 @@ import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.util.ErrandNumberGeneratorService;
 
-import generated.se.sundsvall.eventlog.Event;
-
 @ExtendWith(MockitoExtension.class)
 class ErrandServiceTest {
 
@@ -87,8 +85,6 @@ class ErrandServiceTest {
 	@Captor
 	private ArgumentCaptor<Specification<ErrandEntity>> specificationCaptor;
 
-	@Captor
-	private ArgumentCaptor<Event> eventCaptor;
 
 	@Test
 	void createErrand() {

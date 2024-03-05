@@ -41,16 +41,14 @@ public class CommunicationService {
 	private static final boolean ASYNCHRONOUSLY = true;
 
 	private final ErrandsRepository errandsRepository;
+	private final CommunicationRepository communicationRepository;
+	private final CommunicationAttachmentRepository communicationAttachmentRepository;
+
+	private final ErrandAttachmentService errandAttachmentService;
 
 	private final MessagingClient messagingClient;
 
-	private final CommunicationRepository communicationRepository;
-
-	private final CommunicationAttachmentRepository communicationAttachmentRepository;
-
 	private final CommunicationMapper communicationMapper;
-
-	private final ErrandAttachmentService errandAttachmentService;
 
 	public CommunicationService(final ErrandsRepository errandsRepository,
 		final MessagingClient messagingClient, final CommunicationRepository communicationRepository,
@@ -104,7 +102,7 @@ public class CommunicationService {
 
 		final var entity = fetchEntity(id, namespace, municipalityId);
 		messagingClient.sendEmail(ASYNCHRONOUSLY, toEmailRequest(entity, request));
-		
+
 		final var communicationEntity = communicationMapper.toCommunicationEntity(request)
 			.withErrandNumber(entity.getErrandNumber());
 

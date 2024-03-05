@@ -1,12 +1,15 @@
 package se.sundsvall.supportmanagement.service;
 
-import generated.se.sundsvall.eventlog.EventType;
-import generated.se.sundsvall.notes.Note;
-import org.springframework.beans.factory.annotation.Autowired;
+import static java.util.Objects.nonNull;
+import static java.util.Optional.ofNullable;
+import static se.sundsvall.supportmanagement.service.mapper.EventlogMapper.toEvent;
+import static se.sundsvall.supportmanagement.service.mapper.EventlogMapper.toMetadataMap;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+
 import se.sundsvall.supportmanagement.api.filter.ExecutingUserSupplier;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.event.Event;
@@ -15,19 +18,21 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.eventlog.EventlogClient;
 import se.sundsvall.supportmanagement.service.mapper.EventlogMapper;
 
-import static java.util.Objects.nonNull;
-import static java.util.Optional.ofNullable;
-import static se.sundsvall.supportmanagement.service.mapper.EventlogMapper.toEvent;
-import static se.sundsvall.supportmanagement.service.mapper.EventlogMapper.toMetadataMap;
+import generated.se.sundsvall.eventlog.EventType;
+import generated.se.sundsvall.notes.Note;
 
 @Service
 public class EventService {
 
-	@Autowired
-	private ExecutingUserSupplier executingUserSupplier;
+	private final ExecutingUserSupplier executingUserSupplier;
 
-	@Autowired
-	private EventlogClient eventLogClient;
+	private final EventlogClient eventLogClient;
+
+	public EventService(final ExecutingUserSupplier executingUserSupplier,
+		final EventlogClient eventLogClient) {
+		this.executingUserSupplier = executingUserSupplier;
+		this.eventLogClient = eventLogClient;
+	}
 
 	public void createErrandEvent(EventType eventType, String message, ErrandEntity errandEntity, Revision currentRevision, Revision previousRevision) {
 		final var metadata = toMetadataMap(errandEntity, currentRevision, previousRevision);

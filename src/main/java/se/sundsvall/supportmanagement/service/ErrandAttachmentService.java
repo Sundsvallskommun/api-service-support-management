@@ -18,10 +18,8 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import jakarta.servlet.http.HttpServletResponse;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StreamUtils;
@@ -44,20 +42,23 @@ public class ErrandAttachmentService {
 	private static final String EVENT_LOG_ADD_ATTACHMENT = "En bilaga har lagts till i ärendet.";
 	private static final String EVENT_LOG_REMOVE_ATTACHMENT = "En bilaga har tagits bort från ärendet.";
 
-	@Autowired
-	private ErrandsRepository errandsRepository;
+	private final ErrandsRepository errandsRepository;
+	private final AttachmentRepository attachmentRepository;
 
-	@Autowired
-	private RevisionService revisionService;
+	private final RevisionService revisionService;
+	private final EventService eventService;
 
-	@Autowired
-	private EventService eventService;
+	private final EntityManager entityManager;
 
-	@Autowired
-	private AttachmentRepository attachmentRepository;
-
-	@PersistenceContext
-	private EntityManager entityManager;
+	public ErrandAttachmentService(final ErrandsRepository errandsRepository,
+		final RevisionService revisionService, final EventService eventService,
+		final AttachmentRepository attachmentRepository, final EntityManager entityManager) {
+		this.errandsRepository = errandsRepository;
+		this.revisionService = revisionService;
+		this.eventService = eventService;
+		this.attachmentRepository = attachmentRepository;
+		this.entityManager = entityManager;
+	}
 
 	public String createErrandAttachment(String namespace, String municipalityId, String errandId, MultipartFile errandAttachment) {
 		final var errandEntity = getErrand(errandId, namespace, municipalityId, true);
@@ -80,7 +81,7 @@ public class ErrandAttachmentService {
 
 	public void readErrandAttachment(String namespace, String municipalityId, String errandId, String attachmentId, HttpServletResponse response) throws SQLException, IOException {
 
-		if(!errandsRepository.existsByIdAndNamespaceAndMunicipalityId(errandId, namespace, municipalityId)) {
+		if (!errandsRepository.existsByIdAndNamespaceAndMunicipalityId(errandId, namespace, municipalityId)) {
 			throw Problem.valueOf(NOT_FOUND, String.format(ERRAND_ENTITY_NOT_FOUND, errandId, namespace, municipalityId));
 		}
 
@@ -120,7 +121,7 @@ public class ErrandAttachmentService {
 	private ErrandEntity getErrand(String errandId, String namespace, String municipalityId, boolean lock) {
 
 		Supplier<Optional<ErrandEntity>> optionalErrand;
-		if(lock) {
+		if (lock) {
 			optionalErrand = () -> errandsRepository.findWithLockingById(errandId);
 		} else {
 			optionalErrand = () -> errandsRepository.findById(errandId);
