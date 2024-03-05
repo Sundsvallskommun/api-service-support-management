@@ -42,7 +42,6 @@ class CommunicationMapperTest {
 	@Mock
 	private Blob blobMock;
 
-
 	@InjectMocks
 	private CommunicationMapper communicationMapper;
 
@@ -64,7 +63,7 @@ class CommunicationMapperTest {
 	}
 
 	@Test
-	void toCommmunicationReturnsNullWhenInputIsNull() {
+	void toCommunicationReturnsNullWhenInputIsNull() {
 		final var communications = communicationMapper.toCommunication(null);
 
 		assertThat(communications).isNull();
@@ -101,7 +100,6 @@ class CommunicationMapperTest {
 		assertThat(attachments).isEmpty();
 	}
 
-
 	@Test
 	void toCommunicationEntityFromEmailRequest() {
 
@@ -132,7 +130,6 @@ class CommunicationMapperTest {
 		assertThat(communicationEntity.getAttachments().getFirst().getAttachmentData().getFile()).isEqualTo(blobMock);
 	}
 
-
 	@Test
 	void toCommunicationEntityFromSmsRequest() {
 		final var smsRequest = new SmsRequest()
@@ -149,7 +146,6 @@ class CommunicationMapperTest {
 		assertThat(communicationEntity.getType()).isEqualTo(CommunicationType.SMS);
 		assertThat(communicationEntity.getMessageBody()).isEqualTo(smsRequest.getMessage());
 	}
-
 
 	@SuppressWarnings("ResultOfMethodCallIgnored")
 	private boolean testValidUUID(final String id) {

@@ -1,31 +1,5 @@
 package se.sundsvall.supportmanagement.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.flipkart.zjsonpatch.DiffFlags;
-import com.flipkart.zjsonpatch.JsonDiff;
-import com.jayway.jsonpath.Configuration;
-import com.jayway.jsonpath.JsonPath;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.zalando.problem.Problem;
-import se.sundsvall.supportmanagement.api.model.revision.DifferenceResponse;
-import se.sundsvall.supportmanagement.api.model.revision.Operation;
-import se.sundsvall.supportmanagement.api.model.revision.Revision;
-import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
-import se.sundsvall.supportmanagement.integration.db.RevisionRepository;
-import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.integration.db.model.RevisionEntity;
-import se.sundsvall.supportmanagement.integration.notes.NotesClient;
-import se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper;
-import se.sundsvall.supportmanagement.service.mapper.RevisionMapper;
-
-import java.util.EnumSet;
-import java.util.List;
-
 import static com.flipkart.zjsonpatch.DiffFlags.ADD_ORIGINAL_VALUE_ON_REPLACE;
 import static com.flipkart.zjsonpatch.DiffFlags.OMIT_COPY_OPERATION;
 import static com.flipkart.zjsonpatch.DiffFlags.OMIT_MOVE_OPERATION;
@@ -37,6 +11,32 @@ import static org.zalando.problem.Status.NOT_FOUND;
 import static se.sundsvall.supportmanagement.service.mapper.RevisionMapper.toRevision;
 import static se.sundsvall.supportmanagement.service.mapper.RevisionMapper.toRevisionEntity;
 import static se.sundsvall.supportmanagement.service.mapper.RevisionMapper.toSerializedSnapshot;
+
+import java.util.EnumSet;
+import java.util.List;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.flipkart.zjsonpatch.DiffFlags;
+import com.flipkart.zjsonpatch.JsonDiff;
+import com.jayway.jsonpath.Configuration;
+import com.jayway.jsonpath.JsonPath;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.zalando.problem.Problem;
+
+import se.sundsvall.supportmanagement.api.model.revision.DifferenceResponse;
+import se.sundsvall.supportmanagement.api.model.revision.Operation;
+import se.sundsvall.supportmanagement.api.model.revision.Revision;
+import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.RevisionRepository;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.RevisionEntity;
+import se.sundsvall.supportmanagement.integration.notes.NotesClient;
+import se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper;
+import se.sundsvall.supportmanagement.service.mapper.RevisionMapper;
 
 @Service
 @Transactional
@@ -52,27 +52,31 @@ public class RevisionService {
 	private static final String VERSION_DOES_NOT_EXIST = "The version requested for the %s revision does not exist";
 	private static final String ERRAND_NOT_FOUND = "An errand with id '%s' could not be found";
 
-	@Autowired
-	private ObjectMapper objectMapper;
+	private final ErrandsRepository errandsRepository;
+	private final RevisionRepository revisionRepository;
 
-	@Autowired
-	private ErrandsRepository errandsRepository;
+	private final ObjectMapper objectMapper;
 
-	@Autowired
-	private RevisionRepository revisionRepository;
+	private final NotesClient notesClient;
 
-	@Autowired
-	private NotesClient notesClient;
+	public RevisionService(final ErrandsRepository errandsRepository,
+		final RevisionRepository revisionRepository, final ObjectMapper objectMapper,
+		final NotesClient notesClient) {
+		this.errandsRepository = errandsRepository;
+		this.revisionRepository = revisionRepository;
+		this.objectMapper = objectMapper;
+		this.notesClient = notesClient;
+	}
 
 	/**
 	 * Create a new revision.
-	 *
+	 * <p>
 	 * A new revision will be created if:
 	 * - the last revisions serialized-snapshot differs from the current (i.e. provided) entity.
 	 * - no previous revisions exist for the provided entity.
 	 *
-	 * @param  entity the entity that will have a new revision.
-	 * @return        the created revision.
+	 * @param entity the entity that will have a new revision.
+	 * @return the created revision.
 	 */
 	public RevisionResult createErrandRevision(ErrandEntity entity) {
 
@@ -106,7 +110,8 @@ public class RevisionService {
 
 		try {
 			return toJsonNode(currentSnapshot).equals(toJsonNode(previousSnapshot));
-		} catch (final Exception e) { // If something fails, log and return the json objects as unequal to force creation of a new revision
+		} catch (final
+		Exception e) { // If something fails, log and return the json objects as unequal to force creation of a new revision
 			LOG.error(COMPARISON_ERROR_LOG_MESSAGE, e);
 		}
 
@@ -116,8 +121,8 @@ public class RevisionService {
 	/**
 	 * Returns all existing revisions for an errand.
 	 *
-	 * @param  errandId id of the errand to fetch revisions for.
-	 * @return          a list of Revision objects containing information on every revision of the errand.
+	 * @param errandId id of the errand to fetch revisions for.
+	 * @return a list of Revision objects containing information on every revision of the errand.
 	 */
 	public List<Revision> getErrandRevisions(String errandId) {
 		verifyExistingErrand(errandId);
@@ -128,8 +133,8 @@ public class RevisionService {
 	/**
 	 * Returns the lastest (current) revision of the errand
 	 *
-	 * @param  errandId id of the errand to fetch latest revision for.
-	 * @return          the latest revision for the errand or null if errand does not exist.
+	 * @param errandId id of the errand to fetch latest revision for.
+	 * @return the latest revision for the errand or null if errand does not exist.
 	 */
 	public Revision getLatestErrandRevision(String errandId) {
 		return revisionRepository.findFirstByEntityIdOrderByVersionDesc(errandId)
@@ -140,9 +145,9 @@ public class RevisionService {
 	/**
 	 * Returns requested revision of the errand
 	 *
-	 * @param  errandId id of the errand to fetch revision for.
-	 * @param  version  the revision version to fetch.
-	 * @return          requested revision for the errand or null if errand or revision does not exist.
+	 * @param errandId id of the errand to fetch revision for.
+	 * @param version the revision version to fetch.
+	 * @return requested revision for the errand or null if errand or revision does not exist.
 	 */
 	public Revision getErrandRevisionByVersion(String errandId, int version) {
 		return revisionRepository.findByEntityIdAndVersion(errandId, version)
@@ -153,10 +158,10 @@ public class RevisionService {
 	/**
 	 * Compares two revision versions of an errand.
 	 *
-	 * @param  errandId      id of the errand to compare.
-	 * @param  sourceVersion version that will act as source in the comparison.
-	 * @param  targetVersion version that will act as target in the comparison.
-	 * @return               response containing the difference between the source version and the target version.
+	 * @param errandId id of the errand to compare.
+	 * @param sourceVersion version that will act as source in the comparison.
+	 * @param targetVersion version that will act as target in the comparison.
+	 * @return response containing the difference between the source version and the target version.
 	 */
 	public DifferenceResponse compareErrandRevisionVersions(String errandId, int sourceVersion, int targetVersion) {
 		verifyExistingErrand(errandId);
@@ -186,9 +191,9 @@ public class RevisionService {
 	/**
 	 * Returns all existing revisions for a note.
 	 *
-	 * @param  errandId id of the errand owning the note to compare.
-	 * @param  noteId   id of the note to fetch revisions for.
-	 * @return          a list of Revision objects containing information on every revision of the note.
+	 * @param errandId id of the errand owning the note to compare.
+	 * @param noteId id of the note to fetch revisions for.
+	 * @return a list of Revision objects containing information on every revision of the note.
 	 */
 	public List<Revision> getNoteRevisions(String errandId, String noteId) {
 		verifyExistingErrand(errandId);
@@ -199,11 +204,11 @@ public class RevisionService {
 	/**
 	 * Compares two revision versions of a note.
 	 *
-	 * @param  errandId      id of the errand owning the note to compare.
-	 * @param  noteId        id of the note to compare.
-	 * @param  sourceVersion version that will act as source in the comparison.
-	 * @param  targetVersion version that will act as target in the comparison.
-	 * @return               response containing the difference between the source version and the target version.
+	 * @param errandId id of the errand owning the note to compare.
+	 * @param noteId id of the note to compare.
+	 * @param sourceVersion version that will act as source in the comparison.
+	 * @param targetVersion version that will act as target in the comparison.
+	 * @return response containing the difference between the source version and the target version.
 	 */
 	public DifferenceResponse compareNoteRevisionVersions(String errandId, String noteId, int sourceVersion, int targetVersion) {
 		verifyExistingErrand(errandId);

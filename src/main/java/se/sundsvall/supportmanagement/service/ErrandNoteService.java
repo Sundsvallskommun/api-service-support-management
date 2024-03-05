@@ -1,25 +1,5 @@
 package se.sundsvall.supportmanagement.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Service;
-import org.zalando.problem.Problem;
-import se.sundsvall.supportmanagement.api.filter.ExecutingUserSupplier;
-import se.sundsvall.supportmanagement.api.model.note.CreateErrandNoteRequest;
-import se.sundsvall.supportmanagement.api.model.note.ErrandNote;
-import se.sundsvall.supportmanagement.api.model.note.FindErrandNotesRequest;
-import se.sundsvall.supportmanagement.api.model.note.FindErrandNotesResponse;
-import se.sundsvall.supportmanagement.api.model.note.UpdateErrandNoteRequest;
-import se.sundsvall.supportmanagement.api.model.revision.Revision;
-import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
-import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
-import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.integration.notes.NotesClient;
-
-import java.util.Objects;
-import java.util.Optional;
-
 import static generated.se.sundsvall.eventlog.EventType.CREATE;
 import static generated.se.sundsvall.eventlog.EventType.DELETE;
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
@@ -35,6 +15,26 @@ import static se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper.toE
 import static se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper.toFindErrandNotesResponse;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper.toUpdateNoteRequest;
 
+import java.util.Objects;
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.zalando.problem.Problem;
+
+import se.sundsvall.supportmanagement.api.filter.ExecutingUserSupplier;
+import se.sundsvall.supportmanagement.api.model.note.CreateErrandNoteRequest;
+import se.sundsvall.supportmanagement.api.model.note.ErrandNote;
+import se.sundsvall.supportmanagement.api.model.note.FindErrandNotesRequest;
+import se.sundsvall.supportmanagement.api.model.note.FindErrandNotesResponse;
+import se.sundsvall.supportmanagement.api.model.note.UpdateErrandNoteRequest;
+import se.sundsvall.supportmanagement.api.model.revision.Revision;
+import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.notes.NotesClient;
+
 @Service
 public class ErrandNoteService {
 
@@ -46,17 +46,22 @@ public class ErrandNoteService {
 	@Value("${spring.application.name:}")
 	private String clientId;
 
-	@Autowired
-	private NotesClient notesClient;
+	private final NotesClient notesClient;
 
-	@Autowired
-	private ErrandsRepository errandsRepository;
+	private final ErrandsRepository errandsRepository;
 
-	@Autowired
-	private EventService eventService;
+	private final EventService eventService;
 
-	@Autowired
-	private ExecutingUserSupplier executingUserSupplier;
+	private final ExecutingUserSupplier executingUserSupplier;
+
+	public ErrandNoteService(final NotesClient notesClient,
+		final ErrandsRepository errandsRepository, final EventService eventService,
+		final ExecutingUserSupplier executingUserSupplier) {
+		this.notesClient = notesClient;
+		this.errandsRepository = errandsRepository;
+		this.eventService = eventService;
+		this.executingUserSupplier = executingUserSupplier;
+	}
 
 	public String createErrandNote(String namespace, String municipalityId, String id, CreateErrandNoteRequest createErrandNoteRequest) {
 		verifyExistingErrand(id, namespace, municipalityId);

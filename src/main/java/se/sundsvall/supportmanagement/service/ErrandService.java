@@ -15,7 +15,6 @@ import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.w
 
 import java.util.function.Supplier;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -38,17 +37,20 @@ public class ErrandService {
 	private static final String EVENT_LOG_UPDATE_ERRAND = "Ärendet har uppdaterats.";
 	private static final String EVENT_LOG_DELETE_ERRAND = "Ärendet har raderats.";
 
-	@Autowired
-	private ErrandsRepository repository;
+	private final ErrandsRepository repository;
 
-	@Autowired
-	private RevisionService revisionService;
+	private final RevisionService revisionService;
+	private final EventService eventService;
+	private final ErrandNumberGeneratorService errandNumberGeneratorService;
 
-	@Autowired
-	private EventService eventService;
-
-	@Autowired
-	private ErrandNumberGeneratorService errandNumberGeneratorService;
+	public ErrandService(final ErrandsRepository repository, final RevisionService revisionService,
+		final EventService eventService,
+		final ErrandNumberGeneratorService errandNumberGeneratorService) {
+		this.repository = repository;
+		this.revisionService = revisionService;
+		this.eventService = eventService;
+		this.errandNumberGeneratorService = errandNumberGeneratorService;
+	}
 
 	public String createErrand(String namespace, String municipalityId, Errand errand) {
 		// Generate unique errand number
@@ -113,7 +115,7 @@ public class ErrandService {
 			exists = () -> repository.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
 		}
 
-		if (!exists.get()) {
+		if (Boolean.FALSE.equals(exists.get())) {
 			throw Problem.valueOf(NOT_FOUND, String.format(ENTITY_NOT_FOUND, id, namespace, municipalityId));
 		}
 	}

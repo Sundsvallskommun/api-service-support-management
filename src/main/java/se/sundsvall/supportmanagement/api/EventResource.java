@@ -29,10 +29,13 @@ import se.sundsvall.supportmanagement.service.EventService;
 @RestController
 @Validated
 @Tag(name = "Errand events", description = "Errand event operations")
-public class EventResource {
+class EventResource {
 
-	@Autowired
-	private EventService eventService;
+	private final EventService eventService;
+
+	EventResource(final EventService eventService) {
+		this.eventService = eventService;
+	}
 
 	@GetMapping(path = "/errands/{id}/events", produces = { APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE })
 	@Operation(summary = "Read errand events", description = "Returns all existing events for the errand that matches the provided id")

@@ -6,7 +6,7 @@ public enum RevisionType {
 
 	private final String value;
 
-	private RevisionType(String value) {
+	RevisionType(String value) {
 		this.value = value;
 	}
 

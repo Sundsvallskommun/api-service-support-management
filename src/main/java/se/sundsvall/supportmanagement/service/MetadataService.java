@@ -21,7 +21,6 @@ import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updat
 import java.util.List;
 import java.util.Objects;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
@@ -58,23 +57,24 @@ public class MetadataService {
 	private static final String ROLE = "Role";
 	private static final String STATUS = "Status";
 
-	@Autowired
-	private CategoryRepository categoryRepository;
+	private final CategoryRepository categoryRepository;
+	private final ExternalIdTypeRepository externalIdTypeRepository;
+	private final LabelRepository labelRepository;
+	private final RoleRepository roleRepository;
+	private final StatusRepository statusRepository;
+	private final ValidationRepository validationRepository;
 
-	@Autowired
-	private ExternalIdTypeRepository externalIdTypeRepository;
-
-	@Autowired
-	private LabelRepository labelRepository;
-
-	@Autowired
-	private RoleRepository roleRepository;
-
-	@Autowired
-	private StatusRepository statusRepository;
-
-	@Autowired
-	private ValidationRepository validationRepository;
+	public MetadataService(final CategoryRepository categoryRepository,
+		final ExternalIdTypeRepository externalIdTypeRepository,
+		final LabelRepository labelRepository, final RoleRepository roleRepository,
+		final StatusRepository statusRepository, final ValidationRepository validationRepository) {
+		this.categoryRepository = categoryRepository;
+		this.externalIdTypeRepository = externalIdTypeRepository;
+		this.labelRepository = labelRepository;
+		this.roleRepository = roleRepository;
+		this.statusRepository = statusRepository;
+		this.validationRepository = validationRepository;
+	}
 
 	// =================================================================
 	// Common operations

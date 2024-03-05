@@ -24,7 +24,7 @@ import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 class ShedlockAnnotationsTest {
 
 	@Test
-	void verifyMandatorySchedlockAnnotations() {
+	void verifyMandatoryShedlockAnnotations() {
 		final var scanner = new ClassPathScanningCandidateComponentProvider(true);
 		final var candidates = scanner.findCandidateComponents(this.getClass().getPackageName());
 		final var hasEnableSchedulerLock = hasEnableSchedulerLock(candidates);
@@ -47,7 +47,7 @@ class ShedlockAnnotationsTest {
 		entrySet.getValue().forEach(method -> {
 			// Verify that method annotated with Scheduled is also annotated with SchedulerLock
 			assertThat(method.isAnnotationPresent(SchedulerLock.class))
-				.withFailMessage(() -> "Method %s in class %s has @Scheduled annotation but no @SchedulerLock annotation" .formatted(method.getName(), entrySet.getKey()))
+				.withFailMessage(() -> "Method %s in class %s has @Scheduled annotation but no @SchedulerLock annotation".formatted(method.getName(), entrySet.getKey()))
 				.isTrue();
 
 			assertThat(hasEnableSchedulerLockAnnotation)
@@ -73,7 +73,7 @@ class ShedlockAnnotationsTest {
 			}
 			return Map.of(Objects.requireNonNull(candidate.getBeanClassName()), methods);
 		} catch (final ClassNotFoundException e) {
-			fail("Couldn't traverse class methods as class %s could not be found" .formatted(candidate.getBeanClassName()));
+			fail("Couldn't traverse class methods as class %s could not be found".formatted(candidate.getBeanClassName()));
 			return Collections.emptyMap();
 		}
 	}
