@@ -1,26 +1,11 @@
 package se.sundsvall.supportmanagement.api;
 
-import static java.util.UUID.randomUUID;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
-import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
-import static org.springframework.http.MediaType.ALL;
-import static org.springframework.http.MediaType.APPLICATION_JSON;
-import static org.springframework.web.util.UriComponentsBuilder.fromPath;
-
-import java.util.List;
-import java.util.Map;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.reactive.server.WebTestClient;
-
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.MetaData;
 import se.sundsvall.supportmanagement.api.model.note.CreateErrandNoteRequest;
@@ -29,6 +14,18 @@ import se.sundsvall.supportmanagement.api.model.note.FindErrandNotesRequest;
 import se.sundsvall.supportmanagement.api.model.note.FindErrandNotesResponse;
 import se.sundsvall.supportmanagement.api.model.note.UpdateErrandNoteRequest;
 import se.sundsvall.supportmanagement.service.ErrandNoteService;
+
+import java.util.List;
+import java.util.Map;
+
+import static java.util.UUID.randomUUID;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
+import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
+import static org.springframework.http.MediaType.ALL;
+import static org.springframework.http.MediaType.APPLICATION_JSON;
 
 @SpringBootTest(classes = Application.class, webEnvironment = RANDOM_PORT)
 @ActiveProfiles("junit")
@@ -42,9 +39,6 @@ class ErrandNotesResourceTest {
 
 	@Autowired
 	private WebTestClient webTestClient;
-
-	@LocalServerPort
-	private int port;
 
 	@MockBean
 	private ErrandNoteService errandNotesServiceMock;
@@ -74,8 +68,7 @@ class ErrandNotesResourceTest {
 			.exchange()
 			.expectStatus().isCreated()
 			.expectHeader().contentType(ALL)
-			.expectHeader().location("http://localhost:".concat(String.valueOf(port)).concat(fromPath(PATH + "/{noteId}")
-				.build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "noteId", noteId)).toString()))
+			.expectHeader().location("/" + NAMESPACE + "/" + MUNICIPALITY_ID + "/errands/" + ERRAND_ID + "/notes/" + noteId)
 			.expectBody().isEmpty();
 
 		// Verification
