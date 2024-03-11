@@ -1,5 +1,15 @@
 package se.sundsvall.supportmanagement.apptest;
 
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.jdbc.Sql;
+import se.sundsvall.dept44.test.AbstractAppTest;
+import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
+import se.sundsvall.supportmanagement.Application;
+import se.sundsvall.supportmanagement.integration.db.RoleRepository;
+
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpHeaders.LOCATION;
@@ -10,17 +20,6 @@ import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
-
-import java.util.List;
-
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.jdbc.Sql;
-
-import se.sundsvall.dept44.test.AbstractAppTest;
-import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
-import se.sundsvall.supportmanagement.Application;
-import se.sundsvall.supportmanagement.integration.db.RoleRepository;
 
 /**
  * Role Metadata IT tests.
@@ -51,7 +50,7 @@ class MetadataRoleIT extends AbstractAppTest {
 			.withHttpMethod(POST)
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(CREATED)
-			.withExpectedResponseHeader(LOCATION, List.of("^http://(.*)/metadata/roles/A_BRAND_NEW_ROLE$"))
+			.withExpectedResponseHeader(LOCATION, List.of("/" + NAMESPACE + "/" + MUNICIPALITY_2281 + "/metadata/roles/A_BRAND_NEW_ROLE"))
 			.withExpectedResponseBodyIsNull()
 			.sendRequestAndVerifyResponse();
 

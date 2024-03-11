@@ -5,7 +5,6 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.reactive.server.WebTestClient;
@@ -33,7 +32,6 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
 import static org.springframework.http.MediaType.TEXT_PLAIN;
 import static org.springframework.http.MediaType.TEXT_PLAIN_VALUE;
-import static org.springframework.web.util.UriComponentsBuilder.fromPath;
 
 @SpringBootTest(classes = Application.class, webEnvironment = RANDOM_PORT)
 @ActiveProfiles("junit")
@@ -49,9 +47,6 @@ class ErrandAttachmentsResourceTest {
 
 	@Autowired
 	private WebTestClient webTestClient;
-
-	@LocalServerPort
-	private int port;
 
 	@Test
 	void createErrandAttachment() {
@@ -76,8 +71,7 @@ class ErrandAttachmentsResourceTest {
 			.exchange()
 			.expectStatus().isCreated()
 			.expectHeader().contentType(ALL)
-			.expectHeader().location("http://localhost:".concat(String.valueOf(port)).concat(fromPath(PATH.concat("/{attachmentId}"))
-				.build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "attachmentId", attachmentId)).toString()))
+			.expectHeader().location("/" + NAMESPACE + "/" + MUNICIPALITY_ID + "/errands/" + ERRAND_ID + "/attachments/" + attachmentId)
 			.expectBody().isEmpty();
 
 		// Verification
