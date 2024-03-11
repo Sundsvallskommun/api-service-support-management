@@ -49,7 +49,7 @@ class MetadataCategoryIT extends AbstractAppTest {
 			.withHttpMethod(POST)
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(CREATED)
-			.withExpectedResponseHeader(LOCATION, List.of("^http://(.*)/metadata/categories/NEW_CATEGORY"))
+			.withExpectedResponseHeader(LOCATION, List.of("/" + NAMESPACE + "/" + MUNICIPALITY_2281 + "/metadata/categories/NEW_CATEGORY"))
 			.withExpectedResponseBodyIsNull()
 			.sendRequestAndVerifyResponse();
 
