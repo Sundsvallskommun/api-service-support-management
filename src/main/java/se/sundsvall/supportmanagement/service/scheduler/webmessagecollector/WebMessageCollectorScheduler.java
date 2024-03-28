@@ -24,7 +24,8 @@ public class WebMessageCollectorScheduler {
 	@SchedulerLock(name = "fetch_webMessages", lockAtMostFor = "${scheduler.web-message-collector.shedlock-lock-at-most-for}")
 	public void fetchWebMessages() {
 		LOG.debug("Fetching messages from WebMessageCollector");
-		webMessageCollectorWorker.fetchWebMessages();
+		webMessageCollectorWorker.fetchWebMessages()
+			.forEach(webMessageCollectorWorker::processAttachments);
 		LOG.debug("Finished fetching from WebMessageCollector");
 	}
 

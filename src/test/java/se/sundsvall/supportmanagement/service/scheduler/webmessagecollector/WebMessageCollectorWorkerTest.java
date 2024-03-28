@@ -1,18 +1,26 @@
 package se.sundsvall.supportmanagement.service.scheduler.webmessagecollector;
 
+import static java.time.OffsetDateTime.now;
+import static java.time.temporal.ChronoUnit.SECONDS;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.Direction.INBOUND;
 
 import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Answers;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -30,6 +38,9 @@ import generated.se.sundsvall.webmessagecollector.MessageDTO;
 @ExtendWith(MockitoExtension.class)
 class WebMessageCollectorWorkerTest {
 
+	@Mock(answer = Answers.CALLS_REAL_METHODS)
+	private WebMessageCollectorMapper webMessageCollectorMapperMock;
+
 	@Mock
 	private WebMessageCollectorClient webMessageCollectorClientMock;
 
@@ -45,9 +56,17 @@ class WebMessageCollectorWorkerTest {
 	@InjectMocks
 	private WebMessageCollectorWorker webMessageCollectorWorker;
 
+	@Captor
+	private ArgumentCaptor<CommunicationEntity> communicationEntityCaptor;
+
+	@Captor
+	private ArgumentCaptor<ErrandEntity> errandEntityCaptor;
+
 	@Test
 	void fetchWebMessages() {
 		// Arrange
+		final var familyId = "123";
+		final var errandNumber = "KC-2024-0101";
 		final var messagedto = new MessageDTO()
 			.direction(MessageDTO.DirectionEnum.INBOUND)
 			.email("email")
@@ -63,21 +82,43 @@ class WebMessageCollectorWorkerTest {
 			.username("username");
 
 		final var errandEntity = ErrandEntity.create()
-			.withErrandNumber("KC-2024-0101")
+			.withErrandNumber(errandNumber)
 			.withStatus(Constants.ERRAND_STATUS_SOLVED)
-			.withTouched(OffsetDateTime.now().minusDays(2));
+			.withTouched(now().minusDays(2));
 		// Mock
-		when(webMessageCollectorPropertiesMock.familyIds()).thenReturn(List.of("123"));
+		when(webMessageCollectorPropertiesMock.familyIds()).thenReturn(List.of(familyId));
 		when(webMessageCollectorClientMock.getMessages(any(String.class))).thenReturn(List.of(messagedto));
 		when(errandsRepositoryMock.findByExternalTagsValue(any(String.class))).thenReturn(Optional.of(errandEntity));
+
+
 		// Act
 		webMessageCollectorWorker.fetchWebMessages();
 		// Verify
 		verify(webMessageCollectorPropertiesMock).familyIds();
-		verify(webMessageCollectorClientMock).getMessages(any(String.class));
-		verify(errandsRepositoryMock).findByExternalTagsValue(any(String.class));
-		verify(errandsRepositoryMock).save(any(ErrandEntity.class));
-		verify(communicationRepositoryMock).save(any(CommunicationEntity.class));
+		verify(webMessageCollectorClientMock).getMessages(familyId);
+		verify(errandsRepositoryMock, times(1)).findByExternalTagsValue(familyId);
+
+		verify(errandsRepositoryMock).save(errandEntityCaptor.capture());
+
+		assertThat(errandEntityCaptor.getValue()).satisfies(
+			errand -> {
+				assertThat(errand.getErrandNumber()).isEqualTo(errandNumber);
+				assertThat(errand.getStatus()).isEqualTo(Constants.ERRAND_STATUS_ONGOING);
+				assertThat(errand.getTouched()).isCloseTo(now().minusDays(2), within(1, SECONDS));
+			});
+
+		verify(communicationRepositoryMock).saveAndFlush(communicationEntityCaptor.capture());
+		assertThat(communicationEntityCaptor.getValue()).satisfies(
+			communication -> {
+				assertThat(communication).hasNoNullFieldsOrPropertiesExcept("subject", "target", "emailHeaders");
+				assertThat(communication.getDirection()).isEqualTo(INBOUND);
+				assertThat(communication.getExternalCaseID()).isEqualTo(messagedto.getExternalCaseId());
+				assertThat(communication.getMessageBody()).isEqualTo(messagedto.getMessage());
+				assertThat(communication.getSent()).isCloseTo(now(), within(1, SECONDS));
+				assertThat(communication.getErrandNumber()).isEqualTo(errandEntity.getErrandNumber());
+			});
+
+		verify(webMessageCollectorMapperMock).toCommunicationEntity(messagedto, errandEntity.getErrandNumber());
 		verifyNoMoreInteractions(webMessageCollectorClientMock, webMessageCollectorPropertiesMock, errandsRepositoryMock, communicationRepositoryMock);
 	}
 
@@ -144,7 +185,7 @@ class WebMessageCollectorWorkerTest {
 		final var errandEntity = ErrandEntity.create()
 			.withErrandNumber("KC-2024-0101")
 			.withStatus(Constants.ERRAND_STATUS_SOLVED)
-			.withTouched(OffsetDateTime.now().minusDays(5).minusMinutes(1));
+			.withTouched(now().minusDays(5).minusMinutes(1));
 
 		// Mock
 		when(webMessageCollectorPropertiesMock.familyIds()).thenReturn(List.of("123"));

@@ -2,19 +2,37 @@ package se.sundsvall.supportmanagement.service.scheduler.webmessagecollector;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
+import static org.mockito.Mockito.when;
 
+import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
+
+import javax.sql.rowset.serial.SerialBlob;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 
 import se.sundsvall.supportmanagement.integration.db.model.enums.Direction;
+import se.sundsvall.supportmanagement.service.util.BlobBuilder;
 import se.sundsvall.supportmanagement.service.util.ServiceUtil;
 
+import generated.se.sundsvall.webmessagecollector.MessageAttachment;
 import generated.se.sundsvall.webmessagecollector.MessageDTO;
 
+@ExtendWith(org.mockito.junit.jupiter.MockitoExtension.class)
 class WebMessageCollectorMapperTest {
+
+	@InjectMocks
+	private WebMessageCollectorMapper webMessageCollectorMapper;
+
+	@Mock
+	private BlobBuilder blobBuilder;
+
 
 	@Test
 	void toCommunicationEntity() {
@@ -29,16 +47,22 @@ class WebMessageCollectorMapperTest {
 
 		final var errandNumber = "KC-2024-010";
 
+		final var attachment = new MessageAttachment()
+			.attachmentId(1)
+			.mimeType("text/plain")
+			.name("attachment.txt");
+
 		final var messagedto = new MessageDTO()
 			.direction(direction)
 			.externalCaseId(externalCaseId)
 			.familyId(familyId)
 			.message(messageString)
 			.messageId(messageId)
+			.attachments(List.of(attachment))
 			.sent(sent);
 
 		// Act
-		final var result = WebMessageCollectorMapper.toCommunicationEntity(messagedto, errandNumber);
+		final var result = webMessageCollectorMapper.toCommunicationEntity(messagedto, errandNumber);
 
 		// Assert
 		assertThat(result).hasNoNullFieldsOrPropertiesExcept("subject", "target", "attachments", "emailHeaders");
@@ -48,8 +72,29 @@ class WebMessageCollectorMapperTest {
 		assertThat(result.getExternalCaseID()).isEqualTo(externalCaseId);
 		assertThat(result.getMessageBody()).isEqualTo(messageString);
 		assertThat(result.getSent()).isCloseTo(OffsetDateTime.now(), within(1, ChronoUnit.SECONDS));
+		assertThat(result.getAttachments()).hasSize(1);
+		assertThat(result.getAttachments().getFirst().getId()).isEqualTo("1");
+		assertThat(result.getAttachments().getFirst().getContentType()).isEqualTo("text/plain");
+		assertThat(result.getAttachments().getFirst().getName()).isEqualTo("attachment.txt");
+
+	}
 
 
+	@Test
+	void toCommunicationAttachmentDataEntity() throws SQLException {
+
+		// Arrange
+		final var attachmentData = "attachmentData".getBytes();
+		final var blob = new SerialBlob(attachmentData);
+		when(blobBuilder.createBlob(attachmentData)).thenReturn(blob);
+
+		// Act
+		final var result = webMessageCollectorMapper.toCommunicationAttachmentDataEntity(attachmentData);
+
+		// Assert
+		assertThat(result).isNotNull();
+		assertThat(result.getFile()).isNotNull();
+		assertThat(result.getFile()).isSameAs(blob);
 	}
 
 }
