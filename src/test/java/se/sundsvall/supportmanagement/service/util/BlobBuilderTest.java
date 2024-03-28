@@ -34,4 +34,16 @@ class BlobBuilderTest {
 		assertThat(blob.getBinaryStream().readAllBytes()).isEqualTo(fileContent.getBytes());
 	}
 
+	@Test
+	void createBlobWithByteArray() throws IOException, SQLException {
+		// Arrange
+		final var fileContent = "text-content-of-file".getBytes(UTF_8);
+
+		// Act
+		final var blob = blobBuilder.createBlob(fileContent);
+
+		// Assert
+		assertThat(blob.getBinaryStream().readAllBytes()).isEqualTo(fileContent);
+	}
+
 }

@@ -5,13 +5,16 @@ import static se.sundsvall.supportmanagement.Constants.ERRAND_STATUS_SOLVED;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import se.sundsvall.supportmanagement.integration.db.CommunicationRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.model.CommunicationAttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.webmessagecollector.WebMessageCollectorClient;
 import se.sundsvall.supportmanagement.integration.webmessagecollector.configuration.WebMessageCollectorProperties;
@@ -31,33 +34,53 @@ public class WebMessageCollectorWorker {
 
 	private final CommunicationRepository communicationRepository;
 
-	public WebMessageCollectorWorker(final WebMessageCollectorClient webMessageCollectorClient, final WebMessageCollectorProperties webMessageCollectorProperties, final ErrandsRepository errandsRepository, final CommunicationRepository communicationRepository) {
+	private final WebMessageCollectorMapper webMessageCollectorMapper;
+
+	public WebMessageCollectorWorker(final WebMessageCollectorClient webMessageCollectorClient, final WebMessageCollectorProperties webMessageCollectorProperties, final ErrandsRepository errandsRepository, final CommunicationRepository communicationRepository, final WebMessageCollectorMapper webMessageCollectorMapper) {
 		this.webMessageCollectorClient = webMessageCollectorClient;
 		this.webMessageCollectorProperties = webMessageCollectorProperties;
 		this.errandsRepository = errandsRepository;
 		this.communicationRepository = communicationRepository;
+		this.webMessageCollectorMapper = webMessageCollectorMapper;
 	}
 
-	void fetchWebMessages() {
-		webMessageCollectorProperties.familyIds().forEach(this::getWebMessages);
+	@Transactional
+	public List<CommunicationAttachmentEntity> fetchWebMessages() {
+		return webMessageCollectorProperties.familyIds().stream()
+			.flatMap(familyId -> getWebMessages(familyId).stream())
+			.toList();
 	}
 
-	private void getWebMessages(final String familyId) {
+	private List<CommunicationAttachmentEntity> getWebMessages(final String familyId) {
 		final var messages = webMessageCollectorClient.getMessages(familyId);
 		LOG.info("Got {} messages from the WebMessageCollectorClient", messages.size());
-		processMessages(messages);
+
+		return processMessages(messages);
 	}
 
-	private void processMessages(final List<MessageDTO> messages) {
-
-		messages.forEach(messageDTO ->
-			errandsRepository.findByExternalTagsValue(messageDTO.getExternalCaseId())
+	private List<CommunicationAttachmentEntity> processMessages(final List<MessageDTO> messages) {
+		return messages.stream()
+			.map(messageDTO -> errandsRepository.findByExternalTagsValue(messageDTO.getExternalCaseId())
 				.filter(this::shouldBeUpdated)
-				.ifPresent(errand ->
-				{
-					updateErrandStatus(errand);
-					communicationRepository.save(WebMessageCollectorMapper.toCommunicationEntity(messageDTO, errand.getErrandNumber()));
-				}));
+				.map(errand -> processMessage(messageDTO, errand)))
+			.filter(Optional::isPresent)
+			.flatMap(optional -> optional.get().stream())
+			.toList();
+	}
+
+	private List<CommunicationAttachmentEntity> processMessage(final MessageDTO messageDTO, final ErrandEntity errand) {
+		updateErrandStatus(errand);
+		final var entity = webMessageCollectorMapper.toCommunicationEntity(messageDTO, errand.getErrandNumber());
+		communicationRepository.saveAndFlush(entity);
+		return entity.getAttachments();
+	}
+
+
+	@Transactional
+	public void processAttachments(final CommunicationAttachmentEntity attachment) {
+		final var attachmentData = webMessageCollectorClient.getAttachment(Integer.parseInt(attachment.getId()));
+		attachment.setAttachmentData(webMessageCollectorMapper.toCommunicationAttachmentDataEntity(attachmentData));
+		communicationRepository.saveAndFlush(attachment.getCommunicationEntity());
 	}
 
 	private void updateErrandStatus(final ErrandEntity errand) {

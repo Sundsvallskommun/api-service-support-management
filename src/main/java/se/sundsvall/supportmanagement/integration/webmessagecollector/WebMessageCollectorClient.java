@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import se.sundsvall.supportmanagement.integration.webmessagecollector.configuration.WebMessageCollectorConfiguration;
@@ -25,5 +26,11 @@ public interface WebMessageCollectorClient {
 
 	@DeleteMapping("/messages")
 	void deleteMessages(List<Integer> ids);
+
+	@GetMapping("/messages/attachments/{attachmentId}")
+	byte[] getAttachment(@PathVariable(name = "attachmentId") int attachmentId);
+
+	@DeleteMapping("/messages/attachments/{attachmentId}")
+	void deleteAttachment(@PathVariable(name = "attachmentId") int attachmentId);
 
 }

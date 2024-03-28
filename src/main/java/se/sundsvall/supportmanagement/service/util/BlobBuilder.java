@@ -31,4 +31,10 @@ public class BlobBuilder {
 		return session.getLobHelper().createBlob(stream, decodedBytes.length);
 	}
 
+
+	public Blob createBlob(final byte[] content) {
+		final var session = entityManager.unwrap(Session.class);
+		return session.getLobHelper().createBlob(content);
+	}
+
 }

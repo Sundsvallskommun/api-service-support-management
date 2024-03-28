@@ -5,9 +5,9 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "2.0"
+  version: "3.0"
 servers:
-  - url: http://localhost:50563
+  - url: http://localhost:50331
     description: Generated server url
 tags:
   - name: messages
@@ -37,6 +37,12 @@ paths:
                 oneOf:
                   - $ref: '#/components/schemas/Problem'
                   - $ref: '#/components/schemas/ConstraintViolationProblem'
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
         "500":
           description: Internal Server error
           content:
@@ -46,17 +52,11 @@ paths:
         "200":
           description: Successful Operation
           content:
-            '*/*':
+            application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/MessageDTO'
-        "404":
-          description: Not found
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
     delete:
       tags:
         - messages
@@ -81,6 +81,51 @@ paths:
                 oneOf:
                   - $ref: '#/components/schemas/Problem'
                   - $ref: '#/components/schemas/ConstraintViolationProblem'
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        "204":
+          description: No Content
+  /messages/attachments/{attachmentId}:
+    get:
+      tags:
+        - messages
+      summary: Get a messageAttachment
+      description: Returns a messageAttachment as a stream for the specified attachmentId
+      operationId: getAttachment
+      parameters:
+        - name: attachmentId
+          in: path
+          description: MessageId to fetch attachment for
+          required: true
+          schema:
+            type: integer
+            format: int32
+          example: 123
+      responses:
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/Problem'
+                  - $ref: '#/components/schemas/ConstraintViolationProblem'
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
         "500":
           description: Internal Server error
           content:
@@ -89,12 +134,44 @@ paths:
                 $ref: '#/components/schemas/Problem'
         "200":
           description: Successful Operation
+    delete:
+      tags:
+        - messages
+      summary: Delete a messageAttachment
+      description: Deletes a messageAttachment with the specified id
+      operationId: deleteAttachment
+      parameters:
+        - name: attachmentId
+          in: path
+          description: Id of the attachment to delete
+          required: true
+          schema:
+            type: integer
+            format: int32
+          example: 123
+      responses:
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/Problem'
+                  - $ref: '#/components/schemas/ConstraintViolationProblem'
         "404":
           description: Not found
           content:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        "204":
+          description: No Content
   /api-docs:
     get:
       tags:
@@ -307,6 +384,28 @@ components:
           type: string
         message:
           type: string
+    MessageAttachment:
+      type: object
+      properties:
+        attachmentId:
+          type: integer
+          description: The Id for the attachment
+          format: int32
+          example: 1
+        name:
+          type: string
+          description: The name of the file
+          example: file.txt
+        extension:
+          type: string
+          description: The extension of the file
+          example: txt
+        mimeType:
+          type: string
+          description: The mime type of the file
+          example: text/plain
+      description: List of attachments for the message
+      example: "attachment1, attachment2"
     MessageDTO:
       type: object
       properties:
@@ -365,4 +464,8 @@ components:
           description: 'If the message was utbound from a manager or inbound from
             a customer '
           example: "177"
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/MessageAttachment'
   securitySchemes: { }
