@@ -1,5 +1,18 @@
 package se.sundsvall.supportmanagement.api;
 
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.HttpStatus;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.reactive.server.WebTestClient;
+import se.sundsvall.supportmanagement.Application;
+import se.sundsvall.supportmanagement.api.model.metadata.ExternalIdType;
+import se.sundsvall.supportmanagement.service.MetadataService;
+
+import java.util.Map;
+
 import static org.apache.commons.lang3.ArrayUtils.EMPTY_STRING_ARRAY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
@@ -7,22 +20,6 @@ import static org.mockito.Mockito.when;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.MediaType.ALL;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
-import static org.springframework.web.util.UriComponentsBuilder.fromPath;
-
-import java.util.Map;
-
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.http.HttpStatus;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.web.reactive.server.WebTestClient;
-
-import se.sundsvall.supportmanagement.Application;
-import se.sundsvall.supportmanagement.api.model.metadata.ExternalIdType;
-import se.sundsvall.supportmanagement.service.MetadataService;
 
 @SpringBootTest(classes = Application.class, webEnvironment = RANDOM_PORT)
 @ActiveProfiles("junit")
@@ -37,9 +34,6 @@ class MetadataExternalIdTypeResourceTest {
 
 	@Autowired
 	private WebTestClient webTestClient;
-
-	@LocalServerPort
-	private int port;
 
 	@Test
 	void createExternalIdType() {
@@ -58,8 +52,7 @@ class MetadataExternalIdTypeResourceTest {
 			.exchange()
 			.expectStatus().isCreated()
 			.expectHeader().contentType(ALL)
-			.expectHeader().location("http://localhost:".concat(String.valueOf(port)).concat(fromPath(PATH + "/{externalIdType}")
-				.build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "externalIdType", externalIdTypeName)).toString()))
+			.expectHeader().location("/" + NAMESPACE + "/" + MUNICIPALITY_ID + "/metadata/externalIdTypes/" + externalIdTypeName)
 			.expectBody().isEmpty();
 
 		// Verifications & assertions
