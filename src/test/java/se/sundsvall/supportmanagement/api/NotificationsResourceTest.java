@@ -8,6 +8,7 @@ import static org.springframework.http.MediaType.ALL;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
@@ -25,6 +26,9 @@ import se.sundsvall.supportmanagement.service.NotificationService;
 @ActiveProfiles("junit")
 class NotificationsResourceTest {
 
+	private static final String PATH = "/{namespace}/{municipalityId}/notifications";
+
+
 	private static final String NAMESPACE = "namespace";
 
 	private static final String MUNICIPALITY_ID = "2281";
@@ -41,7 +45,8 @@ class NotificationsResourceTest {
 		when(notificationServiceMock.getNotifications(MUNICIPALITY_ID, NAMESPACE, "12")).thenReturn(List.of(Notification.create()));
 
 		final var response = webTestClient.get()
-			.uri("/" + NAMESPACE + "/" + MUNICIPALITY_ID + "/notifications" + "?ownerId=12")
+			.uri(builder -> builder.path(PATH).queryParam("ownerId", "12")
+				.build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
 			.accept(APPLICATION_JSON)
 			.exchange()
 			.expectStatus().isOk()
@@ -58,7 +63,7 @@ class NotificationsResourceTest {
 	void createNotification() {
 		// Parameter values
 		final var requestBody = Notification.create()
-			.withOwner("SomeOwner")
+			.withOwnerFullName("SomeOwner")
 			.withOwnerId(UUID.randomUUID().toString())
 			.withCreatedBy("SomeUser")
 			.withType("SomeType")
@@ -72,7 +77,8 @@ class NotificationsResourceTest {
 
 		// Call
 		final var response = webTestClient.post()
-			.uri("/" + NAMESPACE + "/" + MUNICIPALITY_ID + "/notifications")
+			.uri(builder -> builder.path(PATH)
+				.build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
 			.contentType(APPLICATION_JSON)
 			.accept(APPLICATION_JSON)
 			.bodyValue(requestBody)
@@ -93,7 +99,7 @@ class NotificationsResourceTest {
 		final var notificationId = UUID.randomUUID().toString();
 		final var requestBody = Notification.create()
 			.withId(notificationId)
-			.withOwner("TestOwner")
+			.withOwnerFullName("TestOwner")
 			.withOwnerId("12")
 			.withCreatedBy("TestUser")
 			.withType("CREATE")
@@ -103,7 +109,8 @@ class NotificationsResourceTest {
 
 		// Call
 		final var response = webTestClient.patch()
-			.uri("/" + NAMESPACE + "/" + MUNICIPALITY_ID + "/notifications/" + notificationId)
+			.uri(builder -> builder.path(PATH + "/" + notificationId)
+				.build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
 			.contentType(APPLICATION_JSON)
 			.accept(APPLICATION_JSON)
 			.bodyValue(requestBody)
@@ -123,7 +130,8 @@ class NotificationsResourceTest {
 
 		// Call
 		final var response = webTestClient.delete()
-			.uri("/" + NAMESPACE + "/" + MUNICIPALITY_ID + "/notifications/" + notificationId)
+			.uri(builder -> builder.path(PATH + "/" + notificationId)
+				.build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
 			.exchange()
 			.expectStatus().isNoContent()
 			.expectBody().isEmpty();

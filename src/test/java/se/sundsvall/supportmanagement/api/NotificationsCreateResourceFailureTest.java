@@ -47,7 +47,7 @@ class NotificationsCreateResourceFailureTest {
 
 	private static Stream<Arguments> provideBadRequests() {
 		return Stream.of(
-			Arguments.of(TestObjectsBuilder.createNotification(n -> n.withOwner(null)), "owner", "must not be blank"),
+			Arguments.of(TestObjectsBuilder.createNotification(n -> n.withOwnerFullName(null)), "ownerFullName", "must not be blank"),
 			Arguments.of(TestObjectsBuilder.createNotification(n -> n.withOwnerId(null)), "ownerId", "not a valid UUID"),
 			Arguments.of(TestObjectsBuilder.createNotification(n -> n.withOwnerId("invalid_uuid")), "ownerId", "not a valid UUID"),
 			Arguments.of(TestObjectsBuilder.createNotification(n -> n.withCreatedBy(null)), "createdBy", "must not be blank"),

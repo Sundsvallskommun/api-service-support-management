@@ -29,8 +29,8 @@ public class Notification {
 	private OffsetDateTime modified;
 
 	@NotBlank
-	@Schema(description = "Owner of the notification", example = "Test Testorsson")
-	private String owner;
+	@Schema(description = "Name of the owner of the notification", example = "Test Testorsson")
+	private String ownerFullName;
 
 	@ValidUuid
 	@Schema(description = "Owner id of the notification", example = "cb20c51f-fcf3-42c0-b613-de563634a8ec")
@@ -105,16 +105,16 @@ public class Notification {
 		return this;
 	}
 
-	public String getOwner() {
-		return owner;
+	public String getOwnerFullName() {
+		return ownerFullName;
 	}
 
-	public void setOwner(final String owner) {
-		this.owner = owner;
+	public void setOwnerFullName(final String ownerFullName) {
+		this.ownerFullName = ownerFullName;
 	}
 
-	public Notification withOwner(final String owner) {
-		this.owner = owner;
+	public Notification withOwnerFullName(final String ownerFullName) {
+		this.ownerFullName = ownerFullName;
 		return this;
 	}
 
@@ -227,12 +227,12 @@ public class Notification {
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
 		final Notification that = (Notification) o;
-		return acknowledged == that.acknowledged && Objects.equals(id, that.id) && Objects.equals(created, that.created) && Objects.equals(modified, that.modified) && Objects.equals(owner, that.owner) && Objects.equals(ownerId, that.ownerId) && Objects.equals(createdBy, that.createdBy) && Objects.equals(type, that.type) && Objects.equals(description, that.description) && Objects.equals(content, that.content) && Objects.equals(expires, that.expires) && Objects.equals(errandId, that.errandId);
+		return acknowledged == that.acknowledged && Objects.equals(id, that.id) && Objects.equals(created, that.created) && Objects.equals(modified, that.modified) && Objects.equals(ownerFullName, that.ownerFullName) && Objects.equals(ownerId, that.ownerId) && Objects.equals(createdBy, that.createdBy) && Objects.equals(type, that.type) && Objects.equals(description, that.description) && Objects.equals(content, that.content) && Objects.equals(expires, that.expires) && Objects.equals(errandId, that.errandId);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, created, modified, owner, ownerId, createdBy, type, description, content, expires, acknowledged, errandId);
+		return Objects.hash(id, created, modified, ownerFullName, ownerId, createdBy, type, description, content, expires, acknowledged, errandId);
 	}
 
 	@Override
@@ -241,7 +241,7 @@ public class Notification {
 			"id=" + id +
 			", created=" + created +
 			", modified=" + modified +
-			", owner='" + owner + '\'' +
+			", ownerFullName='" + ownerFullName + '\'' +
 			", ownerId='" + ownerId + '\'' +
 			", createdBy='" + createdBy + '\'' +
 			", type='" + type + '\'' +

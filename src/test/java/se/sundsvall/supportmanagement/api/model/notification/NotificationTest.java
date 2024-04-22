@@ -55,7 +55,7 @@ class NotificationTest {
 			.withId(id)
 			.withCreated(created)
 			.withModified(modified)
-			.withOwner(owner)
+			.withOwnerFullName(owner)
 			.withOwnerId(ownerId)
 			.withCreatedBy(createdBy)
 			.withType(type)
@@ -69,7 +69,7 @@ class NotificationTest {
 		assertThat(notification.getId()).isEqualTo(id);
 		assertThat(notification.getCreated()).isEqualTo(created);
 		assertThat(notification.getModified()).isEqualTo(modified);
-		assertThat(notification.getOwner()).isEqualTo(owner);
+		assertThat(notification.getOwnerFullName()).isEqualTo(owner);
 		assertThat(notification.getOwnerId()).isEqualTo(ownerId);
 		assertThat(notification.getCreatedBy()).isEqualTo(createdBy);
 		assertThat(notification.getType()).isEqualTo(type);

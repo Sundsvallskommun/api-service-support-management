@@ -137,7 +137,7 @@ public class TestObjectsBuilder {
 		final var notification = Notification.create()
 			.withCreated(NOTIFICATION_CREATED)
 			.withModified(NOTIFICATION_MODIFIED)
-			.withOwner(NOTIFICATION_OWNER)
+			.withOwnerFullName(NOTIFICATION_OWNER)
 			.withOwnerId(NOTIFICATION_OWNER_ID)
 			.withCreatedBy(NOTIFICATION_CREATED_BY)
 			.withType(NOTIFICATION_TYPE)
