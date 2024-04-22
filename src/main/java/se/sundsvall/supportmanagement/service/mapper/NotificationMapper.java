@@ -33,7 +33,7 @@ public class NotificationMapper {
 	}
 
 	public static NotificationEntity updateEntity(final NotificationEntity entity, final Notification notification) {
-		if (entity == null || notification == null) {
+		if (anyNull(entity, notification)) {
 			return entity;
 		}
 		Optional.ofNullable(notification.getOwnerFullName()).ifPresent(entity::setOwnerFullName);

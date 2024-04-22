@@ -1,6 +1,6 @@
 create table notification
 (
-    acknowledged    bit,
+    acknowledged    bit          not null,
     created         datetime(6),
     expires         datetime(6),
     modified        datetime(6),

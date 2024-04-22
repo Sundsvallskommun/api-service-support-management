@@ -15,6 +15,7 @@ import jakarta.persistence.Index;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotNull;
 
 import org.hibernate.annotations.TimeZoneStorage;
 import org.hibernate.annotations.UuidGenerator;
@@ -60,6 +61,7 @@ public class NotificationEntity {
 	@Column(name = "expires")
 	private OffsetDateTime expires;
 
+	@NotNull
 	@Column(name = "acknowledged")
 	private boolean acknowledged;
 
