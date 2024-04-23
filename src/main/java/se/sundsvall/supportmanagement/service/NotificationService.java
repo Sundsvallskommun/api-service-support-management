@@ -5,6 +5,7 @@ import static org.zalando.problem.Status.NOT_FOUND;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.zalando.problem.Problem;
 
 import se.sundsvall.supportmanagement.api.model.notification.Notification;
@@ -30,17 +31,15 @@ public class NotificationService {
 	public String createNotification(final String municipalityId, final String namespace, final Notification notification) {
 		return "";
 	}
-	
+
+	@Transactional
 	public void updateNotifications(final String municipalityId, final String namespace, final List<Notification> notifications) {
 		notifications.forEach(notification -> updateNotification(municipalityId, namespace, notification.getId(), notification));
 	}
 
-
-	public void updateNotification(final String municipalityId, final String namespace, final String notificationId, final Notification notification) {
-		if (!notificationRepository.existsByIdAndNamespaceAndMunicipalityId(notificationId, namespace, municipalityId)) {
-			throw Problem.valueOf(NOT_FOUND, String.format(NOTIFICATION_ENTITY_NOT_FOUND, notificationId, namespace, municipalityId));
-		}
-		final var entity = notificationRepository.getReferenceById(notificationId);
+	private void updateNotification(final String municipalityId, final String namespace, final String notificationId, final Notification notification) {
+		final var entity = notificationRepository.findByIdAndNamespaceAndMunicipalityId(notificationId, namespace, municipalityId)
+			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, String.format(NOTIFICATION_ENTITY_NOT_FOUND, notificationId, namespace, municipalityId)));
 		notificationRepository.save(NotificationMapper.updateEntity(entity, notification));
 
 	}

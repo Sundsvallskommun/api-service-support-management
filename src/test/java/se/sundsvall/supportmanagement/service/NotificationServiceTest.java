@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.createNotificationEntity;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
@@ -87,18 +88,18 @@ class NotificationServiceTest {
 	}
 
 	@Test
-	void updateNotification() {
+	void updateNotifications() {
 
 		// Arrange
 		final var municipalityId = "2281";
 		final var namespace = "namespace";
-		final var notification = TestObjectsBuilder.createNotification(n -> {});
 		final var notificationId = UUID.randomUUID().toString();
-		when(notificationRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(notificationId, namespace, municipalityId)).thenReturn(true);
-		when(notificationRepositoryMock.getReferenceById(notificationId)).thenReturn(createNotificationEntity(n -> {}));
+		final var notification = TestObjectsBuilder.createNotification(n -> n.setId(notificationId));
+		when(notificationRepositoryMock.findByIdAndNamespaceAndMunicipalityId(notificationId, namespace, municipalityId))
+			.thenReturn(Optional.ofNullable(createNotificationEntity(n -> n.setId(notificationId))));
 
 		// Act
-		notificationService.updateNotification(municipalityId, namespace, notificationId, notification);
+		notificationService.updateNotifications(municipalityId, namespace, List.of(notification));
 
 		// Assert
 		verify(notificationRepositoryMock).save(notificationEntityArgumentCaptor.capture());
@@ -119,16 +120,16 @@ class NotificationServiceTest {
 		// Arrange
 		final var municipalityId = "2281";
 		final var namespace = "namespace";
-		final var notification = TestObjectsBuilder.createNotification(n -> {});
 		final var notificationId = UUID.randomUUID().toString();
 
+		final var notification = TestObjectsBuilder.createNotification(n -> n.setId(notificationId));
 		// Act
-		assertThatThrownBy(() -> notificationService.updateNotification(municipalityId, namespace, notificationId, notification))
+		assertThatThrownBy(() -> notificationService.updateNotifications(municipalityId, namespace, List.of(notification)))
 			.isInstanceOf(Problem.class)
 			.hasMessage(String.format("Not Found: Notification with id %s not found in namespace %s for municipality with id %s", notificationId, namespace, municipalityId));
 
 		// Assert
-		verify(notificationRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(notificationId, namespace, municipalityId);
+		verify(notificationRepositoryMock).findByIdAndNamespaceAndMunicipalityId(notificationId, namespace, municipalityId);
 	}
 
 	@Test

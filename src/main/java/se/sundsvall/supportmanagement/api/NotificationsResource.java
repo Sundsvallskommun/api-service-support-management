@@ -15,6 +15,7 @@ import static se.sundsvall.supportmanagement.Constants.NAMESPACE_VALIDATON_MESSA
 import java.util.List;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 
@@ -88,7 +89,7 @@ public class NotificationsResource {
 	public ResponseEntity<Void> updateNotifications(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATON_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
-		@RequestBody final List<Notification> notifications) {
+		@RequestBody @NotEmpty final List<Notification> notifications) {
 		notificationService.updateNotifications(municipalityId, namespace, notifications);
 		return noContent().build();
 	}
