@@ -89,7 +89,7 @@ public class NotificationsResource {
 	public ResponseEntity<Void> updateNotifications(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATON_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
-		@RequestBody @NotEmpty final List<Notification> notifications) {
+		@Valid @NotEmpty @RequestBody final List<Notification> notifications) {
 		notificationService.updateNotifications(municipalityId, namespace, notifications);
 		return noContent().build();
 	}
