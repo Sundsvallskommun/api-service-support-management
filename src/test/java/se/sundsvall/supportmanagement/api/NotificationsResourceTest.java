@@ -19,6 +19,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
 import se.sundsvall.supportmanagement.Application;
+import se.sundsvall.supportmanagement.TestObjectsBuilder;
 import se.sundsvall.supportmanagement.api.model.notification.Notification;
 import se.sundsvall.supportmanagement.service.NotificationService;
 
@@ -97,19 +98,11 @@ class NotificationsResourceTest {
 	void updateNotification() {
 		// Parameter values
 		final var notificationId = UUID.randomUUID().toString();
-		final var requestBody = Notification.create()
-			.withId(notificationId)
-			.withOwnerFullName("TestOwner")
-			.withOwnerId("12")
-			.withCreatedBy("TestUser")
-			.withType("CREATE")
-			.withDescription("Test description")
-			.withContent("Test content")
-			.withAcknowledged(true);
+		final var requestBody = List.of(TestObjectsBuilder.createNotification(n -> n.withOwnerId(notificationId)));
 
 		// Call
 		final var response = webTestClient.patch()
-			.uri(builder -> builder.path(PATH + "/" + notificationId)
+			.uri(builder -> builder.path(PATH)
 				.build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
 			.contentType(APPLICATION_JSON)
 			.accept(APPLICATION_JSON)
@@ -120,7 +113,7 @@ class NotificationsResourceTest {
 
 		// Verification
 		assertThat(response).isNotNull();
-		verify(notificationServiceMock).updateNotification(MUNICIPALITY_ID, NAMESPACE, notificationId, requestBody);
+		verify(notificationServiceMock).updateNotifications(MUNICIPALITY_ID, NAMESPACE, requestBody);
 	}
 
 	@Test

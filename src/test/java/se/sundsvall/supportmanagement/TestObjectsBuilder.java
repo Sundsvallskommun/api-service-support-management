@@ -18,11 +18,12 @@ import se.sundsvall.supportmanagement.api.model.notification.Notification;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 
 public class TestObjectsBuilder {
 
-	private static final String MUNICIPALITY_ID = "municipalityId";
+	private static final String MUNICIPALITY_ID = "2281";
 
 	private static final String ERRAND_ID = "errandId";
 
@@ -145,6 +146,27 @@ public class TestObjectsBuilder {
 			.withContent(NOTIFICATION_CONTENT)
 			.withExpires(NOTIFICATION_EXPIRES)
 			.withAcknowledged(NOTIFICATION_ACKNOWLEDGED)
+			.withErrandId(NOTIFICATION_ERRAND_ID);
+
+		Optional.ofNullable(modifier).ifPresent(m -> m.accept(notification));
+
+		return notification;
+	}
+
+	public static NotificationEntity createNotificationEntity(final Consumer<NotificationEntity> modifier) {
+		final var notification = NotificationEntity.create()
+			.withCreated(NOTIFICATION_CREATED)
+			.withModified(NOTIFICATION_MODIFIED)
+			.withOwnerFullName(NOTIFICATION_OWNER)
+			.withOwnerId(NOTIFICATION_OWNER_ID)
+			.withCreatedBy(NOTIFICATION_CREATED_BY)
+			.withType(NOTIFICATION_TYPE)
+			.withDescription(NOTIFICATION_DESCRIPTION)
+			.withContent(NOTIFICATION_CONTENT)
+			.withExpires(NOTIFICATION_EXPIRES)
+			.withAcknowledged(NOTIFICATION_ACKNOWLEDGED)
+			.withNamespace(NAMESPACE)
+			.withMunicipalityId(MUNICIPALITY_ID)
 			.withErrandId(NOTIFICATION_ERRAND_ID);
 
 		Optional.ofNullable(modifier).ifPresent(m -> m.accept(notification));

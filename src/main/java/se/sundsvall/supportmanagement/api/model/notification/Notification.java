@@ -10,13 +10,12 @@ import org.springframework.format.annotation.DateTimeFormat;
 
 import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
-import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
 public class Notification {
 
-	@Null(groups = {OnCreate.class, OnUpdate.class})
+	@Null(groups = {OnCreate.class})
 	@Schema(description = "Unique identifier for the notification", example = "123e4567-e89b-12d3-a456-426614174000")
 	private String id;
 
