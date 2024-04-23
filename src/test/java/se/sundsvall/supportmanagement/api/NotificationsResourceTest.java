@@ -97,7 +97,7 @@ class NotificationsResourceTest {
 	void updateNotification() {
 		// Parameter values
 		final var notificationId = UUID.randomUUID().toString();
-		final var requestBody = Notification.create()
+		final var requestBody = List.of(Notification.create()
 			.withId(notificationId)
 			.withOwnerFullName("TestOwner")
 			.withOwnerId("12")
@@ -105,11 +105,11 @@ class NotificationsResourceTest {
 			.withType("CREATE")
 			.withDescription("Test description")
 			.withContent("Test content")
-			.withAcknowledged(true);
+			.withAcknowledged(true));
 
 		// Call
 		final var response = webTestClient.patch()
-			.uri(builder -> builder.path(PATH + "/" + notificationId)
+			.uri(builder -> builder.path(PATH)
 				.build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
 			.contentType(APPLICATION_JSON)
 			.accept(APPLICATION_JSON)
@@ -120,7 +120,7 @@ class NotificationsResourceTest {
 
 		// Verification
 		assertThat(response).isNotNull();
-		verify(notificationServiceMock).updateNotification(MUNICIPALITY_ID, NAMESPACE, notificationId, requestBody);
+		verify(notificationServiceMock).updateNotifications(MUNICIPALITY_ID, NAMESPACE, requestBody);
 	}
 
 	@Test

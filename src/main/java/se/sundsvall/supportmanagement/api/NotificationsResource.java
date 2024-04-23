@@ -59,7 +59,7 @@ public class NotificationsResource {
 	@GetMapping
 	@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true)
 	@ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
-	@Operation(summary = "Get notifications", description = "Get notifications for the namespace and municipality")
+	@Operation(summary = "Get notifications", description = "Get notifications for the namespace and municipality with the specified ownerId")
 	public ResponseEntity<List<Notification>> getNotifications(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATON_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
@@ -81,16 +81,15 @@ public class NotificationsResource {
 			.build();
 	}
 
-	@PatchMapping("/{notificationId}")
+	@PatchMapping
 	@ApiResponse(responseCode = "204", description = "Successful operation")
 	@ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
-	@Operation(summary = "Update notification", description = "Update notification for the namespace and municipality")
-	public ResponseEntity<Void> updateNotification(
+	@Operation(summary = "Update notification", description = "Update notifications for the namespace and municipality")
+	public ResponseEntity<Void> updateNotifications(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATON_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
-		@Parameter(name = "notificationId", description = "Notification id", example = "") @PathVariable final String notificationId,
-		@RequestBody final Notification notification) {
-		notificationService.updateNotification(municipalityId, namespace, notificationId, notification);
+		@RequestBody final List<Notification> notifications) {
+		notificationService.updateNotifications(municipalityId, namespace, notifications);
 		return noContent().build();
 	}
 
