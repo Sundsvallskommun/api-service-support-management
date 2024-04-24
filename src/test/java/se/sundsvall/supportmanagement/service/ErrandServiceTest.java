@@ -52,10 +52,15 @@ import se.sundsvall.supportmanagement.integration.db.util.ErrandNumberGeneratorS
 class ErrandServiceTest {
 
 	private static final String NAMESPACE = "namespace";
+
 	private static final String MUNICIPALITY_ID = "municipalityId";
+
 	private static final String ERRAND_ID = "errandId";
+
 	private static final String EVENT_LOG_CREATE_ERRAND = "Ärendet har skapats.";
+
 	private static final String EVENT_LOG_UPDATE_ERRAND = "Ärendet har uppdaterats.";
+
 	private static final String EVENT_LOG_DELETE_ERRAND = "Ärendet har raderats.";
 
 	@Mock
@@ -296,4 +301,5 @@ class ErrandServiceTest {
 	void verifyNoMoreInteractionsOnMocks() {
 		verifyNoMoreInteractions(errandRepositoryMock, revisionServiceMock, eventServiceMock);
 	}
+
 }

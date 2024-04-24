@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.zalando.problem.Problem;
 
+import se.sundsvall.supportmanagement.api.filter.ExecutingUserSupplier;
 import se.sundsvall.supportmanagement.api.model.notification.Notification;
 import se.sundsvall.supportmanagement.integration.db.NotificationRepository;
 import se.sundsvall.supportmanagement.service.mapper.NotificationMapper;
@@ -18,18 +19,45 @@ public class NotificationService {
 
 	private static final String NOTIFICATION_ENTITY_NOT_FOUND = "Notification with id %s not found in namespace %s for municipality with id %s";
 
+	public final ExecutingUserSupplier executingUserSupplier;
+
 	private final NotificationRepository notificationRepository;
 
-	public NotificationService(final NotificationRepository notificationRepository) {this.notificationRepository = notificationRepository;}
-
+	public NotificationService(final NotificationRepository notificationRepository, final ExecutingUserSupplier executingUserSupplier) {
+		this.notificationRepository = notificationRepository;
+		this.executingUserSupplier = executingUserSupplier;
+	}
 
 	public List<Notification> getNotifications(final String municipalityId, final String namespace, final String ownerId) {
 
 		return notificationRepository.findAllByNamespaceAndMunicipalityIdAndOwnerId(namespace, municipalityId, ownerId).stream().map(NotificationMapper::toNotification).toList();
 	}
 
+
 	public String createNotification(final String municipalityId, final String namespace, final Notification notification) {
-		return "";
+
+		if (!isOwner(notification.getOwnerId()) && doesNotificationExist(municipalityId, namespace, notification)) {
+			return null;
+		}
+
+		final var entity = NotificationMapper.toNotificationEntity(namespace, municipalityId, notification);
+		return notificationRepository.save(entity).getId();
+	}
+
+	private boolean isOwner(final String ownerId) {
+		return executingUserSupplier.getAdUser().equals(ownerId);
+	}
+
+	private boolean doesNotificationExist(final String municipalityId, final String namespace, final Notification notification) {
+		return notificationRepository
+			.findByNamespaceAndMunicipalityIdAndOwnerIdAndAcknowledgedAndErrandIdAndType(
+				namespace,
+				municipalityId,
+				notification.getOwnerId(),
+				notification.isAcknowledged(),
+				notification.getErrandId(),
+				notification.getType())
+			.isPresent();
 	}
 
 	@Transactional

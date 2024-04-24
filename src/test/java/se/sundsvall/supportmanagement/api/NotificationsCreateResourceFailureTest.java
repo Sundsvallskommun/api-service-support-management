@@ -3,9 +3,11 @@ package se.sundsvall.supportmanagement.api;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.zalando.problem.Status.BAD_REQUEST;
+import static org.zalando.problem.Status.CONFLICT;
 
 import java.util.Map;
 import java.util.stream.Stream;
@@ -19,6 +21,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import org.zalando.problem.Problem;
 import org.zalando.problem.violations.ConstraintViolationProblem;
 import org.zalando.problem.violations.Violation;
 
@@ -48,8 +51,7 @@ class NotificationsCreateResourceFailureTest {
 	private static Stream<Arguments> provideBadRequests() {
 		return Stream.of(
 			Arguments.of(TestObjectsBuilder.createNotification(n -> n.withOwnerFullName(null)), "ownerFullName", "must not be blank"),
-			Arguments.of(TestObjectsBuilder.createNotification(n -> n.withOwnerId(null)), "ownerId", "not a valid UUID"),
-			Arguments.of(TestObjectsBuilder.createNotification(n -> n.withOwnerId("invalid_uuid")), "ownerId", "not a valid UUID"),
+			Arguments.of(TestObjectsBuilder.createNotification(n -> n.withOwnerId(null)), "ownerId", "must not be blank"),
 			Arguments.of(TestObjectsBuilder.createNotification(n -> n.withCreatedBy(null)), "createdBy", "must not be blank"),
 			Arguments.of(TestObjectsBuilder.createNotification(n -> n.withType(null)), "type", "must not be blank"),
 			Arguments.of(TestObjectsBuilder.createNotification(n -> n.withDescription(null)), "description", "must not be blank"),
@@ -124,6 +126,32 @@ class NotificationsCreateResourceFailureTest {
 		// Verification
 		assertThat(response).isNotNull();
 		verifyNoInteractions(notificationServiceMock);
+	}
+
+	@Test
+	void createNotificationAlreadyExists() {
+		// Parameter values
+		final var requestBody = TestObjectsBuilder.createNotification(n -> {});
+		when(notificationServiceMock.createNotification(MUNICIPALITY_ID, NAMESPACE, requestBody)).thenReturn(null);
+
+		// Call
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+			.contentType(APPLICATION_JSON)
+			.accept(APPLICATION_JSON)
+			.bodyValue(requestBody)
+			.exchange()
+			.expectStatus().is4xxClientError()
+			.expectBody(Problem.class)
+			.returnResult()
+			.getResponseBody();
+
+		// Verification
+		assertThat(response).isNotNull();
+
+		assertThat(response.getStatus()).isEqualTo(CONFLICT);
+		assertThat(response.getTitle()).isEqualTo("Conflict");
+		assertThat(response.getDetail()).isEqualTo("Notification already exists");
 	}
 
 }

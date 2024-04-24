@@ -31,8 +31,8 @@ public class Notification {
 	@Schema(description = "Name of the owner of the notification", example = "Test Testorsson")
 	private String ownerFullName;
 
-	@ValidUuid
-	@Schema(description = "Owner id of the notification", example = "cb20c51f-fcf3-42c0-b613-de563634a8ec")
+	@NotBlank
+	@Schema(description = "Owner id of the notification", example = "AD01")
 	private String ownerId;
 
 	@NotBlank

@@ -31,6 +31,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.zalando.problem.Problem;
+import org.zalando.problem.Status;
 import org.zalando.problem.violations.ConstraintViolationProblem;
 
 import se.sundsvall.dept44.common.validators.annotation.ValidMunicipalityId;
@@ -70,12 +71,17 @@ public class NotificationsResource {
 
 	@PostMapping
 	@ApiResponse(responseCode = "201", description = "Created - Successful operation", headers = @Header(name = LOCATION, schema = @Schema(type = "string")), useReturnTypeSchema = true)
+	@ApiResponse(responseCode = "409", description = "Conflict", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	@Operation(summary = "Create notification", description = "Create new notification for the namespace and municipality")
 	public ResponseEntity<Void> createNotification(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATON_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Valid @NotNull @RequestBody final Notification notification) {
+
 		final var result = notificationService.createNotification(municipalityId, namespace, notification);
+		if (result == null) {
+			throw Problem.valueOf(Status.CONFLICT, "Notification already exists");
+		}
 		return created(fromPath("/{namespace}/{municipalityId}/notifications/{notificationId}")
 			.buildAndExpand(namespace, municipalityId, result).toUri())
 			.header(CONTENT_TYPE, ALL_VALUE)
