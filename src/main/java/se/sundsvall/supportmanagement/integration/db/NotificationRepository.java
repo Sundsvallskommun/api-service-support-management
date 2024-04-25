@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.integration.db;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,5 +20,7 @@ public interface NotificationRepository extends JpaRepository<NotificationEntity
 	List<NotificationEntity> findAllByNamespaceAndMunicipalityIdAndOwnerId(String namespace, String municipalityId, String ownerId);
 
 	Optional<NotificationEntity> findByNamespaceAndMunicipalityIdAndOwnerIdAndAcknowledgedAndErrandIdAndType(final String namespace, final String municipalityId, final String ownerId, final boolean acknowledged, final String errandId, final String type);
+
+	List<NotificationEntity> findByExpiresBefore(final OffsetDateTime expires);
 
 }

@@ -27,7 +27,7 @@ class NotificationRepositoryTest {
 	private NotificationRepository notificationRepository;
 
 	@Test
-	void createNotificationTest() {
+	void createNotification() {
 
 		// Arrange
 		final var id = "123e4567-e89b-12d3-a456-426614174000";
@@ -67,7 +67,50 @@ class NotificationRepositoryTest {
 	}
 
 	@Test
-	void updateNotificationTest() {
+	void findByIdAndNamespaceAndMunicipalityId() {
+
+		// Act
+		final var notification = notificationRepository.findByIdAndNamespaceAndMunicipalityId("1", "namespace-1", "municipalityId-1");
+
+		// Assert
+		assertThat(notification).isPresent();
+	}
+
+	@Test
+	void findAllByNamespaceAndMunicipalityIdAndOwnerId() {
+
+		// Act
+		final var notifications = notificationRepository.findAllByNamespaceAndMunicipalityIdAndOwnerId("namespace-1", "municipalityId-1", "owner_id-1");
+
+		// Assert
+		assertThat(notifications).hasSize(1);
+	}
+
+	@Test
+	void findByNamespaceAndMunicipalityIdAndOwnerIdAndAcknowledgedAndErrandIdAndType() {
+
+		// Act
+		final var notification = notificationRepository.findByNamespaceAndMunicipalityIdAndOwnerIdAndAcknowledgedAndErrandIdAndType("namespace-1", "municipalityId-1", "owner_id-1", false, "ERRAND_ID-1", "type-1");
+
+		// Assert
+		assertThat(notification).isPresent();
+	}
+
+	@Test
+	void findByExpiresBefore() {
+
+		// Arrange
+		final var timestamp = OffsetDateTime.of(2024, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
+
+		// Act
+		final var notifications = notificationRepository.findByExpiresBefore(timestamp);
+
+		// Assert
+		assertThat(notifications).hasSize(1);
+	}
+
+	@Test
+	void updateNotification() {
 
 		// Arrange
 		final var notification = notificationRepository.findById("1").orElseThrow();
@@ -82,7 +125,7 @@ class NotificationRepositoryTest {
 	}
 
 	@Test
-	void existsByIdAndNamespaceAndMunicipalityIdTest() {
+	void existsByIdAndNamespaceAndMunicipalityId() {
 
 		// Act
 		final boolean exists = notificationRepository.existsByIdAndNamespaceAndMunicipalityId("1", "namespace-1", "municipalityId-1");
@@ -92,7 +135,7 @@ class NotificationRepositoryTest {
 	}
 
 	@Test
-	void deleteNotificationTest() {
+	void deleteNotification() {
 
 		// Arrange
 		final var notification = notificationRepository.findById("1").orElseThrow();
