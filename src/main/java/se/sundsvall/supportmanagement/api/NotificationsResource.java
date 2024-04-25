@@ -13,6 +13,7 @@ import static se.sundsvall.supportmanagement.Constants.NAMESPACE_REGEXP;
 import static se.sundsvall.supportmanagement.Constants.NAMESPACE_VALIDATON_MESSAGE;
 
 import java.util.List;
+import java.util.Optional;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
@@ -78,10 +79,9 @@ public class NotificationsResource {
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Valid @NotNull @RequestBody final Notification notification) {
 
-		final var result = notificationService.createNotification(municipalityId, namespace, notification);
-		if (result == null) {
-			throw Problem.valueOf(Status.CONFLICT, "Notification already exists");
-		}
+		final var result = Optional.ofNullable(notificationService.createNotification(municipalityId, namespace, notification))
+			.orElseThrow(() -> Problem.valueOf(Status.CONFLICT, "Notification already exists"));
+
 		return created(fromPath("/{namespace}/{municipalityId}/notifications/{notificationId}")
 			.buildAndExpand(namespace, municipalityId, result).toUri())
 			.header(CONTENT_TYPE, ALL_VALUE)
