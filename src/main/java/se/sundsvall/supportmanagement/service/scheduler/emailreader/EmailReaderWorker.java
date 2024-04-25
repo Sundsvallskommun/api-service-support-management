@@ -21,7 +21,6 @@ import generated.se.sundsvall.emailreader.Email;
 
 
 @Service
-@Transactional
 public class EmailReaderWorker {
 
 	private final EmailReaderProperties emailReaderProperties;
@@ -46,7 +45,6 @@ public class EmailReaderWorker {
 		this.communicationService = communicationService;
 		this.emailReaderMapper = emailReaderMapper;
 	}
-
 
 	@Transactional
 	public void getAndProcessEmails() {
