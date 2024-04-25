@@ -1,0 +1,11 @@
+{
+  "ownerFullName": "Test Testorsson",
+  "ownerId": "AD01",
+  "createdBy": "TestUser",
+  "type": "CREATE",
+  "description": "Some description of the notification",
+  "content": "Some content of the notification",
+  "expires": "2000-10-31T01:30:00+02:00",
+  "acknowledged": true,
+  "errandId": "f0882f1d-06bc-47fd-b017-1d8307f5ce95"
+}

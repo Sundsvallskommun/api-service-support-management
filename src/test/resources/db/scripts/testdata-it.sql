@@ -229,3 +229,10 @@ VALUES ('cc236cf1-c00f-4479-8341-ecf5dd90b5b9', '81471222-5798-11e9-ae24-57fa13b
 INSERT INTO communication_email_header_value (header_id, value, order_index)
 VALUES ('81471222-5798-11e9-ae24-57fa13b361e1', 'someValue', 0),
        ('81471222-5798-11e9-ae24-57fa13b361e1', 'someOtherValue', 1);
+
+-------------------------------------
+-- Notification
+-------------------------------------
+INSERT INTO notification(acknowledged, created, expires, modified, content, created_by, description, errand_id, id, municipality_id, namespace, owner_full_name, owner_id, type)
+VALUES (0, '2023-12-31 23:59:59.999', '2024-12-31 23:59:59.999', '2023-12-31 23:59:59.999', 'content-1', 'created_by-1', 'description-1', 'ERRAND_ID-1', '3ec421e9-56d1-4e47-9160-259d8dbe6a50', '2281', 'namespace_1', 'owner_full_name-1', 'owner_id-1', 'type-1'),
+       (1, '2023-12-31 23:59:59.999', '2024-12-31 23:59:59.999', '2023-12-31 23:59:59.999', 'content-2', 'created_by-2', 'description-2', 'ERRAND_ID-2', '2', '2281', 'namespace_1', 'owner_full_name-2', 'owner_id-2', 'type-2');
