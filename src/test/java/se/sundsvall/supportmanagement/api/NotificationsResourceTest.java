@@ -65,7 +65,7 @@ class NotificationsResourceTest {
 		// Parameter values
 		final var requestBody = Notification.create()
 			.withOwnerFullName("SomeOwner")
-			.withOwnerId(UUID.randomUUID().toString())
+			.withOwnerId("SomeOwnerId")
 			.withCreatedBy("SomeUser")
 			.withType("SomeType")
 			.withDescription("Some description")

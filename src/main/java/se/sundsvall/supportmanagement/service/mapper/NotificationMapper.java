@@ -15,9 +15,6 @@ public class NotificationMapper {
 
 
 	public static NotificationEntity toNotificationEntity(final String namespace, final String municipalityId, final Notification notification) {
-		if (anyNull(namespace, municipalityId, notification)) {
-			return null;
-		}
 		return NotificationEntity.create()
 			.withOwnerFullName(notification.getOwnerFullName())
 			.withOwnerId(notification.getOwnerId())

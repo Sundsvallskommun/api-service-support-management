@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.createNotificationEntity;
@@ -20,11 +21,15 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.zalando.problem.Problem;
 
 import se.sundsvall.supportmanagement.TestObjectsBuilder;
+import se.sundsvall.supportmanagement.api.filter.ExecutingUserSupplier;
 import se.sundsvall.supportmanagement.integration.db.NotificationRepository;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
 
 @ExtendWith(MockitoExtension.class)
 class NotificationServiceTest {
+
+	@Mock
+	private ExecutingUserSupplier executingUserSupplierMock;
 
 	@Mock
 	private NotificationRepository notificationRepositoryMock;
@@ -78,13 +83,20 @@ class NotificationServiceTest {
 		final var municipalityId = "2281";
 		final var namespace = "namespace";
 		final var notification = TestObjectsBuilder.createNotification(n -> {});
+		final var id = "SomeId";
 
+		when(executingUserSupplierMock.getAdUser()).thenReturn("otherAD");
+		when(notificationRepositoryMock.findByNamespaceAndMunicipalityIdAndOwnerIdAndAcknowledgedAndErrandIdAndType(namespace, municipalityId, notification.getOwnerId(), notification.isAcknowledged(), notification.getErrandId(), notification.getType()))
+			.thenReturn(Optional.empty());
+		when(notificationRepositoryMock.save(any())).thenReturn(createNotificationEntity(n -> n.setId(id)));
 		// Act
 		final var result = notificationService.createNotification(municipalityId, namespace, notification);
 
 		// Assert
-		// Todo fix when entities are in place
-		assertThat(result).isNotNull();
+		assertThat(result).isNotNull().isEqualTo(id);
+		verify(notificationRepositoryMock).save(notificationEntityArgumentCaptor.capture());
+		assertThat(notificationEntityArgumentCaptor.getValue().getOwnerFullName()).isEqualTo(notification.getOwnerFullName());
+		verify(notificationRepositoryMock).findByNamespaceAndMunicipalityIdAndOwnerIdAndAcknowledgedAndErrandIdAndType(namespace, municipalityId, notification.getOwnerId(), notification.isAcknowledged(), notification.getErrandId(), notification.getType());
 	}
 
 	@Test

@@ -121,13 +121,6 @@ class NotificationMapperTest {
 	}
 
 	@Test
-	void testToNotificationEntityFromNull() {
-		assertThat(NotificationMapper.toNotificationEntity(null, null, null)).isNull();
-		assertThat(NotificationMapper.toNotificationEntity(NAMESPACE, null, null)).isNull();
-		assertThat(NotificationMapper.toNotificationEntity(null, MUNICIPALITY_ID, null)).isNull();
-	}
-
-	@Test
 	void updateEntity() {
 		final var entity = createEntity();
 		final var notification = createNotification();
