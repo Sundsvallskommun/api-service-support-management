@@ -7,6 +7,10 @@ scheduler:
     initialDelay: PT1M
     fixedRate: PT1M
     shedlock-lock-at-most-for: PT10M
+  notification:
+    initialDelay: PT1M
+    fixedRate: PT1M
+    shedlock-lock-at-most-for: PT10M
 integration:
   emailreader:
     connectTimeout: 5

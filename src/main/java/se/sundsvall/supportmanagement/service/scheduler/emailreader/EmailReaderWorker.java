@@ -6,9 +6,7 @@ import static se.sundsvall.supportmanagement.service.scheduler.emailreader.Erran
 
 import java.time.OffsetDateTime;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,12 +18,12 @@ import se.sundsvall.supportmanagement.service.CommunicationService;
 import se.sundsvall.supportmanagement.service.ErrandService;
 
 import generated.se.sundsvall.emailreader.Email;
-import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 
 
 @Service
 @Transactional
 public class EmailReaderWorker {
+
 	private final EmailReaderProperties emailReaderProperties;
 
 	private final EmailReaderClient emailReaderClient;
@@ -50,9 +48,8 @@ public class EmailReaderWorker {
 	}
 
 
-	@Scheduled(initialDelayString = "${scheduler.emailreader.initialDelay}", fixedRateString = "${scheduler.emailreader.fixedRate}", timeUnit = TimeUnit.SECONDS)
-	@SchedulerLock(name = "fetch_emails", lockAtMostFor = "${scheduler.emailreader.shedlock-lock-at-most-for}")
-	void getAndProcessEmails() {
+	@Transactional
+	public void getAndProcessEmails() {
 
 		emailReaderClient.getEmails(emailReaderProperties.municipalityId(), emailReaderProperties.namespace())
 			.forEach(this::processEmail);
