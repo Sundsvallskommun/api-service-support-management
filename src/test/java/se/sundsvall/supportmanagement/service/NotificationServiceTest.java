@@ -42,6 +42,42 @@ class NotificationServiceTest {
 
 
 	@Test
+	void getNotification() {
+
+		// Arrange
+		final var municipalityId = "2281";
+		final var namespace = "namespace";
+		final var notificationId = UUID.randomUUID().toString();
+
+		when(notificationRepositoryMock.findByIdAndNamespaceAndMunicipalityId(notificationId, namespace, municipalityId)).thenReturn(Optional.ofNullable(createNotificationEntity(n -> {})));
+
+		// Act
+		final var result = notificationService.getNotification(municipalityId, namespace, notificationId);
+
+		// Assert
+		assertThat(result).isNotNull();
+		verify(notificationRepositoryMock).findByIdAndNamespaceAndMunicipalityId(notificationId, namespace, municipalityId);
+	}
+
+	@Test
+	void getNotification_notFound() {
+
+		// Arrange
+		final var municipalityId = "2281";
+		final var namespace = "namespace";
+		final var notificationId = UUID.randomUUID().toString();
+
+		// Act
+		assertThatThrownBy(() -> notificationService.getNotification(municipalityId, namespace, notificationId))
+			.isInstanceOf(Problem.class)
+			.hasMessage(String.format("Not Found: Notification with id %s not found in namespace %s for municipality with id %s", notificationId, namespace, municipalityId));
+
+		// Assert
+		verify(notificationRepositoryMock).findByIdAndNamespaceAndMunicipalityId(notificationId, namespace, municipalityId);
+	}
+
+
+	@Test
 	void getNotifications() {
 
 		// Arrange

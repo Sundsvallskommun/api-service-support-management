@@ -92,4 +92,14 @@ class NotificationIT extends AbstractAppTest {
 			.sendRequestAndVerifyResponse();
 	}
 
+	@Test
+	void test05_getNotification() {
+		setupCall()
+			.withServicePath(PATH + "/" + NOTIFICATION_ID)
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
 }
