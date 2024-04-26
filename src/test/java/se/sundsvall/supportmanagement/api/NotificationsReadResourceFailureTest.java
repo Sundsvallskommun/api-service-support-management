@@ -135,8 +135,8 @@ class NotificationsReadResourceFailureTest {
 
 
 	@Test
-	void getNotificationWithNullNotificationID() {
-		
+	void getNotificationNotFound() {
+
 		// Arrange
 		when(notificationServiceMock.getNotification(MUNICIPALITY_ID, NAMESPACE, NOTIFICATION_ID)).thenThrow(Problem.valueOf(NOT_FOUND, String.format("Notification with id %s not found in namespace %s for municipality with id %s", NOTIFICATION_ID, NAMESPACE, MUNICIPALITY_ID)));
 

@@ -47,16 +47,21 @@ class NotificationIT extends AbstractAppTest {
 
 	@Test
 	void test01_createNotification() {
-		setupCall()
+
+		final var result = setupCall()
 			.withServicePath(PATH)
 			.withHttpMethod(POST)
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(CREATED)
 			.withExpectedResponseHeader(LOCATION, List.of("/" + NAMESPACE + "/" + MUNICIPALITY_2281 + "/notifications/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"))
 			.withExpectedResponseBodyIsNull()
-			.sendRequestAndVerifyResponse();
+			.sendRequestAndVerifyResponse()
+			.getResponseHeaders()
+			.getFirst(LOCATION);
 
-		assertThat(notificationRepository.existsByIdAndNamespaceAndMunicipalityId("3ec421e9-56d1-4e47-9160-259d8dbe6a50", NAMESPACE, MUNICIPALITY_2281)).isTrue();
+		assertThat(result).isNotBlank();
+		final var createdNotificationId = result.substring(result.lastIndexOf('/') + 1);
+		assertThat(notificationRepository.existsByIdAndNamespaceAndMunicipalityId(createdNotificationId, NAMESPACE, MUNICIPALITY_2281)).isTrue();
 
 	}
 
