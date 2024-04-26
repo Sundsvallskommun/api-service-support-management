@@ -59,6 +59,17 @@ public class NotificationsResource {
 
 	public NotificationsResource(final NotificationService notificationService) {this.notificationService = notificationService;}
 
+	@GetMapping("/{notificationId}")
+	@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true)
+	@ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+	@Operation(summary = "Get notifications", description = "Get a specific notification for the namespace and municipality")
+	public ResponseEntity<Notification> getNotification(
+		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATON_MESSAGE) @PathVariable final String namespace,
+		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
+		@Parameter(name = "notificationId", description = "notificationId", example = "12") @PathVariable final String notificationId) {
+		return ok(notificationService.getNotification(municipalityId, namespace, notificationId));
+	}
+
 	@GetMapping
 	@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true)
 	@ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))

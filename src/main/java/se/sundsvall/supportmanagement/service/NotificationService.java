@@ -28,6 +28,12 @@ public class NotificationService {
 		this.executingUserSupplier = executingUserSupplier;
 	}
 
+	public Notification getNotification(final String municipalityId, final String namespace, final String notificationId) {
+		return notificationRepository.findByIdAndNamespaceAndMunicipalityId(notificationId, namespace, municipalityId)
+			.map(NotificationMapper::toNotification)
+			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, String.format(NOTIFICATION_ENTITY_NOT_FOUND, notificationId, namespace, municipalityId)));
+	}
+
 	public List<Notification> getNotifications(final String municipalityId, final String namespace, final String ownerId) {
 
 		return notificationRepository.findAllByNamespaceAndMunicipalityIdAndOwnerId(namespace, municipalityId, ownerId).stream().map(NotificationMapper::toNotification).toList();
