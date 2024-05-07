@@ -156,3 +156,16 @@ VALUES (1, 'attach1', 'comm1', 'text/plain', 'attachment1'),
 INSERT INTO notification(acknowledged, created, expires, modified, content, created_by, description, errand_id, id, municipality_id, namespace, owner_full_name, owner_id, type)
 VALUES (0, now(), '2023-12-31 23:59:59.999', now(), 'content-1', 'created_by-1', 'description-1', 'ERRAND_ID-1', '1', 'municipalityId-1', 'namespace-1', 'owner_full_name-1', 'owner_id-1', 'type-1'),
        (1, now(), '2024-12-31 23:59:59.999', now(), 'content-2', 'created_by-2', 'description-2', 'ERRAND_ID-2', '2', 'municipalityId-1', 'namespace-1', 'owner_full_name-2', 'owner_id-2', 'type-2');
+
+-------------------------------------
+-- EmailWorkerConfig
+-------------------------------------
+INSERT INTO email_worker_config(days_of_inactivity_before_reject, enabled, created, id, modified,
+                                errand_closed_email_sender, errand_closed_email_template, inactive_status,
+                                municipality_id, namespace, status_change_to, status_for_new, trigger_status_change_on)
+VALUES (1, true, '2020-10-10 10:10:59.999', 1, '2021-11-11 11:11:59.999',
+        'sender-1', 'template-1', 'inactive_status-1',
+        'municipality_id-1', 'namespace-1', 'status_change_to-1', 'status_for_new-1', 'trigger_status_change_on-1'),
+       (2, false, '2022-02-02 12:12:59.999', 2, '2023-03-03 13:13:59.999',
+       'sender-2', 'template-2', 'inactive_status-2',
+       'municipality_id-2', 'namespace-2', 'status_change_to-2', 'status_for_new-2', 'trigger_status_change_on-2');
