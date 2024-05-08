@@ -43,12 +43,12 @@ public class EmailWorkerConfigEntity {
 	private String namespace;
 
 	@Column(name = "enabled", nullable = false)
-	private Boolean enabled;
+	private boolean enabled;
 
 	@Column(name = "errand_closed_email_sender")
 	private String errandClosedEmailSender;
 
-	@Column(name = "errandClosedEmailTemplate")
+	@Column(name = "errand_closed_email_template", length = 5000)
 	private String errandClosedEmailTemplate;
 
 	@Column(name = "days_of_inactivity_before_reject")
@@ -117,11 +117,11 @@ public class EmailWorkerConfigEntity {
 		return this;
 	}
 
-	public Boolean getEnabled() {
+	public boolean getEnabled() {
 		return enabled;
 	}
 
-	public void setEnabled(Boolean enabled) {
+	public void setEnabled(boolean enabled) {
 		this.enabled = enabled;
 	}
 

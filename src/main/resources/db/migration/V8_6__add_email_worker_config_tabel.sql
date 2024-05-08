@@ -5,7 +5,7 @@ create table email_worker_config (
         id bigint not null auto_increment,
         modified datetime(6),
         errand_closed_email_sender varchar(255),
-        errand_closed_email_template varchar(255),
+        errand_closed_email_template varchar(5000),
         inactive_status varchar(255),
         municipality_id varchar(255) not null,
         namespace varchar(255) not null,

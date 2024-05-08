@@ -4,7 +4,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.time.OffsetDateTime;
-import java.util.List;
 import java.util.Random;
 
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;
@@ -26,7 +25,6 @@ class EmailWorkerConfigEntityTest {
 	static void setup() {
 		final var random = new Random();
 		registerValueGenerator(() -> now().plusDays(random.nextInt()), OffsetDateTime.class);
-		registerValueGenerator(() -> List.of(TypeEntity.create().withId(random.nextLong())), List.class);
 	}
 
 	@Test
@@ -91,7 +89,7 @@ class EmailWorkerConfigEntityTest {
 		entity.onCreate();
 
 		assertThat(entity.getCreated()).isCloseTo(now(), within(1, SECONDS));
-		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("created");
+		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("created", "enabled");
 	}
 
 	@Test
@@ -100,12 +98,12 @@ class EmailWorkerConfigEntityTest {
 		entity.onUpdate();
 
 		assertThat(entity.getModified()).isCloseTo(now(), within(1, SECONDS));
-		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("modified");
+		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("modified", "enabled");
 	}
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(EmailWorkerConfigEntity.create()).hasAllNullFieldsOrProperties();
-		assertThat(new EmailWorkerConfigEntity()).hasAllNullFieldsOrProperties();
+		assertThat(EmailWorkerConfigEntity.create()).hasAllNullFieldsOrPropertiesExcept("enabled");
+		assertThat(new EmailWorkerConfigEntity()).hasAllNullFieldsOrPropertiesExcept("enabled");
 	}
 }
