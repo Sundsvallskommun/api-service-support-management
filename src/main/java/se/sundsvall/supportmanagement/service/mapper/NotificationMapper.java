@@ -19,12 +19,14 @@ public class NotificationMapper {
 			.withOwnerFullName(notification.getOwnerFullName())
 			.withOwnerId(notification.getOwnerId())
 			.withCreatedBy(notification.getCreatedBy())
+			.withCreatedByFullName(notification.getCreatedByFullName())
 			.withType(notification.getType())
 			.withDescription(notification.getDescription())
 			.withContent(notification.getContent())
 			.withExpires(notification.getExpires())
 			.withAcknowledged(notification.isAcknowledged())
 			.withErrandId(notification.getErrandId())
+			.withErrandNumber(notification.getErrandNumber())
 			.withMunicipalityId(municipalityId)
 			.withNamespace(namespace);
 	}
@@ -37,11 +39,13 @@ public class NotificationMapper {
 		Optional.ofNullable(notification.getOwnerId()).ifPresent(entity::setOwnerId);
 		Optional.ofNullable(notification.getCreatedBy()).ifPresent(entity::setCreatedBy);
 		Optional.ofNullable(notification.getType()).ifPresent(entity::setType);
+		Optional.ofNullable(notification.getCreatedByFullName()).ifPresent(entity::setCreatedByFullName);
 		Optional.ofNullable(notification.getDescription()).ifPresent(entity::setDescription);
 		Optional.ofNullable(notification.getContent()).ifPresent(entity::setContent);
 		Optional.ofNullable(notification.getExpires()).ifPresent(entity::setExpires);
 		Optional.of(notification.isAcknowledged()).ifPresent(entity::setAcknowledged);
 		Optional.ofNullable(notification.getErrandId()).ifPresent(entity::setErrandId);
+		Optional.ofNullable(notification.getErrandNumber()).ifPresent(entity::setErrandNumber);
 		return entity;
 	}
 
@@ -53,12 +57,14 @@ public class NotificationMapper {
 				.withOwnerFullName(entity.getOwnerFullName())
 				.withOwnerId(entity.getOwnerId())
 				.withCreatedBy(entity.getCreatedBy())
+				.withCreatedByFullName(entity.getCreatedByFullName())
 				.withType(entity.getType())
 				.withDescription(entity.getDescription())
 				.withContent(entity.getContent())
 				.withExpires(entity.getExpires())
 				.withAcknowledged(entity.isAcknowledged())
 				.withErrandId(entity.getErrandId())
+				.withErrandNumber(entity.getErrandNumber())
 				.withModified(entity.getModified())
 				.withCreated(entity.getCreated()))
 			.orElse(null);

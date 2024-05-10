@@ -45,12 +45,14 @@ class NotificationEntityTest {
 		final var owner = "Test Testorsson";
 		final var ownerId = "cb20c51f-fcf3-42c0-b613-de563634a8ec";
 		final var createdBy = "TestUser";
+		final var createdByFullName = "Test Testorsson";
 		final var type = "SomeType";
 		final var description = "Some description of the notification";
 		final var content = "Some content of the notification";
 		final var expires = now();
 		final var acknowledged = true;
 		final var errandId = "f0882f1d-06bc-47fd-b017-1d8307f5ce95";
+		final var errandNumber = "PRH-2022-000001";
 		final var municipalityId = "municipalityId";
 		final var namespace = "namespace";
 
@@ -62,12 +64,14 @@ class NotificationEntityTest {
 			.withOwnerFullName(owner)
 			.withOwnerId(ownerId)
 			.withCreatedBy(createdBy)
+			.withCreatedByFullName(createdByFullName)
 			.withType(type)
 			.withDescription(description)
 			.withContent(content)
 			.withExpires(expires)
 			.withAcknowledged(acknowledged)
 			.withErrandId(errandId)
+			.withErrandNumber(errandNumber)
 			.withMunicipalityId(municipalityId)
 			.withNamespace(namespace);
 
@@ -78,12 +82,14 @@ class NotificationEntityTest {
 		assertThat(notification.getOwnerFullName()).isEqualTo(owner);
 		assertThat(notification.getOwnerId()).isEqualTo(ownerId);
 		assertThat(notification.getCreatedBy()).isEqualTo(createdBy);
+		assertThat(notification.getCreatedByFullName()).isEqualTo(createdByFullName);
 		assertThat(notification.getType()).isEqualTo(type);
 		assertThat(notification.getDescription()).isEqualTo(description);
 		assertThat(notification.getContent()).isEqualTo(content);
 		assertThat(notification.getExpires()).isEqualTo(expires);
 		assertThat(notification.isAcknowledged()).isEqualTo(acknowledged);
 		assertThat(notification.getErrandId()).isEqualTo(errandId);
+		assertThat(notification.getErrandNumber()).isEqualTo(errandNumber);
 		assertThat(notification.getMunicipalityId()).isEqualTo(municipalityId);
 		assertThat(notification.getNamespace()).isEqualTo(namespace);
 	}

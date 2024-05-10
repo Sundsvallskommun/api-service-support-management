@@ -49,6 +49,9 @@ public class NotificationEntity {
 	@Column(name = "created_by")
 	private String createdBy;
 
+	@Column(name = "created_by_full_name")
+	private String createdByFullName;
+
 	@Column(name = "type")
 	private String type;
 
@@ -67,6 +70,9 @@ public class NotificationEntity {
 
 	@Column(name = "errand_id")
 	private String errandId;
+
+	@Column(name = "errand_number")
+	private String errandNumber;
 
 	@Column(name = "municipality_id", nullable = false)
 	private String municipalityId;
@@ -166,6 +172,19 @@ public class NotificationEntity {
 		return this;
 	}
 
+	public String getCreatedByFullName() {
+		return createdByFullName;
+	}
+
+	public void setCreatedByFullName(final String createdByFullName) {
+		this.createdByFullName = createdByFullName;
+	}
+
+	public NotificationEntity withCreatedByFullName(final String createdByFullName) {
+		this.createdByFullName = createdByFullName;
+		return this;
+	}
+
 	public String getType() {
 		return type;
 	}
@@ -244,6 +263,19 @@ public class NotificationEntity {
 		return this;
 	}
 
+	public String getErrandNumber() {
+		return errandNumber;
+	}
+
+	public void setErrandNumber(final String errandNumber) {
+		this.errandNumber = errandNumber;
+	}
+
+	public NotificationEntity withErrandNumber(final String errandNumber) {
+		this.errandNumber = errandNumber;
+		return this;
+	}
+
 	public String getMunicipalityId() {
 		return municipalityId;
 	}
@@ -276,12 +308,12 @@ public class NotificationEntity {
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
 		final NotificationEntity that = (NotificationEntity) o;
-		return acknowledged == that.acknowledged && Objects.equals(id, that.id) && Objects.equals(created, that.created) && Objects.equals(modified, that.modified) && Objects.equals(ownerFullName, that.ownerFullName) && Objects.equals(ownerId, that.ownerId) && Objects.equals(createdBy, that.createdBy) && Objects.equals(type, that.type) && Objects.equals(description, that.description) && Objects.equals(content, that.content) && Objects.equals(expires, that.expires) && Objects.equals(errandId, that.errandId) && Objects.equals(municipalityId, that.municipalityId) && Objects.equals(namespace, that.namespace);
+		return acknowledged == that.acknowledged && Objects.equals(id, that.id) && Objects.equals(created, that.created) && Objects.equals(modified, that.modified) && Objects.equals(ownerFullName, that.ownerFullName) && Objects.equals(ownerId, that.ownerId) && Objects.equals(createdBy, that.createdBy) && Objects.equals(createdByFullName, that.createdByFullName) && Objects.equals(type, that.type) && Objects.equals(description, that.description) && Objects.equals(content, that.content) && Objects.equals(expires, that.expires) && Objects.equals(errandId, that.errandId) && Objects.equals(errandNumber, that.errandNumber) && Objects.equals(municipalityId, that.municipalityId) && Objects.equals(namespace, that.namespace);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, created, modified, ownerFullName, ownerId, createdBy, type, description, content, expires, acknowledged, errandId, municipalityId, namespace);
+		return Objects.hash(id, created, modified, ownerFullName, ownerId, createdBy, createdByFullName, type, description, content, expires, acknowledged, errandId, errandNumber, municipalityId, namespace);
 	}
 
 	@Override
@@ -293,12 +325,14 @@ public class NotificationEntity {
 			", ownerFullName='" + ownerFullName + '\'' +
 			", ownerId='" + ownerId + '\'' +
 			", createdBy='" + createdBy + '\'' +
+			", createdByFullName='" + createdByFullName + '\'' +
 			", type='" + type + '\'' +
 			", description='" + description + '\'' +
 			", content='" + content + '\'' +
 			", expires=" + expires +
 			", acknowledged=" + acknowledged +
 			", errandId='" + errandId + '\'' +
+			", errandNumber='" + errandNumber + '\'' +
 			", municipalityId='" + municipalityId + '\'' +
 			", namespace='" + namespace + '\'' +
 			'}';
