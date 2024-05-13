@@ -10,8 +10,11 @@ import java.util.Base64;
 import java.util.Base64.Decoder;
 import java.util.Base64.Encoder;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
 
 import generated.se.sundsvall.messaging.EmailAttachment;
 import generated.se.sundsvall.messaging.EmailRequest;
@@ -38,7 +41,15 @@ public class MessagingMapper {
 			.message(emailRequest.getMessage())
 			.party(toEmailRequestParty(errandEntity))
 			.sender(toEmailSender(emailRequest))
+			.headers(toEmailHeaders(emailRequest.getEmailHeaders()))
 			.subject(emailRequest.getSubject());
+	}
+
+	public static Map<String, List<String>> toEmailHeaders(Map<EmailHeader, List<String>> emailHeaders) {
+		return ofNullable(emailHeaders).orElse(Map.of()).entrySet().stream()
+			.collect(Collectors.toMap(
+				e -> e.getKey().toString(),
+				Map.Entry::getValue));
 	}
 
 	public static SmsRequest toSmsRequest(ErrandEntity errandEntity, se.sundsvall.supportmanagement.api.model.communication.SmsRequest smsRequest) {
