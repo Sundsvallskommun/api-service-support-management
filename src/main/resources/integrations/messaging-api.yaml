@@ -4,11 +4,10 @@ info:
   contact: { }
   license:
     name: MIT License
-    url: https://opensource.org/licenses/MIT
-  version: "4.1"
+    url: 'https://opensource.org/licenses/MIT'
+  version: '4.4'
 servers:
-  - url: http://localhost:57698
-    description: Generated server url
+  - url: /
 paths:
   /webmessage:
     post:
@@ -17,10 +16,19 @@ paths:
       summary: Send a single web message
       operationId: sendWebMessage
       parameters:
+        - name: x-origin
+          in: header
+          required: false
+          style: simple
+          explode: false
+          schema:
+            type: string
         - name: async
           in: query
           description: Whether to send the message asynchronously
           required: false
+          style: form
+          explode: true
           schema:
             type: boolean
             default: false
@@ -31,11 +39,12 @@ paths:
               $ref: '#/components/schemas/WebMessageRequest'
         required: true
       responses:
-        "201":
+        '201':
           description: Successful Operation
           headers:
             Location:
               style: simple
+              explode: false
               schema:
                 type: string
           content:
@@ -45,16 +54,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/MessageResult'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        "400":
+        '400':
           description: Bad Request
           content:
             application/json:
@@ -63,7 +63,16 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-        "502":
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '502':
           description: Bad Gateway
           content:
             application/json:
@@ -72,6 +81,14 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+      security:
+        - default: [ ]
+      x-throttling-tier: Unlimited
+      x-auth-type: Application & Application User
+      x-wso2-application-security:
+        security-types:
+          - oauth2
+        optional: false
   /sms:
     post:
       tags:
@@ -79,10 +96,19 @@ paths:
       summary: Send a single SMS
       operationId: sendSms
       parameters:
+        - name: x-origin
+          in: header
+          required: false
+          style: simple
+          explode: false
+          schema:
+            type: string
         - name: async
           in: query
           description: Whether to send the message asynchronously
           required: false
+          style: form
+          explode: true
           schema:
             type: boolean
             default: false
@@ -93,11 +119,12 @@ paths:
               $ref: '#/components/schemas/SmsRequest'
         required: true
       responses:
-        "201":
+        '201':
           description: Successful Operation
           headers:
             Location:
               style: simple
+              explode: false
               schema:
                 type: string
           content:
@@ -107,16 +134,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/MessageResult'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        "400":
+        '400':
           description: Bad Request
           content:
             application/json:
@@ -125,7 +143,16 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-        "502":
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '502':
           description: Bad Gateway
           content:
             application/json:
@@ -134,6 +161,14 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+      security:
+        - default: [ ]
+      x-throttling-tier: Unlimited
+      x-auth-type: Application & Application User
+      x-wso2-application-security:
+        security-types:
+          - oauth2
+        optional: false
   /slack:
     post:
       tags:
@@ -141,10 +176,19 @@ paths:
       summary: Send a single Slack message
       operationId: sendToSlack
       parameters:
+        - name: x-origin
+          in: header
+          required: false
+          style: simple
+          explode: false
+          schema:
+            type: string
         - name: async
           in: query
           description: Whether to send the message asynchronously
           required: false
+          style: form
+          explode: true
           schema:
             type: boolean
             default: false
@@ -155,11 +199,12 @@ paths:
               $ref: '#/components/schemas/SlackRequest'
         required: true
       responses:
-        "201":
+        '201':
           description: Successful Operation
           headers:
             Location:
               style: simple
+              explode: false
               schema:
                 type: string
           content:
@@ -169,16 +214,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/MessageResult'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        "400":
+        '400':
           description: Bad Request
           content:
             application/json:
@@ -187,7 +223,16 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-        "502":
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '502':
           description: Bad Gateway
           content:
             application/json:
@@ -196,6 +241,14 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+      security:
+        - default: [ ]
+      x-throttling-tier: Unlimited
+      x-auth-type: Application & Application User
+      x-wso2-application-security:
+        security-types:
+          - oauth2
+        optional: false
   /messages:
     post:
       tags:
@@ -203,10 +256,19 @@ paths:
       summary: Send a batch of messages as e-mail or SMS to a list of parties
       operationId: sendMessages
       parameters:
+        - name: x-origin
+          in: header
+          required: false
+          style: simple
+          explode: false
+          schema:
+            type: string
         - name: async
           in: query
           description: Whether to send the message asynchronously
           required: false
+          style: form
+          explode: true
           schema:
             type: boolean
             default: false
@@ -217,11 +279,12 @@ paths:
               $ref: '#/components/schemas/MessageRequest'
         required: true
       responses:
-        "201":
+        '201':
           description: Successful Operation
           headers:
             Location:
               style: simple
+              explode: false
               schema:
                 type: string
           content:
@@ -231,16 +294,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/MessageBatchResult'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        "400":
+        '400':
           description: Bad Request
           content:
             application/json:
@@ -249,7 +303,16 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-        "502":
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '502':
           description: Bad Gateway
           content:
             application/json:
@@ -258,6 +321,14 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+      security:
+        - default: [ ]
+      x-throttling-tier: Unlimited
+      x-auth-type: Application & Application User
+      x-wso2-application-security:
+        security-types:
+          - oauth2
+        optional: false
   /letter:
     post:
       tags:
@@ -265,10 +336,19 @@ paths:
       summary: Send a single letter as digital mail or snail mail
       operationId: sendLetter
       parameters:
+        - name: x-origin
+          in: header
+          required: false
+          style: simple
+          explode: false
+          schema:
+            type: string
         - name: async
           in: query
           description: Whether to send the message asynchronously
           required: false
+          style: form
+          explode: true
           schema:
             type: boolean
             default: false
@@ -279,11 +359,12 @@ paths:
               $ref: '#/components/schemas/LetterRequest'
         required: true
       responses:
-        "201":
+        '201':
           description: Successful Operation
           headers:
             Location:
               style: simple
+              explode: false
               schema:
                 type: string
           content:
@@ -293,16 +374,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/MessageBatchResult'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        "400":
+        '400':
           description: Bad Request
           content:
             application/json:
@@ -311,7 +383,16 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-        "502":
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '502':
           description: Bad Gateway
           content:
             application/json:
@@ -320,6 +401,14 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+      security:
+        - default: [ ]
+      x-throttling-tier: Unlimited
+      x-auth-type: Application & Application User
+      x-wso2-application-security:
+        security-types:
+          - oauth2
+        optional: false
   /email:
     post:
       tags:
@@ -327,10 +416,19 @@ paths:
       summary: Send a single e-mail
       operationId: sendEmail
       parameters:
+        - name: x-origin
+          in: header
+          required: false
+          style: simple
+          explode: false
+          schema:
+            type: string
         - name: async
           in: query
           description: Whether to send the message asynchronously
           required: false
+          style: form
+          explode: true
           schema:
             type: boolean
             default: false
@@ -341,11 +439,12 @@ paths:
               $ref: '#/components/schemas/EmailRequest'
         required: true
       responses:
-        "201":
+        '201':
           description: Successful Operation
           headers:
             Location:
               style: simple
+              explode: false
               schema:
                 type: string
           content:
@@ -355,16 +454,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/MessageResult'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        "400":
+        '400':
           description: Bad Request
           content:
             application/json:
@@ -373,7 +463,16 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-        "502":
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '502':
           description: Bad Gateway
           content:
             application/json:
@@ -382,6 +481,14 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+      security:
+        - default: [ ]
+      x-throttling-tier: Unlimited
+      x-auth-type: Application & Application User
+      x-wso2-application-security:
+        security-types:
+          - oauth2
+        optional: false
   /digital-mail:
     post:
       tags:
@@ -389,10 +496,19 @@ paths:
       summary: Send a single digital mail to one or more parties
       operationId: sendDigitalMail
       parameters:
+        - name: x-origin
+          in: header
+          required: false
+          style: simple
+          explode: false
+          schema:
+            type: string
         - name: async
           in: query
           description: Whether to send the message asynchronously
           required: false
+          style: form
+          explode: true
           schema:
             type: boolean
             default: false
@@ -403,11 +519,12 @@ paths:
               $ref: '#/components/schemas/DigitalMailRequest'
         required: true
       responses:
-        "201":
+        '201':
           description: Successful Operation
           headers:
             Location:
               style: simple
+              explode: false
               schema:
                 type: string
           content:
@@ -417,16 +534,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/MessageBatchResult'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        "400":
+        '400':
           description: Bad Request
           content:
             application/json:
@@ -435,7 +543,16 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-        "502":
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '502':
           description: Bad Gateway
           content:
             application/json:
@@ -444,6 +561,14 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+      security:
+        - default: [ ]
+      x-throttling-tier: Unlimited
+      x-auth-type: Application & Application User
+      x-wso2-application-security:
+        security-types:
+          - oauth2
+        optional: false
   /digital-invoice:
     post:
       tags:
@@ -451,10 +576,19 @@ paths:
       summary: Send a digital invoice
       operationId: sendDigitalInvoice
       parameters:
+        - name: x-origin
+          in: header
+          required: false
+          style: simple
+          explode: false
+          schema:
+            type: string
         - name: async
           in: query
           description: Whether to send the message asynchronously
           required: false
+          style: form
+          explode: true
           schema:
             type: boolean
             default: false
@@ -465,11 +599,12 @@ paths:
               $ref: '#/components/schemas/DigitalInvoiceRequest'
         required: true
       responses:
-        "201":
+        '201':
           description: Successful Operation
           headers:
             Location:
               style: simple
+              explode: false
               schema:
                 type: string
           content:
@@ -479,16 +614,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/MessageResult'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        "400":
+        '400':
           description: Bad Request
           content:
             application/json:
@@ -497,7 +623,16 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-        "502":
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '502':
           description: Bad Gateway
           content:
             application/json:
@@ -506,7 +641,15 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-  /status/message/{messageId}:
+      security:
+        - default: [ ]
+      x-throttling-tier: Unlimited
+      x-auth-type: Application & Application User
+      x-wso2-application-security:
+        security-types:
+          - oauth2
+        optional: false
+  '/status/message/{messageId}':
     get:
       tags:
         - Status and History Resources
@@ -516,11 +659,13 @@ paths:
         - name: messageId
           in: path
           required: true
+          style: simple
+          explode: false
           schema:
             type: string
             format: uuid
       responses:
-        "200":
+        '200':
           description: Successful Operation
           content:
             application/json:
@@ -529,7 +674,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/MessageResult'
-        "404":
+        '404':
           description: Not Found
           content:
             application/json:
@@ -538,7 +683,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-        "500":
+        '500':
           description: Internal Server Error
           content:
             application/json:
@@ -547,7 +692,15 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-  /status/delivery/{deliveryId}:
+      security:
+        - default: [ ]
+      x-throttling-tier: Unlimited
+      x-auth-type: Application & Application User
+      x-wso2-application-security:
+        security-types:
+          - oauth2
+        optional: false
+  '/status/delivery/{deliveryId}':
     get:
       tags:
         - Status and History Resources
@@ -557,11 +710,13 @@ paths:
         - name: deliveryId
           in: path
           required: true
+          style: simple
+          explode: false
           schema:
             type: string
             format: uuid
       responses:
-        "200":
+        '200':
           description: Successful Operation
           content:
             application/json:
@@ -570,7 +725,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/DeliveryResult'
-        "404":
+        '404':
           description: Not Found
           content:
             application/json:
@@ -579,7 +734,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-        "500":
+        '500':
           description: Internal Server Error
           content:
             application/json:
@@ -588,21 +743,31 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-  /status/batch/{batchId}:
+      security:
+        - default: [ ]
+      x-throttling-tier: Unlimited
+      x-auth-type: Application & Application User
+      x-wso2-application-security:
+        security-types:
+          - oauth2
+        optional: false
+  '/status/batch/{batchId}':
     get:
       tags:
         - Status and History Resources
-      summary: "Get the status for a message batch, its messages and their deliveries"
+      summary: 'Get the status for a message batch, its messages and their deliveries'
       operationId: getBatchStatus
       parameters:
         - name: batchId
           in: path
           required: true
+          style: simple
+          explode: false
           schema:
             type: string
             format: uuid
       responses:
-        "200":
+        '200':
           description: Successful Operation
           content:
             application/json:
@@ -611,7 +776,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/MessageBatchResult'
-        "404":
+        '404':
           description: Not Found
           content:
             application/json:
@@ -620,7 +785,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-        "500":
+        '500':
           description: Internal Server Error
           content:
             application/json:
@@ -629,6 +794,14 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+      security:
+        - default: [ ]
+      x-throttling-tier: Unlimited
+      x-auth-type: Application & Application User
+      x-wso2-application-security:
+        security-types:
+          - oauth2
+        optional: false
   /statistics:
     get:
       tags:
@@ -640,6 +813,8 @@ paths:
           in: query
           description: Message type
           required: false
+          style: form
+          explode: true
           schema:
             type: string
             enum:
@@ -654,20 +829,24 @@ paths:
               - SLACK
         - name: from
           in: query
-          description: "From-date (inclusive). Format: yyyy-MM-dd (ISO8601)"
+          description: 'From-date (inclusive). Format: yyyy-MM-dd (ISO8601)'
           required: false
+          style: form
+          explode: true
           schema:
             type: string
             format: date
         - name: to
           in: query
-          description: "To-date (inclusive). Format: yyyy-MM-dd (ISO8601)"
+          description: 'To-date (inclusive). Format: yyyy-MM-dd (ISO8601)'
           required: false
+          style: form
+          explode: true
           schema:
             type: string
             format: date
       responses:
-        "200":
+        '200':
           description: Successful Operation
           content:
             application/json:
@@ -680,7 +859,7 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Statistics'
-        "500":
+        '500':
           description: Internal Server Error
           content:
             application/json:
@@ -689,7 +868,177 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-  /message/{messageId}:
+      security:
+        - default: [ ]
+      x-throttling-tier: Unlimited
+      x-auth-type: Application & Application User
+      x-wso2-application-security:
+        security-types:
+          - oauth2
+        optional: false
+  /statistics/departments:
+    get:
+      tags:
+        - Status and History Resources
+      summary: Get letter delivery statistics by department
+      operationId: getDepartmentStats
+      parameters:
+        - name: origin
+          in: query
+          description: Origin name
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: string
+        - name: from
+          in: query
+          description: 'From-date (inclusive). Format: yyyy-MM-dd (ISO8601)'
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          description: 'To-date (inclusive). Format: yyyy-MM-dd (ISO8601)'
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Successful Operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DepartmentStatistics'
+            application/problem+json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DepartmentStatistics'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/Problem'
+                  - $ref: '#/components/schemas/ConstraintViolationProblem'
+            application/problem+json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/Problem'
+                  - $ref: '#/components/schemas/ConstraintViolationProblem'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+      security:
+        - default: [ ]
+      x-throttling-tier: Unlimited
+      x-auth-type: Application & Application User
+      x-wso2-application-security:
+        security-types:
+          - oauth2
+        optional: false
+  '/statistics/departments/{department}':
+    get:
+      tags:
+        - Status and History Resources
+      summary: Get letter delivery statistics by department
+      operationId: getDepartmentStats_1
+      parameters:
+        - name: department
+          in: path
+          description: Department name
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+        - name: origin
+          in: query
+          description: Origin name
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: string
+        - name: from
+          in: query
+          description: 'From-date (inclusive). Format: yyyy-MM-dd (ISO8601)'
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          description: 'To-date (inclusive). Format: yyyy-MM-dd (ISO8601)'
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Successful Operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DepartmentStatistics'
+            application/problem+json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DepartmentStatistics'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/Problem'
+                  - $ref: '#/components/schemas/ConstraintViolationProblem'
+            application/problem+json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/Problem'
+                  - $ref: '#/components/schemas/ConstraintViolationProblem'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+      security:
+        - default: [ ]
+      x-throttling-tier: Unlimited
+      x-auth-type: Application & Application User
+      x-wso2-application-security:
+        security-types:
+          - oauth2
+        optional: false
+  '/message/{messageId}':
     get:
       tags:
         - Status and History Resources
@@ -699,11 +1048,13 @@ paths:
         - name: messageId
           in: path
           required: true
+          style: simple
+          explode: false
           schema:
             type: string
             format: uuid
       responses:
-        "200":
+        '200':
           description: Successful Operation
           content:
             application/json:
@@ -716,7 +1067,7 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/HistoryResponse'
-        "404":
+        '404':
           description: Not Found
           content:
             application/json:
@@ -725,7 +1076,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-        "500":
+        '500':
           description: Internal Server Error
           content:
             application/json:
@@ -734,7 +1085,15 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-  /conversation-history/{partyId}:
+      security:
+        - default: [ ]
+      x-throttling-tier: Unlimited
+      x-auth-type: Application & Application User
+      x-wso2-application-security:
+        security-types:
+          - oauth2
+        optional: false
+  '/conversation-history/{partyId}':
     get:
       tags:
         - Status and History Resources
@@ -744,25 +1103,31 @@ paths:
         - name: partyId
           in: path
           required: true
+          style: simple
+          explode: false
           schema:
             type: string
             format: uuid
         - name: from
           in: query
-          description: "From-date (inclusive). Format: yyyy-MM-dd (ISO8601)"
+          description: 'From-date (inclusive). Format: yyyy-MM-dd (ISO8601)'
           required: false
+          style: form
+          explode: true
           schema:
             type: string
             format: date
         - name: to
           in: query
-          description: "To-date (inclusive). Format: yyyy-MM-dd (ISO8601)"
+          description: 'To-date (inclusive). Format: yyyy-MM-dd (ISO8601)'
           required: false
+          style: form
+          explode: true
           schema:
             type: string
             format: date
       responses:
-        "200":
+        '200':
           description: Successful Operation
           content:
             application/json:
@@ -775,7 +1140,7 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/HistoryResponse'
-        "500":
+        '500':
           description: Internal Server Error
           content:
             application/json:
@@ -784,6 +1149,14 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+      security:
+        - default: [ ]
+      x-throttling-tier: Unlimited
+      x-auth-type: Application & Application User
+      x-wso2-application-security:
+        security-types:
+          - oauth2
+        optional: false
   /api-docs:
     get:
       tags:
@@ -791,15 +1164,21 @@ paths:
       summary: OpenAPI
       operationId: getApiDocs
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/yaml:
               schema:
                 type: string
+      security:
+        - default: [ ]
       x-auth-type: None
       x-throttling-tier: Unlimited
       x-wso2-mutual-ssl: Optional
+      x-wso2-application-security:
+        security-types:
+          - oauth2
+        optional: false
 components:
   schemas:
     ExternalReference:
@@ -828,7 +1207,7 @@ components:
           description: Mime-type
         base64Data:
           type: string
-          description: "BASE64-encoded file, max size 10 MB"
+          description: 'BASE64-encoded file, max size 10 MB'
       description: Attachment
     WebMessageParty:
       required:
@@ -877,9 +1256,9 @@ components:
             type: object
         status:
           $ref: '#/components/schemas/StatusType'
-        title:
-          type: string
         detail:
+          type: string
+        title:
           type: string
     StatusType:
       type: object
@@ -1020,7 +1399,7 @@ components:
             items:
               type: string
               description: Filters
-              example: "{\"someAttributeName\":[\"someAttributeValue\"]}"
+              example: '{"someAttributeName":["someAttributeValue"]}'
           description: Filters
           example:
             someAttributeName:
@@ -1035,7 +1414,7 @@ components:
           description: Plain-text message text
         htmlMessage:
           type: string
-          description: "HTML message text, for e-mails (BASE64-encoded)"
+          description: 'HTML message text, for e-mails (BASE64-encoded)'
       description: The messages to be sent
     MessageParty:
       required:
@@ -1103,8 +1482,10 @@ components:
       properties:
         deliveryMode:
           type: string
-          description: |
-            Delivery mode, to indicate whether an attachment is intended/allowed to be used for
+          description: >
+            Delivery mode, to indicate whether an attachment is intended/allowed
+            to be used for
+
             digital mail, snail-mail or any of them
           enum:
             - ANY
@@ -1163,12 +1544,13 @@ components:
             - text/html
         body:
           type: string
-          description: "Body (plain text if contentType is set to 'text/plain', BASE64-encoded\
-            \ if contentType is set to 'text/html')"
+          description: >-
+            Body (plain text if contentType is set to 'text/plain',
+            BASE64-encoded if contentType is set to 'text/html')
         department:
           type: string
           description: Department and unit that should be billed in case of snailmail
-          example: "SBK(Gatuavdelningen, Trafiksektionen)"
+          example: 'SBK(Gatuavdelningen, Trafiksektionen)'
         deviation:
           type: string
           description: If the letter to send deviates from the standard
@@ -1340,6 +1722,11 @@ components:
           type: string
           description: Subject
           nullable: true
+        department:
+          type: string
+          description: Department and unit that should be billed for the message
+          nullable: true
+          example: 'SBK(Gatuavdelningen, Trafiksektionen)'
         contentType:
           type: string
           description: Content type
@@ -1348,8 +1735,9 @@ components:
             - text/html
         body:
           type: string
-          description: "Body (plain text if contentType is set to 'text/plain', BASE64-encoded\
-            \ if contentType is set to 'application/html')"
+          description: >-
+            Body (plain text if contentType is set to 'text/plain',
+            BASE64-encoded if contentType is set to 'application/html')
         attachments:
           type: array
           description: Attachments
@@ -1400,7 +1788,6 @@ components:
           type: string
           description: The invoice due date
           format: date
-          example: 2023-10-09
         paymentReferenceType:
           type: string
           enum:
@@ -1410,7 +1797,7 @@ components:
           maxLength: 25
           type: string
           description: The payment reference number
-          example: "426523791"
+          example: '426523791'
         accountType:
           type: string
           enum:
@@ -1419,7 +1806,7 @@ components:
         accountNumber:
           type: string
           description: The receiving account (a valid BANKGIRO or PLUSGIRO number)
-          example: "12345"
+          example: '12345'
       description: Invoice details
     DigitalInvoiceFile:
       required:
@@ -1475,7 +1862,11 @@ components:
         reference:
           type: string
           description: Invoice reference
-          example: "Faktura #12345"
+          example: 'Faktura #12345'
+        payable:
+          type: boolean
+          description: Whether the invoice is payable
+          default: true
         details:
           $ref: '#/components/schemas/Details'
         files:
@@ -1526,6 +1917,191 @@ components:
         failed:
           type: integer
           format: int32
+    ConstraintViolationProblem:
+      type: object
+      properties:
+        cause:
+          $ref: '#/components/schemas/ThrowableProblem'
+        stackTrace:
+          type: array
+          items:
+            type: object
+            properties:
+              classLoaderName:
+                type: string
+              moduleName:
+                type: string
+              moduleVersion:
+                type: string
+              methodName:
+                type: string
+              fileName:
+                type: string
+              lineNumber:
+                type: integer
+                format: int32
+              className:
+                type: string
+              nativeMethod:
+                type: boolean
+        type:
+          type: string
+          format: uri
+        status:
+          $ref: '#/components/schemas/StatusType'
+        violations:
+          type: array
+          items:
+            $ref: '#/components/schemas/Violation'
+        title:
+          type: string
+        message:
+          type: string
+        instance:
+          type: string
+          format: uri
+        parameters:
+          type: object
+          additionalProperties:
+            type: object
+        detail:
+          type: string
+        suppressed:
+          type: array
+          items:
+            type: object
+            properties:
+              stackTrace:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    classLoaderName:
+                      type: string
+                    moduleName:
+                      type: string
+                    moduleVersion:
+                      type: string
+                    methodName:
+                      type: string
+                    fileName:
+                      type: string
+                    lineNumber:
+                      type: integer
+                      format: int32
+                    className:
+                      type: string
+                    nativeMethod:
+                      type: boolean
+              message:
+                type: string
+              localizedMessage:
+                type: string
+        localizedMessage:
+          type: string
+    ThrowableProblem:
+      type: object
+      properties:
+        cause:
+          $ref: '#/components/schemas/ThrowableProblem'
+        stackTrace:
+          type: array
+          items:
+            type: object
+            properties:
+              classLoaderName:
+                type: string
+              moduleName:
+                type: string
+              moduleVersion:
+                type: string
+              methodName:
+                type: string
+              fileName:
+                type: string
+              lineNumber:
+                type: integer
+                format: int32
+              className:
+                type: string
+              nativeMethod:
+                type: boolean
+        message:
+          type: string
+        instance:
+          type: string
+          format: uri
+        type:
+          type: string
+          format: uri
+        parameters:
+          type: object
+          additionalProperties:
+            type: object
+        status:
+          $ref: '#/components/schemas/StatusType'
+        detail:
+          type: string
+        title:
+          type: string
+        suppressed:
+          type: array
+          items:
+            type: object
+            properties:
+              stackTrace:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    classLoaderName:
+                      type: string
+                    moduleName:
+                      type: string
+                    moduleVersion:
+                      type: string
+                    methodName:
+                      type: string
+                    fileName:
+                      type: string
+                    lineNumber:
+                      type: integer
+                      format: int32
+                    className:
+                      type: string
+                    nativeMethod:
+                      type: boolean
+              message:
+                type: string
+              localizedMessage:
+                type: string
+        localizedMessage:
+          type: string
+    Violation:
+      type: object
+      properties:
+        field:
+          type: string
+        message:
+          type: string
+    DepartmentLetterStatistics:
+      type: object
+      properties:
+        DEPARTMENT:
+          type: string
+        SNAIL_MAIL:
+          $ref: '#/components/schemas/StatisticsCounter'
+        DIGITAL_MAIL:
+          $ref: '#/components/schemas/StatisticsCounter'
+    DepartmentStatistics:
+      type: object
+      properties:
+        ORIGIN:
+          type: string
+        DEPARTMENT_STATISTICS:
+          type: array
+          items:
+            $ref: '#/components/schemas/DepartmentLetterStatistics'
     HistoryResponse:
       type: object
       properties:
@@ -1556,4 +2132,40 @@ components:
         timestamp:
           type: string
           format: date-time
-  securitySchemes: { }
+  securitySchemes:
+    default:
+      type: oauth2
+      flows:
+        implicit:
+          authorizationUrl: 'https://test.com'
+          scopes: { }
+x-wso2-auth-header: Authorization
+x-wso2-cors:
+  corsConfigurationEnabled: false
+  accessControlAllowOrigins:
+    - '*'
+  accessControlAllowCredentials: false
+  accessControlAllowHeaders:
+    - authorization
+    - Access-Control-Allow-Origin
+    - Content-Type
+    - SOAPAction
+    - apikey
+    - testKey
+  accessControlAllowMethods:
+    - GET
+    - PUT
+    - POST
+    - DELETE
+    - PATCH
+    - OPTIONS
+x-wso2-production-endpoints:
+  urls:
+    - 'https://messaging-af-messaging.apps.ocp101.sundsvall.se'
+  type: http
+x-wso2-basePath: /messaging/4.4
+x-wso2-transports:
+  - https
+x-wso2-response-cache:
+  enabled: false
+  cacheTimeoutInSeconds: 300

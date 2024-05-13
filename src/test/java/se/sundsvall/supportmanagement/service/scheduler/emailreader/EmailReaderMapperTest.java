@@ -129,13 +129,14 @@ class EmailReaderMapperTest {
 			.receivedAt(OffsetDateTime.now())
 			.metadata(Map.of("classification.category", "someCategory", "classification.type", "someType"))
 			.attachments(null);
+		final var status = "NEW";
 
-		final var result = emailReaderMapper.toErrand(email);
+		final var result = emailReaderMapper.toErrand(email, status);
 
 		assertThat(result).isNotNull();
 		assertThat(result.getTitle()).isEqualTo("someSubject");
 		assertThat(result.getDescription()).isEqualTo("someMessage");
-		assertThat(result.getStatus()).isEqualTo("NEW");
+		assertThat(result.getStatus()).isEqualTo(status);
 		assertThat(result.getClassification()).isNotNull();
 		assertThat(result.getClassification().getCategory()).isEqualTo("someCategory");
 		assertThat(result.getClassification().getType()).isEqualTo("someType");

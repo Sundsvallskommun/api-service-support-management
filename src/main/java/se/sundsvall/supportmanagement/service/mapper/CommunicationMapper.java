@@ -44,22 +44,19 @@ public class CommunicationMapper {
 	}
 
 	public Communication toCommunication(final CommunicationEntity entity) {
-		if (entity == null) {
-			return null;
-		}
-		
-		return Communication.create()
-			.withEmailHeaders(toHeaders(entity))
-			.withCommunicationID(entity.getId())
-			.withErrandNumber(entity.getErrandNumber())
-			.withDirection(entity.getDirection())
-			.withMessageBody(entity.getMessageBody())
-			.withSent(entity.getSent())
-			.withSubject(entity.getSubject())
-			.withCommunicationType(entity.getType())
-			.withTarget(entity.getTarget())
-			.withViewed(entity.isViewed())
-			.withCommunicationAttachments(toAttachments(entity.getAttachments()));
+		return Optional.ofNullable(entity).map(communication -> Communication.create()
+				.withEmailHeaders(toHeaders(entity))
+				.withCommunicationID(entity.getId())
+				.withErrandNumber(entity.getErrandNumber())
+				.withDirection(entity.getDirection())
+				.withMessageBody(entity.getMessageBody())
+				.withSent(entity.getSent())
+				.withSubject(entity.getSubject())
+				.withCommunicationType(entity.getType())
+				.withTarget(entity.getTarget())
+				.withViewed(entity.isViewed())
+				.withCommunicationAttachments(toAttachments(entity.getAttachments())))
+			.orElse(null);
 	}
 
 	@NotNull
@@ -71,18 +68,13 @@ public class CommunicationMapper {
 
 
 	public List<AttachmentEntity> toAttachments(final CommunicationEntity communicationEntity) {
-
-
 		return Optional.ofNullable(communicationEntity.getAttachments()).orElse(Collections.emptyList())
 			.stream()
-			.map(emailAttachment ->
-				AttachmentEntity.create()
-					.withId(UUID.randomUUID().toString())
-					.withFileName(emailAttachment.getName())
-					.withMimeType(emailAttachment.getContentType())
-					.withAttachmentData(new AttachmentDataEntity().withFile(emailAttachment.getAttachmentData().getFile()))
-
-			)
+			.map(emailAttachment -> AttachmentEntity.create()
+				.withId(UUID.randomUUID().toString())
+				.withFileName(emailAttachment.getName())
+				.withMimeType(emailAttachment.getContentType())
+				.withAttachmentData(new AttachmentDataEntity().withFile(emailAttachment.getAttachmentData().getFile())))
 			.toList();
 	}
 

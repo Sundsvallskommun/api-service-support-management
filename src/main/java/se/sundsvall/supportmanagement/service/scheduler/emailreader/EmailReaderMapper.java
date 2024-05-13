@@ -97,12 +97,12 @@ public class EmailReaderMapper {
 			.withFile(blobBuilder.createBlob(attachment.getContent()));
 	}
 
-	public Errand toErrand(final Email email) {
+	public Errand toErrand(final Email email, String status) {
 
 		return Errand.create()
 			.withTitle(email.getSubject())
 			.withDescription(email.getMessage())
-			.withStatus("NEW")
+			.withStatus(status)
 			.withPriority(Priority.MEDIUM)
 			.withClassification(Classification.create().withCategory(email.getMetadata().get("classification.category")).withType(email.getMetadata().get("classification.type")))
 			.withStakeholders(List.of(

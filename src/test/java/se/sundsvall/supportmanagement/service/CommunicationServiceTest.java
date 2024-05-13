@@ -71,6 +71,7 @@ class CommunicationServiceTest {
 	private static final String FILE_CONTENT = "iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==";
 	private static final String FILE_NAME = "fileName";
 	private static final String ERRAND_ID_KEY = "errandId";
+	private static final String MESSAGE_ID = "MESSAGE_ID";
 
 	@Mock
 	private ErrandsRepository errandsRepositoryMock;
@@ -255,6 +256,8 @@ class CommunicationServiceTest {
 			generated.se.sundsvall.messaging.EmailAttachment::getContent,
 			generated.se.sundsvall.messaging.EmailAttachment::getContentType,
 			generated.se.sundsvall.messaging.EmailAttachment::getName).containsExactly(tuple(FILE_CONTENT, IMAGE_PNG_VALUE, FILE_NAME));
+		assertThat(arguments.getHeaders().get(MESSAGE_ID)).isNotNull().hasSize(1).extracting(String::toString).allMatch(s -> s.startsWith("<") && s.contains("@") && s.contains(NAMESPACE) && s.endsWith(">"));
+
 
 		// Verification
 		verifyNoMoreInteractions(errandsRepositoryMock, messagingClientMock, communicationMapperMock, communicationRepositoryMock);
