@@ -18,6 +18,9 @@ integration:
   eventlog:
     connectTimeout: 5
     readTimeout: 30
+  employee:
+    connect-timeout: 5
+    read-timeout: 30
   messaging:
     connectTimeout: 5
     readTimeout: 30
@@ -71,6 +74,9 @@ spring:
           emailreader:
             authorization-grant-type: client_credentials
             provider: emailreader
+          employee:
+            authorization-grant-type: client_credentials
+            provider: employee
           eventlog:
             authorization-grant-type: client_credentials
             provider: eventlog
