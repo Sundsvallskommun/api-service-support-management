@@ -10,6 +10,9 @@ import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toSm
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -26,6 +29,7 @@ import se.sundsvall.supportmanagement.integration.db.CommunicationRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
 import se.sundsvall.supportmanagement.integration.messaging.MessagingClient;
 import se.sundsvall.supportmanagement.service.mapper.CommunicationMapper;
 
@@ -101,6 +105,13 @@ public class CommunicationService {
 	public void sendEmail(final String namespace, final String municipalityId, final String id, final EmailRequest request) {
 
 		final var entity = fetchEntity(id, namespace, municipalityId);
+
+		Optional.ofNullable(request.getEmailHeaders()).ifPresentOrElse(headers -> {
+			if (!headers.containsKey(EmailHeader.MESSAGE_ID)) {
+				headers.put(EmailHeader.MESSAGE_ID, List.of("<" + UUID.randomUUID() + "@" + namespace + ">"));
+			}
+		}, () -> request.setEmailHeaders(Map.of(EmailHeader.MESSAGE_ID, List.of("<" + UUID.randomUUID() + "@" + namespace + ">"))));
+
 		messagingClient.sendEmail(ASYNCHRONOUSLY, toEmailRequest(entity, request));
 
 		final var communicationEntity = communicationMapper.toCommunicationEntity(request)
