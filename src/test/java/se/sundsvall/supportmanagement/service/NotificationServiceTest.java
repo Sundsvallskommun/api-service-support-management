@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.service;
 
+import static java.time.OffsetDateTime.now;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -22,11 +23,15 @@ import org.zalando.problem.Problem;
 
 import se.sundsvall.supportmanagement.TestObjectsBuilder;
 import se.sundsvall.supportmanagement.api.filter.ExecutingUserSupplier;
+import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.NotificationRepository;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
 
 @ExtendWith(MockitoExtension.class)
 class NotificationServiceTest {
+
+	@Mock
+	private ErrandsRepository errandsRepositoryMock;
 
 	@Mock
 	private ExecutingUserSupplier executingUserSupplierMock;
@@ -49,6 +54,7 @@ class NotificationServiceTest {
 		final var namespace = "namespace";
 		final var notificationId = UUID.randomUUID().toString();
 
+		when(errandsRepositoryMock.findById(any())).thenReturn(Optional.ofNullable(TestObjectsBuilder.buildErrandEntity().withCreated(now())));
 		when(notificationRepositoryMock.findByIdAndNamespaceAndMunicipalityId(notificationId, namespace, municipalityId)).thenReturn(Optional.ofNullable(createNotificationEntity(n -> {})));
 
 		// Act

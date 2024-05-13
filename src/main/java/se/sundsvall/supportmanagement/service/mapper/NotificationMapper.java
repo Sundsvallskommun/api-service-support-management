@@ -7,7 +7,7 @@ import java.util.Optional;
 import se.sundsvall.supportmanagement.api.model.notification.Notification;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
 
-public class NotificationMapper {
+public final class NotificationMapper {
 
 	private NotificationMapper() {
 		// Intentionally empty
@@ -26,7 +26,6 @@ public class NotificationMapper {
 			.withExpires(notification.getExpires())
 			.withAcknowledged(notification.isAcknowledged())
 			.withErrandId(notification.getErrandId())
-			.withErrandNumber(notification.getErrandNumber())
 			.withMunicipalityId(municipalityId)
 			.withNamespace(namespace);
 	}
@@ -45,7 +44,6 @@ public class NotificationMapper {
 		Optional.ofNullable(notification.getExpires()).ifPresent(entity::setExpires);
 		Optional.of(notification.isAcknowledged()).ifPresent(entity::setAcknowledged);
 		Optional.ofNullable(notification.getErrandId()).ifPresent(entity::setErrandId);
-		Optional.ofNullable(notification.getErrandNumber()).ifPresent(entity::setErrandNumber);
 		return entity;
 	}
 
@@ -64,7 +62,6 @@ public class NotificationMapper {
 				.withExpires(entity.getExpires())
 				.withAcknowledged(entity.isAcknowledged())
 				.withErrandId(entity.getErrandId())
-				.withErrandNumber(entity.getErrandNumber())
 				.withModified(entity.getModified())
 				.withCreated(entity.getCreated()))
 			.orElse(null);

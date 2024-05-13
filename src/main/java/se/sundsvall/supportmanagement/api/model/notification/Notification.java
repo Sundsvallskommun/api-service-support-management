@@ -1,5 +1,7 @@
 package se.sundsvall.supportmanagement.api.model.notification;
 
+import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
+
 import java.time.OffsetDateTime;
 import java.util.Objects;
 
@@ -10,6 +12,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 
 import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
+import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -38,7 +41,8 @@ public class Notification {
 	@Schema(description = "User who created the notification", example = "TestUser")
 	private String createdBy;
 
-	@Schema(description = "Full name of the user who created the notification", example = "Test Testorsson")
+	@Schema(description = "Full name of the user who created the notification", example = "Test Testorsson", accessMode = READ_ONLY)
+	@Null(groups = {OnCreate.class, OnUpdate.class})
 	private String createdByFullName;
 
 	@NotBlank
@@ -63,7 +67,8 @@ public class Notification {
 	@Schema(description = "Errand id of the notification", example = "f0882f1d-06bc-47fd-b017-1d8307f5ce95")
 	private String errandId;
 
-	@Schema(description = "Errand number of the notification", example = "PRH-2022-000001")
+	@Schema(description = "Errand number of the notification", example = "PRH-2022-000001", accessMode = READ_ONLY)
+	@Null(groups = {OnCreate.class, OnUpdate.class})
 	private String errandNumber;
 
 	public static Notification create() {

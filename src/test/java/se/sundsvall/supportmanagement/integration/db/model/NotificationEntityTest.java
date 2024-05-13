@@ -52,7 +52,6 @@ class NotificationEntityTest {
 		final var expires = now();
 		final var acknowledged = true;
 		final var errandId = "f0882f1d-06bc-47fd-b017-1d8307f5ce95";
-		final var errandNumber = "PRH-2022-000001";
 		final var municipalityId = "municipalityId";
 		final var namespace = "namespace";
 
@@ -71,7 +70,6 @@ class NotificationEntityTest {
 			.withExpires(expires)
 			.withAcknowledged(acknowledged)
 			.withErrandId(errandId)
-			.withErrandNumber(errandNumber)
 			.withMunicipalityId(municipalityId)
 			.withNamespace(namespace);
 
@@ -89,7 +87,6 @@ class NotificationEntityTest {
 		assertThat(notification.getExpires()).isEqualTo(expires);
 		assertThat(notification.isAcknowledged()).isEqualTo(acknowledged);
 		assertThat(notification.getErrandId()).isEqualTo(errandId);
-		assertThat(notification.getErrandNumber()).isEqualTo(errandNumber);
 		assertThat(notification.getMunicipalityId()).isEqualTo(municipalityId);
 		assertThat(notification.getNamespace()).isEqualTo(namespace);
 	}

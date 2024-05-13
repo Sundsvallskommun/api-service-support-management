@@ -53,7 +53,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "User notifications", description = "User notifications operations")
 @ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {Problem.class, ConstraintViolationProblem.class})))
 @ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
-public class NotificationsResource {
+class NotificationsResource {
 
 	private final NotificationService notificationService;
 
