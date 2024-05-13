@@ -25,6 +25,8 @@ class NotificationMapperTest {
 
 	private static final String CREATED_BY = "createdBy";
 
+	private static final String CREATED_BY_FULL_NAME = "createdByFullName";
+
 	private static final String TYPE = "type";
 
 	private static final String DESCRIPTION = "description";
@@ -32,6 +34,8 @@ class NotificationMapperTest {
 	private static final String CONTENT = "content";
 
 	private static final String ERRAND_ID = "errandId";
+
+	private static final String ERRAND_NUMBER = "errandNumber";
 
 	private static final OffsetDateTime CREATED = now();
 
@@ -45,6 +49,8 @@ class NotificationMapperTest {
 
 	private static final String NEW_CREATED_BY = "newCreatedBy";
 
+	private static final String NEW_CREATED_BY_FULL_NAME = "newCreatedByFullName";
+
 	private static final String NEW_TYPE = "newType";
 
 	private static final String NEW_DESCRIPTION = "newDescription";
@@ -57,15 +63,19 @@ class NotificationMapperTest {
 
 	private static final String NEW_ERRAND_ID = "newErrandId";
 
+	private static final String NEW_ERRAND_NUMBER = "newErrandNumber";
+
 	private static Notification createNotification() {
 		return Notification.create()
 			.withOwnerFullName(OWNER_FULL_NAME)
 			.withOwnerId(OWNER_ID)
 			.withCreatedBy(CREATED_BY)
+			.withCreatedByFullName(CREATED_BY_FULL_NAME)
 			.withType(TYPE)
 			.withDescription(DESCRIPTION)
 			.withContent(CONTENT)
-			.withErrandId(ERRAND_ID);
+			.withErrandId(ERRAND_ID)
+			.withErrandNumber(ERRAND_NUMBER);
 	}
 
 	private static NotificationEntity createEntity() {
@@ -77,6 +87,7 @@ class NotificationMapperTest {
 			.withOwnerFullName(OWNER_FULL_NAME)
 			.withOwnerId(OWNER_ID)
 			.withCreatedBy(CREATED_BY)
+			.withCreatedByFullName(CREATED_BY_FULL_NAME)
 			.withType(TYPE)
 			.withDescription(DESCRIPTION)
 			.withContent(CONTENT)
@@ -89,10 +100,11 @@ class NotificationMapperTest {
 	void testToNotification() {
 		final var notification = NotificationMapper.toNotification(createEntity());
 
-		assertThat(notification).isNotNull().hasNoNullFieldsOrProperties();
+		assertThat(notification).isNotNull().hasNoNullFieldsOrPropertiesExcept("errandNumber");
 		assertThat(notification.getOwnerFullName()).isEqualTo(OWNER_FULL_NAME);
 		assertThat(notification.getOwnerId()).isEqualTo(OWNER_ID);
 		assertThat(notification.getCreatedBy()).isEqualTo(CREATED_BY);
+		assertThat(notification.getCreatedByFullName()).isEqualTo(CREATED_BY_FULL_NAME);
 		assertThat(notification.getType()).isEqualTo(TYPE);
 		assertThat(notification.getDescription()).isEqualTo(DESCRIPTION);
 		assertThat(notification.getContent()).isEqualTo(CONTENT);
@@ -112,6 +124,7 @@ class NotificationMapperTest {
 		assertThat(entity.getOwnerFullName()).isEqualTo(OWNER_FULL_NAME);
 		assertThat(entity.getOwnerId()).isEqualTo(OWNER_ID);
 		assertThat(entity.getCreatedBy()).isEqualTo(CREATED_BY);
+		assertThat(entity.getCreatedByFullName()).isEqualTo(CREATED_BY_FULL_NAME);
 		assertThat(entity.getType()).isEqualTo(TYPE);
 		assertThat(entity.getDescription()).isEqualTo(DESCRIPTION);
 		assertThat(entity.getContent()).isEqualTo(CONTENT);
@@ -127,12 +140,14 @@ class NotificationMapperTest {
 		notification.setOwnerFullName(NEW_OWNER_FULL_NAME);
 		notification.setOwnerId(NEW_OWNER_ID);
 		notification.setCreatedBy(NEW_CREATED_BY);
+		notification.setCreatedByFullName(NEW_CREATED_BY_FULL_NAME);
 		notification.setType(NEW_TYPE);
 		notification.setDescription(NEW_DESCRIPTION);
 		notification.setContent(NEW_CONTENT);
 		notification.setExpires(NEW_EXPIRES);
 		notification.setAcknowledged(NEW_ACKNOWLEDGED);
 		notification.setErrandId(NEW_ERRAND_ID);
+		notification.setErrandNumber(NEW_ERRAND_NUMBER);
 
 		final var updatedEntity = NotificationMapper.updateEntity(entity, notification);
 
@@ -144,6 +159,7 @@ class NotificationMapperTest {
 		assertThat(updatedEntity.getOwnerFullName()).isEqualTo(NEW_OWNER_FULL_NAME);
 		assertThat(updatedEntity.getOwnerId()).isEqualTo(NEW_OWNER_ID);
 		assertThat(updatedEntity.getCreatedBy()).isEqualTo(NEW_CREATED_BY);
+		assertThat(updatedEntity.getCreatedByFullName()).isEqualTo(NEW_CREATED_BY_FULL_NAME);
 		assertThat(updatedEntity.getType()).isEqualTo(NEW_TYPE);
 		assertThat(updatedEntity.getDescription()).isEqualTo(NEW_DESCRIPTION);
 		assertThat(updatedEntity.getContent()).isEqualTo(NEW_CONTENT);
