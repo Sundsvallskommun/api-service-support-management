@@ -45,6 +45,7 @@ class NotificationEntityTest {
 		final var owner = "Test Testorsson";
 		final var ownerId = "cb20c51f-fcf3-42c0-b613-de563634a8ec";
 		final var createdBy = "TestUser";
+		final var createdByFullName = "Test Testorsson";
 		final var type = "SomeType";
 		final var description = "Some description of the notification";
 		final var content = "Some content of the notification";
@@ -62,6 +63,7 @@ class NotificationEntityTest {
 			.withOwnerFullName(owner)
 			.withOwnerId(ownerId)
 			.withCreatedBy(createdBy)
+			.withCreatedByFullName(createdByFullName)
 			.withType(type)
 			.withDescription(description)
 			.withContent(content)
@@ -78,6 +80,7 @@ class NotificationEntityTest {
 		assertThat(notification.getOwnerFullName()).isEqualTo(owner);
 		assertThat(notification.getOwnerId()).isEqualTo(ownerId);
 		assertThat(notification.getCreatedBy()).isEqualTo(createdBy);
+		assertThat(notification.getCreatedByFullName()).isEqualTo(createdByFullName);
 		assertThat(notification.getType()).isEqualTo(type);
 		assertThat(notification.getDescription()).isEqualTo(description);
 		assertThat(notification.getContent()).isEqualTo(content);

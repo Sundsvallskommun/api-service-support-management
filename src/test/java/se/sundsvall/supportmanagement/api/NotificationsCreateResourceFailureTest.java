@@ -52,7 +52,6 @@ class NotificationsCreateResourceFailureTest {
 		return Stream.of(
 			Arguments.of(TestObjectsBuilder.createNotification(n -> n.withOwnerFullName(null)), "ownerFullName", "must not be blank"),
 			Arguments.of(TestObjectsBuilder.createNotification(n -> n.withOwnerId(null)), "ownerId", "must not be blank"),
-			Arguments.of(TestObjectsBuilder.createNotification(n -> n.withCreatedBy(null)), "createdBy", "must not be blank"),
 			Arguments.of(TestObjectsBuilder.createNotification(n -> n.withType(null)), "type", "must not be blank"),
 			Arguments.of(TestObjectsBuilder.createNotification(n -> n.withDescription(null)), "description", "must not be blank"),
 			Arguments.of(TestObjectsBuilder.createNotification(n -> n.withErrandId(null)), "errandId", "not a valid UUID")

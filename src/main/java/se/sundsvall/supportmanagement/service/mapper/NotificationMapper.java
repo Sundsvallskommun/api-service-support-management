@@ -7,7 +7,7 @@ import java.util.Optional;
 import se.sundsvall.supportmanagement.api.model.notification.Notification;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
 
-public class NotificationMapper {
+public final class NotificationMapper {
 
 	private NotificationMapper() {
 		// Intentionally empty
@@ -19,6 +19,7 @@ public class NotificationMapper {
 			.withOwnerFullName(notification.getOwnerFullName())
 			.withOwnerId(notification.getOwnerId())
 			.withCreatedBy(notification.getCreatedBy())
+			.withCreatedByFullName(notification.getCreatedByFullName())
 			.withType(notification.getType())
 			.withDescription(notification.getDescription())
 			.withContent(notification.getContent())
@@ -37,6 +38,7 @@ public class NotificationMapper {
 		Optional.ofNullable(notification.getOwnerId()).ifPresent(entity::setOwnerId);
 		Optional.ofNullable(notification.getCreatedBy()).ifPresent(entity::setCreatedBy);
 		Optional.ofNullable(notification.getType()).ifPresent(entity::setType);
+		Optional.ofNullable(notification.getCreatedByFullName()).ifPresent(entity::setCreatedByFullName);
 		Optional.ofNullable(notification.getDescription()).ifPresent(entity::setDescription);
 		Optional.ofNullable(notification.getContent()).ifPresent(entity::setContent);
 		Optional.ofNullable(notification.getExpires()).ifPresent(entity::setExpires);
@@ -53,6 +55,7 @@ public class NotificationMapper {
 				.withOwnerFullName(entity.getOwnerFullName())
 				.withOwnerId(entity.getOwnerId())
 				.withCreatedBy(entity.getCreatedBy())
+				.withCreatedByFullName(entity.getCreatedByFullName())
 				.withType(entity.getType())
 				.withDescription(entity.getDescription())
 				.withContent(entity.getContent())

@@ -155,6 +155,7 @@
         modified datetime(6),
         content varchar(255),
         created_by varchar(255),
+        created_by_full_name varchar(255),
         description varchar(255),
         errand_id varchar(255),
         id varchar(255) not null,
@@ -233,28 +234,28 @@
         primary key (id)
     ) engine=InnoDB;
 
-    create index idx_attachment_file_name
+    create index idx_attachment_file_name 
        on attachment (file_name);
 
-    alter table if exists attachment
+    alter table if exists attachment 
        add constraint uq_attachment_data_id unique (attachment_data_id);
 
-    create index idx_namespace_municipality_id
+    create index idx_namespace_municipality_id 
        on category (namespace, municipality_id);
 
-    alter table if exists category
+    alter table if exists category 
        add constraint uq_namespace_municipality_id_name unique (namespace, municipality_id, name);
 
-    create index idx_errand_number
+    create index idx_errand_number 
        on communication (errand_number);
 
-    alter table if exists communication_attachment
+    alter table if exists communication_attachment 
        add constraint uq_communication_attachment_data_id unique (communication_attachment_data_id);
 
-    create index idx_namespace_municipality_id
+    create index idx_namespace_municipality_id 
        on email_worker_config (namespace, municipality_id);
 
-    alter table if exists email_worker_config
+    alter table if exists email_worker_config 
        add constraint uq_namespace_municipality_id unique (namespace, municipality_id);
 
     create index idx_errand_id 

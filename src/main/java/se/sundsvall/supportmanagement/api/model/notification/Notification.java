@@ -1,5 +1,7 @@
 package se.sundsvall.supportmanagement.api.model.notification;
 
+import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
+
 import java.time.OffsetDateTime;
 import java.util.Objects;
 
@@ -10,6 +12,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 
 import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
+import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -35,9 +38,12 @@ public class Notification {
 	@Schema(description = "Owner id of the notification", example = "AD01")
 	private String ownerId;
 
-	@NotBlank
 	@Schema(description = "User who created the notification", example = "TestUser")
 	private String createdBy;
+
+	@Schema(description = "Full name of the user who created the notification", example = "Test Testorsson", accessMode = READ_ONLY)
+	@Null(groups = {OnCreate.class, OnUpdate.class})
+	private String createdByFullName;
 
 	@NotBlank
 	@Schema(description = "Type of the notification", example = "CREATE")
@@ -60,6 +66,10 @@ public class Notification {
 	@ValidUuid
 	@Schema(description = "Errand id of the notification", example = "f0882f1d-06bc-47fd-b017-1d8307f5ce95")
 	private String errandId;
+
+	@Schema(description = "Errand number of the notification", example = "PRH-2022-000001", accessMode = READ_ONLY)
+	@Null(groups = {OnCreate.class, OnUpdate.class})
+	private String errandNumber;
 
 	public static Notification create() {
 		return new Notification();
@@ -143,6 +153,19 @@ public class Notification {
 		return this;
 	}
 
+	public String getCreatedByFullName() {
+		return createdByFullName;
+	}
+
+	public void setCreatedByFullName(final String createdByFullName) {
+		this.createdByFullName = createdByFullName;
+	}
+
+	public Notification withCreatedByFullName(final String createdByFullName) {
+		this.createdByFullName = createdByFullName;
+		return this;
+	}
+
 	public String getType() {
 		return type;
 	}
@@ -221,17 +244,30 @@ public class Notification {
 		return this;
 	}
 
+	public String getErrandNumber() {
+		return errandNumber;
+	}
+
+	public void setErrandNumber(final String errandNumber) {
+		this.errandNumber = errandNumber;
+	}
+
+	public Notification withErrandNumber(final String errandNumber) {
+		this.errandNumber = errandNumber;
+		return this;
+	}
+
 	@Override
 	public boolean equals(final Object o) {
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
 		final Notification that = (Notification) o;
-		return acknowledged == that.acknowledged && Objects.equals(id, that.id) && Objects.equals(created, that.created) && Objects.equals(modified, that.modified) && Objects.equals(ownerFullName, that.ownerFullName) && Objects.equals(ownerId, that.ownerId) && Objects.equals(createdBy, that.createdBy) && Objects.equals(type, that.type) && Objects.equals(description, that.description) && Objects.equals(content, that.content) && Objects.equals(expires, that.expires) && Objects.equals(errandId, that.errandId);
+		return acknowledged == that.acknowledged && Objects.equals(id, that.id) && Objects.equals(created, that.created) && Objects.equals(modified, that.modified) && Objects.equals(ownerFullName, that.ownerFullName) && Objects.equals(ownerId, that.ownerId) && Objects.equals(createdBy, that.createdBy) && Objects.equals(createdByFullName, that.createdByFullName) && Objects.equals(type, that.type) && Objects.equals(description, that.description) && Objects.equals(content, that.content) && Objects.equals(expires, that.expires) && Objects.equals(errandId, that.errandId) && Objects.equals(errandNumber, that.errandNumber);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, created, modified, ownerFullName, ownerId, createdBy, type, description, content, expires, acknowledged, errandId);
+		return Objects.hash(id, created, modified, ownerFullName, ownerId, createdBy, createdByFullName, type, description, content, expires, acknowledged, errandId, errandNumber);
 	}
 
 	@Override
@@ -243,12 +279,14 @@ public class Notification {
 			", ownerFullName='" + ownerFullName + '\'' +
 			", ownerId='" + ownerId + '\'' +
 			", createdBy='" + createdBy + '\'' +
+			", createdByFullName='" + createdByFullName + '\'' +
 			", type='" + type + '\'' +
 			", description='" + description + '\'' +
 			", content='" + content + '\'' +
 			", expires=" + expires +
 			", acknowledged=" + acknowledged +
 			", errandId='" + errandId + '\'' +
+			", errandNumber='" + errandNumber + '\'' +
 			'}';
 	}
 
