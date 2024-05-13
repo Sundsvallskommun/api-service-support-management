@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
+import static java.util.Map.entry;
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
@@ -9,14 +10,17 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Base64.Decoder;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
-import generated.se.sundsvall.messaging.ExternalReference;
 import se.sundsvall.supportmanagement.api.model.communication.EmailAttachment;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
 import se.sundsvall.supportmanagement.api.model.communication.SmsRequest;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
+
+import generated.se.sundsvall.messaging.ExternalReference;
 
 class MessagingMapperTest {
 
@@ -48,6 +52,9 @@ class MessagingMapperTest {
 		assertThat(result.getParty().getExternalReferences())
 			.extracting(ExternalReference::getKey, ExternalReference::getValue)
 			.contains(tuple(ERRAND_ID_KEY, ERRAND_ID));
+		assertThat(result.getHeaders()).contains(entry(EmailHeader.MESSAGE_ID.toString(), List.of("this-is@message-id")));
+		assertThat(result.getHeaders()).contains(entry(EmailHeader.IN_REPLY_TO.toString(), List.of("another@message-id")));
+		assertThat(result.getHeaders()).contains(entry(EmailHeader.REFERENCES.toString(), List.of("valid@message-id", "also-valid@message-id")));
 
 		assertThat(result.getAttachments()).isNotNull().extracting(
 			generated.se.sundsvall.messaging.EmailAttachment::getContent,
@@ -66,6 +73,9 @@ class MessagingMapperTest {
 		assertThat(result.getSender().getAddress()).isEqualTo(SENDER_EMAIL);
 		assertThat(result.getSender().getName()).isEqualTo(SENDER_EMAIL);
 		assertThat(result.getSender().getReplyTo()).isNull();
+		assertThat(result.getHeaders()).contains(entry(EmailHeader.MESSAGE_ID.toString(), List.of("this-is@message-id")));
+		assertThat(result.getHeaders()).contains(entry(EmailHeader.IN_REPLY_TO.toString(), List.of("another@message-id")));
+		assertThat(result.getHeaders()).contains(entry(EmailHeader.REFERENCES.toString(), List.of("valid@message-id", "also-valid@message-id")));
 		assertThat(result.getAttachments()).isNotNull().extracting(
 			generated.se.sundsvall.messaging.EmailAttachment::getContent,
 			generated.se.sundsvall.messaging.EmailAttachment::getContentType,
@@ -102,11 +112,18 @@ class MessagingMapperTest {
 			.withRecipient(RECIPIENT)
 			.withSender(SENDER_EMAIL)
 			.withSenderName(hasSenderName ? SENDER_NAME : null)
+			.withEmailHeaders(createEmailHeaders())
 			.withSubject(SUBJECT);
 	}
 
 	private static ErrandEntity createErrandEntity() {
 		return ErrandEntity.create()
 			.withId(ERRAND_ID);
+	}
+
+	private static Map<EmailHeader, List<String>> createEmailHeaders() {
+		return Map.of(EmailHeader.MESSAGE_ID, List.of("this-is@message-id"),
+			EmailHeader.IN_REPLY_TO, List.of("another@message-id"),
+			EmailHeader.REFERENCES, List.of("valid@message-id", "also-valid@message-id"));
 	}
 }
