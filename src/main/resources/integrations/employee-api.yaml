@@ -1,0 +1,582 @@
+openapi: 3.0.1
+info:
+  title: Employee API
+  version: v1
+paths:
+  /api/v1/employee/api-docs:
+    get:
+      tags:
+        - Employee
+      summary: OpenAPI specification
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                type: string
+            text/json:
+              schema:
+                type: string
+      x-auth-type: None
+  '/api/v1/employee/employed/{personalNumber}/loginname':
+    get:
+      tags:
+        - Employee
+      parameters:
+        - name: personalNumber
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LoginName'
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LoginName'
+            text/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LoginName'
+        '404':
+          description: Not Found
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  '/api/v1/employee/portalpersondata/{domain}/{loginName}':
+    get:
+      tags:
+        - Employee
+      parameters:
+        - name: domain
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: loginName
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/PortalPersonData'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortalPersonData'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/PortalPersonData'
+  '/api/v1/employee/portalpersondata/{email}':
+    get:
+      tags:
+        - Employee
+      parameters:
+        - name: email
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/PortalPersonData'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortalPersonData'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/PortalPersonData'
+  /api/v1/employee/employments:
+    get:
+      tags:
+        - Employee
+      parameters:
+        - name: filter
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Employee'
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Employee'
+            text/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Employee'
+  /api/v1/employee/newemployments:
+    get:
+      tags:
+        - Employee
+      parameters:
+        - name: filter
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Employee'
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Employee'
+            text/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Employee'
+  /api/v1/employee/endedemployments:
+    get:
+      tags:
+        - Employee
+      parameters:
+        - name: filter
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Employee'
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Employee'
+            text/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Employee'
+  '/api/v1/employee/{personId}/personimage':
+    get:
+      tags:
+        - Employee
+      parameters:
+        - name: personId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: width
+          in: query
+          schema:
+            type: integer
+            format: int32
+      responses:
+        '200':
+          description: Success
+    put:
+      tags:
+        - Employee
+      parameters:
+        - name: personId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModelPostPersonImage'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/ModelPostPersonImage'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/ModelPostPersonImage'
+      responses:
+        '200':
+          description: Success
+    delete:
+      tags:
+        - Employee
+      parameters:
+        - name: personId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Success
+  '/api/v1/employee/manageremployees/{managerId}':
+    get:
+      tags:
+        - Employee
+      parameters:
+        - name: managerId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ManagerEmployee'
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ManagerEmployee'
+            text/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ManagerEmployee'
+components:
+  schemas:
+    Employee:
+      type: object
+      properties:
+        personId:
+          type: string
+          format: uuid
+        personNumber:
+          type: string
+          nullable: true
+        isClassified:
+          type: boolean
+        givenname:
+          type: string
+          nullable: true
+        middlename:
+          type: string
+          nullable: true
+        lastname:
+          type: string
+          nullable: true
+        loginname:
+          type: string
+          nullable: true
+        emailAddress:
+          type: string
+          nullable: true
+        referenceNumber:
+          type: string
+          nullable: true
+        isManager:
+          type: boolean
+          nullable: true
+        employments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Employment'
+          nullable: true
+        employeeEvents:
+          type: array
+          items:
+            $ref: '#/components/schemas/EmployeeEvent'
+          nullable: true
+      additionalProperties: false
+    EmployeeEvent:
+      type: object
+      properties:
+        companyId:
+          type: integer
+          format: int32
+        startDate:
+          type: string
+          format: date-time
+          nullable: true
+        endDate:
+          type: string
+          format: date-time
+          nullable: true
+        title:
+          type: string
+          nullable: true
+        orgId:
+          type: integer
+          format: int32
+        orgName:
+          type: string
+          nullable: true
+        topOrgId:
+          type: integer
+          format: int32
+        topOrgName:
+          type: string
+          nullable: true
+        benefitGroupId:
+          type: integer
+          format: int32
+          nullable: true
+        eventType:
+          type: string
+          nullable: true
+        eventInfo:
+          type: string
+          nullable: true
+      additionalProperties: false
+    Employment:
+      type: object
+      properties:
+        companyId:
+          type: integer
+          format: int32
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+          nullable: true
+        employmentType:
+          type: integer
+          format: int32
+        title:
+          type: string
+          nullable: true
+        managerCode:
+          type: string
+          nullable: true
+        orgId:
+          type: integer
+          format: int32
+        orgName:
+          type: string
+          nullable: true
+        topOrgId:
+          type: integer
+          format: int32
+        topOrgName:
+          type: string
+          nullable: true
+        benefitGroupId:
+          type: integer
+          format: int32
+          nullable: true
+        formOfEmploymentId:
+          type: string
+          nullable: true
+        isManual:
+          type: boolean
+        paTeam:
+          type: string
+          nullable: true
+        isMainEmployment:
+          type: boolean
+        manager:
+          $ref: '#/components/schemas/Manager'
+        aid:
+          type: string
+          nullable: true
+        eventType:
+          type: string
+          nullable: true
+        eventInfo:
+          type: string
+          nullable: true
+      additionalProperties: false
+    LoginName:
+      type: object
+      properties:
+        domain:
+          type: string
+          nullable: true
+        loginName:
+          type: string
+          nullable: true
+      additionalProperties: false
+    Manager:
+      type: object
+      properties:
+        personId:
+          type: string
+          format: uuid
+        givenname:
+          type: string
+          nullable: true
+        middlename:
+          type: string
+          nullable: true
+        lastname:
+          type: string
+          nullable: true
+        loginname:
+          type: string
+          nullable: true
+        emailAddress:
+          type: string
+          nullable: true
+        referenceNumber:
+          type: string
+          nullable: true
+      additionalProperties: false
+    ManagerEmployee:
+      type: object
+      properties:
+        personId:
+          type: string
+          format: uuid
+        hireDate:
+          type: string
+          format: date-time
+          nullable: true
+        retireDate:
+          type: string
+          format: date-time
+          nullable: true
+      additionalProperties: false
+    ModelPostPersonImage:
+      type: object
+      properties:
+        title:
+          type: string
+          nullable: true
+        imageData:
+          type: string
+          nullable: true
+      additionalProperties: false
+    PortalPersonData:
+      type: object
+      properties:
+        personid:
+          type: string
+          format: uuid
+        givenname:
+          type: string
+          nullable: true
+        lastname:
+          type: string
+          nullable: true
+        fullname:
+          type: string
+          nullable: true
+        address:
+          type: string
+          nullable: true
+        postalCode:
+          type: string
+          nullable: true
+        city:
+          type: string
+          nullable: true
+        workPhone:
+          type: string
+          nullable: true
+        mobilePhone:
+          type: string
+          nullable: true
+        extraMobilePhone:
+          type: string
+          nullable: true
+        aboutMe:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+        mailNickname:
+          type: string
+          nullable: true
+        company:
+          type: string
+          nullable: true
+        companyId:
+          type: integer
+          format: int32
+        orgTree:
+          type: string
+          nullable: true
+        referenceNumber:
+          type: string
+          nullable: true
+        isManager:
+          type: boolean
+        loginName:
+          type: string
+          nullable: true
+      additionalProperties: false
+    ProblemDetails:
+      type: object
+      properties:
+        type:
+          type: string
+          nullable: true
+        title:
+          type: string
+          nullable: true
+        status:
+          type: integer
+          format: int32
+          nullable: true
+        detail:
+          type: string
+          nullable: true
+        instance:
+          type: string
+          nullable: true
+      additionalProperties: { }
+  securitySchemes:
+    Bearer:
+      type: apiKey
+      description: JWT Authorization header using the Bearer scheme.
+      name: X-JWT-Assertion
+      in: header
+security:
+  - Bearer: [ ]
+tags:
+  - name: Employee
+    description: Handles information about employees

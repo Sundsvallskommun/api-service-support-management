@@ -7,6 +7,8 @@ integration:
       Ditt ärende är nu stängt på grund av saknad återkoppling. Vänligen återkom per telefon eller via e-post för att skapa nytt ärende.
       Detta e-postmeddelande går ej att svara på.
     errand-closed-email-sender: noreply@sundsvall.se
+  employee:
+    url: http://employee.url
   eventlog:
     url: http://eventlog.url
   messaging:
@@ -45,6 +47,8 @@ spring:
         provider:
           emailreader:
             token-uri: http://token.url
+          employee:
+            token-uri: http://token.url
           eventlog:
             token-uri: http://token.url
           messaging:
@@ -57,6 +61,9 @@ spring:
           emailreader:
             client-id: the-client-id
             client-secret: the-client-secret
+          employee:
+            client-id: the-client-id
+            client-secret: the-client
           eventlog:
             client-id: the-client-id
             client-secret: the-client-secret
