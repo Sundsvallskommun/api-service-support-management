@@ -1,26 +1,5 @@
 package se.sundsvall.supportmanagement.service;
 
-import generated.se.sundsvall.eventlog.Event;
-import generated.se.sundsvall.eventlog.EventType;
-import generated.se.sundsvall.eventlog.Metadata;
-import generated.se.sundsvall.eventlog.PageEvent;
-import generated.se.sundsvall.notes.Note;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Pageable;
-import se.sundsvall.supportmanagement.api.filter.ExecutingUserSupplier;
-import se.sundsvall.supportmanagement.api.model.errand.Errand;
-import se.sundsvall.supportmanagement.api.model.revision.Revision;
-import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.integration.eventlog.EventlogClient;
-
-import java.util.List;
-
 import static java.time.OffsetDateTime.now;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static java.util.UUID.randomUUID;
@@ -32,8 +11,40 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Pageable;
+
+import se.sundsvall.supportmanagement.api.filter.ExecutingUserSupplier;
+import se.sundsvall.supportmanagement.api.model.errand.Errand;
+import se.sundsvall.supportmanagement.api.model.notification.Notification;
+import se.sundsvall.supportmanagement.api.model.revision.Revision;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
+import se.sundsvall.supportmanagement.integration.eventlog.EventlogClient;
+
+import generated.se.sundsvall.employee.PortalPersonData;
+import generated.se.sundsvall.eventlog.Event;
+import generated.se.sundsvall.eventlog.EventType;
+import generated.se.sundsvall.eventlog.Metadata;
+import generated.se.sundsvall.eventlog.PageEvent;
+import generated.se.sundsvall.notes.Note;
+
 @ExtendWith(MockitoExtension.class)
 class EventServiceTest {
+
+	@Mock
+	private EmployeeService employeeServiceMock;
+
+	@Mock
+	private NotificationService notificationServiceMock;
 
 	@Mock
 	private EventlogClient eventLogClientMock;
@@ -52,6 +63,9 @@ class EventServiceTest {
 
 	@Captor
 	private ArgumentCaptor<Event> eventCaptor;
+
+	@Captor
+	private ArgumentCaptor<Notification> notificationCaptor;
 
 	@Test
 	void createErrandEventWithAllDataPresent() {
@@ -73,6 +87,8 @@ class EventServiceTest {
 
 		// Mock
 		when(executingUserSupplierMock.getAdUser()).thenReturn(executingUserId);
+		when(employeeServiceMock.getEmployeeByPartyId(entity)).thenReturn(new PortalPersonData());
+		when(employeeServiceMock.getEmployeeByLoginName(executingUserId)).thenReturn(new PortalPersonData().loginName(executingUserId));
 
 		// Call
 		service.createErrandEvent(eventType, message, entity, currentRevision, previousRevision);
@@ -98,6 +114,10 @@ class EventServiceTest {
 		assertThat(event.getOwner()).isEqualTo(owner);
 		assertThat(event.getSourceType()).isEqualTo(sourceType);
 		assertThat(event.getType()).isEqualTo(eventType);
+
+		verify(notificationServiceMock).createNotification(eq(entity.getMunicipalityId()), eq(entity.getNamespace()), notificationCaptor.capture());
+		final var notification = notificationCaptor.getValue();
+		assertThat(notification.getCreatedBy()).isEqualTo(executingUserId);
 	}
 
 	@Test
@@ -139,8 +159,10 @@ class EventServiceTest {
 		final var owner = "SupportManagement";
 		final var sourceType = Errand.class.getSimpleName();
 
-		final var entity = ErrandEntity.create().withId(errandId);
+		final var entity = ErrandEntity.create().withId(errandId).withStakeholders(List.of(StakeholderEntity.create()));
 		final var currentRevision = Revision.create().withId(currentRevisionId).withVersion(currentRevisionVersion);
+
+		when(employeeServiceMock.getEmployeeByPartyId(entity)).thenReturn(new PortalPersonData());
 
 		// Call
 		service.createErrandEvent(eventType, message, entity, currentRevision, null);
@@ -298,4 +320,5 @@ class EventServiceTest {
 			.extracting(se.sundsvall.supportmanagement.api.model.event.Event::getType)
 			.containsOnly(se.sundsvall.supportmanagement.api.model.event.EventType.UNKNOWN);
 	}
+
 }

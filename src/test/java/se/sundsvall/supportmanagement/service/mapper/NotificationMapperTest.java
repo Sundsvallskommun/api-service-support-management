@@ -9,7 +9,12 @@ import java.time.OffsetDateTime;
 import org.junit.jupiter.api.Test;
 
 import se.sundsvall.supportmanagement.api.model.notification.Notification;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
+
+import generated.se.sundsvall.employee.PortalPersonData;
+import generated.se.sundsvall.eventlog.Event;
+import generated.se.sundsvall.eventlog.EventType;
 
 class NotificationMapperTest {
 
@@ -64,6 +69,8 @@ class NotificationMapperTest {
 	private static final String NEW_ERRAND_ID = "newErrandId";
 
 	private static final String NEW_ERRAND_NUMBER = "newErrandNumber";
+
+	private static final EventType EVENT_TYPE = EventType.CREATE;
 
 	private static Notification createNotification() {
 		return Notification.create()
@@ -166,6 +173,43 @@ class NotificationMapperTest {
 		assertThat(updatedEntity.getExpires()).isEqualTo(NEW_EXPIRES);
 		assertThat(updatedEntity.isAcknowledged()).isEqualTo(NEW_ACKNOWLEDGED);
 		assertThat(updatedEntity.getErrandId()).isEqualTo(NEW_ERRAND_ID);
+	}
+
+	@Test
+	void toNotificationFromEvent() {
+
+		// Arrange
+		final var event = new Event()
+			.type(EVENT_TYPE)
+			.created(CREATED)
+			.expires(EXPIRES)
+			.message(DESCRIPTION);
+
+		final var errandEntity = new ErrandEntity()
+			.withId(ERRAND_ID)
+			.withErrandNumber(ERRAND_NUMBER);
+		final var owner = new PortalPersonData()
+			.loginName(OWNER_ID)
+			.fullname(OWNER_FULL_NAME);
+		final var creator = new PortalPersonData()
+			.loginName(CREATED_BY)
+			.fullname(CREATED_BY_FULL_NAME);
+
+		// Act
+		final var notification = NotificationMapper.toNotification(event, errandEntity, owner, creator);
+
+		// Assert
+		assertThat(notification).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "content", "expires");
+		assertThat(notification.getDescription()).isEqualTo(DESCRIPTION);
+		assertThat(notification.getErrandId()).isEqualTo(ERRAND_ID);
+		assertThat(notification.getErrandNumber()).isEqualTo(ERRAND_NUMBER);
+		assertThat(notification.getType()).isEqualTo(EVENT_TYPE.getValue());
+		assertThat(notification.getExpires()).isEqualTo(EXPIRES);
+		assertThat(notification.getCreated()).isEqualTo(CREATED);
+		assertThat(notification.getOwnerId()).isEqualTo(OWNER_ID);
+		assertThat(notification.getOwnerFullName()).isEqualTo(OWNER_FULL_NAME);
+		assertThat(notification.getCreatedBy()).isEqualTo(CREATED_BY);
+		assertThat(notification.getCreatedByFullName()).isEqualTo(CREATED_BY_FULL_NAME);
 	}
 
 }
