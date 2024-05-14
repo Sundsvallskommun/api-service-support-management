@@ -1,0 +1,18 @@
+{
+  "name": "api-employee-getPersonalData",
+  "request": {
+    "method": "GET",
+    "urlPath": "/api-employee/portalpersondata/personal/del04ete",
+    "headers": {
+      "Authorization": {
+        "equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
+      }
+    }
+  },
+  "response": {
+    "headers": {
+      "Content-Type": "*/*"
+    },
+    "status": 200
+  }
+}

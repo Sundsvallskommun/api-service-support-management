@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import se.sundsvall.supportmanagement.integration.employee.configuration.EmployeeConfiguration;
 
 import generated.se.sundsvall.employee.Employee;
+import generated.se.sundsvall.employee.PortalPersonData;
 
 
 @FeignClient(
@@ -31,5 +32,16 @@ public interface EmployeeClient {
 	 */
 	@GetMapping(path = "/employments?filter={filter}", produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_PROBLEM_JSON_VALUE})
 	Optional<List<Employee>> getEmployeeInformation(@PathVariable("filter") String filter);
+
+
+	/**
+	 * Get Userdata from the employee service by domain and loginName.
+	 *
+	 * @param domain domain of the employee
+	 * @param loginName login name of the employee
+	 * @return PortalPersonData with information about the employee
+	 */
+	@GetMapping(path = "/portalpersondata/{domain}/{loginName}", produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_PROBLEM_JSON_VALUE})
+	Optional<PortalPersonData> getEmployeeByDomainAndLoginName(@PathVariable("domain") String domain, @PathVariable("loginName") String loginName);
 
 }

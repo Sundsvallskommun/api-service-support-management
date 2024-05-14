@@ -5,7 +5,12 @@ import static org.apache.commons.lang3.ObjectUtils.anyNull;
 import java.util.Optional;
 
 import se.sundsvall.supportmanagement.api.model.notification.Notification;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
+import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
+
+import generated.se.sundsvall.employee.PortalPersonData;
+import generated.se.sundsvall.eventlog.Event;
 
 public final class NotificationMapper {
 
@@ -64,6 +69,32 @@ public final class NotificationMapper {
 				.withErrandId(entity.getErrandId())
 				.withModified(entity.getModified())
 				.withCreated(entity.getCreated()))
+			.orElse(null);
+	}
+
+	public static Notification toNotification(final Event event, final ErrandEntity errandEntity, final PortalPersonData owner, final PortalPersonData creator) {
+
+		final var notification = Notification.create()
+			.withDescription(event.getMessage())
+			.withErrandId(errandEntity.getId())
+			.withErrandNumber(errandEntity.getErrandNumber())
+			.withType(event.getType().getValue())
+			.withExpires(event.getExpires())
+			.withModified(event.getCreated())
+			.withCreated(event.getCreated());
+		Optional.ofNullable(owner)
+			.ifPresent(o -> notification.withOwnerId(o.getLoginName())
+				.withOwnerFullName(o.getFullname()));
+		Optional.ofNullable(creator)
+			.ifPresent(c -> notification.withCreatedBy(c.getLoginName())
+				.withCreatedByFullName(c.getFullname()));
+		return notification;
+	}
+
+	public static StakeholderEntity getStakeholder(final ErrandEntity errandEntity) {
+		return errandEntity.getStakeholders().stream()
+			.filter(stakeholder -> "ADMINISTRATOR".equals(stakeholder.getRole()))
+			.findFirst()
 			.orElse(null);
 	}
 

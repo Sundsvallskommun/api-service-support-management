@@ -4,6 +4,7 @@ import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static se.sundsvall.supportmanagement.service.mapper.EventlogMapper.toEvent;
 import static se.sundsvall.supportmanagement.service.mapper.EventlogMapper.toMetadataMap;
+import static se.sundsvall.supportmanagement.service.mapper.NotificationMapper.toNotification;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -28,27 +29,34 @@ public class EventService {
 
 	private final EventlogClient eventLogClient;
 
+	private final NotificationService notificationService;
+
+	private final EmployeeService employeeService;
+
 	public EventService(final ExecutingUserSupplier executingUserSupplier,
-		final EventlogClient eventLogClient) {
+		final EventlogClient eventLogClient, final NotificationService notificationService, final EmployeeService employeeService) {
 		this.executingUserSupplier = executingUserSupplier;
 		this.eventLogClient = eventLogClient;
+		this.notificationService = notificationService;
+
+		this.employeeService = employeeService;
 	}
 
-	public void createErrandEvent(EventType eventType, String message, ErrandEntity errandEntity, Revision currentRevision, Revision previousRevision) {
+	public void createErrandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final Revision currentRevision, final Revision previousRevision) {
 		final var metadata = toMetadataMap(errandEntity, currentRevision, previousRevision);
-		eventLogClient.createEvent(
-			errandEntity.getId(),
-			toEvent(eventType, message, extractId(currentRevision), Errand.class, metadata, executingUserSupplier.getAdUser()));
+		final var event = toEvent(eventType, message, extractId(currentRevision), Errand.class, metadata, executingUserSupplier.getAdUser());
+		eventLogClient.createEvent(errandEntity.getId(), event);
+		createNotification(errandEntity, event);
 	}
 
-	public void createErrandNoteEvent(EventType eventType, String message, String logKey, String caseId, String noteId, Revision currentRevision, Revision previousRevision) {
+	public void createErrandNoteEvent(final EventType eventType, final String message, final String logKey, final String caseId, final String noteId, final Revision currentRevision, final Revision previousRevision) {
 		final var metadata = toMetadataMap(caseId, noteId, currentRevision, previousRevision);
 		eventLogClient.createEvent(
 			logKey,
 			toEvent(eventType, message, extractId(currentRevision), Note.class, metadata, executingUserSupplier.getAdUser()));
 	}
 
-	public Page<Event> readEvents(String id, Pageable pageable) {
+	public Page<Event> readEvents(final String id, final Pageable pageable) {
 		final var response = eventLogClient.getEvents(id, pageable);
 
 		return new PageImpl<>(response.getContent().stream()
@@ -57,7 +65,15 @@ public class EventService {
 			.toList(), pageable, response.getTotalElements());
 	}
 
-	private String extractId(Revision currentRevision) {
+	private String extractId(final Revision currentRevision) {
 		return ofNullable(currentRevision).map(Revision::getId).orElse(null);
 	}
+
+	private void createNotification(final ErrandEntity errandEntity, final generated.se.sundsvall.eventlog.Event event) {
+		final var owner = employeeService.getEmployeeByPartyId(errandEntity);
+		final var creator = employeeService.getEmployeeByLoginName(executingUserSupplier.getAdUser());
+		notificationService.createNotification(errandEntity.getMunicipalityId(), errandEntity.getNamespace(), toNotification(event, errandEntity, owner, creator));
+	}
+
+
 }
