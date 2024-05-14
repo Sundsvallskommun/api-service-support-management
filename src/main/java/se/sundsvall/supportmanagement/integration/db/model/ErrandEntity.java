@@ -61,7 +61,7 @@ public class ErrandEntity {
 			@Index(name = "idx_external_tag_key", columnList = "key")
 		},
 		joinColumns = @JoinColumn(name = "errand_id", referencedColumnName = "id", foreignKey = @ForeignKey(name = "fk_errand_external_tag_errand_id")),
-		uniqueConstraints = @UniqueConstraint(name = "uq_external_tag_errand_id_key", columnNames = { "errand_id", "key" }))
+		uniqueConstraints = @UniqueConstraint(name = "uq_external_tag_errand_id_key", columnNames = {"errand_id", "key"}))
 	private List<DbExternalTag> externalTags;
 
 	@OneToMany(mappedBy = "errandEntity", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -106,6 +106,10 @@ public class ErrandEntity {
 
 	@Column(name = "escalation_email")
 	private String escalationEmail;
+
+	@OneToMany(cascade = CascadeType.ALL)
+	@JoinColumn(name = "errand_id")
+	private List<ParameterEntity> parameters;
 
 	@OneToMany(mappedBy = "errandEntity", cascade = CascadeType.ALL, orphanRemoval = true)
 	@OrderBy("fileName")
