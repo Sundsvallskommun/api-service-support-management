@@ -1,5 +1,13 @@
 package se.sundsvall.supportmanagement.integration.db.model;
 
+import static java.time.OffsetDateTime.now;
+import static java.time.temporal.ChronoUnit.MILLIS;
+import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
+
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.util.Objects;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -14,16 +22,9 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+
 import org.hibernate.annotations.TimeZoneStorage;
 import org.hibernate.annotations.UuidGenerator;
-
-import java.time.OffsetDateTime;
-import java.time.ZoneId;
-import java.util.Objects;
-
-import static java.time.OffsetDateTime.now;
-import static java.time.temporal.ChronoUnit.MILLIS;
-import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 
 @Entity
 @Table(name = "attachment",
@@ -31,7 +32,7 @@ import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 		@Index(name = "idx_attachment_file_name", columnList = "file_name")
 	},
 	uniqueConstraints = {
-		@UniqueConstraint(name = "uq_attachment_data_id", columnNames = { "attachment_data_id" })
+		@UniqueConstraint(name = "uq_attachment_data_id", columnNames = {"attachment_data_id"})
 	})
 public class AttachmentEntity {
 
@@ -186,15 +187,13 @@ public class AttachmentEntity {
 
 	@Override
 	public String toString() {
-		final StringBuilder sb = new StringBuilder("AttachmentEntity{");
-		sb.append("id='").append(id).append('\'');
-		sb.append(", fileName='").append(fileName).append('\'');
-		sb.append(", mimeType='").append(mimeType).append('\'');
-		sb.append(", attachmentData=").append(attachmentData);
-		sb.append(", created=").append(created);
-		sb.append(", modified=").append(modified);
-		sb.append(", errandEntity=").append(errandEntity);
-		sb.append('}');
-		return sb.toString();
+		return "AttachmentEntity{" +
+			"id='" + id + '\'' +
+			", fileName='" + fileName + '\'' +
+			", mimeType='" + mimeType + '\'' +
+			", attachmentData=" + attachmentData +
+			", created=" + created +
+			", modified=" + modified +
+			'}';
 	}
 }

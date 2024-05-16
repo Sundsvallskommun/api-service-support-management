@@ -1,8 +1,6 @@
 package se.sundsvall.supportmanagement.service.scheduler.notifications;
 
 
-import java.util.concurrent.TimeUnit;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -21,7 +19,7 @@ public class NotificationScheduler {
 
 	public NotificationScheduler(final NotificationWorker notificationWorker) {this.notificationWorker = notificationWorker;}
 
-	@Scheduled(initialDelayString = "${scheduler.notification.initialDelay}", fixedRateString = "${scheduler.notification.fixedRate}", timeUnit = TimeUnit.SECONDS)
+	@Scheduled(cron = "${scheduler.notification.cron}")
 	@SchedulerLock(name = "clean_notifications", lockAtMostFor = "${scheduler.notification.shedlock-lock-at-most-for}")
 	void cleanUpNotifications() {
 

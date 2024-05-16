@@ -15,6 +15,7 @@ import jakarta.validation.constraints.Null;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.format.annotation.DateTimeFormat.ISO;
 
+import se.sundsvall.supportmanagement.api.model.parameter.ErrandParameter;
 import se.sundsvall.supportmanagement.api.validation.UniqueExternalTagKeys;
 import se.sundsvall.supportmanagement.api.validation.ValidClassification;
 import se.sundsvall.supportmanagement.api.validation.ValidStatus;
@@ -28,7 +29,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 public class Errand {
 
 	@Schema(description = "Unique id for the errand", example = "f0882f1d-06bc-47fd-b017-1d8307f5ce95", accessMode = READ_ONLY)
-	@Null(groups = { OnCreate.class, OnUpdate.class })
+	@Null(groups = {OnCreate.class, OnUpdate.class})
 	private String id;
 
 	@Schema(description = "Unique number for the errand", example = "KC-23010001", accessMode = READ_ONLY)
@@ -50,6 +51,9 @@ public class Errand {
 	@UniqueExternalTagKeys
 	@Valid
 	private List<ExternalTag> externalTags;
+
+	@ArraySchema(schema = @Schema(implementation = ErrandParameter.class, accessMode = READ_ONLY))
+	private List<ErrandParameter> parameters;
 
 	@Schema(implementation = Classification.class)
 	@NotNull(groups = OnCreate.class)
@@ -85,17 +89,17 @@ public class Errand {
 
 	@Schema(description = "Timestamp when errand was created", example = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	@DateTimeFormat(iso = ISO.DATE_TIME)
-	@Null(groups = { OnCreate.class, OnUpdate.class })
+	@Null(groups = {OnCreate.class, OnUpdate.class})
 	private OffsetDateTime created;
 
 	@Schema(description = "Timestamp when errand was last modified", example = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	@DateTimeFormat(iso = ISO.DATE_TIME)
-	@Null(groups = { OnCreate.class, OnUpdate.class })
+	@Null(groups = {OnCreate.class, OnUpdate.class})
 	private OffsetDateTime modified;
 
 	@Schema(description = "Timestamp when errand was last touched (created or modified)", example = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	@DateTimeFormat(iso = ISO.DATE_TIME)
-	@Null(groups = { OnCreate.class, OnUpdate.class })
+	@Null(groups = {OnCreate.class, OnUpdate.class})
 	private OffsetDateTime touched;
 
 	public static Errand create() {
@@ -112,6 +116,19 @@ public class Errand {
 
 	public Errand withId(String id) {
 		this.id = id;
+		return this;
+	}
+
+	public List<ErrandParameter> getParameters() {
+		return parameters;
+	}
+
+	public void setParameters(final List<ErrandParameter> parameters) {
+		this.parameters = parameters;
+	}
+
+	public Errand withParameters(final List<ErrandParameter> parameters) {
+		this.parameters = parameters;
 		return this;
 	}
 
@@ -324,50 +341,39 @@ public class Errand {
 	}
 
 	@Override
-	public boolean equals(Object o) {
-		if (this == o) {
-			return true;
-		}
-		if (o == null || getClass() != o.getClass()) {
-			return false;
-		}
-		Errand errand = (Errand) o;
-		return Objects.equals(id, errand.id) && Objects.equals(title, errand.title) && priority == errand.priority &&
-			Objects.equals(stakeholders, errand.stakeholders) && Objects.equals(externalTags, errand.externalTags) &&
-			Objects.equals(classification, errand.classification) && Objects.equals(status, errand.status) &&
-			Objects.equals(resolution, errand.resolution) && Objects.equals(description, errand.description) &&
-			Objects.equals(reporterUserId, errand.reporterUserId) && Objects.equals(assignedUserId, errand.assignedUserId) &&
-			Objects.equals(assignedGroupId, errand.assignedGroupId) && Objects.equals(escalationEmail, errand.escalationEmail) &&
-			Objects.equals(created, errand.created) && Objects.equals(modified, errand.modified) &&
-			Objects.equals(touched, errand.touched) && Objects.equals(errandNumber, errand.errandNumber);
+	public String toString() {
+		return "Errand{" +
+			"id='" + id + '\'' +
+			", errandNumber='" + errandNumber + '\'' +
+			", title='" + title + '\'' +
+			", priority=" + priority +
+			", stakeholders=" + stakeholders +
+			", externalTags=" + externalTags +
+			", parameters=" + parameters +
+			", classification=" + classification +
+			", status='" + status + '\'' +
+			", resolution='" + resolution + '\'' +
+			", description='" + description + '\'' +
+			", reporterUserId='" + reporterUserId + '\'' +
+			", assignedUserId='" + assignedUserId + '\'' +
+			", assignedGroupId='" + assignedGroupId + '\'' +
+			", escalationEmail='" + escalationEmail + '\'' +
+			", created=" + created +
+			", modified=" + modified +
+			", touched=" + touched +
+			'}';
+	}
+
+	@Override
+	public boolean equals(final Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		final Errand errand = (Errand) o;
+		return Objects.equals(id, errand.id) && Objects.equals(errandNumber, errand.errandNumber) && Objects.equals(title, errand.title) && priority == errand.priority && Objects.equals(stakeholders, errand.stakeholders) && Objects.equals(externalTags, errand.externalTags) && Objects.equals(parameters, errand.parameters) && Objects.equals(classification, errand.classification) && Objects.equals(status, errand.status) && Objects.equals(resolution, errand.resolution) && Objects.equals(description, errand.description) && Objects.equals(reporterUserId, errand.reporterUserId) && Objects.equals(assignedUserId, errand.assignedUserId) && Objects.equals(assignedGroupId, errand.assignedGroupId) && Objects.equals(escalationEmail, errand.escalationEmail) && Objects.equals(created, errand.created) && Objects.equals(modified, errand.modified) && Objects.equals(touched, errand.touched);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, errandNumber, title, priority, stakeholders, externalTags, classification, status, resolution, description, reporterUserId, assignedUserId, assignedGroupId, escalationEmail, created, modified, touched);
-	}
-
-	@Override
-	public String toString() {
-		final StringBuilder sb = new StringBuilder("Errand{");
-		sb.append("id='").append(id).append('\'');
-		sb.append(", errandNumber='").append(errandNumber).append('\'');
-		sb.append(", title='").append(title).append('\'');
-		sb.append(", priority=").append(priority);
-		sb.append(", stakeholders=").append(stakeholders);
-		sb.append(", externalTags=").append(externalTags);
-		sb.append(", classification='").append(classification).append('\'');
-		sb.append(", statusTag='").append(status).append('\'');
-		sb.append(", resolution='").append(resolution).append('\'');
-		sb.append(", description='").append(description).append('\'');
-		sb.append(", reporterUserId='").append(reporterUserId).append('\'');
-		sb.append(", assignedUserId='").append(assignedUserId).append('\'');
-		sb.append(", assignedGroupId='").append(assignedGroupId).append('\'');
-		sb.append(", escalationEmail='").append(escalationEmail).append('\'');
-		sb.append(", created=").append(created);
-		sb.append(", modified=").append(modified);
-		sb.append(", touched=").append(touched);
-		sb.append('}');
-		return sb.toString();
+		return Objects.hash(id, errandNumber, title, priority, stakeholders, externalTags, parameters, classification, status, resolution, description, reporterUserId, assignedUserId, assignedGroupId, escalationEmail, created, modified, touched);
 	}
 }

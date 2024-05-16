@@ -11,6 +11,13 @@ integration:
     url: http://localhost:${wiremock.server.port:}/api-notes
   web-message-collector:
     url: http://localhost:${wiremock.server.port:}/api-web-message-collector
+scheduler:
+  emailreader:
+    cron: "-"
+  web-message-collector:
+    cron: "-"
+  notification:
+    cron: "-"
 spring:
   cache:
     type: none

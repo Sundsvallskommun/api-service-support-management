@@ -1,35 +1,36 @@
 {
-	"id": "1be673c0-6ba3-4fb0-af4a-43acf23389f6",
-	"errandNumber": "KC-23020003",
-	"title": "TITLE-3",
-	"priority": "HIGH",
-	"stakeholders": [
-		{
-			"contactChannels": [],
-			"externalId": "7fba994b-e99e-4beb-8ab5-63cc74483b66",
-			"externalIdType": "ENTERPRISE"
-		}
-	],
-	"externalTags": [
-		{
-			"key": "KEY-4",
-			"value": "VALUE-4"
-		},
-		{
-			"key": "KEY-5",
-			"value": "VALUE-5"
-		}
-	],
-	"classification": {
-		"category": "CATEGORY-3",
-		"type": "TYPE-3"
-	},
-	"status": "STATUS-3",
-	"resolution": "RESOLUTION",
-	"description": "DESCRIPTION",
-	"reporterUserId": "REPORTER_USER_ID-3",
-	"assignedUserId": "ASSIGNED_USER_ID-3",
-	"assignedGroupId": "ASSIGNED_GROUP_ID-3",
-	"created": "2022-03-01T12:00:00+01:00",
-	"touched": "2022-03-01T12:00:00+01:00"
+  "id": "1be673c0-6ba3-4fb0-af4a-43acf23389f6",
+  "errandNumber": "KC-23020003",
+  "title": "TITLE-3",
+  "priority": "HIGH",
+  "stakeholders": [
+    {
+      "externalId": "7fba994b-e99e-4beb-8ab5-63cc74483b66",
+      "externalIdType": "ENTERPRISE",
+      "contactChannels": []
+    }
+  ],
+  "externalTags": [
+    {
+      "key": "KEY-4",
+      "value": "VALUE-4"
+    },
+    {
+      "key": "KEY-5",
+      "value": "VALUE-5"
+    }
+  ],
+  "parameters": [],
+  "classification": {
+    "category": "CATEGORY-3",
+    "type": "TYPE-3"
+  },
+  "status": "STATUS-3",
+  "resolution": "RESOLUTION",
+  "description": "DESCRIPTION",
+  "reporterUserId": "REPORTER_USER_ID-3",
+  "assignedUserId": "ASSIGNED_USER_ID-3",
+  "assignedGroupId": "ASSIGNED_GROUP_ID-3",
+  "created": "2022-03-01T12:00:00+01:00",
+  "touched": "2022-03-01T12:00:00+01:00"
 }

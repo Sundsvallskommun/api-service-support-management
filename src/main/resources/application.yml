@@ -1,15 +1,12 @@
 scheduler:
   emailreader:
-    initialDelay: PT1M
-    fixedRate: PT1M
+    cron: 0 * * * * *
     shedlock-lock-at-most-for: PT10M
   web-message-collector:
-    initialDelay: PT1M
-    fixedRate: PT1M
+    cron: 0 * * * * *
     shedlock-lock-at-most-for: PT10M
   notification:
-    initialDelay: PT1M
-    fixedRate: PT1M
+    cron: 0 * * * * *
     shedlock-lock-at-most-for: PT10M
 integration:
   emailreader:

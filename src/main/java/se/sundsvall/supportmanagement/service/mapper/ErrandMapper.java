@@ -17,9 +17,11 @@ import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
 import se.sundsvall.supportmanagement.api.model.errand.Priority;
 import se.sundsvall.supportmanagement.api.model.errand.Stakeholder;
+import se.sundsvall.supportmanagement.api.model.parameter.ErrandParameter;
 import se.sundsvall.supportmanagement.integration.db.model.ContactChannelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 
 public class ErrandMapper {
@@ -36,6 +38,7 @@ public class ErrandMapper {
 			.withAssignedGroupId(errand.getAssignedGroupId())
 			.withAssignedUserId(errand.getAssignedUserId())
 			.withAttachments(emptyList())
+			.withParameters(emptyList())
 			.withCategory(errand.getClassification().getCategory())
 			.withDescription(errand.getDescription())
 			.withEscalationEmail(errand.getEscalationEmail())
@@ -118,9 +121,25 @@ public class ErrandMapper {
 				.withTouched(e.getTouched())
 				.withResolution(e.getResolution())
 				.withDescription(e.getDescription())
+				.withParameters(toErrandParameters(e.getParameters()))
 				.withEscalationEmail(e.getEscalationEmail()))
 			.orElse(null);
 	}
+
+	private static List<ErrandParameter> toErrandParameters(final List<ParameterEntity> parameterEntities) {
+		return ofNullable(parameterEntities).orElse(emptyList())
+			.stream()
+			.map(ErrandMapper::toErrandParameter)
+			.toList();
+	}
+
+	private static ErrandParameter toErrandParameter(final ParameterEntity parameterEntity) {
+		return ErrandParameter.create()
+			.withId(parameterEntity.getId())
+			.withName(parameterEntity.getName())
+			.withValue(parameterEntity.getValue());
+	}
+
 
 	private static List<Stakeholder> toStakeholders(List<StakeholderEntity> stakeholderEntities) {
 		return Optional.ofNullable(stakeholderEntities)
