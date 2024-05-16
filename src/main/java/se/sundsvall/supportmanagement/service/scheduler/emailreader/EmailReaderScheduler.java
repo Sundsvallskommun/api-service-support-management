@@ -1,7 +1,5 @@
 package se.sundsvall.supportmanagement.service.scheduler.emailreader;
 
-import java.util.concurrent.TimeUnit;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -22,7 +20,7 @@ public class EmailReaderScheduler {
 		this.emailReaderWorker = emailReaderWorker;
 	}
 
-	@Scheduled(initialDelayString = "${scheduler.emailreader.initialDelay}", fixedRateString = "${scheduler.emailreader.fixedRate}", timeUnit = TimeUnit.SECONDS)
+	@Scheduled(cron = "${scheduler.emailreader.cron}")
 	@SchedulerLock(name = "fetch_emails", lockAtMostFor = "${scheduler.emailreader.shedlock-lock-at-most-for}")
 	void getAndProcessEmails() {
 		LOG.debug("Fetching messages from Emailreader");

@@ -19,6 +19,7 @@ import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 
 public class TestObjectsBuilder {
@@ -77,10 +78,15 @@ public class TestObjectsBuilder {
 
 	private static final String NOTIFICATION_CONTENT = "TestContent";
 
+	private static final String PARAMETER_NAME = "parameterName";
+
+	private static final String PARAMETER_VALUE = "parameterValue";
+
+	private static final String PARAMETER_ID = "parameterId";
+
 	private static final boolean NOTIFICATION_ACKNOWLEDGED = false;
 
 	private static final String NOTIFICATION_ERRAND_ID = "cb20c51f-fcf3-42c0-b613-de563634a8ec";
-
 
 	private static final OffsetDateTime NOTIFICATION_CREATED = OffsetDateTime.now();
 
@@ -106,7 +112,14 @@ public class TestObjectsBuilder {
 			.withReporterUserId(REPORTER_USER_ID)
 			.withStatus(STATUS)
 			.withTitle(TITLE)
+			.withParameters(new ArrayList<>(List.of(createParameterEntity().withId(PARAMETER_ID))))
 			.withType(TYPE);
+	}
+
+	public static ParameterEntity createParameterEntity() {
+		return ParameterEntity.create()
+			.withName(PARAMETER_NAME)
+			.withValue(PARAMETER_VALUE);
 	}
 
 	public static AttachmentEntity buildAttachmentEntity(final ErrandEntity errandEntity) {

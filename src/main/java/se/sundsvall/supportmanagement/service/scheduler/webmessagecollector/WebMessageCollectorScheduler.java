@@ -1,7 +1,5 @@
 package se.sundsvall.supportmanagement.service.scheduler.webmessagecollector;
 
-import java.util.concurrent.TimeUnit;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -20,7 +18,7 @@ public class WebMessageCollectorScheduler {
 		this.webMessageCollectorWorker = webMessageCollectorWorker;
 	}
 
-	@Scheduled(initialDelayString = "${scheduler.web-message-collector.initialDelay}", fixedRateString = "${scheduler.web-message-collector.fixedRate}", timeUnit = TimeUnit.SECONDS)
+	@Scheduled(cron = "${scheduler.web-message-collector.cron}")
 	@SchedulerLock(name = "fetch_webMessages", lockAtMostFor = "${scheduler.web-message-collector.shedlock-lock-at-most-for}")
 	public void fetchWebMessages() {
 		LOG.debug("Fetching messages from WebMessageCollector");

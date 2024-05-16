@@ -24,10 +24,12 @@ import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
 import se.sundsvall.supportmanagement.api.model.errand.Priority;
 import se.sundsvall.supportmanagement.api.model.errand.Stakeholder;
+import se.sundsvall.supportmanagement.api.model.parameter.ErrandParameter;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ContactChannelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 
 class ErrandMapperTest {
@@ -63,6 +65,8 @@ class ErrandMapperTest {
 	private static final String CONTACT_CHANNEL_VALUE = "contactChannelValue";
 	private static final String ESCALATION_EMAIL = "escalation@email.com";
 	private static final String STAKEHOLDER_ROLE = "role";
+	private static final String PARAMETER_VALUE = "parameterValue";
+	private static final String PARAMETER_NAME = "parameterName";
 
 	private static final String ERRAND_NUMBER = "errandNumber";
 
@@ -93,6 +97,9 @@ class ErrandMapperTest {
 		assertThat(errand.getDescription()).isEqualTo(DESCRIPTION);
 		assertThat(errand.getEscalationEmail()).isEqualTo(ESCALATION_EMAIL);
 		assertThat(errand.getErrandNumber()).isEqualTo(ERRAND_NUMBER);
+		assertThat(errand.getParameters()).hasSize(1)
+			.extracting(ErrandParameter::getValue, ErrandParameter::getName)
+			.contains(tuple(PARAMETER_VALUE, PARAMETER_NAME));
 	}
 
 	@Test
@@ -112,6 +119,7 @@ class ErrandMapperTest {
 				Errand::getCreated,
 				Errand::getStakeholders,
 				Errand::getExternalTags,
+				Errand::getParameters,
 				Errand::getId,
 				Errand::getModified,
 				Errand::getPriority,
@@ -130,6 +138,7 @@ class ErrandMapperTest {
 				CREATED,
 				List.of(createStakeHolder()),
 				List.of(ExternalTag.create().withKey(TAG_KEY).withValue(TAG_VALUE)),
+				List.of(ErrandParameter.create().withName(PARAMETER_NAME).withValue(PARAMETER_VALUE)),
 				ID,
 				MODIFIED,
 				Priority.valueOf(PRIORITY),
@@ -159,6 +168,7 @@ class ErrandMapperTest {
 				ErrandEntity::getAttachments,
 				ErrandEntity::getCategory,
 				ErrandEntity::getExternalTags,
+				ErrandEntity::getParameters,
 				ErrandEntity::getMunicipalityId,
 				ErrandEntity::getNamespace,
 				ErrandEntity::getPriority,
@@ -176,6 +186,7 @@ class ErrandMapperTest {
 				emptyList(),
 				CATEGORY,
 				List.of(DbExternalTag.create().withKey(TAG_KEY).withValue(TAG_VALUE)),
+				emptyList(),
 				MUNICIPALITY_ID,
 				NAMESPACE,
 				PRIORITY,
@@ -307,7 +318,7 @@ class ErrandMapperTest {
 	void testUpdateEntityWithBlank() {
 		final var entity = updateEntity(createEntity(), Errand.create().withAssignedGroupId("").withAssignedUserId("").withErrandNumber("").withResolution("").withDescription("").withEscalationEmail(""));
 
-		assertThat(entity).hasNoNullFieldsOrPropertiesExcept("assignedGroupId", "assignedUserId", "attachments", "resolution", "description", "escalationEmail");
+		assertThat(entity).hasNoNullFieldsOrPropertiesExcept("assignedGroupId", "assignedUserId", "attachments", "resolution", "description", "escalationEmail", "parameters");
 		assertThat(entity.getAssignedGroupId()).isNull();
 		assertThat(entity.getAssignedUserId()).isNull();
 		assertThat(entity.getAttachments()).isNull();
@@ -334,6 +345,7 @@ class ErrandMapperTest {
 			.withCreated(CREATED)
 			.withStakeholders(List.of(createStakeHolder()))
 			.withExternalTags(List.of(ExternalTag.create().withKey(TAG_KEY).withValue(TAG_VALUE)))
+			.withParameters(List.of(ErrandParameter.create().withName(PARAMETER_NAME).withValue(PARAMETER_VALUE)))
 			.withId(ID)
 			.withModified(MODIFIED)
 			.withPriority(Priority.valueOf(PRIORITY))
@@ -363,6 +375,7 @@ class ErrandMapperTest {
 
 	private static ErrandEntity createEntity() {
 		return ErrandEntity.create()
+			.withId(ID)
 			.withAssignedGroupId(ASSIGNED_GROUP_ID)
 			.withAssignedUserId(ASSIGNED_USER_ID)
 			.withCategory(CATEGORY)
@@ -370,7 +383,7 @@ class ErrandMapperTest {
 			.withCreated(CREATED)
 			.withStakeholders(List.of(createStakeHolderEntity()))
 			.withExternalTags(List.of(DbExternalTag.create().withKey(TAG_KEY).withValue(TAG_VALUE)))
-			.withId(ID)
+			.withParameters(List.of(ParameterEntity.create().withValue(PARAMETER_VALUE).withName(PARAMETER_NAME)))
 			.withMunicipalityId(MUNICIPALITY_ID)
 			.withPriority(PRIORITY)
 			.withReporterUserId(REPORTER_USER_ID)

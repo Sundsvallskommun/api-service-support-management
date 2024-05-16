@@ -61,7 +61,7 @@ public class ErrandEntity {
 			@Index(name = "idx_external_tag_key", columnList = "key")
 		},
 		joinColumns = @JoinColumn(name = "errand_id", referencedColumnName = "id", foreignKey = @ForeignKey(name = "fk_errand_external_tag_errand_id")),
-		uniqueConstraints = @UniqueConstraint(name = "uq_external_tag_errand_id_key", columnNames = { "errand_id", "key" }))
+		uniqueConstraints = @UniqueConstraint(name = "uq_external_tag_errand_id_key", columnNames = {"errand_id", "key"}))
 	private List<DbExternalTag> externalTags;
 
 	@OneToMany(mappedBy = "errandEntity", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -106,6 +106,10 @@ public class ErrandEntity {
 
 	@Column(name = "escalation_email")
 	private String escalationEmail;
+
+	@OneToMany
+	@JoinColumn(name = "errand_id")
+	private List<ParameterEntity> parameters;
 
 	@OneToMany(mappedBy = "errandEntity", cascade = CascadeType.ALL, orphanRemoval = true)
 	@OrderBy("fileName")
@@ -154,6 +158,19 @@ public class ErrandEntity {
 
 	public ErrandEntity withId(String id) {
 		this.id = id;
+		return this;
+	}
+
+	public List<ParameterEntity> getParameters() {
+		return parameters;
+	}
+
+	public void setParameters(final List<ParameterEntity> parameters) {
+		this.parameters = parameters;
+	}
+
+	public ErrandEntity withParameters(final List<ParameterEntity> parameters) {
+		this.parameters = parameters;
 		return this;
 	}
 
@@ -417,60 +434,44 @@ public class ErrandEntity {
 		return this;
 	}
 
+	@Override
+	public String toString() {
+		return "ErrandEntity{" +
+			"id='" + id + '\'' +
+			", externalTags=" + externalTags +
+			", stakeholders=" + stakeholders +
+			", municipalityId='" + municipalityId + '\'' +
+			", namespace='" + namespace + '\'' +
+			", title='" + title + '\'' +
+			", category='" + category + '\'' +
+			", type='" + type + '\'' +
+			", status='" + status + '\'' +
+			", resolution='" + resolution + '\'' +
+			", description='" + description + '\'' +
+			", priority='" + priority + '\'' +
+			", reporterUserId='" + reporterUserId + '\'' +
+			", assignedUserId='" + assignedUserId + '\'' +
+			", assignedGroupId='" + assignedGroupId + '\'' +
+			", escalationEmail='" + escalationEmail + '\'' +
+			", parameters=" + parameters +
+			", attachments=" + attachments +
+			", created=" + created +
+			", modified=" + modified +
+			", touched=" + touched +
+			", errandNumber='" + errandNumber + '\'' +
+			'}';
+	}
 
 	@Override
-	public boolean equals(Object o) {
-		if (this == o) {
-			return true;
-		}
-		if ((o == null) || (getClass() != o.getClass())) {
-			return false;
-		}
+	public boolean equals(final Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
 		final ErrandEntity that = (ErrandEntity) o;
-		return Objects.equals(id, that.id) && Objects.equals(externalTags, that.externalTags) &&
-			Objects.equals(errandNumber, that.errandNumber) &&
-			Objects.equals(stakeholders, that.stakeholders) && Objects.equals(municipalityId, that.municipalityId) &&
-			Objects.equals(namespace, that.namespace) && Objects.equals(title, that.title) &&
-			Objects.equals(category, that.category) && Objects.equals(type, that.type) &&
-			Objects.equals(status, that.status) && Objects.equals(resolution, that.resolution) &&
-			Objects.equals(description, that.description) && Objects.equals(priority, that.priority) &&
-			Objects.equals(reporterUserId, that.reporterUserId) && Objects.equals(assignedUserId, that.assignedUserId) &&
-			Objects.equals(assignedGroupId, that.assignedGroupId) && Objects.equals(escalationEmail, that.escalationEmail) &&
-			Objects.equals(attachments, that.attachments) && Objects.equals(created, that.created) &&
-			Objects.equals(modified, that.modified) && Objects.equals(touched, that.touched);
+		return Objects.equals(id, that.id) && Objects.equals(externalTags, that.externalTags) && Objects.equals(stakeholders, that.stakeholders) && Objects.equals(municipalityId, that.municipalityId) && Objects.equals(namespace, that.namespace) && Objects.equals(title, that.title) && Objects.equals(category, that.category) && Objects.equals(type, that.type) && Objects.equals(status, that.status) && Objects.equals(resolution, that.resolution) && Objects.equals(description, that.description) && Objects.equals(priority, that.priority) && Objects.equals(reporterUserId, that.reporterUserId) && Objects.equals(assignedUserId, that.assignedUserId) && Objects.equals(assignedGroupId, that.assignedGroupId) && Objects.equals(escalationEmail, that.escalationEmail) && Objects.equals(parameters, that.parameters) && Objects.equals(attachments, that.attachments) && Objects.equals(created, that.created) && Objects.equals(modified, that.modified) && Objects.equals(touched, that.touched) && Objects.equals(errandNumber, that.errandNumber);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, errandNumber, externalTags, stakeholders, municipalityId, namespace, title, category, type, status, resolution, description, priority, reporterUserId, assignedUserId, assignedGroupId, escalationEmail, attachments, created, modified,
-			touched);
-	}
-
-	@Override
-	public String toString() {
-		final StringBuilder sb = new StringBuilder("ErrandEntity{");
-		sb.append("id='").append(id).append('\'');
-		sb.append(", errandNumber='").append(errandNumber).append('\'');
-		sb.append(", externalTags=").append(externalTags);
-		sb.append(", stakeholders=").append(stakeholders);
-		sb.append(", municipalityId='").append(municipalityId).append('\'');
-		sb.append(", namespace='").append(namespace).append('\'');
-		sb.append(", title='").append(title).append('\'');
-		sb.append(", category='").append(category).append('\'');
-		sb.append(", type='").append(type).append('\'');
-		sb.append(", status='").append(status).append('\'');
-		sb.append(", resolution='").append(resolution).append('\'');
-		sb.append(", description='").append(description).append('\'');
-		sb.append(", priority='").append(priority).append('\'');
-		sb.append(", reporterUserId='").append(reporterUserId).append('\'');
-		sb.append(", assignedUserId='").append(assignedUserId).append('\'');
-		sb.append(", assignedGroupId='").append(assignedGroupId).append('\'');
-		sb.append(", escalationEmail='").append(escalationEmail).append('\'');
-		sb.append(", attachments=").append(attachments);
-		sb.append(", created=").append(created);
-		sb.append(", modified=").append(modified);
-		sb.append(", touched=").append(touched);
-		sb.append('}');
-		return sb.toString();
+		return Objects.hash(id, externalTags, stakeholders, municipalityId, namespace, title, category, type, status, resolution, description, priority, reporterUserId, assignedUserId, assignedGroupId, escalationEmail, parameters, attachments, created, modified, touched, errandNumber);
 	}
 }
