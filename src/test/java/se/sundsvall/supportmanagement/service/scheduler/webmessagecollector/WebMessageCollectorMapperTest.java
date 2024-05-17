@@ -44,6 +44,8 @@ class WebMessageCollectorMapperTest {
 		final var messageString = "message";
 		final var messageId = "456";
 		final var sent = LocalDateTime.now().toString();
+		final var firstName = "firstName";
+		final var lastName = "lastName";
 
 		final var errandNumber = "KC-2024-010";
 
@@ -54,6 +56,8 @@ class WebMessageCollectorMapperTest {
 
 		final var messagedto = new MessageDTO()
 			.direction(direction)
+			.firstName(firstName)
+			.lastName(lastName)
 			.externalCaseId(externalCaseId)
 			.familyId(familyId)
 			.message(messageString)
@@ -67,6 +71,7 @@ class WebMessageCollectorMapperTest {
 		// Assert
 		assertThat(result).hasNoNullFieldsOrPropertiesExcept("subject", "target", "attachments", "emailHeaders");
 		assertThat(result.getId()).isNotNull();
+		assertThat(result.getSender()).isEqualTo(firstName + " " + lastName);
 		assertThat(ServiceUtil.isValidUuid(result.getId())).isTrue();
 		assertThat(result.getDirection()).isEqualTo(Direction.INBOUND);
 		assertThat(result.getExternalCaseID()).isEqualTo(externalCaseId);

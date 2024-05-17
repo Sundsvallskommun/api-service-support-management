@@ -37,6 +37,7 @@ class CommunicationRepositoryTest {
 		// Setup
 		final var communicationEntity = CommunicationEntity.create()
 			.withId("id")
+			.withSender("sender")
 			.withErrandNumber("errandNumber")
 			.withDirection(Direction.INBOUND)
 			.withExternalCaseID("externalCaseID")
@@ -54,6 +55,7 @@ class CommunicationRepositoryTest {
 		// Assertions
 		assertThat(persistedEntity).isNotNull();
 		assertThat(persistedEntity.getId()).isEqualTo("id");
+		assertThat(persistedEntity.getSender()).isEqualTo("sender");
 		assertThat(persistedEntity.getErrandNumber()).isEqualTo("errandNumber");
 		assertThat(persistedEntity.getDirection()).isEqualTo(Direction.INBOUND);
 		assertThat(persistedEntity.getExternalCaseID()).isEqualTo("externalCaseID");

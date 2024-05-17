@@ -44,6 +44,7 @@ class CommunicationTest {
 	void testBuilderMethods() {
 		// Arrange
 		final var id = "id";
+		final var sender = "sender";
 		final var direction = Direction.INBOUND;
 		final var messageBody = "messageBody";
 		final var sent = OffsetDateTime.now();
@@ -57,6 +58,7 @@ class CommunicationTest {
 		// Act
 		final var bean = Communication.create()
 			.withCommunicationID(id)
+			.withSender(sender)
 			.withDirection(direction)
 			.withMessageBody(messageBody)
 			.withSent(sent)
@@ -70,6 +72,7 @@ class CommunicationTest {
 		// Assert
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(bean.getCommunicationID()).isEqualTo(id);
+		assertThat(bean.getSender()).isEqualTo(sender);
 		assertThat(bean.getDirection()).isEqualTo(direction);
 		assertThat(bean.getMessageBody()).isEqualTo(messageBody);
 		assertThat(bean.getSent()).isEqualTo(sent);
