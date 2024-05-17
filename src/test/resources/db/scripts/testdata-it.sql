@@ -198,11 +198,11 @@ VALUES ('59328e70-4297-4bb5-ba69-cb17f2d15a17', '2022-01-01 12:00:00.000',
 -------------------------------------
 -- Communication
 -------------------------------------
-INSERT INTO communication(viewed, sent, id, errand_number, external_case_id,
+INSERT INTO communication(viewed,sender, sent, id, errand_number, external_case_id,
                           message_body, target, subject, direction, type)
-VALUES (0, '2023-01-01 12:00:00.000', 'cc236cf1-c00f-4479-8341-ecf5dd90b5b9', 'KC-23020001', 'case1',
+VALUES (0, 'Test Testorsson', '2023-01-01 12:00:00.000', 'cc236cf1-c00f-4479-8341-ecf5dd90b5b9', 'KC-23020001', 'case1',
         'message body 1', '1234567890', 'subject1', 'INBOUND', 'SMS'),
-       (1, '2023-01-02 12:00:00.000', '59328e70-4297-4bb5-ba69-cb17f2d15a17',  'KC-23020001', 'case2',
+       (1, 'Test Testorsson', '2023-01-02 12:00:00.000', '59328e70-4297-4bb5-ba69-cb17f2d15a17',  'KC-23020001', 'case2',
         'message body 2', '0987654321', 'subject2', 'OUTBOUND', 'EMAIL');
 
 -------------------------------------

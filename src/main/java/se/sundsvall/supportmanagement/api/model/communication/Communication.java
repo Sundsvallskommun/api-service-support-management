@@ -18,8 +18,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 public class Communication {
 
+
 	@Schema(description = "The communication ID", example = "12")
 	private String communicationID;
+
+	@Schema(description = "Sender of the communication.", example = "Test Testsson")
+	private String sender;
 
 	@Schema(description = "The errand number", example = "PRH-2022-000001")
 	private String errandNumber;
@@ -44,13 +48,13 @@ public class Communication {
 
 	@Schema(description = "The mobile number or email adress the communication was sent to", example = "+46701234567")
 	private String target;
-	
+
 	@Schema(description = "Signal if the message has been viewed or not", example = "true")
 	private boolean viewed;
 
 	@Schema(description = "Headers for keeping track of email conversations", example = "{\"IN_REPLY_TO\": [\"reply-to@example.com\"], \"REFERENCES\": [\"reference1\", \"reference2\"], \"MESSAGE_ID\": [\"123456789\"]}")
 	private Map<EmailHeader, List<String>> emailHeaders;
-	
+
 	@Schema(description = "List of communicationAttachments on the message")
 	private List<CommunicationAttachment> communicationAttachments;
 
@@ -68,6 +72,19 @@ public class Communication {
 
 	public Communication withCommunicationID(final String communicationID) {
 		this.communicationID = communicationID;
+		return this;
+	}
+
+	public String getSender() {
+		return sender;
+	}
+
+	public void setSender(final String sender) {
+		this.sender = sender;
+	}
+
+	public Communication withSender(final String sender) {
+		this.sender = sender;
 		return this;
 	}
 
@@ -207,18 +224,19 @@ public class Communication {
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
 		final Communication that = (Communication) o;
-		return viewed == that.viewed && Objects.equals(communicationID, that.communicationID) && Objects.equals(errandNumber, that.errandNumber) && direction == that.direction && Objects.equals(messageBody, that.messageBody) && Objects.equals(sent, that.sent) && Objects.equals(subject, that.subject) && communicationType == that.communicationType && Objects.equals(target, that.target) && Objects.equals(emailHeaders, that.emailHeaders) && Objects.equals(communicationAttachments, that.communicationAttachments);
+		return viewed == that.viewed && Objects.equals(communicationID, that.communicationID) && Objects.equals(sender, that.sender) && Objects.equals(errandNumber, that.errandNumber) && direction == that.direction && Objects.equals(messageBody, that.messageBody) && Objects.equals(sent, that.sent) && Objects.equals(subject, that.subject) && communicationType == that.communicationType && Objects.equals(target, that.target) && Objects.equals(emailHeaders, that.emailHeaders) && Objects.equals(communicationAttachments, that.communicationAttachments);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(communicationID, errandNumber, direction, messageBody, sent, subject, communicationType, target, viewed, emailHeaders, communicationAttachments);
+		return Objects.hash(communicationID, sender, errandNumber, direction, messageBody, sent, subject, communicationType, target, viewed, emailHeaders, communicationAttachments);
 	}
 
 	@Override
 	public String toString() {
 		return "Communication{" +
 			"communicationID='" + communicationID + '\'' +
+			", sender='" + sender + '\'' +
 			", errandNumber='" + errandNumber + '\'' +
 			", direction=" + direction +
 			", messageBody='" + messageBody + '\'' +

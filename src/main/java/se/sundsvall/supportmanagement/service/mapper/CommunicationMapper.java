@@ -37,6 +37,13 @@ public class CommunicationMapper {
 
 	public CommunicationMapper(final BlobBuilder blobBuilder) {this.blobBuilder = blobBuilder;}
 
+	@NotNull
+	private static Map<EmailHeader, List<String>> toHeaders(final CommunicationEntity entity) {
+		return Optional.ofNullable(entity.getEmailHeaders())
+			.orElse(List.of()).stream()
+			.collect(Collectors.toMap(CommunicationEmailHeaderEntity::getHeader, CommunicationEmailHeaderEntity::getValues));
+	}
+
 	public List<Communication> toCommunications(final List<CommunicationEntity> entities) {
 		return entities.stream()
 			.map(this::toCommunication)
@@ -45,6 +52,7 @@ public class CommunicationMapper {
 
 	public Communication toCommunication(final CommunicationEntity entity) {
 		return Optional.ofNullable(entity).map(communication -> Communication.create()
+				.withSender(entity.getSender())
 				.withEmailHeaders(toHeaders(entity))
 				.withCommunicationID(entity.getId())
 				.withErrandNumber(entity.getErrandNumber())
@@ -58,14 +66,6 @@ public class CommunicationMapper {
 				.withCommunicationAttachments(toAttachments(entity.getAttachments())))
 			.orElse(null);
 	}
-
-	@NotNull
-	private static Map<EmailHeader, List<String>> toHeaders(final CommunicationEntity entity) {
-		return Optional.ofNullable(entity.getEmailHeaders())
-			.orElse(List.of()).stream()
-			.collect(Collectors.toMap(CommunicationEmailHeaderEntity::getHeader, CommunicationEmailHeaderEntity::getValues));
-	}
-
 
 	public List<AttachmentEntity> toAttachments(final CommunicationEntity communicationEntity) {
 		return Optional.ofNullable(communicationEntity.getAttachments()).orElse(Collections.emptyList())
@@ -96,6 +96,7 @@ public class CommunicationMapper {
 
 	public CommunicationEntity toCommunicationEntity(final EmailRequest request) {
 		return CommunicationEntity.create()
+			.withSender(request.getSender())
 			.withEmailHeaders(toEmailHeaders(request.getEmailHeaders()))
 			.withId(UUID.randomUUID().toString())
 			.withDirection(Direction.OUTBOUND)
@@ -119,6 +120,7 @@ public class CommunicationMapper {
 
 	public CommunicationEntity toCommunicationEntity(final SmsRequest request) {
 		return CommunicationEntity.create()
+			.withSender(request.getSender())
 			.withId(UUID.randomUUID().toString())
 			.withDirection(Direction.OUTBOUND)
 			.withMessageBody(request.getMessage())

@@ -1,6 +1,7 @@
 [
   {
     "communicationID": "59328e70-4297-4bb5-ba69-cb17f2d15a17",
+    "sender": "Test Testorsson",
     "errandNumber": "KC-23020001",
     "direction": "OUTBOUND",
     "messageBody": "message body 2",
@@ -20,6 +21,7 @@
   },
   {
     "communicationID": "cc236cf1-c00f-4479-8341-ecf5dd90b5b9",
+    "sender": "Test Testorsson",
     "errandNumber": "KC-23020001",
     "direction": "INBOUND",
     "messageBody": "message body 1",

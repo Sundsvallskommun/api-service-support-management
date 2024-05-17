@@ -119,6 +119,7 @@ class CommunicationMapperTest {
 
 		assertThat(communicationEntity).isNotNull().hasNoNullFieldsOrPropertiesExcept("errandNumber", "externalCaseID");
 		assertThat(testValidUUID(communicationEntity.getId())).isTrue();
+		assertThat(communicationEntity.getSender()).isEqualTo(emailRequest.getSender());
 		assertThat(communicationEntity.getDirection()).isEqualTo(Direction.OUTBOUND);
 		assertThat(communicationEntity.getTarget()).isEqualTo(emailRequest.getRecipient());
 		assertThat(communicationEntity.getType()).isEqualTo(CommunicationType.EMAIL);
@@ -141,13 +142,13 @@ class CommunicationMapperTest {
 
 		assertThat(communicationEntity).isNotNull().hasNoNullFieldsOrPropertiesExcept("errandNumber", "externalCaseID", "subject", "attachments", "emailHeaders");
 		assertThat(testValidUUID(communicationEntity.getId())).isTrue();
+		assertThat(communicationEntity.getSender()).isEqualTo(smsRequest.getSender());
 		assertThat(communicationEntity.getDirection()).isEqualTo(Direction.OUTBOUND);
 		assertThat(communicationEntity.getTarget()).isEqualTo(smsRequest.getRecipient());
 		assertThat(communicationEntity.getType()).isEqualTo(CommunicationType.SMS);
 		assertThat(communicationEntity.getMessageBody()).isEqualTo(smsRequest.getMessage());
 	}
 
-	@SuppressWarnings("ResultOfMethodCallIgnored")
 	private boolean testValidUUID(final String id) {
 
 		try {
@@ -162,31 +163,32 @@ class CommunicationMapperTest {
 	}
 
 	private CommunicationEntity createCommunicationEntity() {
-		final CommunicationEntity entity = new CommunicationEntity();
-		entity.setId("testid");
-		entity.setErrandNumber("testErrandNumber");
-		entity.setDirection(Direction.INBOUND);
-		entity.setMessageBody("testMessageBody");
-		entity.setSent(OffsetDateTime.now());
-		entity.setSubject("testSubject");
-		entity.setType(CommunicationType.EMAIL);
-		entity.setTarget("target");
-		entity.setViewed(true);
-		entity.setEmailHeaders(Collections.singletonList(CommunicationEmailHeaderEntity.create().withHeader(EmailHeader.IN_REPLY_TO).withValues(Collections.singletonList("someValue"))));
-		entity.setAttachments(Collections.singletonList(createCommunicationAttachmentEntity()));
-		return entity;
+		return new CommunicationEntity()
+			.withId("testid")
+			.withSender("testSender")
+			.withErrandNumber("testErrandNumber")
+			.withDirection(Direction.INBOUND)
+			.withMessageBody("testMessageBody")
+			.withSent(OffsetDateTime.now())
+			.withSubject("testSubject")
+			.withType(CommunicationType.EMAIL)
+			.withTarget("target")
+			.withViewed(true)
+			.withEmailHeaders(Collections.singletonList(CommunicationEmailHeaderEntity.create().withHeader(EmailHeader.IN_REPLY_TO).withValues(Collections.singletonList("someValue"))))
+			.withAttachments(Collections.singletonList(createCommunicationAttachmentEntity()));
 	}
 
 	private CommunicationAttachmentEntity createCommunicationAttachmentEntity() {
-		final CommunicationAttachmentEntity entity = new CommunicationAttachmentEntity();
-		entity.setId("testId");
-		entity.setName("testName");
-		entity.setContentType("testContentType");
-		return entity;
+		return new CommunicationAttachmentEntity()
+			.withId("testId")
+			.withName("testName")
+			.withContentType("testContentType");
 	}
 
 	private void assertCommunicationMatchesEntity(final Communication communication, final CommunicationEntity entity) {
+		assertThat(communication).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(communication.getCommunicationID()).isEqualTo(entity.getId());
+		assertThat(communication.getSender()).isEqualTo(entity.getSender());
 		assertThat(communication.getErrandNumber()).isEqualTo(entity.getErrandNumber());
 		assertThat(communication.getDirection()).isEqualTo(entity.getDirection());
 		assertThat(communication.getMessageBody()).isEqualTo(entity.getMessageBody());

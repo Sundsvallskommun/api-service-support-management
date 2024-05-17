@@ -128,11 +128,11 @@ VALUES (1, now(), 'municipalityId-1', 'namespace-1', '[{"key": "value"}]'),
 -------------------------------------
 -- Communication
 -------------------------------------
-INSERT INTO communication(viewed, sent, id, errand_number, external_case_id,
+INSERT INTO communication(viewed, sender, sent, id, errand_number, external_case_id,
                           message_body, target, subject, direction, type)
-VALUES (0, '2023-01-01 12:00:00.000', 'comm1', 'errand1', 'case1',
+VALUES (0,'Test Testorsson', '2023-01-01 12:00:00.000', 'comm1', 'errand1', 'case1',
         'message body 1', '1234567890', 'subject1', 'INBOUND', 'SMS'),
-       (1, '2023-01-02 12:00:00.000', 'comm2',  'errand2', 'case2',
+       (1, 'Test Testorsson','2023-01-02 12:00:00.000', 'comm2',  'errand2', 'case2',
         'message body 2', '0987654321', 'subject2', 'OUTBOUND', 'EMAIL');
 
 -------------------------------------

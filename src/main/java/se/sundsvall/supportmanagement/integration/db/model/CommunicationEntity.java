@@ -34,6 +34,9 @@ public class CommunicationEntity {
 	@Column(name = "id")
 	private String id;
 
+	@Column(name = "sender")
+	private String sender;
+
 	@Column(name = "errand_number")
 	private String errandNumber;
 
@@ -46,6 +49,7 @@ public class CommunicationEntity {
 
 	@Column(name = "subject")
 	private String subject;
+
 	@Column(name = "message_body", length = Length.LONG32)
 	private String messageBody;
 
@@ -85,6 +89,19 @@ public class CommunicationEntity {
 
 	public CommunicationEntity withId(final String id) {
 		this.id = id;
+		return this;
+	}
+
+	public String getSender() {
+		return sender;
+	}
+
+	public void setSender(final String sender) {
+		this.sender = sender;
+	}
+
+	public CommunicationEntity withSender(final String sender) {
+		this.sender = sender;
 		return this;
 	}
 
@@ -236,18 +253,20 @@ public class CommunicationEntity {
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
 		final CommunicationEntity that = (CommunicationEntity) o;
-		return viewed == that.viewed && Objects.equals(id, that.id) && Objects.equals(errandNumber, that.errandNumber) && direction == that.direction && Objects.equals(externalCaseID, that.externalCaseID) && Objects.equals(subject, that.subject) && Objects.equals(messageBody, that.messageBody) && Objects.equals(sent, that.sent) && type == that.type && Objects.equals(target, that.target) && Objects.equals(attachments, that.attachments) && Objects.equals(emailHeaders, that.emailHeaders);
+		return viewed == that.viewed && Objects.equals(id, that.id) && Objects.equals(sender, that.sender) && Objects.equals(errandNumber, that.errandNumber) && direction == that.direction && Objects.equals(externalCaseID, that.externalCaseID) && Objects.equals(subject, that.subject) && Objects.equals(messageBody, that.messageBody) && Objects.equals(sent, that.sent) && type == that.type && Objects.equals(target, that.target) && Objects.equals(attachments, that.attachments) && Objects.equals(emailHeaders, that.emailHeaders);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, errandNumber, direction, externalCaseID, subject, messageBody, sent, type, target, viewed, attachments, emailHeaders);
+		return Objects.hash(id, sender, errandNumber, direction, externalCaseID, subject, messageBody, sent, type, target, viewed, attachments, emailHeaders);
 	}
 
 	@Override
-	public String toString() {
+	public String
+	toString() {
 		return "CommunicationEntity{" +
 			"id='" + id + '\'' +
+			", sender='" + sender + '\'' +
 			", errandNumber='" + errandNumber + '\'' +
 			", direction=" + direction +
 			", externalCaseID='" + externalCaseID + '\'' +
