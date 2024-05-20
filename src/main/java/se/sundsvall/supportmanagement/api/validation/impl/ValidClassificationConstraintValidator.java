@@ -62,4 +62,5 @@ public class ValidClassificationConstraintValidator extends AbstractTagConstrain
 			.map(Type::getName)
 			.toList();
 	}
+
 }

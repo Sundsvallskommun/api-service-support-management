@@ -98,7 +98,7 @@ class ErrandParameterServiceTest {
 
 		var result = spy.findErrandParameters(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 
-		assertThat(result.getErrandParameters()).hasSize(1).allSatisfy(parameter -> {
+		assertThat(result.getParameters()).hasSize(1).allSatisfy(parameter -> {
 			assertThat(parameter.getId()).isEqualTo(PARAMETER_ID);
 			assertThat(parameter.getName()).isEqualTo(PARAMETER_NAME);
 			assertThat(parameter.getValue()).isEqualTo(PARAMETER_VALUE);

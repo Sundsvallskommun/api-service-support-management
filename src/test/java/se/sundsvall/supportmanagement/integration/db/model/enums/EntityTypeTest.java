@@ -1,14 +1,14 @@
 package se.sundsvall.supportmanagement.integration.db.model.enums;
 
-import org.junit.jupiter.api.Test;
-
 import static org.assertj.core.api.Assertions.assertThat;
+
+import org.junit.jupiter.api.Test;
 
 class EntityTypeTest {
 
 	@Test
 	void enumValues() {
-		assertThat(EntityType.values()).containsExactlyInAnyOrder(EntityType.CATEGORY, EntityType.EXTERNAL_ID_TYPE, EntityType.STATUS, EntityType.TYPE, EntityType.ROLE);
+		assertThat(EntityType.values()).containsExactlyInAnyOrder(EntityType.CATEGORY, EntityType.EXTERNAL_ID_TYPE, EntityType.STATUS, EntityType.TYPE, EntityType.ROLE, EntityType.CONTACT_REASON);
 	}
 
 	@Test
@@ -18,5 +18,6 @@ class EntityTypeTest {
 		assertThat(EntityType.STATUS).hasToString("STATUS");
 		assertThat(EntityType.TYPE).hasToString("TYPE");
 		assertThat(EntityType.ROLE).hasToString("ROLE");
+		assertThat(EntityType.CONTACT_REASON).hasToString("CONTACT_REASON");
 	}
 }

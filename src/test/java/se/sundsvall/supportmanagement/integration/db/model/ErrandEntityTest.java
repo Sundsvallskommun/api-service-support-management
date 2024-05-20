@@ -67,6 +67,10 @@ class ErrandEntityTest {
 		final var escalationEmail = "escalation@email.com";
 		final var errandNumber = "errandNumber";
 		final var parameters = List.of(ParameterEntity.create());
+		final var suspendedTo = OffsetDateTime.now().plusDays(1);
+		final var suspendedFrom = OffsetDateTime.now();
+		final var businessRelated = true;
+		final var contactReason = ContactReasonEntity.create().withReason("reason");
 
 		final var errandEntity = ErrandEntity.create()
 			.withAssignedGroupId(assignedGroupId)
@@ -90,6 +94,10 @@ class ErrandEntityTest {
 			.withType(type)
 			.withParameters(parameters)
 			.withEscalationEmail(escalationEmail)
+			.withSuspendedFrom(suspendedFrom)
+			.withSuspendedTo(suspendedTo)
+			.withBusinessRelated(businessRelated)
+			.withContactReason(contactReason)
 			.withErrandNumber(errandNumber);
 
 		assertThat(errandEntity).hasNoNullFieldsOrProperties();
@@ -115,6 +123,10 @@ class ErrandEntityTest {
 		assertThat(errandEntity.getParameters()).isEqualTo(parameters);
 		assertThat(errandEntity.getEscalationEmail()).isEqualTo(escalationEmail);
 		assertThat(errandEntity.getErrandNumber()).isEqualTo(errandNumber);
+		assertThat(errandEntity.getSuspendedFrom()).isEqualTo(suspendedFrom);
+		assertThat(errandEntity.getSuspendedTo()).isEqualTo(suspendedTo);
+		assertThat(errandEntity.getBusinessRelated()).isEqualTo(businessRelated);
+		assertThat(errandEntity.getContactReason()).isEqualTo(contactReason);
 	}
 
 	@Test

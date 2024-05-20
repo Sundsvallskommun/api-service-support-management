@@ -20,6 +20,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import se.sundsvall.supportmanagement.api.model.parameter.ErrandParameter;
+import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
 
 class ErrandTest {
 
@@ -60,6 +61,9 @@ class ErrandTest {
 		final var description = "description";
 		final var escalationEmail = "escalation@email.com";
 		final var errandNumber = "errandNumber";
+		final var suspend = Suspend.create().withSuspendedFrom(OffsetDateTime.now()).withSuspendedTo(OffsetDateTime.now().plusDays(1));
+		final var businessRelated = true;
+		final var contactReason = ContactReasonEntity.create().withReason("reason");
 
 		final var bean = Errand.create()
 			.withAssignedGroupId(assignedGroupId)
@@ -79,7 +83,10 @@ class ErrandTest {
 			.withTouched(touched)
 			.withResolution(resolution)
 			.withDescription(description)
-			.withEscalationEmail(escalationEmail);
+			.withEscalationEmail(escalationEmail)
+			.withSuspend(suspend)
+			.withBusinessRelated(businessRelated)
+			.withContactReason(contactReason.getReason());
 
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(bean.getAssignedGroupId()).isEqualTo(assignedGroupId);
@@ -101,10 +108,14 @@ class ErrandTest {
 		assertThat(bean.getDescription()).isEqualTo(description);
 		assertThat(bean.getEscalationEmail()).isEqualTo(escalationEmail);
 		assertThat(bean.getErrandNumber()).isEqualTo(errandNumber);
+		assertThat(bean.getSuspend()).isEqualTo(suspend);
+		assertThat(bean.getBusinessRelated()).isEqualTo(businessRelated);
+		assertThat(bean.getContactReason()).isEqualTo(contactReason.getReason());
 	}
 
 	@Test
 	void testNoDirtOnCreatedBean() {
 		assertThat(Errand.create()).hasAllNullFieldsOrProperties();
+		assertThat(new Errand()).hasAllNullFieldsOrProperties();
 	}
 }

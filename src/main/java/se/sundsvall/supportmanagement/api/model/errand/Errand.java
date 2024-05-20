@@ -18,6 +18,7 @@ import org.springframework.format.annotation.DateTimeFormat.ISO;
 import se.sundsvall.supportmanagement.api.model.parameter.ErrandParameter;
 import se.sundsvall.supportmanagement.api.validation.UniqueExternalTagKeys;
 import se.sundsvall.supportmanagement.api.validation.ValidClassification;
+import se.sundsvall.supportmanagement.api.validation.ValidContactReason;
 import se.sundsvall.supportmanagement.api.validation.ValidStatus;
 import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
 import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
@@ -42,18 +43,18 @@ public class Errand {
 
 	@Schema(implementation = Priority.class)
 	@NotNull(groups = OnCreate.class)
+	@ArraySchema(schema = @Schema(implementation = Stakeholder.class), uniqueItems = true)
 	private Priority priority;
 
-	@ArraySchema(schema = @Schema(implementation = Stakeholder.class), uniqueItems = true)
 	private List<Stakeholder> stakeholders;
 
 	@ArraySchema(schema = @Schema(implementation = ExternalTag.class), uniqueItems = true)
-	@UniqueExternalTagKeys
+	@UniqueExternalTagKeys(groups = OnCreate.class)
 	@Valid
 	private List<ExternalTag> externalTags;
 
 	@ArraySchema(schema = @Schema(implementation = ErrandParameter.class, accessMode = READ_ONLY))
-	private List<ErrandParameter> parameters;
+	private List<@Valid ErrandParameter> parameters;
 
 	@Schema(implementation = Classification.class)
 	@NotNull(groups = OnCreate.class)
@@ -86,6 +87,18 @@ public class Errand {
 	@Schema(description = "Email address used for escalation of errand", example = "joe.doe@email.com")
 	@Email
 	private String escalationEmail;
+
+	@Schema(description = "Contact reason for the errand", example = "The printer is not working")
+	@ValidContactReason(groups = {OnCreate.class, OnUpdate.class}, nullable = true)
+	private String contactReason;
+
+	@Schema(description = "Suspend information")
+	@Valid
+	private Suspend suspend;
+
+	@Schema(description = "Flag to indicate if the errand is business related", example = "true")
+	@NotNull(groups = {OnCreate.class, OnUpdate.class})
+	private Boolean businessRelated;
 
 	@Schema(description = "Timestamp when errand was created", example = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	@DateTimeFormat(iso = ISO.DATE_TIME)
@@ -340,6 +353,45 @@ public class Errand {
 		return this;
 	}
 
+	public String getContactReason() {
+		return contactReason;
+	}
+
+	public void setContactReason(final String contactReason) {
+		this.contactReason = contactReason;
+	}
+
+	public Errand withContactReason(final String contactReason) {
+		this.contactReason = contactReason;
+		return this;
+	}
+
+	public Boolean getBusinessRelated() {
+		return businessRelated;
+	}
+
+	public void setBusinessRelated(final Boolean businessRelated) {
+		this.businessRelated = businessRelated;
+	}
+
+	public Errand withBusinessRelated(final Boolean businessRelated) {
+		this.businessRelated = businessRelated;
+		return this;
+	}
+
+	public Suspend getSuspend() {
+		return suspend;
+	}
+
+	public void setSuspend(final Suspend suspend) {
+		this.suspend = suspend;
+	}
+
+	public Errand withSuspend(final Suspend suspend) {
+		this.suspend = suspend;
+		return this;
+	}
+
 	@Override
 	public String toString() {
 		return "Errand{" +
@@ -358,6 +410,9 @@ public class Errand {
 			", assignedUserId='" + assignedUserId + '\'' +
 			", assignedGroupId='" + assignedGroupId + '\'' +
 			", escalationEmail='" + escalationEmail + '\'' +
+			", contactReason='" + contactReason + '\'' +
+			", suspend=" + suspend +
+			", businessRelated=" + businessRelated +
 			", created=" + created +
 			", modified=" + modified +
 			", touched=" + touched +
@@ -369,11 +424,11 @@ public class Errand {
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
 		final Errand errand = (Errand) o;
-		return Objects.equals(id, errand.id) && Objects.equals(errandNumber, errand.errandNumber) && Objects.equals(title, errand.title) && priority == errand.priority && Objects.equals(stakeholders, errand.stakeholders) && Objects.equals(externalTags, errand.externalTags) && Objects.equals(parameters, errand.parameters) && Objects.equals(classification, errand.classification) && Objects.equals(status, errand.status) && Objects.equals(resolution, errand.resolution) && Objects.equals(description, errand.description) && Objects.equals(reporterUserId, errand.reporterUserId) && Objects.equals(assignedUserId, errand.assignedUserId) && Objects.equals(assignedGroupId, errand.assignedGroupId) && Objects.equals(escalationEmail, errand.escalationEmail) && Objects.equals(created, errand.created) && Objects.equals(modified, errand.modified) && Objects.equals(touched, errand.touched);
+		return Objects.equals(id, errand.id) && Objects.equals(errandNumber, errand.errandNumber) && Objects.equals(title, errand.title) && priority == errand.priority && Objects.equals(stakeholders, errand.stakeholders) && Objects.equals(externalTags, errand.externalTags) && Objects.equals(parameters, errand.parameters) && Objects.equals(classification, errand.classification) && Objects.equals(status, errand.status) && Objects.equals(resolution, errand.resolution) && Objects.equals(description, errand.description) && Objects.equals(reporterUserId, errand.reporterUserId) && Objects.equals(assignedUserId, errand.assignedUserId) && Objects.equals(assignedGroupId, errand.assignedGroupId) && Objects.equals(escalationEmail, errand.escalationEmail) && Objects.equals(contactReason, errand.contactReason) && Objects.equals(suspend, errand.suspend) && Objects.equals(businessRelated, errand.businessRelated) && Objects.equals(created, errand.created) && Objects.equals(modified, errand.modified) && Objects.equals(touched, errand.touched);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, errandNumber, title, priority, stakeholders, externalTags, parameters, classification, status, resolution, description, reporterUserId, assignedUserId, assignedGroupId, escalationEmail, created, modified, touched);
+		return Objects.hash(id, errandNumber, title, priority, stakeholders, externalTags, parameters, classification, status, resolution, description, reporterUserId, assignedUserId, assignedGroupId, escalationEmail, contactReason, suspend, businessRelated, created, modified, touched);
 	}
 }

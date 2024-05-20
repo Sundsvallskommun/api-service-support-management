@@ -1,31 +1,5 @@
 package se.sundsvall.supportmanagement.api;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.web.reactive.server.WebTestClient;
-import org.zalando.problem.Problem;
-import org.zalando.problem.violations.ConstraintViolationProblem;
-import org.zalando.problem.violations.Violation;
-import se.sundsvall.supportmanagement.Application;
-import se.sundsvall.supportmanagement.api.model.errand.Classification;
-import se.sundsvall.supportmanagement.api.model.errand.Errand;
-import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
-import se.sundsvall.supportmanagement.api.model.errand.Priority;
-import se.sundsvall.supportmanagement.api.model.errand.Stakeholder;
-import se.sundsvall.supportmanagement.api.model.metadata.Category;
-import se.sundsvall.supportmanagement.api.model.metadata.Status;
-import se.sundsvall.supportmanagement.api.model.metadata.Type;
-import se.sundsvall.supportmanagement.service.ErrandService;
-import se.sundsvall.supportmanagement.service.MetadataService;
-
-import java.time.OffsetDateTime;
-import java.util.List;
-import java.util.Map;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 import static org.mockito.ArgumentMatchers.any;
@@ -36,6 +10,34 @@ import static org.mockito.Mockito.when;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.zalando.problem.Status.BAD_REQUEST;
+
+import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.Map;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.reactive.server.WebTestClient;
+import org.zalando.problem.Problem;
+import org.zalando.problem.violations.ConstraintViolationProblem;
+import org.zalando.problem.violations.Violation;
+
+import se.sundsvall.supportmanagement.Application;
+import se.sundsvall.supportmanagement.api.model.errand.Classification;
+import se.sundsvall.supportmanagement.api.model.errand.Errand;
+import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
+import se.sundsvall.supportmanagement.api.model.errand.Priority;
+import se.sundsvall.supportmanagement.api.model.errand.Stakeholder;
+import se.sundsvall.supportmanagement.api.model.metadata.Category;
+import se.sundsvall.supportmanagement.api.model.metadata.ContactReason;
+import se.sundsvall.supportmanagement.api.model.metadata.Status;
+import se.sundsvall.supportmanagement.api.model.metadata.Type;
+import se.sundsvall.supportmanagement.service.ErrandService;
+import se.sundsvall.supportmanagement.service.MetadataService;
 
 @SpringBootTest(classes = Application.class, webEnvironment = RANDOM_PORT)
 @ActiveProfiles("junit")
@@ -58,6 +60,7 @@ class ErrandsCreateResourceFailureTest {
 	@BeforeEach
 	void setupMock() {
 		when(metadataServiceMock.isValidated(any(), any(), any())).thenReturn(true);
+		when(metadataServiceMock.findContactReasons(any(), any())).thenReturn(List.of(ContactReason.create().withReason("contactReason")));
 		when(metadataServiceMock.findCategories(any(), any())).thenReturn(List.of(Category.create().withName("CATEGORY_1"), Category.create().withName("CATEGORY_2")));
 		when(metadataServiceMock.findStatuses(any(), any())).thenReturn(List.of(Status.create().withName("STATUS_1"), Status.create().withName("STATUS_2")));
 		when(metadataServiceMock.findTypes(any(), any(), any())).thenReturn(List.of(Type.create().withName("TYPE_1"), Type.create().withName("TYPE_2")));
@@ -145,7 +148,7 @@ class ErrandsCreateResourceFailureTest {
 	@Test
 	void createErrandWithFullErrandInstance() {
 		// Parameter values
-		final var request = createErrandInstance();
+		final var request = createErrandInstance().withId("not-null").withCreated(OffsetDateTime.now()).withModified(OffsetDateTime.now());
 
 		when(metadataServiceMock.isValidated(any(), any(), any())).thenReturn(true);
 
@@ -197,7 +200,8 @@ class ErrandsCreateResourceFailureTest {
 			tuple("createErrand.errand.reporterUserId", "must not be blank"),
 			tuple("createErrand.errand.priority", "must not be null"),
 			tuple("createErrand.errand.status", "must not be blank"),
-			tuple("createErrand.errand.title", "must not be blank"));
+			tuple("createErrand.errand.title", "must not be blank"),
+			tuple("createErrand.errand.businessRelated", "must not be null"));
 
 		// Verification
 		verify(metadataServiceMock).findStatuses(any(), any());
@@ -210,7 +214,7 @@ class ErrandsCreateResourceFailureTest {
 		final var response = webTestClient.post()
 			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
 			.contentType(APPLICATION_JSON)
-			.bodyValue(Errand.create().withTitle(" ").withReporterUserId(" ").withClassification(Classification.create().withCategory(" ").withType(" ")).withStatus(" "))
+			.bodyValue(Errand.create().withTitle(" ").withReporterUserId(" ").withClassification(Classification.create().withCategory(" ").withType(" ")).withStatus(" ").withContactReason(" ").withBusinessRelated(null))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -218,6 +222,7 @@ class ErrandsCreateResourceFailureTest {
 			.getResponseBody();
 
 		assertThat(response).isNotNull();
+
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
@@ -226,7 +231,9 @@ class ErrandsCreateResourceFailureTest {
 			tuple("createErrand.errand.title", "must not be blank"),
 			tuple("createErrand.errand.reporterUserId", "must not be blank"),
 			tuple("createErrand.errand.priority", "must not be null"),
-			tuple("createErrand.errand.status", "must not be blank"));
+			tuple("createErrand.errand.status", "must not be blank"),
+			tuple("createErrand.errand.businessRelated", "must not be null"),
+			tuple("createErrand.errand.contactReason", "not a valid contact reason"));
 
 		// Verification
 		verify(metadataServiceMock).findCategories(any(), any());
@@ -266,13 +273,18 @@ class ErrandsCreateResourceFailureTest {
 
 	@Test
 	void createErrandWithNonUniqueExternalTagKeys() {
+
+		var errand = createErrandInstance().withExternalTags(List.of(
+			ExternalTag.create().withKey("key").withValue("value"),
+			ExternalTag.create().withKey("key").withValue("other value")));
+
+
+		System.out.println(errand.getId());
 		// Call
 		final var response = webTestClient.post()
 			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
 			.contentType(APPLICATION_JSON)
-			.bodyValue(Errand.create().withExternalTags(List.of(
-				ExternalTag.create().withKey("key").withValue("value"),
-				ExternalTag.create().withKey("key").withValue("other value"))))
+			.bodyValue(errand)
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -283,7 +295,7 @@ class ErrandsCreateResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactly(
-			tuple("externalTags", "keys in the collection must be unique"));
+			tuple("createErrand.errand.externalTags", "keys in the collection must be unique"));
 
 		// Verification
 		verify(metadataServiceMock).findStatuses(any(), any());
@@ -369,17 +381,19 @@ class ErrandsCreateResourceFailureTest {
 
 	private static Errand createErrandInstance() {
 		return Errand.create()
+			.withId(null)
+			.withModified(null)
+			.withCreated(null)
 			.withAssignedGroupId("assignedGroupId")
 			.withAssignedUserId("assignedUserId")
 			.withStakeholders(List.of(Stakeholder.create().withExternalId("id").withExternalIdType("EMPLOYEE")))
 			.withClassification(Classification.create().withCategory("category_1").withType("TYPE_2"))
-			.withCreated(OffsetDateTime.now())
 			.withExternalTags(List.of(ExternalTag.create().withKey("externalTagKey").withValue("externalTagValue")))
-			.withId("id")
-			.withModified(OffsetDateTime.now())
 			.withPriority(Priority.HIGH)
 			.withReporterUserId("reporterUserId")
 			.withStatus("status_1")
-			.withTitle("title");
+			.withTitle("title")
+			.withBusinessRelated(true)
+			.withContactReason("contactReason");
 	}
 }

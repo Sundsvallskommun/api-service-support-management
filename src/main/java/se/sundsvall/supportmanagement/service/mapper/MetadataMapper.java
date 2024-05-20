@@ -9,6 +9,7 @@ import static java.util.Optional.ofNullable;
 import static org.apache.commons.lang3.ObjectUtils.anyNull;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -18,6 +19,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 import se.sundsvall.supportmanagement.api.model.metadata.Category;
+import se.sundsvall.supportmanagement.api.model.metadata.ContactReason;
 import se.sundsvall.supportmanagement.api.model.metadata.ExternalIdType;
 import se.sundsvall.supportmanagement.api.model.metadata.Label;
 import se.sundsvall.supportmanagement.api.model.metadata.Labels;
@@ -25,6 +27,7 @@ import se.sundsvall.supportmanagement.api.model.metadata.Role;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
 import se.sundsvall.supportmanagement.api.model.metadata.Type;
 import se.sundsvall.supportmanagement.integration.db.model.CategoryEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ExternalIdTypeEntity;
 import se.sundsvall.supportmanagement.integration.db.model.LabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.RoleEntity;
@@ -34,7 +37,8 @@ import se.sundsvall.supportmanagement.integration.db.model.TypeEntity;
 public class MetadataMapper {
 
 	private static final Gson GSON = new Gson();
-	private static final java.lang.reflect.Type LABEL_LIST_TYPE = new TypeToken<List<Label>>() {}.getType();
+	private static final java.lang.reflect.Type LABEL_LIST_TYPE = new TypeToken<List<Label>>() {
+	}.getType();
 
 	private MetadataMapper() {}
 
@@ -213,4 +217,39 @@ public class MetadataMapper {
 			.withModified(entity.getModified())
 			.withLabelStructure(GSON.fromJson(entity.getJsonStructure(), LABEL_LIST_TYPE));
 	}
+
+	// =================================================================
+	// Contact Reason operations
+	// =================================================================
+
+	public static ContactReason toContactReason(final ContactReasonEntity contactReasonEntity) {
+		return ofNullable(contactReasonEntity)
+			.map(entity -> ContactReason.create()
+				.withReason(entity.getReason())
+				.withModified(entity.getModified())
+				.withCreated(entity.getCreated()))
+			.orElse(null);
+	}
+
+	public static ContactReasonEntity toContactReasonEntity(final String namespace, final String municipalityId, final ContactReason contactReason) {
+		return Optional.ofNullable(contactReason)
+			.map(request -> ContactReasonEntity.create()
+				.withReason(request.getReason())
+				.withNamespace(namespace)
+				.withMunicipalityId(municipalityId)
+				.withCreated(OffsetDateTime.now())
+				.withModified(OffsetDateTime.now()))
+			.orElse(null);
+	}
+
+	public static ContactReasonEntity updateContactReason(final ContactReasonEntity entity, final ContactReason contactReason) {
+		if (isNull(contactReason)) {
+			return entity;
+		}
+
+		Optional.ofNullable(contactReason.getReason()).ifPresent(value -> entity.setReason(contactReason.getReason()));
+
+		return entity;
+	}
+
 }

@@ -46,6 +46,7 @@
   "reporterUserId": "REPORTER_USER_ID-3",
   "assignedUserId": "ASSIGNED_USER_ID-3",
   "assignedGroupId": "ASSIGNED_GROUP_ID-3",
+  "suspend": {},
   "created": "${json-unit.any-string}",
   "modified": "${json-unit.any-string}",
   "touched": "${json-unit.any-string}"

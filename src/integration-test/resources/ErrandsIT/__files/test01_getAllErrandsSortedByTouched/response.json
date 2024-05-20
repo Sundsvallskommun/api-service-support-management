@@ -43,6 +43,7 @@
       "assignedUserId": "jane11dane",
       "assignedGroupId": "hardware support",
       "escalationEmail": "joe.doe@email.com",
+      "suspend": {},
       "created": "2023-04-26T15:48:17.124+02:00",
       "modified": "2023-04-26T16:05:08.806+02:00",
       "touched": "2023-04-26T16:05:08.806+02:00"
@@ -80,6 +81,7 @@
       "reporterUserId": "REPORTER_USER_ID-1",
       "assignedUserId": "ASSIGNED_USER_ID-1",
       "assignedGroupId": "ASSIGNED_GROUP_ID-1",
+      "suspend": {},
       "created": "2022-02-01T12:00:00+01:00",
       "modified": "2022-04-01T12:00:00+02:00",
       "touched": "2022-04-01T12:00:00+02:00"
@@ -117,6 +119,7 @@
       "reporterUserId": "REPORTER_USER_ID-3",
       "assignedUserId": "ASSIGNED_USER_ID-3",
       "assignedGroupId": "ASSIGNED_GROUP_ID-3",
+      "suspend": {},
       "created": "2022-03-01T12:00:00+01:00",
       "touched": "2022-03-01T12:00:00+01:00"
     },
@@ -187,6 +190,7 @@
       "assignedUserId": "ASSIGNED_USER_ID-1",
       "assignedGroupId": "ASSIGNED_GROUP_ID-1",
       "escalationEmail": "ESCALATION_EMAIL_1",
+      "suspend": {},
       "created": "2022-01-01T12:00:00+01:00",
       "touched": "2022-01-01T12:00:00+01:00"
     }
@@ -200,17 +204,17 @@
         "property": "touched",
         "ignoreCase": false,
         "nullHandling": "NATIVE",
-        "descending": true,
-        "ascending": false
+        "ascending": false,
+        "descending": true
       }
     ],
     "offset": 0,
     "paged": true,
     "unpaged": false
   },
-  "last": true,
-  "totalElements": 4,
   "totalPages": 1,
+  "totalElements": 4,
+  "last": true,
   "size": 20,
   "number": 0,
   "sort": [
@@ -219,8 +223,8 @@
       "property": "touched",
       "ignoreCase": false,
       "nullHandling": "NATIVE",
-      "descending": true,
-      "ascending": false
+      "ascending": false,
+      "descending": true
     }
   ],
   "first": true,

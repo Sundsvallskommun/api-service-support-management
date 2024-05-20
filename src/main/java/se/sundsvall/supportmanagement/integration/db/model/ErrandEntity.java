@@ -20,6 +20,7 @@ import jakarta.persistence.ForeignKey;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.PrePersist;
@@ -68,6 +69,13 @@ public class ErrandEntity {
 	@OrderBy("externalId")
 	private List<StakeholderEntity> stakeholders;
 
+	@ManyToOne
+	@JoinColumn(name = "contact_reason_id")
+	private ContactReasonEntity contactReasonEntity;
+
+	@Column(name = "business_related")
+	private Boolean businessRelated;
+
 	@Column(name = "municipality_id", nullable = false)
 	private String municipalityId;
 
@@ -114,6 +122,14 @@ public class ErrandEntity {
 	@OneToMany(mappedBy = "errandEntity", cascade = CascadeType.ALL, orphanRemoval = true)
 	@OrderBy("fileName")
 	private List<AttachmentEntity> attachments;
+
+	@Column(name = "suspended_to")
+	@TimeZoneStorage(NORMALIZE)
+	private OffsetDateTime suspendedTo;
+
+	@Column(name = "suspended_from")
+	@TimeZoneStorage(NORMALIZE)
+	private OffsetDateTime suspendedFrom;
 
 	@Column(name = "created")
 	@TimeZoneStorage(NORMALIZE)
@@ -434,12 +450,79 @@ public class ErrandEntity {
 		return this;
 	}
 
+	public ContactReasonEntity getContactReason() {
+		return contactReasonEntity;
+	}
+
+	public void setContactReason(final ContactReasonEntity contactReasonEntity) {
+		this.contactReasonEntity = contactReasonEntity;
+	}
+
+	public ErrandEntity withContactReason(final ContactReasonEntity contactReasonEntity) {
+		this.contactReasonEntity = contactReasonEntity;
+		return this;
+	}
+
+	public ContactReasonEntity getContactReasonEntity() {
+		return contactReasonEntity;
+	}
+
+	public void setContactReasonEntity(final ContactReasonEntity contactReasonEntity) {
+		this.contactReasonEntity = contactReasonEntity;
+	}
+
+	public ErrandEntity withContactReasonEntity(final ContactReasonEntity contactReasonEntity) {
+		this.contactReasonEntity = contactReasonEntity;
+		return this;
+	}
+
+	public Boolean getBusinessRelated() {
+		return businessRelated;
+	}
+
+	public void setBusinessRelated(final Boolean businessRelated) {
+		this.businessRelated = businessRelated;
+	}
+
+	public ErrandEntity withBusinessRelated(final Boolean businessRelated) {
+		this.businessRelated = businessRelated;
+		return this;
+	}
+
+	public OffsetDateTime getSuspendedTo() {
+		return suspendedTo;
+	}
+
+	public void setSuspendedTo(final OffsetDateTime suspendedTo) {
+		this.suspendedTo = suspendedTo;
+	}
+
+	public ErrandEntity withSuspendedTo(final OffsetDateTime suspendedTo) {
+		this.suspendedTo = suspendedTo;
+		return this;
+	}
+
+	public OffsetDateTime getSuspendedFrom() {
+		return suspendedFrom;
+	}
+
+	public void setSuspendedFrom(final OffsetDateTime suspendedFrom) {
+		this.suspendedFrom = suspendedFrom;
+	}
+
+	public ErrandEntity withSuspendedFrom(final OffsetDateTime suspendedFrom) {
+		this.suspendedFrom = suspendedFrom;
+		return this;
+	}
+
 	@Override
 	public String toString() {
 		return "ErrandEntity{" +
 			"id='" + id + '\'' +
 			", externalTags=" + externalTags +
 			", stakeholders=" + stakeholders +
+			", contactReasonEntity=" + contactReasonEntity +
+			", businessRelated=" + businessRelated +
 			", municipalityId='" + municipalityId + '\'' +
 			", namespace='" + namespace + '\'' +
 			", title='" + title + '\'' +
@@ -455,6 +538,8 @@ public class ErrandEntity {
 			", escalationEmail='" + escalationEmail + '\'' +
 			", parameters=" + parameters +
 			", attachments=" + attachments +
+			", suspendedTo=" + suspendedTo +
+			", suspendedFrom=" + suspendedFrom +
 			", created=" + created +
 			", modified=" + modified +
 			", touched=" + touched +
@@ -467,11 +552,11 @@ public class ErrandEntity {
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
 		final ErrandEntity that = (ErrandEntity) o;
-		return Objects.equals(id, that.id) && Objects.equals(externalTags, that.externalTags) && Objects.equals(stakeholders, that.stakeholders) && Objects.equals(municipalityId, that.municipalityId) && Objects.equals(namespace, that.namespace) && Objects.equals(title, that.title) && Objects.equals(category, that.category) && Objects.equals(type, that.type) && Objects.equals(status, that.status) && Objects.equals(resolution, that.resolution) && Objects.equals(description, that.description) && Objects.equals(priority, that.priority) && Objects.equals(reporterUserId, that.reporterUserId) && Objects.equals(assignedUserId, that.assignedUserId) && Objects.equals(assignedGroupId, that.assignedGroupId) && Objects.equals(escalationEmail, that.escalationEmail) && Objects.equals(parameters, that.parameters) && Objects.equals(attachments, that.attachments) && Objects.equals(created, that.created) && Objects.equals(modified, that.modified) && Objects.equals(touched, that.touched) && Objects.equals(errandNumber, that.errandNumber);
+		return Objects.equals(id, that.id) && Objects.equals(externalTags, that.externalTags) && Objects.equals(stakeholders, that.stakeholders) && Objects.equals(contactReasonEntity, that.contactReasonEntity) && Objects.equals(businessRelated, that.businessRelated) && Objects.equals(municipalityId, that.municipalityId) && Objects.equals(namespace, that.namespace) && Objects.equals(title, that.title) && Objects.equals(category, that.category) && Objects.equals(type, that.type) && Objects.equals(status, that.status) && Objects.equals(resolution, that.resolution) && Objects.equals(description, that.description) && Objects.equals(priority, that.priority) && Objects.equals(reporterUserId, that.reporterUserId) && Objects.equals(assignedUserId, that.assignedUserId) && Objects.equals(assignedGroupId, that.assignedGroupId) && Objects.equals(escalationEmail, that.escalationEmail) && Objects.equals(parameters, that.parameters) && Objects.equals(attachments, that.attachments) && Objects.equals(suspendedTo, that.suspendedTo) && Objects.equals(suspendedFrom, that.suspendedFrom) && Objects.equals(created, that.created) && Objects.equals(modified, that.modified) && Objects.equals(touched, that.touched) && Objects.equals(errandNumber, that.errandNumber);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, externalTags, stakeholders, municipalityId, namespace, title, category, type, status, resolution, description, priority, reporterUserId, assignedUserId, assignedGroupId, escalationEmail, parameters, attachments, created, modified, touched, errandNumber);
+		return Objects.hash(id, externalTags, stakeholders, contactReasonEntity, businessRelated, municipalityId, namespace, title, category, type, status, resolution, description, priority, reporterUserId, assignedUserId, assignedGroupId, escalationEmail, parameters, attachments, suspendedTo, suspendedFrom, created, modified, touched, errandNumber);
 	}
 }

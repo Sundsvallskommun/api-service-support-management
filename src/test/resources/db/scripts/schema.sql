@@ -77,6 +77,16 @@
         value varchar(255)
     ) engine=InnoDB;
 
+    create table contact_reason (
+        created datetime(6),
+        id bigint not null auto_increment,
+        modified datetime(6),
+        municipality_id varchar(255) not null,
+        namespace varchar(255) not null,
+        reason varchar(255),
+        primary key (id)
+    ) engine=InnoDB;
+
     create table email_worker_config (
         days_of_inactivity_before_reject integer,
         enabled bit not null,
@@ -95,8 +105,12 @@
     ) engine=InnoDB;
 
     create table errand (
+        business_related bit,
+        contact_reason_id bigint,
         created datetime(6),
         modified datetime(6),
+        suspended_from datetime(6),
+        suspended_to datetime(6),
         assigned_group_id varchar(255),
         assigned_user_id varchar(255),
         category varchar(255),
@@ -388,6 +402,11 @@
        add constraint fk_stakeholder_contact_channel_stakeholder_id
        foreign key (stakeholder_id)
        references stakeholder (id);
+
+    alter table if exists errand
+       add constraint FKeudsxli8chjy568rft33oa79n
+       foreign key (contact_reason_id)
+       references contact_reason (id);
 
     alter table if exists external_tag
        add constraint fk_errand_external_tag_errand_id

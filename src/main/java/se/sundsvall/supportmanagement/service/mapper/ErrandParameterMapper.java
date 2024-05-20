@@ -11,6 +11,10 @@ import se.sundsvall.supportmanagement.integration.db.model.ParameterEntity;
 
 public final class ErrandParameterMapper {
 
+
+	private ErrandParameterMapper() {
+	}
+
 	public static ErrandParameter toErrandParameter(final ParameterEntity parameterEntity) {
 		return Optional.ofNullable(parameterEntity).map(entity -> ErrandParameter.create()
 				.withId(entity.getId())

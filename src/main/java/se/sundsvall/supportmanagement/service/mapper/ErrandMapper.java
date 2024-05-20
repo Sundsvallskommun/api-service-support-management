@@ -17,8 +17,10 @@ import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
 import se.sundsvall.supportmanagement.api.model.errand.Priority;
 import se.sundsvall.supportmanagement.api.model.errand.Stakeholder;
+import se.sundsvall.supportmanagement.api.model.errand.Suspend;
 import se.sundsvall.supportmanagement.api.model.parameter.ErrandParameter;
 import se.sundsvall.supportmanagement.integration.db.model.ContactChannelEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ParameterEntity;
@@ -28,8 +30,8 @@ public class ErrandMapper {
 
 	private ErrandMapper() {}
 
-	public static ErrandEntity toErrandEntity(String namespace, String municipalityId, Errand errand) {
-		if (anyNull(namespace, municipalityId, errand)) {
+	public static ErrandEntity toErrandEntity(String namespace, String municipalityId, Errand errand, ContactReasonEntity contactReasonEntity) {
+		if (anyNull(namespace, municipalityId, errand, contactReasonEntity)) {
 			return null;
 		}
 
@@ -52,7 +54,11 @@ public class ErrandMapper {
 			.withStatus(errand.getStatus())
 			.withTitle(errand.getTitle())
 			.withType(errand.getClassification().getType())
-			.withErrandNumber(errand.getErrandNumber());
+			.withErrandNumber(errand.getErrandNumber())
+			.withSuspendedFrom(Optional.ofNullable(errand.getSuspend()).map(Suspend::getSuspendedFrom).orElse(null))
+			.withSuspendedTo(Optional.ofNullable(errand.getSuspend()).map(Suspend::getSuspendedTo).orElse(null))
+			.withBusinessRelated(errand.getBusinessRelated())
+			.withContactReason(contactReasonEntity);
 	}
 
 	public static ErrandEntity updateEntity(ErrandEntity entity, Errand errand) {
@@ -66,6 +72,7 @@ public class ErrandMapper {
 			entity.setCategory(value.getCategory());
 			entity.setType(value.getType());
 		});
+
 		ofNullable(errand.getStakeholders()).ifPresent(value -> updateStakeholders(entity, value));
 		ofNullable(errand.getExternalTags()).ifPresent(value -> entity.setExternalTags(toExternalTag(value)));
 		ofNullable(errand.getPriority()).ifPresent(value -> entity.setPriority(value.name()));
@@ -121,6 +128,7 @@ public class ErrandMapper {
 				.withTouched(e.getTouched())
 				.withResolution(e.getResolution())
 				.withDescription(e.getDescription())
+				.withSuspend(Suspend.create().withSuspendedFrom(e.getSuspendedFrom()).withSuspendedTo(e.getSuspendedTo()))
 				.withParameters(toErrandParameters(e.getParameters()))
 				.withEscalationEmail(e.getEscalationEmail()))
 			.orElse(null);
