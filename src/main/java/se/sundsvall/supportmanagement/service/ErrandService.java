@@ -4,6 +4,7 @@ import static generated.se.sundsvall.eventlog.EventType.CREATE;
 import static generated.se.sundsvall.eventlog.EventType.DELETE;
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
 import static java.util.Objects.nonNull;
+import static org.zalando.problem.Status.BAD_REQUEST;
 import static org.zalando.problem.Status.NOT_FOUND;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrand;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandEntity;
@@ -13,6 +14,7 @@ import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.d
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withMunicipalityId;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withNamespace;
 
+import java.util.Optional;
 import java.util.function.Supplier;
 
 import org.springframework.data.domain.Page;
@@ -24,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zalando.problem.Problem;
 
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
+import se.sundsvall.supportmanagement.integration.db.ContactReasonRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.util.ErrandNumberGeneratorService;
@@ -33,20 +36,24 @@ import se.sundsvall.supportmanagement.integration.db.util.ErrandNumberGeneratorS
 public class ErrandService {
 
 	private static final String ENTITY_NOT_FOUND = "An errand with id '%s' could not be found in namespace '%s' for municipality with id '%s'";
+	private static final String BAD_CONTACT_REASON = "'%s' is not a valid contact reason for namespace '%s' and municipality with id '%s'";
 	private static final String EVENT_LOG_CREATE_ERRAND = "Ärendet har skapats.";
 	private static final String EVENT_LOG_UPDATE_ERRAND = "Ärendet har uppdaterats.";
 	private static final String EVENT_LOG_DELETE_ERRAND = "Ärendet har raderats.";
 
 	private final ErrandsRepository repository;
+	private final ContactReasonRepository contactReasonRepository;
 
 	private final RevisionService revisionService;
 	private final EventService eventService;
 	private final ErrandNumberGeneratorService errandNumberGeneratorService;
 
-	public ErrandService(final ErrandsRepository repository, final RevisionService revisionService,
-		final EventService eventService,
+	public ErrandService(final ErrandsRepository repository,
+		final ContactReasonRepository contactReasonRepository,
+		final RevisionService revisionService, final EventService eventService,
 		final ErrandNumberGeneratorService errandNumberGeneratorService) {
 		this.repository = repository;
+		this.contactReasonRepository = contactReasonRepository;
 		this.revisionService = revisionService;
 		this.eventService = eventService;
 		this.errandNumberGeneratorService = errandNumberGeneratorService;
@@ -55,8 +62,13 @@ public class ErrandService {
 	public String createErrand(String namespace, String municipalityId, Errand errand) {
 		// Generate unique errand number
 		errand.withErrandNumber(errandNumberGeneratorService.generateErrandNumber(namespace, municipalityId));
+
+		//Validate ContactReason
+		var contactReason = contactReasonRepository.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId(errand.getContactReason(), namespace, municipalityId)
+			.orElseThrow(() -> Problem.valueOf(BAD_REQUEST, BAD_CONTACT_REASON.formatted(errand.getContactReason(), namespace, municipalityId)));
+
 		// Create new errand and revision
-		final var entity = repository.save(toErrandEntity(namespace, municipalityId, errand));
+		final var entity = repository.save(toErrandEntity(namespace, municipalityId, errand, contactReason));
 		final var revision = revisionService.createErrandRevision(entity);
 
 		// Create log event
@@ -81,8 +93,16 @@ public class ErrandService {
 	public Errand updateErrand(String namespace, String municipalityId, String id, Errand errand) {
 		verifyExistingErrand(id, namespace, municipalityId, true);
 
-		// Update errand and create new revision
-		final var entity = repository.save(updateEntity(repository.getReferenceById(id), errand));
+
+		final var errandEntity = updateEntity(repository.getReferenceById(id), errand);
+		Optional.ofNullable(errand.getContactReason()).ifPresent(reason -> {
+			var contactReason = contactReasonRepository.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId(reason, namespace, municipalityId)
+				.orElseThrow(() -> Problem.valueOf(BAD_REQUEST, BAD_CONTACT_REASON.formatted(reason, namespace, municipalityId)));
+			errandEntity.setContactReason(contactReason);
+		});
+
+		final var entity = repository.save(errandEntity);
+
 		final var revisionResult = revisionService.createErrandRevision(entity);
 
 		// Create log event if the update has modified the errand (and thus has created a new revision)

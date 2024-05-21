@@ -1,5 +1,20 @@
 package se.sundsvall.supportmanagement.api;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.groups.Tuple.tuple;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
+import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
+import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.zalando.problem.Status.BAD_REQUEST;
+
+import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,32 +25,19 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import org.zalando.problem.Problem;
 import org.zalando.problem.violations.ConstraintViolationProblem;
 import org.zalando.problem.violations.Violation;
+
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.errand.Classification;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
 import se.sundsvall.supportmanagement.api.model.errand.Priority;
 import se.sundsvall.supportmanagement.api.model.errand.Stakeholder;
+import se.sundsvall.supportmanagement.api.model.errand.Suspension;
 import se.sundsvall.supportmanagement.api.model.metadata.Category;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
 import se.sundsvall.supportmanagement.api.model.metadata.Type;
 import se.sundsvall.supportmanagement.service.ErrandService;
 import se.sundsvall.supportmanagement.service.MetadataService;
-
-import java.time.OffsetDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.groups.Tuple.tuple;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
-import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
-import static org.springframework.http.MediaType.APPLICATION_JSON;
-import static org.zalando.problem.Status.BAD_REQUEST;
 
 @SpringBootTest(classes = Application.class, webEnvironment = RANDOM_PORT)
 @ActiveProfiles("junit")
@@ -70,7 +72,7 @@ class ErrandsUpdateResourceFailureTest {
 		final var response = webTestClient.patch()
 			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
-			.bodyValue(Errand.create())
+			.bodyValue(Errand.create().withBusinessRelated(true))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -94,7 +96,7 @@ class ErrandsUpdateResourceFailureTest {
 		final var response = webTestClient.patch()
 			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", NAMESPACE, "municipalityId", INVALID, "id", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
-			.bodyValue(Errand.create())
+			.bodyValue(Errand.create().withBusinessRelated(true))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -118,7 +120,7 @@ class ErrandsUpdateResourceFailureTest {
 		final var response = webTestClient.patch()
 			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", INVALID)))
 			.contentType(APPLICATION_JSON)
-			.bodyValue(Errand.create())
+			.bodyValue(Errand.create().withBusinessRelated(true))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -198,7 +200,7 @@ class ErrandsUpdateResourceFailureTest {
 		final var response = webTestClient.patch()
 			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
-			.bodyValue(Errand.create().withTitle(" ").withReporterUserId(" ").withClassification(Classification.create().withCategory(" ").withType(" ")).withStatus(" "))
+			.bodyValue(Errand.create().withTitle(" ").withReporterUserId(" ").withClassification(Classification.create().withCategory(" ").withType(" ")).withStatus(" ").withBusinessRelated(true))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -277,6 +279,45 @@ class ErrandsUpdateResourceFailureTest {
 		verifyNoInteractions(errandServiceMock);
 	}
 
+	@Test
+	void updateErrandWithInvalidSuspension() {
+		final var response = webTestClient.patch()
+			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(Errand.create().withSuspension(Suspension.create().withSuspendedTo(OffsetDateTime.now().plusDays(2)).withSuspendedFrom(OffsetDateTime.now().plusDays(3))))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
+			tuple("suspension", "to date must be after from date"));
+	}
+
+	@Test
+	void updateErrandWithInvalidToDate() {
+		final var response = webTestClient.patch()
+			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(Errand.create().withSuspension(Suspension.create().withSuspendedTo(OffsetDateTime.now().minusDays(2)).withSuspendedFrom(OffsetDateTime.now().plusDays(3))))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
+			tuple("suspension", "to date must be after from date"),
+			tuple("suspension.suspendedTo", "must be a date in the present or in the future"));
+	}
+
 	private static Errand createErrandInstance() {
 		return Errand.create()
 			.withAssignedGroupId("assignedGroupId")
@@ -290,6 +331,7 @@ class ErrandsUpdateResourceFailureTest {
 			.withPriority(Priority.HIGH)
 			.withReporterUserId("reporterUserId")
 			.withStatus("STATUS_2")
-			.withTitle("title");
+			.withTitle("title")
+			.withBusinessRelated(true);
 	}
 }

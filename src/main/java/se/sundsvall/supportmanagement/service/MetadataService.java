@@ -8,6 +8,8 @@ import static org.zalando.problem.Status.BAD_REQUEST;
 import static org.zalando.problem.Status.NOT_FOUND;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toCategory;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toCategoryEntity;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toContactReason;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toContactReasonEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toExternalIdType;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toExternalIdTypeEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toLabelEntity;
@@ -16,6 +18,7 @@ import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toRol
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toRoleEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toStatus;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toStatusEntity;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateContactReason;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateEntity;
 
 import java.util.List;
@@ -25,9 +28,11 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.zalando.problem.Problem;
 
 import se.sundsvall.supportmanagement.api.model.metadata.Category;
+import se.sundsvall.supportmanagement.api.model.metadata.ContactReason;
 import se.sundsvall.supportmanagement.api.model.metadata.ExternalIdType;
 import se.sundsvall.supportmanagement.api.model.metadata.Label;
 import se.sundsvall.supportmanagement.api.model.metadata.Labels;
@@ -36,6 +41,7 @@ import se.sundsvall.supportmanagement.api.model.metadata.Role;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
 import se.sundsvall.supportmanagement.api.model.metadata.Type;
 import se.sundsvall.supportmanagement.integration.db.CategoryRepository;
+import se.sundsvall.supportmanagement.integration.db.ContactReasonRepository;
 import se.sundsvall.supportmanagement.integration.db.ExternalIdTypeRepository;
 import se.sundsvall.supportmanagement.integration.db.LabelRepository;
 import se.sundsvall.supportmanagement.integration.db.RoleRepository;
@@ -52,6 +58,7 @@ public class MetadataService {
 	private static final String ITEM_ALREADY_EXISTS_IN_NAMESPACE_FOR_MUNICIPALITY_ID = "%s '%s' already exists in namespace '%s' for municipalityId '%s'";
 	private static final String ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID = "%s '%s' is not present in namespace '%s' for municipalityId '%s'";
 
+	private static final String CONTACT_REASON = "ContactReason";
 	private static final String CATEGORY = "Category";
 	private static final String EXTERNAL_ID_TYPE = "ExternalIdType";
 	private static final String ROLE = "Role";
@@ -63,17 +70,20 @@ public class MetadataService {
 	private final RoleRepository roleRepository;
 	private final StatusRepository statusRepository;
 	private final ValidationRepository validationRepository;
+	private final ContactReasonRepository contactReasonRepository;
 
 	public MetadataService(final CategoryRepository categoryRepository,
 		final ExternalIdTypeRepository externalIdTypeRepository,
 		final LabelRepository labelRepository, final RoleRepository roleRepository,
-		final StatusRepository statusRepository, final ValidationRepository validationRepository) {
+		final StatusRepository statusRepository, final ValidationRepository validationRepository,
+		final ContactReasonRepository contactReasonRepository) {
 		this.categoryRepository = categoryRepository;
 		this.externalIdTypeRepository = externalIdTypeRepository;
 		this.labelRepository = labelRepository;
 		this.roleRepository = roleRepository;
 		this.statusRepository = statusRepository;
 		this.validationRepository = validationRepository;
+		this.contactReasonRepository = contactReasonRepository;
 	}
 
 	// =================================================================
@@ -87,7 +97,8 @@ public class MetadataService {
 			.withLabels(findLabels(namespace, municipalityId))
 			.withStatuses(findStatuses(namespace, municipalityId))
 			.withRoles(findRoles(namespace, municipalityId))
-			.withExternalIdTypes(findExternalIdTypes(namespace, municipalityId));
+			.withExternalIdTypes(findExternalIdTypes(namespace, municipalityId))
+			.withContactReasons(findContactReasons(namespace, municipalityId));
 	}
 
 	@Cacheable(value = CACHE_NAME, key = "{#root.methodName, #namespace, #municipalityId, #type}")
@@ -338,5 +349,67 @@ public class MetadataService {
 		}
 
 		categoryRepository.deleteByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
+	}
+
+
+	// =================================================================
+	// ContactReason Operations
+	// =================================================================
+
+	@Cacheable(value = CACHE_NAME, key = "{#root.methodName, #namespace, #municipalityId}")
+	public List<ContactReason> findContactReasons(final String namespace, final String municipalityId) {
+		return contactReasonRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId).stream()
+			.map(MetadataMapper::toContactReason)
+			.filter(Objects::nonNull)
+			.toList();
+	}
+
+	@Caching(evict = {
+		@CacheEvict(value = CACHE_NAME, key = "{'findContactReasons', #namespace, #municipalityId}"),
+		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}")
+	})
+	public String createContactReason(final String namespace, final String municipalityId, final ContactReason contactReason) {
+		if (contactReasonRepository.existsByReasonIgnoreCaseAndNamespaceAndMunicipalityId(contactReason.getReason(), namespace, municipalityId)) {
+			throw Problem.valueOf(BAD_REQUEST, String.format(ITEM_ALREADY_EXISTS_IN_NAMESPACE_FOR_MUNICIPALITY_ID, CONTACT_REASON, contactReason.getReason(), namespace, municipalityId));
+		}
+
+		return contactReasonRepository.save(toContactReasonEntity(namespace, municipalityId, contactReason)).getReason();
+	}
+
+	public ContactReason getContactReasonByReasonAndNamespaceAndMunicipalityId(final String contactReason, final String namespace, final String municipalityId) {
+		var contactReasonEntity = contactReasonRepository.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId(contactReason, namespace, municipalityId)
+			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, String.format(ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID, CONTACT_REASON, contactReason, namespace, municipalityId)));
+		return toContactReason(contactReasonEntity);
+	}
+
+	public List<ContactReason> getContactReasonsForNamespaceAndMunicipality(final String namespace, final String municipalityId) {
+		return contactReasonRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId).stream()
+			.map(MetadataMapper::toContactReason)
+			.toList();
+	}
+
+	@Caching(evict = {
+		@CacheEvict(value = CACHE_NAME, key = "{'findContactReasons', #namespace, #municipalityId}"),
+		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}")
+	})
+	public ContactReason patchContactReason(final String reason, final String namespace, final String municipalityId, final ContactReason contactReason) {
+		if (!contactReasonRepository.existsByReasonIgnoreCaseAndNamespaceAndMunicipalityId(reason, namespace, municipalityId)) {
+			throw Problem.valueOf(NOT_FOUND, String.format(ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID, CONTACT_REASON, reason, namespace, municipalityId));
+		}
+		final var contactReasonEntity = updateContactReason(contactReasonRepository.getByReasonIgnoreCaseAndNamespaceAndMunicipalityId(reason, namespace, municipalityId), contactReason);
+
+		return toContactReason(contactReasonRepository.save(contactReasonEntity));
+	}
+
+	@Caching(evict = {
+		@CacheEvict(value = CACHE_NAME, key = "{'findContactReasons', #namespace, #municipalityId}"),
+		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}")
+	})
+	@Transactional
+	public void deleteContactReason(final String contactReason, final String namespace, final String municipalityId) {
+		if (!contactReasonRepository.existsByReasonIgnoreCaseAndNamespaceAndMunicipalityId(contactReason, namespace, municipalityId)) {
+			throw Problem.valueOf(NOT_FOUND, String.format(ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID, CONTACT_REASON, contactReason, namespace, municipalityId));
+		}
+		contactReasonRepository.deleteByReasonIgnoreCaseAndNamespaceAndMunicipalityId(contactReason, namespace, municipalityId);
 	}
 }

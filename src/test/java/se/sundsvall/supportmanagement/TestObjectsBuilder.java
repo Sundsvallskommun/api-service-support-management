@@ -94,6 +94,8 @@ public class TestObjectsBuilder {
 
 	private static final OffsetDateTime NOTIFICATION_EXPIRES = OffsetDateTime.now().plusDays(1);
 
+	private static final String CONTACT_REASON = "reason";
+
 
 	public static ErrandEntity buildErrandEntity() {
 		return ErrandEntity.create()
@@ -144,7 +146,8 @@ public class TestObjectsBuilder {
 			.withPriority(Priority.valueOf(PRIORITY))
 			.withReporterUserId(REPORTER_USER_ID)
 			.withStatus(STATUS)
-			.withTitle(TITLE);
+			.withTitle(TITLE)
+			.withContactReason(CONTACT_REASON);
 	}
 
 	public static Notification createNotification(final Consumer<Notification> modifier) {

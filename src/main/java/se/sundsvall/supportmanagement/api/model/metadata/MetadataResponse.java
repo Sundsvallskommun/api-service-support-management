@@ -27,6 +27,9 @@ public class MetadataResponse {
 	@ArraySchema(schema = @Schema(implementation = Role.class))
 	private List<Role> roles;
 
+	@ArraySchema(schema = @Schema(implementation = ContactReason.class))
+	private List<ContactReason> contactReasons;
+
 	public static MetadataResponse create() {
 		return new MetadataResponse();
 	}
@@ -41,6 +44,19 @@ public class MetadataResponse {
 
 	public MetadataResponse withCategories(final List<Category> categories) {
 		this.categories = categories;
+		return this;
+	}
+
+	public List<ContactReason> getContactReasons() {
+		return contactReasons;
+	}
+
+	public void setContactReasons(final List<ContactReason> contactReasons) {
+		this.contactReasons = contactReasons;
+	}
+
+	public MetadataResponse withContactReasons(final List<ContactReason> contactReasons) {
+		this.contactReasons = contactReasons;
 		return this;
 	}
 
@@ -97,26 +113,27 @@ public class MetadataResponse {
 	}
 
 	@Override
-	public int hashCode() {
-		return Objects.hash(categories, externalIdTypes, labels, roles, statuses);
-	}
-
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
-			return true;
-		}
-		if (!(obj instanceof MetadataResponse)) {
-			return false;
-		}
-		MetadataResponse other = (MetadataResponse) obj;
-		return Objects.equals(categories, other.categories) && Objects.equals(externalIdTypes, other.externalIdTypes) && Objects.equals(labels, other.labels) && Objects.equals(roles, other.roles) && Objects.equals(statuses, other.statuses);
-	}
-
-	@Override
 	public String toString() {
-		StringBuilder builder = new StringBuilder();
-		builder.append("MetadataResponse [categories=").append(categories).append(", externalIdTypes=").append(externalIdTypes).append(", statuses=").append(statuses).append(", roles=").append(roles).append(", labels=").append(labels).append("]");
-		return builder.toString();
+		return "MetadataResponse{" +
+			"categories=" + categories +
+			", externalIdTypes=" + externalIdTypes +
+			", labels=" + labels +
+			", statuses=" + statuses +
+			", roles=" + roles +
+			", contactReasons=" + contactReasons +
+			'}';
+	}
+
+	@Override
+	public boolean equals(final Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		final MetadataResponse that = (MetadataResponse) o;
+		return Objects.equals(categories, that.categories) && Objects.equals(externalIdTypes, that.externalIdTypes) && Objects.equals(labels, that.labels) && Objects.equals(statuses, that.statuses) && Objects.equals(roles, that.roles) && Objects.equals(contactReasons, that.contactReasons);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(categories, externalIdTypes, labels, statuses, roles, contactReasons);
 	}
 }

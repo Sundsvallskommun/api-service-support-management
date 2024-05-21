@@ -24,9 +24,11 @@ import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
 import se.sundsvall.supportmanagement.api.model.errand.Priority;
 import se.sundsvall.supportmanagement.api.model.errand.Stakeholder;
+import se.sundsvall.supportmanagement.api.model.errand.Suspension;
 import se.sundsvall.supportmanagement.api.model.parameter.ErrandParameter;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ContactChannelEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ParameterEntity;
@@ -67,6 +69,10 @@ class ErrandMapperTest {
 	private static final String STAKEHOLDER_ROLE = "role";
 	private static final String PARAMETER_VALUE = "parameterValue";
 	private static final String PARAMETER_NAME = "parameterName";
+	private static final OffsetDateTime SUSPENDED_FROM = now().plusDays(1);
+	private static final OffsetDateTime SUSPENDED_TO = now().plusDays(2);
+	private static final String CONTACT_REASON = "reason";
+	private static final ContactReasonEntity CONTACT_REASON_ENTITY = ContactReasonEntity.create().withReason(CONTACT_REASON);
 
 	private static final String ERRAND_NUMBER = "errandNumber";
 
@@ -159,7 +165,7 @@ class ErrandMapperTest {
 
 	@Test
 	void testToErrandEntity() {
-		final var entity = toErrandEntity(NAMESPACE, MUNICIPALITY_ID, createErrand());
+		final var entity = toErrandEntity(NAMESPACE, MUNICIPALITY_ID, createErrand(), CONTACT_REASON_ENTITY);
 
 		assertThat(entity)
 			.extracting(
@@ -234,14 +240,15 @@ class ErrandMapperTest {
 
 	@Test
 	void testToErrandEntityFromNull() {
-		assertThat(toErrandEntity(null, null, null)).isNull();
-		assertThat(toErrandEntity(null, null, Errand.create())).isNull();
-		assertThat(toErrandEntity(NAMESPACE, null, null)).isNull();
-		assertThat(toErrandEntity(NAMESPACE, null, Errand.create())).isNull();
-		assertThat(toErrandEntity(NAMESPACE, MUNICIPALITY_ID, null)).isNull();
-		assertThat(toErrandEntity(null, MUNICIPALITY_ID, null)).isNull();
-		assertThat(toErrandEntity(NAMESPACE, MUNICIPALITY_ID, null)).isNull();
-		assertThat(toErrandEntity(null, MUNICIPALITY_ID, Errand.create())).isNull();
+		assertThat(toErrandEntity(null, null, null, null)).isNull();
+		assertThat(toErrandEntity(null, null, Errand.create(), null)).isNull();
+		assertThat(toErrandEntity(NAMESPACE, null, null, null)).isNull();
+		assertThat(toErrandEntity(NAMESPACE, null, Errand.create(), null)).isNull();
+		assertThat(toErrandEntity(NAMESPACE, MUNICIPALITY_ID, null, CONTACT_REASON_ENTITY)).isNull();
+		assertThat(toErrandEntity(null, MUNICIPALITY_ID, null, null)).isNull();
+		assertThat(toErrandEntity(NAMESPACE, MUNICIPALITY_ID, null, CONTACT_REASON_ENTITY)).isNull();
+		assertThat(toErrandEntity(null, MUNICIPALITY_ID, Errand.create(), CONTACT_REASON_ENTITY)).isNull();
+		assertThat(toErrandEntity(null, null, null, CONTACT_REASON_ENTITY)).isNull();
 	}
 
 	@Test
@@ -265,7 +272,10 @@ class ErrandMapperTest {
 				ErrandEntity::getType,
 				ErrandEntity::getResolution,
 				ErrandEntity::getDescription,
-				ErrandEntity::getEscalationEmail)
+				ErrandEntity::getEscalationEmail,
+				ErrandEntity::getSuspendedFrom,
+				ErrandEntity::getSuspendedTo,
+				ErrandEntity::getBusinessRelated)
 			.containsExactly(
 				ASSIGNED_GROUP_ID,
 				ASSIGNED_USER_ID,
@@ -277,7 +287,10 @@ class ErrandMapperTest {
 				TYPE,
 				RESOLUTION,
 				DESCRIPTION,
-				ESCALATION_EMAIL);
+				ESCALATION_EMAIL,
+				SUSPENDED_FROM,
+				SUSPENDED_TO,
+				true);
 
 		assertThat(entity.getStakeholders()).hasSize(1).extracting(
 				StakeholderEntity::getAddress,
@@ -316,9 +329,9 @@ class ErrandMapperTest {
 
 	@Test
 	void testUpdateEntityWithBlank() {
-		final var entity = updateEntity(createEntity(), Errand.create().withAssignedGroupId("").withAssignedUserId("").withErrandNumber("").withResolution("").withDescription("").withEscalationEmail(""));
+		final var entity = updateEntity(createEntity(), Errand.create().withAssignedGroupId("").withAssignedUserId("").withErrandNumber("").withResolution("").withDescription("").withEscalationEmail("").withContactReason(""));
 
-		assertThat(entity).hasNoNullFieldsOrPropertiesExcept("assignedGroupId", "assignedUserId", "attachments", "resolution", "description", "escalationEmail", "parameters");
+		assertThat(entity).hasNoNullFieldsOrPropertiesExcept("assignedGroupId", "assignedUserId", "attachments", "resolution", "description", "escalationEmail", "parameters", "businessRelated", "suspend");
 		assertThat(entity.getAssignedGroupId()).isNull();
 		assertThat(entity.getAssignedUserId()).isNull();
 		assertThat(entity.getAttachments()).isNull();
@@ -356,7 +369,10 @@ class ErrandMapperTest {
 			.withResolution(RESOLUTION)
 			.withDescription(DESCRIPTION)
 			.withEscalationEmail(ESCALATION_EMAIL)
-			.withErrandNumber(ERRAND_NUMBER);
+			.withErrandNumber(ERRAND_NUMBER)
+			.withBusinessRelated(true)
+			.withSuspension(Suspension.create().withSuspendedFrom(SUSPENDED_FROM).withSuspendedTo(SUSPENDED_TO))
+			.withContactReason("reason");
 	}
 
 	private static Stakeholder createStakeHolder() {
@@ -395,6 +411,9 @@ class ErrandMapperTest {
 			.withResolution(RESOLUTION)
 			.withDescription(DESCRIPTION)
 			.withEscalationEmail(ESCALATION_EMAIL)
+			.withContactReason(ContactReasonEntity.create().withReason("reason"))
+			.withSuspendedFrom(SUSPENDED_FROM)
+			.withSuspendedTo(SUSPENDED_TO)
 			.withErrandNumber(ERRAND_NUMBER);
 	}
 

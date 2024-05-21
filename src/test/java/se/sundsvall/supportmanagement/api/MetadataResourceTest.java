@@ -50,8 +50,7 @@ class MetadataResourceTest {
 			.withExternalIdTypes(List.of(ExternalIdType.create().withName("ExternalIdType-1")))
 			.withLabels(Labels.create().withLabelStructure(List.of(Label.create().withClassification("Classification-1").withName("Name-1"))))
 			.withRoles(List.of(Role.create().withName("Role-1")))
-			.withStatuses(List.of(Status.create().withName("Status-1")))
-		;
+			.withStatuses(List.of(Status.create().withName("Status-1")));
 
 		when(metadataServiceMock.findAll(any(), any())).thenReturn(metadataResponse);
 

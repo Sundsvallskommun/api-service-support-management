@@ -31,7 +31,7 @@ class ErrandParametersTest {
 			.withErrandParameters(List.of(errandParameter));
 
 		Assertions.assertThat(errandParameters).hasNoNullFieldsOrProperties();
-		Assertions.assertThat(errandParameters.getErrandParameters()).hasSize(1).containsExactly(errandParameter);
+		Assertions.assertThat(errandParameters.getParameters()).hasSize(1).containsExactly(errandParameter);
 	}
 
 	@Test

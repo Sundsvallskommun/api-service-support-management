@@ -23,18 +23,21 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.zalando.problem.ThrowableProblem;
 
 import se.sundsvall.supportmanagement.api.model.metadata.Category;
+import se.sundsvall.supportmanagement.api.model.metadata.ContactReason;
 import se.sundsvall.supportmanagement.api.model.metadata.ExternalIdType;
 import se.sundsvall.supportmanagement.api.model.metadata.Label;
 import se.sundsvall.supportmanagement.api.model.metadata.Role;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
 import se.sundsvall.supportmanagement.api.model.metadata.Type;
 import se.sundsvall.supportmanagement.integration.db.CategoryRepository;
+import se.sundsvall.supportmanagement.integration.db.ContactReasonRepository;
 import se.sundsvall.supportmanagement.integration.db.ExternalIdTypeRepository;
 import se.sundsvall.supportmanagement.integration.db.LabelRepository;
 import se.sundsvall.supportmanagement.integration.db.RoleRepository;
 import se.sundsvall.supportmanagement.integration.db.StatusRepository;
 import se.sundsvall.supportmanagement.integration.db.ValidationRepository;
 import se.sundsvall.supportmanagement.integration.db.model.CategoryEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ExternalIdTypeEntity;
 import se.sundsvall.supportmanagement.integration.db.model.LabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.RoleEntity;
@@ -62,6 +65,9 @@ class MetadataServiceTest {
 
 	@Mock
 	private ValidationRepository validationRepositoryMock;
+
+	@Mock
+	private ContactReasonRepository contactReasonRepositoryMock;
 
 	@InjectMocks
 	private MetadataService metadataService;
@@ -797,10 +803,10 @@ class MetadataServiceTest {
 
 		// Verifications
 		assertThat(labels.getLabelStructure()).hasSize(1).extracting(
-			Label::getClassification,
-			Label::getDisplayName,
-			Label::getName,
-			Label::getLabels)
+				Label::getClassification,
+				Label::getDisplayName,
+				Label::getName,
+				Label::getLabels)
 			.containsExactly(tuple(
 				"classification",
 				"displayName",
@@ -889,14 +895,18 @@ class MetadataServiceTest {
 		final var externalIdTypeEntityList = List.of(
 			ExternalIdTypeEntity.create().withName("EXTERNALIDTYPE-1"),
 			ExternalIdTypeEntity.create().withName("EXTERNALIDTYPE-2"));
+		final var contactReasonEntityList = List.of(
+			ContactReasonEntity.create().withReason("CONTACTREASON-1"),
+			ContactReasonEntity.create().withReason("CONTACTREASON-2"));
 		final var labelEntity = LabelEntity.create().withJsonStructure("[{\"classification\":\"CLASSIFICATION-1\",\"name\":\"LABEL-1\"}]");
-		
+
 		// Mock
 		when(categoryRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any())).thenReturn(categoryEntityList);
 		when(externalIdTypeRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any())).thenReturn(externalIdTypeEntityList);
 		when(labelRepositoryMock.findOneByNamespaceAndMunicipalityId(any(), any())).thenReturn(labelEntity);
 		when(statusRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any())).thenReturn(statusEntityList);
 		when(roleRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any())).thenReturn(roleEntityList);
+		when(contactReasonRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any())).thenReturn(contactReasonEntityList);
 
 		// Call
 		final var result = metadataService.findAll(namespace, municipalityId);
@@ -909,6 +919,7 @@ class MetadataServiceTest {
 		assertThat(result.getLabels().getLabelStructure()).hasSize(1).extracting(Label::getName).containsExactly("LABEL-1");
 		assertThat(result.getRoles()).hasSize(3).extracting(Role::getName).containsExactlyInAnyOrder("ROLE-1", "ROLE-2", "ROLE-3");
 		assertThat(result.getStatuses()).hasSize(3).extracting(Status::getName).containsExactlyInAnyOrder("STATUS-1", "STATUS-2", "STATUS-3");
+		assertThat(result.getContactReasons()).hasSize(2).extracting(ContactReason::getReason).containsExactlyInAnyOrder("CONTACTREASON-1", "CONTACTREASON-2");
 
 		verify(categoryRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId);
 		verify(externalIdTypeRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId);

@@ -8,29 +8,29 @@ import io.swagger.v3.oas.annotations.media.Schema;
 public class ErrandParameters {
 
 	@Schema(description = "The errand parameters", implementation = ErrandParameter.class)
-	private List<ErrandParameter> errandParameters;
+	private List<ErrandParameter> parameters;
 
 	public static ErrandParameters create() {
 		return new ErrandParameters();
 	}
 
-	public List<ErrandParameter> getErrandParameters() {
-		return errandParameters;
+	public List<ErrandParameter> getParameters() {
+		return parameters;
 	}
 
-	public void setErrandParameters(final List<ErrandParameter> errandParameters) {
-		this.errandParameters = errandParameters;
+	public void setParameters(final List<ErrandParameter> parameters) {
+		this.parameters = parameters;
 	}
 
 	public ErrandParameters withErrandParameters(final List<ErrandParameter> errandParameters) {
-		this.errandParameters = errandParameters;
+		this.parameters = errandParameters;
 		return this;
 	}
 
 	@Override
 	public String toString() {
 		return "ErrandParameters{" +
-			"errandParameters=" + errandParameters +
+			"parameters=" + parameters +
 			'}';
 	}
 
@@ -39,11 +39,11 @@ public class ErrandParameters {
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
 		final ErrandParameters that = (ErrandParameters) o;
-		return Objects.equals(errandParameters, that.errandParameters);
+		return Objects.equals(parameters, that.parameters);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(errandParameters);
+		return Objects.hash(parameters);
 	}
 }

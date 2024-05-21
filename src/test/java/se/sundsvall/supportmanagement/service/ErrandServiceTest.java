@@ -22,6 +22,7 @@ import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.w
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withNamespace;
 
 import java.util.List;
+import java.util.Optional;
 
 import com.turkraft.springfilter.converter.FilterSpecificationConverter;
 import org.junit.jupiter.api.AfterEach;
@@ -44,7 +45,9 @@ import org.zalando.problem.ThrowableProblem;
 
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
+import se.sundsvall.supportmanagement.integration.db.ContactReasonRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.util.ErrandNumberGeneratorService;
 
@@ -68,6 +71,9 @@ class ErrandServiceTest {
 
 	@Mock
 	private ErrandsRepository errandRepositoryMock;
+
+	@Mock
+	private ContactReasonRepository contactReasonRepositoryMock;
 
 	@Mock
 	private RevisionService revisionServiceMock;
@@ -101,6 +107,7 @@ class ErrandServiceTest {
 		when(errandRepositoryMock.save(any(ErrandEntity.class))).thenReturn(errandEntity);
 		when(revisionServiceMock.createErrandRevision(any())).thenReturn(new RevisionResult(null, currentRevisionMock));
 		when(stringGeneratorServiceMock.generateErrandNumber(any(String.class), any(String.class))).thenReturn("KC-23090001");
+		when(contactReasonRepositoryMock.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(Optional.ofNullable(ContactReasonEntity.create().withReason("reason")));
 
 		// Call
 		final var result = service.createErrand(NAMESPACE, MUNICIPALITY_ID, errand);
@@ -212,12 +219,15 @@ class ErrandServiceTest {
 		when(errandRepositoryMock.getReferenceById(ERRAND_ID)).thenReturn(entity);
 		when(errandRepositoryMock.save(entity)).thenReturn(entity);
 		when(revisionServiceMock.createErrandRevision(any())).thenReturn(new RevisionResult(previousRevisionMock, currentRevisionMock));
+		when(contactReasonRepositoryMock.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId("reason", NAMESPACE, MUNICIPALITY_ID))
+			.thenReturn(Optional.ofNullable(ContactReasonEntity.create().withReason("reason")));
 
 		// Call
 		final var response = service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, buildErrand());
 
 		// Assertions and verifications
 		assertThat(response.getId()).isEqualTo(ERRAND_ID);
+		assertThat(response.getSuspension()).extracting("suspendedFrom", "suspendedTo").containsExactlyInAnyOrder(entity.getSuspendedFrom(), entity.getSuspendedTo());
 
 		verify(errandRepositoryMock).existsWithLockingByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(errandRepositoryMock).getReferenceById(ERRAND_ID);
@@ -236,6 +246,8 @@ class ErrandServiceTest {
 		when(errandRepositoryMock.existsWithLockingByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
 		when(errandRepositoryMock.getReferenceById(ERRAND_ID)).thenReturn(entity);
 		when(errandRepositoryMock.save(entity)).thenReturn(entity);
+		when(contactReasonRepositoryMock.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId("reason", NAMESPACE, MUNICIPALITY_ID))
+			.thenReturn(Optional.ofNullable(ContactReasonEntity.create().withReason("reason")));
 
 		// Call
 		final var response = service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, buildErrand());

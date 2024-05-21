@@ -241,3 +241,10 @@ INSERT INTO parameter(id, name, value, errand_id)
 VALUES ('55d266a7-1ff2-4bf4-b6f3-0473b2b86fcd', 'testName', 'testValue', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4'),
 ('35d266a7-1ff2-4bf4-b6f3-0473b2b86fcd', 'PROPERTY_DESIGNATION', 'KLINGSTA 123', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4'),
 ('45d266a7-1ff2-4bf4-b6f3-0473b2b86fcd', 'APARTMENT_NUMBER', '1101', 'cc236cf1-c00f-4479-8341-ecf5dd90b5b9');
+
+INSERT INTO contact_reason(id, reason, municipality_id, namespace, created, modified)
+VALUES(123, 'reason1', '2281', 'CONTACTCENTER', '2023-12-31 23:59:59.999', '2023-12-31 23:59:59.999'),
+(124, 'reason2', '2281', 'CONTACTCENTER', '2023-12-31 23:59:59.999', '2023-12-31 23:59:59.999'),
+(127, 'reason3', '2281', 'CONTACTCENTER', '2023-12-31 23:59:59.999', '2023-12-31 23:59:59.999'),
+(125, 'reason3', '2281', 'namespace_2', '2023-12-31 23:59:59.999', '2023-12-31 23:59:59.999'),
+(126, 'reason4', '2281', 'namespace_2', '2023-12-31 23:59:59.999', '2023-12-31 23:59:59.999');

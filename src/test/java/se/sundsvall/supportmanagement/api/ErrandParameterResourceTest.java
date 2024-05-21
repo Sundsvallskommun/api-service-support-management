@@ -115,7 +115,7 @@ class ErrandParameterResourceTest {
 			.returnResult();
 
 		assertThat(response).isNotNull();
-		assertThat(response.getResponseBody().getErrandParameters()).allSatisfy(p -> {
+		assertThat(response.getResponseBody().getParameters()).allSatisfy(p -> {
 			assertThat(p).isNotNull();
 			assertThat(p.getId()).isEqualTo(PARAMETER_ID);
 			assertThat(p.getName()).isEqualTo("name");
