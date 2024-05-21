@@ -20,7 +20,7 @@ public interface ContactReasonRepository extends JpaRepository<ContactReasonEnti
 
 	List<ContactReasonEntity> findAllByNamespaceAndMunicipalityId(final String namespace, final String municipalityId);
 
-	Boolean existsByReasonIgnoreCaseAndNamespaceAndMunicipalityId(final String reason, final String namespace, final String municipalityId);
+	boolean existsByReasonIgnoreCaseAndNamespaceAndMunicipalityId(final String reason, final String namespace, final String municipalityId);
 
 	void deleteByReasonIgnoreCaseAndNamespaceAndMunicipalityId(final String reason, final String namespace, final String municipalityId);
 }

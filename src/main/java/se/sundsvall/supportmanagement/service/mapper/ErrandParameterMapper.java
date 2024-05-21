@@ -11,8 +11,8 @@ import se.sundsvall.supportmanagement.integration.db.model.ParameterEntity;
 
 public final class ErrandParameterMapper {
 
-
 	private ErrandParameterMapper() {
+		//Intentionally empty
 	}
 
 	public static ErrandParameter toErrandParameter(final ParameterEntity parameterEntity) {

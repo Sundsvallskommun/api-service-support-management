@@ -43,6 +43,7 @@ class ErrandEntityTest {
 
 	@Test
 	void hasValidBuilderMethods() {
+		final var now = OffsetDateTime.now();
 
 		final var assignedUserId = "assignedUserId";
 		final var assignedGroupId = "assignedGroupId";
@@ -50,25 +51,20 @@ class ErrandEntityTest {
 		final var attachments = List.of(AttachmentEntity.create().withId(attachmentId).withFileName("fileName").withAttachmentData(AttachmentDataEntity.create().withFile(new MariaDbBlob("file".getBytes()))).withMimeType("mimeType"));
 		final var category = "category";
 		final var namespace = "namespace";
-		final var created = now();
 		final var stakeholder = StakeholderEntity.create().withExternalId(UUID.randomUUID().toString()).withExternalIdType("PRIVATE");
 		final var description = "description";
 		final var externalTags = List.of(DbExternalTag.create().withKey("key").withValue("value"));
 		final var id = UUID.randomUUID().toString();
-		final var modified = now().plusDays(1);
 		final var municipalityId = "municipalityId";
 		final var priority = "priority";
 		final var reporterUserId = "reporterUserId";
 		final var resolution = "resolution";
 		final var status = "status";
 		final var title = "title";
-		final var touched = now().plusDays(2);
 		final var type = "type";
 		final var escalationEmail = "escalation@email.com";
 		final var errandNumber = "errandNumber";
 		final var parameters = List.of(ParameterEntity.create());
-		final var suspendedTo = OffsetDateTime.now().plusDays(1);
-		final var suspendedFrom = OffsetDateTime.now();
 		final var businessRelated = true;
 		final var contactReason = ContactReasonEntity.create().withReason("reason");
 
@@ -78,27 +74,27 @@ class ErrandEntityTest {
 			.withAttachments(attachments)
 			.withCategory(category)
 			.withNamespace(namespace)
-			.withCreated(created)
 			.withStakeholders(List.of(stakeholder))
 			.withDescription(description)
 			.withExternalTags(externalTags)
 			.withId(id)
-			.withModified(modified)
 			.withMunicipalityId(municipalityId)
 			.withPriority(priority)
 			.withReporterUserId(reporterUserId)
 			.withResolution(resolution)
 			.withStatus(status)
 			.withTitle(title)
-			.withTouched(touched)
 			.withType(type)
 			.withParameters(parameters)
 			.withEscalationEmail(escalationEmail)
-			.withSuspendedFrom(suspendedFrom)
-			.withSuspendedTo(suspendedTo)
 			.withBusinessRelated(businessRelated)
 			.withContactReason(contactReason)
-			.withErrandNumber(errandNumber);
+			.withErrandNumber(errandNumber)
+			.withTouched(now)
+			.withCreated(now)
+			.withModified(now)
+			.withSuspendedFrom(now)
+			.withSuspendedTo(now);
 
 		assertThat(errandEntity).hasNoNullFieldsOrProperties();
 		assertThat(errandEntity.getAssignedGroupId()).isEqualTo(assignedGroupId);
@@ -106,27 +102,26 @@ class ErrandEntityTest {
 		assertThat(errandEntity.getAttachments()).isEqualTo(attachments);
 		assertThat(errandEntity.getCategory()).isEqualTo(category);
 		assertThat(errandEntity.getNamespace()).isEqualTo(namespace);
-		assertThat(errandEntity.getCreated()).isEqualTo(created);
+		assertThat(errandEntity.getCreated()).isEqualTo(now);
 		assertThat(errandEntity.getStakeholders()).containsExactly(stakeholder);
 		assertThat(errandEntity.getDescription()).isEqualTo(description);
 		assertThat(errandEntity.getExternalTags()).isEqualTo(externalTags);
 		assertThat(errandEntity.getId()).isEqualTo(id);
-		assertThat(errandEntity.getModified()).isEqualTo(modified);
 		assertThat(errandEntity.getMunicipalityId()).isEqualTo(municipalityId);
 		assertThat(errandEntity.getPriority()).isEqualTo(priority);
 		assertThat(errandEntity.getReporterUserId()).isEqualTo(reporterUserId);
 		assertThat(errandEntity.getResolution()).isEqualTo(resolution);
 		assertThat(errandEntity.getStatus()).isEqualTo(status);
 		assertThat(errandEntity.getTitle()).isEqualTo(title);
-		assertThat(errandEntity.getTouched()).isEqualTo(touched);
 		assertThat(errandEntity.getType()).isEqualTo(type);
 		assertThat(errandEntity.getParameters()).isEqualTo(parameters);
 		assertThat(errandEntity.getEscalationEmail()).isEqualTo(escalationEmail);
 		assertThat(errandEntity.getErrandNumber()).isEqualTo(errandNumber);
-		assertThat(errandEntity.getSuspendedFrom()).isEqualTo(suspendedFrom);
-		assertThat(errandEntity.getSuspendedTo()).isEqualTo(suspendedTo);
 		assertThat(errandEntity.getBusinessRelated()).isEqualTo(businessRelated);
 		assertThat(errandEntity.getContactReason()).isEqualTo(contactReason);
+		assertThat(errandEntity).extracting(ErrandEntity::getModified,
+			ErrandEntity::getTouched, ErrandEntity::getSuspendedFrom, ErrandEntity::getSuspendedTo,
+			ErrandEntity::getCreated).allSatisfy(date -> assertThat(date).isEqualTo(now));
 	}
 
 	@Test
