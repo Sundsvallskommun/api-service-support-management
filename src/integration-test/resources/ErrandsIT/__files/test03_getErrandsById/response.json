@@ -31,7 +31,7 @@
   "reporterUserId": "REPORTER_USER_ID-3",
   "assignedUserId": "ASSIGNED_USER_ID-3",
   "assignedGroupId": "ASSIGNED_GROUP_ID-3",
-  "suspend": {},
+  "suspension": {},
   "created": "2022-03-01T12:00:00+01:00",
   "touched": "2022-03-01T12:00:00+01:00"
 }

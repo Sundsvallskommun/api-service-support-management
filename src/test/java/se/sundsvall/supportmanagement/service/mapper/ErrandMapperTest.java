@@ -24,7 +24,7 @@ import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
 import se.sundsvall.supportmanagement.api.model.errand.Priority;
 import se.sundsvall.supportmanagement.api.model.errand.Stakeholder;
-import se.sundsvall.supportmanagement.api.model.errand.Suspend;
+import se.sundsvall.supportmanagement.api.model.errand.Suspension;
 import se.sundsvall.supportmanagement.api.model.parameter.ErrandParameter;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ContactChannelEntity;
@@ -71,7 +71,8 @@ class ErrandMapperTest {
 	private static final String PARAMETER_NAME = "parameterName";
 	private static final OffsetDateTime SUSPENDED_FROM = now().plusDays(1);
 	private static final OffsetDateTime SUSPENDED_TO = now().plusDays(2);
-	private static final ContactReasonEntity CONTACT_REASON_ENTITY = ContactReasonEntity.create().withReason("reason");
+	private static final String CONTACT_REASON = "reason";
+	private static final ContactReasonEntity CONTACT_REASON_ENTITY = ContactReasonEntity.create().withReason(CONTACT_REASON);
 
 	private static final String ERRAND_NUMBER = "errandNumber";
 
@@ -271,7 +272,10 @@ class ErrandMapperTest {
 				ErrandEntity::getType,
 				ErrandEntity::getResolution,
 				ErrandEntity::getDescription,
-				ErrandEntity::getEscalationEmail)
+				ErrandEntity::getEscalationEmail,
+				ErrandEntity::getSuspendedFrom,
+				ErrandEntity::getSuspendedTo,
+				ErrandEntity::getBusinessRelated)
 			.containsExactly(
 				ASSIGNED_GROUP_ID,
 				ASSIGNED_USER_ID,
@@ -283,7 +287,10 @@ class ErrandMapperTest {
 				TYPE,
 				RESOLUTION,
 				DESCRIPTION,
-				ESCALATION_EMAIL);
+				ESCALATION_EMAIL,
+				SUSPENDED_FROM,
+				SUSPENDED_TO,
+				true);
 
 		assertThat(entity.getStakeholders()).hasSize(1).extracting(
 				StakeholderEntity::getAddress,
@@ -364,7 +371,7 @@ class ErrandMapperTest {
 			.withEscalationEmail(ESCALATION_EMAIL)
 			.withErrandNumber(ERRAND_NUMBER)
 			.withBusinessRelated(true)
-			.withSuspend(Suspend.create().withSuspendedFrom(now()).withSuspendedTo(now().plusDays(1)))
+			.withSuspension(Suspension.create().withSuspendedFrom(SUSPENDED_FROM).withSuspendedTo(SUSPENDED_TO))
 			.withContactReason("reason");
 	}
 

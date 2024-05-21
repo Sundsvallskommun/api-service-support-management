@@ -43,7 +43,9 @@ import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
 import se.sundsvall.supportmanagement.api.model.errand.Priority;
 import se.sundsvall.supportmanagement.api.model.errand.Stakeholder;
+import se.sundsvall.supportmanagement.api.model.errand.Suspension;
 import se.sundsvall.supportmanagement.api.model.metadata.Category;
+import se.sundsvall.supportmanagement.api.model.metadata.ContactReason;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
 import se.sundsvall.supportmanagement.api.model.metadata.Type;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
@@ -75,6 +77,7 @@ class ErrandsResourceTest {
 		when(metadataServiceMock.findCategories(any(), any())).thenReturn(List.of(Category.create().withName("CATEGORY_1"), Category.create().withName("CATEGORY_2")));
 		when(metadataServiceMock.findStatuses(any(), any())).thenReturn(List.of(Status.create().withName("STATUS_1"), Status.create().withName("STATUS_2")));
 		when(metadataServiceMock.findTypes(any(), any(), any())).thenReturn(List.of(Type.create().withName("TYPE_1"), Type.create().withName("TYPE_2")));
+		when(metadataServiceMock.findContactReasons(any(), any())).thenReturn(List.of(ContactReason.create().withReason("REASON_1"), ContactReason.create().withReason("REASON_2")));
 	}
 
 	@Test
@@ -372,7 +375,9 @@ class ErrandsResourceTest {
 			.withStatus("status_2")
 			.withTitle("title")
 			.withEscalationEmail("escalation@email.com")
-			.withBusinessRelated(true);
+			.withBusinessRelated(true)
+			.withSuspension(Suspension.create().withSuspendedFrom(OffsetDateTime.now()).withSuspendedTo(OffsetDateTime.now().plusDays(1)))
+			.withContactReason("REASON_1");
 	}
 
 	// Helper implementation of Page

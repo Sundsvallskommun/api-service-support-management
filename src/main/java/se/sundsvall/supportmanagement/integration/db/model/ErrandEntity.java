@@ -463,19 +463,6 @@ public class ErrandEntity {
 		return this;
 	}
 
-	public ContactReasonEntity getContactReasonEntity() {
-		return contactReasonEntity;
-	}
-
-	public void setContactReasonEntity(final ContactReasonEntity contactReasonEntity) {
-		this.contactReasonEntity = contactReasonEntity;
-	}
-
-	public ErrandEntity withContactReasonEntity(final ContactReasonEntity contactReasonEntity) {
-		this.contactReasonEntity = contactReasonEntity;
-		return this;
-	}
-
 	public Boolean getBusinessRelated() {
 		return businessRelated;
 	}

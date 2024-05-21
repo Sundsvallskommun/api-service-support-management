@@ -92,9 +92,9 @@ public class Errand {
 	@ValidContactReason(groups = {OnCreate.class, OnUpdate.class}, nullable = true)
 	private String contactReason;
 
-	@Schema(description = "Suspend information")
+	@Schema(description = "Suspension information")
 	@Valid
-	private Suspend suspend;
+	private Suspension suspension;
 
 	@Schema(description = "Flag to indicate if the errand is business related", example = "true")
 	@NotNull(groups = {OnCreate.class, OnUpdate.class})
@@ -379,16 +379,16 @@ public class Errand {
 		return this;
 	}
 
-	public Suspend getSuspend() {
-		return suspend;
+	public Suspension getSuspension() {
+		return suspension;
 	}
 
-	public void setSuspend(final Suspend suspend) {
-		this.suspend = suspend;
+	public void setSuspension(final Suspension suspension) {
+		this.suspension = suspension;
 	}
 
-	public Errand withSuspend(final Suspend suspend) {
-		this.suspend = suspend;
+	public Errand withSuspension(final Suspension suspension) {
+		this.suspension = suspension;
 		return this;
 	}
 
@@ -411,7 +411,7 @@ public class Errand {
 			", assignedGroupId='" + assignedGroupId + '\'' +
 			", escalationEmail='" + escalationEmail + '\'' +
 			", contactReason='" + contactReason + '\'' +
-			", suspend=" + suspend +
+			", suspension=" + suspension +
 			", businessRelated=" + businessRelated +
 			", created=" + created +
 			", modified=" + modified +
@@ -424,11 +424,11 @@ public class Errand {
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
 		final Errand errand = (Errand) o;
-		return Objects.equals(id, errand.id) && Objects.equals(errandNumber, errand.errandNumber) && Objects.equals(title, errand.title) && priority == errand.priority && Objects.equals(stakeholders, errand.stakeholders) && Objects.equals(externalTags, errand.externalTags) && Objects.equals(parameters, errand.parameters) && Objects.equals(classification, errand.classification) && Objects.equals(status, errand.status) && Objects.equals(resolution, errand.resolution) && Objects.equals(description, errand.description) && Objects.equals(reporterUserId, errand.reporterUserId) && Objects.equals(assignedUserId, errand.assignedUserId) && Objects.equals(assignedGroupId, errand.assignedGroupId) && Objects.equals(escalationEmail, errand.escalationEmail) && Objects.equals(contactReason, errand.contactReason) && Objects.equals(suspend, errand.suspend) && Objects.equals(businessRelated, errand.businessRelated) && Objects.equals(created, errand.created) && Objects.equals(modified, errand.modified) && Objects.equals(touched, errand.touched);
+		return Objects.equals(id, errand.id) && Objects.equals(errandNumber, errand.errandNumber) && Objects.equals(title, errand.title) && priority == errand.priority && Objects.equals(stakeholders, errand.stakeholders) && Objects.equals(externalTags, errand.externalTags) && Objects.equals(parameters, errand.parameters) && Objects.equals(classification, errand.classification) && Objects.equals(status, errand.status) && Objects.equals(resolution, errand.resolution) && Objects.equals(description, errand.description) && Objects.equals(reporterUserId, errand.reporterUserId) && Objects.equals(assignedUserId, errand.assignedUserId) && Objects.equals(assignedGroupId, errand.assignedGroupId) && Objects.equals(escalationEmail, errand.escalationEmail) && Objects.equals(contactReason, errand.contactReason) && Objects.equals(suspension, errand.suspension) && Objects.equals(businessRelated, errand.businessRelated) && Objects.equals(created, errand.created) && Objects.equals(modified, errand.modified) && Objects.equals(touched, errand.touched);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, errandNumber, title, priority, stakeholders, externalTags, parameters, classification, status, resolution, description, reporterUserId, assignedUserId, assignedGroupId, escalationEmail, contactReason, suspend, businessRelated, created, modified, touched);
+		return Objects.hash(id, errandNumber, title, priority, stakeholders, externalTags, parameters, classification, status, resolution, description, reporterUserId, assignedUserId, assignedGroupId, escalationEmail, contactReason, suspension, businessRelated, created, modified, touched);
 	}
 }

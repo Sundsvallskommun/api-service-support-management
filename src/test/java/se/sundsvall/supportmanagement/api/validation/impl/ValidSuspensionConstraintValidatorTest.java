@@ -17,16 +17,16 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import se.sundsvall.supportmanagement.api.model.errand.Suspend;
+import se.sundsvall.supportmanagement.api.model.errand.Suspension;
 
 @ExtendWith(MockitoExtension.class)
-class ValidSuspendConstraintValidatorTest {
+class ValidSuspensionConstraintValidatorTest {
 
 	@Mock
 	private ConstraintValidatorContext constraintValidatorContextMock;
 
 	@InjectMocks
-	private ValidSuspendConstraintValidator validator;
+	private ValidSuspensionConstraintValidator validator;
 
 	private static Stream<Arguments> argumentProvider() {
 		return Stream.of(
@@ -47,14 +47,14 @@ class ValidSuspendConstraintValidatorTest {
 
 	@ParameterizedTest
 	@MethodSource("argumentProvider")
-	void validSuspend(final OffsetDateTime suspendFrom, final OffsetDateTime suspendTo, final boolean valid) {
-		var suspend = new Suspend().withSuspendedFrom(suspendFrom).withSuspendedTo(suspendTo);
+	void validSuspension(final OffsetDateTime suspendFrom, final OffsetDateTime suspendTo, final boolean valid) {
+		var suspension = new Suspension().withSuspendedFrom(suspendFrom).withSuspendedTo(suspendTo);
 
-		assertThat(validator.isValid(suspend, constraintValidatorContextMock)).isEqualTo(valid);
+		assertThat(validator.isValid(suspension, constraintValidatorContextMock)).isEqualTo(valid);
 	}
 
 	@Test
-	void nullSuspend() {
+	void nullSuspension() {
 		assertThat(validator.isValid(null, constraintValidatorContextMock)).isTrue();
 	}
 

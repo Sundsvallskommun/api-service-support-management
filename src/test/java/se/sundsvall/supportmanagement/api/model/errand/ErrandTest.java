@@ -61,7 +61,7 @@ class ErrandTest {
 		final var description = "description";
 		final var escalationEmail = "escalation@email.com";
 		final var errandNumber = "errandNumber";
-		final var suspend = Suspend.create().withSuspendedFrom(OffsetDateTime.now()).withSuspendedTo(OffsetDateTime.now().plusDays(1));
+		final var suspension = Suspension.create().withSuspendedFrom(OffsetDateTime.now()).withSuspendedTo(OffsetDateTime.now().plusDays(1));
 		final var businessRelated = true;
 		final var contactReason = ContactReasonEntity.create().withReason("reason");
 
@@ -84,7 +84,7 @@ class ErrandTest {
 			.withResolution(resolution)
 			.withDescription(description)
 			.withEscalationEmail(escalationEmail)
-			.withSuspend(suspend)
+			.withSuspension(suspension)
 			.withBusinessRelated(businessRelated)
 			.withContactReason(contactReason.getReason());
 
@@ -108,7 +108,7 @@ class ErrandTest {
 		assertThat(bean.getDescription()).isEqualTo(description);
 		assertThat(bean.getEscalationEmail()).isEqualTo(escalationEmail);
 		assertThat(bean.getErrandNumber()).isEqualTo(errandNumber);
-		assertThat(bean.getSuspend()).isEqualTo(suspend);
+		assertThat(bean.getSuspension()).isEqualTo(suspension);
 		assertThat(bean.getBusinessRelated()).isEqualTo(businessRelated);
 		assertThat(bean.getContactReason()).isEqualTo(contactReason.getReason());
 	}

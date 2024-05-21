@@ -28,6 +28,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.zalando.problem.Problem;
 
 import se.sundsvall.supportmanagement.api.model.metadata.Category;
@@ -404,6 +405,7 @@ public class MetadataService {
 		@CacheEvict(value = CACHE_NAME, key = "{'findContactReasons', #namespace, #municipalityId}"),
 		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}")
 	})
+	@Transactional
 	public void deleteContactReason(final String contactReason, final String namespace, final String municipalityId) {
 		if (!contactReasonRepository.existsByReasonIgnoreCaseAndNamespaceAndMunicipalityId(contactReason, namespace, municipalityId)) {
 			throw Problem.valueOf(NOT_FOUND, String.format(ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID, CONTACT_REASON, contactReason, namespace, municipalityId));

@@ -14,6 +14,7 @@ import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.d
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withMunicipalityId;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withNamespace;
 
+import java.util.Optional;
 import java.util.function.Supplier;
 
 import org.springframework.data.domain.Page;
@@ -92,8 +93,16 @@ public class ErrandService {
 	public Errand updateErrand(String namespace, String municipalityId, String id, Errand errand) {
 		verifyExistingErrand(id, namespace, municipalityId, true);
 
-		// Update errand and create new revision
-		final var entity = repository.save(updateEntity(repository.getReferenceById(id), errand));
+
+		final var errandEntity = updateEntity(repository.getReferenceById(id), errand);
+		Optional.ofNullable(errand.getContactReason()).ifPresent(reason -> {
+			var contactReason = contactReasonRepository.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId(reason, namespace, municipalityId)
+				.orElseThrow(() -> Problem.valueOf(BAD_REQUEST, BAD_CONTACT_REASON.formatted(reason, namespace, municipalityId)));
+			errandEntity.setContactReason(contactReason);
+		});
+
+		final var entity = repository.save(errandEntity);
+
 		final var revisionResult = revisionService.createErrandRevision(entity);
 
 		// Create log event if the update has modified the errand (and thus has created a new revision)

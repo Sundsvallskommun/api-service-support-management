@@ -18,7 +18,7 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-class SuspendTest {
+class SuspensionTest {
 
 	@BeforeAll
 	static void setup() {
@@ -27,7 +27,7 @@ class SuspendTest {
 
 	@Test
 	void testBean() {
-		assertThat(Suspend.class, allOf(
+		assertThat(Suspension.class, allOf(
 			hasValidBeanConstructor(),
 			hasValidGettersAndSetters(),
 			hasValidBeanHashCode(),
@@ -42,7 +42,7 @@ class SuspendTest {
 		final var suspendFrom = OffsetDateTime.now();
 		final var suspendTo = OffsetDateTime.now().plusDays(1);
 
-		final var bean = Suspend.create()
+		final var bean = Suspension.create()
 			.withSuspendedTo(suspendTo)
 			.withSuspendedFrom(suspendFrom);
 
@@ -53,7 +53,7 @@ class SuspendTest {
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		Assertions.assertThat(Suspend.create()).hasAllNullFieldsOrProperties();
-		Assertions.assertThat(new Suspend()).hasAllNullFieldsOrProperties();
+		Assertions.assertThat(Suspension.create()).hasAllNullFieldsOrProperties();
+		Assertions.assertThat(new Suspension()).hasAllNullFieldsOrProperties();
 	}
 }

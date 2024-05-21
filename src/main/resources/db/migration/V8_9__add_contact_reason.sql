@@ -1,11 +1,12 @@
 create table contact_reason
 (
-    id bigint not null primary key,
+    id bigint not null auto_increment,
     namespace varchar(255) not null,
     municipality_id varchar(255) not null,
     reason varchar(255) not null,
     created datetime(6),
-    modified datetime(6)
+    modified datetime(6),
+    PRIMARY KEY (id)
 ) engine = InnoDB;
 
 alter table if exists errand

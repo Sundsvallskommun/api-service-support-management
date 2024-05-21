@@ -7,12 +7,12 @@ import jakarta.validation.constraints.FutureOrPresent;
 
 import org.springframework.format.annotation.DateTimeFormat;
 
-import se.sundsvall.supportmanagement.api.validation.ValidSuspend;
+import se.sundsvall.supportmanagement.api.validation.ValidSuspension;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
-@ValidSuspend
-public class Suspend {
+@ValidSuspension
+public class Suspension {
 
 	@Schema(description = "Timestamp when the suspension wears off", example = "2000-10-31T01:30:00.000+02:00")
 	@DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
@@ -23,8 +23,8 @@ public class Suspend {
 	@DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
 	private OffsetDateTime suspendedFrom;
 
-	public static Suspend create() {
-		return new Suspend();
+	public static Suspension create() {
+		return new Suspension();
 	}
 
 	public OffsetDateTime getSuspendedTo() {
@@ -35,7 +35,7 @@ public class Suspend {
 		this.suspendedTo = suspendedTo;
 	}
 
-	public Suspend withSuspendedTo(final OffsetDateTime suspendedTo) {
+	public Suspension withSuspendedTo(final OffsetDateTime suspendedTo) {
 		this.suspendedTo = suspendedTo;
 		return this;
 	}
@@ -48,14 +48,14 @@ public class Suspend {
 		this.suspendedFrom = suspendedFrom;
 	}
 
-	public Suspend withSuspendedFrom(final OffsetDateTime suspendedFrom) {
+	public Suspension withSuspendedFrom(final OffsetDateTime suspendedFrom) {
 		this.suspendedFrom = suspendedFrom;
 		return this;
 	}
 
 	@Override
 	public String toString() {
-		return "Suspend{" +
+		return "Suspension{" +
 			"suspendedTo=" + suspendedTo +
 			", suspendedFrom=" + suspendedFrom +
 			'}';
@@ -65,8 +65,8 @@ public class Suspend {
 	public boolean equals(final Object o) {
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
-		final Suspend suspend = (Suspend) o;
-		return Objects.equals(suspendedTo, suspend.suspendedTo) && Objects.equals(suspendedFrom, suspend.suspendedFrom);
+		final Suspension that = (Suspension) o;
+		return Objects.equals(suspendedTo, that.suspendedTo) && Objects.equals(suspendedFrom, that.suspendedFrom);
 	}
 
 	@Override

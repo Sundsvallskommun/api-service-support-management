@@ -32,6 +32,7 @@ import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
 import se.sundsvall.supportmanagement.api.model.errand.Priority;
 import se.sundsvall.supportmanagement.api.model.errand.Stakeholder;
+import se.sundsvall.supportmanagement.api.model.errand.Suspension;
 import se.sundsvall.supportmanagement.api.model.metadata.Category;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
 import se.sundsvall.supportmanagement.api.model.metadata.Type;
@@ -276,6 +277,45 @@ class ErrandsUpdateResourceFailureTest {
 		verify(metadataServiceMock).findCategories(any(), any());
 		verify(metadataServiceMock).findStatuses(any(), any());
 		verifyNoInteractions(errandServiceMock);
+	}
+
+	@Test
+	void updateErrandWithInvalidSuspension() {
+		final var response = webTestClient.patch()
+			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(Errand.create().withSuspension(Suspension.create().withSuspendedTo(OffsetDateTime.now().plusDays(2)).withSuspendedFrom(OffsetDateTime.now().plusDays(3))))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
+			tuple("suspension", "to date must be after from date"));
+	}
+
+	@Test
+	void updateErrandWithInvalidToDate() {
+		final var response = webTestClient.patch()
+			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(Errand.create().withSuspension(Suspension.create().withSuspendedTo(OffsetDateTime.now().minusDays(2)).withSuspendedFrom(OffsetDateTime.now().plusDays(3))))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
+			tuple("suspension", "to date must be after from date"),
+			tuple("suspension.suspendedTo", "must be a date in the present or in the future"));
 	}
 
 	private static Errand createErrandInstance() {

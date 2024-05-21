@@ -245,5 +245,6 @@ VALUES ('55d266a7-1ff2-4bf4-b6f3-0473b2b86fcd', 'testName', 'testValue', 'ec677e
 INSERT INTO contact_reason(id, reason, municipality_id, namespace, created, modified)
 VALUES(123, 'reason1', '2281', 'CONTACTCENTER', '2023-12-31 23:59:59.999', '2023-12-31 23:59:59.999'),
 (124, 'reason2', '2281', 'CONTACTCENTER', '2023-12-31 23:59:59.999', '2023-12-31 23:59:59.999'),
+(127, 'reason3', '2281', 'CONTACTCENTER', '2023-12-31 23:59:59.999', '2023-12-31 23:59:59.999'),
 (125, 'reason3', '2281', 'namespace_2', '2023-12-31 23:59:59.999', '2023-12-31 23:59:59.999'),
 (126, 'reason4', '2281', 'namespace_2', '2023-12-31 23:59:59.999', '2023-12-31 23:59:59.999');

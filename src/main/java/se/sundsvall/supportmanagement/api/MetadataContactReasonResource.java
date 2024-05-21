@@ -114,7 +114,7 @@ class MetadataContactReasonResource {
 	ResponseEntity<Void> deleteContactReason(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
-		@Parameter(name = "reason", description = "Reason", example = "8bc38e64-1e97-4cbf-b47e-e05b5fe9af70") @PathVariable final String reason) {
+		@Parameter(name = "reason", description = "Reason", example = "INVOICE") @PathVariable final String reason) {
 
 		metadataService.deleteContactReason(reason, namespace, municipalityId);
 		return noContent().build();
