@@ -200,8 +200,7 @@ class ErrandsCreateResourceFailureTest {
 			tuple("createErrand.errand.reporterUserId", "must not be blank"),
 			tuple("createErrand.errand.priority", "must not be null"),
 			tuple("createErrand.errand.status", "must not be blank"),
-			tuple("createErrand.errand.title", "must not be blank"),
-			tuple("createErrand.errand.businessRelated", "must not be null"));
+			tuple("createErrand.errand.title", "must not be blank"));
 
 		// Verification
 		verify(metadataServiceMock).findStatuses(any(), any());
@@ -232,7 +231,6 @@ class ErrandsCreateResourceFailureTest {
 			tuple("createErrand.errand.reporterUserId", "must not be blank"),
 			tuple("createErrand.errand.priority", "must not be null"),
 			tuple("createErrand.errand.status", "must not be blank"),
-			tuple("createErrand.errand.businessRelated", "must not be null"),
 			tuple("createErrand.errand.contactReason", "not a valid contact reason"));
 
 		// Verification
