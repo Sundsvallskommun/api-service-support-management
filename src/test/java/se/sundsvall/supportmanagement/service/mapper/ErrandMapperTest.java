@@ -37,44 +37,161 @@ import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 class ErrandMapperTest {
 
 	private static final String NAMESPACE = "namespace";
+
 	private static final String MUNICIPALITY_ID = "municipalityId";
+
 	private static final String ASSIGNED_GROUP_ID = "assignedGroupId";
+
 	private static final String ASSIGNED_USER_ID = "assignedUserId";
+
 	private static final String CATEGORY = "category";
+
 	private static final String CLIENT_ID_TAG = "clientIdTag";
+
 	private static final OffsetDateTime CREATED = now().minusWeeks(1);
+
 	private static final String EXTERNAL_ID = "externalId";
+
 	private static final String EXTERNAL_ID_TYPE_TAG = "PRIVATE";
+
 	private static final String TAG_KEY = "tagKey";
+
 	private static final String TAG_VALUE = "tagValue";
+
 	private static final String ID = "id";
+
 	private static final OffsetDateTime MODIFIED = now();
+
 	private static final String PRIORITY = HIGH.name();
+
 	private static final String REPORTER_USER_ID = "reporterUserId";
+
 	private static final String STATUS = "status";
+
 	private static final String TITLE = "title";
+
 	private static final OffsetDateTime TOUCHED = now().plusWeeks(1);
+
 	private static final String TYPE = "type";
+
 	private static final String DESCRIPTION = "description";
+
 	private static final String RESOLUTION = "resolution";
+
 	private static final String FIRST_NAME = "firstName";
+
 	private static final String LAST_NAME = "lastName";
+
 	private static final String ADDRESS = "address";
+
 	private static final String CARE_OF = "careOf";
+
 	private static final String ZIP_CODE = "zipCode";
+
 	private static final String COUNTRY = "country";
+
 	private static final String CONTACT_CHANNEL_TYPE = "contactChannelType";
+
 	private static final String CONTACT_CHANNEL_VALUE = "contactChannelValue";
+
 	private static final String ESCALATION_EMAIL = "escalation@email.com";
+
 	private static final String STAKEHOLDER_ROLE = "role";
+
 	private static final String PARAMETER_VALUE = "parameterValue";
+
 	private static final String PARAMETER_NAME = "parameterName";
+
 	private static final OffsetDateTime SUSPENDED_FROM = now().plusDays(1);
+
 	private static final OffsetDateTime SUSPENDED_TO = now().plusDays(2);
+
 	private static final String CONTACT_REASON = "reason";
+
 	private static final ContactReasonEntity CONTACT_REASON_ENTITY = ContactReasonEntity.create().withReason(CONTACT_REASON);
 
 	private static final String ERRAND_NUMBER = "errandNumber";
+
+	private static Errand createErrand() {
+		return Errand.create()
+			.withAssignedGroupId(ASSIGNED_GROUP_ID)
+			.withAssignedUserId(ASSIGNED_USER_ID)
+			.withClassification(Classification.create().withCategory(CATEGORY).withType(TYPE))
+			.withCreated(CREATED)
+			.withStakeholders(List.of(createStakeHolder()))
+			.withExternalTags(List.of(ExternalTag.create().withKey(TAG_KEY).withValue(TAG_VALUE)))
+			.withParameters(List.of(ErrandParameter.create().withName(PARAMETER_NAME).withValue(PARAMETER_VALUE)))
+			.withId(ID)
+			.withModified(MODIFIED)
+			.withPriority(Priority.valueOf(PRIORITY))
+			.withReporterUserId(REPORTER_USER_ID)
+			.withStatus(STATUS)
+			.withTitle(TITLE)
+			.withTouched(TOUCHED)
+			.withResolution(RESOLUTION)
+			.withDescription(DESCRIPTION)
+			.withEscalationEmail(ESCALATION_EMAIL)
+			.withErrandNumber(ERRAND_NUMBER)
+			.withBusinessRelated(true)
+			.withSuspension(Suspension.create().withSuspendedFrom(SUSPENDED_FROM).withSuspendedTo(SUSPENDED_TO))
+			.withContactReason("reason");
+	}
+
+	private static Stakeholder createStakeHolder() {
+		return Stakeholder.create()
+			.withExternalId(EXTERNAL_ID)
+			.withExternalIdType("PRIVATE")
+			.withFirstName(FIRST_NAME)
+			.withLastName(LAST_NAME)
+			.withAddress(ADDRESS)
+			.withCareOf(CARE_OF)
+			.withZipCode(ZIP_CODE)
+			.withCountry(COUNTRY)
+			.withContactChannels(List.of(ContactChannel.create().withType(CONTACT_CHANNEL_TYPE).withValue(CONTACT_CHANNEL_VALUE)))
+			.withRole(STAKEHOLDER_ROLE);
+	}
+
+	private static ErrandEntity createEntity() {
+		return ErrandEntity.create()
+			.withId(ID)
+			.withAssignedGroupId(ASSIGNED_GROUP_ID)
+			.withAssignedUserId(ASSIGNED_USER_ID)
+			.withCategory(CATEGORY)
+			.withNamespace(CLIENT_ID_TAG)
+			.withCreated(CREATED)
+			.withStakeholders(List.of(createStakeHolderEntity()))
+			.withExternalTags(List.of(DbExternalTag.create().withKey(TAG_KEY).withValue(TAG_VALUE)))
+			.withParameters(List.of(ParameterEntity.create().withValue(PARAMETER_VALUE).withName(PARAMETER_NAME)))
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withPriority(PRIORITY)
+			.withReporterUserId(REPORTER_USER_ID)
+			.withStatus(STATUS)
+			.withTitle(TITLE)
+			.withType(TYPE)
+			.withTouched(TOUCHED)
+			.withModified(MODIFIED)
+			.withResolution(RESOLUTION)
+			.withDescription(DESCRIPTION)
+			.withEscalationEmail(ESCALATION_EMAIL)
+			.withContactReason(ContactReasonEntity.create().withReason("reason"))
+			.withSuspendedFrom(SUSPENDED_FROM)
+			.withSuspendedTo(SUSPENDED_TO)
+			.withErrandNumber(ERRAND_NUMBER);
+	}
+
+	private static StakeholderEntity createStakeHolderEntity() {
+		return StakeholderEntity.create()
+			.withExternalId(EXTERNAL_ID)
+			.withExternalIdType(EXTERNAL_ID_TYPE_TAG)
+			.withFirstName(FIRST_NAME)
+			.withLastName(LAST_NAME)
+			.withAddress(ADDRESS)
+			.withCareOf(CARE_OF)
+			.withZipCode(ZIP_CODE)
+			.withCountry(COUNTRY)
+			.withContactChannels(List.of(ContactChannelEntity.create().withType(CONTACT_CHANNEL_TYPE).withValue(CONTACT_CHANNEL_VALUE)))
+			.withRole(STAKEHOLDER_ROLE);
+	}
 
 	@Test
 	void testToErrand() {
@@ -88,7 +205,7 @@ class ErrandMapperTest {
 		assertThat(errand.getStakeholders()).hasSize(1)
 			.extracting(Stakeholder::getExternalId, Stakeholder::getExternalIdType, Stakeholder::getFirstName, Stakeholder::getLastName, Stakeholder::getAddress, Stakeholder::getCareOf, Stakeholder::getZipCode, Stakeholder::getCountry,
 				Stakeholder::getContactChannels)
-			.contains(tuple(EXTERNAL_ID, String.valueOf(EXTERNAL_ID_TYPE_TAG), FIRST_NAME, LAST_NAME, ADDRESS, CARE_OF, ZIP_CODE, COUNTRY, List.of(ContactChannel.create().withType(CONTACT_CHANNEL_TYPE).withValue(CONTACT_CHANNEL_VALUE))));
+			.contains(tuple(EXTERNAL_ID, EXTERNAL_ID_TYPE_TAG, FIRST_NAME, LAST_NAME, ADDRESS, CARE_OF, ZIP_CODE, COUNTRY, List.of(ContactChannel.create().withType(CONTACT_CHANNEL_TYPE).withValue(CONTACT_CHANNEL_VALUE))));
 		assertThat(errand.getExternalTags()).hasSize(1)
 			.extracting(ExternalTag::getKey, ExternalTag::getValue)
 			.contains(tuple(TAG_KEY, TAG_VALUE));
@@ -331,7 +448,7 @@ class ErrandMapperTest {
 	void testUpdateEntityWithBlank() {
 		final var entity = updateEntity(createEntity(), Errand.create().withAssignedGroupId("").withAssignedUserId("").withErrandNumber("").withResolution("").withDescription("").withEscalationEmail("").withContactReason(""));
 
-		assertThat(entity).hasNoNullFieldsOrPropertiesExcept("assignedGroupId", "assignedUserId", "attachments", "resolution", "description", "escalationEmail", "parameters", "businessRelated", "suspend");
+		assertThat(entity).hasNoNullFieldsOrPropertiesExcept("assignedGroupId", "assignedUserId", "attachments", "resolution", "description", "escalationEmail", "parameters", "businessRelated", "suspend", "previousStatus");
 		assertThat(entity.getAssignedGroupId()).isNull();
 		assertThat(entity.getAssignedUserId()).isNull();
 		assertThat(entity.getAttachments()).isNull();
@@ -350,84 +467,4 @@ class ErrandMapperTest {
 		assertThat(updateEntity(createEntity(), null)).usingRecursiveComparison().isEqualTo(createEntity());
 	}
 
-	private static Errand createErrand() {
-		return Errand.create()
-			.withAssignedGroupId(ASSIGNED_GROUP_ID)
-			.withAssignedUserId(ASSIGNED_USER_ID)
-			.withClassification(Classification.create().withCategory(CATEGORY).withType(TYPE))
-			.withCreated(CREATED)
-			.withStakeholders(List.of(createStakeHolder()))
-			.withExternalTags(List.of(ExternalTag.create().withKey(TAG_KEY).withValue(TAG_VALUE)))
-			.withParameters(List.of(ErrandParameter.create().withName(PARAMETER_NAME).withValue(PARAMETER_VALUE)))
-			.withId(ID)
-			.withModified(MODIFIED)
-			.withPriority(Priority.valueOf(PRIORITY))
-			.withReporterUserId(REPORTER_USER_ID)
-			.withStatus(STATUS)
-			.withTitle(TITLE)
-			.withTouched(TOUCHED)
-			.withResolution(RESOLUTION)
-			.withDescription(DESCRIPTION)
-			.withEscalationEmail(ESCALATION_EMAIL)
-			.withErrandNumber(ERRAND_NUMBER)
-			.withBusinessRelated(true)
-			.withSuspension(Suspension.create().withSuspendedFrom(SUSPENDED_FROM).withSuspendedTo(SUSPENDED_TO))
-			.withContactReason("reason");
-	}
-
-	private static Stakeholder createStakeHolder() {
-		return Stakeholder.create()
-			.withExternalId(EXTERNAL_ID)
-			.withExternalIdType("PRIVATE")
-			.withFirstName(FIRST_NAME)
-			.withLastName(LAST_NAME)
-			.withAddress(ADDRESS)
-			.withCareOf(CARE_OF)
-			.withZipCode(ZIP_CODE)
-			.withCountry(COUNTRY)
-			.withContactChannels(List.of(ContactChannel.create().withType(CONTACT_CHANNEL_TYPE).withValue(CONTACT_CHANNEL_VALUE)))
-			.withRole(STAKEHOLDER_ROLE);
-	}
-
-	private static ErrandEntity createEntity() {
-		return ErrandEntity.create()
-			.withId(ID)
-			.withAssignedGroupId(ASSIGNED_GROUP_ID)
-			.withAssignedUserId(ASSIGNED_USER_ID)
-			.withCategory(CATEGORY)
-			.withNamespace(CLIENT_ID_TAG)
-			.withCreated(CREATED)
-			.withStakeholders(List.of(createStakeHolderEntity()))
-			.withExternalTags(List.of(DbExternalTag.create().withKey(TAG_KEY).withValue(TAG_VALUE)))
-			.withParameters(List.of(ParameterEntity.create().withValue(PARAMETER_VALUE).withName(PARAMETER_NAME)))
-			.withMunicipalityId(MUNICIPALITY_ID)
-			.withPriority(PRIORITY)
-			.withReporterUserId(REPORTER_USER_ID)
-			.withStatus(STATUS)
-			.withTitle(TITLE)
-			.withType(TYPE)
-			.withTouched(TOUCHED)
-			.withModified(MODIFIED)
-			.withResolution(RESOLUTION)
-			.withDescription(DESCRIPTION)
-			.withEscalationEmail(ESCALATION_EMAIL)
-			.withContactReason(ContactReasonEntity.create().withReason("reason"))
-			.withSuspendedFrom(SUSPENDED_FROM)
-			.withSuspendedTo(SUSPENDED_TO)
-			.withErrandNumber(ERRAND_NUMBER);
-	}
-
-	private static StakeholderEntity createStakeHolderEntity() {
-		return StakeholderEntity.create()
-			.withExternalId(EXTERNAL_ID)
-			.withExternalIdType(EXTERNAL_ID_TYPE_TAG)
-			.withFirstName(FIRST_NAME)
-			.withLastName(LAST_NAME)
-			.withAddress(ADDRESS)
-			.withCareOf(CARE_OF)
-			.withZipCode(ZIP_CODE)
-			.withCountry(COUNTRY)
-			.withContactChannels(List.of(ContactChannelEntity.create().withType(CONTACT_CHANNEL_TYPE).withValue(CONTACT_CHANNEL_VALUE)))
-			.withRole(STAKEHOLDER_ROLE);
-	}
 }
