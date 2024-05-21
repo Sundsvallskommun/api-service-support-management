@@ -20,7 +20,6 @@ import se.sundsvall.supportmanagement.api.model.errand.Stakeholder;
 import se.sundsvall.supportmanagement.api.model.errand.Suspension;
 import se.sundsvall.supportmanagement.api.model.parameter.ErrandParameter;
 import se.sundsvall.supportmanagement.integration.db.model.ContactChannelEntity;
-import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ParameterEntity;
@@ -30,8 +29,8 @@ public class ErrandMapper {
 
 	private ErrandMapper() {}
 
-	public static ErrandEntity toErrandEntity(String namespace, String municipalityId, Errand errand, ContactReasonEntity contactReasonEntity) {
-		if (anyNull(namespace, municipalityId, errand, contactReasonEntity)) {
+	public static ErrandEntity toErrandEntity(String namespace, String municipalityId, Errand errand) {
+		if (anyNull(namespace, municipalityId, errand)) {
 			return null;
 		}
 
@@ -57,8 +56,7 @@ public class ErrandMapper {
 			.withErrandNumber(errand.getErrandNumber())
 			.withSuspendedFrom(Optional.ofNullable(errand.getSuspension()).map(Suspension::getSuspendedFrom).orElse(null))
 			.withSuspendedTo(Optional.ofNullable(errand.getSuspension()).map(Suspension::getSuspendedTo).orElse(null))
-			.withBusinessRelated(errand.getBusinessRelated())
-			.withContactReason(contactReasonEntity);
+			.withBusinessRelated(errand.getBusinessRelated());
 	}
 
 	public static ErrandEntity updateEntity(ErrandEntity entity, Errand errand) {

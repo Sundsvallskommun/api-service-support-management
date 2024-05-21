@@ -165,7 +165,7 @@ class ErrandMapperTest {
 
 	@Test
 	void testToErrandEntity() {
-		final var entity = toErrandEntity(NAMESPACE, MUNICIPALITY_ID, createErrand(), CONTACT_REASON_ENTITY);
+		final var entity = toErrandEntity(NAMESPACE, MUNICIPALITY_ID, createErrand());
 
 		assertThat(entity)
 			.extracting(
@@ -240,15 +240,15 @@ class ErrandMapperTest {
 
 	@Test
 	void testToErrandEntityFromNull() {
-		assertThat(toErrandEntity(null, null, null, null)).isNull();
-		assertThat(toErrandEntity(null, null, Errand.create(), null)).isNull();
-		assertThat(toErrandEntity(NAMESPACE, null, null, null)).isNull();
-		assertThat(toErrandEntity(NAMESPACE, null, Errand.create(), null)).isNull();
-		assertThat(toErrandEntity(NAMESPACE, MUNICIPALITY_ID, null, CONTACT_REASON_ENTITY)).isNull();
-		assertThat(toErrandEntity(null, MUNICIPALITY_ID, null, null)).isNull();
-		assertThat(toErrandEntity(NAMESPACE, MUNICIPALITY_ID, null, CONTACT_REASON_ENTITY)).isNull();
-		assertThat(toErrandEntity(null, MUNICIPALITY_ID, Errand.create(), CONTACT_REASON_ENTITY)).isNull();
-		assertThat(toErrandEntity(null, null, null, CONTACT_REASON_ENTITY)).isNull();
+		assertThat(toErrandEntity(null, null, null)).isNull();
+		assertThat(toErrandEntity(null, null, Errand.create())).isNull();
+		assertThat(toErrandEntity(NAMESPACE, null, null)).isNull();
+		assertThat(toErrandEntity(NAMESPACE, null, Errand.create())).isNull();
+		assertThat(toErrandEntity(NAMESPACE, MUNICIPALITY_ID, null)).isNull();
+		assertThat(toErrandEntity(null, MUNICIPALITY_ID, null)).isNull();
+		assertThat(toErrandEntity(NAMESPACE, MUNICIPALITY_ID, null)).isNull();
+		assertThat(toErrandEntity(null, MUNICIPALITY_ID, Errand.create())).isNull();
+		assertThat(toErrandEntity(null, null, null)).isNull();
 	}
 
 	@Test
