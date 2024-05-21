@@ -448,7 +448,7 @@ class ErrandMapperTest {
 	void testUpdateEntityWithBlank() {
 		final var entity = updateEntity(createEntity(), Errand.create().withAssignedGroupId("").withAssignedUserId("").withErrandNumber("").withResolution("").withDescription("").withEscalationEmail("").withContactReason(""));
 
-		assertThat(entity).hasNoNullFieldsOrPropertiesExcept("assignedGroupId", "assignedUserId", "attachments", "resolution", "description", "escalationEmail", "parameters", "businessRelated", "suspend", "previousStatus");
+		assertThat(entity).hasNoNullFieldsOrPropertiesExcept("assignedGroupId", "assignedUserId", "attachments", "resolution", "description", "escalationEmail", "parameters", "businessRelated", "suspend", "previousStatus", "timeMeasures");
 		assertThat(entity.getAssignedGroupId()).isNull();
 		assertThat(entity.getAssignedUserId()).isNull();
 		assertThat(entity.getAttachments()).isNull();

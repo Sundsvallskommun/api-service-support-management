@@ -3,7 +3,7 @@ package se.sundsvall.supportmanagement.integration.db.model;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanEquals;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanHashCode;
-import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanToString;
+import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanToStringExcluding;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidGettersAndSetters;
 import static com.google.code.beanmatchers.BeanMatchers.registerValueGenerator;
 import static java.time.OffsetDateTime.now;
@@ -17,7 +17,7 @@ import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-class TimeMeasureTest {
+class TimeMeasureEntityTest {
 
 	@BeforeAll
 	static void setup() {
@@ -26,12 +26,12 @@ class TimeMeasureTest {
 
 	@Test
 	void hasValidBean() {
-		MatcherAssert.assertThat(TimeMeasure.class, allOf(
+		MatcherAssert.assertThat(TimeMeasureEntity.class, allOf(
 			hasValidBeanConstructor(),
 			hasValidGettersAndSetters(),
 			hasValidBeanHashCode(),
 			hasValidBeanEquals(),
-			hasValidBeanToString()));
+			hasValidBeanToStringExcluding("errandEntity")));
 	}
 
 	@Test
@@ -44,15 +44,17 @@ class TimeMeasureTest {
 		final var description = "description";
 		final var status = "status";
 		final var administrator = "administrator";
+		final var errandEntity = ErrandEntity.create().withId("1");
 
 		// Act
-		final var result = TimeMeasure.create()
+		final var result = TimeMeasureEntity.create()
 			.withId(id)
 			.withStartTime(startTime)
 			.withStopTime(stopTime)
 			.withDescription(description)
 			.withStatus(status)
-			.withAdministrator(administrator);
+			.withAdministrator(administrator)
+			.withErrandEntity(errandEntity);
 
 		// Assert
 		assertThat(result).hasNoNullFieldsOrProperties();
@@ -62,12 +64,13 @@ class TimeMeasureTest {
 		assertThat(result.getDescription()).isEqualTo(description);
 		assertThat(result.getStatus()).isEqualTo(status);
 		assertThat(result.getAdministrator()).isEqualTo(administrator);
+		assertThat(result.getErrandEntity()).isSameAs(errandEntity);
 	}
 
 	@Test
 	void noDirtOnCreatedBean() {
-		assertThat(TimeMeasure.create()).hasAllNullFieldsOrProperties();
-		assertThat(new TimeMeasure()).hasAllNullFieldsOrProperties();
+		assertThat(TimeMeasureEntity.create()).hasAllNullFieldsOrProperties();
+		assertThat(new TimeMeasureEntity()).hasAllNullFieldsOrProperties();
 	}
 
 }

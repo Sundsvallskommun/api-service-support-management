@@ -241,6 +241,7 @@
         stop_time datetime(6),
         administrator varchar(255),
         description varchar(255),
+        errand_id varchar(255) not null,
         status varchar(255),
         primary key (id)
     ) engine=InnoDB;
@@ -430,6 +431,11 @@
 
     alter table if exists stakeholder 
        add constraint fk_errand_stakeholder_errand_id 
+       foreign key (errand_id) 
+       references errand (id);
+
+    alter table if exists time_measure 
+       add constraint fk_errand_time_measure_errand_id 
        foreign key (errand_id) 
        references errand (id);
 
