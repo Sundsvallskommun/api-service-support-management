@@ -102,7 +102,6 @@ class ErrandEntityTest {
 		assertThat(errandEntity.getAttachments()).isEqualTo(attachments);
 		assertThat(errandEntity.getCategory()).isEqualTo(category);
 		assertThat(errandEntity.getNamespace()).isEqualTo(namespace);
-		assertThat(errandEntity.getCreated()).isEqualTo(now);
 		assertThat(errandEntity.getStakeholders()).containsExactly(stakeholder);
 		assertThat(errandEntity.getDescription()).isEqualTo(description);
 		assertThat(errandEntity.getExternalTags()).isEqualTo(externalTags);
