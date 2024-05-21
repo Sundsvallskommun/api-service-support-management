@@ -66,7 +66,7 @@ public class ErrandParameterResource {
 		@Parameter(name = "errandId", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("errandId") final String errandId,
 		@Valid @NotNull @RequestBody final ErrandParameter errandParameter) {
 
-		var parameterId = service.createErrandParameter(namespace, municipalityId, errandId, errandParameter);
+		final var parameterId = service.createErrandParameter(namespace, municipalityId, errandId, errandParameter);
 		return created(fromPath("/{namespace}/{municipalityId}/errands/{errandId}/parameters/{parameterId}")
 			.buildAndExpand(namespace, municipalityId, errandId, parameterId).toUri())
 			.header(CONTENT_TYPE, ALL_VALUE)
@@ -92,7 +92,7 @@ public class ErrandParameterResource {
 	public ResponseEntity<ErrandParameters> findErrandParameters(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
-		@Parameter(name = "id", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("errandId") final String errandId) {
+		@Parameter(name = "errandId", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("errandId") final String errandId) {
 
 		return ok(service.findErrandParameters(namespace, municipalityId, errandId));
 	}
@@ -104,7 +104,7 @@ public class ErrandParameterResource {
 	public ResponseEntity<ErrandParameter> updateErrandParameter(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
-		@Parameter(name = "id", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("errandId") final String errandId,
+		@Parameter(name = "errandId", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("errandId") final String errandId,
 		@Parameter(name = "parameterId", description = "Errand parameter id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable("parameterId") final String parameterId,
 		@Valid @NotNull @RequestBody final ErrandParameter errandParameter) {
 
