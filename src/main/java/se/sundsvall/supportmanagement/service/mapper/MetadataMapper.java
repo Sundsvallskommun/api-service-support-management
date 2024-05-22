@@ -10,10 +10,13 @@ import static org.apache.commons.lang3.ObjectUtils.anyNull;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -188,8 +191,19 @@ public class MetadataMapper {
 	}
 
 	private static void updateTypes(final CategoryEntity entity, final List<Type> types) {
-		ofNullable(entity.getTypes()).ifPresentOrElse(List::clear, () -> entity.setTypes(new ArrayList<>()));
-		entity.getTypes().addAll(toTypeEntities(types));
+		var existingTypes = Stream.ofNullable(entity.getTypes())
+			.flatMap(Collection::stream)
+			.collect(Collectors.toMap(TypeEntity::getName, Function.identity()));
+
+		var updatedTypes = toTypeEntities(types);
+		updatedTypes.stream()
+			.filter(type -> existingTypes.containsKey(type.getName()))
+			.forEach(type ->  {
+				type.setId(existingTypes.get(type.getName()).getId());
+				type.setCreated(existingTypes.get(type.getName()).getCreated());
+			});
+
+		entity.setTypes(updatedTypes);
 	}
 
 	// =================================================================
