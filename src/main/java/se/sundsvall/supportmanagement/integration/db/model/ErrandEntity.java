@@ -1,21 +1,19 @@
 package se.sundsvall.supportmanagement.integration.db.model;
 
-import static java.time.OffsetDateTime.now;
-import static java.time.ZoneId.systemDefault;
-import static java.time.temporal.ChronoUnit.MILLIS;
 import static org.hibernate.Length.LONG32;
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.ForeignKey;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
@@ -23,9 +21,6 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
-import jakarta.persistence.PostLoad;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import jakarta.persistence.UniqueConstraint;
@@ -33,6 +28,8 @@ import jakarta.persistence.UniqueConstraint;
 import org.hibernate.annotations.Formula;
 import org.hibernate.annotations.TimeZoneStorage;
 import org.hibernate.annotations.UuidGenerator;
+
+import se.sundsvall.supportmanagement.integration.db.model.listener.ErrandListener;
 
 @Entity
 @Table(name = "errand",
@@ -50,6 +47,7 @@ import org.hibernate.annotations.UuidGenerator;
 	uniqueConstraints = {
 		@UniqueConstraint(name = "uq_errand_number", columnNames = {"errand_number"})
 	})
+@EntityListeners(ErrandListener.class)
 public class ErrandEntity {
 
 	@Id
@@ -151,31 +149,12 @@ public class ErrandEntity {
 	@Transient
 	private String previousStatus;
 
-	@OneToMany(mappedBy = "errandEntity", cascade = CascadeType.ALL, orphanRemoval = true)
-	@OrderBy("startTime")
+	@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+	@JoinColumn(name = "errand_id", referencedColumnName = "id", foreignKey = @ForeignKey(name = "fk_errand_time_measure_errand_id"))
 	private List<TimeMeasureEntity> timeMeasures;
 
 	public static ErrandEntity create() {
 		return new ErrandEntity();
-	}
-
-	@PrePersist
-	void onCreate() {
-		created = now(systemDefault()).truncatedTo(MILLIS);
-		Optional.ofNullable(stakeholders).ifPresent(st -> st
-			.forEach(s -> s.setErrandEntity(this)));
-	}
-
-	@PreUpdate
-	void onUpdate() {
-		modified = now(systemDefault()).truncatedTo(MILLIS);
-		Optional.ofNullable(stakeholders).ifPresent(st -> st
-			.forEach(s -> s.setErrandEntity(this)));
-	}
-
-	@PostLoad
-	void onLoad() {
-		previousStatus = status;
 	}
 
 	public String getId() {

@@ -6,9 +6,7 @@ import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanHashCode;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanToString;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidGettersAndSetters;
 import static java.time.OffsetDateTime.now;
-import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.within;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.AllOf.allOf;
 
@@ -69,7 +67,7 @@ class ErrandEntityTest {
 		final var contactReason = ContactReasonEntity.create().withReason("reason");
 		final var previousStatus = "previousStatus";
 		final var timeMeasure = List.of(TimeMeasureEntity.create().withStartTime(now).withStopTime(now).withDescription("description").withAdministrator("administrator"));
-		
+
 		final var errandEntity = ErrandEntity.create()
 			.withAssignedGroupId(assignedGroupId)
 			.withAssignedUserId(assignedUserId)
@@ -127,37 +125,6 @@ class ErrandEntityTest {
 			ErrandEntity::getCreated).allSatisfy(date -> assertThat(date).isEqualTo(now));
 		assertThat(errandEntity.getPreviousStatus()).isEqualTo(previousStatus);
 		assertThat(errandEntity.getTimeMeasures()).isSameAs(timeMeasure);
-	}
-
-	@Test
-	void testOnCreate() {
-		final var entity = new ErrandEntity().withStakeholders(List.of(StakeholderEntity.create()));
-		entity.onCreate();
-
-		assertThat(entity.getCreated()).isCloseTo(now(), within(1, SECONDS));
-		assertThat(entity.getStakeholders().getFirst().getErrandEntity()).isSameAs(entity);
-		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("created", "stakeholders");
-	}
-
-	@Test
-	void testOnUpdate() {
-		final var entity = new ErrandEntity().withStakeholders(List.of(StakeholderEntity.create()));
-		entity.onUpdate();
-
-		assertThat(entity.getModified()).isCloseTo(now(), within(1, SECONDS));
-		assertThat(entity.getStakeholders().getFirst().getErrandEntity()).isSameAs(entity);
-		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("modified", "stakeholders");
-	}
-
-	@Test
-	void onLoad() {
-		final var entity = new ErrandEntity().withStatus("status");
-		entity.onLoad();
-
-		assertThat(entity.getStatus()).isEqualTo("status");
-		assertThat(entity.getPreviousStatus()).isEqualTo("status");
-		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("status", "previousStatus");
-
 	}
 
 	@Test
