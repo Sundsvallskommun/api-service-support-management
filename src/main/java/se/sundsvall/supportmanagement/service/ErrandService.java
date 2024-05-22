@@ -63,18 +63,23 @@ public class ErrandService {
 		// Generate unique errand number
 		errand.withErrandNumber(errandNumberGeneratorService.generateErrandNumber(namespace, municipalityId));
 
-		//Validate ContactReason
-		var contactReason = contactReasonRepository.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId(errand.getContactReason(), namespace, municipalityId)
-			.orElseThrow(() -> Problem.valueOf(BAD_REQUEST, BAD_CONTACT_REASON.formatted(errand.getContactReason(), namespace, municipalityId)));
 
-		// Create new errand and revision
-		final var entity = repository.save(toErrandEntity(namespace, municipalityId, errand, contactReason));
-		final var revision = revisionService.createErrandRevision(entity);
+		final var errandEntity = repository.save(toErrandEntity(namespace, municipalityId, errand));
+		//Validate ContactReason
+		Optional.ofNullable(errand.getContactReason()).ifPresent(reason -> {
+			var contactReason = contactReasonRepository.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId(reason, namespace, municipalityId)
+				.orElseThrow(() -> Problem.valueOf(BAD_REQUEST, BAD_CONTACT_REASON.formatted(reason, namespace, municipalityId)));
+			errandEntity.setContactReason(contactReason);
+			repository.save(errandEntity);
+		});
+
+
+		final var revision = revisionService.createErrandRevision(errandEntity);
 
 		// Create log event
-		eventService.createErrandEvent(CREATE, EVENT_LOG_CREATE_ERRAND, entity, revision.latest(), null);
+		eventService.createErrandEvent(CREATE, EVENT_LOG_CREATE_ERRAND, errandEntity, revision.latest(), null);
 
-		return entity.getId();
+		return errandEntity.getId();
 	}
 
 	public Page<Errand> findErrands(String namespace, String municipalityId, Specification<ErrandEntity> filter, Pageable pageable) {

@@ -10,6 +10,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -115,7 +116,7 @@ class ErrandServiceTest {
 		// Assertions and verifications
 		assertThat(result).isEqualTo(ERRAND_ID);
 
-		verify(errandRepositoryMock).save(any(ErrandEntity.class));
+		verify(errandRepositoryMock, times(2)).save(any(ErrandEntity.class));
 		verify(revisionServiceMock).createErrandRevision(any(ErrandEntity.class));
 		verify(eventServiceMock).createErrandEvent(CREATE, EVENT_LOG_CREATE_ERRAND, errandEntity, currentRevisionMock, null);
 	}
