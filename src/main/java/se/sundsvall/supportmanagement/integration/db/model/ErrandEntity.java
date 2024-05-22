@@ -23,9 +23,11 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
+import jakarta.persistence.PostLoad;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import jakarta.persistence.UniqueConstraint;
 
 import org.hibernate.annotations.Formula;
@@ -146,6 +148,13 @@ public class ErrandEntity {
 	@Column(name = "errand_number", nullable = false)
 	private String errandNumber;
 
+	@Transient
+	private String previousStatus;
+
+	@OneToMany(mappedBy = "errandEntity", cascade = CascadeType.ALL, orphanRemoval = true)
+	@OrderBy("startTime")
+	private List<TimeMeasureEntity> timeMeasures;
+
 	public static ErrandEntity create() {
 		return new ErrandEntity();
 	}
@@ -164,15 +173,20 @@ public class ErrandEntity {
 			.forEach(s -> s.setErrandEntity(this)));
 	}
 
+	@PostLoad
+	void onLoad() {
+		previousStatus = status;
+	}
+
 	public String getId() {
 		return id;
 	}
 
-	public void setId(String id) {
+	public void setId(final String id) {
 		this.id = id;
 	}
 
-	public ErrandEntity withId(String id) {
+	public ErrandEntity withId(final String id) {
 		this.id = id;
 		return this;
 	}
@@ -194,11 +208,11 @@ public class ErrandEntity {
 		return externalTags;
 	}
 
-	public void setExternalTags(List<DbExternalTag> externalTags) {
+	public void setExternalTags(final List<DbExternalTag> externalTags) {
 		this.externalTags = externalTags;
 	}
 
-	public ErrandEntity withExternalTags(List<DbExternalTag> externalTags) {
+	public ErrandEntity withExternalTags(final List<DbExternalTag> externalTags) {
 		this.externalTags = externalTags;
 		return this;
 	}
@@ -207,11 +221,11 @@ public class ErrandEntity {
 		return stakeholders;
 	}
 
-	public void setStakeholders(List<StakeholderEntity> stakeholders) {
+	public void setStakeholders(final List<StakeholderEntity> stakeholders) {
 		this.stakeholders = stakeholders;
 	}
 
-	public ErrandEntity withStakeholders(List<StakeholderEntity> stakeholders) {
+	public ErrandEntity withStakeholders(final List<StakeholderEntity> stakeholders) {
 		this.stakeholders = stakeholders;
 		return this;
 	}
@@ -220,11 +234,11 @@ public class ErrandEntity {
 		return municipalityId;
 	}
 
-	public void setMunicipalityId(String municipalityId) {
+	public void setMunicipalityId(final String municipalityId) {
 		this.municipalityId = municipalityId;
 	}
 
-	public ErrandEntity withMunicipalityId(String municipalityId) {
+	public ErrandEntity withMunicipalityId(final String municipalityId) {
 		this.municipalityId = municipalityId;
 		return this;
 	}
@@ -233,11 +247,11 @@ public class ErrandEntity {
 		return namespace;
 	}
 
-	public void setNamespace(String namespace) {
+	public void setNamespace(final String namespace) {
 		this.namespace = namespace;
 	}
 
-	public ErrandEntity withNamespace(String namespace) {
+	public ErrandEntity withNamespace(final String namespace) {
 		this.namespace = namespace;
 		return this;
 	}
@@ -246,11 +260,11 @@ public class ErrandEntity {
 		return title;
 	}
 
-	public void setTitle(String title) {
+	public void setTitle(final String title) {
 		this.title = title;
 	}
 
-	public ErrandEntity withTitle(String title) {
+	public ErrandEntity withTitle(final String title) {
 		this.title = title;
 		return this;
 	}
@@ -259,11 +273,11 @@ public class ErrandEntity {
 		return category;
 	}
 
-	public void setCategory(String category) {
+	public void setCategory(final String category) {
 		this.category = category;
 	}
 
-	public ErrandEntity withCategory(String category) {
+	public ErrandEntity withCategory(final String category) {
 		this.category = category;
 		return this;
 	}
@@ -272,11 +286,11 @@ public class ErrandEntity {
 		return type;
 	}
 
-	public void setType(String type) {
+	public void setType(final String type) {
 		this.type = type;
 	}
 
-	public ErrandEntity withType(String type) {
+	public ErrandEntity withType(final String type) {
 		this.type = type;
 		return this;
 	}
@@ -285,11 +299,11 @@ public class ErrandEntity {
 		return status;
 	}
 
-	public void setStatus(String status) {
+	public void setStatus(final String status) {
 		this.status = status;
 	}
 
-	public ErrandEntity withStatus(String status) {
+	public ErrandEntity withStatus(final String status) {
 		this.status = status;
 		return this;
 	}
@@ -298,11 +312,11 @@ public class ErrandEntity {
 		return resolution;
 	}
 
-	public void setResolution(String resolution) {
+	public void setResolution(final String resolution) {
 		this.resolution = resolution;
 	}
 
-	public ErrandEntity withResolution(String resolution) {
+	public ErrandEntity withResolution(final String resolution) {
 		this.resolution = resolution;
 		return this;
 	}
@@ -311,11 +325,11 @@ public class ErrandEntity {
 		return description;
 	}
 
-	public void setDescription(String description) {
+	public void setDescription(final String description) {
 		this.description = description;
 	}
 
-	public ErrandEntity withDescription(String description) {
+	public ErrandEntity withDescription(final String description) {
 		this.description = description;
 		return this;
 	}
@@ -324,11 +338,11 @@ public class ErrandEntity {
 		return priority;
 	}
 
-	public void setPriority(String priority) {
+	public void setPriority(final String priority) {
 		this.priority = priority;
 	}
 
-	public ErrandEntity withPriority(String priority) {
+	public ErrandEntity withPriority(final String priority) {
 		this.priority = priority;
 		return this;
 	}
@@ -337,11 +351,11 @@ public class ErrandEntity {
 		return reporterUserId;
 	}
 
-	public void setReporterUserId(String reporterUserId) {
+	public void setReporterUserId(final String reporterUserId) {
 		this.reporterUserId = reporterUserId;
 	}
 
-	public ErrandEntity withReporterUserId(String reporterUserId) {
+	public ErrandEntity withReporterUserId(final String reporterUserId) {
 		this.reporterUserId = reporterUserId;
 		return this;
 	}
@@ -350,11 +364,11 @@ public class ErrandEntity {
 		return assignedUserId;
 	}
 
-	public void setAssignedUserId(String assignedUserId) {
+	public void setAssignedUserId(final String assignedUserId) {
 		this.assignedUserId = assignedUserId;
 	}
 
-	public ErrandEntity withAssignedUserId(String assignedUserId) {
+	public ErrandEntity withAssignedUserId(final String assignedUserId) {
 		this.assignedUserId = assignedUserId;
 		return this;
 	}
@@ -363,11 +377,11 @@ public class ErrandEntity {
 		return assignedGroupId;
 	}
 
-	public void setAssignedGroupId(String assignedGroupId) {
+	public void setAssignedGroupId(final String assignedGroupId) {
 		this.assignedGroupId = assignedGroupId;
 	}
 
-	public ErrandEntity withAssignedGroupId(String assignedGroupId) {
+	public ErrandEntity withAssignedGroupId(final String assignedGroupId) {
 		this.assignedGroupId = assignedGroupId;
 		return this;
 	}
@@ -376,11 +390,11 @@ public class ErrandEntity {
 		return escalationEmail;
 	}
 
-	public void setEscalationEmail(String escalationEmail) {
+	public void setEscalationEmail(final String escalationEmail) {
 		this.escalationEmail = escalationEmail;
 	}
 
-	public ErrandEntity withEscalationEmail(String escalationEmail) {
+	public ErrandEntity withEscalationEmail(final String escalationEmail) {
 		this.escalationEmail = escalationEmail;
 		return this;
 	}
@@ -389,11 +403,11 @@ public class ErrandEntity {
 		return attachments;
 	}
 
-	public void setAttachments(List<AttachmentEntity> attachments) {
+	public void setAttachments(final List<AttachmentEntity> attachments) {
 		this.attachments = attachments;
 	}
 
-	public ErrandEntity withAttachments(List<AttachmentEntity> attachments) {
+	public ErrandEntity withAttachments(final List<AttachmentEntity> attachments) {
 		this.attachments = attachments;
 		return this;
 	}
@@ -402,11 +416,11 @@ public class ErrandEntity {
 		return created;
 	}
 
-	public void setCreated(OffsetDateTime created) {
+	public void setCreated(final OffsetDateTime created) {
 		this.created = created;
 	}
 
-	public ErrandEntity withCreated(OffsetDateTime created) {
+	public ErrandEntity withCreated(final OffsetDateTime created) {
 		this.created = created;
 		return this;
 	}
@@ -415,11 +429,11 @@ public class ErrandEntity {
 		return modified;
 	}
 
-	public void setModified(OffsetDateTime modified) {
+	public void setModified(final OffsetDateTime modified) {
 		this.modified = modified;
 	}
 
-	public ErrandEntity withModified(OffsetDateTime modified) {
+	public ErrandEntity withModified(final OffsetDateTime modified) {
 		this.modified = modified;
 		return this;
 	}
@@ -502,6 +516,45 @@ public class ErrandEntity {
 		return this;
 	}
 
+	public String getPreviousStatus() {
+		return previousStatus;
+	}
+
+	public void setPreviousStatus(final String previousStatus) {
+		this.previousStatus = previousStatus;
+	}
+
+	public ErrandEntity withPreviousStatus(final String previousStatus) {
+		this.previousStatus = previousStatus;
+		return this;
+	}
+
+	public List<TimeMeasureEntity> getTimeMeasures() {
+		return timeMeasures;
+	}
+
+	public void setTimeMeasures(final List<TimeMeasureEntity> timeMeasures) {
+		this.timeMeasures = timeMeasures;
+	}
+
+	public ErrandEntity withTimeMeasures(final List<TimeMeasureEntity> timeMeasures) {
+		this.timeMeasures = timeMeasures;
+		return this;
+	}
+
+	@Override
+	public boolean equals(final Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		final ErrandEntity that = (ErrandEntity) o;
+		return Objects.equals(id, that.id) && Objects.equals(externalTags, that.externalTags) && Objects.equals(stakeholders, that.stakeholders) && Objects.equals(contactReasonEntity, that.contactReasonEntity) && Objects.equals(businessRelated, that.businessRelated) && Objects.equals(municipalityId, that.municipalityId) && Objects.equals(namespace, that.namespace) && Objects.equals(title, that.title) && Objects.equals(category, that.category) && Objects.equals(type, that.type) && Objects.equals(status, that.status) && Objects.equals(resolution, that.resolution) && Objects.equals(description, that.description) && Objects.equals(priority, that.priority) && Objects.equals(reporterUserId, that.reporterUserId) && Objects.equals(assignedUserId, that.assignedUserId) && Objects.equals(assignedGroupId, that.assignedGroupId) && Objects.equals(escalationEmail, that.escalationEmail) && Objects.equals(parameters, that.parameters) && Objects.equals(attachments, that.attachments) && Objects.equals(suspendedTo, that.suspendedTo) && Objects.equals(suspendedFrom, that.suspendedFrom) && Objects.equals(created, that.created) && Objects.equals(modified, that.modified) && Objects.equals(touched, that.touched) && Objects.equals(errandNumber, that.errandNumber) && Objects.equals(previousStatus, that.previousStatus) && Objects.equals(timeMeasures, that.timeMeasures);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(id, externalTags, stakeholders, contactReasonEntity, businessRelated, municipalityId, namespace, title, category, type, status, resolution, description, priority, reporterUserId, assignedUserId, assignedGroupId, escalationEmail, parameters, attachments, suspendedTo, suspendedFrom, created, modified, touched, errandNumber, previousStatus, timeMeasures);
+	}
+
 	@Override
 	public String toString() {
 		return "ErrandEntity{" +
@@ -531,19 +584,9 @@ public class ErrandEntity {
 			", modified=" + modified +
 			", touched=" + touched +
 			", errandNumber='" + errandNumber + '\'' +
+			", previousStatus='" + previousStatus + '\'' +
+			", timeMeasures=" + timeMeasures +
 			'}';
 	}
 
-	@Override
-	public boolean equals(final Object o) {
-		if (this == o) return true;
-		if (o == null || getClass() != o.getClass()) return false;
-		final ErrandEntity that = (ErrandEntity) o;
-		return Objects.equals(id, that.id) && Objects.equals(externalTags, that.externalTags) && Objects.equals(stakeholders, that.stakeholders) && Objects.equals(contactReasonEntity, that.contactReasonEntity) && Objects.equals(businessRelated, that.businessRelated) && Objects.equals(municipalityId, that.municipalityId) && Objects.equals(namespace, that.namespace) && Objects.equals(title, that.title) && Objects.equals(category, that.category) && Objects.equals(type, that.type) && Objects.equals(status, that.status) && Objects.equals(resolution, that.resolution) && Objects.equals(description, that.description) && Objects.equals(priority, that.priority) && Objects.equals(reporterUserId, that.reporterUserId) && Objects.equals(assignedUserId, that.assignedUserId) && Objects.equals(assignedGroupId, that.assignedGroupId) && Objects.equals(escalationEmail, that.escalationEmail) && Objects.equals(parameters, that.parameters) && Objects.equals(attachments, that.attachments) && Objects.equals(suspendedTo, that.suspendedTo) && Objects.equals(suspendedFrom, that.suspendedFrom) && Objects.equals(created, that.created) && Objects.equals(modified, that.modified) && Objects.equals(touched, that.touched) && Objects.equals(errandNumber, that.errandNumber);
-	}
-
-	@Override
-	public int hashCode() {
-		return Objects.hash(id, externalTags, stakeholders, contactReasonEntity, businessRelated, municipalityId, namespace, title, category, type, status, resolution, description, priority, reporterUserId, assignedUserId, assignedGroupId, escalationEmail, parameters, attachments, suspendedTo, suspendedFrom, created, modified, touched, errandNumber);
-	}
 }
