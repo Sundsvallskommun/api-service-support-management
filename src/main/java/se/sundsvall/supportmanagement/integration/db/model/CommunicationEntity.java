@@ -227,11 +227,14 @@ public class CommunicationEntity {
 	}
 
 	public void setAttachments(final List<CommunicationAttachmentEntity> attachments) {
+		if(attachments != null) {
+			attachments.forEach(attachment -> attachment.withCommunicationEntity(this));
+		}
 		this.attachments = attachments;
 	}
 
 	public CommunicationEntity withAttachments(final List<CommunicationAttachmentEntity> attachments) {
-		this.attachments = attachments;
+		setAttachments(attachments);
 		return this;
 	}
 
