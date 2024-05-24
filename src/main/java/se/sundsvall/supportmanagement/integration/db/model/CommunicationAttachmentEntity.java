@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.integration.db.model;
 
 import java.util.Objects;
+import java.util.Optional;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -118,14 +119,16 @@ public class CommunicationAttachmentEntity {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, communicationEntity, attachmentData, name, contentType);
+		final var communicationId = Optional.ofNullable(communicationEntity).map(CommunicationEntity::getId).orElse(null);
+		return Objects.hash(id, communicationId, attachmentData, name, contentType);
 	}
 
 	@Override
 	public String toString() {
+		final var communicationId = Optional.ofNullable(communicationEntity).map(CommunicationEntity::getId).orElse(null);
 		return "CommunicationAttachmentEntity{" +
 			"id='" + id + '\'' +
-			", communicationEntity=" + communicationEntity +
+			", communicationEntity.id=" + communicationId +
 			", attachmentData=" + attachmentData +
 			", name='" + name + '\'' +
 			", contentType='" + contentType + '\'' +

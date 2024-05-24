@@ -1,0 +1,31 @@
+[
+  {
+    "communicationID": "${json-unit.regex}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+    "sender": "bender@rodriguez.com",
+    "errandNumber": "KC-23020002",
+    "direction": "OUTBOUND",
+    "messageBody": "Since when is the internet about robbing people of their privacy? Since August 6, 1991 when the World Wide Web project was announced.",
+    "sent": "${json-unit.ignore}",
+    "subject": "Attack of the Killer App",
+    "communicationType": "EMAIL",
+    "target": "turanga@leela.com",
+    "viewed": false,
+    "emailHeaders": {
+      "MESSAGE_ID": [
+        "${json-unit.regex}<[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}@NAMESPACE\\.1>"
+      ]
+    },
+    "communicationAttachments": [
+      {
+        "attachmentID": "${json-unit.regex}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+        "name": "internet_history.png",
+        "contentType": "image/png"
+      },
+      {
+        "attachmentID": "${json-unit.regex}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+        "name": "those_happy_days.png",
+        "contentType": "image/png"
+      }
+    ]
+  }
+]
