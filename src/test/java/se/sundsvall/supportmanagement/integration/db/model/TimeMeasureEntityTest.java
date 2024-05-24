@@ -44,7 +44,6 @@ class TimeMeasureEntityTest {
 		final var description = "description";
 		final var status = "status";
 		final var administrator = "administrator";
-		final var errandEntity = ErrandEntity.create().withId("1");
 
 		// Act
 		final var result = TimeMeasureEntity.create()
@@ -53,8 +52,7 @@ class TimeMeasureEntityTest {
 			.withStopTime(stopTime)
 			.withDescription(description)
 			.withStatus(status)
-			.withAdministrator(administrator)
-			.withErrandEntity(errandEntity);
+			.withAdministrator(administrator);
 
 		// Assert
 		assertThat(result).hasNoNullFieldsOrProperties();
@@ -64,7 +62,6 @@ class TimeMeasureEntityTest {
 		assertThat(result.getDescription()).isEqualTo(description);
 		assertThat(result.getStatus()).isEqualTo(status);
 		assertThat(result.getAdministrator()).isEqualTo(administrator);
-		assertThat(result.getErrandEntity()).isSameAs(errandEntity);
 	}
 
 	@Test

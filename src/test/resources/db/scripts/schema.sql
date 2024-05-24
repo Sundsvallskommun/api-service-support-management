@@ -241,7 +241,7 @@
         stop_time datetime(6),
         administrator varchar(255),
         description varchar(255),
-        errand_id varchar(255) not null,
+        errand_id varchar(255),
         status varchar(255),
         primary key (id)
     ) engine=InnoDB;
