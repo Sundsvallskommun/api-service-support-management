@@ -47,6 +47,13 @@ class ErrandCommunicationIT extends AbstractAppTest {
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(NO_CONTENT)
 			.withExpectedResponseBodyIsNull()
+			.sendRequest();
+
+		setupCall()
+			.withServicePath(PATH + "cc236cf1-c00f-4479-8341-ecf5dd90b5b9/communication")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse("response.json")
 			.sendRequestAndVerifyResponse();
 	}
 

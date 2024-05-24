@@ -13,6 +13,7 @@ import static org.hamcrest.core.AllOf.allOf;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Random;
+import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -27,6 +28,7 @@ class CommunicationEntityTest {
 	static void setup() {
 		final var random = new Random();
 		registerValueGenerator(() -> OffsetDateTime.now().plusDays(random.nextInt()), OffsetDateTime.class);
+		registerValueGenerator(() -> List.of(CommunicationAttachmentEntity.create().withId(UUID.randomUUID().toString())), List.class);
 	}
 
 	@Test
@@ -86,6 +88,7 @@ class CommunicationEntityTest {
 		assertThat(entity.getTarget()).isEqualTo(target);
 		assertThat(entity.isViewed()).isEqualTo(viewed);
 		assertThat(entity.getAttachments()).isEqualTo(attachments);
+		assertThat(entity.getAttachments()).allMatch(attachment -> attachment.getCommunicationEntity() == entity);
 		assertThat(entity.getEmailHeaders()).isEqualTo(emailHeaders);
 	}
 
