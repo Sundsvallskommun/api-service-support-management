@@ -4,6 +4,7 @@ import static java.time.OffsetDateTime.now;
 import static java.time.ZoneId.systemDefault;
 import static java.time.temporal.ChronoUnit.MILLIS;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -34,7 +35,7 @@ public class ErrandListener {
 			.ifPresent(st -> st.forEach(s -> s.setErrandEntity(errandEntity)));
 
 		final var list = getTimeMeasures(errandEntity);
-		list.add(startTimeEntry(errandEntity));
+		list.add(startTimeEntry(errandEntity, now()));
 		errandEntity.setTimeMeasures(list);
 
 	}
@@ -48,30 +49,29 @@ public class ErrandListener {
 		// Status Changed
 		if (!errandEntity.getStatus().equals(errandEntity.getPreviousStatus())) {
 			final var list = getTimeMeasures(errandEntity);
-
-			list.add(stopTimeEntry(findTimeMeasureEntityWithoutStopTime(errandEntity)));
-			list.add(startTimeEntry(errandEntity));
+			final var now = now();
+			list.add(stopTimeEntry(findTimeMeasureEntityWithoutStopTime(errandEntity), now));
+			list.add(startTimeEntry(errandEntity, now));
 			errandEntity.setTimeMeasures(list);
-
 		}
 	}
 
 	@PreRemove
 	void onDelete(final ErrandEntity errandEntity) {
 		final var list = getTimeMeasures(errandEntity);
-		list.add(stopTimeEntry(findTimeMeasureEntityWithoutStopTime(errandEntity)));
+		list.add(stopTimeEntry(findTimeMeasureEntityWithoutStopTime(errandEntity), now()));
 		errandEntity.setTimeMeasures(list);
 
 	}
 
-	private TimeMeasureEntity startTimeEntry(final ErrandEntity errandEntity) {
+	private TimeMeasureEntity startTimeEntry(final ErrandEntity errandEntity, final OffsetDateTime now) {
 		return new TimeMeasureEntity()
 			.withStatus(errandEntity.getStatus())
-			.withStartTime(now());
+			.withStartTime(now);
 	}
 
-	private TimeMeasureEntity stopTimeEntry(final TimeMeasureEntity timeMeasureEntity) {
-		return timeMeasureEntity.withStopTime(now());
+	private TimeMeasureEntity stopTimeEntry(final TimeMeasureEntity timeMeasureEntity, final OffsetDateTime now) {
+		return timeMeasureEntity.withStopTime(now);
 	}
 
 	private TimeMeasureEntity findTimeMeasureEntityWithoutStopTime(final ErrandEntity errandEntity) {

@@ -8,6 +8,10 @@ scheduler:
   notification:
     cron: 0 * * * * *
     shedlock-lock-at-most-for: PT10M
+  suspension:
+    cron: 0 * * * * *
+    shedlock-lock-at-most-for: PT10M
+
 integration:
   emailreader:
     connectTimeout: 5

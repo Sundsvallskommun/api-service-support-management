@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.service.mapper;
 
 import static org.apache.commons.lang3.ObjectUtils.anyNull;
 
+import java.time.OffsetDateTime;
 import java.util.Optional;
 
 import se.sundsvall.supportmanagement.api.model.notification.Notification;
@@ -28,7 +29,7 @@ public final class NotificationMapper {
 			.withType(notification.getType())
 			.withDescription(notification.getDescription())
 			.withContent(notification.getContent())
-			.withExpires(notification.getExpires())
+			.withExpires(Optional.ofNullable(notification.getExpires()).orElse(OffsetDateTime.now().plusDays(30)))
 			.withAcknowledged(notification.isAcknowledged())
 			.withErrandId(notification.getErrandId())
 			.withMunicipalityId(municipalityId)

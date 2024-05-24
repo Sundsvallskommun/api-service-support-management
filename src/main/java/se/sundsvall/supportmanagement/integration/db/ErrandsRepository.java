@@ -1,5 +1,7 @@
 package se.sundsvall.supportmanagement.integration.db;
 
+import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import jakarta.persistence.LockModeType;
@@ -30,5 +32,7 @@ public interface ErrandsRepository extends JpaRepository<ErrandEntity, String>, 
 	Optional<ErrandEntity> findByExternalTagsValue(String value);
 
 	Optional<ErrandEntity> findByIdAndNamespaceAndMunicipalityId(String id, String namespace, String municipalityId);
+
+	List<ErrandEntity> findAllBySuspendedToBefore(OffsetDateTime now);
 
 }
