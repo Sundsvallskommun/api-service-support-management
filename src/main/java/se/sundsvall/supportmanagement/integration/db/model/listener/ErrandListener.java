@@ -25,7 +25,7 @@ public class ErrandListener {
 
 	@PostLoad
 	void onLoad(final ErrandEntity errandEntity) {
-		errandEntity.setPreviousStatus(errandEntity.getStatus());
+		errandEntity.setTempPreviousStatus(errandEntity.getStatus());
 	}
 
 	@PrePersist
@@ -47,12 +47,13 @@ public class ErrandListener {
 			.ifPresent(st -> st.forEach(s -> s.setErrandEntity(errandEntity)));
 
 		// Status Changed
-		if (!errandEntity.getStatus().equals(errandEntity.getPreviousStatus())) {
+		if (!errandEntity.getStatus().equals(errandEntity.getTempPreviousStatus())) {
 			final var list = getTimeMeasures(errandEntity);
 			final var now = now();
 			list.add(stopTimeEntry(findTimeMeasureEntityWithoutStopTime(errandEntity), now));
 			list.add(startTimeEntry(errandEntity, now));
 			errandEntity.setTimeMeasures(list);
+			errandEntity.setPreviousStatus(errandEntity.getTempPreviousStatus());
 		}
 	}
 

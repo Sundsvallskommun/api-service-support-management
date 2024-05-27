@@ -21,7 +21,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.integration.db.model.TimeMeasureEntity;
 import se.sundsvall.supportmanagement.service.ErrandService;
 
 @ExtendWith(MockitoExtension.class)
@@ -46,23 +45,15 @@ class SuspensionWorkerTest {
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
 		// When the previous time measurement is stopped and the current time measurement is started
-		final var stopStartTime = OffsetDateTime.now().minusDays(1);
-
-		final var previousTimeMeasurement = TimeMeasureEntity.create()
-			.withStartTime(OffsetDateTime.now().minusDays(2))
-			.withStopTime(stopStartTime)
-			.withStatus("previousStatus");
-		final var currentTimeMeasurement = TimeMeasureEntity.create()
-			.withStartTime(stopStartTime)
-			.withStatus("currentStatus");
+		final var previousStatus = "previousStatus";
 
 		final var errandEntity = ErrandEntity.create()
 			.withNamespace(namespace)
 			.withId("id")
 			.withMunicipalityId(municipalityId)
-			.withTimeMeasures(List.of(previousTimeMeasurement, currentTimeMeasurement))
 			.withSuspendedFrom(OffsetDateTime.now().minusDays(1))
 			.withSuspendedTo(OffsetDateTime.now().minusHours(1))
+			.withPreviousStatus(previousStatus)
 			.withMunicipalityId(municipalityId);
 
 		when(errandsRepository.findAllBySuspendedToBefore(any(OffsetDateTime.class))).thenReturn(List.of(errandEntity));
@@ -75,7 +66,7 @@ class SuspensionWorkerTest {
 		final var errand = errandCaptor.getValue();
 		assertThat(errand).isNotNull();
 		assertThat(errand.getSuspension()).isNotNull();
-		assertThat(errand.getStatus()).isEqualTo("previousStatus");
+		assertThat(errand.getStatus()).isEqualTo(previousStatus);
 
 		verifyNoMoreInteractions(errandsRepository, errandService);
 	}

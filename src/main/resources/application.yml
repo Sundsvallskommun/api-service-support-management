@@ -3,13 +3,13 @@ scheduler:
     cron: 0 * * * * *
     shedlock-lock-at-most-for: PT10M
   web-message-collector:
-    cron: 0 * * * * *
+    cron: 15 * * * * *
     shedlock-lock-at-most-for: PT10M
   notification:
-    cron: 0 * * * * *
+    cron: 30 * * * * *
     shedlock-lock-at-most-for: PT10M
   suspension:
-    cron: 0 * * * * *
+    cron: 45 * * * * *
     shedlock-lock-at-most-for: PT10M
 
 integration:
