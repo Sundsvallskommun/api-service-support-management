@@ -119,6 +119,7 @@
         id varchar(255) not null,
         municipality_id varchar(255) not null,
         namespace varchar(255) not null,
+        previous_status varchar(255),
         priority varchar(255),
         reporter_user_id varchar(255),
         resolution varchar(255),
