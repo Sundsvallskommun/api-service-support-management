@@ -44,6 +44,7 @@
       "assignedGroupId": "hardware support",
       "escalationEmail": "joe.doe@email.com",
       "suspension": {},
+      "businessRelated": false,
       "created": "2023-04-26T15:48:17.124+02:00",
       "modified": "2023-04-26T16:05:08.806+02:00",
       "touched": "2023-04-26T16:05:08.806+02:00"
@@ -82,6 +83,7 @@
       "assignedUserId": "ASSIGNED_USER_ID-1",
       "assignedGroupId": "ASSIGNED_GROUP_ID-1",
       "suspension": {},
+      "businessRelated": false,
       "created": "2022-02-01T12:00:00+01:00",
       "modified": "2022-04-01T12:00:00+02:00",
       "touched": "2022-04-01T12:00:00+02:00"
@@ -120,6 +122,7 @@
       "assignedUserId": "ASSIGNED_USER_ID-3",
       "assignedGroupId": "ASSIGNED_GROUP_ID-3",
       "suspension": {},
+      "businessRelated": false,
       "created": "2022-03-01T12:00:00+01:00",
       "touched": "2022-03-01T12:00:00+01:00"
     },
@@ -191,6 +194,7 @@
       "assignedGroupId": "ASSIGNED_GROUP_ID-1",
       "escalationEmail": "ESCALATION_EMAIL_1",
       "suspension": {},
+      "businessRelated": false,
       "created": "2022-01-01T12:00:00+01:00",
       "touched": "2022-01-01T12:00:00+01:00"
     }
@@ -212,9 +216,9 @@
     "paged": true,
     "unpaged": false
   },
-  "totalPages": 1,
-  "totalElements": 4,
   "last": true,
+  "totalElements": 4,
+  "totalPages": 1,
   "size": 20,
   "number": 0,
   "sort": [

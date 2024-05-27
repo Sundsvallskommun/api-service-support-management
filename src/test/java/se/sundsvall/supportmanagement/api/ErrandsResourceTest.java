@@ -304,7 +304,7 @@ class ErrandsResourceTest {
 	@Test
 	void updateErrandEmptyRequest() {
 		// Parameter values
-		final var emptyInstance = Errand.create().withBusinessRelated(true);
+		final var emptyInstance = Errand.create();
 		final var updatedInstance = Errand.create().withId(ERRAND_ID);
 
 		// Mock
