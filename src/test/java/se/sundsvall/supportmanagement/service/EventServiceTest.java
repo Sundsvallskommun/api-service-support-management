@@ -80,14 +80,14 @@ class EventServiceTest {
 		final var owner = "SupportManagement";
 		final var sourceType = Errand.class.getSimpleName();
 
-		final var entity = ErrandEntity.create().withId(errandId);
+		final var entity = ErrandEntity.create().withId(errandId).withStakeholders(List.of(StakeholderEntity.create().withRole("ADMINISTRATOR")));
 		final var currentRevision = Revision.create().withId(currentRevisionId).withVersion(currentRevisionVersion);
 		final var previousRevision = Revision.create().withId(previousRevisionId).withVersion(previousRevisionVersion);
 		final var executingUserId = "executingUserId";
 
 		// Mock
 		when(executingUserSupplierMock.getAdUser()).thenReturn(executingUserId);
-		when(employeeServiceMock.getEmployeeByPartyId(entity)).thenReturn(new PortalPersonData());
+		when(employeeServiceMock.getEmployeeByPartyId(entity.getStakeholders().getFirst())).thenReturn(new PortalPersonData());
 		when(employeeServiceMock.getEmployeeByLoginName(executingUserId)).thenReturn(new PortalPersonData().loginName(executingUserId));
 
 		// Call
@@ -159,10 +159,10 @@ class EventServiceTest {
 		final var owner = "SupportManagement";
 		final var sourceType = Errand.class.getSimpleName();
 
-		final var entity = ErrandEntity.create().withId(errandId).withStakeholders(List.of(StakeholderEntity.create()));
+		final var entity = ErrandEntity.create().withId(errandId).withStakeholders(List.of(StakeholderEntity.create().withRole("ADMINISTRATOR")));
 		final var currentRevision = Revision.create().withId(currentRevisionId).withVersion(currentRevisionVersion);
 
-		when(employeeServiceMock.getEmployeeByPartyId(entity)).thenReturn(new PortalPersonData());
+		when(employeeServiceMock.getEmployeeByPartyId(entity.getStakeholders().getFirst())).thenReturn(new PortalPersonData());
 
 		// Call
 		service.createErrandEvent(eventType, message, entity, currentRevision, null);

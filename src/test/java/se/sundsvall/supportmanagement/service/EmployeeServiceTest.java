@@ -82,7 +82,7 @@ class EmployeeServiceTest {
 		when(employeeClientMock.getEmployeeInformation(any(String.class))).thenReturn(Optional.of(List.of(employee)));
 		when(employeeClientMock.getEmployeeByDomainAndLoginName(domain, loginName)).thenReturn(Optional.of(portalPersonData));
 		// Act
-		final var result = employeeService.getEmployeeByPartyId(errandEntity);
+		final var result = employeeService.getEmployeeByPartyId(errandEntity.getStakeholders().getFirst());
 		// Assert
 		assertThat(result).isNotNull().isSameAs(portalPersonData);
 
@@ -99,7 +99,7 @@ class EmployeeServiceTest {
 		final var errandEntity = new ErrandEntity().withStakeholders(List.of(StakeholderEntity.create().withExternalId(externalId).withRole(stakeholderRole)));
 		when(employeeClientMock.getEmployeeInformation(any(String.class))).thenReturn(Optional.empty());
 		// Act
-		final var result = employeeService.getEmployeeByPartyId(errandEntity);
+		final var result = employeeService.getEmployeeByPartyId(errandEntity.getStakeholders().getFirst());
 		// Assert
 		assertThat(result).isNull();
 

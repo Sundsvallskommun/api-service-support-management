@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.service.mapper;
 
 import static org.apache.commons.lang3.ObjectUtils.anyNull;
 
+import java.util.Collections;
 import java.util.Optional;
 
 import se.sundsvall.supportmanagement.api.model.notification.Notification;
@@ -91,8 +92,9 @@ public final class NotificationMapper {
 		return notification;
 	}
 
-	public static StakeholderEntity getStakeholder(final ErrandEntity errandEntity) {
-		return errandEntity.getStakeholders().stream()
+	public static StakeholderEntity getStakeholderWithAdminRole(final ErrandEntity errandEntity) {
+		return Optional.ofNullable(errandEntity.getStakeholders())
+			.orElse(Collections.emptyList()).stream()
 			.filter(stakeholder -> "ADMINISTRATOR".equals(stakeholder.getRole()))
 			.findFirst()
 			.orElse(null);
