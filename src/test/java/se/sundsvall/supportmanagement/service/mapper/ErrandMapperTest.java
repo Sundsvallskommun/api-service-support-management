@@ -225,6 +225,9 @@ class ErrandMapperTest {
 			.extracting(ErrandParameter::getValue, ErrandParameter::getName)
 			.contains(tuple(PARAMETER_VALUE, PARAMETER_NAME));
 		assertThat(errand.getBusinessRelated()).isEqualTo(BUSINESS_RELATED);
+		assertThat(errand.getContactReason()).isEqualTo(CONTACT_REASON);
+
+		assertThat(errand).hasNoNullFieldsOrProperties();
 	}
 
 	@Test
@@ -256,6 +259,7 @@ class ErrandMapperTest {
 				Errand::getDescription,
 				Errand::getEscalationEmail,
 				Errand::getBusinessRelated,
+				Errand::getContactReason,
 				Errand::getErrandNumber)
 			.containsExactly(tuple(
 				ASSIGNED_GROUP_ID,
@@ -276,7 +280,9 @@ class ErrandMapperTest {
 				DESCRIPTION,
 				ESCALATION_EMAIL,
 				BUSINESS_RELATED,
+				CONTACT_REASON,
 				ERRAND_NUMBER));
+		assertThat(errands.getFirst()).hasNoNullFieldsOrProperties();
 	}
 
 	@Test
