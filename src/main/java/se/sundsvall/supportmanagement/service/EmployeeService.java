@@ -3,6 +3,8 @@ package se.sundsvall.supportmanagement.service;
 import static java.util.Collections.emptyList;
 import static se.sundsvall.supportmanagement.service.mapper.NotificationMapper.getStakeholder;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
@@ -30,11 +32,15 @@ public class EmployeeService {
 
 	public PortalPersonData getEmployeeByPartyId(final ErrandEntity errandEntity) {
 		return Optional.ofNullable(getStakeholder(errandEntity))
-			.flatMap(stakeholder -> employeeClient.getEmployeeInformation(stakeholder.getExternalId())
-				.orElse(emptyList())
-				.stream()
-				.findFirst()
-				.map(Employee::getLoginname))
+			.flatMap(stakeholder ->
+			{
+				final var filter = URLEncoder.encode("{\"PersonId\": \"" + stakeholder.getExternalId() + "\"}", StandardCharsets.UTF_8);
+				return employeeClient.getEmployeeInformation(filter)
+					.orElse(emptyList())
+					.stream()
+					.findFirst()
+					.map(Employee::getLoginname);
+			})
 			.map(this::getEmployeeByLoginName)
 			.orElse(null);
 	}
