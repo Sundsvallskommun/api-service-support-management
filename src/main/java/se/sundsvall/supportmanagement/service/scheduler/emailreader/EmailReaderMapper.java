@@ -62,9 +62,11 @@ public class EmailReaderMapper {
 			.withDirection(Direction.INBOUND)
 			.withExternalCaseID("")
 			.withSubject(email.getSubject())
+			.withMessageBody(email.getMessage())
+			.withSender(email.getSender())
 			.withSent(email.getReceivedAt())
 			.withType(CommunicationType.EMAIL)
-			.withTarget(email.getSender())
+			.withTarget(email.getRecipients().getFirst())
 			.withEmailHeaders(toEmailHeaders(email))
 			.withAttachments(toMessageAttachments(email.getAttachments()));
 	}
@@ -97,7 +99,7 @@ public class EmailReaderMapper {
 			.withFile(blobBuilder.createBlob(attachment.getContent()));
 	}
 
-	public Errand toErrand(final Email email, String status) {
+	public Errand toErrand(final Email email, final String status) {
 
 		return Errand.create()
 			.withTitle(email.getSubject())
