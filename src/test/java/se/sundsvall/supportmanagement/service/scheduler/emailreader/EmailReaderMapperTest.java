@@ -73,6 +73,7 @@ class EmailReaderMapperTest {
 	@Test
 	void toCommunicationEntity() {
 
+		//Arrange
 		when(blobBuilderMock.createBlob(anyString())).thenReturn(blobMock);
 
 		final var email = new Email()
@@ -89,16 +90,20 @@ class EmailReaderMapperTest {
 				.contentType("text/plain")
 			));
 
+		// Act
 		final var result = emailReaderMapper.toCommunicationEntity(email);
 
-		assertThat(result).isNotNull();
+		// Assert
+		assertThat(result).isNotNull().hasNoNullFieldsOrPropertiesExcept("errandNumber");
 		assertThat(result.getSubject()).isEqualTo("someSubject");
 		assertThat(result.getExternalCaseID()).isEmpty();
 		assertThat(result.getErrandNumber()).isNull();
 		assertThat(result.getSent()).isNotNull().isCloseTo(OffsetDateTime.now(), org.assertj.core.api.Assertions.within(1, java.time.temporal.ChronoUnit.SECONDS));
 		assertThat(result.getDirection()).isEqualTo(INBOUND);
 		assertThat(result.getType()).isEqualTo(CommunicationType.EMAIL);
-		assertThat(result.getTarget()).isEqualTo("someSender");
+		assertThat(result.getTarget()).isEqualTo("someRecipient");
+		assertThat(result.getMessageBody()).isEqualTo("someMessage");
+		assertThat(result.getSender()).isEqualTo("someSender");
 		assertThat(result.getAttachments()).isNotNull().hasSize(1);
 		assertThat(result.getAttachments().getFirst().getName()).isEqualTo("someName");
 		assertThat(result.getAttachments().getFirst().getContentType()).isEqualTo("text/plain");
