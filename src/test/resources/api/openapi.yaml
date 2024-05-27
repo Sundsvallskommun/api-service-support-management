@@ -57,7 +57,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -118,7 +118,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -171,7 +171,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -222,7 +222,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -272,7 +272,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -319,7 +319,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -377,7 +377,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -433,7 +433,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -487,7 +487,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -532,7 +532,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -585,7 +585,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -630,7 +630,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -683,7 +683,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -729,7 +729,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -776,7 +776,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -822,7 +822,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -867,7 +867,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -920,7 +920,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -961,7 +961,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -1015,7 +1015,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -1060,7 +1060,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -1114,7 +1114,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -1193,7 +1193,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -1246,7 +1246,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -1301,7 +1301,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -1361,7 +1361,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -1414,7 +1414,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -1468,7 +1468,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -1531,7 +1531,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -1595,7 +1595,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -1643,7 +1643,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -1703,7 +1703,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -1751,7 +1751,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -1803,7 +1803,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -1864,7 +1864,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -1916,7 +1916,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -1968,7 +1968,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -2031,7 +2031,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -2087,7 +2087,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -2139,7 +2139,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -2203,7 +2203,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -2267,7 +2267,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -2327,7 +2327,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -2398,7 +2398,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -2460,7 +2460,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -2520,7 +2520,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -2588,7 +2588,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -2644,7 +2644,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -2696,7 +2696,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -2740,7 +2740,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -2796,7 +2796,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -2849,7 +2849,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -2905,7 +2905,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -2959,7 +2959,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -3015,7 +3015,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -3068,7 +3068,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -3112,7 +3112,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -3171,7 +3171,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId
@@ -3231,7 +3231,7 @@ paths:
           description: Namespace
           required: true
           schema:
-            pattern: "[\\w|\\.]+"
+            pattern: "[\\w|\\.|\\-]+"
             type: string
           example: my.namespace
         - name: municipalityId

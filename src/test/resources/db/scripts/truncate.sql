@@ -22,4 +22,5 @@ TRUNCATE table communication_email_header_value;
 TRUNCATE table notification;
 TRUNCATE table parameter;
 TRUNCATE table contact_reason;
+TRUNCATE table email_worker_config;
 SET FOREIGN_KEY_CHECKS = 1;

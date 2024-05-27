@@ -39,7 +39,7 @@ class MetadataContactReasonResourceFailureTest {
 		return Stream.of(
 			Arguments.of(ContactReason.create().withReason(""), "namespace", "2281", "reason", "must not be blank"),
 			Arguments.of(ContactReason.create().withReason(null), "namespace", "2281", "reason", "must not be blank"),
-			Arguments.of(ContactReason.create().withReason("reason"), "not-a-valid-namespace", "2281", "createContactReason.namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."),
+			Arguments.of(ContactReason.create().withReason("reason"), "#not-a-valid-namespace", "2281", "createContactReason.namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."),
 			Arguments.of(ContactReason.create().withReason("reason"), "namespace", "not-a-valid-municipalityId", "createContactReason.municipalityId", "not a valid municipality ID")
 		);
 	}

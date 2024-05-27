@@ -2,6 +2,8 @@ package se.sundsvall.supportmanagement.api.model.config;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
+import se.sundsvall.supportmanagement.api.validation.ValidStatus;
+
 import java.time.OffsetDateTime;
 import java.util.Objects;
 
@@ -25,16 +27,20 @@ public class EmailIntegration {
 
 	@Schema(description = "Status set on errand when email results in a new errand", example = "NEW")
 	@NotNull
+	@ValidStatus
 	private String statusForNew;
 
 	@Schema(description = "Status on errand that will trigger a status change when email refers to an existing errand", example = "SOLVED", nullable = true)
+	@ValidStatus
 	private String triggerStatusChangeOn;
 
 	@Schema(description = "Status that will be set on errand if status change is triggered. Can only be null if 'triggerStatusChangeOn' is null.", example = "OPEN", nullable = true)
+	@ValidStatus
 	private String statusChangeTo;
 
 	@Schema(description = "Status of an inactive errand. This value relates to property 'daysOfInactivityBeforeReject'. " +
 		"If set to null, no rejection mail will be sent", example = "SOLVED", nullable = true)
+	@ValidStatus
 	private String inactiveStatus;
 
 	@Schema(description = "Timestamp when the configuration was created", example = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)

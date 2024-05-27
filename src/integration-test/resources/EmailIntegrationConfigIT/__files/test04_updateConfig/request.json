@@ -1,0 +1,10 @@
+{
+  "enabled": false,
+  "errandClosedEmailSender": "sender-update",
+  "errandClosedEmailTemplate": "template-update",
+  "daysOfInactivityBeforeReject": 123,
+  "statusForNew": "STATUS-3",
+  "triggerStatusChangeOn": "STATUS-2",
+  "statusChangeTo": "STATUS-1",
+  "inactiveStatus": "STATUS-3"
+}

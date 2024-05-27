@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.api;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -10,13 +11,18 @@ import org.zalando.problem.violations.ConstraintViolationProblem;
 import org.zalando.problem.violations.Violation;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.config.EmailIntegration;
+import se.sundsvall.supportmanagement.api.model.metadata.Status;
 import se.sundsvall.supportmanagement.service.EmailIntegrationConfigService;
+import se.sundsvall.supportmanagement.service.MetadataService;
 
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.zalando.problem.Status.BAD_REQUEST;
@@ -35,6 +41,14 @@ class EmailIntegrationConfigResourceFailureTest {
 
 	@MockBean
 	private EmailIntegrationConfigService serviceMock;
+
+	@MockBean
+	private MetadataService metadataServiceMock;
+
+	@BeforeEach
+	void setup() {
+		when(metadataServiceMock.findStatuses(any(), any())).thenReturn(List.of(Status.create().withName("NEW")));
+	}
 
 	@Test
 	void createWithInvalidNamespace() {
@@ -129,6 +143,30 @@ class EmailIntegrationConfigResourceFailureTest {
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
 			.containsExactly(tuple("enabled", "must not be null"));
+
+		verifyNoInteractions(serviceMock);
+	}
+
+	@Test
+	void createWithInvalidStatus() {
+		final var emailConfig = EmailIntegration.create().withEnabled(true).withStatusForNew("invalid");
+
+		final var response = webTestClient.post()
+			.uri(uriBuilder -> uriBuilder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(emailConfig)
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::getField, Violation::getMessage)
+			.containsExactly(tuple("statusForNew", "value 'invalid' doesn't match any of [NEW]"));
 
 		verifyNoInteractions(serviceMock);
 	}
@@ -268,6 +306,29 @@ class EmailIntegrationConfigResourceFailureTest {
 			.containsExactly(tuple("enabled", "must not be null"));
 
 		verifyNoInteractions(serviceMock);
+	}
+
+	@Test
+	void updateWithInvalidStatus() {
+		final var emailConfig = EmailIntegration.create().withEnabled(true).withStatusForNew("invalid");
+
+		final var response = webTestClient.put()
+			.uri(uriBuilder -> uriBuilder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(emailConfig)
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::getField, Violation::getMessage)
+			.containsExactly(tuple("statusForNew", "value 'invalid' doesn't match any of [NEW]"));
+
 	}
 
 	@Test
