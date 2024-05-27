@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.api;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -8,9 +9,12 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.config.EmailIntegration;
+import se.sundsvall.supportmanagement.api.model.metadata.Status;
 import se.sundsvall.supportmanagement.service.EmailIntegrationConfigService;
+import se.sundsvall.supportmanagement.service.MetadataService;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -34,6 +38,14 @@ class EmailIntegrationConfigResourceTest {
 
 	@MockBean
 	private EmailIntegrationConfigService serviceMock;
+
+	@MockBean
+	private MetadataService metadataServiceMock;
+
+	@BeforeEach
+	void setup() {
+		when(metadataServiceMock.findStatuses(any(), any())).thenReturn(List.of(Status.create().withName("NEW")));
+	}
 
 	@Test
 	void create() {

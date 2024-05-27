@@ -1,0 +1,12 @@
+{
+  "enabled": true,
+  "errandClosedEmailSender": "sender-1",
+  "errandClosedEmailTemplate": "template-1",
+  "daysOfInactivityBeforeReject": 1,
+  "statusForNew": "STATUS-1",
+  "triggerStatusChangeOn": "STATUS-2",
+  "statusChangeTo": "STATUS-3",
+  "inactiveStatus": "STATUS-1",
+  "created": "2021-12-31T23:59:59.999+01:00",
+  "modified": "2022-12-31T23:59:59.999+01:00"
+}

@@ -44,7 +44,11 @@ VALUES (100, '2023-01-01 12:00:00.000', null, '2281', 'STATUS-1', 'NAMESPACE.1')
        (104, '2023-01-01 12:00:00.000', null, '2281', 'STATUS-1', 'NAMESPACE.2'),
        (105, '2023-01-01 12:00:00.000', null, '2305', 'STATUS-1', 'NAMESPACE.1'),
        (106, '2023-01-01 12:00:00.000', null, '2305', 'STATUS-2', 'NAMESPACE.1'),
-       (107, '2023-01-01 12:00:00.000', null, '2281', 'STATUS-2', 'CONTACTCENTER');
+       (107, '2023-01-01 12:00:00.000', null, '2281', 'STATUS-2', 'CONTACTCENTER'),
+       (108, '2023-01-01 12:00:00.000', null, '2281', 'STATUS-1', 'NAMESPACE.3'),
+       (109, '2023-01-01 12:00:00.000', null, '2281', 'STATUS-2', 'NAMESPACE.3'),
+       (110, '2023-01-01 12:00:00.000', null, '2281', 'STATUS-3', 'NAMESPACE.3'),
+       (111, '2023-01-01 12:00:00.000', null, '2281', 'STATUS-4', 'NAMESPACE.3');
 -------------------------------------
 -- Role
 -------------------------------------
@@ -248,3 +252,10 @@ VALUES(123, 'reason1', '2281', 'CONTACTCENTER', '2023-12-31 23:59:59.999', '2023
 (127, 'reason3', '2281', 'CONTACTCENTER', '2023-12-31 23:59:59.999', '2023-12-31 23:59:59.999'),
 (125, 'reason3', '2281', 'namespace_2', '2023-12-31 23:59:59.999', '2023-12-31 23:59:59.999'),
 (126, 'reason4', '2281', 'namespace_2', '2023-12-31 23:59:59.999', '2023-12-31 23:59:59.999');
+
+-------------------------------------
+-- Email integration config
+-------------------------------------
+INSERT INTO email_worker_config (id, enabled, municipality_id, namespace, days_of_inactivity_before_reject, errand_closed_email_sender, errand_closed_email_template,
+                                status_for_new, trigger_status_change_on, status_change_to, inactive_status, created, modified)
+VALUES (1, true, '2281', 'NAMESPACE.1', 1, 'sender-1', 'template-1', 'STATUS-1', 'STATUS-2', 'STATUS-3', 'STATUS-1', '2021-12-31 23:59:59.999', '2022-12-31 23:59:59.999');

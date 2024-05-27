@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -78,14 +79,14 @@ class EmployeeServiceTest {
 		final var portalPersonData = new PortalPersonData().loginName(loginName);
 		final var employee = new Employee().loginname(loginName);
 
-		when(employeeClientMock.getEmployeeInformation(externalId)).thenReturn(Optional.of(List.of(employee)));
+		when(employeeClientMock.getEmployeeInformation(any(String.class))).thenReturn(Optional.of(List.of(employee)));
 		when(employeeClientMock.getEmployeeByDomainAndLoginName(domain, loginName)).thenReturn(Optional.of(portalPersonData));
 		// Act
 		final var result = employeeService.getEmployeeByPartyId(errandEntity);
 		// Assert
 		assertThat(result).isNotNull().isSameAs(portalPersonData);
 
-		verify(employeeClientMock).getEmployeeInformation(externalId);
+		verify(employeeClientMock).getEmployeeInformation(any(String.class));
 		verify(employeeClientMock).getEmployeeByDomainAndLoginName(domain, loginName);
 	}
 
@@ -96,13 +97,13 @@ class EmployeeServiceTest {
 		final var externalId = "partyId";
 		final var stakeholderRole = "ADMINISTRATOR";
 		final var errandEntity = new ErrandEntity().withStakeholders(List.of(StakeholderEntity.create().withExternalId(externalId).withRole(stakeholderRole)));
-		when(employeeClientMock.getEmployeeInformation(externalId)).thenReturn(Optional.empty());
+		when(employeeClientMock.getEmployeeInformation(any(String.class))).thenReturn(Optional.empty());
 		// Act
 		final var result = employeeService.getEmployeeByPartyId(errandEntity);
 		// Assert
 		assertThat(result).isNull();
 
-		verify(employeeClientMock).getEmployeeInformation(externalId);
+		verify(employeeClientMock).getEmployeeInformation(any(String.class));
 	}
 
 
