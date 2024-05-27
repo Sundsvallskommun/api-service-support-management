@@ -131,6 +131,7 @@ public class ErrandMapper {
 				.withResolution(e.getResolution())
 				.withDescription(e.getDescription())
 				.withSuspension(Suspension.create().withSuspendedFrom(e.getSuspendedFrom()).withSuspendedTo(e.getSuspendedTo()))
+				.withBusinessRelated(e.getBusinessRelated())
 				.withParameters(toErrandParameters(e.getParameters()))
 				.withEscalationEmail(e.getEscalationEmail()))
 			.orElse(null);

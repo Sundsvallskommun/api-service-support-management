@@ -108,9 +108,9 @@ class ErrandMapperTest {
 
 	private static final String CONTACT_REASON = "reason";
 
-	private static final ContactReasonEntity CONTACT_REASON_ENTITY = ContactReasonEntity.create().withReason(CONTACT_REASON);
-
 	private static final String ERRAND_NUMBER = "errandNumber";
+
+	private static final Boolean BUSINESS_RELATED = true;
 
 	private static Errand createErrand() {
 		return Errand.create()
@@ -132,9 +132,9 @@ class ErrandMapperTest {
 			.withDescription(DESCRIPTION)
 			.withEscalationEmail(ESCALATION_EMAIL)
 			.withErrandNumber(ERRAND_NUMBER)
-			.withBusinessRelated(true)
+			.withBusinessRelated(BUSINESS_RELATED)
 			.withSuspension(Suspension.create().withSuspendedFrom(SUSPENDED_FROM).withSuspendedTo(SUSPENDED_TO))
-			.withContactReason("reason");
+			.withContactReason(CONTACT_REASON);
 	}
 
 	private static Stakeholder createStakeHolder() {
@@ -173,10 +173,11 @@ class ErrandMapperTest {
 			.withResolution(RESOLUTION)
 			.withDescription(DESCRIPTION)
 			.withEscalationEmail(ESCALATION_EMAIL)
-			.withContactReason(ContactReasonEntity.create().withReason("reason"))
+			.withContactReason(ContactReasonEntity.create().withReason(CONTACT_REASON))
 			.withSuspendedFrom(SUSPENDED_FROM)
 			.withSuspendedTo(SUSPENDED_TO)
-			.withErrandNumber(ERRAND_NUMBER);
+			.withErrandNumber(ERRAND_NUMBER)
+			.withBusinessRelated(BUSINESS_RELATED);
 	}
 
 	private static StakeholderEntity createStakeHolderEntity() {
@@ -223,6 +224,7 @@ class ErrandMapperTest {
 		assertThat(errand.getParameters()).hasSize(1)
 			.extracting(ErrandParameter::getValue, ErrandParameter::getName)
 			.contains(tuple(PARAMETER_VALUE, PARAMETER_NAME));
+		assertThat(errand.getBusinessRelated()).isEqualTo(BUSINESS_RELATED);
 	}
 
 	@Test
@@ -253,6 +255,7 @@ class ErrandMapperTest {
 				Errand::getResolution,
 				Errand::getDescription,
 				Errand::getEscalationEmail,
+				Errand::getBusinessRelated,
 				Errand::getErrandNumber)
 			.containsExactly(tuple(
 				ASSIGNED_GROUP_ID,
@@ -272,6 +275,7 @@ class ErrandMapperTest {
 				RESOLUTION,
 				DESCRIPTION,
 				ESCALATION_EMAIL,
+				BUSINESS_RELATED,
 				ERRAND_NUMBER));
 	}
 
@@ -302,6 +306,7 @@ class ErrandMapperTest {
 				ErrandEntity::getResolution,
 				ErrandEntity::getDescription,
 				ErrandEntity::getEscalationEmail,
+				ErrandEntity::getBusinessRelated,
 				ErrandEntity::getErrandNumber)
 			.containsExactly(
 				ASSIGNED_GROUP_ID,
@@ -320,6 +325,7 @@ class ErrandMapperTest {
 				RESOLUTION,
 				DESCRIPTION,
 				ESCALATION_EMAIL,
+				BUSINESS_RELATED,
 				ERRAND_NUMBER);
 
 		assertThat(entity.getStakeholders()).hasSize(1).extracting(
@@ -407,7 +413,7 @@ class ErrandMapperTest {
 				ESCALATION_EMAIL,
 				SUSPENDED_FROM,
 				SUSPENDED_TO,
-				true);
+				BUSINESS_RELATED);
 
 		assertThat(entity.getStakeholders()).hasSize(1).extracting(
 				StakeholderEntity::getAddress,

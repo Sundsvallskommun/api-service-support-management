@@ -68,6 +68,7 @@
       "assignedGroupId": "ASSIGNED_GROUP_ID-1",
       "escalationEmail": "ESCALATION_EMAIL_1",
       "suspension": {},
+      "businessRelated": false,
       "created": "2022-01-01T12:00:00+01:00",
       "touched": "2022-01-01T12:00:00+01:00"
     }
@@ -80,9 +81,9 @@
     "paged": true,
     "unpaged": false
   },
-  "totalPages": 1,
-  "totalElements": 1,
   "last": true,
+  "totalElements": 1,
+  "totalPages": 1,
   "size": 20,
   "number": 0,
   "sort": [],
