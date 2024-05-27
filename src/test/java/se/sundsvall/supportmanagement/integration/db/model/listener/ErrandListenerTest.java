@@ -31,7 +31,7 @@ class ErrandListenerTest {
 		errandListener.onLoad(entity);
 
 		// Assert
-		assertThat(entity.getPreviousStatus()).isEqualTo(status);
+		assertThat(entity.getTempPreviousStatus()).isEqualTo(status);
 	}
 
 	@Test

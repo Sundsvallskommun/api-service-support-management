@@ -67,7 +67,8 @@ class ErrandEntityTest {
 		final var contactReason = ContactReasonEntity.create().withReason("reason");
 		final var previousStatus = "previousStatus";
 		final var timeMeasure = List.of(TimeMeasureEntity.create().withStartTime(now).withStopTime(now).withDescription("description").withAdministrator("administrator"));
-
+		final var tempPreviousStatus = "tempPreviousStatus";
+		
 		final var errandEntity = ErrandEntity.create()
 			.withAssignedGroupId(assignedGroupId)
 			.withAssignedUserId(assignedUserId)
@@ -96,7 +97,8 @@ class ErrandEntityTest {
 			.withSuspendedFrom(now)
 			.withSuspendedTo(now)
 			.withPreviousStatus(previousStatus)
-			.withTimeMeasures(timeMeasure);
+			.withTimeMeasures(timeMeasure)
+			.withTempPreviousStatus(tempPreviousStatus);
 
 		assertThat(errandEntity).hasNoNullFieldsOrProperties();
 		assertThat(errandEntity.getAssignedGroupId()).isEqualTo(assignedGroupId);
@@ -125,6 +127,7 @@ class ErrandEntityTest {
 			ErrandEntity::getCreated).allSatisfy(date -> assertThat(date).isEqualTo(now));
 		assertThat(errandEntity.getPreviousStatus()).isEqualTo(previousStatus);
 		assertThat(errandEntity.getTimeMeasures()).isSameAs(timeMeasure);
+		assertThat(errandEntity.getTempPreviousStatus()).isEqualTo(tempPreviousStatus);
 	}
 
 	@Test

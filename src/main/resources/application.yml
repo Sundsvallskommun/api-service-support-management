@@ -1,13 +1,17 @@
 scheduler:
   emailreader:
-    cron: 0 * * * * *
+    cron: 0 */5 * * * *
     shedlock-lock-at-most-for: PT10M
   web-message-collector:
-    cron: 0 * * * * *
+    cron: 15 */5 * * * *
     shedlock-lock-at-most-for: PT10M
   notification:
-    cron: 0 * * * * *
+    cron: 0 0 0 * * *
     shedlock-lock-at-most-for: PT10M
+  suspension:
+    cron: 0 */15 * * * *
+    shedlock-lock-at-most-for: PT10M
+
 integration:
   emailreader:
     connectTimeout: 5
