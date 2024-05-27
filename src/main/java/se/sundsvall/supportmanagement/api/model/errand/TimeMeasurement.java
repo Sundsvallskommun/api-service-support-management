@@ -5,7 +5,7 @@ import java.util.Objects;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
-@Schema(description = "Time measure model")
+@Schema(description = "Time measure model", accessMode = Schema.AccessMode.READ_ONLY)
 public class TimeMeasurement {
 
 	@Schema(description = "Status for the time measurement period", example = "Started")
