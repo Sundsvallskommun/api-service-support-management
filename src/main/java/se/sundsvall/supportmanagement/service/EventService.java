@@ -4,6 +4,7 @@ import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static se.sundsvall.supportmanagement.service.mapper.EventlogMapper.toEvent;
 import static se.sundsvall.supportmanagement.service.mapper.EventlogMapper.toMetadataMap;
+import static se.sundsvall.supportmanagement.service.mapper.NotificationMapper.getStakeholderWithAdminRole;
 import static se.sundsvall.supportmanagement.service.mapper.NotificationMapper.toNotification;
 
 import org.springframework.data.domain.Page;
@@ -70,7 +71,7 @@ public class EventService {
 	}
 
 	private void createNotification(final ErrandEntity errandEntity, final generated.se.sundsvall.eventlog.Event event) {
-		final var owner = employeeService.getEmployeeByPartyId(errandEntity);
+		final var owner = employeeService.getEmployeeByPartyId(getStakeholderWithAdminRole(errandEntity));
 		final var creator = employeeService.getEmployeeByLoginName(executingUserSupplier.getAdUser());
 		notificationService.createNotification(errandEntity.getMunicipalityId(), errandEntity.getNamespace(), toNotification(event, errandEntity, owner, creator));
 	}

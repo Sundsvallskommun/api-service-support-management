@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.integration.db.model.listener;
 import static java.time.OffsetDateTime.now;
 import static java.time.ZoneId.systemDefault;
 import static java.time.temporal.ChronoUnit.MILLIS;
+import static se.sundsvall.supportmanagement.service.mapper.NotificationMapper.getStakeholderWithAdminRole;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -14,13 +15,21 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreRemove;
 import jakarta.persistence.PreUpdate;
 
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.TimeMeasureEntity;
+import se.sundsvall.supportmanagement.service.EmployeeService;
+
+import generated.se.sundsvall.employee.PortalPersonData;
 
 @Component
 public class ErrandListener {
+
+	private final EmployeeService employeeService;
+
+	public ErrandListener(@Lazy final EmployeeService employeeService) {this.employeeService = employeeService;}
 
 
 	@PostLoad
@@ -67,6 +76,7 @@ public class ErrandListener {
 
 	private TimeMeasureEntity startTimeEntry(final ErrandEntity errandEntity, final OffsetDateTime now) {
 		return new TimeMeasureEntity()
+			.withAdministrator(findAdministrator(errandEntity))
 			.withStatus(errandEntity.getStatus())
 			.withStartTime(now);
 	}
@@ -82,11 +92,18 @@ public class ErrandListener {
 			.findFirst()
 			.orElse(new TimeMeasureEntity()
 				.withStatus(errandEntity.getStatus())
+				.withAdministrator(findAdministrator(errandEntity))
 				.withStartTime(now()));
 	}
 
 	private List<TimeMeasureEntity> getTimeMeasures(final ErrandEntity errandEntity) {
 		return Optional.ofNullable(errandEntity.getTimeMeasures()).orElseGet(ArrayList::new);
+	}
+
+	private String findAdministrator(final ErrandEntity errandEntity) {
+		return Optional.ofNullable(employeeService.getEmployeeByPartyId(getStakeholderWithAdminRole(errandEntity)))
+			.map(PortalPersonData::getLoginName)
+			.orElse(null);
 	}
 
 }
