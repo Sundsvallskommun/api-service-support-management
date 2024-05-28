@@ -154,7 +154,7 @@ public class ErrandEntity {
 
 	@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
 	@JoinColumn(name = "errand_id", referencedColumnName = "id", foreignKey = @ForeignKey(name = "fk_errand_time_measure_errand_id"))
-	private List<TimeMeasureEntity> timeMeasures;
+	private List<TimeMeasurementEntity> timeMeasures;
 
 	public static ErrandEntity create() {
 		return new ErrandEntity();
@@ -511,15 +511,15 @@ public class ErrandEntity {
 		return this;
 	}
 
-	public List<TimeMeasureEntity> getTimeMeasures() {
+	public List<TimeMeasurementEntity> getTimeMeasures() {
 		return timeMeasures;
 	}
 
-	public void setTimeMeasures(final List<TimeMeasureEntity> timeMeasures) {
+	public void setTimeMeasures(final List<TimeMeasurementEntity> timeMeasures) {
 		this.timeMeasures = timeMeasures;
 	}
 
-	public ErrandEntity withTimeMeasures(final List<TimeMeasureEntity> timeMeasures) {
+	public ErrandEntity withTimeMeasures(final List<TimeMeasurementEntity> timeMeasures) {
 		this.timeMeasures = timeMeasures;
 		return this;
 	}

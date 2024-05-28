@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.service;
 import static org.zalando.problem.Status.NOT_FOUND;
 
 import java.util.List;
+import java.util.Objects;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -60,7 +61,7 @@ public class NotificationService {
 	}
 
 	private boolean isOwner(final String ownerId) {
-		return executingUserSupplier.getAdUser().equals(ownerId);
+		return Objects.equals(ownerId, executingUserSupplier.getAdUser());
 	}
 
 	private boolean doesNotificationExist(final String municipalityId, final String namespace, final Notification notification) {

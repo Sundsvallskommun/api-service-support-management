@@ -15,8 +15,8 @@ import jakarta.persistence.Table;
 import org.hibernate.annotations.TimeZoneStorage;
 
 @Entity
-@Table(name = "time_measure")
-public class TimeMeasureEntity {
+@Table(name = "time_measurement")
+public class TimeMeasurementEntity {
 
 	@Id
 	@GeneratedValue(strategy = IDENTITY)
@@ -39,8 +39,8 @@ public class TimeMeasureEntity {
 	@Column(name = "administrator")
 	private String administrator;
 
-	public static TimeMeasureEntity create() {
-		return new TimeMeasureEntity();
+	public static TimeMeasurementEntity create() {
+		return new TimeMeasurementEntity();
 	}
 
 	public Long getId() {
@@ -51,7 +51,7 @@ public class TimeMeasureEntity {
 		this.id = id;
 	}
 
-	public TimeMeasureEntity withId(final Long id) {
+	public TimeMeasurementEntity withId(final Long id) {
 		this.id = id;
 		return this;
 	}
@@ -64,7 +64,7 @@ public class TimeMeasureEntity {
 		this.status = status;
 	}
 
-	public TimeMeasureEntity withStatus(final String status) {
+	public TimeMeasurementEntity withStatus(final String status) {
 		this.status = status;
 		return this;
 	}
@@ -77,7 +77,7 @@ public class TimeMeasureEntity {
 		this.startTime = startTime;
 	}
 
-	public TimeMeasureEntity withStartTime(final OffsetDateTime startTime) {
+	public TimeMeasurementEntity withStartTime(final OffsetDateTime startTime) {
 		this.startTime = startTime;
 		return this;
 	}
@@ -90,7 +90,7 @@ public class TimeMeasureEntity {
 		this.stopTime = stopTime;
 	}
 
-	public TimeMeasureEntity withStopTime(final OffsetDateTime stopTime) {
+	public TimeMeasurementEntity withStopTime(final OffsetDateTime stopTime) {
 		this.stopTime = stopTime;
 		return this;
 	}
@@ -103,7 +103,7 @@ public class TimeMeasureEntity {
 		this.description = description;
 	}
 
-	public TimeMeasureEntity withDescription(final String description) {
+	public TimeMeasurementEntity withDescription(final String description) {
 		this.description = description;
 		return this;
 	}
@@ -116,7 +116,7 @@ public class TimeMeasureEntity {
 		this.administrator = administrator;
 	}
 
-	public TimeMeasureEntity withAdministrator(final String administrator) {
+	public TimeMeasurementEntity withAdministrator(final String administrator) {
 		this.administrator = administrator;
 		return this;
 	}
@@ -126,7 +126,7 @@ public class TimeMeasureEntity {
 	public boolean equals(final Object o) {
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
-		final TimeMeasureEntity that = (TimeMeasureEntity) o;
+		final TimeMeasurementEntity that = (TimeMeasurementEntity) o;
 		return Objects.equals(id, that.id) && Objects.equals(status, that.status) && Objects.equals(startTime, that.startTime) && Objects.equals(stopTime, that.stopTime) && Objects.equals(description, that.description) && Objects.equals(administrator, that.administrator);
 	}
 
@@ -137,7 +137,7 @@ public class TimeMeasureEntity {
 
 	@Override
 	public String toString() {
-		return "TimeMeasureEntity{" +
+		return "TimeMeasurementEntity{" +
 			"administrator='" + administrator + '\'' +
 			", description='" + description + '\'' +
 			", stopTime=" + stopTime +

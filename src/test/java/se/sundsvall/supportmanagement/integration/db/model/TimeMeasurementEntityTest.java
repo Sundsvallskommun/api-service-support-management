@@ -17,7 +17,7 @@ import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-class TimeMeasureEntityTest {
+class TimeMeasurementEntityTest {
 
 	@BeforeAll
 	static void setup() {
@@ -26,7 +26,7 @@ class TimeMeasureEntityTest {
 
 	@Test
 	void hasValidBean() {
-		MatcherAssert.assertThat(TimeMeasureEntity.class, allOf(
+		MatcherAssert.assertThat(TimeMeasurementEntity.class, allOf(
 			hasValidBeanConstructor(),
 			hasValidGettersAndSetters(),
 			hasValidBeanHashCode(),
@@ -46,7 +46,7 @@ class TimeMeasureEntityTest {
 		final var administrator = "administrator";
 
 		// Act
-		final var result = TimeMeasureEntity.create()
+		final var result = TimeMeasurementEntity.create()
 			.withId(id)
 			.withStartTime(startTime)
 			.withStopTime(stopTime)
@@ -66,8 +66,8 @@ class TimeMeasureEntityTest {
 
 	@Test
 	void noDirtOnCreatedBean() {
-		assertThat(TimeMeasureEntity.create()).hasAllNullFieldsOrProperties();
-		assertThat(new TimeMeasureEntity()).hasAllNullFieldsOrProperties();
+		assertThat(TimeMeasurementEntity.create()).hasAllNullFieldsOrProperties();
+		assertThat(new TimeMeasurementEntity()).hasAllNullFieldsOrProperties();
 	}
 
 }

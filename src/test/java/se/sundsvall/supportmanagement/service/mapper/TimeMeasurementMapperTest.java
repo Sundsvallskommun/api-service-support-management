@@ -7,7 +7,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import se.sundsvall.supportmanagement.integration.db.model.TimeMeasureEntity;
+import se.sundsvall.supportmanagement.integration.db.model.TimeMeasurementEntity;
 
 class TimeMeasurementMapperTest {
 
@@ -20,7 +20,7 @@ class TimeMeasurementMapperTest {
 		final var administrator = "administrator";
 		final var status = "status";
 
-		final var timeMeasure = new TimeMeasureEntity()
+		final var timeMeasure = new TimeMeasurementEntity()
 			.withStartTime(startTime)
 			.withStopTime(stopTime)
 			.withDescription(description)
@@ -45,7 +45,7 @@ class TimeMeasurementMapperTest {
 	@Test
 	void toTimeMeasurementsEmptyList() {
 		// Arrange
-		final List<TimeMeasureEntity> timeMeasures = List.of();
+		final List<TimeMeasurementEntity> timeMeasures = List.of();
 
 		// Act
 		final var result = TimeMeasurementMapper.toTimeMeasurements(timeMeasures);

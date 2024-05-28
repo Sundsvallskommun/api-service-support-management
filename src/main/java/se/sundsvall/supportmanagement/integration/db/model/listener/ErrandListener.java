@@ -6,7 +6,6 @@ import static java.time.temporal.ChronoUnit.MILLIS;
 import static se.sundsvall.supportmanagement.service.mapper.NotificationMapper.getStakeholderWithAdminRole;
 
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,10 +18,10 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.integration.db.model.TimeMeasureEntity;
+import se.sundsvall.supportmanagement.integration.db.model.TimeMeasurementEntity;
 import se.sundsvall.supportmanagement.service.EmployeeService;
 
-import generated.se.sundsvall.employee.PortalPersonData;
+import generated.se.sundsvall.employee.Employee;
 
 @Component
 public class ErrandListener {
@@ -43,10 +42,10 @@ public class ErrandListener {
 		Optional.ofNullable(errandEntity.getStakeholders())
 			.ifPresent(st -> st.forEach(s -> s.setErrandEntity(errandEntity)));
 
-		final var list = getTimeMeasures(errandEntity);
-		list.add(startTimeEntry(errandEntity, now()));
-		errandEntity.setTimeMeasures(list);
-
+		Optional.ofNullable(errandEntity.getTimeMeasures())
+			.ifPresentOrElse(
+				list -> list.add(startTimeEntry(errandEntity, now())),
+				() -> errandEntity.setTimeMeasures(List.of(startTimeEntry(errandEntity, now()))));
 	}
 
 	@PreUpdate
@@ -56,53 +55,43 @@ public class ErrandListener {
 			.ifPresent(st -> st.forEach(s -> s.setErrandEntity(errandEntity)));
 
 		// Status Changed
-		if (!errandEntity.getStatus().equals(errandEntity.getTempPreviousStatus())) {
-			final var list = getTimeMeasures(errandEntity);
+		// The second statement is to prevent the same status from being added multiple times as preUpdate is called multiple times during the same transaction
+		if (!errandEntity.getStatus().equals(errandEntity.getTempPreviousStatus()) && !errandEntity.getPreviousStatus().equals(errandEntity.getTempPreviousStatus())) {
 			final var now = now();
-			list.add(stopTimeEntry(findTimeMeasureEntityWithoutStopTime(errandEntity), now));
-			list.add(startTimeEntry(errandEntity, now));
-			errandEntity.setTimeMeasures(list);
+			Optional.ofNullable(errandEntity.getTimeMeasures())
+				.ifPresentOrElse(list -> {
+					findTimeMeasureEntityWithoutStopTime(errandEntity, now);
+					list.add(startTimeEntry(errandEntity, now));
+				}, () -> errandEntity.setTimeMeasures(List.of((startTimeEntry(errandEntity, now)))));
 			errandEntity.setPreviousStatus(errandEntity.getTempPreviousStatus());
 		}
 	}
 
 	@PreRemove
 	void onDelete(final ErrandEntity errandEntity) {
-		final var list = getTimeMeasures(errandEntity);
-		list.add(stopTimeEntry(findTimeMeasureEntityWithoutStopTime(errandEntity), now()));
-		errandEntity.setTimeMeasures(list);
-
+		Optional.ofNullable(errandEntity.getTimeMeasures())
+			.ifPresent(tm -> findTimeMeasureEntityWithoutStopTime(errandEntity, now()));
 	}
 
-	private TimeMeasureEntity startTimeEntry(final ErrandEntity errandEntity, final OffsetDateTime now) {
-		return new TimeMeasureEntity()
+	private TimeMeasurementEntity startTimeEntry(final ErrandEntity errandEntity, final OffsetDateTime now) {
+		return new TimeMeasurementEntity()
 			.withAdministrator(findAdministrator(errandEntity))
 			.withStatus(errandEntity.getStatus())
+			.withDescription(errandEntity.getDescription())
 			.withStartTime(now);
 	}
 
-	private TimeMeasureEntity stopTimeEntry(final TimeMeasureEntity timeMeasureEntity, final OffsetDateTime now) {
-		return timeMeasureEntity.withStopTime(now);
-	}
-
-	private TimeMeasureEntity findTimeMeasureEntityWithoutStopTime(final ErrandEntity errandEntity) {
-		return getTimeMeasures(errandEntity).stream()
-			.filter(tm -> tm.getStatus().equals(errandEntity.getStatus()))
+	private void findTimeMeasureEntityWithoutStopTime(final ErrandEntity errandEntity, final OffsetDateTime now) {
+		errandEntity.getTimeMeasures()
+			.stream()
 			.filter(tm -> tm.getStopTime() == null)
 			.findFirst()
-			.orElse(new TimeMeasureEntity()
-				.withStatus(errandEntity.getStatus())
-				.withAdministrator(findAdministrator(errandEntity))
-				.withStartTime(now()));
-	}
-
-	private List<TimeMeasureEntity> getTimeMeasures(final ErrandEntity errandEntity) {
-		return Optional.ofNullable(errandEntity.getTimeMeasures()).orElseGet(ArrayList::new);
+			.ifPresent(tm -> tm.setStopTime(now));
 	}
 
 	private String findAdministrator(final ErrandEntity errandEntity) {
 		return Optional.ofNullable(employeeService.getEmployeeByPartyId(getStakeholderWithAdminRole(errandEntity)))
-			.map(PortalPersonData::getLoginName)
+			.map(Employee::getLoginname)
 			.orElse(null);
 	}
 

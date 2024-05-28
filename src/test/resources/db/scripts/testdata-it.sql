@@ -83,26 +83,26 @@ VALUES (100, '2281', 'NAMESPACE.1', 'CATEGORY', '2023-01-01 12:00:00.000', null,
 -------------------------------------
 INSERT INTO errand(municipality_id, id, assigned_group_id, assigned_user_id, category, namespace,
                    priority, reporter_user_id, status, title, type, created, modified, resolution,
-                   description, escalation_email, errand_number, business_related)
+                   description, escalation_email, errand_number, business_related, previous_status)
 VALUES ('2281', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', 'ASSIGNED_GROUP_ID-1', 'ASSIGNED_USER_ID-1',
         'CATEGORY-1', 'NAMESPACE.1', 'LOW', 'REPORTER_USER_ID-1', 'STATUS-1', 'TITLE-1', 'TYPE-1',
-        '2022-01-01 12:00:00.000', null, null, null, "ESCALATION_EMAIL_1", 'KC-23020001', false),
+        '2022-01-01 12:00:00.000', null, null, null, "ESCALATION_EMAIL_1", 'KC-23020001', false, 'STATUS-2'),
        ('2281', 'cc236cf1-c00f-4479-8341-ecf5dd90b5b9', 'ASSIGNED_GROUP_ID-1', 'ASSIGNED_USER_ID-1',
         'CATEGORY-1', 'NAMESPACE.1', 'LOW', 'REPORTER_USER_ID-1', 'STATUS-1', 'TITLE-1', 'TYPE-1',
-        '2022-02-01 12:00:00.000', '2022-04-01 12:00:00.000', null, null, null, 'KC-23020002', false),
+        '2022-02-01 12:00:00.000', '2022-04-01 12:00:00.000', null, null, null, 'KC-23020002', false, 'STATUS-2'),
        ('2281', '1be673c0-6ba3-4fb0-af4a-43acf23389f6', 'ASSIGNED_GROUP_ID-3', 'ASSIGNED_USER_ID-3',
         'CATEGORY-3', 'NAMESPACE.1', 'HIGH', 'REPORTER_USER_ID-3', 'STATUS-3', 'TITLE-3', 'TYPE-3',
-        '2022-03-01 12:00:00.000', null, "RESOLUTION", "DESCRIPTION", null, 'KC-23020003', false),
+        '2022-03-01 12:00:00.000', null, "RESOLUTION", "DESCRIPTION", null, 'KC-23020003', false, 'STATUS-2'),
        ('2281', 'f4a7a771-bb75-487b-b7d8-2684a0c3512c', 'ASSIGNED_GROUP_ID-3', 'ASSIGNED_USER_ID-3',
         'CATEGORY-3', 'NAMESPACE.2', 'HIGH', 'REPORTER_USER_ID-3', 'STATUS-3', 'TITLE-3', 'TYPE-3',
-        '2022-03-01 12:00:00.000', null, "RESOLUTION", "DESCRIPTION", null, 'KC-23020004', false),
+        '2022-03-01 12:00:00.000', null, "RESOLUTION", "DESCRIPTION", null, 'KC-23020004', false, 'STATUS-2'),
        ('2305', 'e29906af-3083-4dcf-bb8a-d787ccf2dcc4', 'ASSIGNED_GROUP_ID-3', 'ASSIGNED_USER_ID-3',
         'CATEGORY-3', 'NAMESPACE.1', 'HIGH', 'REPORTER_USER_ID-1', 'STATUS-3', 'TITLE-3', 'TYPE-3',
-        '2022-03-01 12:00:00.000', null, null, null, null, 'KC-23020005', false),
+        '2022-03-01 12:00:00.000', null, null, null, null, 'KC-23020005', false, 'STATUS-2'),
        ('2281', '147d355f-dc94-4fde-a4cb-9ddd16cb1946', 'hardware support', 'jane11dane',
         'CATEGORY-1', 'NAMESPACE.1', 'HIGH', 'joe01doe', 'STATUS-1', 'It is my birthday', 'TYPE-1',
         '2023-04-26 15:48:17.124', '2023-04-26 16:05:08.806', 'FIXED', 'Order cake for everyone',
-        'joe.doe@email.com', 'KC-23020006', false);
+        'joe.doe@email.com', 'KC-23020006', false, 'STATUS-2');
 
 -------------------------------------
 -- Stakeholder
@@ -259,3 +259,10 @@ VALUES(123, 'reason1', '2281', 'CONTACTCENTER', '2023-12-31 23:59:59.999', '2023
 INSERT INTO email_worker_config (id, enabled, municipality_id, namespace, days_of_inactivity_before_reject, errand_closed_email_sender, errand_closed_email_template,
                                 status_for_new, trigger_status_change_on, status_change_to, inactive_status, created, modified)
 VALUES (1, true, '2281', 'NAMESPACE.1', 1, 'sender-1', 'template-1', 'STATUS-1', 'STATUS-2', 'STATUS-3', 'STATUS-1', '2021-12-31 23:59:59.999', '2022-12-31 23:59:59.999');
+
+-------------------------------------
+-- Time measurement
+-------------------------------------
+INSERT INTO time_measurement(id, errand_id, start_time,stop_time, status, administrator)
+VALUES ('1', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', '2023-12-31 23:59:59.999', '2024-12-31 23:59:59.999', 'STATUS-1', 'AD01TEST'),
+       ('2', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', '2024-12-31 23:59:59.999', null, 'STATUS-2', 'AD01TEST');

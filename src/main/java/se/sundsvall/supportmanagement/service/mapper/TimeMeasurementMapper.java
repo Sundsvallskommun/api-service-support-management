@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Optional;
 
 import se.sundsvall.supportmanagement.api.model.errand.TimeMeasurement;
-import se.sundsvall.supportmanagement.integration.db.model.TimeMeasureEntity;
+import se.sundsvall.supportmanagement.integration.db.model.TimeMeasurementEntity;
 
 public final class TimeMeasurementMapper {
 
@@ -14,7 +14,7 @@ public final class TimeMeasurementMapper {
 		// Prevent instantiation
 	}
 
-	public static List<TimeMeasurement> toTimeMeasurements(final List<TimeMeasureEntity> timeMeasures) {
+	public static List<TimeMeasurement> toTimeMeasurements(final List<TimeMeasurementEntity> timeMeasures) {
 
 		return Optional.ofNullable(timeMeasures)
 			.orElse(emptyList()).stream()

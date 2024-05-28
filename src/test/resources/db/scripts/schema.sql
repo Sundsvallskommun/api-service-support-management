@@ -236,7 +236,7 @@
         primary key (id)
     ) engine=InnoDB;
 
-    create table time_measure (
+    create table time_measurement (
         id bigint not null auto_increment,
         start_time datetime(6),
         stop_time datetime(6),
@@ -435,7 +435,7 @@
        foreign key (errand_id) 
        references errand (id);
 
-    alter table if exists time_measure 
+    alter table if exists time_measurement 
        add constraint fk_errand_time_measure_errand_id 
        foreign key (errand_id) 
        references errand (id);

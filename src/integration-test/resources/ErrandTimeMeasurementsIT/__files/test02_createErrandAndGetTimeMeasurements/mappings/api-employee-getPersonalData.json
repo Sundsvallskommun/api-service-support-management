@@ -1,0 +1,19 @@
+{
+  "name": "api-employee-getPersonalData",
+  "request": {
+    "method": "GET",
+    "urlPath": "/api-employee/portalpersondata/personal/joe01doe",
+    "headers": {
+      "Authorization": {
+        "equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
+      }
+    }
+  },
+  "response": {
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "status": 200,
+    "bodyFileName": "test02_createErrandAndGetTimeMeasurements/responses/api-employee-getPersonalData-response.json"
+  }
+}
