@@ -12,7 +12,6 @@ import se.sundsvall.supportmanagement.api.model.notification.Notification;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
 
-import generated.se.sundsvall.employee.Employee;
 import generated.se.sundsvall.employee.PortalPersonData;
 import generated.se.sundsvall.eventlog.Event;
 import generated.se.sundsvall.eventlog.EventType;
@@ -193,10 +192,9 @@ class NotificationMapperTest {
 		final var errandEntity = new ErrandEntity()
 			.withId(ERRAND_ID)
 			.withErrandNumber(ERRAND_NUMBER);
-		final var owner = new Employee()
-			.loginname(OWNER_ID)
-			.givenname(FIRST_NAME)
-			.lastname(LAST_NAME);
+		final var owner = new PortalPersonData()
+			.loginName(OWNER_ID)
+			.fullname(CREATED_BY_FULL_NAME);
 		final var creator = new PortalPersonData()
 			.loginName(CREATED_BY)
 			.fullname(CREATED_BY_FULL_NAME);
@@ -213,7 +211,7 @@ class NotificationMapperTest {
 		assertThat(notification.getExpires()).isEqualTo(EXPIRES);
 		assertThat(notification.getCreated()).isEqualTo(CREATED);
 		assertThat(notification.getOwnerId()).isEqualTo(OWNER_ID);
-		assertThat(notification.getOwnerFullName()).isEqualTo(OWNER_FULL_NAME);
+		assertThat(notification.getOwnerFullName()).isEqualTo(CREATED_BY_FULL_NAME);
 		assertThat(notification.getCreatedBy()).isEqualTo(CREATED_BY);
 		assertThat(notification.getCreatedByFullName()).isEqualTo(CREATED_BY_FULL_NAME);
 	}

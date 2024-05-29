@@ -3,10 +3,10 @@ package se.sundsvall.supportmanagement.integration.db.model.listener;
 import static java.time.OffsetDateTime.now;
 import static java.time.ZoneId.systemDefault;
 import static java.time.temporal.ChronoUnit.MILLIS;
-import static se.sundsvall.supportmanagement.service.mapper.NotificationMapper.getStakeholderWithAdminRole;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import jakarta.persistence.PostLoad;
@@ -14,22 +14,13 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreRemove;
 import jakarta.persistence.PreUpdate;
 
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.TimeMeasurementEntity;
-import se.sundsvall.supportmanagement.service.EmployeeService;
-
-import generated.se.sundsvall.employee.Employee;
 
 @Component
 public class ErrandListener {
-
-	private final EmployeeService employeeService;
-
-	public ErrandListener(@Lazy final EmployeeService employeeService) {this.employeeService = employeeService;}
-
 
 	@PostLoad
 	void onLoad(final ErrandEntity errandEntity) {
@@ -56,7 +47,7 @@ public class ErrandListener {
 
 		// Status Changed
 		// The second statement is to prevent the same status from being added multiple times as preUpdate is called multiple times during the same transaction
-		if (!errandEntity.getStatus().equals(errandEntity.getTempPreviousStatus()) && !errandEntity.getPreviousStatus().equals(errandEntity.getTempPreviousStatus())) {
+		if (!errandEntity.getStatus().equals(errandEntity.getTempPreviousStatus()) && !Objects.equals(errandEntity.getTempPreviousStatus(), errandEntity.getPreviousStatus())) {
 			final var now = now();
 			Optional.ofNullable(errandEntity.getTimeMeasures())
 				.ifPresentOrElse(list -> {
@@ -75,7 +66,7 @@ public class ErrandListener {
 
 	private TimeMeasurementEntity startTimeEntry(final ErrandEntity errandEntity, final OffsetDateTime now) {
 		return new TimeMeasurementEntity()
-			.withAdministrator(findAdministrator(errandEntity))
+			.withAdministrator(errandEntity.getAssignedUserId())
 			.withStatus(errandEntity.getStatus())
 			.withDescription(errandEntity.getDescription())
 			.withStartTime(now);
@@ -87,12 +78,6 @@ public class ErrandListener {
 			.filter(tm -> tm.getStopTime() == null)
 			.findFirst()
 			.ifPresent(tm -> tm.setStopTime(now));
-	}
-
-	private String findAdministrator(final ErrandEntity errandEntity) {
-		return Optional.ofNullable(employeeService.getEmployeeByPartyId(getStakeholderWithAdminRole(errandEntity)))
-			.map(Employee::getLoginname)
-			.orElse(null);
 	}
 
 }

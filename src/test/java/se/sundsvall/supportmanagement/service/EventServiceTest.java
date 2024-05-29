@@ -30,7 +30,6 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.eventlog.EventlogClient;
 
-import generated.se.sundsvall.employee.Employee;
 import generated.se.sundsvall.employee.PortalPersonData;
 import generated.se.sundsvall.eventlog.Event;
 import generated.se.sundsvall.eventlog.EventType;
@@ -80,15 +79,16 @@ class EventServiceTest {
 		final var previousRevisionVersion = 13;
 		final var owner = "SupportManagement";
 		final var sourceType = Errand.class.getSimpleName();
+		final var assignedUserId = "assignedUserId";
 
-		final var entity = ErrandEntity.create().withId(errandId).withStakeholders(List.of(StakeholderEntity.create().withRole("ADMINISTRATOR")));
+		final var entity = ErrandEntity.create().withId(errandId).withAssignedUserId(assignedUserId).withStakeholders(List.of(StakeholderEntity.create()));
 		final var currentRevision = Revision.create().withId(currentRevisionId).withVersion(currentRevisionVersion);
 		final var previousRevision = Revision.create().withId(previousRevisionId).withVersion(previousRevisionVersion);
 		final var executingUserId = "executingUserId";
 
 		// Mock
 		when(executingUserSupplierMock.getAdUser()).thenReturn(executingUserId);
-		when(employeeServiceMock.getEmployeeByPartyId(entity.getStakeholders().getFirst())).thenReturn(new Employee());
+		when(employeeServiceMock.getEmployeeByLoginName(assignedUserId)).thenReturn(new PortalPersonData().loginName(assignedUserId));
 		when(employeeServiceMock.getEmployeeByLoginName(executingUserId)).thenReturn(new PortalPersonData().loginName(executingUserId));
 
 		// Call
@@ -159,11 +159,12 @@ class EventServiceTest {
 		final var currentRevisionVersion = 0;
 		final var owner = "SupportManagement";
 		final var sourceType = Errand.class.getSimpleName();
+		final var assignedUserId = "assignedUserId";
 
-		final var entity = ErrandEntity.create().withId(errandId).withStakeholders(List.of(StakeholderEntity.create().withRole("ADMINISTRATOR")));
+		final var entity = ErrandEntity.create().withId(errandId).withAssignedUserId(assignedUserId);
 		final var currentRevision = Revision.create().withId(currentRevisionId).withVersion(currentRevisionVersion);
 
-		when(employeeServiceMock.getEmployeeByPartyId(entity.getStakeholders().getFirst())).thenReturn(new Employee());
+		when(employeeServiceMock.getEmployeeByLoginName(assignedUserId)).thenReturn(new PortalPersonData());
 
 		// Call
 		service.createErrandEvent(eventType, message, entity, currentRevision, null);
