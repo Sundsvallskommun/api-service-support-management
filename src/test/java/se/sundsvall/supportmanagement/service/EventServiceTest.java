@@ -81,7 +81,7 @@ class EventServiceTest {
 		final var sourceType = Errand.class.getSimpleName();
 		final var assignedUserId = "assignedUserId";
 
-		final var entity = ErrandEntity.create().withId(errandId).withAssignedUserId(assignedUserId).withStakeholders(List.of(StakeholderEntity.create().withRole("ADMINISTRATOR")));
+		final var entity = ErrandEntity.create().withId(errandId).withAssignedUserId(assignedUserId).withStakeholders(List.of(StakeholderEntity.create()));
 		final var currentRevision = Revision.create().withId(currentRevisionId).withVersion(currentRevisionVersion);
 		final var previousRevision = Revision.create().withId(previousRevisionId).withVersion(previousRevisionVersion);
 		final var executingUserId = "executingUserId";

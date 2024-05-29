@@ -43,7 +43,7 @@ class ErrandListenerTest {
 		final var loginName = "loginName";
 		final var entity = new ErrandEntity()
 			.withAssignedUserId(loginName)
-			.withStakeholders(List.of(StakeholderEntity.create().withRole("ADMINISTRATOR"))
+			.withStakeholders(List.of(StakeholderEntity.create())
 			).withStatus(status);
 
 		// Act
@@ -70,7 +70,7 @@ class ErrandListenerTest {
 		final var previousStatus = "previousStatus";
 		final var entity = new ErrandEntity()
 			.withAssignedUserId(loginName)
-			.withStakeholders(List.of(StakeholderEntity.create().withRole("ADMINISTRATOR")))
+			.withStakeholders(List.of(StakeholderEntity.create()))
 			.withStatus(status)
 			.withPreviousStatus(previousStatus);
 
@@ -98,7 +98,7 @@ class ErrandListenerTest {
 		final var loginName = "loginName";
 		final var entity = new ErrandEntity()
 			.withAssignedUserId(loginName)
-			.withStakeholders(List.of(StakeholderEntity.create().withRole("ADMINISTRATOR")))
+			.withStakeholders(List.of(StakeholderEntity.create()))
 			.withTimeMeasures(List.of(TimeMeasurementEntity.create().withStartTime(now()).withAdministrator(loginName).withStatus(status)))
 			.withStatus(status);
 		// Act
