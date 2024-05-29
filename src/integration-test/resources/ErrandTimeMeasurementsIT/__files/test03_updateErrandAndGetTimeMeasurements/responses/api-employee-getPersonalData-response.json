@@ -1,0 +1,16 @@
+{
+  "personid": "123e4567-e89b-12d3-a456-426614174000",
+  "givenname": "Test",
+  "lastname": "Testorsson",
+  "fullname": "Test Testorsson",
+  "address": "123 Test Street",
+  "postalCode": "12345",
+  "city": "Ankeborg",
+  "email": "test.testorsson@test.com",
+  "mailNickname": "test.testorsson",
+  "company": "Test Company",
+  "companyId": 1,
+  "orgTree": "Test Org Tree",
+  "isManager": false,
+  "loginName": "Personal\\te02st"
+}

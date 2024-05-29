@@ -29,7 +29,7 @@ public class EmployeeService {
 			.orElse(null);
 	}
 
-	public PortalPersonData getEmployeeByPartyId(final StakeholderEntity stakeholderEntity) {
+	public Employee getEmployeeByPartyId(final StakeholderEntity stakeholderEntity) {
 		return Optional.ofNullable(stakeholderEntity)
 			.flatMap(stakeholder ->
 			{
@@ -37,10 +37,8 @@ public class EmployeeService {
 				return employeeClient.getEmployeeInformation(filter)
 					.orElse(emptyList())
 					.stream()
-					.findFirst()
-					.map(Employee::getLoginname);
+					.findFirst();
 			})
-			.map(this::getEmployeeByLoginName)
 			.orElse(null);
 	}
 

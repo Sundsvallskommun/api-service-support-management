@@ -31,7 +31,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @Validated
-@RequestMapping("/{namespace}/{municipalityId}/errands/{errandId}/time-measure")
+@RequestMapping("/{namespace}/{municipalityId}/errands/{errandId}/timeMeasure")
 @Tag(name = "Time measures", description = "Time measure operations")
 @ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {Problem.class, ConstraintViolationProblem.class})))
 @ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))

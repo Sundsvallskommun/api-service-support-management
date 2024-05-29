@@ -1,0 +1,45 @@
+{
+	"name": "api-eventlog-createEvent",
+	"request": {
+		"method": "POST",
+		"urlPattern": "/api-eventlog/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+		"headers": {
+			"Authorization": {
+				"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
+			}
+		},
+		"bodyPatterns": [
+			{
+				"ignoreArrayOrder" : true,
+				"equalToJson": {
+					"type": "CREATE",
+					"message": "Ärendet har skapats.",
+					"owner": "SupportManagement",
+					"created": "${json-unit.any-string}",
+					"historyReference": "${json-unit.regex}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+					"sourceType": "Errand",
+					"metadata": [
+						{
+							"key": "CurrentVersion",
+							"value": "0"
+						},
+						{
+							"key": "CurrentRevision",
+							"value": "${json-unit.regex}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+						},
+						{
+							"key":"ExecutedBy",
+							"value":"joe01doe"
+						}
+					]
+				}
+			}
+		]
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "*/*"
+		},
+		"status": 202
+	}
+}

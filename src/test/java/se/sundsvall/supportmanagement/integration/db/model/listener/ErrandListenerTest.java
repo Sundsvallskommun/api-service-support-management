@@ -16,9 +16,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
+import se.sundsvall.supportmanagement.integration.db.model.TimeMeasurementEntity;
 import se.sundsvall.supportmanagement.service.EmployeeService;
 
-import generated.se.sundsvall.employee.PortalPersonData;
+import generated.se.sundsvall.employee.Employee;
 
 @ExtendWith(MockitoExtension.class)
 class ErrandListenerTest {
@@ -52,7 +53,7 @@ class ErrandListenerTest {
 			.withStakeholders(List.of(StakeholderEntity.create().withRole("ADMINISTRATOR"))
 			).withStatus(status);
 
-		when(employeeService.getEmployeeByPartyId(entity.getStakeholders().getFirst())).thenReturn(new PortalPersonData().loginName(loginName));
+		when(employeeService.getEmployeeByPartyId(entity.getStakeholders().getFirst())).thenReturn(new Employee().loginname(loginName));
 
 		// Act
 		errandListener.onCreate(entity);
@@ -81,8 +82,7 @@ class ErrandListenerTest {
 			.withStatus(status)
 			.withPreviousStatus(previousStatus);
 
-
-		when(employeeService.getEmployeeByPartyId(entity.getStakeholders().getFirst())).thenReturn(new PortalPersonData().loginName(loginName));
+		when(employeeService.getEmployeeByPartyId(entity.getStakeholders().getFirst())).thenReturn(new Employee().loginname(loginName));
 
 		// Act
 		errandListener.onUpdate(entity);
@@ -92,19 +92,12 @@ class ErrandListenerTest {
 		assertThat(entity.getStakeholders().getFirst().getErrandEntity()).isSameAs(entity);
 		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("modified", "stakeholders", "status", "previousStatus", "timeMeasures");
 
-		assertThat(entity.getTimeMeasures()).isNotEmpty().hasSize(2);
+		assertThat(entity.getTimeMeasures()).isNotEmpty().hasSize(1);
 		assertThat(entity.getTimeMeasures().getFirst()).isNotNull();
 		assertThat(entity.getTimeMeasures().getFirst().getStartTime()).isCloseTo(now(), within(1, SECONDS));
-		assertThat(entity.getTimeMeasures().getFirst().getStopTime()).isCloseTo(now(), within(1, SECONDS));
+		assertThat(entity.getTimeMeasures().getFirst().getStopTime()).isNull();
 		assertThat(entity.getTimeMeasures().getFirst().getAdministrator()).isEqualTo(loginName);
 		assertThat(entity.getTimeMeasures().getFirst().getStatus()).isEqualTo(status);
-
-		assertThat(entity.getTimeMeasures().getLast()).isNotNull();
-		assertThat(entity.getTimeMeasures().getLast().getStartTime()).isCloseTo(now(), within(1, SECONDS));
-		assertThat(entity.getTimeMeasures().getLast().getStopTime()).isNull();
-		assertThat(entity.getTimeMeasures().getLast().getStatus()).isEqualTo(status);
-		assertThat(entity.getTimeMeasures().getLast().getAdministrator()).isEqualTo(loginName);
-
 	}
 
 	@Test
@@ -115,10 +108,8 @@ class ErrandListenerTest {
 		final var loginName = "loginName";
 		final var entity = new ErrandEntity()
 			.withStakeholders(List.of(StakeholderEntity.create().withRole("ADMINISTRATOR")))
+			.withTimeMeasures(List.of(TimeMeasurementEntity.create().withStartTime(now()).withAdministrator(loginName).withStatus(status)))
 			.withStatus(status);
-
-		when(employeeService.getEmployeeByPartyId(entity.getStakeholders().getFirst())).thenReturn(new PortalPersonData().loginName(loginName));
-
 		// Act
 		errandListener.onDelete(entity);
 
@@ -127,6 +118,7 @@ class ErrandListenerTest {
 		assertThat(entity.getTimeMeasures()).isNotEmpty().hasSize(1);
 		assertThat(entity.getTimeMeasures().getFirst()).isNotNull();
 		assertThat(entity.getTimeMeasures().getFirst().getStartTime()).isNotNull();
+		assertThat(entity.getTimeMeasures().getFirst().getStopTime()).isCloseTo(now(), within(1, SECONDS));
 		assertThat(entity.getTimeMeasures().getFirst().getStatus()).isEqualTo(status);
 		assertThat(entity.getTimeMeasures().getFirst().getAdministrator()).isEqualTo(loginName);
 

@@ -66,9 +66,9 @@ class ErrandEntityTest {
 		final var businessRelated = true;
 		final var contactReason = ContactReasonEntity.create().withReason("reason");
 		final var previousStatus = "previousStatus";
-		final var timeMeasure = List.of(TimeMeasureEntity.create().withStartTime(now).withStopTime(now).withDescription("description").withAdministrator("administrator"));
+		final var timeMeasure = List.of(TimeMeasurementEntity.create().withStartTime(now).withStopTime(now).withDescription("description").withAdministrator("administrator"));
 		final var tempPreviousStatus = "tempPreviousStatus";
-		
+
 		final var errandEntity = ErrandEntity.create()
 			.withAssignedGroupId(assignedGroupId)
 			.withAssignedUserId(assignedUserId)
@@ -132,8 +132,8 @@ class ErrandEntityTest {
 
 	@Test
 	void hasNoDirtOnCreatedBean() {
-		assertThat(ErrandEntity.create()).hasAllNullFieldsOrProperties();
-		assertThat(new ErrandEntity()).hasAllNullFieldsOrProperties();
+		assertThat(ErrandEntity.create()).hasAllNullFieldsOrPropertiesExcept("timeMeasures");
+		assertThat(new ErrandEntity()).hasAllNullFieldsOrPropertiesExcept("timeMeasures");
 	}
 
 }

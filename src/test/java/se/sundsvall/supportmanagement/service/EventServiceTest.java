@@ -30,6 +30,7 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.eventlog.EventlogClient;
 
+import generated.se.sundsvall.employee.Employee;
 import generated.se.sundsvall.employee.PortalPersonData;
 import generated.se.sundsvall.eventlog.Event;
 import generated.se.sundsvall.eventlog.EventType;
@@ -87,7 +88,7 @@ class EventServiceTest {
 
 		// Mock
 		when(executingUserSupplierMock.getAdUser()).thenReturn(executingUserId);
-		when(employeeServiceMock.getEmployeeByPartyId(entity.getStakeholders().getFirst())).thenReturn(new PortalPersonData());
+		when(employeeServiceMock.getEmployeeByPartyId(entity.getStakeholders().getFirst())).thenReturn(new Employee());
 		when(employeeServiceMock.getEmployeeByLoginName(executingUserId)).thenReturn(new PortalPersonData().loginName(executingUserId));
 
 		// Call
@@ -162,7 +163,7 @@ class EventServiceTest {
 		final var entity = ErrandEntity.create().withId(errandId).withStakeholders(List.of(StakeholderEntity.create().withRole("ADMINISTRATOR")));
 		final var currentRevision = Revision.create().withId(currentRevisionId).withVersion(currentRevisionVersion);
 
-		when(employeeServiceMock.getEmployeeByPartyId(entity.getStakeholders().getFirst())).thenReturn(new PortalPersonData());
+		when(employeeServiceMock.getEmployeeByPartyId(entity.getStakeholders().getFirst())).thenReturn(new Employee());
 
 		// Call
 		service.createErrandEvent(eventType, message, entity, currentRevision, null);

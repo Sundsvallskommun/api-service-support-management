@@ -2,8 +2,8 @@ package se.sundsvall.supportmanagement.service.mapper;
 
 import static org.apache.commons.lang3.ObjectUtils.anyNull;
 
-import java.util.Collections;
 import java.time.OffsetDateTime;
+import java.util.Collections;
 import java.util.Optional;
 
 import se.sundsvall.supportmanagement.api.model.notification.Notification;
@@ -11,6 +11,7 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 
+import generated.se.sundsvall.employee.Employee;
 import generated.se.sundsvall.employee.PortalPersonData;
 import generated.se.sundsvall.eventlog.Event;
 
@@ -74,7 +75,7 @@ public final class NotificationMapper {
 			.orElse(null);
 	}
 
-	public static Notification toNotification(final Event event, final ErrandEntity errandEntity, final PortalPersonData owner, final PortalPersonData creator) {
+	public static Notification toNotification(final Event event, final ErrandEntity errandEntity, final Employee owner, final PortalPersonData creator) {
 
 		final var notification = Notification.create()
 			.withDescription(event.getMessage())
@@ -85,8 +86,8 @@ public final class NotificationMapper {
 			.withModified(event.getCreated())
 			.withCreated(event.getCreated());
 		Optional.ofNullable(owner)
-			.ifPresent(o -> notification.withOwnerId(o.getLoginName())
-				.withOwnerFullName(o.getFullname()));
+			.ifPresent(o -> notification.withOwnerId(o.getLoginname())
+				.withOwnerFullName(o.getGivenname() + " " + o.getLastname()));
 		Optional.ofNullable(creator)
 			.ifPresent(c -> notification.withCreatedBy(c.getLoginName())
 				.withCreatedByFullName(c.getFullname()));

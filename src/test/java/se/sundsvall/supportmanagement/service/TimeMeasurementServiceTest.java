@@ -18,7 +18,7 @@ import org.zalando.problem.Problem;
 
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.integration.db.model.TimeMeasureEntity;
+import se.sundsvall.supportmanagement.integration.db.model.TimeMeasurementEntity;
 
 @ExtendWith(MockitoExtension.class)
 class TimeMeasurementServiceTest {
@@ -43,7 +43,7 @@ class TimeMeasurementServiceTest {
 		final var administrator = "administrator";
 		final var status = "SUSPENDED";
 
-		final var timeMeasurements = List.of(new TimeMeasureEntity()
+		final var timeMeasurements = List.of(new TimeMeasurementEntity()
 			.withStartTime(startTime)
 			.withStopTime(stopTime)
 			.withDescription(description)
