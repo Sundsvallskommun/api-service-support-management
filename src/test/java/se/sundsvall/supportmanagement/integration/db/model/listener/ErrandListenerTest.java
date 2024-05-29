@@ -15,9 +15,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.TimeMeasurementEntity;
-import se.sundsvall.supportmanagement.service.EmployeeService;
-
-import generated.se.sundsvall.employee.Employee;
 
 @ExtendWith(MockitoExtension.class)
 class ErrandListenerTest {

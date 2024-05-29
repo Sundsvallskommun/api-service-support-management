@@ -6,6 +6,7 @@ import static java.time.temporal.ChronoUnit.MILLIS;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import jakarta.persistence.PostLoad;
@@ -46,7 +47,7 @@ public class ErrandListener {
 
 		// Status Changed
 		// The second statement is to prevent the same status from being added multiple times as preUpdate is called multiple times during the same transaction
-		if (!errandEntity.getStatus().equals(errandEntity.getTempPreviousStatus()) && !errandEntity.getPreviousStatus().equals(errandEntity.getTempPreviousStatus())) {
+		if (!errandEntity.getStatus().equals(errandEntity.getTempPreviousStatus()) && !Objects.equals(errandEntity.getTempPreviousStatus(), errandEntity.getPreviousStatus())) {
 			final var now = now();
 			Optional.ofNullable(errandEntity.getTimeMeasures())
 				.ifPresentOrElse(list -> {
