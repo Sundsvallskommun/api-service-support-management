@@ -4,8 +4,9 @@ import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static se.sundsvall.supportmanagement.service.mapper.EventlogMapper.toEvent;
 import static se.sundsvall.supportmanagement.service.mapper.EventlogMapper.toMetadataMap;
-import static se.sundsvall.supportmanagement.service.mapper.NotificationMapper.getStakeholderWithAdminRole;
 import static se.sundsvall.supportmanagement.service.mapper.NotificationMapper.toNotification;
+
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -71,9 +72,18 @@ public class EventService {
 	}
 
 	private void createNotification(final ErrandEntity errandEntity, final generated.se.sundsvall.eventlog.Event event) {
-		final var owner = employeeService.getEmployeeByPartyId(getStakeholderWithAdminRole(errandEntity));
-		final var creator = employeeService.getEmployeeByLoginName(executingUserSupplier.getAdUser());
-		notificationService.createNotification(errandEntity.getMunicipalityId(), errandEntity.getNamespace(), toNotification(event, errandEntity, owner, creator));
+
+		Optional.ofNullable(errandEntity.getAssignedUserId()).ifPresent(loginName -> {
+			final var owner = employeeService.getEmployeeByLoginName(loginName);
+			final var creator = employeeService.getEmployeeByLoginName(executingUserSupplier.getAdUser());
+
+			final var notification = toNotification(event, errandEntity, owner, creator);
+			if (creator == null) {
+				notification.setCreatedBy(executingUserSupplier.getAdUser());
+			}
+			notificationService.createNotification(errandEntity.getMunicipalityId(), errandEntity.getNamespace(), notification);
+		});
+
 	}
 
 
