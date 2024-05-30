@@ -26,6 +26,7 @@ import se.sundsvall.supportmanagement.api.filter.ExecutingUserSupplier;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.notification.Notification;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
+import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.eventlog.EventlogClient;
@@ -196,6 +197,7 @@ class EventServiceTest {
 		final var message = "message";
 		final var logKey = randomUUID().toString();
 		final var caseId = randomUUID().toString();
+		final var errandEntity = ErrandEntity.create().withExternalTags(List.of(new DbExternalTag().withValue(caseId).withKey("CaseId")));
 		final var noteId = randomUUID().toString();
 		final var currentRevisionId = randomUUID().toString();
 		final var currentRevisionVersion = 14;
@@ -212,7 +214,7 @@ class EventServiceTest {
 		when(executingUserSupplierMock.getAdUser()).thenReturn(executingUserId);
 
 		// Call
-		service.createErrandNoteEvent(eventType, message, logKey, caseId, noteId, currentRevision, previousRevision);
+		service.createErrandNoteEvent(eventType, message, logKey, errandEntity, noteId, currentRevision, previousRevision);
 
 		// Verifications and assertions
 		verify(eventLogClientMock).createEvent(eq(logKey), eventCaptor.capture());
@@ -246,6 +248,7 @@ class EventServiceTest {
 		final var message = "message";
 		final var logKey = randomUUID().toString();
 		final var caseId = randomUUID().toString();
+		final var errandEntity = ErrandEntity.create().withExternalTags(List.of(new DbExternalTag().withValue(caseId).withKey("CaseId")));
 		final var noteId = randomUUID().toString();
 		final var currentRevisionId = randomUUID().toString();
 		final var currentRevisionVersion = 0;
@@ -255,7 +258,7 @@ class EventServiceTest {
 		final var currentRevision = Revision.create().withId(currentRevisionId).withVersion(currentRevisionVersion);
 
 		// Call
-		service.createErrandNoteEvent(eventType, message, logKey, caseId, noteId, currentRevision, null);
+		service.createErrandNoteEvent(eventType, message, logKey, errandEntity, noteId, currentRevision, null);
 
 		// Verifications and assertions
 		verify(eventLogClientMock).createEvent(eq(logKey), eventCaptor.capture());

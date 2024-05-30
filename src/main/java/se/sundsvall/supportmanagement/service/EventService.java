@@ -1,11 +1,14 @@
 package se.sundsvall.supportmanagement.service;
 
+import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
+import static se.sundsvall.supportmanagement.Constants.EXTERNAL_TAG_KEY_CASE_ID;
 import static se.sundsvall.supportmanagement.service.mapper.EventlogMapper.toEvent;
 import static se.sundsvall.supportmanagement.service.mapper.EventlogMapper.toMetadataMap;
 import static se.sundsvall.supportmanagement.service.mapper.NotificationMapper.toNotification;
 
+import java.util.Objects;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -17,6 +20,7 @@ import se.sundsvall.supportmanagement.api.filter.ExecutingUserSupplier;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.event.Event;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
+import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.eventlog.EventlogClient;
 import se.sundsvall.supportmanagement.service.mapper.EventlogMapper;
@@ -51,11 +55,13 @@ public class EventService {
 		createNotification(errandEntity, event);
 	}
 
-	public void createErrandNoteEvent(final EventType eventType, final String message, final String logKey, final String caseId, final String noteId, final Revision currentRevision, final Revision previousRevision) {
+	public void createErrandNoteEvent(final EventType eventType, final String message, final String logKey, final ErrandEntity errandEntity, final String noteId, final Revision currentRevision, final Revision previousRevision) {
+		final var caseId = extractCaseId(errandEntity);
 		final var metadata = toMetadataMap(caseId, noteId, currentRevision, previousRevision);
-		eventLogClient.createEvent(
-			logKey,
-			toEvent(eventType, message, extractId(currentRevision), Note.class, metadata, executingUserSupplier.getAdUser()));
+		final var event = toEvent(eventType, message, extractId(currentRevision), Note.class, metadata, executingUserSupplier.getAdUser());
+		eventLogClient.createEvent(logKey, event);
+		createNotification(errandEntity, event);
+
 	}
 
 	public Page<Event> readEvents(final String id, final Pageable pageable) {
@@ -83,6 +89,18 @@ public class EventService {
 			}
 			notificationService.createNotification(errandEntity.getMunicipalityId(), errandEntity.getNamespace(), notification);
 		});
+
+	}
+
+	private String extractCaseId(final ErrandEntity errand) {
+		return ofNullable(errand)
+			.map(ErrandEntity::getExternalTags)
+			.orElse(emptyList())
+			.stream()
+			.filter(et -> Objects.equals(EXTERNAL_TAG_KEY_CASE_ID, et.getKey()))
+			.map(DbExternalTag::getValue)
+			.findAny()
+			.orElse(null);
 
 	}
 
