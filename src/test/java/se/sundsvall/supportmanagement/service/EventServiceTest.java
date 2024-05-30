@@ -197,7 +197,7 @@ class EventServiceTest {
 		final var message = "message";
 		final var logKey = randomUUID().toString();
 		final var caseId = randomUUID().toString();
-		final var errandEntity =ErrandEntity.create().withExternalTags(List.of(new DbExternalTag().withValue(caseId).withKey("CaseId")));
+		final var errandEntity = ErrandEntity.create().withExternalTags(List.of(new DbExternalTag().withValue(caseId).withKey("CaseId")));
 		final var noteId = randomUUID().toString();
 		final var currentRevisionId = randomUUID().toString();
 		final var currentRevisionVersion = 14;
@@ -248,7 +248,7 @@ class EventServiceTest {
 		final var message = "message";
 		final var logKey = randomUUID().toString();
 		final var caseId = randomUUID().toString();
-		final var errandEntity =ErrandEntity.create().withExternalTags(List.of(new DbExternalTag().withValue(caseId).withKey("CaseId")));
+		final var errandEntity = ErrandEntity.create().withExternalTags(List.of(new DbExternalTag().withValue(caseId).withKey("CaseId")));
 		final var noteId = randomUUID().toString();
 		final var currentRevisionId = randomUUID().toString();
 		final var currentRevisionVersion = 0;

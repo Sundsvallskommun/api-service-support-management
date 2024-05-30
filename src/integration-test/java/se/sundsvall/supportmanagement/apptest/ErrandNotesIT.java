@@ -33,9 +33,13 @@ import se.sundsvall.supportmanagement.Application;
 class ErrandNotesIT extends AbstractAppTest {
 
 	private static final String PATH = "/NAMESPACE.1/2281/errands/"; // 2281 is the municipalityId of Sundsvalls kommun
+
 	private static final String REQUEST_FILE = "request.json";
+
 	private static final String RESPONSE_FILE = "response.json";
+
 	private static final String NOTE_ID = "d1f2c8d4-d234-4504-a483-b74570a7941d";
+
 	private static final String ERRAND_ID = "ec677eb3-604c-4935-bff7-f8f0b500c8f4";
 
 	@Test
@@ -105,4 +109,5 @@ class ErrandNotesIT extends AbstractAppTest {
 			.withExpectedResponseStatus(NO_CONTENT)
 			.sendRequestAndVerifyResponse();
 	}
+
 }

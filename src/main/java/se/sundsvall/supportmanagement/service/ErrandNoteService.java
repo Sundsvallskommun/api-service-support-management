@@ -34,12 +34,12 @@ import se.sundsvall.supportmanagement.integration.notes.NotesClient;
 public class ErrandNoteService {
 
 	private static final String ERRAND_ENTITY_NOT_FOUND = "An errand with id '%s' could not be found in namespace '%s' for municipality with id '%s'";
-	private static final String EVENT_LOG_CREATE_ERRAND_NOTE = "Ärendenotering har skapats.";
-	private static final String EVENT_LOG_UPDATE_ERRAND_NOTE = "Ärendenotering har uppdaterats.";
-	private static final String EVENT_LOG_DELETE_ERRAND_NOTE = "Ärendenotering har raderats.";
 
-	@Value("${spring.application.name:}")
-	private String clientId;
+	private static final String EVENT_LOG_CREATE_ERRAND_NOTE = "Ärendenotering har skapats.";
+
+	private static final String EVENT_LOG_UPDATE_ERRAND_NOTE = "Ärendenotering har uppdaterats.";
+
+	private static final String EVENT_LOG_DELETE_ERRAND_NOTE = "Ärendenotering har raderats.";
 
 	private final NotesClient notesClient;
 
@@ -48,6 +48,9 @@ public class ErrandNoteService {
 	private final EventService eventService;
 
 	private final ExecutingUserSupplier executingUserSupplier;
+
+	@Value("${spring.application.name:}")
+	private String clientId;
 
 	public ErrandNoteService(final NotesClient notesClient,
 		final ErrandsRepository errandsRepository, final EventService eventService,
@@ -117,7 +120,7 @@ public class ErrandNoteService {
 
 	private String extractNoteIdFromLocationHeader(final ResponseEntity<Void> response) {
 		final var locationValue = Optional.ofNullable(response.getHeaders().get(LOCATION)).orElse(emptyList()).stream().findFirst();
-		return locationValue.map(string-> string.substring(string.lastIndexOf('/') + 1)).orElse(EMPTY);
+		return locationValue.map(string -> string.substring(string.lastIndexOf('/') + 1)).orElse(EMPTY);
 	}
 
 	private Revision extractRevisionInformationFromHeader(final ResponseEntity<?> response, final RevisionType revision) {
@@ -146,4 +149,5 @@ public class ErrandNoteService {
 			throw Problem.valueOf(NOT_FOUND, String.format(ERRAND_ENTITY_NOT_FOUND, id, namespace, municipalityId));
 		}
 	}
+
 }

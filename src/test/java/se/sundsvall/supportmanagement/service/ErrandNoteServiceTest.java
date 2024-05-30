@@ -46,22 +46,37 @@ import generated.se.sundsvall.notes.Note;
 class ErrandNoteServiceTest {
 
 	private static final int LIMIT = 99;
+
 	private static final int PAGE = 2;
+
 	private static final String NAMESPACE = "namespace";
+
 	private static final String MUNICIPALITY_ID = "municipalityId";
+
 	private static final String ERRAND_ID = "errandId";
+
 	private static final String BODY = "body";
+
 	private static final String CASE_ID = "caseId";
+
 	private static final ErrandEntity ERRAND_ENTITY = new ErrandEntity().withExternalTags(List.of(DbExternalTag.create().withKey(EXTERNAL_TAG_KEY_CASE_ID).withValue(CASE_ID)));
 
 	private static final String CONTEXT = "context";
+
 	private static final String CREATED_BY = "createdBy";
+
 	private static final String NOTE_ID = "noteId";
+
 	private static final String MODIFIED_BY = "modifiedBy";
+
 	private static final String PARTY_ID = "partyId";
+
 	private static final String ROLE = "role";
+
 	private static final String SUBJECT = "subject";
+
 	private static final String APPLICATION_NAME = "applicationName";
+
 	private static final String EXECUTING_USER = "executingUser";
 
 	@Mock
@@ -87,6 +102,23 @@ class ErrandNoteServiceTest {
 
 	@InjectMocks
 	private ErrandNoteService service;
+
+	private static CreateErrandNoteRequest buildCreateErrandNoteRequest() {
+		return CreateErrandNoteRequest.create()
+			.withBody(BODY)
+			.withContext(CONTEXT)
+			.withCreatedBy(CREATED_BY)
+			.withPartyId(PARTY_ID)
+			.withRole(ROLE)
+			.withSubject(SUBJECT);
+	}
+
+	private static UpdateErrandNoteRequest buildUpdateErrandNoteRequest() {
+		return UpdateErrandNoteRequest.create()
+			.withBody(BODY)
+			.withModifiedBy(MODIFIED_BY)
+			.withSubject(SUBJECT);
+	}
 
 	@Test
 	void createErrandNote() {
@@ -335,20 +367,4 @@ class ErrandNoteServiceTest {
 		verifyNoInteractions(notesClientMock);
 	}
 
-	private static CreateErrandNoteRequest buildCreateErrandNoteRequest() {
-		return CreateErrandNoteRequest.create()
-			.withBody(BODY)
-			.withContext(CONTEXT)
-			.withCreatedBy(CREATED_BY)
-			.withPartyId(PARTY_ID)
-			.withRole(ROLE)
-			.withSubject(SUBJECT);
-	}
-
-	private static UpdateErrandNoteRequest buildUpdateErrandNoteRequest() {
-		return UpdateErrandNoteRequest.create()
-			.withBody(BODY)
-			.withModifiedBy(MODIFIED_BY)
-			.withSubject(SUBJECT);
-	}
 }

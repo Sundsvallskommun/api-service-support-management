@@ -30,12 +30,18 @@ import se.sundsvall.supportmanagement.integration.db.EmailWorkerConfigRepository
 	"/db/scripts/testdata-it.sql"
 })
 class EmailIntegrationConfigIT extends AbstractAppTest {
+
 	private static final String REQUEST_FILE = "request.json";
+
 	private static final String RESPONSE_FILE = "response.json";
+
 	private static final String NAMESPACE_1 = "NAMESPACE.1";
+
 	private static final String NAMESPACE_3 = "NAMESPACE.3";
+
 	private static final String MUNICIPALITY_ID = "2281";
-	private static final UnaryOperator<String> PATH = namespace ->  "/" + namespace + "/" + MUNICIPALITY_ID + "/emailIntegrationConfig";
+
+	private static final UnaryOperator<String> PATH = namespace -> "/" + namespace + "/" + MUNICIPALITY_ID + "/emailIntegrationConfig";
 
 	@Autowired
 	private EmailWorkerConfigRepository repository;
@@ -125,4 +131,5 @@ class EmailIntegrationConfigIT extends AbstractAppTest {
 
 		assertThat(repository.existsByNamespaceAndMunicipalityId(NAMESPACE_3, MUNICIPALITY_ID)).isTrue();
 	}
+
 }
