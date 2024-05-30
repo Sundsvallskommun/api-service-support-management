@@ -7,7 +7,7 @@
 	<parent>
 		<groupId>se.sundsvall.dept44</groupId>
 		<artifactId>dept44-service-parent</artifactId>
-		<version>5.0.0</version>
+		<version>5.0.1</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>se.sundsvall</groupId>
@@ -15,10 +15,6 @@
 	<version>5.8</version>
 	<name>api-service-support-management</name>
 	<properties>
-		<!-- Pipeline properties -->
-		<docker.image.name>ms-support-management</docker.image.name>
-		<published.container.port.test>9094</published.container.port.test>
-		<published.container.port.production>9094</published.container.port.production>
 		<app.jvm.xmx.mb>512</app.jvm.xmx.mb>
 		<!-- Service properties -->
 		<spring-filter.version>3.1.7</spring-filter.version>
