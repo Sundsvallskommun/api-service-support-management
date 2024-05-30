@@ -38,7 +38,7 @@
         target varchar(255),
         direction enum ('INBOUND','OUTBOUND'),
         message_body longtext,
-        type enum ('SMS','EMAIL'),
+        type enum ('EMAIL','SMS'),
         primary key (id)
     ) engine=InnoDB;
 
@@ -60,7 +60,7 @@
     create table communication_email_header (
         communication_id varchar(255),
         id varchar(255) not null,
-        header_key enum ('IN_REPLY_TO','REFERENCES','MESSAGE_ID'),
+        header_key enum ('IN_REPLY_TO','MESSAGE_ID','REFERENCES'),
         primary key (id)
     ) engine=InnoDB;
 
@@ -336,10 +336,10 @@
        on external_tag (errand_id);
 
     create index idx_external_tag_key 
-       on external_tag (key);
+       on external_tag (`key`);
 
     alter table if exists external_tag 
-       add constraint uq_external_tag_errand_id_key unique (errand_id, key);
+       add constraint uq_external_tag_errand_id_key unique (errand_id, `key`);
 
     create index idx_namespace_municipality_id 
        on label (namespace, municipality_id);
