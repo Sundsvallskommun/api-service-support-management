@@ -85,9 +85,9 @@ public final class NotificationMapper {
 			.withCreatedBy(executingUser)
 			.withOwnerId(errandEntity.getAssignedUserId());
 		Optional.ofNullable(owner)
-			.ifPresent(o -> notification.withOwnerFullName(o.getFullname()));
+			.ifPresent(o -> notification.setOwnerFullName(o.getFullname()));
 		Optional.ofNullable(creator)
-			.ifPresent(c -> notification.withCreatedByFullName(c.getFullname()));
+			.ifPresent(c -> notification.setCreatedByFullName(c.getFullname()));
 		return notification;
 	}
 
