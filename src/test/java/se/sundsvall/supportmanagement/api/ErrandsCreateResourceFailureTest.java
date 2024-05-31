@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
+import static org.flywaydb.core.internal.util.StringUtils.rightPad;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -272,10 +273,9 @@ class ErrandsCreateResourceFailureTest {
 	@Test
 	void createErrandWithNonUniqueExternalTagKeys() {
 
-		var errand = createErrandInstance().withExternalTags(List.of(
+		final var errand = createErrandInstance().withExternalTags(List.of(
 			ExternalTag.create().withKey("key").withValue("value"),
 			ExternalTag.create().withKey("key").withValue("other value")));
-
 
 		System.out.println(errand.getId());
 		// Call
@@ -371,6 +371,31 @@ class ErrandsCreateResourceFailureTest {
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
 			.containsExactly(tuple("escalationEmail", "must be a well-formed email address"));
+
+		// Verification
+		verify(metadataServiceMock).findStatuses(any(), any());
+		verifyNoInteractions(errandServiceMock);
+	}
+
+	@Test
+	void createErrandWithTooLongChannel() {
+		// Call
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(createErrandInstance().withChannel(rightPad("Test", 260, 'X')))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::getField, Violation::getMessage)
+			.containsExactly(tuple("channel", "size must be between 0 and 255"));
 
 		// Verification
 		verify(metadataServiceMock).findStatuses(any(), any());
