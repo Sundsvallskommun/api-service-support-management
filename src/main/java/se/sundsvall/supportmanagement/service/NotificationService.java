@@ -4,7 +4,6 @@ import static org.zalando.problem.Status.NOT_FOUND;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -63,9 +62,7 @@ public class NotificationService {
 	}
 
 	private boolean isExecutingUserTheOwner(final String ownerId) {
-		return Optional.ofNullable(ownerId)
-			.map(id -> Objects.equals(id, executingUserSupplier.getAdUser()))
-			.orElse(false);
+		return Objects.equals(ownerId, executingUserSupplier.getAdUser());
 	}
 
 	private boolean doesNotificationExist(final String municipalityId, final String namespace, final Notification notification) {
