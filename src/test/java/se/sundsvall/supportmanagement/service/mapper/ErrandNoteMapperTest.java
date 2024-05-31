@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.service.mapper;
 
 import static java.time.OffsetDateTime.now;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.InstanceOfAssertFactories.LIST;
 import static org.assertj.core.groups.Tuple.tuple;
 
 import java.time.OffsetDateTime;
@@ -276,7 +277,8 @@ class ErrandNoteMapperTest {
 
 		assertThat(result).isNotNull()
 			.extracting(DifferenceResponse::getOperations)
-			.asList().isEmpty();
+			.asInstanceOf(LIST)
+			.isEmpty();
 	}
 
 	@Test
