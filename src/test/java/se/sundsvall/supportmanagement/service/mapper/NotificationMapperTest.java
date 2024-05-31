@@ -191,16 +191,15 @@ class NotificationMapperTest {
 
 		final var errandEntity = new ErrandEntity()
 			.withId(ERRAND_ID)
+			.withAssignedUserId(OWNER_ID)
 			.withErrandNumber(ERRAND_NUMBER);
 		final var owner = new PortalPersonData()
-			.loginName(OWNER_ID)
 			.fullname(CREATED_BY_FULL_NAME);
 		final var creator = new PortalPersonData()
-			.loginName(CREATED_BY)
 			.fullname(CREATED_BY_FULL_NAME);
 
 		// Act
-		final var notification = NotificationMapper.toNotification(event, errandEntity, owner, creator);
+		final var notification = NotificationMapper.toNotification(event, errandEntity, owner, creator, CREATED_BY);
 
 		// Assert
 		assertThat(notification).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "content", "expires");
