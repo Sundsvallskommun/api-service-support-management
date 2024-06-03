@@ -15,11 +15,11 @@ import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 
-import com.google.code.beanmatchers.BeanMatchers;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mariadb.jdbc.MariaDbBlob;
 
+import com.google.code.beanmatchers.BeanMatchers;
 
 class ErrandEntityTest {
 
@@ -30,7 +30,6 @@ class ErrandEntityTest {
 
 	@Test
 	void testBean() {
-
 		assertThat(ErrandEntity.class, allOf(
 			hasValidBeanConstructor(),
 			hasValidGettersAndSetters(),
@@ -51,6 +50,7 @@ class ErrandEntityTest {
 		final var namespace = "namespace";
 		final var stakeholder = StakeholderEntity.create().withExternalId(UUID.randomUUID().toString()).withExternalIdType("PRIVATE");
 		final var description = "description";
+		final var channel = "channel";
 		final var externalTags = List.of(DbExternalTag.create().withKey("key").withValue("value"));
 		final var id = UUID.randomUUID().toString();
 		final var municipalityId = "municipalityId";
@@ -77,6 +77,7 @@ class ErrandEntityTest {
 			.withNamespace(namespace)
 			.withStakeholders(List.of(stakeholder))
 			.withDescription(description)
+			.withChannel(channel)
 			.withExternalTags(externalTags)
 			.withId(id)
 			.withMunicipalityId(municipalityId)
@@ -108,6 +109,7 @@ class ErrandEntityTest {
 		assertThat(errandEntity.getNamespace()).isEqualTo(namespace);
 		assertThat(errandEntity.getStakeholders()).containsExactly(stakeholder);
 		assertThat(errandEntity.getDescription()).isEqualTo(description);
+		assertThat(errandEntity.getChannel()).isEqualTo(channel);
 		assertThat(errandEntity.getExternalTags()).isEqualTo(externalTags);
 		assertThat(errandEntity.getId()).isEqualTo(id);
 		assertThat(errandEntity.getMunicipalityId()).isEqualTo(municipalityId);
@@ -135,5 +137,4 @@ class ErrandEntityTest {
 		assertThat(ErrandEntity.create()).hasAllNullFieldsOrPropertiesExcept("timeMeasures");
 		assertThat(new ErrandEntity()).hasAllNullFieldsOrPropertiesExcept("timeMeasures");
 	}
-
 }

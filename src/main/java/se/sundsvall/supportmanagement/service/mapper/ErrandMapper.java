@@ -43,6 +43,7 @@ public class ErrandMapper {
 			.withParameters(emptyList())
 			.withCategory(errand.getClassification().getCategory())
 			.withDescription(errand.getDescription())
+			.withChannel(errand.getChannel())
 			.withEscalationEmail(errand.getEscalationEmail())
 			.withExternalTags(toExternalTag(errand.getExternalTags()))
 			.withMunicipalityId(municipalityId)
@@ -82,6 +83,7 @@ public class ErrandMapper {
 		ofNullable(errand.getTitle()).ifPresent(entity::setTitle);
 		ofNullable(errand.getResolution()).ifPresent(value -> entity.setResolution(isEmpty(value) ? null : value));
 		ofNullable(errand.getDescription()).ifPresent(value -> entity.setDescription(isEmpty(value) ? null : value));
+		ofNullable(errand.getChannel()).ifPresent(value -> entity.setChannel(isEmpty(value) ? null : value));
 		ofNullable(errand.getEscalationEmail()).ifPresent(value -> entity.setEscalationEmail(isEmpty(value) ? null : value));
 		ofNullable(errand.getBusinessRelated()).ifPresent(value -> entity.setBusinessRelated(errand.getBusinessRelated()));
 
@@ -131,6 +133,7 @@ public class ErrandMapper {
 				.withTouched(e.getTouched())
 				.withResolution(e.getResolution())
 				.withDescription(e.getDescription())
+				.withChannel(e.getChannel())
 				.withSuspension(Suspension.create().withSuspendedFrom(e.getSuspendedFrom()).withSuspendedTo(e.getSuspendedTo()))
 				.withBusinessRelated(e.getBusinessRelated())
 				.withParameters(toErrandParameters(e.getParameters()))
@@ -152,7 +155,6 @@ public class ErrandMapper {
 			.withName(parameterEntity.getName())
 			.withValue(parameterEntity.getValue());
 	}
-
 
 	private static List<Stakeholder> toStakeholders(List<StakeholderEntity> stakeholderEntities) {
 		return Optional.ofNullable(stakeholderEntities)

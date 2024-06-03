@@ -56,6 +56,7 @@ class ErrandMapperTest {
 	private static final OffsetDateTime TOUCHED = now().plusWeeks(1);
 	private static final String TYPE = "type";
 	private static final String DESCRIPTION = "description";
+	private static final String CHANNEL = "channel";
 	private static final String RESOLUTION = "resolution";
 	private static final String FIRST_NAME = "firstName";
 	private static final String LAST_NAME = "lastName";
@@ -135,6 +136,7 @@ class ErrandMapperTest {
 			.withModified(MODIFIED)
 			.withResolution(RESOLUTION)
 			.withDescription(DESCRIPTION)
+			.withChannel(CHANNEL)
 			.withEscalationEmail(ESCALATION_EMAIL)
 			.withContactReason(ContactReasonEntity.create().withReason(CONTACT_REASON))
 			.withSuspendedFrom(SUSPENDED_FROM)
@@ -182,6 +184,7 @@ class ErrandMapperTest {
 		assertThat(errand.getTouched()).isEqualTo(TOUCHED);
 		assertThat(errand.getResolution()).isEqualTo(RESOLUTION);
 		assertThat(errand.getDescription()).isEqualTo(DESCRIPTION);
+		assertThat(errand.getChannel()).isEqualTo(CHANNEL);
 		assertThat(errand.getEscalationEmail()).isEqualTo(ESCALATION_EMAIL);
 		assertThat(errand.getErrandNumber()).isEqualTo(ERRAND_NUMBER);
 		assertThat(errand.getParameters()).hasSize(1)
@@ -190,7 +193,7 @@ class ErrandMapperTest {
 		assertThat(errand.getBusinessRelated()).isEqualTo(BUSINESS_RELATED);
 		assertThat(errand.getContactReason()).isEqualTo(CONTACT_REASON);
 
-		assertThat(errand).hasNoNullFieldsOrPropertiesExcept("channel"); // TODO: Remove "channel", when support has been added to ErrandEntity
+		assertThat(errand).hasNoNullFieldsOrProperties();
 	}
 
 	@Test
@@ -242,12 +245,13 @@ class ErrandMapperTest {
 				TOUCHED,
 				RESOLUTION,
 				DESCRIPTION,
-				null,
+				CHANNEL,
 				ESCALATION_EMAIL,
 				BUSINESS_RELATED,
 				CONTACT_REASON,
 				ERRAND_NUMBER));
-		assertThat(errands.getFirst()).hasNoNullFieldsOrPropertiesExcept("channel"); // TODO: Remove "channel", when support has been added to ErrandEntity
+
+		assertThat(errands.getFirst()).hasNoNullFieldsOrProperties();
 	}
 
 	@Test
@@ -423,9 +427,17 @@ class ErrandMapperTest {
 
 	@Test
 	void testUpdateEntityWithBlank() {
-		final var entity = updateEntity(createEntity(), Errand.create().withAssignedGroupId("").withAssignedUserId("").withErrandNumber("").withResolution("").withDescription("").withEscalationEmail("").withContactReason(""));
+		final var entity = updateEntity(createEntity(), Errand.create()
+			.withAssignedGroupId("")
+			.withAssignedUserId("")
+			.withErrandNumber("")
+			.withResolution("")
+			.withDescription("")
+			.withChannel("")
+			.withEscalationEmail("")
+			.withContactReason(""));
 
-		assertThat(entity).hasNoNullFieldsOrPropertiesExcept("assignedGroupId", "assignedUserId", "attachments", "resolution", "description", "escalationEmail", "parameters", "businessRelated", "suspend", "previousStatus", "tempPreviousStatus",
+		assertThat(entity).hasNoNullFieldsOrPropertiesExcept("assignedGroupId", "assignedUserId", "attachments", "resolution", "description", "channel", "escalationEmail", "parameters", "businessRelated", "suspend", "previousStatus", "tempPreviousStatus",
 			"timeMeasures");
 		assertThat(entity.getAssignedGroupId()).isNull();
 		assertThat(entity.getAssignedUserId()).isNull();
