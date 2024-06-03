@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.service.scheduler.webmessagecollector;
 
+import static java.util.Collections.emptyMap;
 import static se.sundsvall.supportmanagement.Constants.ERRAND_STATUS_ONGOING;
 import static se.sundsvall.supportmanagement.Constants.ERRAND_STATUS_SOLVED;
 
@@ -46,13 +47,18 @@ public class WebMessageCollectorWorker {
 
 	@Transactional
 	public List<CommunicationAttachmentEntity> fetchWebMessages() {
-		return webMessageCollectorProperties.familyIds().stream()
-			.flatMap(familyId -> getWebMessages(familyId).stream())
+		
+		return Optional.ofNullable(webMessageCollectorProperties.familyIds())
+			.orElse(emptyMap())
+			.entrySet().stream()
+			.flatMap(entry -> entry.getValue().stream()
+				.flatMap(familyId -> getWebMessages(entry.getKey(), familyId)
+					.stream()))
 			.toList();
 	}
 
-	private List<CommunicationAttachmentEntity> getWebMessages(final String familyId) {
-		final var messages = webMessageCollectorClient.getMessages(familyId);
+	private List<CommunicationAttachmentEntity> getWebMessages(final String instance, final String familyId) {
+		final var messages = webMessageCollectorClient.getMessages(familyId, instance);
 		LOG.info("Got {} messages from the WebMessageCollectorClient", messages.size());
 
 		return processMessages(messages);

@@ -14,6 +14,7 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.Directio
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
@@ -66,6 +67,7 @@ class WebMessageCollectorWorkerTest {
 	void fetchWebMessages() {
 		// Arrange
 		final var familyId = "123";
+		final var instance = "instance";
 		final var errandNumber = "KC-2024-0101";
 		final var messagedto = new MessageDTO()
 			.direction(MessageDTO.DirectionEnum.INBOUND)
@@ -86,8 +88,8 @@ class WebMessageCollectorWorkerTest {
 			.withStatus(Constants.ERRAND_STATUS_SOLVED)
 			.withTouched(now().minusDays(2));
 		// Mock
-		when(webMessageCollectorPropertiesMock.familyIds()).thenReturn(List.of(familyId));
-		when(webMessageCollectorClientMock.getMessages(any(String.class))).thenReturn(List.of(messagedto));
+		when(webMessageCollectorPropertiesMock.familyIds()).thenReturn(Map.of(instance, List.of(familyId)));
+		when(webMessageCollectorClientMock.getMessages(familyId, instance)).thenReturn(List.of(messagedto));
 		when(errandsRepositoryMock.findByExternalTagsValue(any(String.class))).thenReturn(Optional.of(errandEntity));
 
 
@@ -95,7 +97,7 @@ class WebMessageCollectorWorkerTest {
 		webMessageCollectorWorker.fetchWebMessages();
 		// Verify
 		verify(webMessageCollectorPropertiesMock).familyIds();
-		verify(webMessageCollectorClientMock).getMessages(familyId);
+		verify(webMessageCollectorClientMock).getMessages(familyId, instance);
 		verify(errandsRepositoryMock, times(1)).findByExternalTagsValue(familyId);
 
 		verify(errandsRepositoryMock).save(errandEntityCaptor.capture());
@@ -124,13 +126,15 @@ class WebMessageCollectorWorkerTest {
 
 	@Test
 	void fetchWebMessage_NothingFromWebMessageCollector() {
-		// Mock
-		when(webMessageCollectorPropertiesMock.familyIds()).thenReturn(List.of("123"));
+		// Arrange
+		final var familyId = "123";
+		final var instance = "instance";
+		when(webMessageCollectorPropertiesMock.familyIds()).thenReturn(Map.of(instance, List.of(familyId)));
 		// Act
 		webMessageCollectorWorker.fetchWebMessages();
 		// Verify
 		verify(webMessageCollectorPropertiesMock).familyIds();
-		verify(webMessageCollectorClientMock).getMessages(any(String.class));
+		verify(webMessageCollectorClientMock).getMessages(familyId, instance);
 		verifyNoMoreInteractions(webMessageCollectorClientMock, webMessageCollectorPropertiesMock, errandsRepositoryMock, communicationRepositoryMock);
 
 	}
@@ -138,6 +142,8 @@ class WebMessageCollectorWorkerTest {
 	@Test
 	void fetchWebMessage_NoErrandFound() {
 		// Arrange
+		final var familyId = "123";
+		final var instance = "instance";
 		final var messagedto = new MessageDTO()
 			.direction(MessageDTO.DirectionEnum.INBOUND)
 			.email("email")
@@ -152,13 +158,13 @@ class WebMessageCollectorWorkerTest {
 			.userId("userId")
 			.username("username");
 		// Mock
-		when(webMessageCollectorPropertiesMock.familyIds()).thenReturn(List.of("123"));
-		when(webMessageCollectorClientMock.getMessages(any(String.class))).thenReturn(List.of(messagedto));
+		when(webMessageCollectorPropertiesMock.familyIds()).thenReturn(Map.of(instance, List.of(familyId)));
+		when(webMessageCollectorClientMock.getMessages(familyId, instance)).thenReturn(List.of(messagedto));
 		// Act
 		webMessageCollectorWorker.fetchWebMessages();
 		// Verify
 		verify(webMessageCollectorPropertiesMock).familyIds();
-		verify(webMessageCollectorClientMock).getMessages(any(String.class));
+		verify(webMessageCollectorClientMock).getMessages(familyId, instance);
 		verify(errandsRepositoryMock).findByExternalTagsValue(any(String.class));
 		verifyNoMoreInteractions(webMessageCollectorClientMock, webMessageCollectorPropertiesMock, errandsRepositoryMock, communicationRepositoryMock);
 
@@ -168,6 +174,8 @@ class WebMessageCollectorWorkerTest {
 	@Test
 	void fetchWebMessage_oldErrand() {
 		// Arrange
+		final var familyId = "123";
+		final var instance = "instance";
 		final var messagedto = new MessageDTO()
 			.direction(MessageDTO.DirectionEnum.INBOUND)
 			.email("email")
@@ -188,15 +196,15 @@ class WebMessageCollectorWorkerTest {
 			.withTouched(now().minusDays(5).minusMinutes(1));
 
 		// Mock
-		when(webMessageCollectorPropertiesMock.familyIds()).thenReturn(List.of("123"));
-		when(webMessageCollectorClientMock.getMessages(any(String.class))).thenReturn(List.of(messagedto));
+		when(webMessageCollectorPropertiesMock.familyIds()).thenReturn(Map.of(instance, List.of(familyId)));
+		when(webMessageCollectorClientMock.getMessages(familyId, instance)).thenReturn(List.of(messagedto));
 		when(errandsRepositoryMock.findByExternalTagsValue(any(String.class))).thenReturn(Optional.of(errandEntity));
 
 		// Act
 		webMessageCollectorWorker.fetchWebMessages();
 		// Verify
 		verify(webMessageCollectorPropertiesMock).familyIds();
-		verify(webMessageCollectorClientMock).getMessages(any(String.class));
+		verify(webMessageCollectorClientMock).getMessages(familyId, instance);
 		verify(errandsRepositoryMock).findByExternalTagsValue(any(String.class));
 		verifyNoMoreInteractions(webMessageCollectorClientMock, webMessageCollectorPropertiesMock, errandsRepositoryMock, communicationRepositoryMock);
 
@@ -216,6 +224,8 @@ class WebMessageCollectorWorkerTest {
 	@Test
 	void fetchWebMessage_noExternalCaseId() {
 		// Arrange
+		final var familyId = "123";
+		final var instance = "instance";
 		final var messagedto = new MessageDTO()
 			.direction(MessageDTO.DirectionEnum.INBOUND)
 			.email("email")
@@ -229,13 +239,13 @@ class WebMessageCollectorWorkerTest {
 			.userId("userId")
 			.username("username");
 		// Mock
-		when(webMessageCollectorPropertiesMock.familyIds()).thenReturn(List.of("123"));
-		when(webMessageCollectorClientMock.getMessages(any(String.class))).thenReturn(List.of(messagedto));
+		when(webMessageCollectorPropertiesMock.familyIds()).thenReturn(Map.of(instance, List.of(familyId)));
+		when(webMessageCollectorClientMock.getMessages(familyId, instance)).thenReturn(List.of(messagedto));
 		// Act
 		webMessageCollectorWorker.fetchWebMessages();
 		//Verify
 		verify(webMessageCollectorPropertiesMock).familyIds();
-		verify(webMessageCollectorClientMock).getMessages(any(String.class));
+		verify(webMessageCollectorClientMock).getMessages(familyId, instance);
 		verify(errandsRepositoryMock).findByExternalTagsValue(null);
 		verifyNoMoreInteractions(webMessageCollectorPropertiesMock, webMessageCollectorClientMock, errandsRepositoryMock);
 		verifyNoInteractions(communicationRepositoryMock);
