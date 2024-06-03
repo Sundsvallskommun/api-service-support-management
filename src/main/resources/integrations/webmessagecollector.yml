@@ -5,15 +5,15 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "3.0"
+  version: "4.0"
 servers:
-  - url: http://localhost:50331
+  - url: http://localhost:58519
     description: Generated server url
 tags:
   - name: messages
     description: Messages
 paths:
-  /messages:
+  /messages/{familyId}/{Instance}:
     get:
       tags:
         - messages
@@ -21,34 +21,41 @@ paths:
       description: Returns a list of messages found for the specified familyId
       operationId: getMessages
       parameters:
-        - name: familyid
-          in: query
+        - name: familyId
+          in: path
           description: FamilyId to fetch messages for
           required: true
           schema:
             type: string
           example: 123
+        - name: Instance
+          in: path
+          description: Instance to fetch messages for
+          required: true
+          schema:
+            type: string
+          example: INTERNAL
       responses:
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
             application/problem+json:
               schema:
                 oneOf:
-                  - $ref: '#/components/schemas/Problem'
-                  - $ref: '#/components/schemas/ConstraintViolationProblem'
-        "404":
-          description: Not found
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
+                  - $ref: "#/components/schemas/Problem"
+                  - $ref: "#/components/schemas/ConstraintViolationProblem"
         "200":
           description: Successful Operation
           content:
@@ -56,45 +63,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/MessageDTO'
-    delete:
-      tags:
-        - messages
-      summary: Delete a list of messages
-      description: Deletes a list of messages with the ids provided
-      operationId: deleteMessages
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: array
-              items:
-                type: integer
-                format: int32
-        required: true
-      responses:
-        "400":
-          description: Bad request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                  - $ref: '#/components/schemas/Problem'
-                  - $ref: '#/components/schemas/ConstraintViolationProblem'
-        "404":
-          description: Not found
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        "204":
-          description: No Content
+                  $ref: "#/components/schemas/MessageDTO"
   /messages/attachments/{attachmentId}:
     get:
       tags:
@@ -112,26 +81,26 @@ paths:
             format: int32
           example: 123
       responses:
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
             application/problem+json:
               schema:
                 oneOf:
-                  - $ref: '#/components/schemas/Problem'
-                  - $ref: '#/components/schemas/ConstraintViolationProblem'
-        "404":
-          description: Not found
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
+                  - $ref: "#/components/schemas/Problem"
+                  - $ref: "#/components/schemas/ConstraintViolationProblem"
         "200":
           description: Successful Operation
     delete:
@@ -150,26 +119,26 @@ paths:
             format: int32
           example: 123
       responses:
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
             application/problem+json:
               schema:
                 oneOf:
-                  - $ref: '#/components/schemas/Problem'
-                  - $ref: '#/components/schemas/ConstraintViolationProblem'
-        "404":
-          description: Not found
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
+                  - $ref: "#/components/schemas/Problem"
+                  - $ref: "#/components/schemas/ConstraintViolationProblem"
         "204":
           description: No Content
   /api-docs:
@@ -188,6 +157,45 @@ paths:
       x-auth-type: None
       x-throttling-tier: Unlimited
       x-wso2-mutual-ssl: Optional
+  /messages:
+    delete:
+      tags:
+        - messages
+      summary: Delete a list of messages
+      description: Deletes a list of messages with the ids provided
+      operationId: deleteMessages
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: integer
+                format: int32
+        required: true
+      responses:
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/Problem"
+                  - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "204":
+          description: No Content
 components:
   schemas:
     Problem:
@@ -203,12 +211,12 @@ components:
           type: object
           additionalProperties:
             type: object
+        status:
+          $ref: "#/components/schemas/StatusType"
         title:
           type: string
         detail:
           type: string
-        status:
-          $ref: '#/components/schemas/StatusType'
     StatusType:
       type: object
       properties:
@@ -221,7 +229,7 @@ components:
       type: object
       properties:
         cause:
-          $ref: '#/components/schemas/ThrowableProblem'
+          $ref: "#/components/schemas/ThrowableProblem"
         stackTrace:
           type: array
           items:
@@ -248,11 +256,11 @@ components:
           type: string
           format: uri
         status:
-          $ref: '#/components/schemas/StatusType'
+          $ref: "#/components/schemas/StatusType"
         violations:
           type: array
           items:
-            $ref: '#/components/schemas/Violation'
+            $ref: "#/components/schemas/Violation"
         title:
           type: string
         message:
@@ -303,7 +311,7 @@ components:
       type: object
       properties:
         cause:
-          $ref: '#/components/schemas/ThrowableProblem'
+          $ref: "#/components/schemas/ThrowableProblem"
         stackTrace:
           type: array
           items:
@@ -338,12 +346,12 @@ components:
           type: object
           additionalProperties:
             type: object
+        status:
+          $ref: "#/components/schemas/StatusType"
         title:
           type: string
         detail:
           type: string
-        status:
-          $ref: '#/components/schemas/StatusType'
         suppressed:
           type: array
           items:
@@ -452,20 +460,22 @@ components:
           example: Test
         lastName:
           type: string
-          description: 'If the message was utbound from a manager or inbound from
-            a customer '
-          example: Testorsson
+          description: Lastname of the poster
+          example: Testsson
         email:
           type: string
           description: Email for the poster
           example: test@sundsvall.se
         userId:
           type: string
-          description: 'If the message was utbound from a manager or inbound from
-            a customer '
-          example: "177"
+          description: The userId for the poster
+          example: "123"
         attachments:
           type: array
           items:
-            $ref: '#/components/schemas/MessageAttachment'
+            $ref: "#/components/schemas/MessageAttachment"
+        instance:
+          type: string
+          description: The instance of the message
+          example: external
   securitySchemes: { }
