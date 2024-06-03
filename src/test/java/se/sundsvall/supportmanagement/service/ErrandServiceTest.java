@@ -10,7 +10,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -25,7 +24,6 @@ import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.w
 import java.util.List;
 import java.util.Optional;
 
-import com.turkraft.springfilter.converter.FilterSpecificationConverter;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -43,6 +41,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.zalando.problem.ThrowableProblem;
+
+import com.turkraft.springfilter.converter.FilterSpecificationConverter;
 
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
@@ -97,28 +97,25 @@ class ErrandServiceTest {
 	@Captor
 	private ArgumentCaptor<Specification<ErrandEntity>> specificationCaptor;
 
-
 	@Test
 	void createErrand() {
 		// Setup
 		final var errand = buildErrand();
-		final var errandEntity = ErrandEntity.create().withId(ERRAND_ID);
 
 		// Mock
-		when(errandRepositoryMock.save(any(ErrandEntity.class))).thenReturn(errandEntity);
+		when(errandRepositoryMock.save(any(ErrandEntity.class))).thenReturn(ErrandEntity.create().withId(ERRAND_ID));
 		when(revisionServiceMock.createErrandRevision(any())).thenReturn(new RevisionResult(null, currentRevisionMock));
 		when(stringGeneratorServiceMock.generateErrandNumber(any(String.class), any(String.class))).thenReturn("KC-23090001");
 		when(contactReasonRepositoryMock.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(Optional.ofNullable(ContactReasonEntity.create().withReason("reason")));
 
-		// Call
 		final var result = service.createErrand(NAMESPACE, MUNICIPALITY_ID, errand);
 
 		// Assertions and verifications
 		assertThat(result).isEqualTo(ERRAND_ID);
 
-		verify(errandRepositoryMock, times(2)).save(any(ErrandEntity.class));
+		verify(errandRepositoryMock).save(any(ErrandEntity.class));
 		verify(revisionServiceMock).createErrandRevision(any(ErrandEntity.class));
-		verify(eventServiceMock).createErrandEvent(CREATE, EVENT_LOG_CREATE_ERRAND, errandEntity, currentRevisionMock, null);
+		verify(eventServiceMock).createErrandEvent(eq(CREATE), eq(EVENT_LOG_CREATE_ERRAND), any(ErrandEntity.class), eq(currentRevisionMock), eq(null));
 	}
 
 	@Test
