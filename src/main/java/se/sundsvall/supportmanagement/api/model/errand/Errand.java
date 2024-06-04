@@ -95,6 +95,10 @@ public class Errand {
 	@ValidContactReason(groups = { OnCreate.class, OnUpdate.class }, nullable = true)
 	private String contactReason;
 
+	@Schema(description = "Contact reason description for the errand", example = "The printer is not working since the power cord is missing")
+	@Size(max = 255)
+	private String contactReasonDescription;
+
 	@Schema(description = "Suspension information")
 	@Valid
 	private Suspension suspension;
@@ -382,6 +386,19 @@ public class Errand {
 		return this;
 	}
 
+	public String getContactReasonDescription() {
+		return contactReasonDescription;
+	}
+
+	public void setContactReasonDescription(String contactReasonDescription) {
+		this.contactReasonDescription = contactReasonDescription;
+	}
+
+	public Errand withContactReasonDescription(String contactReasonDescription) {
+		this.contactReasonDescription = contactReasonDescription;
+		return this;
+	}
+
 	public Boolean getBusinessRelated() {
 		return businessRelated;
 	}
@@ -410,8 +427,8 @@ public class Errand {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(assignedGroupId, assignedUserId, businessRelated, channel, classification, contactReason, created, description, errandNumber, escalationEmail, externalTags, id, modified, parameters, priority, reporterUserId, resolution,
-			stakeholders, status, suspension, title, touched);
+		return Objects.hash(assignedGroupId, assignedUserId, businessRelated, channel, classification, contactReason, contactReasonDescription, created, description, errandNumber, escalationEmail, externalTags, id, modified, parameters, priority,
+			reporterUserId, resolution, stakeholders, status, suspension, title, touched);
 	}
 
 	@Override
@@ -419,11 +436,10 @@ public class Errand {
 		if (this == obj) { return true; }
 		if (!(obj instanceof final Errand other)) { return false; }
 		return Objects.equals(assignedGroupId, other.assignedGroupId) && Objects.equals(assignedUserId, other.assignedUserId) && Objects.equals(businessRelated, other.businessRelated) && Objects.equals(channel, other.channel) && Objects.equals(
-			classification, other.classification) && Objects.equals(contactReason, other.contactReason) && Objects.equals(created, other.created) && Objects.equals(description, other.description) && Objects.equals(errandNumber, other.errandNumber)
-			&& Objects.equals(escalationEmail, other.escalationEmail) && Objects.equals(externalTags, other.externalTags) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(parameters, other.parameters)
-			&& (priority == other.priority) && Objects.equals(reporterUserId, other.reporterUserId) && Objects.equals(resolution, other.resolution) && Objects.equals(stakeholders, other.stakeholders) && Objects.equals(status, other.status) && Objects
-				.equals(
-					suspension, other.suspension) && Objects.equals(title, other.title) && Objects.equals(touched, other.touched);
+			classification, other.classification) && Objects.equals(contactReason, other.contactReason) && Objects.equals(contactReasonDescription, other.contactReasonDescription) && Objects.equals(created, other.created) && Objects.equals(description,
+				other.description) && Objects.equals(errandNumber, other.errandNumber) && Objects.equals(escalationEmail, other.escalationEmail) && Objects.equals(externalTags, other.externalTags) && Objects.equals(id, other.id) && Objects.equals(modified,
+					other.modified) && Objects.equals(parameters, other.parameters) && (priority == other.priority) && Objects.equals(reporterUserId, other.reporterUserId) && Objects.equals(resolution, other.resolution) && Objects.equals(stakeholders,
+						other.stakeholders) && Objects.equals(status, other.status) && Objects.equals(suspension, other.suspension) && Objects.equals(title, other.title) && Objects.equals(touched, other.touched);
 	}
 
 	@Override
@@ -432,8 +448,8 @@ public class Errand {
 		builder.append("Errand [id=").append(id).append(", errandNumber=").append(errandNumber).append(", title=").append(title).append(", priority=").append(priority).append(", stakeholders=").append(stakeholders).append(", externalTags=").append(
 			externalTags).append(", parameters=").append(parameters).append(", classification=").append(classification).append(", status=").append(status).append(", resolution=").append(resolution).append(", description=").append(description).append(
 				", channel=").append(channel).append(", reporterUserId=").append(reporterUserId).append(", assignedUserId=").append(assignedUserId).append(", assignedGroupId=").append(assignedGroupId).append(", escalationEmail=").append(escalationEmail)
-			.append(", contactReason=").append(contactReason).append(", suspension=").append(suspension).append(", businessRelated=").append(businessRelated).append(", created=").append(created).append(", modified=").append(modified).append(", touched=")
-			.append(touched).append("]");
+			.append(", contactReason=").append(contactReason).append(", contactReasonDescription=").append(contactReasonDescription).append(", suspension=").append(suspension).append(", businessRelated=").append(businessRelated).append(", created=")
+			.append(created).append(", modified=").append(modified).append(", touched=").append(touched).append("]");
 		return builder.toString();
 	}
 }
