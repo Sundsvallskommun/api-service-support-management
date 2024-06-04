@@ -43,6 +43,7 @@
   "status": "STATUS-3",
   "resolution": "RESOLUTION",
   "description": "DESCRIPTION",
+  "channel": "Updated channel",
   "reporterUserId": "REPORTER_USER_ID-3",
   "assignedUserId": "ASSIGNED_USER_ID-3",
   "assignedGroupId": "ASSIGNED_GROUP_ID-3",

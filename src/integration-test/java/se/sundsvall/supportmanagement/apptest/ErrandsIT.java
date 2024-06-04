@@ -16,7 +16,6 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Example;
 import org.springframework.test.context.jdbc.Sql;
 
 import se.sundsvall.dept44.test.AbstractAppTest;
@@ -24,7 +23,6 @@ import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.RevisionRepository;
-import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.RevisionEntity;
 
 /**
@@ -84,24 +82,22 @@ class ErrandsIT extends AbstractAppTest {
 
 	@Test
 	void test04_postErrand() {
-		setupCall()
+		final var headers = setupCall()
 			.withHeader("sentbyuser", "joe01doe")
 			.withServicePath(PATH.replace("NAMESPACE.1", "CONTACTCENTER"))
 			.withHttpMethod(POST)
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(CREATED)
 			.withExpectedResponseHeader(LOCATION, List.of("/CONTACTCENTER/2281/errands/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"))
+			.sendRequest()
+			.getResponseHeaders();
+
+		setupCall()
+			.withServicePath(headers.get(LOCATION).stream().findFirst().get())
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
-
-		final var entityId = errandsRepository.findAll(Example.of(ErrandEntity.create().withTitle("test04_postErrand"))).stream()
-			.findAny()
-			.map(ErrandEntity::getId)
-			.orElseThrow();
-
-		assertThat(revisionRepository.findAllByEntityIdOrderByVersion(entityId))
-			.hasSize(1)
-			.extracting(RevisionEntity::getVersion)
-			.containsExactly(0);
 	}
 
 	@Test
