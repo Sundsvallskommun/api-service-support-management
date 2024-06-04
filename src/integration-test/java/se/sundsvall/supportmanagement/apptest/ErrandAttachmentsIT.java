@@ -75,7 +75,7 @@ class ErrandAttachmentsIT extends AbstractAppTest {
 			.extracting(RevisionEntity::getVersion)
 			.containsExactly(0);
 
-		var headers = setupCall()
+		final var headers = setupCall()
 			.withHeader("sentbyuser", "cre03ate")
 			.withServicePath(PATH + entityId + "/attachments")
 			.withHttpMethod(POST)
@@ -98,7 +98,6 @@ class ErrandAttachmentsIT extends AbstractAppTest {
 			.withExpectedResponseHeader(CONTENT_TYPE, List.of(TEXT_PLAIN_VALUE))
 			.withExpectedBinaryResponse("test.txt")
 			.sendRequestAndVerifyResponse();
-
 	}
 
 	@Test

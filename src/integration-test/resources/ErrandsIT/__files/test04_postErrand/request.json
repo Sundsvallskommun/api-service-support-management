@@ -24,5 +24,6 @@
   "assignedUserId": "joe01doe",
   "assignedGroupId": "hardware support",
   "resolution": "fixed",
-  "description": "Fix as soon as possible!"
+  "description": "Fix as soon as possible!",
+  "channel": "The channel"
 }

@@ -52,15 +52,16 @@ public class NotificationService {
 
 	public String createNotification(final String municipalityId, final String namespace, final Notification notification) {
 
-		if (!isOwner(notification.getOwnerId()) && doesNotificationExist(municipalityId, namespace, notification)) {
+		if (notification.getOwnerId() == null || isExecutingUserTheOwner(notification.getOwnerId()) || doesNotificationExist(municipalityId, namespace, notification)) {
 			return null;
 		}
 
 		final var entity = NotificationMapper.toNotificationEntity(namespace, municipalityId, notification);
+
 		return notificationRepository.save(entity).getId();
 	}
 
-	private boolean isOwner(final String ownerId) {
+	private boolean isExecutingUserTheOwner(final String ownerId) {
 		return Objects.equals(ownerId, executingUserSupplier.getAdUser());
 	}
 

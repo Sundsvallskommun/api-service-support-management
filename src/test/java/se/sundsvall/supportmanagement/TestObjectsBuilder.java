@@ -68,7 +68,7 @@ public class TestObjectsBuilder {
 
 	private static final String NOTIFICATION_OWNER = "Test Owner";
 
-	private static final String NOTIFICATION_OWNER_ID = "cb20c51f-fcf3-42c0-b613-de563634a8ec";
+	private static final String NOTIFICATION_OWNER_ID = "TE07ST";
 
 	private static final String NOTIFICATION_CREATED_BY = "TestUser";
 

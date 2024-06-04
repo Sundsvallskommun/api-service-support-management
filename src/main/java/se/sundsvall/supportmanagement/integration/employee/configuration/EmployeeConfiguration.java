@@ -26,5 +26,4 @@ public class EmployeeConfiguration {
 			.withRetryableOAuth2InterceptorForClientRegistration(clientRegistrationRepository.findByRegistrationId(CLIENT_ID))
 			.composeCustomizersToOne();
 	}
-
 }
