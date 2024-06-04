@@ -193,7 +193,7 @@ class ErrandMapperTest {
 		assertThat(errand.getBusinessRelated()).isEqualTo(BUSINESS_RELATED);
 		assertThat(errand.getContactReason()).isEqualTo(CONTACT_REASON);
 
-		assertThat(errand).hasNoNullFieldsOrPropertiesExcept("contactReasonDescription");
+		assertThat(errand).hasNoNullFieldsOrPropertiesExcept("contactReasonDescription"); // TODO: remove "Except.."
 	}
 
 	@Test
@@ -251,7 +251,7 @@ class ErrandMapperTest {
 				CONTACT_REASON,
 				ERRAND_NUMBER));
 
-		assertThat(errands.getFirst()).hasNoNullFieldsOrPropertiesExcept("contactReasonDescription");
+		assertThat(errands.getFirst()).hasNoNullFieldsOrPropertiesExcept("contactReasonDescription"); // TODO: remove "Except.."
 	}
 
 	@Test
