@@ -83,10 +83,7 @@ public class EventService {
 			final var owner = employeeService.getEmployeeByLoginName(loginName);
 			final var creator = employeeService.getEmployeeByLoginName(executingUserSupplier.getAdUser());
 
-			final var notification = toNotification(event, errandEntity, owner, creator);
-			if (creator == null) {
-				notification.setCreatedBy(executingUserSupplier.getAdUser());
-			}
+			final var notification = toNotification(event, errandEntity, owner, creator, executingUserSupplier.getAdUser());
 			notificationService.createNotification(errandEntity.getMunicipalityId(), errandEntity.getNamespace(), notification);
 		});
 
