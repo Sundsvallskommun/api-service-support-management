@@ -72,7 +72,8 @@ class ErrandMapperTest {
 	private static final String PARAMETER_NAME = "parameterName";
 	private static final OffsetDateTime SUSPENDED_FROM = now().plusDays(1);
 	private static final OffsetDateTime SUSPENDED_TO = now().plusDays(2);
-	private static final String CONTACT_REASON = "reason";
+	private static final String CONTACT_REASON = "contactReason";
+	private static final String CONTACT_REASON_DESCRIPTION = "contactReasonDescription";
 	private static final String ERRAND_NUMBER = "errandNumber";
 	private static final Boolean BUSINESS_RELATED = true;
 
@@ -98,7 +99,8 @@ class ErrandMapperTest {
 			.withErrandNumber(ERRAND_NUMBER)
 			.withBusinessRelated(BUSINESS_RELATED)
 			.withSuspension(Suspension.create().withSuspendedFrom(SUSPENDED_FROM).withSuspendedTo(SUSPENDED_TO))
-			.withContactReason(CONTACT_REASON);
+			.withContactReason(CONTACT_REASON)
+			.withContactReasonDescription(CONTACT_REASON_DESCRIPTION);
 	}
 
 	private static Stakeholder createStakeHolder() {
@@ -139,6 +141,7 @@ class ErrandMapperTest {
 			.withChannel(CHANNEL)
 			.withEscalationEmail(ESCALATION_EMAIL)
 			.withContactReason(ContactReasonEntity.create().withReason(CONTACT_REASON))
+			.withContactReasonDescription(CONTACT_REASON_DESCRIPTION)
 			.withSuspendedFrom(SUSPENDED_FROM)
 			.withSuspendedTo(SUSPENDED_TO)
 			.withErrandNumber(ERRAND_NUMBER)
@@ -192,6 +195,7 @@ class ErrandMapperTest {
 			.contains(tuple(PARAMETER_VALUE, PARAMETER_NAME));
 		assertThat(errand.getBusinessRelated()).isEqualTo(BUSINESS_RELATED);
 		assertThat(errand.getContactReason()).isEqualTo(CONTACT_REASON);
+		assertThat(errand.getContactReasonDescription()).isEqualTo(CONTACT_REASON_DESCRIPTION);
 
 		assertThat(errand).hasNoNullFieldsOrPropertiesExcept("contactReasonDescription"); // TODO: remove "Except.."
 	}
@@ -435,16 +439,18 @@ class ErrandMapperTest {
 			.withDescription("")
 			.withChannel("")
 			.withEscalationEmail("")
-			.withContactReason(""));
+			.withContactReason("")
+			.withContactReasonDescription(""));
 
-		assertThat(entity).hasNoNullFieldsOrPropertiesExcept("assignedGroupId", "assignedUserId", "attachments", "resolution", "description", "channel", "escalationEmail", "parameters", "businessRelated", "suspend", "previousStatus", "tempPreviousStatus",
-			"timeMeasures");
+		assertThat(entity).hasNoNullFieldsOrPropertiesExcept(
+			"assignedGroupId", "assignedUserId", "attachments", "resolution", "description", "channel", "escalationEmail", "parameters", "businessRelated", "suspend", "previousStatus", "tempPreviousStatus", "timeMeasures", "contactReasonDescription");
 		assertThat(entity.getAssignedGroupId()).isNull();
 		assertThat(entity.getAssignedUserId()).isNull();
 		assertThat(entity.getAttachments()).isNull();
 		assertThat(entity.getResolution()).isNull();
 		assertThat(entity.getDescription()).isNull();
 		assertThat(entity.getEscalationEmail()).isNull();
+		assertThat(entity.getContactReasonDescription()).isNull();
 	}
 
 	@Test

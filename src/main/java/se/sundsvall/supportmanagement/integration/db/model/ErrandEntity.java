@@ -72,6 +72,9 @@ public class ErrandEntity {
 	@JoinColumn(name = "contact_reason_id")
 	private ContactReasonEntity contactReasonEntity;
 
+	@Column(name = "contact_reason_description")
+	private String contactReasonDescription;
+
 	@Column(name = "business_related")
 	private Boolean businessRelated;
 
@@ -474,6 +477,19 @@ public class ErrandEntity {
 		return this;
 	}
 
+	public String getContactReasonDescription() {
+		return contactReasonDescription;
+	}
+
+	public void setContactReasonDescription(String contactReasonDescription) {
+		this.contactReasonDescription = contactReasonDescription;
+	}
+
+	public ErrandEntity withContactReasonDescription(String contactReasonDescription) {
+		this.contactReasonDescription = contactReasonDescription;
+		return this;
+	}
+
 	public Boolean getBusinessRelated() {
 		return businessRelated;
 	}
@@ -554,8 +570,8 @@ public class ErrandEntity {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(assignedGroupId, assignedUserId, attachments, businessRelated, category, channel, contactReasonEntity, created, description, errandNumber, escalationEmail, externalTags, id, modified, municipalityId, namespace, parameters,
-			previousStatus, priority, reporterUserId, resolution, stakeholders, status, suspendedFrom, suspendedTo, tempPreviousStatus, timeMeasures, title, touched, type);
+		return Objects.hash(assignedGroupId, assignedUserId, attachments, businessRelated, category, channel, contactReasonDescription, contactReasonEntity, created, description, errandNumber, escalationEmail, externalTags, id, modified, municipalityId,
+			namespace, parameters, previousStatus, priority, reporterUserId, resolution, stakeholders, status, suspendedFrom, suspendedTo, tempPreviousStatus, timeMeasures, title, touched, type);
 	}
 
 	@Override
@@ -563,23 +579,24 @@ public class ErrandEntity {
 		if (this == obj) { return true; }
 		if (!(obj instanceof final ErrandEntity other)) { return false; }
 		return Objects.equals(assignedGroupId, other.assignedGroupId) && Objects.equals(assignedUserId, other.assignedUserId) && Objects.equals(attachments, other.attachments) && Objects.equals(businessRelated, other.businessRelated) && Objects.equals(
-			category, other.category) && Objects.equals(channel, other.channel) && Objects.equals(contactReasonEntity, other.contactReasonEntity) && Objects.equals(created, other.created) && Objects.equals(description, other.description) && Objects.equals(
-				errandNumber, other.errandNumber) && Objects.equals(escalationEmail, other.escalationEmail) && Objects.equals(externalTags, other.externalTags) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(
-					municipalityId, other.municipalityId) && Objects.equals(namespace, other.namespace) && Objects.equals(parameters, other.parameters) && Objects.equals(previousStatus, other.previousStatus) && Objects.equals(priority, other.priority)
-			&& Objects.equals(reporterUserId, other.reporterUserId) && Objects.equals(resolution, other.resolution) && Objects.equals(stakeholders, other.stakeholders) && Objects.equals(status, other.status) && Objects.equals(suspendedFrom,
-				other.suspendedFrom) && Objects.equals(suspendedTo, other.suspendedTo) && Objects.equals(tempPreviousStatus, other.tempPreviousStatus) && Objects.equals(timeMeasures, other.timeMeasures) && Objects.equals(title, other.title) && Objects
-					.equals(touched, other.touched) && Objects.equals(type, other.type);
+			category, other.category) && Objects.equals(channel, other.channel) && Objects.equals(contactReasonDescription, other.contactReasonDescription) && Objects.equals(contactReasonEntity, other.contactReasonEntity) && Objects.equals(created,
+				other.created) && Objects.equals(description, other.description) && Objects.equals(errandNumber, other.errandNumber) && Objects.equals(escalationEmail, other.escalationEmail) && Objects.equals(externalTags, other.externalTags) && Objects
+					.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(municipalityId, other.municipalityId) && Objects.equals(namespace, other.namespace) && Objects.equals(parameters, other.parameters) && Objects.equals(
+						previousStatus, other.previousStatus) && Objects.equals(priority, other.priority) && Objects.equals(reporterUserId, other.reporterUserId) && Objects.equals(resolution, other.resolution) && Objects.equals(stakeholders,
+							other.stakeholders) && Objects.equals(status, other.status) && Objects.equals(suspendedFrom, other.suspendedFrom) && Objects.equals(suspendedTo, other.suspendedTo) && Objects.equals(tempPreviousStatus, other.tempPreviousStatus)
+			&& Objects.equals(timeMeasures, other.timeMeasures) && Objects.equals(title, other.title) && Objects.equals(touched, other.touched) && Objects.equals(type, other.type);
 	}
 
 	@Override
 	public String toString() {
 		final StringBuilder builder = new StringBuilder();
-		builder.append("ErrandEntity [id=").append(id).append(", externalTags=").append(externalTags).append(", stakeholders=").append(stakeholders).append(", contactReasonEntity=").append(contactReasonEntity).append(", businessRelated=").append(
-			businessRelated).append(", municipalityId=").append(municipalityId).append(", namespace=").append(namespace).append(", title=").append(title).append(", category=").append(category).append(", type=").append(type).append(", status=").append(
-				status).append(", resolution=").append(resolution).append(", description=").append(description).append(", channel=").append(channel).append(", priority=").append(priority).append(", reporterUserId=").append(reporterUserId).append(
-					", assignedUserId=").append(assignedUserId).append(", assignedGroupId=").append(assignedGroupId).append(", escalationEmail=").append(escalationEmail).append(", parameters=").append(parameters).append(", attachments=").append(
-						attachments).append(", suspendedTo=").append(suspendedTo).append(", suspendedFrom=").append(suspendedFrom).append(", created=").append(created).append(", modified=").append(modified).append(", touched=").append(touched).append(
-							", errandNumber=").append(errandNumber).append(", tempPreviousStatus=").append(tempPreviousStatus).append(", previousStatus=").append(previousStatus).append(", timeMeasures=").append(timeMeasures).append("]");
+		builder.append("ErrandEntity [id=").append(id).append(", externalTags=").append(externalTags).append(", stakeholders=").append(stakeholders).append(", contactReasonEntity=").append(contactReasonEntity).append(", contactReasonDescription=").append(
+			contactReasonDescription).append(", businessRelated=").append(businessRelated).append(", municipalityId=").append(municipalityId).append(", namespace=").append(namespace).append(", title=").append(title).append(", category=").append(category)
+			.append(", type=").append(type).append(", status=").append(status).append(", resolution=").append(resolution).append(", description=").append(description).append(", channel=").append(channel).append(", priority=").append(priority).append(
+				", reporterUserId=").append(reporterUserId).append(", assignedUserId=").append(assignedUserId).append(", assignedGroupId=").append(assignedGroupId).append(", escalationEmail=").append(escalationEmail).append(", parameters=").append(
+					parameters).append(", attachments=").append(attachments).append(", suspendedTo=").append(suspendedTo).append(", suspendedFrom=").append(suspendedFrom).append(", created=").append(created).append(", modified=").append(modified).append(
+						", touched=").append(touched).append(", errandNumber=").append(errandNumber).append(", tempPreviousStatus=").append(tempPreviousStatus).append(", previousStatus=").append(previousStatus).append(", timeMeasures=").append(
+							timeMeasures).append("]");
 		return builder.toString();
 	}
 }

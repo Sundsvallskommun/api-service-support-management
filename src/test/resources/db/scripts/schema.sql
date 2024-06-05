@@ -115,6 +115,7 @@
         assigned_user_id varchar(255),
         category varchar(255),
         channel varchar(255),
+        contact_reason_description varchar(255),
         errand_number varchar(255) not null,
         escalation_email varchar(255),
         id varchar(255) not null,
