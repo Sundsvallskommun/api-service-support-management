@@ -1,14 +1,14 @@
 package se.sundsvall.supportmanagement.api.validation.impl;
 
 import static java.util.Collections.emptyList;
+import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
+import static org.apache.commons.lang3.StringUtils.upperCase;
 
 import java.util.List;
-import java.util.Objects;
 
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
-
 import se.sundsvall.supportmanagement.api.model.metadata.ContactReason;
 import se.sundsvall.supportmanagement.api.validation.ValidContactReason;
 import se.sundsvall.supportmanagement.service.MetadataService;
@@ -22,13 +22,14 @@ public class ValidContactReasonConstraintValidator extends AbstractTagConstraint
 		this.metadataService = metadataService;
 	}
 
+	@Override
 	public void initialize(final ValidContactReason constraintAnnotation) {
 		this.nullable = constraintAnnotation.nullable();
 	}
 
 	@Override
 	public boolean isValid(final String value, final ConstraintValidatorContext context) {
-		if (Objects.isNull(value) && this.nullable) {
+		if (isNull(value) && this.nullable) {
 			return true;
 		}
 
@@ -39,7 +40,7 @@ public class ValidContactReasonConstraintValidator extends AbstractTagConstraint
 			.map(String::toUpperCase)
 			.toList();
 
-		return contactReasons.contains(value.toUpperCase());
+		return contactReasons.contains(upperCase(value));
 	}
 
 	private List<String> getContactReasons(final String namespace, final String municipalityId) {
