@@ -86,6 +86,7 @@ public final class ErrandMapper {
 		ofNullable(errand.getResolution()).ifPresent(value -> entity.setResolution(isEmpty(value) ? null : value));
 		ofNullable(errand.getDescription()).ifPresent(value -> entity.setDescription(isEmpty(value) ? null : value));
 		ofNullable(errand.getChannel()).ifPresent(value -> entity.setChannel(isEmpty(value) ? null : value));
+		ofNullable(errand.getContactReasonDescription()).ifPresent(value -> entity.setContactReasonDescription(isEmpty(value) ? null : value));
 		ofNullable(errand.getEscalationEmail()).ifPresent(value -> entity.setEscalationEmail(isEmpty(value) ? null : value));
 		ofNullable(errand.getBusinessRelated()).ifPresent(value -> entity.setBusinessRelated(errand.getBusinessRelated()));
 		ofNullable(errand.getParameters()).ifPresent(value -> entity.setParameters(toErrandParameterEntityMap(errand.getParameters())));
@@ -141,6 +142,7 @@ public final class ErrandMapper {
 				.withBusinessRelated(e.getBusinessRelated())
 				.withParameters(toParameterMap(e.getParameters()))
 				.withContactReason(Optional.ofNullable(e.getContactReason()).map(ContactReasonEntity::getReason).orElse(null))
+				.withContactReasonDescription(e.getContactReasonDescription())
 				.withEscalationEmail(e.getEscalationEmail()))
 			.orElse(null);
 	}

@@ -65,6 +65,7 @@ class ErrandEntityTest {
 		final var parameters = Map.of("key", ParameterEntity.create());
 		final var businessRelated = true;
 		final var contactReason = ContactReasonEntity.create().withReason("reason");
+		final var contactReasonDescription = "contactReasonDescription";
 		final var previousStatus = "previousStatus";
 		final var timeMeasure = List.of(TimeMeasurementEntity.create().withStartTime(now).withStopTime(now).withDescription("description").withAdministrator("administrator"));
 		final var tempPreviousStatus = "tempPreviousStatus";
@@ -91,6 +92,7 @@ class ErrandEntityTest {
 			.withEscalationEmail(escalationEmail)
 			.withBusinessRelated(businessRelated)
 			.withContactReason(contactReason)
+			.withContactReasonDescription(contactReasonDescription)
 			.withErrandNumber(errandNumber)
 			.withTouched(now)
 			.withCreated(now)
@@ -124,6 +126,7 @@ class ErrandEntityTest {
 		assertThat(errandEntity.getErrandNumber()).isEqualTo(errandNumber);
 		assertThat(errandEntity.getBusinessRelated()).isEqualTo(businessRelated);
 		assertThat(errandEntity.getContactReason()).isEqualTo(contactReason);
+		assertThat(errandEntity.getContactReasonDescription()).isEqualTo(contactReasonDescription);
 		assertThat(errandEntity).extracting(ErrandEntity::getModified,
 			ErrandEntity::getTouched, ErrandEntity::getSuspendedFrom, ErrandEntity::getSuspendedTo,
 			ErrandEntity::getCreated).allSatisfy(date -> assertThat(date).isEqualTo(now));

@@ -68,7 +68,10 @@ public class ErrandService {
 		Optional.ofNullable(errand.getContactReason()).ifPresent(reason -> {
 			final var contactReason = contactReasonRepository.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId(reason, namespace, municipalityId)
 				.orElseThrow(() -> Problem.valueOf(BAD_REQUEST, BAD_CONTACT_REASON.formatted(reason, namespace, municipalityId)));
-			errandEntity.withContactReason(contactReason);
+
+			errandEntity
+				.withContactReason(contactReason)
+				.withContactReasonDescription(errand.getContactReasonDescription());
 		});
 
 		final var persistedEntity = repository.save(errandEntity);
@@ -100,7 +103,8 @@ public class ErrandService {
 		Optional.ofNullable(errand.getContactReason()).ifPresent(reason -> {
 			final var contactReason = contactReasonRepository.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId(reason, namespace, municipalityId)
 				.orElseThrow(() -> Problem.valueOf(BAD_REQUEST, BAD_CONTACT_REASON.formatted(reason, namespace, municipalityId)));
-			errandEntity.setContactReason(contactReason);
+
+			errandEntity.withContactReason(contactReason);
 		});
 
 		final var entity = repository.save(errandEntity);
