@@ -186,7 +186,7 @@
     ) engine=InnoDB;
 
     create table parameter (
-        errand_id varchar(255),
+        errand_id varchar(255) not null,
         id varchar(255) not null,
         parameters_key varchar(255),
         primary key (id)
@@ -432,7 +432,7 @@
        references errand (id);
 
     alter table if exists parameter 
-       add constraint FKkyhen2apa9ge3l7opobg4fdg7 
+       add constraint fk_parameter_errand_id 
        foreign key (errand_id) 
        references errand (id);
 

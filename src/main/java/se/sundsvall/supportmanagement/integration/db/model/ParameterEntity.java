@@ -11,6 +11,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.ForeignKey;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 import org.hibernate.annotations.UuidGenerator;
@@ -22,6 +23,10 @@ public class ParameterEntity {
 	@Id
 	@UuidGenerator
 	private String id;
+
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "errand_id", nullable = false, foreignKey = @ForeignKey(name = "fk_parameter_errand_id"))
+	private ErrandEntity errandEntity;
 
 	@ElementCollection(fetch = FetchType.EAGER)
 	@CollectionTable(
@@ -49,6 +54,19 @@ public class ParameterEntity {
 		return this;
 	}
 
+	public ErrandEntity getErrandEntity() {
+		return errandEntity;
+	}
+
+	public void setErrandEntity(final ErrandEntity errandEntity) {
+		this.errandEntity = errandEntity;
+	}
+
+	public ParameterEntity withErrandEntity(final ErrandEntity errandEntity) {
+		this.errandEntity = errandEntity;
+		return this;
+	}
+
 	public List<String> getValues() {
 		return values;
 	}
@@ -67,18 +85,19 @@ public class ParameterEntity {
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
 		final ParameterEntity that = (ParameterEntity) o;
-		return Objects.equals(id, that.id) && Objects.equals(values, that.values);
+		return Objects.equals(id, that.id) && Objects.equals(errandEntity, that.errandEntity) && Objects.equals(values, that.values);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, values);
+		return Objects.hash(id, errandEntity, values);
 	}
 
 	@Override
 	public String toString() {
 		return "ParameterEntity{" +
 			"id='" + id + '\'' +
+			", errandEntity=" + errandEntity +
 			", values=" + values +
 			'}';
 	}

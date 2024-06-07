@@ -122,8 +122,7 @@ public class ErrandEntity {
 	@Column(name = "escalation_email")
 	private String escalationEmail;
 
-	@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
-	@JoinColumn(name = "errand_id")
+	@OneToMany(mappedBy = "errandEntity", cascade = CascadeType.ALL, orphanRemoval = true)
 	private Map<String, ParameterEntity> parameters;
 
 	@OneToMany(mappedBy = "errandEntity", cascade = CascadeType.ALL, orphanRemoval = true)

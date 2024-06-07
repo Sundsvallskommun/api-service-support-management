@@ -35,7 +35,7 @@ public class ErrandParameterService {
 			errand.setParameters(new HashMap<>());
 		}
 
-		errandParameter.forEach((key, value) -> errand.getParameters().put(key, toErrandParameterEntity(value)));
+		errandParameter.forEach((key, value) -> errand.getParameters().put(key, toErrandParameterEntity(value).withErrandEntity(errand)));
 
 		return toParameterMap(errandsRepository.save(errand).getParameters());
 	}
