@@ -4,20 +4,19 @@ import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
-import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.format.annotation.DateTimeFormat.ISO;
-
-import io.swagger.v3.oas.annotations.media.ArraySchema;
-import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Null;
 import jakarta.validation.constraints.Size;
-import se.sundsvall.supportmanagement.api.model.parameter.ErrandParameter;
+
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.format.annotation.DateTimeFormat.ISO;
+
 import se.sundsvall.supportmanagement.api.validation.UniqueExternalTagKeys;
 import se.sundsvall.supportmanagement.api.validation.ValidClassification;
 import se.sundsvall.supportmanagement.api.validation.ValidContactReason;
@@ -25,15 +24,18 @@ import se.sundsvall.supportmanagement.api.validation.ValidStatus;
 import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
 import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
 
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Schema;
+
 @Schema(description = "Errand model")
 public class Errand {
 
 	@Schema(description = "Unique id for the errand", example = "f0882f1d-06bc-47fd-b017-1d8307f5ce95", accessMode = READ_ONLY)
-	@Null(groups = { OnCreate.class, OnUpdate.class })
+	@Null(groups = {OnCreate.class, OnUpdate.class})
 	private String id;
 
 	@Schema(description = "Unique number for the errand", example = "KC-23010001", accessMode = READ_ONLY)
-	@Null(groups = { OnCreate.class, OnUpdate.class })
+	@Null(groups = {OnCreate.class, OnUpdate.class})
 	private String errandNumber;
 
 	@Schema(description = "Title for the errand", example = "Title for the errand")
@@ -52,8 +54,8 @@ public class Errand {
 	@Valid
 	private List<ExternalTag> externalTags;
 
-	@ArraySchema(schema = @Schema(implementation = ErrandParameter.class, accessMode = READ_ONLY))
-	private List<@Valid ErrandParameter> parameters;
+	@Schema(description = "Parameters for the errand", example = "{\"key1\":[\"value1\",\"value2\"],\"key2\":[\"value3\"]}")
+	private Map<String, List<String>> parameters;
 
 	@Schema(implementation = Classification.class)
 	@NotNull(groups = OnCreate.class)
@@ -92,7 +94,7 @@ public class Errand {
 	private String escalationEmail;
 
 	@Schema(description = "Contact reason for the errand", example = "The printer is not working")
-	@ValidContactReason(groups = { OnCreate.class, OnUpdate.class }, nullable = true)
+	@ValidContactReason(groups = {OnCreate.class, OnUpdate.class}, nullable = true)
 	private String contactReason;
 
 	@Schema(description = "Contact reason description for the errand", example = "The printer is not working since the power cord is missing")
@@ -104,22 +106,22 @@ public class Errand {
 	private Suspension suspension;
 
 	@Schema(description = "Flag to indicate if the errand is business related", example = "true")
-	@NotNull(groups = { OnCreate.class, OnUpdate.class })
+	@NotNull(groups = {OnCreate.class, OnUpdate.class})
 	private Boolean businessRelated;
 
 	@Schema(description = "Timestamp when errand was created", example = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	@DateTimeFormat(iso = ISO.DATE_TIME)
-	@Null(groups = { OnCreate.class, OnUpdate.class })
+	@Null(groups = {OnCreate.class, OnUpdate.class})
 	private OffsetDateTime created;
 
 	@Schema(description = "Timestamp when errand was last modified", example = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	@DateTimeFormat(iso = ISO.DATE_TIME)
-	@Null(groups = { OnCreate.class, OnUpdate.class })
+	@Null(groups = {OnCreate.class, OnUpdate.class})
 	private OffsetDateTime modified;
 
 	@Schema(description = "Timestamp when errand was last touched (created or modified)", example = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	@DateTimeFormat(iso = ISO.DATE_TIME)
-	@Null(groups = { OnCreate.class, OnUpdate.class })
+	@Null(groups = {OnCreate.class, OnUpdate.class})
 	private OffsetDateTime touched;
 
 	public static Errand create() {
@@ -130,24 +132,24 @@ public class Errand {
 		return id;
 	}
 
-	public void setId(String id) {
+	public void setId(final String id) {
 		this.id = id;
 	}
 
-	public Errand withId(String id) {
+	public Errand withId(final String id) {
 		this.id = id;
 		return this;
 	}
 
-	public List<ErrandParameter> getParameters() {
+	public Map<String, List<String>> getParameters() {
 		return parameters;
 	}
 
-	public void setParameters(final List<ErrandParameter> parameters) {
+	public void setParameters(final Map<String, List<String>> parameters) {
 		this.parameters = parameters;
 	}
 
-	public Errand withParameters(final List<ErrandParameter> parameters) {
+	public Errand withParameters(final Map<String, List<String>> parameters) {
 		this.parameters = parameters;
 		return this;
 	}
@@ -156,11 +158,11 @@ public class Errand {
 		return title;
 	}
 
-	public void setTitle(String title) {
+	public void setTitle(final String title) {
 		this.title = title;
 	}
 
-	public Errand withTitle(String title) {
+	public Errand withTitle(final String title) {
 		this.title = title;
 		return this;
 	}
@@ -169,11 +171,11 @@ public class Errand {
 		return priority;
 	}
 
-	public void setPriority(Priority priority) {
+	public void setPriority(final Priority priority) {
 		this.priority = priority;
 	}
 
-	public Errand withPriority(Priority priority) {
+	public Errand withPriority(final Priority priority) {
 		this.priority = priority;
 		return this;
 	}
@@ -182,11 +184,11 @@ public class Errand {
 		return stakeholders;
 	}
 
-	public void setStakeholders(List<Stakeholder> stakeholders) {
+	public void setStakeholders(final List<Stakeholder> stakeholders) {
 		this.stakeholders = stakeholders;
 	}
 
-	public Errand withStakeholders(List<Stakeholder> stakeholders) {
+	public Errand withStakeholders(final List<Stakeholder> stakeholders) {
 		this.stakeholders = stakeholders;
 		return this;
 	}
@@ -195,11 +197,11 @@ public class Errand {
 		return externalTags;
 	}
 
-	public void setExternalTags(List<ExternalTag> externalTags) {
+	public void setExternalTags(final List<ExternalTag> externalTags) {
 		this.externalTags = externalTags;
 	}
 
-	public Errand withExternalTags(List<ExternalTag> externalTags) {
+	public Errand withExternalTags(final List<ExternalTag> externalTags) {
 		this.externalTags = externalTags;
 		return this;
 	}
@@ -208,11 +210,11 @@ public class Errand {
 		return classification;
 	}
 
-	public void setClassification(Classification classification) {
+	public void setClassification(final Classification classification) {
 		this.classification = classification;
 	}
 
-	public Errand withClassification(Classification classification) {
+	public Errand withClassification(final Classification classification) {
 		this.classification = classification;
 		return this;
 	}
@@ -221,11 +223,11 @@ public class Errand {
 		return status;
 	}
 
-	public void setStatus(String status) {
+	public void setStatus(final String status) {
 		this.status = status;
 	}
 
-	public Errand withStatus(String status) {
+	public Errand withStatus(final String status) {
 		this.status = status;
 		return this;
 	}
@@ -234,11 +236,11 @@ public class Errand {
 		return resolution;
 	}
 
-	public void setResolution(String resolution) {
+	public void setResolution(final String resolution) {
 		this.resolution = resolution;
 	}
 
-	public Errand withResolution(String resolution) {
+	public Errand withResolution(final String resolution) {
 		this.resolution = resolution;
 		return this;
 	}
@@ -247,11 +249,11 @@ public class Errand {
 		return description;
 	}
 
-	public void setDescription(String description) {
+	public void setDescription(final String description) {
 		this.description = description;
 	}
 
-	public Errand withDescription(String description) {
+	public Errand withDescription(final String description) {
 		this.description = description;
 		return this;
 	}
@@ -260,11 +262,11 @@ public class Errand {
 		return channel;
 	}
 
-	public void setChannel(String channel) {
+	public void setChannel(final String channel) {
 		this.channel = channel;
 	}
 
-	public Errand withChannel(String channel) {
+	public Errand withChannel(final String channel) {
 		this.channel = channel;
 		return this;
 	}
@@ -273,11 +275,11 @@ public class Errand {
 		return reporterUserId;
 	}
 
-	public void setReporterUserId(String reporterUserId) {
+	public void setReporterUserId(final String reporterUserId) {
 		this.reporterUserId = reporterUserId;
 	}
 
-	public Errand withReporterUserId(String reporterUserId) {
+	public Errand withReporterUserId(final String reporterUserId) {
 		this.reporterUserId = reporterUserId;
 		return this;
 	}
@@ -286,11 +288,11 @@ public class Errand {
 		return assignedUserId;
 	}
 
-	public void setAssignedUserId(String assignedUserId) {
+	public void setAssignedUserId(final String assignedUserId) {
 		this.assignedUserId = assignedUserId;
 	}
 
-	public Errand withAssignedUserId(String assignedUserId) {
+	public Errand withAssignedUserId(final String assignedUserId) {
 		this.assignedUserId = assignedUserId;
 		return this;
 	}
@@ -299,11 +301,11 @@ public class Errand {
 		return assignedGroupId;
 	}
 
-	public void setAssignedGroupId(String assignedGroupId) {
+	public void setAssignedGroupId(final String assignedGroupId) {
 		this.assignedGroupId = assignedGroupId;
 	}
 
-	public Errand withAssignedGroupId(String assignedGroupId) {
+	public Errand withAssignedGroupId(final String assignedGroupId) {
 		this.assignedGroupId = assignedGroupId;
 		return this;
 	}
@@ -312,11 +314,11 @@ public class Errand {
 		return escalationEmail;
 	}
 
-	public void setEscalationEmail(String escalationEmail) {
+	public void setEscalationEmail(final String escalationEmail) {
 		this.escalationEmail = escalationEmail;
 	}
 
-	public Errand withEscalationEmail(String escalationEmail) {
+	public Errand withEscalationEmail(final String escalationEmail) {
 		this.escalationEmail = escalationEmail;
 		return this;
 	}
@@ -325,11 +327,11 @@ public class Errand {
 		return created;
 	}
 
-	public void setCreated(OffsetDateTime created) {
+	public void setCreated(final OffsetDateTime created) {
 		this.created = created;
 	}
 
-	public Errand withCreated(OffsetDateTime created) {
+	public Errand withCreated(final OffsetDateTime created) {
 		this.created = created;
 		return this;
 	}
@@ -338,11 +340,11 @@ public class Errand {
 		return modified;
 	}
 
-	public void setModified(OffsetDateTime modified) {
+	public void setModified(final OffsetDateTime modified) {
 		this.modified = modified;
 	}
 
-	public Errand withModified(OffsetDateTime modified) {
+	public Errand withModified(final OffsetDateTime modified) {
 		this.modified = modified;
 		return this;
 	}
@@ -351,11 +353,11 @@ public class Errand {
 		return touched;
 	}
 
-	public void setTouched(OffsetDateTime touched) {
+	public void setTouched(final OffsetDateTime touched) {
 		this.touched = touched;
 	}
 
-	public Errand withTouched(OffsetDateTime touched) {
+	public Errand withTouched(final OffsetDateTime touched) {
 		this.touched = touched;
 		return this;
 	}
@@ -390,11 +392,11 @@ public class Errand {
 		return contactReasonDescription;
 	}
 
-	public void setContactReasonDescription(String contactReasonDescription) {
+	public void setContactReasonDescription(final String contactReasonDescription) {
 		this.contactReasonDescription = contactReasonDescription;
 	}
 
-	public Errand withContactReasonDescription(String contactReasonDescription) {
+	public Errand withContactReasonDescription(final String contactReasonDescription) {
 		this.contactReasonDescription = contactReasonDescription;
 		return this;
 	}
@@ -432,24 +434,48 @@ public class Errand {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) { return true; }
-		if (!(obj instanceof final Errand other)) { return false; }
+	public boolean equals(final Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (!(obj instanceof final Errand other)) {
+			return false;
+		}
 		return Objects.equals(assignedGroupId, other.assignedGroupId) && Objects.equals(assignedUserId, other.assignedUserId) && Objects.equals(businessRelated, other.businessRelated) && Objects.equals(channel, other.channel) && Objects.equals(
-			classification, other.classification) && Objects.equals(contactReason, other.contactReason) && Objects.equals(contactReasonDescription, other.contactReasonDescription) && Objects.equals(created, other.created) && Objects.equals(description,
-				other.description) && Objects.equals(errandNumber, other.errandNumber) && Objects.equals(escalationEmail, other.escalationEmail) && Objects.equals(externalTags, other.externalTags) && Objects.equals(id, other.id) && Objects.equals(modified,
-					other.modified) && Objects.equals(parameters, other.parameters) && (priority == other.priority) && Objects.equals(reporterUserId, other.reporterUserId) && Objects.equals(resolution, other.resolution) && Objects.equals(stakeholders,
-						other.stakeholders) && Objects.equals(status, other.status) && Objects.equals(suspension, other.suspension) && Objects.equals(title, other.title) && Objects.equals(touched, other.touched);
+			classification, other.classification) && Objects.equals(contactReason, other.contactReason) && Objects.equals(contactReasonDescription, other.contactReasonDescription) && Objects.equals(created, other.created) && Objects.equals(description, other.description) && Objects.equals(errandNumber, other.errandNumber)
+			&& Objects.equals(escalationEmail, other.escalationEmail) && Objects.equals(externalTags, other.externalTags) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(parameters, other.parameters)
+			&& (priority == other.priority) && Objects.equals(reporterUserId, other.reporterUserId) && Objects.equals(resolution, other.resolution) && Objects.equals(stakeholders, other.stakeholders) && Objects.equals(status, other.status) && Objects
+			.equals(
+				suspension, other.suspension) && Objects.equals(title, other.title) && Objects.equals(touched, other.touched);
 	}
 
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder();
-		builder.append("Errand [id=").append(id).append(", errandNumber=").append(errandNumber).append(", title=").append(title).append(", priority=").append(priority).append(", stakeholders=").append(stakeholders).append(", externalTags=").append(
-			externalTags).append(", parameters=").append(parameters).append(", classification=").append(classification).append(", status=").append(status).append(", resolution=").append(resolution).append(", description=").append(description).append(
-				", channel=").append(channel).append(", reporterUserId=").append(reporterUserId).append(", assignedUserId=").append(assignedUserId).append(", assignedGroupId=").append(assignedGroupId).append(", escalationEmail=").append(escalationEmail)
-			.append(", contactReason=").append(contactReason).append(", contactReasonDescription=").append(contactReasonDescription).append(", suspension=").append(suspension).append(", businessRelated=").append(businessRelated).append(", created=")
-			.append(created).append(", modified=").append(modified).append(", touched=").append(touched).append("]");
-		return builder.toString();
+		return "Errand{" +
+			"id='" + id + '\'' +
+			", errandNumber='" + errandNumber + '\'' +
+			", title='" + title + '\'' +
+			", priority=" + priority +
+			", stakeholders=" + stakeholders +
+			", externalTags=" + externalTags +
+			", parameters=" + parameters +
+			", classification=" + classification +
+			", status='" + status + '\'' +
+			", resolution='" + resolution + '\'' +
+			", description='" + description + '\'' +
+			", channel='" + channel + '\'' +
+			", reporterUserId='" + reporterUserId + '\'' +
+			", assignedUserId='" + assignedUserId + '\'' +
+			", assignedGroupId='" + assignedGroupId + '\'' +
+			", escalationEmail='" + escalationEmail + '\'' +
+			", contactReason='" + contactReason + '\'' +
+			", contactReasonDescription='" + contactReasonDescription + '\'' +
+			", suspension=" + suspension +
+			", businessRelated=" + businessRelated +
+			", created=" + created +
+			", modified=" + modified +
+			", touched=" + touched +
+			'}';
 	}
+
 }

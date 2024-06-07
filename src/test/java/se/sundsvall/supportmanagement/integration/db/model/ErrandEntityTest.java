@@ -12,14 +12,14 @@ import static org.hamcrest.core.AllOf.allOf;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 
+import com.google.code.beanmatchers.BeanMatchers;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mariadb.jdbc.MariaDbBlob;
-
-import com.google.code.beanmatchers.BeanMatchers;
 
 class ErrandEntityTest {
 
@@ -62,7 +62,7 @@ class ErrandEntityTest {
 		final var type = "type";
 		final var escalationEmail = "escalation@email.com";
 		final var errandNumber = "errandNumber";
-		final var parameters = List.of(ParameterEntity.create());
+		final var parameters = Map.of("key", ParameterEntity.create());
 		final var businessRelated = true;
 		final var contactReason = ContactReasonEntity.create().withReason("reason");
 		final var previousStatus = "previousStatus";
@@ -137,4 +137,5 @@ class ErrandEntityTest {
 		assertThat(ErrandEntity.create()).hasAllNullFieldsOrPropertiesExcept("timeMeasures");
 		assertThat(new ErrandEntity()).hasAllNullFieldsOrPropertiesExcept("timeMeasures");
 	}
+
 }

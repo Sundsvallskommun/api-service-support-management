@@ -1,10 +1,16 @@
 package se.sundsvall.supportmanagement.integration.db.model;
 
+import java.util.List;
 import java.util.Objects;
 
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
 
 import org.hibernate.annotations.UuidGenerator;
@@ -17,11 +23,14 @@ public class ParameterEntity {
 	@UuidGenerator
 	private String id;
 
-	@Column(name = "name")
-	private String name;
-
+	@ElementCollection(fetch = FetchType.EAGER)
+	@CollectionTable(
+		name = "parameter_values",
+		joinColumns = @JoinColumn(name = "parameter_id",
+			foreignKey = @ForeignKey(name = "fk_parameter_values_parameter_id")
+		))
 	@Column(name = "value")
-	private String value;
+	private List<String> values;
 
 	public static ParameterEntity create() {
 		return new ParameterEntity();
@@ -40,39 +49,17 @@ public class ParameterEntity {
 		return this;
 	}
 
-	public String getName() {
-		return name;
+	public List<String> getValues() {
+		return values;
 	}
 
-	public void setName(final String name) {
-		this.name = name;
+	public void setValues(final List<String> values) {
+		this.values = values;
 	}
 
-	public ParameterEntity withName(final String name) {
-		this.name = name;
+	public ParameterEntity withValues(final List<String> values) {
+		this.values = values;
 		return this;
-	}
-
-	public String getValue() {
-		return value;
-	}
-
-	public void setValue(final String value) {
-		this.value = value;
-	}
-
-	public ParameterEntity withValue(final String value) {
-		this.value = value;
-		return this;
-	}
-
-	@Override
-	public String toString() {
-		return "ParameterEntity{" +
-			"id='" + id + '\'' +
-			", name='" + name + '\'' +
-			", value='" + value + '\'' +
-			'}';
 	}
 
 	@Override
@@ -80,11 +67,20 @@ public class ParameterEntity {
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
 		final ParameterEntity that = (ParameterEntity) o;
-		return Objects.equals(id, that.id) && Objects.equals(name, that.name) && Objects.equals(value, that.value);
+		return Objects.equals(id, that.id) && Objects.equals(values, that.values);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, name, value);
+		return Objects.hash(id, values);
 	}
+
+	@Override
+	public String toString() {
+		return "ParameterEntity{" +
+			"id='" + id + '\'' +
+			", values=" + values +
+			'}';
+	}
+
 }

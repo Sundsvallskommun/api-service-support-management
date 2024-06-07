@@ -7,6 +7,8 @@ import static com.google.code.beanmatchers.BeanMatchers.hasValidGettersAndSetter
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.AllOf.allOf;
 
+import java.util.List;
+
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -26,16 +28,14 @@ class ParameterEntityTest {
 
 		final var id = "id";
 		final var name = "name";
-		final var value = "value";
+		final var value = List.of("value");
 
 		final var parameterEntity = ParameterEntity.create()
 			.withId(id)
-			.withName(name)
-			.withValue(value);
+			.withValues(value);
 
 		Assertions.assertThat(parameterEntity).hasNoNullFieldsOrProperties();
-		Assertions.assertThat(parameterEntity.getName()).isEqualTo(name);
-		Assertions.assertThat(parameterEntity.getValue()).isEqualTo(value);
+		Assertions.assertThat(parameterEntity.getValues()).isEqualTo(value);
 	}
 
 	@Test
@@ -43,4 +43,5 @@ class ParameterEntityTest {
 		Assertions.assertThat(ParameterEntity.create()).hasAllNullFieldsOrProperties();
 		Assertions.assertThat(new ParameterEntity()).hasAllNullFieldsOrProperties();
 	}
+
 }

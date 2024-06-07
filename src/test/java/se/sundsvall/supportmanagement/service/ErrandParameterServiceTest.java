@@ -2,14 +2,16 @@ package se.sundsvall.supportmanagement.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.zalando.problem.Status.NOT_FOUND;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrandEntity;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -23,9 +25,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.zalando.problem.ThrowableProblem;
 
-import se.sundsvall.supportmanagement.api.model.parameter.ErrandParameter;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
-import se.sundsvall.supportmanagement.integration.db.ParameterRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ParameterEntity;
 
@@ -33,76 +33,77 @@ import se.sundsvall.supportmanagement.integration.db.model.ParameterEntity;
 class ErrandParameterServiceTest {
 
 	private static final String NAMESPACE = "namespace";
+
 	private static final String MUNICIPALITY_ID = "municipalityId";
+
 	private static final String ERRAND_ID = "errandId";
-	private static final String PARAMETER_NAME = "parameterName";
+
+	private static final String PARAMETER_KEY = "parameterKey";
+
 	private static final String PARAMETER_VALUE = "parameterValue";
+
 	private static final String PARAMETER_ID = "parameterId";
 
 	@Mock
 	private ErrandsRepository errandsRepositoryMock;
 
-	@Mock
-	private ParameterRepository parameterRepositoryMock;
-
 	@Captor
 	private ArgumentCaptor<ErrandEntity> errandEntityArgumentCaptor;
-
-	@Captor
-	private ArgumentCaptor<ParameterEntity> parameterEntityArgumentCaptor;
 
 	@InjectMocks
 	private ErrandParameterService errandParameterService;
 
 	@Test
-	void createErrandParameter() {
-		var parameter = ErrandParameter.create()
-			.withValue(PARAMETER_VALUE)
-			.withName(PARAMETER_NAME);
+	void updateErrandParameters() {
+
+		// Arrange
+		final var parameter = Map.of(PARAMETER_KEY, List.of(PARAMETER_VALUE));
 		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(ErrandEntity.create()));
+		when(errandsRepositoryMock.save(any(ErrandEntity.class))).thenReturn(ErrandEntity.create());
 
-		errandParameterService.createErrandParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, parameter);
+		// Act
+		errandParameterService.updateErrandParameters(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, parameter);
 
+		// Assert
 		verify(errandsRepositoryMock).save(errandEntityArgumentCaptor.capture());
-
 		final var errandEntity = errandEntityArgumentCaptor.getValue();
-		assertThat(errandEntity.getParameters()).hasSize(1).allSatisfy(parameterEntity -> {
-			assertThat(parameterEntity.getName()).isEqualTo(PARAMETER_NAME);
-			assertThat(parameterEntity.getValue()).isEqualTo(PARAMETER_VALUE);
+
+		assertThat(errandEntity.getParameters()).hasSize(1).allSatisfy((key, value) -> {
+			assertThat(key).isEqualTo(PARAMETER_KEY);
+			assertThat(value.getValues()).containsExactly(PARAMETER_VALUE);
 		});
 	}
 
 	@Test
 	void readErrandParameter() {
-		var spy = Mockito.spy(errandParameterService);
-		var errand = buildErrandEntity();
 
+		// Arrange
+		final var spy = Mockito.spy(errandParameterService);
+		final var errand = buildErrandEntity();
 		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(errand));
 
-		var result = spy.readErrandParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PARAMETER_ID);
+		// Act
+		final var result = spy.readErrandParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PARAMETER_KEY);
 
-		assertThat(result).satisfies(parameter -> {
-			assertThat(parameter.getId()).isEqualTo(PARAMETER_ID);
-			assertThat(parameter.getName()).isEqualTo(PARAMETER_NAME);
-			assertThat(parameter.getValue()).isEqualTo(PARAMETER_VALUE);
-		});
+		// Assert
+		assertThat(result).hasSize(1).containsExactly(PARAMETER_VALUE);
 		verify(spy).findExistingErrand(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
-		verify(spy).findParameterEntityOrElseThrow(errand, PARAMETER_ID);
+		verify(spy).findParameterEntityOrElseThrow(errand, PARAMETER_KEY);
 	}
 
 	@Test
 	void findErrandParameters() {
-		var spy = Mockito.spy(errandParameterService);
-		var errand = buildErrandEntity();
+
+		// Arrange
+		final var spy = Mockito.spy(errandParameterService);
+		final var errand = buildErrandEntity();
 		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(errand));
 
-		var result = spy.findErrandParameters(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
+		// Act
+		final var result = spy.findErrandParameters(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 
-		assertThat(result.getParameters()).hasSize(1).allSatisfy(parameter -> {
-			assertThat(parameter.getId()).isEqualTo(PARAMETER_ID);
-			assertThat(parameter.getName()).isEqualTo(PARAMETER_NAME);
-			assertThat(parameter.getValue()).isEqualTo(PARAMETER_VALUE);
-		});
+		// Assert
+		assertThat(result).hasSize(1).containsEntry(PARAMETER_KEY, List.of(PARAMETER_VALUE));
 		verify(spy).findErrandParameters(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 		verify(spy).findExistingErrand(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(errandsRepositoryMock).findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
@@ -111,99 +112,92 @@ class ErrandParameterServiceTest {
 
 	@Test
 	void updateErrandParameter() {
-		var spy = Mockito.spy(errandParameterService);
-		var errand = buildErrandEntity();
-		var errandParameter = ErrandParameter.create()
-			.withValue("anotherValue")
-			.withName("anotherName");
+
+		// Arrange
+		final var spy = Mockito.spy(errandParameterService);
+		final var errand = buildErrandEntity();
+		final var errandParameter = List.of("anotherValue");
 
 		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(errand));
-		when(parameterRepositoryMock.save(Mockito.any())).thenAnswer(invocation -> invocation.getArgument(0));
-		when(spy.findParameterEntityOrElseThrow(errand, PARAMETER_ID))
-			.thenReturn(ParameterEntity.create()
-				.withId(PARAMETER_ID)
-				.withName(PARAMETER_NAME)
-				.withValue(PARAMETER_VALUE));
+		when(errandsRepositoryMock.save(errand)).thenReturn(errand);
 
-		var result = spy.updateErrandParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PARAMETER_ID, errandParameter);
+		// Act
+		final var result = spy.updateErrandParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PARAMETER_KEY, errandParameter);
 
-		assertThat(result).satisfies(parameter -> {
-			assertThat(parameter.getId()).isEqualTo(PARAMETER_ID);
-			assertThat(parameter.getName()).isEqualTo("anotherName");
-			assertThat(parameter.getValue()).isEqualTo("anotherValue");
-		});
+		// Assert
+		assertThat(result).hasSize(1);
+		assertThat(result.getFirst()).isEqualTo("anotherValue");
 		verify(spy).findExistingErrand(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
-		verify(spy).findParameterEntityOrElseThrow(errand, PARAMETER_ID);
-		verify(spy).updateErrandParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PARAMETER_ID, errandParameter);
-
-		verify(parameterRepositoryMock).save(parameterEntityArgumentCaptor.capture());
-		var parameterEntity = parameterEntityArgumentCaptor.getValue();
-		assertThat(parameterEntity).satisfies(parameter -> {
-			assertThat(parameter.getId()).isEqualTo(PARAMETER_ID);
-			assertThat(parameter.getName()).isEqualTo("anotherName");
-			assertThat(parameter.getValue()).isEqualTo("anotherValue");
-		});
-
-		verifyNoMoreInteractions(errandsRepositoryMock, parameterRepositoryMock, spy);
+		verify(spy).updateErrandParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PARAMETER_KEY, errandParameter);
+		verifyNoMoreInteractions(errandsRepositoryMock, spy);
 	}
 
 	@Test
 	void deleteErrandParameter() {
-		var spy = Mockito.spy(errandParameterService);
-		var errand = buildErrandEntity();
-		var parameter = errand.getParameters().getFirst();
+		// Arrange
+		final var spy = Mockito.spy(errandParameterService);
+		final var errand = buildErrandEntity().withParameters(new HashMap<>(Map.of(PARAMETER_KEY, ParameterEntity.create().withValues(List.of(PARAMETER_VALUE)))));
 		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(errand));
-		when(spy.findParameterEntityOrElseThrow(errand, PARAMETER_ID)).thenReturn(parameter);
 
-		spy.deleteErrandParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PARAMETER_ID);
+		// Act
+		spy.deleteErrandParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PARAMETER_KEY);
 
+		// Assert
 		verify(errandsRepositoryMock).save(errandEntityArgumentCaptor.capture());
 		assertThat(errandEntityArgumentCaptor.getValue().getParameters()).isEmpty();
-		verify(parameterRepositoryMock).delete(parameter);
-		verifyNoMoreInteractions(errandsRepositoryMock, parameterRepositoryMock);
+		verifyNoMoreInteractions(errandsRepositoryMock);
 	}
 
 	@Test
 	void findExistingErrand() {
-		var errand = buildErrandEntity();
+
+		// Arrange
+		final var errand = buildErrandEntity();
 		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(errand));
 
-		var result = errandParameterService.findExistingErrand(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
+		// Act
+		final var result = errandParameterService.findExistingErrand(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 
+		// Assert
 		assertThat(result).isEqualTo(errand);
 		verify(errandsRepositoryMock).findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 		verifyNoMoreInteractions(errandsRepositoryMock);
-		verifyNoInteractions(parameterRepositoryMock);
 	}
 
 	@Test
 	void findParameterEntityOrElseThrow_Ok() {
-		var parameter = ParameterEntity.create()
+
+		// Arrange
+		final var parameter = ParameterEntity.create()
 			.withId(UUID.randomUUID().toString())
-			.withValue(PARAMETER_VALUE)
-			.withName(PARAMETER_NAME);
-		var errand = ErrandEntity.create()
-			.withParameters(List.of(parameter));
+			.withValues(List.of(PARAMETER_VALUE));
 
-		var result = errandParameterService.findParameterEntityOrElseThrow(errand, parameter.getId());
+		final var errand = ErrandEntity.create()
+			.withParameters(Map.of(PARAMETER_ID, parameter));
 
-		assertThat(result.getName()).isEqualTo(PARAMETER_NAME);
-		assertThat(result.getValue()).isEqualTo(PARAMETER_VALUE);
+		// Act
+		final var result = errandParameterService.findParameterEntityOrElseThrow(errand, PARAMETER_ID);
+
+		// Assert
+		assertThat(result).isEqualTo(parameter.getValues());
 	}
 
 	@Test
 	void findParameterEntityOrElseThrow_Throw() {
-		var errand = ErrandEntity.create()
-			.withId("errandId")
-			.withParameters(List.of());
 
+		// Arrange
+		final var errand = ErrandEntity.create()
+			.withId("errandId")
+			.withParameters(Map.of());
+
+		// Act
 		final var exception = assertThrows(ThrowableProblem.class, () -> errandParameterService.findParameterEntityOrElseThrow(errand, "parameterId"));
 
+		// Assert
 		assertThat(exception.getStatus()).isEqualTo(NOT_FOUND);
 		assertThat(exception.getTitle()).isEqualTo(NOT_FOUND.getReasonPhrase());
-		assertThat(exception.getMessage()).isEqualTo("Not Found: A parameter with id 'parameterId' could not be found in errand with id 'errandId'");
+		assertThat(exception.getMessage()).isEqualTo("Not Found: A parameter with key 'parameterId' could not be found in errand with id 'errandId'");
 
 	}
-
 
 }
