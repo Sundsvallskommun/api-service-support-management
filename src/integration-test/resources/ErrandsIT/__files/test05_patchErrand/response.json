@@ -49,6 +49,8 @@
   "assignedGroupId": "ASSIGNED_GROUP_ID-3",
   "suspension": {},
   "businessRelated": true,
+  "contactReason": "reason5",
+  "contactReasonDescription": "This is an updated contact reason description",
   "created": "${json-unit.any-string}",
   "modified": "${json-unit.any-string}",
   "touched": "${json-unit.any-string}"

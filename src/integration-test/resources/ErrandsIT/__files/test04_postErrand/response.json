@@ -30,6 +30,8 @@
   "assignedGroupId": "hardware support",
   "suspension": {},
   "businessRelated": true,
-  "created": "${json-unit.any-string}",
+  "contactReason": "reason1",
+	"contactReasonDescription": "This is the contact reason description",
+	"created": "${json-unit.any-string}",
   "touched": "${json-unit.any-string}"
 }

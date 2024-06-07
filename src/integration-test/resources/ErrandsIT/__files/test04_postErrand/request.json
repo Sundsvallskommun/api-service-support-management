@@ -25,5 +25,7 @@
   "assignedGroupId": "hardware support",
   "resolution": "fixed",
   "description": "Fix as soon as possible!",
+  "contactReason": "reason1",
+  "contactReasonDescription": "This is the contact reason description",
   "channel": "The channel"
 }
