@@ -3,7 +3,6 @@ package se.sundsvall.supportmanagement.service.mapper;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.toCollection;
 import static org.apache.commons.lang3.ObjectUtils.anyNull;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 
@@ -97,9 +96,9 @@ public class ErrandMapper {
 	}
 
 	private static List<DbExternalTag> toExternalTag(List<ExternalTag> tags) {
-		return ofNullable(tags).orElse(emptyList()).stream()
+		return new ArrayList<>(ofNullable(tags).orElse(emptyList()).stream()
 			.map(ErrandMapper::toExternalTagEntity)
-			.collect(toCollection(ArrayList::new));
+			.toList());
 	}
 
 	private static DbExternalTag toExternalTagEntity(ExternalTag tag) {
@@ -178,7 +177,7 @@ public class ErrandMapper {
 	}
 
 	private static List<StakeholderEntity> toStakeholderEntities(ErrandEntity errandEntity, List<Stakeholder> stakeholders) {
-		return Optional.ofNullable(stakeholders)
+		return new ArrayList<>(Optional.ofNullable(stakeholders)
 			.map(s -> s.stream()
 				.map(stakeholder -> StakeholderEntity.create()
 					.withErrandEntity(errandEntity)
@@ -194,17 +193,17 @@ public class ErrandMapper {
 					.withCountry(stakeholder.getCountry())
 					.withContactChannels(toContactChannelEntities(stakeholder.getContactChannels())))
 				.toList())
-			.orElse(emptyList());
+			.orElse(emptyList()));
 	}
 
 	private static List<ContactChannelEntity> toContactChannelEntities(List<ContactChannel> contactChannels) {
-		return Optional.ofNullable(contactChannels)
+		return new ArrayList<>(Optional.ofNullable(contactChannels)
 			.map(ch -> ch.stream()
 				.map(contactChannel -> ContactChannelEntity.create()
 					.withType(contactChannel.getType())
 					.withValue(contactChannel.getValue()))
 				.toList())
-			.orElse(emptyList());
+			.orElse(emptyList()));
 	}
 
 	private static List<ContactChannel> toContactChannels(List<ContactChannelEntity> contactChannelEntities) {
