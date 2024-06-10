@@ -106,7 +106,6 @@ public class Errand {
 	private Suspension suspension;
 
 	@Schema(description = "Flag to indicate if the errand is business related", example = "true")
-	@NotNull(groups = {OnCreate.class, OnUpdate.class})
 	private Boolean businessRelated;
 
 	@Schema(description = "Timestamp when errand was created", example = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
