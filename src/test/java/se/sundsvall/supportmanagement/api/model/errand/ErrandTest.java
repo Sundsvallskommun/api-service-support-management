@@ -14,14 +14,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
-import se.sundsvall.supportmanagement.api.model.parameter.ErrandParameter;
-import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
-
 class ErrandTest {
 
 	@BeforeAll
@@ -48,7 +45,7 @@ class ErrandTest {
 		final var created = OffsetDateTime.now();
 		final var stakeholder = Stakeholder.create().withExternalId("id").withExternalIdType("type");
 		final var externalTags = List.of(ExternalTag.create().withKey("externalTagkey").withValue("externalTagValue"));
-		final var parameters = List.of(ErrandParameter.create().withName("name").withValue("value"));
+		final var parameters = Map.of("name", List.of("value"));
 		final var id = randomUUID().toString();
 		final var modified = OffsetDateTime.now().plusDays(1);
 		final var priority = Priority.MEDIUM;
@@ -59,11 +56,13 @@ class ErrandTest {
 		final var type = "type";
 		final var resolution = "resolution";
 		final var description = "description";
+		final var channel = "channel";
 		final var escalationEmail = "escalation@email.com";
 		final var errandNumber = "errandNumber";
 		final var suspension = Suspension.create().withSuspendedFrom(OffsetDateTime.now()).withSuspendedTo(OffsetDateTime.now().plusDays(1));
 		final var businessRelated = true;
-		final var contactReason = ContactReasonEntity.create().withReason("reason");
+		final var contactReason = "reason";
+		final var contactReasonDescription = "contactReasonDescription";
 
 		final var bean = Errand.create()
 			.withAssignedGroupId(assignedGroupId)
@@ -83,10 +82,12 @@ class ErrandTest {
 			.withTouched(touched)
 			.withResolution(resolution)
 			.withDescription(description)
+			.withChannel(channel)
 			.withEscalationEmail(escalationEmail)
 			.withSuspension(suspension)
 			.withBusinessRelated(businessRelated)
-			.withContactReason(contactReason.getReason());
+			.withContactReason(contactReason)
+			.withContactReasonDescription(contactReasonDescription);
 
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(bean.getAssignedGroupId()).isEqualTo(assignedGroupId);
@@ -106,11 +107,13 @@ class ErrandTest {
 		assertThat(bean.getTouched()).isEqualTo(touched);
 		assertThat(bean.getResolution()).isEqualTo(resolution);
 		assertThat(bean.getDescription()).isEqualTo(description);
+		assertThat(bean.getChannel()).isEqualTo(channel);
 		assertThat(bean.getEscalationEmail()).isEqualTo(escalationEmail);
 		assertThat(bean.getErrandNumber()).isEqualTo(errandNumber);
 		assertThat(bean.getSuspension()).isEqualTo(suspension);
 		assertThat(bean.getBusinessRelated()).isEqualTo(businessRelated);
-		assertThat(bean.getContactReason()).isEqualTo(contactReason.getReason());
+		assertThat(bean.getContactReason()).isEqualTo(contactReason);
+		assertThat(bean.getContactReasonDescription()).isEqualTo(contactReasonDescription);
 	}
 
 	@Test
@@ -118,4 +121,5 @@ class ErrandTest {
 		assertThat(Errand.create()).hasAllNullFieldsOrProperties();
 		assertThat(new Errand()).hasAllNullFieldsOrProperties();
 	}
+
 }

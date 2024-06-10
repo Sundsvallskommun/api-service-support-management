@@ -22,5 +22,4 @@ public class EmailReaderConfiguration {
 			.withRetryableOAuth2InterceptorForClientRegistration(clientRegistrationRepository.findByRegistrationId(CLIENT_ID))
 			.composeCustomizersToOne();
 	}
-
 }

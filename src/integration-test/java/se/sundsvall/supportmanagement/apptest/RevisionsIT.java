@@ -27,7 +27,7 @@ class RevisionsIT extends AbstractAppTest {
 	private static final String RESPONSE_FILE = "response.json";
 
 	@Test
-	void test01_readErrandRevisions() throws Exception {
+	void test01_readErrandRevisions() {
 		setupCall()
 			.withServicePath("/errands/147d355f-dc94-4fde-a4cb-9ddd16cb1946/revisions")
 			.withHttpMethod(GET)
@@ -38,7 +38,7 @@ class RevisionsIT extends AbstractAppTest {
 	}
 
 	@Test
-	void test02_readNoteRevisions() throws Exception {
+	void test02_readNoteRevisions() {
 		setupCall()
 			.withServicePath("/errands/ec677eb3-604c-4935-bff7-f8f0b500c8f4/notes/d1f2c8d4-d234-4504-a483-b74570a7941d/revisions")
 			.withHttpMethod(GET)
@@ -49,7 +49,7 @@ class RevisionsIT extends AbstractAppTest {
 	}
 
 	@Test
-	void test03_compareErrandRevisionsAfterModifiedErrand() throws Exception {
+	void test03_compareErrandRevisionsAfterModifiedErrand() {
 		setupCall()
 			.withServicePath("/errands/147d355f-dc94-4fde-a4cb-9ddd16cb1946/revisions/difference?source=0&target=1")
 			.withHttpMethod(GET)
@@ -60,7 +60,7 @@ class RevisionsIT extends AbstractAppTest {
 	}
 
 	@Test
-	void test04_compareErrandRevisionsAfterAddedFile() throws Exception {
+	void test04_compareErrandRevisionsAfterAddedFile() {
 		setupCall()
 			.withServicePath("/errands/147d355f-dc94-4fde-a4cb-9ddd16cb1946/revisions/difference?source=1&target=2")
 			.withHttpMethod(GET)
@@ -71,13 +71,14 @@ class RevisionsIT extends AbstractAppTest {
 	}
 
 	@Test
-	void test05_compareNoteRevisions() throws Exception {
+	void test05_compareNoteRevisions() {
 		setupCall()
-		.withServicePath("/errands/ec677eb3-604c-4935-bff7-f8f0b500c8f4/notes/d1f2c8d4-d234-4504-a483-b74570a7941d/revisions/difference?source=0&target=1")
+			.withServicePath("/errands/ec677eb3-604c-4935-bff7-f8f0b500c8f4/notes/d1f2c8d4-d234-4504-a483-b74570a7941d/revisions/difference?source=0&target=1")
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 	}
+
 }

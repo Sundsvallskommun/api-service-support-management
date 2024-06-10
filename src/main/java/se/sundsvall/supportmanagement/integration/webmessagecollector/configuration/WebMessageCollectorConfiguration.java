@@ -1,6 +1,5 @@
 package se.sundsvall.supportmanagement.integration.webmessagecollector.configuration;
 
-
 import org.springframework.cloud.openfeign.FeignBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
@@ -15,7 +14,6 @@ public class WebMessageCollectorConfiguration {
 
 	public static final String CLIENT_ID = "web-message-collector";
 
-
 	@Bean
 	FeignBuilderCustomizer feignBuilderCustomizer(final WebMessageCollectorProperties webMessageCollectorProperties, final ClientRegistrationRepository clientRegistrationRepository) {
 		return FeignMultiCustomizer.create()
@@ -24,5 +22,4 @@ public class WebMessageCollectorConfiguration {
 			.withRequestTimeoutsInSeconds(webMessageCollectorProperties.connectTimeout(), webMessageCollectorProperties.readTimeout())
 			.composeCustomizersToOne();
 	}
-
 }

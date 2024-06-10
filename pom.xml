@@ -12,10 +12,9 @@
 	</parent>
 	<groupId>se.sundsvall</groupId>
 	<artifactId>api-service-support-management</artifactId>
-	<version>5.9</version>
+	<version>6.0</version>
 	<name>api-service-support-management</name>
 	<properties>
-		<!-- Service properties -->
 		<spring-filter.version>3.1.7</spring-filter.version>
 		<tika-core.version>2.9.2</tika-core.version>
 		<flipkart.zjsonpatch.version>0.4.16</flipkart.zjsonpatch.version>

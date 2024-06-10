@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
+import static org.flywaydb.core.internal.util.StringUtils.rightPad;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -44,8 +45,11 @@ import se.sundsvall.supportmanagement.service.MetadataService;
 class ErrandsCreateResourceFailureTest {
 
 	private static final String PATH = "/{namespace}/{municipalityId}/errands";
+
 	private static final String NAMESPACE = "namespace";
+
 	private static final String MUNICIPALITY_ID = "2281";
+
 	private static final String INVALID = "#invalid#";
 
 	@Autowired
@@ -56,6 +60,24 @@ class ErrandsCreateResourceFailureTest {
 
 	@MockBean
 	private MetadataService metadataServiceMock;
+
+	private static Errand createErrandInstance() {
+		return Errand.create()
+			.withId(null)
+			.withModified(null)
+			.withCreated(null)
+			.withAssignedGroupId("assignedGroupId")
+			.withAssignedUserId("assignedUserId")
+			.withStakeholders(List.of(Stakeholder.create().withExternalId("id").withExternalIdType("EMPLOYEE")))
+			.withClassification(Classification.create().withCategory("category_1").withType("TYPE_2"))
+			.withExternalTags(List.of(ExternalTag.create().withKey("externalTagKey").withValue("externalTagValue")))
+			.withPriority(Priority.HIGH)
+			.withReporterUserId("reporterUserId")
+			.withStatus("status_1")
+			.withTitle("title")
+			.withBusinessRelated(true)
+			.withContactReason("contactReason");
+	}
 
 	@BeforeEach
 	void setupMock() {
@@ -138,7 +160,7 @@ class ErrandsCreateResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Bad Request");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getDetail()).isEqualTo("""
-			Required request body is missing: public org.springframework.http.ResponseEntity<java.lang.Void>\s\
+			Required request body is missing: public org.springframework.http.ResponseEntity<java.lang.Void> \
 			se.sundsvall.supportmanagement.api.ErrandsResource.createErrand(java.lang.String,java.lang.String,se.sundsvall.supportmanagement.api.model.errand.Errand)""");
 
 		// Verification
@@ -272,10 +294,9 @@ class ErrandsCreateResourceFailureTest {
 	@Test
 	void createErrandWithNonUniqueExternalTagKeys() {
 
-		var errand = createErrandInstance().withExternalTags(List.of(
+		final var errand = createErrandInstance().withExternalTags(List.of(
 			ExternalTag.create().withKey("key").withValue("value"),
 			ExternalTag.create().withKey("key").withValue("other value")));
-
 
 		System.out.println(errand.getId());
 		// Call
@@ -377,21 +398,54 @@ class ErrandsCreateResourceFailureTest {
 		verifyNoInteractions(errandServiceMock);
 	}
 
-	private static Errand createErrandInstance() {
-		return Errand.create()
-			.withId(null)
-			.withModified(null)
-			.withCreated(null)
-			.withAssignedGroupId("assignedGroupId")
-			.withAssignedUserId("assignedUserId")
-			.withStakeholders(List.of(Stakeholder.create().withExternalId("id").withExternalIdType("EMPLOYEE")))
-			.withClassification(Classification.create().withCategory("category_1").withType("TYPE_2"))
-			.withExternalTags(List.of(ExternalTag.create().withKey("externalTagKey").withValue("externalTagValue")))
-			.withPriority(Priority.HIGH)
-			.withReporterUserId("reporterUserId")
-			.withStatus("status_1")
-			.withTitle("title")
-			.withBusinessRelated(true)
-			.withContactReason("contactReason");
+	@Test
+	void createErrandWithTooLongChannel() {
+		// Call
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(createErrandInstance().withChannel(rightPad("Test", 260, 'X')))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::getField, Violation::getMessage)
+			.containsExactly(tuple("channel", "size must be between 0 and 255"));
+
+		// Verification
+		verify(metadataServiceMock).findStatuses(any(), any());
+		verifyNoInteractions(errandServiceMock);
 	}
+
+	@Test
+	void createErrandWithTooLongContactReasonDescription() {
+		// Call
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(createErrandInstance().withContactReasonDescription(rightPad("Test", 260, 'X')))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::getField, Violation::getMessage)
+			.containsExactly(tuple("contactReasonDescription", "size must be between 0 and 255"));
+
+		// Verification
+		verify(metadataServiceMock).findStatuses(any(), any());
+		verifyNoInteractions(errandServiceMock);
+	}
+
 }

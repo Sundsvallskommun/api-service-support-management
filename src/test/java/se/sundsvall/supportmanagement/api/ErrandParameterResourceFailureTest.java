@@ -7,7 +7,9 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.zalando.problem.Status.BAD_REQUEST;
+import static org.zalando.problem.Status.NOT_FOUND;
 
+import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
@@ -16,11 +18,11 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import org.zalando.problem.Problem;
 import org.zalando.problem.violations.ConstraintViolationProblem;
 import org.zalando.problem.violations.Violation;
 
 import se.sundsvall.supportmanagement.Application;
-import se.sundsvall.supportmanagement.api.model.parameter.ErrandParameter;
 import se.sundsvall.supportmanagement.service.ErrandParameterService;
 
 @SpringBootTest(classes = Application.class, webEnvironment = RANDOM_PORT)
@@ -28,10 +30,15 @@ import se.sundsvall.supportmanagement.service.ErrandParameterService;
 class ErrandParameterResourceFailureTest {
 
 	private static final String NAMESPACE = "namespace";
+
 	private static final String MUNICIPALITY_ID = "2281";
+
 	private static final String ERRAND_ID = randomUUID().toString();
-	private static final String PARAMETER_ID = randomUUID().toString();
+
+	private static final String PARAMETER_KEY = randomUUID().toString();
+
 	private static final String INVALID = "#invalid#";
+
 	private static final String PATH = "/{namespace}/{municipalityId}/errands/{errandId}/parameters";
 
 	@Autowired
@@ -41,12 +48,10 @@ class ErrandParameterResourceFailureTest {
 	private ErrandParameterService errandParameterServiceMock;
 
 	@Test
-	void createErrandParameterInvalidNamespace() {
-		var requestBody = ErrandParameter.create()
-			.withName("name")
-			.withValue("value");
+	void updateErrandParametersInvalidNamespace() {
+		final var requestBody = Map.of("name", List.of("value"));
 
-		final var response = webTestClient.post()
+		final var response = webTestClient.patch()
 			.uri(builder -> builder.path(PATH).build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(requestBody)
@@ -61,19 +66,17 @@ class ErrandParameterResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactlyInAnyOrder(tuple("createErrandParameter.namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."));
+			.containsExactlyInAnyOrder(tuple("updateErrandParameters.namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."));
 
 		verifyNoInteractions(errandParameterServiceMock);
 	}
 
 
 	@Test
-	void createErrandParameterInvalidMunicipalityId() {
-		var requestBody = ErrandParameter.create()
-			.withName("name")
-			.withValue("value");
+	void updateErrandParametersInvalidMunicipalityId() {
+		final var requestBody = Map.of("name", List.of("value"));
 
-		final var response = webTestClient.post()
+		final var response = webTestClient.patch()
 			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", INVALID, "errandId", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(requestBody)
@@ -88,20 +91,17 @@ class ErrandParameterResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactlyInAnyOrder(tuple("createErrandParameter.municipalityId", "not a valid municipality ID"));
-
+			.containsExactlyInAnyOrder(tuple("updateErrandParameters.municipalityId", "not a valid municipality ID"));
 
 		verifyNoInteractions(errandParameterServiceMock);
 	}
 
 
 	@Test
-	void createErrandParameterInvalidId() {
-		var requestBody = ErrandParameter.create()
-			.withName("name")
-			.withValue("value");
+	void updateErrandParametersInvalidId() {
+		final var requestBody = Map.of("name", List.of("value"));
 
-		final var response = webTestClient.post()
+		final var response = webTestClient.patch()
 			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", INVALID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(requestBody)
@@ -116,32 +116,7 @@ class ErrandParameterResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactlyInAnyOrder(tuple("createErrandParameter.errandId", "not a valid UUID"));
-
-		verifyNoInteractions(errandParameterServiceMock);
-	}
-
-	@Test
-	void createErrandParameterInvalidRequestBody() {
-
-		final var response = webTestClient.post()
-			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
-			.contentType(APPLICATION_JSON)
-			.bodyValue(ErrandParameter.create())
-			.exchange()
-			.expectStatus().isBadRequest()
-			.expectBody(ConstraintViolationProblem.class)
-			.returnResult()
-			.getResponseBody();
-
-		assertThat(response).isNotNull();
-		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
-		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
-		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactlyInAnyOrder(
-				tuple("name", "must not be blank"),
-				tuple("value", "must not be blank"));
+			.containsExactlyInAnyOrder(tuple("updateErrandParameters.errandId", "not a valid UUID"));
 
 		verifyNoInteractions(errandParameterServiceMock);
 	}
@@ -149,7 +124,7 @@ class ErrandParameterResourceFailureTest {
 	@Test
 	void readErrandParameterWithInvalidNamespace() {
 		final var response = webTestClient.get()
-			.uri(builder -> builder.path(PATH.concat("/{parameterId}")).build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "parameterId", PARAMETER_ID)))
+			.uri(builder -> builder.path(PATH.concat("/{parameterKey}")).build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "parameterKey", PARAMETER_KEY)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -167,10 +142,10 @@ class ErrandParameterResourceFailureTest {
 	}
 
 	@Test
-	void readErrandParameterWithInvalidMunicipalityId() {
+	void readErrandParameterWithInvalidMunicipalityKey() {
 
 		final var response = webTestClient.get()
-			.uri(builder -> builder.path(PATH.concat("/{parameterId}")).build(Map.of("namespace", NAMESPACE, "municipalityId", INVALID, "errandId", ERRAND_ID, "parameterId", PARAMETER_ID)))
+			.uri(builder -> builder.path(PATH.concat("/{parameterKey}")).build(Map.of("namespace", NAMESPACE, "municipalityId", INVALID, "errandId", ERRAND_ID, "parameterKey", PARAMETER_KEY)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -188,10 +163,10 @@ class ErrandParameterResourceFailureTest {
 	}
 
 	@Test
-	void readErrandParameterWithInvalidId() {
+	void readErrandParameterWithInvalidKey() {
 
 		final var response = webTestClient.get()
-			.uri(builder -> builder.path(PATH.concat("/{parameterId}")).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", INVALID, "parameterId", PARAMETER_ID)))
+			.uri(builder -> builder.path(PATH.concat("/{parameterKey}")).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", INVALID, "parameterKey", PARAMETER_KEY)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -209,22 +184,20 @@ class ErrandParameterResourceFailureTest {
 	}
 
 	@Test
-	void readErrandParameterWithInvalidParameterId() {
+	void readErrandParameterWithInvalidParameterKey() {
 
 		final var response = webTestClient.get()
-			.uri(builder -> builder.path(PATH.concat("/{parameterId}")).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "parameterId", INVALID)))
+			.uri(builder -> builder.path(PATH.concat("/{parameterKey}")).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "parameterKey", "")))
 			.exchange()
-			.expectStatus().isBadRequest()
-			.expectBody(ConstraintViolationProblem.class)
+			.expectStatus().isNotFound()
+			.expectBody(Problem.class)
 			.returnResult()
 			.getResponseBody();
 
 		assertThat(response).isNotNull();
-		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
-		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
-		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactlyInAnyOrder(tuple("readErrandParameter.parameterId", "not a valid UUID"));
+		assertThat(response.getTitle()).isEqualTo("Not Found");
+		assertThat(response.getStatus()).isEqualTo(NOT_FOUND);
+		assertThat(response.getDetail()).isEqualTo("No endpoint GET /" + NAMESPACE + "/" + MUNICIPALITY_ID + "/errands/" + ERRAND_ID + "/parameters/.");
 
 		verifyNoInteractions(errandParameterServiceMock);
 	}
@@ -274,12 +247,10 @@ class ErrandParameterResourceFailureTest {
 	@Test
 	void updateErrandParameterInvalidNamespace() {
 
-		final var requestBody = ErrandParameter.create()
-			.withName("name")
-			.withValue("value");
+		final var requestBody = List.of("value");
 
 		final var response = webTestClient.patch()
-			.uri(builder -> builder.path(PATH.concat("/{parameterId}")).build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "parameterId", PARAMETER_ID)))
+			.uri(builder -> builder.path(PATH.concat("/{parameterKey}")).build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "parameterKey", PARAMETER_KEY)))
 			.contentType(APPLICATION_JSON)
 			.accept(APPLICATION_JSON)
 			.bodyValue(requestBody)
@@ -302,12 +273,10 @@ class ErrandParameterResourceFailureTest {
 	@Test
 	void updateErrandParameterInvalidMunicipalityId() {
 
-		final var requestBody = ErrandParameter.create()
-			.withName("name")
-			.withValue("value");
+		final var requestBody = List.of("value");
 
 		final var response = webTestClient.patch()
-			.uri(builder -> builder.path(PATH.concat("/{parameterId}")).build(Map.of("namespace", NAMESPACE, "municipalityId", INVALID, "errandId", ERRAND_ID, "parameterId", PARAMETER_ID)))
+			.uri(builder -> builder.path(PATH.concat("/{parameterKey}")).build(Map.of("namespace", NAMESPACE, "municipalityId", INVALID, "errandId", ERRAND_ID, "parameterKey", PARAMETER_KEY)))
 			.contentType(APPLICATION_JSON)
 			.accept(APPLICATION_JSON)
 			.bodyValue(requestBody)
@@ -330,12 +299,10 @@ class ErrandParameterResourceFailureTest {
 	@Test
 	void updateErrandParameterInvalidErrandId() {
 
-		final var requestBody = ErrandParameter.create()
-			.withName("name")
-			.withValue("value");
+		final var requestBody = List.of("value");
 
 		final var response = webTestClient.patch()
-			.uri(builder -> builder.path(PATH.concat("/{parameterId}")).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", INVALID, "parameterId", PARAMETER_ID)))
+			.uri(builder -> builder.path(PATH.concat("/{parameterKey}")).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", INVALID, "parameterKey", PARAMETER_KEY)))
 			.contentType(APPLICATION_JSON)
 			.accept(APPLICATION_JSON)
 			.bodyValue(requestBody)
@@ -356,67 +323,34 @@ class ErrandParameterResourceFailureTest {
 	}
 
 	@Test
-	void updateErrandParameterInvalidParameterId() {
+	void updateErrandParameterInvalidParameterKey() {
 
-		final var requestBody = ErrandParameter.create()
-			.withName("name")
-			.withValue("value");
+		final var requestBody = List.of("value");
 
 		final var response = webTestClient.patch()
-			.uri(builder -> builder.path(PATH.concat("/{parameterId}")).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "parameterId", INVALID)))
+			.uri(builder -> builder.path(PATH.concat("/{parameterKey}")).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "parameterKey", "")))
 			.contentType(APPLICATION_JSON)
 			.accept(APPLICATION_JSON)
 			.bodyValue(requestBody)
 			.exchange()
-			.expectStatus().isBadRequest()
-			.expectBody(ConstraintViolationProblem.class)
+			.expectStatus().isNotFound()
+			.expectBody(Problem.class)
 			.returnResult()
 			.getResponseBody();
 
 		assertThat(response).isNotNull();
-		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
-		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
-		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactlyInAnyOrder(tuple("updateErrandParameter.parameterId", "not a valid UUID"));
+		assertThat(response.getTitle()).isEqualTo("Not Found");
+		assertThat(response.getStatus()).isEqualTo(NOT_FOUND);
+		assertThat(response.getDetail()).isEqualTo("No endpoint PATCH /" + NAMESPACE + "/" + MUNICIPALITY_ID + "/errands/" + ERRAND_ID + "/parameters/.");
 
 		verifyNoInteractions(errandParameterServiceMock);
 	}
-
-	@Test
-	void updateErrandParameterInvalidRequestBody() {
-
-		final var requestBody = ErrandParameter.create();
-
-		final var response = webTestClient.patch()
-			.uri(builder -> builder.path(PATH.concat("/{parameterId}")).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "parameterId", PARAMETER_ID)))
-			.contentType(APPLICATION_JSON)
-			.accept(APPLICATION_JSON)
-			.bodyValue(requestBody)
-			.exchange()
-			.expectStatus().isBadRequest()
-			.expectBody(ConstraintViolationProblem.class)
-			.returnResult()
-			.getResponseBody();
-
-		assertThat(response).isNotNull();
-		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
-		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
-		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactlyInAnyOrder(
-				tuple("name", "must not be blank"),
-				tuple("value", "must not be blank"));
-
-		verifyNoInteractions(errandParameterServiceMock);
-	}
-
 
 	@Test
 	void deleteErrandParameterWithInvalidNamespace() {
 
 		final var response = webTestClient.delete()
-			.uri(builder -> builder.path(PATH.concat("/{parameterId}")).build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "parameterId", PARAMETER_ID)))
+			.uri(builder -> builder.path(PATH.concat("/{parameterKey}")).build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "parameterKey", PARAMETER_KEY)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -437,7 +371,7 @@ class ErrandParameterResourceFailureTest {
 	void deleteErrandParameterWithInvalidMunicipalityId() {
 
 		final var response = webTestClient.delete()
-			.uri(builder -> builder.path(PATH.concat("/{parameterId}")).build(Map.of("namespace", NAMESPACE, "municipalityId", INVALID, "errandId", ERRAND_ID, "parameterId", PARAMETER_ID)))
+			.uri(builder -> builder.path(PATH.concat("/{parameterKey}")).build(Map.of("namespace", NAMESPACE, "municipalityId", INVALID, "errandId", ERRAND_ID, "parameterKey", PARAMETER_KEY)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -458,7 +392,7 @@ class ErrandParameterResourceFailureTest {
 	void deleteErrandParameterWithInvalidId() {
 
 		final var response = webTestClient.delete()
-			.uri(builder -> builder.path(PATH.concat("/{parameterId}")).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", INVALID, "parameterId", PARAMETER_ID)))
+			.uri(builder -> builder.path(PATH.concat("/{parameterKey}")).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", INVALID, "parameterKey", PARAMETER_KEY)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -476,22 +410,20 @@ class ErrandParameterResourceFailureTest {
 	}
 
 	@Test
-	void deleteErrandParameterWithInvalidParameterId() {
+	void deleteErrandParameterWithInvalidParameterKey() {
 
 		final var response = webTestClient.delete()
-			.uri(builder -> builder.path(PATH.concat("/{parameterId}")).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "parameterId", INVALID)))
+			.uri(builder -> builder.path(PATH.concat("/{parameterKey}")).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "parameterKey", "")))
 			.exchange()
-			.expectStatus().isBadRequest()
-			.expectBody(ConstraintViolationProblem.class)
+			.expectStatus().isNotFound()
+			.expectBody(Problem.class)
 			.returnResult()
 			.getResponseBody();
 
 		assertThat(response).isNotNull();
-		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
-		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
-		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactlyInAnyOrder(tuple("deleteErrandParameter.parameterId", "not a valid UUID"));
+		assertThat(response.getTitle()).isEqualTo("Not Found");
+		assertThat(response.getStatus()).isEqualTo(NOT_FOUND);
+		assertThat(response.getDetail()).isEqualTo("No endpoint DELETE /" + NAMESPACE + "/" + MUNICIPALITY_ID + "/errands/" + ERRAND_ID + "/parameters/.");
 
 		verifyNoInteractions(errandParameterServiceMock);
 	}

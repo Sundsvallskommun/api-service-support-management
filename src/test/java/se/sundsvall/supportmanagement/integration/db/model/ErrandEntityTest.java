@@ -12,6 +12,7 @@ import static org.hamcrest.core.AllOf.allOf;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 
@@ -19,7 +20,6 @@ import com.google.code.beanmatchers.BeanMatchers;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mariadb.jdbc.MariaDbBlob;
-
 
 class ErrandEntityTest {
 
@@ -30,7 +30,6 @@ class ErrandEntityTest {
 
 	@Test
 	void testBean() {
-
 		assertThat(ErrandEntity.class, allOf(
 			hasValidBeanConstructor(),
 			hasValidGettersAndSetters(),
@@ -51,6 +50,7 @@ class ErrandEntityTest {
 		final var namespace = "namespace";
 		final var stakeholder = StakeholderEntity.create().withExternalId(UUID.randomUUID().toString()).withExternalIdType("PRIVATE");
 		final var description = "description";
+		final var channel = "channel";
 		final var externalTags = List.of(DbExternalTag.create().withKey("key").withValue("value"));
 		final var id = UUID.randomUUID().toString();
 		final var municipalityId = "municipalityId";
@@ -62,9 +62,10 @@ class ErrandEntityTest {
 		final var type = "type";
 		final var escalationEmail = "escalation@email.com";
 		final var errandNumber = "errandNumber";
-		final var parameters = List.of(ParameterEntity.create());
+		final var parameters = Map.of("key", ParameterEntity.create());
 		final var businessRelated = true;
 		final var contactReason = ContactReasonEntity.create().withReason("reason");
+		final var contactReasonDescription = "contactReasonDescription";
 		final var previousStatus = "previousStatus";
 		final var timeMeasure = List.of(TimeMeasurementEntity.create().withStartTime(now).withStopTime(now).withDescription("description").withAdministrator("administrator"));
 		final var tempPreviousStatus = "tempPreviousStatus";
@@ -77,6 +78,7 @@ class ErrandEntityTest {
 			.withNamespace(namespace)
 			.withStakeholders(List.of(stakeholder))
 			.withDescription(description)
+			.withChannel(channel)
 			.withExternalTags(externalTags)
 			.withId(id)
 			.withMunicipalityId(municipalityId)
@@ -90,6 +92,7 @@ class ErrandEntityTest {
 			.withEscalationEmail(escalationEmail)
 			.withBusinessRelated(businessRelated)
 			.withContactReason(contactReason)
+			.withContactReasonDescription(contactReasonDescription)
 			.withErrandNumber(errandNumber)
 			.withTouched(now)
 			.withCreated(now)
@@ -108,6 +111,7 @@ class ErrandEntityTest {
 		assertThat(errandEntity.getNamespace()).isEqualTo(namespace);
 		assertThat(errandEntity.getStakeholders()).containsExactly(stakeholder);
 		assertThat(errandEntity.getDescription()).isEqualTo(description);
+		assertThat(errandEntity.getChannel()).isEqualTo(channel);
 		assertThat(errandEntity.getExternalTags()).isEqualTo(externalTags);
 		assertThat(errandEntity.getId()).isEqualTo(id);
 		assertThat(errandEntity.getMunicipalityId()).isEqualTo(municipalityId);
@@ -122,6 +126,7 @@ class ErrandEntityTest {
 		assertThat(errandEntity.getErrandNumber()).isEqualTo(errandNumber);
 		assertThat(errandEntity.getBusinessRelated()).isEqualTo(businessRelated);
 		assertThat(errandEntity.getContactReason()).isEqualTo(contactReason);
+		assertThat(errandEntity.getContactReasonDescription()).isEqualTo(contactReasonDescription);
 		assertThat(errandEntity).extracting(ErrandEntity::getModified,
 			ErrandEntity::getTouched, ErrandEntity::getSuspendedFrom, ErrandEntity::getSuspendedTo,
 			ErrandEntity::getCreated).allSatisfy(date -> assertThat(date).isEqualTo(now));

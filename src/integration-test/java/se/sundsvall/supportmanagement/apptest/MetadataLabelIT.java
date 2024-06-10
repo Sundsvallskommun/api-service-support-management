@@ -32,17 +32,22 @@ import se.sundsvall.supportmanagement.integration.db.LabelRepository;
 class MetadataLabelIT extends AbstractAppTest {
 
 	private static final String REQUEST_FILE = "request.json";
+
 	private static final String RESPONSE_FILE = "response.json";
+
 	private static final String NAMESPACE = "NAMESPACE.1";
+
 	private static final String MUNICIPALITY_2281 = "2281";
+
 	private static final String MUNICIPALITY_2282 = "2282";
+
 	private static final String MUNICIPALITY_2309 = "2309";
 
 	@Autowired
 	private LabelRepository labelRepository;
 
 	@Test
-	void test01_createLabels() throws Exception {
+	void test01_createLabels() {
 		final var path = "/" + NAMESPACE + "/" + MUNICIPALITY_2282 + "/metadata/labels";
 		final var json = "[{\"classification\":\"TOP-LEVEL\",\"displayName\":\"Nivå 1\",\"name\":\"LABEL-1\",\"labels\":[{\"classification\":\"MIDDLE-LEVEL\",\"displayName\":\"Nivå 1.1\",\"name\":\"LEVEL-1-1\",\"labels\":[{\"classification\":\"LOWEST-LEVEL\",\"displayName\":\"Nivå 1.1.1\",\"name\":\"LEVEL-1-1-1\"},{\"classification\":\"LOWEST-LEVEL\",\"displayName\":\"Nivå 1.1.2\",\"name\":\"LEVEL-1-1-2\"}]}]}]";
 
@@ -61,7 +66,7 @@ class MetadataLabelIT extends AbstractAppTest {
 	}
 
 	@Test
-	void test02_getLabels() throws Exception {
+	void test02_getLabels() {
 		setupCall()
 			.withServicePath("/" + NAMESPACE + "/" + MUNICIPALITY_2281 + "/metadata/labels")
 			.withHttpMethod(GET)
@@ -72,7 +77,7 @@ class MetadataLabelIT extends AbstractAppTest {
 	}
 
 	@Test
-	void test03_getLabelsWhenEmpty() throws Exception {
+	void test03_getLabelsWhenEmpty() {
 		final var path = "/" + NAMESPACE + "/" + MUNICIPALITY_2309 + "/metadata/labels";
 
 		setupCall()
@@ -84,7 +89,7 @@ class MetadataLabelIT extends AbstractAppTest {
 	}
 
 	@Test
-	void test04_deleteLabels() throws Exception {
+	void test04_deleteLabels() {
 		assertThat(labelRepository.existsByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_2281)).isTrue();
 
 		setupCall()
@@ -96,4 +101,5 @@ class MetadataLabelIT extends AbstractAppTest {
 
 		assertThat(labelRepository.existsByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_2281)).isFalse();
 	}
+
 }

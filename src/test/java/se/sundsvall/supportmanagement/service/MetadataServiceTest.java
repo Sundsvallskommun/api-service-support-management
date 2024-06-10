@@ -773,12 +773,13 @@ class MetadataServiceTest {
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
 		final var label = Label.create();
+		final var labels = List.of(label);
 
 		// Mock
 		when(labelRepositoryMock.existsByNamespaceAndMunicipalityId(namespace, municipalityId)).thenReturn(true);
 
 		// Call
-		final var e = assertThrows(ThrowableProblem.class, () -> metadataService.createLabels(namespace, municipalityId, List.of(label)));
+		final var e = assertThrows(ThrowableProblem.class, () -> metadataService.createLabels(namespace, municipalityId, labels));
 
 		// Verifications
 		assertThat(e.getStatus()).isEqualTo(BAD_REQUEST);
@@ -978,4 +979,5 @@ class MetadataServiceTest {
 		verify(validationRepositoryMock).findByNamespaceAndMunicipalityIdAndType(namespace, municipalityId, type);
 		verifyNoInteractions(statusRepositoryMock, categoryRepositoryMock, externalIdTypeRepositoryMock, roleRepositoryMock);
 	}
+
 }

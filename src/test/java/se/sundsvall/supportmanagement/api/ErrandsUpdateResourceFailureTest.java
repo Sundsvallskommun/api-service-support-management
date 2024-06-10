@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
+import static org.flywaydb.core.internal.util.StringUtils.rightPad;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -316,6 +317,25 @@ class ErrandsUpdateResourceFailureTest {
 		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
 			tuple("suspension", "to date must be after from date"),
 			tuple("suspension.suspendedTo", "must be a date in the present or in the future"));
+	}
+
+	@Test
+	void updateErrandWithTooLongChannel() {
+		final var response = webTestClient.patch()
+			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(Errand.create().withChannel(rightPad("Test", 260, 'X')))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
+			tuple("channel", "size must be between 0 and 255"));
 	}
 
 	private static Errand createErrandInstance() {

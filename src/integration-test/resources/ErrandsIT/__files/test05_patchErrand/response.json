@@ -35,7 +35,7 @@
       "value": "VALUE-6"
     }
   ],
-  "parameters": [],
+  "parameters": {},
   "classification": {
     "category": "CATEGORY-3",
     "type": "TYPE-3"
@@ -43,11 +43,14 @@
   "status": "STATUS-3",
   "resolution": "RESOLUTION",
   "description": "DESCRIPTION",
+  "channel": "Updated channel",
   "reporterUserId": "REPORTER_USER_ID-3",
   "assignedUserId": "ASSIGNED_USER_ID-3",
   "assignedGroupId": "ASSIGNED_GROUP_ID-3",
   "suspension": {},
   "businessRelated": true,
+  "contactReason": "reason5",
+  "contactReasonDescription": "This is an updated contact reason description",
   "created": "${json-unit.any-string}",
   "modified": "${json-unit.any-string}",
   "touched": "${json-unit.any-string}"

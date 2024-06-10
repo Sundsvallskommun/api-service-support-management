@@ -1,4 +1,9 @@
 {
+  "totalPages": 1,
+  "totalElements": 4,
+  "first": true,
+  "last": true,
+  "size": 20,
   "content": [
     {
       "id": "147d355f-dc94-4fde-a4cb-9ddd16cb1946",
@@ -31,7 +36,7 @@
         }
       ],
       "externalTags": [],
-      "parameters": [],
+      "parameters": {},
       "classification": {
         "category": "CATEGORY-1",
         "type": "TYPE-1"
@@ -67,13 +72,7 @@
           "value": "VALUE-3"
         }
       ],
-      "parameters": [
-        {
-          "id": "45d266a7-1ff2-4bf4-b6f3-0473b2b86fcd",
-          "name": "APARTMENT_NUMBER",
-          "value": "1101"
-        }
-      ],
+      "parameters": {},
       "classification": {
         "category": "CATEGORY-1",
         "type": "TYPE-1"
@@ -110,7 +109,7 @@
           "value": "VALUE-5"
         }
       ],
-      "parameters": [],
+      "parameters": {},
       "classification": {
         "category": "CATEGORY-3",
         "type": "TYPE-3"
@@ -172,18 +171,13 @@
           "value": "VALUE-2"
         }
       ],
-      "parameters": [
-        {
-          "id": "35d266a7-1ff2-4bf4-b6f3-0473b2b86fcd",
-          "name": "PROPERTY_DESIGNATION",
-          "value": "KLINGSTA 123"
-        },
-        {
-          "id": "55d266a7-1ff2-4bf4-b6f3-0473b2b86fcd",
-          "name": "testName",
-          "value": "testValue"
-        }
-      ],
+      "parameters": {
+        "key1": [
+          "value1",
+          "value2"
+        ],
+        "key2": []
+      },
       "classification": {
         "category": "CATEGORY-1",
         "type": "TYPE-1"
@@ -197,6 +191,17 @@
       "businessRelated": false,
       "created": "2022-01-01T12:00:00+01:00",
       "touched": "2022-01-01T12:00:00+01:00"
+    }
+  ],
+  "number": 0,
+  "sort": [
+    {
+      "direction": "DESC",
+      "property": "touched",
+      "ignoreCase": false,
+      "nullHandling": "NATIVE",
+      "ascending": false,
+      "descending": true
     }
   ],
   "pageable": {
@@ -213,25 +218,9 @@
       }
     ],
     "offset": 0,
-    "paged": true,
-    "unpaged": false
+    "unpaged": false,
+    "paged": true
   },
-  "last": true,
-  "totalElements": 4,
-  "totalPages": 1,
-  "size": 20,
-  "number": 0,
-  "sort": [
-    {
-      "direction": "DESC",
-      "property": "touched",
-      "ignoreCase": false,
-      "nullHandling": "NATIVE",
-      "ascending": false,
-      "descending": true
-    }
-  ],
-  "first": true,
   "numberOfElements": 4,
   "empty": false
 }

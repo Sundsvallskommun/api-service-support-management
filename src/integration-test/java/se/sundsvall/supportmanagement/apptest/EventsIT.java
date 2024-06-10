@@ -22,7 +22,7 @@ class EventsIT extends AbstractAppTest {
 	private static final String RESPONSE_FILE = "response.json";
 
 	@Test
-	void test01_readErrandEvents() throws Exception {
+	void test01_readErrandEvents() {
 		setupCall()
 			.withServicePath("/errands/147d355f-dc94-4fde-a4cb-9ddd16cb1946/events?sort=created,ASC")
 			.withHttpMethod(GET)
@@ -33,7 +33,7 @@ class EventsIT extends AbstractAppTest {
 	}
 
 	@Test
-	void test02_readErrandEventsPaginated() throws Exception {
+	void test02_readErrandEventsPaginated() {
 		setupCall()
 			.withServicePath("/errands/147d355f-dc94-4fde-a4cb-9ddd16cb1946/events?page=1&size=2&sort=created,ASC")
 			.withHttpMethod(GET)
@@ -42,4 +42,5 @@ class EventsIT extends AbstractAppTest {
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 	}
+
 }

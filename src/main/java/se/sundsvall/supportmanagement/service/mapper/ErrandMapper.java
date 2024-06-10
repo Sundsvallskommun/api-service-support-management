@@ -3,12 +3,14 @@ package se.sundsvall.supportmanagement.service.mapper;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.toCollection;
 import static org.apache.commons.lang3.ObjectUtils.anyNull;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.toErrandParameterEntityMap;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.toParameterMap;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import se.sundsvall.supportmanagement.api.model.errand.Classification;
@@ -18,7 +20,6 @@ import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
 import se.sundsvall.supportmanagement.api.model.errand.Priority;
 import se.sundsvall.supportmanagement.api.model.errand.Stakeholder;
 import se.sundsvall.supportmanagement.api.model.errand.Suspension;
-import se.sundsvall.supportmanagement.api.model.parameter.ErrandParameter;
 import se.sundsvall.supportmanagement.integration.db.model.ContactChannelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
@@ -26,23 +27,23 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 
-public class ErrandMapper {
+public final class ErrandMapper {
 
 	private ErrandMapper() {}
 
-	public static ErrandEntity toErrandEntity(String namespace, String municipalityId, Errand errand) {
+	public static ErrandEntity toErrandEntity(final String namespace, final String municipalityId, final Errand errand) {
 		if (anyNull(namespace, municipalityId, errand)) {
 			return null;
 		}
-
 		final var errandEntity = ErrandEntity.create();
 		return errandEntity
 			.withAssignedGroupId(errand.getAssignedGroupId())
 			.withAssignedUserId(errand.getAssignedUserId())
 			.withAttachments(emptyList())
-			.withParameters(emptyList())
+			.withParameters(Map.of("", new ParameterEntity()))
 			.withCategory(errand.getClassification().getCategory())
 			.withDescription(errand.getDescription())
+			.withChannel(errand.getChannel())
 			.withEscalationEmail(errand.getEscalationEmail())
 			.withExternalTags(toExternalTag(errand.getExternalTags()))
 			.withMunicipalityId(municipalityId)
@@ -57,10 +58,11 @@ public class ErrandMapper {
 			.withErrandNumber(errand.getErrandNumber())
 			.withSuspendedFrom(Optional.ofNullable(errand.getSuspension()).map(Suspension::getSuspendedFrom).orElse(null))
 			.withSuspendedTo(Optional.ofNullable(errand.getSuspension()).map(Suspension::getSuspendedTo).orElse(null))
-			.withBusinessRelated(errand.getBusinessRelated());
+			.withBusinessRelated(errand.getBusinessRelated())
+			.withParameters(toErrandParameterEntityMap(errand.getParameters()));
 	}
 
-	public static ErrandEntity updateEntity(ErrandEntity entity, Errand errand) {
+	public static ErrandEntity updateEntity(final ErrandEntity entity, final Errand errand) {
 		if (isNull(errand)) {
 			return entity;
 		}
@@ -82,37 +84,40 @@ public class ErrandMapper {
 		ofNullable(errand.getTitle()).ifPresent(entity::setTitle);
 		ofNullable(errand.getResolution()).ifPresent(value -> entity.setResolution(isEmpty(value) ? null : value));
 		ofNullable(errand.getDescription()).ifPresent(value -> entity.setDescription(isEmpty(value) ? null : value));
+		ofNullable(errand.getChannel()).ifPresent(value -> entity.setChannel(isEmpty(value) ? null : value));
+		ofNullable(errand.getContactReasonDescription()).ifPresent(value -> entity.setContactReasonDescription(isEmpty(value) ? null : value));
 		ofNullable(errand.getEscalationEmail()).ifPresent(value -> entity.setEscalationEmail(isEmpty(value) ? null : value));
 		ofNullable(errand.getBusinessRelated()).ifPresent(value -> entity.setBusinessRelated(errand.getBusinessRelated()));
-
+		ofNullable(errand.getParameters()).ifPresent(value -> entity.setParameters(toErrandParameterEntityMap(errand.getParameters())));
 		return entity;
 	}
 
-	private static void updateStakeholders(ErrandEntity entity, List<Stakeholder> stakeholders) {
+
+	private static void updateStakeholders(final ErrandEntity entity, final List<Stakeholder> stakeholders) {
 		ofNullable(entity.getStakeholders()).ifPresentOrElse(List::clear, () -> entity.setStakeholders(new ArrayList<>()));
 		entity.getStakeholders().addAll(toStakeholderEntities(entity, stakeholders));
 	}
 
-	private static List<DbExternalTag> toExternalTag(List<ExternalTag> tags) {
-		return ofNullable(tags).orElse(emptyList()).stream()
+	private static List<DbExternalTag> toExternalTag(final List<ExternalTag> tags) {
+		return new ArrayList<>(ofNullable(tags).orElse(emptyList()).stream()
 			.map(ErrandMapper::toExternalTagEntity)
-			.collect(toCollection(ArrayList::new));
+			.toList());
 	}
 
-	private static DbExternalTag toExternalTagEntity(ExternalTag tag) {
+	private static DbExternalTag toExternalTagEntity(final ExternalTag tag) {
 		return DbExternalTag.create()
 			.withKey(tag.getKey())
 			.withValue(tag.getValue());
 	}
 
-	public static List<Errand> toErrands(List<ErrandEntity> entities) {
+	public static List<Errand> toErrands(final List<ErrandEntity> entities) {
 		return ofNullable(entities).orElse(emptyList())
 			.stream()
 			.map(ErrandMapper::toErrand)
 			.toList();
 	}
 
-	public static Errand toErrand(ErrandEntity entity) {
+	public static Errand toErrand(final ErrandEntity entity) {
 		return Optional.ofNullable(entity)
 			.map(e -> Errand.create()
 				.withAssignedGroupId(e.getAssignedGroupId())
@@ -131,30 +136,17 @@ public class ErrandMapper {
 				.withTouched(e.getTouched())
 				.withResolution(e.getResolution())
 				.withDescription(e.getDescription())
+				.withChannel(e.getChannel())
 				.withSuspension(Suspension.create().withSuspendedFrom(e.getSuspendedFrom()).withSuspendedTo(e.getSuspendedTo()))
 				.withBusinessRelated(e.getBusinessRelated())
-				.withParameters(toErrandParameters(e.getParameters()))
+				.withParameters(toParameterMap(e.getParameters()))
 				.withContactReason(Optional.ofNullable(e.getContactReason()).map(ContactReasonEntity::getReason).orElse(null))
+				.withContactReasonDescription(e.getContactReasonDescription())
 				.withEscalationEmail(e.getEscalationEmail()))
 			.orElse(null);
 	}
 
-	private static List<ErrandParameter> toErrandParameters(final List<ParameterEntity> parameterEntities) {
-		return ofNullable(parameterEntities).orElse(emptyList())
-			.stream()
-			.map(ErrandMapper::toErrandParameter)
-			.toList();
-	}
-
-	private static ErrandParameter toErrandParameter(final ParameterEntity parameterEntity) {
-		return ErrandParameter.create()
-			.withId(parameterEntity.getId())
-			.withName(parameterEntity.getName())
-			.withValue(parameterEntity.getValue());
-	}
-
-
-	private static List<Stakeholder> toStakeholders(List<StakeholderEntity> stakeholderEntities) {
+	private static List<Stakeholder> toStakeholders(final List<StakeholderEntity> stakeholderEntities) {
 		return Optional.ofNullable(stakeholderEntities)
 			.map(s -> s.stream()
 				.map(stakeholderEntity -> Stakeholder.create()
@@ -173,8 +165,8 @@ public class ErrandMapper {
 			.orElse(emptyList());
 	}
 
-	private static List<StakeholderEntity> toStakeholderEntities(ErrandEntity errandEntity, List<Stakeholder> stakeholders) {
-		return Optional.ofNullable(stakeholders)
+	private static List<StakeholderEntity> toStakeholderEntities(final ErrandEntity errandEntity, final List<Stakeholder> stakeholders) {
+		return new ArrayList<>(Optional.ofNullable(stakeholders)
 			.map(s -> s.stream()
 				.map(stakeholder -> StakeholderEntity.create()
 					.withErrandEntity(errandEntity)
@@ -190,20 +182,20 @@ public class ErrandMapper {
 					.withCountry(stakeholder.getCountry())
 					.withContactChannels(toContactChannelEntities(stakeholder.getContactChannels())))
 				.toList())
-			.orElse(emptyList());
+			.orElse(emptyList()));
 	}
 
-	private static List<ContactChannelEntity> toContactChannelEntities(List<ContactChannel> contactChannels) {
-		return Optional.ofNullable(contactChannels)
+	private static List<ContactChannelEntity> toContactChannelEntities(final List<ContactChannel> contactChannels) {
+		return new ArrayList<>(Optional.ofNullable(contactChannels)
 			.map(ch -> ch.stream()
 				.map(contactChannel -> ContactChannelEntity.create()
 					.withType(contactChannel.getType())
 					.withValue(contactChannel.getValue()))
 				.toList())
-			.orElse(emptyList());
+			.orElse(emptyList()));
 	}
 
-	private static List<ContactChannel> toContactChannels(List<ContactChannelEntity> contactChannelEntities) {
+	private static List<ContactChannel> toContactChannels(final List<ContactChannelEntity> contactChannelEntities) {
 		return Optional.ofNullable(contactChannelEntities)
 			.map(ch -> ch.stream()
 				.map(contactChannelEntity -> ContactChannel.create()
@@ -213,16 +205,17 @@ public class ErrandMapper {
 			.orElse(emptyList());
 	}
 
-	private static List<ExternalTag> toExternalTags(List<DbExternalTag> entities) {
+	private static List<ExternalTag> toExternalTags(final List<DbExternalTag> entities) {
 		return ofNullable(entities).orElse(emptyList())
 			.stream()
 			.map(ErrandMapper::toExternalTag)
 			.toList();
 	}
 
-	private static ExternalTag toExternalTag(DbExternalTag entity) {
+	private static ExternalTag toExternalTag(final DbExternalTag entity) {
 		return ExternalTag.create()
 			.withKey(entity.getKey())
 			.withValue(entity.getValue());
 	}
+
 }

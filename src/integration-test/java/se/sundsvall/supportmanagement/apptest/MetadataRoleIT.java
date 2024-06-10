@@ -1,15 +1,5 @@
 package se.sundsvall.supportmanagement.apptest;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.jdbc.Sql;
-import se.sundsvall.dept44.test.AbstractAppTest;
-import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
-import se.sundsvall.supportmanagement.Application;
-import se.sundsvall.supportmanagement.integration.db.RoleRepository;
-
-import java.util.List;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpHeaders.LOCATION;
@@ -20,6 +10,17 @@ import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+
+import java.util.List;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.jdbc.Sql;
+
+import se.sundsvall.dept44.test.AbstractAppTest;
+import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
+import se.sundsvall.supportmanagement.Application;
+import se.sundsvall.supportmanagement.integration.db.RoleRepository;
 
 /**
  * Role Metadata IT tests.
@@ -32,17 +33,22 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 class MetadataRoleIT extends AbstractAppTest {
 
 	private static final String REQUEST_FILE = "request.json";
+
 	private static final String RESPONSE_FILE = "response.json";
+
 	private static final String NAMESPACE = "NAMESPACE.1";
+
 	private static final String MUNICIPALITY_2281 = "2281";
+
 	private static final String MUNICIPALITY_2309 = "2309";
+
 	private static final String PATH = "/" + NAMESPACE + "/" + MUNICIPALITY_2281 + "/metadata/roles";
 
 	@Autowired
 	private RoleRepository roleRepository;
 
 	@Test
-	void test01_createRole() throws Exception {
+	void test01_createRole() {
 		assertThat(roleRepository.existsByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_2281, "A_BRAND_NEW_ROLE")).isFalse();
 
 		setupCall()
@@ -58,7 +64,7 @@ class MetadataRoleIT extends AbstractAppTest {
 	}
 
 	@Test
-	void test02_getRole() throws Exception {
+	void test02_getRole() {
 		setupCall()
 			.withServicePath(PATH + "/ROLE-2")
 			.withHttpMethod(GET)
@@ -69,7 +75,7 @@ class MetadataRoleIT extends AbstractAppTest {
 	}
 
 	@Test
-	void test03_getRoles() throws Exception {
+	void test03_getRoles() {
 		setupCall()
 			.withServicePath(PATH)
 			.withHttpMethod(GET)
@@ -80,7 +86,7 @@ class MetadataRoleIT extends AbstractAppTest {
 	}
 
 	@Test
-	void test04_getRolesWhenEmpty() throws Exception {
+	void test04_getRolesWhenEmpty() {
 		final var path = "/" + NAMESPACE + "/" + MUNICIPALITY_2309 + "/metadata/roles";
 
 		setupCall()
@@ -93,7 +99,7 @@ class MetadataRoleIT extends AbstractAppTest {
 	}
 
 	@Test
-	void test05_deleteRole() throws Exception {
+	void test05_deleteRole() {
 		final var roleName = "ROLE-2";
 
 		assertThat(roleRepository.existsByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_2281, roleName)).isTrue();
@@ -109,4 +115,5 @@ class MetadataRoleIT extends AbstractAppTest {
 		assertThat(roleRepository.existsByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_2281, roleName)).isFalse();
 		assertThat(roleRepository.count()).isEqualTo(5);
 	}
+
 }

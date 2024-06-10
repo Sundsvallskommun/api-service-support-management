@@ -63,23 +63,24 @@ public class ErrandService {
 		// Generate unique errand number
 		errand.withErrandNumber(errandNumberGeneratorService.generateErrandNumber(namespace, municipalityId));
 
-
-		final var errandEntity = repository.save(toErrandEntity(namespace, municipalityId, errand));
-		//Validate ContactReason
+		final var errandEntity = toErrandEntity(namespace, municipalityId, errand);
+		// Validate ContactReason
 		Optional.ofNullable(errand.getContactReason()).ifPresent(reason -> {
-			var contactReason = contactReasonRepository.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId(reason, namespace, municipalityId)
+			final var contactReason = contactReasonRepository.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId(reason, namespace, municipalityId)
 				.orElseThrow(() -> Problem.valueOf(BAD_REQUEST, BAD_CONTACT_REASON.formatted(reason, namespace, municipalityId)));
-			errandEntity.setContactReason(contactReason);
-			repository.save(errandEntity);
+
+			errandEntity
+				.withContactReason(contactReason)
+				.withContactReasonDescription(errand.getContactReasonDescription());
 		});
 
-
-		final var revision = revisionService.createErrandRevision(errandEntity);
+		final var persistedEntity = repository.save(errandEntity);
+		final var revision = revisionService.createErrandRevision(persistedEntity);
 
 		// Create log event
-		eventService.createErrandEvent(CREATE, EVENT_LOG_CREATE_ERRAND, errandEntity, revision.latest(), null);
+		eventService.createErrandEvent(CREATE, EVENT_LOG_CREATE_ERRAND, persistedEntity, revision.latest(), null);
 
-		return errandEntity.getId();
+		return persistedEntity.getId();
 	}
 
 	public Page<Errand> findErrands(String namespace, String municipalityId, Specification<ErrandEntity> filter, Pageable pageable) {
@@ -98,12 +99,12 @@ public class ErrandService {
 	public Errand updateErrand(String namespace, String municipalityId, String id, Errand errand) {
 		verifyExistingErrand(id, namespace, municipalityId, true);
 
-
 		final var errandEntity = updateEntity(repository.getReferenceById(id), errand);
 		Optional.ofNullable(errand.getContactReason()).ifPresent(reason -> {
-			var contactReason = contactReasonRepository.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId(reason, namespace, municipalityId)
+			final var contactReason = contactReasonRepository.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId(reason, namespace, municipalityId)
 				.orElseThrow(() -> Problem.valueOf(BAD_REQUEST, BAD_CONTACT_REASON.formatted(reason, namespace, municipalityId)));
-			errandEntity.setContactReason(contactReason);
+
+			errandEntity.withContactReason(contactReason);
 		});
 
 		final var entity = repository.save(errandEntity);
