@@ -12,10 +12,9 @@
 	</parent>
 	<groupId>se.sundsvall</groupId>
 	<artifactId>api-service-support-management</artifactId>
-	<version>5.8</version>
+	<version>5.9</version>
 	<name>api-service-support-management</name>
 	<properties>
-		<app.jvm.xmx.mb>512</app.jvm.xmx.mb>
 		<!-- Service properties -->
 		<spring-filter.version>3.1.7</spring-filter.version>
 		<tika-core.version>2.9.2</tika-core.version>

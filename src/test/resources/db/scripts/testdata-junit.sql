@@ -169,3 +169,10 @@ VALUES (1, true, '2020-10-10 10:10:59.999', 1, '2021-11-11 11:11:59.999',
        (2, false, '2022-02-02 12:12:59.999', 2, '2023-03-03 13:13:59.999',
        'sender-2', 'template-2', 'inactive_status-2',
        'municipality_id-2', 'namespace-2', 'status_change_to-2', 'status_for_new-2', 'trigger_status_change_on-2');
+
+-------------------------------------
+-- NamespaceConfig
+-------------------------------------
+INSERT INTO namespace_config(id, municipality_id, namespace, short_code, created, modified)
+values (1, 'municipality_id-1', 'namespace-1', 'short_code-1', '2021-01-01 11:11:59.999', '2022-01-01 11:11:59.999'),
+       (2, 'municipality_id-2', 'namespace-2', 'short_code-2', '2022-02-02 12:12:59.999', '2023-02-02 12:12:59.999');

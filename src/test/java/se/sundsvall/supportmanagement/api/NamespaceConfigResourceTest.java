@@ -1,6 +1,5 @@
 package se.sundsvall.supportmanagement.api;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -8,13 +7,10 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import se.sundsvall.supportmanagement.Application;
-import se.sundsvall.supportmanagement.api.model.config.EmailIntegration;
-import se.sundsvall.supportmanagement.api.model.metadata.Status;
-import se.sundsvall.supportmanagement.service.MetadataService;
-import se.sundsvall.supportmanagement.service.config.EmailIntegrationConfigService;
+import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
+import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 
 import java.time.OffsetDateTime;
-import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -27,79 +23,71 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
 
 @SpringBootTest(classes = Application.class, webEnvironment = RANDOM_PORT)
 @ActiveProfiles("junit")
-class EmailIntegrationConfigResourceTest {
+class NamespaceConfigResourceTest {
 
-	private static final String PATH = "/{namespace}/{municipalityId}/emailIntegrationConfig";
+	private static final String PATH = "/{namespace}/{municipalityId}/namespaceConfig";
 	private static final String NAMESPACE = "namespace";
 	private static final String MUNICIPALITY_ID = "2281";
+	private static final String SHORT_CODE = "NS";
 
 	@Autowired
 	private WebTestClient webTestClient;
 
 	@MockBean
-	private EmailIntegrationConfigService serviceMock;
-
-	@MockBean
-	private MetadataService metadataServiceMock;
-
-	@BeforeEach
-	void setup() {
-		when(metadataServiceMock.findStatuses(any(), any())).thenReturn(List.of(Status.create().withName("NEW")));
-	}
+	private NamespaceConfigService serviceMock;
 
 	@Test
 	void create() {
-		final var emailConfig = EmailIntegration.create().withEnabled(true).withStatusForNew("NEW");
+		final var namespaceConfig = NamespaceConfig.create().withShortCode(SHORT_CODE);
 
 		webTestClient.post()
 			.uri(uriBuilder -> uriBuilder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
 			.contentType(APPLICATION_JSON)
-			.bodyValue(emailConfig)
+			.bodyValue(namespaceConfig)
 			.exchange()
 			.expectStatus().isCreated()
 			.expectHeader().contentType(ALL)
-			.expectHeader().location("/" + NAMESPACE + "/" + MUNICIPALITY_ID + "/emailIntegrationConfig")
+			.expectHeader().location("/" + NAMESPACE + "/" + MUNICIPALITY_ID + "/namespaceConfig")
 			.expectBody().isEmpty();
 
-		verify(serviceMock).create(emailConfig, NAMESPACE, MUNICIPALITY_ID);
+		verify(serviceMock).create(namespaceConfig, NAMESPACE, MUNICIPALITY_ID);
 	}
 
 	@Test
 	void read() {
-		final var emailConfig = EmailIntegration.create()
-			.withEnabled(true)
-			.withStatusForNew("NEW")
+		final var namespaceConfig = NamespaceConfig.create()
+			.withShortCode(SHORT_CODE)
 			.withCreated(OffsetDateTime.now().minusDays(2))
 			.withModified(OffsetDateTime.now().minusDays(1));
 
-		when(serviceMock.get(any(), any())).thenReturn(emailConfig);
+		when(serviceMock.get(any(), any())).thenReturn(namespaceConfig);
 
 		final var response = webTestClient.get()
 			.uri(uriBuilder -> uriBuilder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
 			.exchange()
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)
-			.expectBody(EmailIntegration.class)
+			.expectBody(NamespaceConfig.class)
 			.returnResult()
 			.getResponseBody();
 
 		verify(serviceMock).get(NAMESPACE, MUNICIPALITY_ID);
-		assertThat(response).isNotNull().isEqualTo(emailConfig);
+		assertThat(response).isNotNull().isEqualTo(namespaceConfig);
 	}
 
 	@Test
 	void update() {
-		final var emailConfig = EmailIntegration.create().withEnabled(true).withStatusForNew("NEW");
+		final var namespaceConfig = NamespaceConfig.create().withShortCode(SHORT_CODE);
 
 		webTestClient.put()
 			.uri(uriBuilder -> uriBuilder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
 			.contentType(APPLICATION_JSON)
-			.bodyValue(emailConfig)
+			.bodyValue(namespaceConfig)
 			.exchange()
 			.expectStatus().isNoContent()
 			.expectBody().isEmpty();
 
-		verify(serviceMock).replace(emailConfig, NAMESPACE, MUNICIPALITY_ID);
+		verify(serviceMock).replace(namespaceConfig, NAMESPACE, MUNICIPALITY_ID);
 	}
 
 	@Test
