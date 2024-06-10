@@ -36,7 +36,7 @@ class NamespaceConfigServiceTest {
 	private NamespaceConfigMapper mapperMock;
 
 	@Captor
-	ArgumentCaptor<NamespaceConfigEntity> entityCaptor;
+	private ArgumentCaptor<NamespaceConfigEntity> entityCaptor;
 
 	@InjectMocks
 	private NamespaceConfigService configService;

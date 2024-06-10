@@ -24,8 +24,7 @@ class NamespaceConfigEntityTest {
 
 	@BeforeAll
 	static void setup() {
-		final var random = new Random();
-		registerValueGenerator(() -> now().plusDays(random.nextInt()), OffsetDateTime.class);
+		registerValueGenerator(() -> now().plusDays(new Random().nextInt()), OffsetDateTime.class);
 	}
 
 	@Test

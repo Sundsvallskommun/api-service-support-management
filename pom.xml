@@ -15,7 +15,6 @@
 	<version>5.9</version>
 	<name>api-service-support-management</name>
 	<properties>
-		<app.jvm.xmx.mb>512</app.jvm.xmx.mb>
 		<!-- Service properties -->
 		<spring-filter.version>3.1.7</spring-filter.version>
 		<tika-core.version>2.9.2</tika-core.version>
@@ -121,7 +120,7 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
 				<configuration>
-					<argLine>${surefireArgLine} -Xmx1024m</argLine>
+					<argLine>${surefireArgLine} -Xmx512m</argLine>
 				</configuration>
 			</plugin>
 			<plugin>

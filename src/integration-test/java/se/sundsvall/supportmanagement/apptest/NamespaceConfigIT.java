@@ -28,7 +28,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql"
 })
-public class NamespaceConfigIT extends AbstractAppTest {
+class NamespaceConfigIT extends AbstractAppTest {
 	private static final String REQUEST_FILE = "request.json";
 	private static final String RESPONSE_FILE = "response.json";
 	private static final String NAMESPACE_1 = "NAMESPACE.1";

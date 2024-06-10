@@ -83,7 +83,7 @@ public class NamespaceConfigResource {
 
 	@PutMapping(consumes = APPLICATION_JSON_VALUE, produces = {ALL_VALUE, APPLICATION_PROBLEM_JSON_VALUE})
 	@Operation(summary = "Update namespace config", description = "Update config that is used within the namespace")
-	@ApiResponse(responseCode = "204", headers = @Header(name = LOCATION, schema = @Schema(type = "string")), description = "Successful operation", useReturnTypeSchema = true)
+	@ApiResponse(responseCode = "204", description = "Successful operation", useReturnTypeSchema = true)
 	@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {Problem.class, ConstraintViolationProblem.class})))
 	@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	public ResponseEntity<Void> updateNamespaceConfig(
@@ -95,7 +95,7 @@ public class NamespaceConfigResource {
 		return noContent().build();
 	}
 
-	@DeleteMapping()
+	@DeleteMapping
 	@Operation(summary = "Delete namespace config", description = "Deletes the config for a namespace/municipality")
 	@ApiResponse(responseCode = "204", description = "Successful operation")
 	@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {Problem.class, ConstraintViolationProblem.class})))
