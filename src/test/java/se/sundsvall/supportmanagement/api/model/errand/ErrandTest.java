@@ -14,13 +14,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
-import se.sundsvall.supportmanagement.api.model.parameter.ErrandParameter;
-
 class ErrandTest {
 
 	@BeforeAll
@@ -47,7 +45,7 @@ class ErrandTest {
 		final var created = OffsetDateTime.now();
 		final var stakeholder = Stakeholder.create().withExternalId("id").withExternalIdType("type");
 		final var externalTags = List.of(ExternalTag.create().withKey("externalTagkey").withValue("externalTagValue"));
-		final var parameters = List.of(ErrandParameter.create().withName("name").withValue("value"));
+		final var parameters = Map.of("name", List.of("value"));
 		final var id = randomUUID().toString();
 		final var modified = OffsetDateTime.now().plusDays(1);
 		final var priority = Priority.MEDIUM;
@@ -123,4 +121,5 @@ class ErrandTest {
 		assertThat(Errand.create()).hasAllNullFieldsOrProperties();
 		assertThat(new Errand()).hasAllNullFieldsOrProperties();
 	}
+
 }

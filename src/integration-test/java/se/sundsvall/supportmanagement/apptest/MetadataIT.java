@@ -25,11 +25,13 @@ import se.sundsvall.supportmanagement.Application;
 class MetadataIT extends AbstractAppTest {
 
 	private static final String PATH_2281 = "/NAMESPACE.1/2281/metadata";
+
 	private static final String PATH_2309 = "/NAMESPACE.1/2309/metadata";
+
 	private static final String RESPONSE_FILE = "response.json";
 
 	@Test
-	void test01_getAll() throws Exception {
+	void test01_getAll() {
 		setupCall()
 			.withServicePath(PATH_2281)
 			.withHttpMethod(GET)
@@ -40,7 +42,7 @@ class MetadataIT extends AbstractAppTest {
 	}
 
 	@Test
-	void test02_getAllWhenEmpty() throws Exception {
+	void test02_getAllWhenEmpty() {
 		setupCall()
 			.withServicePath(PATH_2309)
 			.withHttpMethod(GET)
@@ -49,4 +51,5 @@ class MetadataIT extends AbstractAppTest {
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 	}
+
 }

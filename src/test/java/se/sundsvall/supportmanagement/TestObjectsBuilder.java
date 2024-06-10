@@ -6,6 +6,7 @@ import static se.sundsvall.supportmanagement.api.model.errand.Priority.HIGH;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 
@@ -78,7 +79,7 @@ public class TestObjectsBuilder {
 
 	private static final String NOTIFICATION_CONTENT = "TestContent";
 
-	private static final String PARAMETER_NAME = "parameterName";
+	private static final String PARAMETER_KEY = "parameterKey";
 
 	private static final String PARAMETER_VALUE = "parameterValue";
 
@@ -114,14 +115,13 @@ public class TestObjectsBuilder {
 			.withReporterUserId(REPORTER_USER_ID)
 			.withStatus(STATUS)
 			.withTitle(TITLE)
-			.withParameters(new ArrayList<>(List.of(createParameterEntity().withId(PARAMETER_ID))))
+			.withParameters(Map.of(PARAMETER_KEY, createParameterEntity().withId(PARAMETER_ID).withValues(List.of(PARAMETER_VALUE))))
 			.withType(TYPE);
 	}
 
 	public static ParameterEntity createParameterEntity() {
 		return ParameterEntity.create()
-			.withName(PARAMETER_NAME)
-			.withValue(PARAMETER_VALUE);
+			.withValues(List.of(PARAMETER_VALUE));
 	}
 
 	public static AttachmentEntity buildAttachmentEntity(final ErrandEntity errandEntity) {

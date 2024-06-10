@@ -15,6 +15,7 @@ import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.updateE
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
@@ -25,7 +26,6 @@ import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
 import se.sundsvall.supportmanagement.api.model.errand.Priority;
 import se.sundsvall.supportmanagement.api.model.errand.Stakeholder;
 import se.sundsvall.supportmanagement.api.model.errand.Suspension;
-import se.sundsvall.supportmanagement.api.model.parameter.ErrandParameter;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ContactChannelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
@@ -37,44 +37,81 @@ import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 class ErrandMapperTest {
 
 	private static final String NAMESPACE = "namespace";
+
 	private static final String MUNICIPALITY_ID = "municipalityId";
+
 	private static final String ASSIGNED_GROUP_ID = "assignedGroupId";
+
 	private static final String ASSIGNED_USER_ID = "assignedUserId";
+
 	private static final String CATEGORY = "category";
+
 	private static final String CLIENT_ID_TAG = "clientIdTag";
+
 	private static final OffsetDateTime CREATED = now().minusWeeks(1);
+
 	private static final String EXTERNAL_ID = "externalId";
+
 	private static final String EXTERNAL_ID_TYPE_TAG = "PRIVATE";
+
 	private static final String TAG_KEY = "tagKey";
+
 	private static final String TAG_VALUE = "tagValue";
+
 	private static final String ID = "id";
+
 	private static final OffsetDateTime MODIFIED = now();
+
 	private static final String PRIORITY = HIGH.name();
+
 	private static final String REPORTER_USER_ID = "reporterUserId";
+
 	private static final String STATUS = "status";
+
 	private static final String TITLE = "title";
+
 	private static final OffsetDateTime TOUCHED = now().plusWeeks(1);
+
 	private static final String TYPE = "type";
+
 	private static final String DESCRIPTION = "description";
+
 	private static final String CHANNEL = "channel";
+
 	private static final String RESOLUTION = "resolution";
+
 	private static final String FIRST_NAME = "firstName";
+
 	private static final String LAST_NAME = "lastName";
+
 	private static final String ADDRESS = "address";
+
 	private static final String CARE_OF = "careOf";
+
 	private static final String ZIP_CODE = "zipCode";
+
 	private static final String COUNTRY = "country";
+
 	private static final String CONTACT_CHANNEL_TYPE = "contactChannelType";
+
 	private static final String CONTACT_CHANNEL_VALUE = "contactChannelValue";
+
 	private static final String ESCALATION_EMAIL = "escalation@email.com";
+
 	private static final String STAKEHOLDER_ROLE = "role";
+
 	private static final String PARAMETER_VALUE = "parameterValue";
+
 	private static final String PARAMETER_NAME = "parameterName";
+
 	private static final OffsetDateTime SUSPENDED_FROM = now().plusDays(1);
+
 	private static final OffsetDateTime SUSPENDED_TO = now().plusDays(2);
+
 	private static final String CONTACT_REASON = "contactReason";
 	private static final String CONTACT_REASON_DESCRIPTION = "contactReasonDescription";
 	private static final String ERRAND_NUMBER = "errandNumber";
+
 	private static final Boolean BUSINESS_RELATED = true;
 
 	private static Errand createErrand() {
@@ -85,7 +122,7 @@ class ErrandMapperTest {
 			.withCreated(CREATED)
 			.withStakeholders(List.of(createStakeHolder()))
 			.withExternalTags(List.of(ExternalTag.create().withKey(TAG_KEY).withValue(TAG_VALUE)))
-			.withParameters(List.of(ErrandParameter.create().withName(PARAMETER_NAME).withValue(PARAMETER_VALUE)))
+			.withParameters(Map.of(PARAMETER_NAME, List.of(PARAMETER_VALUE)))
 			.withId(ID)
 			.withModified(MODIFIED)
 			.withPriority(Priority.valueOf(PRIORITY))
@@ -127,7 +164,7 @@ class ErrandMapperTest {
 			.withCreated(CREATED)
 			.withStakeholders(List.of(createStakeHolderEntity()))
 			.withExternalTags(List.of(DbExternalTag.create().withKey(TAG_KEY).withValue(TAG_VALUE)))
-			.withParameters(List.of(ParameterEntity.create().withValue(PARAMETER_VALUE).withName(PARAMETER_NAME)))
+			.withParameters(Map.of(PARAMETER_NAME, ParameterEntity.create().withValues(List.of(PARAMETER_VALUE))))
 			.withMunicipalityId(MUNICIPALITY_ID)
 			.withPriority(PRIORITY)
 			.withReporterUserId(REPORTER_USER_ID)
@@ -190,9 +227,7 @@ class ErrandMapperTest {
 		assertThat(errand.getChannel()).isEqualTo(CHANNEL);
 		assertThat(errand.getEscalationEmail()).isEqualTo(ESCALATION_EMAIL);
 		assertThat(errand.getErrandNumber()).isEqualTo(ERRAND_NUMBER);
-		assertThat(errand.getParameters()).hasSize(1)
-			.extracting(ErrandParameter::getValue, ErrandParameter::getName)
-			.contains(tuple(PARAMETER_VALUE, PARAMETER_NAME));
+		assertThat(errand.getParameters()).hasSize(1).containsEntry(PARAMETER_NAME, List.of(PARAMETER_VALUE));
 		assertThat(errand.getBusinessRelated()).isEqualTo(BUSINESS_RELATED);
 		assertThat(errand.getContactReason()).isEqualTo(CONTACT_REASON);
 		assertThat(errand.getContactReasonDescription()).isEqualTo(CONTACT_REASON_DESCRIPTION);
@@ -239,7 +274,7 @@ class ErrandMapperTest {
 				CREATED,
 				List.of(createStakeHolder()),
 				List.of(ExternalTag.create().withKey(TAG_KEY).withValue(TAG_VALUE)),
-				List.of(ErrandParameter.create().withName(PARAMETER_NAME).withValue(PARAMETER_VALUE)),
+				Map.of(PARAMETER_NAME, List.of(PARAMETER_VALUE)),
 				ID,
 				MODIFIED,
 				Priority.valueOf(PRIORITY),
@@ -268,13 +303,13 @@ class ErrandMapperTest {
 		final var entity = toErrandEntity(NAMESPACE, MUNICIPALITY_ID, createErrand());
 
 		assertThat(entity)
+			.isNotNull()
 			.extracting(
 				ErrandEntity::getAssignedGroupId,
 				ErrandEntity::getAssignedUserId,
 				ErrandEntity::getAttachments,
 				ErrandEntity::getCategory,
 				ErrandEntity::getExternalTags,
-				ErrandEntity::getParameters,
 				ErrandEntity::getMunicipalityId,
 				ErrandEntity::getNamespace,
 				ErrandEntity::getPriority,
@@ -286,14 +321,14 @@ class ErrandMapperTest {
 				ErrandEntity::getDescription,
 				ErrandEntity::getEscalationEmail,
 				ErrandEntity::getBusinessRelated,
-				ErrandEntity::getErrandNumber)
+				ErrandEntity::getErrandNumber,
+				ErrandEntity::getParameters)
 			.containsExactly(
 				ASSIGNED_GROUP_ID,
 				ASSIGNED_USER_ID,
 				emptyList(),
 				CATEGORY,
 				List.of(DbExternalTag.create().withKey(TAG_KEY).withValue(TAG_VALUE)),
-				emptyList(),
 				MUNICIPALITY_ID,
 				NAMESPACE,
 				PRIORITY,
@@ -305,18 +340,19 @@ class ErrandMapperTest {
 				DESCRIPTION,
 				ESCALATION_EMAIL,
 				BUSINESS_RELATED,
-				ERRAND_NUMBER);
+				ERRAND_NUMBER,
+				Map.of(PARAMETER_NAME, ParameterEntity.create().withValues(List.of(PARAMETER_VALUE))));
 
 		assertThat(entity.getStakeholders()).hasSize(1).extracting(
-			StakeholderEntity::getAddress,
-			StakeholderEntity::getCareOf,
-			StakeholderEntity::getCountry,
-			StakeholderEntity::getExternalId,
-			StakeholderEntity::getExternalIdType,
-			StakeholderEntity::getFirstName,
-			StakeholderEntity::getLastName,
-			StakeholderEntity::getZipCode,
-			StakeholderEntity::getRole)
+				StakeholderEntity::getAddress,
+				StakeholderEntity::getCareOf,
+				StakeholderEntity::getCountry,
+				StakeholderEntity::getExternalId,
+				StakeholderEntity::getExternalIdType,
+				StakeholderEntity::getFirstName,
+				StakeholderEntity::getLastName,
+				StakeholderEntity::getZipCode,
+				StakeholderEntity::getRole)
 			.containsExactly(tuple(ADDRESS,
 				CARE_OF,
 				COUNTRY,
@@ -328,8 +364,8 @@ class ErrandMapperTest {
 				STAKEHOLDER_ROLE));
 
 		assertThat(entity.getStakeholders().getFirst().getContactChannels()).hasSize(1).extracting(
-			ContactChannelEntity::getType,
-			ContactChannelEntity::getValue)
+				ContactChannelEntity::getType,
+				ContactChannelEntity::getValue)
 			.containsExactly(tuple(
 				CONTACT_CHANNEL_TYPE,
 				CONTACT_CHANNEL_VALUE));
@@ -395,15 +431,15 @@ class ErrandMapperTest {
 				BUSINESS_RELATED);
 
 		assertThat(entity.getStakeholders()).hasSize(1).extracting(
-			StakeholderEntity::getAddress,
-			StakeholderEntity::getCareOf,
-			StakeholderEntity::getCountry,
-			StakeholderEntity::getExternalId,
-			StakeholderEntity::getExternalIdType,
-			StakeholderEntity::getFirstName,
-			StakeholderEntity::getLastName,
-			StakeholderEntity::getZipCode,
-			StakeholderEntity::getRole)
+				StakeholderEntity::getAddress,
+				StakeholderEntity::getCareOf,
+				StakeholderEntity::getCountry,
+				StakeholderEntity::getExternalId,
+				StakeholderEntity::getExternalIdType,
+				StakeholderEntity::getFirstName,
+				StakeholderEntity::getLastName,
+				StakeholderEntity::getZipCode,
+				StakeholderEntity::getRole)
 			.containsExactly(tuple(ADDRESS,
 				CARE_OF,
 				COUNTRY,
@@ -415,8 +451,8 @@ class ErrandMapperTest {
 				STAKEHOLDER_ROLE));
 
 		assertThat(entity.getStakeholders().getFirst().getContactChannels()).hasSize(1).extracting(
-			ContactChannelEntity::getType,
-			ContactChannelEntity::getValue)
+				ContactChannelEntity::getType,
+				ContactChannelEntity::getValue)
 			.containsExactly(tuple(
 				CONTACT_CHANNEL_TYPE,
 				CONTACT_CHANNEL_VALUE));

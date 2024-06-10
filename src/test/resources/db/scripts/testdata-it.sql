@@ -241,11 +241,6 @@ INSERT INTO notification(acknowledged, created, expires, modified, content, crea
 VALUES (0, '2023-12-31 23:59:59.999', '2024-12-31 23:59:59.999', '2023-12-31 23:59:59.999', 'content-1', 'created_by-1', 'description-1', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', '3ec421e9-56d1-4e47-9160-259d8dbe6a50', '2281', 'namespace_1', 'owner_full_name-1', 'owner_id-1', 'type-1'),
        (1, '2023-12-31 23:59:59.999', '2024-12-31 23:59:59.999', '2023-12-31 23:59:59.999', 'content-2', 'created_by-2', 'description-2', 'cc236cf1-c00f-4479-8341-ecf5dd90b5b9', '2', '2281', 'namespace_1', 'owner_full_name-2', 'owner_id-2', 'type-2');
 
-INSERT INTO parameter(id, name, value, errand_id)
-VALUES ('55d266a7-1ff2-4bf4-b6f3-0473b2b86fcd', 'testName', 'testValue', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4'),
-('35d266a7-1ff2-4bf4-b6f3-0473b2b86fcd', 'PROPERTY_DESIGNATION', 'KLINGSTA 123', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4'),
-('45d266a7-1ff2-4bf4-b6f3-0473b2b86fcd', 'APARTMENT_NUMBER', '1101', 'cc236cf1-c00f-4479-8341-ecf5dd90b5b9');
-
 INSERT INTO contact_reason(id, reason, municipality_id, namespace, created, modified)
 VALUES(123, 'reason1', '2281', 'CONTACTCENTER', '2023-12-31 23:59:59.999', '2023-12-31 23:59:59.999'),
 (124, 'reason2', '2281', 'CONTACTCENTER', '2023-12-31 23:59:59.999', '2023-12-31 23:59:59.999'),
@@ -267,3 +262,15 @@ VALUES (1, true, '2281', 'NAMESPACE.1', 1, 'sender-1', 'template-1', 'STATUS-1',
 INSERT INTO time_measurement(id, errand_id, start_time,stop_time, status, administrator)
 VALUES ('1', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', '2023-12-31 23:59:59.999', '2024-12-31 23:59:59.999', 'STATUS-1', 'AD01TEST'),
        ('2', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', '2024-12-31 23:59:59.999', null, 'STATUS-2', 'AD01TEST');
+
+-------------------------------------
+-- Parameters
+-------------------------------------
+
+INSERT INTO parameter(errand_id, id, parameters_key)
+VALUES ('ec677eb3-604c-4935-bff7-f8f0b500c8f4','45d266a7-1ff2-4bf4-b6f3-0473b2b86fcd', 'key1' ),
+       ('ec677eb3-604c-4935-bff7-f8f0b500c8f4','2', 'key2' );
+
+INSERT INTO parameter_values(parameter_id, value)
+VALUES ('45d266a7-1ff2-4bf4-b6f3-0473b2b86fcd', 'value1'),
+       ('45d266a7-1ff2-4bf4-b6f3-0473b2b86fcd', 'value2');

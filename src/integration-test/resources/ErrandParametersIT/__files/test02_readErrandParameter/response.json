@@ -1,5 +1,4 @@
-{
-  "id": "55d266a7-1ff2-4bf4-b6f3-0473b2b86fcd",
-  "name": "testName",
-  "value": "testValue"
-}
+[
+  "value1",
+  "value2"
+]
