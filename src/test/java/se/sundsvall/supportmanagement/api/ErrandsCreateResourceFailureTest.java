@@ -45,8 +45,11 @@ import se.sundsvall.supportmanagement.service.MetadataService;
 class ErrandsCreateResourceFailureTest {
 
 	private static final String PATH = "/{namespace}/{municipalityId}/errands";
+
 	private static final String NAMESPACE = "namespace";
+
 	private static final String MUNICIPALITY_ID = "2281";
+
 	private static final String INVALID = "#invalid#";
 
 	@Autowired
@@ -57,6 +60,24 @@ class ErrandsCreateResourceFailureTest {
 
 	@MockBean
 	private MetadataService metadataServiceMock;
+
+	private static Errand createErrandInstance() {
+		return Errand.create()
+			.withId(null)
+			.withModified(null)
+			.withCreated(null)
+			.withAssignedGroupId("assignedGroupId")
+			.withAssignedUserId("assignedUserId")
+			.withStakeholders(List.of(Stakeholder.create().withExternalId("id").withExternalIdType("EMPLOYEE")))
+			.withClassification(Classification.create().withCategory("category_1").withType("TYPE_2"))
+			.withExternalTags(List.of(ExternalTag.create().withKey("externalTagKey").withValue("externalTagValue")))
+			.withPriority(Priority.HIGH)
+			.withReporterUserId("reporterUserId")
+			.withStatus("status_1")
+			.withTitle("title")
+			.withBusinessRelated(true)
+			.withContactReason("contactReason");
+	}
 
 	@BeforeEach
 	void setupMock() {
@@ -139,7 +160,7 @@ class ErrandsCreateResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Bad Request");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getDetail()).isEqualTo("""
-			Required request body is missing: public org.springframework.http.ResponseEntity<java.lang.Void>\s\
+			Required request body is missing: public org.springframework.http.ResponseEntity<java.lang.Void> \
 			se.sundsvall.supportmanagement.api.ErrandsResource.createErrand(java.lang.String,java.lang.String,se.sundsvall.supportmanagement.api.model.errand.Errand)""");
 
 		// Verification
@@ -201,7 +222,6 @@ class ErrandsCreateResourceFailureTest {
 			tuple("createErrand.errand.reporterUserId", "must not be blank"),
 			tuple("createErrand.errand.priority", "must not be null"),
 			tuple("createErrand.errand.status", "must not be blank"),
-			tuple("createErrand.errand.businessRelated", "must not be null"),
 			tuple("createErrand.errand.title", "must not be blank"));
 
 		// Verification
@@ -233,8 +253,7 @@ class ErrandsCreateResourceFailureTest {
 			tuple("createErrand.errand.reporterUserId", "must not be blank"),
 			tuple("createErrand.errand.priority", "must not be null"),
 			tuple("createErrand.errand.status", "must not be blank"),
-			tuple("createErrand.errand.contactReason", "not a valid contact reason"),
-			tuple("createErrand.errand.businessRelated", "must not be null"));
+			tuple("createErrand.errand.contactReason", "not a valid contact reason"));
 
 		// Verification
 		verify(metadataServiceMock).findCategories(any(), any());
@@ -429,21 +448,4 @@ class ErrandsCreateResourceFailureTest {
 		verifyNoInteractions(errandServiceMock);
 	}
 
-	private static Errand createErrandInstance() {
-		return Errand.create()
-			.withId(null)
-			.withModified(null)
-			.withCreated(null)
-			.withAssignedGroupId("assignedGroupId")
-			.withAssignedUserId("assignedUserId")
-			.withStakeholders(List.of(Stakeholder.create().withExternalId("id").withExternalIdType("EMPLOYEE")))
-			.withClassification(Classification.create().withCategory("category_1").withType("TYPE_2"))
-			.withExternalTags(List.of(ExternalTag.create().withKey("externalTagKey").withValue("externalTagValue")))
-			.withPriority(Priority.HIGH)
-			.withReporterUserId("reporterUserId")
-			.withStatus("status_1")
-			.withTitle("title")
-			.withBusinessRelated(true)
-			.withContactReason("contactReason");
-	}
 }
