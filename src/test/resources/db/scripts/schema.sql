@@ -166,6 +166,16 @@
         primary key (id)
     ) engine=InnoDB;
 
+    create table namespace_config (
+        created datetime(6),
+        id bigint not null auto_increment,
+        modified datetime(6),
+        municipality_id varchar(255) not null,
+        namespace varchar(255) not null,
+        short_code varchar(255) not null,
+        primary key (id)
+    ) engine=InnoDB;
+
     create table notification (
         acknowledged bit not null,
         created datetime(6),
@@ -351,6 +361,12 @@
        on label (namespace, municipality_id);
 
     alter table if exists label 
+       add constraint uq_namespace_municipality_id unique (namespace, municipality_id);
+
+    create index idx_namespace_municipality_id 
+       on namespace_config (namespace, municipality_id);
+
+    alter table if exists namespace_config 
        add constraint uq_namespace_municipality_id unique (namespace, municipality_id);
 
     create index idx_namespace_municipality_id 

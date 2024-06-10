@@ -257,6 +257,12 @@ INSERT INTO email_worker_config (id, enabled, municipality_id, namespace, days_o
 VALUES (1, true, '2281', 'NAMESPACE.1', 1, 'sender-1', 'template-1', 'STATUS-1', 'STATUS-2', 'STATUS-3', 'STATUS-1', '2021-12-31 23:59:59.999', '2022-12-31 23:59:59.999');
 
 -------------------------------------
+-- Namespace config
+-------------------------------------
+INSERT INTO namespace_config (id, municipality_id, namespace, short_code, created, modified)
+VALUES (1, '2281', 'NAMESPACE.1', 'NS1', '2021-12-31 23:59:59.999', '2022-12-31 23:59:59.999');
+
+-------------------------------------
 -- Time measurement
 -------------------------------------
 INSERT INTO time_measurement(id, errand_id, start_time,stop_time, status, administrator)

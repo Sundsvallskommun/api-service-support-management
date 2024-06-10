@@ -1,4 +1,4 @@
-package se.sundsvall.supportmanagement.service;
+package se.sundsvall.supportmanagement.service.config;
 
 import org.springframework.stereotype.Service;
 import org.zalando.problem.Problem;

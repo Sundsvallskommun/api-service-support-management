@@ -1,4 +1,4 @@
-package se.sundsvall.supportmanagement.service;
+package se.sundsvall.supportmanagement.service.config;
 
 
 import org.junit.jupiter.api.Test;

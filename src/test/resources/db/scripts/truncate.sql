@@ -24,5 +24,6 @@ TRUNCATE table parameter_values;
 TRUNCATE table parameter;
 TRUNCATE table contact_reason;
 TRUNCATE table email_worker_config;
+TRUNCATE table namespace_config;
 TRUNCATE table time_measurement;
 SET FOREIGN_KEY_CHECKS = 1;
