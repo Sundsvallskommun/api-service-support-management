@@ -109,7 +109,9 @@ class ErrandMapperTest {
 	private static final OffsetDateTime SUSPENDED_TO = now().plusDays(2);
 
 	private static final String CONTACT_REASON = "contactReason";
+
 	private static final String CONTACT_REASON_DESCRIPTION = "contactReasonDescription";
+
 	private static final String ERRAND_NUMBER = "errandNumber";
 
 	private static final Boolean BUSINESS_RELATED = true;
@@ -231,8 +233,7 @@ class ErrandMapperTest {
 		assertThat(errand.getBusinessRelated()).isEqualTo(BUSINESS_RELATED);
 		assertThat(errand.getContactReason()).isEqualTo(CONTACT_REASON);
 		assertThat(errand.getContactReasonDescription()).isEqualTo(CONTACT_REASON_DESCRIPTION);
-
-		assertThat(errand).hasNoNullFieldsOrPropertiesExcept("contactReasonDescription"); // TODO: remove "Except.."
+		assertThat(errand).hasNoNullFieldsOrProperties();
 	}
 
 	@Test
@@ -290,7 +291,7 @@ class ErrandMapperTest {
 				CONTACT_REASON,
 				ERRAND_NUMBER));
 
-		assertThat(errands.getFirst()).hasNoNullFieldsOrPropertiesExcept("contactReasonDescription"); // TODO: remove "Except.."
+		assertThat(errands.getFirst()).hasNoNullFieldsOrProperties();
 	}
 
 	@Test

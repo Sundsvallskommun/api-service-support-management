@@ -1,15 +1,5 @@
 package se.sundsvall.supportmanagement.apptest;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.jdbc.Sql;
-import se.sundsvall.dept44.test.AbstractAppTest;
-import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
-import se.sundsvall.supportmanagement.Application;
-import se.sundsvall.supportmanagement.integration.db.ExternalIdTypeRepository;
-
-import java.util.List;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpHeaders.LOCATION;
@@ -21,6 +11,17 @@ import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
+import java.util.List;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.jdbc.Sql;
+
+import se.sundsvall.dept44.test.AbstractAppTest;
+import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
+import se.sundsvall.supportmanagement.Application;
+import se.sundsvall.supportmanagement.integration.db.ExternalIdTypeRepository;
+
 /**
  * Status Metadata IT tests.
  */
@@ -30,18 +31,24 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 	"/db/scripts/testdata-it.sql"
 })
 class MetadataExternalIdTypeIT extends AbstractAppTest {
+
 	private static final String REQUEST_FILE = "request.json";
+
 	private static final String RESPONSE_FILE = "response.json";
+
 	private static final String NAMESPACE = "NAMESPACE.1";
+
 	private static final String MUNICIPALITY_2281 = "2281";
+
 	private static final String MUNICIPALITY_2309 = "2309";
+
 	private static final String PATH = "/" + NAMESPACE + "/" + MUNICIPALITY_2281 + "/metadata/externalIdTypes";
 
 	@Autowired
 	private ExternalIdTypeRepository externalIdTypeRepository;
 
 	@Test
-	void test01_createExternalIdType() throws Exception {
+	void test01_createExternalIdType() {
 		assertThat(externalIdTypeRepository.existsByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_2281, "A_BRAND_NEW_EXTERNAL_ID_TYPE")).isFalse();
 
 		setupCall()
@@ -57,7 +64,7 @@ class MetadataExternalIdTypeIT extends AbstractAppTest {
 	}
 
 	@Test
-	void test02_getExternalIdType() throws Exception {
+	void test02_getExternalIdType() {
 		setupCall()
 			.withServicePath(PATH + "/EXTERNAL-ID-TYPE-3")
 			.withHttpMethod(GET)
@@ -68,7 +75,7 @@ class MetadataExternalIdTypeIT extends AbstractAppTest {
 	}
 
 	@Test
-	void test03_getExternalIdTypes() throws Exception {
+	void test03_getExternalIdTypes() {
 		setupCall()
 			.withServicePath(PATH)
 			.withHttpMethod(GET)
@@ -79,7 +86,7 @@ class MetadataExternalIdTypeIT extends AbstractAppTest {
 	}
 
 	@Test
-	void test04_getExternalIdTypesWhenEmpty() throws Exception {
+	void test04_getExternalIdTypesWhenEmpty() {
 		final var path = "/" + NAMESPACE + "/" + MUNICIPALITY_2309 + "/metadata/externalIdTypes";
 
 		setupCall()
@@ -92,12 +99,12 @@ class MetadataExternalIdTypeIT extends AbstractAppTest {
 	}
 
 	@Test
-	void test05_deleteExternalIdType() throws Exception {
+	void test05_deleteExternalIdType() {
 		final var externalIdTypeName = "EXTERNAL-ID-TYPE-3";
 
 		assertThat(externalIdTypeRepository.existsByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_2281, externalIdTypeName)).isTrue();
 		assertThat(externalIdTypeRepository.count()).isEqualTo(6);
-		
+
 		setupCall()
 			.withServicePath(PATH + "/" + externalIdTypeName)
 			.withHttpMethod(DELETE)
@@ -108,4 +115,5 @@ class MetadataExternalIdTypeIT extends AbstractAppTest {
 		assertThat(externalIdTypeRepository.existsByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_2281, externalIdTypeName)).isFalse();
 		assertThat(externalIdTypeRepository.count()).isEqualTo(5);
 	}
+
 }

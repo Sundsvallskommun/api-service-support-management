@@ -107,7 +107,7 @@ class RevisionServiceTest {
 		final var revisionId = UUID.randomUUID().toString();
 
 		// Mock
-		when(revisionRepositoryMock.findFirstByEntityIdOrderByVersionDesc(entityId)).thenReturn(Optional.of(RevisionEntity.create().withVersion(version).withSerializedSnapshot("{\someKey\":\"someValue\"}")));
+		when(revisionRepositoryMock.findFirstByEntityIdOrderByVersionDesc(entityId)).thenReturn(Optional.of(RevisionEntity.create().withVersion(version).withSerializedSnapshot("{ omeKey\":\"someValue\"}")));
 		when(revisionRepositoryMock.save(any(RevisionEntity.class))).thenReturn(RevisionEntity.create().withId(revisionId));
 
 		// Call
@@ -420,7 +420,7 @@ class RevisionServiceTest {
 	}
 
 	@Test
-	void compareErrandRevisionVersionsThrowsException() throws Exception {
+	void compareErrandRevisionVersionsThrowsException() {
 		// Setup
 		final var errandId = "errandId";
 		final var sourceVersion = 5;
@@ -521,7 +521,7 @@ class RevisionServiceTest {
 		assertThat(e.getMessage()).isEqualTo("Not Found: An errand with id 'errandId' could not be found");
 	}
 
-	private ErrandEntity createErrandEntity(String entityId) {
+	private ErrandEntity createErrandEntity(final String entityId) {
 		final var randomBytes = new byte[30];
 		new Random().nextBytes(randomBytes);
 
@@ -536,7 +536,7 @@ class RevisionServiceTest {
 			.withStakeholders(List.of(StakeholderEntity.create().withId(new Random().nextLong())));
 	}
 
-	private RevisionEntity createRevisionEntity(String key, String value) {
+	private RevisionEntity createRevisionEntity(final String key, final String value) {
 		return createRevisionEntity()
 			.withSerializedSnapshot("{\"" + key + "\": \"" + value + "\"}");
 	}
@@ -550,4 +550,5 @@ class RevisionServiceTest {
 			.withSerializedSnapshot("{}")
 			.withVersion(0);
 	}
+
 }

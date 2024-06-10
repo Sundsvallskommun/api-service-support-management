@@ -39,7 +39,9 @@ import se.sundsvall.supportmanagement.integration.db.model.RevisionEntity;
 class ErrandAttachmentsIT extends AbstractAppTest {
 
 	private static final String PATH = "/NAMESPACE.1/2281/errands/"; // 2281 is the municipalityId of Sundsvalls kommun
+
 	private static final String REQUEST_FILE = "request.json";
+
 	private static final String RESPONSE_FILE = "response.json";
 
 	@Autowired
@@ -57,7 +59,7 @@ class ErrandAttachmentsIT extends AbstractAppTest {
 	}
 
 	@Test
-	void test02_readErrandAttachments() throws Exception {
+	void test02_readErrandAttachments() {
 		setupCall()
 			.withServicePath(PATH + "cc236cf1-c00f-4479-8341-ecf5dd90b5b9/attachments")
 			.withHttpMethod(GET)
@@ -101,7 +103,7 @@ class ErrandAttachmentsIT extends AbstractAppTest {
 	}
 
 	@Test
-	void test04_deleteErrandAttachment() throws Exception {
+	void test04_deleteErrandAttachment() {
 		final var entityId = "1be673c0-6ba3-4fb0-af4a-43acf23389f6";
 
 		assertThat(revisionRepository.findAllByEntityIdOrderByVersion(entityId)).hasSize(1)
@@ -119,4 +121,5 @@ class ErrandAttachmentsIT extends AbstractAppTest {
 			.extracting(RevisionEntity::getVersion)
 			.containsExactlyInAnyOrder(0, 1);
 	}
+
 }

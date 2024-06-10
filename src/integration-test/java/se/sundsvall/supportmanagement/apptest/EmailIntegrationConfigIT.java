@@ -118,6 +118,7 @@ class EmailIntegrationConfigIT extends AbstractAppTest {
 
 	@Test
 	void test05_CreateMinimal() {
+		
 		assertThat(repository.existsByNamespaceAndMunicipalityId(NAMESPACE_3, MUNICIPALITY_ID)).isFalse();
 
 		setupCall()
