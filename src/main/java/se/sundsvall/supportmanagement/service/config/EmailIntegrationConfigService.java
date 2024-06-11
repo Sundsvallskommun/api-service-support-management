@@ -4,8 +4,10 @@ import org.springframework.stereotype.Service;
 import org.zalando.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.config.EmailIntegration;
 import se.sundsvall.supportmanagement.integration.db.EmailWorkerConfigRepository;
+import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
 import se.sundsvall.supportmanagement.service.mapper.EmailIntegrationMapper;
 
+import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
 import static org.zalando.problem.Status.NOT_FOUND;
 
 @Service
@@ -15,14 +17,19 @@ public class EmailIntegrationConfigService {
 
 	private EmailWorkerConfigRepository configRepository;
 	private EmailIntegrationMapper mapper;
+	private NamespaceConfigRepository namespaceConfigRepository;
 
 
-	public EmailIntegrationConfigService(EmailWorkerConfigRepository configRepository, EmailIntegrationMapper mapper) {
+	public EmailIntegrationConfigService(EmailWorkerConfigRepository configRepository, EmailIntegrationMapper mapper, NamespaceConfigRepository namespaceConfigRepository) {
 		this.configRepository = configRepository;
 		this.mapper = mapper;
+		this.namespaceConfigRepository = namespaceConfigRepository;
 	}
 
 	public void create(EmailIntegration request, String namespace, String municipalityId) {
+		if(namespaceConfigRepository.getByNamespaceAndMunicipalityId(namespace, municipalityId).isEmpty()) {
+			throw Problem.valueOf(INTERNAL_SERVER_ERROR, "Namespace config must be created before enabling email integration. Add via /namespaceConfig resource");
+		}
 		configRepository.save(mapper.toEntity(request, namespace, municipalityId));
 	}
 
