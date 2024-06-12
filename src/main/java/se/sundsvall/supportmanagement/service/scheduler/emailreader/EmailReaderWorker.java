@@ -73,8 +73,15 @@ public class EmailReaderWorker {
 		return Optional.ofNullable(errandNumber)
 			.map(errandRepository::findByErrandNumber)
 			.orElseGet(() -> errandRepository
-				.findById(errandService.createErrand(config.getNamespace(),
-					config.getMunicipalityId(), emailReaderMapper.toErrand(email, config.getStatusForNew()))));
+				.findById(errandService.createErrand(
+					config.getNamespace(),
+					config.getMunicipalityId(),
+					emailReaderMapper.toErrand(
+						email,
+						config.getStatusForNew(),
+						config.isAddSenderAsStakeholder(),
+						config.getStakeholderRole(),
+						config.getErrandChannel()))));
 	}
 
 	private void processErrand(final ErrandEntity errand, final Email email, EmailWorkerConfigEntity config) {

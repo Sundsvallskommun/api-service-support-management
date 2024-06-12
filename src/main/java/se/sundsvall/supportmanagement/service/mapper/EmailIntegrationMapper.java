@@ -18,7 +18,10 @@ public class EmailIntegrationMapper {
 			.withStatusForNew(config.getStatusForNew())
 			.withTriggerStatusChangeOn(config.getTriggerStatusChangeOn())
 			.withStatusChangeTo(config.getStatusChangeTo())
-			.withInactiveStatus(config.getInactiveStatus());
+			.withInactiveStatus(config.getInactiveStatus())
+			.withAddSenderAsStakeholder(config.getAddSenderAsStakeholder() != null && config.getAddSenderAsStakeholder())
+			.withErrandChannel(config.getErrandChannel())
+			.withStakeholderRole(config.getStakeholderRole());
 	}
 
 	public EmailIntegration toEmailIntegration(EmailWorkerConfigEntity entity) {
@@ -31,6 +34,9 @@ public class EmailIntegrationMapper {
 			.withTriggerStatusChangeOn(entity.getTriggerStatusChangeOn())
 			.withStatusChangeTo(entity.getStatusChangeTo())
 			.withInactiveStatus(entity.getInactiveStatus())
+			.withAddSenderAsStakeholder(entity.isAddSenderAsStakeholder())
+			.withStakeholderRole(entity.getStakeholderRole())
+			.withErrandChannel(entity.getErrandChannel())
 			.withCreated(entity.getCreated())
 			.withModified(entity.getModified());
 	}

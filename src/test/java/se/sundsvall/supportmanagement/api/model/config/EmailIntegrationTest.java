@@ -45,6 +45,9 @@ class EmailIntegrationTest {
 		final var triggerStatusChangeOn = "triggerStatusChangeOn";
 		final var statusChangeTo = "statusChangeTo";
 		final var inactiveStatus = "inactiveStatus";
+		final var addSenderAsStakeholder = true;
+		final var stakeholderRole = "stakeholderRole";
+		final var errandChannel = "errandChannel";
 		final var created = OffsetDateTime.now();
 		final var modified = OffsetDateTime.now().plusDays(1);
 
@@ -57,6 +60,9 @@ class EmailIntegrationTest {
 			.withTriggerStatusChangeOn(triggerStatusChangeOn)
 			.withStatusChangeTo(statusChangeTo)
 			.withInactiveStatus(inactiveStatus)
+			.withAddSenderAsStakeholder(addSenderAsStakeholder)
+			.withStakeholderRole(stakeholderRole)
+			.withErrandChannel(errandChannel)
 			.withCreated(created)
 			.withModified(modified);
 
@@ -68,6 +74,9 @@ class EmailIntegrationTest {
 		assertThat(bean.getTriggerStatusChangeOn()).isEqualTo(triggerStatusChangeOn);
 		assertThat(bean.getStatusChangeTo()).isEqualTo(statusChangeTo);
 		assertThat(bean.getInactiveStatus()).isEqualTo(inactiveStatus);
+		assertThat(bean.getAddSenderAsStakeholder()).isTrue();
+		assertThat(bean.getStakeholderRole()).isEqualTo(stakeholderRole);
+		assertThat(bean.getErrandChannel()).isEqualTo(errandChannel);
 		assertThat(bean.getCreated()).isEqualTo(created);
 		assertThat(bean.getModified()).isEqualTo(modified);
 	}

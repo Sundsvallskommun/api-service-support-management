@@ -12,6 +12,8 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -122,8 +124,9 @@ class EmailReaderMapperTest {
 	}
 
 
-	@Test
-	void toErrand() {
+	@ParameterizedTest
+	@CsvSource({"true,role", "false,role", "true,null"})
+	void toErrand(boolean addSenderAsStakeholder, String stakeholderRole) {
 
 		final var email = new Email()
 			.id("someId")
@@ -136,7 +139,7 @@ class EmailReaderMapperTest {
 			.attachments(null);
 		final var status = "NEW";
 
-		final var result = emailReaderMapper.toErrand(email, status);
+		final var result = emailReaderMapper.toErrand(email, status, addSenderAsStakeholder, stakeholderRole, "errandChannel");
 
 		assertThat(result).isNotNull();
 		assertThat(result.getTitle()).isEqualTo("someSubject");
@@ -145,9 +148,16 @@ class EmailReaderMapperTest {
 		assertThat(result.getClassification()).isNotNull();
 		assertThat(result.getClassification().getCategory()).isEqualTo("someCategory");
 		assertThat(result.getClassification().getType()).isEqualTo("someType");
-		assertThat(result.getStakeholders()).isNotNull().hasSize(1);
-		assertThat(result.getStakeholders().getFirst().getContactChannels()).isNotNull().hasSize(1);
-		assertThat(result.getStakeholders().getFirst().getContactChannels().getFirst().getType()).isEqualTo("EMAIL");
+		assertThat(result.getChannel()).isEqualTo("errandChannel");
+
+		if(addSenderAsStakeholder) {
+			assertThat(result.getStakeholders()).isNotNull().hasSize(1);
+			assertThat(result.getStakeholders().getFirst().getRole()).isEqualTo(stakeholderRole);
+			assertThat(result.getStakeholders().getFirst().getContactChannels()).isNotNull().hasSize(1);
+			assertThat(result.getStakeholders().getFirst().getContactChannels().getFirst().getType()).isEqualTo("EMAIL");
+		} else {
+			assertThat(result.getStakeholders()).isNull();
+		}
 	}
 
 

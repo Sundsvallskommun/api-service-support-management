@@ -40,6 +40,9 @@ class EmailWorkerConfigRepositoryTest {
 		final var triggerStatusChangeOn = "SOLVED";
 		final var statusChangeTo = "OPEN";
 		final var inactiveStatus = "CLOSED";
+		final var addSenderAsStakeholder = true;
+		final var stakeholderRole = "stakeholderRole";
+		final var errandChannel = "errandChannel";
 
 		final var entity = EmailWorkerConfigEntity.create()
 			.withMunicipalityId(municipalityId)
@@ -51,7 +54,10 @@ class EmailWorkerConfigRepositoryTest {
 			.withStatusForNew(statusForNew)
 			.withTriggerStatusChangeOn(triggerStatusChangeOn)
 			.withStatusChangeTo(statusChangeTo)
-			.withInactiveStatus(inactiveStatus);
+			.withInactiveStatus(inactiveStatus)
+			.withAddSenderAsStakeholder(addSenderAsStakeholder)
+			.withStakeholderRole(stakeholderRole)
+			.withErrandChannel(errandChannel);
 
 		assertThat(repository.existsByNamespaceAndMunicipalityId(namespace, municipalityId)).isFalse();
 
@@ -72,6 +78,9 @@ class EmailWorkerConfigRepositoryTest {
 		assertThat(result.get().getTriggerStatusChangeOn()).isEqualTo(triggerStatusChangeOn);
 		assertThat(result.get().getStatusChangeTo()).isEqualTo(statusChangeTo);
 		assertThat(result.get().getInactiveStatus()).isEqualTo(inactiveStatus);
+		assertThat(result.get().isAddSenderAsStakeholder()).isEqualTo(addSenderAsStakeholder);
+		assertThat(result.get().getStakeholderRole()).isEqualTo(stakeholderRole);
+		assertThat(result.get().getErrandChannel()).isEqualTo(errandChannel);
 		assertThat(result.get().getCreated()).isCloseTo(OffsetDateTime.now(), within(2, SECONDS));
 		assertThat(result.get().getModified()).isNull();
 	}

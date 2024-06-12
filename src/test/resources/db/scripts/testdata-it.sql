@@ -253,8 +253,8 @@ VALUES(123, 'reason1', '2281', 'CONTACTCENTER', '2023-12-31 23:59:59.999', '2023
 -- Email integration config
 -------------------------------------
 INSERT INTO email_worker_config (id, enabled, municipality_id, namespace, days_of_inactivity_before_reject, errand_closed_email_sender, errand_closed_email_template,
-                                status_for_new, trigger_status_change_on, status_change_to, inactive_status, created, modified)
-VALUES (1, true, '2281', 'NAMESPACE.1', 1, 'sender-1', 'template-1', 'STATUS-1', 'STATUS-2', 'STATUS-3', 'STATUS-1', '2021-12-31 23:59:59.999', '2022-12-31 23:59:59.999');
+                                status_for_new, trigger_status_change_on, status_change_to, inactive_status, add_sender_as_stakeholder, stakeholder_role, errand_channel,  created, modified)
+VALUES (1, true, '2281', 'NAMESPACE.1', 1, 'sender-1', 'template-1', 'STATUS-1', 'STATUS-2', 'STATUS-3', 'STATUS-1', true, 'ROLE-1', 'CHANNEL-1', '2021-12-31 23:59:59.999', '2022-12-31 23:59:59.999');
 
 -------------------------------------
 -- Namespace config

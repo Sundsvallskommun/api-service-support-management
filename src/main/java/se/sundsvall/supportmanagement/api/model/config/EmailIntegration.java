@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.api.model.config;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
+import se.sundsvall.supportmanagement.api.validation.ValidRole;
 import se.sundsvall.supportmanagement.api.validation.ValidStatus;
 
 import java.time.OffsetDateTime;
@@ -42,6 +43,16 @@ public class EmailIntegration {
 		"If set to null, no rejection mail will be sent", example = "SOLVED", nullable = true)
 	@ValidStatus
 	private String inactiveStatus;
+
+	@Schema(description = "If true sender is added as stakeholder", example = "false", nullable = true)
+	private Boolean addSenderAsStakeholder;
+
+	@Schema(description = "Role set on stakeholder.", example = "APPLICANT", nullable = true)
+	@ValidRole
+	private String stakeholderRole;
+
+	@Schema(description = "Channel set on created errands", example = "EMAIL", nullable = true)
+	private String errandChannel;
 
 	@Schema(description = "Timestamp when the configuration was created", example = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	private OffsetDateTime created;
@@ -183,21 +194,73 @@ public class EmailIntegration {
 		return this;
 	}
 
+	public Boolean getAddSenderAsStakeholder() {
+		return addSenderAsStakeholder;
+	}
+
+	public void setAddSenderAsStakeholder(Boolean addSenderAsStakeholder) {
+		this.addSenderAsStakeholder = addSenderAsStakeholder;
+	}
+
+	public EmailIntegration withAddSenderAsStakeholder(Boolean addSenderAsStakeholder) {
+		this.addSenderAsStakeholder = addSenderAsStakeholder;
+		return this;
+	}
+
+	public String getStakeholderRole() {
+		return stakeholderRole;
+	}
+
+	public void setStakeholderRole(String stakeholderRole) {
+		this.stakeholderRole = stakeholderRole;
+	}
+
+	public EmailIntegration withStakeholderRole(String stakeholderRole) {
+		this.stakeholderRole = stakeholderRole;
+		return this;
+	}
+
+	public String getErrandChannel() {
+		return errandChannel;
+	}
+
+	public void setErrandChannel(String errandChannel) {
+		this.errandChannel = errandChannel;
+	}
+
+	public EmailIntegration withErrandChannel(String errandChannel) {
+		this.errandChannel = errandChannel;
+		return this;
+	}
+
 	@Override
-	public boolean equals(Object object) {
-		if (this == object) {
+	public boolean equals(Object o) {
+		if (this == o) {
 			return true;
 		}
-		if (object == null || getClass() != object.getClass()) {
+		if (o == null || getClass() != o.getClass()) {
 			return false;
 		}
-		EmailIntegration that = (EmailIntegration) object;
-		return Objects.equals(enabled, that.enabled) && Objects.equals(errandClosedEmailSender, that.errandClosedEmailSender) && Objects.equals(errandClosedEmailTemplate, that.errandClosedEmailTemplate) && Objects.equals(daysOfInactivityBeforeReject, that.daysOfInactivityBeforeReject) && Objects.equals(statusForNew, that.statusForNew) && Objects.equals(triggerStatusChangeOn, that.triggerStatusChangeOn) && Objects.equals(statusChangeTo, that.statusChangeTo) && Objects.equals(inactiveStatus, that.inactiveStatus) && Objects.equals(created, that.created) && Objects.equals(modified, that.modified);
+		EmailIntegration that = (EmailIntegration) o;
+		return Objects.equals(enabled, that.enabled)
+			&& Objects.equals(errandClosedEmailSender, that.errandClosedEmailSender)
+			&& Objects.equals(errandClosedEmailTemplate, that.errandClosedEmailTemplate)
+			&& Objects.equals(daysOfInactivityBeforeReject, that.daysOfInactivityBeforeReject)
+			&& Objects.equals(statusForNew, that.statusForNew)
+			&& Objects.equals(triggerStatusChangeOn, that.triggerStatusChangeOn)
+			&& Objects.equals(statusChangeTo, that.statusChangeTo)
+			&& Objects.equals(inactiveStatus, that.inactiveStatus)
+			&& Objects.equals(addSenderAsStakeholder, that.addSenderAsStakeholder)
+			&& Objects.equals(stakeholderRole, that.stakeholderRole)
+			&& Objects.equals(errandChannel, that.errandChannel)
+			&& Objects.equals(created, that.created)
+			&& Objects.equals(modified, that.modified);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(enabled, errandClosedEmailSender, errandClosedEmailTemplate, daysOfInactivityBeforeReject, statusForNew, triggerStatusChangeOn, statusChangeTo, inactiveStatus, created, modified);
+		return Objects.hash(enabled, errandClosedEmailSender, errandClosedEmailTemplate, daysOfInactivityBeforeReject, statusForNew,
+			triggerStatusChangeOn, statusChangeTo, inactiveStatus, addSenderAsStakeholder, stakeholderRole, errandChannel, created, modified);
 	}
 
 	@Override
@@ -211,6 +274,9 @@ public class EmailIntegration {
 		sb.append(", triggerStatusChangeOn='").append(triggerStatusChangeOn).append('\'');
 		sb.append(", statusChangeTo='").append(statusChangeTo).append('\'');
 		sb.append(", inactiveStatus='").append(inactiveStatus).append('\'');
+		sb.append(", addSenderAsStakeholder=").append(addSenderAsStakeholder);
+		sb.append(", stakeholderRole='").append(stakeholderRole).append('\'');
+		sb.append(", errandChannel='").append(errandChannel).append('\'');
 		sb.append(", created=").append(created);
 		sb.append(", modified=").append(modified);
 		sb.append('}');

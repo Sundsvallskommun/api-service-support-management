@@ -49,6 +49,9 @@ class EmailWorkerConfigEntityTest {
 		final var triggerStatusChangeOn = "SOLVED";
 		final var statusChangeTo = "OPEN";
 		final var inactiveStatus = "CLOSED";
+		final var addSenderAsStakeholder = true;
+		final var stakeholderRole = "stakeholderRole";
+		final var errandChannel = "errandChannel";
 		final var created = OffsetDateTime.now().minusDays(1);
 		final var modified = OffsetDateTime.now();
 
@@ -64,6 +67,9 @@ class EmailWorkerConfigEntityTest {
 			.withTriggerStatusChangeOn(triggerStatusChangeOn)
 			.withStatusChangeTo(statusChangeTo)
 			.withInactiveStatus(inactiveStatus)
+			.withAddSenderAsStakeholder(addSenderAsStakeholder)
+			.withStakeholderRole(stakeholderRole)
+			.withErrandChannel(errandChannel)
 			.withCreated(created)
 			.withModified(modified);
 
@@ -79,6 +85,9 @@ class EmailWorkerConfigEntityTest {
 		assertThat(entity.getTriggerStatusChangeOn()).isEqualTo(triggerStatusChangeOn);
 		assertThat(entity.getStatusChangeTo()).isEqualTo(statusChangeTo);
 		assertThat(entity.getInactiveStatus()).isEqualTo(inactiveStatus);
+		assertThat(entity.isAddSenderAsStakeholder()).isTrue();
+		assertThat(entity.getStakeholderRole()).isEqualTo(stakeholderRole);
+		assertThat(entity.getErrandChannel()).isEqualTo(errandChannel);
 		assertThat(entity.getCreated()).isEqualTo(created);
 		assertThat(entity.getModified()).isEqualTo(modified);
 	}
@@ -89,7 +98,7 @@ class EmailWorkerConfigEntityTest {
 		entity.onCreate();
 
 		assertThat(entity.getCreated()).isCloseTo(now(), within(1, SECONDS));
-		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("created", "enabled");
+		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("created", "enabled", "addSenderAsStakeholder");
 	}
 
 	@Test
@@ -98,12 +107,12 @@ class EmailWorkerConfigEntityTest {
 		entity.onUpdate();
 
 		assertThat(entity.getModified()).isCloseTo(now(), within(1, SECONDS));
-		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("modified", "enabled");
+		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("modified", "enabled", "addSenderAsStakeholder");
 	}
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(EmailWorkerConfigEntity.create()).hasAllNullFieldsOrPropertiesExcept("enabled");
-		assertThat(new EmailWorkerConfigEntity()).hasAllNullFieldsOrPropertiesExcept("enabled");
+		assertThat(EmailWorkerConfigEntity.create()).hasAllNullFieldsOrPropertiesExcept("enabled", "addSenderAsStakeholder");
+		assertThat(new EmailWorkerConfigEntity()).hasAllNullFieldsOrPropertiesExcept("enabled", "addSenderAsStakeholder");
 	}
 }
