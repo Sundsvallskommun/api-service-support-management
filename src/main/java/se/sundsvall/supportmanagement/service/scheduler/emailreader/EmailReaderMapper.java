@@ -99,19 +99,28 @@ public class EmailReaderMapper {
 			.withFile(blobBuilder.createBlob(attachment.getContent()));
 	}
 
-	public Errand toErrand(final Email email, final String status) {
+	public Errand toErrand(final Email email, final String status, final boolean addSenderAsStakeholder,
+						   final String stakeholderRole, final String errandChannel) {
 
-		return Errand.create()
+		var errand = Errand.create()
 			.withTitle(email.getSubject())
 			.withDescription(email.getMessage())
 			.withStatus(status)
 			.withPriority(Priority.MEDIUM)
-			.withClassification(Classification.create().withCategory(email.getMetadata().get("classification.category")).withType(email.getMetadata().get("classification.type")))
-			.withStakeholders(List.of(
-				Stakeholder.create().withContactChannels(List.of(
+			.withChannel(errandChannel)
+			.withClassification(Classification.create().withCategory(email.getMetadata().get("classification.category")).withType(email.getMetadata().get("classification.type")));
+
+		if(addSenderAsStakeholder) {
+			errand.withStakeholders(List.of(
+				Stakeholder.create()
+					.withRole(stakeholderRole)
+					.withContactChannels(List.of(
 						ContactChannel.create().withType("EMAIL").withValue(email.getSender())
 					)
 				)));
+		}
+
+		return errand;
 
 	}
 

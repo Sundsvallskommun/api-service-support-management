@@ -26,6 +26,9 @@ class EmailIntegrationMapperTest {
 		final var triggerStatusChangeOn = "triggerStatusChangeOn";
 		final var statusChangeTo = "statusChangeTo";
 		final var inactiveStatus = "inactiveStatus";
+		final var addSenderAsStakeholder = true;
+		final var stakeholderRole = "stakeholderRole";
+		final var errandChannel = "errandChannel";
 		final var created = OffsetDateTime.now();
 		final var modified = OffsetDateTime.now().plusDays(1);
 
@@ -38,6 +41,9 @@ class EmailIntegrationMapperTest {
 			.withTriggerStatusChangeOn(triggerStatusChangeOn)
 			.withStatusChangeTo(statusChangeTo)
 			.withInactiveStatus(inactiveStatus)
+			.withAddSenderAsStakeholder(addSenderAsStakeholder)
+			.withStakeholderRole(stakeholderRole)
+			.withErrandChannel(errandChannel)
 			.withCreated(created)
 			.withModified(modified);
 
@@ -55,6 +61,9 @@ class EmailIntegrationMapperTest {
 		assertThat(entity.getTriggerStatusChangeOn()).isEqualTo(triggerStatusChangeOn);
 		assertThat(entity.getStatusChangeTo()).isEqualTo(statusChangeTo);
 		assertThat(entity.getInactiveStatus()).isEqualTo(inactiveStatus);
+		assertThat(entity.isAddSenderAsStakeholder()).isEqualTo(addSenderAsStakeholder);
+		assertThat(entity.getStakeholderRole()).isEqualTo(stakeholderRole);
+		assertThat(entity.getErrandChannel()).isEqualTo(errandChannel);
 	}
 
 	@Test
@@ -70,6 +79,9 @@ class EmailIntegrationMapperTest {
 		final var triggerStatusChangeOn = "SOLVED";
 		final var statusChangeTo = "OPEN";
 		final var inactiveStatus = "CLOSED";
+		final var addSenderAsStakeholder = true;
+		final var stakeholderRole = "stakeholderRole";
+		final var errandChannel = "errandChannel";
 		final var created = OffsetDateTime.now().minusDays(1);
 		final var modified = OffsetDateTime.now();
 
@@ -85,6 +97,9 @@ class EmailIntegrationMapperTest {
 			.withTriggerStatusChangeOn(triggerStatusChangeOn)
 			.withStatusChangeTo(statusChangeTo)
 			.withInactiveStatus(inactiveStatus)
+			.withAddSenderAsStakeholder(addSenderAsStakeholder)
+			.withStakeholderRole(stakeholderRole)
+			.withErrandChannel(errandChannel)
 			.withCreated(created)
 			.withModified(modified);
 
@@ -99,6 +114,9 @@ class EmailIntegrationMapperTest {
 		assertThat(config.getTriggerStatusChangeOn()).isEqualTo(triggerStatusChangeOn);
 		assertThat(config.getStatusChangeTo()).isEqualTo(statusChangeTo);
 		assertThat(config.getInactiveStatus()).isEqualTo(inactiveStatus);
+		assertThat(config.getAddSenderAsStakeholder()).isEqualTo(addSenderAsStakeholder);
+		assertThat(config.getStakeholderRole()).isEqualTo(stakeholderRole);
+		assertThat(config.getErrandChannel()).isEqualTo(errandChannel);
 		assertThat(config.getCreated()).isEqualTo(created);
 		assertThat(config.getModified()).isEqualTo(modified);
 	}

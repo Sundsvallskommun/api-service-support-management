@@ -162,13 +162,14 @@ VALUES (0, now(), '2023-12-31 23:59:59.999', now(), 'content-1', 'created_by-1',
 -------------------------------------
 INSERT INTO email_worker_config(days_of_inactivity_before_reject, enabled, created, id, modified,
                                 errand_closed_email_sender, errand_closed_email_template, inactive_status,
-                                municipality_id, namespace, status_change_to, status_for_new, trigger_status_change_on)
+                                municipality_id, namespace, status_change_to, status_for_new, trigger_status_change_on,
+                                add_sender_as_stakeholder, stakeholder_role, errand_channel)
 VALUES (1, true, '2020-10-10 10:10:59.999', 1, '2021-11-11 11:11:59.999',
         'sender-1', 'template-1', 'inactive_status-1',
-        'municipality_id-1', 'namespace-1', 'status_change_to-1', 'status_for_new-1', 'trigger_status_change_on-1'),
+        'municipality_id-1', 'namespace-1', 'status_change_to-1', 'status_for_new-1', 'trigger_status_change_on-1', true, 'role-1', 'channel-1'),
        (2, false, '2022-02-02 12:12:59.999', 2, '2023-03-03 13:13:59.999',
        'sender-2', 'template-2', 'inactive_status-2',
-       'municipality_id-2', 'namespace-2', 'status_change_to-2', 'status_for_new-2', 'trigger_status_change_on-2');
+       'municipality_id-2', 'namespace-2', 'status_change_to-2', 'status_for_new-2', 'trigger_status_change_on-2', true, 'role-2', 'channel-2');
 
 -------------------------------------
 -- NamespaceConfig

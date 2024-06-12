@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.service.scheduler.emailreader;
 
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.any;
@@ -177,7 +178,10 @@ class EmailReaderWorkerTest {
 			.withStatusForNew("NEW")
 			.withTriggerStatusChangeOn("SOLVED")
 			.withStatusChangeTo("ONGOING")
-			.withInactiveStatus("SOLVED");
+			.withInactiveStatus("SOLVED")
+			.withAddSenderAsStakeholder(true)
+			.withStakeholderRole("stakeholderRole")
+			.withErrandChannel("errandChannel");
 
 		final var errandEntity = new ErrandEntity().withId("errandId").withStatus("NEW");
 		final var communicationEntity = CommunicationEntity.create();
@@ -189,7 +193,7 @@ class EmailReaderWorkerTest {
 		when(errandServiceMock.createErrand(anyString(), anyString(), any())).thenReturn(errandEntity.getId());
 		when(errandRepositoryMock.findById(anyString())).thenReturn(Optional.of(errandEntity));
 		when(emailReaderMapperMock.toCommunicationEntity(any())).thenReturn(communicationEntity);
-		when(emailReaderMapperMock.toErrand(any(), any())).thenReturn(errand);
+		when(emailReaderMapperMock.toErrand(any(), any(), anyBoolean(), any(), any())).thenReturn(errand);
 
 		// ACT
 		emailReaderWorker.getAndProcessEmails();
@@ -198,7 +202,7 @@ class EmailReaderWorkerTest {
 		verify(emailWorkerConfigRepositoryMock).findAll();
 		verify(emailReaderClientMock).getEmails(emailConfig.getMunicipalityId(), emailConfig.getNamespace());
 		verify(errandRepositoryMock).findById(errandEntity.getId());
-		verify(emailReaderMapperMock).toErrand(same(email), eq(emailConfig.getStatusForNew()));
+		verify(emailReaderMapperMock).toErrand(same(email), eq(emailConfig.getStatusForNew()), eq(emailConfig.isAddSenderAsStakeholder()), eq(emailConfig.getStakeholderRole()), eq(emailConfig.getErrandChannel()));
 		verify(errandServiceMock).createErrand(eq(emailConfig.getNamespace()), eq(emailConfig.getMunicipalityId()), same(errand));
 		verify(emailReaderMapperMock).toCommunicationEntity(same(email));
 		verify(emailReaderClientMock).deleteEmail(email.getId());

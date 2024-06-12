@@ -6,5 +6,8 @@
   "statusForNew": "STATUS-3",
   "triggerStatusChangeOn": "STATUS-2",
   "statusChangeTo": "STATUS-1",
-  "inactiveStatus": "STATUS-3"
+  "inactiveStatus": "STATUS-3",
+  "errandChannel":"CHANNEL-2",
+  "addSenderAsStakeholder": false,
+  "stakeholderRole": "ROLE-2"
 }

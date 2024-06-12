@@ -66,6 +66,15 @@ public class EmailWorkerConfigEntity {
 	@Column(name = "inactive_status")
 	private String inactiveStatus;
 
+	@Column(name = "add_sender_as_stakeholder")
+	private boolean addSenderAsStakeholder;
+
+	@Column(name = "stakeholder_role")
+	private String stakeholderRole;
+
+	@Column(name = "errand_channel")
+	private String errandChannel;
+
 	@Column(name = "created")
 	@TimeZoneStorage(NORMALIZE)
 	private OffsetDateTime created;
@@ -221,6 +230,45 @@ public class EmailWorkerConfigEntity {
 		return this;
 	}
 
+	public boolean isAddSenderAsStakeholder() {
+		return addSenderAsStakeholder;
+	}
+
+	public void setAddSenderAsStakeholder(boolean addSenderAsStakeholder) {
+		this.addSenderAsStakeholder = addSenderAsStakeholder;
+	}
+
+	public EmailWorkerConfigEntity withAddSenderAsStakeholder(boolean addSenderAsStakeholder) {
+		setAddSenderAsStakeholder(addSenderAsStakeholder);
+		return this;
+	}
+
+	public String getStakeholderRole() {
+		return stakeholderRole;
+	}
+
+	public void setStakeholderRole(String stakeholderRole) {
+		this.stakeholderRole = stakeholderRole;
+	}
+
+	public EmailWorkerConfigEntity withStakeholderRole(String stakeholderRole) {
+		setStakeholderRole(stakeholderRole);
+		return this;
+	}
+
+	public String getErrandChannel() {
+		return errandChannel;
+	}
+
+	public void setErrandChannel(String errandChannel) {
+		this.errandChannel = errandChannel;
+	}
+
+	public EmailWorkerConfigEntity withErrandChannel(String errandChannel) {
+		setErrandChannel(errandChannel);
+		return this;
+	}
+
 	public OffsetDateTime getCreated() {
 		return created;
 	}
@@ -277,6 +325,9 @@ public class EmailWorkerConfigEntity {
 			&& Objects.equals(triggerStatusChangeOn, that.triggerStatusChangeOn)
 			&& Objects.equals(statusChangeTo, that.statusChangeTo)
 			&& Objects.equals(inactiveStatus, that.inactiveStatus)
+			&& Objects.equals(addSenderAsStakeholder, that.addSenderAsStakeholder)
+			&& Objects.equals(stakeholderRole, that.stakeholderRole)
+			&& Objects.equals(errandChannel, that.errandChannel)
 			&& Objects.equals(created, that.created)
 			&& Objects.equals(modified, that.modified);
 	}
@@ -284,7 +335,8 @@ public class EmailWorkerConfigEntity {
 	@Override
 	public int hashCode() {
 		return Objects.hash(id, municipalityId, namespace, enabled, errandClosedEmailSender, errandClosedEmailTemplate,
-			daysOfInactivityBeforeReject, statusForNew, triggerStatusChangeOn, statusChangeTo, inactiveStatus, created, modified);
+			daysOfInactivityBeforeReject, statusForNew, triggerStatusChangeOn, statusChangeTo, inactiveStatus, addSenderAsStakeholder,
+			stakeholderRole, errandChannel, created, modified);
 	}
 
 	@Override
@@ -301,6 +353,9 @@ public class EmailWorkerConfigEntity {
 		sb.append(", triggerStatusChangeOn='").append(triggerStatusChangeOn).append('\'');
 		sb.append(", statusChangeTo='").append(statusChangeTo).append('\'');
 		sb.append(", inactiveStatus='").append(inactiveStatus).append('\'');
+		sb.append(", addSenderAsStakeholder='").append(addSenderAsStakeholder).append('\'');
+		sb.append(", stakeholderRole='").append(stakeholderRole).append('\'');
+		sb.append(", errandChannel='").append(errandChannel).append('\'');
 		sb.append(", created=").append(created);
 		sb.append(", modified=").append(modified);
 		sb.append('}');
