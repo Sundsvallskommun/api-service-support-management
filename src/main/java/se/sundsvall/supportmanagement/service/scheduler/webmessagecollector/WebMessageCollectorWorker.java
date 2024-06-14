@@ -13,12 +13,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.integration.db.CommunicationRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationAttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.webmessagecollector.WebMessageCollectorClient;
 import se.sundsvall.supportmanagement.integration.webmessagecollector.configuration.WebMessageCollectorProperties;
+import se.sundsvall.supportmanagement.service.ErrandService;
 
 import generated.se.sundsvall.webmessagecollector.MessageDTO;
 
@@ -37,12 +39,15 @@ public class WebMessageCollectorWorker {
 
 	private final WebMessageCollectorMapper webMessageCollectorMapper;
 
-	public WebMessageCollectorWorker(final WebMessageCollectorClient webMessageCollectorClient, final WebMessageCollectorProperties webMessageCollectorProperties, final ErrandsRepository errandsRepository, final CommunicationRepository communicationRepository, final WebMessageCollectorMapper webMessageCollectorMapper) {
+	private final ErrandService errandService;
+
+	public WebMessageCollectorWorker(final WebMessageCollectorClient webMessageCollectorClient, final WebMessageCollectorProperties webMessageCollectorProperties, final ErrandsRepository errandsRepository, final CommunicationRepository communicationRepository, final WebMessageCollectorMapper webMessageCollectorMapper, final ErrandService errandService) {
 		this.webMessageCollectorClient = webMessageCollectorClient;
 		this.webMessageCollectorProperties = webMessageCollectorProperties;
 		this.errandsRepository = errandsRepository;
 		this.communicationRepository = communicationRepository;
 		this.webMessageCollectorMapper = webMessageCollectorMapper;
+		this.errandService = errandService;
 	}
 
 	@Transactional
@@ -91,8 +96,7 @@ public class WebMessageCollectorWorker {
 
 	private void updateErrandStatus(final ErrandEntity errand) {
 		if (errand.getStatus().equals(ERRAND_STATUS_SOLVED)) {
-			errand.setStatus(ERRAND_STATUS_ONGOING);
-			errandsRepository.save(errand);
+			errandService.updateErrand(errand.getNamespace(), errand.getMunicipalityId(), errand.getId(), Errand.create().withStatus(ERRAND_STATUS_ONGOING));
 		}
 	}
 
