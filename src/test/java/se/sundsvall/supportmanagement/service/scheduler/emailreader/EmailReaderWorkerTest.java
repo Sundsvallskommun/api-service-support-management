@@ -97,14 +97,13 @@ class EmailReaderWorkerTest {
 		verify(emailWorkerConfigRepositoryMock).findAll();
 		verify(emailReaderClientMock).getEmails(emailConfig.getMunicipalityId(), emailConfig.getNamespace());
 		verify(errandRepositoryMock).findByErrandNumber("PRH-2022-000001");
-		verify(errandRepositoryMock).save(same(errandEntity));
+		verify(errandServiceMock).updateErrand(errandEntity.getNamespace(), errandEntity.getMunicipalityId(), errandEntity.getId(), Errand.create().withStatus("ONGOING"));
 		verify(emailReaderMapperMock).toCommunicationEntity(same(email));
 		verify(emailReaderClientMock).deleteEmail(email.getId());
 		verify(communicationServiceMock).saveAttachment(same(communicationEntity), same(errandEntity));
 		verify(communicationServiceMock).saveCommunication(same(communicationEntity));
 
-		verifyNoInteractions(errandServiceMock);
-		verifyNoMoreInteractions(emailReaderClientMock, errandRepositoryMock, emailReaderMapperMock, communicationServiceMock, emailWorkerConfigRepositoryMock);
+		verifyNoMoreInteractions(errandServiceMock, emailReaderClientMock, errandRepositoryMock, emailReaderMapperMock, communicationServiceMock, emailWorkerConfigRepositoryMock);
 	}
 
 

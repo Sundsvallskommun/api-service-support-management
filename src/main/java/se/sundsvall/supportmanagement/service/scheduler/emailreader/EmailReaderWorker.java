@@ -8,6 +8,7 @@ import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.integration.db.EmailWorkerConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.EmailWorkerConfigEntity;
@@ -52,12 +53,12 @@ public class EmailReaderWorker {
 			.forEach(this::processEmailConfig);
 	}
 
-	private void processEmailConfig(EmailWorkerConfigEntity config) {
+	private void processEmailConfig(final EmailWorkerConfigEntity config) {
 		emailReaderClient.getEmails(config.getMunicipalityId(), config.getNamespace())
 			.forEach(email -> processEmail(email, config));
 	}
 
-	private void processEmail(final Email email, EmailWorkerConfigEntity config) {
+	private void processEmail(final Email email, final EmailWorkerConfigEntity config) {
 
 		final var errandNumber = parseSubject(email.getSubject());
 
@@ -68,7 +69,7 @@ public class EmailReaderWorker {
 
 	}
 
-	private Optional<ErrandEntity> getErrand(final String errandNumber, final Email email, EmailWorkerConfigEntity config) {
+	private Optional<ErrandEntity> getErrand(final String errandNumber, final Email email, final EmailWorkerConfigEntity config) {
 
 		return Optional.ofNullable(errandNumber)
 			.map(errandRepository::findByErrandNumber)
@@ -84,13 +85,12 @@ public class EmailReaderWorker {
 						config.getErrandChannel()))));
 	}
 
-	private void processErrand(final ErrandEntity errand, final Email email, EmailWorkerConfigEntity config) {
+	private void processErrand(final ErrandEntity errand, final Email email, final EmailWorkerConfigEntity config) {
 
 		if (isErrandInactive(errand, config)) {
 			sendEmail(errand, email, config);
 		} else if (config.getTriggerStatusChangeOn() != null && errand.getStatus().equals(config.getTriggerStatusChangeOn())) {
-			errand.setStatus(config.getStatusChangeTo());
-			errandRepository.save(errand);
+			errandService.updateErrand(errand.getNamespace(), errand.getMunicipalityId(), errand.getId(), Errand.create().withStatus(config.getStatusChangeTo()));
 		}
 		saveEmail(email, errand);
 	}
@@ -102,7 +102,7 @@ public class EmailReaderWorker {
 		communicationService.saveAttachment(communicationEntity, errand);
 	}
 
-	private boolean isErrandInactive(final ErrandEntity errand, EmailWorkerConfigEntity config) {
+	private boolean isErrandInactive(final ErrandEntity errand, final EmailWorkerConfigEntity config) {
 
 		return config.getInactiveStatus() != null
 			&& errand.getStatus().equals(config.getInactiveStatus())
@@ -110,7 +110,7 @@ public class EmailReaderWorker {
 			&& errand.getTouched().isBefore(OffsetDateTime.now().minusDays(config.getDaysOfInactivityBeforeReject()));
 	}
 
-	private void sendEmail(final ErrandEntity errand, final Email email, EmailWorkerConfigEntity config) {
+	private void sendEmail(final ErrandEntity errand, final Email email, final EmailWorkerConfigEntity config) {
 
 		final var emailRequest = emailReaderMapper.createEmailRequest(email, config.getErrandClosedEmailSender(), config.getErrandClosedEmailTemplate());
 		communicationService.sendEmail(config.getNamespace(), config.getMunicipalityId(), errand.getId(), emailRequest);
