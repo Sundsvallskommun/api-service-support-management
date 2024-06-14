@@ -5,6 +5,7 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -27,12 +28,14 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import se.sundsvall.supportmanagement.Constants;
+import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.integration.db.CommunicationRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.webmessagecollector.WebMessageCollectorClient;
 import se.sundsvall.supportmanagement.integration.webmessagecollector.configuration.WebMessageCollectorProperties;
+import se.sundsvall.supportmanagement.service.ErrandService;
 
 import generated.se.sundsvall.webmessagecollector.MessageDTO;
 
@@ -52,6 +55,9 @@ class WebMessageCollectorWorkerTest {
 	private ErrandsRepository errandsRepositoryMock;
 
 	@Mock
+	private  ErrandService errandService;
+
+	@Mock
 	private CommunicationRepository communicationRepositoryMock;
 
 	@InjectMocks
@@ -61,7 +67,7 @@ class WebMessageCollectorWorkerTest {
 	private ArgumentCaptor<CommunicationEntity> communicationEntityCaptor;
 
 	@Captor
-	private ArgumentCaptor<ErrandEntity> errandEntityCaptor;
+	private ArgumentCaptor<Errand> errandCaptor;
 
 	@Test
 	void fetchWebMessages() {
@@ -100,14 +106,10 @@ class WebMessageCollectorWorkerTest {
 		verify(webMessageCollectorClientMock).getMessages(familyId, instance);
 		verify(errandsRepositoryMock, times(1)).findByExternalTagsValue(familyId);
 
-		verify(errandsRepositoryMock).save(errandEntityCaptor.capture());
+		verify(errandService).updateErrand(eq(errandEntity.getNamespace()), eq(errandEntity.getMunicipalityId()),eq( errandEntity.getId()),errandCaptor.capture());
 
-		assertThat(errandEntityCaptor.getValue()).satisfies(
-			errand -> {
-				assertThat(errand.getErrandNumber()).isEqualTo(errandNumber);
-				assertThat(errand.getStatus()).isEqualTo(Constants.ERRAND_STATUS_ONGOING);
-				assertThat(errand.getTouched()).isCloseTo(now().minusDays(2), within(1, SECONDS));
-			});
+		assertThat(errandCaptor.getValue()).satisfies(
+			errand -> assertThat(errand.getStatus()).isEqualTo(Constants.ERRAND_STATUS_ONGOING));
 
 		verify(communicationRepositoryMock).saveAndFlush(communicationEntityCaptor.capture());
 		assertThat(communicationEntityCaptor.getValue()).satisfies(
