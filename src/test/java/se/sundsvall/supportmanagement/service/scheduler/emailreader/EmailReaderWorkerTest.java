@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.service.scheduler.emailreader;
 
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyString;
@@ -30,10 +31,15 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.emailreader.EmailReaderClient;
 import se.sundsvall.supportmanagement.service.CommunicationService;
 import se.sundsvall.supportmanagement.service.ErrandService;
+import se.sundsvall.supportmanagement.service.EventService;
 
 import generated.se.sundsvall.emailreader.Email;
+import generated.se.sundsvall.eventlog.EventType;
 
 class EmailReaderWorkerTest {
+
+	@Mock
+	private EventService eventServiceMock;
 
 	@Mock
 	private EmailReaderClient emailReaderClientMock;
@@ -97,13 +103,14 @@ class EmailReaderWorkerTest {
 		verify(emailWorkerConfigRepositoryMock).findAll();
 		verify(emailReaderClientMock).getEmails(emailConfig.getMunicipalityId(), emailConfig.getNamespace());
 		verify(errandRepositoryMock).findByErrandNumber("PRH-2022-000001");
-		verify(errandServiceMock).updateErrand(errandEntity.getNamespace(), errandEntity.getMunicipalityId(), errandEntity.getId(), Errand.create().withStatus("ONGOING"));
+		verify(errandRepositoryMock).save(same(errandEntity));
 		verify(emailReaderMapperMock).toCommunicationEntity(same(email));
 		verify(emailReaderClientMock).deleteEmail(email.getId());
 		verify(communicationServiceMock).saveAttachment(same(communicationEntity), same(errandEntity));
 		verify(communicationServiceMock).saveCommunication(same(communicationEntity));
-
-		verifyNoMoreInteractions(errandServiceMock, emailReaderClientMock, errandRepositoryMock, emailReaderMapperMock, communicationServiceMock, emailWorkerConfigRepositoryMock);
+		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Ärendekommunikation har skapats."), same(errandEntity), isNull(), isNull());
+		verifyNoInteractions(errandServiceMock);
+		verifyNoMoreInteractions(emailReaderClientMock, errandRepositoryMock, emailReaderMapperMock, communicationServiceMock, emailWorkerConfigRepositoryMock, eventServiceMock);
 	}
 
 
@@ -152,9 +159,9 @@ class EmailReaderWorkerTest {
 		verify(communicationServiceMock).saveAttachment(same(communicationEntity), same(errandEntity));
 		verify(communicationServiceMock).saveCommunication(same(communicationEntity));
 		verify(emailReaderClientMock).deleteEmail(email.getId());
-
+		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Ärendekommunikation har skapats."), same(errandEntity), isNull(), isNull());
 		verifyNoInteractions(errandServiceMock);
-		verifyNoMoreInteractions(emailReaderClientMock, errandRepositoryMock, emailReaderMapperMock, communicationServiceMock, emailWorkerConfigRepositoryMock);
+		verifyNoMoreInteractions(emailReaderClientMock, errandRepositoryMock, emailReaderMapperMock, communicationServiceMock, emailWorkerConfigRepositoryMock, eventServiceMock);
 
 	}
 
@@ -207,8 +214,8 @@ class EmailReaderWorkerTest {
 		verify(emailReaderClientMock).deleteEmail(email.getId());
 		verify(communicationServiceMock).saveAttachment(same(communicationEntity), same(errandEntity));
 		verify(communicationServiceMock).saveCommunication(same(communicationEntity));
-
-		verifyNoMoreInteractions(emailWorkerConfigRepositoryMock, emailReaderClientMock, errandServiceMock, errandRepositoryMock, emailReaderMapperMock, communicationServiceMock);
+		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Ärendekommunikation har skapats."), same(errandEntity), isNull(), isNull());
+		verifyNoMoreInteractions(emailWorkerConfigRepositoryMock, emailReaderClientMock, errandServiceMock, errandRepositoryMock, emailReaderMapperMock, communicationServiceMock, eventServiceMock);
 
 	}
 
@@ -227,6 +234,7 @@ class EmailReaderWorkerTest {
 		// VERIFY
 		verify(emailWorkerConfigRepositoryMock).findAll();
 		verifyNoMoreInteractions(emailWorkerConfigRepositoryMock);
-		verifyNoInteractions(emailReaderClientMock, errandServiceMock, errandRepositoryMock, emailReaderMapperMock, communicationServiceMock);
+		verifyNoInteractions(emailReaderClientMock, errandServiceMock, errandRepositoryMock, emailReaderMapperMock, communicationServiceMock, eventServiceMock);
 	}
+
 }

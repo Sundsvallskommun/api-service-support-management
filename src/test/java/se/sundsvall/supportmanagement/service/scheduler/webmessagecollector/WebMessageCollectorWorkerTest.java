@@ -6,6 +6,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -28,15 +30,15 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import se.sundsvall.supportmanagement.Constants;
-import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.integration.db.CommunicationRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.webmessagecollector.WebMessageCollectorClient;
 import se.sundsvall.supportmanagement.integration.webmessagecollector.configuration.WebMessageCollectorProperties;
-import se.sundsvall.supportmanagement.service.ErrandService;
+import se.sundsvall.supportmanagement.service.EventService;
 
+import generated.se.sundsvall.eventlog.EventType;
 import generated.se.sundsvall.webmessagecollector.MessageDTO;
 
 @ExtendWith(MockitoExtension.class)
@@ -44,6 +46,9 @@ class WebMessageCollectorWorkerTest {
 
 	@Mock(answer = Answers.CALLS_REAL_METHODS)
 	private WebMessageCollectorMapper webMessageCollectorMapperMock;
+
+	@Mock
+	private EventService eventServiceMock;
 
 	@Mock
 	private WebMessageCollectorClient webMessageCollectorClientMock;
@@ -55,9 +60,6 @@ class WebMessageCollectorWorkerTest {
 	private ErrandsRepository errandsRepositoryMock;
 
 	@Mock
-	private  ErrandService errandService;
-
-	@Mock
 	private CommunicationRepository communicationRepositoryMock;
 
 	@InjectMocks
@@ -67,7 +69,7 @@ class WebMessageCollectorWorkerTest {
 	private ArgumentCaptor<CommunicationEntity> communicationEntityCaptor;
 
 	@Captor
-	private ArgumentCaptor<Errand> errandCaptor;
+	private ArgumentCaptor<ErrandEntity> errandEntityCaptor;
 
 	@Test
 	void fetchWebMessages() {
@@ -106,10 +108,14 @@ class WebMessageCollectorWorkerTest {
 		verify(webMessageCollectorClientMock).getMessages(familyId, instance);
 		verify(errandsRepositoryMock, times(1)).findByExternalTagsValue(familyId);
 
-		verify(errandService).updateErrand(eq(errandEntity.getNamespace()), eq(errandEntity.getMunicipalityId()),eq( errandEntity.getId()),errandCaptor.capture());
+		verify(errandsRepositoryMock).save(errandEntityCaptor.capture());
 
-		assertThat(errandCaptor.getValue()).satisfies(
-			errand -> assertThat(errand.getStatus()).isEqualTo(Constants.ERRAND_STATUS_ONGOING));
+		assertThat(errandEntityCaptor.getValue()).satisfies(
+			errand -> {
+				assertThat(errand.getErrandNumber()).isEqualTo(errandNumber);
+				assertThat(errand.getStatus()).isEqualTo(Constants.ERRAND_STATUS_ONGOING);
+				assertThat(errand.getTouched()).isCloseTo(now().minusDays(2), within(1, SECONDS));
+			});
 
 		verify(communicationRepositoryMock).saveAndFlush(communicationEntityCaptor.capture());
 		assertThat(communicationEntityCaptor.getValue()).satisfies(
@@ -123,6 +129,7 @@ class WebMessageCollectorWorkerTest {
 			});
 
 		verify(webMessageCollectorMapperMock).toCommunicationEntity(messagedto, errandEntity.getErrandNumber());
+		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Ärendekommunikation har skapats."), same(errandEntity), isNull(), isNull());
 		verifyNoMoreInteractions(webMessageCollectorClientMock, webMessageCollectorPropertiesMock, errandsRepositoryMock, communicationRepositoryMock);
 	}
 
