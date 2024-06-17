@@ -8,7 +8,6 @@ import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.integration.db.EmailWorkerConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.EmailWorkerConfigEntity;
@@ -16,16 +15,22 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.emailreader.EmailReaderClient;
 import se.sundsvall.supportmanagement.service.CommunicationService;
 import se.sundsvall.supportmanagement.service.ErrandService;
+import se.sundsvall.supportmanagement.service.EventService;
 
 import generated.se.sundsvall.emailreader.Email;
+import generated.se.sundsvall.eventlog.EventType;
 
 
 @Service
 public class EmailReaderWorker {
 
+	private static final String EVENT_LOG_COMMUNICATION = "Ärendekommunikation har skapats.";
+
 	private final EmailReaderClient emailReaderClient;
 
 	private final ErrandService errandService;
+
+	private final EventService eventService;
 
 	private final CommunicationService communicationService;
 
@@ -35,10 +40,11 @@ public class EmailReaderWorker {
 
 	private final EmailWorkerConfigRepository emailWorkerConfigRepository;
 
-	public EmailReaderWorker(final EmailReaderClient emailReaderClient,
+	public EmailReaderWorker(final EmailReaderClient emailReaderClient, final EventService eventService,
 		final ErrandsRepository errandRepository, final ErrandService errandService, final CommunicationService communicationService,
 		final EmailReaderMapper emailReaderMapper, final EmailWorkerConfigRepository emailWorkerConfigRepository) {
 		this.emailReaderClient = emailReaderClient;
+		this.eventService = eventService;
 		this.errandRepository = errandRepository;
 		this.errandService = errandService;
 		this.communicationService = communicationService;
@@ -90,8 +96,10 @@ public class EmailReaderWorker {
 		if (isErrandInactive(errand, config)) {
 			sendEmail(errand, email, config);
 		} else if (config.getTriggerStatusChangeOn() != null && errand.getStatus().equals(config.getTriggerStatusChangeOn())) {
-			errandService.updateErrand(errand.getNamespace(), errand.getMunicipalityId(), errand.getId(), Errand.create().withStatus(config.getStatusChangeTo()));
+			errand.setStatus(config.getStatusChangeTo());
+			errandRepository.save(errand);
 		}
+		eventService.createErrandEvent(EventType.UPDATE, EVENT_LOG_COMMUNICATION, errand, null, null);
 		saveEmail(email, errand);
 	}
 
