@@ -260,7 +260,9 @@ VALUES (1, true, '2281', 'NAMESPACE.1', 1, 'sender-1', 'template-1', 'STATUS-1',
 -- Namespace config
 -------------------------------------
 INSERT INTO namespace_config (id, municipality_id, namespace, short_code, created, modified)
-VALUES (1, '2281', 'NAMESPACE.1', 'NS1', '2021-12-31 23:59:59.999', '2022-12-31 23:59:59.999');
+VALUES (1, '2281', 'NAMESPACE.1', 'NS1', '2021-12-31 23:59:59.999', '2022-12-31 23:59:59.999'),
+       (2, '2281', 'CONTACTCENTER', 'KC', '2024-06-12 15:23:59.999', null),
+       (3, '2281', 'NAMESPACE.3' , 'NS3', '2021-12-31 23:59:59.999', '2022-12-31 23:59:59.999');
 
 -------------------------------------
 -- Time measurement

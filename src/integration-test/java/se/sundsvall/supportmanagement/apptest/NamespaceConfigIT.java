@@ -53,7 +53,7 @@ class NamespaceConfigIT extends AbstractAppTest {
 	@Test
 	void test02_createConfig() {
 
-		assertThat(repository.getByNamespaceAndMunicipalityId(NAMESPACE_2, MUNICIPALITY_ID)).isEmpty();
+		assertThat(repository.existsByNamespaceAndMunicipalityId(NAMESPACE_2, MUNICIPALITY_ID)).isFalse();
 
 		setupCall()
 			.withServicePath(PATH.apply(NAMESPACE_2))
@@ -64,12 +64,12 @@ class NamespaceConfigIT extends AbstractAppTest {
 			.withExpectedResponseBodyIsNull()
 			.sendRequestAndVerifyResponse();
 
-		assertThat(repository.getByNamespaceAndMunicipalityId(NAMESPACE_2, MUNICIPALITY_ID)).isNotEmpty();
+		assertThat(repository.existsByNamespaceAndMunicipalityId(NAMESPACE_2, MUNICIPALITY_ID)).isTrue();
 	}
 
 	@Test
 	void test03_deleteConfig() {
-		assertThat(repository.getByNamespaceAndMunicipalityId(NAMESPACE_1, MUNICIPALITY_ID)).isNotEmpty();
+		assertThat(repository.existsByNamespaceAndMunicipalityId(NAMESPACE_1, MUNICIPALITY_ID)).isTrue();
 
 		setupCall()
 			.withServicePath(PATH.apply(NAMESPACE_1))
@@ -78,7 +78,7 @@ class NamespaceConfigIT extends AbstractAppTest {
 			.withExpectedResponseBodyIsNull()
 			.sendRequestAndVerifyResponse();
 
-		assertThat(repository.getByNamespaceAndMunicipalityId(NAMESPACE_1, MUNICIPALITY_ID)).isEmpty();
+		assertThat(repository.existsByNamespaceAndMunicipalityId(NAMESPACE_1, MUNICIPALITY_ID)).isFalse();
 	}
 
 	@Test

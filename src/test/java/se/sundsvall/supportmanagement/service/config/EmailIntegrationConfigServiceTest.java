@@ -11,7 +11,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.zalando.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.config.EmailIntegration;
 import se.sundsvall.supportmanagement.integration.db.EmailWorkerConfigRepository;
+import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.model.EmailWorkerConfigEntity;
+import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity;
 import se.sundsvall.supportmanagement.service.mapper.EmailIntegrationMapper;
 
 import java.time.OffsetDateTime;
@@ -24,6 +26,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
 import static org.zalando.problem.Status.NOT_FOUND;
 
 @ExtendWith(MockitoExtension.class)
@@ -35,8 +38,11 @@ class EmailIntegrationConfigServiceTest {
 	@Mock
 	private EmailIntegrationMapper mapperMock;
 
+	@Mock
+	private NamespaceConfigRepository namespaceConfigRepositoryMock;
+
 	@Captor
-	ArgumentCaptor<EmailWorkerConfigEntity> entityCaptor;
+	private ArgumentCaptor<EmailWorkerConfigEntity> entityCaptor;
 
 	@InjectMocks
 	private EmailIntegrationConfigService configService;
@@ -49,11 +55,26 @@ class EmailIntegrationConfigServiceTest {
 		var entity = new EmailWorkerConfigEntity();
 
 		when(mapperMock.toEntity(any(), any(), any())).thenReturn(entity);
+		when(namespaceConfigRepositoryMock.existsByNamespaceAndMunicipalityId(any(), any())).thenReturn(true);
 
 		configService.create(request, namespace, municipalityId);
 
 		verify(mapperMock).toEntity(same(request), eq(namespace), eq(municipalityId));
+		verify(namespaceConfigRepositoryMock).existsByNamespaceAndMunicipalityId(namespace, municipalityId);
 		verify(configRepositoryMock).save(same(entity));
+	}
+
+	@Test
+	void createWithMissingNamespaceConfig() {
+		var request = new EmailIntegration();
+		var namespace = "namespace";
+		var municipalityId = "municipalityId";
+
+		when(namespaceConfigRepositoryMock.existsByNamespaceAndMunicipalityId(any(), any())).thenReturn(false);
+		assertThatThrownBy(() -> configService.create(request, namespace, municipalityId))
+			.isInstanceOf(Problem.class)
+			.hasMessage("Internal Server Error: Namespace config must be created before enabling email integration. Add via /namespaceConfig resource")
+			.extracting("status").isEqualTo(INTERNAL_SERVER_ERROR);
 	}
 
 	@Test

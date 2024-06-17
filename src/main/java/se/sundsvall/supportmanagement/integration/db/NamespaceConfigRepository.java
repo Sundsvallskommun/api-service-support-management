@@ -11,5 +11,6 @@ import java.util.Optional;
 @CircuitBreaker(name = "NamespaceConfigRepository")
 public interface NamespaceConfigRepository extends JpaRepository<NamespaceConfigEntity, Long> {
 	Optional<NamespaceConfigEntity> getByNamespaceAndMunicipalityId(String namespace, String municipalityId);
+	boolean existsByNamespaceAndMunicipalityId(String namespace, String municipalityId);
 	void deleteByNamespaceAndMunicipalityId(String namespace, String municipalityId);
 }
