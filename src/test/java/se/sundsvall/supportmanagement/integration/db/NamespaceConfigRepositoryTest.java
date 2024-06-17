@@ -35,6 +35,12 @@ class NamespaceConfigRepositoryTest {
 	}
 
 	@Test
+	void existsByNamespaceAndMunicipalityId() {
+		assertThat(repository.existsByNamespaceAndMunicipalityId("namespace-1", "municipality_id-1")).isTrue();
+		assertThat(repository.existsByNamespaceAndMunicipalityId("namespace-99", "municipality_id-99")).isFalse();
+	}
+
+	@Test
 	void create() {
 
 		final var municipalityId = "municipalityId";
@@ -46,7 +52,7 @@ class NamespaceConfigRepositoryTest {
 			.withNamespace(namespace)
 			.withShortCode(shortCode);
 
-		assertThat(repository.getByNamespaceAndMunicipalityId(namespace, municipalityId)).isEmpty();
+		assertThat(repository.existsByNamespaceAndMunicipalityId(namespace, municipalityId)).isFalse();
 
 		repository.saveAndFlush(entity);
 
@@ -78,12 +84,12 @@ class NamespaceConfigRepositoryTest {
 
 	@Test
 	void delete() {
-		assertThat(repository.getByNamespaceAndMunicipalityId("namespace-1", "municipality_id-1")).isPresent();
-		assertThat(repository.getByNamespaceAndMunicipalityId("namespace-2", "municipality_id-2")).isPresent();
+		assertThat(repository.existsByNamespaceAndMunicipalityId("namespace-1", "municipality_id-1")).isTrue();
+		assertThat(repository.existsByNamespaceAndMunicipalityId("namespace-2", "municipality_id-2")).isTrue();
 
 		repository.deleteByNamespaceAndMunicipalityId("namespace-1", "municipality_id-1");
 
-		assertThat(repository.getByNamespaceAndMunicipalityId("namespace-1", "municipality_id-1")).isNotPresent();
-		assertThat(repository.getByNamespaceAndMunicipalityId("namespace-2", "municipality_id-2")).isPresent();
+		assertThat(repository.existsByNamespaceAndMunicipalityId("namespace-1", "municipality_id-1")).isFalse();
+		assertThat(repository.existsByNamespaceAndMunicipalityId("namespace-2", "municipality_id-2")).isTrue();
 	}
 }

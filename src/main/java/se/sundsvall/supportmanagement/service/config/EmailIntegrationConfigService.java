@@ -27,7 +27,7 @@ public class EmailIntegrationConfigService {
 	}
 
 	public void create(EmailIntegration request, String namespace, String municipalityId) {
-		if(namespaceConfigRepository.getByNamespaceAndMunicipalityId(namespace, municipalityId).isEmpty()) {
+		if(!namespaceConfigRepository.existsByNamespaceAndMunicipalityId(namespace, municipalityId)) {
 			throw Problem.valueOf(INTERNAL_SERVER_ERROR, "Namespace config must be created before enabling email integration. Add via /namespaceConfig resource");
 		}
 		configRepository.save(mapper.toEntity(request, namespace, municipalityId));

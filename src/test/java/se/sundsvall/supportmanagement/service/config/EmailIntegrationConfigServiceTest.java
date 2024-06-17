@@ -39,10 +39,10 @@ class EmailIntegrationConfigServiceTest {
 	private EmailIntegrationMapper mapperMock;
 
 	@Mock
-	NamespaceConfigRepository namespaceConfigRepositoryMock;
+	private NamespaceConfigRepository namespaceConfigRepositoryMock;
 
 	@Captor
-	ArgumentCaptor<EmailWorkerConfigEntity> entityCaptor;
+	private ArgumentCaptor<EmailWorkerConfigEntity> entityCaptor;
 
 	@InjectMocks
 	private EmailIntegrationConfigService configService;
@@ -55,12 +55,12 @@ class EmailIntegrationConfigServiceTest {
 		var entity = new EmailWorkerConfigEntity();
 
 		when(mapperMock.toEntity(any(), any(), any())).thenReturn(entity);
-		when(namespaceConfigRepositoryMock.getByNamespaceAndMunicipalityId(any(), any())).thenReturn(Optional.of(NamespaceConfigEntity.create()));
+		when(namespaceConfigRepositoryMock.existsByNamespaceAndMunicipalityId(any(), any())).thenReturn(true);
 
 		configService.create(request, namespace, municipalityId);
 
 		verify(mapperMock).toEntity(same(request), eq(namespace), eq(municipalityId));
-		verify(namespaceConfigRepositoryMock).getByNamespaceAndMunicipalityId(namespace, municipalityId);
+		verify(namespaceConfigRepositoryMock).existsByNamespaceAndMunicipalityId(namespace, municipalityId);
 		verify(configRepositoryMock).save(same(entity));
 	}
 
@@ -70,7 +70,7 @@ class EmailIntegrationConfigServiceTest {
 		var namespace = "namespace";
 		var municipalityId = "municipalityId";
 
-		when(namespaceConfigRepositoryMock.getByNamespaceAndMunicipalityId(any(), any())).thenReturn(Optional.empty());
+		when(namespaceConfigRepositoryMock.existsByNamespaceAndMunicipalityId(any(), any())).thenReturn(false);
 		assertThatThrownBy(() -> configService.create(request, namespace, municipalityId))
 			.isInstanceOf(Problem.class)
 			.hasMessage("Internal Server Error: Namespace config must be created before enabling email integration. Add via /namespaceConfig resource")

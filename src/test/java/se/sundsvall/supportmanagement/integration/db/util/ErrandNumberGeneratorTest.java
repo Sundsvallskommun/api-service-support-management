@@ -33,13 +33,13 @@ class ErrandNumberGeneratorTest {
 
 
 	@Mock
-	ErrandNumberSequenceRepository repositoryMock;
+	private ErrandNumberSequenceRepository repositoryMock;
 
 	@Mock
-	NamespaceConfigRepository namespaceConfigRepositoryMock;
+	private NamespaceConfigRepository namespaceConfigRepositoryMock;
 
 	@InjectMocks
-	ErrandNumberGeneratorService stringGeneratorService;
+	private ErrandNumberGeneratorService stringGeneratorService;
 
 	@Test
 	void generateErrandNumber_resetSequence() {
