@@ -74,7 +74,7 @@ public final class NotificationMapper {
 
 	public static Notification toNotification(final Event event, final ErrandEntity errandEntity, final PortalPersonData owner, final PortalPersonData creator, final String executingUser) {
 
-		final var notification = Notification.create()
+		return Notification.create()
 			.withDescription(event.getMessage())
 			.withErrandId(errandEntity.getId())
 			.withErrandNumber(errandEntity.getErrandNumber())
@@ -83,12 +83,9 @@ public final class NotificationMapper {
 			.withModified(event.getCreated())
 			.withCreated(event.getCreated())
 			.withCreatedBy(executingUser)
-			.withOwnerId(errandEntity.getAssignedUserId());
-		Optional.ofNullable(owner)
-			.ifPresent(o -> notification.setOwnerFullName(o.getFullname()));
-		Optional.ofNullable(creator)
-			.ifPresent(c -> notification.setCreatedByFullName(c.getFullname()));
-		return notification;
+			.withOwnerId(errandEntity.getAssignedUserId())
+			.withOwnerFullName(Optional.ofNullable(owner).map(PortalPersonData::getFullname).orElse("unknown"))
+			.withCreatedByFullName(Optional.ofNullable(creator).map(PortalPersonData::getFullname).orElse("unknown"));
 	}
 
 }
