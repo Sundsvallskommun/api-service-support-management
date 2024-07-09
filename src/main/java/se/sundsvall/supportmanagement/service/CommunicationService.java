@@ -140,6 +140,7 @@ public class CommunicationService {
 
 
 		var errandAttachments = errandAttachmentService.findByIdIn(request.getAttachmentIds());
+
 		var emailRequest = toEmailRequest(errandEntity, request, toEmailAttachments(errandAttachments));
 
 		messagingClient.sendEmail(ASYNCHRONOUSLY, emailRequest);

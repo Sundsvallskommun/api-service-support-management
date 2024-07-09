@@ -88,6 +88,7 @@ class CommunicationEntityTest {
 		assertThat(entity.getSent()).isEqualTo(sent);
 		assertThat(entity.getType()).isEqualTo(type);
 		assertThat(entity.getTarget()).isEqualTo(target);
+		assertThat(entity.getErrandAttachments()).isEqualTo(errandAttachments);
 		assertThat(entity.isViewed()).isEqualTo(viewed);
 		assertThat(entity.getAttachments()).isEqualTo(attachments);
 		assertThat(entity.getAttachments()).allMatch(attachment -> attachment.getCommunicationEntity() == entity);

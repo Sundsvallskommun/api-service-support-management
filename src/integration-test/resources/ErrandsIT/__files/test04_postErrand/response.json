@@ -1,6 +1,6 @@
 {
   "id": "${json-unit.any-string}",
-  "errandNumber": "KC-24070001",
+  "errandNumber": "${json-unit.regex}(KC-\\d{8})",
   "title": "test04_postErrand",
   "priority": "LOW",
   "stakeholders": [
