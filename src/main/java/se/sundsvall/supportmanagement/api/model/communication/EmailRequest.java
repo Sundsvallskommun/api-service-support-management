@@ -51,8 +51,24 @@ public class EmailRequest {
 	@ArraySchema(schema = @Schema(description = "List with Base64 encoded email attachments"))
 	private List<@Valid EmailAttachment> attachments;
 
+	@ArraySchema(schema = @Schema(description = "List with attachment ids"))
+	private List<String> attachmentIds;
+
 	public static EmailRequest create() {
 		return new EmailRequest();
+	}
+
+	public List<String> getAttachmentIds() {
+		return attachmentIds;
+	}
+
+	public void setAttachmentIds(final List<String> attachmentIds) {
+		this.attachmentIds = attachmentIds;
+	}
+
+	public EmailRequest withAttachmentIds(final List<String> attachmentIds) {
+		this.attachmentIds = attachmentIds;
+		return this;
 	}
 
 	public String getSender() {
@@ -160,19 +176,6 @@ public class EmailRequest {
 	}
 
 	@Override
-	public boolean equals(final Object o) {
-		if (this == o) return true;
-		if (o == null || getClass() != o.getClass()) return false;
-		final EmailRequest that = (EmailRequest) o;
-		return Objects.equals(sender, that.sender) && Objects.equals(senderName, that.senderName) && Objects.equals(recipient, that.recipient) && Objects.equals(subject, that.subject) && Objects.equals(htmlMessage, that.htmlMessage) && Objects.equals(message, that.message) && Objects.equals(emailHeaders, that.emailHeaders) && Objects.equals(attachments, that.attachments);
-	}
-
-	@Override
-	public int hashCode() {
-		return Objects.hash(sender, senderName, recipient, subject, htmlMessage, message, emailHeaders, attachments);
-	}
-
-	@Override
 	public String toString() {
 		return "EmailRequest{" +
 			"sender='" + sender + '\'' +
@@ -183,7 +186,20 @@ public class EmailRequest {
 			", message='" + message + '\'' +
 			", emailHeaders=" + emailHeaders +
 			", attachments=" + attachments +
+			", attachmentIds=" + attachmentIds +
 			'}';
 	}
 
+	@Override
+	public boolean equals(final Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		final EmailRequest that = (EmailRequest) o;
+		return Objects.equals(sender, that.sender) && Objects.equals(senderName, that.senderName) && Objects.equals(recipient, that.recipient) && Objects.equals(subject, that.subject) && Objects.equals(htmlMessage, that.htmlMessage) && Objects.equals(message, that.message) && Objects.equals(emailHeaders, that.emailHeaders) && Objects.equals(attachments, that.attachments) && Objects.equals(attachmentIds, that.attachmentIds);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(sender, senderName, recipient, subject, htmlMessage, message, emailHeaders, attachments, attachmentIds);
+	}
 }

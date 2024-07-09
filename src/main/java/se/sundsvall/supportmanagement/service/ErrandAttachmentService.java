@@ -140,4 +140,8 @@ public class ErrandAttachmentService {
 		}
 	}
 
+	public List<AttachmentEntity> findByIdIn(final List<String> attachmentIds) {
+		return attachmentRepository.findByIdIn(attachmentIds);
+	}
+
 }

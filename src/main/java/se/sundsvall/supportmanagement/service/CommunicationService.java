@@ -4,6 +4,7 @@ import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
 import static org.zalando.problem.Status.NOT_FOUND;
+import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toEmailAttachments;
 import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toEmailRequest;
 import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toSmsRequest;
 
@@ -24,9 +25,12 @@ import org.zalando.problem.Status;
 import se.sundsvall.supportmanagement.api.model.communication.Communication;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
 import se.sundsvall.supportmanagement.api.model.communication.SmsRequest;
+import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.CommunicationAttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.CommunicationRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
+import se.sundsvall.supportmanagement.integration.db.model.CommunicationAttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
@@ -47,6 +51,7 @@ public class CommunicationService {
 	private final ErrandsRepository errandsRepository;
 	private final CommunicationRepository communicationRepository;
 	private final CommunicationAttachmentRepository communicationAttachmentRepository;
+	private final AttachmentRepository attachmentRepository;
 
 	private final ErrandAttachmentService errandAttachmentService;
 
@@ -56,24 +61,26 @@ public class CommunicationService {
 
 	public CommunicationService(final ErrandsRepository errandsRepository,
 		final MessagingClient messagingClient, final CommunicationRepository communicationRepository,
-		final CommunicationAttachmentRepository communicationAttachmentRepository, final CommunicationMapper communicationMapper, final ErrandAttachmentService errandAttachmentService) {
+		final CommunicationAttachmentRepository communicationAttachmentRepository, final AttachmentRepository attachmentRepository,
+		final CommunicationMapper communicationMapper, final ErrandAttachmentService errandAttachmentService) {
 		this.errandsRepository = errandsRepository;
 		this.messagingClient = messagingClient;
 		this.communicationRepository = communicationRepository;
 		this.communicationAttachmentRepository = communicationAttachmentRepository;
+		this.attachmentRepository = attachmentRepository;
 		this.communicationMapper = communicationMapper;
 		this.errandAttachmentService = errandAttachmentService;
 	}
 
 
-	public List<Communication> readCommunications(final String namespace, final String municipalityId, final String id) {
-		final var entity = fetchEntity(id, namespace, municipalityId);
+	public List<Communication> readCommunications(final String namespace, final String municipalityId, final String errandId) {
+		final var errand = fetchErrand(errandId, namespace, municipalityId);
 
-		return communicationMapper.toCommunications(communicationRepository.findByErrandNumber(entity.getErrandNumber()));
+		return communicationMapper.toCommunications(communicationRepository.findByErrandNumber(errand.getErrandNumber()));
 	}
 
 	public void updateViewedStatus(final String namespace, final String municipalityId, final String id, final String communicationId, final boolean isViewed) {
-		fetchEntity(id, namespace, municipalityId);
+		fetchErrand(id, namespace, municipalityId);
 
 		final var message = communicationRepository
 			.findById(communicationId)
@@ -83,28 +90,47 @@ public class CommunicationService {
 		communicationRepository.save(message);
 	}
 
-	public void getMessageAttachmentStreamed(final String attachmentID, final HttpServletResponse response) {
+	public void getMessageAttachmentStreamed(final String attachmentId, final HttpServletResponse response) {
+		final var attachment = attachmentRepository.findById(attachmentId);
+		final var communicationAttachment = communicationAttachmentRepository.findById(attachmentId);
 
+		if (attachment.isEmpty() && communicationAttachment.isEmpty()) {
+			throw Problem.valueOf(Status.NOT_FOUND, ATTACHMENT_NOT_FOUND);
+		}
+
+		attachment.ifPresent(attachment1 -> streamAttachmentData(attachment1, response));
+		communicationAttachment.ifPresent(communicationAttachment1 -> streamCommunicationAttachmentData(communicationAttachment1, response));
+	}
+
+	void streamAttachmentData(final AttachmentEntity attachment, final HttpServletResponse response) {
 		try {
-			final var attachmentEntity = communicationAttachmentRepository
-				.findById(attachmentID)
-				.orElseThrow(() -> Problem.valueOf(Status.NOT_FOUND, ATTACHMENT_NOT_FOUND));
+			final var file = attachment.getAttachmentData().getFile();
 
-			final var file = attachmentEntity.getAttachmentData().getFile();
-
-			response.addHeader(CONTENT_TYPE, attachmentEntity.getContentType());
-			response.addHeader(CONTENT_DISPOSITION, "attachment; filename=\"" + attachmentEntity.getName() + "\"");
+			response.addHeader(CONTENT_TYPE, attachment.getMimeType());
+			response.addHeader(CONTENT_DISPOSITION, "attachment; filename=\"" + attachment.getFileName() + "\"");
 			response.setContentLength((int) file.length());
 			StreamUtils.copy(file.getBinaryStream(), response.getOutputStream());
 		} catch (final IOException | SQLException e) {
-			throw Problem.valueOf(INTERNAL_SERVER_ERROR, "%s occurred when copying file with attachment id '%s' to response: %s".formatted(e.getClass().getSimpleName(), attachmentID, e.getMessage()));
+			throw Problem.valueOf(INTERNAL_SERVER_ERROR, "%s occurred when copying file with attachment id '%s' to response: %s".formatted(e.getClass().getSimpleName(), attachment.getId(), e.getMessage()));
+		}
+	}
 
+	void streamCommunicationAttachmentData(final CommunicationAttachmentEntity attachment, final HttpServletResponse response) {
+		try {
+			final var file = attachment.getAttachmentData().getFile();
+
+			response.addHeader(CONTENT_TYPE, attachment.getContentType());
+			response.addHeader(CONTENT_DISPOSITION, "attachment; filename=\"" + attachment.getName() + "\"");
+			response.setContentLength((int) file.length());
+			StreamUtils.copy(file.getBinaryStream(), response.getOutputStream());
+		} catch (final IOException | SQLException e) {
+			throw Problem.valueOf(INTERNAL_SERVER_ERROR, "%s occurred when copying file with attachment id '%s' to response: %s".formatted(e.getClass().getSimpleName(), attachment.getId(), e.getMessage()));
 		}
 	}
 
 	public void sendEmail(final String namespace, final String municipalityId, final String id, final EmailRequest request) {
 
-		final var entity = fetchEntity(id, namespace, municipalityId);
+		final var errandEntity = fetchErrand(id, namespace, municipalityId);
 
 		Optional.ofNullable(request.getEmailHeaders()).ifPresentOrElse(headers -> {
 			if (!headers.containsKey(EmailHeader.MESSAGE_ID)) {
@@ -112,19 +138,24 @@ public class CommunicationService {
 			}
 		}, () -> request.setEmailHeaders(Map.of(EmailHeader.MESSAGE_ID, List.of("<" + UUID.randomUUID() + "@" + namespace + ">"))));
 
-		messagingClient.sendEmail(ASYNCHRONOUSLY, toEmailRequest(entity, request));
+
+		var errandAttachments = errandAttachmentService.findByIdIn(request.getAttachmentIds());
+		var emailRequest = toEmailRequest(errandEntity, request, toEmailAttachments(errandAttachments));
+
+		messagingClient.sendEmail(ASYNCHRONOUSLY, emailRequest);
 
 		final var communicationEntity = communicationMapper.toCommunicationEntity(request)
-			.withErrandNumber(entity.getErrandNumber());
+			.withErrandAttachments(errandAttachments)
+			.withErrandNumber(errandEntity.getErrandNumber());
 
 		saveCommunication(communicationEntity);
-		saveAttachment(communicationEntity, entity);
+		saveAttachment(communicationEntity, errandEntity);
 
 	}
 
 	public void sendSms(final String namespace, final String municipalityId, final String id, final SmsRequest request) {
 
-		final var entity = fetchEntity(id, namespace, municipalityId);
+		final var entity = fetchErrand(id, namespace, municipalityId);
 		messagingClient.sendSms(ASYNCHRONOUSLY, toSmsRequest(entity, request));
 
 		final var communicationEntity = communicationMapper.toCommunicationEntity(request)
@@ -135,7 +166,7 @@ public class CommunicationService {
 	}
 
 
-	private ErrandEntity fetchEntity(final String id, final String namespace, final String municipalityId) {
+	private ErrandEntity fetchErrand(final String id, final String namespace, final String municipalityId) {
 		if (!errandsRepository.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)) {
 			throw Problem.valueOf(NOT_FOUND, String.format(ERRAND_ENTITY_NOT_FOUND, id, namespace, municipalityId));
 		}

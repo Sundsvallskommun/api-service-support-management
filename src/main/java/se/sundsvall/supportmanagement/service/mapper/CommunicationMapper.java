@@ -4,6 +4,7 @@ import static org.apache.commons.codec.binary.Base64.decodeBase64;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.detectMimeType;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -51,6 +52,7 @@ public class CommunicationMapper {
 	}
 
 	public Communication toCommunication(final CommunicationEntity entity) {
+
 		return Optional.ofNullable(entity).map(communication -> Communication.create()
 				.withSender(entity.getSender())
 				.withEmailHeaders(toHeaders(entity))
@@ -63,7 +65,7 @@ public class CommunicationMapper {
 				.withCommunicationType(entity.getType())
 				.withTarget(entity.getTarget())
 				.withViewed(entity.isViewed())
-				.withCommunicationAttachments(toAttachments(entity.getAttachments())))
+				.withCommunicationAttachments(toCommunicationAttachments(entity.getAttachments(), entity.getErrandAttachments())))
 			.orElse(null);
 	}
 
@@ -78,13 +80,16 @@ public class CommunicationMapper {
 			.toList();
 	}
 
-	public List<CommunicationAttachment> toAttachments(final List<CommunicationAttachmentEntity> attachments) {
-
-		return Optional.ofNullable(attachments)
+	public List<CommunicationAttachment> toCommunicationAttachments(final List<CommunicationAttachmentEntity> communicationAttachments, final List<AttachmentEntity> errandAttachments) {
+		final List<CommunicationAttachment> attachments = new ArrayList<>();
+		Optional.ofNullable(communicationAttachments)
 			.orElse(Collections.emptyList())
-			.stream()
-			.map(this::toAttachment)
-			.toList();
+			.forEach(attachment -> attachments.add(toAttachment(attachment)));
+		Optional.ofNullable(errandAttachments)
+			.orElse(Collections.emptyList())
+			.forEach(attachment -> attachments.add(toAttachment(attachment)));
+
+		return attachments;
 	}
 
 	public CommunicationAttachment toAttachment(final CommunicationAttachmentEntity entity) {
@@ -92,6 +97,13 @@ public class CommunicationMapper {
 			.withAttachmentID(entity.getId())
 			.withName(entity.getName())
 			.withContentType(entity.getContentType());
+	}
+
+	public CommunicationAttachment toAttachment(final AttachmentEntity entity) {
+		return CommunicationAttachment.create()
+			.withAttachmentID(entity.getId())
+			.withName(entity.getFileName())
+			.withContentType(entity.getMimeType());
 	}
 
 	public CommunicationEntity toCommunicationEntity(final EmailRequest request) {

@@ -96,7 +96,7 @@ class EmailReaderMapperTest {
 		final var result = emailReaderMapper.toCommunicationEntity(email);
 
 		// Assert
-		assertThat(result).isNotNull().hasNoNullFieldsOrPropertiesExcept("errandNumber");
+		assertThat(result).isNotNull().hasNoNullFieldsOrPropertiesExcept("errandNumber", "errandAttachments");
 		assertThat(result.getSubject()).isEqualTo("someSubject");
 		assertThat(result.getExternalCaseID()).isEmpty();
 		assertThat(result.getErrandNumber()).isNull();
@@ -150,7 +150,7 @@ class EmailReaderMapperTest {
 		assertThat(result.getClassification().getType()).isEqualTo("someType");
 		assertThat(result.getChannel()).isEqualTo("errandChannel");
 
-		if(addSenderAsStakeholder) {
+		if (addSenderAsStakeholder) {
 			assertThat(result.getStakeholders()).isNotNull().hasSize(1);
 			assertThat(result.getStakeholders().getFirst().getRole()).isEqualTo(stakeholderRole);
 			assertThat(result.getStakeholders().getFirst().getContactChannels()).isNotNull().hasSize(1);
@@ -183,7 +183,7 @@ class EmailReaderMapperTest {
 		final var result = emailReaderMapper.createEmailRequest(email, sender, template);
 
 		// Assert
-		assertThat(result).isNotNull().hasNoNullFieldsOrPropertiesExcept("senderName", "htmlMessage", "attachments");
+		assertThat(result).isNotNull().hasNoNullFieldsOrPropertiesExcept("senderName", "htmlMessage", "attachments", "attachmentIds");
 		assertThat(result.getMessage()).isEqualTo(template);
 		assertThat(result.getSubject()).isEqualTo(subject);
 		assertThat(result.getRecipient()).isEqualTo(sender); // Because we are sending response to the sender

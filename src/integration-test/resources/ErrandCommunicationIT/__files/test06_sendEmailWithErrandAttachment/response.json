@@ -1,0 +1,33 @@
+[
+  {
+    "communicationAttachments": [
+      {
+        "attachmentID": "99fa4dd0-9308-4d45-bb8e-4bb881a9a536",
+        "contentType": "text/plain",
+        "name": "Test3.txt"
+      }
+    ],
+    "communicationID": "${json-unit.any-string}",
+    "communicationType": "EMAIL",
+    "direction": "OUTBOUND",
+    "emailHeaders": {
+      "IN_REPLY_TO": [
+        "301e977e-2a89-47c8-b9b3-dce5ee506ef4@test.com"
+      ],
+      "MESSAGE_ID": [
+        "873e64eb-3ed7-43b6-b1ea-082e7ce0d41e@test.com"
+      ],
+      "REFERENCES": [
+        "301e977e-2a89-47c8-b9b3-dce5ee506ef4@test.com",
+        "83e13aaf-33aa-4aa2-ae31-abf46eaf0152@test.com"
+      ]
+    },
+    "errandNumber": "KC-23020002",
+    "messageBody": "Some message about the HAL Institute for Criminally Insane Robots, where robots that murderously turns against its human crew are held",
+    "sender": "bender@rodriguez.com",
+    "sent": "${json-unit.any-string}",
+    "subject": "Insane in the Mainframe",
+    "target": "john.a@zoidberg.com",
+    "viewed": false
+  }
+]

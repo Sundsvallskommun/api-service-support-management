@@ -56,6 +56,7 @@ class CommunicationEntityTest {
 		final var target = "target";
 		final var viewed = true;
 		final var attachments = List.of(CommunicationAttachmentEntity.create());
+		final var errandAttachments = List.of(AttachmentEntity.create());
 		final var emailHeaders = List.of(CommunicationEmailHeaderEntity.create()
 			.withHeader(EmailHeader.IN_REPLY_TO)
 			.withValues(List.of("someValue")));
@@ -72,6 +73,7 @@ class CommunicationEntityTest {
 			.withType(type)
 			.withTarget(target)
 			.withViewed(viewed)
+			.withErrandAttachments(errandAttachments)
 			.withAttachments(attachments)
 			.withEmailHeaders(emailHeaders);
 

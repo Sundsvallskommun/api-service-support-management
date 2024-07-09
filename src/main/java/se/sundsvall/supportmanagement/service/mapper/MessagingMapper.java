@@ -5,14 +5,20 @@ import static java.util.Optional.ofNullable;
 import static org.apache.commons.codec.binary.Base64.decodeBase64;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.detectMimeType;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.sql.SQLException;
 import java.util.Base64;
 import java.util.Base64.Decoder;
 import java.util.Base64.Encoder;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import org.apache.commons.compress.utils.IOUtils;
+
+import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
 
@@ -33,9 +39,11 @@ public class MessagingMapper {
 
 	private MessagingMapper() {}
 
-	public static EmailRequest toEmailRequest(ErrandEntity errandEntity, se.sundsvall.supportmanagement.api.model.communication.EmailRequest emailRequest) {
+	public static EmailRequest toEmailRequest(ErrandEntity errandEntity, se.sundsvall.supportmanagement.api.model.communication.EmailRequest emailRequest, List<EmailAttachment> attachments) {
 		return new EmailRequest()
-			.attachments(toAttachments(emailRequest.getAttachments()))
+			.attachments(Stream.of(attachments, toAttachments(emailRequest.getAttachments()))
+				.flatMap(List::stream)
+				.toList())
 			.emailAddress(emailRequest.getRecipient())
 			.htmlMessage(addBase64Encoding(emailRequest.getHtmlMessage()))
 			.message(emailRequest.getMessage())
@@ -58,6 +66,26 @@ public class MessagingMapper {
 			.mobileNumber(smsRequest.getRecipient())
 			.party(toSmsRequestParty(errandEntity))
 			.sender(smsRequest.getSender());
+	}
+
+	public static List<EmailAttachment> toEmailAttachments(final List<AttachmentEntity> attachments) {
+		return ofNullable(attachments).orElse(emptyList()).stream()
+			.map(MessagingMapper::toEmailAttachment)
+			.toList();
+	}
+
+	static EmailAttachment toEmailAttachment(final AttachmentEntity attachment) {
+		try {
+			byte[] bytes = IOUtils.toByteArray(attachment.getAttachmentData().getFile().getBinaryStream());
+			String encoded = Base64.getEncoder().encodeToString(bytes);
+
+			return new EmailAttachment()
+				.content(encoded)
+				.contentType(detectMimeType(attachment.getFileName(), bytes))
+				.name(attachment.getFileName());
+		} catch (SQLException | IOException e) {
+			return null;
+		}
 	}
 
 	private static List<EmailAttachment> toAttachments(List<se.sundsvall.supportmanagement.api.model.communication.EmailAttachment> attachments) {

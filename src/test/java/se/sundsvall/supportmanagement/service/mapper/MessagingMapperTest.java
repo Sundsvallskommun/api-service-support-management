@@ -4,19 +4,25 @@ import static java.util.Map.entry;
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
+import static org.mockito.Mockito.when;
 import static org.springframework.util.MimeTypeUtils.IMAGE_PNG_VALUE;
 
+import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
+import java.sql.Blob;
 import java.util.Base64;
 import java.util.Base64.Decoder;
 import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import se.sundsvall.supportmanagement.api.model.communication.EmailAttachment;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
 import se.sundsvall.supportmanagement.api.model.communication.SmsRequest;
+import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
+import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
 
@@ -39,7 +45,7 @@ class MessagingMapperTest {
 
 	@Test
 	void toEmailRequestWithSenderName() {
-		final var result = MessagingMapper.toEmailRequest(createErrandEntity(), createEmailRequest(true, HTML_MESSAGE_IN_BASE64));
+		final var result = MessagingMapper.toEmailRequest(createErrandEntity(), createEmailRequest(true, HTML_MESSAGE_IN_BASE64), List.of());
 
 		assertThat(result.getEmailAddress()).isEqualTo(RECIPIENT);
 		assertThat(new String(BASE64_DECODER.decode(result.getHtmlMessage()), StandardCharsets.UTF_8)).isEqualTo(HTML_MESSAGE);
@@ -64,7 +70,7 @@ class MessagingMapperTest {
 
 	@Test
 	void toEmailRequestWithoutSenderName() {
-		final var result = MessagingMapper.toEmailRequest(createErrandEntity(), createEmailRequest(false, HTML_MESSAGE));
+		final var result = MessagingMapper.toEmailRequest(createErrandEntity(), createEmailRequest(false, HTML_MESSAGE), List.of());
 
 		assertThat(result.getEmailAddress()).isEqualTo(RECIPIENT);
 		assertThat(new String(BASE64_DECODER.decode(result.getHtmlMessage()), StandardCharsets.UTF_8)).isEqualTo(HTML_MESSAGE);
@@ -93,6 +99,33 @@ class MessagingMapperTest {
 		assertThat(result.getParty().getExternalReferences())
 			.extracting(ExternalReference::getKey, ExternalReference::getValue)
 			.contains(tuple(ERRAND_ID_KEY, ERRAND_ID));
+	}
+
+	@Test
+	void testToEmailAttachment() throws Exception {
+
+		String originalContent = "This is a test";
+		var contentBytes = originalContent.getBytes(StandardCharsets.UTF_8);
+		var inputStream = new ByteArrayInputStream(contentBytes);
+		var mockAttachment = Mockito.mock(AttachmentEntity.class);
+		var mockAttachmentData = Mockito.mock(AttachmentDataEntity.class);
+		Blob mockFile = Mockito.mock(Blob.class);
+
+		when(mockAttachment.getAttachmentData()).thenReturn(mockAttachmentData);
+		when(mockAttachmentData.getFile()).thenReturn(mockFile);
+		when(mockFile.getBinaryStream()).thenReturn(inputStream);
+		when(mockAttachment.getFileName()).thenReturn("test.txt");
+
+		String expectedEncodedContent = Base64.getEncoder().encodeToString(contentBytes);
+		String expectedContentType = "text/plain";
+		String expectedFileName = "test.txt";
+
+		var result = MessagingMapper.toEmailAttachment(mockAttachment);
+
+		assertThat(result).isNotNull();
+		assertThat(result.getContent()).isEqualTo(expectedEncodedContent);
+		assertThat(result.getContentType()).isEqualTo(expectedContentType);
+		assertThat(result.getName()).isEqualTo(expectedFileName);
 	}
 
 	private SmsRequest createSmsRequest() {

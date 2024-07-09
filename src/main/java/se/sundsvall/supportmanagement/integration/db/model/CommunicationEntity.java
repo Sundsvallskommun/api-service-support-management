@@ -15,6 +15,8 @@ import jakarta.persistence.ForeignKey;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
@@ -75,6 +77,14 @@ public class CommunicationEntity {
 		foreignKey = @ForeignKey(name = "fk_email_header_email_id"))
 	private List<CommunicationEmailHeaderEntity> emailHeaders;
 
+	@ManyToMany
+	@JoinTable(
+		name = "communication_errand_attachment",
+		joinColumns = {@JoinColumn(name = "communication_id")},
+		inverseJoinColumns = {@JoinColumn(name = "errand_attachment_id")}
+	)
+	private List<AttachmentEntity> errandAttachments;
+
 	public static CommunicationEntity create() {
 		return new CommunicationEntity();
 	}
@@ -89,6 +99,19 @@ public class CommunicationEntity {
 
 	public CommunicationEntity withId(final String id) {
 		this.id = id;
+		return this;
+	}
+
+	public List<AttachmentEntity> getErrandAttachments() {
+		return errandAttachments;
+	}
+
+	public void setErrandAttachments(final List<AttachmentEntity> errandAttachments) {
+		this.errandAttachments = errandAttachments;
+	}
+
+	public CommunicationEntity withErrandAttachments(final List<AttachmentEntity> errandAttachments) {
+		this.errandAttachments = errandAttachments;
 		return this;
 	}
 
@@ -227,7 +250,7 @@ public class CommunicationEntity {
 	}
 
 	public void setAttachments(final List<CommunicationAttachmentEntity> attachments) {
-		if(attachments != null) {
+		if (attachments != null) {
 			attachments.forEach(attachment -> attachment.withCommunicationEntity(this));
 		}
 		this.attachments = attachments;
@@ -252,21 +275,7 @@ public class CommunicationEntity {
 	}
 
 	@Override
-	public boolean equals(final Object o) {
-		if (this == o) return true;
-		if (o == null || getClass() != o.getClass()) return false;
-		final CommunicationEntity that = (CommunicationEntity) o;
-		return viewed == that.viewed && Objects.equals(id, that.id) && Objects.equals(sender, that.sender) && Objects.equals(errandNumber, that.errandNumber) && direction == that.direction && Objects.equals(externalCaseID, that.externalCaseID) && Objects.equals(subject, that.subject) && Objects.equals(messageBody, that.messageBody) && Objects.equals(sent, that.sent) && type == that.type && Objects.equals(target, that.target) && Objects.equals(attachments, that.attachments) && Objects.equals(emailHeaders, that.emailHeaders);
-	}
-
-	@Override
-	public int hashCode() {
-		return Objects.hash(id, sender, errandNumber, direction, externalCaseID, subject, messageBody, sent, type, target, viewed, attachments, emailHeaders);
-	}
-
-	@Override
-	public String
-	toString() {
+	public String toString() {
 		return "CommunicationEntity{" +
 			"id='" + id + '\'' +
 			", sender='" + sender + '\'' +
@@ -281,7 +290,20 @@ public class CommunicationEntity {
 			", viewed=" + viewed +
 			", attachments=" + attachments +
 			", emailHeaders=" + emailHeaders +
+			", errandAttachments=" + errandAttachments +
 			'}';
 	}
 
+	@Override
+	public boolean equals(final Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		final CommunicationEntity that = (CommunicationEntity) o;
+		return viewed == that.viewed && Objects.equals(id, that.id) && Objects.equals(sender, that.sender) && Objects.equals(errandNumber, that.errandNumber) && direction == that.direction && Objects.equals(externalCaseID, that.externalCaseID) && Objects.equals(subject, that.subject) && Objects.equals(messageBody, that.messageBody) && Objects.equals(sent, that.sent) && type == that.type && Objects.equals(target, that.target) && Objects.equals(attachments, that.attachments) && Objects.equals(emailHeaders, that.emailHeaders) && Objects.equals(errandAttachments, that.errandAttachments);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(id, sender, errandNumber, direction, externalCaseID, subject, messageBody, sent, type, target, viewed, attachments, emailHeaders, errandAttachments);
+	}
 }

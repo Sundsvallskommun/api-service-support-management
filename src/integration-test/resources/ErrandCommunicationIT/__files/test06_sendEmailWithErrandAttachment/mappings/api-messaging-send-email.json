@@ -1,0 +1,60 @@
+{
+  "name": "api-messaging-email",
+  "request": {
+    "method": "POST",
+    "url": "/api-messaging/email?async=true",
+    "headers": {
+      "Authorization": {
+        "equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
+      }
+    },
+    "bodyPatterns": [
+      {
+        "equalToJson": {
+          "party": {
+            "externalReferences": [
+              {
+                "key": "errandId",
+                "value": "cc236cf1-c00f-4479-8341-ecf5dd90b5b9"
+              }
+            ]
+          },
+          "emailAddress": "john.a@zoidberg.com",
+          "subject": "Insane in the Mainframe",
+          "message": "Some message about the HAL Institute for Criminally Insane Robots, where robots that murderously turns against its human crew are held",
+          "htmlMessage": "PGh0bWw+U29tZSBtZXNzYWdlIGFib3V0IHRoZSBIQUwgSW5zdGl0dXRlIGZvciA8Yj5DcmltaW5hbGx5IEluc2FuZSBSb2JvdHM8L2I+LCB3aGVyZSByb2JvdHMgdGhhdCA8aT5tdXJkZXJvdXNseTwvaT4gdHVybnMgYWdhaW5zdCBpdHMgaHVtYW4gY3JldyBhcmUgaGVsZDwvaHRtbD4=",
+          "sender": {
+            "name": "Bender Bending Rodriguez",
+            "address": "bender@rodriguez.com"
+          },
+          "attachments": [
+            {
+              "name": "Test3.txt",
+              "contentType": "text/plain",
+              "content": "ODk1MDRFNDcwRDBBMUEwQTAwMDAwMDBENDk0ODQ0NTIwMDAwMDAxMDAwMDAwMDEwMDgwMjAwMDAwMDkwOTE2ODM2MDAwMDAwMDE3MzUyNDc0MjAwQUVDRTFDRTkwMDAwMDAwNDY3NDE0RDQxMDAwMEIxOEYwQkZDNjEwNTAwMDAwMDA5NzA0ODU5NzMwMDAwMEVDMzAwMDAwRUMzMDFDNzZGQTg2NDAwMDAwMDFFNDk0NDQxNTQzODRGNjM1MERBRTg0MzEyNjIyMDQ5MzU1MEYxQTgwNjYyNDI2QzM0OTQwNjQ3MjgwMTAwNkFDOTFGMTA0MEY3OTZCRDAwMDAwMDAwNDk0NTRFNDRBRTQyNjA4Mg=="
+            }
+          ],
+          "headers": {
+            "MESSAGE_ID": [
+              "873e64eb-3ed7-43b6-b1ea-082e7ce0d41e@test.com"
+            ],
+            "IN_REPLY_TO": [
+              "301e977e-2a89-47c8-b9b3-dce5ee506ef4@test.com"
+            ],
+            "REFERENCES": [
+              "301e977e-2a89-47c8-b9b3-dce5ee506ef4@test.com",
+              "83e13aaf-33aa-4aa2-ae31-abf46eaf0152@test.com"
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "response": {
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "status": 200,
+    "bodyFileName": "test06_sendEmailWithErrandAttachment/response/api-messaging-send-email-response.json"
+  }
+}

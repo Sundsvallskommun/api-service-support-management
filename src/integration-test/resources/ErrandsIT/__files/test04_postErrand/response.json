@@ -1,6 +1,6 @@
 {
   "id": "${json-unit.any-string}",
-  "errandNumber": "KC-24060001",
+  "errandNumber": "KC-24070001",
   "title": "test04_postErrand",
   "priority": "LOW",
   "stakeholders": [
@@ -31,7 +31,7 @@
   "suspension": {},
   "businessRelated": true,
   "contactReason": "reason1",
-	"contactReasonDescription": "This is the contact reason description",
-	"created": "${json-unit.any-string}",
+  "contactReasonDescription": "This is the contact reason description",
+  "created": "${json-unit.any-string}",
   "touched": "${json-unit.any-string}"
 }

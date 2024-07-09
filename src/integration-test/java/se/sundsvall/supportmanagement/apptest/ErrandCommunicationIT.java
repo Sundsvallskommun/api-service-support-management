@@ -27,6 +27,7 @@ class ErrandCommunicationIT extends AbstractAppTest {
 
 	private static final String PATH = "/NAMESPACE.1/2281/errands/"; // 2281 is the municipalityId of Sundsvalls kommun
 	private static final String REQUEST_FILE = "request.json";
+	private static final String RESPONSE_FILE = "response.json";
 
 	@Test
 	void test01_sendEmail() {
@@ -86,5 +87,24 @@ class ErrandCommunicationIT extends AbstractAppTest {
 			.withExpectedResponseStatus(NO_CONTENT)
 			.withExpectedResponseBodyIsNull()
 			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	void test06_sendEmailWithErrandAttachment() {
+		setupCall()
+			.withServicePath(PATH + "cc236cf1-c00f-4479-8341-ecf5dd90b5b9/communication/email")
+			.withHttpMethod(POST)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(NO_CONTENT)
+			.withExpectedResponseBodyIsNull()
+			.sendRequest();
+
+		setupCall()
+			.withServicePath(PATH + "cc236cf1-c00f-4479-8341-ecf5dd90b5b9/communication")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+
 	}
 }
