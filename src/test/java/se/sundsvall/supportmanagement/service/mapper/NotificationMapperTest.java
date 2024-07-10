@@ -194,7 +194,7 @@ class NotificationMapperTest {
 			.withAssignedUserId(OWNER_ID)
 			.withErrandNumber(ERRAND_NUMBER);
 		final var owner = new PortalPersonData()
-			.fullname(CREATED_BY_FULL_NAME);
+			.fullname(OWNER_FULL_NAME);
 		final var creator = new PortalPersonData()
 			.fullname(CREATED_BY_FULL_NAME);
 
@@ -210,9 +210,40 @@ class NotificationMapperTest {
 		assertThat(notification.getExpires()).isEqualTo(EXPIRES);
 		assertThat(notification.getCreated()).isEqualTo(CREATED);
 		assertThat(notification.getOwnerId()).isEqualTo(OWNER_ID);
-		assertThat(notification.getOwnerFullName()).isEqualTo(CREATED_BY_FULL_NAME);
+		assertThat(notification.getOwnerFullName()).isEqualTo(OWNER_FULL_NAME);
 		assertThat(notification.getCreatedBy()).isEqualTo(CREATED_BY);
 		assertThat(notification.getCreatedByFullName()).isEqualTo(CREATED_BY_FULL_NAME);
 	}
 
+	@Test
+	void toNotificationFromEventOwnerAndCreatorIsNull() {
+
+		// Arrange
+		final var event = new Event()
+			.type(EVENT_TYPE)
+			.created(CREATED)
+			.expires(EXPIRES)
+			.message(DESCRIPTION);
+
+		final var errandEntity = new ErrandEntity()
+			.withId(ERRAND_ID)
+			.withAssignedUserId(OWNER_ID)
+			.withErrandNumber(ERRAND_NUMBER);
+
+		// Act
+		final var notification = NotificationMapper.toNotification(event, errandEntity, null, null, CREATED_BY);
+
+		// Assert
+		assertThat(notification).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "content", "expires");
+		assertThat(notification.getDescription()).isEqualTo(DESCRIPTION);
+		assertThat(notification.getErrandId()).isEqualTo(ERRAND_ID);
+		assertThat(notification.getErrandNumber()).isEqualTo(ERRAND_NUMBER);
+		assertThat(notification.getType()).isEqualTo(EVENT_TYPE.getValue());
+		assertThat(notification.getExpires()).isEqualTo(EXPIRES);
+		assertThat(notification.getCreated()).isEqualTo(CREATED);
+		assertThat(notification.getOwnerId()).isEqualTo(OWNER_ID);
+		assertThat(notification.getOwnerFullName()).isEqualTo("unknown");
+		assertThat(notification.getCreatedBy()).isEqualTo(CREATED_BY);
+		assertThat(notification.getCreatedByFullName()).isEqualTo("unknown");
+	}
 }
