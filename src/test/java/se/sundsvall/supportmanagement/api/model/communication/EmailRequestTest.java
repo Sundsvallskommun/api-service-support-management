@@ -38,6 +38,7 @@ class EmailRequestTest {
 		final var sender = "sender";
 		final var senderName = "senderName";
 		final var subject = "subject";
+		final var attachmentsIds = List.of("attachment1", "attachment2");
 		final var emailHeaders = Map.of(EmailHeader.REFERENCES, List.of("reference1", "reference2"));
 		// Act
 		final var bean = EmailRequest.create()
@@ -48,7 +49,8 @@ class EmailRequestTest {
 			.withSender(sender)
 			.withSenderName(senderName)
 			.withSubject(subject)
-			.withEmailHeaders(emailHeaders);
+			.withEmailHeaders(emailHeaders)
+			.withAttachmentIds(attachmentsIds);
 		// Assert
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(bean.getAttachments()).isEqualTo(attachments);
@@ -59,6 +61,7 @@ class EmailRequestTest {
 		assertThat(bean.getSenderName()).isEqualTo(senderName);
 		assertThat(bean.getSubject()).isEqualTo(subject);
 		assertThat(bean.getEmailHeaders()).isEqualTo(emailHeaders);
+		assertThat(bean.getAttachmentIds()).isEqualTo(attachmentsIds);
 	}
 
 	@Test

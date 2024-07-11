@@ -55,6 +55,7 @@ class CommunicationTest {
 		final var viewed = true;
 		final var emailHeaders = Map.of(EmailHeader.REFERENCES, List.of("reference1", "reference2"));
 		final var communicationAttachments = List.of(CommunicationAttachment.create());
+
 		// Act
 		final var bean = Communication.create()
 			.withCommunicationID(id)

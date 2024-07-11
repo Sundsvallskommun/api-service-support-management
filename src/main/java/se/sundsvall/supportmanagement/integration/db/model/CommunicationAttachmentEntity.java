@@ -26,19 +26,19 @@ public class CommunicationAttachmentEntity {
 	@Column(name = "id")
 	private String id;
 
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "communication_id", nullable = false, foreignKey = @ForeignKey(name = "fk_communication_attachment_communication_id"))
-	private CommunicationEntity communicationEntity;
-
-	@OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-	@JoinColumn(name = "communication_attachment_data_id", nullable = false, foreignKey = @ForeignKey(name = "fk_communication_attachment_data_communication_attachment"))
-	private CommunicationAttachmentDataEntity attachmentData;
-
 	@Column(name = "name")
 	private String name;
 
 	@Column(name = "content_type")
 	private String contentType;
+
+	@OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+	@JoinColumn(name = "communication_attachment_data_id", nullable = false, foreignKey = @ForeignKey(name = "fk_communication_attachment_data_communication_attachment"))
+	private CommunicationAttachmentDataEntity attachmentData;
+
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "communication_id", nullable = false, foreignKey = @ForeignKey(name = "fk_communication_attachment_communication_id"))
+	private CommunicationEntity communicationEntity;
 
 	public static CommunicationAttachmentEntity create() {
 		return new CommunicationAttachmentEntity();

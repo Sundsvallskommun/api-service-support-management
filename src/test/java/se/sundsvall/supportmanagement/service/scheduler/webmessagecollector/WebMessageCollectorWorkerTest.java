@@ -120,7 +120,7 @@ class WebMessageCollectorWorkerTest {
 		verify(communicationRepositoryMock).saveAndFlush(communicationEntityCaptor.capture());
 		assertThat(communicationEntityCaptor.getValue()).satisfies(
 			communication -> {
-				assertThat(communication).hasNoNullFieldsOrPropertiesExcept("subject", "target", "emailHeaders");
+				assertThat(communication).hasNoNullFieldsOrPropertiesExcept("subject", "target", "emailHeaders", "errandAttachments");
 				assertThat(communication.getDirection()).isEqualTo(INBOUND);
 				assertThat(communication.getExternalCaseID()).isEqualTo(messagedto.getExternalCaseId());
 				assertThat(communication.getMessageBody()).isEqualTo(messagedto.getMessage());

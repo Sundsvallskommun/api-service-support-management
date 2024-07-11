@@ -24,6 +24,7 @@ import se.sundsvall.supportmanagement.api.model.communication.CommunicationAttac
 import se.sundsvall.supportmanagement.api.model.communication.EmailAttachment;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
 import se.sundsvall.supportmanagement.api.model.communication.SmsRequest;
+import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationAttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationEmailHeaderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationEntity;
@@ -70,12 +71,12 @@ class CommunicationMapperTest {
 	}
 
 	@Test
-	void toAttachmentsReturnsCorrectAttachmentList() {
-		final var entities = singletonList(createCommunicationAttachmentEntity());
-		final var attachments = communicationMapper.toAttachments(entities);
+	void toCommunicationAttachmentsReturnsCorrectAttachmentList() {
+		final var communicationAttachments = singletonList(createCommunicationAttachmentEntity());
+		final var attachments = communicationMapper.toCommunicationAttachments(communicationAttachments, Collections.emptyList());
 
 		assertThat(attachments).hasSize(1);
-		assertAttachmentMatchesEntity(attachments.getFirst(), entities.getFirst());
+		assertAttachmentMatchesEntity(attachments.getFirst(), communicationAttachments.getFirst());
 	}
 
 	@Test
@@ -94,8 +95,8 @@ class CommunicationMapperTest {
 	}
 
 	@Test
-	void toAttachmentsReturnsEmptyListWhenInputIsEmpty() {
-		final var attachments = communicationMapper.toAttachments(Collections.emptyList());
+	void toCommunicationAttachmentsReturnsEmptyListWhenInputIsEmpty() {
+		final var attachments = communicationMapper.toCommunicationAttachments(Collections.emptyList(), Collections.emptyList());
 
 		assertThat(attachments).isEmpty();
 	}
@@ -117,7 +118,7 @@ class CommunicationMapperTest {
 
 		final var communicationEntity = communicationMapper.toCommunicationEntity(emailRequest);
 
-		assertThat(communicationEntity).isNotNull().hasNoNullFieldsOrPropertiesExcept("errandNumber", "externalCaseID");
+		assertThat(communicationEntity).isNotNull().hasNoNullFieldsOrPropertiesExcept("errandNumber", "externalCaseID", "errandAttachments");
 		assertThat(testValidUUID(communicationEntity.getId())).isTrue();
 		assertThat(communicationEntity.getSender()).isEqualTo(emailRequest.getSender());
 		assertThat(communicationEntity.getDirection()).isEqualTo(Direction.OUTBOUND);
@@ -140,7 +141,7 @@ class CommunicationMapperTest {
 
 		final var communicationEntity = communicationMapper.toCommunicationEntity(smsRequest);
 
-		assertThat(communicationEntity).isNotNull().hasNoNullFieldsOrPropertiesExcept("errandNumber", "externalCaseID", "subject", "attachments", "emailHeaders");
+		assertThat(communicationEntity).isNotNull().hasNoNullFieldsOrPropertiesExcept("errandNumber", "externalCaseID", "subject", "attachments", "emailHeaders", "errandAttachments");
 		assertThat(testValidUUID(communicationEntity.getId())).isTrue();
 		assertThat(communicationEntity.getSender()).isEqualTo(smsRequest.getSender());
 		assertThat(communicationEntity.getDirection()).isEqualTo(Direction.OUTBOUND);
@@ -175,7 +176,15 @@ class CommunicationMapperTest {
 			.withTarget("target")
 			.withViewed(true)
 			.withEmailHeaders(Collections.singletonList(CommunicationEmailHeaderEntity.create().withHeader(EmailHeader.IN_REPLY_TO).withValues(Collections.singletonList("someValue"))))
+			.withErrandAttachments(Collections.singletonList(createAttachmentEntity()))
 			.withAttachments(Collections.singletonList(createCommunicationAttachmentEntity()));
+	}
+
+	private AttachmentEntity createAttachmentEntity() {
+		return new AttachmentEntity()
+			.withId("testId")
+			.withFileName("testFileName")
+			.withMimeType("testMimeType");
 	}
 
 	private CommunicationAttachmentEntity createCommunicationAttachmentEntity() {
@@ -197,7 +206,7 @@ class CommunicationMapperTest {
 		assertThat(communication.getCommunicationType()).isEqualTo(entity.getType());
 		assertThat(communication.getTarget()).isEqualTo(entity.getTarget());
 		assertThat(communication.isViewed()).isEqualTo(entity.isViewed());
-		assertThat(communication.getCommunicationAttachments()).hasSize(1);
+		assertThat(communication.getCommunicationAttachments()).hasSize(2);
 		assertAttachmentMatchesEntity(communication.getCommunicationAttachments().getFirst(), entity.getAttachments().getFirst());
 		assertEmailHeadersMatchesEntity(communication.getEmailHeaders(), entity.getEmailHeaders());
 	}

@@ -56,6 +56,7 @@ class CommunicationEntityTest {
 		final var target = "target";
 		final var viewed = true;
 		final var attachments = List.of(CommunicationAttachmentEntity.create());
+		final var errandAttachments = List.of(AttachmentEntity.create());
 		final var emailHeaders = List.of(CommunicationEmailHeaderEntity.create()
 			.withHeader(EmailHeader.IN_REPLY_TO)
 			.withValues(List.of("someValue")));
@@ -72,6 +73,7 @@ class CommunicationEntityTest {
 			.withType(type)
 			.withTarget(target)
 			.withViewed(viewed)
+			.withErrandAttachments(errandAttachments)
 			.withAttachments(attachments)
 			.withEmailHeaders(emailHeaders);
 
@@ -86,6 +88,7 @@ class CommunicationEntityTest {
 		assertThat(entity.getSent()).isEqualTo(sent);
 		assertThat(entity.getType()).isEqualTo(type);
 		assertThat(entity.getTarget()).isEqualTo(target);
+		assertThat(entity.getErrandAttachments()).isEqualTo(errandAttachments);
 		assertThat(entity.isViewed()).isEqualTo(viewed);
 		assertThat(entity.getAttachments()).isEqualTo(attachments);
 		assertThat(entity.getAttachments()).allMatch(attachment -> attachment.getCommunicationEntity() == entity);

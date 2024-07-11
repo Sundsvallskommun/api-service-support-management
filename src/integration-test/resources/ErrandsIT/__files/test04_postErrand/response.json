@@ -31,7 +31,7 @@
   "suspension": {},
   "businessRelated": true,
   "contactReason": "reason1",
-	"contactReasonDescription": "This is the contact reason description",
-	"created": "${json-unit.any-string}",
+  "contactReasonDescription": "This is the contact reason description",
+  "created": "${json-unit.any-string}",
   "touched": "${json-unit.any-string}"
 }

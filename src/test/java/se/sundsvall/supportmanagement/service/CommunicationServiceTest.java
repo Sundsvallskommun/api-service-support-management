@@ -3,11 +3,14 @@ package se.sundsvall.supportmanagement.service;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.groups.Tuple.tuple;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -17,6 +20,7 @@ import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.util.MimeTypeUtils.IMAGE_PNG_VALUE;
 import static org.zalando.problem.Status.NOT_FOUND;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.sql.Blob;
@@ -37,15 +41,18 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.zalando.problem.Problem;
 import org.zalando.problem.ThrowableProblem;
 
 import se.sundsvall.supportmanagement.api.model.communication.Communication;
 import se.sundsvall.supportmanagement.api.model.communication.EmailAttachment;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
 import se.sundsvall.supportmanagement.api.model.communication.SmsRequest;
+import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.CommunicationAttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.CommunicationRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationAttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationAttachmentEntity;
@@ -80,6 +87,9 @@ class CommunicationServiceTest {
 	private CommunicationRepository communicationRepositoryMock;
 
 	@Mock
+	private AttachmentRepository attachmentRepositoryMock;
+
+	@Mock
 	private CommunicationAttachmentRepository communicationAttachmentRepositoryMock;
 
 	@Mock
@@ -96,6 +106,12 @@ class CommunicationServiceTest {
 
 	@Mock
 	private CommunicationAttachmentDataEntity messageAttachmentDataMock;
+
+	@Mock
+	private AttachmentEntity attachmentMock;
+
+	@Mock
+	private AttachmentDataEntity attachmentDataMock;
 
 	@Captor
 	private ArgumentCaptor<generated.se.sundsvall.messaging.EmailRequest> messagingEmailCaptor;
@@ -190,6 +206,7 @@ class CommunicationServiceTest {
 		final var inputStream = IOUtils.toInputStream(content, UTF_8);
 
 		// Mock
+		when(attachmentRepositoryMock.findById(any())).thenReturn(Optional.empty());
 		when(communicationAttachmentRepositoryMock.findById(any())).thenReturn(Optional.of(communicationAttachmentEntity));
 		when(communicationAttachmentEntity.getContentType()).thenReturn(contentType);
 		when(communicationAttachmentEntity.getName()).thenReturn(fileName);
@@ -215,6 +232,42 @@ class CommunicationServiceTest {
 
 		verifyNoMoreInteractions(communicationAttachmentRepositoryMock, communicationAttachmentEntity, messageAttachmentDataMock, blobMock, servletResponseMock);
 		verifyNoInteractions(errandsRepositoryMock, communicationRepositoryMock, messagingClientMock, communicationMapperMock);
+	}
+
+	@Test
+	void streamAttachmentData_Success() throws IOException, SQLException {
+		byte[] fileContent = "file content".getBytes();
+		ByteArrayInputStream inputStream = new ByteArrayInputStream(fileContent);
+
+		when(servletResponseMock.getOutputStream()).thenReturn(servletOutputStreamMock);
+		when(attachmentMock.getAttachmentData()).thenReturn(attachmentDataMock);
+		when(attachmentDataMock.getFile()).thenReturn(blobMock);
+		when(blobMock.length()).thenReturn((long) fileContent.length);
+		when(blobMock.getBinaryStream()).thenReturn(inputStream);
+		when(attachmentMock.getMimeType()).thenReturn("application/pdf");
+		when(attachmentMock.getFileName()).thenReturn("test.pdf");
+
+		service.streamAttachmentData(attachmentMock, servletResponseMock);
+
+		verify(servletResponseMock).addHeader(CONTENT_TYPE, "application/pdf");
+		verify(servletResponseMock).addHeader(CONTENT_DISPOSITION, "attachment; filename=\"test.pdf\"");
+		verify(servletResponseMock).setContentLength(fileContent.length);
+		verify(servletOutputStreamMock).write(any(byte[].class), eq(0), eq(fileContent.length));
+	}
+
+	@Test
+	void streamAttachmentData_ThrowsSQLException() throws SQLException {
+		byte[] fileContent = "file content".getBytes();
+		when(attachmentMock.getAttachmentData()).thenReturn(attachmentDataMock);
+		when(attachmentDataMock.getFile()).thenReturn(blobMock);
+		when(blobMock.length()).thenReturn((long) fileContent.length);
+		when(blobMock.getBinaryStream()).thenThrow(new SQLException("Test SQLException"));
+
+		assertThatThrownBy(() -> service.streamAttachmentData(attachmentMock, servletResponseMock))
+			.isInstanceOf(Problem.class)
+			.hasMessageContaining("SQLException occurred when copying file with attachment id");
+
+		verify(servletResponseMock, never()).addHeader(eq(CONTENT_TYPE), anyString());
 	}
 
 	@Test

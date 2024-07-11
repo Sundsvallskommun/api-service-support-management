@@ -6,6 +6,7 @@ import static java.util.Optional.ofNullable;
 import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.zalando.problem.Status.BAD_GATEWAY;
+import static org.zalando.problem.Status.BAD_REQUEST;
 import static org.zalando.problem.Status.NOT_FOUND;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapper.toAttachmentEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapper.toErrandAttachmentHeaders;
@@ -138,6 +139,17 @@ public class ErrandAttachmentService {
 		if (revisionResult != null) {
 			eventService.createErrandEvent(UPDATE, EVENT_LOG_ADD_ATTACHMENT, errandEntity, revisionResult.latest(), revisionResult.previous());
 		}
+	}
+
+	public List<AttachmentEntity> findByIdIn(final List<String> attachmentIds) {
+		if (attachmentIds == null) {
+			return emptyList();
+		}
+		var attachments = attachmentRepository.findByIdIn(attachmentIds);
+		if (attachments.size() != attachmentIds.size()) {
+			throw Problem.valueOf(BAD_REQUEST, "There was a mismatch in the given attachment Ids and the found attachments.");
+		}
+		return attachments;
 	}
 
 }

@@ -106,6 +106,7 @@ public class EmailReaderWorker {
 	private void saveEmail(final Email email, final ErrandEntity errand) {
 
 		final var communicationEntity = emailReaderMapper.toCommunicationEntity(email).withErrandNumber(errand.getErrandNumber());
+
 		communicationService.saveCommunication(communicationEntity);
 		communicationService.saveAttachment(communicationEntity, errand);
 	}

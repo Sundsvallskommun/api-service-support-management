@@ -178,7 +178,10 @@ VALUES ('25d266a7-1ff2-4bf4-b6f3-0473b2b86fcd', '1', 'Test_image.jpg', 'image/jp
        ('99fa4dd0-9308-4d45-bb8e-4bb881a9a536', '4', 'Test3.txt', 'text/plain',
         '1be673c0-6ba3-4fb0-af4a-43acf23389f6'),
        ('95ea267a-28ec-4636-922c-a717d79bd029', '5', 'birthday-card.txt', 'text/plain',
+        '147d355f-dc94-4fde-a4cb-9ddd16cb1946'),
+        ('b3b3b3b3-b3b3-b3b3-b3b3-b3b3b3b3b3b3', '1', 'Test_image.jpg', 'image/jpeg',
         '147d355f-dc94-4fde-a4cb-9ddd16cb1946');
+
 
 -- Revision
 -------------------------------------

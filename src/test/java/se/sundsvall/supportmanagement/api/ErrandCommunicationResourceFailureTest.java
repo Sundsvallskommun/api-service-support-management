@@ -125,7 +125,7 @@ class ErrandCommunicationResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactly(tuple("getCommunications.id", "not a valid UUID"));
+			.containsExactly(tuple("getCommunications.errandId", "not a valid UUID"));
 
 		// Verification
 		verifyNoInteractions(serviceMock);
@@ -199,7 +199,7 @@ class ErrandCommunicationResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactly(tuple("updateViewedStatus.id", "not a valid UUID"));
+			.containsExactly(tuple("updateViewedStatus.errandId", "not a valid UUID"));
 
 		// Verification
 		verifyNoInteractions(serviceMock);
@@ -252,7 +252,7 @@ class ErrandCommunicationResourceFailureTest {
 	}
 
 	@ParameterizedTest
-	@ValueSource(strings = { PATH_SMS, PATH_EMAIL })
+	@ValueSource(strings = {PATH_SMS, PATH_EMAIL})
 	void sendNotificationWithInvalidNamespace(String type) {
 
 		// Call
@@ -277,7 +277,7 @@ class ErrandCommunicationResourceFailureTest {
 	}
 
 	@ParameterizedTest
-	@ValueSource(strings = { PATH_SMS, PATH_EMAIL })
+	@ValueSource(strings = {PATH_SMS, PATH_EMAIL})
 	void sendNotificationWithInvalidMunicipalityId(String type) {
 
 		// Call
@@ -303,7 +303,7 @@ class ErrandCommunicationResourceFailureTest {
 	}
 
 	@ParameterizedTest
-	@ValueSource(strings = { PATH_SMS, PATH_EMAIL })
+	@ValueSource(strings = {PATH_SMS, PATH_EMAIL})
 	void sendNotificationWithInvalidErrandId(String type) {
 
 		// Call
@@ -322,7 +322,7 @@ class ErrandCommunicationResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactly(tuple("send" + StringUtils.capitalize(type.substring(1)) + ".id", "not a valid UUID"));
+			.containsExactly(tuple("send" + StringUtils.capitalize(type.substring(1)) + ".errandId", "not a valid UUID"));
 
 		// Verification
 		verifyNoInteractions(serviceMock);

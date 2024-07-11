@@ -69,7 +69,7 @@ class WebMessageCollectorMapperTest {
 		final var result = webMessageCollectorMapper.toCommunicationEntity(messagedto, errandNumber);
 
 		// Assert
-		assertThat(result).hasNoNullFieldsOrPropertiesExcept("subject", "target", "attachments", "emailHeaders");
+		assertThat(result).hasNoNullFieldsOrPropertiesExcept("subject", "target", "attachments", "emailHeaders", "errandAttachments");
 		assertThat(result.getId()).isNotNull();
 		assertThat(result.getSender()).isEqualTo(firstName + " " + lastName);
 		assertThat(ServiceUtil.isValidUuid(result.getId())).isTrue();

@@ -41,7 +41,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @Validated
-@RequestMapping("/{namespace}/{municipalityId}/errands/{id}/communication")
+@RequestMapping("/{namespace}/{municipalityId}/errands/{errandId}/communication")
 @Tag(name = "Errand communication", description = "Errand communication operations")
 @ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {Problem.class, ConstraintViolationProblem.class})))
 @ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
@@ -59,9 +59,9 @@ class ErrandCommunicationResource {
 	public ResponseEntity<List<Communication>> getCommunications(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
-		@Parameter(name = "id", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("id") final String id) {
+		@Parameter(name = "errandId", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("errandId") final String errandId) {
 
-		return ResponseEntity.ok(service.readCommunications(namespace, municipalityId, id));
+		return ResponseEntity.ok(service.readCommunications(namespace, municipalityId, errandId));
 	}
 
 	@Operation(description = "Set viewed status for communication.")
@@ -70,11 +70,11 @@ class ErrandCommunicationResource {
 	public ResponseEntity<Void> updateViewedStatus(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
-		@Parameter(name = "id", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("id") final String id,
+		@Parameter(name = "errandId", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("errandId") final String errandId,
 		@Parameter(name = "communicationID", description = "communication id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("communicationID") final String communicationID,
 		@Parameter(name = "isViewed", description = "If a message is viewed", example = "true") @PathVariable final boolean isViewed) {
 
-		service.updateViewedStatus(namespace, municipalityId, id, communicationID, isViewed);
+		service.updateViewedStatus(namespace, municipalityId, errandId, communicationID, isViewed);
 		return ResponseEntity.noContent().build();
 	}
 
@@ -84,10 +84,10 @@ class ErrandCommunicationResource {
 	public ResponseEntity<Void> sendEmail(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
-		@Parameter(name = "id", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("id") final String id,
+		@Parameter(name = "errandId", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("errandId") final String errandId,
 		@Valid @NotNull @RequestBody final EmailRequest request) {
 
-		service.sendEmail(namespace, municipalityId, id, request);
+		service.sendEmail(namespace, municipalityId, errandId, request);
 		return noContent().build();
 
 	}
@@ -98,10 +98,10 @@ class ErrandCommunicationResource {
 	public ResponseEntity<Void> sendSms(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
-		@Parameter(name = "id", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("id") final String id,
+		@Parameter(name = "errandId", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("errandId") final String errandId,
 		@Valid @NotNull @RequestBody final SmsRequest request) {
 
-		service.sendSms(namespace, municipalityId, id, request);
+		service.sendSms(namespace, municipalityId, errandId, request);
 		return noContent().build();
 	}
 }

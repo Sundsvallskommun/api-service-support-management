@@ -18,7 +18,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 public class Communication {
 
-
 	@Schema(description = "The communication ID", example = "12")
 	private String communicationID;
 

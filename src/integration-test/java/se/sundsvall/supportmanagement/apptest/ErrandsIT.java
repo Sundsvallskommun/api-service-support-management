@@ -26,7 +26,7 @@ import se.sundsvall.supportmanagement.integration.db.RevisionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.RevisionEntity;
 
 /**
- * Errand notes IT tests.
+ * Errand IT tests.
  */
 @WireMockAppTestSuite(files = "classpath:/ErrandsIT/", classes = Application.class)
 @Sql({
