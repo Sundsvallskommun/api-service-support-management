@@ -36,6 +36,8 @@ class StakeholderTest {
 		final var zipCode = "zipCode";
 		final var country = "country";
 		final var role = "role";
+		final var city = "city";
+		final var organizationName = "organizationName";
 		final var contactChannel = ContactChannel.create();
 
 		final var bean = Stakeholder.create()
@@ -48,6 +50,8 @@ class StakeholderTest {
 			.withCareOf(careOf)
 			.withZipCode(zipCode)
 			.withCountry(country)
+			.withCity(city)
+			.withOrganizationName(organizationName)
 			.withContactChannels(List.of(contactChannel));
 
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
@@ -60,6 +64,8 @@ class StakeholderTest {
 		assertThat(bean.getCareOf()).isEqualTo(careOf);
 		assertThat(bean.getZipCode()).isEqualTo(zipCode);
 		assertThat(bean.getCountry()).isEqualTo(country);
+		assertThat(bean.getCity()).isEqualTo(city);
+		assertThat(bean.getOrganizationName()).isEqualTo(organizationName);
 		assertThat(bean.getContactChannels()).containsExactly(contactChannel);
 	}
 

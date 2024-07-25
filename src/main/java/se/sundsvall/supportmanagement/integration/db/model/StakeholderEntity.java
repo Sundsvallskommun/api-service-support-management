@@ -36,6 +36,12 @@ public class StakeholderEntity {
 	@Column(name = "external_id_type")
 	private String externalIdType;
 
+	@Column(name = "city")
+	private String city;
+
+	@Column(name = "organization_name")
+	private String organizationName;
+
 	@Column(name = "role")
 	private String role;
 
@@ -63,6 +69,32 @@ public class StakeholderEntity {
 
 	public static StakeholderEntity create() {
 		return new StakeholderEntity();
+	}
+
+	public String getCity() {
+		return city;
+	}
+
+	public void setCity(final String city) {
+		this.city = city;
+	}
+
+	public StakeholderEntity withCity(final String city) {
+		this.city = city;
+		return this;
+	}
+
+	public String getOrganizationName() {
+		return organizationName;
+	}
+
+	public void setOrganizationName(final String organizationName) {
+		this.organizationName = organizationName;
+	}
+
+	public StakeholderEntity withOrganizationName(final String organizationName) {
+		this.organizationName = organizationName;
+		return this;
 	}
 
 	public String getExternalId() {
@@ -222,38 +254,35 @@ public class StakeholderEntity {
 	}
 
 	@Override
-	public boolean equals(Object o) {
-		if (this == o) {
-			return true;
-		}
-		if (o == null || getClass() != o.getClass()) {
-			return false;
-		}
-		StakeholderEntity that = (StakeholderEntity) o;
-		return id == that.id && Objects.equals(errandEntity, that.errandEntity) && Objects.equals(externalId, that.externalId) && Objects.equals(externalIdType, that.externalIdType) && Objects.equals(role, that.role) && Objects.equals(firstName, that.firstName) && Objects.equals(lastName, that.lastName) && Objects.equals(address, that.address) && Objects.equals(careOf, that.careOf) && Objects.equals(zipCode, that.zipCode) && Objects.equals(country, that.country) && Objects.equals(contactChannels, that.contactChannels);
+	public String toString() {
+		return "StakeholderEntity{" +
+			"id=" + id +
+			", errandEntity=" + errandEntity +
+			", externalId='" + externalId + '\'' +
+			", externalIdType='" + externalIdType + '\'' +
+			", city='" + city + '\'' +
+			", organizationName='" + organizationName + '\'' +
+			", role='" + role + '\'' +
+			", firstName='" + firstName + '\'' +
+			", lastName='" + lastName + '\'' +
+			", address='" + address + '\'' +
+			", careOf='" + careOf + '\'' +
+			", zipCode='" + zipCode + '\'' +
+			", country='" + country + '\'' +
+			", contactChannels=" + contactChannels +
+			'}';
+	}
+
+	@Override
+	public boolean equals(final Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		final StakeholderEntity that = (StakeholderEntity) o;
+		return id == that.id && Objects.equals(errandEntity, that.errandEntity) && Objects.equals(externalId, that.externalId) && Objects.equals(externalIdType, that.externalIdType) && Objects.equals(city, that.city) && Objects.equals(organizationName, that.organizationName) && Objects.equals(role, that.role) && Objects.equals(firstName, that.firstName) && Objects.equals(lastName, that.lastName) && Objects.equals(address, that.address) && Objects.equals(careOf, that.careOf) && Objects.equals(zipCode, that.zipCode) && Objects.equals(country, that.country) && Objects.equals(contactChannels, that.contactChannels);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, errandEntity, externalId, externalIdType, role, firstName, lastName, address, careOf, zipCode, country, contactChannels);
-	}
-
-	@Override
-	public String toString() {
-		final StringBuilder sb = new StringBuilder("StakeholderEntity{");
-		sb.append("id=").append(id);
-		sb.append(", errandEntityId=").append(Optional.ofNullable(errandEntity).map(ErrandEntity::getId).orElse(null));
-		sb.append(", externalId='").append(externalId).append('\'');
-		sb.append(", externalIdType='").append(externalIdType).append('\'');
-		sb.append(", role='").append(role).append('\'');
-		sb.append(", firstName='").append(firstName).append('\'');
-		sb.append(", lastName='").append(lastName).append('\'');
-		sb.append(", address='").append(address).append('\'');
-		sb.append(", careOf='").append(careOf).append('\'');
-		sb.append(", zipCode='").append(zipCode).append('\'');
-		sb.append(", country='").append(country).append('\'');
-		sb.append(", contactChannels=").append(contactChannels);
-		sb.append('}');
-		return sb.toString();
+		return Objects.hash(id, errandEntity, externalId, externalIdType, city, organizationName, role, firstName, lastName, address, careOf, zipCode, country, contactChannels);
 	}
 }
