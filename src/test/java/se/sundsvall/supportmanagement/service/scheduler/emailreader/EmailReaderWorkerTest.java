@@ -105,7 +105,7 @@ class EmailReaderWorkerTest {
 		verify(errandRepositoryMock).findByErrandNumber("PRH-2022-000001");
 		verify(errandRepositoryMock).save(same(errandEntity));
 		verify(emailReaderMapperMock).toCommunicationEntity(same(email));
-		verify(emailReaderClientMock).deleteEmail(email.getId());
+		verify(emailReaderClientMock).deleteEmail("municipalityId", email.getId());
 		verify(communicationServiceMock).saveAttachment(same(communicationEntity), same(errandEntity));
 		verify(communicationServiceMock).saveCommunication(same(communicationEntity));
 		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Ärendekommunikation har skapats."), same(errandEntity), isNull(), isNull());
@@ -158,7 +158,7 @@ class EmailReaderWorkerTest {
 		verify(emailReaderMapperMock).toCommunicationEntity(same(email));
 		verify(communicationServiceMock).saveAttachment(same(communicationEntity), same(errandEntity));
 		verify(communicationServiceMock).saveCommunication(same(communicationEntity));
-		verify(emailReaderClientMock).deleteEmail(email.getId());
+		verify(emailReaderClientMock).deleteEmail("municipalityId", email.getId());
 		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Ärendekommunikation har skapats."), same(errandEntity), isNull(), isNull());
 		verifyNoInteractions(errandServiceMock);
 		verifyNoMoreInteractions(emailReaderClientMock, errandRepositoryMock, emailReaderMapperMock, communicationServiceMock, emailWorkerConfigRepositoryMock, eventServiceMock);
@@ -211,7 +211,7 @@ class EmailReaderWorkerTest {
 		verify(emailReaderMapperMock).toErrand(same(email), eq(emailConfig.getStatusForNew()), eq(emailConfig.isAddSenderAsStakeholder()), eq(emailConfig.getStakeholderRole()), eq(emailConfig.getErrandChannel()));
 		verify(errandServiceMock).createErrand(eq(emailConfig.getNamespace()), eq(emailConfig.getMunicipalityId()), same(errand));
 		verify(emailReaderMapperMock).toCommunicationEntity(same(email));
-		verify(emailReaderClientMock).deleteEmail(email.getId());
+		verify(emailReaderClientMock).deleteEmail("municipalityId", email.getId());
 		verify(communicationServiceMock).saveAttachment(same(communicationEntity), same(errandEntity));
 		verify(communicationServiceMock).saveCommunication(same(communicationEntity));
 		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Ärendekommunikation har skapats."), same(errandEntity), isNull(), isNull());

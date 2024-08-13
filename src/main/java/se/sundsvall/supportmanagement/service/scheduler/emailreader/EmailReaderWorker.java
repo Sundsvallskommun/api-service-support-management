@@ -70,7 +70,7 @@ public class EmailReaderWorker {
 
 		getErrand(errandNumber, email, config).ifPresent(errand -> {
 			processErrand(errand, email, config);
-			emailReaderClient.deleteEmail(email.getId());
+			emailReaderClient.deleteEmail(config.getMunicipalityId(), email.getId());
 		});
 
 	}
