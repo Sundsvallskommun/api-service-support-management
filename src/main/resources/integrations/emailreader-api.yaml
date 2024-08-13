@@ -4,10 +4,10 @@ info:
   contact: { }
   license:
     name: MIT License
-    url: https://opensource.org/licenses/MIT
-  version: "1.1"
+    url: 'https://opensource.org/licenses/MIT'
+  version: '2.0'
 servers:
-  - url: http://localhost:54012
+  - url: 'http://localhost:55919'
     description: Generated server url
 tags:
   - name: Email
@@ -15,17 +15,28 @@ tags:
   - name: Credentials
     description: Credentials
 paths:
-  /credentials/{id}:
+  '/{municipalityId}/credentials/{id}':
     put:
       tags:
         - Credentials
-      summary: Update credentials
+      description: Update credentials
       operationId: update
       parameters:
+        - name: municipalityId
+          in: path
+          description: Municipality id
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+          example: 2281
         - name: id
           in: path
           description: Email message ID
           required: true
+          style: simple
+          explode: false
           schema:
             type: string
           example: 81471222-5798-11e9-ae24-57fa13b361e1
@@ -36,27 +47,9 @@ paths:
               $ref: '#/components/schemas/Credentials'
         required: true
       responses:
-        "204":
+        '204':
           description: No content
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        "502":
-          description: Bad Gateway
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        "400":
+        '400':
           description: Bad Request
           content:
             application/json:
@@ -65,41 +58,59 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '502':
+          description: Bad Gateway
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+      security:
+        - default: [ ]
+      x-throttling-tier: Unlimited
+      x-wso2-application-security:
+        security-types:
+          - oauth2
+        optional: false
     delete:
       tags:
         - Credentials
-      summary: Delete credentials by id
+      description: Delete credentials by id
       operationId: delete
       parameters:
+        - name: municipalityId
+          in: path
+          description: Municipality id
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+          example: 2281
         - name: id
           in: path
           description: Email message ID
           required: true
+          style: simple
+          explode: false
           schema:
             type: string
           example: 81471222-5798-11e9-ae24-57fa13b361e1
       responses:
-        "204":
+        '204':
           description: No content
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        "502":
-          description: Bad Gateway
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        "400":
+        '400':
           description: Bad Request
           content:
             application/json:
@@ -108,14 +119,49 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-  /credentials:
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '502':
+          description: Bad Gateway
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+      security:
+        - default: [ ]
+      x-throttling-tier: Unlimited
+      x-wso2-application-security:
+        security-types:
+          - oauth2
+        optional: false
+  '/{municipalityId}/credentials':
     get:
       tags:
         - Credentials
-      summary: Get a list of credentials
-      operationId: getAll
+      description: Get a list of credentials
+      operationId: getAllByMunicipalityId
+      parameters:
+        - name: municipalityId
+          in: path
+          description: Municipality id
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+          example: 2281
       responses:
-        "200":
+        '200':
           description: Ok
           content:
             application/json:
@@ -128,25 +174,7 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Credentials'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        "502":
-          description: Bad Gateway
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        "400":
+        '400':
           description: Bad Request
           content:
             application/json:
@@ -155,11 +183,46 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '502':
+          description: Bad Gateway
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+      security:
+        - default: [ ]
+      x-throttling-tier: Unlimited
+      x-wso2-application-security:
+        security-types:
+          - oauth2
+        optional: false
     post:
       tags:
         - Credentials
-      summary: Create credentials
+      description: Create credentials
       operationId: create
+      parameters:
+        - name: municipalityId
+          in: path
+          description: Municipality id
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+          example: 2281
       requestBody:
         content:
           application/json:
@@ -167,27 +230,9 @@ paths:
               $ref: '#/components/schemas/Credentials'
         required: true
       responses:
-        "204":
+        '204':
           description: No content
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        "502":
-          description: Bad Gateway
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        "400":
+        '400':
           description: Bad Request
           content:
             application/json:
@@ -196,26 +241,59 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-  /email:
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '502':
+          description: Bad Gateway
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+      security:
+        - default: [ ]
+      x-throttling-tier: Unlimited
+      x-wso2-application-security:
+        security-types:
+          - oauth2
+        optional: false
+  '/{municipalityId}/email/{namespace}':
     get:
       tags:
         - Email
-      summary: Get a list of emails
+      description: Get a list of emails
       operationId: getAllEmails
       parameters:
         - name: municipalityId
-          in: query
+          in: path
+          description: Municipality id
           required: true
+          style: simple
+          explode: false
           schema:
             type: string
+          example: 2281
         - name: namespace
-          in: query
+          in: path
+          description: A specific namespace
           required: true
+          style: simple
+          explode: false
           schema:
             type: string
+          example: CONTACTCENTER
       responses:
-        "200":
-          description: Ok
+        '200':
+          description: OK
           content:
             application/json:
               schema:
@@ -227,25 +305,7 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Email'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        "502":
-          description: Bad Gateway
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        "400":
+        '400':
           description: Bad Request
           content:
             application/json:
@@ -254,6 +314,31 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '502':
+          description: Bad Gateway
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+      security:
+        - default: [ ]
+      x-throttling-tier: Unlimited
+      x-wso2-application-security:
+        security-types:
+          - oauth2
+        optional: false
   /api-docs:
     get:
       tags:
@@ -261,51 +346,50 @@ paths:
       summary: OpenAPI
       operationId: getApiDocs
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/yaml:
               schema:
                 type: string
+      security:
+        - default: [ ]
       x-auth-type: None
       x-throttling-tier: Unlimited
       x-wso2-mutual-ssl: Optional
-  /email/{id}:
+      x-wso2-application-security:
+        security-types:
+          - oauth2
+        optional: false
+  '/{municipalityId}/email/{id}':
     delete:
       tags:
         - Email
-      summary: Delete an email by messageID
+      description: Delete an email by id
       operationId: deleteEmail
       parameters:
+        - name: municipalityId
+          in: path
+          description: Municipality id
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+          example: 2281
         - name: id
           in: path
           description: Email message ID
           required: true
+          style: simple
+          explode: false
           schema:
             type: string
           example: 81471222-5798-11e9-ae24-57fa13b361e1
       responses:
-        "204":
+        '204':
           description: No content
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        "502":
-          description: Bad Gateway
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        "400":
+        '400':
           description: Bad Request
           content:
             application/json:
@@ -314,6 +398,31 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '502':
+          description: Bad Gateway
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+      security:
+        - default: [ ]
+      x-throttling-tier: Unlimited
+      x-wso2-application-security:
+        security-types:
+          - oauth2
+        optional: false
 components:
   schemas:
     Credentials:
@@ -342,8 +451,9 @@ components:
           example: mySecretPassword
         emailAddress:
           type: array
-          description: List of email addresses to check for new emails. The provided
-            user must have access to these email addresses.
+          description: >-
+            List of email addresses to check for new emails. The provided user
+            must have access to these email addresses.
           example:
             - myothersupportemail@sundsvall.se
             - mysupportemail@sundsvall.se
@@ -352,11 +462,7 @@ components:
         domain:
           type: string
           description: domain for the email server
-          example: https://mail.example.com/EWS/Exchange.asmx
-        municipalityId:
-          type: string
-          description: Municipality id
-          example: "2281"
+          example: 'https://mail.example.com/EWS/Exchange.asmx'
         namespace:
           type: string
           description: Namespace
@@ -366,7 +472,7 @@ components:
           additionalProperties:
             type: string
             description: Metadata to add to the email
-            example: "{\"casetype\":\"myCaseType\",\"key2\":\"value2\"}"
+            example: '{"casetype":"myCaseType","key2":"value2"}'
           description: Metadata to add to the email
           example:
             casetype: myCaseType
@@ -389,12 +495,12 @@ components:
           type: object
           additionalProperties:
             type: object
+        status:
+          $ref: '#/components/schemas/StatusType'
         title:
           type: string
         detail:
           type: string
-        status:
-          $ref: '#/components/schemas/StatusType'
     StatusType:
       type: object
       properties:
@@ -435,7 +541,7 @@ components:
           additionalProperties:
             type: string
             description: Metadata for the email
-            example: "{\"casetype\":\"myCaseType\",\"key2\":\"value2\"}"
+            example: '{"casetype":"myCaseType","key2":"value2"}'
           description: Metadata for the email
           example:
             casetype: myCaseType
@@ -444,7 +550,7 @@ components:
           type: string
           description: The date and time the email was received
           format: date-time
-          example: 2021-09-01T12:00:00+02:00
+          example: '2021-09-01T10:00:00Z'
         headers:
           type: object
           additionalProperties:
@@ -457,12 +563,12 @@ components:
                 - reference1
                 - reference2
               MESSAGE_ID:
-                - "123456789"
+                - '123456789'
             items:
               type: string
               description: The email headers
-              example: "{\"IN_REPLY_TO\":[\"reply-to@example.com\"],\"REFERENCES\"\
-                :[\"reference1\",\"reference2\"],\"MESSAGE_ID\":[\"123456789\"]}"
+              example: >-
+                {"IN_REPLY_TO":["reply-to@example.com"],"REFERENCES":["reference1","reference2"],"MESSAGE_ID":["123456789"]}
           description: The email headers
           example:
             IN_REPLY_TO:
@@ -471,7 +577,7 @@ components:
               - reference1
               - reference2
             MESSAGE_ID:
-              - "123456789"
+              - '123456789'
         attachments:
           type: array
           items:
@@ -494,4 +600,40 @@ components:
           description: The attachment (file) content as a BASE64-encoded string
           example: aGVsbG8gd29ybGQK
       description: Attachment
-  securitySchemes: { }
+  securitySchemes:
+    default:
+      type: oauth2
+      flows:
+        implicit:
+          authorizationUrl: 'https://test.com'
+          scopes: { }
+x-wso2-cors:
+  corsConfigurationEnabled: false
+  accessControlAllowOrigins:
+    - '*'
+  accessControlAllowCredentials: false
+  accessControlAllowHeaders:
+    - authorization
+    - Access-Control-Allow-Origin
+    - Content-Type
+    - SOAPAction
+    - apikey
+    - testKey
+  accessControlAllowMethods:
+    - GET
+    - PUT
+    - POST
+    - DELETE
+    - PATCH
+    - OPTIONS
+x-wso2-production-endpoints:
+  urls:
+    - 'https://email-reader-af-emailreader.apps.ocp101.sundsvall.se/'
+  type: http
+x-wso2-basePath: /email-reader/2.0
+x-wso2-transports:
+  - http
+  - https
+x-wso2-response-cache:
+  enabled: false
+  cacheTimeoutInSeconds: 300
