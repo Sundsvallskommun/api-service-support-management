@@ -21,6 +21,7 @@ public interface MessagingClient {
 	/**
 	 * Send a single e-mail
 	 *
+	 * @param municipalityId the id of the municipality to send the email to
 	 * @param sendAsynchronously how to send the message (true to send asynchronously, false to wait for response)
 	 * @param emailRequest containing email information
 	 * @return response containing id and delivery results for sent message
@@ -34,6 +35,7 @@ public interface MessagingClient {
 	/**
 	 * Send a single sms
 	 *
+	 * @param municipalityId the id of the municipality to send the email to
 	 * @param sendAsynchronously how to send the message (true to send asynchronously, false to wait for response)
 	 * @param smsRequest containing sms information
 	 * @return response containing id and delivery results for sent message
