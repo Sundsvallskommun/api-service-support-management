@@ -5,11 +5,12 @@ info:
   license:
     name: MIT License
     url: 'https://opensource.org/licenses/MIT'
-  version: '4.4'
+  version: '5.0'
 servers:
-  - url: /
+  - url: 'https://messaging-af-messaging.apps.ocp101.sundsvall.se'
+    description: Generated server url
 paths:
-  /webmessage:
+  '/{municipalityId}/webmessage':
     post:
       tags:
         - Sending Resources
@@ -23,6 +24,15 @@ paths:
           explode: false
           schema:
             type: string
+        - name: municipalityId
+          in: path
+          description: Municipality id
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+          example: 2281
         - name: async
           in: query
           description: Whether to send the message asynchronously
@@ -84,12 +94,11 @@ paths:
       security:
         - default: [ ]
       x-throttling-tier: Unlimited
-      x-auth-type: Application & Application User
       x-wso2-application-security:
         security-types:
           - oauth2
         optional: false
-  /sms:
+  '/{municipalityId}/sms':
     post:
       tags:
         - Sending Resources
@@ -103,6 +112,15 @@ paths:
           explode: false
           schema:
             type: string
+        - name: municipalityId
+          in: path
+          description: Municipality id
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+          example: 2281
         - name: async
           in: query
           description: Whether to send the message asynchronously
@@ -164,12 +182,90 @@ paths:
       security:
         - default: [ ]
       x-throttling-tier: Unlimited
-      x-auth-type: Application & Application User
       x-wso2-application-security:
         security-types:
           - oauth2
         optional: false
-  /slack:
+  '/{municipalityId}/sms/batch':
+    post:
+      tags:
+        - Sending Resources
+      summary: Send a batch of sms asynchronously
+      operationId: sendSmsBatch
+      parameters:
+        - name: x-origin
+          in: header
+          required: false
+          style: simple
+          explode: false
+          schema:
+            type: string
+        - name: municipalityId
+          in: path
+          description: Municipality id
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+          example: 2281
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SmsBatchRequest'
+        required: true
+      responses:
+        '201':
+          description: Successful Operation
+          headers:
+            Location:
+              style: simple
+              explode: false
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageBatchResult'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/MessageBatchResult'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '502':
+          description: Bad Gateway
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+      security:
+        - default: [ ]
+      x-throttling-tier: Unlimited
+      x-wso2-application-security:
+        security-types:
+          - oauth2
+        optional: false
+  '/{municipalityId}/slack':
     post:
       tags:
         - Sending Resources
@@ -183,6 +279,15 @@ paths:
           explode: false
           schema:
             type: string
+        - name: municipalityId
+          in: path
+          description: Municipality id
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+          example: 2281
         - name: async
           in: query
           description: Whether to send the message asynchronously
@@ -244,12 +349,11 @@ paths:
       security:
         - default: [ ]
       x-throttling-tier: Unlimited
-      x-auth-type: Application & Application User
       x-wso2-application-security:
         security-types:
           - oauth2
         optional: false
-  /messages:
+  '/{municipalityId}/messages':
     post:
       tags:
         - Sending Resources
@@ -263,6 +367,15 @@ paths:
           explode: false
           schema:
             type: string
+        - name: municipalityId
+          in: path
+          description: Municipality id
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+          example: 2281
         - name: async
           in: query
           description: Whether to send the message asynchronously
@@ -324,12 +437,11 @@ paths:
       security:
         - default: [ ]
       x-throttling-tier: Unlimited
-      x-auth-type: Application & Application User
       x-wso2-application-security:
         security-types:
           - oauth2
         optional: false
-  /letter:
+  '/{municipalityId}/letter':
     post:
       tags:
         - Sending Resources
@@ -343,6 +455,15 @@ paths:
           explode: false
           schema:
             type: string
+        - name: municipalityId
+          in: path
+          description: Municipality id
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+          example: 2281
         - name: async
           in: query
           description: Whether to send the message asynchronously
@@ -404,12 +525,11 @@ paths:
       security:
         - default: [ ]
       x-throttling-tier: Unlimited
-      x-auth-type: Application & Application User
       x-wso2-application-security:
         security-types:
           - oauth2
         optional: false
-  /email:
+  '/{municipalityId}/email':
     post:
       tags:
         - Sending Resources
@@ -423,6 +543,15 @@ paths:
           explode: false
           schema:
             type: string
+        - name: municipalityId
+          in: path
+          description: Municipality id
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+          example: 2281
         - name: async
           in: query
           description: Whether to send the message asynchronously
@@ -484,12 +613,90 @@ paths:
       security:
         - default: [ ]
       x-throttling-tier: Unlimited
-      x-auth-type: Application & Application User
       x-wso2-application-security:
         security-types:
           - oauth2
         optional: false
-  /digital-mail:
+  '/{municipalityId}/email/batch':
+    post:
+      tags:
+        - Sending Resources
+      summary: Send a batch of e-mails asynchronously
+      operationId: sendEmailBatch
+      parameters:
+        - name: x-origin
+          in: header
+          required: false
+          style: simple
+          explode: false
+          schema:
+            type: string
+        - name: municipalityId
+          in: path
+          description: Municipality id
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+          example: 2281
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailBatchRequest'
+        required: true
+      responses:
+        '201':
+          description: Successful Operation
+          headers:
+            Location:
+              style: simple
+              explode: false
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageBatchResult'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/MessageBatchResult'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '502':
+          description: Bad Gateway
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+      security:
+        - default: [ ]
+      x-throttling-tier: Unlimited
+      x-wso2-application-security:
+        security-types:
+          - oauth2
+        optional: false
+  '/{municipalityId}/digital-mail':
     post:
       tags:
         - Sending Resources
@@ -503,6 +710,15 @@ paths:
           explode: false
           schema:
             type: string
+        - name: municipalityId
+          in: path
+          description: Municipality id
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+          example: 2281
         - name: async
           in: query
           description: Whether to send the message asynchronously
@@ -564,12 +780,11 @@ paths:
       security:
         - default: [ ]
       x-throttling-tier: Unlimited
-      x-auth-type: Application & Application User
       x-wso2-application-security:
         security-types:
           - oauth2
         optional: false
-  /digital-invoice:
+  '/{municipalityId}/digital-invoice':
     post:
       tags:
         - Sending Resources
@@ -583,6 +798,15 @@ paths:
           explode: false
           schema:
             type: string
+        - name: municipalityId
+          in: path
+          description: Municipality id
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+          example: 2281
         - name: async
           in: query
           description: Whether to send the message asynchronously
@@ -644,18 +868,26 @@ paths:
       security:
         - default: [ ]
       x-throttling-tier: Unlimited
-      x-auth-type: Application & Application User
       x-wso2-application-security:
         security-types:
           - oauth2
         optional: false
-  '/status/message/{messageId}':
+  '/{municipalityId}/status/message/{messageId}':
     get:
       tags:
         - Status and History Resources
       summary: Get the status for a single message and its deliveries
       operationId: getMessageStatus
       parameters:
+        - name: municipalityId
+          in: path
+          description: Municipality id
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+          example: 2281
         - name: messageId
           in: path
           required: true
@@ -674,6 +906,19 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/MessageResult'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/Problem'
+                  - $ref: '#/components/schemas/ConstraintViolationProblem'
+            application/problem+json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/Problem'
+                  - $ref: '#/components/schemas/ConstraintViolationProblem'
         '404':
           description: Not Found
           content:
@@ -695,18 +940,26 @@ paths:
       security:
         - default: [ ]
       x-throttling-tier: Unlimited
-      x-auth-type: Application & Application User
       x-wso2-application-security:
         security-types:
           - oauth2
         optional: false
-  '/status/delivery/{deliveryId}':
+  '/{municipalityId}/status/delivery/{deliveryId}':
     get:
       tags:
         - Status and History Resources
       summary: Get the status for a single delivery
       operationId: getDeliveryStatus
       parameters:
+        - name: municipalityId
+          in: path
+          description: Municipality id
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+          example: 2281
         - name: deliveryId
           in: path
           required: true
@@ -725,6 +978,19 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/DeliveryResult'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/Problem'
+                  - $ref: '#/components/schemas/ConstraintViolationProblem'
+            application/problem+json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/Problem'
+                  - $ref: '#/components/schemas/ConstraintViolationProblem'
         '404':
           description: Not Found
           content:
@@ -746,18 +1012,26 @@ paths:
       security:
         - default: [ ]
       x-throttling-tier: Unlimited
-      x-auth-type: Application & Application User
       x-wso2-application-security:
         security-types:
           - oauth2
         optional: false
-  '/status/batch/{batchId}':
+  '/{municipalityId}/status/batch/{batchId}':
     get:
       tags:
         - Status and History Resources
       summary: 'Get the status for a message batch, its messages and their deliveries'
       operationId: getBatchStatus
       parameters:
+        - name: municipalityId
+          in: path
+          description: Municipality id
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+          example: 2281
         - name: batchId
           in: path
           required: true
@@ -776,6 +1050,19 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/MessageBatchResult'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/Problem'
+                  - $ref: '#/components/schemas/ConstraintViolationProblem'
+            application/problem+json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/Problem'
+                  - $ref: '#/components/schemas/ConstraintViolationProblem'
         '404':
           description: Not Found
           content:
@@ -797,18 +1084,26 @@ paths:
       security:
         - default: [ ]
       x-throttling-tier: Unlimited
-      x-auth-type: Application & Application User
       x-wso2-application-security:
         security-types:
           - oauth2
         optional: false
-  /statistics:
+  '/{municipalityId}/statistics':
     get:
       tags:
         - Status and History Resources
       summary: Get delivery statistics
-      operationId: getStats
+      operationId: getStatistics
       parameters:
+        - name: municipalityId
+          in: path
+          description: Municipality id
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+          example: 2281
         - name: messageType
           in: query
           description: Message type
@@ -851,78 +1146,10 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Statistics'
+                $ref: '#/components/schemas/Statistics'
             application/problem+json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Statistics'
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-      security:
-        - default: [ ]
-      x-throttling-tier: Unlimited
-      x-auth-type: Application & Application User
-      x-wso2-application-security:
-        security-types:
-          - oauth2
-        optional: false
-  /statistics/departments:
-    get:
-      tags:
-        - Status and History Resources
-      summary: Get letter delivery statistics by department
-      operationId: getDepartmentStats
-      parameters:
-        - name: origin
-          in: query
-          description: Origin name
-          required: false
-          style: form
-          explode: true
-          schema:
-            type: string
-        - name: from
-          in: query
-          description: 'From-date (inclusive). Format: yyyy-MM-dd (ISO8601)'
-          required: false
-          style: form
-          explode: true
-          schema:
-            type: string
-            format: date
-        - name: to
-          in: query
-          description: 'To-date (inclusive). Format: yyyy-MM-dd (ISO8601)'
-          required: false
-          style: form
-          explode: true
-          schema:
-            type: string
-            format: date
-      responses:
-        '200':
-          description: Successful Operation
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/DepartmentStatistics'
-            application/problem+json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/DepartmentStatistics'
+                $ref: '#/components/schemas/Statistics'
         '400':
           description: Bad Request
           content:
@@ -948,18 +1175,26 @@ paths:
       security:
         - default: [ ]
       x-throttling-tier: Unlimited
-      x-auth-type: Application & Application User
       x-wso2-application-security:
         security-types:
           - oauth2
         optional: false
-  '/statistics/departments/{department}':
+  '/{municipalityId}/statistics/departments/{department}':
     get:
       tags:
         - Status and History Resources
       summary: Get letter delivery statistics by department
-      operationId: getDepartmentStats_1
+      operationId: getDepartmentStatistics
       parameters:
+        - name: municipalityId
+          in: path
+          description: Municipality id
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+          example: 2281
         - name: department
           in: path
           description: Department name
@@ -1033,18 +1268,111 @@ paths:
       security:
         - default: [ ]
       x-throttling-tier: Unlimited
-      x-auth-type: Application & Application User
       x-wso2-application-security:
         security-types:
           - oauth2
         optional: false
-  '/message/{messageId}':
+  '/{municipalityId}/statistics/departments':
+    get:
+      tags:
+        - Status and History Resources
+      summary: Get letter delivery statistics by department
+      operationId: getDepartmentStatistics_1
+      parameters:
+        - name: municipalityId
+          in: path
+          description: Municipality id
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+          example: 2281
+        - name: origin
+          in: query
+          description: Origin name
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: string
+        - name: from
+          in: query
+          description: 'From-date (inclusive). Format: yyyy-MM-dd (ISO8601)'
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          description: 'To-date (inclusive). Format: yyyy-MM-dd (ISO8601)'
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Successful Operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DepartmentStatistics'
+            application/problem+json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DepartmentStatistics'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/Problem'
+                  - $ref: '#/components/schemas/ConstraintViolationProblem'
+            application/problem+json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/Problem'
+                  - $ref: '#/components/schemas/ConstraintViolationProblem'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+      security:
+        - default: [ ]
+      x-throttling-tier: Unlimited
+      x-wso2-application-security:
+        security-types:
+          - oauth2
+        optional: false
+  '/{municipalityId}/message/{messageId}':
     get:
       tags:
         - Status and History Resources
       summary: Get a message and all its deliveries
       operationId: getMessage
       parameters:
+        - name: municipalityId
+          in: path
+          description: Municipality id
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+          example: 2281
         - name: messageId
           in: path
           required: true
@@ -1067,6 +1395,19 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/HistoryResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/Problem'
+                  - $ref: '#/components/schemas/ConstraintViolationProblem'
+            application/problem+json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/Problem'
+                  - $ref: '#/components/schemas/ConstraintViolationProblem'
         '404':
           description: Not Found
           content:
@@ -1088,18 +1429,26 @@ paths:
       security:
         - default: [ ]
       x-throttling-tier: Unlimited
-      x-auth-type: Application & Application User
       x-wso2-application-security:
         security-types:
           - oauth2
         optional: false
-  '/conversation-history/{partyId}':
+  '/{municipalityId}/conversation-history/{partyId}':
     get:
       tags:
         - Status and History Resources
       summary: Get the entire conversation history for a given party
       operationId: getConversationHistory
       parameters:
+        - name: municipalityId
+          in: path
+          description: Municipality id
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+          example: 2281
         - name: partyId
           in: path
           required: true
@@ -1140,6 +1489,19 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/HistoryResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/Problem'
+                  - $ref: '#/components/schemas/ConstraintViolationProblem'
+            application/problem+json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/Problem'
+                  - $ref: '#/components/schemas/ConstraintViolationProblem'
         '500':
           description: Internal Server Error
           content:
@@ -1152,7 +1514,6 @@ paths:
       security:
         - default: [ ]
       x-throttling-tier: Unlimited
-      x-auth-type: Application & Application User
       x-wso2-application-security:
         security-types:
           - oauth2
@@ -1235,6 +1596,15 @@ components:
         message:
           type: string
           description: Message
+        oepInstance:
+          type: string
+          description: >-
+            Determines if the message should be added to the internal or
+            external OeP instance
+          example: internal
+          enum:
+            - internal
+            - external
         attachments:
           maxItems: 10
           minItems: 0
@@ -1256,9 +1626,9 @@ components:
             type: object
         status:
           $ref: '#/components/schemas/StatusType'
-        detail:
-          type: string
         title:
+          type: string
+        detail:
           type: string
     StatusType:
       type: object
@@ -1326,14 +1696,25 @@ components:
         party:
           $ref: '#/components/schemas/SmsRequestParty'
         sender:
+          maxLength: 11
+          minLength: 3
           type: string
-          description: Sender
+          description: >-
+            The sender of the SMS, swedish letters(å,ä,ö) will be replaced by
+            (a,a,o) respectively
+          example: sender
         mobileNumber:
           type: string
           description: Mobile number. Should start with +467x
         message:
           type: string
           description: Message
+        priority:
+          type: string
+          description: 'Priority (optional, will be defaulted to NORMAL if not present)'
+          enum:
+            - HIGH
+            - NORMAL
     SmsRequestParty:
       type: object
       properties:
@@ -1347,6 +1728,60 @@ components:
           items:
             $ref: '#/components/schemas/ExternalReference'
       description: Party
+    SmsBatchRequest:
+      required:
+        - message
+        - parties
+      type: object
+      properties:
+        sender:
+          maxLength: 11
+          minLength: 3
+          type: string
+          description: >-
+            The sender of the SMS, swedish letters(å,ä,ö) will be replaced by
+            (a,a,o) respectively
+          example: sender
+        message:
+          type: string
+          description: Message to send as sms
+        priority:
+          type: string
+          description: 'Priority (optional, will be defaulted to NORMAL if not present)'
+          enum:
+            - HIGH
+            - NORMAL
+        parties:
+          type: array
+          description: Parties to send the sms message to
+          items:
+            $ref: '#/components/schemas/SmsBatchRequestParty'
+    SmsBatchRequestParty:
+      required:
+        - mobileNumber
+      type: object
+      properties:
+        partyId:
+          type: string
+          description: The message party id (optional)
+          example: f427952b-247c-4d3b-b081-675a467b3619
+        mobileNumber:
+          type: string
+          description: 'Mobile number, which should start with +467x'
+      description: Parties to send the sms message to
+    MessageBatchResult:
+      type: object
+      properties:
+        batchId:
+          type: string
+          description: The batch id
+          format: uuid
+        messages:
+          type: array
+          description: The individual message results
+          items:
+            $ref: '#/components/schemas/MessageResult'
+      description: Message batch result
     SlackRequest:
       required:
         - channel
@@ -1460,19 +1895,6 @@ components:
           type: string
           description: The sender of the SMS
           example: sender
-    MessageBatchResult:
-      type: object
-      properties:
-        batchId:
-          type: string
-          description: The batch id
-          format: uuid
-        messages:
-          type: array
-          description: The individual message results
-          items:
-            $ref: '#/components/schemas/MessageResult'
-      description: Message batch result
     LetterAttachment:
       required:
         - content
@@ -1670,7 +2092,55 @@ components:
           type: string
           description: Reply-to e-mail address
           example: sender@sender.se
-      description: Attachment
+      description: Sender
+    EmailBatchRequest:
+      required:
+        - parties
+        - subject
+      type: object
+      properties:
+        parties:
+          type: array
+          items:
+            $ref: '#/components/schemas/Party'
+        subject:
+          type: string
+          description: E-mail subject
+        message:
+          type: string
+          description: E-mail plain-text body
+        htmlMessage:
+          type: string
+          description: E-mail HTML body (BASE64-encoded)
+        sender:
+          $ref: '#/components/schemas/EmailSender'
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/EmailAttachment'
+        headers:
+          type: object
+          additionalProperties:
+            type: array
+            description: Headers
+            items:
+              type: string
+              description: Headers
+          description: Headers
+    Party:
+      required:
+        - emailAddress
+      type: object
+      properties:
+        partyId:
+          type: string
+          description: The message parties id
+          format: uuid
+          example: e8660aab-6df9-4ed5-86d1-d9b90a5f7e87
+        emailAddress:
+          type: string
+          description: Recipient e-mail address
+          example: someone@somewhere.com
     DigitalMailAttachment:
       required:
         - content
@@ -1788,6 +2258,7 @@ components:
           type: string
           description: The invoice due date
           format: date
+          example: '2023-10-09'
         paymentReferenceType:
           type: string
           enum:
@@ -1874,49 +2345,6 @@ components:
           description: Files
           items:
             $ref: '#/components/schemas/DigitalInvoiceFile'
-    LetterStatistics:
-      type: object
-      properties:
-        SNAIL_MAIL:
-          $ref: '#/components/schemas/StatisticsCounter'
-        DIGITAL_MAIL:
-          $ref: '#/components/schemas/StatisticsCounter'
-    MessageStatistics:
-      type: object
-      properties:
-        EMAIL:
-          $ref: '#/components/schemas/StatisticsCounter'
-        SMS:
-          $ref: '#/components/schemas/StatisticsCounter'
-        UNDELIVERABLE:
-          type: integer
-          format: int32
-    Statistics:
-      type: object
-      properties:
-        EMAIL:
-          $ref: '#/components/schemas/StatisticsCounter'
-        SMS:
-          $ref: '#/components/schemas/StatisticsCounter'
-        WEB_MESSAGE:
-          $ref: '#/components/schemas/StatisticsCounter'
-        DIGITAL_MAIL:
-          $ref: '#/components/schemas/StatisticsCounter'
-        SNAIL_MAIL:
-          $ref: '#/components/schemas/StatisticsCounter'
-        MESSAGE:
-          $ref: '#/components/schemas/MessageStatistics'
-        LETTER:
-          $ref: '#/components/schemas/LetterStatistics'
-    StatisticsCounter:
-      type: object
-      properties:
-        sent:
-          type: integer
-          format: int32
-        failed:
-          type: integer
-          format: int32
     ConstraintViolationProblem:
       type: object
       properties:
@@ -2040,9 +2468,9 @@ components:
             type: object
         status:
           $ref: '#/components/schemas/StatusType'
-        detail:
-          type: string
         title:
+          type: string
+        detail:
           type: string
         suppressed:
           type: array
@@ -2084,6 +2512,49 @@ components:
           type: string
         message:
           type: string
+    LetterStatistics:
+      type: object
+      properties:
+        SNAIL_MAIL:
+          $ref: '#/components/schemas/StatisticsCounter'
+        DIGITAL_MAIL:
+          $ref: '#/components/schemas/StatisticsCounter'
+    MessageStatistics:
+      type: object
+      properties:
+        EMAIL:
+          $ref: '#/components/schemas/StatisticsCounter'
+        SMS:
+          $ref: '#/components/schemas/StatisticsCounter'
+        UNDELIVERABLE:
+          type: integer
+          format: int32
+    Statistics:
+      type: object
+      properties:
+        EMAIL:
+          $ref: '#/components/schemas/StatisticsCounter'
+        SMS:
+          $ref: '#/components/schemas/StatisticsCounter'
+        WEB_MESSAGE:
+          $ref: '#/components/schemas/StatisticsCounter'
+        DIGITAL_MAIL:
+          $ref: '#/components/schemas/StatisticsCounter'
+        SNAIL_MAIL:
+          $ref: '#/components/schemas/StatisticsCounter'
+        MESSAGE:
+          $ref: '#/components/schemas/MessageStatistics'
+        LETTER:
+          $ref: '#/components/schemas/LetterStatistics'
+    StatisticsCounter:
+      type: object
+      properties:
+        sent:
+          type: integer
+          format: int32
+        failed:
+          type: integer
+          format: int32
     DepartmentLetterStatistics:
       type: object
       properties:
@@ -2163,7 +2634,7 @@ x-wso2-production-endpoints:
   urls:
     - 'https://messaging-af-messaging.apps.ocp101.sundsvall.se'
   type: http
-x-wso2-basePath: /messaging/4.4
+x-wso2-basePath: /messaging/5.0
 x-wso2-transports:
   - https
 x-wso2-response-cache:

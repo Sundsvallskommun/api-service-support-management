@@ -288,7 +288,7 @@ class CommunicationServiceTest {
 		// Verifications and assertions
 		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(errandsRepositoryMock).findById(ERRAND_ID);
-		verify(messagingClientMock).sendEmail(eq(true), messagingEmailCaptor.capture());
+		verify(messagingClientMock).sendEmail(eq(MUNICIPALITY_ID), eq(true), messagingEmailCaptor.capture());
 		verify(communicationMapperMock).toCommunicationEntity(request);
 		verify(communicationRepositoryMock).save(any(CommunicationEntity.class));
 		verify(communicationMapperMock).toAttachments(any(CommunicationEntity.class));
@@ -337,7 +337,7 @@ class CommunicationServiceTest {
 		// Verifications and assertions
 		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(errandsRepositoryMock).findById(ERRAND_ID);
-		verify(messagingClientMock).sendSms(eq(true), messagingSmsCaptor.capture());
+		verify(messagingClientMock).sendSms(eq(MUNICIPALITY_ID), eq(true), messagingSmsCaptor.capture());
 		verify(communicationMapperMock).toCommunicationEntity(request);
 		verify(communicationRepositoryMock).save(any(CommunicationEntity.class));
 		verify(communicationMapperMock).toAttachments(any(CommunicationEntity.class));
