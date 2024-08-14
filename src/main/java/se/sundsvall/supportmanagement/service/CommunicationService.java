@@ -143,7 +143,7 @@ public class CommunicationService {
 
 		var emailRequest = toEmailRequest(errandEntity, request, toEmailAttachments(errandAttachments));
 
-		messagingClient.sendEmail(ASYNCHRONOUSLY, emailRequest);
+		messagingClient.sendEmail(municipalityId, ASYNCHRONOUSLY, emailRequest);
 
 		final var communicationEntity = communicationMapper.toCommunicationEntity(request)
 			.withErrandAttachments(errandAttachments)
@@ -157,7 +157,7 @@ public class CommunicationService {
 	public void sendSms(final String namespace, final String municipalityId, final String id, final SmsRequest request) {
 
 		final var entity = fetchErrand(id, namespace, municipalityId);
-		messagingClient.sendSms(ASYNCHRONOUSLY, toSmsRequest(entity, request));
+		messagingClient.sendSms(municipalityId, ASYNCHRONOUSLY, toSmsRequest(entity, request));
 
 		final var communicationEntity = communicationMapper.toCommunicationEntity(request)
 			.withErrandNumber(entity.getErrandNumber());
