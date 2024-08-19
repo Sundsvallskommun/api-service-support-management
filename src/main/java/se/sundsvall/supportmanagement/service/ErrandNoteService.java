@@ -1,5 +1,21 @@
 package se.sundsvall.supportmanagement.service;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.zalando.problem.Problem;
+import se.sundsvall.supportmanagement.api.filter.ExecutingUserSupplier;
+import se.sundsvall.supportmanagement.api.model.note.CreateErrandNoteRequest;
+import se.sundsvall.supportmanagement.api.model.note.ErrandNote;
+import se.sundsvall.supportmanagement.api.model.note.FindErrandNotesRequest;
+import se.sundsvall.supportmanagement.api.model.note.FindErrandNotesResponse;
+import se.sundsvall.supportmanagement.api.model.note.UpdateErrandNoteRequest;
+import se.sundsvall.supportmanagement.api.model.revision.Revision;
+import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.notes.NotesClient;
+
+import java.util.Optional;
+
 import static generated.se.sundsvall.eventlog.EventType.CREATE;
 import static generated.se.sundsvall.eventlog.EventType.DELETE;
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
@@ -12,23 +28,6 @@ import static se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper.toC
 import static se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper.toErrandNote;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper.toFindErrandNotesResponse;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper.toUpdateNoteRequest;
-
-import java.util.Optional;
-
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Service;
-import org.zalando.problem.Problem;
-
-import se.sundsvall.supportmanagement.api.filter.ExecutingUserSupplier;
-import se.sundsvall.supportmanagement.api.model.note.CreateErrandNoteRequest;
-import se.sundsvall.supportmanagement.api.model.note.ErrandNote;
-import se.sundsvall.supportmanagement.api.model.note.FindErrandNotesRequest;
-import se.sundsvall.supportmanagement.api.model.note.FindErrandNotesResponse;
-import se.sundsvall.supportmanagement.api.model.note.UpdateErrandNoteRequest;
-import se.sundsvall.supportmanagement.api.model.revision.Revision;
-import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
-import se.sundsvall.supportmanagement.integration.notes.NotesClient;
 
 @Service
 public class ErrandNoteService {
@@ -64,7 +63,7 @@ public class ErrandNoteService {
 	public String createErrandNote(final String namespace, final String municipalityId, final String id, final CreateErrandNoteRequest createErrandNoteRequest) {
 		verifyExistingErrand(id, namespace, municipalityId);
 
-		final var response = notesClient.createNote(executingUserSupplier.getAdUser(), toCreateNoteRequest(municipalityId, id, clientId, createErrandNoteRequest));
+		final var response = notesClient.createNote(executingUserSupplier.getAdUser(), municipalityId, toCreateNoteRequest(id, clientId, createErrandNoteRequest));
 
 		// Create log event
 		final var currentRevision = extractRevisionInformationFromHeader(response, RevisionType.CURRENT);
@@ -77,7 +76,7 @@ public class ErrandNoteService {
 
 	public ErrandNote readErrandNote(final String namespace, final String municipalityId, final String id, final String noteId) {
 		verifyExistingErrand(id, namespace, municipalityId);
-		return toErrandNote(notesClient.findNoteById(noteId));
+		return toErrandNote(notesClient.findNoteById(municipalityId, noteId));
 	}
 
 	public FindErrandNotesResponse findErrandNotes(final String namespace, final String municipalityId, final String id, final FindErrandNotesRequest findErrandNotesRequest) {
@@ -96,7 +95,7 @@ public class ErrandNoteService {
 	public ErrandNote updateErrandNote(final String namespace, final String municipalityId, final String id, final String noteId, final UpdateErrandNoteRequest updateErrandNoteRequest) {
 		verifyExistingErrand(id, namespace, municipalityId);
 
-		final var response = notesClient.updateNoteById(executingUserSupplier.getAdUser(), noteId, toUpdateNoteRequest(updateErrandNoteRequest));
+		final var response = notesClient.updateNoteById(executingUserSupplier.getAdUser(), municipalityId, noteId, toUpdateNoteRequest(updateErrandNoteRequest));
 
 		// Create log event if the update has modified the note (and thus has created a new revision)
 		final var currentRevision = extractRevisionInformationFromHeader(response, RevisionType.CURRENT);
@@ -111,7 +110,7 @@ public class ErrandNoteService {
 	public void deleteErrandNote(final String namespace, final String municipalityId, final String id, final String noteId) {
 		verifyExistingErrand(id, namespace, municipalityId);
 
-		final var response = notesClient.deleteNoteById(executingUserSupplier.getAdUser(), noteId);
+		final var response = notesClient.deleteNoteById(executingUserSupplier.getAdUser(), municipalityId, noteId);
 
 		// Create log event
 		final var currentRevision = extractRevisionInformationFromHeader(response, RevisionType.CURRENT);
