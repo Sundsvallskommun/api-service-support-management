@@ -2,16 +2,13 @@
 	"name": "api-notes-findNotes",
 	"request": {
 		"method": "GET",
-		"urlPath": "/api-notes/notes",
+		"urlPath": "/api-notes/2281/notes",
 		"headers": {
 			"Authorization": {
 				"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
 			}
 		},
         "queryParameters": {
-	        "municipalityId": {
-		        "equalTo": "2281"
-	        },
             "context": {
                 "equalTo": "SUPPORT"
             },

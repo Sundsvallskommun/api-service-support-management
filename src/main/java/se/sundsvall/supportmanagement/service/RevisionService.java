@@ -1,20 +1,5 @@
 package se.sundsvall.supportmanagement.service;
 
-import static com.flipkart.zjsonpatch.DiffFlags.ADD_ORIGINAL_VALUE_ON_REPLACE;
-import static com.flipkart.zjsonpatch.DiffFlags.OMIT_COPY_OPERATION;
-import static com.flipkart.zjsonpatch.DiffFlags.OMIT_MOVE_OPERATION;
-import static com.jayway.jsonpath.Configuration.defaultConfiguration;
-import static com.jayway.jsonpath.Option.SUPPRESS_EXCEPTIONS;
-import static org.apache.commons.lang3.ObjectUtils.anyNull;
-import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
-import static org.zalando.problem.Status.NOT_FOUND;
-import static se.sundsvall.supportmanagement.service.mapper.RevisionMapper.toRevision;
-import static se.sundsvall.supportmanagement.service.mapper.RevisionMapper.toRevisionEntity;
-import static se.sundsvall.supportmanagement.service.mapper.RevisionMapper.toSerializedSnapshot;
-
-import java.util.EnumSet;
-import java.util.List;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.flipkart.zjsonpatch.DiffFlags;
@@ -26,7 +11,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.zalando.problem.Problem;
-
 import se.sundsvall.supportmanagement.api.model.revision.DifferenceResponse;
 import se.sundsvall.supportmanagement.api.model.revision.Operation;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
@@ -37,6 +21,21 @@ import se.sundsvall.supportmanagement.integration.db.model.RevisionEntity;
 import se.sundsvall.supportmanagement.integration.notes.NotesClient;
 import se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper;
 import se.sundsvall.supportmanagement.service.mapper.RevisionMapper;
+
+import java.util.EnumSet;
+import java.util.List;
+
+import static com.flipkart.zjsonpatch.DiffFlags.ADD_ORIGINAL_VALUE_ON_REPLACE;
+import static com.flipkart.zjsonpatch.DiffFlags.OMIT_COPY_OPERATION;
+import static com.flipkart.zjsonpatch.DiffFlags.OMIT_MOVE_OPERATION;
+import static com.jayway.jsonpath.Configuration.defaultConfiguration;
+import static com.jayway.jsonpath.Option.SUPPRESS_EXCEPTIONS;
+import static org.apache.commons.lang3.ObjectUtils.anyNull;
+import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
+import static org.zalando.problem.Status.NOT_FOUND;
+import static se.sundsvall.supportmanagement.service.mapper.RevisionMapper.toRevision;
+import static se.sundsvall.supportmanagement.service.mapper.RevisionMapper.toRevisionEntity;
+import static se.sundsvall.supportmanagement.service.mapper.RevisionMapper.toSerializedSnapshot;
 
 @Service
 @Transactional
@@ -51,6 +50,7 @@ public class RevisionService {
 	private static final String COMPARISON_ERROR_PROBLEM = "An error occured when comparing version %s to version %s of entityId '%s'";
 	private static final String VERSION_DOES_NOT_EXIST = "The version requested for the %s revision does not exist";
 	private static final String ERRAND_NOT_FOUND = "An errand with id '%s' could not be found";
+	private static final String MUNICIPALITY_ID = "2281";
 
 	private final ErrandsRepository errandsRepository;
 	private final RevisionRepository revisionRepository;
@@ -198,7 +198,8 @@ public class RevisionService {
 	public List<Revision> getNoteRevisions(String errandId, String noteId) {
 		verifyExistingErrand(errandId);
 
-		return ErrandNoteMapper.toRevisions(notesClient.findAllNoteRevisions(noteId));
+		//TODO Change to municipalityId when added to API
+		return ErrandNoteMapper.toRevisions(notesClient.findAllNoteRevisions(MUNICIPALITY_ID, noteId));
 	}
 
 	/**
@@ -213,7 +214,8 @@ public class RevisionService {
 	public DifferenceResponse compareNoteRevisionVersions(String errandId, String noteId, int sourceVersion, int targetVersion) {
 		verifyExistingErrand(errandId);
 
-		return ErrandNoteMapper.toDifferenceResponse(notesClient.compareNoteRevisions(noteId, sourceVersion, targetVersion));
+		//TODO Change to municipalityId when added to API
+		return ErrandNoteMapper.toDifferenceResponse(notesClient.compareNoteRevisions(MUNICIPALITY_ID, noteId, sourceVersion, targetVersion));
 	}
 
 	private void verifyExistingErrand(String errandId) {

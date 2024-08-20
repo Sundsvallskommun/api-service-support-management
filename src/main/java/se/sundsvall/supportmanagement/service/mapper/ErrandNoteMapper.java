@@ -1,13 +1,5 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
-import static java.util.Collections.emptyList;
-import static java.util.Objects.isNull;
-import static java.util.Optional.ofNullable;
-
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-
 import generated.se.sundsvall.notes.CreateNoteRequest;
 import generated.se.sundsvall.notes.FindNotesResponse;
 import generated.se.sundsvall.notes.Note;
@@ -21,15 +13,22 @@ import se.sundsvall.supportmanagement.api.model.revision.DifferenceResponse;
 import se.sundsvall.supportmanagement.api.model.revision.Operation;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
 
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+
+import static java.util.Collections.emptyList;
+import static java.util.Objects.isNull;
+import static java.util.Optional.ofNullable;
+
 public class ErrandNoteMapper {
 
 	private ErrandNoteMapper() {}
 
-	public static CreateNoteRequest toCreateNoteRequest(final String municipalityId, final String caseId, final String clientId, final CreateErrandNoteRequest createErrandNoteRequest) {
+	public static CreateNoteRequest toCreateNoteRequest(final String caseId, final String clientId, final CreateErrandNoteRequest createErrandNoteRequest) {
 		final var param = Optional.ofNullable(createErrandNoteRequest).orElse(CreateErrandNoteRequest.create());
 		return new CreateNoteRequest()
 			.body(param.getBody())
-			.municipalityId(municipalityId)
 			.caseId(caseId)
 			.clientId(clientId)
 			.context(param.getContext())
