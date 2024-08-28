@@ -3,7 +3,10 @@ package se.sundsvall.supportmanagement.service.scheduler.emailreader;
 import static se.sundsvall.supportmanagement.service.scheduler.emailreader.ErrandNumberParser.parseSubject;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -52,19 +55,19 @@ public class EmailReaderWorker {
 		this.emailWorkerConfigRepository = emailWorkerConfigRepository;
 	}
 
-	@Transactional
-	public void getAndProcessEmails() {
-		emailWorkerConfigRepository.findAll().stream()
+
+	public Set<EmailWorkerConfigEntity> getEnabledEmailConfigs() {
+		return emailWorkerConfigRepository.findAll().stream()
 			.filter(EmailWorkerConfigEntity::getEnabled)
-			.forEach(this::processEmailConfig);
+			.collect(Collectors.toSet());
 	}
 
-	private void processEmailConfig(final EmailWorkerConfigEntity config) {
-		emailReaderClient.getEmails(config.getMunicipalityId(), config.getNamespace())
-			.forEach(email -> processEmail(email, config));
+	public List<Email> getEmailsFromConfig(final EmailWorkerConfigEntity config) {
+		return emailReaderClient.getEmails(config.getMunicipalityId(), config.getNamespace());
 	}
 
-	private void processEmail(final Email email, final EmailWorkerConfigEntity config) {
+	@Transactional
+	public void processEmail(final Email email, final EmailWorkerConfigEntity config) {
 
 		final var errandNumber = parseSubject(email.getSubject());
 
