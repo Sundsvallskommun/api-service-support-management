@@ -81,7 +81,7 @@ public class ErrandLabelsResource {
 		@Parameter(name = "id", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("id") final String id,
 		@RequestBody final List<String> labels) {
 		service.updateErrandLabel(namespace, municipalityId, id, labels);
-		return ResponseEntity.noContent().build();
+		return ResponseEntity.noContent().header(CONTENT_TYPE, ALL_VALUE).build();
 	}
 
 	@DeleteMapping
@@ -92,7 +92,7 @@ public class ErrandLabelsResource {
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "id", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("id") final String id) {
 		service.deleteErrandLabel(namespace, municipalityId, id);
-		return ResponseEntity.noContent().build();
+		return ResponseEntity.noContent().header(CONTENT_TYPE, ALL_VALUE).build();
 	}
 
 

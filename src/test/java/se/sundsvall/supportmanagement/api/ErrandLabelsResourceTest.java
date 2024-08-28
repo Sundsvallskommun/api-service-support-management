@@ -5,7 +5,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
-import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.MediaType.ALL;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
@@ -106,9 +105,9 @@ class ErrandLabelsResourceTest {
 		// Call
 		webTestClient.delete()
 			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
+			.accept(ALL)
 			.exchange()
-			.expectStatus().isNoContent()
-			.expectHeader().doesNotExist(CONTENT_TYPE);
+			.expectStatus().isNoContent();
 
 		// Verification
 		verify(errandLabelServiceMock).deleteErrandLabel(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
