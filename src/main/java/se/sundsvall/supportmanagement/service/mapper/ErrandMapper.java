@@ -143,6 +143,7 @@ public final class ErrandMapper {
 				.withContactReason(Optional.ofNullable(e.getContactReason()).map(ContactReasonEntity::getReason).orElse(null))
 				.withContactReasonDescription(e.getContactReasonDescription())
 				.withEscalationEmail(e.getEscalationEmail()))
+			//.withLabels(e.getLabels()))
 			.orElse(null);
 	}
 

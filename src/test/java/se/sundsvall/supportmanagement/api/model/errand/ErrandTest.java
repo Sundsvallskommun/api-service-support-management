@@ -19,6 +19,7 @@ import java.util.Random;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
 class ErrandTest {
 
 	@BeforeAll
@@ -63,6 +64,7 @@ class ErrandTest {
 		final var businessRelated = true;
 		final var contactReason = "reason";
 		final var contactReasonDescription = "contactReasonDescription";
+		final var labels = List.of("label");
 
 		final var bean = Errand.create()
 			.withAssignedGroupId(assignedGroupId)
@@ -87,7 +89,8 @@ class ErrandTest {
 			.withSuspension(suspension)
 			.withBusinessRelated(businessRelated)
 			.withContactReason(contactReason)
-			.withContactReasonDescription(contactReasonDescription);
+			.withContactReasonDescription(contactReasonDescription)
+			.withLabels(labels);
 
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(bean.getAssignedGroupId()).isEqualTo(assignedGroupId);
@@ -114,6 +117,7 @@ class ErrandTest {
 		assertThat(bean.getBusinessRelated()).isEqualTo(businessRelated);
 		assertThat(bean.getContactReason()).isEqualTo(contactReason);
 		assertThat(bean.getContactReasonDescription()).isEqualTo(contactReasonDescription);
+		assertThat(bean.getLabels()).isEqualTo(labels);
 	}
 
 	@Test

@@ -108,6 +108,9 @@ public class Errand {
 	@Schema(description = "Flag to indicate if the errand is business related", example = "true")
 	private Boolean businessRelated;
 
+	@Schema(description = "List of labels for the errand", example = "[\"label1\",\"label2\"]")
+	private List<String> labels;
+
 	@Schema(description = "Timestamp when errand was created", example = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	@DateTimeFormat(iso = ISO.DATE_TIME)
 	@Null(groups = {OnCreate.class, OnUpdate.class})
@@ -413,6 +416,19 @@ public class Errand {
 		return this;
 	}
 
+	public List<String> getLabels() {
+		return labels;
+	}
+
+	public void setLabels(final List<String> labels) {
+		this.labels = labels;
+	}
+
+	public Errand withLabels(final List<String> labels) {
+		this.labels = labels;
+		return this;
+	}
+
 	public Suspension getSuspension() {
 		return suspension;
 	}
@@ -427,25 +443,16 @@ public class Errand {
 	}
 
 	@Override
-	public int hashCode() {
-		return Objects.hash(assignedGroupId, assignedUserId, businessRelated, channel, classification, contactReason, contactReasonDescription, created, description, errandNumber, escalationEmail, externalTags, id, modified, parameters, priority,
-			reporterUserId, resolution, stakeholders, status, suspension, title, touched);
+	public boolean equals(final Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		final Errand errand = (Errand) o;
+		return Objects.equals(id, errand.id) && Objects.equals(errandNumber, errand.errandNumber) && Objects.equals(title, errand.title) && priority == errand.priority && Objects.equals(stakeholders, errand.stakeholders) && Objects.equals(externalTags, errand.externalTags) && Objects.equals(parameters, errand.parameters) && Objects.equals(classification, errand.classification) && Objects.equals(status, errand.status) && Objects.equals(resolution, errand.resolution) && Objects.equals(description, errand.description) && Objects.equals(channel, errand.channel) && Objects.equals(reporterUserId, errand.reporterUserId) && Objects.equals(assignedUserId, errand.assignedUserId) && Objects.equals(assignedGroupId, errand.assignedGroupId) && Objects.equals(escalationEmail, errand.escalationEmail) && Objects.equals(contactReason, errand.contactReason) && Objects.equals(contactReasonDescription, errand.contactReasonDescription) && Objects.equals(suspension, errand.suspension) && Objects.equals(businessRelated, errand.businessRelated) && Objects.equals(labels, errand.labels) && Objects.equals(created, errand.created) && Objects.equals(modified, errand.modified) && Objects.equals(touched, errand.touched);
 	}
 
 	@Override
-	public boolean equals(final Object obj) {
-		if (this == obj) {
-			return true;
-		}
-		if (!(obj instanceof final Errand other)) {
-			return false;
-		}
-		return Objects.equals(assignedGroupId, other.assignedGroupId) && Objects.equals(assignedUserId, other.assignedUserId) && Objects.equals(businessRelated, other.businessRelated) && Objects.equals(channel, other.channel) && Objects.equals(
-			classification, other.classification) && Objects.equals(contactReason, other.contactReason) && Objects.equals(contactReasonDescription, other.contactReasonDescription) && Objects.equals(created, other.created) && Objects.equals(description, other.description) && Objects.equals(errandNumber, other.errandNumber)
-			&& Objects.equals(escalationEmail, other.escalationEmail) && Objects.equals(externalTags, other.externalTags) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(parameters, other.parameters)
-			&& (priority == other.priority) && Objects.equals(reporterUserId, other.reporterUserId) && Objects.equals(resolution, other.resolution) && Objects.equals(stakeholders, other.stakeholders) && Objects.equals(status, other.status) && Objects
-			.equals(
-				suspension, other.suspension) && Objects.equals(title, other.title) && Objects.equals(touched, other.touched);
+	public int hashCode() {
+		return Objects.hash(id, errandNumber, title, priority, stakeholders, externalTags, parameters, classification, status, resolution, description, channel, reporterUserId, assignedUserId, assignedGroupId, escalationEmail, contactReason, contactReasonDescription, suspension, businessRelated, labels, created, modified, touched);
 	}
 
 	@Override
@@ -471,6 +478,7 @@ public class Errand {
 			", contactReasonDescription='" + contactReasonDescription + '\'' +
 			", suspension=" + suspension +
 			", businessRelated=" + businessRelated +
+			", labels=" + labels +
 			", created=" + created +
 			", modified=" + modified +
 			", touched=" + touched +
