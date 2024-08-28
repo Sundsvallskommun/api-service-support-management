@@ -12,7 +12,7 @@ class EmailProcessingHealthIndicatorTest {
 		var healthIndicator = new EmailProcessingHealthIndicator();
 
 		assertThat(healthIndicator.health().getStatus()).isEqualTo(Status.UP);
-		assertThat(healthIndicator.isErrors()).isFalse();
+		assertThat(healthIndicator.hasErrors()).isFalse();
 	}
 
 	@Test
@@ -21,7 +21,7 @@ class EmailProcessingHealthIndicatorTest {
 		healthIndicator.setUnhealthy();
 
 		assertThat(healthIndicator.health().getStatus().getCode()).isEqualTo("RESTRICTED");
-		assertThat(healthIndicator.isErrors()).isTrue();
+		assertThat(healthIndicator.hasErrors()).isTrue();
 	}
 
 	@Test
@@ -31,7 +31,7 @@ class EmailProcessingHealthIndicatorTest {
 		healthIndicator.setHealthy();
 
 		assertThat(healthIndicator.health().getStatus()).isEqualTo(Status.UP);
-		assertThat(healthIndicator.isErrors()).isFalse();
+		assertThat(healthIndicator.hasErrors()).isFalse();
 	}
 
 	@Test
@@ -41,6 +41,6 @@ class EmailProcessingHealthIndicatorTest {
 		healthIndicator.resetErrors();
 
 		assertThat(healthIndicator.health().getStatus().getCode()).isEqualTo("RESTRICTED");
-		assertThat(healthIndicator.isErrors()).isFalse();
+		assertThat(healthIndicator.hasErrors()).isFalse();
 	}
 }

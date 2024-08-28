@@ -38,7 +38,7 @@ public class EmailReaderScheduler {
 					}
 				})
 			);
-		if(!healthIndicator.isErrors()) {
+		if(!healthIndicator.hasErrors()) {
 			healthIndicator.setHealthy();
 		}
 		LOG.debug("Finished fetching from Emailreader");

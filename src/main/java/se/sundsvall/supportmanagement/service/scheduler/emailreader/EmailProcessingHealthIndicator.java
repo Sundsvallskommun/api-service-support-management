@@ -35,7 +35,7 @@ public class EmailProcessingHealthIndicator implements HealthIndicator {
 		errors.set(false);
 	}
 
-	public boolean isErrors() {
+	public boolean hasErrors() {
 		return errors.get();
 	}
 }

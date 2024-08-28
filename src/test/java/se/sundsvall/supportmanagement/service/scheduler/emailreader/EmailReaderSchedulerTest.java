@@ -50,7 +50,7 @@ class EmailReaderSchedulerTest {
 		verify(emailReaderWorkerMock).getEnabledEmailConfigs();
 		verify(emailReaderWorkerMock).getEmailsFromConfig(same(emailWorkerConfigEntityMock));
 		verify(emailReaderWorkerMock).processEmail(same(emailMock1), same(emailWorkerConfigEntityMock));
-		verify(healthIndicatorMock).isErrors();
+		verify(healthIndicatorMock).hasErrors();
 		verify(healthIndicatorMock).setHealthy();
 		verifyNoMoreInteractions(emailReaderWorkerMock, healthIndicatorMock);
 	}
@@ -61,7 +61,7 @@ class EmailReaderSchedulerTest {
 		when(emailReaderWorkerMock.getEnabledEmailConfigs()).thenReturn(Set.of(emailWorkerConfigEntityMock));
 		when(emailReaderWorkerMock.getEmailsFromConfig(any())).thenReturn(List.of(emailMock1, emailMock2));
 		doThrow(new RuntimeException("error")).when(emailReaderWorkerMock).processEmail(same(emailMock1), any());
-		when(healthIndicatorMock.isErrors()).thenReturn(true);
+		when(healthIndicatorMock.hasErrors()).thenReturn(true);
 		// Act
 		emailReaderScheduler.getAndProcessEmails();
 		// Verify
@@ -71,7 +71,7 @@ class EmailReaderSchedulerTest {
 		verify(emailReaderWorkerMock).getEmailsFromConfig(same(emailWorkerConfigEntityMock));
 		verify(emailReaderWorkerMock, times(2)).processEmail(emailArgumentCaptor.capture(), same(emailWorkerConfigEntityMock));
 		verify(healthIndicatorMock).setUnhealthy();
-		verify(healthIndicatorMock).isErrors();
+		verify(healthIndicatorMock).hasErrors();
 		assertThat(emailArgumentCaptor.getAllValues()).containsExactly(emailMock1, emailMock2);
 		verifyNoMoreInteractions(emailReaderWorkerMock, healthIndicatorMock);
 	}
