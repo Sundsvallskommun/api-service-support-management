@@ -1,18 +1,18 @@
 package se.sundsvall.supportmanagement.integration.db.util;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
-
 import org.zalando.problem.Problem;
 import se.sundsvall.supportmanagement.integration.db.ErrandNumberSequenceRepository;
 import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandNumberSequenceEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+
+import static org.springframework.transaction.annotation.Propagation.REQUIRES_NEW;
 import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
 
 @Component
@@ -28,7 +28,7 @@ public class ErrandNumberGeneratorService {
 		this.namespaceConfigRepository = namespaceConfigRepository;
 	}
 
-	@Transactional(isolation = Isolation.SERIALIZABLE)
+	@Transactional(isolation = Isolation.SERIALIZABLE, propagation = REQUIRES_NEW)
 	public String generateErrandNumber(final String namespace, final String municipalityId) {
 
 		final var shortcode = namespaceConfigRepository.getByNamespaceAndMunicipalityId(namespace, municipalityId)
