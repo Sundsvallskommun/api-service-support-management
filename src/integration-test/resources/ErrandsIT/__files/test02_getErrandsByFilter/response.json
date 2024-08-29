@@ -4,6 +4,7 @@
       "assignedGroupId": "ASSIGNED_GROUP_ID-1",
       "assignedUserId": "ASSIGNED_USER_ID-1",
       "businessRelated": false,
+      "labels": [],
       "classification": {
         "category": "CATEGORY-1",
         "type": "TYPE-1"

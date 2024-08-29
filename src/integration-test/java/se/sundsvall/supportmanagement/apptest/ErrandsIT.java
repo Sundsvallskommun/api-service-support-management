@@ -140,4 +140,15 @@ class ErrandsIT extends AbstractAppTest {
 		assertThat(revisionRepository.findAllByEntityIdOrderByVersion(id)).hasSize(1);
 	}
 
+	@Test
+	void test07_getErrandsByLabelFilter() {
+		setupCall()
+			.withServicePath(PATH + "?filter=labels:'LABEL-1'")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
 }

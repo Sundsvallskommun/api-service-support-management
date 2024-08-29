@@ -33,6 +33,7 @@
   "assignedGroupId": "ASSIGNED_GROUP_ID-3",
   "suspension": {},
   "businessRelated": false,
+  "labels": [],
   "created": "${json-unit.any-string}",
   "touched": "${json-unit.any-string}"
 }

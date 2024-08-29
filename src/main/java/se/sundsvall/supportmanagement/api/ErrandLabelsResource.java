@@ -30,6 +30,7 @@ import se.sundsvall.dept44.common.validators.annotation.ValidMunicipalityId;
 import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 import se.sundsvall.supportmanagement.service.ErrandLabelService;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -49,8 +50,8 @@ public class ErrandLabelsResource {
 
 	public ErrandLabelsResource(final ErrandLabelService service) {this.service = service;}
 
-
 	@GetMapping(produces = {APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE})
+	@Operation(summary = "Get errand labels", description = "Get errand labels")
 	@ApiResponse(responseCode = "200", description = "Successful Operation", useReturnTypeSchema = true)
 	public ResponseEntity<List<String>> getErrandLabels(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
@@ -60,6 +61,7 @@ public class ErrandLabelsResource {
 	}
 
 	@PostMapping(consumes = APPLICATION_JSON_VALUE, produces = {ALL_VALUE, APPLICATION_PROBLEM_JSON_VALUE})
+	@Operation(summary = "Add errand labels", description = "Add errand labels to an errand")
 	@ApiResponse(responseCode = "201", description = "Created", content = @Content(mediaType = APPLICATION_JSON_VALUE), useReturnTypeSchema = true)
 	public ResponseEntity<Void> addErrandLabels(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
@@ -74,6 +76,7 @@ public class ErrandLabelsResource {
 	}
 
 	@PutMapping(consumes = APPLICATION_JSON_VALUE, produces = {ALL_VALUE, APPLICATION_PROBLEM_JSON_VALUE})
+	@Operation(summary = "Replace errand labels", description = "Replace all labels of an errand")
 	@ApiResponse(responseCode = "204", description = "No content")
 	public ResponseEntity<Void> updateErrandLabels(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
@@ -85,6 +88,7 @@ public class ErrandLabelsResource {
 	}
 
 	@DeleteMapping
+	@Operation(summary = "Remove errand labels", description = "Remove all labels of an errand")
 	@ApiResponse(responseCode = "204", description = "No content")
 	public ResponseEntity<Void> removeErrandLabel(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
