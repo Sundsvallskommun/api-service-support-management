@@ -51,6 +51,7 @@
   "businessRelated": true,
   "contactReason": "reason5",
   "contactReasonDescription": "This is an updated contact reason description",
+  "labels": [],
   "created": "${json-unit.any-string}",
   "modified": "${json-unit.any-string}",
   "touched": "${json-unit.any-string}"

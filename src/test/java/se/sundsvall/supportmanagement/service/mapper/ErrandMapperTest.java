@@ -116,6 +116,10 @@ class ErrandMapperTest {
 
 	private static final Boolean BUSINESS_RELATED = true;
 
+	private static final String LABEL_1 = "label1";
+
+	private static final String LABEL_2 = "label2";
+
 	private static Errand createErrand() {
 		return Errand.create()
 			.withAssignedGroupId(ASSIGNED_GROUP_ID)
@@ -139,7 +143,8 @@ class ErrandMapperTest {
 			.withBusinessRelated(BUSINESS_RELATED)
 			.withSuspension(Suspension.create().withSuspendedFrom(SUSPENDED_FROM).withSuspendedTo(SUSPENDED_TO))
 			.withContactReason(CONTACT_REASON)
-			.withContactReasonDescription(CONTACT_REASON_DESCRIPTION);
+			.withContactReasonDescription(CONTACT_REASON_DESCRIPTION)
+			.withLabels(List.of(LABEL_1, LABEL_2));
 	}
 
 	private static Stakeholder createStakeHolder() {
@@ -184,7 +189,9 @@ class ErrandMapperTest {
 			.withSuspendedFrom(SUSPENDED_FROM)
 			.withSuspendedTo(SUSPENDED_TO)
 			.withErrandNumber(ERRAND_NUMBER)
-			.withBusinessRelated(BUSINESS_RELATED);
+			.withBusinessRelated(BUSINESS_RELATED)
+			.withLabels(List.of(LABEL_1, LABEL_2));
+
 	}
 
 	private static StakeholderEntity createStakeHolderEntity() {
@@ -233,8 +240,8 @@ class ErrandMapperTest {
 		assertThat(errand.getBusinessRelated()).isEqualTo(BUSINESS_RELATED);
 		assertThat(errand.getContactReason()).isEqualTo(CONTACT_REASON);
 		assertThat(errand.getContactReasonDescription()).isEqualTo(CONTACT_REASON_DESCRIPTION);
-		assertThat(errand.getLabels()).isNull();
-		assertThat(errand).hasNoNullFieldsOrPropertiesExcept("labels");
+		assertThat(errand.getLabels()).containsExactly(LABEL_1, LABEL_2);
+		assertThat(errand).hasNoNullFieldsOrProperties();
 	}
 
 	@Test
@@ -268,7 +275,8 @@ class ErrandMapperTest {
 				Errand::getEscalationEmail,
 				Errand::getBusinessRelated,
 				Errand::getContactReason,
-				Errand::getErrandNumber)
+				Errand::getErrandNumber,
+				Errand::getLabels)
 			.containsExactly(tuple(
 				ASSIGNED_GROUP_ID,
 				ASSIGNED_USER_ID,
@@ -290,10 +298,10 @@ class ErrandMapperTest {
 				ESCALATION_EMAIL,
 				BUSINESS_RELATED,
 				CONTACT_REASON,
-				ERRAND_NUMBER));
+				ERRAND_NUMBER,
+				List.of(LABEL_1, LABEL_2)));
 
-		assertThat(errands.getFirst().getLabels()).isNull();
-		assertThat(errands.getFirst()).hasNoNullFieldsOrPropertiesExcept("labels");
+		assertThat(errands.getFirst()).hasNoNullFieldsOrProperties();
 	}
 
 	@Test
@@ -325,7 +333,8 @@ class ErrandMapperTest {
 				ErrandEntity::getEscalationEmail,
 				ErrandEntity::getBusinessRelated,
 				ErrandEntity::getErrandNumber,
-				ErrandEntity::getParameters)
+				ErrandEntity::getParameters,
+				ErrandEntity::getLabels)
 			.containsExactly(
 				ASSIGNED_GROUP_ID,
 				ASSIGNED_USER_ID,
@@ -344,7 +353,8 @@ class ErrandMapperTest {
 				ESCALATION_EMAIL,
 				BUSINESS_RELATED,
 				ERRAND_NUMBER,
-				Map.of(PARAMETER_NAME, ParameterEntity.create().withValues(List.of(PARAMETER_VALUE))));
+				Map.of(PARAMETER_NAME, ParameterEntity.create().withValues(List.of(PARAMETER_VALUE))),
+				List.of(LABEL_1, LABEL_2));
 
 		assertThat(entity.getStakeholders()).hasSize(1).extracting(
 				StakeholderEntity::getAddress,

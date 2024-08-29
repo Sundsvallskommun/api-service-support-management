@@ -285,3 +285,10 @@ VALUES ('ec677eb3-604c-4935-bff7-f8f0b500c8f4','45d266a7-1ff2-4bf4-b6f3-0473b2b8
 INSERT INTO parameter_values(parameter_id, value)
 VALUES ('45d266a7-1ff2-4bf4-b6f3-0473b2b86fcd', 'value1'),
        ('45d266a7-1ff2-4bf4-b6f3-0473b2b86fcd', 'value2');
+
+-------------------------------------
+-- errandLabel
+-------------------------------------
+INSERT INTO errand_labels(errand_id, label)
+VALUES ('147d355f-dc94-4fde-a4cb-9ddd16cb1946', 'label-1'),
+       ('147d355f-dc94-4fde-a4cb-9ddd16cb1946', 'label-2');

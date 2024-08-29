@@ -36,13 +36,13 @@ class ErrandLabelServiceTest {
 	void getErrandLabels() {
 		// Arrange
 		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID))
-			.thenReturn(Optional.of(new ErrandEntity()));
+			.thenReturn(Optional.of(new ErrandEntity().withLabels(List.of("label1", "label2"))));
 
 		// Act
 		final List<String> labels = errandLabelService.getErrandLabels(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 
 		// Assertions
-		assertThat(labels).isEmpty();
+		assertThat(labels).containsExactly("label1", "label2");
 
 		// Assert
 		verify(errandsRepositoryMock).findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);

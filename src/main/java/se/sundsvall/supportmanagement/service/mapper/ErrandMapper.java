@@ -59,7 +59,8 @@ public final class ErrandMapper {
 			.withSuspendedFrom(Optional.ofNullable(errand.getSuspension()).map(Suspension::getSuspendedFrom).orElse(null))
 			.withSuspendedTo(Optional.ofNullable(errand.getSuspension()).map(Suspension::getSuspendedTo).orElse(null))
 			.withBusinessRelated(errand.getBusinessRelated())
-			.withParameters(toErrandParameterEntityMap(errand.getParameters()));
+			.withParameters(toErrandParameterEntityMap(errand.getParameters()))
+			.withLabels(errand.getLabels());
 	}
 
 	public static ErrandEntity updateEntity(final ErrandEntity entity, final Errand errand) {
@@ -89,6 +90,7 @@ public final class ErrandMapper {
 		ofNullable(errand.getEscalationEmail()).ifPresent(value -> entity.setEscalationEmail(isEmpty(value) ? null : value));
 		ofNullable(errand.getBusinessRelated()).ifPresent(value -> entity.setBusinessRelated(errand.getBusinessRelated()));
 		ofNullable(errand.getParameters()).ifPresent(value -> entity.setParameters(toErrandParameterEntityMap(errand.getParameters())));
+		ofNullable(errand.getLabels()).ifPresent(entity::setLabels);
 		return entity;
 	}
 
@@ -142,8 +144,8 @@ public final class ErrandMapper {
 				.withParameters(toParameterMap(e.getParameters()))
 				.withContactReason(Optional.ofNullable(e.getContactReason()).map(ContactReasonEntity::getReason).orElse(null))
 				.withContactReasonDescription(e.getContactReasonDescription())
-				.withEscalationEmail(e.getEscalationEmail()))
-			//.withLabels(e.getLabels()))
+				.withEscalationEmail(e.getEscalationEmail())
+				.withLabels(e.getLabels()))
 			.orElse(null);
 	}
 
