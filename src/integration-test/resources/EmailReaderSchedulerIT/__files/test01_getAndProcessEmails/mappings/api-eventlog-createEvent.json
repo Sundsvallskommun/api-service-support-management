@@ -1,0 +1,133 @@
+{
+	"mappings": [
+		{
+			"scenarioName": "api-eventlog-createEvent",
+			"requiredScenarioState": "Started",
+			"newScenarioState": "Error",
+			"request": {
+				"method": "POST",
+				"urlPattern": "/api-eventlog/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+				"headers": {
+					"Authorization": {
+						"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
+					}
+				},
+				"bodyPatterns": [
+					{
+						"ignoreArrayOrder": true,
+						"equalToJson": {
+							"type": "CREATE",
+							"message": "Ärendet har skapats.",
+							"owner": "SupportManagement",
+							"created": "${json-unit.any-string}",
+							"historyReference": "${json-unit.regex}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+							"sourceType": "Errand",
+							"metadata": [
+								{
+									"key": "CurrentVersion",
+									"value": "0"
+								},
+								{
+									"key": "CurrentRevision",
+									"value": "${json-unit.regex}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+								}
+							]
+						}
+					}
+				]
+			},
+			"response": {
+				"headers": {
+					"Content-Type": "*/*"
+				},
+				"status": 202
+			}
+		},
+		{
+			"scenarioName": "api-eventlog-createEvent",
+			"requiredScenarioState": "Error",
+			"newScenarioState": "Successful",
+			"request": {
+				"method": "POST",
+				"urlPattern": "/api-eventlog/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+				"headers": {
+					"Authorization": {
+						"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
+					}
+				},
+				"bodyPatterns": [
+					{
+						"ignoreArrayOrder": true,
+						"equalToJson": {
+							"type": "CREATE",
+							"message": "Ärendet har skapats.",
+							"owner": "SupportManagement",
+							"created": "${json-unit.any-string}",
+							"historyReference": "${json-unit.regex}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+							"sourceType": "Errand",
+							"metadata": [
+								{
+									"key": "CurrentVersion",
+									"value": "0"
+								},
+								{
+									"key": "CurrentRevision",
+									"value": "${json-unit.regex}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+								}
+							]
+						}
+					}
+				]
+			},
+			"response": {
+				"headers": {
+					"Content-Type": "*/*"
+				},
+				"status": 500,
+				"body" : "Error!"
+			}
+		},
+		{
+			"scenarioName": "api-eventlog-createEvent",
+			"requiredScenarioState": "Successful",
+			"request": {
+				"method": "POST",
+				"urlPattern": "/api-eventlog/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+				"headers": {
+					"Authorization": {
+						"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
+					}
+				},
+				"bodyPatterns": [
+					{
+						"ignoreArrayOrder": true,
+						"equalToJson": {
+							"type": "CREATE",
+							"message": "Ärendet har skapats.",
+							"owner": "SupportManagement",
+							"created": "${json-unit.any-string}",
+							"historyReference": "${json-unit.regex}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+							"sourceType": "Errand",
+							"metadata": [
+								{
+									"key": "CurrentVersion",
+									"value": "0"
+								},
+								{
+									"key": "CurrentRevision",
+									"value": "${json-unit.regex}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+								}
+							]
+						}
+					}
+				]
+			},
+			"response": {
+				"headers": {
+					"Content-Type": "*/*"
+				},
+				"status": 202
+			}
+		}
+	]
+}

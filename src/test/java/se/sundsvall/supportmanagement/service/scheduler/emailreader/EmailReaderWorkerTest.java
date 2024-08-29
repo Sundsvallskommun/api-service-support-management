@@ -116,7 +116,7 @@ class EmailReaderWorkerTest {
 			.withStatusChangeTo("ONGOING")
 			.withInactiveStatus("SOLVED");
 
-		final var errandEntity = ErrandEntity.create().withId("id").withStatus("SOLVED").withTouched(OffsetDateTime.now());
+		final var errandEntity = ErrandEntity.create().withId("id").withStatus("SOLVED").withCreated(OffsetDateTime.now().minusDays(1)).withModified(OffsetDateTime.now());
 		final var communicationEntity = CommunicationEntity.create();
 
 
@@ -160,7 +160,7 @@ class EmailReaderWorkerTest {
 			.withStatusChangeTo("ONGOING")
 			.withInactiveStatus("SOLVED");
 
-		final var errandEntity = ErrandEntity.create().withId("id").withStatus("SOLVED").withTouched(OffsetDateTime.now().minusDays(6));
+		final var errandEntity = ErrandEntity.create().withId("id").withStatus("SOLVED").withCreated(OffsetDateTime.now().minusDays(6));
 		final var communicationEntity = CommunicationEntity.create();
 		final var emailRequest = new EmailRequest();
 
