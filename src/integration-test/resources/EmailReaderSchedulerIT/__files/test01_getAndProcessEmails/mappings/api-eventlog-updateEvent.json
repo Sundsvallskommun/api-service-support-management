@@ -1,0 +1,31 @@
+{
+  "name": "api-eventlog-updateEvent",
+  "request": {
+    "method": "POST",
+    "urlPattern": "/api-eventlog/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+    "headers": {
+      "Authorization": {
+        "equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
+      }
+    },
+    "bodyPatterns": [
+      {
+        "ignoreArrayOrder" : true,
+        "equalToJson": {
+          "type": "UPDATE",
+          "message": "Ärendekommunikation har skapats.",
+          "owner": "SupportManagement",
+          "created": "${json-unit.any-string}",
+          "sourceType": "Errand",
+          "metadata": []
+        }
+      }
+    ]
+  },
+  "response": {
+    "headers": {
+      "Content-Type": "*/*"
+    },
+    "status": 202
+  }
+}

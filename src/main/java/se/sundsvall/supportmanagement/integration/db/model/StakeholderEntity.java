@@ -257,7 +257,7 @@ public class StakeholderEntity {
 	public String toString() {
 		return "StakeholderEntity{" +
 			"id=" + id +
-			", errandEntity=" + errandEntity +
+			", errandEntity=" + (errandEntity != null ? errandEntity.getId() : "null") +
 			", externalId='" + externalId + '\'' +
 			", externalIdType='" + externalIdType + '\'' +
 			", city='" + city + '\'' +
