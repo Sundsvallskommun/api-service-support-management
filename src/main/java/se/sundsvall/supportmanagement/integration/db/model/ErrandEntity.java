@@ -150,6 +150,7 @@ public class ErrandEntity {
 	@TimeZoneStorage(NORMALIZE)
 	private OffsetDateTime modified;
 
+	// If formula is modified, make sure to update getTouched accordingly.
 	@Formula("greatest(coalesce(created, 0), coalesce(modified, 0))")
 	@TimeZoneStorage(NORMALIZE)
 	private OffsetDateTime touched;
@@ -458,7 +459,13 @@ public class ErrandEntity {
 	}
 
 	public OffsetDateTime getTouched() {
-		return touched;
+		//If session is not commited touched may be null. In that case fall back on comparing modified and created.
+		if(touched != null) {
+			return touched;
+		} else if (modified != null && created != null && modified.isAfter(created)) {
+			return modified;
+		}
+		return created;
 	}
 
 	public void setTouched(final OffsetDateTime touched) {

@@ -119,15 +119,7 @@ public class EmailReaderWorker {
 		return config.getInactiveStatus() != null
 			&& errand.getStatus().equals(config.getInactiveStatus())
 			&& config.getDaysOfInactivityBeforeReject() != null
-			// errand.getTouched() will be null if session is not flushed.
-			&& calculateTouched(errand).isBefore(OffsetDateTime.now().minusDays(config.getDaysOfInactivityBeforeReject()));
-	}
-
-	private OffsetDateTime calculateTouched(ErrandEntity errand) {
-		if(errand.getModified() != null && errand.getModified().isAfter(errand.getCreated())) {
-			return errand.getModified();
-		}
-		return errand.getCreated();
+			&& errand.getTouched().isBefore(OffsetDateTime.now().minusDays(config.getDaysOfInactivityBeforeReject()));
 	}
 
 	private void sendEmail(final ErrandEntity errand, final Email email, final EmailWorkerConfigEntity config) {
