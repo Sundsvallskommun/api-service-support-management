@@ -6,6 +6,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
+import se.sundsvall.dept44.requestid.RequestId;
 
 @Service
 public class EmailReaderScheduler {
@@ -23,6 +24,8 @@ public class EmailReaderScheduler {
 	@Scheduled(cron = "${scheduler.emailreader.cron}")
 	@SchedulerLock(name = "fetch_emails", lockAtMostFor = "${scheduler.emailreader.shedlock-lock-at-most-for}")
 	public void getAndProcessEmails() {
+		RequestId.init();
+
 		LOG.debug("Fetching messages from Emailreader");
 		healthIndicator.resetErrors();
 		emailReaderWorker.getEnabledEmailConfigs()
@@ -30,16 +33,14 @@ public class EmailReaderScheduler {
 				.forEach(email -> {
 					try {
 						emailReaderWorker.processEmail(email, config);
-					} catch (Exception e) {
+					} catch (final Exception e) {
 						LOG.error("Error processing email with id: {}", email.getId(), e);
 						healthIndicator.setUnhealthy();
 					}
-				})
-			);
-		if(!healthIndicator.hasErrors()) {
+				}));
+		if (!healthIndicator.hasErrors()) {
 			healthIndicator.setHealthy();
 		}
 		LOG.debug("Finished fetching from Emailreader");
 	}
-
 }
