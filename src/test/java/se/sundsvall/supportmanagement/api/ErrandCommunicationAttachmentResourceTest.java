@@ -22,9 +22,8 @@ import se.sundsvall.supportmanagement.service.CommunicationService;
 @ActiveProfiles("junit")
 class ErrandCommunicationAttachmentResourceTest {
 
-	private final static String PATH = "/communication/attachments/{attachmentID}/streamed";
-
-	private final static String ATTACHMENT_ID = randomUUID().toString();
+	private static final String PATH = "/communication/attachments/{attachmentID}/streamed";
+	private static final String ATTACHMENT_ID = randomUUID().toString();
 
 	@Autowired
 	private WebTestClient webTestClient;

@@ -18,12 +18,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import generated.se.sundsvall.emailreader.Email;
+import generated.se.sundsvall.emailreader.EmailAttachment;
 import se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
 import se.sundsvall.supportmanagement.service.util.BlobBuilder;
-
-import generated.se.sundsvall.emailreader.Email;
-import generated.se.sundsvall.emailreader.EmailAttachment;
 
 @ExtendWith(MockitoExtension.class)
 class EmailReaderMapperTest {
@@ -52,8 +51,7 @@ class EmailReaderMapperTest {
 			.attachments(List.of(new EmailAttachment()
 				.name("someName")
 				.content("someContent")
-				.contentType("text/plain")
-			));
+				.contentType("text/plain")));
 
 		final var result = emailReaderMapper.toAttachments(email).getFirst();
 
@@ -75,7 +73,7 @@ class EmailReaderMapperTest {
 	@Test
 	void toCommunicationEntity() {
 
-		//Arrange
+		// Arrange
 		when(blobBuilderMock.createBlob(anyString())).thenReturn(blobMock);
 
 		final var email = new Email()
@@ -89,8 +87,7 @@ class EmailReaderMapperTest {
 			.attachments(List.of(new EmailAttachment()
 				.name("someName")
 				.content("someContent")
-				.contentType("text/plain")
-			));
+				.contentType("text/plain")));
 
 		// Act
 		final var result = emailReaderMapper.toCommunicationEntity(email);
@@ -116,6 +113,31 @@ class EmailReaderMapperTest {
 	}
 
 	@Test
+	void toCommunicationEntityWhenRecipientsIsNull() {
+
+		// Arrange
+		final var email = new Email()
+			.id("someId")
+			.subject("someSubject")
+			.recipients(null)
+			.sender("someSender")
+			.message("someMessage")
+			.headers(Map.of(EmailHeader.MESSAGE_ID.toString(), List.of("someValue")))
+			.receivedAt(OffsetDateTime.now())
+			.attachments(List.of(new EmailAttachment()
+				.name("someName")
+				.content("someContent")
+				.contentType("text/plain")));
+
+		// Act
+		final var result = emailReaderMapper.toCommunicationEntity(email);
+
+		// Assert
+		assertThat(result).isNotNull().hasNoNullFieldsOrPropertiesExcept("target", "errandNumber", "errandAttachments");
+		assertThat(result.getTarget()).isNull();
+	}
+
+	@Test
 	void toCommunicationEntity_null() {
 
 		final var result = emailReaderMapper.toCommunicationEntity(null);
@@ -123,9 +145,8 @@ class EmailReaderMapperTest {
 		assertThat(result).isNull();
 	}
 
-
 	@ParameterizedTest
-	@CsvSource({"true,role", "false,role", "true,null"})
+	@CsvSource({ "true,role", "false,role", "true,null" })
 	void toErrand(boolean addSenderAsStakeholder, String stakeholderRole) {
 
 		final var email = new Email()
@@ -160,7 +181,6 @@ class EmailReaderMapperTest {
 		}
 	}
 
-
 	@Test
 	void createEmailRequest() {
 		// Arrange
@@ -191,6 +211,5 @@ class EmailReaderMapperTest {
 		assertThat(result.getMessage()).isEqualTo(template);
 
 	}
-
 
 }

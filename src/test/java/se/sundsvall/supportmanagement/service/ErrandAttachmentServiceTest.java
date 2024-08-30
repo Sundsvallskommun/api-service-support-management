@@ -24,10 +24,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import jakarta.persistence.EntityManager;
-import jakarta.servlet.ServletOutputStream;
-import jakarta.servlet.http.HttpServletResponse;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -39,6 +35,9 @@ import org.springframework.util.StreamUtils;
 import org.springframework.web.multipart.MultipartFile;
 import org.zalando.problem.ThrowableProblem;
 
+import jakarta.persistence.EntityManager;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.http.HttpServletResponse;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
@@ -157,6 +156,7 @@ class ErrandAttachmentServiceTest {
 		verifyNoInteractions(revisionServiceMock, eventServiceMock);
 	}
 
+	@SuppressWarnings("resource")
 	@Test
 	void readErrandAttachment() throws IOException, SQLException {
 
@@ -167,12 +167,11 @@ class ErrandAttachmentServiceTest {
 		when(attachmentDataEntityMock.getFile()).thenReturn(blobMock);
 		when(attachmentMock.getMimeType()).thenReturn(MIME_TYPE);
 		when(attachmentMock.getFileName()).thenReturn(FILE_NAME);
-		var outputStreamMock = Mockito.mock(ServletOutputStream.class);
+		final var outputStreamMock = Mockito.mock(ServletOutputStream.class);
 		when(httpServletResponseMock.getOutputStream()).thenReturn(outputStreamMock);
-		var inputStreamMock = Mockito.mock(InputStream.class);
+		final var inputStreamMock = Mockito.mock(InputStream.class);
 		when(blobMock.getBinaryStream()).thenReturn(inputStreamMock);
 		when(blobMock.length()).thenReturn(123L);
-
 
 		// Call
 		try (final MockedStatic<StreamUtils> streamMock = Mockito.mockStatic(StreamUtils.class)) {
@@ -184,7 +183,6 @@ class ErrandAttachmentServiceTest {
 			verify(httpServletResponseMock).addHeader(CONTENT_DISPOSITION, "attachment; filename=\"" + FILE_NAME + "\"");
 			verify(httpServletResponseMock).setContentLength(123);
 			streamMock.verify(() -> StreamUtils.copy(same(inputStreamMock), same(outputStreamMock)));
-
 
 			verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 			verifyNoInteractions(revisionServiceMock, eventServiceMock);

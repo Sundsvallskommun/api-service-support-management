@@ -27,7 +27,6 @@ import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 
-
 /**
  * Errand time measurements IT tests.
  */
@@ -38,19 +37,14 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 })
 class ErrandTimeMeasurementsIT extends AbstractAppTest {
 
-	private final static String ERRAND_ID = "ec677eb3-604c-4935-bff7-f8f0b500c8f4";
-
+	private static final String ERRAND_ID = "ec677eb3-604c-4935-bff7-f8f0b500c8f4";
 	private static final String BASE_PATH = "/NAMESPACE.1/2281/errands";
-
 	private static final String TIME_MEASUREMENT_PATH = BASE_PATH + "/" + ERRAND_ID + "/timeMeasure";
-
 	private static final String REQUEST_FILE = "request.json";
-
 	private static final String RESPONSE_FILE = "response.json";
 
 	@Autowired
 	private ErrandsRepository errandsRepository;
-
 
 	@Test
 	void test01_getTimeMeasurements() {

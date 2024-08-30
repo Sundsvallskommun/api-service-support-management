@@ -19,8 +19,7 @@ import se.sundsvall.supportmanagement.service.CommunicationService;
 @ActiveProfiles("junit")
 class ErrandCommunicationAttachmentFailuresResourceTest {
 
-	private final static String PATH = "/communication/attachments/{attachmentID}/streamed";
-
+	private static final String PATH = "/communication/attachments/{attachmentID}/streamed";
 	private static final String INVALID = "#invalid#";
 
 	@Autowired

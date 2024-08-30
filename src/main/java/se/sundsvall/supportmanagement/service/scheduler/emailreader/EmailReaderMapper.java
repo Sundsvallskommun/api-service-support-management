@@ -1,14 +1,19 @@
 package se.sundsvall.supportmanagement.service.scheduler.emailreader;
 
+import static java.util.Collections.emptyList;
+import static java.util.Objects.isNull;
+import static java.util.UUID.randomUUID;
+import static java.util.stream.Collectors.toMap;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
+import generated.se.sundsvall.emailreader.Email;
+import generated.se.sundsvall.emailreader.EmailAttachment;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
 import se.sundsvall.supportmanagement.api.model.errand.Classification;
 import se.sundsvall.supportmanagement.api.model.errand.ContactChannel;
@@ -26,9 +31,6 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.Direction;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
 import se.sundsvall.supportmanagement.service.util.BlobBuilder;
 
-import generated.se.sundsvall.emailreader.Email;
-import generated.se.sundsvall.emailreader.EmailAttachment;
-
 @Component
 public class EmailReaderMapper {
 
@@ -39,26 +41,25 @@ public class EmailReaderMapper {
 	}
 
 	List<AttachmentEntity> toAttachments(final Email email) {
-		if (email == null) {
-			return Collections.emptyList();
+		if (isNull(email)) {
+			return emptyList();
 		}
-		return Optional.ofNullable(email.getAttachments()).orElse(Collections.emptyList())
+		return Optional.ofNullable(email.getAttachments()).orElse(emptyList())
 			.stream()
-			.map(emailAttachment ->
-				AttachmentEntity.create()
-					.withId(UUID.randomUUID().toString())
-					.withAttachmentData(new AttachmentDataEntity().withFile(blobBuilder.createBlob(emailAttachment.getContent())))
-					.withFileName(emailAttachment.getName())
-					.withMimeType(emailAttachment.getContentType()))
+			.map(emailAttachment -> AttachmentEntity.create()
+				.withId(randomUUID().toString())
+				.withAttachmentData(AttachmentDataEntity.create().withFile(blobBuilder.createBlob(emailAttachment.getContent())))
+				.withFileName(emailAttachment.getName())
+				.withMimeType(emailAttachment.getContentType()))
 			.toList();
 	}
 
 	CommunicationEntity toCommunicationEntity(final Email email) {
-		if (email == null) {
+		if (isNull(email)) {
 			return null;
 		}
 		return CommunicationEntity.create()
-			.withId(UUID.randomUUID().toString())
+			.withId(randomUUID().toString())
 			.withDirection(Direction.INBOUND)
 			.withExternalCaseID("")
 			.withSubject(email.getSubject())
@@ -66,13 +67,12 @@ public class EmailReaderMapper {
 			.withSender(email.getSender())
 			.withSent(email.getReceivedAt())
 			.withType(CommunicationType.EMAIL)
-			.withTarget(email.getRecipients().getFirst())
+			.withTarget(Optional.ofNullable(email.getRecipients()).orElse(emptyList()).stream().findFirst().orElse(null))
 			.withEmailHeaders(toEmailHeaders(email))
 			.withAttachments(toMessageAttachments(email.getAttachments()));
 	}
 
 	private List<CommunicationEmailHeaderEntity> toEmailHeaders(final Email email) {
-
 		return Optional.ofNullable(email.getHeaders())
 			.orElseGet(Collections::emptyMap)
 			.entrySet()
@@ -84,10 +84,9 @@ public class EmailReaderMapper {
 	}
 
 	private List<CommunicationAttachmentEntity> toMessageAttachments(final List<EmailAttachment> attachments) {
-
 		return Optional.ofNullable(attachments).orElse(Collections.emptyList()).stream()
 			.map(attachment -> CommunicationAttachmentEntity.create()
-				.withId(UUID.randomUUID().toString())
+				.withId(randomUUID().toString())
 				.withName(attachment.getName())
 				.withAttachmentData(toMessageAttachmentData(attachment))
 				.withContentType(attachment.getContentType()))
@@ -100,9 +99,9 @@ public class EmailReaderMapper {
 	}
 
 	public Errand toErrand(final Email email, final String status, final boolean addSenderAsStakeholder,
-						   final String stakeholderRole, final String errandChannel) {
+		final String stakeholderRole, final String errandChannel) {
 
-		var errand = Errand.create()
+		final var errand = Errand.create()
 			.withTitle(email.getSubject())
 			.withDescription(email.getMessage())
 			.withStatus(status)
@@ -110,22 +109,18 @@ public class EmailReaderMapper {
 			.withChannel(errandChannel)
 			.withClassification(Classification.create().withCategory(email.getMetadata().get("classification.category")).withType(email.getMetadata().get("classification.type")));
 
-		if(addSenderAsStakeholder) {
+		if (addSenderAsStakeholder) {
 			errand.withStakeholders(List.of(
 				Stakeholder.create()
 					.withRole(stakeholderRole)
 					.withContactChannels(List.of(
-						ContactChannel.create().withType("EMAIL").withValue(email.getSender())
-					)
-				)));
+						ContactChannel.create().withType("EMAIL").withValue(email.getSender())))));
 		}
 
 		return errand;
-
 	}
 
 	public EmailRequest createEmailRequest(final Email email, final String sender, final String messageTemplate) {
-
 		return EmailRequest.create()
 			.withSubject(email.getSubject())
 			.withRecipient(email.getSender()) // Because we are sending a return response
@@ -136,13 +131,10 @@ public class EmailReaderMapper {
 	}
 
 	private Map<EmailHeader, List<String>> toEmailHeaderMap(final Email email) {
-
 		return email.getHeaders().entrySet().stream()
-			.collect(Collectors.toMap(
+			.collect(toMap(
 				entry -> EmailHeader.valueOf(entry.getKey()),
 				Map.Entry::getValue,
-				(oldValue, newValue) -> newValue
-			));
+				(oldValue, newValue) -> newValue));
 	}
-
 }

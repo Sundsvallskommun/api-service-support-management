@@ -11,6 +11,8 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import generated.se.sundsvall.emailreader.Email;
+import generated.se.sundsvall.eventlog.EventType;
 import se.sundsvall.supportmanagement.integration.db.EmailWorkerConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.EmailWorkerConfigEntity;
@@ -19,10 +21,6 @@ import se.sundsvall.supportmanagement.integration.emailreader.EmailReaderClient;
 import se.sundsvall.supportmanagement.service.CommunicationService;
 import se.sundsvall.supportmanagement.service.ErrandService;
 import se.sundsvall.supportmanagement.service.EventService;
-
-import generated.se.sundsvall.emailreader.Email;
-import generated.se.sundsvall.eventlog.EventType;
-
 
 @Service
 public class EmailReaderWorker {
@@ -54,7 +52,6 @@ public class EmailReaderWorker {
 		this.emailReaderMapper = emailReaderMapper;
 		this.emailWorkerConfigRepository = emailWorkerConfigRepository;
 	}
-
 
 	public Set<EmailWorkerConfigEntity> getEnabledEmailConfigs() {
 		return emailWorkerConfigRepository.findAll().stream()
@@ -98,7 +95,7 @@ public class EmailReaderWorker {
 
 		if (isErrandInactive(errand, config)) {
 			sendEmail(errand, email, config);
-		} else if (config.getTriggerStatusChangeOn() != null && errand.getStatus().equals(config.getTriggerStatusChangeOn())) {
+		} else if ((config.getTriggerStatusChangeOn() != null) && errand.getStatus().equals(config.getTriggerStatusChangeOn())) {
 			errand.setStatus(config.getStatusChangeTo());
 			errandRepository.save(errand);
 		}
@@ -115,10 +112,9 @@ public class EmailReaderWorker {
 	}
 
 	private boolean isErrandInactive(final ErrandEntity errand, final EmailWorkerConfigEntity config) {
-
-		return config.getInactiveStatus() != null
+		return (config.getInactiveStatus() != null)
 			&& errand.getStatus().equals(config.getInactiveStatus())
-			&& config.getDaysOfInactivityBeforeReject() != null
+			&& (config.getDaysOfInactivityBeforeReject() != null)
 			&& errand.getTouched().isBefore(OffsetDateTime.now().minusDays(config.getDaysOfInactivityBeforeReject()));
 	}
 

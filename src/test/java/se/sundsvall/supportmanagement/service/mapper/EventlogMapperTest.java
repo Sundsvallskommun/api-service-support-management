@@ -45,11 +45,11 @@ class EventlogMapperTest {
 	private static final String KEY_PREVIOUS_VERSION = "PreviousVersion";
 	private static final String KEY_CURRENT_REVISION = "CurrentRevision";
 	private static final String KEY_CURRENT_VERSION = "CurrentVersion";
-	private final static String CASE_ID = "caseId";
-	private final static String PREVIOUS_ID = "previousRevisionId";
-	private final static int PREVIOUS_VERSION = 123;
-	private final static String CURRENT_ID = "currentRevisionId";
-	private final static int CURRENT_VERSION = 456;
+	private static final String CASE_ID = "caseId";
+	private static final String PREVIOUS_ID = "previousRevisionId";
+	private static final int PREVIOUS_VERSION = 123;
+	private static final String CURRENT_ID = "currentRevisionId";
+	private static final int CURRENT_VERSION = 456;
 
 	@Test
 	void toEventAllNulls() {
