@@ -20,7 +20,10 @@
       "value": "VALUE-5"
     }
   ],
-  "parameters": {},
+  "parameters": {
+    "keyA":["valueA1", "valueA2"],
+    "keyB":["valueB1"]
+  },
   "classification": {
     "category": "CATEGORY-3",
     "type": "TYPE-3"

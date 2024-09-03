@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ParameterEntity;
 
 public final class ErrandParameterMapper {
@@ -16,11 +17,11 @@ public final class ErrandParameterMapper {
 		//Intentionally empty
 	}
 
-	public static Map<String, ParameterEntity> toErrandParameterEntityMap(final Map<String, List<String>> parameters) {
+	public static Map<String, ParameterEntity> toErrandParameterEntityMap(final Map<String, List<String>> parameters, ErrandEntity entity) {
 		return ofNullable(parameters).orElse(emptyMap())
 			.entrySet()
 			.stream()
-			.collect(toMap(Map.Entry::getKey, e -> toErrandParameterEntity(e.getValue())));
+			.collect(toMap(Map.Entry::getKey, e -> toErrandParameterEntity(e.getValue()).withErrandEntity(entity)));
 	}
 
 	public static ParameterEntity toErrandParameterEntity(final List<String> errandParameter) {

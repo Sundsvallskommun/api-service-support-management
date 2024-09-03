@@ -9,6 +9,7 @@ import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMappe
 import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.toParameterMap;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -59,7 +60,7 @@ public final class ErrandMapper {
 			.withSuspendedFrom(Optional.ofNullable(errand.getSuspension()).map(Suspension::getSuspendedFrom).orElse(null))
 			.withSuspendedTo(Optional.ofNullable(errand.getSuspension()).map(Suspension::getSuspendedTo).orElse(null))
 			.withBusinessRelated(errand.getBusinessRelated())
-			.withParameters(toErrandParameterEntityMap(errand.getParameters()))
+			.withParameters(toErrandParameterEntityMap(errand.getParameters(), errandEntity))
 			.withLabels(errand.getLabels());
 	}
 
@@ -89,9 +90,14 @@ public final class ErrandMapper {
 		ofNullable(errand.getContactReasonDescription()).ifPresent(value -> entity.setContactReasonDescription(isEmpty(value) ? null : value));
 		ofNullable(errand.getEscalationEmail()).ifPresent(value -> entity.setEscalationEmail(isEmpty(value) ? null : value));
 		ofNullable(errand.getBusinessRelated()).ifPresent(value -> entity.setBusinessRelated(errand.getBusinessRelated()));
-		ofNullable(errand.getParameters()).ifPresent(value -> entity.setParameters(toErrandParameterEntityMap(errand.getParameters())));
+		ofNullable(errand.getParameters()).ifPresent(value -> updateParameters(entity, value));
 		ofNullable(errand.getLabels()).ifPresent(entity::setLabels);
 		return entity;
+	}
+
+	private static void updateParameters(final ErrandEntity entity, final Map<String, List<String>> parameters) {
+		ofNullable(entity.getParameters()).ifPresentOrElse(Map::clear, () -> entity.setParameters(new HashMap<>()));
+		entity.getParameters().putAll(toErrandParameterEntityMap(parameters, entity));
 	}
 
 

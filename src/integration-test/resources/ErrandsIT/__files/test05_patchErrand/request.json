@@ -34,6 +34,9 @@
       "value": "VALUE-6"
     }
   ],
+  "parameters": {
+    "keyA":["valueA3"]
+  },
   "contactReason": "reason5",
   "contactReasonDescription": "This is an updated contact reason description"
 }
