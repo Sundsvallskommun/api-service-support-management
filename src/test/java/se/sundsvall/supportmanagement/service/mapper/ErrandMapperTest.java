@@ -353,7 +353,7 @@ class ErrandMapperTest {
 				ESCALATION_EMAIL,
 				BUSINESS_RELATED,
 				ERRAND_NUMBER,
-				Map.of(PARAMETER_NAME, ParameterEntity.create().withValues(List.of(PARAMETER_VALUE))),
+				Map.of(PARAMETER_NAME, ParameterEntity.create().withValues(List.of(PARAMETER_VALUE)).withErrandEntity(entity)),
 				List.of(LABEL_1, LABEL_2));
 
 		assertThat(entity.getStakeholders()).hasSize(1).extracting(

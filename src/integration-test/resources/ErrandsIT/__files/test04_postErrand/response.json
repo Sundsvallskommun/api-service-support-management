@@ -16,7 +16,9 @@
       "value": "8849-2848"
     }
   ],
-  "parameters": {},
+  "parameters": {
+    "keyA":["valueA1"]
+  },
   "classification": {
     "category": "CATEGORY-2",
     "type": "TYPE-2"

@@ -35,7 +35,9 @@
       "value": "VALUE-6"
     }
   ],
-  "parameters": {},
+  "parameters": {
+    "keyA":["valueA3"]
+  },
   "classification": {
     "category": "CATEGORY-3",
     "type": "TYPE-3"

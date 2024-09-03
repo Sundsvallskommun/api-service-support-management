@@ -8,6 +8,9 @@
       "externalIdType": "PRIVATE"
     }
   ],
+  "parameters": {
+    "keyA":["valueA1"]
+  },
   "externalTags": [
     {
       "key": "caseid",
