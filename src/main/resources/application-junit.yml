@@ -18,8 +18,9 @@ integration:
   web-message-collector:
     url: http://web-message-collector.url
     family-ids:
-      internal:
-        - 123
+      2281:
+        internal:
+          - 123
 spring:
   cache:
     type: none

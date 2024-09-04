@@ -8,6 +8,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties(prefix = "integration.web-message-collector")
 public record WebMessageCollectorProperties(int connectTimeout, int readTimeout,
-                                            Map<String, List<String>> familyIds) {
+                                            Map<String, Map<String, List<String>>> familyIds) {
 
 }

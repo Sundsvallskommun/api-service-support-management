@@ -19,17 +19,19 @@ import generated.se.sundsvall.webmessagecollector.MessageDTO;
 )
 public interface WebMessageCollectorClient {
 
-	@GetMapping("/messages/{familyId}/{instance}")
-	List<MessageDTO> getMessages(@PathVariable(name = "familyId") String familyId, @PathVariable(name = "instance") String instance);
+	@GetMapping("/{municipalityId}/messages/{familyId}/{instance}")
+	List<MessageDTO> getMessages(
+		@PathVariable(name = "municipalityId") String municipalityId,
+		@PathVariable(name = "familyId") String familyId, @PathVariable(name = "instance") String instance);
 
 
-	@DeleteMapping("/messages")
-	void deleteMessages(List<Integer> ids);
+	@DeleteMapping("/{municipalityId}/messages")
+	void deleteMessages(@PathVariable(name = "municipalityId") String municipalityId, List<Integer> ids);
 
-	@GetMapping("/messages/attachments/{attachmentId}")
-	byte[] getAttachment(@PathVariable(name = "attachmentId") int attachmentId);
+	@GetMapping("/{municipalityId}/messages/attachments/{attachmentId}")
+	byte[] getAttachment(@PathVariable(name = "municipalityId") String municipalityId, @PathVariable(name = "attachmentId") int attachmentId);
 
-	@DeleteMapping("/messages/attachments/{attachmentId}")
-	void deleteAttachment(@PathVariable(name = "attachmentId") int attachmentId);
+	@DeleteMapping("/{municipalityId}/messages/attachments/{attachmentId}")
+	void deleteAttachment(@PathVariable(name = "municipalityId") String municipalityId, @PathVariable(name = "attachmentId") int attachmentId);
 
 }

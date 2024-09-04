@@ -5,8 +5,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import se.sundsvall.dept44.requestid.RequestId;
+
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 
 @Service
 public class WebMessageCollectorScheduler {
@@ -25,8 +26,14 @@ public class WebMessageCollectorScheduler {
 		RequestId.init();
 
 		LOG.debug("Fetching messages from WebMessageCollector");
+
 		webMessageCollectorWorker.fetchWebMessages()
-			.forEach(webMessageCollectorWorker::processAttachments);
+			.forEach((municipalityId, attachments) ->
+				attachments.forEach(attachment ->
+					webMessageCollectorWorker.processAttachments(attachment, municipalityId)));
+
+
 		LOG.debug("Finished fetching from WebMessageCollector");
 	}
+
 }
