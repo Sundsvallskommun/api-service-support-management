@@ -1,11 +1,13 @@
 package se.sundsvall.supportmanagement.service.scheduler.webmessagecollector;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,13 +36,13 @@ class WebMessageCollectorSchedulerTest {
 	void fetchWebMessages() {
 		// Arrange
 		final var entity = new CommunicationAttachmentEntity();
-		when(webMessageCollectorWorkerMock.fetchWebMessages()).thenReturn(List.of(entity));
+		when(webMessageCollectorWorkerMock.fetchWebMessages()).thenReturn(Map.of("2281", List.of(entity)));
 
 		// Act
 		scheduler.fetchWebMessages();
 		//Verify
 		verify(webMessageCollectorWorkerMock).fetchWebMessages();
-		verify(webMessageCollectorWorkerMock).processAttachments(communicationAttachmentEntityCaptor.capture());
+		verify(webMessageCollectorWorkerMock).processAttachments(communicationAttachmentEntityCaptor.capture(), eq("2281"));
 		assertThat(communicationAttachmentEntityCaptor.getValue()).isSameAs(entity);
 		verifyNoMoreInteractions(webMessageCollectorWorkerMock);
 	}

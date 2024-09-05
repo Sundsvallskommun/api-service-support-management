@@ -44,6 +44,8 @@ import generated.se.sundsvall.webmessagecollector.MessageDTO;
 @ExtendWith(MockitoExtension.class)
 class WebMessageCollectorWorkerTest {
 
+	private static final String MUNICIPALITY_ID = "2281";
+
 	@Mock(answer = Answers.CALLS_REAL_METHODS)
 	private WebMessageCollectorMapper webMessageCollectorMapperMock;
 
@@ -96,8 +98,8 @@ class WebMessageCollectorWorkerTest {
 			.withStatus(Constants.ERRAND_STATUS_SOLVED)
 			.withTouched(now().minusDays(2));
 		// Mock
-		when(webMessageCollectorPropertiesMock.familyIds()).thenReturn(Map.of(instance, List.of(familyId)));
-		when(webMessageCollectorClientMock.getMessages(familyId, instance)).thenReturn(List.of(messagedto));
+		when(webMessageCollectorPropertiesMock.familyIds()).thenReturn(Map.of(MUNICIPALITY_ID, Map.of(instance, List.of(familyId))));
+		when(webMessageCollectorClientMock.getMessages(MUNICIPALITY_ID, familyId, instance)).thenReturn(List.of(messagedto));
 		when(errandsRepositoryMock.findByExternalTagsValue(any(String.class))).thenReturn(Optional.of(errandEntity));
 
 
@@ -105,7 +107,7 @@ class WebMessageCollectorWorkerTest {
 		webMessageCollectorWorker.fetchWebMessages();
 		// Verify
 		verify(webMessageCollectorPropertiesMock).familyIds();
-		verify(webMessageCollectorClientMock).getMessages(familyId, instance);
+		verify(webMessageCollectorClientMock).getMessages(MUNICIPALITY_ID, familyId, instance);
 		verify(errandsRepositoryMock, times(1)).findByExternalTagsValue(familyId);
 
 		verify(errandsRepositoryMock).save(errandEntityCaptor.capture());
@@ -138,12 +140,12 @@ class WebMessageCollectorWorkerTest {
 		// Arrange
 		final var familyId = "123";
 		final var instance = "instance";
-		when(webMessageCollectorPropertiesMock.familyIds()).thenReturn(Map.of(instance, List.of(familyId)));
+		when(webMessageCollectorPropertiesMock.familyIds()).thenReturn(Map.of(MUNICIPALITY_ID, Map.of(instance, List.of(familyId))));
 		// Act
 		webMessageCollectorWorker.fetchWebMessages();
 		// Verify
 		verify(webMessageCollectorPropertiesMock).familyIds();
-		verify(webMessageCollectorClientMock).getMessages(familyId, instance);
+		verify(webMessageCollectorClientMock).getMessages(MUNICIPALITY_ID, familyId, instance);
 		verifyNoMoreInteractions(webMessageCollectorClientMock, webMessageCollectorPropertiesMock, errandsRepositoryMock, communicationRepositoryMock);
 
 	}
@@ -167,13 +169,13 @@ class WebMessageCollectorWorkerTest {
 			.userId("userId")
 			.username("username");
 		// Mock
-		when(webMessageCollectorPropertiesMock.familyIds()).thenReturn(Map.of(instance, List.of(familyId)));
-		when(webMessageCollectorClientMock.getMessages(familyId, instance)).thenReturn(List.of(messagedto));
+		when(webMessageCollectorPropertiesMock.familyIds()).thenReturn(Map.of(MUNICIPALITY_ID, Map.of(instance, List.of(familyId))));
+		when(webMessageCollectorClientMock.getMessages(MUNICIPALITY_ID, familyId, instance)).thenReturn(List.of(messagedto));
 		// Act
 		webMessageCollectorWorker.fetchWebMessages();
 		// Verify
 		verify(webMessageCollectorPropertiesMock).familyIds();
-		verify(webMessageCollectorClientMock).getMessages(familyId, instance);
+		verify(webMessageCollectorClientMock).getMessages(MUNICIPALITY_ID, familyId, instance);
 		verify(errandsRepositoryMock).findByExternalTagsValue(any(String.class));
 		verifyNoMoreInteractions(webMessageCollectorClientMock, webMessageCollectorPropertiesMock, errandsRepositoryMock, communicationRepositoryMock);
 
@@ -205,15 +207,15 @@ class WebMessageCollectorWorkerTest {
 			.withTouched(now().minusDays(5).minusMinutes(1));
 
 		// Mock
-		when(webMessageCollectorPropertiesMock.familyIds()).thenReturn(Map.of(instance, List.of(familyId)));
-		when(webMessageCollectorClientMock.getMessages(familyId, instance)).thenReturn(List.of(messagedto));
+		when(webMessageCollectorPropertiesMock.familyIds()).thenReturn(Map.of(MUNICIPALITY_ID, Map.of(instance, List.of(familyId))));
+		when(webMessageCollectorClientMock.getMessages(MUNICIPALITY_ID, familyId, instance)).thenReturn(List.of(messagedto));
 		when(errandsRepositoryMock.findByExternalTagsValue(any(String.class))).thenReturn(Optional.of(errandEntity));
 
 		// Act
 		webMessageCollectorWorker.fetchWebMessages();
 		// Verify
 		verify(webMessageCollectorPropertiesMock).familyIds();
-		verify(webMessageCollectorClientMock).getMessages(familyId, instance);
+		verify(webMessageCollectorClientMock).getMessages(MUNICIPALITY_ID, familyId, instance);
 		verify(errandsRepositoryMock).findByExternalTagsValue(any(String.class));
 		verifyNoMoreInteractions(webMessageCollectorClientMock, webMessageCollectorPropertiesMock, errandsRepositoryMock, communicationRepositoryMock);
 
@@ -248,13 +250,13 @@ class WebMessageCollectorWorkerTest {
 			.userId("userId")
 			.username("username");
 		// Mock
-		when(webMessageCollectorPropertiesMock.familyIds()).thenReturn(Map.of(instance, List.of(familyId)));
-		when(webMessageCollectorClientMock.getMessages(familyId, instance)).thenReturn(List.of(messagedto));
+		when(webMessageCollectorPropertiesMock.familyIds()).thenReturn(Map.of(MUNICIPALITY_ID, Map.of(instance, List.of(familyId))));
+		when(webMessageCollectorClientMock.getMessages(MUNICIPALITY_ID, familyId, instance)).thenReturn(List.of(messagedto));
 		// Act
 		webMessageCollectorWorker.fetchWebMessages();
 		//Verify
 		verify(webMessageCollectorPropertiesMock).familyIds();
-		verify(webMessageCollectorClientMock).getMessages(familyId, instance);
+		verify(webMessageCollectorClientMock).getMessages(MUNICIPALITY_ID, familyId, instance);
 		verify(errandsRepositoryMock).findByExternalTagsValue(null);
 		verifyNoMoreInteractions(webMessageCollectorPropertiesMock, webMessageCollectorClientMock, errandsRepositoryMock);
 		verifyNoInteractions(communicationRepositoryMock);

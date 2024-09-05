@@ -2,11 +2,14 @@ package se.sundsvall.supportmanagement.service.scheduler.webmessagecollector;
 
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
 import static java.util.Collections.emptyMap;
+import static java.util.stream.Collectors.toMap;
 import static se.sundsvall.supportmanagement.Constants.ERRAND_STATUS_ONGOING;
 import static se.sundsvall.supportmanagement.Constants.ERRAND_STATUS_SOLVED;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 
 import org.slf4j.Logger;
@@ -53,19 +56,22 @@ public class WebMessageCollectorWorker {
 	}
 
 	@Transactional
-	public List<CommunicationAttachmentEntity> fetchWebMessages() {
-
+	public Map<String, List<CommunicationAttachmentEntity>> fetchWebMessages() {
 		return Optional.ofNullable(webMessageCollectorProperties.familyIds())
 			.orElse(emptyMap())
 			.entrySet().stream()
-			.flatMap(entry -> entry.getValue().stream()
-				.flatMap(familyId -> getWebMessages(entry.getKey(), familyId)
-					.stream()))
-			.toList();
+			.collect(toMap(
+				Entry::getKey,
+				municipalityIdEntry -> municipalityIdEntry.getValue().entrySet().stream()
+					.flatMap(instanceEntry -> instanceEntry.getValue().stream()
+						.flatMap(familyId -> getWebMessages(instanceEntry.getKey(), familyId, municipalityIdEntry.getKey())
+							.stream()))
+					.toList()
+			));
 	}
 
-	private List<CommunicationAttachmentEntity> getWebMessages(final String instance, final String familyId) {
-		final var messages = webMessageCollectorClient.getMessages(familyId, instance);
+	private List<CommunicationAttachmentEntity> getWebMessages(final String instance, final String familyId, final String municipalityId) {
+		final var messages = webMessageCollectorClient.getMessages(municipalityId, familyId, instance);
 		LOG.info("Got {} messages from the WebMessageCollectorClient", messages.size());
 
 		return processMessages(messages);
@@ -91,8 +97,8 @@ public class WebMessageCollectorWorker {
 
 
 	@Transactional
-	public void processAttachments(final CommunicationAttachmentEntity attachment) {
-		final var attachmentData = webMessageCollectorClient.getAttachment(Integer.parseInt(attachment.getId()));
+	public void processAttachments(final CommunicationAttachmentEntity attachment, final String municipalityId) {
+		final var attachmentData = webMessageCollectorClient.getAttachment(municipalityId, Integer.parseInt(attachment.getId()));
 		attachment.setAttachmentData(webMessageCollectorMapper.toCommunicationAttachmentDataEntity(attachmentData));
 		communicationRepository.saveAndFlush(attachment.getCommunicationEntity());
 	}
