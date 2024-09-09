@@ -5,11 +5,16 @@
     {
       "contactChannels": [],
       "externalId": "cb20c51f-fcf3-42c0-b613-de563634a8ec",
-      "externalIdType": "PRIVATE"
+      "externalIdType": "PRIVATE",
+      "metadata": {
+        "key": "value"
+      }
     }
   ],
   "parameters": {
-    "keyA":["valueA1"]
+    "keyA": [
+      "valueA1"
+    ]
   },
   "externalTags": [
     {

@@ -24,7 +24,8 @@
               "value": "sender@this.is.a.test"
             }
           ],
-          "role": "ROLE-1"
+          "role": "ROLE-1",
+          "metadata": {}
         }
       ],
       "status": "STATUS-1",
@@ -54,7 +55,8 @@
               "value": "sender@this.is.a.test"
             }
           ],
-          "role": "ROLE-1"
+          "role": "ROLE-1",
+          "metadata": {}
         }
       ],
       "status": "STATUS-1",

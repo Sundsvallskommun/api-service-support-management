@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.integration.db.model;
 import static jakarta.persistence.GenerationType.IDENTITY;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import jakarta.persistence.CollectionTable;
@@ -67,6 +68,10 @@ public class StakeholderEntity {
 	@CollectionTable(name = "contact_channel", joinColumns = @JoinColumn(name = "stakeholder_id", referencedColumnName = "id", foreignKey = @ForeignKey(name = "fk_stakeholder_contact_channel_stakeholder_id")))
 	private List<ContactChannelEntity> contactChannels;
 
+	@ElementCollection
+	@CollectionTable(name = "stakeholder_metadata", joinColumns = @JoinColumn(name = "stakeholder_id", referencedColumnName = "id", foreignKey = @ForeignKey(name = "fk_stakeholder_metadata_stakeholder_id")))
+	private Map<String, String> metadata;
+
 	public static StakeholderEntity create() {
 		return new StakeholderEntity();
 	}
@@ -101,7 +106,7 @@ public class StakeholderEntity {
 		return externalId;
 	}
 
-	public void setExternalId(String externalId) {
+	public void setExternalId(final String externalId) {
 		this.externalId = externalId;
 	}
 
@@ -109,11 +114,11 @@ public class StakeholderEntity {
 		return id;
 	}
 
-	public void setId(long id) {
+	public void setId(final long id) {
 		this.id = id;
 	}
 
-	public StakeholderEntity withId(long id) {
+	public StakeholderEntity withId(final long id) {
 		this.id = id;
 		return this;
 	}
@@ -122,16 +127,16 @@ public class StakeholderEntity {
 		return errandEntity;
 	}
 
-	public void setErrandEntity(ErrandEntity errandEntity) {
+	public void setErrandEntity(final ErrandEntity errandEntity) {
 		this.errandEntity = errandEntity;
 	}
 
-	public StakeholderEntity withErrandEntity(ErrandEntity errandEntity) {
+	public StakeholderEntity withErrandEntity(final ErrandEntity errandEntity) {
 		this.errandEntity = errandEntity;
 		return this;
 	}
 
-	public StakeholderEntity withExternalId(String externalId) {
+	public StakeholderEntity withExternalId(final String externalId) {
 		this.externalId = externalId;
 		return this;
 	}
@@ -140,11 +145,11 @@ public class StakeholderEntity {
 		return externalIdType;
 	}
 
-	public void setExternalIdType(String externalIdType) {
+	public void setExternalIdType(final String externalIdType) {
 		this.externalIdType = externalIdType;
 	}
 
-	public StakeholderEntity withExternalIdType(String externalIdType) {
+	public StakeholderEntity withExternalIdType(final String externalIdType) {
 		this.externalIdType = externalIdType;
 		return this;
 	}
@@ -153,11 +158,11 @@ public class StakeholderEntity {
 		return role;
 	}
 
-	public void setRole(String role) {
+	public void setRole(final String role) {
 		this.role = role;
 	}
 
-	public StakeholderEntity withRole(String role) {
+	public StakeholderEntity withRole(final String role) {
 		this.role = role;
 		return this;
 	}
@@ -166,11 +171,11 @@ public class StakeholderEntity {
 		return firstName;
 	}
 
-	public void setFirstName(String firstName) {
+	public void setFirstName(final String firstName) {
 		this.firstName = firstName;
 	}
 
-	public StakeholderEntity withFirstName(String firstName) {
+	public StakeholderEntity withFirstName(final String firstName) {
 		this.firstName = firstName;
 		return this;
 	}
@@ -179,11 +184,11 @@ public class StakeholderEntity {
 		return lastName;
 	}
 
-	public void setLastName(String lastName) {
+	public void setLastName(final String lastName) {
 		this.lastName = lastName;
 	}
 
-	public StakeholderEntity withLastName(String lastName) {
+	public StakeholderEntity withLastName(final String lastName) {
 		this.lastName = lastName;
 		return this;
 	}
@@ -192,11 +197,11 @@ public class StakeholderEntity {
 		return address;
 	}
 
-	public void setAddress(String address) {
+	public void setAddress(final String address) {
 		this.address = address;
 	}
 
-	public StakeholderEntity withAddress(String address) {
+	public StakeholderEntity withAddress(final String address) {
 		this.address = address;
 		return this;
 	}
@@ -205,11 +210,11 @@ public class StakeholderEntity {
 		return careOf;
 	}
 
-	public void setCareOf(String careOf) {
+	public void setCareOf(final String careOf) {
 		this.careOf = careOf;
 	}
 
-	public StakeholderEntity withCareOf(String careOf) {
+	public StakeholderEntity withCareOf(final String careOf) {
 		this.careOf = careOf;
 		return this;
 	}
@@ -218,11 +223,11 @@ public class StakeholderEntity {
 		return zipCode;
 	}
 
-	public void setZipCode(String zipCode) {
+	public void setZipCode(final String zipCode) {
 		this.zipCode = zipCode;
 	}
 
-	public StakeholderEntity withZipCode(String zipCode) {
+	public StakeholderEntity withZipCode(final String zipCode) {
 		this.zipCode = zipCode;
 		return this;
 	}
@@ -231,11 +236,11 @@ public class StakeholderEntity {
 		return country;
 	}
 
-	public void setCountry(String country) {
+	public void setCountry(final String country) {
 		this.country = country;
 	}
 
-	public StakeholderEntity withCountry(String country) {
+	public StakeholderEntity withCountry(final String country) {
 		this.country = country;
 		return this;
 	}
@@ -244,12 +249,25 @@ public class StakeholderEntity {
 		return contactChannels;
 	}
 
-	public void setContactChannels(List<ContactChannelEntity> contactChannels) {
+	public void setContactChannels(final List<ContactChannelEntity> contactChannels) {
 		this.contactChannels = contactChannels;
 	}
 
-	public StakeholderEntity withContactChannels(List<ContactChannelEntity> contactChannels) {
+	public StakeholderEntity withContactChannels(final List<ContactChannelEntity> contactChannels) {
 		this.contactChannels = contactChannels;
+		return this;
+	}
+
+	public Map<String, String> getMetadata() {
+		return metadata;
+	}
+
+	public void setMetadata(final Map<String, String> metadata) {
+		this.metadata = metadata;
+	}
+
+	public StakeholderEntity withMetadata(final Map<String, String> metadata) {
+		this.metadata = metadata;
 		return this;
 	}
 
@@ -270,25 +288,22 @@ public class StakeholderEntity {
 			", zipCode='" + zipCode + '\'' +
 			", country='" + country + '\'' +
 			", contactChannels=" + contactChannels +
+			", metadata=" + metadata +
 			'}';
+
 	}
 
 	@Override
 	public boolean equals(final Object o) {
-		if (this == o) {
-			return true;
-		}
-		if ((o == null) || (getClass() != o.getClass())) {
-			return false;
-		}
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
 		final StakeholderEntity that = (StakeholderEntity) o;
-		return (id == that.id) && Objects.equals(errandEntity, that.errandEntity) && Objects.equals(externalId, that.externalId) && Objects.equals(externalIdType, that.externalIdType) && Objects.equals(city, that.city) && Objects.equals(organizationName,
-			that.organizationName) && Objects.equals(role, that.role) && Objects.equals(firstName, that.firstName) && Objects.equals(lastName, that.lastName) && Objects.equals(address, that.address) && Objects.equals(careOf, that.careOf) && Objects.equals(
-				zipCode, that.zipCode) && Objects.equals(country, that.country) && Objects.equals(contactChannels, that.contactChannels);
+		return id == that.id && Objects.equals(errandEntity, that.errandEntity) && Objects.equals(externalId, that.externalId) && Objects.equals(externalIdType, that.externalIdType) && Objects.equals(city, that.city) && Objects.equals(organizationName, that.organizationName) && Objects.equals(role, that.role) && Objects.equals(firstName, that.firstName) && Objects.equals(lastName, that.lastName) && Objects.equals(address, that.address) && Objects.equals(careOf, that.careOf) && Objects.equals(zipCode, that.zipCode) && Objects.equals(country, that.country) && Objects.equals(contactChannels, that.contactChannels) && Objects.equals(metadata, that.metadata);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, errandEntity, externalId, externalIdType, city, organizationName, role, firstName, lastName, address, careOf, zipCode, country, contactChannels);
+		return Objects.hash(id, errandEntity, externalId, externalIdType, city, organizationName, role, firstName, lastName, address, careOf, zipCode, country, contactChannels, metadata);
 	}
+
 }
