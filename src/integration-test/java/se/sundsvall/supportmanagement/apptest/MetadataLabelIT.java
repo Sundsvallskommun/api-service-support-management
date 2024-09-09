@@ -5,6 +5,7 @@ import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.POST;
+import static org.springframework.http.HttpMethod.PUT;
 import static org.springframework.http.HttpStatus.ACCEPTED;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
@@ -100,6 +101,25 @@ class MetadataLabelIT extends AbstractAppTest {
 			.sendRequestAndVerifyResponse();
 
 		assertThat(labelRepository.existsByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_2281)).isFalse();
+	}
+
+	@Test
+	void test05_updateLabels() {
+		final var path = "/" + NAMESPACE + "/" + MUNICIPALITY_2281 + "/metadata/labels";
+		final var json = "[{\"classification\":\"TOP-LEVEL\",\"displayName\":\"TOP 1\",\"name\":\"LABEL-1\",\"labels\":[{\"classification\":\"SUB-LEVEL\",\"displayName\":\"SUB 1.1\",\"name\":\"SUB-1-1\"}]}]";
+
+		assertThat(labelRepository.existsByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_2281)).isTrue();
+		assertThat(labelRepository.findOneByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_2281).getJsonStructure()).isNotEqualTo(json);
+
+		setupCall()
+				.withServicePath(path)
+				.withHttpMethod(PUT)
+				.withRequest(REQUEST_FILE)
+				.withExpectedResponseStatus(NO_CONTENT)
+				.withExpectedResponseBodyIsNull()
+				.sendRequestAndVerifyResponse();
+
+		assertThat(labelRepository.findOneByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_2281).getJsonStructure()).isEqualTo(json);
 	}
 
 }

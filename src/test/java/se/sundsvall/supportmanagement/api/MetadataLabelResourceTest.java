@@ -79,6 +79,27 @@ class MetadataLabelResourceTest {
 	}
 
 	@Test
+	void UpdateLabels() {
+		// Arrange
+		final var labels = List.of(
+				Label.create().withClassification("classification").withName("name_1"),
+				Label.create().withClassification("classification").withName("name_2"));
+
+		// Act
+		webTestClient.put()
+				.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+				.contentType(APPLICATION_JSON)
+				.bodyValue(labels)
+				.exchange()
+				.expectStatus().isNoContent()
+				.expectBody().isEmpty();
+
+		// Assert and verify
+		verify(metadataServiceMock).updateLabels(NAMESPACE, MUNICIPALITY_ID, labels);
+		verifyNoMoreInteractions(metadataServiceMock);
+	}
+
+	@Test
 	void deleteLabels() {
 		// Act
 		webTestClient.delete().uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))

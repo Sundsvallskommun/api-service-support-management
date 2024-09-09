@@ -221,6 +221,10 @@ public class MetadataMapper {
 			.withNamespace(namespace);
 	}
 
+	public static LabelEntity updateLabelEntity(LabelEntity entity, final List<Label> labels) {
+		return entity.withJsonStructure(GSON.toJson(labels, LABEL_LIST_TYPE));
+	}
+
 	public static Labels toLabels(LabelEntity entity) {
 		if (isNull(entity)) {
 			return null;
