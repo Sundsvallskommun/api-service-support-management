@@ -790,6 +790,28 @@ class MetadataServiceTest {
 	}
 
 	@Test
+	void createLabelsNonUniqueNames() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var labels = List.of(
+				Label.create().withName("name1")
+						.withLabels(List.of(Label.create().withName("name2"))),
+				Label.create().withName("name3"),
+				Label.create().withName("name4")
+						.withLabels(List.of(Label.create().withName("name1"))));
+
+		// Call
+		final var e = assertThrows(ThrowableProblem.class, () -> metadataService.createLabels(namespace, municipalityId, labels));
+		// Verifications
+		assertThat(e.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(e.getMessage()).isEqualTo("Bad Request: Label names must be unique. Duplication detected for 'name1'");
+		verify(labelRepositoryMock).existsByNamespaceAndMunicipalityId(namespace, municipalityId);
+		verifyNoMoreInteractions(labelRepositoryMock);
+		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, roleRepositoryMock, validationRepositoryMock, statusRepositoryMock);
+	}
+
+	@Test
 	void getLabels() {
 		// Setup
 		final var namespace = "namespace";
