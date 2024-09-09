@@ -20,7 +20,7 @@
 		<generated-sources-path>${project.build.directory}/generated-sources
 		</generated-sources-path>
 		<generated-sources-java-path>src/main/java</generated-sources-java-path>
-		<shedlock.version>5.15.1</shedlock.version>
+		<shedlock.version>5.16.0</shedlock.version>
 	</properties>
 	<dependencies>
 		<dependency>
