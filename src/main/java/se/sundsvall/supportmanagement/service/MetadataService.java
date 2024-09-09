@@ -21,8 +21,10 @@ import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toSta
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateContactReason;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateEntity;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -258,7 +260,21 @@ public class MetadataService {
 		if (labelRepository.existsByNamespaceAndMunicipalityId(namespace, municipalityId)) {
 			throw Problem.valueOf(BAD_REQUEST, String.format("Labels already exists in namespace '%s' for municipalityId '%s'", namespace, municipalityId));
 		}
+		verifyUniqueNames(labels, new HashSet<>());
 		labelRepository.save(toLabelEntity(namespace, municipalityId, labels));
+	}
+
+	private void verifyUniqueNames(final List<Label> labels, final Set<String> names) {
+		if(labels == null) {
+			return;
+		}
+		for(Label label : labels) {
+			if(names.contains(label.getName())) {
+				throw Problem.valueOf(BAD_REQUEST, String.format("Label names must be unique. Duplication detected for '%s'", label.getName()));
+			}
+			names.add(label.getName());
+			verifyUniqueNames(label.getLabels(), names);
+		}
 	}
 
 	@Cacheable(value = CACHE_NAME, key = "{#root.methodName, #namespace, #municipalityId}")
