@@ -1,0 +1,14 @@
+[
+  {
+    "classification": "TOP-LEVEL",
+    "displayName": "TOP 1",
+    "name": "LABEL-1",
+    "labels": [
+      {
+        "classification": "SUB-LEVEL",
+        "displayName": "SUB 1.1",
+        "name": "SUB-1-1"
+      }
+    ]
+  }
+]

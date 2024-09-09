@@ -3,6 +3,7 @@ TRUNCATE table errand;
 TRUNCATE table external_tag;
 TRUNCATE table attachment;
 TRUNCATE table stakeholder;
+TRUNCATE table stakeholder_metadata;
 TRUNCATE table contact_channel;
 TRUNCATE table category;
 TRUNCATE table external_id_type;

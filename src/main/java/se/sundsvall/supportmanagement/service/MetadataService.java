@@ -20,6 +20,7 @@ import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toSta
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toStatusEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateContactReason;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateEntity;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateLabelEntity;
 
 import java.util.HashSet;
 import java.util.List;
@@ -262,6 +263,19 @@ public class MetadataService {
 		}
 		verifyUniqueNames(labels, new HashSet<>());
 		labelRepository.save(toLabelEntity(namespace, municipalityId, labels));
+	}
+
+	@Caching(evict = {
+			@CacheEvict(value = CACHE_NAME, key = "{'findLabels', #namespace, #municipalityId}"),
+			@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}")
+	})
+	public void updateLabels(final String namespace, final String municipalityId, final List<Label> labels) {
+		if (!labelRepository.existsByNamespaceAndMunicipalityId(namespace, municipalityId)) {
+			throw Problem.valueOf(NOT_FOUND, String.format("Labels dos not exists in namespace '%s' for municipalityId '%s'", namespace, municipalityId));
+		}
+		verifyUniqueNames(labels, new HashSet<>());
+		var entity = labelRepository.findOneByNamespaceAndMunicipalityId(namespace, municipalityId);
+		labelRepository.save(updateLabelEntity(entity, labels));
 	}
 
 	private void verifyUniqueNames(final List<Label> labels, final Set<String> names) {

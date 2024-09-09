@@ -17,6 +17,7 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -806,6 +807,69 @@ class MetadataServiceTest {
 		// Verifications
 		assertThat(e.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(e.getMessage()).isEqualTo("Bad Request: Label names must be unique. Duplication detected for 'name1'");
+		verify(labelRepositoryMock).existsByNamespaceAndMunicipalityId(namespace, municipalityId);
+		verifyNoMoreInteractions(labelRepositoryMock);
+		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, roleRepositoryMock, validationRepositoryMock, statusRepositoryMock);
+	}
+
+	@Test
+	void updateLabels() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var label = Label.create().withName("name");
+		final var labelEntity = LabelEntity.create();
+		// Mock
+		when(labelRepositoryMock.existsByNamespaceAndMunicipalityId(namespace, municipalityId)).thenReturn(true);
+		when(labelRepositoryMock.findOneByNamespaceAndMunicipalityId(any(), any())).thenReturn(labelEntity);
+		// Call
+		metadataService.updateLabels(namespace, municipalityId, List.of(label));
+		// Verifications
+		verify(labelRepositoryMock).existsByNamespaceAndMunicipalityId(namespace, municipalityId);
+		verify(labelRepositoryMock).findOneByNamespaceAndMunicipalityId(namespace, municipalityId);
+		ArgumentCaptor<LabelEntity> labelEntityCaptor = ArgumentCaptor.forClass(LabelEntity.class);
+		verify(labelRepositoryMock).save(labelEntityCaptor.capture());
+		assertThat(labelEntityCaptor.getValue()).isSameAs(labelEntity);
+		assertThat(labelEntityCaptor.getValue().getJsonStructure()).isEqualTo("[{\"name\":\"name\"}]");
+		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, roleRepositoryMock, validationRepositoryMock, statusRepositoryMock);
+	}
+
+	@Test
+	void updateLabelsNonUniqueNames() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var labels = List.of(
+				Label.create().withName("name1")
+						.withLabels(List.of(Label.create().withName("name2"))),
+				Label.create().withName("name3"),
+				Label.create().withName("name4")
+						.withLabels(List.of(Label.create().withName("name1"))));
+		// Mock
+		when(labelRepositoryMock.existsByNamespaceAndMunicipalityId(namespace, municipalityId)).thenReturn(true);
+		// Call
+		final var e = assertThrows(ThrowableProblem.class, () -> metadataService.updateLabels(namespace, municipalityId, labels));
+		// Verifications
+		assertThat(e.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(e.getMessage()).isEqualTo("Bad Request: Label names must be unique. Duplication detected for 'name1'");
+		verify(labelRepositoryMock).existsByNamespaceAndMunicipalityId(namespace, municipalityId);
+		verifyNoMoreInteractions(labelRepositoryMock);
+		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, roleRepositoryMock, validationRepositoryMock, statusRepositoryMock);
+	}
+
+	@Test
+	void updateLabelsNoExistingLabels() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var labels = List.of(Label.create().withName("name"));
+		// Mock
+		when(labelRepositoryMock.existsByNamespaceAndMunicipalityId(namespace, municipalityId)).thenReturn(false);
+		// Call
+		final var e = assertThrows(ThrowableProblem.class, () -> metadataService.updateLabels(namespace, municipalityId, labels));
+		// Verifications
+		assertThat(e.getStatus()).isEqualTo(NOT_FOUND);
+		assertThat(e.getMessage()).isEqualTo("Not Found: Labels dos not exists in namespace 'namespace' for municipalityId 'municipalityId'");
 		verify(labelRepositoryMock).existsByNamespaceAndMunicipalityId(namespace, municipalityId);
 		verifyNoMoreInteractions(labelRepositoryMock);
 		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, roleRepositoryMock, validationRepositoryMock, statusRepositoryMock);
