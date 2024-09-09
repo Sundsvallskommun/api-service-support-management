@@ -37,6 +37,7 @@
           "address": "ADDRESS-2",
           "careOf": "CARE_OF-2",
           "contactChannels": [],
+          "metadata": {},
           "country": "COUNTRY-2",
           "externalId": "01e159b4-724d-40f9-91a4-9a7d021b8563",
           "externalIdType": "PRIVATE",
@@ -54,6 +55,7 @@
               "value": "VALUE-1"
             }
           ],
+          "metadata": {},
           "country": "COUNTRY-1",
           "externalId": "USER_ID",
           "externalIdType": "EMPLOYEE",

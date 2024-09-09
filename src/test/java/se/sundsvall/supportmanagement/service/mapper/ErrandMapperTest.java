@@ -120,6 +120,8 @@ class ErrandMapperTest {
 
 	private static final String LABEL_2 = "label2";
 
+	private static final Map<String, String> METADATA = Map.of("key", "value");
+
 	private static Errand createErrand() {
 		return Errand.create()
 			.withAssignedGroupId(ASSIGNED_GROUP_ID)
@@ -157,6 +159,7 @@ class ErrandMapperTest {
 			.withCareOf(CARE_OF)
 			.withZipCode(ZIP_CODE)
 			.withCountry(COUNTRY)
+			.withMetadata(METADATA)
 			.withContactChannels(List.of(ContactChannel.create().withType(CONTACT_CHANNEL_TYPE).withValue(CONTACT_CHANNEL_VALUE)))
 			.withRole(STAKEHOLDER_ROLE);
 	}
@@ -204,6 +207,7 @@ class ErrandMapperTest {
 			.withCareOf(CARE_OF)
 			.withZipCode(ZIP_CODE)
 			.withCountry(COUNTRY)
+			.withMetadata(METADATA)
 			.withContactChannels(List.of(ContactChannelEntity.create().withType(CONTACT_CHANNEL_TYPE).withValue(CONTACT_CHANNEL_VALUE)))
 			.withRole(STAKEHOLDER_ROLE);
 	}
@@ -365,7 +369,8 @@ class ErrandMapperTest {
 				StakeholderEntity::getFirstName,
 				StakeholderEntity::getLastName,
 				StakeholderEntity::getZipCode,
-				StakeholderEntity::getRole)
+				StakeholderEntity::getRole,
+				StakeholderEntity::getMetadata)
 			.containsExactly(tuple(ADDRESS,
 				CARE_OF,
 				COUNTRY,
@@ -374,7 +379,8 @@ class ErrandMapperTest {
 				FIRST_NAME,
 				LAST_NAME,
 				ZIP_CODE,
-				STAKEHOLDER_ROLE));
+				STAKEHOLDER_ROLE,
+				METADATA));
 
 		assertThat(entity.getStakeholders().getFirst().getContactChannels()).hasSize(1).extracting(
 				ContactChannelEntity::getType,
@@ -452,7 +458,8 @@ class ErrandMapperTest {
 				StakeholderEntity::getFirstName,
 				StakeholderEntity::getLastName,
 				StakeholderEntity::getZipCode,
-				StakeholderEntity::getRole)
+				StakeholderEntity::getRole,
+				StakeholderEntity::getMetadata)
 			.containsExactly(tuple(ADDRESS,
 				CARE_OF,
 				COUNTRY,
@@ -461,7 +468,8 @@ class ErrandMapperTest {
 				FIRST_NAME,
 				LAST_NAME,
 				ZIP_CODE,
-				STAKEHOLDER_ROLE));
+				STAKEHOLDER_ROLE,
+				METADATA));
 
 		assertThat(entity.getStakeholders().getFirst().getContactChannels()).hasSize(1).extracting(
 				ContactChannelEntity::getType,

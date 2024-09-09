@@ -7,7 +7,9 @@
     {
       "externalId": "7fba994b-e99e-4beb-8ab5-63cc74483b66",
       "externalIdType": "ENTERPRISE",
-      "contactChannels": []
+      "contactChannels": [],
+      "metadata": {
+      }
     }
   ],
   "externalTags": [
@@ -21,8 +23,13 @@
     }
   ],
   "parameters": {
-    "keyA":["valueA1", "valueA2"],
-    "keyB":["valueB1"]
+    "keyA": [
+      "valueA1",
+      "valueA2"
+    ],
+    "keyB": [
+      "valueB1"
+    ]
   },
   "classification": {
     "category": "CATEGORY-3",

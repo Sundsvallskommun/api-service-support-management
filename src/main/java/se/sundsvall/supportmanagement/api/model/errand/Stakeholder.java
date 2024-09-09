@@ -1,11 +1,13 @@
 package se.sundsvall.supportmanagement.api.model.errand;
 
-import io.swagger.v3.oas.annotations.media.ArraySchema;
-import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+
 import se.sundsvall.supportmanagement.api.validation.ValidRole;
 
-import java.util.List;
-import java.util.Objects;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "Stakeholder model")
 public class Stakeholder {
@@ -47,6 +49,9 @@ public class Stakeholder {
 	@ArraySchema(schema = @Schema(implementation = ContactChannel.class))
 	private List<ContactChannel> contactChannels;
 
+	@Schema(description = "Metadata", example = "{\"key\": \"value\"}")
+	private Map<String, String> metadata;
+
 	public static Stakeholder create() {
 		return new Stakeholder();
 	}
@@ -81,11 +86,11 @@ public class Stakeholder {
 		return externalId;
 	}
 
-	public void setExternalId(String externalId) {
+	public void setExternalId(final String externalId) {
 		this.externalId = externalId;
 	}
 
-	public Stakeholder withExternalId(String externalId) {
+	public Stakeholder withExternalId(final String externalId) {
 		this.externalId = externalId;
 		return this;
 	}
@@ -94,11 +99,11 @@ public class Stakeholder {
 		return externalIdType;
 	}
 
-	public void setExternalIdType(String externalIdType) {
+	public void setExternalIdType(final String externalIdType) {
 		this.externalIdType = externalIdType;
 	}
 
-	public Stakeholder withExternalIdType(String externalIdType) {
+	public Stakeholder withExternalIdType(final String externalIdType) {
 		this.externalIdType = externalIdType;
 		return this;
 	}
@@ -107,11 +112,11 @@ public class Stakeholder {
 		return role;
 	}
 
-	public void setRole(String role) {
+	public void setRole(final String role) {
 		this.role = role;
 	}
 
-	public Stakeholder withRole(String role) {
+	public Stakeholder withRole(final String role) {
 		this.role = role;
 		return this;
 	}
@@ -120,11 +125,11 @@ public class Stakeholder {
 		return firstName;
 	}
 
-	public void setFirstName(String firstName) {
+	public void setFirstName(final String firstName) {
 		this.firstName = firstName;
 	}
 
-	public Stakeholder withFirstName(String firstName) {
+	public Stakeholder withFirstName(final String firstName) {
 		this.firstName = firstName;
 		return this;
 	}
@@ -133,11 +138,11 @@ public class Stakeholder {
 		return lastName;
 	}
 
-	public void setLastName(String lastName) {
+	public void setLastName(final String lastName) {
 		this.lastName = lastName;
 	}
 
-	public Stakeholder withLastName(String lastName) {
+	public Stakeholder withLastName(final String lastName) {
 		this.lastName = lastName;
 		return this;
 	}
@@ -146,11 +151,11 @@ public class Stakeholder {
 		return address;
 	}
 
-	public void setAddress(String address) {
+	public void setAddress(final String address) {
 		this.address = address;
 	}
 
-	public Stakeholder withAddress(String address) {
+	public Stakeholder withAddress(final String address) {
 		this.address = address;
 		return this;
 	}
@@ -159,11 +164,11 @@ public class Stakeholder {
 		return careOf;
 	}
 
-	public void setCareOf(String careOf) {
+	public void setCareOf(final String careOf) {
 		this.careOf = careOf;
 	}
 
-	public Stakeholder withCareOf(String careOf) {
+	public Stakeholder withCareOf(final String careOf) {
 		this.careOf = careOf;
 		return this;
 	}
@@ -172,11 +177,11 @@ public class Stakeholder {
 		return zipCode;
 	}
 
-	public void setZipCode(String zipCode) {
+	public void setZipCode(final String zipCode) {
 		this.zipCode = zipCode;
 	}
 
-	public Stakeholder withZipCode(String zipCode) {
+	public Stakeholder withZipCode(final String zipCode) {
 		this.zipCode = zipCode;
 		return this;
 	}
@@ -185,11 +190,11 @@ public class Stakeholder {
 		return country;
 	}
 
-	public void setCountry(String country) {
+	public void setCountry(final String country) {
 		this.country = country;
 	}
 
-	public Stakeholder withCountry(String country) {
+	public Stakeholder withCountry(final String country) {
 		this.country = country;
 		return this;
 	}
@@ -198,12 +203,25 @@ public class Stakeholder {
 		return contactChannels;
 	}
 
-	public void setContactChannels(List<ContactChannel> contactChannels) {
+	public void setContactChannels(final List<ContactChannel> contactChannels) {
 		this.contactChannels = contactChannels;
 	}
 
-	public Stakeholder withContactChannels(List<ContactChannel> contactChannels) {
+	public Stakeholder withContactChannels(final List<ContactChannel> contactChannels) {
 		this.contactChannels = contactChannels;
+		return this;
+	}
+
+	public Map<String, String> getMetadata() {
+		return metadata;
+	}
+
+	public void setMetadata(final Map<String, String> metadata) {
+		this.metadata = metadata;
+	}
+
+	public Stakeholder withMetadata(final Map<String, String> metadata) {
+		this.metadata = metadata;
 		return this;
 	}
 
@@ -222,6 +240,7 @@ public class Stakeholder {
 			", zipCode='" + zipCode + '\'' +
 			", country='" + country + '\'' +
 			", contactChannels=" + contactChannels +
+			", metadata=" + metadata +
 			'}';
 	}
 
@@ -230,11 +249,12 @@ public class Stakeholder {
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
 		final Stakeholder that = (Stakeholder) o;
-		return Objects.equals(externalId, that.externalId) && Objects.equals(externalIdType, that.externalIdType) && Objects.equals(role, that.role) && Objects.equals(city, that.city) && Objects.equals(organizationName, that.organizationName) && Objects.equals(firstName, that.firstName) && Objects.equals(lastName, that.lastName) && Objects.equals(address, that.address) && Objects.equals(careOf, that.careOf) && Objects.equals(zipCode, that.zipCode) && Objects.equals(country, that.country) && Objects.equals(contactChannels, that.contactChannels);
+		return Objects.equals(externalId, that.externalId) && Objects.equals(externalIdType, that.externalIdType) && Objects.equals(role, that.role) && Objects.equals(city, that.city) && Objects.equals(organizationName, that.organizationName) && Objects.equals(firstName, that.firstName) && Objects.equals(lastName, that.lastName) && Objects.equals(address, that.address) && Objects.equals(careOf, that.careOf) && Objects.equals(zipCode, that.zipCode) && Objects.equals(country, that.country) && Objects.equals(contactChannels, that.contactChannels) && Objects.equals(metadata, that.metadata);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(externalId, externalIdType, role, city, organizationName, firstName, lastName, address, careOf, zipCode, country, contactChannels);
+		return Objects.hash(externalId, externalIdType, role, city, organizationName, firstName, lastName, address, careOf, zipCode, country, contactChannels, metadata);
 	}
+
 }

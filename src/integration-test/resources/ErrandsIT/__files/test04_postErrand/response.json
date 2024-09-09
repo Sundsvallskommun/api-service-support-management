@@ -7,7 +7,10 @@
     {
       "externalId": "cb20c51f-fcf3-42c0-b613-de563634a8ec",
       "externalIdType": "PRIVATE",
-      "contactChannels": []
+      "contactChannels": [],
+      "metadata": {
+        "key": "value"
+      }
     }
   ],
   "externalTags": [
@@ -17,7 +20,9 @@
     }
   ],
   "parameters": {
-    "keyA":["valueA1"]
+    "keyA": [
+      "valueA1"
+    ]
   },
   "classification": {
     "category": "CATEGORY-2",

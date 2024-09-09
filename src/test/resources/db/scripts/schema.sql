@@ -257,6 +257,13 @@
         primary key (id)
     ) engine=InnoDB;
 
+    create table stakeholder_metadata (
+        stakeholder_id bigint not null,
+        metadata varchar(255),
+        metadata_key varchar(255) not null,
+        primary key (stakeholder_id, metadata_key)
+    ) engine=InnoDB;
+
     create table status (
         created datetime(6),
         id bigint not null auto_increment,
@@ -491,6 +498,11 @@
        add constraint fk_errand_stakeholder_errand_id 
        foreign key (errand_id) 
        references errand (id);
+
+    alter table if exists stakeholder_metadata 
+       add constraint fk_stakeholder_metadata_stakeholder_id 
+       foreign key (stakeholder_id) 
+       references stakeholder (id);
 
     alter table if exists time_measurement 
        add constraint fk_errand_time_measure_errand_id 

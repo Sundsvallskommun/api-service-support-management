@@ -170,6 +170,7 @@ public final class ErrandMapper {
 					.withCareOf(stakeholderEntity.getCareOf())
 					.withZipCode(stakeholderEntity.getZipCode())
 					.withCountry(stakeholderEntity.getCountry())
+					.withMetadata(stakeholderEntity.getMetadata())
 					.withContactChannels(toContactChannels(stakeholderEntity.getContactChannels())))
 				.toList())
 			.orElse(emptyList());
@@ -191,6 +192,7 @@ public final class ErrandMapper {
 					.withCareOf(stakeholder.getCareOf())
 					.withZipCode(stakeholder.getZipCode())
 					.withCountry(stakeholder.getCountry())
+					.withMetadata(stakeholder.getMetadata())
 					.withContactChannels(toContactChannelEntities(stakeholder.getContactChannels())))
 				.toList())
 			.orElse(emptyList()));
