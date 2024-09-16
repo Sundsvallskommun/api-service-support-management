@@ -6,7 +6,6 @@ import static se.sundsvall.supportmanagement.api.model.errand.Priority.HIGH;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 
@@ -97,7 +96,6 @@ public class TestObjectsBuilder {
 
 	private static final String CONTACT_REASON = "reason";
 
-
 	public static ErrandEntity buildErrandEntity() {
 		return ErrandEntity.create()
 			.withId(ERRAND_ID)
@@ -115,12 +113,14 @@ public class TestObjectsBuilder {
 			.withReporterUserId(REPORTER_USER_ID)
 			.withStatus(STATUS)
 			.withTitle(TITLE)
-			.withParameters(Map.of(PARAMETER_KEY, createParameterEntity().withId(PARAMETER_ID).withValues(List.of(PARAMETER_VALUE))))
+			.withParameters(List.of(createParameterEntity()))
 			.withType(TYPE);
 	}
 
 	public static ParameterEntity createParameterEntity() {
 		return ParameterEntity.create()
+			.withId(PARAMETER_ID)
+			.withKey(PARAMETER_KEY)
 			.withValues(List.of(PARAMETER_VALUE));
 	}
 
@@ -189,5 +189,4 @@ public class TestObjectsBuilder {
 
 		return notification;
 	}
-
 }

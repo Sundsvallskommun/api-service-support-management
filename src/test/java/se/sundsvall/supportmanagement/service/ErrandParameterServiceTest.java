@@ -9,9 +9,8 @@ import static org.mockito.Mockito.when;
 import static org.zalando.problem.Status.NOT_FOUND;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrandEntity;
 
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -25,6 +24,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.zalando.problem.ThrowableProblem;
 
+import se.sundsvall.supportmanagement.api.model.errand.Parameter;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ParameterEntity;
@@ -33,16 +33,10 @@ import se.sundsvall.supportmanagement.integration.db.model.ParameterEntity;
 class ErrandParameterServiceTest {
 
 	private static final String NAMESPACE = "namespace";
-
 	private static final String MUNICIPALITY_ID = "municipalityId";
-
 	private static final String ERRAND_ID = "errandId";
-
 	private static final String PARAMETER_KEY = "parameterKey";
-
 	private static final String PARAMETER_VALUE = "parameterValue";
-
-	private static final String PARAMETER_ID = "parameterId";
 
 	@Mock
 	private ErrandsRepository errandsRepositoryMock;
@@ -57,20 +51,20 @@ class ErrandParameterServiceTest {
 	void updateErrandParameters() {
 
 		// Arrange
-		final var parameter = Map.of(PARAMETER_KEY, List.of(PARAMETER_VALUE));
-		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(ErrandEntity.create()));
+		final var parameters = List.of(Parameter.create().withKey(PARAMETER_KEY).withValues(List.of(PARAMETER_VALUE)));
+		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(ErrandEntity.create().withParameters(new ArrayList<>())));
 		when(errandsRepositoryMock.save(any(ErrandEntity.class))).thenReturn(ErrandEntity.create());
 
 		// Act
-		errandParameterService.updateErrandParameters(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, parameter);
+		errandParameterService.updateErrandParameters(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, parameters);
 
 		// Assert
 		verify(errandsRepositoryMock).save(errandEntityArgumentCaptor.capture());
 		final var errandEntity = errandEntityArgumentCaptor.getValue();
 
-		assertThat(errandEntity.getParameters()).hasSize(1).allSatisfy((key, value) -> {
-			assertThat(key).isEqualTo(PARAMETER_KEY);
-			assertThat(value.getValues()).containsExactly(PARAMETER_VALUE);
+		assertThat(errandEntity.getParameters()).hasSize(1).allSatisfy(parameterEntity -> {
+			assertThat(parameterEntity.getKey()).isEqualTo(PARAMETER_KEY);
+			assertThat(parameterEntity.getValues()).containsExactly(PARAMETER_VALUE);
 		});
 	}
 
@@ -103,7 +97,7 @@ class ErrandParameterServiceTest {
 		final var result = spy.findErrandParameters(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 
 		// Assert
-		assertThat(result).hasSize(1).containsEntry(PARAMETER_KEY, List.of(PARAMETER_VALUE));
+		assertThat(result).hasSize(1).isEqualTo(List.of(Parameter.create().withKey(PARAMETER_KEY).withValues(List.of(PARAMETER_VALUE))));
 		verify(spy).findErrandParameters(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 		verify(spy).findExistingErrand(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(errandsRepositoryMock).findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
@@ -116,19 +110,19 @@ class ErrandParameterServiceTest {
 		// Arrange
 		final var spy = Mockito.spy(errandParameterService);
 		final var errand = buildErrandEntity();
-		final var errandParameter = List.of("anotherValue");
+		final var errandParameterValues = List.of("anotherValue");
 
 		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(errand));
 		when(errandsRepositoryMock.save(errand)).thenReturn(errand);
 
 		// Act
-		final var result = spy.updateErrandParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PARAMETER_KEY, errandParameter);
+		final var result = spy.updateErrandParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PARAMETER_KEY, errandParameterValues);
 
 		// Assert
-		assertThat(result).hasSize(1);
-		assertThat(result.getFirst()).isEqualTo("anotherValue");
+		assertThat(result).isNotNull();
+		assertThat(result.getValues()).isEqualTo(List.of("anotherValue"));
 		verify(spy).findExistingErrand(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
-		verify(spy).updateErrandParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PARAMETER_KEY, errandParameter);
+		verify(spy).updateErrandParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PARAMETER_KEY, errandParameterValues);
 		verifyNoMoreInteractions(errandsRepositoryMock, spy);
 	}
 
@@ -136,7 +130,7 @@ class ErrandParameterServiceTest {
 	void deleteErrandParameter() {
 		// Arrange
 		final var spy = Mockito.spy(errandParameterService);
-		final var errand = buildErrandEntity().withParameters(new HashMap<>(Map.of(PARAMETER_KEY, ParameterEntity.create().withValues(List.of(PARAMETER_VALUE)))));
+		final var errand = buildErrandEntity().withParameters(new ArrayList<>(List.of(ParameterEntity.create().withKey(PARAMETER_KEY).withValues(List.of(PARAMETER_VALUE)))));
 		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(errand));
 
 		// Act
@@ -170,13 +164,13 @@ class ErrandParameterServiceTest {
 		// Arrange
 		final var parameter = ParameterEntity.create()
 			.withId(UUID.randomUUID().toString())
+			.withKey(PARAMETER_KEY)
 			.withValues(List.of(PARAMETER_VALUE));
 
-		final var errand = ErrandEntity.create()
-			.withParameters(Map.of(PARAMETER_ID, parameter));
+		final var errand = ErrandEntity.create().withParameters(List.of(parameter));
 
 		// Act
-		final var result = errandParameterService.findParameterEntityOrElseThrow(errand, PARAMETER_ID);
+		final var result = errandParameterService.findParameterEntityOrElseThrow(errand, PARAMETER_KEY);
 
 		// Assert
 		assertThat(result).isEqualTo(parameter.getValues());
@@ -188,7 +182,7 @@ class ErrandParameterServiceTest {
 		// Arrange
 		final var errand = ErrandEntity.create()
 			.withId("errandId")
-			.withParameters(Map.of());
+			.withParameters(List.of());
 
 		// Act
 		final var exception = assertThrows(ThrowableProblem.class, () -> errandParameterService.findParameterEntityOrElseThrow(errand, "parameterId"));

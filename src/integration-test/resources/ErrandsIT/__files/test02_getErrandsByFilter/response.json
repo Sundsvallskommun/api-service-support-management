@@ -1,91 +1,97 @@
 {
-  "content": [
-    {
-      "assignedGroupId": "ASSIGNED_GROUP_ID-1",
-      "assignedUserId": "ASSIGNED_USER_ID-1",
-      "businessRelated": false,
-      "labels": [],
-      "classification": {
-        "category": "CATEGORY-1",
-        "type": "TYPE-1"
-      },
-      "created": "2022-01-01T12:00:00+01:00",
-      "errandNumber": "KC-23020001",
-      "escalationEmail": "ESCALATION_EMAIL_1",
-      "externalTags": [
-        {
-          "key": "KEY-1",
-          "value": "VALUE-1"
-        },
-        {
-          "key": "KEY-2",
-          "value": "VALUE-2"
-        }
-      ],
-      "id": "ec677eb3-604c-4935-bff7-f8f0b500c8f4",
-      "parameters": {
-        "key1": [
-          "value1",
-          "value2"
-        ],
-        "key2": []
-      },
-      "priority": "LOW",
-      "reporterUserId": "REPORTER_USER_ID-1",
-      "stakeholders": [
-        {
-          "address": "ADDRESS-2",
-          "careOf": "CARE_OF-2",
-          "contactChannels": [],
-          "metadata": {},
-          "country": "COUNTRY-2",
-          "externalId": "01e159b4-724d-40f9-91a4-9a7d021b8563",
-          "externalIdType": "PRIVATE",
-          "firstName": "FIRST_NAME-1",
-          "lastName": "LAST_NAME-1",
-          "role": "ROLE-2",
-          "zipCode": "ZIP_CODE-2"
-        },
-        {
-          "address": "ADDRESS-1",
-          "careOf": "CARE_OF-1",
-          "contactChannels": [
-            {
-              "type": "TYPE-1",
-              "value": "VALUE-1"
-            }
-          ],
-          "metadata": {},
-          "country": "COUNTRY-1",
-          "externalId": "USER_ID",
-          "externalIdType": "EMPLOYEE",
-          "firstName": "FIRST_NAME-1",
-          "lastName": "LAST_NAME-1",
-          "role": "ROLE-1",
-          "zipCode": "ZIP_CODE-1"
-        }
-      ],
-      "status": "STATUS-1",
-      "suspension": {},
-      "title": "TITLE-1",
-      "touched": "2022-01-01T12:00:00+01:00"
-    }
-  ],
-  "pageable": {
-    "pageNumber": 0,
-    "pageSize": 20,
-    "sort": [],
-    "offset": 0,
-    "paged": true,
-    "unpaged": false
-  },
-  "last": true,
-  "totalElements": 1,
-  "totalPages": 1,
-  "size": 20,
-  "number": 0,
-  "sort": [],
-  "first": true,
-  "numberOfElements": 1,
-  "empty": false
+	"content": [
+		{
+			"assignedGroupId": "ASSIGNED_GROUP_ID-1",
+			"assignedUserId": "ASSIGNED_USER_ID-1",
+			"businessRelated": false,
+			"labels": [],
+			"classification": {
+				"category": "CATEGORY-1",
+				"type": "TYPE-1"
+			},
+			"created": "2022-01-01T12:00:00+01:00",
+			"errandNumber": "KC-23020001",
+			"escalationEmail": "ESCALATION_EMAIL_1",
+			"externalTags": [
+				{
+					"key": "KEY-1",
+					"value": "VALUE-1"
+				},
+				{
+					"key": "KEY-2",
+					"value": "VALUE-2"
+				}
+			],
+			"id": "ec677eb3-604c-4935-bff7-f8f0b500c8f4",
+			"parameters": [
+				{
+					"key": "key1",
+					"values": [
+						"value1",
+						"value2"
+					]
+				},
+				{
+					"key": "key2",
+					"values": []
+				}
+			],
+			"priority": "LOW",
+			"reporterUserId": "REPORTER_USER_ID-1",
+			"stakeholders": [
+				{
+					"address": "ADDRESS-2",
+					"careOf": "CARE_OF-2",
+					"contactChannels": [],
+					"metadata": {},
+					"country": "COUNTRY-2",
+					"externalId": "01e159b4-724d-40f9-91a4-9a7d021b8563",
+					"externalIdType": "PRIVATE",
+					"firstName": "FIRST_NAME-1",
+					"lastName": "LAST_NAME-1",
+					"role": "ROLE-2",
+					"zipCode": "ZIP_CODE-2"
+				},
+				{
+					"address": "ADDRESS-1",
+					"careOf": "CARE_OF-1",
+					"contactChannels": [
+						{
+							"type": "TYPE-1",
+							"value": "VALUE-1"
+						}
+					],
+					"metadata": {},
+					"country": "COUNTRY-1",
+					"externalId": "USER_ID",
+					"externalIdType": "EMPLOYEE",
+					"firstName": "FIRST_NAME-1",
+					"lastName": "LAST_NAME-1",
+					"role": "ROLE-1",
+					"zipCode": "ZIP_CODE-1"
+				}
+			],
+			"status": "STATUS-1",
+			"suspension": {},
+			"title": "TITLE-1",
+			"touched": "2022-01-01T12:00:00+01:00"
+		}
+	],
+	"pageable": {
+		"pageNumber": 0,
+		"pageSize": 20,
+		"sort": [],
+		"offset": 0,
+		"paged": true,
+		"unpaged": false
+	},
+	"last": true,
+	"totalElements": 1,
+	"totalPages": 1,
+	"size": 20,
+	"number": 0,
+	"sort": [],
+	"first": true,
+	"numberOfElements": 1,
+	"empty": false
 }

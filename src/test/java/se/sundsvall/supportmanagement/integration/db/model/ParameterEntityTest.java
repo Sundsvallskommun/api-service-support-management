@@ -30,16 +30,19 @@ class ParameterEntityTest {
 	void hasValidBuilderMethods() {
 
 		final var id = "id";
-		final var value = List.of("value");
+		final var key = "key";
+		final var values = List.of("value");
 		final var errandEntity = ErrandEntity.create().withId("id");
 
 		final var parameterEntity = ParameterEntity.create()
 			.withId(id)
 			.withErrandEntity(errandEntity)
-			.withValues(value);
+			.withKey(key)
+			.withValues(values);
 
 		assertThat(parameterEntity).hasNoNullFieldsOrProperties();
-		assertThat(parameterEntity.getValues()).isEqualTo(value);
+		assertThat(parameterEntity.getKey()).isEqualTo(key);
+		assertThat(parameterEntity.getValues()).isEqualTo(values);
 		assertThat(parameterEntity.getId()).isEqualTo(id);
 		assertThat(parameterEntity.getErrandEntity()).isEqualTo(errandEntity);
 	}

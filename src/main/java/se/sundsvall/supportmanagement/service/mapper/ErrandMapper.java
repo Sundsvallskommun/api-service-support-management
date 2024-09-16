@@ -5,19 +5,17 @@ import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
 import static org.apache.commons.lang3.ObjectUtils.anyNull;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
-import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.toErrandParameterEntityMap;
-import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.toParameterMap;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.toErrandParameterEntityList;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import se.sundsvall.supportmanagement.api.model.errand.Classification;
 import se.sundsvall.supportmanagement.api.model.errand.ContactChannel;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
+import se.sundsvall.supportmanagement.api.model.errand.Parameter;
 import se.sundsvall.supportmanagement.api.model.errand.Priority;
 import se.sundsvall.supportmanagement.api.model.errand.Stakeholder;
 import se.sundsvall.supportmanagement.api.model.errand.Suspension;
@@ -25,7 +23,6 @@ import se.sundsvall.supportmanagement.integration.db.model.ContactChannelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.integration.db.model.ParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 
 public final class ErrandMapper {
@@ -41,7 +38,6 @@ public final class ErrandMapper {
 			.withAssignedGroupId(errand.getAssignedGroupId())
 			.withAssignedUserId(errand.getAssignedUserId())
 			.withAttachments(emptyList())
-			.withParameters(Map.of("", new ParameterEntity()))
 			.withCategory(errand.getClassification().getCategory())
 			.withDescription(errand.getDescription())
 			.withChannel(errand.getChannel())
@@ -60,7 +56,7 @@ public final class ErrandMapper {
 			.withSuspendedFrom(Optional.ofNullable(errand.getSuspension()).map(Suspension::getSuspendedFrom).orElse(null))
 			.withSuspendedTo(Optional.ofNullable(errand.getSuspension()).map(Suspension::getSuspendedTo).orElse(null))
 			.withBusinessRelated(errand.getBusinessRelated())
-			.withParameters(toErrandParameterEntityMap(errand.getParameters(), errandEntity))
+			.withParameters(toErrandParameterEntityList(errand.getParameters(), errandEntity))
 			.withLabels(errand.getLabels());
 	}
 
@@ -95,11 +91,10 @@ public final class ErrandMapper {
 		return entity;
 	}
 
-	private static void updateParameters(final ErrandEntity entity, final Map<String, List<String>> parameters) {
-		ofNullable(entity.getParameters()).ifPresentOrElse(Map::clear, () -> entity.setParameters(new HashMap<>()));
-		entity.getParameters().putAll(toErrandParameterEntityMap(parameters, entity));
+	private static void updateParameters(final ErrandEntity entity, final List<Parameter> parameters) {
+		ofNullable(entity.getParameters()).ifPresentOrElse(List::clear, () -> entity.setParameters(new ArrayList<>()));
+		entity.getParameters().addAll(toErrandParameterEntityList(parameters, entity));
 	}
-
 
 	private static void updateStakeholders(final ErrandEntity entity, final List<Stakeholder> stakeholders) {
 		ofNullable(entity.getStakeholders()).ifPresentOrElse(List::clear, () -> entity.setStakeholders(new ArrayList<>()));
@@ -147,7 +142,7 @@ public final class ErrandMapper {
 				.withChannel(e.getChannel())
 				.withSuspension(Suspension.create().withSuspendedFrom(e.getSuspendedFrom()).withSuspendedTo(e.getSuspendedTo()))
 				.withBusinessRelated(e.getBusinessRelated())
-				.withParameters(toParameterMap(e.getParameters()))
+				.withParameters(ErrandParameterMapper.toParameterList(e.getParameters()))
 				.withContactReason(Optional.ofNullable(e.getContactReason()).map(ContactReasonEntity::getReason).orElse(null))
 				.withContactReasonDescription(e.getContactReasonDescription())
 				.withEscalationEmail(e.getEscalationEmail())

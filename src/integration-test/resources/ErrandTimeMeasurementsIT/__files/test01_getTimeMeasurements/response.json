@@ -1,13 +1,13 @@
 [
-  {
-    "status": "STATUS-1",
-    "startTime": "2023-12-31T23:59:59.999+01:00",
-    "stopTime": "2024-12-31T23:59:59.999+01:00",
-    "administrator": "AD01TEST"
-  },
-  {
-    "status": "STATUS-2",
-    "startTime": "2024-12-31T23:59:59.999+01:00",
-    "administrator": "AD01TEST"
-  }
+	{
+		"status": "STATUS-1",
+		"startTime": "2023-12-31T23:59:59.999+01:00",
+		"stopTime": "2024-12-31T23:59:59.999+01:00",
+		"administrator": "AD01TEST"
+	},
+	{
+		"status": "STATUS-2",
+		"startTime": "2024-12-31T23:59:59.999+01:00",
+		"administrator": "AD01TEST"
+	}
 ]

@@ -36,7 +36,7 @@ logbook:
     jsonPath:
       - key: '$..base64EncodedString'
         value: '[base64]'
-      - key: '$..content'
+      - key: '$..attachments[*].content'
         value: '[binary]'
 logging:
   level:
