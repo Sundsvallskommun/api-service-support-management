@@ -13,7 +13,7 @@
       "created": "${json-unit.any-string}",
       "touched": "${json-unit.any-string}",
       "externalTags": [],
-      "labels": [],
+      "labels": ["LABEL-1", "LABEL-2"],
       "parameters": {},
       "priority": "MEDIUM",
       "stakeholders": [

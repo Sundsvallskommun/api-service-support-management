@@ -156,7 +156,7 @@ class EmailReaderMapperTest {
 			.sender("someSender")
 			.message("someMessage")
 			.receivedAt(OffsetDateTime.now())
-			.metadata(Map.of("classification.category", "someCategory", "classification.type", "someType"))
+			.metadata(Map.of("classification.category", "someCategory", "classification.type", "someType", "labels", "someLabel1;someLabel2"))
 			.attachments(null);
 		final var status = "NEW";
 
@@ -170,6 +170,7 @@ class EmailReaderMapperTest {
 		assertThat(result.getClassification().getCategory()).isEqualTo("someCategory");
 		assertThat(result.getClassification().getType()).isEqualTo("someType");
 		assertThat(result.getChannel()).isEqualTo("errandChannel");
+		assertThat(result.getLabels()).containsExactly("someLabel1", "someLabel2");
 
 		if (addSenderAsStakeholder) {
 			assertThat(result.getStakeholders()).isNotNull().hasSize(1);
