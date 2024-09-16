@@ -2,12 +2,18 @@
 	{
 		"key": "key1",
 		"values": [
+			"value1"
+		]
+	},
+	{
+		"key": "key1",
+		"values": [
 			"value2",
 			"value3"
 		]
 	},
 	{
-		"key": "key2",
+		"key": "key1",
 		"values": [
 			"value4"
 		]

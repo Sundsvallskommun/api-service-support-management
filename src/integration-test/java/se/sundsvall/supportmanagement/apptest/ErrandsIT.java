@@ -151,4 +151,15 @@ class ErrandsIT extends AbstractAppTest {
 			.sendRequestAndVerifyResponse();
 	}
 
+	@Test
+	void test08_getErrandsByParametersFilter() {
+		setupCall()
+			.withServicePath(PATH + "?filter=parameters.values~'B1'")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
 }

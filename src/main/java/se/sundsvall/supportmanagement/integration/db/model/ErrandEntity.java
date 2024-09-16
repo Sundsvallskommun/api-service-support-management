@@ -5,8 +5,11 @@ import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 
 import java.time.OffsetDateTime;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
+
+import org.hibernate.annotations.Formula;
+import org.hibernate.annotations.TimeZoneStorage;
+import org.hibernate.annotations.UuidGenerator;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.CollectionTable;
@@ -25,11 +28,6 @@ import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import jakarta.persistence.UniqueConstraint;
-
-import org.hibernate.annotations.Formula;
-import org.hibernate.annotations.TimeZoneStorage;
-import org.hibernate.annotations.UuidGenerator;
-
 import se.sundsvall.supportmanagement.integration.db.model.listener.ErrandListener;
 
 @Entity
@@ -46,7 +44,7 @@ import se.sundsvall.supportmanagement.integration.db.model.listener.ErrandListen
 		@Index(name = "idx_errand_number", columnList = "errand_number")
 	},
 	uniqueConstraints = {
-		@UniqueConstraint(name = "uq_errand_number", columnNames = {"errand_number"})
+		@UniqueConstraint(name = "uq_errand_number", columnNames = { "errand_number" })
 	})
 @EntityListeners(ErrandListener.class)
 public class ErrandEntity {
@@ -63,7 +61,7 @@ public class ErrandEntity {
 			@Index(name = "idx_external_tag_key", columnList = "\"key\"")
 		},
 		joinColumns = @JoinColumn(name = "errand_id", referencedColumnName = "id", foreignKey = @ForeignKey(name = "fk_errand_external_tag_errand_id")),
-		uniqueConstraints = @UniqueConstraint(name = "uq_external_tag_errand_id_key", columnNames = {"errand_id", "\"key\""}))
+		uniqueConstraints = @UniqueConstraint(name = "uq_external_tag_errand_id_key", columnNames = { "errand_id", "\"key\"" }))
 	private List<DbExternalTag> externalTags;
 
 	@OneToMany(mappedBy = "errandEntity", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -123,7 +121,7 @@ public class ErrandEntity {
 	private String escalationEmail;
 
 	@OneToMany(mappedBy = "errandEntity", cascade = CascadeType.ALL, orphanRemoval = true)
-	private Map<String, ParameterEntity> parameters;
+	private List<ParameterEntity> parameters;
 
 	@OneToMany(mappedBy = "errandEntity", cascade = CascadeType.ALL, orphanRemoval = true)
 	@OrderBy("fileName")
@@ -185,15 +183,15 @@ public class ErrandEntity {
 		return this;
 	}
 
-	public Map<String, ParameterEntity> getParameters() {
+	public List<ParameterEntity> getParameters() {
 		return parameters;
 	}
 
-	public void setParameters(final Map<String, ParameterEntity> parameters) {
+	public void setParameters(final List<ParameterEntity> parameters) {
 		this.parameters = parameters;
 	}
 
-	public ErrandEntity withParameters(final Map<String, ParameterEntity> parameters) {
+	public ErrandEntity withParameters(final List<ParameterEntity> parameters) {
 		this.parameters = parameters;
 		return this;
 	}
@@ -459,10 +457,11 @@ public class ErrandEntity {
 	}
 
 	public OffsetDateTime getTouched() {
-		//If session is not commited touched may be null. In that case fall back on comparing modified and created.
-		if(touched != null) {
+		// If session is not commited touched may be null. In that case fall back on comparing modified and created.
+		if (touched != null) {
 			return touched;
-		} else if (modified != null && created != null && modified.isAfter(created)) {
+		}
+		if ((modified != null) && (created != null) && modified.isAfter(created)) {
 			return modified;
 		}
 		return created;
@@ -596,20 +595,31 @@ public class ErrandEntity {
 
 	@Override
 	public boolean equals(final Object o) {
-		if (this == o) return true;
-		if (o == null || getClass() != o.getClass()) return false;
+		if (this == o) {
+			return true;
+		}
+		if ((o == null) || (getClass() != o.getClass())) {
+			return false;
+		}
 		final ErrandEntity that = (ErrandEntity) o;
-		return Objects.equals(id, that.id) && Objects.equals(externalTags, that.externalTags) && Objects.equals(stakeholders, that.stakeholders) && Objects.equals(contactReasonEntity, that.contactReasonEntity) && Objects.equals(contactReasonDescription, that.contactReasonDescription) && Objects.equals(businessRelated, that.businessRelated) && Objects.equals(municipalityId, that.municipalityId) && Objects.equals(namespace, that.namespace) && Objects.equals(title, that.title) && Objects.equals(category, that.category) && Objects.equals(type, that.type) && Objects.equals(status, that.status) && Objects.equals(resolution, that.resolution) && Objects.equals(description, that.description) && Objects.equals(channel, that.channel) && Objects.equals(priority, that.priority) && Objects.equals(reporterUserId, that.reporterUserId) && Objects.equals(assignedUserId, that.assignedUserId) && Objects.equals(assignedGroupId, that.assignedGroupId) && Objects.equals(escalationEmail, that.escalationEmail) && Objects.equals(parameters, that.parameters) && Objects.equals(attachments, that.attachments) && Objects.equals(suspendedTo, that.suspendedTo) && Objects.equals(suspendedFrom, that.suspendedFrom) && Objects.equals(labels, that.labels) && Objects.equals(created, that.created) && Objects.equals(modified, that.modified) && Objects.equals(touched, that.touched) && Objects.equals(errandNumber, that.errandNumber) && Objects.equals(tempPreviousStatus, that.tempPreviousStatus) && Objects.equals(previousStatus, that.previousStatus) && Objects.equals(timeMeasures, that.timeMeasures);
+		return Objects.equals(id, that.id) && Objects.equals(externalTags, that.externalTags) && Objects.equals(stakeholders, that.stakeholders) && Objects.equals(contactReasonEntity, that.contactReasonEntity) && Objects.equals(contactReasonDescription,
+			that.contactReasonDescription) && Objects.equals(businessRelated, that.businessRelated) && Objects.equals(municipalityId, that.municipalityId) && Objects.equals(namespace, that.namespace) && Objects.equals(title, that.title) && Objects.equals(
+				category, that.category) && Objects.equals(type, that.type) && Objects.equals(status, that.status) && Objects.equals(resolution, that.resolution) && Objects.equals(description, that.description) && Objects.equals(channel, that.channel)
+			&& Objects.equals(priority, that.priority) && Objects.equals(reporterUserId, that.reporterUserId) && Objects.equals(assignedUserId, that.assignedUserId) && Objects.equals(assignedGroupId, that.assignedGroupId) && Objects.equals(escalationEmail,
+				that.escalationEmail) && Objects.equals(parameters, that.parameters) && Objects.equals(attachments, that.attachments) && Objects.equals(suspendedTo, that.suspendedTo) && Objects.equals(suspendedFrom, that.suspendedFrom) && Objects.equals(
+					labels, that.labels) && Objects.equals(created, that.created) && Objects.equals(modified, that.modified) && Objects.equals(touched, that.touched) && Objects.equals(errandNumber, that.errandNumber) && Objects.equals(tempPreviousStatus,
+						that.tempPreviousStatus) && Objects.equals(previousStatus, that.previousStatus) && Objects.equals(timeMeasures, that.timeMeasures);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, externalTags, stakeholders, contactReasonEntity, contactReasonDescription, businessRelated, municipalityId, namespace, title, category, type, status, resolution, description, channel, priority, reporterUserId, assignedUserId, assignedGroupId, escalationEmail, parameters, attachments, suspendedTo, suspendedFrom, labels, created, modified, touched, errandNumber, tempPreviousStatus, previousStatus, timeMeasures);
+		return Objects.hash(id, externalTags, stakeholders, contactReasonEntity, contactReasonDescription, businessRelated, municipalityId, namespace, title, category, type, status, resolution, description, channel, priority, reporterUserId,
+			assignedUserId, assignedGroupId, escalationEmail, parameters, attachments, suspendedTo, suspendedFrom, labels, created, modified, touched, errandNumber, tempPreviousStatus, previousStatus, timeMeasures);
 	}
 
 	@Override
 	public String
-	toString() {
+		toString() {
 		return "ErrandEntity{" +
 			"id='" + id + '\'' +
 			", externalTags=" + externalTags +

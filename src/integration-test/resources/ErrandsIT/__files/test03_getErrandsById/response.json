@@ -1,49 +1,54 @@
 {
-  "id": "1be673c0-6ba3-4fb0-af4a-43acf23389f6",
-  "errandNumber": "KC-23020003",
-  "title": "TITLE-3",
-  "priority": "HIGH",
-  "stakeholders": [
-    {
-      "externalId": "7fba994b-e99e-4beb-8ab5-63cc74483b66",
-      "externalIdType": "ENTERPRISE",
-      "contactChannels": [],
-      "metadata": {
-      }
-    }
-  ],
-  "externalTags": [
-    {
-      "key": "KEY-4",
-      "value": "VALUE-4"
-    },
-    {
-      "key": "KEY-5",
-      "value": "VALUE-5"
-    }
-  ],
-  "parameters": {
-    "keyA": [
-      "valueA1",
-      "valueA2"
-    ],
-    "keyB": [
-      "valueB1"
-    ]
-  },
-  "classification": {
-    "category": "CATEGORY-3",
-    "type": "TYPE-3"
-  },
-  "status": "STATUS-3",
-  "resolution": "RESOLUTION",
-  "description": "DESCRIPTION",
-  "reporterUserId": "REPORTER_USER_ID-3",
-  "assignedUserId": "ASSIGNED_USER_ID-3",
-  "assignedGroupId": "ASSIGNED_GROUP_ID-3",
-  "suspension": {},
-  "businessRelated": false,
-  "labels": [],
-  "created": "${json-unit.any-string}",
-  "touched": "${json-unit.any-string}"
+	"id": "1be673c0-6ba3-4fb0-af4a-43acf23389f6",
+	"errandNumber": "KC-23020003",
+	"title": "TITLE-3",
+	"priority": "HIGH",
+	"stakeholders": [
+		{
+			"externalId": "7fba994b-e99e-4beb-8ab5-63cc74483b66",
+			"externalIdType": "ENTERPRISE",
+			"contactChannels": [],
+			"metadata": {}
+		}
+	],
+	"externalTags": [
+		{
+			"key": "KEY-4",
+			"value": "VALUE-4"
+		},
+		{
+			"key": "KEY-5",
+			"value": "VALUE-5"
+		}
+	],
+	"parameters": [
+		{
+			"key": "keyA",
+			"values": [
+				"valueA1",
+				"valueA2"
+			]
+		},
+		{
+			"key": "keyB",
+			"values": [
+				"valueB1"
+			]
+		}
+	],
+	"classification": {
+		"category": "CATEGORY-3",
+		"type": "TYPE-3"
+	},
+	"status": "STATUS-3",
+	"resolution": "RESOLUTION",
+	"description": "DESCRIPTION",
+	"reporterUserId": "REPORTER_USER_ID-3",
+	"assignedUserId": "ASSIGNED_USER_ID-3",
+	"assignedGroupId": "ASSIGNED_GROUP_ID-3",
+	"suspension": {},
+	"businessRelated": false,
+	"labels": [],
+	"created": "${json-unit.any-string}",
+	"touched": "${json-unit.any-string}"
 }

@@ -97,4 +97,13 @@ class ErrandParametersIT extends AbstractAppTest {
 		assertThat(parameterRepository.findById(parameterId)).isEmpty();
 	}
 
+	void test06_updateErrandParametersWithKeyDuplicates() {
+		setupCall()
+			.withServicePath(PATH + ERRAND_ID + "/parameters")
+			.withHttpMethod(PATCH)
+			.withExpectedResponseStatus(OK)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
 }

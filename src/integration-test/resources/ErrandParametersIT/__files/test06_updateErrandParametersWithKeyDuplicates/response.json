@@ -1,13 +1,11 @@
 [
 	{
-		"key": "key2",
-		"values": []
-	},
-	{
 		"key": "key1",
 		"values": [
 			"value1",
-			"value2"
+			"value2",
+			"value3",
+			"value4"
 		]
 	}
 ]

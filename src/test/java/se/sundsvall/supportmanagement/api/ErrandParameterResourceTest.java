@@ -21,12 +21,12 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
 import se.sundsvall.supportmanagement.Application;
+import se.sundsvall.supportmanagement.api.model.errand.Parameter;
 import se.sundsvall.supportmanagement.service.ErrandParameterService;
 
 @SpringBootTest(classes = Application.class, webEnvironment = RANDOM_PORT)
 @ActiveProfiles("junit")
 class ErrandParameterResourceTest {
-
 
 	private static final String NAMESPACE = "namespace";
 
@@ -46,7 +46,7 @@ class ErrandParameterResourceTest {
 
 	@Test
 	void updateErrandParameters() {
-		final var requestBody = Map.of("key", List.of("value"));
+		final var requestBody = List.of(Parameter.create().withKey("key").withValues(List.of("value")));
 
 		when(errandParameterServiceMock.updateErrandParameters(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, requestBody)).thenReturn(requestBody);
 
@@ -58,17 +58,12 @@ class ErrandParameterResourceTest {
 			.exchange()
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)
-			.expectBody(new ParameterizedTypeReference<Map<String, List<String>>>() {
+			.expectBody(new ParameterizedTypeReference<List<Parameter>>() {
 
 			})
 			.returnResult();
 
 		assertThat(response).isNotNull();
-		assertThat(response.getResponseBody()).satisfies(p -> {
-			assertThat(p).isNotNull();
-			assertThat(p).hasSize(1);
-			assertThat(p).containsEntry("key", List.of("value"));
-		});
 		verify(errandParameterServiceMock).updateErrandParameters(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, requestBody);
 		verifyNoMoreInteractions(errandParameterServiceMock);
 	}
@@ -87,7 +82,6 @@ class ErrandParameterResourceTest {
 			.expectBodyList(String.class)
 			.returnResult();
 
-
 		assertThat(response).isNotNull();
 		assertThat(response.getResponseBody()).satisfies(p -> {
 			assertThat(p).isNotNull();
@@ -101,7 +95,9 @@ class ErrandParameterResourceTest {
 
 	@Test
 	void findErrandParameters() {
-		final var errandParameters = Map.of("key", List.of("value", "value2"), "key2", List.of("value3"));
+		final var errandParameters = List.of(
+			Parameter.create().withKey("key1").withValues(List.of("value1", "value2")),
+			Parameter.create().withKey("key2").withValues(List.of("value3")));
 
 		when(errandParameterServiceMock.findErrandParameters(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID)).thenReturn(errandParameters);
 
@@ -111,36 +107,22 @@ class ErrandParameterResourceTest {
 			.exchange()
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)
-			.expectBody(new ParameterizedTypeReference<Map<String, List<String>>>() {
-
-			})
+			.expectBody(new ParameterizedTypeReference<List<Parameter>>() {})
 			.returnResult();
 
 		assertThat(response).isNotNull();
-		assertThat(response.getResponseBody()).allSatisfy((k, p) -> {
-			assertThat(p).isNotNull();
-			if (k.equals("name")) {
-				assertThat(p).hasSize(2);
-				assertThat(p).contains("value", "value2");
-			} else if (k.equals("name2")) {
-				assertThat(p).hasSize(1);
-				assertThat(p).contains("value3");
-			}
-		});
-
 		verify(errandParameterServiceMock).findErrandParameters(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 		verifyNoMoreInteractions(errandParameterServiceMock);
 	}
 
 	@Test
 	void updateErrandParameter() {
+
 		final var requestBody = List.of("value");
 
-		final var errandParameter = Map.of("key", List.of("value"));
+		when(errandParameterServiceMock.updateErrandParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PARAMETER_KEY, requestBody)).thenReturn(Parameter.create().withKey("key").withValues(List.of("value")));
 
-		when(errandParameterServiceMock.updateErrandParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PARAMETER_KEY, requestBody)).thenReturn(errandParameter.get("key"));
-
-		final var response = webTestClient.patch()
+		webTestClient.patch()
 			.uri(builder -> builder.path(PATH.concat("/{parameterKey}")).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "parameterKey", PARAMETER_KEY)))
 			.contentType(APPLICATION_JSON)
 			.accept(APPLICATION_JSON)
@@ -148,17 +130,9 @@ class ErrandParameterResourceTest {
 			.exchange()
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)
-			.expectBody(new ParameterizedTypeReference<List<String>>() {
-
-			})
+			.expectBody(Parameter.class)
 			.returnResult();
 
-		assertThat(response).isNotNull();
-		assertThat(response.getResponseBody()).satisfies(p -> {
-			assertThat(p).isNotNull();
-			assertThat(p).hasSize(1);
-			assertThat(p.getFirst()).isEqualTo("value");
-		});
 		verify(errandParameterServiceMock).updateErrandParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PARAMETER_KEY, requestBody);
 		verifyNoMoreInteractions(errandParameterServiceMock);
 	}
@@ -175,5 +149,4 @@ class ErrandParameterResourceTest {
 		verify(errandParameterServiceMock).deleteErrandParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PARAMETER_KEY);
 
 	}
-
 }

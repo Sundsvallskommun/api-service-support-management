@@ -1,39 +1,59 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
-import static java.util.Collections.emptyMap;
-import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.toMap;
+import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.groupingBy;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
+import se.sundsvall.supportmanagement.api.model.errand.Parameter;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ParameterEntity;
 
 public final class ErrandParameterMapper {
 
 	private ErrandParameterMapper() {
-		//Intentionally empty
+		// Intentionally empty
 	}
 
-	public static Map<String, ParameterEntity> toErrandParameterEntityMap(final Map<String, List<String>> parameters, ErrandEntity entity) {
-		return ofNullable(parameters).orElse(emptyMap())
+	public static List<ParameterEntity> toErrandParameterEntityList(final List<Parameter> parameters, ErrandEntity entity) {
+		return new ArrayList<>(toUniqueKeyList(parameters).stream()
+			.map(parameter -> toErrandParameterEntity(parameter).withErrandEntity(entity))
+			.toList());
+	}
+
+	public static ParameterEntity toErrandParameterEntity(final Parameter parameter) {
+		return ParameterEntity.create()
+			.withKey(parameter.getKey())
+			.withValues(parameter.getValues());
+	}
+
+	public static Parameter toParameter(final ParameterEntity parameter) {
+		return Parameter.create()
+			.withKey(parameter.getKey())
+			.withValues(parameter.getValues());
+	}
+
+	public static List<Parameter> toParameterList(final List<ParameterEntity> parameters) {
+		return Optional.ofNullable(parameters).orElse(emptyList()).stream()
+			.map(ErrandParameterMapper::toParameter)
+			.toList();
+	}
+
+	public static List<Parameter> toUniqueKeyList(List<Parameter> parameterList) {
+		return new ArrayList<>(Optional.ofNullable(parameterList).orElse(emptyList()).stream()
+			.collect(groupingBy(Parameter::getKey))
 			.entrySet()
 			.stream()
-			.collect(toMap(Map.Entry::getKey, e -> toErrandParameterEntity(e.getValue()).withErrandEntity(entity)));
+			.map(entry -> Parameter.create()
+				.withKey(entry.getKey())
+				.withValues(new ArrayList<>(entry.getValue().stream()
+					.map(Parameter::getValues)
+					.filter(Objects::nonNull)
+					.flatMap(List::stream)
+					.toList())))
+			.toList());
 	}
-
-	public static ParameterEntity toErrandParameterEntity(final List<String> errandParameter) {
-		return ParameterEntity.create()
-			.withValues(errandParameter);
-	}
-
-	public static Map<String, List<String>> toParameterMap(final Map<String, ParameterEntity> parameters) {
-		return Optional.ofNullable(parameters).orElse(emptyMap())
-			.entrySet().stream()
-			.map(entry -> Map.entry(entry.getKey(), entry.getValue().getValues()))
-			.collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
-	}
-
 }
