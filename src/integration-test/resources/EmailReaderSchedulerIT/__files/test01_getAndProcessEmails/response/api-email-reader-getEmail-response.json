@@ -10,7 +10,8 @@
     "message": "Should pass 1",
     "metadata": {
       "classification.category": "CATEGORY-1",
-      "classification.type": "TYPE-1"
+      "classification.type": "TYPE-1",
+      "labels": "LABEL-1;LABEL-2"
     },
     "receivedAt": "2024-08-28T13:20:27+02:00",
     "recipients": [

@@ -5,6 +5,7 @@ import static java.util.Objects.isNull;
 import static java.util.UUID.randomUUID;
 import static java.util.stream.Collectors.toMap;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Component;
 
 import generated.se.sundsvall.emailreader.Email;
 import generated.se.sundsvall.emailreader.EmailAttachment;
+import org.springframework.util.StringUtils;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
 import se.sundsvall.supportmanagement.api.model.errand.Classification;
 import se.sundsvall.supportmanagement.api.model.errand.ContactChannel;
@@ -108,6 +110,11 @@ public class EmailReaderMapper {
 			.withPriority(Priority.MEDIUM)
 			.withChannel(errandChannel)
 			.withClassification(Classification.create().withCategory(email.getMetadata().get("classification.category")).withType(email.getMetadata().get("classification.type")));
+
+		if(StringUtils.hasText(email.getMetadata().get("labels"))) {
+			errand.setLabels(Arrays.stream(email.getMetadata().get("labels").split(";")).toList());
+		}
+
 
 		if (addSenderAsStakeholder) {
 			errand.withStakeholders(List.of(
