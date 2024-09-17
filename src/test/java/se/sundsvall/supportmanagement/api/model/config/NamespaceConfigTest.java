@@ -37,6 +37,7 @@ class NamespaceConfigTest {
 	@Test
 	void testCreatePattern() {
 		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
 		final var displayName = "displayName";
 		final var shortCode = "shortCode";
 		final var created = OffsetDateTime.now();
@@ -44,12 +45,14 @@ class NamespaceConfigTest {
 
 		final var bean = NamespaceConfig.create()
 			.withNamespace(namespace)
+			.withMunicipalityId(municipalityId)
 			.withDisplayName(displayName)
 			.withShortCode(shortCode)
 			.withCreated(created)
 			.withModified(modified);
 
 		assertThat(bean.getNamespace()).isEqualTo(namespace);
+		assertThat(bean.getMunicipalityId()).isEqualTo(municipalityId);
 		assertThat(bean.getDisplayName()).isEqualTo(displayName);
 		assertThat(bean.getShortCode()).isEqualTo(shortCode);
 		assertThat(bean.getCreated()).isEqualTo(created);

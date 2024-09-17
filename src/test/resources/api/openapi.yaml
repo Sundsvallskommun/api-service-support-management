@@ -4248,12 +4248,12 @@ components:
       properties:
         namespace:
           type: string
-          description: namespace value
+          description: Namespace
           readOnly: true
           example: CONTACTCENTER
         municipalityId:
           type: string
-          description: municipality for the namespace
+          description: Municipality connected to the namespace
           readOnly: true
           example: "2281"
         displayName:

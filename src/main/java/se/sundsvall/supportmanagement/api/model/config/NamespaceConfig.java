@@ -13,11 +13,11 @@ import jakarta.validation.constraints.Null;
 public class NamespaceConfig {
 
 	@Null
-	@Schema(description = "namespace value", accessMode = READ_ONLY, example = "CONTACTCENTER")
+	@Schema(description = "Namespace", accessMode = READ_ONLY, example = "CONTACTCENTER")
 	private String namespace;
 
 	@Null
-	@Schema(description = "municipality for the namespace", accessMode = READ_ONLY, example = "2281")
+	@Schema(description = "Municipality connected to the namespace", accessMode = READ_ONLY, example = "2281")
 	private String municipalityId;
 
 	@NotNull
