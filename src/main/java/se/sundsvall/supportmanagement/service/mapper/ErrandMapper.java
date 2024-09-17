@@ -6,6 +6,7 @@ import static java.util.Optional.ofNullable;
 import static org.apache.commons.lang3.ObjectUtils.anyNull;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.toErrandParameterEntityList;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.toParameterList;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -142,7 +143,7 @@ public final class ErrandMapper {
 				.withChannel(e.getChannel())
 				.withSuspension(Suspension.create().withSuspendedFrom(e.getSuspendedFrom()).withSuspendedTo(e.getSuspendedTo()))
 				.withBusinessRelated(e.getBusinessRelated())
-				.withParameters(ErrandParameterMapper.toParameterList(e.getParameters()))
+				.withParameters(toParameterList(e.getParameters()))
 				.withContactReason(Optional.ofNullable(e.getContactReason()).map(ContactReasonEntity::getReason).orElse(null))
 				.withContactReasonDescription(e.getContactReasonDescription())
 				.withEscalationEmail(e.getEscalationEmail())
@@ -225,5 +226,4 @@ public final class ErrandMapper {
 			.withKey(entity.getKey())
 			.withValue(entity.getValue());
 	}
-
 }
