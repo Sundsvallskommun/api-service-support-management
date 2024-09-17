@@ -14,7 +14,7 @@
       "touched": "${json-unit.any-string}",
       "externalTags": [],
       "labels": ["LABEL-1", "LABEL-2"],
-      "parameters": {},
+      "parameters": [],
       "priority": "MEDIUM",
       "stakeholders": [
         {
@@ -45,7 +45,7 @@
       "touched": "${json-unit.any-string}",
       "externalTags": [],
       "labels": [],
-      "parameters": {},
+      "parameters": [],
       "priority": "MEDIUM",
       "stakeholders": [
         {

@@ -1,29 +1,29 @@
 {
-  "title": "test04_postErrand",
-  "priority": "LOW",
-  "stakeholders": [
-    {
-      "role": "ADMINISTRATOR",
-      "contactChannels": [],
-      "externalId": "cb20c51f-fcf3-42c0-b613-de563634a8ec",
-      "externalIdType": "PRIVATE"
-    }
-  ],
-  "externalTags": [
-    {
-      "key": "caseid",
-      "value": "8849-2848"
-    }
-  ],
-  "classification": {
-    "category": "CATEGORY-2",
-    "type": "TYPE-2"
-  },
-  "businessRelated": "true",
-  "status": "STATUS-2",
-  "reporterUserId": "joe01doe",
-  "assignedUserId": "joe01doe",
-  "assignedGroupId": "hardware support",
-  "resolution": "fixed",
-  "description": "Fix as soon as possible!"
+	"title": "test04_postErrand",
+	"priority": "LOW",
+	"stakeholders": [
+		{
+			"role": "ADMINISTRATOR",
+			"contactChannels": [],
+			"externalId": "cb20c51f-fcf3-42c0-b613-de563634a8ec",
+			"externalIdType": "PRIVATE"
+		}
+	],
+	"externalTags": [
+		{
+			"key": "caseid",
+			"value": "8849-2848"
+		}
+	],
+	"classification": {
+		"category": "CATEGORY-2",
+		"type": "TYPE-2"
+	},
+	"businessRelated": "true",
+	"status": "STATUS-2",
+	"reporterUserId": "joe01doe",
+	"assignedUserId": "joe01doe",
+	"assignedGroupId": "hardware support",
+	"resolution": "fixed",
+	"description": "Fix as soon as possible!"
 }

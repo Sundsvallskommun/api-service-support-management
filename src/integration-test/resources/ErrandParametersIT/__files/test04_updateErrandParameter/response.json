@@ -1,4 +1,7 @@
-[
-  "value3",
-  "value4"
-]
+{
+	"key": "key1",
+	"values": [
+		"value3",
+		"value4"
+	]
+}

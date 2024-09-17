@@ -23,6 +23,7 @@ import org.zalando.problem.violations.ConstraintViolationProblem;
 import org.zalando.problem.violations.Violation;
 
 import se.sundsvall.supportmanagement.Application;
+import se.sundsvall.supportmanagement.api.model.errand.Parameter;
 import se.sundsvall.supportmanagement.service.ErrandParameterService;
 
 @SpringBootTest(classes = Application.class, webEnvironment = RANDOM_PORT)
@@ -30,15 +31,10 @@ import se.sundsvall.supportmanagement.service.ErrandParameterService;
 class ErrandParameterResourceFailureTest {
 
 	private static final String NAMESPACE = "namespace";
-
 	private static final String MUNICIPALITY_ID = "2281";
-
 	private static final String ERRAND_ID = randomUUID().toString();
-
 	private static final String PARAMETER_KEY = randomUUID().toString();
-
 	private static final String INVALID = "#invalid#";
-
 	private static final String PATH = "/{namespace}/{municipalityId}/errands/{errandId}/parameters";
 
 	@Autowired
@@ -49,7 +45,8 @@ class ErrandParameterResourceFailureTest {
 
 	@Test
 	void updateErrandParametersInvalidNamespace() {
-		final var requestBody = Map.of("name", List.of("value"));
+
+		final var requestBody = List.of(Parameter.create().withKey("key").withValues(List.of("value")));
 
 		final var response = webTestClient.patch()
 			.uri(builder -> builder.path(PATH).build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
@@ -71,10 +68,10 @@ class ErrandParameterResourceFailureTest {
 		verifyNoInteractions(errandParameterServiceMock);
 	}
 
-
 	@Test
 	void updateErrandParametersInvalidMunicipalityId() {
-		final var requestBody = Map.of("name", List.of("value"));
+
+		final var requestBody = List.of(Parameter.create().withKey("key").withValues(List.of("value")));
 
 		final var response = webTestClient.patch()
 			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", INVALID, "errandId", ERRAND_ID)))
@@ -96,10 +93,10 @@ class ErrandParameterResourceFailureTest {
 		verifyNoInteractions(errandParameterServiceMock);
 	}
 
-
 	@Test
 	void updateErrandParametersInvalidId() {
-		final var requestBody = Map.of("name", List.of("value"));
+
+		final var requestBody = List.of(Parameter.create().withKey("key").withValues(List.of("value")));
 
 		final var response = webTestClient.patch()
 			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", INVALID)))
@@ -123,6 +120,7 @@ class ErrandParameterResourceFailureTest {
 
 	@Test
 	void readErrandParameterWithInvalidNamespace() {
+
 		final var response = webTestClient.get()
 			.uri(builder -> builder.path(PATH.concat("/{parameterKey}")).build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "parameterKey", PARAMETER_KEY)))
 			.exchange()
@@ -427,5 +425,4 @@ class ErrandParameterResourceFailureTest {
 
 		verifyNoInteractions(errandParameterServiceMock);
 	}
-
 }

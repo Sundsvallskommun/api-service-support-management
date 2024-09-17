@@ -1,60 +1,66 @@
 {
-  "id": "1be673c0-6ba3-4fb0-af4a-43acf23389f6",
-  "errandNumber": "KC-23020003",
-  "title": "Updated title",
-  "priority": "HIGH",
-  "stakeholders": [
-    {
-      "externalId": "cb20c51f-fcf3-42c0-b613-de563634a8ec",
-      "externalIdType": "CO_APPLICANT",
-      "firstName": "Aurthur",
-      "lastName": "Dent",
-      "address": "155 Country Lane, Cottington",
-      "careOf": "Ford Prefect",
-      "zipCode": "12345",
-      "country": "United Kingdom",
-      "contactChannels": [
-        {
-          "type": "Email",
-          "value": "arthur.dent@earth.com"
-        }
-      ]
-    }
-  ],
-  "externalTags": [
-    {
-      "key": "KEY-4",
-      "value": "VALUE-4"
-    },
-    {
-      "key": "KEY-5",
-      "value": "VALUE-5"
-    },
-    {
-      "key": "KEY-6",
-      "value": "VALUE-6"
-    }
-  ],
-  "parameters": {
-    "keyA":["valueA3"]
-  },
-  "classification": {
-    "category": "CATEGORY-3",
-    "type": "TYPE-3"
-  },
-  "status": "STATUS-3",
-  "resolution": "RESOLUTION",
-  "description": "DESCRIPTION",
-  "channel": "Updated channel",
-  "reporterUserId": "REPORTER_USER_ID-3",
-  "assignedUserId": "ASSIGNED_USER_ID-3",
-  "assignedGroupId": "ASSIGNED_GROUP_ID-3",
-  "suspension": {},
-  "businessRelated": true,
-  "contactReason": "reason5",
-  "contactReasonDescription": "This is an updated contact reason description",
-  "labels": [],
-  "created": "${json-unit.any-string}",
-  "modified": "${json-unit.any-string}",
-  "touched": "${json-unit.any-string}"
+	"id": "1be673c0-6ba3-4fb0-af4a-43acf23389f6",
+	"errandNumber": "KC-23020003",
+	"title": "Updated title",
+	"priority": "HIGH",
+	"stakeholders": [
+		{
+			"externalId": "cb20c51f-fcf3-42c0-b613-de563634a8ec",
+			"externalIdType": "CO_APPLICANT",
+			"firstName": "Aurthur",
+			"lastName": "Dent",
+			"address": "155 Country Lane, Cottington",
+			"careOf": "Ford Prefect",
+			"zipCode": "12345",
+			"country": "United Kingdom",
+			"contactChannels": [
+				{
+					"type": "Email",
+					"value": "arthur.dent@earth.com"
+				}
+			]
+		}
+	],
+	"externalTags": [
+		{
+			"key": "KEY-4",
+			"value": "VALUE-4"
+		},
+		{
+			"key": "KEY-5",
+			"value": "VALUE-5"
+		},
+		{
+			"key": "KEY-6",
+			"value": "VALUE-6"
+		}
+	],
+	"parameters": [
+		{
+			"key": "keyA",
+			"values": [
+				"valueA3",
+				"valueA4"
+			]
+		}
+	],
+	"classification": {
+		"category": "CATEGORY-3",
+		"type": "TYPE-3"
+	},
+	"status": "STATUS-3",
+	"resolution": "RESOLUTION",
+	"description": "DESCRIPTION",
+	"channel": "Updated channel",
+	"reporterUserId": "REPORTER_USER_ID-3",
+	"assignedUserId": "ASSIGNED_USER_ID-3",
+	"assignedGroupId": "ASSIGNED_GROUP_ID-3",
+	"suspension": {},
+	"businessRelated": true,
+	"contactReason": "reason5",
+	"contactReasonDescription": "This is an updated contact reason description",
+	"labels": [],
+	"created": "${json-unit.any-string}",
+	"modified": "${json-unit.any-string}",
+	"touched": "${json-unit.any-string}"
 }

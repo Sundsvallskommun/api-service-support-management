@@ -3,6 +3,8 @@ package se.sundsvall.supportmanagement.integration.db.model;
 import java.util.List;
 import java.util.Objects;
 
+import org.hibernate.annotations.UuidGenerator;
+
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
@@ -13,8 +15,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-
-import org.hibernate.annotations.UuidGenerator;
 
 @Entity
 @Table(name = "parameter")
@@ -28,12 +28,14 @@ public class ParameterEntity {
 	@JoinColumn(name = "errand_id", nullable = false, foreignKey = @ForeignKey(name = "fk_parameter_errand_id"))
 	private ErrandEntity errandEntity;
 
+	@Column(name = "parameters_key")
+	private String key;
+
 	@ElementCollection(fetch = FetchType.EAGER)
 	@CollectionTable(
 		name = "parameter_values",
 		joinColumns = @JoinColumn(name = "parameter_id",
-			foreignKey = @ForeignKey(name = "fk_parameter_values_parameter_id")
-		))
+			foreignKey = @ForeignKey(name = "fk_parameter_values_parameter_id")))
 	@Column(name = "value")
 	private List<String> values;
 
@@ -67,6 +69,19 @@ public class ParameterEntity {
 		return this;
 	}
 
+	public String getKey() {
+		return key;
+	}
+
+	public void setKey(String key) {
+		this.key = key;
+	}
+
+	public ParameterEntity withKey(String key) {
+		this.key = key;
+		return this;
+	}
+
 	public List<String> getValues() {
 		return values;
 	}
@@ -81,25 +96,21 @@ public class ParameterEntity {
 	}
 
 	@Override
-	public boolean equals(final Object o) {
-		if (this == o) return true;
-		if (o == null || getClass() != o.getClass()) return false;
-		final ParameterEntity that = (ParameterEntity) o;
-		return Objects.equals(id, that.id) && Objects.equals(errandEntity, that.errandEntity) && Objects.equals(values, that.values);
+	public int hashCode() {
+		return Objects.hash(errandEntity, id, key, values);
 	}
 
 	@Override
-	public int hashCode() {
-		return Objects.hash(id, errandEntity, values);
+	public boolean equals(Object obj) {
+		if (this == obj) { return true; }
+		if (!(obj instanceof final ParameterEntity other)) { return false; }
+		return Objects.equals(errandEntity, other.errandEntity) && Objects.equals(id, other.id) && Objects.equals(key, other.key) && Objects.equals(values, other.values);
 	}
 
 	@Override
 	public String toString() {
-		return "ParameterEntity{" +
-			"id='" + id + '\'' +
-			", errandEntity=" + (errandEntity != null ? errandEntity.getId() : "null") +
-			", values=" + values +
-			'}';
+		final StringBuilder builder = new StringBuilder();
+		builder.append("ParameterEntity [id=").append(id).append(", errandEntity=").append((errandEntity != null ? errandEntity.getId() : "null")).append(", key=").append(key).append(", values=").append(values).append("]");
+		return builder.toString();
 	}
-
 }

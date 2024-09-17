@@ -1,17 +1,19 @@
 package se.sundsvall.supportmanagement.service;
 
+import static java.util.Collections.emptyList;
 import static org.zalando.problem.Status.NOT_FOUND;
-import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.toErrandParameterEntity;
-import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.toParameterMap;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.toErrandParameterEntityList;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.toParameter;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.toParameterList;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 import org.zalando.problem.Problem;
 
+import se.sundsvall.supportmanagement.api.model.errand.Parameter;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 
@@ -28,16 +30,16 @@ public class ErrandParameterService {
 		this.errandsRepository = errandsRepository;
 	}
 
-	public Map<String, List<String>> updateErrandParameters(final String namespace, final String municipalityId, final String errandId, final Map<String, List<String>> errandParameter) {
-		final var errand = findExistingErrand(errandId, namespace, municipalityId);
+	public List<Parameter> updateErrandParameters(final String namespace, final String municipalityId, final String errandId, final List<Parameter> parameters) {
+		final var errandEntity = findExistingErrand(errandId, namespace, municipalityId);
 
-		if (errand.getParameters() == null) {
-			errand.setParameters(new HashMap<>());
+		if (errandEntity.getParameters() != null) {
+			errandEntity.getParameters().clear();
 		}
 
-		errandParameter.forEach((key, value) -> errand.getParameters().put(key, toErrandParameterEntity(value).withErrandEntity(errand)));
+		errandEntity.getParameters().addAll(toErrandParameterEntityList(parameters, errandEntity));
 
-		return toParameterMap(errandsRepository.save(errand).getParameters());
+		return toParameterList(errandsRepository.save(errandEntity).getParameters());
 	}
 
 	public List<String> readErrandParameter(final String namespace, final String municipalityId, final String errandId, final String parameterKey) {
@@ -45,27 +47,41 @@ public class ErrandParameterService {
 		return findParameterEntityOrElseThrow(errand, parameterKey);
 	}
 
-	public Map<String, List<String>> findErrandParameters(final String namespace, final String municipalityId, final String errandId) {
-		final var errand = findExistingErrand(errandId, namespace, municipalityId);
+	public List<Parameter> findErrandParameters(final String namespace, final String municipalityId, final String errandId) {
+		final var errandEntity = findExistingErrand(errandId, namespace, municipalityId);
 
-		return toParameterMap(errand.getParameters());
+		return toParameterList(errandEntity.getParameters());
 	}
 
-	public List<String> updateErrandParameter(final String namespace, final String municipalityId, final String errandId, final String parameterKey, final List<String> errandParameter) {
-		final var errand = findExistingErrand(errandId, namespace, municipalityId);
+	public Parameter updateErrandParameter(final String namespace, final String municipalityId, final String errandId, final String parameterKey, final List<String> parameterValues) {
+		final var errandEntity = findExistingErrand(errandId, namespace, municipalityId);
 
-		final var parameter = toErrandParameterEntity(errandParameter);
+		final var parameterEntity = errandEntity.getParameters().stream()
+			.filter(paramEntity -> Objects.equals(paramEntity.getKey(), parameterKey))
+			.findFirst()
+			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, String.format(PARAMETER_NOT_FOUND, parameterKey, errandEntity.getId())))
+			.withValues(parameterValues);
 
-		errand.getParameters().get(parameterKey).setValues(parameter.getValues());
+		errandsRepository.save(errandEntity);
 
-		return toParameterMap(errandsRepository.save(errand).getParameters()).get(parameterKey);
+		return toParameter(parameterEntity);
 	}
-
 
 	public void deleteErrandParameter(final String namespace, final String municipalityId, final String errandId, final String parameterKey) {
-		final var errand = findExistingErrand(errandId, namespace, municipalityId);
-		errand.getParameters().remove(parameterKey);
-		errandsRepository.save(errand);
+		final var errandEntity = findExistingErrand(errandId, namespace, municipalityId);
+
+		if (errandEntity.getParameters() == null) {
+			return;
+		}
+
+		final var parameterToRemove = errandEntity.getParameters().stream()
+			.filter(paramEntity -> Objects.equals(paramEntity.getKey(), parameterKey))
+			.findFirst()
+			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, String.format(PARAMETER_NOT_FOUND, parameterKey, errandEntity.getId())));
+
+		errandEntity.getParameters().remove(parameterToRemove);
+
+		errandsRepository.save(errandEntity);
 	}
 
 	ErrandEntity findExistingErrand(final String id, final String namespace, final String municipalityId) {
@@ -74,10 +90,10 @@ public class ErrandParameterService {
 	}
 
 	List<String> findParameterEntityOrElseThrow(final ErrandEntity errandEntity, final String parameterKey) {
-		return Optional.ofNullable(errandEntity.getParameters().get(parameterKey))
+		return Optional.ofNullable(errandEntity.getParameters()).orElse(emptyList()).stream()
+			.filter(paramEntity -> Objects.equals(paramEntity.getKey(), parameterKey))
+			.findAny()
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, String.format(PARAMETER_NOT_FOUND, parameterKey, errandEntity.getId())))
 			.getValues();
 	}
-
-
 }
