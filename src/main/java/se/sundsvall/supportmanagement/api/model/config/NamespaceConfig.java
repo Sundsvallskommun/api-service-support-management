@@ -1,15 +1,28 @@
 package se.sundsvall.supportmanagement.api.model.config;
 
-import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotNull;
+import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 
 import java.time.OffsetDateTime;
 import java.util.Objects;
 
-import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Null;
 
 @Schema(description = "Namespace configuration model")
 public class NamespaceConfig {
+
+	@Null
+	@Schema(description = "namespace value", accessMode = READ_ONLY, example = "CONTACTCENTER")
+	private String namespace;
+
+	@Null
+	@Schema(description = "municipality for the namespace", accessMode = READ_ONLY, example = "2281")
+	private String municipalityId;
+
+	@NotNull
+	@Schema(description = "Displayname for the namespace", example = "Kontaktcenter")
+	private String displayName;
 
 	@NotNull
 	@Schema(description = "Prefix for errand numbers in this namespace", example = "KC")
@@ -23,6 +36,45 @@ public class NamespaceConfig {
 
 	public static NamespaceConfig create() {
 		return new NamespaceConfig();
+	}
+
+	public String getMunicipalityId() {
+		return municipalityId;
+	}
+
+	public void setMunicipalityId(String municipalityId) {
+		this.municipalityId = municipalityId;
+	}
+
+	public NamespaceConfig withMunicipalityId(String municipalityId) {
+		this.municipalityId = municipalityId;
+		return this;
+	}
+
+	public String getNamespace() {
+		return namespace;
+	}
+
+	public void setNamespace(String namespace) {
+		this.namespace = namespace;
+	}
+
+	public NamespaceConfig withNamespace(String namespace) {
+		this.namespace = namespace;
+		return this;
+	}
+
+	public String getDisplayName() {
+		return displayName;
+	}
+
+	public void setDisplayName(String displayName) {
+		this.displayName = displayName;
+	}
+
+	public NamespaceConfig withDisplayName(String displayName) {
+		this.displayName = displayName;
+		return this;
 	}
 
 	public String getShortCode() {
@@ -65,29 +117,27 @@ public class NamespaceConfig {
 	}
 
 	@Override
-	public boolean equals(Object o) {
-		if (this == o) {
-			return true;
-		}
-		if (o == null || getClass() != o.getClass()) {
-			return false;
-		}
-		NamespaceConfig that = (NamespaceConfig) o;
-		return Objects.equals(shortCode, that.shortCode) && Objects.equals(created, that.created) && Objects.equals(modified, that.modified);
+	public int hashCode() {
+		return Objects.hash(created, displayName, modified, municipalityId, namespace, shortCode);
 	}
 
 	@Override
-	public int hashCode() {
-		return Objects.hash(shortCode, created, modified);
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (!(obj instanceof final NamespaceConfig other)) {
+			return false;
+		}
+		return Objects.equals(created, other.created) && Objects.equals(displayName, other.displayName) && Objects.equals(modified, other.modified) && Objects.equals(municipalityId, other.municipalityId) && Objects.equals(namespace, other.namespace)
+			&& Objects.equals(shortCode, other.shortCode);
 	}
 
 	@Override
 	public String toString() {
-		final StringBuilder sb = new StringBuilder("NamespaceConfig{");
-		sb.append("shortCode='").append(shortCode).append('\'');
-		sb.append(", created=").append(created);
-		sb.append(", modified=").append(modified);
-		sb.append('}');
-		return sb.toString();
+		final var builder = new StringBuilder();
+		builder.append("NamespaceConfig [namespace=").append(namespace).append(", municipalityId=").append(municipalityId).append(", displayName=").append(displayName).append(", shortCode=").append(shortCode).append(", created=").append(created)
+			.append(", modified=").append(modified).append("]");
+		return builder.toString();
 	}
 }

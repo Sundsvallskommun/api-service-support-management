@@ -1,17 +1,17 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
-
-import org.junit.jupiter.api.Test;
-import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
-import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.OffsetDateTime;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.Test;
+
+import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
+import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity;
 
 class NamespaceConfigMapperTest {
 
-	private NamespaceConfigMapper mapper = new NamespaceConfigMapper();
+	private final NamespaceConfigMapper mapper = new NamespaceConfigMapper();
 
 	@Test
 	void toEntity() {
@@ -23,7 +23,7 @@ class NamespaceConfigMapperTest {
 
 		final var entity = mapper.toEntity(config, namespace, municipalityId);
 
-		assertThat(config).hasNoNullFieldsOrPropertiesExcept("id", "created", "modified");
+		assertThat(entity).hasNoNullFieldsOrPropertiesExcept("id", "created", "modified");
 		assertThat(entity.getNamespace()).isEqualTo(namespace);
 		assertThat(entity.getMunicipalityId()).isEqualTo(municipalityId);
 		assertThat(entity.getShortCode()).isEqualTo(shortCode);
@@ -43,11 +43,10 @@ class NamespaceConfigMapperTest {
 
 		final var config = mapper.toNamespaceConfig(entity);
 
-		assertThat(config).hasNoNullFieldsOrProperties();
+		assertThat(config).hasNoNullFieldsOrPropertiesExcept("namespace", "municipalityId", "displayName"); // TODO: This will be changed in UF-10005 where DB is extended to store displayname
 		assertThat(config.getShortCode()).isEqualTo(shortCode);
 		assertThat(config.getCreated()).isEqualTo(created);
 		assertThat(config.getModified()).isEqualTo(modified);
-
 
 	}
 }
