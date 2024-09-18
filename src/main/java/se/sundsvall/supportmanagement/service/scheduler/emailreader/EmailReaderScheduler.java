@@ -24,23 +24,28 @@ public class EmailReaderScheduler {
 	@Scheduled(cron = "${scheduler.emailreader.cron}")
 	@SchedulerLock(name = "fetch_emails", lockAtMostFor = "${scheduler.emailreader.shedlock-lock-at-most-for}")
 	public void getAndProcessEmails() {
-		RequestId.init();
 
-		LOG.debug("Fetching messages from Emailreader");
-		healthIndicator.resetErrors();
-		emailReaderWorker.getEnabledEmailConfigs()
-			.forEach(config -> emailReaderWorker.getEmailsFromConfig(config)
-				.forEach(email -> {
-					try {
-						emailReaderWorker.processEmail(email, config);
-					} catch (final Exception e) {
-						LOG.error("Error processing email with id: {}", email.getId(), e);
-						healthIndicator.setUnhealthy();
-					}
-				}));
-		if (!healthIndicator.hasErrors()) {
-			healthIndicator.setHealthy();
+		try {
+			RequestId.init();
+
+			LOG.debug("Fetching messages from Emailreader");
+			healthIndicator.resetErrors();
+			emailReaderWorker.getEnabledEmailConfigs()
+					.forEach(config -> emailReaderWorker.getEmailsFromConfig(config)
+							.forEach(email -> {
+								try {
+									emailReaderWorker.processEmail(email, config);
+								} catch (final Exception e) {
+									LOG.error("Error processing email with id: {}", email.getId(), e);
+									healthIndicator.setUnhealthy();
+								}
+							}));
+			if (!healthIndicator.hasErrors()) {
+				healthIndicator.setHealthy();
+			}
+			LOG.debug("Finished fetching from Emailreader");
+		} finally {
+			RequestId.reset();
 		}
-		LOG.debug("Finished fetching from Emailreader");
 	}
 }
