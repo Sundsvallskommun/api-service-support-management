@@ -23,17 +23,21 @@ public class WebMessageCollectorScheduler {
 	@Scheduled(cron = "${scheduler.web-message-collector.cron}")
 	@SchedulerLock(name = "fetch_webMessages", lockAtMostFor = "${scheduler.web-message-collector.shedlock-lock-at-most-for}")
 	public void fetchWebMessages() {
-		RequestId.init();
+		try {
+			RequestId.init();
 
-		LOG.debug("Fetching messages from WebMessageCollector");
+			LOG.debug("Fetching messages from WebMessageCollector");
 
-		webMessageCollectorWorker.fetchWebMessages()
-			.forEach((municipalityId, attachments) ->
-				attachments.forEach(attachment ->
-					webMessageCollectorWorker.processAttachments(attachment, municipalityId)));
+			webMessageCollectorWorker.fetchWebMessages()
+					.forEach((municipalityId, attachments) ->
+							attachments.forEach(attachment ->
+									webMessageCollectorWorker.processAttachments(attachment, municipalityId)));
 
 
-		LOG.debug("Finished fetching from WebMessageCollector");
+			LOG.debug("Finished fetching from WebMessageCollector");
+		} finally {
+			RequestId.reset();
+		}
 	}
 
 }
