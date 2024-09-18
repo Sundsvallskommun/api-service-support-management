@@ -24,10 +24,14 @@ public class SuspensionScheduler {
 	@Scheduled(cron = "${scheduler.suspension.cron}")
 	@SchedulerLock(name = "clean_suspensions", lockAtMostFor = "${scheduler.suspension.shedlock-lock-at-most-for}")
 	void cleanUpSuspensions() {
-		RequestId.init();
+		try {
+			RequestId.init();
 
-		LOG.debug("Cleaning up suspensions");
-		suspensionWorker.cleanUpSuspensions();
-		LOG.debug("Finished cleaning up suspensions");
+			LOG.debug("Cleaning up suspensions");
+			suspensionWorker.cleanUpSuspensions();
+			LOG.debug("Finished cleaning up suspensions");
+		} finally {
+			RequestId.reset();
+		}
 	}
 }

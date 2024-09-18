@@ -24,11 +24,15 @@ public class NotificationScheduler {
 	@Scheduled(cron = "${scheduler.notification.cron}")
 	@SchedulerLock(name = "clean_notifications", lockAtMostFor = "${scheduler.notification.shedlock-lock-at-most-for}")
 	void cleanUpNotifications() {
-		RequestId.init();
+		try {
+			RequestId.init();
 
-		LOG.debug("Cleaning up notifications");
-		notificationWorker.cleanUpNotifications();
-		LOG.debug("Finished cleaning up notifications");
+			LOG.debug("Cleaning up notifications");
+			notificationWorker.cleanUpNotifications();
+			LOG.debug("Finished cleaning up notifications");
+		} finally {
+			RequestId.reset();
+		}
 	}
 
 }
