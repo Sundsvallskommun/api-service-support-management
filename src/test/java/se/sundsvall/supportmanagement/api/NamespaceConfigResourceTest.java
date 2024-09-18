@@ -1,25 +1,28 @@
 package se.sundsvall.supportmanagement.api;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.web.reactive.server.WebTestClient;
-import se.sundsvall.supportmanagement.Application;
-import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
-import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
-
-import java.time.OffsetDateTime;
-import java.util.Map;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.MediaType.ALL;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
+
+import java.time.OffsetDateTime;
+import java.util.Map;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.HttpStatus;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.reactive.server.WebTestClient;
+
+import se.sundsvall.supportmanagement.Application;
+import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
+import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 
 @SpringBootTest(classes = Application.class, webEnvironment = RANDOM_PORT)
 @ActiveProfiles("junit")
@@ -28,6 +31,7 @@ class NamespaceConfigResourceTest {
 	private static final String PATH = "/{namespace}/{municipalityId}/namespaceConfig";
 	private static final String NAMESPACE = "namespace";
 	private static final String MUNICIPALITY_ID = "2281";
+	private static final String DISPLAY_NAME = "DisplayName";
 	private static final String SHORT_CODE = "NS";
 
 	@Autowired
@@ -38,7 +42,9 @@ class NamespaceConfigResourceTest {
 
 	@Test
 	void create() {
-		final var namespaceConfig = NamespaceConfig.create().withShortCode(SHORT_CODE);
+		final var namespaceConfig = NamespaceConfig.create()
+			.withDisplayName(DISPLAY_NAME)
+			.withShortCode(SHORT_CODE);
 
 		webTestClient.post()
 			.uri(uriBuilder -> uriBuilder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
@@ -56,6 +62,7 @@ class NamespaceConfigResourceTest {
 	@Test
 	void read() {
 		final var namespaceConfig = NamespaceConfig.create()
+			.withDisplayName(DISPLAY_NAME)
 			.withShortCode(SHORT_CODE)
 			.withCreated(OffsetDateTime.now().minusDays(2))
 			.withModified(OffsetDateTime.now().minusDays(1));
@@ -76,8 +83,21 @@ class NamespaceConfigResourceTest {
 	}
 
 	@Test
+	void readAllWithMunicipalityId() {
+		webTestClient.get()
+			.uri(uriBuilder -> uriBuilder.path("/namespaceConfigs").queryParam("municipalityId", MUNICIPALITY_ID).build())
+			.exchange()
+			.expectStatus().isEqualTo(HttpStatus.NOT_IMPLEMENTED.value())
+			.expectBody().isEmpty();
+
+		verifyNoInteractions(serviceMock);
+	}
+
+	@Test
 	void update() {
-		final var namespaceConfig = NamespaceConfig.create().withShortCode(SHORT_CODE);
+		final var namespaceConfig = NamespaceConfig.create()
+			.withDisplayName(DISPLAY_NAME)
+			.withShortCode(SHORT_CODE);
 
 		webTestClient.put()
 			.uri(uriBuilder -> uriBuilder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
