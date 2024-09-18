@@ -3,20 +3,19 @@ package se.sundsvall.supportmanagement.api;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.MediaType.ALL;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.HttpStatus;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
@@ -83,14 +82,47 @@ class NamespaceConfigResourceTest {
 	}
 
 	@Test
+	void readAll() {
+		final var configs = List.of(NamespaceConfig.create()
+			.withDisplayName(DISPLAY_NAME)
+			.withShortCode(SHORT_CODE)
+			.withCreated(OffsetDateTime.now().minusDays(2))
+			.withModified(OffsetDateTime.now().minusDays(1)));
+
+		when(serviceMock.findAll(any())).thenReturn(configs);
+
+		final var response = webTestClient.get()
+			.uri(uriBuilder -> uriBuilder.path("/namespaceConfigs").build())
+			.exchange()
+			.expectStatus().isOk()
+			.expectBodyList(NamespaceConfig.class)
+			.returnResult()
+			.getResponseBody();
+
+		verify(serviceMock).findAll(null);
+		assertThat(response).isNotNull().isEqualTo(configs);
+	}
+
+	@Test
 	void readAllWithMunicipalityId() {
-		webTestClient.get()
+		final var configs = List.of(NamespaceConfig.create()
+			.withDisplayName(DISPLAY_NAME)
+			.withShortCode(SHORT_CODE)
+			.withCreated(OffsetDateTime.now().minusDays(2))
+			.withModified(OffsetDateTime.now().minusDays(1)));
+
+		when(serviceMock.findAll(any())).thenReturn(configs);
+
+		final var response = webTestClient.get()
 			.uri(uriBuilder -> uriBuilder.path("/namespaceConfigs").queryParam("municipalityId", MUNICIPALITY_ID).build())
 			.exchange()
-			.expectStatus().isEqualTo(HttpStatus.NOT_IMPLEMENTED.value())
-			.expectBody().isEmpty();
+			.expectStatus().isOk()
+			.expectBodyList(NamespaceConfig.class)
+			.returnResult()
+			.getResponseBody();
 
-		verifyNoInteractions(serviceMock);
+		verify(serviceMock).findAll(MUNICIPALITY_ID);
+		assertThat(response).isNotNull().isEqualTo(configs);
 	}
 
 	@Test

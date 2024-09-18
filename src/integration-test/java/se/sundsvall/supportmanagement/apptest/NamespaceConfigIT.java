@@ -1,16 +1,5 @@
 package se.sundsvall.supportmanagement.apptest;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.jdbc.Sql;
-import se.sundsvall.dept44.test.AbstractAppTest;
-import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
-import se.sundsvall.supportmanagement.Application;
-import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
-
-import java.util.List;
-import java.util.function.Function;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpHeaders.LOCATION;
@@ -23,6 +12,18 @@ import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
+import java.util.List;
+import java.util.function.Function;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.jdbc.Sql;
+
+import se.sundsvall.dept44.test.AbstractAppTest;
+import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
+import se.sundsvall.supportmanagement.Application;
+import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
+
 @WireMockAppTestSuite(files = "classpath:/NamespaceConfigIT/", classes = Application.class)
 @Sql({
 	"/db/scripts/truncate.sql",
@@ -34,7 +35,7 @@ class NamespaceConfigIT extends AbstractAppTest {
 	private static final String NAMESPACE_1 = "NAMESPACE.1";
 	private static final String NAMESPACE_2 = "NAMESPACE.2";
 	private static final String MUNICIPALITY_ID = "2281";
-	private static final Function<String, String> PATH = namespace ->  "/" + namespace + "/" + MUNICIPALITY_ID + "/namespaceConfig";
+	private static final Function<String, String> PATH = namespace -> "/" + namespace + "/" + MUNICIPALITY_ID + "/namespaceConfig";
 
 	@Autowired
 	private NamespaceConfigRepository repository;
@@ -106,6 +107,28 @@ class NamespaceConfigIT extends AbstractAppTest {
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
 			.withExpectedResponse("response_after.json")
+			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	void test05_getAllConfigsFilteredByMunicipality() {
+		setupCall()
+			.withServicePath("/namespaceConfigs?municipalityId=" + MUNICIPALITY_ID)
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	void test06_getAllConfigs() {
+		setupCall()
+			.withServicePath("/namespaceConfigs")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
+			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 	}
 }
