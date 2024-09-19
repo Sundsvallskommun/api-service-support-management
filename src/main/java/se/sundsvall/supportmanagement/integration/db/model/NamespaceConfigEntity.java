@@ -1,5 +1,16 @@
 package se.sundsvall.supportmanagement.integration.db.model;
 
+import static jakarta.persistence.GenerationType.IDENTITY;
+import static java.time.OffsetDateTime.now;
+import static java.time.ZoneId.systemDefault;
+import static java.time.temporal.ChronoUnit.MILLIS;
+import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
+
+import java.time.OffsetDateTime;
+import java.util.Objects;
+
+import org.hibernate.annotations.TimeZoneStorage;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -9,25 +20,14 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
-import org.hibernate.annotations.TimeZoneStorage;
-
-import java.time.OffsetDateTime;
-import java.util.Objects;
-
-import static jakarta.persistence.GenerationType.IDENTITY;
-import static java.time.OffsetDateTime.now;
-import static java.time.ZoneId.systemDefault;
-import static java.time.temporal.ChronoUnit.MILLIS;
-import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 
 @Entity
-@Table(name = "namespace_config",
-	indexes = {
-		@Index(name = "idx_namespace_municipality_id", columnList = "namespace, municipality_id")
-	},
-	uniqueConstraints = {
-		@UniqueConstraint(name = "uq_namespace_municipality_id", columnNames = {"namespace", "municipality_id"})
-	})
+@Table(name = "namespace_config", indexes = {
+	@Index(name = "idx_namespace_municipality_id", columnList = "namespace, municipality_id"),
+	@Index(name = "idx_municipality_id", columnList = "municipality_id")
+}, uniqueConstraints = {
+	@UniqueConstraint(name = "uq_namespace_municipality_id", columnNames = { "namespace", "municipality_id" })
+})
 public class NamespaceConfigEntity {
 
 	@Id
@@ -40,6 +40,9 @@ public class NamespaceConfigEntity {
 
 	@Column(name = "namespace", nullable = false)
 	private String namespace;
+
+	@Column(name = "display_name", nullable = false)
+	private String displayName;
 
 	@Column(name = "short_code", nullable = false)
 	private String shortCode;
@@ -95,6 +98,19 @@ public class NamespaceConfigEntity {
 		return this;
 	}
 
+	public String getDisplayName() {
+		return displayName;
+	}
+
+	public void setDisplayName(String displayName) {
+		this.displayName = displayName;
+	}
+
+	public NamespaceConfigEntity withDisplayName(String displayName) {
+		this.displayName = displayName;
+		return this;
+	}
+
 	public String getShortCode() {
 		return shortCode;
 	}
@@ -145,32 +161,28 @@ public class NamespaceConfigEntity {
 	}
 
 	@Override
-	public boolean equals(Object object) {
-		if (this == object) {
-			return true;
-		}
-		if (object == null || getClass() != object.getClass()) {
-			return false;
-		}
-		NamespaceConfigEntity that = (NamespaceConfigEntity) object;
-		return Objects.equals(id, that.id) && Objects.equals(municipalityId, that.municipalityId) && Objects.equals(namespace, that.namespace) && Objects.equals(shortCode, that.shortCode) && Objects.equals(created, that.created) && Objects.equals(modified, that.modified);
+	public int hashCode() {
+		return Objects.hash(created, displayName, id, modified, municipalityId, namespace, shortCode);
 	}
 
 	@Override
-	public int hashCode() {
-		return Objects.hash(id, municipalityId, namespace, shortCode, created, modified);
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (!(obj instanceof final NamespaceConfigEntity other)) {
+			return false;
+		}
+		return Objects.equals(created, other.created) && Objects.equals(displayName, other.displayName) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(municipalityId, other.municipalityId) && Objects
+			.equals(namespace, other.namespace) && Objects.equals(shortCode, other.shortCode);
 	}
 
 	@Override
 	public String toString() {
-		final StringBuilder sb = new StringBuilder("NamespaceConfigEntity{");
-		sb.append("id=").append(id);
-		sb.append(", municipalityId='").append(municipalityId).append('\'');
-		sb.append(", namespace='").append(namespace).append('\'');
-		sb.append(", shortCode='").append(shortCode).append('\'');
-		sb.append(", created=").append(created);
-		sb.append(", modified=").append(modified);
-		sb.append('}');
-		return sb.toString();
+		final var builder = new StringBuilder();
+		builder.append("NamespaceConfigEntity [id=").append(id).append(", municipalityId=").append(municipalityId).append(", namespace=").append(namespace).append(", displayName=").append(displayName).append(", shortCode=").append(shortCode).append(
+			", created=").append(created).append(", modified=").append(modified).append("]");
+		return builder.toString();
 	}
+
 }

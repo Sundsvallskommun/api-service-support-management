@@ -14,7 +14,6 @@ import static se.sundsvall.supportmanagement.Constants.NAMESPACE_VALIDATION_MESS
 
 import java.util.List;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -92,7 +91,7 @@ public class NamespaceConfigResource {
 	public ResponseEntity<List<NamespaceConfig>> readAllNamespaceConfigs(
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId(nullable = true) @RequestParam(required = false) final String municipalityId) {
 
-		return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
+		return ok(service.findAll(municipalityId));
 	}
 
 	@PutMapping(path = "/{namespace}/{municipalityId}/namespaceConfig", consumes = APPLICATION_JSON_VALUE, produces = { ALL_VALUE, APPLICATION_PROBLEM_JSON_VALUE })

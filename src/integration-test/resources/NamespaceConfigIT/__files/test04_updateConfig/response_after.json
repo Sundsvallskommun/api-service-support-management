@@ -1,5 +1,8 @@
 {
-	"shortCode" : "NS1-UPDATE",
 	"created": "2021-12-31T23:59:59.999+01:00",
-	"modified": "${json-unit.any-string}"
+	"displayName": "Updated displayname",
+	"modified": "${json-unit.any-string}",
+	"municipalityId": "2281",
+	"namespace": "NAMESPACE.1",
+	"shortCode": "NS1-UPDATE"
 }

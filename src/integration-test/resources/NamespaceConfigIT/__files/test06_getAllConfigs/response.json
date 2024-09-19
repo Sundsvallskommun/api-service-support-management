@@ -1,0 +1,32 @@
+[
+	{
+		"namespace": "NAMESPACE.1",
+		"municipalityId": "2281",
+		"displayName": "Namespace 1",
+		"shortCode": "NS1",
+		"created": "2021-12-31T23:59:59.999+01:00",
+		"modified": "2022-12-31T23:59:59.999+01:00"
+	},
+	{
+		"namespace": "CONTACTCENTER",
+		"municipalityId": "2281",
+		"displayName": "Kontaktcenter",
+		"shortCode": "KC",
+		"created": "2024-06-12T15:23:59.999+02:00"
+	},
+	{
+		"namespace": "NAMESPACE.3",
+		"municipalityId": "2281",
+		"displayName": "Namespace 3",
+		"shortCode": "NS3",
+		"created": "2021-12-31T23:59:59.999+01:00",
+		"modified": "2022-12-31T23:59:59.999+01:00"
+	},
+	{
+		"namespace": "CONTACTCENTER",
+		"municipalityId": "2262",
+		"displayName": "Kontaktcenter",
+		"shortCode": "KC",
+		"created": "2024-06-12T15:24:00.001+02:00"
+	}
+]
