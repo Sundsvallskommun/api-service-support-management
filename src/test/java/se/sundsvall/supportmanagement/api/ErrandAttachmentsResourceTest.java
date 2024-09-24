@@ -1,5 +1,24 @@
 package se.sundsvall.supportmanagement.api;
 
+import static java.util.UUID.randomUUID;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
+import static org.springframework.http.MediaType.ALL;
+import static org.springframework.http.MediaType.ALL_VALUE;
+import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
+import static org.springframework.http.MediaType.TEXT_PLAIN;
+import static org.springframework.http.MediaType.TEXT_PLAIN_VALUE;
+
+import java.io.IOException;
+import java.sql.SQLException;
+import java.util.List;
+import java.util.Map;
+
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,28 +29,10 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.BodyInserters;
+
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachmentHeader;
 import se.sundsvall.supportmanagement.service.ErrandAttachmentService;
-
-import java.io.IOException;
-import java.sql.SQLException;
-import java.util.List;
-import java.util.Map;
-
-import static java.util.UUID.randomUUID;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
-import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
-import static org.springframework.http.MediaType.ALL;
-import static org.springframework.http.MediaType.APPLICATION_JSON;
-import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
-import static org.springframework.http.MediaType.TEXT_PLAIN;
-import static org.springframework.http.MediaType.TEXT_PLAIN_VALUE;
 
 @SpringBootTest(classes = Application.class, webEnvironment = RANDOM_PORT)
 @ActiveProfiles("junit")
@@ -59,7 +60,6 @@ class ErrandAttachmentsResourceTest {
 		final var body = multipartBodyBuilder.build();
 		final var attachmentId = "attachmentId";
 
-
 		// Mock
 		when(errandAttachmentServiceMock.createErrandAttachment(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), any())).thenReturn(attachmentId);
 
@@ -75,7 +75,7 @@ class ErrandAttachmentsResourceTest {
 			.expectBody().isEmpty();
 
 		// Verification
-		ArgumentCaptor<MultipartFile> fileArgumentCaptor = ArgumentCaptor.forClass(MultipartFile.class);
+		final ArgumentCaptor<MultipartFile> fileArgumentCaptor = ArgumentCaptor.forClass(MultipartFile.class);
 		verify(errandAttachmentServiceMock).createErrandAttachment(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), fileArgumentCaptor.capture());
 		final var multipartFile = fileArgumentCaptor.getValue();
 		assertThat(multipartFile.getOriginalFilename()).isEqualTo(fileName);
@@ -87,7 +87,6 @@ class ErrandAttachmentsResourceTest {
 
 		// Parameter values
 		final var attachmentId = randomUUID().toString();
-
 
 		webTestClient.get().uri(builder -> builder.path(PATH.concat("/{attachmentId}")).build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "attachmentId", attachmentId)))
 			.accept(APPLICATION_JSON)
@@ -130,7 +129,7 @@ class ErrandAttachmentsResourceTest {
 		webTestClient.delete().uri(builder -> builder.path(PATH.concat("/{attachmentId}")).build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "attachmentId", attachmentId)))
 			.exchange()
 			.expectStatus().isNoContent()
-			.expectHeader().doesNotExist(CONTENT_TYPE);
+			.expectHeader().contentType(ALL_VALUE);
 
 		// Verification
 		verify(errandAttachmentServiceMock).deleteErrandAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, attachmentId);

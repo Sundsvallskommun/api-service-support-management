@@ -66,8 +66,8 @@ public class NamespaceConfigResource {
 
 		return created(fromPath("/{namespace}/{municipalityId}/namespaceConfig")
 			.buildAndExpand(namespace, municipalityId).toUri())
-				.header(CONTENT_TYPE, ALL_VALUE)
-				.build();
+			.header(CONTENT_TYPE, ALL_VALUE)
+			.build();
 	}
 
 	@GetMapping(path = "/{namespace}/{municipalityId}/namespaceConfig", produces = { APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE })
@@ -105,12 +105,14 @@ public class NamespaceConfigResource {
 		@Valid @NotNull @RequestBody NamespaceConfig namespaceConfig) {
 
 		service.replace(namespaceConfig, namespace, municipalityId);
-		return noContent().build();
+		return noContent()
+			.header(CONTENT_TYPE, ALL_VALUE)
+			.build();
 	}
 
 	@DeleteMapping(path = "/{namespace}/{municipalityId}/namespaceConfig")
 	@Operation(summary = "Delete namespace config", description = "Deletes the config for a namespace/municipality")
-	@ApiResponse(responseCode = "204", description = "Successful operation")
+	@ApiResponse(responseCode = "204", description = "Successful operation", useReturnTypeSchema = true)
 	@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = { Problem.class, ConstraintViolationProblem.class })))
 	@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
@@ -119,6 +121,8 @@ public class NamespaceConfigResource {
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId) {
 
 		service.delete(namespace, municipalityId);
-		return noContent().build();
+		return noContent()
+			.header(CONTENT_TYPE, ALL_VALUE)
+			.build();
 	}
 }
