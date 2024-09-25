@@ -51,7 +51,7 @@ import se.sundsvall.supportmanagement.service.ErrandService;
 
 @RestController
 @Validated
-@RequestMapping("/{namespace}/{municipalityId}/errands")
+@RequestMapping("/{municipalityId}/{namespace}/errands")
 @Tag(name = "Errands", description = "Errand operations")
 class ErrandsResource {
 
@@ -72,8 +72,8 @@ class ErrandsResource {
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId(groups = OnCreate.class) @PathVariable final String municipalityId,
 		@Valid @NotNull @RequestBody final Errand errand) {
 
-		return created(fromPath("/{namespace}/{municipalityId}/errands/{id}")
-			.buildAndExpand(namespace, municipalityId, service.createErrand(namespace, municipalityId, errand)).toUri())
+		return created(fromPath("/{municipalityId}/{namespace}/errands/{id}")
+			.buildAndExpand(municipalityId, namespace, service.createErrand(namespace, municipalityId, errand)).toUri())
 			.header(CONTENT_TYPE, ALL_VALUE)
 			.build();
 	}
@@ -140,4 +140,5 @@ class ErrandsResource {
 			.header(CONTENT_TYPE, ALL_VALUE)
 			.build();
 	}
+
 }

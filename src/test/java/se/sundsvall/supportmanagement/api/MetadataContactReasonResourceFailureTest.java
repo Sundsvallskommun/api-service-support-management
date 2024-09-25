@@ -27,7 +27,7 @@ import se.sundsvall.supportmanagement.service.MetadataService;
 @ActiveProfiles("junit")
 class MetadataContactReasonResourceFailureTest {
 
-	private static final String PATH = "/{namespace}/{municipalityId}/metadata/contactreasons";
+	private static final String PATH = "/{municipalityId}/{namespace}/metadata/contactreasons";
 
 	@MockBean
 	private MetadataService metadataServiceMock;
@@ -37,10 +37,10 @@ class MetadataContactReasonResourceFailureTest {
 
 	private static Stream<Arguments> createContactReasonArgumentProvider() {
 		return Stream.of(
-			Arguments.of(ContactReason.create().withReason(""), "namespace", "2281", "reason", "must not be blank"),
-			Arguments.of(ContactReason.create().withReason(null), "namespace", "2281", "reason", "must not be blank"),
-			Arguments.of(ContactReason.create().withReason("reason"), "#not-a-valid-namespace", "2281", "createContactReason.namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."),
-			Arguments.of(ContactReason.create().withReason("reason"), "namespace", "not-a-valid-municipalityId", "createContactReason.municipalityId", "not a valid municipality ID")
+			Arguments.of(ContactReason.create().withReason(""),  "2281", "namespace","reason", "must not be blank"),
+			Arguments.of(ContactReason.create().withReason(null),  "2281", "namespace","reason", "must not be blank"),
+			Arguments.of(ContactReason.create().withReason("reason"), "2281","#not-a-valid-namespace",  "createContactReason.namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."),
+			Arguments.of(ContactReason.create().withReason("reason"),  "not-a-valid-municipalityId", "namespace","createContactReason.municipalityId", "not a valid municipality ID")
 		);
 	}
 

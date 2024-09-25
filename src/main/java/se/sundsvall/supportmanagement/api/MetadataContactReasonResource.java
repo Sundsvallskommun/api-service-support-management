@@ -44,7 +44,7 @@ import se.sundsvall.supportmanagement.service.MetadataService;
 
 @RestController
 @Validated
-@RequestMapping("/{namespace}/{municipalityId}/metadata/contactreasons")
+@RequestMapping("/{municipalityId}/{namespace}/metadata/contactreasons")
 @ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = { Problem.class, ConstraintViolationProblem.class })))
 @ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 @Tag(name = "Metadata for contact reasons", description = "Contact reason metadata operations")
@@ -65,8 +65,8 @@ class MetadataContactReasonResource {
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId(groups = OnCreate.class) @PathVariable final String municipalityId,
 		@Valid @NotNull @RequestBody final ContactReason contactReason) {
 
-		return created(fromPath("/{namespace}/{municipalityId}/metadata/contactreasons/{reason}")
-			.buildAndExpand(namespace, municipalityId, metadataService.createContactReason(namespace, municipalityId, contactReason)).toUri())
+		return created(fromPath("/{municipalityId}/{namespace}/metadata/contactreasons/{reason}")
+			.buildAndExpand(municipalityId, namespace, metadataService.createContactReason(namespace, municipalityId, contactReason)).toUri())
 			.header(CONTENT_TYPE, ALL_VALUE)
 			.build();
 	}

@@ -1,18 +1,5 @@
 package se.sundsvall.supportmanagement.api;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.HttpStatus;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.web.reactive.server.WebTestClient;
-import se.sundsvall.supportmanagement.Application;
-import se.sundsvall.supportmanagement.api.model.metadata.Category;
-import se.sundsvall.supportmanagement.service.MetadataService;
-
-import java.util.Map;
-
 import static org.apache.commons.lang3.ArrayUtils.EMPTY_STRING_ARRAY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
@@ -21,12 +8,28 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 import static org.springframework.http.MediaType.ALL;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
+import java.util.Map;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.HttpStatus;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.reactive.server.WebTestClient;
+
+import se.sundsvall.supportmanagement.Application;
+import se.sundsvall.supportmanagement.api.model.metadata.Category;
+import se.sundsvall.supportmanagement.service.MetadataService;
+
 @SpringBootTest(classes = Application.class, webEnvironment = RANDOM_PORT)
 @ActiveProfiles("junit")
 class MetadataCategoriesResourceTest {
 
-	private static final String PATH = "/{namespace}/{municipalityId}/metadata/categories";
+	private static final String PATH = "/{municipalityId}/{namespace}/metadata/categories";
+
 	private static final String NAMESPACE = "namespace";
+
 	private static final String MUNICIPALITY_ID = "2281";
 
 	@MockBean
@@ -50,7 +53,7 @@ class MetadataCategoriesResourceTest {
 			.exchange()
 			.expectStatus().isCreated()
 			.expectHeader().contentType(ALL)
-			.expectHeader().location( "/" + NAMESPACE + "/" + MUNICIPALITY_ID + "/metadata/categories/" + body.getName())
+			.expectHeader().location("/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/metadata/categories/" + body.getName())
 			.expectBody().isEmpty();
 
 		verify(metadataServiceMock).createCategory(NAMESPACE, MUNICIPALITY_ID, body);
@@ -138,4 +141,5 @@ class MetadataCategoriesResourceTest {
 
 		verify(metadataServiceMock).deleteCategory(NAMESPACE, MUNICIPALITY_ID, name);
 	}
+
 }

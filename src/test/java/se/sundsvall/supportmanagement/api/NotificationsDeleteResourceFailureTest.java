@@ -22,7 +22,7 @@ import se.sundsvall.supportmanagement.service.NotificationService;
 @ActiveProfiles("junit")
 class NotificationsDeleteResourceFailureTest {
 
-	private static final String PATH = "/{namespace}/{municipalityId}/notifications/{notificationId}";
+	private static final String PATH = "/{municipalityId}/{namespace}/notifications/{notificationId}";
 
 	private static final String NAMESPACE = "namespace";
 
@@ -77,7 +77,7 @@ class NotificationsDeleteResourceFailureTest {
 		doThrow(Problem.valueOf(NOT_FOUND, "Notification id not found")).when(notificationServiceMock).deleteNotification(MUNICIPALITY_ID, NAMESPACE, INVALID);
 		// Call
 		final var response = webTestClient.delete()
-			.uri(builder -> builder.path(PATH).build(NAMESPACE, MUNICIPALITY_ID, INVALID))
+			.uri(builder -> builder.path(PATH).build(MUNICIPALITY_ID,NAMESPACE, INVALID))
 			.exchange()
 			.expectStatus().isNotFound()
 			.expectBody(Problem.class)

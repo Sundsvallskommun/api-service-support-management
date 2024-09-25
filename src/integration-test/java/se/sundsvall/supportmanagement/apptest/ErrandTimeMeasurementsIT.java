@@ -38,9 +38,13 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 class ErrandTimeMeasurementsIT extends AbstractAppTest {
 
 	private static final String ERRAND_ID = "ec677eb3-604c-4935-bff7-f8f0b500c8f4";
-	private static final String BASE_PATH = "/NAMESPACE.1/2281/errands";
+
+	private static final String BASE_PATH = "/2281/NAMESPACE.1/errands";
+
 	private static final String TIME_MEASUREMENT_PATH = BASE_PATH + "/" + ERRAND_ID + "/timeMeasure";
+
 	private static final String REQUEST_FILE = "request.json";
+
 	private static final String RESPONSE_FILE = "response.json";
 
 	@Autowired
@@ -69,7 +73,7 @@ class ErrandTimeMeasurementsIT extends AbstractAppTest {
 			.withHttpMethod(POST)
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(CREATED)
-			.withExpectedResponseHeader(LOCATION, List.of("/CONTACTCENTER/2281/errands/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"))
+			.withExpectedResponseHeader(LOCATION, List.of("/2281/CONTACTCENTER/errands/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"))
 			.sendRequestAndVerifyResponse();
 
 		final var result = errandsRepository.findAll(Example.of(ErrandEntity.create().withTitle("test04_postErrand"))).stream()

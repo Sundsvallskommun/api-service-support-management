@@ -42,7 +42,7 @@ import se.sundsvall.supportmanagement.service.MetadataService;
 
 @RestController
 @Validated
-@RequestMapping("/{namespace}/{municipalityId}/metadata/roles")
+@RequestMapping("/{municipalityId}/{namespace}/metadata/roles")
 @Tag(name = "Metadata for roles", description = "Role metadata operations")
 class MetadataRoleResource {
 
@@ -62,8 +62,8 @@ class MetadataRoleResource {
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Valid @NotNull @RequestBody final Role body) {
 
-		return created(fromPath("/{namespace}/{municipalityId}/metadata/roles/{role}")
-			.buildAndExpand(namespace, municipalityId, metadataService.createRole(namespace, municipalityId, body)).toUri())
+		return created(fromPath("/{municipalityId}/{namespace}/metadata/roles/{role}")
+			.buildAndExpand(municipalityId, namespace, metadataService.createRole(namespace, municipalityId, body)).toUri())
 			.header(CONTENT_TYPE, ALL_VALUE)
 			.build();
 	}
@@ -110,4 +110,5 @@ class MetadataRoleResource {
 			.header(CONTENT_TYPE, ALL_VALUE)
 			.build();
 	}
+
 }

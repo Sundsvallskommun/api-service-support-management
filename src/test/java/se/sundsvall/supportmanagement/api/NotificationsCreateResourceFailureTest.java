@@ -34,7 +34,7 @@ import se.sundsvall.supportmanagement.service.NotificationService;
 @ActiveProfiles("junit")
 class NotificationsCreateResourceFailureTest {
 
-	private static final String PATH = "/{namespace}/{municipalityId}/notifications";
+	private static final String PATH = "/{municipalityId}/{namespace}/notifications";
 
 	private static final String NAMESPACE = "namespace";
 

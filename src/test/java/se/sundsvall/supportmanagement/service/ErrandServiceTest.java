@@ -257,7 +257,7 @@ class ErrandServiceTest {
 		verify(errandRepositoryMock).getReferenceById(ERRAND_ID);
 		verify(errandRepositoryMock).save(entity);
 		verify(revisionServiceMock).createErrandRevision(entity);
-		verify(revisionServiceMock, never()).getErrandRevisionByVersion(any(), anyInt());
+		verify(revisionServiceMock, never()).getErrandRevisionByVersion(any(), any(),any(), anyInt());
 		verify(eventServiceMock, never()).createErrandEvent(any(), any(), any(), any(), any());
 	}
 
@@ -283,7 +283,7 @@ class ErrandServiceTest {
 		// Mock
 		when(errandRepositoryMock.existsWithLockingByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
 		when(errandRepositoryMock.getReferenceById(ERRAND_ID)).thenReturn(entity);
-		when(revisionServiceMock.getLatestErrandRevision(ERRAND_ID)).thenReturn(currentRevisionMock);
+		when(revisionServiceMock.getLatestErrandRevision(NAMESPACE, MUNICIPALITY_ID,ERRAND_ID)).thenReturn(currentRevisionMock);
 
 		// Call
 		service.deleteErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);

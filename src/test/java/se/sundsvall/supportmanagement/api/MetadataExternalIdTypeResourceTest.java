@@ -1,18 +1,5 @@
 package se.sundsvall.supportmanagement.api;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.HttpStatus;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.web.reactive.server.WebTestClient;
-import se.sundsvall.supportmanagement.Application;
-import se.sundsvall.supportmanagement.api.model.metadata.ExternalIdType;
-import se.sundsvall.supportmanagement.service.MetadataService;
-
-import java.util.Map;
-
 import static org.apache.commons.lang3.ArrayUtils.EMPTY_STRING_ARRAY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
@@ -21,12 +8,28 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 import static org.springframework.http.MediaType.ALL;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
+import java.util.Map;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.HttpStatus;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.reactive.server.WebTestClient;
+
+import se.sundsvall.supportmanagement.Application;
+import se.sundsvall.supportmanagement.api.model.metadata.ExternalIdType;
+import se.sundsvall.supportmanagement.service.MetadataService;
+
 @SpringBootTest(classes = Application.class, webEnvironment = RANDOM_PORT)
 @ActiveProfiles("junit")
 class MetadataExternalIdTypeResourceTest {
 
-	private static final String PATH = "/{namespace}/{municipalityId}/metadata/externalIdTypes";
+	private static final String PATH = "/{municipalityId}/{namespace}/metadata/externalIdTypes";
+
 	private static final String NAMESPACE = "namespace";
+
 	private static final String MUNICIPALITY_ID = "2281";
 
 	@MockBean
@@ -52,7 +55,7 @@ class MetadataExternalIdTypeResourceTest {
 			.exchange()
 			.expectStatus().isCreated()
 			.expectHeader().contentType(ALL)
-			.expectHeader().location("/" + NAMESPACE + "/" + MUNICIPALITY_ID + "/metadata/externalIdTypes/" + externalIdTypeName)
+			.expectHeader().location("/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/metadata/externalIdTypes/" + externalIdTypeName)
 			.expectBody().isEmpty();
 
 		// Verifications & assertions
@@ -109,4 +112,5 @@ class MetadataExternalIdTypeResourceTest {
 		// Verifications & assertions
 		verify(metadataServiceMock).deleteExternalIdType(NAMESPACE, MUNICIPALITY_ID, externalIdTypeName);
 	}
+
 }

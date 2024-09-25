@@ -28,7 +28,7 @@ import se.sundsvall.supportmanagement.integration.db.ParameterRepository;
 @DirtiesContext
 class ErrandParametersIT extends AbstractAppTest {
 
-	private static final String PATH = "/NAMESPACE.1/2281/errands/"; // 2281 is the municipalityId of Sundsvalls kommun
+	private static final String PATH = "/2281/NAMESPACE.1/errands/"; // 2281 is the municipalityId of Sundsvalls kommun
 
 	private static final String REQUEST_FILE = "request.json";
 
@@ -106,4 +106,5 @@ class ErrandParametersIT extends AbstractAppTest {
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 	}
+
 }

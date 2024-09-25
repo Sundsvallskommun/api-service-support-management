@@ -46,7 +46,7 @@ import se.sundsvall.supportmanagement.service.NotificationService;
 
 @RestController
 @Validated
-@RequestMapping("/{namespace}/{municipalityId}/notifications")
+@RequestMapping("/{municipalityId}/{namespace}/notifications")
 @Tag(name = "User notifications", description = "User notifications operations")
 @ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = { Problem.class, ConstraintViolationProblem.class })))
 @ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
@@ -94,8 +94,8 @@ class NotificationsResource {
 		final var result = Optional.ofNullable(notificationService.createNotification(municipalityId, namespace, notification))
 			.orElseThrow(() -> Problem.valueOf(CONFLICT, "Notification already exists"));
 
-		return created(fromPath("/{namespace}/{municipalityId}/notifications/{notificationId}")
-			.buildAndExpand(namespace, municipalityId, result).toUri())
+		return created(fromPath("/{municipalityId}/{namespace}/notifications/{notificationId}")
+			.buildAndExpand(municipalityId, namespace, result).toUri())
 			.header(CONTENT_TYPE, ALL_VALUE)
 			.build();
 	}

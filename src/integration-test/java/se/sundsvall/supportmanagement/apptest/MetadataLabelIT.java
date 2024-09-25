@@ -49,7 +49,7 @@ class MetadataLabelIT extends AbstractAppTest {
 
 	@Test
 	void test01_createLabels() {
-		final var path = "/" + NAMESPACE + "/" + MUNICIPALITY_2282 + "/metadata/labels";
+		final var path = "/" + MUNICIPALITY_2282 + "/" + NAMESPACE + "/metadata/labels";
 		final var json = "[{\"classification\":\"TOP-LEVEL\",\"displayName\":\"Nivå 1\",\"name\":\"LABEL-1\",\"labels\":[{\"classification\":\"MIDDLE-LEVEL\",\"displayName\":\"Nivå 1.1\",\"name\":\"LEVEL-1-1\",\"labels\":[{\"classification\":\"LOWEST-LEVEL\",\"displayName\":\"Nivå 1.1.1\",\"name\":\"LEVEL-1-1-1\"},{\"classification\":\"LOWEST-LEVEL\",\"displayName\":\"Nivå 1.1.2\",\"name\":\"LEVEL-1-1-2\"}]}]}]";
 
 		assertThat(labelRepository.existsByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_2282)).isFalse();
@@ -69,7 +69,7 @@ class MetadataLabelIT extends AbstractAppTest {
 	@Test
 	void test02_getLabels() {
 		setupCall()
-			.withServicePath("/" + NAMESPACE + "/" + MUNICIPALITY_2281 + "/metadata/labels")
+			.withServicePath("/" + MUNICIPALITY_2281 + "/" + NAMESPACE + "/metadata/labels")
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
@@ -79,7 +79,7 @@ class MetadataLabelIT extends AbstractAppTest {
 
 	@Test
 	void test03_getLabelsWhenEmpty() {
-		final var path = "/" + NAMESPACE + "/" + MUNICIPALITY_2309 + "/metadata/labels";
+		final var path = "/" + MUNICIPALITY_2309 + "/" + NAMESPACE + "/metadata/labels";
 
 		setupCall()
 			.withServicePath(path)
@@ -94,7 +94,7 @@ class MetadataLabelIT extends AbstractAppTest {
 		assertThat(labelRepository.existsByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_2281)).isTrue();
 
 		setupCall()
-			.withServicePath("/" + NAMESPACE + "/" + MUNICIPALITY_2281 + "/metadata/labels")
+			.withServicePath("/" + MUNICIPALITY_2281 + "/" + NAMESPACE + "/metadata/labels")
 			.withHttpMethod(DELETE)
 			.withExpectedResponseStatus(NO_CONTENT)
 			.withExpectedResponseBodyIsNull()
@@ -105,19 +105,19 @@ class MetadataLabelIT extends AbstractAppTest {
 
 	@Test
 	void test05_updateLabels() {
-		final var path = "/" + NAMESPACE + "/" + MUNICIPALITY_2281 + "/metadata/labels";
+		final var path = "/" + MUNICIPALITY_2281 + "/" + NAMESPACE + "/metadata/labels";
 		final var json = "[{\"classification\":\"TOP-LEVEL\",\"displayName\":\"TOP 1\",\"name\":\"LABEL-1\",\"labels\":[{\"classification\":\"SUB-LEVEL\",\"displayName\":\"SUB 1.1\",\"name\":\"SUB-1-1\"}]}]";
 
 		assertThat(labelRepository.existsByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_2281)).isTrue();
 		assertThat(labelRepository.findOneByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_2281).getJsonStructure()).isNotEqualTo(json);
 
 		setupCall()
-				.withServicePath(path)
-				.withHttpMethod(PUT)
-				.withRequest(REQUEST_FILE)
-				.withExpectedResponseStatus(NO_CONTENT)
-				.withExpectedResponseBodyIsNull()
-				.sendRequestAndVerifyResponse();
+			.withServicePath(path)
+			.withHttpMethod(PUT)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(NO_CONTENT)
+			.withExpectedResponseBodyIsNull()
+			.sendRequestAndVerifyResponse();
 
 		assertThat(labelRepository.findOneByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_2281).getJsonStructure()).isEqualTo(json);
 	}

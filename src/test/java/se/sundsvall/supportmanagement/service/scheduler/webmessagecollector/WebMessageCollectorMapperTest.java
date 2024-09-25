@@ -17,6 +17,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.Direction;
 import se.sundsvall.supportmanagement.service.util.BlobBuilder;
 import se.sundsvall.supportmanagement.service.util.ServiceUtil;
@@ -46,8 +47,10 @@ class WebMessageCollectorMapperTest {
 		final var sent = LocalDateTime.now().toString();
 		final var firstName = "firstName";
 		final var lastName = "lastName";
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
 
-		final var errandNumber = "KC-2024-010";
+		final var errand = ErrandEntity.create().withErrandNumber("KC-2024-010").withMunicipalityId(municipalityId).withNamespace(namespace);
 
 		final var attachment = new MessageAttachment()
 			.attachmentId(1)
@@ -66,11 +69,13 @@ class WebMessageCollectorMapperTest {
 			.sent(sent);
 
 		// Act
-		final var result = webMessageCollectorMapper.toCommunicationEntity(messagedto, errandNumber);
+		final var result = webMessageCollectorMapper.toCommunicationEntity(messagedto, errand);
 
 		// Assert
 		assertThat(result).hasNoNullFieldsOrPropertiesExcept("subject", "target", "attachments", "emailHeaders", "errandAttachments");
 		assertThat(result.getId()).isNotNull();
+		assertThat(result.getNamespace()).isEqualTo(namespace);
+		assertThat(result.getMunicipalityId()).isEqualTo(municipalityId);
 		assertThat(result.getSender()).isEqualTo(firstName + " " + lastName);
 		assertThat(ServiceUtil.isValidUuid(result.getId())).isTrue();
 		assertThat(result.getDirection()).isEqualTo(Direction.INBOUND);

@@ -21,10 +21,12 @@ class EventsIT extends AbstractAppTest {
 
 	private static final String RESPONSE_FILE = "response.json";
 
+	private static final String PATH = "/2281/namespace.1/errands/";
+
 	@Test
 	void test01_readErrandEvents() {
 		setupCall()
-			.withServicePath("/errands/147d355f-dc94-4fde-a4cb-9ddd16cb1946/events?sort=created,ASC")
+			.withServicePath(PATH + "147d355f-dc94-4fde-a4cb-9ddd16cb1946/events?sort=created,ASC")
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
@@ -35,7 +37,7 @@ class EventsIT extends AbstractAppTest {
 	@Test
 	void test02_readErrandEventsPaginated() {
 		setupCall()
-			.withServicePath("/errands/147d355f-dc94-4fde-a4cb-9ddd16cb1946/events?page=1&size=2&sort=created,ASC")
+			.withServicePath(PATH + "147d355f-dc94-4fde-a4cb-9ddd16cb1946/events?page=1&size=2&sort=created,ASC")
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))

@@ -74,10 +74,10 @@ public class WebMessageCollectorWorker {
 		final var messages = webMessageCollectorClient.getMessages(municipalityId, familyId, instance);
 		LOG.info("Got {} messages from the WebMessageCollectorClient", messages.size());
 
-		return processMessages(messages);
+		return processMessages(messages, municipalityId);
 	}
 
-	private List<CommunicationAttachmentEntity> processMessages(final List<MessageDTO> messages) {
+	private List<CommunicationAttachmentEntity> processMessages(final List<MessageDTO> messages, final String municipalityId) {
 		return messages.stream()
 			.map(messageDTO -> errandsRepository.findByExternalTagsValue(messageDTO.getExternalCaseId())
 				.filter(this::shouldBeUpdated)
@@ -89,7 +89,7 @@ public class WebMessageCollectorWorker {
 
 	private List<CommunicationAttachmentEntity> processMessage(final MessageDTO messageDTO, final ErrandEntity errand) {
 		updateErrandStatus(errand);
-		final var entity = webMessageCollectorMapper.toCommunicationEntity(messageDTO, errand.getErrandNumber());
+		final var entity = webMessageCollectorMapper.toCommunicationEntity(messageDTO, errand);
 		communicationRepository.saveAndFlush(entity);
 		eventService.createErrandEvent(UPDATE, EVENT_LOG_COMMUNICATION, errand, null, null);
 		return entity.getAttachments();

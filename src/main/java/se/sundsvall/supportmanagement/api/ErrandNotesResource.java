@@ -46,7 +46,7 @@ import se.sundsvall.supportmanagement.service.ErrandNoteService;
 
 @RestController
 @Validated
-@RequestMapping("/{namespace}/{municipalityId}/errands/{id}/notes")
+@RequestMapping("/{municipalityId}/{namespace}/errands/{id}/notes")
 @Tag(name = "Errand notes", description = "Errand notes operations")
 class ErrandNotesResource {
 
@@ -64,12 +64,12 @@ class ErrandNotesResource {
 	public ResponseEntity<Void> createErrandNote(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
-		@Parameter(name = "id", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("id") String id,
-		@Valid @NotNull @RequestBody CreateErrandNoteRequest createErrandNoteRequest) {
+		@Parameter(name = "id", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("id") final String id,
+		@Valid @NotNull @RequestBody final CreateErrandNoteRequest createErrandNoteRequest) {
 
 		final var noteId = service.createErrandNote(namespace, municipalityId, id, createErrandNoteRequest);
-		return created(fromPath("/{namespace}/{municipalityId}/errands/{id}/notes/{noteId}")
-			.buildAndExpand(namespace, municipalityId, id, noteId).toUri())
+		return created(fromPath("/{municipalityId}/{namespace}/errands/{id}/notes/{noteId}")
+			.buildAndExpand(municipalityId, namespace, id, noteId).toUri())
 			.header(CONTENT_TYPE, ALL_VALUE)
 			.build();
 	}
@@ -83,8 +83,8 @@ class ErrandNotesResource {
 	public ResponseEntity<ErrandNote> readErrandNote(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
-		@Parameter(name = "id", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("id") String id,
-		@Parameter(name = "noteId", description = "Errand note id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable("noteId") String noteId) {
+		@Parameter(name = "id", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("id") final String id,
+		@Parameter(name = "noteId", description = "Errand note id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable("noteId") final String noteId) {
 
 		return ok(service.readErrandNote(namespace, municipalityId, id, noteId));
 	}
@@ -97,8 +97,8 @@ class ErrandNotesResource {
 	public ResponseEntity<FindErrandNotesResponse> findErrandNotes(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
-		@Parameter(name = "id", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("id") String id,
-		@Valid FindErrandNotesRequest findErrandNotesRequest) {
+		@Parameter(name = "id", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("id") final String id,
+		@Valid final FindErrandNotesRequest findErrandNotesRequest) {
 
 		return ok(service.findErrandNotes(namespace, municipalityId, id, findErrandNotesRequest));
 	}
@@ -112,9 +112,9 @@ class ErrandNotesResource {
 	public ResponseEntity<ErrandNote> updateErrandNote(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
-		@Parameter(name = "id", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("id") String id,
-		@Parameter(name = "noteId", description = "Errand note id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable("noteId") String noteId,
-		@Valid @NotNull @RequestBody UpdateErrandNoteRequest updateErrandNoteRequest) {
+		@Parameter(name = "id", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("id") final String id,
+		@Parameter(name = "noteId", description = "Errand note id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable("noteId") final String noteId,
+		@Valid @NotNull @RequestBody final UpdateErrandNoteRequest updateErrandNoteRequest) {
 
 		return ok(service.updateErrandNote(namespace, municipalityId, id, noteId, updateErrandNoteRequest));
 	}
@@ -128,12 +128,13 @@ class ErrandNotesResource {
 	public ResponseEntity<Void> deleteErrandNote(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
-		@Parameter(name = "id", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("id") String id,
-		@Parameter(name = "noteId", description = "Errand note id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable("noteId") String noteId) {
+		@Parameter(name = "id", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("id") final String id,
+		@Parameter(name = "noteId", description = "Errand note id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable("noteId") final String noteId) {
 
 		service.deleteErrandNote(namespace, municipalityId, id, noteId);
 		return noContent()
 			.header(CONTENT_TYPE, ALL_VALUE)
 			.build();
 	}
+
 }

@@ -6,6 +6,8 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.zalando.problem.Status.BAD_REQUEST;
 
+import java.util.Map;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -22,6 +24,8 @@ import se.sundsvall.supportmanagement.service.MetadataService;
 @ActiveProfiles("junit")
 class MetadataResourceFailureTest {
 
+	private static final String PATH = "{municipalityId}/{namespace}/metadata";
+
 	@MockBean
 	private MetadataService metadataServiceMock;
 
@@ -31,7 +35,8 @@ class MetadataResourceFailureTest {
 	@Test
 	void getWithInvalidNamespace() {
 		// Call
-		final var response = webTestClient.get().uri("invalid,namespace/2281/metadata")
+		final var response = webTestClient.get()
+			.uri(builder -> builder.path(PATH).build(Map.of("municipalityId", "2281", "namespace", "invalid,namespace")))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -51,7 +56,8 @@ class MetadataResourceFailureTest {
 	@Test
 	void getWithInvalidMunicipalityId() {
 		// Call
-		final var response = webTestClient.get().uri("my.namespace/666/metadata")
+		final var response = webTestClient.get()
+			.uri(builder -> builder.path(PATH).build(Map.of("municipalityId", "666", "namespace", "my.namspace")))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)

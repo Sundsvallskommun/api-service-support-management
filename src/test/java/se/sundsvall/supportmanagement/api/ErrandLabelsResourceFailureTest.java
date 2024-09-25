@@ -33,7 +33,7 @@ class ErrandLabelsResourceFailureTest {
 
 	private static final String INVALID = "#invalid#";
 
-	private static final String PATH = "/{namespace}/{municipalityId}/errands/{id}/labels";
+	private static final String PATH = "/{municipalityId}/{namespace}/errands/{id}/labels";
 
 	@Autowired
 	private WebTestClient webTestClient;

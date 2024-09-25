@@ -31,7 +31,7 @@ class ErrandLabelsResourceTest {
 
 	private static final String ERRAND_ID = randomUUID().toString();
 
-	private static final String PATH = "/{namespace}/{municipalityId}/errands/{id}/labels";
+	private static final String PATH = "/{municipalityId}/{namespace}/errands/{id}/labels";
 
 	@Autowired
 	private WebTestClient webTestClient;
@@ -53,7 +53,7 @@ class ErrandLabelsResourceTest {
 			.exchange()
 			.expectStatus().isCreated()
 			.expectHeader().contentType(ALL)
-			.expectHeader().location("/" + NAMESPACE + "/" + MUNICIPALITY_ID + "/errands/" + ERRAND_ID + "/labels")
+			.expectHeader().location("/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/errands/" + ERRAND_ID + "/labels")
 			.expectBody().isEmpty();
 
 		// Verification

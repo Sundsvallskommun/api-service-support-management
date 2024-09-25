@@ -30,7 +30,7 @@ import se.sundsvall.supportmanagement.service.MetadataService;
 @ActiveProfiles("junit")
 class MetadataLabelResourceFailureTest {
 
-	private static final String PATH = "/{namespace}/{municipalityId}/metadata/labels";
+	private static final String PATH = "/{municipalityId}/{namespace}/metadata/labels";
 
 	@MockBean
 	private MetadataService metadataServiceMock;

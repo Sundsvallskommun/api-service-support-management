@@ -27,7 +27,7 @@ import se.sundsvall.supportmanagement.service.MetadataService;
 @ActiveProfiles("junit")
 class MetadataLabelResourceTest {
 
-	private static final String PATH = "/{namespace}/{municipalityId}/metadata/labels";
+	private static final String PATH = "/{municipalityId}/{namespace}/metadata/labels";
 	private static final String NAMESPACE = "namespace";
 	private static final String MUNICIPALITY_ID = "2281";
 

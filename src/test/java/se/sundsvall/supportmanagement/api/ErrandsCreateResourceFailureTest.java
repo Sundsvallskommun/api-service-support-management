@@ -44,7 +44,7 @@ import se.sundsvall.supportmanagement.service.MetadataService;
 @ActiveProfiles("junit")
 class ErrandsCreateResourceFailureTest {
 
-	private static final String PATH = "/{namespace}/{municipalityId}/errands";
+	private static final String PATH = "/{municipalityId}/{namespace}/errands";
 
 	private static final String NAMESPACE = "namespace";
 

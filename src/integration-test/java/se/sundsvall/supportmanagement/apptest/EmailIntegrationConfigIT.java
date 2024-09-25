@@ -41,7 +41,7 @@ class EmailIntegrationConfigIT extends AbstractAppTest {
 
 	private static final String MUNICIPALITY_ID = "2281";
 
-	private static final UnaryOperator<String> PATH = namespace -> "/" + namespace + "/" + MUNICIPALITY_ID + "/emailIntegrationConfig";
+	private static final UnaryOperator<String> PATH = namespace -> "/" + MUNICIPALITY_ID + "/" + namespace + "/emailIntegrationConfig";
 
 	@Autowired
 	private EmailWorkerConfigRepository repository;
@@ -118,7 +118,7 @@ class EmailIntegrationConfigIT extends AbstractAppTest {
 
 	@Test
 	void test05_CreateMinimal() {
-		
+
 		assertThat(repository.existsByNamespaceAndMunicipalityId(NAMESPACE_3, MUNICIPALITY_ID)).isFalse();
 
 		setupCall()

@@ -35,7 +35,11 @@ import se.sundsvall.supportmanagement.integration.db.model.RevisionEntity;
 })
 class ErrandsIT extends AbstractAppTest {
 
-	private static final String PATH = "/NAMESPACE.1/2281/errands"; // 2281 is the municipalityId of Sundsvalls kommun
+	private static final String NAMESPACE = "NAMESPACE.1";
+
+	private static final String MUNICIPALITY_ID = "2281";
+
+	private static final String PATH = "/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/errands"; // 2281 is the municipalityId of Sundsvalls kommun
 
 	private static final String REQUEST_FILE = "request.json";
 
@@ -88,7 +92,7 @@ class ErrandsIT extends AbstractAppTest {
 			.withHttpMethod(POST)
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(CREATED)
-			.withExpectedResponseHeader(LOCATION, List.of("/CONTACTCENTER/2281/errands/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"))
+			.withExpectedResponseHeader(LOCATION, List.of("/2281/CONTACTCENTER/errands/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"))
 			.sendRequest()
 			.getResponseHeaders();
 
@@ -104,7 +108,7 @@ class ErrandsIT extends AbstractAppTest {
 	void test05_patchErrand() {
 		final var id = "1be673c0-6ba3-4fb0-af4a-43acf23389f6";
 
-		assertThat(revisionRepository.findAllByEntityIdOrderByVersion(id)).hasSize(1)
+		assertThat(revisionRepository.findAllByNamespaceAndMunicipalityIdAndEntityIdOrderByVersion(NAMESPACE, MUNICIPALITY_ID, id)).hasSize(1)
 			.extracting(RevisionEntity::getVersion)
 			.containsExactly(0);
 
@@ -117,7 +121,7 @@ class ErrandsIT extends AbstractAppTest {
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 
-		assertThat(revisionRepository.findAllByEntityIdOrderByVersion(id)).hasSize(2)
+		assertThat(revisionRepository.findAllByNamespaceAndMunicipalityIdAndEntityIdOrderByVersion(NAMESPACE, MUNICIPALITY_ID, id)).hasSize(2)
 			.extracting(RevisionEntity::getVersion)
 			.containsExactlyInAnyOrder(0, 1);
 	}
@@ -126,7 +130,7 @@ class ErrandsIT extends AbstractAppTest {
 	void test06_deleteErrand() {
 		final var id = "1be673c0-6ba3-4fb0-af4a-43acf23389f6";
 
-		assertThat(revisionRepository.findAllByEntityIdOrderByVersion(id)).hasSize(1);
+		assertThat(revisionRepository.findAllByNamespaceAndMunicipalityIdAndEntityIdOrderByVersion(NAMESPACE, MUNICIPALITY_ID, id)).hasSize(1);
 		assertThat(errandsRepository.existsById(id)).isTrue();
 
 		setupCall()
@@ -137,7 +141,7 @@ class ErrandsIT extends AbstractAppTest {
 			.sendRequestAndVerifyResponse();
 
 		assertThat(errandsRepository.existsById(id)).isFalse();
-		assertThat(revisionRepository.findAllByEntityIdOrderByVersion(id)).hasSize(1);
+		assertThat(revisionRepository.findAllByNamespaceAndMunicipalityIdAndEntityIdOrderByVersion(NAMESPACE, MUNICIPALITY_ID, id)).hasSize(1);
 	}
 
 	@Test

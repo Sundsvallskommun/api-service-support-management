@@ -9,9 +9,6 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.Objects;
 
-import org.hibernate.annotations.TimeZoneStorage;
-import org.hibernate.annotations.UuidGenerator;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -20,14 +17,19 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
+import org.hibernate.annotations.TimeZoneStorage;
+import org.hibernate.annotations.UuidGenerator;
+
 @Entity
 @Table(name = "revision",
 	indexes = {
 		@Index(name = "revision_entity_id_index", columnList = "entity_id"),
-		@Index(name = "revision_entity_type_index", columnList = "entity_type")
+		@Index(name = "revision_entity_type_index", columnList = "entity_type"),
+		@Index(name = "revision_municipality_id_index", columnList = "municipality_id"),
+		@Index(name = "revision_namespace_index", columnList = "namespace")
 	},
 	uniqueConstraints = {
-		@UniqueConstraint(name = "uq_entity_id_version", columnNames = { "entity_id", "version" })
+		@UniqueConstraint(name = "uq_entity_id_version", columnNames = {"entity_id", "version"})
 	})
 public class RevisionEntity {
 
@@ -38,6 +40,12 @@ public class RevisionEntity {
 
 	@Column(name = "entity_id")
 	private String entityId;
+
+	@Column(name = "namespace")
+	private String namespace;
+
+	@Column(name = "municipality_id")
+	private String municipalityId;
 
 	@Column(name = "entity_type")
 	private String entityType;
@@ -65,11 +73,11 @@ public class RevisionEntity {
 		return id;
 	}
 
-	public void setId(String id) {
+	public void setId(final String id) {
 		this.id = id;
 	}
 
-	public RevisionEntity withId(String id) {
+	public RevisionEntity withId(final String id) {
 		this.id = id;
 		return this;
 	}
@@ -78,12 +86,38 @@ public class RevisionEntity {
 		return entityId;
 	}
 
-	public void setEntityId(String entityId) {
+	public void setEntityId(final String entityId) {
 		this.entityId = entityId;
 	}
 
-	public RevisionEntity withEntityId(String entityId) {
+	public RevisionEntity withEntityId(final String entityId) {
 		this.entityId = entityId;
+		return this;
+	}
+
+	public String getNamespace() {
+		return namespace;
+	}
+
+	public void setNamespace(final String namespace) {
+		this.namespace = namespace;
+	}
+
+	public RevisionEntity withNamespace(final String namespace) {
+		this.namespace = namespace;
+		return this;
+	}
+
+	public String getMunicipalityId() {
+		return municipalityId;
+	}
+
+	public void setMunicipalityId(final String municipalityId) {
+		this.municipalityId = municipalityId;
+	}
+
+	public RevisionEntity withMunicipalityId(final String municipalityId) {
+		this.municipalityId = municipalityId;
 		return this;
 	}
 
@@ -91,11 +125,11 @@ public class RevisionEntity {
 		return entityType;
 	}
 
-	public void setEntityType(String entityType) {
+	public void setEntityType(final String entityType) {
 		this.entityType = entityType;
 	}
 
-	public RevisionEntity withEntityType(String entityType) {
+	public RevisionEntity withEntityType(final String entityType) {
 		this.entityType = entityType;
 		return this;
 	}
@@ -104,11 +138,11 @@ public class RevisionEntity {
 		return version;
 	}
 
-	public void setVersion(Integer version) {
+	public void setVersion(final Integer version) {
 		this.version = version;
 	}
 
-	public RevisionEntity withVersion(Integer version) {
+	public RevisionEntity withVersion(final Integer version) {
 		this.version = version;
 		return this;
 	}
@@ -117,11 +151,11 @@ public class RevisionEntity {
 		return serializedSnapshot;
 	}
 
-	public void setSerializedSnapshot(String serializedSnapshot) {
+	public void setSerializedSnapshot(final String serializedSnapshot) {
 		this.serializedSnapshot = serializedSnapshot;
 	}
 
-	public RevisionEntity withSerializedSnapshot(String serializedSnapshot) {
+	public RevisionEntity withSerializedSnapshot(final String serializedSnapshot) {
 		this.serializedSnapshot = serializedSnapshot;
 		return this;
 	}
@@ -130,38 +164,40 @@ public class RevisionEntity {
 		return created;
 	}
 
-	public void setCreated(OffsetDateTime created) {
+	public void setCreated(final OffsetDateTime created) {
 		this.created = created;
 	}
 
-	public RevisionEntity withCreated(OffsetDateTime created) {
+	public RevisionEntity withCreated(final OffsetDateTime created) {
 		this.created = created;
 		return this;
 	}
 
 	@Override
-	public int hashCode() {
-		return Objects.hash(created, entityId, entityType, id, serializedSnapshot, version);
+	public boolean equals(final Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		final RevisionEntity that = (RevisionEntity) o;
+		return Objects.equals(id, that.id) && Objects.equals(entityId, that.entityId) && Objects.equals(namespace, that.namespace) && Objects.equals(municipalityId, that.municipalityId) && Objects.equals(entityType, that.entityType) && Objects.equals(version, that.version) && Objects.equals(serializedSnapshot, that.serializedSnapshot) && Objects.equals(created, that.created);
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
-			return true;
-		}
-		if (!(obj instanceof final RevisionEntity other)) {
-			return false;
-		}
-		return Objects.equals(created, other.created) && Objects.equals(entityId, other.entityId) && Objects.equals(entityType, other.entityType) && Objects.equals(id, other.id) && Objects.equals(serializedSnapshot, other.serializedSnapshot)
-			&& Objects.equals(version, other.version);
+	public int hashCode() {
+		return Objects.hash(id, entityId, namespace, municipalityId, entityType, version, serializedSnapshot, created);
 	}
 
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder();
-		builder.append("RevisionEntity [id=").append(id).append(", entityId=").append(entityId).append(", entityType=").append(entityType).append(", version=").append(version).append(", serializedSnapshot=").append(serializedSnapshot).append(
-			", created=").append(created).append("]");
-		return builder.toString();
+		return "RevisionEntity{" +
+			"id='" + id + '\'' +
+			", entityId='" + entityId + '\'' +
+			", namespace='" + namespace + '\'' +
+			", municipalityId='" + municipalityId + '\'' +
+			", entityType='" + entityType + '\'' +
+			", version=" + version +
+			", serializedSnapshot='" + serializedSnapshot + '\'' +
+			", created=" + created +
+			'}';
 	}
 
 }

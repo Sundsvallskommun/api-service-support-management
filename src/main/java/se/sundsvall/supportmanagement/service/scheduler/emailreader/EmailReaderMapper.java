@@ -12,10 +12,8 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.stereotype.Component;
-
-import generated.se.sundsvall.emailreader.Email;
-import generated.se.sundsvall.emailreader.EmailAttachment;
 import org.springframework.util.StringUtils;
+
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
 import se.sundsvall.supportmanagement.api.model.errand.Classification;
 import se.sundsvall.supportmanagement.api.model.errand.ContactChannel;
@@ -28,10 +26,14 @@ import se.sundsvall.supportmanagement.integration.db.model.CommunicationAttachme
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationAttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationEmailHeaderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.Direction;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
 import se.sundsvall.supportmanagement.service.util.BlobBuilder;
+
+import generated.se.sundsvall.emailreader.Email;
+import generated.se.sundsvall.emailreader.EmailAttachment;
 
 @Component
 public class EmailReaderMapper {
@@ -56,12 +58,15 @@ public class EmailReaderMapper {
 			.toList();
 	}
 
-	CommunicationEntity toCommunicationEntity(final Email email) {
+	CommunicationEntity toCommunicationEntity(final Email email, final ErrandEntity errand) {
 		if (isNull(email)) {
 			return null;
 		}
 		return CommunicationEntity.create()
 			.withId(randomUUID().toString())
+			.withNamespace(errand.getNamespace())
+			.withMunicipalityId(errand.getMunicipalityId())
+			.withErrandNumber(errand.getErrandNumber())
 			.withDirection(Direction.INBOUND)
 			.withExternalCaseID("")
 			.withSubject(email.getSubject())
@@ -111,7 +116,7 @@ public class EmailReaderMapper {
 			.withChannel(errandChannel)
 			.withClassification(Classification.create().withCategory(email.getMetadata().get("classification.category")).withType(email.getMetadata().get("classification.type")));
 
-		if(StringUtils.hasText(email.getMetadata().get("labels"))) {
+		if (StringUtils.hasText(email.getMetadata().get("labels"))) {
 			errand.setLabels(Arrays.stream(email.getMetadata().get("labels").split(";")).toList());
 		}
 
@@ -144,4 +149,5 @@ public class EmailReaderMapper {
 				Map.Entry::getValue,
 				(oldValue, newValue) -> newValue));
 	}
+
 }

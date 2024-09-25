@@ -29,12 +29,21 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.Direction;
 
 @Entity
 @Table(name = "communication",
-	indexes = {@Index(name = "idx_errand_number", columnList = "errand_number")})
+	indexes = {
+		@Index(name = "idx_errand_number", columnList = "errand_number"),
+		@Index(name = "idx_communication_namespace", columnList = "namespace"),
+		@Index(name = "idx_communication_municipality_id", columnList = "municipality_id"),})
 public class CommunicationEntity {
 
 	@Id
 	@Column(name = "id")
 	private String id;
+
+	@Column(name = "namespace")
+	private String namespace;
+
+	@Column(name = "municipality_id")
+	private String municipalityId;
 
 	@Column(name = "sender")
 	private String sender;
@@ -99,6 +108,32 @@ public class CommunicationEntity {
 
 	public CommunicationEntity withId(final String id) {
 		this.id = id;
+		return this;
+	}
+
+	public String getNamespace() {
+		return namespace;
+	}
+
+	public void setNamespace(final String namespace) {
+		this.namespace = namespace;
+	}
+
+	public CommunicationEntity withNamespace(final String namespace) {
+		this.namespace = namespace;
+		return this;
+	}
+
+	public String getMunicipalityId() {
+		return municipalityId;
+	}
+
+	public void setMunicipalityId(final String municipalityId) {
+		this.municipalityId = municipalityId;
+	}
+
+	public CommunicationEntity withMunicipalityId(final String municipalityId) {
+		this.municipalityId = municipalityId;
 		return this;
 	}
 
@@ -275,9 +310,24 @@ public class CommunicationEntity {
 	}
 
 	@Override
+	public boolean equals(final Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		final CommunicationEntity that = (CommunicationEntity) o;
+		return viewed == that.viewed && Objects.equals(id, that.id) && Objects.equals(namespace, that.namespace) && Objects.equals(municipalityId, that.municipalityId) && Objects.equals(sender, that.sender) && Objects.equals(errandNumber, that.errandNumber) && direction == that.direction && Objects.equals(externalCaseID, that.externalCaseID) && Objects.equals(subject, that.subject) && Objects.equals(messageBody, that.messageBody) && Objects.equals(sent, that.sent) && type == that.type && Objects.equals(target, that.target) && Objects.equals(attachments, that.attachments) && Objects.equals(emailHeaders, that.emailHeaders) && Objects.equals(errandAttachments, that.errandAttachments);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(id, namespace, municipalityId, sender, errandNumber, direction, externalCaseID, subject, messageBody, sent, type, target, viewed, attachments, emailHeaders, errandAttachments);
+	}
+
+	@Override
 	public String toString() {
 		return "CommunicationEntity{" +
 			"id='" + id + '\'' +
+			", namespace='" + namespace + '\'' +
+			", municipalityId='" + municipalityId + '\'' +
 			", sender='" + sender + '\'' +
 			", errandNumber='" + errandNumber + '\'' +
 			", direction=" + direction +
@@ -294,16 +344,4 @@ public class CommunicationEntity {
 			'}';
 	}
 
-	@Override
-	public boolean equals(final Object o) {
-		if (this == o) return true;
-		if (o == null || getClass() != o.getClass()) return false;
-		final CommunicationEntity that = (CommunicationEntity) o;
-		return viewed == that.viewed && Objects.equals(id, that.id) && Objects.equals(sender, that.sender) && Objects.equals(errandNumber, that.errandNumber) && direction == that.direction && Objects.equals(externalCaseID, that.externalCaseID) && Objects.equals(subject, that.subject) && Objects.equals(messageBody, that.messageBody) && Objects.equals(sent, that.sent) && type == that.type && Objects.equals(target, that.target) && Objects.equals(attachments, that.attachments) && Objects.equals(emailHeaders, that.emailHeaders) && Objects.equals(errandAttachments, that.errandAttachments);
-	}
-
-	@Override
-	public int hashCode() {
-		return Objects.hash(id, sender, errandNumber, direction, externalCaseID, subject, messageBody, sent, type, target, viewed, attachments, emailHeaders, errandAttachments);
-	}
 }

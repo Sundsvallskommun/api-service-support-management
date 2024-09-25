@@ -30,7 +30,7 @@ import se.sundsvall.supportmanagement.service.TimeMeasurementService;
 @ActiveProfiles("junit")
 class ErrandTimeMeasurementsResourceTest {
 
-	private static final String PATH = "/{namespace}/{municipalityId}/errands/{errandId}/timeMeasure";
+	private static final String PATH = "/{municipalityId}/{namespace}/errands/{errandId}/timeMeasure";
 
 	private static final String NAMESPACE = "namespace";
 

@@ -1,14 +1,5 @@
 package se.sundsvall.supportmanagement.integration.db.model;
 
-import com.google.code.beanmatchers.BeanMatchers;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.mariadb.jdbc.MariaDbBlob;
-
-import java.time.OffsetDateTime;
-import java.util.Random;
-import java.util.UUID;
-
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanEquals;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanHashCode;
@@ -20,6 +11,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.AllOf.allOf;
+
+import java.time.OffsetDateTime;
+import java.util.Random;
+import java.util.UUID;
+
+import com.google.code.beanmatchers.BeanMatchers;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.mariadb.jdbc.MariaDbBlob;
 
 class AttachmentEntityTest {
 
@@ -46,9 +46,13 @@ class AttachmentEntityTest {
 		final var file = new AttachmentDataEntity().withFile(new MariaDbBlob("file".getBytes()));
 		final var mimeType = "mimeType";
 		final var errandEntity = ErrandEntity.create().withId(UUID.randomUUID().toString());
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
 
 		final var attachmentEntity = AttachmentEntity.create()
 			.withId(id)
+			.withNamespace(namespace)
+			.withMunicipalityId(municipalityId)
 			.withFileName(fileName)
 			.withAttachmentData(file)
 			.withMimeType(mimeType)
@@ -58,12 +62,13 @@ class AttachmentEntityTest {
 
 		assertThat(attachmentEntity).hasNoNullFieldsOrProperties();
 		assertThat(attachmentEntity.getId()).isEqualTo(id);
+		assertThat(attachmentEntity.getNamespace()).isEqualTo(namespace);
+		assertThat(attachmentEntity.getMunicipalityId()).isEqualTo(municipalityId);
 		assertThat(attachmentEntity.getFileName()).isEqualTo(fileName);
 		assertThat(attachmentEntity.getAttachmentData()).isEqualTo(file);
 		assertThat(attachmentEntity.getMimeType()).isEqualTo(mimeType);
 		assertThat(attachmentEntity.getErrandEntity()).isEqualTo(errandEntity);
 	}
-
 
 
 	@Test
@@ -89,4 +94,5 @@ class AttachmentEntityTest {
 		assertThat(AttachmentEntity.create()).hasAllNullFieldsOrProperties();
 		assertThat(new AttachmentEntity()).hasAllNullFieldsOrProperties();
 	}
+
 }

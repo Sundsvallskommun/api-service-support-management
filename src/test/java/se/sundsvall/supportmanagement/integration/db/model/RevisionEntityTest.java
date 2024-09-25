@@ -44,6 +44,8 @@ class RevisionEntityTest {
 		final var id = UUID.randomUUID().toString();
 		final var serializedSnapshot = "serializedSnapshot";
 		final var version = 1;
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
 
 		final var revisionEntity = RevisionEntity.create()
 			.withCreated(created)
@@ -51,7 +53,9 @@ class RevisionEntityTest {
 			.withEntityType(entityType)
 			.withId(id)
 			.withVersion(version)
-			.withSerializedSnapshot(serializedSnapshot);
+			.withSerializedSnapshot(serializedSnapshot)
+			.withNamespace(namespace)
+			.withMunicipalityId(municipalityId);
 
 		assertThat(revisionEntity).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(revisionEntity.getCreated()).isEqualTo(created);
@@ -60,6 +64,8 @@ class RevisionEntityTest {
 		assertThat(revisionEntity.getId()).isEqualTo(id);
 		assertThat(revisionEntity.getVersion()).isEqualTo(version);
 		assertThat(revisionEntity.getSerializedSnapshot()).isEqualTo(serializedSnapshot);
+		assertThat(revisionEntity.getNamespace()).isEqualTo(namespace);
+		assertThat(revisionEntity.getMunicipalityId()).isEqualTo(municipalityId);
 	}
 
 	@Test
@@ -67,4 +73,5 @@ class RevisionEntityTest {
 		assertThat(RevisionEntity.create()).hasAllNullFieldsOrProperties();
 		assertThat(new RevisionEntity()).hasAllNullFieldsOrProperties();
 	}
+
 }

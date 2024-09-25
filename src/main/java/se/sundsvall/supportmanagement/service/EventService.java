@@ -51,7 +51,7 @@ public class EventService {
 	public void createErrandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final Revision currentRevision, final Revision previousRevision) {
 		final var metadata = toMetadataMap(errandEntity, currentRevision, previousRevision);
 		final var event = toEvent(eventType, message, extractId(currentRevision), Errand.class, metadata, executingUserSupplier.getAdUser());
-		eventLogClient.createEvent(errandEntity.getId(), event);
+		eventLogClient.createEvent(errandEntity.getMunicipalityId(), errandEntity.getId(), event);
 		createNotification(errandEntity, event);
 	}
 
@@ -59,13 +59,13 @@ public class EventService {
 		final var caseId = extractCaseId(errandEntity);
 		final var metadata = toMetadataMap(caseId, noteId, currentRevision, previousRevision);
 		final var event = toEvent(eventType, message, extractId(currentRevision), Note.class, metadata, executingUserSupplier.getAdUser());
-		eventLogClient.createEvent(logKey, event);
+		eventLogClient.createEvent(errandEntity.getMunicipalityId(), logKey, event);
 		createNotification(errandEntity, event);
 
 	}
 
-	public Page<Event> readEvents(final String id, final Pageable pageable) {
-		final var response = eventLogClient.getEvents(id, pageable);
+	public Page<Event> readEvents(final String municipalityId, final String id, final Pageable pageable) {
+		final var response = eventLogClient.getEvents(municipalityId, id, pageable);
 
 		return new PageImpl<>(response.getContent().stream()
 			.map(EventlogMapper::toEvent)

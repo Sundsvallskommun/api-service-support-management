@@ -18,6 +18,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
@@ -32,11 +36,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.reactive.server.WebTestClient;
-
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.JsonNode;
 
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.errand.Classification;
@@ -57,11 +56,15 @@ import se.sundsvall.supportmanagement.service.MetadataService;
 @ActiveProfiles("junit")
 class ErrandsResourceTest {
 
-	private static final String PATH = "/{namespace}/{municipalityId}/errands";
+	private static final String PATH = "/{municipalityId}/{namespace}/errands";
+
 	private static final String NAMESPACE = "namespace";
+
 	private static final String MUNICIPALITY_ID = "2281";
+
 	private static final String ERRAND_ID = UUID.randomUUID().toString();
-	private static final String LOCATION = "/" + NAMESPACE + "/" + MUNICIPALITY_ID + "/errands/" + ERRAND_ID;
+
+	private static final String LOCATION = "/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/errands/" + ERRAND_ID;
 
 	@Autowired
 	private WebTestClient webTestClient;
@@ -71,6 +74,23 @@ class ErrandsResourceTest {
 
 	@MockBean
 	private ErrandService errandServiceMock;
+
+	private static Errand createErrandInstance(final String reporterUserId, final boolean withStakeholder) {
+		return Errand.create()
+			.withAssignedGroupId("assignedGroupId")
+			.withAssignedUserId("assignedUserId")
+			.withClassification(Classification.create().withCategory("category_1").withType("type_1"))
+			.withStakeholders(withStakeholder ? List.of(Stakeholder.create().withExternalId(randomUUID().toString()).withExternalIdType("ENTERPRISE")) : null)
+			.withExternalTags(List.of(ExternalTag.create().withKey("externalTagKey").withValue("externalTagValue")))
+			.withPriority(Priority.HIGH)
+			.withReporterUserId(reporterUserId)
+			.withStatus("status_2")
+			.withTitle("title")
+			.withEscalationEmail("escalation@email.com")
+			.withBusinessRelated(true)
+			.withSuspension(Suspension.create().withSuspendedFrom(OffsetDateTime.now()).withSuspendedTo(OffsetDateTime.now().plusDays(1)))
+			.withContactReason("REASON_1");
+	}
 
 	@BeforeEach
 	void setupMock() {
@@ -198,6 +218,7 @@ class ErrandsResourceTest {
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)
 			.expectBody(new ParameterizedTypeReference<Page<Errand>>() {
+
 			})
 			.returnResult()
 			.getResponseBody();
@@ -218,7 +239,7 @@ class ErrandsResourceTest {
 		final var filter = "categoryTag:'SUPPORT_CASE' and reporterUserId:'joe01doe'";
 
 		// Mock
-		when(errandServiceMock.findErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), ArgumentMatchers.<Specification<ErrandEntity>>any(), eq(pageable))).thenReturn(matches);
+		when(errandServiceMock.findErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), ArgumentMatchers.any(), eq(pageable))).thenReturn(matches);
 
 		// Call
 		final var response = webTestClient.get()
@@ -231,12 +252,13 @@ class ErrandsResourceTest {
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)
 			.expectBody(new ParameterizedTypeReference<Page<Errand>>() {
+
 			})
 			.returnResult()
 			.getResponseBody();
 
 		// Verification
-		verify(errandServiceMock).findErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), ArgumentMatchers.<Specification<ErrandEntity>>any(), eq(pageable));
+		verify(errandServiceMock).findErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), ArgumentMatchers.any(), eq(pageable));
 		assertThat(response).isNotNull();
 		assertThat(response.getContent()).hasSize(1);
 	}
@@ -254,24 +276,25 @@ class ErrandsResourceTest {
 		final var filter = "created > '" + from + "' and created < '" + to + "'";
 
 		// Mock
-		when(errandServiceMock.findErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), ArgumentMatchers.<Specification<ErrandEntity>>any(), eq(pageable))).thenReturn(matches);
+		when(errandServiceMock.findErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), ArgumentMatchers.any(), eq(pageable))).thenReturn(matches);
 
 		// Call
 		final var response = webTestClient.get().uri(builder -> builder.path(PATH)
-			.queryParam("filter", filter)
-			.queryParam("page", page)
-			.queryParam("size", size)
-			.build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+				.queryParam("filter", filter)
+				.queryParam("page", page)
+				.queryParam("size", size)
+				.build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
 			.exchange()
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)
 			.expectBody(new ParameterizedTypeReference<Page<Errand>>() {
+
 			})
 			.returnResult()
 			.getResponseBody();
 
 		// Verification
-		verify(errandServiceMock).findErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), ArgumentMatchers.<Specification<ErrandEntity>>any(), eq(pageable));
+		verify(errandServiceMock).findErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), ArgumentMatchers.any(), eq(pageable));
 		assertThat(response).isNotNull();
 		assertThat(response.getContent()).hasSize(1);
 	}
@@ -366,26 +389,10 @@ class ErrandsResourceTest {
 		verify(errandServiceMock).deleteErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 	}
 
-	private static Errand createErrandInstance(final String reporterUserId, final boolean withStakeholder) {
-		return Errand.create()
-			.withAssignedGroupId("assignedGroupId")
-			.withAssignedUserId("assignedUserId")
-			.withClassification(Classification.create().withCategory("category_1").withType("type_1"))
-			.withStakeholders(withStakeholder ? List.of(Stakeholder.create().withExternalId(randomUUID().toString()).withExternalIdType("ENTERPRISE")) : null)
-			.withExternalTags(List.of(ExternalTag.create().withKey("externalTagKey").withValue("externalTagValue")))
-			.withPriority(Priority.HIGH)
-			.withReporterUserId(reporterUserId)
-			.withStatus("status_2")
-			.withTitle("title")
-			.withEscalationEmail("escalation@email.com")
-			.withBusinessRelated(true)
-			.withSuspension(Suspension.create().withSuspendedFrom(OffsetDateTime.now()).withSuspendedTo(OffsetDateTime.now().plusDays(1)))
-			.withContactReason("REASON_1");
-	}
-
 	// Helper implementation of Page
 	@JsonIgnoreProperties(ignoreUnknown = true)
 	private static class RestResponsePage<T> extends PageImpl<T> {
+
 		private static final long serialVersionUID = -7361702892303169935L;
 
 		@JsonCreator(mode = PROPERTIES)
@@ -407,5 +414,7 @@ class ErrandsResourceTest {
 		public RestResponsePage() {
 			super(new ArrayList<>());
 		}
+
 	}
+
 }

@@ -32,9 +32,13 @@ import se.sundsvall.supportmanagement.integration.db.ContactReasonRepository;
 class MetadataContactReasonIT extends AbstractAppTest {
 
 	private static final String NAMESPACE = "CONTACTCENTER";
+
 	private static final String MUNICIPALITY_2281 = "2281";
-	private static final String PATH = "/" + NAMESPACE + "/" + MUNICIPALITY_2281 + "/metadata/contactreasons";
+
+	private static final String PATH = "/" + MUNICIPALITY_2281 + "/" + NAMESPACE + "/metadata/contactreasons";
+
 	private static final String REQUEST_FILE = "request.json";
+
 	private static final String RESPONSE_FILE = "response.json";
 
 	@Autowired

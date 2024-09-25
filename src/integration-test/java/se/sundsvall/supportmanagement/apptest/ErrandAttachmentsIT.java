@@ -38,7 +38,11 @@ import se.sundsvall.supportmanagement.integration.db.model.RevisionEntity;
 @DirtiesContext
 class ErrandAttachmentsIT extends AbstractAppTest {
 
-	private static final String PATH = "/NAMESPACE.1/2281/errands/"; // 2281 is the municipalityId of Sundsvalls kommun
+	private static final String NAMESPACE = "NAMESPACE.1";
+
+	private static final String MUNICIPALITY_ID = "2281";
+
+	private static final String PATH = "/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/errands/"; // 2281 is the municipalityId of Sundsvalls kommun
 
 	private static final String REQUEST_FILE = "request.json";
 
@@ -73,7 +77,7 @@ class ErrandAttachmentsIT extends AbstractAppTest {
 	void test03_createErrandAttachment() throws Exception {
 		final var entityId = "1be673c0-6ba3-4fb0-af4a-43acf23389f6";
 
-		assertThat(revisionRepository.findAllByEntityIdOrderByVersion(entityId)).hasSize(1)
+		assertThat(revisionRepository.findAllByNamespaceAndMunicipalityIdAndEntityIdOrderByVersion(NAMESPACE, MUNICIPALITY_ID, entityId)).hasSize(1)
 			.extracting(RevisionEntity::getVersion)
 			.containsExactly(0);
 
@@ -89,7 +93,11 @@ class ErrandAttachmentsIT extends AbstractAppTest {
 			.sendRequest()
 			.getResponseHeaders();
 
-		assertThat(revisionRepository.findAllByEntityIdOrderByVersion(entityId)).hasSize(2)
+
+		final var test = revisionRepository.findAll();
+
+		test.forEach(System.out::println);
+		assertThat(revisionRepository.findAllByNamespaceAndMunicipalityIdAndEntityIdOrderByVersion(NAMESPACE, MUNICIPALITY_ID, entityId)).hasSize(2)
 			.extracting(RevisionEntity::getVersion)
 			.containsExactlyInAnyOrder(0, 1);
 
@@ -106,7 +114,7 @@ class ErrandAttachmentsIT extends AbstractAppTest {
 	void test04_deleteErrandAttachment() {
 		final var entityId = "1be673c0-6ba3-4fb0-af4a-43acf23389f6";
 
-		assertThat(revisionRepository.findAllByEntityIdOrderByVersion(entityId)).hasSize(1)
+		assertThat(revisionRepository.findAllByNamespaceAndMunicipalityIdAndEntityIdOrderByVersion(NAMESPACE, MUNICIPALITY_ID, entityId)).hasSize(1)
 			.extracting(RevisionEntity::getVersion)
 			.containsExactly(0);
 
@@ -117,7 +125,7 @@ class ErrandAttachmentsIT extends AbstractAppTest {
 			.withExpectedResponseStatus(NO_CONTENT)
 			.sendRequestAndVerifyResponse();
 
-		assertThat(revisionRepository.findAllByEntityIdOrderByVersion(entityId)).hasSize(2)
+		assertThat(revisionRepository.findAllByNamespaceAndMunicipalityIdAndEntityIdOrderByVersion(NAMESPACE, MUNICIPALITY_ID, entityId)).hasSize(2)
 			.extracting(RevisionEntity::getVersion)
 			.containsExactlyInAnyOrder(0, 1);
 	}

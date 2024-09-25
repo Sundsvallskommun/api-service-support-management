@@ -37,6 +37,10 @@ import se.sundsvall.supportmanagement.service.util.BlobBuilder;
 @ExtendWith(MockitoExtension.class)
 class CommunicationMapperTest {
 
+	private static final String NAMESPACE = "name.space";
+
+	private static final String MUNICIPALITY_ID = "2281";
+
 	@Mock
 	private BlobBuilder blobBuilder;
 
@@ -116,7 +120,7 @@ class CommunicationMapperTest {
 			.withEmailHeaders(Map.of(EmailHeader.MESSAGE_ID, List.of("<test@test.se>")))
 			.withAttachments(singletonList(new EmailAttachment().withName("name").withBase64EncodedString("base64EncodedString")));
 
-		final var communicationEntity = communicationMapper.toCommunicationEntity(emailRequest);
+		final var communicationEntity = communicationMapper.toCommunicationEntity(NAMESPACE, MUNICIPALITY_ID, emailRequest);
 
 		assertThat(communicationEntity).isNotNull().hasNoNullFieldsOrPropertiesExcept("errandNumber", "externalCaseID", "errandAttachments");
 		assertThat(testValidUUID(communicationEntity.getId())).isTrue();
@@ -139,7 +143,7 @@ class CommunicationMapperTest {
 			.withSender("sender")
 			.withMessage("message");
 
-		final var communicationEntity = communicationMapper.toCommunicationEntity(smsRequest);
+		final var communicationEntity = communicationMapper.toCommunicationEntity(NAMESPACE, MUNICIPALITY_ID, smsRequest);
 
 		assertThat(communicationEntity).isNotNull().hasNoNullFieldsOrPropertiesExcept("errandNumber", "externalCaseID", "subject", "attachments", "emailHeaders", "errandAttachments");
 		assertThat(testValidUUID(communicationEntity.getId())).isTrue();

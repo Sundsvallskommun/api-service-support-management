@@ -26,10 +26,12 @@ class RevisionsIT extends AbstractAppTest {
 
 	private static final String RESPONSE_FILE = "response.json";
 
+	private static final String PATH = "/2281/namespace.1/errands/";
+
 	@Test
 	void test01_readErrandRevisions() {
 		setupCall()
-			.withServicePath("/errands/147d355f-dc94-4fde-a4cb-9ddd16cb1946/revisions")
+			.withServicePath(PATH + "147d355f-dc94-4fde-a4cb-9ddd16cb1946/revisions")
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
@@ -40,7 +42,7 @@ class RevisionsIT extends AbstractAppTest {
 	@Test
 	void test02_readNoteRevisions() {
 		setupCall()
-			.withServicePath("/errands/ec677eb3-604c-4935-bff7-f8f0b500c8f4/notes/d1f2c8d4-d234-4504-a483-b74570a7941d/revisions")
+			.withServicePath(PATH + "ec677eb3-604c-4935-bff7-f8f0b500c8f4/notes/d1f2c8d4-d234-4504-a483-b74570a7941d/revisions")
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
@@ -51,7 +53,7 @@ class RevisionsIT extends AbstractAppTest {
 	@Test
 	void test03_compareErrandRevisionsAfterModifiedErrand() {
 		setupCall()
-			.withServicePath("/errands/147d355f-dc94-4fde-a4cb-9ddd16cb1946/revisions/difference?source=0&target=1")
+			.withServicePath(PATH + "147d355f-dc94-4fde-a4cb-9ddd16cb1946/revisions/difference?source=0&target=1")
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
@@ -62,7 +64,7 @@ class RevisionsIT extends AbstractAppTest {
 	@Test
 	void test04_compareErrandRevisionsAfterAddedFile() {
 		setupCall()
-			.withServicePath("/errands/147d355f-dc94-4fde-a4cb-9ddd16cb1946/revisions/difference?source=1&target=2")
+			.withServicePath(PATH + "147d355f-dc94-4fde-a4cb-9ddd16cb1946/revisions/difference?source=1&target=2")
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
@@ -73,7 +75,7 @@ class RevisionsIT extends AbstractAppTest {
 	@Test
 	void test05_compareNoteRevisions() {
 		setupCall()
-			.withServicePath("/errands/ec677eb3-604c-4935-bff7-f8f0b500c8f4/notes/d1f2c8d4-d234-4504-a483-b74570a7941d/revisions/difference?source=0&target=1")
+			.withServicePath(PATH + "ec677eb3-604c-4935-bff7-f8f0b500c8f4/notes/d1f2c8d4-d234-4504-a483-b74570a7941d/revisions/difference?source=0&target=1")
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))

@@ -42,7 +42,7 @@ class MetadataRoleIT extends AbstractAppTest {
 
 	private static final String MUNICIPALITY_2309 = "2309";
 
-	private static final String PATH = "/" + NAMESPACE + "/" + MUNICIPALITY_2281 + "/metadata/roles";
+	private static final String PATH = "/" + MUNICIPALITY_2281 + "/" + NAMESPACE + "/metadata/roles";
 
 	@Autowired
 	private RoleRepository roleRepository;
@@ -56,7 +56,7 @@ class MetadataRoleIT extends AbstractAppTest {
 			.withHttpMethod(POST)
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(CREATED)
-			.withExpectedResponseHeader(LOCATION, List.of("/" + NAMESPACE + "/" + MUNICIPALITY_2281 + "/metadata/roles/A_BRAND_NEW_ROLE"))
+			.withExpectedResponseHeader(LOCATION, List.of("/" + MUNICIPALITY_2281 + "/" + NAMESPACE + "/metadata/roles/A_BRAND_NEW_ROLE"))
 			.withExpectedResponseBodyIsNull()
 			.sendRequestAndVerifyResponse();
 
@@ -87,7 +87,7 @@ class MetadataRoleIT extends AbstractAppTest {
 
 	@Test
 	void test04_getRolesWhenEmpty() {
-		final var path = "/" + NAMESPACE + "/" + MUNICIPALITY_2309 + "/metadata/roles";
+		final var path = "/" + MUNICIPALITY_2309 + "/" + NAMESPACE + "/metadata/roles";
 
 		setupCall()
 			.withServicePath(path)

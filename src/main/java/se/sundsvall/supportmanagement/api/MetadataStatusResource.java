@@ -42,7 +42,7 @@ import se.sundsvall.supportmanagement.service.MetadataService;
 
 @RestController
 @Validated
-@RequestMapping("/{namespace}/{municipalityId}/metadata/statuses")
+@RequestMapping("/{municipalityId}/{namespace}/metadata/statuses")
 @Tag(name = "Metadata for statuses", description = "Status metadata operations")
 class MetadataStatusResource {
 
@@ -62,8 +62,8 @@ class MetadataStatusResource {
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Valid @NotNull @RequestBody final Status body) {
 
-		return created(UriComponentsBuilder.fromPath("/{namespace}/{municipalityId}/metadata/statuses/{status}")
-			.buildAndExpand(namespace, municipalityId, metadataService.createStatus(namespace, municipalityId, body)).toUri())
+		return created(UriComponentsBuilder.fromPath("/{municipalityId}/{namespace}/metadata/statuses/{status}")
+			.buildAndExpand(municipalityId, namespace, metadataService.createStatus(namespace, municipalityId, body)).toUri())
 			.header(CONTENT_TYPE, ALL_VALUE)
 			.build();
 	}
@@ -110,4 +110,5 @@ class MetadataStatusResource {
 			.header(CONTENT_TYPE, ALL_VALUE)
 			.build();
 	}
+
 }

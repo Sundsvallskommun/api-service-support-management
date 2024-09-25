@@ -11,8 +11,6 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import generated.se.sundsvall.emailreader.Email;
-import generated.se.sundsvall.eventlog.EventType;
 import se.sundsvall.supportmanagement.integration.db.EmailWorkerConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.EmailWorkerConfigEntity;
@@ -21,6 +19,9 @@ import se.sundsvall.supportmanagement.integration.emailreader.EmailReaderClient;
 import se.sundsvall.supportmanagement.service.CommunicationService;
 import se.sundsvall.supportmanagement.service.ErrandService;
 import se.sundsvall.supportmanagement.service.EventService;
+
+import generated.se.sundsvall.emailreader.Email;
+import generated.se.sundsvall.eventlog.EventType;
 
 @Service
 public class EmailReaderWorker {
@@ -105,7 +106,7 @@ public class EmailReaderWorker {
 
 	private void saveEmail(final Email email, final ErrandEntity errand) {
 
-		final var communicationEntity = emailReaderMapper.toCommunicationEntity(email).withErrandNumber(errand.getErrandNumber());
+		final var communicationEntity = emailReaderMapper.toCommunicationEntity(email, errand);
 
 		communicationService.saveCommunication(communicationEntity);
 		communicationService.saveAttachment(communicationEntity, errand);

@@ -28,7 +28,7 @@ import se.sundsvall.supportmanagement.service.MetadataService;
 
 @RestController
 @Validated
-@RequestMapping("/{namespace}/{municipalityId}/metadata")
+@RequestMapping("/{municipalityId}/{namespace}/metadata")
 @Tag(name = "Metadata", description = "Metadata operations")
 class MetadataResource {
 

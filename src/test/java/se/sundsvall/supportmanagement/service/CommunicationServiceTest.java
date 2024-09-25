@@ -65,19 +65,33 @@ import generated.se.sundsvall.messaging.ExternalReference;
 
 @ExtendWith(MockitoExtension.class)
 class CommunicationServiceTest {
+
 	private static final Decoder BASE64_DECODER = Base64.getDecoder();
+
 	private static final String NAMESPACE = "namespace";
+
 	private static final String MUNICIPALITY_ID = "municipalityId";
+
 	private static final String ERRAND_ID = randomUUID().toString();
+
 	private static final String HTML_MESSAGE = "<html><h1>message</h1></html>";
+
 	private static final String PLAIN_MESSAGE = "message";
+
 	private static final String RECIPIENT = "recipient";
+
 	private static final String SENDER_EMAIL = "sender@sender.com";
+
 	private static final String SENDER_NAME = "senderName";
+
 	private static final String SUBJECT = "subject";
+
 	private static final String FILE_CONTENT = "iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==";
+
 	private static final String FILE_NAME = "fileName";
+
 	private static final String ERRAND_ID_KEY = "errandId";
+
 	private static final String MESSAGE_ID = "MESSAGE_ID";
 
 	@Mock
@@ -133,6 +147,19 @@ class CommunicationServiceTest {
 
 	@InjectMocks
 	private CommunicationService service;
+
+	private static EmailRequest createEmailRequest() {
+		return EmailRequest.create()
+			.withAttachments(List.of(EmailAttachment.create()
+				.withBase64EncodedString(FILE_CONTENT)
+				.withName(FILE_NAME)))
+			.withHtmlMessage(HTML_MESSAGE)
+			.withMessage(PLAIN_MESSAGE)
+			.withRecipient(RECIPIENT)
+			.withSender(SENDER_EMAIL)
+			.withSenderName(SENDER_NAME)
+			.withSubject(SUBJECT);
+	}
 
 	@Test
 	void readMessages() {
@@ -206,7 +233,7 @@ class CommunicationServiceTest {
 		final var inputStream = IOUtils.toInputStream(content, UTF_8);
 
 		// Mock
-		when(attachmentRepositoryMock.findById(any())).thenReturn(Optional.empty());
+		when(attachmentRepositoryMock.findByNamespaceAndMunicipalityIdAndId(any(), any(), any())).thenReturn(Optional.empty());
 		when(communicationAttachmentRepositoryMock.findById(any())).thenReturn(Optional.of(communicationAttachmentEntity));
 		when(communicationAttachmentEntity.getContentType()).thenReturn(contentType);
 		when(communicationAttachmentEntity.getName()).thenReturn(fileName);
@@ -217,7 +244,7 @@ class CommunicationServiceTest {
 		when(servletResponseMock.getOutputStream()).thenReturn(servletOutputStreamMock);
 
 		// Call
-		service.getMessageAttachmentStreamed(attachmentId, servletResponseMock);
+		service.getMessageAttachmentStreamed(NAMESPACE, MUNICIPALITY_ID, attachmentId, servletResponseMock);
 
 		// Verification
 		verify(communicationAttachmentRepositoryMock).findById(attachmentId);
@@ -236,8 +263,8 @@ class CommunicationServiceTest {
 
 	@Test
 	void streamAttachmentData_Success() throws IOException, SQLException {
-		byte[] fileContent = "file content".getBytes();
-		ByteArrayInputStream inputStream = new ByteArrayInputStream(fileContent);
+		final byte[] fileContent = "file content".getBytes();
+		final ByteArrayInputStream inputStream = new ByteArrayInputStream(fileContent);
 
 		when(servletResponseMock.getOutputStream()).thenReturn(servletOutputStreamMock);
 		when(attachmentMock.getAttachmentData()).thenReturn(attachmentDataMock);
@@ -257,7 +284,7 @@ class CommunicationServiceTest {
 
 	@Test
 	void streamAttachmentData_ThrowsSQLException() throws SQLException {
-		byte[] fileContent = "file content".getBytes();
+		final byte[] fileContent = "file content".getBytes();
 		when(attachmentMock.getAttachmentData()).thenReturn(attachmentDataMock);
 		when(attachmentDataMock.getFile()).thenReturn(blobMock);
 		when(blobMock.length()).thenReturn((long) fileContent.length);
@@ -279,7 +306,7 @@ class CommunicationServiceTest {
 		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
 		when(errandsRepositoryMock.findById(ERRAND_ID)).thenReturn(Optional.of(errandEntityMock));
 		when(errandEntityMock.getId()).thenReturn(ERRAND_ID);
-		when(communicationMapperMock.toCommunicationEntity(request)).thenReturn(CommunicationEntity.create());
+		when(communicationMapperMock.toCommunicationEntity(NAMESPACE, MUNICIPALITY_ID, request)).thenReturn(CommunicationEntity.create());
 		when(communicationMapperMock.toAttachments(any(CommunicationEntity.class))).thenReturn(List.of(AttachmentEntity.create()));
 
 		// Call
@@ -289,7 +316,7 @@ class CommunicationServiceTest {
 		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(errandsRepositoryMock).findById(ERRAND_ID);
 		verify(messagingClientMock).sendEmail(eq(MUNICIPALITY_ID), eq(true), messagingEmailCaptor.capture());
-		verify(communicationMapperMock).toCommunicationEntity(request);
+		verify(communicationMapperMock).toCommunicationEntity(NAMESPACE, MUNICIPALITY_ID, request);
 		verify(communicationRepositoryMock).save(any(CommunicationEntity.class));
 		verify(communicationMapperMock).toAttachments(any(CommunicationEntity.class));
 		verify(errandAttachmentServiceMock).createErrandAttachment(any(AttachmentEntity.class), any(ErrandEntity.class));
@@ -328,7 +355,7 @@ class CommunicationServiceTest {
 		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
 		when(errandsRepositoryMock.findById(ERRAND_ID)).thenReturn(Optional.of(errandEntityMock));
 		when(errandEntityMock.getId()).thenReturn(ERRAND_ID);
-		when(communicationMapperMock.toCommunicationEntity(request)).thenReturn(CommunicationEntity.create());
+		when(communicationMapperMock.toCommunicationEntity(NAMESPACE, MUNICIPALITY_ID, request)).thenReturn(CommunicationEntity.create());
 		when(communicationMapperMock.toAttachments(any(CommunicationEntity.class))).thenReturn(List.of(AttachmentEntity.create()));
 
 		// Call
@@ -338,7 +365,7 @@ class CommunicationServiceTest {
 		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(errandsRepositoryMock).findById(ERRAND_ID);
 		verify(messagingClientMock).sendSms(eq(MUNICIPALITY_ID), eq(true), messagingSmsCaptor.capture());
-		verify(communicationMapperMock).toCommunicationEntity(request);
+		verify(communicationMapperMock).toCommunicationEntity(NAMESPACE, MUNICIPALITY_ID, request);
 		verify(communicationRepositoryMock).save(any(CommunicationEntity.class));
 		verify(communicationMapperMock).toAttachments(any(CommunicationEntity.class));
 		verify(errandAttachmentServiceMock).createErrandAttachment(any(AttachmentEntity.class), any(ErrandEntity.class));
@@ -384,19 +411,6 @@ class CommunicationServiceTest {
 			.withSender(SENDER_NAME);
 	}
 
-	private static EmailRequest createEmailRequest() {
-		return EmailRequest.create()
-			.withAttachments(List.of(EmailAttachment.create()
-				.withBase64EncodedString(FILE_CONTENT)
-				.withName(FILE_NAME)))
-			.withHtmlMessage(HTML_MESSAGE)
-			.withMessage(PLAIN_MESSAGE)
-			.withRecipient(RECIPIENT)
-			.withSender(SENDER_EMAIL)
-			.withSenderName(SENDER_NAME)
-			.withSubject(SUBJECT);
-	}
-
 	@Test
 	void saveCommunication() {
 
@@ -407,4 +421,5 @@ class CommunicationServiceTest {
 		verifyNoInteractions(errandsRepositoryMock, communicationAttachmentRepositoryMock, messagingClientMock, communicationMapperMock);
 
 	}
+
 }

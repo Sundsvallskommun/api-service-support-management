@@ -49,8 +49,11 @@ public class CommunicationService {
 	private static final boolean ASYNCHRONOUSLY = true;
 
 	private final ErrandsRepository errandsRepository;
+
 	private final CommunicationRepository communicationRepository;
+
 	private final CommunicationAttachmentRepository communicationAttachmentRepository;
+
 	private final AttachmentRepository attachmentRepository;
 
 	private final ErrandAttachmentService errandAttachmentService;
@@ -90,8 +93,8 @@ public class CommunicationService {
 		communicationRepository.save(message);
 	}
 
-	public void getMessageAttachmentStreamed(final String attachmentId, final HttpServletResponse response) {
-		final var attachment = attachmentRepository.findById(attachmentId);
+	public void getMessageAttachmentStreamed(final String namespace, final String municipalityId, final String attachmentId, final HttpServletResponse response) {
+		final var attachment = attachmentRepository.findByNamespaceAndMunicipalityIdAndId(namespace, municipalityId, attachmentId);
 		final var communicationAttachment = communicationAttachmentRepository.findById(attachmentId);
 
 		if (attachment.isEmpty() && communicationAttachment.isEmpty()) {
@@ -139,13 +142,13 @@ public class CommunicationService {
 		}, () -> request.setEmailHeaders(Map.of(EmailHeader.MESSAGE_ID, List.of("<" + UUID.randomUUID() + "@" + namespace + ">"))));
 
 
-		var errandAttachments = errandAttachmentService.findByIdIn(request.getAttachmentIds());
+		final var errandAttachments = errandAttachmentService.findByNamespaceAndMunicipalityIdAndIdIn(namespace, municipalityId, request.getAttachmentIds());
 
-		var emailRequest = toEmailRequest(errandEntity, request, toEmailAttachments(errandAttachments));
+		final var emailRequest = toEmailRequest(errandEntity, request, toEmailAttachments(errandAttachments));
 
 		messagingClient.sendEmail(municipalityId, ASYNCHRONOUSLY, emailRequest);
 
-		final var communicationEntity = communicationMapper.toCommunicationEntity(request)
+		final var communicationEntity = communicationMapper.toCommunicationEntity(namespace, municipalityId, request)
 			.withErrandAttachments(errandAttachments)
 			.withErrandNumber(errandEntity.getErrandNumber());
 
@@ -159,7 +162,7 @@ public class CommunicationService {
 		final var entity = fetchErrand(id, namespace, municipalityId);
 		messagingClient.sendSms(municipalityId, ASYNCHRONOUSLY, toSmsRequest(entity, request));
 
-		final var communicationEntity = communicationMapper.toCommunicationEntity(request)
+		final var communicationEntity = communicationMapper.toCommunicationEntity(namespace, municipalityId, request)
 			.withErrandNumber(entity.getErrandNumber());
 
 		saveCommunication(communicationEntity);

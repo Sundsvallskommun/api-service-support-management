@@ -48,7 +48,7 @@ import se.sundsvall.supportmanagement.service.ErrandAttachmentService;
 
 @RestController
 @Validated
-@RequestMapping("/{namespace}/{municipalityId}/errands/{id}/attachments")
+@RequestMapping("/{municipalityId}/{namespace}/errands/{id}/attachments")
 @Tag(name = "Errand attachments", description = "Errand attachments operations")
 class ErrandAttachmentsResource {
 
@@ -72,8 +72,8 @@ class ErrandAttachmentsResource {
 
 		final var attachmentId = errandAttachmentService.createErrandAttachment(namespace, municipalityId, id, errandAttachment);
 
-		return created(fromPath("/{namespace}/{municipalityId}/errands/{id}/attachments/{attachmentId}")
-			.buildAndExpand(namespace, municipalityId, id, attachmentId).toUri())
+		return created(fromPath("/{municipalityId}/{namespace}/errands/{id}/attachments/{attachmentId}")
+			.buildAndExpand(municipalityId, namespace, id, attachmentId).toUri())
 			.header(CONTENT_TYPE, ALL_VALUE)
 			.build();
 	}
@@ -89,7 +89,7 @@ class ErrandAttachmentsResource {
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "id", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("id") final String id,
 		@Parameter(name = "attachmentId", description = "Errand attachment id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable("attachmentId") final String attachmentId,
-		HttpServletResponse response) throws SQLException, IOException {
+		final HttpServletResponse response) throws SQLException, IOException {
 
 		errandAttachmentService.readErrandAttachment(namespace, municipalityId, id, attachmentId, response);
 	}
@@ -125,4 +125,5 @@ class ErrandAttachmentsResource {
 			.header(CONTENT_TYPE, ALL_VALUE)
 			.build();
 	}
+
 }

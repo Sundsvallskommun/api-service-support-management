@@ -25,7 +25,7 @@ import se.sundsvall.supportmanagement.service.ErrandService;
 @ActiveProfiles("junit")
 class ErrandsDeleteResourceFailureTest {
 
-	private static final String PATH = "/{namespace}/{municipalityId}/errands";
+	private static final String PATH = "/{municipalityId}/{namespace}/errands";
 	private static final String NAMESPACE = "namespace";
 	private static final String MUNICIPALITY_ID = "2281";
 	private static final String ERRAND_ID = UUID.randomUUID().toString();

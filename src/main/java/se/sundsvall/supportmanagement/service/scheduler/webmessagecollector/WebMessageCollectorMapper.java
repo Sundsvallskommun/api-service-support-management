@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationAttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationAttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.Direction;
 import se.sundsvall.supportmanagement.service.util.BlobBuilder;
@@ -29,12 +30,14 @@ public class WebMessageCollectorMapper {
 
 	public WebMessageCollectorMapper(final BlobBuilder blobBuilder) {this.blobBuilder = blobBuilder;}
 
-	CommunicationEntity toCommunicationEntity(final MessageDTO messageDTO, final String errandNumber) {
+	CommunicationEntity toCommunicationEntity(final MessageDTO messageDTO, final ErrandEntity errand) {
 		final var communicationEntity = CommunicationEntity.create()
 			.withSender(messageDTO.getFirstName() + " " + messageDTO.getLastName())
 			.withId(UUID.randomUUID().toString())
 			.withDirection(Direction.INBOUND)
-			.withErrandNumber(errandNumber)
+			.withErrandNumber(errand.getErrandNumber())
+			.withMunicipalityId(errand.getMunicipalityId())
+			.withNamespace(errand.getNamespace())
 			.withExternalCaseID(messageDTO.getExternalCaseId())
 			.withMessageBody(messageDTO.getMessage())
 			.withSent(OffsetDateTime.of(LocalDateTime.parse(messageDTO.getSent()), now(systemDefault()).getOffset()))

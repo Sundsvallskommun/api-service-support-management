@@ -39,7 +39,7 @@ import se.sundsvall.supportmanagement.service.ErrandParameterService;
 
 @RestController
 @Validated
-@RequestMapping("/{namespace}/{municipalityId}/errands/{errandId}/parameters")
+@RequestMapping("/{municipalityId}/{namespace}/errands/{errandId}/parameters")
 @Tag(name = "Errand Parameters", description = "Errand parameter operations")
 @ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = { Problem.class, ConstraintViolationProblem.class })))
 @ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))

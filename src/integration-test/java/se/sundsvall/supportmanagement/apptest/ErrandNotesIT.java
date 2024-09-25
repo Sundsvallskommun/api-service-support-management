@@ -32,7 +32,7 @@ import se.sundsvall.supportmanagement.Application;
 @DirtiesContext
 class ErrandNotesIT extends AbstractAppTest {
 
-	private static final String PATH = "/NAMESPACE.1/2281/errands/"; // 2281 is the municipalityId of Sundsvalls kommun
+	private static final String PATH = "/2281/NAMESPACE.1/errands/"; // 2281 is the municipalityId of Sundsvalls kommun
 
 	private static final String REQUEST_FILE = "request.json";
 

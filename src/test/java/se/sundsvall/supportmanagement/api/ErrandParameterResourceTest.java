@@ -36,7 +36,7 @@ class ErrandParameterResourceTest {
 
 	private static final String PARAMETER_KEY = "parameterKey";
 
-	private static final String PATH = "/{namespace}/{municipalityId}/errands/{errandId}/parameters";
+	private static final String PATH = "/{municipalityId}/{namespace}/errands/{errandId}/parameters";
 
 	@Autowired
 	private WebTestClient webTestClient;

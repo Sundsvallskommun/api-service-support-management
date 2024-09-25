@@ -33,10 +33,14 @@ import se.sundsvall.supportmanagement.service.ErrandNoteService;
 class ErrandNotesResourceTest {
 
 	private static final String NAMESPACE = "namespace";
+
 	private static final String MUNICIPALITY_ID = "2281";
+
 	private static final String ERRAND_ID = randomUUID().toString();
+
 	private static final String NOTE_ID = randomUUID().toString();
-	private static final String PATH = "/" + NAMESPACE + "/{municipalityId}/errands/{id}/notes";
+
+	private static final String PATH = "/{municipalityId}/" + NAMESPACE + "/errands/{id}/notes";
 
 	@Autowired
 	private WebTestClient webTestClient;
@@ -69,7 +73,7 @@ class ErrandNotesResourceTest {
 			.exchange()
 			.expectStatus().isCreated()
 			.expectHeader().contentType(ALL)
-			.expectHeader().location("/" + NAMESPACE + "/" + MUNICIPALITY_ID + "/errands/" + ERRAND_ID + "/notes/" + noteId)
+			.expectHeader().location("/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/errands/" + ERRAND_ID + "/notes/" + noteId)
 			.expectBody().isEmpty();
 
 		// Verification
@@ -164,4 +168,5 @@ class ErrandNotesResourceTest {
 		// Verification
 		verify(errandNotesServiceMock).deleteErrandNote(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, NOTE_ID);
 	}
+
 }
