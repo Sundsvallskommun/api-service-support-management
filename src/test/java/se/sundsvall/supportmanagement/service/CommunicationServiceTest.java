@@ -234,7 +234,7 @@ class CommunicationServiceTest {
 
 		// Mock
 		when(attachmentRepositoryMock.findByNamespaceAndMunicipalityIdAndId(any(), any(), any())).thenReturn(Optional.empty());
-		when(communicationAttachmentRepositoryMock.findById(any())).thenReturn(Optional.of(communicationAttachmentEntity));
+		when(communicationAttachmentRepositoryMock.findByNamespaceAndMunicipalityIdAndId(eq(NAMESPACE), eq(MUNICIPALITY_ID), any())).thenReturn(Optional.of(communicationAttachmentEntity));
 		when(communicationAttachmentEntity.getContentType()).thenReturn(contentType);
 		when(communicationAttachmentEntity.getName()).thenReturn(fileName);
 		when(communicationAttachmentEntity.getAttachmentData()).thenReturn(messageAttachmentDataMock);
@@ -247,7 +247,7 @@ class CommunicationServiceTest {
 		service.getMessageAttachmentStreamed(NAMESPACE, MUNICIPALITY_ID, attachmentId, servletResponseMock);
 
 		// Verification
-		verify(communicationAttachmentRepositoryMock).findById(attachmentId);
+		verify(communicationAttachmentRepositoryMock).findByNamespaceAndMunicipalityIdAndId(NAMESPACE, MUNICIPALITY_ID, attachmentId);
 		verify(communicationAttachmentEntity).getAttachmentData();
 		verify(messageAttachmentDataMock).getFile();
 		verify(blobMock).length();

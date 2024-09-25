@@ -36,16 +36,23 @@ import se.sundsvall.supportmanagement.service.CommunicationService;
 class ErrandCommunicationResourceFailureTest {
 
 	private static final String NAMESPACE = "name.space";
+
 	private static final String MUNICIPALITY_ID = "2281";
+
 	private static final String ERRAND_ID = randomUUID().toString();
 
 	private static final String MESSAGE_ID = randomUUID().toString();
 
 	private static final boolean IS_VIEWED = true;
+
 	private static final String INVALID = "#invalid#";
+
 	private static final String CONSTRAINT_VIOLATION = "Constraint Violation";
+
 	private static final String PATH_PREFIX = "/{municipalityId}/{namespace}/errands/{id}/communication";
+
 	private static final String PATH_SMS = "/sms";
+
 	private static final String PATH_EMAIL = "/email";
 
 	@MockBean
@@ -54,6 +61,21 @@ class ErrandCommunicationResourceFailureTest {
 	@Autowired
 	private WebTestClient webTestClient;
 
+	private static SmsRequest smsRequest() {
+		return SmsRequest.create()
+			.withMessage("message")
+			.withRecipient("+46701234567")
+			.withSender("sender");
+	}
+
+	private static EmailRequest emailRequest() {
+		return EmailRequest.create()
+			.withHtmlMessage("htmlMessage")
+			.withMessage("message")
+			.withRecipient("recipient@recipient.com")
+			.withSender("sender@sender.com")
+			.withSubject("subject");
+	}
 
 	@Test
 	void getMessagesOnErrandWithInvalidNamespace() {
@@ -253,7 +275,7 @@ class ErrandCommunicationResourceFailureTest {
 
 	@ParameterizedTest
 	@ValueSource(strings = {PATH_SMS, PATH_EMAIL})
-	void sendNotificationWithInvalidNamespace(String type) {
+	void sendNotificationWithInvalidNamespace(final String type) {
 
 		// Call
 		final var response = webTestClient.post()
@@ -278,7 +300,7 @@ class ErrandCommunicationResourceFailureTest {
 
 	@ParameterizedTest
 	@ValueSource(strings = {PATH_SMS, PATH_EMAIL})
-	void sendNotificationWithInvalidMunicipalityId(String type) {
+	void sendNotificationWithInvalidMunicipalityId(final String type) {
 
 		// Call
 		final var response = webTestClient.post()
@@ -304,7 +326,7 @@ class ErrandCommunicationResourceFailureTest {
 
 	@ParameterizedTest
 	@ValueSource(strings = {PATH_SMS, PATH_EMAIL})
-	void sendNotificationWithInvalidErrandId(String type) {
+	void sendNotificationWithInvalidErrandId(final String type) {
 
 		// Call
 		final var response = webTestClient.post()
@@ -344,7 +366,7 @@ class ErrandCommunicationResourceFailureTest {
 		assertThat(response).isNotNull();
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getDetail()).isEqualTo("""
-			Required request body is missing: public org.springframework.http.ResponseEntity<java.lang.Void>\s\
+			Required request body is missing: org.springframework.http.ResponseEntity<java.lang.Void> \
 			se.sundsvall.supportmanagement.api.ErrandCommunicationResource.sendSms(java.lang.String,java.lang.String,\
 			java.lang.String,se.sundsvall.supportmanagement.api.model.communication.SmsRequest)""");
 
@@ -421,7 +443,7 @@ class ErrandCommunicationResourceFailureTest {
 		assertThat(response).isNotNull();
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getDetail()).isEqualTo("""
-			Required request body is missing: public org.springframework.http.ResponseEntity<java.lang.Void>\s\
+			Required request body is missing: org.springframework.http.ResponseEntity<java.lang.Void> \
 			se.sundsvall.supportmanagement.api.ErrandCommunicationResource.sendEmail(java.lang.String,java.lang.String,\
 			java.lang.String,se.sundsvall.supportmanagement.api.model.communication.EmailRequest)""");
 
@@ -537,19 +559,4 @@ class ErrandCommunicationResourceFailureTest {
 		verifyNoInteractions(serviceMock);
 	}
 
-	private static SmsRequest smsRequest() {
-		return SmsRequest.create()
-			.withMessage("message")
-			.withRecipient("+46701234567")
-			.withSender("sender");
-	}
-
-	private static EmailRequest emailRequest() {
-		return EmailRequest.create()
-			.withHtmlMessage("htmlMessage")
-			.withMessage("message")
-			.withRecipient("recipient@recipient.com")
-			.withSender("sender@sender.com")
-			.withSubject("subject");
-	}
 }

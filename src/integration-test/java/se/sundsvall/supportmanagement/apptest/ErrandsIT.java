@@ -39,7 +39,7 @@ class ErrandsIT extends AbstractAppTest {
 
 	private static final String MUNICIPALITY_ID = "2281";
 
-	private static final String PATH = "/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/errands"; // 2281 is the municipalityId of Sundsvalls kommun
+	private static final String PATH = "/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/errands";
 
 	private static final String REQUEST_FILE = "request.json";
 

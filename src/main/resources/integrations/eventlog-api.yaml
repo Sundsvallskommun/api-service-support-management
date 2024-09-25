@@ -5,15 +5,15 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "2.0"
+  version: "0.2"
 servers:
-  - url: http://localhost:8080
+  - url: https://api-i-test.sundsvall.se/eventlog
     description: Generated server url
 tags:
   - name: Events
     description: Event operations
 paths:
-  /{municipalityId}/{logKey}:
+  /{logKey}:
     get:
       tags:
         - Events
@@ -22,13 +22,6 @@ paths:
         \ the result"
       operationId: getEvents
       parameters:
-        - name: municipalityId
-          in: path
-          description: Municipality id
-          required: true
-          schema:
-            type: string
-          example: 2281
         - name: logKey
           in: path
           description: Events stored under this UUID
@@ -69,35 +62,35 @@ paths:
             items:
               type: string
       responses:
-        "404":
-          description: Not Found
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad Request
           content:
             application/problem+json:
               schema:
                 oneOf:
-                  - $ref: "#/components/schemas/Problem"
-                  - $ref: "#/components/schemas/ConstraintViolationProblem"
+                  - $ref: '#/components/schemas/Problem'
+                  - $ref: '#/components/schemas/ConstraintViolationProblem'
         "500":
           description: Internal Server error
           content:
             application/problem+json:
               schema:
-                $ref: "#/components/schemas/Problem"
+                $ref: '#/components/schemas/Problem'
         "200":
           description: Successful Operation
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PageEvent"
+                $ref: '#/components/schemas/PageEvent'
             application/problem+json:
               schema:
-                $ref: "#/components/schemas/PageEvent"
+                $ref: '#/components/schemas/PageEvent'
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
     post:
       tags:
         - Events
@@ -105,13 +98,6 @@ paths:
       description: Creates a log event under logKey
       operationId: createEvent
       parameters:
-        - name: municipalityId
-          in: path
-          description: Municipality id
-          required: true
-          schema:
-            type: string
-          example: 2281
         - name: logKey
           in: path
           description: Event will be stored under this UUID. Used to separate data under
@@ -124,25 +110,25 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Event"
+              $ref: '#/components/schemas/Event'
         required: true
       responses:
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-        "202":
-          description: Successful operation
         "400":
           description: Bad request
           content:
             application/problem+json:
               schema:
                 oneOf:
-                  - $ref: "#/components/schemas/Problem"
-                  - $ref: "#/components/schemas/ConstraintViolationProblem"
+                  - $ref: '#/components/schemas/Problem'
+                  - $ref: '#/components/schemas/ConstraintViolationProblem'
+        "202":
+          description: Successful operation
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
   /api-docs:
     get:
       tags:
@@ -169,12 +155,7 @@ components:
       type: object
       properties:
         type:
-          $ref: "#/components/schemas/EventType"
-        municipalityId:
-          type: string
-          description: Municipality ID
-          readOnly: true
-          example: "2281"
+          $ref: '#/components/schemas/EventType'
         message:
           type: string
           description: Event description
@@ -208,7 +189,7 @@ components:
         metadata:
           type: array
           items:
-            $ref: "#/components/schemas/Metadata"
+            $ref: '#/components/schemas/Metadata'
       description: Event model
     EventType:
       type: string
@@ -260,11 +241,11 @@ components:
           type: object
           additionalProperties:
             type: object
-        status:
-          $ref: "#/components/schemas/StatusType"
-        title:
-          type: string
         detail:
+          type: string
+        status:
+          $ref: '#/components/schemas/StatusType'
+        title:
           type: string
     StatusType:
       type: object
@@ -278,7 +259,7 @@ components:
       type: object
       properties:
         cause:
-          $ref: "#/components/schemas/ThrowableProblem"
+          $ref: '#/components/schemas/ThrowableProblem'
         stackTrace:
           type: array
           items:
@@ -305,11 +286,11 @@ components:
           type: string
           format: uri
         status:
-          $ref: "#/components/schemas/StatusType"
+          $ref: '#/components/schemas/StatusType'
         violations:
           type: array
           items:
-            $ref: "#/components/schemas/Violation"
+            $ref: '#/components/schemas/Violation'
         title:
           type: string
         message:
@@ -328,6 +309,35 @@ components:
           items:
             type: object
             properties:
+              cause:
+                type: object
+                properties:
+                  stackTrace:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        classLoaderName:
+                          type: string
+                        moduleName:
+                          type: string
+                        moduleVersion:
+                          type: string
+                        methodName:
+                          type: string
+                        fileName:
+                          type: string
+                        lineNumber:
+                          type: integer
+                          format: int32
+                        className:
+                          type: string
+                        nativeMethod:
+                          type: boolean
+                  message:
+                    type: string
+                  localizedMessage:
+                    type: string
               stackTrace:
                 type: array
                 items:
@@ -360,7 +370,7 @@ components:
       type: object
       properties:
         cause:
-          $ref: "#/components/schemas/ThrowableProblem"
+          $ref: '#/components/schemas/ThrowableProblem'
         stackTrace:
           type: array
           items:
@@ -395,17 +405,46 @@ components:
           type: object
           additionalProperties:
             type: object
-        status:
-          $ref: "#/components/schemas/StatusType"
-        title:
-          type: string
         detail:
+          type: string
+        status:
+          $ref: '#/components/schemas/StatusType'
+        title:
           type: string
         suppressed:
           type: array
           items:
             type: object
             properties:
+              cause:
+                type: object
+                properties:
+                  stackTrace:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        classLoaderName:
+                          type: string
+                        moduleName:
+                          type: string
+                        moduleVersion:
+                          type: string
+                        methodName:
+                          type: string
+                        fileName:
+                          type: string
+                        lineNumber:
+                          type: integer
+                          format: int32
+                        className:
+                          type: string
+                        nativeMethod:
+                          type: boolean
+                  message:
+                    type: string
+                  localizedMessage:
+                    type: string
               stackTrace:
                 type: array
                 items:
@@ -456,23 +495,21 @@ components:
         content:
           type: array
           items:
-            $ref: "#/components/schemas/Event"
+            $ref: '#/components/schemas/Event'
         number:
           type: integer
           format: int32
         sort:
-          type: array
-          items:
-            $ref: "#/components/schemas/SortObject"
+          $ref: '#/components/schemas/SortObject'
+        first:
+          type: boolean
         numberOfElements:
           type: integer
           format: int32
-        first:
-          type: boolean
+        pageable:
+          $ref: '#/components/schemas/PageableObject'
         last:
           type: boolean
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
         empty:
           type: boolean
     PageableObject:
@@ -482,10 +519,10 @@ components:
           type: integer
           format: int64
         sort:
-          type: array
-          items:
-            $ref: "#/components/schemas/SortObject"
+          $ref: '#/components/schemas/SortObject'
         paged:
+          type: boolean
+        unpaged:
           type: boolean
         pageNumber:
           type: integer
@@ -493,19 +530,13 @@ components:
         pageSize:
           type: integer
           format: int32
-        unpaged:
-          type: boolean
     SortObject:
       type: object
       properties:
-        direction:
-          type: string
-        nullHandling:
-          type: string
-        ascending:
+        empty:
           type: boolean
-        property:
-          type: string
-        ignoreCase:
+        sorted:
+          type: boolean
+        unsorted:
           type: boolean
   securitySchemes: { }

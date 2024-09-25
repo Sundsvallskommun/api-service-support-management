@@ -95,7 +95,7 @@ public class CommunicationService {
 
 	public void getMessageAttachmentStreamed(final String namespace, final String municipalityId, final String attachmentId, final HttpServletResponse response) {
 		final var attachment = attachmentRepository.findByNamespaceAndMunicipalityIdAndId(namespace, municipalityId, attachmentId);
-		final var communicationAttachment = communicationAttachmentRepository.findById(attachmentId);
+		final var communicationAttachment = communicationAttachmentRepository.findByNamespaceAndMunicipalityIdAndId(namespace, municipalityId, attachmentId);
 
 		if (attachment.isEmpty() && communicationAttachment.isEmpty()) {
 			throw Problem.valueOf(Status.NOT_FOUND, ATTACHMENT_NOT_FOUND);

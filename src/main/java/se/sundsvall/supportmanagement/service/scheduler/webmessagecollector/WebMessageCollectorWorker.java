@@ -74,10 +74,10 @@ public class WebMessageCollectorWorker {
 		final var messages = webMessageCollectorClient.getMessages(municipalityId, familyId, instance);
 		LOG.info("Got {} messages from the WebMessageCollectorClient", messages.size());
 
-		return processMessages(messages, municipalityId);
+		return processMessages(messages);
 	}
 
-	private List<CommunicationAttachmentEntity> processMessages(final List<MessageDTO> messages, final String municipalityId) {
+	private List<CommunicationAttachmentEntity> processMessages(final List<MessageDTO> messages) {
 		return messages.stream()
 			.map(messageDTO -> errandsRepository.findByExternalTagsValue(messageDTO.getExternalCaseId())
 				.filter(this::shouldBeUpdated)
