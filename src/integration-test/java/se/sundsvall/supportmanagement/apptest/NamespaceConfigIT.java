@@ -30,12 +30,18 @@ import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
 	"/db/scripts/testdata-it.sql"
 })
 class NamespaceConfigIT extends AbstractAppTest {
+
 	private static final String REQUEST_FILE = "request.json";
+
 	private static final String RESPONSE_FILE = "response.json";
+
 	private static final String NAMESPACE_1 = "NAMESPACE.1";
+
 	private static final String NAMESPACE_2 = "NAMESPACE.2";
+
 	private static final String MUNICIPALITY_ID = "2281";
-	private static final Function<String, String> PATH = namespace -> "/" + namespace + "/" + MUNICIPALITY_ID + "/namespaceConfig";
+
+	private static final Function<String, String> PATH = namespace -> "/" + MUNICIPALITY_ID + "/" + namespace + "/namespaceConfig";
 
 	@Autowired
 	private NamespaceConfigRepository repository;
@@ -131,4 +137,5 @@ class NamespaceConfigIT extends AbstractAppTest {
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 	}
+
 }

@@ -26,8 +26,13 @@ import se.sundsvall.supportmanagement.service.RevisionService;
 @ActiveProfiles("junit")
 class RevisionResourceTest {
 
-	private static final String ERRANDS_PATH = "/errands/{id}/revisions";
-	private static final String ERRAND_NOTES_PATH = "/errands/{id}/notes/{noteId}/revisions";
+	private static final String NAMESPACE = "name.space";
+
+	private static final String MUNICIPALITY_ID = "2281";
+
+	private static final String ERRANDS_PATH = "{municipalityId}/{namespace}/errands/{id}/revisions";
+
+	private static final String ERRAND_NOTES_PATH = "{municipalityId}/{namespace}/errands/{id}/notes/{noteId}/revisions";
 
 	@MockBean
 	private RevisionService revisionServiceMock;
@@ -45,10 +50,11 @@ class RevisionResourceTest {
 		final var id = UUID.randomUUID().toString();
 
 		// Mock
-		when(revisionServiceMock.getErrandRevisions(id)).thenReturn(List.of(Revision.create()));
+		when(revisionServiceMock.getErrandRevisions(NAMESPACE,MUNICIPALITY_ID,id)).thenReturn(List.of(Revision.create()));
 
 		// Call
-		final var response = webTestClient.get().uri(builder -> builder.path(ERRANDS_PATH).build(Map.of("id", id)))
+		final var response = webTestClient.get().uri(builder -> builder.path(ERRANDS_PATH)
+				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "id", id)))
 			.exchange()
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)
@@ -58,7 +64,7 @@ class RevisionResourceTest {
 
 		// Verification
 		assertThat(response).isNotNull();
-		verify(revisionServiceMock).getErrandRevisions(id);
+		verify(revisionServiceMock).getErrandRevisions(NAMESPACE,MUNICIPALITY_ID,id);
 
 	}
 
@@ -70,10 +76,11 @@ class RevisionResourceTest {
 		final var target = 2;
 
 		// Mock
-		when(revisionServiceMock.compareErrandRevisionVersions(id, source, target)).thenReturn(DifferenceResponse.create());
+		when(revisionServiceMock.compareErrandRevisionVersions(NAMESPACE,MUNICIPALITY_ID,id, source, target)).thenReturn(DifferenceResponse.create());
 
 		// Call
-		final var response = webTestClient.get().uri(builder -> builder.path(ERRANDS_PATH + "/difference").queryParam("source", source).queryParam("target", target).build(Map.of("id", id)))
+		final var response = webTestClient.get().uri(builder -> builder.path(ERRANDS_PATH + "/difference").queryParam("source", source).queryParam("target", target)
+				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE,"id", id)))
 			.exchange()
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)
@@ -83,7 +90,7 @@ class RevisionResourceTest {
 
 		// Verification
 		assertThat(response).isNotNull();
-		verify(revisionServiceMock).compareErrandRevisionVersions(id, source, target);
+		verify(revisionServiceMock).compareErrandRevisionVersions(NAMESPACE,MUNICIPALITY_ID,id, source, target);
 	}
 
 	// ==============================================================================================================
@@ -97,10 +104,11 @@ class RevisionResourceTest {
 		final var noteId = UUID.randomUUID().toString();
 
 		// Mock
-		when(revisionServiceMock.getNoteRevisions(id, noteId)).thenReturn(List.of(Revision.create()));
+		when(revisionServiceMock.getNoteRevisions(NAMESPACE,MUNICIPALITY_ID,id, noteId)).thenReturn(List.of(Revision.create()));
 
 		// Call
-		final var response = webTestClient.get().uri(builder -> builder.path(ERRAND_NOTES_PATH).build(Map.of("id", id, "noteId", noteId)))
+		final var response = webTestClient.get().uri(builder -> builder.path(ERRAND_NOTES_PATH)
+				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE,"id", id, "noteId", noteId)))
 			.exchange()
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)
@@ -110,7 +118,7 @@ class RevisionResourceTest {
 
 		// Verification
 		assertThat(response).isNotNull();
-		verify(revisionServiceMock).getNoteRevisions(id, noteId);
+		verify(revisionServiceMock).getNoteRevisions(NAMESPACE,MUNICIPALITY_ID,id, noteId);
 	}
 
 	@Test
@@ -122,10 +130,11 @@ class RevisionResourceTest {
 		final var target = 2;
 
 		// Mock
-		when(revisionServiceMock.compareNoteRevisionVersions(id, noteId, source, target)).thenReturn(DifferenceResponse.create());
+		when(revisionServiceMock.compareNoteRevisionVersions(NAMESPACE,MUNICIPALITY_ID,id, noteId, source, target)).thenReturn(DifferenceResponse.create());
 
 		// Call
-		final var response = webTestClient.get().uri(builder -> builder.path(ERRAND_NOTES_PATH + "/difference").queryParam("source", source).queryParam("target", target).build(Map.of("id", id, "noteId", noteId)))
+		final var response = webTestClient.get().uri(builder -> builder.path(ERRAND_NOTES_PATH + "/difference").queryParam("source", source).queryParam("target", target)
+				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE,"id", id, "noteId", noteId)))
 			.exchange()
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)
@@ -135,6 +144,7 @@ class RevisionResourceTest {
 
 		// Verification
 		assertThat(response).isNotNull();
-		verify(revisionServiceMock).compareNoteRevisionVersions(id, noteId, source, target);
+		verify(revisionServiceMock).compareNoteRevisionVersions(NAMESPACE,MUNICIPALITY_ID,id, noteId, source, target);
 	}
+
 }

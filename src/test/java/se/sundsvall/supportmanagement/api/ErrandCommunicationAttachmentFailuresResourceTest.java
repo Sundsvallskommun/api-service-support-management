@@ -19,7 +19,9 @@ import se.sundsvall.supportmanagement.service.CommunicationService;
 @ActiveProfiles("junit")
 class ErrandCommunicationAttachmentFailuresResourceTest {
 
-	private static final String PATH = "/communication/attachments/{attachmentID}/streamed";
+	private static final String NAMESPACE = "name.space";
+	private static final String MUNICIPALITY_ID = "2281";
+	private static final String PATH = "/{municipalityId}/{namespace}/communication/attachments/{attachmentId}/streamed";
 	private static final String INVALID = "#invalid#";
 
 	@Autowired
@@ -34,7 +36,7 @@ class ErrandCommunicationAttachmentFailuresResourceTest {
 		// Call
 		webTestClient.get()
 			.uri(uriBuilder -> uriBuilder.path(PATH)
-				.build(Map.of("attachmentID", INVALID)))
+				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "attachmentId", INVALID)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody()

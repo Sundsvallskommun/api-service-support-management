@@ -42,7 +42,7 @@ import se.sundsvall.supportmanagement.service.MetadataService;
 
 @RestController
 @Validated
-@RequestMapping("/{namespace}/{municipalityId}/metadata/externalIdTypes")
+@RequestMapping("/{municipalityId}/{namespace}/metadata/externalIdTypes")
 @Tag(name = "Metadata for externalid types", description = "Externaid type metadata operations")
 class MetadataExternalIdTypeResource {
 
@@ -62,8 +62,8 @@ class MetadataExternalIdTypeResource {
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Valid @NotNull @RequestBody final ExternalIdType body) {
 
-		return created(fromPath("/{namespace}/{municipalityId}/metadata/externalIdTypes/{externalIdType}")
-			.buildAndExpand(namespace, municipalityId, metadataService.createExternalIdType(namespace, municipalityId, body)).toUri())
+		return created(fromPath("/{municipalityId}/{namespace}/metadata/externalIdTypes/{externalIdType}")
+			.buildAndExpand(municipalityId, namespace, metadataService.createExternalIdType(namespace, municipalityId, body)).toUri())
 			.header(CONTENT_TYPE, ALL_VALUE)
 			.build();
 	}
@@ -110,4 +110,5 @@ class MetadataExternalIdTypeResource {
 			.header(CONTENT_TYPE, ALL_VALUE)
 			.build();
 	}
+
 }

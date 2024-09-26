@@ -7,6 +7,8 @@
         file_name varchar(255),
         id varchar(255) not null,
         mime_type varchar(255),
+        municipality_id varchar(255),
+        namespace varchar(255),
         primary key (id)
     ) engine=InnoDB;
 
@@ -33,6 +35,8 @@
         errand_number varchar(255),
         external_case_id varchar(255),
         id varchar(255) not null,
+        municipality_id varchar(255),
+        namespace varchar(255),
         sender varchar(255),
         subject varchar(255),
         target varchar(255),
@@ -47,7 +51,9 @@
         communication_id varchar(255) not null,
         content_type varchar(255),
         id varchar(255) not null,
+        municipality_id varchar(255),
         name varchar(255),
+        namespace varchar(255),
         primary key (id)
     ) engine=InnoDB;
 
@@ -227,6 +233,8 @@
         entity_id varchar(255),
         entity_type varchar(255),
         id varchar(255) not null,
+        municipality_id varchar(255),
+        namespace varchar(255),
         serialized_snapshot longtext,
         primary key (id)
     ) engine=InnoDB;
@@ -311,6 +319,12 @@
     create index idx_attachment_file_name 
        on attachment (file_name);
 
+    create index idx_attachment_municipality_id 
+       on attachment (municipality_id);
+
+    create index idx_attachment_namespace 
+       on attachment (namespace);
+
     alter table if exists attachment 
        add constraint uq_attachment_data_id unique (attachment_data_id);
 
@@ -322,6 +336,18 @@
 
     create index idx_errand_number 
        on communication (errand_number);
+
+    create index idx_communication_namespace 
+       on communication (namespace);
+
+    create index idx_communication_municipality_id 
+       on communication (municipality_id);
+
+    create index idx_communication_attachment_municipality_id 
+       on communication_attachment (municipality_id);
+
+    create index idx_communication_attachment_namespace 
+       on communication_attachment (namespace);
 
     alter table if exists communication_attachment 
        add constraint uq_communication_attachment_data_id unique (communication_attachment_data_id);
@@ -403,6 +429,12 @@
 
     create index revision_entity_type_index 
        on revision (entity_type);
+
+    create index revision_municipality_id_index 
+       on revision (municipality_id);
+
+    create index revision_namespace_index 
+       on revision (namespace);
 
     alter table if exists revision 
        add constraint uq_entity_id_version unique (entity_id, version);

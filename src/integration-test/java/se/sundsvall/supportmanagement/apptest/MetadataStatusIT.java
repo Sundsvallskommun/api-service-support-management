@@ -42,7 +42,7 @@ class MetadataStatusIT extends AbstractAppTest {
 
 	private static final String MUNICIPALITY_2309 = "2309";
 
-	private static final String PATH = "/" + NAMESPACE + "/" + MUNICIPALITY_2281 + "/metadata/statuses";
+	private static final String PATH = "/" + MUNICIPALITY_2281 + "/" + NAMESPACE + "/metadata/statuses";
 
 	@Autowired
 	private StatusRepository statusRepository;
@@ -56,7 +56,7 @@ class MetadataStatusIT extends AbstractAppTest {
 			.withHttpMethod(POST)
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(CREATED)
-			.withExpectedResponseHeader(LOCATION, List.of("/" + NAMESPACE + "/" + MUNICIPALITY_2281 + "/metadata/statuses/A_BRAND_NEW_STATUS"))
+			.withExpectedResponseHeader(LOCATION, List.of("/" + MUNICIPALITY_2281 + "/" + NAMESPACE + "/metadata/statuses/A_BRAND_NEW_STATUS"))
 			.withExpectedResponseBodyIsNull()
 			.sendRequestAndVerifyResponse();
 
@@ -88,7 +88,7 @@ class MetadataStatusIT extends AbstractAppTest {
 
 	@Test
 	void test04_getStatusesWhenEmpty() {
-		final var path = "/" + NAMESPACE + "/" + MUNICIPALITY_2309 + "/metadata/statuses";
+		final var path = "/" + MUNICIPALITY_2309 + "/" + NAMESPACE + "/metadata/statuses";
 
 		setupCall()
 			.withServicePath(path)

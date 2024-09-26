@@ -89,7 +89,7 @@ public class WebMessageCollectorWorker {
 
 	private List<CommunicationAttachmentEntity> processMessage(final MessageDTO messageDTO, final ErrandEntity errand) {
 		updateErrandStatus(errand);
-		final var entity = webMessageCollectorMapper.toCommunicationEntity(messageDTO, errand.getErrandNumber());
+		final var entity = webMessageCollectorMapper.toCommunicationEntity(messageDTO, errand);
 		communicationRepository.saveAndFlush(entity);
 		eventService.createErrandEvent(UPDATE, EVENT_LOG_COMMUNICATION, errand, null, null);
 		return entity.getAttachments();

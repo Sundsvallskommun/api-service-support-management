@@ -44,10 +44,14 @@ import se.sundsvall.supportmanagement.service.MetadataService;
 @ActiveProfiles("junit")
 class ErrandsUpdateResourceFailureTest {
 
-	private static final String PATH = "/{namespace}/{municipalityId}/errands";
+	private static final String PATH = "/{municipalityId}/{namespace}/errands";
+
 	private static final String NAMESPACE = "namespace";
+
 	private static final String MUNICIPALITY_ID = "2281";
+
 	private static final String ERRAND_ID = UUID.randomUUID().toString();
+
 	private static final String INVALID = "#invalid#";
 
 	@Autowired
@@ -58,6 +62,23 @@ class ErrandsUpdateResourceFailureTest {
 
 	@MockBean
 	private MetadataService metadataServiceMock;
+
+	private static Errand createErrandInstance() {
+		return Errand.create()
+			.withAssignedGroupId("assignedGroupId")
+			.withAssignedUserId("assignedUserId")
+			.withStakeholders(List.of(Stakeholder.create().withExternalId("id").withExternalIdType("EMPLOYEE")))
+			.withClassification(Classification.create().withCategory("CATEGORY_2").withType("type_1"))
+			.withCreated(OffsetDateTime.now())
+			.withExternalTags(List.of(ExternalTag.create().withKey("externalTagKey").withValue("externalTagValue")))
+			.withId("id")
+			.withModified(OffsetDateTime.now())
+			.withPriority(Priority.HIGH)
+			.withReporterUserId("reporterUserId")
+			.withStatus("STATUS_2")
+			.withTitle("title")
+			.withBusinessRelated(true);
+	}
 
 	@BeforeEach
 	void setupMock() {
@@ -156,7 +177,7 @@ class ErrandsUpdateResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Bad Request");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getDetail()).isEqualTo("""
-			Required request body is missing: public org.springframework.http.ResponseEntity<se.sundsvall.supportmanagement.api.model.errand.Errand>\s\
+			Required request body is missing: org.springframework.http.ResponseEntity<se.sundsvall.supportmanagement.api.model.errand.Errand> \
 			se.sundsvall.supportmanagement.api.ErrandsResource.updateErrand(java.lang.String,java.lang.String,java.lang.String,\
 			se.sundsvall.supportmanagement.api.model.errand.Errand)""");
 
@@ -338,20 +359,4 @@ class ErrandsUpdateResourceFailureTest {
 			tuple("channel", "size must be between 0 and 255"));
 	}
 
-	private static Errand createErrandInstance() {
-		return Errand.create()
-			.withAssignedGroupId("assignedGroupId")
-			.withAssignedUserId("assignedUserId")
-			.withStakeholders(List.of(Stakeholder.create().withExternalId("id").withExternalIdType("EMPLOYEE")))
-			.withClassification(Classification.create().withCategory("CATEGORY_2").withType("type_1"))
-			.withCreated(OffsetDateTime.now())
-			.withExternalTags(List.of(ExternalTag.create().withKey("externalTagKey").withValue("externalTagValue")))
-			.withId("id")
-			.withModified(OffsetDateTime.now())
-			.withPriority(Priority.HIGH)
-			.withReporterUserId("reporterUserId")
-			.withStatus("STATUS_2")
-			.withTitle("title")
-			.withBusinessRelated(true);
-	}
 }

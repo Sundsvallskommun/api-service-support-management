@@ -1,37 +1,5 @@
 package se.sundsvall.supportmanagement.service;
 
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import generated.se.sundsvall.notes.DifferenceResponse;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mariadb.jdbc.MariaDbBlob;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Spy;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.zalando.problem.ThrowableProblem;
-import se.sundsvall.supportmanagement.api.model.revision.Operation;
-import se.sundsvall.supportmanagement.api.model.revision.Revision;
-import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
-import se.sundsvall.supportmanagement.integration.db.RevisionRepository;
-import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
-import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
-import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.integration.db.model.RevisionEntity;
-import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
-import se.sundsvall.supportmanagement.integration.notes.NotesClient;
-
-import java.time.OffsetDateTime;
-import java.time.ZoneId;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
-import java.util.UUID;
-
 import static java.time.Instant.ofEpochMilli;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
@@ -46,10 +14,46 @@ import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
 import static org.zalando.problem.Status.NOT_FOUND;
 import static se.sundsvall.supportmanagement.service.mapper.RevisionMapper.toSerializedSnapshot;
 
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.util.List;
+import java.util.Optional;
+import java.util.Random;
+import java.util.UUID;
+
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mariadb.jdbc.MariaDbBlob;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Spy;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.zalando.problem.ThrowableProblem;
+
+import se.sundsvall.supportmanagement.api.model.revision.Operation;
+import se.sundsvall.supportmanagement.api.model.revision.Revision;
+import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.RevisionRepository;
+import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
+import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.RevisionEntity;
+import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
+import se.sundsvall.supportmanagement.integration.notes.NotesClient;
+
+import generated.se.sundsvall.notes.DifferenceResponse;
+
 @ExtendWith(MockitoExtension.class)
 class RevisionServiceTest {
 
-	static final String MUNICIPALITY_ID = "2281";
+	private static final String NAMESPACE = "namespace";
+
+	private static final String MUNICIPALITY_ID = "2281";
 
 	@Mock
 	private RevisionRepository revisionRepositoryMock;
@@ -78,18 +82,18 @@ class RevisionServiceTest {
 	void shouldCreateErrandRevisionWhenNoPreviousRevisionExists() throws Exception {
 		// Setup
 		final var entityId = "entityId";
-		final var entity = ErrandEntity.create().withId(entityId);
+		final var entity = ErrandEntity.create().withNamespace(NAMESPACE).withMunicipalityId(MUNICIPALITY_ID).withId(entityId);
 		final var revisionId = UUID.randomUUID().toString();
 
 		// Mock
-		when(revisionRepositoryMock.findFirstByEntityIdOrderByVersionDesc(entityId)).thenReturn(Optional.empty());
+		when(revisionRepositoryMock.findFirstByNamespaceAndMunicipalityIdAndEntityIdOrderByVersionDesc(NAMESPACE, MUNICIPALITY_ID, entityId)).thenReturn(Optional.empty());
 		when(revisionRepositoryMock.save(any(RevisionEntity.class))).thenReturn(RevisionEntity.create().withId(revisionId));
 
 		// Call
 		final var response = service.createErrandRevision(entity);
 
 		// Assertions and verifications
-		verify(revisionRepositoryMock).findFirstByEntityIdOrderByVersionDesc(entityId);
+		verify(revisionRepositoryMock).findFirstByNamespaceAndMunicipalityIdAndEntityIdOrderByVersionDesc(NAMESPACE, MUNICIPALITY_ID, entityId);
 		verify(revisionRepositoryMock).save(entityCaptor.capture());
 
 		assertThat(entityCaptor.getValue().getEntityType()).isEqualTo("ErrandEntity");
@@ -102,12 +106,12 @@ class RevisionServiceTest {
 	void shouldCreateErrandRevisionWhenPreviousRevisionSnapshotDiffersFromCurrent() throws Exception {
 		// Setup
 		final var entityId = "entityId";
-		final var entity = ErrandEntity.create().withId(entityId);
+		final var entity = ErrandEntity.create().withNamespace(NAMESPACE).withMunicipalityId(MUNICIPALITY_ID).withId(entityId);
 		final var version = 1;
 		final var revisionId = UUID.randomUUID().toString();
 
 		// Mock
-		when(revisionRepositoryMock.findFirstByEntityIdOrderByVersionDesc(entityId)).thenReturn(Optional.of(RevisionEntity.create().withVersion(version).withSerializedSnapshot("{ omeKey\":\"someValue\"}")));
+		when(revisionRepositoryMock.findFirstByNamespaceAndMunicipalityIdAndEntityIdOrderByVersionDesc(NAMESPACE, MUNICIPALITY_ID, entityId)).thenReturn(Optional.of(RevisionEntity.create().withVersion(version).withSerializedSnapshot("{ omeKey\":\"someValue\"}")));
 		when(revisionRepositoryMock.save(any(RevisionEntity.class))).thenReturn(RevisionEntity.create().withId(revisionId));
 
 		// Call
@@ -127,13 +131,13 @@ class RevisionServiceTest {
 	void shouldCreateErrandRevisionWhenPreviousRevisionSnapshotIsNull() throws Exception {
 		// Setup
 		final var entityId = "entityId";
-		final var errandEntity = ErrandEntity.create().withId(entityId);
+		final var errandEntity = ErrandEntity.create().withNamespace(NAMESPACE).withMunicipalityId(MUNICIPALITY_ID).withId(entityId);
 		final var version = 2;
 		final var revisionEntity = RevisionEntity.create().withVersion(version);
 		final var revisionId = UUID.randomUUID().toString();
 
 		// Mock
-		when(revisionRepositoryMock.findFirstByEntityIdOrderByVersionDesc(entityId)).thenReturn(Optional.of(revisionEntity));
+		when(revisionRepositoryMock.findFirstByNamespaceAndMunicipalityIdAndEntityIdOrderByVersionDesc(NAMESPACE, MUNICIPALITY_ID, entityId)).thenReturn(Optional.of(revisionEntity));
 		when(revisionRepositoryMock.save(any(RevisionEntity.class))).thenReturn(RevisionEntity.create().withId(revisionId));
 
 		// Call
@@ -153,12 +157,12 @@ class RevisionServiceTest {
 	void shouldCreateErrandRevisionWhenExceptionOccursInSnapshotComparison() throws Exception {
 		// Setup
 		final var entityId = "entityId";
-		final var entity = ErrandEntity.create().withId(entityId);
+		final var entity = ErrandEntity.create().withNamespace(NAMESPACE).withMunicipalityId(MUNICIPALITY_ID).withId(entityId);
 		final var version = 3;
 		final var revisionId = UUID.randomUUID().toString();
 
 		// Mock
-		when(revisionRepositoryMock.findFirstByEntityIdOrderByVersionDesc(entityId)).thenReturn(Optional.of(RevisionEntity.create().withVersion(version).withSerializedSnapshot("{\"id\":\"entityId\"")));
+		when(revisionRepositoryMock.findFirstByNamespaceAndMunicipalityIdAndEntityIdOrderByVersionDesc(NAMESPACE, MUNICIPALITY_ID, entityId)).thenReturn(Optional.of(RevisionEntity.create().withVersion(version).withSerializedSnapshot("{\"id\":\"entityId\"")));
 		when(revisionRepositoryMock.save(any(RevisionEntity.class))).thenReturn(RevisionEntity.create().withId(revisionId));
 
 		// Call
@@ -178,11 +182,12 @@ class RevisionServiceTest {
 	void shouldNotErrandCreateRevisionWhenPreviousRevisionSnapshotIsEqualToCurrent() {
 		// Setup
 		final var entityId = "entityId";
-		final var entity = ErrandEntity.create().withId(entityId);
+		final var entity = ErrandEntity.create().withNamespace(NAMESPACE).withMunicipalityId(MUNICIPALITY_ID).withId(entityId);
 		final var version = 4;
 
 		// Mock
-		when(revisionRepositoryMock.findFirstByEntityIdOrderByVersionDesc(entityId)).thenReturn(Optional.of(RevisionEntity.create().withVersion(version).withSerializedSnapshot("{\"id\":\"entityId\"}")));
+		when(revisionRepositoryMock.findFirstByNamespaceAndMunicipalityIdAndEntityIdOrderByVersionDesc(NAMESPACE, MUNICIPALITY_ID, entityId)).thenReturn(Optional.of(RevisionEntity.create().withMunicipalityId(MUNICIPALITY_ID).withNamespace(NAMESPACE).withVersion(version)
+			.withSerializedSnapshot("{\"id\":\"entityId\", \"namespace\":\"" + NAMESPACE + "\", \"municipalityId\":\"" + MUNICIPALITY_ID + "\"}")));
 
 		// Call
 		service.createErrandRevision(entity);
@@ -201,7 +206,7 @@ class RevisionServiceTest {
 		final var currentEntity = createErrandEntity(entityId);
 
 		// Mock
-		when(revisionRepositoryMock.findFirstByEntityIdOrderByVersionDesc(entityId)).thenReturn(Optional.of(RevisionEntity.create().withVersion(version).withSerializedSnapshot(previousSnapshot)));
+		when(revisionRepositoryMock.findFirstByNamespaceAndMunicipalityIdAndEntityIdOrderByVersionDesc(NAMESPACE, MUNICIPALITY_ID, entityId)).thenReturn(Optional.of(RevisionEntity.create().withVersion(version).withSerializedSnapshot(previousSnapshot)));
 
 		// Call
 		service.createErrandRevision(currentEntity);
@@ -216,14 +221,14 @@ class RevisionServiceTest {
 		final var errandId = "errandId";
 
 		// Mock
-		when(errandsRepositoryMock.existsById(errandId)).thenReturn(true);
-		when(revisionRepositoryMock.findAllByEntityIdOrderByVersion(errandId)).thenReturn(List.of(createRevisionEntity(), createRevisionEntity(), createRevisionEntity()));
+		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(errandId, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
+		when(revisionRepositoryMock.findAllByNamespaceAndMunicipalityIdAndEntityIdOrderByVersion(NAMESPACE, MUNICIPALITY_ID, errandId)).thenReturn(List.of(createRevisionEntity(), createRevisionEntity(), createRevisionEntity()));
 
 		// Call
-		final var result = service.getErrandRevisions(errandId);
+		final var result = service.getErrandRevisions(NAMESPACE, MUNICIPALITY_ID, errandId);
 
-		verify(errandsRepositoryMock).existsById(errandId);
-		verify(revisionRepositoryMock).findAllByEntityIdOrderByVersion(errandId);
+		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(errandId, NAMESPACE, MUNICIPALITY_ID);
+		verify(revisionRepositoryMock).findAllByNamespaceAndMunicipalityIdAndEntityIdOrderByVersion(NAMESPACE, MUNICIPALITY_ID, errandId);
 
 		assertThat(result).hasSize(3);
 	}
@@ -234,10 +239,10 @@ class RevisionServiceTest {
 		final var errandId = "errandId";
 
 		// Call
-		final var e = assertThrows(ThrowableProblem.class, () -> service.getErrandRevisions(errandId));
+		final var e = assertThrows(ThrowableProblem.class, () -> service.getErrandRevisions(NAMESPACE, MUNICIPALITY_ID, errandId));
 
 		// Assertions and verifications
-		verify(errandsRepositoryMock).existsById(errandId);
+		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(errandId, NAMESPACE, MUNICIPALITY_ID);
 		verifyNoInteractions(revisionRepositoryMock);
 
 		assertThat(e.getStatus()).isEqualTo(NOT_FOUND);
@@ -250,10 +255,10 @@ class RevisionServiceTest {
 		final var errandId = "errandId";
 
 		// Call
-		final var e = assertThrows(ThrowableProblem.class, () -> service.compareErrandRevisionVersions(errandId, 0, 0));
+		final var e = assertThrows(ThrowableProblem.class, () -> service.compareErrandRevisionVersions(NAMESPACE, MUNICIPALITY_ID, errandId, 0, 0));
 
 		// Assertions and verifications
-		verify(errandsRepositoryMock).existsById(errandId);
+		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(errandId, NAMESPACE, MUNICIPALITY_ID);
 		verifyNoInteractions(revisionRepositoryMock);
 
 		assertThat(e.getStatus()).isEqualTo(NOT_FOUND);
@@ -266,13 +271,13 @@ class RevisionServiceTest {
 		final var errandId = "errandId";
 
 		// Mock
-		when(revisionRepositoryMock.findFirstByEntityIdOrderByVersionDesc(errandId)).thenReturn(Optional.of(createRevisionEntity()));
+		when(revisionRepositoryMock.findFirstByNamespaceAndMunicipalityIdAndEntityIdOrderByVersionDesc(NAMESPACE, MUNICIPALITY_ID, errandId)).thenReturn(Optional.of(createRevisionEntity()));
 
 		// Call
-		final var result = service.getLatestErrandRevision(errandId);
+		final var result = service.getLatestErrandRevision(NAMESPACE, MUNICIPALITY_ID, errandId);
 
 		// Assertions and verifications
-		verify(revisionRepositoryMock).findFirstByEntityIdOrderByVersionDesc(errandId);
+		verify(revisionRepositoryMock).findFirstByNamespaceAndMunicipalityIdAndEntityIdOrderByVersionDesc(NAMESPACE, MUNICIPALITY_ID, errandId);
 		assertThat(result).isNotNull();
 	}
 
@@ -282,10 +287,10 @@ class RevisionServiceTest {
 		final var errandId = "errandId";
 
 		// Call
-		final var result = service.getLatestErrandRevision(errandId);
+		final var result = service.getLatestErrandRevision(NAMESPACE, MUNICIPALITY_ID, errandId);
 
 		// Assertions and verifications
-		verify(revisionRepositoryMock).findFirstByEntityIdOrderByVersionDesc(errandId);
+		verify(revisionRepositoryMock).findFirstByNamespaceAndMunicipalityIdAndEntityIdOrderByVersionDesc(NAMESPACE, MUNICIPALITY_ID, errandId);
 		assertThat(result).isNull();
 	}
 
@@ -296,13 +301,13 @@ class RevisionServiceTest {
 		final var version = 123;
 
 		// Mock
-		when(revisionRepositoryMock.findByEntityIdAndVersion(errandId, version)).thenReturn(Optional.of(createRevisionEntity()));
+		when(revisionRepositoryMock.findByNamespaceAndMunicipalityIdAndEntityIdAndVersion(NAMESPACE, MUNICIPALITY_ID, errandId, version)).thenReturn(Optional.of(createRevisionEntity()));
 
 		// Call
-		final var result = service.getErrandRevisionByVersion(errandId, version);
+		final var result = service.getErrandRevisionByVersion(NAMESPACE, MUNICIPALITY_ID, errandId, version);
 
 		// Assertions and verifications
-		verify(revisionRepositoryMock).findByEntityIdAndVersion(errandId, version);
+		verify(revisionRepositoryMock).findByNamespaceAndMunicipalityIdAndEntityIdAndVersion(NAMESPACE, MUNICIPALITY_ID, errandId, version);
 		assertThat(result).isNotNull();
 	}
 
@@ -313,10 +318,10 @@ class RevisionServiceTest {
 		final var version = 123;
 
 		// Call
-		final var result = service.getErrandRevisionByVersion(errandId, version);
+		final var result = service.getErrandRevisionByVersion(NAMESPACE, MUNICIPALITY_ID, errandId, version);
 
 		// Assertions and verifications
-		verify(revisionRepositoryMock).findByEntityIdAndVersion(errandId, version);
+		verify(revisionRepositoryMock).findByNamespaceAndMunicipalityIdAndEntityIdAndVersion(NAMESPACE, MUNICIPALITY_ID, errandId, version);
 		assertThat(result).isNull();
 	}
 
@@ -328,15 +333,15 @@ class RevisionServiceTest {
 		final var targetVersion = 6;
 
 		// Mock
-		when(errandsRepositoryMock.existsById(errandId)).thenReturn(true);
+		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(errandId, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
 
 		// Call
-		final var e = assertThrows(ThrowableProblem.class, () -> service.compareErrandRevisionVersions(errandId, sourceVersion, targetVersion));
+		final var e = assertThrows(ThrowableProblem.class, () -> service.compareErrandRevisionVersions(NAMESPACE, MUNICIPALITY_ID, errandId, sourceVersion, targetVersion));
 
 		// Assertions and verifications
-		verify(errandsRepositoryMock).existsById(errandId);
-		verify(revisionRepositoryMock).findByEntityIdAndVersion(errandId, sourceVersion);
-		verify(revisionRepositoryMock, never()).findByEntityIdAndVersion(errandId, targetVersion);
+		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(errandId, NAMESPACE, MUNICIPALITY_ID);
+		verify(revisionRepositoryMock).findByNamespaceAndMunicipalityIdAndEntityIdAndVersion(NAMESPACE, MUNICIPALITY_ID, errandId, sourceVersion);
+		verify(revisionRepositoryMock, never()).findByNamespaceAndMunicipalityIdAndEntityIdAndVersion(NAMESPACE, MUNICIPALITY_ID, errandId, targetVersion);
 
 		assertThat(e.getStatus()).isEqualTo(NOT_FOUND);
 		assertThat(e.getMessage()).isEqualTo("Not Found: The version requested for the source revision does not exist");
@@ -350,16 +355,16 @@ class RevisionServiceTest {
 		final var targetVersion = 6;
 
 		// Mock
-		when(errandsRepositoryMock.existsById(errandId)).thenReturn(true);
-		when(revisionRepositoryMock.findByEntityIdAndVersion(errandId, sourceVersion)).thenReturn(Optional.of(createRevisionEntity()));
+		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(errandId, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
+		when(revisionRepositoryMock.findByNamespaceAndMunicipalityIdAndEntityIdAndVersion(NAMESPACE, MUNICIPALITY_ID, errandId, sourceVersion)).thenReturn(Optional.of(createRevisionEntity()));
 
 		// Call
-		final var e = assertThrows(ThrowableProblem.class, () -> service.compareErrandRevisionVersions(errandId, sourceVersion, targetVersion));
+		final var e = assertThrows(ThrowableProblem.class, () -> service.compareErrandRevisionVersions(NAMESPACE, MUNICIPALITY_ID, errandId, sourceVersion, targetVersion));
 
 		// Assertions and verifications
-		verify(errandsRepositoryMock).existsById(errandId);
-		verify(revisionRepositoryMock).findByEntityIdAndVersion(errandId, sourceVersion);
-		verify(revisionRepositoryMock).findByEntityIdAndVersion(errandId, targetVersion);
+		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(errandId, NAMESPACE, MUNICIPALITY_ID);
+		verify(revisionRepositoryMock).findByNamespaceAndMunicipalityIdAndEntityIdAndVersion(NAMESPACE, MUNICIPALITY_ID, errandId, sourceVersion);
+		verify(revisionRepositoryMock).findByNamespaceAndMunicipalityIdAndEntityIdAndVersion(NAMESPACE, MUNICIPALITY_ID, errandId, targetVersion);
 
 		assertThat(e.getStatus()).isEqualTo(NOT_FOUND);
 		assertThat(e.getMessage()).isEqualTo("Not Found: The version requested for the target revision does not exist");
@@ -373,15 +378,15 @@ class RevisionServiceTest {
 		final var sourceVersion = 5;
 
 		// Mock
-		when(errandsRepositoryMock.existsById(errandId)).thenReturn(true);
-		when(revisionRepositoryMock.findByEntityIdAndVersion(errandId, sourceVersion)).thenReturn(Optional.of(createRevisionEntity()));
+		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(errandId, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
+		when(revisionRepositoryMock.findByNamespaceAndMunicipalityIdAndEntityIdAndVersion(NAMESPACE, MUNICIPALITY_ID, errandId, sourceVersion)).thenReturn(Optional.of(createRevisionEntity()));
 
 		// Call
-		final var result = service.compareErrandRevisionVersions(errandId, sourceVersion, sourceVersion);
+		final var result = service.compareErrandRevisionVersions(NAMESPACE, MUNICIPALITY_ID, errandId, sourceVersion, sourceVersion);
 
 		// Assertions and verifications
-		verify(errandsRepositoryMock).existsById(errandId);
-		verify(revisionRepositoryMock, times(2)).findByEntityIdAndVersion(errandId, sourceVersion);
+		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(errandId, NAMESPACE, MUNICIPALITY_ID);
+		verify(revisionRepositoryMock, times(2)).findByNamespaceAndMunicipalityIdAndEntityIdAndVersion(NAMESPACE, MUNICIPALITY_ID, errandId, sourceVersion);
 
 		assertThat(result.getOperations()).isEmpty();
 	}
@@ -394,17 +399,17 @@ class RevisionServiceTest {
 		final var targetVersion = 6;
 
 		// Mock
-		when(errandsRepositoryMock.existsById(errandId)).thenReturn(true);
-		when(revisionRepositoryMock.findByEntityIdAndVersion(errandId, sourceVersion)).thenReturn(Optional.of(createRevisionEntity("key", "oldValue")));
-		when(revisionRepositoryMock.findByEntityIdAndVersion(errandId, targetVersion)).thenReturn(Optional.of(createRevisionEntity("key", "newValue")));
+		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(errandId, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
+		when(revisionRepositoryMock.findByNamespaceAndMunicipalityIdAndEntityIdAndVersion(NAMESPACE, MUNICIPALITY_ID, errandId, sourceVersion)).thenReturn(Optional.of(createRevisionEntity("key", "oldValue")));
+		when(revisionRepositoryMock.findByNamespaceAndMunicipalityIdAndEntityIdAndVersion(NAMESPACE, MUNICIPALITY_ID, errandId, targetVersion)).thenReturn(Optional.of(createRevisionEntity("key", "newValue")));
 
 		// Call
-		final var result = service.compareErrandRevisionVersions(errandId, sourceVersion, targetVersion);
+		final var result = service.compareErrandRevisionVersions(NAMESPACE, MUNICIPALITY_ID, errandId, sourceVersion, targetVersion);
 
 		// Assertions and verifications
-		verify(errandsRepositoryMock).existsById(errandId);
-		verify(revisionRepositoryMock).findByEntityIdAndVersion(errandId, sourceVersion);
-		verify(revisionRepositoryMock).findByEntityIdAndVersion(errandId, targetVersion);
+		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(errandId, NAMESPACE, MUNICIPALITY_ID);
+		verify(revisionRepositoryMock).findByNamespaceAndMunicipalityIdAndEntityIdAndVersion(NAMESPACE, MUNICIPALITY_ID, errandId, sourceVersion);
+		verify(revisionRepositoryMock).findByNamespaceAndMunicipalityIdAndEntityIdAndVersion(NAMESPACE, MUNICIPALITY_ID, errandId, targetVersion);
 
 		assertThat(result.getOperations()).hasSize(1)
 			.extracting(
@@ -427,17 +432,17 @@ class RevisionServiceTest {
 		final var targetVersion = 6;
 
 		// Mock
-		when(errandsRepositoryMock.existsById(errandId)).thenReturn(true);
-		when(revisionRepositoryMock.findByEntityIdAndVersion(errandId, sourceVersion)).thenReturn(Optional.of(createRevisionEntity("key", "oldValue")));
-		when(revisionRepositoryMock.findByEntityIdAndVersion(errandId, targetVersion)).thenReturn(Optional.of(createRevisionEntity("key", "newValue\"")));
+		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(errandId, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
+		when(revisionRepositoryMock.findByNamespaceAndMunicipalityIdAndEntityIdAndVersion(NAMESPACE, MUNICIPALITY_ID, errandId, sourceVersion)).thenReturn(Optional.of(createRevisionEntity("key", "oldValue")));
+		when(revisionRepositoryMock.findByNamespaceAndMunicipalityIdAndEntityIdAndVersion(NAMESPACE, MUNICIPALITY_ID, errandId, targetVersion)).thenReturn(Optional.of(createRevisionEntity("key", "newValue\"")));
 
 		// Call
-		final var e = assertThrows(ThrowableProblem.class, () -> service.compareErrandRevisionVersions(errandId, sourceVersion, targetVersion));
+		final var e = assertThrows(ThrowableProblem.class, () -> service.compareErrandRevisionVersions(NAMESPACE, MUNICIPALITY_ID, errandId, sourceVersion, targetVersion));
 
 		// Assertions and verifications
-		verify(errandsRepositoryMock).existsById(errandId);
-		verify(revisionRepositoryMock).findByEntityIdAndVersion(errandId, sourceVersion);
-		verify(revisionRepositoryMock).findByEntityIdAndVersion(errandId, targetVersion);
+		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(errandId, NAMESPACE, MUNICIPALITY_ID);
+		verify(revisionRepositoryMock).findByNamespaceAndMunicipalityIdAndEntityIdAndVersion(NAMESPACE, MUNICIPALITY_ID, errandId, sourceVersion);
+		verify(revisionRepositoryMock).findByNamespaceAndMunicipalityIdAndEntityIdAndVersion(NAMESPACE, MUNICIPALITY_ID, errandId, targetVersion);
 
 		assertThat(e.getStatus()).isEqualTo(INTERNAL_SERVER_ERROR);
 		assertThat(e.getMessage()).isEqualTo("Internal Server Error: An error occured when comparing version 5 to version 6 of entityId 'errandId'");
@@ -451,14 +456,14 @@ class RevisionServiceTest {
 		final var noteId = "noteId";
 
 		// Mock
-		when(errandsRepositoryMock.existsById(errandId)).thenReturn(true);
+		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(errandId, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
 		when(notesClientMock.findAllNoteRevisions(MUNICIPALITY_ID, noteId)).thenReturn(List.of(new generated.se.sundsvall.notes.Revision()));
 
 		// Call
-		final var result = service.getNoteRevisions(errandId, noteId);
+		final var result = service.getNoteRevisions(NAMESPACE, MUNICIPALITY_ID, errandId, noteId);
 
 		// Assertions and verifications
-		verify(errandsRepositoryMock).existsById(errandId);
+		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(errandId, NAMESPACE, MUNICIPALITY_ID);
 		verify(notesClientMock).findAllNoteRevisions(MUNICIPALITY_ID, noteId);
 
 		assertThat(result).hasSize(1);
@@ -471,10 +476,10 @@ class RevisionServiceTest {
 		final var noteId = "noteId";
 
 		// Call
-		final var e = assertThrows(ThrowableProblem.class, () -> service.getNoteRevisions(errandId, noteId));
+		final var e = assertThrows(ThrowableProblem.class, () -> service.getNoteRevisions(NAMESPACE, MUNICIPALITY_ID, errandId, noteId));
 
 		// Assertions and verifications
-		verify(errandsRepositoryMock).existsById(errandId);
+		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(errandId, NAMESPACE, MUNICIPALITY_ID);
 		verifyNoInteractions(notesClientMock);
 
 		assertThat(e.getStatus()).isEqualTo(NOT_FOUND);
@@ -490,14 +495,14 @@ class RevisionServiceTest {
 		final var targetVersion = 2;
 
 		// Mock
-		when(errandsRepositoryMock.existsById(errandId)).thenReturn(true);
+		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(errandId, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
 		when(notesClientMock.compareNoteRevisions(MUNICIPALITY_ID, noteId, sourceVersion, targetVersion)).thenReturn(new DifferenceResponse().addOperationsItem(new generated.se.sundsvall.notes.Operation()));
 
 		// Call
-		final var result = service.compareNoteRevisionVersions(errandId, noteId, sourceVersion, targetVersion);
+		final var result = service.compareNoteRevisionVersions(NAMESPACE, MUNICIPALITY_ID, errandId, noteId, sourceVersion, targetVersion);
 
 		// Assertions and verifications
-		verify(errandsRepositoryMock).existsById(errandId);
+		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(errandId, NAMESPACE, MUNICIPALITY_ID);
 		verify(notesClientMock).compareNoteRevisions(MUNICIPALITY_ID, noteId, sourceVersion, targetVersion);
 
 		assertThat(result).isNotNull();
@@ -511,10 +516,10 @@ class RevisionServiceTest {
 		final var noteId = "noteId";
 
 		// Call
-		final var e = assertThrows(ThrowableProblem.class, () -> service.compareNoteRevisionVersions(errandId, noteId, 0, 1));
+		final var e = assertThrows(ThrowableProblem.class, () -> service.compareNoteRevisionVersions(NAMESPACE, MUNICIPALITY_ID, errandId, noteId, 0, 1));
 
 		// Assertions and verifications
-		verify(errandsRepositoryMock).existsById(errandId);
+		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(errandId, NAMESPACE, MUNICIPALITY_ID);
 		verifyNoInteractions(notesClientMock);
 
 		assertThat(e.getStatus()).isEqualTo(NOT_FOUND);
@@ -526,6 +531,8 @@ class RevisionServiceTest {
 		new Random().nextBytes(randomBytes);
 
 		return ErrandEntity.create()
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withNamespace(NAMESPACE)
 			.withId(entityId)
 			.withModified(OffsetDateTime.ofInstant(ofEpochMilli(new Random().nextLong()), ZoneId.systemDefault()))
 			.withTouched(OffsetDateTime.ofInstant(ofEpochMilli(new Random().nextLong()), ZoneId.systemDefault()))

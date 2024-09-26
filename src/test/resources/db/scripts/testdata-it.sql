@@ -168,49 +168,49 @@ VALUES ('1',
 -------------------------------------
 -- Attachment
 -------------------------------------
-INSERT INTO attachment(id, attachment_data_id, file_name, mime_type, errand_id)
+INSERT INTO attachment(id, attachment_data_id, file_name, mime_type, errand_id, namespace, municipality_id)
 VALUES ('25d266a7-1ff2-4bf4-b6f3-0473b2b86fcd', '1', 'Test_image.jpg', 'image/jpeg',
-        'ec677eb3-604c-4935-bff7-f8f0b500c8f4'),
+        'ec677eb3-604c-4935-bff7-f8f0b500c8f4', 'NAMESPACE.1', '2281'),
        ('c697642d-4d8d-4b07-8816-025a2734b09a', '2', 'Test.txt', 'text/plain',
-        'cc236cf1-c00f-4479-8341-ecf5dd90b5b9'),
+        'cc236cf1-c00f-4479-8341-ecf5dd90b5b9', 'NAMESPACE.1', '2281'),
        ('c8d88089-5136-4a1a-aa10-5f435cb6e69f', '3', 'Test2.txt', 'text/plain',
-        'cc236cf1-c00f-4479-8341-ecf5dd90b5b9'),
+        'cc236cf1-c00f-4479-8341-ecf5dd90b5b9', 'NAMESPACE.1', '2281'),
        ('99fa4dd0-9308-4d45-bb8e-4bb881a9a536', '4', 'Test3.txt', 'text/plain',
-        '1be673c0-6ba3-4fb0-af4a-43acf23389f6'),
+        '1be673c0-6ba3-4fb0-af4a-43acf23389f6', 'NAMESPACE.1', '2281'),
        ('95ea267a-28ec-4636-922c-a717d79bd029', '5', 'birthday-card.txt', 'text/plain',
-        '147d355f-dc94-4fde-a4cb-9ddd16cb1946'),
+        '147d355f-dc94-4fde-a4cb-9ddd16cb1946', 'NAMESPACE.1', '2281'),
         ('b3b3b3b3-b3b3-b3b3-b3b3-b3b3b3b3b3b3', '1', 'Test_image.jpg', 'image/jpeg',
-        '147d355f-dc94-4fde-a4cb-9ddd16cb1946');
+        '147d355f-dc94-4fde-a4cb-9ddd16cb1946', 'NAMESPACE.1', '2281');
 
 
 -- Revision
 -------------------------------------
-INSERT INTO revision(id, created, entity_id, entity_type, serialized_snapshot, version)
+INSERT INTO revision(id, created, entity_id, entity_type, serialized_snapshot, version, namespace, municipality_id)
 VALUES ('59328e70-4297-4bb5-ba69-cb17f2d15a17', '2022-01-01 12:00:00.000',
         '1be673c0-6ba3-4fb0-af4a-43acf23389f6', 'ErrandEntity',
-        '{"id":"1be673c0-6ba3-4fb0-af4a-43acf23389f6"}', 0),
+        '{"id":"1be673c0-6ba3-4fb0-af4a-43acf23389f6"}', 0, 'NAMESPACE.1', '2281'),
        ('84e0f78f-a857-4325-adff-04d2c0609a64', '2023-04-26 15:48:17.164',
         '147d355f-dc94-4fde-a4cb-9ddd16cb1946', 'ErrandEntity',
         '{"id":"147d355f-dc94-4fde-a4cb-9ddd16cb1946","externalTags":[{"key":"caseid","value":"2222-3333"}],"stakeholders":[{"id":3007,"externalId":"cb20c51f-fcf3-42c0-b613-de563634a8ec","externalIdType":"PRIVATE","role":"ADMINISTRATOR","firstName":"Aurthur","lastName":"Dent","address":"155 Country Lane, Cottington","careOf":"Ford Prefect","zipCode":"12345","country":"United Kingdom","contactChannels":[{"type":"Email","value":"arthur.dent@earth.com"}]}],"municipalityId":"2281","namespace":"NAMESPACE.1","title":"Title for the errand","category":"CATEGORY-1","type":"TYPE-1","status":"STATUS-1","resolution":"FIXED","description":"Order cake for everyone","priority":"LOW","reporterUserId":"joe01doe","assignedUserId":"joe01doe","assignedGroupId":"hardware support","escalationEmail":"joe.doe@email.com","created":"2023-04-26T15:48:17.124+02:00"}',
-        0),
+        0, 'NAMESPACE.1', '2281'),
        ('b69b0c4a-4a43-4753-ab6d-f5b8eeca1dcd', '2023-04-26 16:05:08.805',
         '147d355f-dc94-4fde-a4cb-9ddd16cb1946', 'ErrandEntity',
         '{"id":"147d355f-dc94-4fde-a4cb-9ddd16cb1946","externalTags":[],"stakeholders":[{"id":3008,"externalId":"cb20c51f-fcf3-42c0-b613-de563634a8ec","externalIdType":"PRIVATE","role":"CAKE-BAKER","firstName":"Aurthur","lastName":"Dent","address":"155 Country Lane, Cottington","careOf":"Ford Prefect","zipCode":"12345","country":"United Kingdom","contactChannels":[{"type":"Email","value":"arthur.dent@earth.com"}]},{"id":3009,"externalId":"cb20c51f-fcf3-42c0-b613-de563634a8ec","externalIdType":"PRIVATE","role":"CAKE-EATER","firstName":"Slartibartfast","lastName":"Magrathea","address":"Northern skies","zipCode":"23456","country":"Norway","contactChannels":[{"type":"Email","value":"slartibartfast@earth.com"}]}],"municipalityId":"2281","namespace":"NAMESPACE.1","title":"It is my birthday","category":"CATEGORY-1","type":"TYPE-1","status":"STATUS-1","resolution":"FIXED","description":"Order cake for everyone","priority":"HIGH","reporterUserId":"joe01doe","assignedUserId":"jane11dane","assignedGroupId":"hardware support","escalationEmail":"joe.doe@email.com","attachments":[],"created":"2023-04-26T15:48:17.124+02:00","modified":"2023-04-26T16:05:08.795+02:00","touched":"2023-04-26T15:48:17.124+02:00"}',
-        1),
+        1, 'NAMESPACE.1', '2281'),
        ('43a5b3c8-9010-4518-ab1b-d365bd7d6bb1', '2023-04-26 16:07:32.884',
         '147d355f-dc94-4fde-a4cb-9ddd16cb1946', 'ErrandEntity',
         '{"id":"147d355f-dc94-4fde-a4cb-9ddd16cb1946","externalTags":[],"stakeholders":[{"id":3008,"externalId":"cb20c51f-fcf3-42c0-b613-de563634a8ec","externalIdType":"PRIVATE","role":"CAKE-BAKER","firstName":"Aurthur","lastName":"Dent","address":"155 Country Lane, Cottington","careOf":"Ford Prefect","zipCode":"12345","country":"United Kingdom","contactChannels":[{"type":"Email","value":"arthur.dent@earth.com"}]},{"id":3009,"externalId":"cb20c51f-fcf3-42c0-b613-de563634a8ec","externalIdType":"PRIVATE","role":"CAKE-EATER","firstName":"Slartibartfast","lastName":"Magrathea","address":"Northern skies","zipCode":"23456","country":"Norway","contactChannels":[{"type":"Email","value":"slartibartfast@earth.com"}]}],"municipalityId":"2281","namespace":"NAMESPACE.1","title":"It is my birthday","category":"CATEGORY-1","type":"TYPE-1","status":"STATUS-1","resolution":"FIXED","description":"Order cake for everyone","priority":"HIGH","reporterUserId":"joe01doe","assignedUserId":"jane11dane","assignedGroupId":"hardware support","escalationEmail":"joe.doe@email.com","attachments":[{"id":"95ea267a-28ec-4636-922c-a717d79bd029","fileName":"birthday-card.txt","mimeType":"text/plain","file":[104,97,112,112,121,98,105,114,116,104,100,97,121],"created":"2023-04-26T16:07:32.874+02:00"}],"created":"2023-04-26T15:48:17.124+02:00","modified":"2023-04-26T16:05:08.806+02:00","touched":"2023-04-26T16:05:08.806+02:00"}',
-        2);
+        2, 'NAMESPACE.1', '2281');
 
 -------------------------------------
 -- Communication
 -------------------------------------
 INSERT INTO communication(viewed,sender, sent, id, errand_number, external_case_id,
-                          message_body, target, subject, direction, type)
+                          message_body, target, subject, direction, type, namespace, municipality_id)
 VALUES (0, 'Test Testorsson', '2023-01-01 12:00:00.000', 'cc236cf1-c00f-4479-8341-ecf5dd90b5b9', 'KC-23020001', 'case1',
-        'message body 1', '1234567890', 'subject1', 'INBOUND', 'SMS'),
+        'message body 1', '1234567890', 'subject1', 'INBOUND', 'SMS', 'NAMESPACE.1', '2281'),
        (1, 'Test Testorsson', '2023-01-02 12:00:00.000', '59328e70-4297-4bb5-ba69-cb17f2d15a17',  'KC-23020001', 'case2',
-        'message body 2', '0987654321', 'subject2', 'OUTBOUND', 'EMAIL');
+        'message body 2', '0987654321', 'subject2', 'OUTBOUND', 'EMAIL', 'NAMESPACE.1', '2281');
 
 -------------------------------------
 -- Communication_attachment_data
@@ -223,9 +223,9 @@ VALUES (1, UNHEX('48656C6C6F20576F726C6421')), -- 'Hello World!' in hexadecimal
 -- Communication_attachment
 -------------------------------------
 INSERT INTO communication_attachment(communication_attachment_data_id, id,
-                                     communication_id, content_type, name)
-VALUES (1, '896a44d8-724b-11ed-a840-0242ac110002', 'cc236cf1-c00f-4479-8341-ecf5dd90b5b9', 'text/plain', 'attachment1'),
-       (2, '05b29c30-4512-46c0-9d82-d0f11cb04bae', '59328e70-4297-4bb5-ba69-cb17f2d15a17', 'image/png', 'attachment2');
+                                     communication_id, content_type, name, namespace, municipality_id)
+VALUES (1, '896a44d8-724b-11ed-a840-0242ac110002', 'cc236cf1-c00f-4479-8341-ecf5dd90b5b9', 'text/plain', 'attachment1', 'NAMESPACE.1', '2281'),
+       (2, '05b29c30-4512-46c0-9d82-d0f11cb04bae', '59328e70-4297-4bb5-ba69-cb17f2d15a17', 'image/png', 'attachment2', 'NAMESPACE.1', '2281');
 
 -- Insert into communication_email_header
 INSERT INTO communication_email_header (communication_id, id, header_key)

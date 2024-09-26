@@ -27,8 +27,10 @@ import se.sundsvall.supportmanagement.service.MetadataService;
 @ActiveProfiles("junit")
 class MetadataContactReasonResourceTest {
 
-	private static final String PATH = "/{namespace}/{municipalityId}/metadata/contactreasons";
+	private static final String PATH = "/{municipalityId}/{namespace}/metadata/contactreasons";
+
 	private static final String NAMESPACE = "namespace";
+
 	private static final String MUNICIPALITY_ID = "2281";
 
 	@MockBean
@@ -46,13 +48,13 @@ class MetadataContactReasonResourceTest {
 
 		when(metadataServiceMock.createContactReason(NAMESPACE, MUNICIPALITY_ID, body)).thenReturn(body.getReason());
 
-		webTestClient.post().uri(builder -> builder.path(PATH).build(NAMESPACE, MUNICIPALITY_ID))
+		webTestClient.post().uri(builder -> builder.path(PATH).build(MUNICIPALITY_ID, NAMESPACE))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(body)
 			.exchange()
 			.expectStatus().isCreated()
 			.expectHeader().contentType(ALL)
-			.expectHeader().location("/" + NAMESPACE + "/" + MUNICIPALITY_ID + "/metadata/contactreasons/" + body.getReason())
+			.expectHeader().location("/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/metadata/contactreasons/" + body.getReason())
 			.expectBody().isEmpty();
 	}
 
@@ -86,7 +88,7 @@ class MetadataContactReasonResourceTest {
 
 		when(metadataServiceMock.getContactReasonsForNamespaceAndMunicipality(NAMESPACE, MUNICIPALITY_ID)).thenReturn(contactReasons);
 
-		final var result = webTestClient.get().uri(builder -> builder.path(PATH).build(NAMESPACE, MUNICIPALITY_ID, reason))
+		final var result = webTestClient.get().uri(builder -> builder.path(PATH).build(MUNICIPALITY_ID, NAMESPACE, reason))
 			.exchange()
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)
@@ -128,4 +130,3 @@ class MetadataContactReasonResourceTest {
 	}
 
 }
-

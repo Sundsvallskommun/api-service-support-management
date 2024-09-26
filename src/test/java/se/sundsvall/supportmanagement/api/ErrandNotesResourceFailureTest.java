@@ -34,7 +34,7 @@ class ErrandNotesResourceFailureTest {
 	private static final String ERRAND_ID = randomUUID().toString();
 	private static final String NOTE_ID = randomUUID().toString();
 	private static final String INVALID = "#invalid#";
-	private static final String PATH = "/{namespace}/{municipalityId}/errands/{id}/notes";
+	private static final String PATH = "/{municipalityId}/{namespace}/errands/{id}/notes";
 
 	@Autowired
 	private WebTestClient webTestClient;

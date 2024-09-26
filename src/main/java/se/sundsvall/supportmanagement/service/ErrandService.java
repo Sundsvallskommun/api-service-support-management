@@ -128,7 +128,7 @@ public class ErrandService {
 		repository.deleteById(id);
 
 		// Create log event
-		final var latestRevision = revisionService.getLatestErrandRevision(id);
+		final var latestRevision = revisionService.getLatestErrandRevision(namespace, municipalityId,id);
 		eventService.createErrandEvent(DELETE, EVENT_LOG_DELETE_ERRAND, entity, latestRevision, null);
 	}
 

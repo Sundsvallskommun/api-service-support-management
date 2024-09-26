@@ -24,8 +24,9 @@ import se.sundsvall.supportmanagement.service.EventService;
 @SpringBootTest(classes = Application.class, webEnvironment = RANDOM_PORT)
 @ActiveProfiles("junit")
 class EventResourceFailuresTest {
-
-	private static final String PATH = "/errands/{id}/events";
+	private static final String NAMESPACE = "namespace";
+	private static final String MUNICIPALITY_ID = "2281";
+	private static final String PATH = "/{municipalityId}/{namespace}/errands/{id}/events";
 
 	@MockBean
 	private EventService eventServiceMock;
@@ -39,7 +40,8 @@ class EventResourceFailuresTest {
 		// Parameter values
 		final var id = "invalid";
 
-		final var response = webTestClient.get().uri(builder -> builder.path(PATH).build(Map.of("id", id)))
+		final var response = webTestClient.get().uri(builder -> builder.path(PATH)
+				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "id", id)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectHeader().contentType(APPLICATION_PROBLEM_JSON)

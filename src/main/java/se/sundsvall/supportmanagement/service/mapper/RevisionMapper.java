@@ -27,6 +27,8 @@ public class RevisionMapper {
 
 	public static RevisionEntity toRevisionEntity(final ErrandEntity entity, final int version) {
 		return RevisionEntity.create()
+			.withNamespace(entity.getNamespace())
+			.withMunicipalityId(entity.getMunicipalityId())
 			.withEntityId(entity.getId())
 			.withEntityType(entity.getClass().getSimpleName())
 			.withVersion(version)

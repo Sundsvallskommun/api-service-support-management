@@ -57,22 +57,22 @@ class MetadataCategoriesResourceFailureTest {
 	private static Stream<Arguments> getWithInvalidParametersArguments() {
 		return Stream.of(
 			// Get category
-			Arguments.of("invalid,namespace/2281/metadata/categories/category-name", tuple("getCategory.namespace", "can only contain A-Z, a-z, 0-9, -, _ and .")),
-			Arguments.of("my.namespace/666/metadata/categories/category-name", tuple("getCategory.municipalityId", "not a valid municipality ID")),
+			Arguments.of("2281/invalid,namespace/metadata/categories/category-name", tuple("getCategory.namespace", "can only contain A-Z, a-z, 0-9, -, _ and .")),
+			Arguments.of("666/my.namespace/metadata/categories/category-name", tuple("getCategory.municipalityId", "not a valid municipality ID")),
 
 			// Get categories
-			Arguments.of("invalid,namespace/2281/metadata/categories", tuple("getCategories.namespace", "can only contain A-Z, a-z, 0-9, -, _ and .")),
-			Arguments.of("my.namespace/666/metadata/categories", tuple("getCategories.municipalityId", "not a valid municipality ID")),
+			Arguments.of("2281/invalid,namespace/metadata/categories", tuple("getCategories.namespace", "can only contain A-Z, a-z, 0-9, -, _ and .")),
+			Arguments.of("666/my.namespace/metadata/categories", tuple("getCategories.municipalityId", "not a valid municipality ID")),
 
 			// Get category type.
-			Arguments.of("invalid,namespace/2281/metadata/categories/category-name/types", tuple("getCategoryTypes.namespace", "can only contain A-Z, a-z, 0-9, -, _ and .")),
-			Arguments.of("my.namespace/666/metadata/categories/category-name/types", tuple("getCategoryTypes.municipalityId", "not a valid municipality ID")));
+			Arguments.of("2281/invalid,namespace/metadata/categories/category-name/types", tuple("getCategoryTypes.namespace", "can only contain A-Z, a-z, 0-9, -, _ and .")),
+			Arguments.of("666/my.namespace/metadata/categories/category-name/types", tuple("getCategoryTypes.municipalityId", "not a valid municipality ID")));
 	}
 
 	@Test
 	void createWithInvalidNamespace() {
 
-		final var response = webTestClient.post().uri("invalid,namespace/2281/metadata/categories")
+		final var response = webTestClient.post().uri("2281/invalid,namespace/metadata/categories")
 			.bodyValue(ExternalIdType.create().withName("name"))
 			.exchange()
 			.expectStatus().isBadRequest()
@@ -92,7 +92,7 @@ class MetadataCategoriesResourceFailureTest {
 	@Test
 	void createWithInvalidMunicipalityId() {
 
-		final var response = webTestClient.post().uri("my.namespace/666/metadata/categories")
+		final var response = webTestClient.post().uri("666/my.namespace/metadata/categories")
 			.bodyValue(ExternalIdType.create().withName("name"))
 			.exchange()
 			.expectStatus().isBadRequest()
@@ -112,7 +112,7 @@ class MetadataCategoriesResourceFailureTest {
 	@Test
 	void updateWithInvalidNamespace() {
 
-		final var response = webTestClient.patch().uri("invalid,namespace/2281/metadata/categories/category-name")
+		final var response = webTestClient.patch().uri("2281/invalid,namespace/metadata/categories/category-name")
 			.bodyValue(Category.create().withName("name"))
 			.exchange()
 			.expectStatus().isBadRequest()
@@ -132,7 +132,7 @@ class MetadataCategoriesResourceFailureTest {
 	@Test
 	void updateWithInvalidMunicipalityId() {
 
-		final var response = webTestClient.patch().uri("my.namespace/666/metadata/categories/category-name")
+		final var response = webTestClient.patch().uri("666/my.namespace/metadata/categories/category-name")
 			.bodyValue(Category.create().withName("name"))
 			.exchange()
 			.expectStatus().isBadRequest()
@@ -152,7 +152,7 @@ class MetadataCategoriesResourceFailureTest {
 	@Test
 	void deleteWithInvalidNamespace() {
 
-		final var response = webTestClient.delete().uri("invalid,namespace/2281/metadata/categories/category-name")
+		final var response = webTestClient.delete().uri("2281/invalid,namespace/metadata/categories/category-name")
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -171,7 +171,7 @@ class MetadataCategoriesResourceFailureTest {
 	@Test
 	void deleteWithInvalidMunicipalityId() {
 
-		final var response = webTestClient.delete().uri("my.namespace/666/metadata/categories/category-name")
+		final var response = webTestClient.delete().uri("666/my.namespace/metadata/categories/category-name")
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)

@@ -31,7 +31,7 @@ import static org.zalando.problem.Status.BAD_REQUEST;
 @ActiveProfiles("junit")
 class EmailIntegrationConfigResourceFailureTest {
 
-	private static final String PATH = "/{namespace}/{municipalityId}/emailIntegrationConfig";
+	private static final String PATH = "/{municipalityId}/{namespace}/emailIntegrationConfig";
 	private static final String NAMESPACE = "namespace";
 	private static final String MUNICIPALITY_ID = "2281";
 	private static final String INVALID = "#invalid#";

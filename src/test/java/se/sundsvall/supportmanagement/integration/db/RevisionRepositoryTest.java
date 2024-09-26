@@ -36,6 +36,11 @@ import se.sundsvall.supportmanagement.integration.db.model.RevisionEntity;
 })
 class RevisionRepositoryTest {
 
+
+	private static final String NAMESPACE = "namespace";
+
+	private static final String MUNICIPALITY_ID = "2281";
+
 	private static final String ENTITY_ID = "9791682e-4ba8-4f3a-857a-54e14836a53b";
 
 	@Autowired
@@ -78,15 +83,15 @@ class RevisionRepositoryTest {
 		// Second save. Will fail due to to unique constraint violation on entityId and version.
 		final var exception = assertThrows(DataIntegrityViolationException.class, () -> repository.saveAndFlush(entity2));
 
-		assertThat(exception.getMessage()).contains("Duplicate entry", version , entityId, "for key 'uq_entity_id_version");
+		assertThat(exception.getMessage()).contains("Duplicate entry", version, entityId, "for key 'uq_entity_id_version");
 	}
 
 	@Test
-	void findByEntityIdAndVersion() {
+	void findByNamespaceAndMunicipalityIdAndEntityIdAndVersion() {
 		// Setup
 		final var version = 3;
 
-		final var revision = repository.findByEntityIdAndVersion(ENTITY_ID, version);
+		final var revision = repository.findByNamespaceAndMunicipalityIdAndEntityIdAndVersion(NAMESPACE, MUNICIPALITY_ID, ENTITY_ID, version);
 
 		assertThat(revision).isPresent();
 		assertThat(revision.get().getEntityId()).isEqualTo(ENTITY_ID);
@@ -98,14 +103,14 @@ class RevisionRepositoryTest {
 		// Setup
 		final var version = 666;
 
-		final var revision = repository.findByEntityIdAndVersion(ENTITY_ID, version);
+		final var revision = repository.findByNamespaceAndMunicipalityIdAndEntityIdAndVersion(NAMESPACE, MUNICIPALITY_ID, ENTITY_ID, version);
 
 		assertThat(revision).isEmpty();
 	}
 
 	@Test
-	void findFirstByEntityIdOrderByVersionDesc() {
-		final var revision = repository.findFirstByEntityIdOrderByVersionDesc(ENTITY_ID);
+	void findFirstByNamespaceAndMunicipalityIdAndEntityIdOrderByVersionDesc() {
+		final var revision = repository.findFirstByNamespaceAndMunicipalityIdAndEntityIdOrderByVersionDesc(NAMESPACE, MUNICIPALITY_ID, ENTITY_ID);
 
 		assertThat(revision).isPresent();
 		assertThat(revision.get().getEntityId()).isEqualTo(ENTITY_ID);
@@ -114,14 +119,14 @@ class RevisionRepositoryTest {
 
 	@Test
 	void findFirstByEntityIdOrderByVersionDescNotFound() {
-		final var revision = repository.findFirstByEntityIdOrderByVersionDesc("does-not-exist");
+		final var revision = repository.findFirstByNamespaceAndMunicipalityIdAndEntityIdOrderByVersionDesc(NAMESPACE, MUNICIPALITY_ID, "does-not-exist");
 
 		assertThat(revision).isEmpty();
 	}
 
 	@Test
 	void findByEntityId() {
-		final var versionList = repository.findAllByEntityIdOrderByVersion(ENTITY_ID);
+		final var versionList = repository.findAllByNamespaceAndMunicipalityIdAndEntityIdOrderByVersion(NAMESPACE, MUNICIPALITY_ID, ENTITY_ID);
 
 		assertThat(versionList)
 			.hasSize(5)
@@ -131,7 +136,7 @@ class RevisionRepositoryTest {
 
 	@Test
 	void findByEntityIdNotFound() {
-		final var versionList = repository.findAllByEntityIdOrderByVersion("does-not-exist");
+		final var versionList = repository.findAllByNamespaceAndMunicipalityIdAndEntityIdOrderByVersion(NAMESPACE, MUNICIPALITY_ID, "does-not-exist");
 
 		assertThat(versionList).isNotNull().isEmpty();
 	}
@@ -145,4 +150,5 @@ class RevisionRepositoryTest {
 
 		return true;
 	}
+
 }

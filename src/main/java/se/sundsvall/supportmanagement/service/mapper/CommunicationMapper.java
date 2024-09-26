@@ -106,8 +106,10 @@ public class CommunicationMapper {
 			.withContentType(entity.getMimeType());
 	}
 
-	public CommunicationEntity toCommunicationEntity(final EmailRequest request) {
+	public CommunicationEntity toCommunicationEntity(final String namespace, final String municipalityId, final EmailRequest request) {
 		return CommunicationEntity.create()
+			.withNamespace(namespace)
+			.withMunicipalityId(municipalityId)
 			.withSender(request.getSender())
 			.withEmailHeaders(toEmailHeaders(request.getEmailHeaders()))
 			.withId(UUID.randomUUID().toString())
@@ -117,7 +119,7 @@ public class CommunicationMapper {
 			.withSubject(request.getSubject())
 			.withType(CommunicationType.EMAIL)
 			.withTarget(request.getRecipient())
-			.withAttachments(toMessageAttachments(request.getAttachments()))
+			.withAttachments(toMessageAttachments(namespace, municipalityId, request.getAttachments()))
 			.withViewed(false);
 	}
 
@@ -130,8 +132,10 @@ public class CommunicationMapper {
 			.toList();
 	}
 
-	public CommunicationEntity toCommunicationEntity(final SmsRequest request) {
+	public CommunicationEntity toCommunicationEntity(final String namespace, final String municipalityId, final SmsRequest request) {
 		return CommunicationEntity.create()
+			.withNamespace(namespace)
+			.withMunicipalityId(municipalityId)
 			.withSender(request.getSender())
 			.withId(UUID.randomUUID().toString())
 			.withDirection(Direction.OUTBOUND)
@@ -142,18 +146,20 @@ public class CommunicationMapper {
 			.withViewed(false);
 	}
 
-	private List<CommunicationAttachmentEntity> toMessageAttachments(final List<EmailAttachment> attachments) {
+	private List<CommunicationAttachmentEntity> toMessageAttachments(final String namespace, final String municipalityId, final List<EmailAttachment> attachments) {
 
 		return Optional.ofNullable(attachments)
 			.orElse(Collections.emptyList()).stream()
-			.map(this::toMessageAttachment)
+			.map((EmailAttachment attachment) -> toMessageAttachment(namespace, municipalityId, attachment))
 			.toList();
 	}
 
-	private CommunicationAttachmentEntity toMessageAttachment(final EmailAttachment attachment) {
+	private CommunicationAttachmentEntity toMessageAttachment(final String namespace, final String municipalityId, final EmailAttachment attachment) {
 		final byte[] byteArray = decodeBase64(attachment.getBase64EncodedString());
 
 		return CommunicationAttachmentEntity.create()
+			.withNamespace(namespace)
+			.withMunicipalityId(municipalityId)
 			.withId(UUID.randomUUID().toString())
 			.withName(attachment.getName())
 			.withAttachmentData(toMessageAttachmentData(attachment))

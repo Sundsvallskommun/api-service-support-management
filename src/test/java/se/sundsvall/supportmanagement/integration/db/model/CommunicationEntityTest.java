@@ -45,6 +45,8 @@ class CommunicationEntityTest {
 	void hasValidBuilderMethods() {
 
 		final var id = "id";
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
 		final var sender = "sender";
 		final var errandNumber = "errandNumber";
 		final var direction = Direction.OUTBOUND;
@@ -63,6 +65,8 @@ class CommunicationEntityTest {
 
 		final var entity = CommunicationEntity.create()
 			.withId(id)
+			.withNamespace(namespace)
+			.withMunicipalityId(municipalityId)
 			.withSender(sender)
 			.withErrandNumber(errandNumber)
 			.withDirection(direction)
@@ -79,6 +83,8 @@ class CommunicationEntityTest {
 
 		assertThat(entity).hasNoNullFieldsOrProperties();
 		assertThat(entity.getId()).isEqualTo(id);
+		assertThat(entity.getNamespace()).isEqualTo(namespace);
+		assertThat(entity.getMunicipalityId()).isEqualTo(municipalityId);
 		assertThat(entity.getSender()).isEqualTo(sender);
 		assertThat(entity.getErrandNumber()).isEqualTo(errandNumber);
 		assertThat(entity.getDirection()).isEqualTo(direction);

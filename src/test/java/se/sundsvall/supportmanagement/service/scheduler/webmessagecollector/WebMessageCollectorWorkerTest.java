@@ -94,6 +94,8 @@ class WebMessageCollectorWorkerTest {
 			.username("username");
 
 		final var errandEntity = ErrandEntity.create()
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withNamespace("namespace")
 			.withErrandNumber(errandNumber)
 			.withStatus(Constants.ERRAND_STATUS_SOLVED)
 			.withTouched(now().minusDays(2));
@@ -130,7 +132,7 @@ class WebMessageCollectorWorkerTest {
 				assertThat(communication.getErrandNumber()).isEqualTo(errandEntity.getErrandNumber());
 			});
 
-		verify(webMessageCollectorMapperMock).toCommunicationEntity(messagedto, errandEntity.getErrandNumber());
+		verify(webMessageCollectorMapperMock).toCommunicationEntity(messagedto, errandEntity);
 		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Ärendekommunikation har skapats."), same(errandEntity), isNull(), isNull());
 		verifyNoMoreInteractions(webMessageCollectorClientMock, webMessageCollectorPropertiesMock, errandsRepositoryMock, communicationRepositoryMock);
 	}

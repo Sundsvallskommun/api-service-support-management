@@ -24,9 +24,9 @@ import se.sundsvall.supportmanagement.Application;
 })
 class MetadataIT extends AbstractAppTest {
 
-	private static final String PATH_2281 = "/NAMESPACE.1/2281/metadata";
+	private static final String PATH_2281 = "/2281/NAMESPACE.1/metadata";
 
-	private static final String PATH_2309 = "/NAMESPACE.1/2309/metadata";
+	private static final String PATH_2309 = "/2309/NAMESPACE.1/metadata";
 
 	private static final String RESPONSE_FILE = "response.json";
 

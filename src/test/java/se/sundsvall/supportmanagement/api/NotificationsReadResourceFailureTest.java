@@ -25,7 +25,7 @@ import se.sundsvall.supportmanagement.service.NotificationService;
 @ActiveProfiles("junit")
 class NotificationsReadResourceFailureTest {
 
-	private static final String PATH = "/{namespace}/{municipalityId}/notifications";
+	private static final String PATH = "/{municipalityId}/{namespace}/notifications";
 
 	private static final String PATH_NOTIFICATION = PATH + "/{notificationId}";
 
@@ -142,7 +142,7 @@ class NotificationsReadResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.get()
-			.uri(builder -> builder.path(PATH_NOTIFICATION).build(NAMESPACE, MUNICIPALITY_ID, NOTIFICATION_ID))
+			.uri(builder -> builder.path(PATH_NOTIFICATION).build( MUNICIPALITY_ID,NAMESPACE, NOTIFICATION_ID))
 			.accept(APPLICATION_JSON)
 			.exchange()
 			.expectStatus().isNotFound()

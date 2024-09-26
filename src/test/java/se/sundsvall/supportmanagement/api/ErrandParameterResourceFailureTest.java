@@ -35,7 +35,7 @@ class ErrandParameterResourceFailureTest {
 	private static final String ERRAND_ID = randomUUID().toString();
 	private static final String PARAMETER_KEY = randomUUID().toString();
 	private static final String INVALID = "#invalid#";
-	private static final String PATH = "/{namespace}/{municipalityId}/errands/{errandId}/parameters";
+	private static final String PATH = "/{municipalityId}/{namespace}/errands/{errandId}/parameters";
 
 	@Autowired
 	private WebTestClient webTestClient;
@@ -195,7 +195,7 @@ class ErrandParameterResourceFailureTest {
 		assertThat(response).isNotNull();
 		assertThat(response.getTitle()).isEqualTo("Not Found");
 		assertThat(response.getStatus()).isEqualTo(NOT_FOUND);
-		assertThat(response.getDetail()).isEqualTo("No endpoint GET /" + NAMESPACE + "/" + MUNICIPALITY_ID + "/errands/" + ERRAND_ID + "/parameters/.");
+		assertThat(response.getDetail()).isEqualTo("No endpoint GET /" + MUNICIPALITY_ID + "/" + NAMESPACE + "/errands/" + ERRAND_ID + "/parameters/.");
 
 		verifyNoInteractions(errandParameterServiceMock);
 	}
@@ -339,7 +339,7 @@ class ErrandParameterResourceFailureTest {
 		assertThat(response).isNotNull();
 		assertThat(response.getTitle()).isEqualTo("Not Found");
 		assertThat(response.getStatus()).isEqualTo(NOT_FOUND);
-		assertThat(response.getDetail()).isEqualTo("No endpoint PATCH /" + NAMESPACE + "/" + MUNICIPALITY_ID + "/errands/" + ERRAND_ID + "/parameters/.");
+		assertThat(response.getDetail()).isEqualTo("No endpoint PATCH /" + MUNICIPALITY_ID + "/" + NAMESPACE + "/errands/" + ERRAND_ID + "/parameters/.");
 
 		verifyNoInteractions(errandParameterServiceMock);
 	}
@@ -421,7 +421,7 @@ class ErrandParameterResourceFailureTest {
 		assertThat(response).isNotNull();
 		assertThat(response.getTitle()).isEqualTo("Not Found");
 		assertThat(response.getStatus()).isEqualTo(NOT_FOUND);
-		assertThat(response.getDetail()).isEqualTo("No endpoint DELETE /" + NAMESPACE + "/" + MUNICIPALITY_ID + "/errands/" + ERRAND_ID + "/parameters/.");
+		assertThat(response.getDetail()).isEqualTo("No endpoint DELETE /" + MUNICIPALITY_ID + "/" + NAMESPACE + "/errands/" + ERRAND_ID + "/parameters/.");
 
 		verifyNoInteractions(errandParameterServiceMock);
 	}

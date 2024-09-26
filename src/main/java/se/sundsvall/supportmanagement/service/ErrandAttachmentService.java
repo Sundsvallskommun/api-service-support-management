@@ -38,15 +38,21 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 public class ErrandAttachmentService {
 
 	private static final String ERRAND_ENTITY_NOT_FOUND = "An errand with id '%s' could not be found in namespace '%s' for municipality with id '%s'";
+
 	private static final String ATTACHMENT_ENTITY_NOT_FOUND = "An attachment with id '%s' could not be found on errand with id '%s'";
+
 	private static final String ATTACHMENT_ENTITY_NOT_CREATED = "Attachment could not be created";
+
 	private static final String EVENT_LOG_ADD_ATTACHMENT = "En bilaga har lagts till i ärendet.";
+
 	private static final String EVENT_LOG_REMOVE_ATTACHMENT = "En bilaga har tagits bort från ärendet.";
 
 	private final ErrandsRepository errandsRepository;
+
 	private final AttachmentRepository attachmentRepository;
 
 	private final RevisionService revisionService;
+
 	private final EventService eventService;
 
 	private final EntityManager entityManager;
@@ -61,7 +67,7 @@ public class ErrandAttachmentService {
 		this.entityManager = entityManager;
 	}
 
-	public String createErrandAttachment(String namespace, String municipalityId, String errandId, MultipartFile errandAttachment) {
+	public String createErrandAttachment(final String namespace, final String municipalityId, final String errandId, final MultipartFile errandAttachment) {
 		final var errandEntity = getErrand(errandId, namespace, municipalityId, true);
 		var attachmentEntity = ofNullable(toAttachmentEntity(errandEntity, errandAttachment, entityManager))
 			.orElseThrow(() -> Problem.valueOf(BAD_GATEWAY, ATTACHMENT_ENTITY_NOT_CREATED));
@@ -80,7 +86,7 @@ public class ErrandAttachmentService {
 		return attachmentEntity.getId();
 	}
 
-	public void readErrandAttachment(String namespace, String municipalityId, String errandId, String attachmentId, HttpServletResponse response) throws SQLException, IOException {
+	public void readErrandAttachment(final String namespace, final String municipalityId, final String errandId, final String attachmentId, final HttpServletResponse response) throws SQLException, IOException {
 
 		if (!errandsRepository.existsByIdAndNamespaceAndMunicipalityId(errandId, namespace, municipalityId)) {
 			throw Problem.valueOf(NOT_FOUND, String.format(ERRAND_ENTITY_NOT_FOUND, errandId, namespace, municipalityId));
@@ -99,12 +105,12 @@ public class ErrandAttachmentService {
 		StreamUtils.copy(file.getBinaryStream(), response.getOutputStream());
 	}
 
-	public List<ErrandAttachmentHeader> readErrandAttachmentHeaders(String namespace, String municipalityId, String errandId) {
+	public List<ErrandAttachmentHeader> readErrandAttachmentHeaders(final String namespace, final String municipalityId, final String errandId) {
 		final var errandEntity = getErrand(errandId, namespace, municipalityId, false);
 		return toErrandAttachmentHeaders(errandEntity.getAttachments());
 	}
 
-	public void deleteErrandAttachment(String namespace, String municipalityId, String errandId, String attachmentId) {
+	public void deleteErrandAttachment(final String namespace, final String municipalityId, final String errandId, final String attachmentId) {
 		final var errandEntity = getErrand(errandId, namespace, municipalityId, true);
 		final var attachmentEntity = ofNullable(errandEntity.getAttachments()).orElse(emptyList()).stream()
 			.filter(attachment -> attachment.getId().equalsIgnoreCase(attachmentId))
@@ -119,9 +125,9 @@ public class ErrandAttachmentService {
 		eventService.createErrandEvent(UPDATE, EVENT_LOG_REMOVE_ATTACHMENT, errandEntity, revisionResult.latest(), revisionResult.previous());
 	}
 
-	private ErrandEntity getErrand(String errandId, String namespace, String municipalityId, boolean lock) {
+	private ErrandEntity getErrand(final String errandId, final String namespace, final String municipalityId, final boolean lock) {
 
-		Supplier<Optional<ErrandEntity>> optionalErrand;
+		final Supplier<Optional<ErrandEntity>> optionalErrand;
 		if (lock) {
 			optionalErrand = () -> errandsRepository.findWithLockingById(errandId);
 		} else {
@@ -141,11 +147,11 @@ public class ErrandAttachmentService {
 		}
 	}
 
-	public List<AttachmentEntity> findByIdIn(final List<String> attachmentIds) {
+	public List<AttachmentEntity> findByNamespaceAndMunicipalityIdAndIdIn(final String namespace, final String municipalityId, final List<String> attachmentIds) {
 		if (attachmentIds == null) {
 			return emptyList();
 		}
-		var attachments = attachmentRepository.findByIdIn(attachmentIds);
+		final var attachments = attachmentRepository.findByNamespaceAndMunicipalityIdAndIdIn(namespace, municipalityId, attachmentIds);
 		if (attachments.size() != attachmentIds.size()) {
 			throw Problem.valueOf(BAD_REQUEST, "There was a mismatch in the given attachment Ids and the found attachments.");
 		}

@@ -36,7 +36,7 @@ class NotificationIT extends AbstractAppTest {
 
 	private static final String MUNICIPALITY_2281 = "2281";
 
-	private static final String PATH = "/" + NAMESPACE + "/" + MUNICIPALITY_2281 + "/notifications";
+	private static final String PATH = "/" + MUNICIPALITY_2281 + "/" + NAMESPACE + "/notifications";
 
 	private static final String OWNER_ID = "owner_id-1";
 
@@ -53,7 +53,7 @@ class NotificationIT extends AbstractAppTest {
 			.withHttpMethod(POST)
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(CREATED)
-			.withExpectedResponseHeader(LOCATION, List.of("/" + NAMESPACE + "/" + MUNICIPALITY_2281 + "/notifications/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"))
+			.withExpectedResponseHeader(LOCATION, List.of("/" + MUNICIPALITY_2281 + "/" + NAMESPACE + "/notifications/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"))
 			.withExpectedResponseBodyIsNull()
 			.sendRequestAndVerifyResponse()
 			.getResponseHeaders()

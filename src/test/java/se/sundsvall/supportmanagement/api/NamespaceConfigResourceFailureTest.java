@@ -26,7 +26,7 @@ import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 @ActiveProfiles("junit")
 class NamespaceConfigResourceFailureTest {
 
-	private static final String PATH = "/{namespace}/{municipalityId}/namespaceConfig";
+	private static final String PATH = "/{municipalityId}/{namespace}/namespaceConfig";
 	private static final String NAMESPACE = "namespace";
 	private static final String MUNICIPALITY_ID = "2281";
 	private static final String DISPLAY_NAME = "DisplayName";

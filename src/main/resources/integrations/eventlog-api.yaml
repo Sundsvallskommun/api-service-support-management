@@ -1,66 +1,66 @@
 openapi: 3.0.1
 info:
   title: api-eventlog
-  contact: {}
+  contact: { }
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
   version: "0.2"
 servers:
-- url: https://api-i-test.sundsvall.se/eventlog
-  description: Generated server url
+  - url: https://api-i-test.sundsvall.se/eventlog
+    description: Generated server url
 tags:
-- name: Events
-  description: Event operations
+  - name: Events
+    description: Event operations
 paths:
   /{logKey}:
     get:
       tags:
-      - Events
+        - Events
       summary: Fetch log events
       description: "Fetch log events for a specific logKey, with or without filtering\
         \ the result"
       operationId: getEvents
       parameters:
-      - name: logKey
-        in: path
-        description: Events stored under this UUID
-        required: true
-        schema:
-          type: string
-        example: f0882f1d-06bc-47fd-b017-1d8307f5ce95
-      - name: filter
-        in: query
-        description: "Syntax description: [spring-filter](https://github.com/turkraft/springfilter#syntax)"
-        required: false
-        schema:
-          type: string
-        example: metadata.key:'userId' and metadata.value:'john123'
-      - name: page
-        in: query
-        description: Zero-based page index (0..N)
-        required: false
-        schema:
-          minimum: 0
-          type: integer
-          default: 0
-      - name: size
-        in: query
-        description: The size of the page to be returned
-        required: false
-        schema:
-          minimum: 1
-          type: integer
-          default: 20
-      - name: sort
-        in: query
-        description: "Sorting criteria in the format: property,(asc|desc). Default\
-          \ sort order is ascending. Multiple sort criteria are supported."
-        required: false
-        schema:
-          type: array
-          items:
+        - name: logKey
+          in: path
+          description: Events stored under this UUID
+          required: true
+          schema:
             type: string
+          example: f0882f1d-06bc-47fd-b017-1d8307f5ce95
+        - name: filter
+          in: query
+          description: "Syntax description: [spring-filter](https://github.com/turkraft/springfilter#syntax)"
+          required: false
+          schema:
+            type: string
+          example: metadata.key:'userId' and metadata.value:'john123'
+        - name: page
+          in: query
+          description: Zero-based page index (0..N)
+          required: false
+          schema:
+            minimum: 0
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          description: The size of the page to be returned
+          required: false
+          schema:
+            minimum: 1
+            type: integer
+            default: 20
+        - name: sort
+          in: query
+          description: "Sorting criteria in the format: property,(asc|desc). Default\
+          \ sort order is ascending. Multiple sort criteria are supported."
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
       responses:
         "400":
           description: Bad Request
@@ -68,8 +68,8 @@ paths:
             application/problem+json:
               schema:
                 oneOf:
-                - $ref: '#/components/schemas/Problem'
-                - $ref: '#/components/schemas/ConstraintViolationProblem'
+                  - $ref: '#/components/schemas/Problem'
+                  - $ref: '#/components/schemas/ConstraintViolationProblem'
         "500":
           description: Internal Server error
           content:
@@ -93,19 +93,19 @@ paths:
                 $ref: '#/components/schemas/Problem'
     post:
       tags:
-      - Events
+        - Events
       summary: Create log event
       description: Creates a log event under logKey
       operationId: createEvent
       parameters:
-      - name: logKey
-        in: path
-        description: Event will be stored under this UUID. Used to separate data under
-          a unique id.
-        required: true
-        schema:
-          type: string
-        example: f0882f1d-06bc-47fd-b017-1d8307f5ce95
+        - name: logKey
+          in: path
+          description: Event will be stored under this UUID. Used to separate data under
+            a unique id.
+          required: true
+          schema:
+            type: string
+          example: f0882f1d-06bc-47fd-b017-1d8307f5ce95
       requestBody:
         content:
           application/json:
@@ -119,8 +119,8 @@ paths:
             application/problem+json:
               schema:
                 oneOf:
-                - $ref: '#/components/schemas/Problem'
-                - $ref: '#/components/schemas/ConstraintViolationProblem'
+                  - $ref: '#/components/schemas/Problem'
+                  - $ref: '#/components/schemas/ConstraintViolationProblem'
         "202":
           description: Successful operation
         "500":
@@ -132,7 +132,7 @@ paths:
   /api-docs:
     get:
       tags:
-      - API
+        - API
       summary: OpenAPI
       operationId: getApiDocs
       responses:
@@ -149,9 +149,9 @@ components:
   schemas:
     Event:
       required:
-      - message
-      - owner
-      - type
+        - message
+        - owner
+        - type
       type: object
       properties:
         type:
@@ -205,18 +205,18 @@ components:
         * `CANCEL` - terminate, abort, decommission, kill
         * `DROP` - skip, omit, ignore, disregard
       enum:
-      - CREATE
-      - READ
-      - UPDATE
-      - DELETE
-      - ACCESS
-      - EXECUTE
-      - CANCEL
-      - DROP
+        - CREATE
+        - READ
+        - UPDATE
+        - DELETE
+        - ACCESS
+        - EXECUTE
+        - CANCEL
+        - DROP
     Metadata:
       required:
-      - key
-      - value
+        - key
+        - value
       type: object
       properties:
         key:
@@ -539,4 +539,4 @@ components:
           type: boolean
         unsorted:
           type: boolean
-  securitySchemes: {}
+  securitySchemes: { }

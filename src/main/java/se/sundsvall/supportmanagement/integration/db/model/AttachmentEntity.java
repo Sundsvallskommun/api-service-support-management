@@ -29,7 +29,9 @@ import org.hibernate.annotations.UuidGenerator;
 @Entity
 @Table(name = "attachment",
 	indexes = {
-		@Index(name = "idx_attachment_file_name", columnList = "file_name")
+		@Index(name = "idx_attachment_file_name", columnList = "file_name"),
+		@Index(name = "idx_attachment_municipality_id", columnList = "municipality_id"),
+		@Index(name = "idx_attachment_namespace", columnList = "namespace")
 	},
 	uniqueConstraints = {
 		@UniqueConstraint(name = "uq_attachment_data_id", columnNames = {"attachment_data_id"})
@@ -40,6 +42,12 @@ public class AttachmentEntity {
 	@UuidGenerator
 	@Column(name = "id")
 	private String id;
+
+	@Column(name = "namespace")
+	private String namespace;
+
+	@Column(name = "municipality_id")
+	private String municipalityId;
 
 	@Column(name = "file_name")
 	private String fileName;
@@ -81,12 +89,38 @@ public class AttachmentEntity {
 		return id;
 	}
 
-	public void setId(String id) {
+	public void setId(final String id) {
 		this.id = id;
 	}
 
-	public AttachmentEntity withId(String id) {
+	public AttachmentEntity withId(final String id) {
 		this.id = id;
+		return this;
+	}
+
+	public String getNamespace() {
+		return namespace;
+	}
+
+	public void setNamespace(final String namespace) {
+		this.namespace = namespace;
+	}
+
+	public AttachmentEntity withNamespace(final String namespace) {
+		this.namespace = namespace;
+		return this;
+	}
+
+	public String getMunicipalityId() {
+		return municipalityId;
+	}
+
+	public void setMunicipalityId(final String municipalityId) {
+		this.municipalityId = municipalityId;
+	}
+
+	public AttachmentEntity withMunicipalityId(final String municipalityId) {
+		this.municipalityId = municipalityId;
 		return this;
 	}
 
@@ -94,11 +128,11 @@ public class AttachmentEntity {
 		return fileName;
 	}
 
-	public void setFileName(String fileName) {
+	public void setFileName(final String fileName) {
 		this.fileName = fileName;
 	}
 
-	public AttachmentEntity withFileName(String fileName) {
+	public AttachmentEntity withFileName(final String fileName) {
 		this.fileName = fileName;
 		return this;
 	}
@@ -107,11 +141,11 @@ public class AttachmentEntity {
 		return mimeType;
 	}
 
-	public void setMimeType(String mimeType) {
+	public void setMimeType(final String mimeType) {
 		this.mimeType = mimeType;
 	}
 
-	public AttachmentEntity withMimeType(String mimeType) {
+	public AttachmentEntity withMimeType(final String mimeType) {
 		this.mimeType = mimeType;
 		return this;
 	}
@@ -120,11 +154,11 @@ public class AttachmentEntity {
 		return attachmentData;
 	}
 
-	public void setAttachmentData(AttachmentDataEntity attachmentData) {
+	public void setAttachmentData(final AttachmentDataEntity attachmentData) {
 		this.attachmentData = attachmentData;
 	}
 
-	public AttachmentEntity withAttachmentData(AttachmentDataEntity attachmentData) {
+	public AttachmentEntity withAttachmentData(final AttachmentDataEntity attachmentData) {
 		this.attachmentData = attachmentData;
 		return this;
 	}
@@ -133,11 +167,11 @@ public class AttachmentEntity {
 		return errandEntity;
 	}
 
-	public void setErrandEntity(ErrandEntity errandEntity) {
+	public void setErrandEntity(final ErrandEntity errandEntity) {
 		this.errandEntity = errandEntity;
 	}
 
-	public AttachmentEntity withErrandEntity(ErrandEntity errandEntity) {
+	public AttachmentEntity withErrandEntity(final ErrandEntity errandEntity) {
 		this.errandEntity = errandEntity;
 		return this;
 	}
@@ -146,11 +180,11 @@ public class AttachmentEntity {
 		return created;
 	}
 
-	public void setCreated(OffsetDateTime created) {
+	public void setCreated(final OffsetDateTime created) {
 		this.created = created;
 	}
 
-	public AttachmentEntity withCreated(OffsetDateTime created) {
+	public AttachmentEntity withCreated(final OffsetDateTime created) {
 		this.created = created;
 		return this;
 	}
@@ -159,36 +193,34 @@ public class AttachmentEntity {
 		return modified;
 	}
 
-	public void setModified(OffsetDateTime modified) {
+	public void setModified(final OffsetDateTime modified) {
 		this.modified = modified;
 	}
 
-	public AttachmentEntity withModified(OffsetDateTime modified) {
+	public AttachmentEntity withModified(final OffsetDateTime modified) {
 		this.modified = modified;
 		return this;
 	}
 
 	@Override
-	public boolean equals(Object o) {
-		if (this == o) {
-			return true;
-		}
-		if (o == null || getClass() != o.getClass()) {
-			return false;
-		}
-		AttachmentEntity that = (AttachmentEntity) o;
-		return Objects.equals(id, that.id) && Objects.equals(fileName, that.fileName) && Objects.equals(mimeType, that.mimeType) && Objects.equals(attachmentData, that.attachmentData) && Objects.equals(created, that.created) && Objects.equals(modified, that.modified) && Objects.equals(errandEntity, that.errandEntity);
+	public boolean equals(final Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		final AttachmentEntity that = (AttachmentEntity) o;
+		return Objects.equals(id, that.id) && Objects.equals(namespace, that.namespace) && Objects.equals(municipalityId, that.municipalityId) && Objects.equals(fileName, that.fileName) && Objects.equals(mimeType, that.mimeType) && Objects.equals(attachmentData, that.attachmentData) && Objects.equals(created, that.created) && Objects.equals(modified, that.modified) && Objects.equals(errandEntity, that.errandEntity);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, fileName, mimeType, attachmentData, created, modified, errandEntity);
+		return Objects.hash(id, namespace, municipalityId, fileName, mimeType, attachmentData, created, modified, errandEntity);
 	}
 
 	@Override
 	public String toString() {
 		return "AttachmentEntity{" +
 			"id='" + id + '\'' +
+			", namespace='" + namespace + '\'' +
+			", municipalityId='" + municipalityId + '\'' +
 			", fileName='" + fileName + '\'' +
 			", mimeType='" + mimeType + '\'' +
 			", attachmentData=" + attachmentData +
@@ -196,4 +228,5 @@ public class AttachmentEntity {
 			", modified=" + modified +
 			'}';
 	}
+
 }

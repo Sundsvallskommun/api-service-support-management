@@ -45,7 +45,7 @@ import se.sundsvall.supportmanagement.service.MetadataService;
 
 @RestController
 @Validated
-@RequestMapping("/{namespace}/{municipalityId}/metadata/categories")
+@RequestMapping("/{municipalityId}/{namespace}/metadata/categories")
 @Tag(name = "Metadata for categories", description = "Category metadata operations")
 class MetadataCategoryResource {
 
@@ -66,8 +66,8 @@ class MetadataCategoryResource {
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId(groups = OnCreate.class) @PathVariable final String municipalityId,
 		@Valid @NotNull @RequestBody final Category body) {
 
-		return created(fromPath("/{namespace}/{municipalityId}/metadata/categories/{category}")
-			.buildAndExpand(namespace, municipalityId, metadataService.createCategory(namespace, municipalityId, body)).toUri())
+		return created(fromPath("/{municipalityId}/{namespace}/metadata/categories/{category}")
+			.buildAndExpand(municipalityId, namespace, metadataService.createCategory(namespace, municipalityId, body)).toUri())
 			.header(CONTENT_TYPE, ALL_VALUE)
 			.build();
 	}
@@ -140,4 +140,5 @@ class MetadataCategoryResource {
 			.header(CONTENT_TYPE, ALL_VALUE)
 			.build();
 	}
+
 }

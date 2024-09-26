@@ -35,7 +35,7 @@ class ErrandAttachmentsResourceFailureTest {
 	private static final String ATTACHMENT_ID = randomUUID().toString();
 	private static final String INVALID = "#invalid#";
 
-	private static final String PATH = "/{namespace}/{municipalityId}/errands/{id}/attachments";
+	private static final String PATH = "/{municipalityId}/{namespace}/errands/{id}/attachments";
 
 	@Autowired
 	private WebTestClient webTestClient;

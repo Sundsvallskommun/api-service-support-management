@@ -27,8 +27,13 @@ import se.sundsvall.supportmanagement.service.RevisionService;
 @ActiveProfiles("junit")
 class RevisionResourceFailuresTest {
 
-	private static final String ERRANDS_PATH = "/errands/{id}/revisions";
-	private static final String ERRAND_NOTES_PATH = "/errands/{id}/notes/{noteId}/revisions";
+	private static final String NAMESPACE = "name.space";
+
+	private static final String MUNICIPALITY_ID = "2281";
+
+	private static final String ERRANDS_PATH = "{municipalityId}/{namespace}/errands/{id}/revisions";
+
+	private static final String ERRAND_NOTES_PATH = "{municipalityId}/{namespace}/errands/{id}/notes/{noteId}/revisions";
 
 	@MockBean
 	private RevisionService revisionServiceMock;
@@ -46,7 +51,8 @@ class RevisionResourceFailuresTest {
 		// Parameter values
 		final var id = "invalid";
 
-		final var response = webTestClient.get().uri(builder -> builder.path(ERRANDS_PATH).build(Map.of("id", id)))
+		final var response = webTestClient.get().uri(builder -> builder.path(ERRANDS_PATH)
+				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "id", id)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectHeader().contentType(APPLICATION_PROBLEM_JSON)
@@ -70,7 +76,8 @@ class RevisionResourceFailuresTest {
 		// Parameter values
 		final var id = "invalid";
 
-		final var response = webTestClient.get().uri(builder -> builder.path(ERRANDS_PATH + "/difference").queryParam("source", 0).queryParam("target", 1).build(Map.of("id", id)))
+		final var response = webTestClient.get().uri(builder -> builder.path(ERRANDS_PATH + "/difference").queryParam("source", 0).queryParam("target", 1)
+				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "id", id)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectHeader().contentType(APPLICATION_PROBLEM_JSON)
@@ -93,7 +100,8 @@ class RevisionResourceFailuresTest {
 		// Parameter values
 		final var id = UUID.randomUUID().toString();
 
-		final var response = webTestClient.get().uri(builder -> builder.path(ERRANDS_PATH + "/difference").queryParam("target", 0).build(Map.of("id", id)))
+		final var response = webTestClient.get().uri(builder -> builder.path(ERRANDS_PATH + "/difference").queryParam("target", 0)
+				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "id", id)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectHeader().contentType(APPLICATION_PROBLEM_JSON)
@@ -114,7 +122,8 @@ class RevisionResourceFailuresTest {
 		// Parameter values
 		final var id = UUID.randomUUID().toString();
 
-		final var response = webTestClient.get().uri(builder -> builder.path(ERRANDS_PATH + "/difference").queryParam("source", 1).build(Map.of("id", id)))
+		final var response = webTestClient.get().uri(builder -> builder.path(ERRANDS_PATH + "/difference").queryParam("source", 1)
+				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "id", id)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectHeader().contentType(APPLICATION_PROBLEM_JSON)
@@ -135,7 +144,8 @@ class RevisionResourceFailuresTest {
 		// Parameter values
 		final var id = UUID.randomUUID().toString();
 
-		final var response = webTestClient.get().uri(builder -> builder.path(ERRANDS_PATH + "/difference").queryParam("source", -1).queryParam("target", 0).build(Map.of("id", id)))
+		final var response = webTestClient.get().uri(builder -> builder.path(ERRANDS_PATH + "/difference").queryParam("source", -1).queryParam("target", 0)
+				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "id", id)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectHeader().contentType(APPLICATION_PROBLEM_JSON)
@@ -158,7 +168,8 @@ class RevisionResourceFailuresTest {
 		// Parameter values
 		final var id = UUID.randomUUID().toString();
 
-		final var response = webTestClient.get().uri(builder -> builder.path(ERRANDS_PATH + "/difference").queryParam("source", 0).queryParam("target", -1).build(Map.of("id", id)))
+		final var response = webTestClient.get().uri(builder -> builder.path(ERRANDS_PATH + "/difference").queryParam("source", 0).queryParam("target", -1)
+				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "id", id)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectHeader().contentType(APPLICATION_PROBLEM_JSON)
@@ -187,7 +198,8 @@ class RevisionResourceFailuresTest {
 		final var id = "invalid";
 		final var noteId = UUID.randomUUID().toString();
 
-		final var response = webTestClient.get().uri(builder -> builder.path(ERRAND_NOTES_PATH).build(Map.of("id", id, "noteId", noteId)))
+		final var response = webTestClient.get().uri(builder -> builder.path(ERRAND_NOTES_PATH)
+				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "id", id, "noteId", noteId)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectHeader().contentType(APPLICATION_PROBLEM_JSON)
@@ -212,7 +224,8 @@ class RevisionResourceFailuresTest {
 		final var id = UUID.randomUUID().toString();
 		final var noteId = "invalid";
 
-		final var response = webTestClient.get().uri(builder -> builder.path(ERRAND_NOTES_PATH).build(Map.of("id", id, "noteId", noteId)))
+		final var response = webTestClient.get().uri(builder -> builder.path(ERRAND_NOTES_PATH)
+				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "id", id, "noteId", noteId)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectHeader().contentType(APPLICATION_PROBLEM_JSON)
@@ -237,7 +250,8 @@ class RevisionResourceFailuresTest {
 		final var id = "invalid";
 		final var noteId = UUID.randomUUID().toString();
 
-		final var response = webTestClient.get().uri(builder -> builder.path(ERRAND_NOTES_PATH + "/difference").queryParam("source", 0).queryParam("target", 1).build(Map.of("id", id, "noteId", noteId)))
+		final var response = webTestClient.get().uri(builder -> builder.path(ERRAND_NOTES_PATH + "/difference").queryParam("source", 0).queryParam("target", 1)
+				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "id", id, "noteId", noteId)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectHeader().contentType(APPLICATION_PROBLEM_JSON)
@@ -262,7 +276,8 @@ class RevisionResourceFailuresTest {
 		final var id = UUID.randomUUID().toString();
 		final var noteId = "invalid";
 
-		final var response = webTestClient.get().uri(builder -> builder.path(ERRAND_NOTES_PATH + "/difference").queryParam("source", 0).queryParam("target", 1).build(Map.of("id", id, "noteId", noteId)))
+		final var response = webTestClient.get().uri(builder -> builder.path(ERRAND_NOTES_PATH + "/difference").queryParam("source", 0).queryParam("target", 1)
+				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "id", id, "noteId", noteId)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectHeader().contentType(APPLICATION_PROBLEM_JSON)
@@ -286,7 +301,8 @@ class RevisionResourceFailuresTest {
 		final var id = UUID.randomUUID().toString();
 		final var noteId = UUID.randomUUID().toString();
 
-		final var response = webTestClient.get().uri(builder -> builder.path(ERRAND_NOTES_PATH + "/difference").queryParam("target", 1).build(Map.of("id", id, "noteId", noteId)))
+		final var response = webTestClient.get().uri(builder -> builder.path(ERRAND_NOTES_PATH + "/difference").queryParam("target", 1)
+				.build(Map.of("municipalityId",MUNICIPALITY_ID, "namespace",NAMESPACE,"id", id, "noteId", noteId)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectHeader().contentType(APPLICATION_PROBLEM_JSON)
@@ -308,7 +324,8 @@ class RevisionResourceFailuresTest {
 		final var id = UUID.randomUUID().toString();
 		final var noteId = UUID.randomUUID().toString();
 
-		final var response = webTestClient.get().uri(builder -> builder.path(ERRAND_NOTES_PATH + "/difference").queryParam("source", 1).build(Map.of("id", id, "noteId", noteId)))
+		final var response = webTestClient.get().uri(builder -> builder.path(ERRAND_NOTES_PATH + "/difference").queryParam("source", 1)
+				.build(Map.of("municipalityId",MUNICIPALITY_ID, "namespace",NAMESPACE,"id", id, "noteId", noteId)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectHeader().contentType(APPLICATION_PROBLEM_JSON)
@@ -330,7 +347,8 @@ class RevisionResourceFailuresTest {
 		final var id = UUID.randomUUID().toString();
 		final var noteId = UUID.randomUUID().toString();
 
-		final var response = webTestClient.get().uri(builder -> builder.path(ERRAND_NOTES_PATH + "/difference").queryParam("source", -1).queryParam("target", 0).build(Map.of("id", id, "noteId", noteId)))
+		final var response = webTestClient.get().uri(builder -> builder.path(ERRAND_NOTES_PATH + "/difference").queryParam("source", -1).queryParam("target", 0)
+				.build(Map.of("municipalityId",MUNICIPALITY_ID, "namespace",NAMESPACE,"id", id, "noteId", noteId)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectHeader().contentType(APPLICATION_PROBLEM_JSON)
@@ -354,7 +372,8 @@ class RevisionResourceFailuresTest {
 		final var id = UUID.randomUUID().toString();
 		final var noteId = UUID.randomUUID().toString();
 
-		final var response = webTestClient.get().uri(builder -> builder.path(ERRAND_NOTES_PATH + "/difference").queryParam("source", 0).queryParam("target", -1).build(Map.of("id", id, "noteId", noteId)))
+		final var response = webTestClient.get().uri(builder -> builder.path(ERRAND_NOTES_PATH + "/difference").queryParam("source", 0).queryParam("target", -1)
+				.build(Map.of("municipalityId",MUNICIPALITY_ID, "namespace",NAMESPACE,"id", id, "noteId", noteId)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectHeader().contentType(APPLICATION_PROBLEM_JSON)
@@ -371,4 +390,5 @@ class RevisionResourceFailuresTest {
 
 		verifyNoInteractions(revisionServiceMock);
 	}
+
 }

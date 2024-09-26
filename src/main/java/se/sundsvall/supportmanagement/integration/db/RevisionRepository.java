@@ -18,7 +18,7 @@ public interface RevisionRepository extends JpaRepository<RevisionEntity, String
 	 * @param  version  the version to fetch.
 	 * @return          an optional entity that matches the provided parameters.
 	 */
-	Optional<RevisionEntity> findByEntityIdAndVersion(String entityId, int version);
+	Optional<RevisionEntity> findByNamespaceAndMunicipalityIdAndEntityIdAndVersion(String namespace, String municipalityId, String entityId, int version);
 
 	/**
 	 * Find the last revision by entityId.
@@ -26,7 +26,7 @@ public interface RevisionRepository extends JpaRepository<RevisionEntity, String
 	 * @param  entityId the id for the errand entity to find the last revision version for.
 	 * @return          an optional entity that matches the provided parameters (i.e. last created revision for an entity).
 	 */
-	Optional<RevisionEntity> findFirstByEntityIdOrderByVersionDesc(String entityId);
+	Optional<RevisionEntity> findFirstByNamespaceAndMunicipalityIdAndEntityIdOrderByVersionDesc(String namespace, String municipalityId, String entityId);
 
 	/**
 	 * Find all revisions for an errand entity.
@@ -34,5 +34,5 @@ public interface RevisionRepository extends JpaRepository<RevisionEntity, String
 	 * @param  entityId the id for the errand entity to find all revision versions for.
 	 * @return          a list of RevisionEntity objects.
 	 */
-	List<RevisionEntity> findAllByEntityIdOrderByVersion(String entityId);
+	List<RevisionEntity> findAllByNamespaceAndMunicipalityIdAndEntityIdOrderByVersion(String namespace, String municipalityId, String entityId);
 }

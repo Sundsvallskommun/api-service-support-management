@@ -9,6 +9,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.ForeignKey;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
@@ -19,12 +20,21 @@ import jakarta.persistence.UniqueConstraint;
 @Entity
 @Table(
 	name = "communication_attachment",
+	indexes = {
+		@Index(name = "idx_communication_attachment_municipality_id", columnList = "municipality_id"),
+		@Index(name = "idx_communication_attachment_namespace", columnList = "namespace")},
 	uniqueConstraints = {@UniqueConstraint(name = "uq_communication_attachment_data_id", columnNames = {"communication_attachment_data_id"})})
 public class CommunicationAttachmentEntity {
 
 	@Id
 	@Column(name = "id")
 	private String id;
+
+	@Column(name = "namespace")
+	private String namespace;
+
+	@Column(name = "municipality_id")
+	private String municipalityId;
 
 	@Column(name = "name")
 	private String name;
@@ -54,6 +64,32 @@ public class CommunicationAttachmentEntity {
 
 	public CommunicationAttachmentEntity withId(final String id) {
 		this.id = id;
+		return this;
+	}
+
+	public String getNamespace() {
+		return namespace;
+	}
+
+	public void setNamespace(final String namespace) {
+		this.namespace = namespace;
+	}
+
+	public CommunicationAttachmentEntity withNamespace(final String namespace) {
+		this.namespace = namespace;
+		return this;
+	}
+
+	public String getMunicipalityId() {
+		return municipalityId;
+	}
+
+	public void setMunicipalityId(final String municipalityId) {
+		this.municipalityId = municipalityId;
+	}
+
+	public CommunicationAttachmentEntity withMunicipalityId(final String municipalityId) {
+		this.municipalityId = municipalityId;
 		return this;
 	}
 
@@ -114,13 +150,13 @@ public class CommunicationAttachmentEntity {
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
 		final CommunicationAttachmentEntity that = (CommunicationAttachmentEntity) o;
-		return Objects.equals(id, that.id) && Objects.equals(communicationEntity, that.communicationEntity) && Objects.equals(attachmentData, that.attachmentData) && Objects.equals(name, that.name) && Objects.equals(contentType, that.contentType);
+		return Objects.equals(id, that.id) && Objects.equals(namespace, that.namespace) && Objects.equals(municipalityId, that.municipalityId) && Objects.equals(name, that.name) && Objects.equals(contentType, that.contentType) && Objects.equals(attachmentData, that.attachmentData) && Objects.equals(communicationEntity, that.communicationEntity);
 	}
 
 	@Override
 	public int hashCode() {
 		final var communicationId = Optional.ofNullable(communicationEntity).map(CommunicationEntity::getId).orElse(null);
-		return Objects.hash(id, communicationId, attachmentData, name, contentType);
+		return Objects.hash(id, communicationId, namespace, municipalityId, attachmentData, name, contentType);
 	}
 
 	@Override
@@ -129,6 +165,8 @@ public class CommunicationAttachmentEntity {
 		return "CommunicationAttachmentEntity{" +
 			"id='" + id + '\'' +
 			", communicationEntity.id=" + communicationId +
+			", namespace='" + namespace + '\'' +
+			", municipalityId='" + municipalityId + '\'' +
 			", attachmentData=" + attachmentData +
 			", name='" + name + '\'' +
 			", contentType='" + contentType + '\'' +

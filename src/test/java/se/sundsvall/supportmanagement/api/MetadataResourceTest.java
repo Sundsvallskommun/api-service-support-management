@@ -8,6 +8,7 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +33,10 @@ import se.sundsvall.supportmanagement.service.MetadataService;
 @ActiveProfiles("junit")
 class MetadataResourceTest {
 
+	private static final String NAMESPACE = "my.namespace";
+	private static final String MUNICIPALITY_ID = "2281";
+	private static final String PATH = "{municipalityId}/{namespace}/metadata";
+
 	@MockBean
 	private MetadataService metadataServiceMock;
 
@@ -55,7 +60,8 @@ class MetadataResourceTest {
 		when(metadataServiceMock.findAll(any(), any())).thenReturn(metadataResponse);
 
 		// Call
-		final var response = webTestClient.get().uri("my.namespace/2281/metadata")
+		final var response = webTestClient.get()
+			.uri(builder -> builder.path(PATH).build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE)))
 			.exchange()
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)

@@ -42,7 +42,7 @@ import se.sundsvall.supportmanagement.service.MetadataService;
 
 @RestController
 @Validated
-@RequestMapping("/{namespace}/{municipalityId}/metadata/labels")
+@RequestMapping("/{municipalityId}/{namespace}/metadata/labels")
 @Tag(name = "Metadata for labels", description = "Label metadata operations")
 class MetadataLabelResource {
 

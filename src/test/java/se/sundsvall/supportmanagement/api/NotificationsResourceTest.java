@@ -27,7 +27,7 @@ import se.sundsvall.supportmanagement.service.NotificationService;
 @ActiveProfiles("junit")
 class NotificationsResourceTest {
 
-	private static final String PATH = "/{namespace}/{municipalityId}/notifications";
+	private static final String PATH = "/{municipalityId}/{namespace}/notifications";
 
 
 	private static final String NAMESPACE = "namespace";
@@ -86,7 +86,7 @@ class NotificationsResourceTest {
 			.exchange()
 			.expectStatus().isCreated()
 			.expectHeader().contentType(ALL)
-			.expectHeader().location("/" + NAMESPACE + "/" + MUNICIPALITY_ID + "/notifications/" + notificationId)
+			.expectHeader().location("/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/notifications/" + notificationId)
 			.expectBody().isEmpty();
 
 		// Verification

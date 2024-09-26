@@ -29,7 +29,7 @@ import se.sundsvall.supportmanagement.service.MetadataService;
 @ActiveProfiles("junit")
 class MetadataRoleResourceFailureTest {
 
-	private static final String PATH = "/{namespace}/{municipalityId}/metadata/roles";
+	private static final String PATH = "/{municipalityId}/{namespace}/metadata/roles";
 
 	@MockBean
 	private MetadataService metadataServiceMock;
