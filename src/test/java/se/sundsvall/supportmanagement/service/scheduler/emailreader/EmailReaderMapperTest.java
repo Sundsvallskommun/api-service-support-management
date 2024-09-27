@@ -147,6 +147,9 @@ class EmailReaderMapperTest {
 		// Assert
 		assertThat(result).isNotNull().hasNoNullFieldsOrPropertiesExcept("target", "errandNumber", "errandAttachments");
 		assertThat(result.getTarget()).isNull();
+		assertThat(result.getErrandNumber()).isEqualTo("someErrandNumber");
+		assertThat(result.getAttachments()).isNotNull().hasSize(1);
+		assertThat(result.getAttachments().getFirst()).hasNoNullFieldsOrProperties();
 	}
 
 	@Test

@@ -76,7 +76,7 @@ public class EmailReaderMapper {
 			.withType(CommunicationType.EMAIL)
 			.withTarget(Optional.ofNullable(email.getRecipients()).orElse(emptyList()).stream().findFirst().orElse(null))
 			.withEmailHeaders(toEmailHeaders(email))
-			.withAttachments(toMessageAttachments(email.getAttachments()));
+			.withAttachments(toMessageAttachments(email.getAttachments(), errand));
 	}
 
 	private List<CommunicationEmailHeaderEntity> toEmailHeaders(final Email email) {
@@ -90,9 +90,11 @@ public class EmailReaderMapper {
 			.toList();
 	}
 
-	private List<CommunicationAttachmentEntity> toMessageAttachments(final List<EmailAttachment> attachments) {
+	private List<CommunicationAttachmentEntity> toMessageAttachments(final List<EmailAttachment> attachments, final ErrandEntity errand) {
 		return Optional.ofNullable(attachments).orElse(Collections.emptyList()).stream()
 			.map(attachment -> CommunicationAttachmentEntity.create()
+				.withMunicipalityId(errand.getMunicipalityId())
+				.withNamespace(errand.getNamespace())
 				.withId(randomUUID().toString())
 				.withName(attachment.getName())
 				.withAttachmentData(toMessageAttachmentData(attachment))
