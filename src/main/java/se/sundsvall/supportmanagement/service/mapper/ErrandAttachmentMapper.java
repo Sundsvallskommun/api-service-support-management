@@ -23,7 +23,7 @@ import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 
-public class ErrandAttachmentMapper {
+public final class ErrandAttachmentMapper {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ErrandAttachmentMapper.class);
 
@@ -35,13 +35,15 @@ public class ErrandAttachmentMapper {
 		}
 
 		try {
-			Session session = entityManager.unwrap(Session.class);
+			final Session session = entityManager.unwrap(Session.class);
 			return AttachmentEntity.create()
 				.withErrandEntity(errandEntity)
+				.withNamespace(errandEntity.getNamespace())
+				.withMunicipalityId(errandEntity.getMunicipalityId())
 				.withAttachmentData(new AttachmentDataEntity().withFile(session.getLobHelper().createBlob(errandAttachment.getInputStream(), errandAttachment.getSize())))
 				.withFileName(errandAttachment.getOriginalFilename())
 				.withMimeType(detectMimeTypeFromStream(errandAttachment.getOriginalFilename(), errandAttachment.getInputStream()));
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			LOGGER.warn("Exception when reading file", e);
 			throw Problem.valueOf(Status.BAD_REQUEST, "Could not read input stream!");
 		}
@@ -62,4 +64,5 @@ public class ErrandAttachmentMapper {
 				.withMimeType(e.getMimeType()))
 			.orElse(null);
 	}
+
 }
