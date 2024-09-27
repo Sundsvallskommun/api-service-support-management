@@ -13,6 +13,8 @@ import java.sql.Blob;
 import java.util.ArrayList;
 import java.util.List;
 
+import jakarta.persistence.EntityManager;
+
 import org.hibernate.LobHelper;
 import org.hibernate.Session;
 import org.junit.jupiter.api.Test;
@@ -21,13 +23,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.multipart.MultipartFile;
 
-import jakarta.persistence.EntityManager;
-
 @ExtendWith(MockitoExtension.class)
 class ErrandAttachmentMapperTest {
 
 	private static final String ATTACHMENT_ID = "attachmentId";
+
 	private static final String FILE_NAME = "fileName";
+
 	private static final String MIME_TYPE = "mimeType";
 
 	@Mock
@@ -58,7 +60,9 @@ class ErrandAttachmentMapperTest {
 
 		final var result = ErrandAttachmentMapper.toAttachmentEntity(errandEntity, multipartFileMock, entityManagerMock);
 
-		assertThat(result).isNotNull();
+		assertThat(result).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "created", "modified");
+		assertThat(result.getMunicipalityId()).isEqualTo(errandEntity.getMunicipalityId());
+		assertThat(result.getNamespace()).isEqualTo(errandEntity.getNamespace());
 		assertThat(result.getFileName()).isEqualTo(FILE_NAME);
 		assertThat(result.getAttachmentData().getFile()).isSameAs(blobMock);
 		assertThat(result.getMimeType()).isEqualTo("text/plain");
@@ -88,4 +92,5 @@ class ErrandAttachmentMapperTest {
 		assertThat(ErrandAttachmentMapper.toErrandAttachmentHeaders(null))
 			.isNotNull().isEmpty();
 	}
+
 }
