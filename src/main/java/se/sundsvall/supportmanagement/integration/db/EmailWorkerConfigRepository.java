@@ -1,16 +1,19 @@
 package se.sundsvall.supportmanagement.integration.db;
 
-import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.transaction.annotation.Transactional;
-import se.sundsvall.supportmanagement.integration.db.model.EmailWorkerConfigEntity;
-
 import java.util.Optional;
 
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.transaction.annotation.Transactional;
+
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import se.sundsvall.supportmanagement.integration.db.model.EmailWorkerConfigEntity;
+
 @Transactional
-@CircuitBreaker(name = "EmailWorkerConfigRepository")
+@CircuitBreaker(name = "emailWorkerConfigRepository")
 public interface EmailWorkerConfigRepository extends JpaRepository<EmailWorkerConfigEntity, Long> {
 	Optional<EmailWorkerConfigEntity> getByNamespaceAndMunicipalityId(String namespace, String municipalityId);
+
 	void deleteByNamespaceAndMunicipalityId(String namespace, String municipalityId);
+
 	boolean existsByNamespaceAndMunicipalityId(String namespace, String municipalityId);
 }
