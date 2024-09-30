@@ -4,13 +4,10 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
-
-import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
 
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
 
-@Repository
 @CircuitBreaker(name = "contactReasonRepository")
 public interface ContactReasonRepository extends JpaRepository<ContactReasonEntity, Long> {
 

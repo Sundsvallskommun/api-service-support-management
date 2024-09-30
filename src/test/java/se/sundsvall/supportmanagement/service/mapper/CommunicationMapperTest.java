@@ -24,7 +24,6 @@ import se.sundsvall.supportmanagement.api.model.communication.CommunicationAttac
 import se.sundsvall.supportmanagement.api.model.communication.EmailAttachment;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
 import se.sundsvall.supportmanagement.api.model.communication.SmsRequest;
-import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationAttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationAttachmentEntity;
@@ -34,7 +33,6 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationTy
 import se.sundsvall.supportmanagement.integration.db.model.enums.Direction;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
 import se.sundsvall.supportmanagement.service.util.BlobBuilder;
-
 
 @ExtendWith(MockitoExtension.class)
 class CommunicationMapperTest {
@@ -94,7 +92,7 @@ class CommunicationMapperTest {
 	}
 
 	@Test
-	void toAttachments(){
+	void toAttachments() {
 
 		final var entity = createCommunicationEntity();
 		final var attachments = communicationMapper.toAttachments(entity);

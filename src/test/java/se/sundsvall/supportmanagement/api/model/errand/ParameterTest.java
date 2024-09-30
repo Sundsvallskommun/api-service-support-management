@@ -28,14 +28,17 @@ class ParameterTest {
 	@Test
 	void testBuilderMethods() {
 
+		final var displayName = "displayName";
 		final var key = "key";
 		final var values = List.of("value");
 
 		final var bean = Parameter.create()
+			.withDisplayName(displayName)
 			.withKey(key)
 			.withValues(values);
 
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
+		assertThat(bean.getDisplayName()).isEqualTo(displayName);
 		assertThat(bean.getKey()).isEqualTo(key);
 		assertThat(bean.getValues()).isEqualTo(values);
 	}

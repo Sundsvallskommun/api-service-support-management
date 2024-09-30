@@ -13,6 +13,9 @@ public class Parameter {
 	@NotBlank
 	private String key;
 
+	@Schema(description = "Parameter display name")
+	private String displayName;
+
 	@Schema(description = "Parameter values")
 	private List<String> values;
 
@@ -33,6 +36,19 @@ public class Parameter {
 		return this;
 	}
 
+	public String getDisplayName() {
+		return displayName;
+	}
+
+	public void setDisplayName(String displayName) {
+		this.displayName = displayName;
+	}
+
+	public Parameter withDisplayName(String displayName) {
+		this.displayName = displayName;
+		return this;
+	}
+
 	public List<String> getValues() {
 		return values;
 	}
@@ -48,20 +64,20 @@ public class Parameter {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(key, values);
+		return Objects.hash(displayName, key, values);
 	}
 
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj) { return true; }
 		if (!(obj instanceof final Parameter other)) { return false; }
-		return Objects.equals(key, other.key) && Objects.equals(values, other.values);
+		return Objects.equals(displayName, other.displayName) && Objects.equals(key, other.key) && Objects.equals(values, other.values);
 	}
 
 	@Override
 	public String toString() {
 		final StringBuilder builder = new StringBuilder();
-		builder.append("Parameter [key=").append(key).append(", values=").append(values).append("]");
+		builder.append("Parameter [key=").append(key).append(", displayName=").append(displayName).append(", values=").append(values).append("]");
 		return builder.toString();
 	}
 }
