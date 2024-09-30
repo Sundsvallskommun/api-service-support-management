@@ -75,8 +75,11 @@ public class CommunicationMapper {
 			.map(emailAttachment -> AttachmentEntity.create()
 				.withId(UUID.randomUUID().toString())
 				.withFileName(emailAttachment.getName())
+				.withNamespace(communicationEntity.getNamespace())
+				.withMunicipalityId(communicationEntity.getMunicipalityId())
 				.withMimeType(emailAttachment.getContentType())
-				.withAttachmentData(new AttachmentDataEntity().withFile(emailAttachment.getAttachmentData().getFile())))
+				.withAttachmentData(new AttachmentDataEntity()
+					.withFile(emailAttachment.getAttachmentData().getFile())))
 			.toList();
 	}
 
