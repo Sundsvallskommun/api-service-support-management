@@ -24,7 +24,9 @@ import se.sundsvall.supportmanagement.api.model.communication.CommunicationAttac
 import se.sundsvall.supportmanagement.api.model.communication.EmailAttachment;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
 import se.sundsvall.supportmanagement.api.model.communication.SmsRequest;
+import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
+import se.sundsvall.supportmanagement.integration.db.model.CommunicationAttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationAttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationEmailHeaderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationEntity;
@@ -89,6 +91,21 @@ class CommunicationMapperTest {
 		final var attachment = communicationMapper.toAttachment(entity);
 
 		assertAttachmentMatchesEntity(attachment, entity);
+	}
+
+	@Test
+	void toAttachments(){
+
+		final var entity = createCommunicationEntity();
+		final var attachments = communicationMapper.toAttachments(entity);
+
+		assertThat(attachments).hasSize(1);
+		assertThat(attachments.getFirst().getFileName()).isEqualTo(entity.getAttachments().getFirst().getName());
+		assertThat(attachments.getFirst().getMimeType()).isEqualTo("application/octet-stream");
+		assertThat(attachments.getFirst().getNamespace()).isEqualTo(NAMESPACE);
+		assertThat(attachments.getFirst().getMunicipalityId()).isEqualTo(MUNICIPALITY_ID);
+		assertThat(attachments.getFirst().getId()).isNotNull();
+		assertThat(attachments.getFirst().getAttachmentData().getFile()).isEqualTo(entity.getAttachments().getFirst().getAttachmentData().getFile());
 	}
 
 	@Test
@@ -171,6 +188,8 @@ class CommunicationMapperTest {
 		return new CommunicationEntity()
 			.withId("testid")
 			.withSender("testSender")
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withNamespace(NAMESPACE)
 			.withErrandNumber("testErrandNumber")
 			.withDirection(Direction.INBOUND)
 			.withMessageBody("testMessageBody")
@@ -195,7 +214,8 @@ class CommunicationMapperTest {
 		return new CommunicationAttachmentEntity()
 			.withId("testId")
 			.withName("testName")
-			.withContentType("testContentType");
+			.withContentType("application/octet-stream")
+			.withAttachmentData(new CommunicationAttachmentDataEntity().withFile(blobMock));
 	}
 
 	private void assertCommunicationMatchesEntity(final Communication communication, final CommunicationEntity entity) {
