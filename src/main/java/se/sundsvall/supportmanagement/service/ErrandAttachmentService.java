@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.service;
 
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
 import static java.util.Collections.emptyList;
+import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
@@ -122,7 +123,9 @@ public class ErrandAttachmentService {
 		final var revisionResult = revisionService.createErrandRevision(errandsRepository.save(errandEntity));
 
 		// Create log event
-		eventService.createErrandEvent(UPDATE, EVENT_LOG_REMOVE_ATTACHMENT, errandEntity, revisionResult.latest(), revisionResult.previous());
+		if (nonNull(revisionResult)) {
+			eventService.createErrandEvent(UPDATE, EVENT_LOG_REMOVE_ATTACHMENT, errandEntity, revisionResult.latest(), revisionResult.previous());
+		}
 	}
 
 	private ErrandEntity getErrand(final String errandId, final String namespace, final String municipalityId, final boolean lock) {
