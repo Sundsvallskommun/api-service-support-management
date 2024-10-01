@@ -18,13 +18,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import generated.se.sundsvall.emailreader.Email;
+import generated.se.sundsvall.emailreader.EmailAttachment;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
 import se.sundsvall.supportmanagement.service.util.BlobBuilder;
-
-import generated.se.sundsvall.emailreader.Email;
-import generated.se.sundsvall.emailreader.EmailAttachment;
 
 @ExtendWith(MockitoExtension.class)
 class EmailReaderMapperTest {
@@ -161,7 +160,7 @@ class EmailReaderMapperTest {
 	}
 
 	@ParameterizedTest
-	@CsvSource({"true,role", "false,role", "true,null"})
+	@CsvSource({ "true,role", "false,role", "true,null" })
 	void toErrand(final boolean addSenderAsStakeholder, final String stakeholderRole) {
 
 		final var email = new Email()
@@ -224,8 +223,7 @@ class EmailReaderMapperTest {
 		assertThat(result.getSubject()).isEqualTo(subject);
 		assertThat(result.getRecipient()).isEqualTo(sender); // Because we are sending response to the sender
 		assertThat(result.getSender()).isEqualTo(sender);
+		assertThat(result.getSenderName()).isEqualTo(sender);
 		assertThat(result.getMessage()).isEqualTo(template);
-
 	}
-
 }

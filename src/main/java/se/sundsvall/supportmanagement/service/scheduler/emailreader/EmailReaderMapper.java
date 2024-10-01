@@ -14,6 +14,8 @@ import java.util.Optional;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
+import generated.se.sundsvall.emailreader.Email;
+import generated.se.sundsvall.emailreader.EmailAttachment;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
 import se.sundsvall.supportmanagement.api.model.errand.Classification;
 import se.sundsvall.supportmanagement.api.model.errand.ContactChannel;
@@ -31,9 +33,6 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationTy
 import se.sundsvall.supportmanagement.integration.db.model.enums.Direction;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
 import se.sundsvall.supportmanagement.service.util.BlobBuilder;
-
-import generated.se.sundsvall.emailreader.Email;
-import generated.se.sundsvall.emailreader.EmailAttachment;
 
 @Component
 public class EmailReaderMapper {
@@ -122,7 +121,6 @@ public class EmailReaderMapper {
 			errand.setLabels(Arrays.stream(email.getMetadata().get("labels").split(";")).toList());
 		}
 
-
 		if (addSenderAsStakeholder) {
 			errand.withStakeholders(List.of(
 				Stakeholder.create()
@@ -140,16 +138,13 @@ public class EmailReaderMapper {
 			.withRecipient(email.getSender()) // Because we are sending a return response
 			.withEmailHeaders(toEmailHeaderMap(email))
 			.withSender(sender)
-			.withSenderName("")
+			.withSenderName(sender)
 			.withMessage(messageTemplate);
 	}
 
 	private Map<EmailHeader, List<String>> toEmailHeaderMap(final Email email) {
 		return email.getHeaders().entrySet().stream()
 			.collect(toMap(
-				entry -> EmailHeader.valueOf(entry.getKey()),
-				Map.Entry::getValue,
-				(oldValue, newValue) -> newValue));
+				entry -> EmailHeader.valueOf(entry.getKey()), Map.Entry::getValue, (oldValue, newValue) -> newValue));
 	}
-
 }
