@@ -79,8 +79,8 @@ public class EmailReaderWorker {
 	private Optional<ErrandEntity> getErrand(final String errandNumber, final Email email, final EmailWorkerConfigEntity config) {
 
 		return Optional.ofNullable(errandNumber)
-			.map(errandRepository::findByErrandNumber)
-			.orElseGet(() -> errandRepository
+			.flatMap(errandRepository::findByErrandNumber)
+			.or(() -> errandRepository
 				.findById(errandService.createErrand(
 					config.getNamespace(),
 					config.getMunicipalityId(),
