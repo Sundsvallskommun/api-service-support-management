@@ -1,9 +1,4 @@
 {
-	"totalPages": 1,
-	"totalElements": 4,
-	"first": true,
-	"last": true,
-	"size": 20,
 	"content": [
 		{
 			"id": "147d355f-dc94-4fde-a4cb-9ddd16cb1946",
@@ -121,6 +116,7 @@
 			"parameters": [
 				{
 					"key": "keyA",
+					"displayName": "Displayname A",
 					"values": [
 						"valueA1",
 						"valueA2"
@@ -128,6 +124,7 @@
 				},
 				{
 					"key": "keyB",
+					"displayName": "Displayname B",
 					"values": [
 						"valueB1"
 					]
@@ -199,15 +196,17 @@
 			],
 			"parameters": [
 				{
+					"key": "key2",
+					"displayName": "Displayname 2",
+					"values": []
+				},
+				{
 					"key": "key1",
+					"displayName": "Displayname 1",
 					"values": [
 						"value1",
 						"value2"
 					]
-				},
-				{
-					"key": "key2",
-					"values": []
 				}
 			],
 			"classification": {
@@ -226,17 +225,6 @@
 			"touched": "2022-01-01T12:00:00+01:00"
 		}
 	],
-	"number": 0,
-	"sort": [
-		{
-			"direction": "DESC",
-			"property": "touched",
-			"ignoreCase": false,
-			"nullHandling": "NATIVE",
-			"ascending": false,
-			"descending": true
-		}
-	],
 	"pageable": {
 		"pageNumber": 0,
 		"pageSize": 20,
@@ -246,14 +234,30 @@
 				"property": "touched",
 				"ignoreCase": false,
 				"nullHandling": "NATIVE",
-				"ascending": false,
-				"descending": true
+				"descending": true,
+				"ascending": false
 			}
 		],
 		"offset": 0,
 		"unpaged": false,
 		"paged": true
 	},
+	"last": true,
+	"totalElements": 4,
+	"totalPages": 1,
+	"size": 20,
+	"number": 0,
+	"sort": [
+		{
+			"direction": "DESC",
+			"property": "touched",
+			"ignoreCase": false,
+			"nullHandling": "NATIVE",
+			"descending": true,
+			"ascending": false
+		}
+	],
 	"numberOfElements": 4,
+	"first": true,
 	"empty": false
 }

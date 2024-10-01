@@ -23,25 +23,27 @@ class ParameterEntityTest {
 			hasValidBeanHashCode(),
 			hasValidBeanEquals(),
 			hasValidBeanToStringExcluding("errandEntity")));
-
 	}
 
 	@Test
 	void hasValidBuilderMethods() {
 
 		final var id = "id";
+		final var displayName = "displayName";
 		final var key = "key";
 		final var values = List.of("value");
 		final var errandEntity = ErrandEntity.create().withId("id");
 
 		final var parameterEntity = ParameterEntity.create()
 			.withId(id)
+			.withDisplayName(displayName)
 			.withErrandEntity(errandEntity)
 			.withKey(key)
 			.withValues(values);
 
 		assertThat(parameterEntity).hasNoNullFieldsOrProperties();
 		assertThat(parameterEntity.getKey()).isEqualTo(key);
+		assertThat(parameterEntity.getDisplayName()).isEqualTo(displayName);
 		assertThat(parameterEntity.getValues()).isEqualTo(values);
 		assertThat(parameterEntity.getId()).isEqualTo(id);
 		assertThat(parameterEntity.getErrandEntity()).isEqualTo(errandEntity);
@@ -52,5 +54,4 @@ class ParameterEntityTest {
 		assertThat(ParameterEntity.create()).hasAllNullFieldsOrProperties();
 		assertThat(new ParameterEntity()).hasAllNullFieldsOrProperties();
 	}
-
 }

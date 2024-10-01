@@ -37,6 +37,7 @@
 	],
 	"parameters": [
 		{
+			"displayName": "Displayname 1",
 			"key": "key1",
 			"values": [
 				"value1",
@@ -44,6 +45,7 @@
 			]
 		},
 		{
+		    "displayName": "Displayname 2",
 			"key": "key2",
 			"values": []
 		}

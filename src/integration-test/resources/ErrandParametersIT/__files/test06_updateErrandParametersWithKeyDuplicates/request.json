@@ -1,11 +1,13 @@
 [
 	{
+	    "displayName": "display name A",
 		"key": "key1",
 		"values": [
 			"value1"
 		]
 	},
 	{
+	    "displayName": "display name B",
 		"key": "key1",
 		"values": [
 			"value2",
@@ -13,6 +15,7 @@
 		]
 	},
 	{
+	    "displayName": "display name C",
 		"key": "key1",
 		"values": [
 			"value4"
