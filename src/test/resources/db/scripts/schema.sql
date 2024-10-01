@@ -216,6 +216,7 @@
     ) engine=InnoDB;
 
     create table parameter (
+        display_name varchar(255),
         errand_id varchar(255) not null,
         id varchar(255) not null,
         parameters_key varchar(255),

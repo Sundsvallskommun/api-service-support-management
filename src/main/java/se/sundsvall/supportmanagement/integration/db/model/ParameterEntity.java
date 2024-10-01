@@ -28,6 +28,9 @@ public class ParameterEntity {
 	@JoinColumn(name = "errand_id", nullable = false, foreignKey = @ForeignKey(name = "fk_parameter_errand_id"))
 	private ErrandEntity errandEntity;
 
+	@Column(name = "display_name")
+	private String displayName;
+
 	@Column(name = "parameters_key")
 	private String key;
 
@@ -69,6 +72,19 @@ public class ParameterEntity {
 		return this;
 	}
 
+	public String getDisplayName() {
+		return displayName;
+	}
+
+	public void setDisplayName(String displayName) {
+		this.displayName = displayName;
+	}
+
+	public ParameterEntity withDisplayName(String displayName) {
+		this.displayName = displayName;
+		return this;
+	}
+
 	public String getKey() {
 		return key;
 	}
@@ -97,20 +113,20 @@ public class ParameterEntity {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(errandEntity, id, key, values);
+		return Objects.hash(displayName, errandEntity, id, key, values);
 	}
 
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj) { return true; }
 		if (!(obj instanceof final ParameterEntity other)) { return false; }
-		return Objects.equals(errandEntity, other.errandEntity) && Objects.equals(id, other.id) && Objects.equals(key, other.key) && Objects.equals(values, other.values);
+		return Objects.equals(displayName, other.displayName) && Objects.equals(errandEntity, other.errandEntity) && Objects.equals(id, other.id) && Objects.equals(key, other.key) && Objects.equals(values, other.values);
 	}
 
 	@Override
 	public String toString() {
 		final StringBuilder builder = new StringBuilder();
-		builder.append("ParameterEntity [id=").append(id).append(", errandEntity=").append((errandEntity != null ? errandEntity.getId() : "null")).append(", key=").append(key).append(", values=").append(values).append("]");
+		builder.append("ParameterEntity [id=").append(id).append(", errandEntity=").append(errandEntity).append(", displayName=").append(displayName).append(", key=").append(key).append(", values=").append(values).append("]");
 		return builder.toString();
 	}
 }

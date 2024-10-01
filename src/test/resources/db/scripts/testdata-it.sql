@@ -279,11 +279,11 @@ VALUES ('1', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', '2023-12-31 23:59:59.999', 
 -- Parameters
 -------------------------------------
 
-INSERT INTO parameter(errand_id, id, parameters_key)
-VALUES ('ec677eb3-604c-4935-bff7-f8f0b500c8f4','45d266a7-1ff2-4bf4-b6f3-0473b2b86fcd', 'key1' ),
-       ('ec677eb3-604c-4935-bff7-f8f0b500c8f4','2', 'key2' ),
-       ('1be673c0-6ba3-4fb0-af4a-43acf23389f6', 'cb638956-0823-402b-ab2a-ae947c0ba006', 'keyA'),
-       ('1be673c0-6ba3-4fb0-af4a-43acf23389f6', 'db93ed18-8f7b-4809-8bc0-1d8971be7291', 'keyB');
+INSERT INTO parameter(errand_id, id, parameters_key, display_name)
+VALUES ('ec677eb3-604c-4935-bff7-f8f0b500c8f4','45d266a7-1ff2-4bf4-b6f3-0473b2b86fcd', 'key1', 'Displayname 1'),
+       ('ec677eb3-604c-4935-bff7-f8f0b500c8f4','2', 'key2', 'Displayname 2'),
+       ('1be673c0-6ba3-4fb0-af4a-43acf23389f6', 'cb638956-0823-402b-ab2a-ae947c0ba006', 'keyA', 'Displayname A'),
+       ('1be673c0-6ba3-4fb0-af4a-43acf23389f6', 'db93ed18-8f7b-4809-8bc0-1d8971be7291', 'keyB', 'Displayname B');
 
 INSERT INTO parameter_values(parameter_id, value)
 VALUES ('45d266a7-1ff2-4bf4-b6f3-0473b2b86fcd', 'value1'),

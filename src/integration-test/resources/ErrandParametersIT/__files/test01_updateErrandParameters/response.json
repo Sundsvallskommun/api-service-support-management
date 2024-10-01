@@ -1,5 +1,6 @@
 [
 	{
+	    "displayName": "display name 1",
 		"key": "key1",
 		"values": [
 			"value2",
@@ -7,6 +8,7 @@
 		]
 	},
 	{
+	    "displayName": "display name 2",
 		"key": "key2",
 		"values": [
 			"value4"

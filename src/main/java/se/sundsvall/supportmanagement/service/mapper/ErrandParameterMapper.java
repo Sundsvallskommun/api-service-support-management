@@ -26,12 +26,14 @@ public final class ErrandParameterMapper {
 
 	public static ParameterEntity toErrandParameterEntity(final Parameter parameter) {
 		return ParameterEntity.create()
+			.withDisplayName(parameter.getDisplayName())
 			.withKey(parameter.getKey())
 			.withValues(parameter.getValues());
 	}
 
 	public static Parameter toParameter(final ParameterEntity parameter) {
 		return Parameter.create()
+			.withDisplayName(parameter.getDisplayName())
 			.withKey(parameter.getKey())
 			.withValues(parameter.getValues());
 	}
@@ -48,6 +50,7 @@ public final class ErrandParameterMapper {
 			.entrySet()
 			.stream()
 			.map(entry -> Parameter.create()
+				.withDisplayName(entry.getValue().getFirst().getDisplayName())
 				.withKey(entry.getKey())
 				.withValues(new ArrayList<>(entry.getValue().stream()
 					.map(Parameter::getValues)

@@ -26,6 +26,7 @@
 			"parameters": [
 				{
 					"key": "keyA",
+					"displayName": "Displayname A",
 					"values": [
 						"valueA1",
 						"valueA2"
@@ -33,6 +34,7 @@
 				},
 				{
 					"key": "keyB",
+					"displayName": "Displayname B",
 					"values": [
 						"valueB1"
 					]
@@ -64,12 +66,12 @@
 		"unpaged": false
 	},
 	"last": true,
-	"totalElements": 1,
 	"totalPages": 1,
+	"totalElements": 1,
+	"first": true,
 	"size": 20,
 	"number": 0,
 	"sort": [],
 	"numberOfElements": 1,
-	"first": true,
 	"empty": false
 }
