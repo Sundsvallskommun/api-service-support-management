@@ -8,17 +8,21 @@ import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 import java.time.OffsetDateTime;
 import java.util.Objects;
 
+import org.hibernate.annotations.TimeZoneStorage;
+import org.hibernate.annotations.UuidGenerator;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
-
-import org.hibernate.annotations.TimeZoneStorage;
-import org.hibernate.annotations.UuidGenerator;
 
 @Entity
 @Table(name = "notification",
@@ -68,8 +72,9 @@ public class NotificationEntity {
 	@Column(name = "acknowledged")
 	private boolean acknowledged;
 
-	@Column(name = "errand_id")
-	private String errandId;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "errand_id", nullable = true, foreignKey = @ForeignKey(name = "fk_notification_errand_id"))
+	private ErrandEntity errandEntity;
 
 	@Column(name = "municipality_id", nullable = false)
 	private String municipalityId;
@@ -247,16 +252,16 @@ public class NotificationEntity {
 		return this;
 	}
 
-	public String getErrandId() {
-		return errandId;
+	public ErrandEntity getErrandEntity() {
+		return errandEntity;
 	}
 
-	public void setErrandId(final String errandId) {
-		this.errandId = errandId;
+	public void setErrandEntity(ErrandEntity errandEntity) {
+		this.errandEntity = errandEntity;
 	}
 
-	public NotificationEntity withErrandId(final String errandId) {
-		this.errandId = errandId;
+	public NotificationEntity withErrandEntity(ErrandEntity errandEntity) {
+		this.errandEntity = errandEntity;
 		return this;
 	}
 
@@ -273,7 +278,6 @@ public class NotificationEntity {
 		return this;
 	}
 
-
 	public String getNamespace() {
 		return namespace;
 	}
@@ -288,37 +292,25 @@ public class NotificationEntity {
 	}
 
 	@Override
-	public boolean equals(final Object o) {
-		if (this == o) return true;
-		if (o == null || getClass() != o.getClass()) return false;
-		final NotificationEntity that = (NotificationEntity) o;
-		return acknowledged == that.acknowledged && Objects.equals(id, that.id) && Objects.equals(created, that.created) && Objects.equals(modified, that.modified) && Objects.equals(ownerFullName, that.ownerFullName) && Objects.equals(ownerId, that.ownerId) && Objects.equals(createdBy, that.createdBy) && Objects.equals(createdByFullName, that.createdByFullName) && Objects.equals(type, that.type) && Objects.equals(description, that.description) && Objects.equals(content, that.content) && Objects.equals(expires, that.expires) && Objects.equals(errandId, that.errandId) && Objects.equals(municipalityId, that.municipalityId) && Objects.equals(namespace, that.namespace);
+	public int hashCode() {
+		return Objects.hash(acknowledged, content, created, createdBy, createdByFullName, description, errandEntity, expires, id, modified, municipalityId, namespace, ownerFullName, ownerId, type);
 	}
 
 	@Override
-	public int hashCode() {
-		return Objects.hash(id, created, modified, ownerFullName, ownerId, createdBy, createdByFullName, type, description, content, expires, acknowledged, errandId, municipalityId, namespace);
+	public boolean equals(Object obj) {
+		if (this == obj) { return true; }
+		if (!(obj instanceof final NotificationEntity other)) { return false; }
+		return (acknowledged == other.acknowledged) && Objects.equals(content, other.content) && Objects.equals(created, other.created) && Objects.equals(createdBy, other.createdBy) && Objects.equals(createdByFullName, other.createdByFullName) && Objects
+			.equals(description, other.description) && Objects.equals(errandEntity, other.errandEntity) && Objects.equals(expires, other.expires) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(municipalityId,
+				other.municipalityId) && Objects.equals(namespace, other.namespace) && Objects.equals(ownerFullName, other.ownerFullName) && Objects.equals(ownerId, other.ownerId) && Objects.equals(type, other.type);
 	}
 
 	@Override
 	public String toString() {
-		return "NotificationEntity{" +
-			"id='" + id + '\'' +
-			", created=" + created +
-			", modified=" + modified +
-			", ownerFullName='" + ownerFullName + '\'' +
-			", ownerId='" + ownerId + '\'' +
-			", createdBy='" + createdBy + '\'' +
-			", createdByFullName='" + createdByFullName + '\'' +
-			", type='" + type + '\'' +
-			", description='" + description + '\'' +
-			", content='" + content + '\'' +
-			", expires=" + expires +
-			", acknowledged=" + acknowledged +
-			", errandId='" + errandId + '\'' +
-			", municipalityId='" + municipalityId + '\'' +
-			", namespace='" + namespace + '\'' +
-			'}';
+		final StringBuilder builder = new StringBuilder();
+		builder.append("NotificationEntity [id=").append(id).append(", created=").append(created).append(", modified=").append(modified).append(", ownerFullName=").append(ownerFullName).append(", ownerId=").append(ownerId).append(", createdBy=").append(
+			createdBy).append(", createdByFullName=").append(createdByFullName).append(", type=").append(type).append(", description=").append(description).append(", content=").append(content).append(", expires=").append(expires).append(", acknowledged=")
+			.append(acknowledged).append(", errandEntity=").append(errandEntity).append(", municipalityId=").append(municipalityId).append(", namespace=").append(namespace).append("]");
+		return builder.toString();
 	}
-
 }

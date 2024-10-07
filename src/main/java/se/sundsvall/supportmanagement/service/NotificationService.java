@@ -15,7 +15,6 @@ import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.NotificationRepository;
 import se.sundsvall.supportmanagement.service.mapper.NotificationMapper;
 
-
 @Service
 public class NotificationService {
 
@@ -37,10 +36,7 @@ public class NotificationService {
 
 	public Notification getNotification(final String municipalityId, final String namespace, final String notificationId) {
 		return notificationRepository.findByIdAndNamespaceAndMunicipalityId(notificationId, namespace, municipalityId)
-			.map(notificationEntity -> NotificationMapper.toNotification(notificationEntity)
-				.withErrandNumber(errandsRepository.findById(notificationEntity.getErrandId())
-					.orElseThrow(() -> Problem.valueOf(NOT_FOUND, String.format(ERRAND_ENTITY_NOT_FOUND, notificationEntity.getErrandId(), namespace, municipalityId)))
-					.getErrandNumber()))
+			.map(NotificationMapper::toNotification)
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, String.format(NOTIFICATION_ENTITY_NOT_FOUND, notificationId, namespace, municipalityId)));
 	}
 
@@ -49,14 +45,16 @@ public class NotificationService {
 		return notificationRepository.findAllByNamespaceAndMunicipalityIdAndOwnerId(namespace, municipalityId, ownerId).stream().map(NotificationMapper::toNotification).toList();
 	}
 
-
 	public String createNotification(final String municipalityId, final String namespace, final Notification notification) {
 
-		if (notification.getOwnerId() == null || isExecutingUserTheOwner(notification.getOwnerId()) || doesNotificationExist(municipalityId, namespace, notification)) {
+		if ((notification.getOwnerId() == null) || isExecutingUserTheOwner(notification.getOwnerId()) || doesNotificationExist(municipalityId, namespace, notification)) {
 			return null;
 		}
 
-		final var entity = NotificationMapper.toNotificationEntity(namespace, municipalityId, notification);
+		final var errandEntity = errandsRepository.findByIdAndNamespaceAndMunicipalityId(notification.getErrandId(), namespace, municipalityId)
+			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, String.format(ERRAND_ENTITY_NOT_FOUND, notification.getErrandId(), namespace, municipalityId)));
+
+		final var entity = NotificationMapper.toNotificationEntity(namespace, municipalityId, notification, errandEntity);
 
 		return notificationRepository.save(entity).getId();
 	}
@@ -67,7 +65,7 @@ public class NotificationService {
 
 	private boolean doesNotificationExist(final String municipalityId, final String namespace, final Notification notification) {
 		return notificationRepository
-			.findByNamespaceAndMunicipalityIdAndOwnerIdAndAcknowledgedAndErrandIdAndType(
+			.findByNamespaceAndMunicipalityIdAndOwnerIdAndAcknowledgedAndErrandEntityIdAndType(
 				namespace,
 				municipalityId,
 				notification.getOwnerId(),
@@ -95,5 +93,4 @@ public class NotificationService {
 		}
 		notificationRepository.deleteById(notificationId);
 	}
-
 }

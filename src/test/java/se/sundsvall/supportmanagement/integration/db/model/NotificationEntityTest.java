@@ -51,7 +51,9 @@ class NotificationEntityTest {
 		final var content = "Some content of the notification";
 		final var expires = now();
 		final var acknowledged = true;
-		final var errandId = "f0882f1d-06bc-47fd-b017-1d8307f5ce95";
+		final var errandEntity = ErrandEntity.create()
+			.withId("f0882f1d-06bc-47fd-b017-1d8307f5ce95")
+			.withErrandNumber("ERRAND-NUMBER");
 		final var municipalityId = "municipalityId";
 		final var namespace = "namespace";
 
@@ -69,7 +71,7 @@ class NotificationEntityTest {
 			.withContent(content)
 			.withExpires(expires)
 			.withAcknowledged(acknowledged)
-			.withErrandId(errandId)
+			.withErrandEntity(errandEntity)
 			.withMunicipalityId(municipalityId)
 			.withNamespace(namespace);
 
@@ -86,11 +88,10 @@ class NotificationEntityTest {
 		assertThat(notification.getContent()).isEqualTo(content);
 		assertThat(notification.getExpires()).isEqualTo(expires);
 		assertThat(notification.isAcknowledged()).isEqualTo(acknowledged);
-		assertThat(notification.getErrandId()).isEqualTo(errandId);
+		assertThat(notification.getErrandEntity()).isEqualTo(errandEntity);
 		assertThat(notification.getMunicipalityId()).isEqualTo(municipalityId);
 		assertThat(notification.getNamespace()).isEqualTo(namespace);
 	}
-
 
 	@Test
 	void testNoDirtOnCreatedBean() {

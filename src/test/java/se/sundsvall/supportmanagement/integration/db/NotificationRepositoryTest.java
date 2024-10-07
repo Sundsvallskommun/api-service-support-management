@@ -12,6 +12,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.transaction.annotation.Transactional;
 
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
 
 @SpringBootTest
@@ -39,7 +40,9 @@ class NotificationRepositoryTest {
 		final var description = "Some description of the notification";
 		final var content = "Some content of the notification";
 		final var acknowledged = true;
-		final var errandId = "f0882f1d-06bc-47fd-b017-1d8307f5ce95";
+		final var errandEntity = ErrandEntity.create()
+			.withId("ERRAND_ID-1")
+			.withErrandNumber("KC-23020001");
 		final var municipalityId = "municipalityId";
 		final var namespace = "namespace";
 
@@ -55,7 +58,7 @@ class NotificationRepositoryTest {
 			.withContent(content)
 			.withExpires(timestamp)
 			.withAcknowledged(acknowledged)
-			.withErrandId(errandId)
+			.withErrandEntity(errandEntity)
 			.withMunicipalityId(municipalityId)
 			.withNamespace(namespace);
 
@@ -87,10 +90,10 @@ class NotificationRepositoryTest {
 	}
 
 	@Test
-	void findByNamespaceAndMunicipalityIdAndOwnerIdAndAcknowledgedAndErrandIdAndType() {
+	void findByNamespaceAndMunicipalityIdAndOwnerIdAndAcknowledgedAndErrandEntityIdAndType() {
 
 		// Act
-		final var notification = notificationRepository.findByNamespaceAndMunicipalityIdAndOwnerIdAndAcknowledgedAndErrandIdAndType("namespace-1", "municipalityId-1", "owner_id-1", false, "ERRAND_ID-1", "type-1");
+		final var notification = notificationRepository.findByNamespaceAndMunicipalityIdAndOwnerIdAndAcknowledgedAndErrandEntityIdAndType("namespace-1", "municipalityId-1", "owner_id-1", false, "ERRAND_ID-1", "type-1");
 
 		// Assert
 		assertThat(notification).isPresent();
