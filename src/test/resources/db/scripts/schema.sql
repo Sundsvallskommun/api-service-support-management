@@ -521,6 +521,11 @@
        foreign key (errand_id) 
        references errand (id);
 
+    alter table if exists notification 
+       add constraint fk_notification_errand_id 
+       foreign key (errand_id) 
+       references errand (id);
+
     alter table if exists parameter 
        add constraint fk_parameter_errand_id 
        foreign key (errand_id) 

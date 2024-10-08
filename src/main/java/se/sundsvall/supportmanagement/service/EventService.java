@@ -16,6 +16,8 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import generated.se.sundsvall.eventlog.EventType;
+import generated.se.sundsvall.notes.Note;
 import se.sundsvall.supportmanagement.api.filter.ExecutingUserSupplier;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.event.Event;
@@ -24,9 +26,6 @@ import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.eventlog.EventlogClient;
 import se.sundsvall.supportmanagement.service.mapper.EventlogMapper;
-
-import generated.se.sundsvall.eventlog.EventType;
-import generated.se.sundsvall.notes.Note;
 
 @Service
 public class EventService {
@@ -48,11 +47,18 @@ public class EventService {
 		this.employeeService = employeeService;
 	}
 
-	public void createErrandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final Revision currentRevision, final Revision previousRevision) {
+	public void createErrandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final Revision currentRevision, final Revision previousRevision, boolean sendNotification) {
 		final var metadata = toMetadataMap(errandEntity, currentRevision, previousRevision);
 		final var event = toEvent(eventType, message, extractId(currentRevision), Errand.class, metadata, executingUserSupplier.getAdUser());
 		eventLogClient.createEvent(errandEntity.getMunicipalityId(), errandEntity.getId(), event);
-		createNotification(errandEntity, event);
+
+		if (sendNotification) {
+			createNotification(errandEntity, event);
+		}
+	}
+
+	public void createErrandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final Revision currentRevision, final Revision previousRevision) {
+		createErrandEvent(eventType, message, errandEntity, currentRevision, previousRevision, true);
 	}
 
 	public void createErrandNoteEvent(final EventType eventType, final String message, final String logKey, final ErrandEntity errandEntity, final String noteId, final Revision currentRevision, final Revision previousRevision) {
@@ -100,6 +106,5 @@ public class EventService {
 			.orElse(null);
 
 	}
-
 
 }

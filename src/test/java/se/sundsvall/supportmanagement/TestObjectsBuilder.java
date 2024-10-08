@@ -86,7 +86,9 @@ public class TestObjectsBuilder {
 
 	private static final boolean NOTIFICATION_ACKNOWLEDGED = false;
 
-	private static final String NOTIFICATION_ERRAND_ID = "cb20c51f-fcf3-42c0-b613-de563634a8ec";
+	private static final ErrandEntity NOTIFICATION_ERRAND_ENTITY = ErrandEntity.create()
+		.withId("cb20c51f-fcf3-42c0-b613-de563634a8ec")
+		.withErrandNumber("ERRAND-NUMBER");
 
 	private static final OffsetDateTime NOTIFICATION_CREATED = OffsetDateTime.now();
 
@@ -162,7 +164,7 @@ public class TestObjectsBuilder {
 			.withContent(NOTIFICATION_CONTENT)
 			.withExpires(NOTIFICATION_EXPIRES)
 			.withAcknowledged(NOTIFICATION_ACKNOWLEDGED)
-			.withErrandId(NOTIFICATION_ERRAND_ID);
+			.withErrandId(NOTIFICATION_ERRAND_ENTITY.getId());
 
 		Optional.ofNullable(modifier).ifPresent(m -> m.accept(notification));
 
@@ -183,7 +185,7 @@ public class TestObjectsBuilder {
 			.withAcknowledged(NOTIFICATION_ACKNOWLEDGED)
 			.withNamespace(NAMESPACE)
 			.withMunicipalityId(MUNICIPALITY_ID)
-			.withErrandId(NOTIFICATION_ERRAND_ID);
+			.withErrandEntity(NOTIFICATION_ERRAND_ENTITY);
 
 		Optional.ofNullable(modifier).ifPresent(m -> m.accept(notification));
 

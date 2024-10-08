@@ -32,7 +32,7 @@ class NotificationIT extends AbstractAppTest {
 
 	private static final String RESPONSE_FILE = "response.json";
 
-	private static final String NAMESPACE = "namespace_1";
+	private static final String NAMESPACE = "NAMESPACE.1";
 
 	private static final String MUNICIPALITY_2281 = "2281";
 

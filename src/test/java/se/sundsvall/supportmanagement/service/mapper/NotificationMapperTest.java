@@ -8,13 +8,12 @@ import java.time.OffsetDateTime;
 
 import org.junit.jupiter.api.Test;
 
-import se.sundsvall.supportmanagement.api.model.notification.Notification;
-import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
-
 import generated.se.sundsvall.employee.PortalPersonData;
 import generated.se.sundsvall.eventlog.Event;
 import generated.se.sundsvall.eventlog.EventType;
+import se.sundsvall.supportmanagement.api.model.notification.Notification;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
 
 class NotificationMapperTest {
 
@@ -70,7 +69,9 @@ class NotificationMapperTest {
 
 	private static final boolean NEW_ACKNOWLEDGED = true;
 
-	private static final String NEW_ERRAND_ID = "newErrandId";
+	private static final ErrandEntity ERRAND_ENTITY = ErrandEntity.create()
+		.withId(ERRAND_ID)
+		.withErrandNumber("ERRAND-NUMBER");
 
 	private static final String NEW_ERRAND_NUMBER = "newErrandNumber";
 
@@ -102,7 +103,7 @@ class NotificationMapperTest {
 			.withType(TYPE)
 			.withDescription(DESCRIPTION)
 			.withContent(CONTENT)
-			.withErrandId(ERRAND_ID)
+			.withErrandEntity(ERRAND_ENTITY)
 			.withMunicipalityId(MUNICIPALITY_ID)
 			.withNamespace(NAMESPACE);
 	}
@@ -129,7 +130,7 @@ class NotificationMapperTest {
 
 	@Test
 	void testToNotificationEntity() {
-		final var entity = NotificationMapper.toNotificationEntity(NAMESPACE, MUNICIPALITY_ID, createNotification());
+		final var entity = NotificationMapper.toNotificationEntity(NAMESPACE, MUNICIPALITY_ID, createNotification(), ERRAND_ENTITY);
 
 		assertThat(entity).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "created", "modified", "expires");
 		assertThat(entity.getOwnerFullName()).isEqualTo(OWNER_FULL_NAME);
@@ -139,7 +140,7 @@ class NotificationMapperTest {
 		assertThat(entity.getType()).isEqualTo(TYPE);
 		assertThat(entity.getDescription()).isEqualTo(DESCRIPTION);
 		assertThat(entity.getContent()).isEqualTo(CONTENT);
-		assertThat(entity.getErrandId()).isEqualTo(ERRAND_ID);
+		assertThat(entity.getErrandEntity().getId()).isEqualTo(ERRAND_ID);
 		assertThat(entity.getMunicipalityId()).isEqualTo(MUNICIPALITY_ID);
 		assertThat(entity.getNamespace()).isEqualTo(NAMESPACE);
 	}
@@ -157,7 +158,6 @@ class NotificationMapperTest {
 		notification.setContent(NEW_CONTENT);
 		notification.setExpires(NEW_EXPIRES);
 		notification.setAcknowledged(NEW_ACKNOWLEDGED);
-		notification.setErrandId(NEW_ERRAND_ID);
 		notification.setErrandNumber(NEW_ERRAND_NUMBER);
 
 		final var updatedEntity = NotificationMapper.updateEntity(entity, notification);
@@ -176,7 +176,6 @@ class NotificationMapperTest {
 		assertThat(updatedEntity.getContent()).isEqualTo(NEW_CONTENT);
 		assertThat(updatedEntity.getExpires()).isEqualTo(NEW_EXPIRES);
 		assertThat(updatedEntity.isAcknowledged()).isEqualTo(NEW_ACKNOWLEDGED);
-		assertThat(updatedEntity.getErrandId()).isEqualTo(NEW_ERRAND_ID);
 	}
 
 	@Test
