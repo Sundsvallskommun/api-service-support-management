@@ -51,6 +51,12 @@ public class EmailWorkerConfigEntity {
 	@Column(name = "errand_closed_email_template", length = 5000)
 	private String errandClosedEmailTemplate;
 
+	@Column(name = "errand_new_email_sender")
+	private String errandNewEmailSender;
+
+	@Column(name = "errand_new_email_template", length = 5000)
+	private String errandNewEmailTemplate;
+
 	@Column(name = "days_of_inactivity_before_reject")
 	private Integer daysOfInactivityBeforeReject;
 
@@ -162,6 +168,32 @@ public class EmailWorkerConfigEntity {
 
 	public EmailWorkerConfigEntity withErrandClosedEmailTemplate(String errandClosedEmailTemplate) {
 		setErrandClosedEmailTemplate(errandClosedEmailTemplate);
+		return this;
+	}
+
+	public String getErrandNewEmailSender() {
+		return errandNewEmailSender;
+	}
+
+	public void setErrandNewEmailSender(String errandNewEmailSender) {
+		this.errandNewEmailSender = errandNewEmailSender;
+	}
+
+	public EmailWorkerConfigEntity withErrandNewEmailSender(String errandNewEmailSender) {
+		setErrandNewEmailSender(errandNewEmailSender);
+		return this;
+	}
+
+	public String getErrandNewEmailTemplate() {
+		return errandNewEmailTemplate;
+	}
+
+	public void setErrandNewEmailTemplate(String errandNewEmailTemplate) {
+		this.errandNewEmailTemplate = errandNewEmailTemplate;
+	}
+
+	public EmailWorkerConfigEntity withErrandNewEmailTemplate(String errandNewEmailTemplate) {
+		setErrandNewEmailTemplate(errandNewEmailTemplate);
 		return this;
 	}
 
@@ -320,6 +352,8 @@ public class EmailWorkerConfigEntity {
 			&& Objects.equals(enabled, that.enabled)
 			&& Objects.equals(errandClosedEmailSender, that.errandClosedEmailSender)
 			&& Objects.equals(errandClosedEmailTemplate, that.errandClosedEmailTemplate)
+			&& Objects.equals(errandNewEmailSender, that.errandNewEmailSender)
+			&& Objects.equals(errandNewEmailTemplate, that.errandNewEmailTemplate)
 			&& Objects.equals(daysOfInactivityBeforeReject, that.daysOfInactivityBeforeReject)
 			&& Objects.equals(statusForNew, that.statusForNew)
 			&& Objects.equals(triggerStatusChangeOn, that.triggerStatusChangeOn)
@@ -335,8 +369,8 @@ public class EmailWorkerConfigEntity {
 	@Override
 	public int hashCode() {
 		return Objects.hash(id, municipalityId, namespace, enabled, errandClosedEmailSender, errandClosedEmailTemplate,
-			daysOfInactivityBeforeReject, statusForNew, triggerStatusChangeOn, statusChangeTo, inactiveStatus, addSenderAsStakeholder,
-			stakeholderRole, errandChannel, created, modified);
+			errandNewEmailSender, errandNewEmailTemplate, daysOfInactivityBeforeReject, statusForNew, triggerStatusChangeOn,
+			statusChangeTo, inactiveStatus, addSenderAsStakeholder, stakeholderRole, errandChannel, created, modified);
 	}
 
 	@Override
@@ -348,6 +382,8 @@ public class EmailWorkerConfigEntity {
 		sb.append(", enabled=").append(enabled);
 		sb.append(", errandClosedEmailSender='").append(errandClosedEmailSender).append('\'');
 		sb.append(", errandClosedEmailTemplate='").append(errandClosedEmailTemplate).append('\'');
+		sb.append(", errandNewEmailSender='").append(errandNewEmailSender).append('\'');
+		sb.append(", errandNewEmailTemplate='").append(errandNewEmailTemplate).append('\'');
 		sb.append(", daysOfInactivityBeforeReject=").append(daysOfInactivityBeforeReject);
 		sb.append(", statusForNew='").append(statusForNew).append('\'');
 		sb.append(", triggerStatusChangeOn='").append(triggerStatusChangeOn).append('\'');

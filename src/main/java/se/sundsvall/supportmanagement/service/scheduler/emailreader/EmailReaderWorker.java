@@ -1,16 +1,9 @@
 package se.sundsvall.supportmanagement.service.scheduler.emailreader;
 
-import static se.sundsvall.supportmanagement.service.scheduler.emailreader.ErrandNumberParser.parseSubject;
-
-import java.time.OffsetDateTime;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
+import generated.se.sundsvall.emailreader.Email;
+import generated.se.sundsvall.eventlog.EventType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import se.sundsvall.supportmanagement.integration.db.EmailWorkerConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.EmailWorkerConfigEntity;
@@ -20,13 +13,20 @@ import se.sundsvall.supportmanagement.service.CommunicationService;
 import se.sundsvall.supportmanagement.service.ErrandService;
 import se.sundsvall.supportmanagement.service.EventService;
 
-import generated.se.sundsvall.emailreader.Email;
-import generated.se.sundsvall.eventlog.EventType;
+import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static org.apache.commons.lang3.StringUtils.isEmpty;
+import static se.sundsvall.supportmanagement.service.scheduler.emailreader.ErrandNumberParser.parseSubject;
 
 @Service
 public class EmailReaderWorker {
 
 	private static final String EVENT_LOG_COMMUNICATION = "Ärendekommunikation har skapats.";
+	private static final String EMAIL_NEW_SUBJECT_PREFIX = "Bekräftelse ärende ";
 
 	private final EmailReaderClient emailReaderClient;
 
@@ -95,7 +95,9 @@ public class EmailReaderWorker {
 	private void processErrand(final ErrandEntity errand, final Email email, final EmailWorkerConfigEntity config) {
 
 		if (isErrandInactive(errand, config)) {
-			sendEmail(errand, email, config);
+			sendEmailClosed(errand, email, config);
+		} else if (isErrandNew(errand, config)) {
+			sendEmailNew(errand, email, config);
 		} else if ((config.getTriggerStatusChangeOn() != null) && errand.getStatus().equals(config.getTriggerStatusChangeOn())) {
 			errand.setStatus(config.getStatusChangeTo());
 			errandRepository.save(errand);
@@ -119,9 +121,25 @@ public class EmailReaderWorker {
 			&& errand.getTouched().isBefore(OffsetDateTime.now().minusDays(config.getDaysOfInactivityBeforeReject()));
 	}
 
-	private void sendEmail(final ErrandEntity errand, final Email email, final EmailWorkerConfigEntity config) {
+	private boolean isErrandNew(final ErrandEntity errand, final EmailWorkerConfigEntity config) {
+		return (config.getStatusForNew() != null)
+			&& errand.getStatus().equals(config.getStatusForNew());
+	}
+
+	private void sendEmailClosed(final ErrandEntity errand, final Email email, final EmailWorkerConfigEntity config) {
 
 		final var emailRequest = emailReaderMapper.createEmailRequest(email, config.getErrandClosedEmailSender(), config.getErrandClosedEmailTemplate());
+		communicationService.sendEmail(config.getNamespace(), config.getMunicipalityId(), errand.getId(), emailRequest);
+	}
+
+	private void sendEmailNew(final ErrandEntity errand, final Email email, final EmailWorkerConfigEntity config) {
+
+		if (isEmpty(config.getErrandNewEmailSender()) || isEmpty(config.getErrandNewEmailTemplate())) {
+			//Is optional to send email on new errand
+			return;
+		}
+		email.setSubject(EMAIL_NEW_SUBJECT_PREFIX + errand.getErrandNumber() + " " + email.getSubject());
+		final var emailRequest = emailReaderMapper.createEmailRequest(email, config.getErrandNewEmailSender(), config.getErrandNewEmailTemplate());
 		communicationService.sendEmail(config.getNamespace(), config.getMunicipalityId(), errand.getId(), emailRequest);
 	}
 
