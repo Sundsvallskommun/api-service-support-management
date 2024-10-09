@@ -1,5 +1,29 @@
 package se.sundsvall.supportmanagement.service.scheduler.emailreader;
 
+import generated.se.sundsvall.emailreader.Email;
+import generated.se.sundsvall.eventlog.EventType;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
+import se.sundsvall.supportmanagement.api.model.errand.Errand;
+import se.sundsvall.supportmanagement.integration.db.EmailWorkerConfigRepository;
+import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.model.CommunicationEntity;
+import se.sundsvall.supportmanagement.integration.db.model.EmailWorkerConfigEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.util.ErrandNumberGeneratorService;
+import se.sundsvall.supportmanagement.integration.emailreader.EmailReaderClient;
+import se.sundsvall.supportmanagement.service.CommunicationService;
+import se.sundsvall.supportmanagement.service.ErrandService;
+import se.sundsvall.supportmanagement.service.EventService;
+
+import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.Optional;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
@@ -11,31 +35,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-
-import java.time.OffsetDateTime;
-import java.util.List;
-import java.util.Optional;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-
-import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
-import se.sundsvall.supportmanagement.api.model.errand.Errand;
-import se.sundsvall.supportmanagement.integration.db.EmailWorkerConfigRepository;
-import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
-import se.sundsvall.supportmanagement.integration.db.model.CommunicationEntity;
-import se.sundsvall.supportmanagement.integration.db.model.EmailWorkerConfigEntity;
-import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.integration.emailreader.EmailReaderClient;
-import se.sundsvall.supportmanagement.service.CommunicationService;
-import se.sundsvall.supportmanagement.service.ErrandService;
-import se.sundsvall.supportmanagement.service.EventService;
-
-import generated.se.sundsvall.emailreader.Email;
-import generated.se.sundsvall.eventlog.EventType;
 
 class EmailReaderWorkerTest {
 
@@ -63,6 +62,9 @@ class EmailReaderWorkerTest {
 
 	@Mock
 	private EmailWorkerConfigRepository emailWorkerConfigRepositoryMock;
+
+	@Mock
+	private ErrandNumberGeneratorService errandNumberGeneratorServiceMock;
 
 	@InjectMocks
 	private EmailReaderWorker emailReaderWorker;
@@ -188,6 +190,103 @@ class EmailReaderWorkerTest {
 		verifyNoMoreInteractions(emailReaderClientMock, errandRepositoryMock, emailReaderMapperMock, communicationServiceMock, emailWorkerConfigRepositoryMock, eventServiceMock);
 
 	}
+
+	@Test
+	void processEmailWithNewErrand() {
+
+		// ARRANGE
+		final var email = new Email();
+		email.setSubject("Ansökan om bygglov för fastighet KATARINA 4");
+		email.setId("id");
+
+		final var emailConfig = EmailWorkerConfigEntity.create()
+			.withEnabled(true)
+			.withMunicipalityId("municipalityId")
+			.withNamespace("namespace")
+			.withErrandClosedEmailSender("errandClosedEmailSender")
+			.withErrandClosedEmailTemplate("errandClosedEmailTemplate")
+			.withErrandNewEmailSender("errandNewEmailSender")
+			.withErrandNewEmailTemplate("errandNewEmailTemplate")
+			.withDaysOfInactivityBeforeReject(5)
+			.withStatusForNew("NEW")
+			.withTriggerStatusChangeOn("SOLVED")
+			.withStatusChangeTo("ONGOING")
+			.withInactiveStatus("SOLVED");
+
+		final var errandEntity = ErrandEntity.create().withId("id").withErrandNumber("errandNumber").withStatus("NEW").withCreated(OffsetDateTime.now());
+		final var communicationEntity = CommunicationEntity.create();
+		final var emailRequest = new EmailRequest();
+
+		// MOCK
+		when(errandRepositoryMock.findById(anyString())).thenReturn(Optional.of(errandEntity));
+		when(errandNumberGeneratorServiceMock.generateErrandNumber(anyString(), anyString())).thenReturn("errandNumber");
+		when(errandServiceMock.createErrand(anyString(), anyString(), any())).thenReturn(errandEntity.getId());
+		when(emailReaderMapperMock.toErrand(any(), any(), anyBoolean(), any(), any())).thenReturn(new Errand());
+		when(emailReaderMapperMock.toCommunicationEntity(any(), any())).thenReturn(communicationEntity);
+		when(emailReaderMapperMock.createEmailRequest(any(Email.class), any(String.class), any(String.class))).thenReturn(emailRequest);
+
+
+		// ACT
+		emailReaderWorker.processEmail(email, emailConfig);
+
+		// VERIFY
+		verify(errandRepositoryMock).findById(errandEntity.getId());
+		verify(emailReaderMapperMock).createEmailRequest(email.subject("Bekräftelse ärende errandNumber Ansökan om bygglov för fastighet KATARINA 4"), emailConfig.getErrandNewEmailSender(), emailConfig.getErrandNewEmailTemplate());
+		verify(emailReaderMapperMock).toErrand(same(email), eq(emailConfig.getStatusForNew()), eq(emailConfig.isAddSenderAsStakeholder()), eq(emailConfig.getStakeholderRole()), eq(emailConfig.getErrandChannel()));
+		verify(communicationServiceMock).sendEmail(eq(emailConfig.getNamespace()), eq(emailConfig.getMunicipalityId()), eq(errandEntity.getId()), same(emailRequest));
+		verify(emailReaderMapperMock).toCommunicationEntity(same(email), same(errandEntity));
+		verify(communicationServiceMock).saveAttachment(same(communicationEntity), same(errandEntity));
+		verify(communicationServiceMock).saveCommunication(same(communicationEntity));
+		verify(emailReaderClientMock).deleteEmail("municipalityId", email.getId());
+		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Ärendekommunikation har skapats."), same(errandEntity), isNull(), isNull());
+		verifyNoMoreInteractions(emailReaderClientMock, errandRepositoryMock, emailReaderMapperMock, communicationServiceMock, emailWorkerConfigRepositoryMock, eventServiceMock);
+
+	}
+
+	@Test
+	void processEmailWithNewErrandNotSending() {
+
+		// ARRANGE
+		final var email = new Email();
+		email.setSubject("Ansökan om bygglov för fastighet KATARINA 4");
+		email.setId("id");
+
+		final var emailConfig = EmailWorkerConfigEntity.create()
+			.withEnabled(true)
+			.withMunicipalityId("municipalityId")
+			.withNamespace("namespace")
+			.withDaysOfInactivityBeforeReject(5)
+			.withStatusForNew("NEW")
+			.withTriggerStatusChangeOn("SOLVED")
+			.withStatusChangeTo("ONGOING")
+			.withInactiveStatus("SOLVED");
+
+		final var errandEntity = ErrandEntity.create().withId("id").withErrandNumber("errandNumber").withStatus("NEW").withCreated(OffsetDateTime.now());
+		final var communicationEntity = CommunicationEntity.create();
+
+		// MOCK
+		when(errandRepositoryMock.findById(anyString())).thenReturn(Optional.of(errandEntity));
+		when(errandNumberGeneratorServiceMock.generateErrandNumber(anyString(), anyString())).thenReturn("errandNumber");
+		when(errandServiceMock.createErrand(anyString(), anyString(), any())).thenReturn(errandEntity.getId());
+		when(emailReaderMapperMock.toErrand(any(), any(), anyBoolean(), any(), any())).thenReturn(new Errand());
+		when(emailReaderMapperMock.toCommunicationEntity(any(), any())).thenReturn(communicationEntity);
+
+
+		// ACT
+		emailReaderWorker.processEmail(email, emailConfig);
+
+		// VERIFY
+		verify(errandRepositoryMock).findById(errandEntity.getId());
+		verify(communicationServiceMock).saveAttachment(same(communicationEntity), same(errandEntity));
+		verify(communicationServiceMock).saveCommunication(same(communicationEntity));
+		verify(emailReaderClientMock).deleteEmail("municipalityId", email.getId());
+		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Ärendekommunikation har skapats."), same(errandEntity), isNull(), isNull());
+		verify(emailReaderMapperMock).toErrand(same(email), eq(emailConfig.getStatusForNew()), eq(emailConfig.isAddSenderAsStakeholder()), eq(emailConfig.getStakeholderRole()), eq(emailConfig.getErrandChannel()));
+		verify(emailReaderMapperMock).toCommunicationEntity(same(email), same(errandEntity));
+		verifyNoMoreInteractions(emailReaderClientMock, errandRepositoryMock, emailReaderMapperMock, communicationServiceMock, emailWorkerConfigRepositoryMock, eventServiceMock);
+
+	}
+
 
 
 	@Test

@@ -35,6 +35,8 @@ class EmailWorkerConfigRepositoryTest {
 		final var enabled = true;
 		final var errandClosedEmailSender = "noreply@email.se";
 		final var errandClosedEmailTemplate = "This is an email";
+		final var errandNewEmailSender = "test@email.se";
+		final var errandNewEmailTemplate = "This is an email too";
 		final var daysOfInactivityBeforeReject = 3;
 		final var statusForNew = "NEW";
 		final var triggerStatusChangeOn = "SOLVED";
@@ -50,6 +52,8 @@ class EmailWorkerConfigRepositoryTest {
 			.withEnabled(enabled)
 			.withErrandClosedEmailSender(errandClosedEmailSender)
 			.withErrandClosedEmailTemplate(errandClosedEmailTemplate)
+			.withErrandNewEmailSender(errandNewEmailSender)
+			.withErrandNewEmailTemplate(errandNewEmailTemplate)
 			.withDaysOfInactivityBeforeReject(daysOfInactivityBeforeReject)
 			.withStatusForNew(statusForNew)
 			.withTriggerStatusChangeOn(triggerStatusChangeOn)
@@ -73,6 +77,8 @@ class EmailWorkerConfigRepositoryTest {
 		assertThat(result.get().getEnabled()).isEqualTo(enabled);
 		assertThat(result.get().getErrandClosedEmailSender()).isEqualTo(errandClosedEmailSender);
 		assertThat(result.get().getErrandClosedEmailTemplate()).isEqualTo(errandClosedEmailTemplate);
+		assertThat(result.get().getErrandNewEmailSender()).isEqualTo(errandNewEmailSender);
+		assertThat(result.get().getErrandNewEmailTemplate()).isEqualTo(errandNewEmailTemplate);
 		assertThat(result.get().getDaysOfInactivityBeforeReject()).isEqualTo(daysOfInactivityBeforeReject);
 		assertThat(result.get().getStatusForNew()).isEqualTo(statusForNew);
 		assertThat(result.get().getTriggerStatusChangeOn()).isEqualTo(triggerStatusChangeOn);

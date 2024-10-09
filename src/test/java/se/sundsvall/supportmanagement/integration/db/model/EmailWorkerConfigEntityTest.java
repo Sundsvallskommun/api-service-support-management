@@ -44,6 +44,8 @@ class EmailWorkerConfigEntityTest {
 		final var enabled = true;
 		final var errandClosedEmailSender = "noreply@email.se";
 		final var errandClosedEmailTemplate = "This is an email";
+		final var errandNewEmailSender = "test@email.se";
+		final var errandNewEmailTemplate = "This is an email too";
 		final var daysOfInactivityBeforeReject = 3;
 		final var statusForNew = "NEW";
 		final var triggerStatusChangeOn = "SOLVED";
@@ -62,6 +64,8 @@ class EmailWorkerConfigEntityTest {
 			.withEnabled(enabled)
 			.withErrandClosedEmailSender(errandClosedEmailSender)
 			.withErrandClosedEmailTemplate(errandClosedEmailTemplate)
+			.withErrandNewEmailSender(errandNewEmailSender)
+			.withErrandNewEmailTemplate(errandNewEmailTemplate)
 			.withDaysOfInactivityBeforeReject(daysOfInactivityBeforeReject)
 			.withStatusForNew(statusForNew)
 			.withTriggerStatusChangeOn(triggerStatusChangeOn)
@@ -80,6 +84,8 @@ class EmailWorkerConfigEntityTest {
 		assertThat(entity.getEnabled()).isEqualTo(enabled);
 		assertThat(entity.getErrandClosedEmailSender()).isEqualTo(errandClosedEmailSender);
 		assertThat(entity.getErrandClosedEmailTemplate()).isEqualTo(errandClosedEmailTemplate);
+		assertThat(entity.getErrandNewEmailSender()).isEqualTo(errandNewEmailSender);
+		assertThat(entity.getErrandNewEmailTemplate()).isEqualTo(errandNewEmailTemplate);
 		assertThat(entity.getDaysOfInactivityBeforeReject()).isEqualTo(daysOfInactivityBeforeReject);
 		assertThat(entity.getStatusForNew()).isEqualTo(statusForNew);
 		assertThat(entity.getTriggerStatusChangeOn()).isEqualTo(triggerStatusChangeOn);
