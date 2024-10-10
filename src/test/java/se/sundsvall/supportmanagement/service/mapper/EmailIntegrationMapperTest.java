@@ -21,6 +21,8 @@ class EmailIntegrationMapperTest {
 		final var enabled = true;
 		final var errandClosedEmailSender = "errandClosedEmailSender";
 		final var errandClosedEmailTemplate = "errandClosedEmailTemplate";
+		final var errandNewEmailSender = "errandNewEmailSender";
+		final var errandNewEmailTemplate = "errandNewEmailTemplate";
 		final var daysOfInactivityBeforeReject = 5;
 		final var statusForNew = "statusForNew";
 		final var triggerStatusChangeOn = "triggerStatusChangeOn";
@@ -36,6 +38,8 @@ class EmailIntegrationMapperTest {
 			.withEnabled(enabled)
 			.withErrandClosedEmailSender(errandClosedEmailSender)
 			.withErrandClosedEmailTemplate(errandClosedEmailTemplate)
+			.withErrandNewEmailSender(errandNewEmailSender)
+			.withErrandNewEmailTemplate(errandNewEmailTemplate)
 			.withDaysOfInactivityBeforeReject(daysOfInactivityBeforeReject)
 			.withStatusForNew(statusForNew)
 			.withTriggerStatusChangeOn(triggerStatusChangeOn)
@@ -56,6 +60,8 @@ class EmailIntegrationMapperTest {
 		assertThat(entity.getEnabled()).isEqualTo(enabled);
 		assertThat(entity.getErrandClosedEmailSender()).isEqualTo(errandClosedEmailSender);
 		assertThat(entity.getErrandClosedEmailTemplate()).isEqualTo(errandClosedEmailTemplate);
+		assertThat(entity.getErrandNewEmailSender()).isEqualTo(errandNewEmailSender);
+		assertThat(entity.getErrandNewEmailTemplate()).isEqualTo(errandNewEmailTemplate);
 		assertThat(entity.getDaysOfInactivityBeforeReject()).isEqualTo(daysOfInactivityBeforeReject);
 		assertThat(entity.getStatusForNew()).isEqualTo(statusForNew);
 		assertThat(entity.getTriggerStatusChangeOn()).isEqualTo(triggerStatusChangeOn);
@@ -74,6 +80,8 @@ class EmailIntegrationMapperTest {
 		final var enabled = true;
 		final var errandClosedEmailSender = "noreply@email.se";
 		final var errandClosedEmailTemplate = "This is an email";
+		final var errandNewEmailSender = "test@email.se";
+		final var errandNewEmailTemplate = "This is an email too";
 		final var daysOfInactivityBeforeReject = 3;
 		final var statusForNew = "NEW";
 		final var triggerStatusChangeOn = "SOLVED";
@@ -92,6 +100,8 @@ class EmailIntegrationMapperTest {
 			.withEnabled(enabled)
 			.withErrandClosedEmailSender(errandClosedEmailSender)
 			.withErrandClosedEmailTemplate(errandClosedEmailTemplate)
+			.withErrandNewEmailSender(errandNewEmailSender)
+			.withErrandNewEmailTemplate(errandNewEmailTemplate)
 			.withDaysOfInactivityBeforeReject(daysOfInactivityBeforeReject)
 			.withStatusForNew(statusForNew)
 			.withTriggerStatusChangeOn(triggerStatusChangeOn)
@@ -109,6 +119,8 @@ class EmailIntegrationMapperTest {
 		assertThat(config.getEnabled()).isEqualTo(enabled);
 		assertThat(config.getErrandClosedEmailSender()).isEqualTo(errandClosedEmailSender);
 		assertThat(config.getErrandClosedEmailTemplate()).isEqualTo(errandClosedEmailTemplate);
+		assertThat(config.getErrandNewEmailSender()).isEqualTo(errandNewEmailSender);
+		assertThat(config.getErrandNewEmailTemplate()).isEqualTo(errandNewEmailTemplate);
 		assertThat(config.getDaysOfInactivityBeforeReject()).isEqualTo(daysOfInactivityBeforeReject);
 		assertThat(config.getStatusForNew()).isEqualTo(statusForNew);
 		assertThat(config.getTriggerStatusChangeOn()).isEqualTo(triggerStatusChangeOn);
