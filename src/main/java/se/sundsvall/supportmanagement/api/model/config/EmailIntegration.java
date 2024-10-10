@@ -22,6 +22,12 @@ public class EmailIntegration {
 	@Schema(description = "Message that will be sent when incoming mail is rejected", example = "Errand is closed. Please open a new errand.", nullable = true)
 	private String errandClosedEmailTemplate;
 
+	@Schema(description = "Email sender if incoming mail results in new errand", example = "test@sundsvall.se", nullable = true)
+	private String errandNewEmailSender;
+
+	@Schema(description = "Message that will be sent when new errand is created", example = "New errand is created.", nullable = true)
+	private String errandNewEmailTemplate;
+
 	@Schema(description = "Number of days before incoming mail is rejected. Measured from when the errand was last touched. " +
 		"Rejection can only occur if status on errand equals 'inactiveStatus'.", example = "5", nullable = true)
 	private Integer daysOfInactivityBeforeReject;
@@ -85,17 +91,43 @@ public class EmailIntegration {
 		this.errandClosedEmailSender = errandClosedEmailSender;
 	}
 
-	public EmailIntegration withErrandClosedEmailSender(String errandClosedEmailSender) {
-		this.errandClosedEmailSender = errandClosedEmailSender;
-		return this;
-	}
-
 	public String getErrandClosedEmailTemplate() {
 		return errandClosedEmailTemplate;
 	}
 
 	public void setErrandClosedEmailTemplate(String errandClosedEmailTemplate) {
 		this.errandClosedEmailTemplate = errandClosedEmailTemplate;
+	}
+
+	public EmailIntegration withErrandClosedEmailSender(String errandClosedEmailSender) {
+		this.errandClosedEmailSender = errandClosedEmailSender;
+		return this;
+	}
+
+	public String getErrandNewEmailSender() {
+		return errandNewEmailSender;
+	}
+
+	public void setErrandNewEmailSender(String errandNewEmailSender) {
+		this.errandNewEmailSender = errandNewEmailSender;
+	}
+
+	public EmailIntegration withErrandNewEmailSender(String errandNewEmailSender) {
+		this.errandNewEmailSender = errandNewEmailSender;
+		return this;
+	}
+
+	public String getErrandNewEmailTemplate() {
+		return errandNewEmailTemplate;
+	}
+
+	public void setErrandNewEmailTemplate(String errandNewEmailTemplate) {
+		this.errandNewEmailTemplate = errandNewEmailTemplate;
+	}
+
+	public EmailIntegration withErrandNewEmailTemplate(String errandNewEmailTemplate) {
+		this.errandNewEmailTemplate = errandNewEmailTemplate;
+		return this;
 	}
 
 	public EmailIntegration withErrandClosedEmailTemplate(String errandClosedEmailTemplate) {
@@ -245,6 +277,8 @@ public class EmailIntegration {
 		return Objects.equals(enabled, that.enabled)
 			&& Objects.equals(errandClosedEmailSender, that.errandClosedEmailSender)
 			&& Objects.equals(errandClosedEmailTemplate, that.errandClosedEmailTemplate)
+			&& Objects.equals(errandNewEmailSender, that.errandNewEmailSender)
+			&& Objects.equals(errandNewEmailTemplate, that.errandNewEmailTemplate)
 			&& Objects.equals(daysOfInactivityBeforeReject, that.daysOfInactivityBeforeReject)
 			&& Objects.equals(statusForNew, that.statusForNew)
 			&& Objects.equals(triggerStatusChangeOn, that.triggerStatusChangeOn)
@@ -259,8 +293,9 @@ public class EmailIntegration {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(enabled, errandClosedEmailSender, errandClosedEmailTemplate, daysOfInactivityBeforeReject, statusForNew,
-			triggerStatusChangeOn, statusChangeTo, inactiveStatus, addSenderAsStakeholder, stakeholderRole, errandChannel, created, modified);
+		return Objects.hash(enabled, errandClosedEmailSender, errandClosedEmailTemplate, errandNewEmailSender, errandNewEmailTemplate,
+			daysOfInactivityBeforeReject, statusForNew, triggerStatusChangeOn, statusChangeTo, inactiveStatus, addSenderAsStakeholder,
+			stakeholderRole, errandChannel, created, modified);
 	}
 
 	@Override
@@ -269,6 +304,8 @@ public class EmailIntegration {
 		sb.append("enabled=").append(enabled);
 		sb.append(", errandClosedEmailSender='").append(errandClosedEmailSender).append('\'');
 		sb.append(", errandClosedEmailTemplate='").append(errandClosedEmailTemplate).append('\'');
+		sb.append(", errandNewEmailSender='").append(errandNewEmailSender).append('\'');
+		sb.append(", errandNewEmailTemplate='").append(errandNewEmailTemplate).append('\'');
 		sb.append(", daysOfInactivityBeforeReject=").append(daysOfInactivityBeforeReject);
 		sb.append(", statusForNew='").append(statusForNew).append('\'');
 		sb.append(", triggerStatusChangeOn='").append(triggerStatusChangeOn).append('\'');
