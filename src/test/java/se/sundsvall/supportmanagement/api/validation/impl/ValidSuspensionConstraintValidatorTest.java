@@ -6,8 +6,6 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.stream.Stream;
 
-import jakarta.validation.ConstraintValidatorContext;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -17,6 +15,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import jakarta.validation.ConstraintValidatorContext;
 import se.sundsvall.supportmanagement.api.model.errand.Suspension;
 
 @ExtendWith(MockitoExtension.class)
@@ -28,7 +27,20 @@ class ValidSuspensionConstraintValidatorTest {
 	@InjectMocks
 	private ValidSuspensionConstraintValidator validator;
 
-	private static Stream<Arguments> argumentProvider() {
+	@ParameterizedTest
+	@MethodSource("validSuspensionArgumentProvider")
+	void validSuspension(final OffsetDateTime suspendFrom, final OffsetDateTime suspendTo, final boolean valid) {
+		final var suspension = new Suspension().withSuspendedFrom(suspendFrom).withSuspendedTo(suspendTo);
+
+		assertThat(validator.isValid(suspension, constraintValidatorContextMock)).isEqualTo(valid);
+	}
+
+	@Test
+	void nullSuspension() {
+		assertThat(validator.isValid(null, constraintValidatorContextMock)).isTrue();
+	}
+
+	private static Stream<Arguments> validSuspensionArgumentProvider() {
 		return Stream.of(
 			Arguments.of(
 				OffsetDateTime.of(2024, 1, 1, 12, 0, 0, 0, ZoneOffset.ofHours(1)),
@@ -41,22 +53,10 @@ class ValidSuspensionConstraintValidatorTest {
 			Arguments.of(
 				OffsetDateTime.of(2024, 1, 1, 12, 0, 0, 0, ZoneOffset.ofHours(1)),
 				null,
-				false)
-		);
+				false),
+			Arguments.of(
+				null,
+				null,
+				true));
 	}
-
-	@ParameterizedTest
-	@MethodSource("argumentProvider")
-	void validSuspension(final OffsetDateTime suspendFrom, final OffsetDateTime suspendTo, final boolean valid) {
-		var suspension = new Suspension().withSuspendedFrom(suspendFrom).withSuspendedTo(suspendTo);
-
-		assertThat(validator.isValid(suspension, constraintValidatorContextMock)).isEqualTo(valid);
-	}
-
-	@Test
-	void nullSuspension() {
-		assertThat(validator.isValid(null, constraintValidatorContextMock)).isTrue();
-	}
-
-
 }
