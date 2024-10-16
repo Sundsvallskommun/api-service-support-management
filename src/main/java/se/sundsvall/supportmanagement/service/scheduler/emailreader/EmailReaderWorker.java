@@ -128,7 +128,7 @@ public class EmailReaderWorker {
 
 	private void sendEmailClosed(final ErrandEntity errand, final Email email, final EmailWorkerConfigEntity config) {
 
-		final var emailRequest = emailReaderMapper.createEmailRequest(email, config.getErrandClosedEmailSender(), config.getErrandClosedEmailTemplate());
+		final var emailRequest = emailReaderMapper.createEmailRequest(email, config.getErrandClosedEmailSender(), config.getErrandClosedEmailTemplate(), email.getSubject());
 		communicationService.sendEmail(config.getNamespace(), config.getMunicipalityId(), errand.getId(), emailRequest);
 	}
 
@@ -138,8 +138,8 @@ public class EmailReaderWorker {
 			//Is optional to send email on new errand
 			return;
 		}
-		email.setSubject(EMAIL_NEW_SUBJECT_PREFIX + errand.getErrandNumber() + " " + email.getSubject());
-		final var emailRequest = emailReaderMapper.createEmailRequest(email, config.getErrandNewEmailSender(), config.getErrandNewEmailTemplate());
+	final var subject =	EMAIL_NEW_SUBJECT_PREFIX + errand.getErrandNumber() + " " + email.getSubject();
+		final var emailRequest = emailReaderMapper.createEmailRequest(email, config.getErrandNewEmailSender(), config.getErrandNewEmailTemplate(),subject);
 		communicationService.sendEmail(config.getNamespace(), config.getMunicipalityId(), errand.getId(), emailRequest);
 	}
 

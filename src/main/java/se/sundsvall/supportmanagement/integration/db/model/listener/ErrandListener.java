@@ -19,7 +19,6 @@ import org.springframework.stereotype.Component;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.TimeMeasurementEntity;
 
-@Component
 public class ErrandListener {
 
 	@PostLoad

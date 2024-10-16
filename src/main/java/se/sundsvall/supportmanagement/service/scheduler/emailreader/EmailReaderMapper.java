@@ -132,9 +132,9 @@ public class EmailReaderMapper {
 		return errand;
 	}
 
-	public EmailRequest createEmailRequest(final Email email, final String sender, final String messageTemplate) {
+	public EmailRequest createEmailRequest(final Email email, final String sender, final String messageTemplate, final String subject) {
 		return EmailRequest.create()
-			.withSubject(email.getSubject())
+			.withSubject(subject)
 			.withRecipient(email.getSender()) // Because we are sending a return response
 			.withEmailHeaders(toEmailHeaderMap(email))
 			.withSender(sender)
@@ -143,8 +143,25 @@ public class EmailReaderMapper {
 	}
 
 	private Map<EmailHeader, List<String>> toEmailHeaderMap(final Email email) {
-		return email.getHeaders().entrySet().stream()
+
+		final var map = email.getHeaders().entrySet().stream()
 			.collect(toMap(
 				entry -> EmailHeader.valueOf(entry.getKey()), Map.Entry::getValue, (oldValue, newValue) -> newValue));
+
+		final var messageId = Optional.ofNullable(map.get(EmailHeader.MESSAGE_ID))
+			.flatMap(list -> list.stream().findFirst())
+			.orElse(null);
+
+		if (messageId != null) {
+			map.put(EmailHeader.IN_REPLY_TO, List.of(messageId));
+
+			Optional.ofNullable(map.get(EmailHeader.REFERENCES))
+				.ifPresentOrElse(references -> references.add(messageId),
+					() -> map.put(EmailHeader.REFERENCES, List.of(messageId)));
+
+			map.remove(EmailHeader.MESSAGE_ID);
+		}
+
+		return map;
 	}
 }

@@ -205,7 +205,7 @@ class EmailReaderMapperTest {
 		final var receivedAt = OffsetDateTime.now();
 		final var sender = "someSender";
 		final var template = "someTemplate";
-		final Map<String, List<String>> emailHeaders = Map.of("MESSAGE_ID", List.of("someValue", "someOtherValue"));
+		final Map<String, List<String>> emailHeaders = Map.of("MESSAGE_ID", List.of("someValue"), "IN_REPLY_TO", List.of("someValue"));
 
 		final var email = new Email()
 			.subject(subject)
@@ -215,7 +215,7 @@ class EmailReaderMapperTest {
 			.headers(emailHeaders)
 			.receivedAt(receivedAt);
 		// Act
-		final var result = emailReaderMapper.createEmailRequest(email, sender, template);
+		final var result = emailReaderMapper.createEmailRequest(email, sender, template, subject);
 
 		// Assert
 		assertThat(result).isNotNull().hasNoNullFieldsOrPropertiesExcept("senderName", "htmlMessage", "attachments", "attachmentIds");
@@ -225,5 +225,9 @@ class EmailReaderMapperTest {
 		assertThat(result.getSender()).isEqualTo(sender);
 		assertThat(result.getSenderName()).isEqualTo(sender);
 		assertThat(result.getMessage()).isEqualTo(template);
+		assertThat(result.getEmailHeaders()).isNotNull().hasSize(2);
+		assertThat(result.getEmailHeaders().get(EmailHeader.MESSAGE_ID)).isNull();
+		assertThat(result.getEmailHeaders().get(EmailHeader.IN_REPLY_TO)).isNotNull().hasSize(1).contains("someValue");
+		assertThat(result.getEmailHeaders().get(EmailHeader.REFERENCES)).isNotNull().hasSize(1).contains("someValue");
 	}
 }
