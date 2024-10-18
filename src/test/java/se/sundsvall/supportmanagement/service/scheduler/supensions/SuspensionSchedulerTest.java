@@ -1,13 +1,13 @@
 package se.sundsvall.supportmanagement.service.scheduler.supensions;
 
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 @ExtendWith(MockitoExtension.class)
 class SuspensionSchedulerTest {
@@ -19,13 +19,13 @@ class SuspensionSchedulerTest {
 	private SuspensionScheduler suspensionScheduler;
 
 	@Test
-	void cleanUpSuspensions() {
+	void processExpiredSuspensions() {
 
 		// Act
-		suspensionScheduler.cleanUpSuspensions();
+		suspensionScheduler.processExpiredSuspensions();
 
 		// Verify
-		verify(suspensionWorkerMock).cleanUpSuspensions();
+		verify(suspensionWorkerMock).processExpiredSuspensions();
 		verifyNoMoreInteractions(suspensionWorkerMock);
 	}
 

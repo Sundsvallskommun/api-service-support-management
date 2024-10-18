@@ -1,39 +1,48 @@
 package se.sundsvall.supportmanagement.service.scheduler.supensions;
 
+import org.springframework.stereotype.Component;
+import se.sundsvall.supportmanagement.api.model.notification.Notification;
+import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.service.EmployeeService;
+import se.sundsvall.supportmanagement.service.NotificationService;
 
 import static java.time.OffsetDateTime.now;
-
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
-
-import se.sundsvall.supportmanagement.api.model.errand.Errand;
-import se.sundsvall.supportmanagement.api.model.errand.Suspension;
-import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
-import se.sundsvall.supportmanagement.service.ErrandService;
 
 @Component
 public class SuspensionWorker {
 
+	private static final String NOTIFICATION_MESSAGE = "Parkering av ärendet har upphört";
+
+	private static final String NOTIFICATION_TYPE = "UPDATE";
+
 	private final ErrandsRepository errandsRepository;
 
-	private final ErrandService errandService;
+	private final NotificationService notificationService;
 
-	public SuspensionWorker(final ErrandsRepository errandsRepository, final ErrandService errandService) {
+	private final EmployeeService employeeService;
+
+	public SuspensionWorker(final ErrandsRepository errandsRepository, final NotificationService notificationService, final EmployeeService employeeService) {
 		this.errandsRepository = errandsRepository;
-		this.errandService = errandService;
+		this.notificationService = notificationService;
+		this.employeeService = employeeService;
 	}
 
-	@Transactional
-	public void cleanUpSuspensions() {
-
+	public void processExpiredSuspensions() {
 		errandsRepository
 			.findAllBySuspendedToBefore(now())
-			.forEach(entity -> {
-				final var errand = Errand.create()
-					.withSuspension(new Suspension())
-					.withStatus(entity.getPreviousStatus());
-				errandService.updateErrand(entity.getNamespace(), entity.getMunicipalityId(), entity.getId(), errand);
-			});
+			.forEach(entity -> notificationService
+				.createNotification(entity.getMunicipalityId(), entity.getNamespace(), createNotification(entity)));
 	}
 
+	private Notification createNotification(final ErrandEntity errand) {
+		final var owner = employeeService.getEmployeeByLoginName(errand.getAssignedUserId());
+		return Notification.create()
+			.withOwnerFullName(owner.getFullname())
+			.withOwnerId(errand.getAssignedUserId())
+			.withType(NOTIFICATION_TYPE)
+			.withDescription(NOTIFICATION_MESSAGE)
+			.withErrandId(errand.getId())
+			.withErrandNumber(errand.getErrandNumber());
+	}
 }
