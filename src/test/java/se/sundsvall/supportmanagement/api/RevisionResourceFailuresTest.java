@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.api;
 
+import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -8,7 +9,6 @@ import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON;
 import static org.zalando.problem.Status.BAD_REQUEST;
 
 import java.util.Map;
-import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,9 +31,9 @@ class RevisionResourceFailuresTest {
 
 	private static final String MUNICIPALITY_ID = "2281";
 
-	private static final String ERRANDS_PATH = "{municipalityId}/{namespace}/errands/{id}/revisions";
+	private static final String ERRANDS_PATH = "{municipalityId}/{namespace}/errands/{errandId}/revisions";
 
-	private static final String ERRAND_NOTES_PATH = "{municipalityId}/{namespace}/errands/{id}/notes/{noteId}/revisions";
+	private static final String ERRAND_NOTES_PATH = "{municipalityId}/{namespace}/errands/{errandId}/notes/{noteId}/revisions";
 
 	@MockBean
 	private RevisionService revisionServiceMock;
@@ -46,13 +46,13 @@ class RevisionResourceFailuresTest {
 	// ==============================================================================================================
 
 	@Test
-	void getErrandRevisionsByInvalidId() {
+	void getErrandRevisionsByInvalidErrandId() {
 
 		// Parameter values
-		final var id = "invalid";
+		final var errandId = "invalid";
 
 		final var response = webTestClient.get().uri(builder -> builder.path(ERRANDS_PATH)
-				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "id", id)))
+			.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", errandId)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectHeader().contentType(APPLICATION_PROBLEM_JSON)
@@ -65,19 +65,19 @@ class RevisionResourceFailuresTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactly(tuple("getErrandRevisions.id", "not a valid UUID"));
+			.containsExactly(tuple("getErrandRevisions.errandId", "not a valid UUID"));
 
 		verifyNoInteractions(revisionServiceMock);
 	}
 
 	@Test
-	void getErrandRevisionDifferencesByInvalidId() {
+	void getErrandRevisionDifferencesByInvalidErrandId() {
 
 		// Parameter values
-		final var id = "invalid";
+		final var errandId = "invalid";
 
 		final var response = webTestClient.get().uri(builder -> builder.path(ERRANDS_PATH + "/difference").queryParam("source", 0).queryParam("target", 1)
-				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "id", id)))
+			.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", errandId)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectHeader().contentType(APPLICATION_PROBLEM_JSON)
@@ -90,7 +90,7 @@ class RevisionResourceFailuresTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactly(tuple("getErrandDiffByVersions.id", "not a valid UUID"));
+			.containsExactly(tuple("getErrandDiffByVersions.errandId", "not a valid UUID"));
 
 		verifyNoInteractions(revisionServiceMock);
 	}
@@ -98,10 +98,10 @@ class RevisionResourceFailuresTest {
 	@Test
 	void getErrandRevisionDifferencesNoSourceParameter() {
 		// Parameter values
-		final var id = UUID.randomUUID().toString();
+		final var errandId = randomUUID().toString();
 
 		final var response = webTestClient.get().uri(builder -> builder.path(ERRANDS_PATH + "/difference").queryParam("target", 0)
-				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "id", id)))
+			.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", errandId)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectHeader().contentType(APPLICATION_PROBLEM_JSON)
@@ -120,10 +120,10 @@ class RevisionResourceFailuresTest {
 	@Test
 	void getErrandRevisionDifferencesNoTargetParameter() {
 		// Parameter values
-		final var id = UUID.randomUUID().toString();
+		final var errandId = randomUUID().toString();
 
 		final var response = webTestClient.get().uri(builder -> builder.path(ERRANDS_PATH + "/difference").queryParam("source", 1)
-				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "id", id)))
+			.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", errandId)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectHeader().contentType(APPLICATION_PROBLEM_JSON)
@@ -142,10 +142,10 @@ class RevisionResourceFailuresTest {
 	@Test
 	void getErrandRevisionDifferencesNegativeValueInSource() {
 		// Parameter values
-		final var id = UUID.randomUUID().toString();
+		final var errandId = randomUUID().toString();
 
 		final var response = webTestClient.get().uri(builder -> builder.path(ERRANDS_PATH + "/difference").queryParam("source", -1).queryParam("target", 0)
-				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "id", id)))
+			.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", errandId)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectHeader().contentType(APPLICATION_PROBLEM_JSON)
@@ -166,10 +166,10 @@ class RevisionResourceFailuresTest {
 	@Test
 	void getErrandRevisionDifferencesNegativeValueInTarget() {
 		// Parameter values
-		final var id = UUID.randomUUID().toString();
+		final var errandId = randomUUID().toString();
 
 		final var response = webTestClient.get().uri(builder -> builder.path(ERRANDS_PATH + "/difference").queryParam("source", 0).queryParam("target", -1)
-				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "id", id)))
+			.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", errandId)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectHeader().contentType(APPLICATION_PROBLEM_JSON)
@@ -192,14 +192,14 @@ class RevisionResourceFailuresTest {
 	// ==============================================================================================================
 
 	@Test
-	void getErrandNoteRevisionsByInvalidId() {
+	void getErrandNoteRevisionsByInvalidErrandId() {
 
 		// Parameter values
-		final var id = "invalid";
-		final var noteId = UUID.randomUUID().toString();
+		final var errandId = "invalid";
+		final var noteId = randomUUID().toString();
 
 		final var response = webTestClient.get().uri(builder -> builder.path(ERRAND_NOTES_PATH)
-				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "id", id, "noteId", noteId)))
+			.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", errandId, "noteId", noteId)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectHeader().contentType(APPLICATION_PROBLEM_JSON)
@@ -212,7 +212,7 @@ class RevisionResourceFailuresTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactly(tuple("getErrandNoteRevisions.id", "not a valid UUID"));
+			.containsExactly(tuple("getErrandNoteRevisions.errandId", "not a valid UUID"));
 
 		verifyNoInteractions(revisionServiceMock);
 	}
@@ -221,11 +221,11 @@ class RevisionResourceFailuresTest {
 	void getErrandNoteRevisionsByInvalidNoteId() {
 
 		// Parameter values
-		final var id = UUID.randomUUID().toString();
+		final var errandId = randomUUID().toString();
 		final var noteId = "invalid";
 
 		final var response = webTestClient.get().uri(builder -> builder.path(ERRAND_NOTES_PATH)
-				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "id", id, "noteId", noteId)))
+			.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", errandId, "noteId", noteId)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectHeader().contentType(APPLICATION_PROBLEM_JSON)
@@ -247,11 +247,11 @@ class RevisionResourceFailuresTest {
 	void getErrandNoteRevisionDifferencesByInvalidErrandId() {
 
 		// Parameter values
-		final var id = "invalid";
-		final var noteId = UUID.randomUUID().toString();
+		final var errandId = "invalid";
+		final var noteId = randomUUID().toString();
 
 		final var response = webTestClient.get().uri(builder -> builder.path(ERRAND_NOTES_PATH + "/difference").queryParam("source", 0).queryParam("target", 1)
-				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "id", id, "noteId", noteId)))
+			.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", errandId, "noteId", noteId)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectHeader().contentType(APPLICATION_PROBLEM_JSON)
@@ -264,7 +264,7 @@ class RevisionResourceFailuresTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactly(tuple("getErrandNoteDiffByVersions.id", "not a valid UUID"));
+			.containsExactly(tuple("getErrandNoteDiffByVersions.errandId", "not a valid UUID"));
 
 		verifyNoInteractions(revisionServiceMock);
 	}
@@ -273,11 +273,11 @@ class RevisionResourceFailuresTest {
 	void getErrandNoteRevisionDifferencesByInvalidNoteId() {
 
 		// Parameter values
-		final var id = UUID.randomUUID().toString();
+		final var errandId = randomUUID().toString();
 		final var noteId = "invalid";
 
 		final var response = webTestClient.get().uri(builder -> builder.path(ERRAND_NOTES_PATH + "/difference").queryParam("source", 0).queryParam("target", 1)
-				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "id", id, "noteId", noteId)))
+			.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", errandId, "noteId", noteId)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectHeader().contentType(APPLICATION_PROBLEM_JSON)
@@ -298,11 +298,11 @@ class RevisionResourceFailuresTest {
 	@Test
 	void getErrandNoteRevisionDifferencesNoSourceParameter() {
 		// Parameter values
-		final var id = UUID.randomUUID().toString();
-		final var noteId = UUID.randomUUID().toString();
+		final var errandId = randomUUID().toString();
+		final var noteId = randomUUID().toString();
 
 		final var response = webTestClient.get().uri(builder -> builder.path(ERRAND_NOTES_PATH + "/difference").queryParam("target", 1)
-				.build(Map.of("municipalityId",MUNICIPALITY_ID, "namespace",NAMESPACE,"id", id, "noteId", noteId)))
+			.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", errandId, "noteId", noteId)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectHeader().contentType(APPLICATION_PROBLEM_JSON)
@@ -321,11 +321,11 @@ class RevisionResourceFailuresTest {
 	@Test
 	void getErrandNoteRevisionDifferencesNoTargetParameter() {
 		// Parameter values
-		final var id = UUID.randomUUID().toString();
-		final var noteId = UUID.randomUUID().toString();
+		final var errandId = randomUUID().toString();
+		final var noteId = randomUUID().toString();
 
 		final var response = webTestClient.get().uri(builder -> builder.path(ERRAND_NOTES_PATH + "/difference").queryParam("source", 1)
-				.build(Map.of("municipalityId",MUNICIPALITY_ID, "namespace",NAMESPACE,"id", id, "noteId", noteId)))
+			.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", errandId, "noteId", noteId)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectHeader().contentType(APPLICATION_PROBLEM_JSON)
@@ -344,11 +344,11 @@ class RevisionResourceFailuresTest {
 	@Test
 	void getErrandNoteRevisionDifferencesNegativeValueInSource() {
 		// Parameter values
-		final var id = UUID.randomUUID().toString();
-		final var noteId = UUID.randomUUID().toString();
+		final var errandId = randomUUID().toString();
+		final var noteId = randomUUID().toString();
 
 		final var response = webTestClient.get().uri(builder -> builder.path(ERRAND_NOTES_PATH + "/difference").queryParam("source", -1).queryParam("target", 0)
-				.build(Map.of("municipalityId",MUNICIPALITY_ID, "namespace",NAMESPACE,"id", id, "noteId", noteId)))
+			.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", errandId, "noteId", noteId)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectHeader().contentType(APPLICATION_PROBLEM_JSON)
@@ -369,11 +369,11 @@ class RevisionResourceFailuresTest {
 	@Test
 	void getErrandNoteRevisionDifferencesNegativeValueInTarget() {
 		// Parameter values
-		final var id = UUID.randomUUID().toString();
-		final var noteId = UUID.randomUUID().toString();
+		final var errandId = randomUUID().toString();
+		final var noteId = randomUUID().toString();
 
 		final var response = webTestClient.get().uri(builder -> builder.path(ERRAND_NOTES_PATH + "/difference").queryParam("source", 0).queryParam("target", -1)
-				.build(Map.of("municipalityId",MUNICIPALITY_ID, "namespace",NAMESPACE,"id", id, "noteId", noteId)))
+			.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", errandId, "noteId", noteId)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectHeader().contentType(APPLICATION_PROBLEM_JSON)
@@ -390,5 +390,4 @@ class RevisionResourceFailuresTest {
 
 		verifyNoInteractions(revisionServiceMock);
 	}
-
 }

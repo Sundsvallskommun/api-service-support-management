@@ -7,8 +7,6 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 
 import java.util.Map;
 
-import jakarta.servlet.http.HttpServletResponse;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -16,6 +14,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
+import jakarta.servlet.http.HttpServletResponse;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.service.CommunicationService;
 
@@ -24,12 +23,11 @@ import se.sundsvall.supportmanagement.service.CommunicationService;
 class ErrandCommunicationAttachmentResourceTest {
 
 	private static final String NAMESPACE = "name.space";
-
 	private static final String MUNICIPALITY_ID = "2281";
-
-	private static final String PATH = "/{municipalityId}/{namespace}/communication/attachments/{attachmentID}/streamed";
-
+	private static final String ERRAND_ID = randomUUID().toString();
+	private static final String COMMUNICATION_ID = randomUUID().toString();
 	private static final String ATTACHMENT_ID = randomUUID().toString();
+	private static final String PATH = "/{municipalityId}/{namespace}/errands/{errandId}/communication/{communicationId}/attachments/{attachmentId}/streamed";
 
 	@Autowired
 	private WebTestClient webTestClient;
@@ -43,7 +41,7 @@ class ErrandCommunicationAttachmentResourceTest {
 		// ACT
 		webTestClient.get()
 			.uri(uriBuilder -> uriBuilder.path(PATH)
-				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "attachmentID", ATTACHMENT_ID)))
+				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", ERRAND_ID, "communicationId", COMMUNICATION_ID, "attachmentId", ATTACHMENT_ID)))
 			.exchange()
 			.expectStatus().isOk()
 			.expectBody()
@@ -51,5 +49,4 @@ class ErrandCommunicationAttachmentResourceTest {
 
 		verify(messageServiceMock).getMessageAttachmentStreamed(any(String.class), any(String.class), any(String.class), any(HttpServletResponse.class));
 	}
-
 }

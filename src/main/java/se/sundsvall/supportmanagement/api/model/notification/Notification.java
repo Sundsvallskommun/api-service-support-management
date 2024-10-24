@@ -5,20 +5,18 @@ import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 import java.time.OffsetDateTime;
 import java.util.Objects;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Null;
-
 import org.springframework.format.annotation.DateTimeFormat;
 
-import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
-import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
-import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
-
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Null;
+import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
 
 public class Notification {
 
-	@Null(groups = {OnCreate.class})
+	@Null(groups = {
+		OnCreate.class
+	})
 	@Schema(description = "Unique identifier for the notification", example = "123e4567-e89b-12d3-a456-426614174000")
 	private String id;
 
@@ -41,8 +39,10 @@ public class Notification {
 	@Schema(description = "User who created the notification", example = "TestUser")
 	private String createdBy;
 
+	@Null(groups = {
+		OnCreate.class
+	})
 	@Schema(description = "Full name of the user who created the notification", example = "Test Testorsson", accessMode = READ_ONLY)
-	@Null(groups = {OnCreate.class, OnUpdate.class})
 	private String createdByFullName;
 
 	@NotBlank
@@ -63,12 +63,16 @@ public class Notification {
 	@Schema(description = "Acknowledged status of the notification", example = "true")
 	private boolean acknowledged;
 
-	@ValidUuid
-	@Schema(description = "Errand id of the notification", example = "f0882f1d-06bc-47fd-b017-1d8307f5ce95")
+	@Null(groups = {
+		OnCreate.class
+	})
+	@Schema(description = "Errand id of the notification", example = "f0882f1d-06bc-47fd-b017-1d8307f5ce95", accessMode = READ_ONLY)
 	private String errandId;
 
+	@Null(groups = {
+		OnCreate.class
+	})
 	@Schema(description = "Errand number of the notification", example = "PRH-2022-000001", accessMode = READ_ONLY)
-	@Null(groups = {OnCreate.class, OnUpdate.class})
 	private String errandNumber;
 
 	public static Notification create() {
@@ -259,10 +263,16 @@ public class Notification {
 
 	@Override
 	public boolean equals(final Object o) {
-		if (this == o) return true;
-		if (o == null || getClass() != o.getClass()) return false;
+		if (this == o) {
+			return true;
+		}
+		if ((o == null) || (getClass() != o.getClass())) {
+			return false;
+		}
 		final Notification that = (Notification) o;
-		return acknowledged == that.acknowledged && Objects.equals(id, that.id) && Objects.equals(created, that.created) && Objects.equals(modified, that.modified) && Objects.equals(ownerFullName, that.ownerFullName) && Objects.equals(ownerId, that.ownerId) && Objects.equals(createdBy, that.createdBy) && Objects.equals(createdByFullName, that.createdByFullName) && Objects.equals(type, that.type) && Objects.equals(description, that.description) && Objects.equals(content, that.content) && Objects.equals(expires, that.expires) && Objects.equals(errandId, that.errandId) && Objects.equals(errandNumber, that.errandNumber);
+		return (acknowledged == that.acknowledged) && Objects.equals(id, that.id) && Objects.equals(created, that.created) && Objects.equals(modified, that.modified) && Objects.equals(ownerFullName, that.ownerFullName) && Objects.equals(ownerId,
+			that.ownerId) && Objects.equals(createdBy, that.createdBy) && Objects.equals(createdByFullName, that.createdByFullName) && Objects.equals(type, that.type) && Objects.equals(description, that.description) && Objects.equals(content, that.content)
+			&& Objects.equals(expires, that.expires) && Objects.equals(errandId, that.errandId) && Objects.equals(errandNumber, that.errandNumber);
 	}
 
 	@Override

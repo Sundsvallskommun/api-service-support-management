@@ -34,17 +34,15 @@ class ErrandCommunicationResourceTest {
 	private static final String NAMESPACE = "namespace";
 	private static final String MUNICIPALITY_ID = "2281";
 	private static final String ERRAND_ID = randomUUID().toString();
-	private static final String PATH_PREFIX = "/{municipalityId}/{namespace}/errands/{id}/communication";
+	private static final String PATH_PREFIX = "/{municipalityId}/{namespace}/errands/{errandId}/communication";
 	private static final String PATH_SMS = "/sms";
 	private static final String PATH_EMAIL = "/email";
-
 
 	@MockBean
 	private CommunicationService serviceMock;
 
 	@Autowired
 	private WebTestClient webTestClient;
-
 
 	@Test
 	void getCommunicationsOnErrand() {
@@ -56,7 +54,7 @@ class ErrandCommunicationResourceTest {
 		// Call
 		final var response = webTestClient.get()
 			.uri(builder -> builder.path(PATH_PREFIX)
-				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE,"id", ERRAND_ID)))
+				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", ERRAND_ID)))
 			.accept(APPLICATION_JSON)
 			.exchange()
 			.expectStatus().isOk()
@@ -79,7 +77,7 @@ class ErrandCommunicationResourceTest {
 		// Call
 		webTestClient.put()
 			.uri(builder -> builder.path(PATH_PREFIX + "/{messageID}/viewed/{isViewed}")
-				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE,"id", ERRAND_ID, "messageID", messageID, "isViewed", isViewed)))
+				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", ERRAND_ID, "messageID", messageID, "isViewed", isViewed)))
 			.contentType(APPLICATION_JSON)
 			.exchange()
 			.expectStatus().isNoContent()
@@ -98,7 +96,7 @@ class ErrandCommunicationResourceTest {
 		// Call
 		webTestClient.post()
 			.uri(builder -> builder.path(PATH_PREFIX + PATH_SMS)
-				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE,"id", ERRAND_ID)))
+				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(requestBody)
 			.exchange()
@@ -118,7 +116,7 @@ class ErrandCommunicationResourceTest {
 
 		webTestClient.post()
 			.uri(builder -> builder.path(PATH_PREFIX + PATH_EMAIL)
-				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE,"id", ERRAND_ID)))
+				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(requestBody)
 			.exchange()
@@ -138,7 +136,7 @@ class ErrandCommunicationResourceTest {
 
 		webTestClient.post()
 			.uri(builder -> builder.path(PATH_PREFIX + PATH_EMAIL)
-				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE,"id", ERRAND_ID)))
+				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(requestBody)
 			.exchange()

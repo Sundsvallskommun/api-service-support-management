@@ -40,7 +40,7 @@ class ErrandNotesResourceTest {
 
 	private static final String NOTE_ID = randomUUID().toString();
 
-	private static final String PATH = "/{municipalityId}/" + NAMESPACE + "/errands/{id}/notes";
+	private static final String PATH = "/{municipalityId}/" + NAMESPACE + "/errands/{errandId}/notes";
 
 	@Autowired
 	private WebTestClient webTestClient;
@@ -66,7 +66,7 @@ class ErrandNotesResourceTest {
 
 		// Call
 		final var response = webTestClient.post()
-			.uri(builder -> builder.path(PATH).build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
+			.uri(builder -> builder.path(PATH).build(Map.of("municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.accept(APPLICATION_JSON)
 			.bodyValue(requestBody)
@@ -88,7 +88,7 @@ class ErrandNotesResourceTest {
 		when(errandNotesServiceMock.readErrandNote(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, NOTE_ID)).thenReturn(ErrandNote.create());
 
 		final var response = webTestClient.get()
-			.uri(builder -> builder.path(PATH.concat("/{noteId}")).build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "noteId", NOTE_ID)))
+			.uri(builder -> builder.path(PATH.concat("/{noteId}")).build(Map.of("municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "noteId", NOTE_ID)))
 			.accept(APPLICATION_JSON)
 			.exchange()
 			.expectStatus().isOk()
@@ -116,7 +116,7 @@ class ErrandNotesResourceTest {
 		when(errandNotesServiceMock.findErrandNotes(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, requestParameter)).thenReturn(findErrandNotesResponse);
 
 		final var response = webTestClient.get()
-			.uri(builder -> builder.path(PATH).queryParam("partyId", partyId).build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
+			.uri(builder -> builder.path(PATH).queryParam("partyId", partyId).build(Map.of("municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
 			.exchange()
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)
@@ -142,7 +142,7 @@ class ErrandNotesResourceTest {
 		when(errandNotesServiceMock.updateErrandNote(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, NOTE_ID, requestBody)).thenReturn(ErrandNote.create());
 
 		webTestClient.patch()
-			.uri(builder -> builder.path(PATH.concat("/{noteId}")).build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "noteId", NOTE_ID)))
+			.uri(builder -> builder.path(PATH.concat("/{noteId}")).build(Map.of("municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "noteId", NOTE_ID)))
 			.accept(APPLICATION_JSON)
 			.contentType(APPLICATION_JSON)
 			.bodyValue(requestBody)
@@ -160,7 +160,7 @@ class ErrandNotesResourceTest {
 	void deleteErrandNote() {
 
 		webTestClient.delete()
-			.uri(builder -> builder.path(PATH.concat("/{noteId}")).build(Map.of("municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "noteId", NOTE_ID)))
+			.uri(builder -> builder.path(PATH.concat("/{noteId}")).build(Map.of("municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "noteId", NOTE_ID)))
 			.exchange()
 			.expectStatus().isNoContent()
 			.expectHeader().contentType(ALL_VALUE);
@@ -168,5 +168,4 @@ class ErrandNotesResourceTest {
 		// Verification
 		verify(errandNotesServiceMock).deleteErrandNote(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, NOTE_ID);
 	}
-
 }

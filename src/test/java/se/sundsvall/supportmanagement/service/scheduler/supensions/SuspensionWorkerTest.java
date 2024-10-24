@@ -1,6 +1,15 @@
 package se.sundsvall.supportmanagement.service.scheduler.supensions;
 
-import generated.se.sundsvall.employee.PortalPersonData;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
+
+import java.time.OffsetDateTime;
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -8,21 +17,13 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import generated.se.sundsvall.employee.PortalPersonData;
 import se.sundsvall.supportmanagement.api.model.notification.Notification;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.service.EmployeeService;
 import se.sundsvall.supportmanagement.service.NotificationService;
-
-import java.time.OffsetDateTime;
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class SuspensionWorkerTest {
@@ -68,7 +69,7 @@ class SuspensionWorkerTest {
 
 		// Assert
 		verify(errandsRepositoryMock).findAllBySuspendedToBefore(any(OffsetDateTime.class));
-		verify(notificationServiceMock).createNotification(eq(municipalityId), eq(namespace), notificationCaptor.capture());
+		verify(notificationServiceMock).createNotification(eq(municipalityId), eq(namespace), eq(errandEntity.getId()), notificationCaptor.capture());
 		final var notification = notificationCaptor.getValue();
 		assertThat(notification).isNotNull();
 		assertThat(notification.getErrandId()).isEqualTo(errandEntity.getId());
@@ -117,7 +118,7 @@ class SuspensionWorkerTest {
 
 		// Assert
 		verify(errandsRepositoryMock).findAllBySuspendedToBefore(any(OffsetDateTime.class));
-		verify(notificationServiceMock).createNotification(eq(municipalityId), eq(namespace), notificationCaptor.capture());
+		verify(notificationServiceMock).createNotification(eq(municipalityId), eq(namespace), eq(errandEntity.getId()), notificationCaptor.capture());
 		final var notification = notificationCaptor.getValue();
 		assertThat(notification).isNotNull();
 		assertThat(notification.getErrandId()).isEqualTo(errandEntity.getId());

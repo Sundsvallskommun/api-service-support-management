@@ -12,9 +12,9 @@ import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
 @CircuitBreaker(name = "notificationRepository")
 public interface NotificationRepository extends JpaRepository<NotificationEntity, String> {
 
-	boolean existsByIdAndNamespaceAndMunicipalityId(String id, String namespace, String municipalityId);
+	boolean existsByIdAndNamespaceAndMunicipalityIdAndErrandEntityId(String id, String namespace, String municipalityId, String errandId);
 
-	Optional<NotificationEntity> findByIdAndNamespaceAndMunicipalityId(String id, String namespace, String municipalityId);
+	Optional<NotificationEntity> findByIdAndNamespaceAndMunicipalityIdAndErrandEntityId(String id, String namespace, String municipalityId, String errandId);
 
 	List<NotificationEntity> findAllByNamespaceAndMunicipalityIdAndOwnerId(String namespace, String municipalityId, String ownerId);
 
@@ -22,5 +22,4 @@ public interface NotificationRepository extends JpaRepository<NotificationEntity
 		final String type);
 
 	List<NotificationEntity> findByExpiresBefore(final OffsetDateTime expires);
-
 }

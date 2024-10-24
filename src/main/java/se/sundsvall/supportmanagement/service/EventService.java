@@ -90,7 +90,7 @@ public class EventService {
 			final var creator = employeeService.getEmployeeByLoginName(executingUserSupplier.getAdUser());
 
 			final var notification = toNotification(event, errandEntity, owner, creator, executingUserSupplier.getAdUser());
-			notificationService.createNotification(errandEntity.getMunicipalityId(), errandEntity.getNamespace(), notification);
+			notificationService.createNotification(errandEntity.getMunicipalityId(), errandEntity.getNamespace(), errandEntity.getId(), notification);
 		});
 
 	}

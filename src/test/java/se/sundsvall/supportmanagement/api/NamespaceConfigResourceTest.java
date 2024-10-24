@@ -27,14 +27,10 @@ import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 @ActiveProfiles("junit")
 class NamespaceConfigResourceTest {
 
-	private static final String PATH = "/{municipalityId}/{namespace}/namespaceConfig";
-
+	private static final String PATH = "/{municipalityId}/{namespace}/namespace-config";
 	private static final String NAMESPACE = "namespace";
-
 	private static final String MUNICIPALITY_ID = "2281";
-
 	private static final String DISPLAY_NAME = "DisplayName";
-
 	private static final String SHORT_CODE = "NS";
 
 	@Autowired
@@ -56,7 +52,7 @@ class NamespaceConfigResourceTest {
 			.exchange()
 			.expectStatus().isCreated()
 			.expectHeader().contentType(ALL)
-			.expectHeader().location("/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/namespaceConfig")
+			.expectHeader().location("/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/namespace-config")
 			.expectBody().isEmpty();
 
 		verify(serviceMock).create(namespaceConfig, NAMESPACE, MUNICIPALITY_ID);
@@ -96,7 +92,7 @@ class NamespaceConfigResourceTest {
 		when(serviceMock.findAll(any())).thenReturn(configs);
 
 		final var response = webTestClient.get()
-			.uri(uriBuilder -> uriBuilder.path("/namespaceConfigs").build())
+			.uri(uriBuilder -> uriBuilder.path("/namespace-configs").build())
 			.exchange()
 			.expectStatus().isOk()
 			.expectBodyList(NamespaceConfig.class)
@@ -118,7 +114,7 @@ class NamespaceConfigResourceTest {
 		when(serviceMock.findAll(any())).thenReturn(configs);
 
 		final var response = webTestClient.get()
-			.uri(uriBuilder -> uriBuilder.path("/namespaceConfigs").queryParam("municipalityId", MUNICIPALITY_ID).build())
+			.uri(uriBuilder -> uriBuilder.path("/namespace-configs").queryParam("municipalityId", MUNICIPALITY_ID).build())
 			.exchange()
 			.expectStatus().isOk()
 			.expectBodyList(NamespaceConfig.class)
@@ -156,5 +152,4 @@ class NamespaceConfigResourceTest {
 
 		verify(serviceMock).delete(NAMESPACE, MUNICIPALITY_ID);
 	}
-
 }

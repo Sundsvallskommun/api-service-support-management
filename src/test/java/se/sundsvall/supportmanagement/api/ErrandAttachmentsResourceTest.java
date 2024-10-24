@@ -44,7 +44,7 @@ class ErrandAttachmentsResourceTest {
 
 	private static final String ERRAND_ID = randomUUID().toString();
 
-	private static final String PATH = "/{municipalityId}/{namespace}/errands/{id}/attachments";
+	private static final String PATH = "/{municipalityId}/{namespace}/errands/{errandId}/attachments";
 
 	@MockBean
 	private ErrandAttachmentService errandAttachmentServiceMock;
@@ -68,7 +68,7 @@ class ErrandAttachmentsResourceTest {
 
 		// Call
 		webTestClient.post().uri(builder -> builder.path(PATH)
-				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "id", ERRAND_ID)))
+			.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", ERRAND_ID)))
 			.contentType(MULTIPART_FORM_DATA)
 			.accept(APPLICATION_JSON)
 			.body(BodyInserters.fromMultipartData(body))
@@ -93,7 +93,7 @@ class ErrandAttachmentsResourceTest {
 		final var attachmentId = randomUUID().toString();
 
 		webTestClient.get().uri(builder -> builder.path(PATH.concat("/{attachmentId}"))
-				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "id", ERRAND_ID, "attachmentId", attachmentId)))
+			.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", ERRAND_ID, "attachmentId", attachmentId)))
 			.accept(APPLICATION_JSON)
 			.exchange()
 			.expectStatus().isOk();
@@ -113,7 +113,7 @@ class ErrandAttachmentsResourceTest {
 		when(errandAttachmentServiceMock.readErrandAttachmentHeaders(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID)).thenReturn(errandAttachments);
 
 		final var response = webTestClient.get().uri(builder -> builder.path(PATH)
-				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "id", ERRAND_ID)))
+			.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", ERRAND_ID)))
 			.exchange()
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)
@@ -133,7 +133,7 @@ class ErrandAttachmentsResourceTest {
 		final var attachmentId = randomUUID().toString();
 
 		webTestClient.delete().uri(builder -> builder.path(PATH.concat("/{attachmentId}"))
-				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "id", ERRAND_ID, "attachmentId", attachmentId)))
+			.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", ERRAND_ID, "attachmentId", attachmentId)))
 			.exchange()
 			.expectStatus().isNoContent()
 			.expectHeader().contentType(ALL_VALUE);
@@ -141,5 +141,4 @@ class ErrandAttachmentsResourceTest {
 		// Verification
 		verify(errandAttachmentServiceMock).deleteErrandAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, attachmentId);
 	}
-
 }

@@ -26,7 +26,7 @@ import se.sundsvall.supportmanagement.service.MetadataService;
 @ActiveProfiles("junit")
 class MetadataExternalIdTypeResourceTest {
 
-	private static final String PATH = "/{municipalityId}/{namespace}/metadata/externalIdTypes";
+	private static final String PATH = "/{municipalityId}/{namespace}/metadata/external-id-types";
 
 	private static final String NAMESPACE = "namespace";
 
@@ -55,7 +55,7 @@ class MetadataExternalIdTypeResourceTest {
 			.exchange()
 			.expectStatus().isCreated()
 			.expectHeader().contentType(ALL)
-			.expectHeader().location("/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/metadata/externalIdTypes/" + externalIdTypeName)
+			.expectHeader().location("/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/metadata/external-id-types/" + externalIdTypeName)
 			.expectBody().isEmpty();
 
 		// Verifications & assertions
@@ -112,5 +112,4 @@ class MetadataExternalIdTypeResourceTest {
 		// Verifications & assertions
 		verify(metadataServiceMock).deleteExternalIdType(NAMESPACE, MUNICIPALITY_ID, externalIdTypeName);
 	}
-
 }

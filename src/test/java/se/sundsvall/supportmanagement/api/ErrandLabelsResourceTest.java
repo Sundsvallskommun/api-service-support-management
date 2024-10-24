@@ -31,7 +31,7 @@ class ErrandLabelsResourceTest {
 
 	private static final String ERRAND_ID = randomUUID().toString();
 
-	private static final String PATH = "/{municipalityId}/{namespace}/errands/{id}/labels";
+	private static final String PATH = "/{municipalityId}/{namespace}/errands/{errandId}/labels";
 
 	@Autowired
 	private WebTestClient webTestClient;
@@ -46,7 +46,7 @@ class ErrandLabelsResourceTest {
 
 		// Call
 		final var response = webTestClient.post()
-			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.accept(ALL)
 			.bodyValue(labels)
@@ -68,7 +68,7 @@ class ErrandLabelsResourceTest {
 
 		// Call
 		final var response = webTestClient.get()
-			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
 			.accept(APPLICATION_JSON)
 			.exchange()
 			.expectStatus().isOk()
@@ -89,7 +89,7 @@ class ErrandLabelsResourceTest {
 
 		// Call
 		webTestClient.put()
-			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.accept(ALL)
 			.bodyValue(labels)
@@ -104,7 +104,7 @@ class ErrandLabelsResourceTest {
 	void deleteErrandLabels() {
 		// Call
 		webTestClient.delete()
-			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
 			.accept(ALL)
 			.exchange()
 			.expectStatus().isNoContent();
@@ -112,5 +112,4 @@ class ErrandLabelsResourceTest {
 		// Verification
 		verify(errandLabelServiceMock).deleteErrandLabel(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 	}
-
 }

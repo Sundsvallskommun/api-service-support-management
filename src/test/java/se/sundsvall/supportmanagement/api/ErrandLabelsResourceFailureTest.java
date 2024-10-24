@@ -33,7 +33,7 @@ class ErrandLabelsResourceFailureTest {
 
 	private static final String INVALID = "#invalid#";
 
-	private static final String PATH = "/{municipalityId}/{namespace}/errands/{id}/labels";
+	private static final String PATH = "/{municipalityId}/{namespace}/errands/{errandId}/labels";
 
 	@Autowired
 	private WebTestClient webTestClient;
@@ -44,7 +44,7 @@ class ErrandLabelsResourceFailureTest {
 	@Test
 	void getErrandLabelsWithInvalidNamespace() {
 		final var response = webTestClient.get()
-			.uri(builder -> builder.path(PATH).build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -64,7 +64,7 @@ class ErrandLabelsResourceFailureTest {
 	@Test
 	void getErrandLabelsWithInvalidMunicipalityId() {
 		final var response = webTestClient.get()
-			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", INVALID, "id", ERRAND_ID)))
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", INVALID, "errandId", ERRAND_ID)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -82,9 +82,9 @@ class ErrandLabelsResourceFailureTest {
 	}
 
 	@Test
-	void getErrandLabelsWithInvalidId() {
+	void getErrandLabelsWithInvalidErrandId() {
 		final var response = webTestClient.get()
-			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", INVALID)))
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", INVALID)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -96,7 +96,7 @@ class ErrandLabelsResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactlyInAnyOrder(tuple("getErrandLabels.id", "not a valid UUID"));
+			.containsExactlyInAnyOrder(tuple("getErrandLabels.errandId", "not a valid UUID"));
 
 		verifyNoInteractions(errandLabelServiceMock);
 	}
@@ -104,7 +104,7 @@ class ErrandLabelsResourceFailureTest {
 	@Test
 	void addErrandLabelsWithInvalidNamespace() {
 		final var response = webTestClient.post()
-			.uri(builder -> builder.path(PATH).build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
 			.bodyValue(List.of("label1", "label2"))
 			.exchange()
 			.expectStatus().isBadRequest()
@@ -125,7 +125,7 @@ class ErrandLabelsResourceFailureTest {
 	@Test
 	void updateErrandLabelsWithInvalidNamespace() {
 		final var response = webTestClient.put()
-			.uri(builder -> builder.path(PATH).build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
 			.bodyValue(List.of("label1", "label2"))
 			.exchange()
 			.expectStatus().isBadRequest()
@@ -146,7 +146,7 @@ class ErrandLabelsResourceFailureTest {
 	@Test
 	void removeErrandLabelWithInvalidNamespace() {
 		final var response = webTestClient.delete()
-			.uri(builder -> builder.path(PATH).build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -162,5 +162,4 @@ class ErrandLabelsResourceFailureTest {
 
 		verifyNoInteractions(errandLabelServiceMock);
 	}
-
 }

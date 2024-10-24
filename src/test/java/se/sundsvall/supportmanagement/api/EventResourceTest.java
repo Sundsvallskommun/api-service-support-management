@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.api;
 
 import static com.fasterxml.jackson.annotation.JsonCreator.Mode.PROPERTIES;
+import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -13,12 +14,7 @@ import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
@@ -35,6 +31,11 @@ import org.springframework.data.domain.Sort.Direction;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
+
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.event.Event;
 import se.sundsvall.supportmanagement.service.EventService;
@@ -47,7 +48,7 @@ class EventResourceTest {
 
 	private static final String MUNICIPALITY_ID = "2281";
 
-	private static final String PATH = "/{municipalityId}/{namespace}/errands/{id}/events";
+	private static final String PATH = "/{municipalityId}/{namespace}/errands/{errandId}/events";
 
 	@MockBean
 	private EventService eventServiceMock;
@@ -61,13 +62,13 @@ class EventResourceTest {
 	@Test
 	void getErrandEventsWithDefaultPageSettings() {
 		// Parameter values
-		final var id = UUID.randomUUID().toString();
+		final var errandId = randomUUID().toString();
 
 		// Mock
-		when(eventServiceMock.readEvents(eq(MUNICIPALITY_ID), eq(id), any(Pageable.class))).thenReturn(new RestResponsePage<>(List.of(Event.create()), PageRequest.of(0, 20), 1));
+		when(eventServiceMock.readEvents(eq(MUNICIPALITY_ID), eq(errandId), any(Pageable.class))).thenReturn(new RestResponsePage<>(List.of(Event.create()), PageRequest.of(0, 20), 1));
 
 		// Call
-		final var response = webTestClient.get().uri(builder -> builder.path(PATH).build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "id", id)))
+		final var response = webTestClient.get().uri(builder -> builder.path(PATH).build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", errandId)))
 			.exchange()
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)
@@ -78,7 +79,7 @@ class EventResourceTest {
 			.getResponseBody();
 
 		// Verification
-		verify(eventServiceMock).readEvents(eq(MUNICIPALITY_ID), eq(id), pageableCaptor.capture());
+		verify(eventServiceMock).readEvents(eq(MUNICIPALITY_ID), eq(errandId), pageableCaptor.capture());
 
 		assertThat(pageableCaptor.getValue().getPageNumber()).isZero();
 		assertThat(pageableCaptor.getValue().getPageSize()).isEqualTo(20);
@@ -91,17 +92,17 @@ class EventResourceTest {
 	@Test
 	void getErrandEventsWithCustomPageSettings() {
 		// Parameter values
-		final var id = UUID.randomUUID().toString();
+		final var errandId = randomUUID().toString();
 
 		// Mock
-		when(eventServiceMock.readEvents(eq(MUNICIPALITY_ID), eq(id), any(Pageable.class))).thenReturn(new RestResponsePage<>(List.of(Event.create(), Event.create())));
+		when(eventServiceMock.readEvents(eq(MUNICIPALITY_ID), eq(errandId), any(Pageable.class))).thenReturn(new RestResponsePage<>(List.of(Event.create(), Event.create())));
 
 		// Call
 		final var response = webTestClient.get().uri(builder -> builder.path(PATH)
-				.queryParam("page", "10")
-				.queryParam("size", "5")
-				.queryParam("sort", "created,desc")
-				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "id", id)))
+			.queryParam("page", "10")
+			.queryParam("size", "5")
+			.queryParam("sort", "created,desc")
+			.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", errandId)))
 			.exchange()
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)
@@ -112,7 +113,7 @@ class EventResourceTest {
 			.getResponseBody();
 
 		// Verification
-		verify(eventServiceMock).readEvents(eq(MUNICIPALITY_ID), eq(id), pageableCaptor.capture());
+		verify(eventServiceMock).readEvents(eq(MUNICIPALITY_ID), eq(errandId), pageableCaptor.capture());
 		assertThat(pageableCaptor.getValue().getPageNumber()).isEqualTo(10);
 		assertThat(pageableCaptor.getValue().getPageSize()).isEqualTo(5);
 		assertThat(pageableCaptor.getValue().getSort()).isEqualTo(Sort.by(Direction.DESC, "created"));
@@ -147,7 +148,5 @@ class EventResourceTest {
 		public RestResponsePage() {
 			super(new ArrayList<>());
 		}
-
 	}
-
 }
