@@ -107,5 +107,7 @@ class NotificationsDeleteResourceFailureTest {
 		// Verification
 		assertThat(response).isNotNull();
 		assertThat(response.getViolations()).isNotEmpty();
+		assertThat(response.getStatus()).isEqualTo(NOT_FOUND);
+		assertThat(response.getDetail()).isEqualTo("Notification id not found");
 	}
 }
