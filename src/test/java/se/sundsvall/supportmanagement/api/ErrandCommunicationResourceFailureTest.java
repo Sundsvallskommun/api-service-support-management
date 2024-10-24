@@ -41,6 +41,7 @@ class ErrandCommunicationResourceFailureTest {
 	private static final String INVALID = "#invalid#";
 	private static final String CONSTRAINT_VIOLATION = "Constraint Violation";
 	private static final String PATH_PREFIX = "/{municipalityId}/{namespace}/errands/{errandId}/communication";
+
 	private static final String PATH_SMS = "/sms";
 	private static final String PATH_EMAIL = "/email";
 

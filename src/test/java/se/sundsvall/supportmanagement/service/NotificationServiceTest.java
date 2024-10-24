@@ -233,6 +233,7 @@ class NotificationServiceTest {
 		final var errandId = randomUUID().toString();
 
 		when(notificationRepositoryMock.existsByIdAndNamespaceAndMunicipalityIdAndErrandEntityId(notificationId, namespace, municipalityId, errandId)).thenReturn(true);
+		when(notificationRepositoryMock.existsByIdAndNamespaceAndMunicipalityIdAndErrandEntityId(notificationId, namespace, municipalityId, errandId)).thenReturn(true);
 
 		// Act
 		notificationService.deleteNotification(municipalityId, namespace, errandId, notificationId);
