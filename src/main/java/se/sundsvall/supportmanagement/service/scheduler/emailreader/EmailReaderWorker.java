@@ -138,8 +138,8 @@ public class EmailReaderWorker {
 			//Is optional to send email on new errand
 			return;
 		}
-	final var subject =	EMAIL_NEW_SUBJECT_PREFIX + errand.getErrandNumber() + " " + email.getSubject();
-		final var emailRequest = emailReaderMapper.createEmailRequest(email, config.getErrandNewEmailSender(), config.getErrandNewEmailTemplate(),subject);
+		final var subject = EMAIL_NEW_SUBJECT_PREFIX + "#" + errand.getErrandNumber() + " " + email.getSubject();
+		final var emailRequest = emailReaderMapper.createEmailRequest(email, config.getErrandNewEmailSender(), config.getErrandNewEmailTemplate(), subject);
 		communicationService.sendEmail(config.getNamespace(), config.getMunicipalityId(), errand.getId(), emailRequest);
 	}
 
