@@ -94,7 +94,7 @@ class ErrandParameterResourceFailureTest {
 	}
 
 	@Test
-	void updateErrandParametersInvalidId() {
+	void updateErrandParametersInvalidErrandId() {
 
 		final var requestBody = List.of(Parameter.create().withKey("key").withValues(List.of("value")));
 
@@ -387,7 +387,7 @@ class ErrandParameterResourceFailureTest {
 	}
 
 	@Test
-	void deleteErrandParameterWithInvalidId() {
+	void deleteErrandParameterWithInvalidErrandId() {
 
 		final var response = webTestClient.delete()
 			.uri(builder -> builder.path(PATH.concat("/{parameterKey}")).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", INVALID, "parameterKey", PARAMETER_KEY)))

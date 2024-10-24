@@ -42,7 +42,7 @@ class MetadataExternalIdTypeIT extends AbstractAppTest {
 
 	private static final String MUNICIPALITY_2309 = "2309";
 
-	private static final String PATH = "/" + MUNICIPALITY_2281 + "/" + NAMESPACE + "/metadata/externalIdTypes";
+	private static final String PATH = "/" + MUNICIPALITY_2281 + "/" + NAMESPACE + "/metadata/external-id-types";
 
 	@Autowired
 	private ExternalIdTypeRepository externalIdTypeRepository;
@@ -56,7 +56,7 @@ class MetadataExternalIdTypeIT extends AbstractAppTest {
 			.withHttpMethod(POST)
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(CREATED)
-			.withExpectedResponseHeader(LOCATION, List.of("/" + MUNICIPALITY_2281 + "/" + NAMESPACE + "/metadata/externalIdTypes/A_BRAND_NEW_EXTERNAL_ID_TYPE"))
+			.withExpectedResponseHeader(LOCATION, List.of("/" + MUNICIPALITY_2281 + "/" + NAMESPACE + "/metadata/external-id-types/A_BRAND_NEW_EXTERNAL_ID_TYPE"))
 			.withExpectedResponseBodyIsNull()
 			.sendRequestAndVerifyResponse();
 
@@ -87,7 +87,7 @@ class MetadataExternalIdTypeIT extends AbstractAppTest {
 
 	@Test
 	void test04_getExternalIdTypesWhenEmpty() {
-		final var path = "/" + MUNICIPALITY_2309 + "/" + NAMESPACE + "/metadata/externalIdTypes";
+		final var path = "/" + MUNICIPALITY_2309 + "/" + NAMESPACE + "/metadata/external-id-types";
 
 		setupCall()
 			.withServicePath(path)

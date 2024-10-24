@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.api;
 
 import static java.util.Collections.emptyList;
+import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -12,7 +13,6 @@ import static org.zalando.problem.Status.NOT_FOUND;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,16 +30,11 @@ import se.sundsvall.supportmanagement.service.TimeMeasurementService;
 @ActiveProfiles("junit")
 class ErrandTimeMeasurementsResourceTest {
 
-	private static final String PATH = "/{municipalityId}/{namespace}/errands/{errandId}/timeMeasure";
-
+	private static final String PATH = "/{municipalityId}/{namespace}/errands/{errandId}/time-measure";
 	private static final String NAMESPACE = "namespace";
-
 	private static final String MUNICIPALITY_ID = "2281";
-
-	private static final String ERRAND_ID = UUID.randomUUID().toString();
-
+	private static final String ERRAND_ID = randomUUID().toString();
 	private static final String ENTITY_NOT_FOUND = "An errand with id '%s' could not be found in namespace '%s' for municipality with id '%s'";
-
 
 	@Autowired
 	private WebTestClient webTestClient;
@@ -120,7 +115,5 @@ class ErrandTimeMeasurementsResourceTest {
 			assertThat(p.getTitle()).isEqualTo("Not Found");
 			assertThat(p.getDetail()).isEqualTo(String.format(ENTITY_NOT_FOUND, ERRAND_ID, NAMESPACE, MUNICIPALITY_ID));
 		});
-
 	}
-
 }

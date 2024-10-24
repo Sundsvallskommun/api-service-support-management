@@ -67,5 +67,4 @@ class ErrandCommunicationsAttachmentIT extends AbstractAppTest {
 			.sendRequestAndVerifyResponse();
 
 	}
-
 }
