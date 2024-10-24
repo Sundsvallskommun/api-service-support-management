@@ -107,6 +107,7 @@ class NotificationsDeleteResourceFailureTest {
 
 		// Verification
 		assertThat(response).isNotNull();
+
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)

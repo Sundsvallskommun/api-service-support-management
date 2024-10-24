@@ -52,6 +52,10 @@ public class NotificationService {
 			.toList();
 	}
 
+	public List<Notification> getNotifications(final String municipalityId, final String namespace, final String ownerId) {
+		return notificationRepository.findAllByNamespaceAndMunicipalityIdAndOwnerId(namespace, municipalityId, ownerId).stream().map(NotificationMapper::toNotification).toList();
+	}
+
 	public String createNotification(final String municipalityId, final String namespace, final String errandId, final Notification notification) {
 		if ((notification.getOwnerId() == null) || isExecutingUserTheOwner(notification.getOwnerId()) || doesNotificationExist(municipalityId, namespace, errandId, notification)) {
 			return null;
