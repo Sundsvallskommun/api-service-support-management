@@ -5,12 +5,10 @@ import static org.zalando.problem.Status.NOT_FOUND;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Objects;
-
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.zalando.problem.Problem;
-
 import se.sundsvall.supportmanagement.api.filter.ExecutingUserSupplier;
 import se.sundsvall.supportmanagement.api.model.notification.Notification;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
