@@ -275,7 +275,7 @@ class ErrandsUpdateResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.patch()
-			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
+			.uri(builder -> builder.path(PATH + "/{errandId}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(Errand.create().withContactReasonDescription(rightPad("Test", 4097, 'X')))
 			.exchange()

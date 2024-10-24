@@ -124,6 +124,7 @@ class ErrandCommunicationResource {
 	@GetMapping(path = "/{communicationId}/attachments/{attachmentId}/streamed", produces = {
 		ALL_VALUE, APPLICATION_PROBLEM_JSON_VALUE
 	})
+
 	@ApiResponse(responseCode = "200", description = "Successful Operation", useReturnTypeSchema = true)
 	@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	void getMessageAttachmentStreamed(
