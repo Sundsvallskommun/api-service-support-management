@@ -3,7 +3,6 @@ package se.sundsvall.supportmanagement.service.scheduler.supensions;
 import static java.time.OffsetDateTime.now;
 
 import org.springframework.stereotype.Component;
-
 import se.sundsvall.supportmanagement.api.model.notification.Notification;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
