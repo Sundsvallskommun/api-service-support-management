@@ -191,7 +191,7 @@ class ErrandsResourceTest {
 
 		// Call
 		final var response = webTestClient.get()
-			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
+			.uri(builder -> builder.path(PATH + "/{errandId}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
 			.exchange()
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)
@@ -312,7 +312,7 @@ class ErrandsResourceTest {
 
 		// Call
 		final var response = webTestClient.patch()
-			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
+			.uri(builder -> builder.path(PATH + "/{errandId}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(errandInstance)
 			.exchange()
@@ -340,7 +340,7 @@ class ErrandsResourceTest {
 
 		// Call
 		final var response = webTestClient.patch()
-			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
+			.uri(builder -> builder.path(PATH + "/{errandId}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(emptyInstance)
 			.exchange()
@@ -365,7 +365,7 @@ class ErrandsResourceTest {
 		when(errandServiceMock.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, errandInstance)).thenReturn(updatedInstance);
 
 		final var response = webTestClient.patch()
-			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
+			.uri(builder -> builder.path(PATH + "/{errandId}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(errandInstance)
 			.exchange()
@@ -383,7 +383,7 @@ class ErrandsResourceTest {
 	@Test
 	void deleteErrand() {
 		webTestClient.delete()
-			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
+			.uri(builder -> builder.path(PATH + "/{errandId}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
 			.exchange()
 			.expectStatus().isNoContent()
 			.expectBody().isEmpty();
@@ -416,7 +416,5 @@ class ErrandsResourceTest {
 		public RestResponsePage() {
 			super(new ArrayList<>());
 		}
-
 	}
-
 }

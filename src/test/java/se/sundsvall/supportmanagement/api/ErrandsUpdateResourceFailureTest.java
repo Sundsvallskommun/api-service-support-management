@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.api;
 
+import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 import static org.flywaydb.core.internal.util.StringUtils.rightPad;
@@ -14,7 +15,6 @@ import static org.zalando.problem.Status.BAD_REQUEST;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -45,13 +45,9 @@ import se.sundsvall.supportmanagement.service.MetadataService;
 class ErrandsUpdateResourceFailureTest {
 
 	private static final String PATH = "/{municipalityId}/{namespace}/errands";
-
 	private static final String NAMESPACE = "namespace";
-
 	private static final String MUNICIPALITY_ID = "2281";
-
-	private static final String ERRAND_ID = UUID.randomUUID().toString();
-
+	private static final String ERRAND_ID = randomUUID().toString();
 	private static final String INVALID = "#invalid#";
 
 	@Autowired
@@ -92,7 +88,7 @@ class ErrandsUpdateResourceFailureTest {
 	void updateErrandWithInvalidNamespace() {
 		// Call
 		final var response = webTestClient.patch()
-			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
+			.uri(builder -> builder.path(PATH + "/{errandId}").build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(Errand.create().withBusinessRelated(true))
 			.exchange()
@@ -116,7 +112,7 @@ class ErrandsUpdateResourceFailureTest {
 	void updateErrandWithInvalidMunicipalityId() {
 		// Call
 		final var response = webTestClient.patch()
-			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", NAMESPACE, "municipalityId", INVALID, "id", ERRAND_ID)))
+			.uri(builder -> builder.path(PATH + "/{errandId}").build(Map.of("namespace", NAMESPACE, "municipalityId", INVALID, "errandId", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(Errand.create().withBusinessRelated(true))
 			.exchange()
@@ -140,7 +136,7 @@ class ErrandsUpdateResourceFailureTest {
 	void updateErrandWithInvalidErrandId() {
 		// Call
 		final var response = webTestClient.patch()
-			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", INVALID)))
+			.uri(builder -> builder.path(PATH + "/{errandId}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", INVALID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(Errand.create().withBusinessRelated(true))
 			.exchange()
@@ -153,7 +149,7 @@ class ErrandsUpdateResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
-			tuple("updateErrand.id", "not a valid UUID"));
+			tuple("updateErrand.errandId", "not a valid UUID"));
 
 		// Verification
 		verify(metadataServiceMock).findStatuses(any(), any());
@@ -165,7 +161,7 @@ class ErrandsUpdateResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.patch()
-			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
+			.uri(builder -> builder.path(PATH + "/{errandId}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.exchange()
 			.expectStatus().isBadRequest()
@@ -190,7 +186,7 @@ class ErrandsUpdateResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.patch()
-			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
+			.uri(builder -> builder.path(PATH + "/{errandId}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(createErrandInstance())
 			.exchange()
@@ -220,7 +216,7 @@ class ErrandsUpdateResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.patch()
-			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
+			.uri(builder -> builder.path(PATH + "/{errandId}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(Errand.create().withTitle(" ").withReporterUserId(" ").withClassification(Classification.create().withCategory(" ").withType(" ")).withStatus(" ").withBusinessRelated(true))
 			.exchange()
@@ -249,7 +245,7 @@ class ErrandsUpdateResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.patch()
-			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
+			.uri(builder -> builder.path(PATH + "/{errandId}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(Errand.create().withExternalTags(List.of(
 				ExternalTag.create(),
@@ -305,7 +301,7 @@ class ErrandsUpdateResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.patch()
-			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
+			.uri(builder -> builder.path(PATH + "/{errandId}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(Errand.create().withClassification(Classification.create().withCategory("invalid_category").withType("invalid_type")).withStatus("invalid_status"))
 			.exchange()
@@ -330,7 +326,7 @@ class ErrandsUpdateResourceFailureTest {
 	@Test
 	void updateErrandWithInvalidSuspension() {
 		final var response = webTestClient.patch()
-			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
+			.uri(builder -> builder.path(PATH + "/{errandId}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(Errand.create().withSuspension(Suspension.create().withSuspendedTo(OffsetDateTime.now().plusDays(2)).withSuspendedFrom(OffsetDateTime.now().plusDays(3))))
 			.exchange()
@@ -349,7 +345,7 @@ class ErrandsUpdateResourceFailureTest {
 	@Test
 	void updateErrandWithInvalidToDate() {
 		final var response = webTestClient.patch()
-			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
+			.uri(builder -> builder.path(PATH + "/{errandId}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(Errand.create().withSuspension(Suspension.create().withSuspendedTo(OffsetDateTime.now().minusDays(2)).withSuspendedFrom(OffsetDateTime.now().plusDays(3))))
 			.exchange()
@@ -369,7 +365,7 @@ class ErrandsUpdateResourceFailureTest {
 	@Test
 	void updateErrandWithTooLongChannel() {
 		final var response = webTestClient.patch()
-			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
+			.uri(builder -> builder.path(PATH + "/{errandId}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(Errand.create().withChannel(rightPad("Test", 260, 'X')))
 			.exchange()
@@ -384,5 +380,4 @@ class ErrandsUpdateResourceFailureTest {
 		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
 			tuple("channel", "size must be between 0 and 255"));
 	}
-
 }

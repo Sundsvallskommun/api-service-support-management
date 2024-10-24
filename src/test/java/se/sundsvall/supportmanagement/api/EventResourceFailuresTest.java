@@ -26,7 +26,7 @@ import se.sundsvall.supportmanagement.service.EventService;
 class EventResourceFailuresTest {
 	private static final String NAMESPACE = "namespace";
 	private static final String MUNICIPALITY_ID = "2281";
-	private static final String PATH = "/{municipalityId}/{namespace}/errands/{id}/events";
+	private static final String PATH = "/{municipalityId}/{namespace}/errands/{errandId}/events";
 
 	@MockBean
 	private EventService eventServiceMock;
@@ -35,13 +35,13 @@ class EventResourceFailuresTest {
 	private WebTestClient webTestClient;
 
 	@Test
-	void getErrandEventsByInvalidId() {
+	void getErrandEventsByInvalidErrandId() {
 
 		// Parameter values
-		final var id = "invalid";
+		final var errandId = "invalid";
 
 		final var response = webTestClient.get().uri(builder -> builder.path(PATH)
-				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "id", id)))
+			.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", errandId)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectHeader().contentType(APPLICATION_PROBLEM_JSON)
@@ -54,7 +54,7 @@ class EventResourceFailuresTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactly(tuple("getErrandEvents.id", "not a valid UUID"));
+			.containsExactly(tuple("getErrandEvents.errandId", "not a valid UUID"));
 
 		verifyNoInteractions(eventServiceMock);
 	}
