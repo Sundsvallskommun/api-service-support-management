@@ -52,10 +52,14 @@ class MetadataStatusResource {
 		this.metadataService = metadataService;
 	}
 
-	@PostMapping(consumes = APPLICATION_JSON_VALUE, produces = { APPLICATION_PROBLEM_JSON_VALUE })
+	@PostMapping(consumes = APPLICATION_JSON_VALUE, produces = {
+		APPLICATION_PROBLEM_JSON_VALUE
+	})
 	@Operation(summary = "Create status", description = "Create new status for the namespace and municipality")
 	@ApiResponse(responseCode = "201", headers = @Header(name = LOCATION, schema = @Schema(type = "string")), description = "Successful operation", useReturnTypeSchema = true)
-	@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = { Problem.class, ConstraintViolationProblem.class })))
+	@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
+		Problem.class, ConstraintViolationProblem.class
+	})))
 	@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	ResponseEntity<Void> createStatus(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
@@ -68,10 +72,14 @@ class MetadataStatusResource {
 			.build();
 	}
 
-	@GetMapping(path = "/{status}", produces = { APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE })
+	@GetMapping(path = "/{status}", produces = {
+		APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE
+	})
 	@Operation(summary = "Get status", description = "Get status matching sent in namespace, municipality and status")
 	@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true)
-	@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = { Problem.class, ConstraintViolationProblem.class })))
+	@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
+		Problem.class, ConstraintViolationProblem.class
+	})))
 	@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	ResponseEntity<Status> getStatus(
@@ -82,10 +90,14 @@ class MetadataStatusResource {
 		return ok(metadataService.getStatus(namespace, municipalityId, status));
 	}
 
-	@GetMapping(produces = { APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE })
+	@GetMapping(produces = {
+		APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE
+	})
 	@Operation(summary = "Get statuses", description = "Get all statuses for the namespace and municipality")
 	@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true)
-	@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = { Problem.class, ConstraintViolationProblem.class })))
+	@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
+		Problem.class, ConstraintViolationProblem.class
+	})))
 	@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	ResponseEntity<List<Status>> getStatuses(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
@@ -94,10 +106,14 @@ class MetadataStatusResource {
 		return ok(metadataService.findStatuses(namespace, municipalityId));
 	}
 
-	@DeleteMapping(path = "/{status}", produces = { APPLICATION_PROBLEM_JSON_VALUE })
+	@DeleteMapping(path = "/{status}", produces = {
+		APPLICATION_PROBLEM_JSON_VALUE
+	})
 	@Operation(summary = "Delete status", description = "Delete status matching namespace, municipality and status")
 	@ApiResponse(responseCode = "204", description = "Successful operation", useReturnTypeSchema = true)
-	@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = { Problem.class, ConstraintViolationProblem.class })))
+	@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
+		Problem.class, ConstraintViolationProblem.class
+	})))
 	@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	ResponseEntity<Void> deleteStatus(
@@ -110,5 +126,4 @@ class MetadataStatusResource {
 			.header(CONTENT_TYPE, ALL_VALUE)
 			.build();
 	}
-
 }

@@ -1,13 +1,14 @@
 package se.sundsvall.supportmanagement.service.scheduler.supensions;
 
+import static java.time.OffsetDateTime.now;
+
 import org.springframework.stereotype.Component;
+
 import se.sundsvall.supportmanagement.api.model.notification.Notification;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.service.EmployeeService;
 import se.sundsvall.supportmanagement.service.NotificationService;
-
-import static java.time.OffsetDateTime.now;
 
 @Component
 public class SuspensionWorker {
@@ -32,7 +33,7 @@ public class SuspensionWorker {
 		errandsRepository
 			.findAllBySuspendedToBefore(now())
 			.forEach(entity -> notificationService
-				.createNotification(entity.getMunicipalityId(), entity.getNamespace(), createNotification(entity)));
+				.createNotification(entity.getMunicipalityId(), entity.getNamespace(), entity.getId(), createNotification(entity)));
 	}
 
 	private Notification createNotification(final ErrandEntity errand) {
