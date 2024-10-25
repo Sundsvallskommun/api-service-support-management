@@ -1,13 +1,13 @@
 package se.sundsvall.supportmanagement.integration.db;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import org.springframework.data.jpa.repository.JpaRepository;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
+
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
-
-import org.springframework.data.jpa.repository.JpaRepository;
-
-import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
-import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
 
 @CircuitBreaker(name = "notificationRepository")
 public interface NotificationRepository extends JpaRepository<NotificationEntity, String> {
@@ -22,4 +22,7 @@ public interface NotificationRepository extends JpaRepository<NotificationEntity
 		final String type);
 
 	List<NotificationEntity> findByExpiresBefore(final OffsetDateTime expires);
+
+	boolean existsByNamespaceAndMunicipalityIdAndOwnerIdAndErrandEntityAndDescription(String namespace, String municipalityId, String ownerId, ErrandEntity errandEntity, String description);
+
 }

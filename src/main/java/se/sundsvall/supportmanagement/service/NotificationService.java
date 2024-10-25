@@ -1,19 +1,19 @@
 package se.sundsvall.supportmanagement.service;
 
-import static org.zalando.problem.Status.NOT_FOUND;
-
-import java.util.List;
-import java.util.Objects;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.zalando.problem.Problem;
-
 import se.sundsvall.supportmanagement.api.filter.ExecutingUserSupplier;
 import se.sundsvall.supportmanagement.api.model.notification.Notification;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.NotificationRepository;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.service.mapper.NotificationMapper;
+
+import java.util.List;
+import java.util.Objects;
+
+import static org.zalando.problem.Status.NOT_FOUND;
 
 @Service
 public class NotificationService {
@@ -70,6 +70,14 @@ public class NotificationService {
 				errandId,
 				notification.getType())
 			.isPresent();
+	}
+
+	public boolean doesNotificationWithSpecificDescriptionExistForOwnerAndErrand(final String municipalityId, final String namespace, final String ownerId, final ErrandEntity errandEntity, final String description) {
+		return notificationRepository.existsByNamespaceAndMunicipalityIdAndOwnerIdAndErrandEntityAndDescription(namespace,
+			municipalityId,
+			ownerId,
+			errandEntity,
+			description);
 	}
 
 	@Transactional

@@ -32,8 +32,12 @@ public class SuspensionWorker {
 	public void processExpiredSuspensions() {
 		errandsRepository
 			.findAllBySuspendedToBefore(now())
-			.forEach(entity -> notificationService
-				.createNotification(entity.getMunicipalityId(), entity.getNamespace(), entity.getId(), createNotification(entity)));
+			.forEach(entity -> {
+				if (!notificationService.doesNotificationWithSpecificDescriptionExistForOwnerAndErrand(entity.getMunicipalityId(), entity.getNamespace(), entity.getAssignedUserId(), entity, NOTIFICATION_MESSAGE)) {
+					notificationService
+						.createNotification(entity.getMunicipalityId(), entity.getNamespace(), entity.getId(), createNotification(entity));
+				}
+			});
 	}
 
 	private Notification createNotification(final ErrandEntity errand) {

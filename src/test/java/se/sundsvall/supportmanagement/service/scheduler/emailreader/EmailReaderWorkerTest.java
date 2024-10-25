@@ -123,7 +123,6 @@ class EmailReaderWorkerTest {
 		final var errandEntity = ErrandEntity.create().withId("id").withStatus("SOLVED").withCreated(OffsetDateTime.now().minusDays(1)).withModified(OffsetDateTime.now());
 		final var communicationEntity = CommunicationEntity.create();
 
-
 		// MOCK
 		when(errandRepositoryMock.findByErrandNumber(anyString())).thenReturn(Optional.of(errandEntity));
 		when(emailReaderMapperMock.toCommunicationEntity(any(), any())).thenReturn(communicationEntity);
@@ -142,7 +141,6 @@ class EmailReaderWorkerTest {
 		verifyNoInteractions(errandServiceMock);
 		verifyNoMoreInteractions(emailReaderClientMock, errandRepositoryMock, emailReaderMapperMock, communicationServiceMock, emailWorkerConfigRepositoryMock, eventServiceMock);
 	}
-
 
 	@Test
 	void processEmailWithExpiredErrand() {
@@ -171,8 +169,7 @@ class EmailReaderWorkerTest {
 		// MOCK
 		when(errandRepositoryMock.findByErrandNumber(anyString())).thenReturn(Optional.of(errandEntity));
 		when(emailReaderMapperMock.toCommunicationEntity(any(), any())).thenReturn(communicationEntity);
-		when(emailReaderMapperMock.createEmailRequest(any(Email.class), any(String.class), any(String.class),any(String.class))).thenReturn(emailRequest);
-
+		when(emailReaderMapperMock.createEmailRequest(any(Email.class), any(String.class), any(String.class), any(String.class))).thenReturn(emailRequest);
 
 		// ACT
 		emailReaderWorker.processEmail(email, emailConfig);
@@ -223,15 +220,15 @@ class EmailReaderWorkerTest {
 		when(errandServiceMock.createErrand(anyString(), anyString(), any())).thenReturn(errandEntity.getId());
 		when(emailReaderMapperMock.toErrand(any(), any(), anyBoolean(), any(), any())).thenReturn(new Errand());
 		when(emailReaderMapperMock.toCommunicationEntity(any(), any())).thenReturn(communicationEntity);
-		when(emailReaderMapperMock.createEmailRequest(any(Email.class), any(String.class), any(String.class),any(String.class))).thenReturn(emailRequest);
-
+		when(emailReaderMapperMock.createEmailRequest(any(Email.class), any(String.class), any(String.class), any(String.class))).thenReturn(emailRequest);
 
 		// ACT
 		emailReaderWorker.processEmail(email, emailConfig);
 
 		// VERIFY
 		verify(errandRepositoryMock).findById(errandEntity.getId());
-		verify(emailReaderMapperMock).createEmailRequest(email.subject("Bekräftelse ärende errandNumber Ansökan om bygglov för fastighet KATARINA 4"), emailConfig.getErrandNewEmailSender(), emailConfig.getErrandNewEmailTemplate(), "Bekräftelse ärende errandNumber Ansökan om bygglov för fastighet KATARINA 4");
+		verify(emailReaderMapperMock).createEmailRequest(email.subject("Bekräftelse ärende #errandNumber Ansökan om bygglov för fastighet KATARINA 4"), emailConfig.getErrandNewEmailSender(), emailConfig.getErrandNewEmailTemplate(),
+			"Bekräftelse ärende #errandNumber Ansökan om bygglov för fastighet KATARINA 4");
 		verify(emailReaderMapperMock).toErrand(same(email), eq(emailConfig.getStatusForNew()), eq(emailConfig.isAddSenderAsStakeholder()), eq(emailConfig.getStakeholderRole()), eq(emailConfig.getErrandChannel()));
 		verify(communicationServiceMock).sendEmail(eq(emailConfig.getNamespace()), eq(emailConfig.getMunicipalityId()), eq(errandEntity.getId()), same(emailRequest));
 		verify(emailReaderMapperMock).toCommunicationEntity(same(email), same(errandEntity));
@@ -271,7 +268,6 @@ class EmailReaderWorkerTest {
 		when(emailReaderMapperMock.toErrand(any(), any(), anyBoolean(), any(), any())).thenReturn(new Errand());
 		when(emailReaderMapperMock.toCommunicationEntity(any(), any())).thenReturn(communicationEntity);
 
-
 		// ACT
 		emailReaderWorker.processEmail(email, emailConfig);
 
@@ -286,8 +282,6 @@ class EmailReaderWorkerTest {
 		verifyNoMoreInteractions(emailReaderClientMock, errandRepositoryMock, emailReaderMapperMock, communicationServiceMock, emailWorkerConfigRepositoryMock, eventServiceMock);
 
 	}
-
-
 
 	@Test
 	void shouldProcessEmailsWithNoErrandFound() {
@@ -347,19 +341,19 @@ class EmailReaderWorkerTest {
 		email.setId("emailId");
 
 		final var emailConfig = EmailWorkerConfigEntity.create()
-				.withEnabled(true)
-				.withMunicipalityId("municipalityId")
-				.withNamespace("namespace")
-				.withErrandClosedEmailSender("errandClosedEmailSender")
-				.withErrandClosedEmailTemplate("errandClosedEmailTemplate")
-				.withDaysOfInactivityBeforeReject(5)
-				.withStatusForNew("NEW")
-				.withTriggerStatusChangeOn("SOLVED")
-				.withStatusChangeTo("ONGOING")
-				.withInactiveStatus("SOLVED")
-				.withAddSenderAsStakeholder(true)
-				.withStakeholderRole("stakeholderRole")
-				.withErrandChannel("errandChannel");
+			.withEnabled(true)
+			.withMunicipalityId("municipalityId")
+			.withNamespace("namespace")
+			.withErrandClosedEmailSender("errandClosedEmailSender")
+			.withErrandClosedEmailTemplate("errandClosedEmailTemplate")
+			.withDaysOfInactivityBeforeReject(5)
+			.withStatusForNew("NEW")
+			.withTriggerStatusChangeOn("SOLVED")
+			.withStatusChangeTo("ONGOING")
+			.withInactiveStatus("SOLVED")
+			.withAddSenderAsStakeholder(true)
+			.withStakeholderRole("stakeholderRole")
+			.withErrandChannel("errandChannel");
 
 		final var errandEntity = new ErrandEntity().withId("errandId").withStatus("NEW");
 		final var communicationEntity = CommunicationEntity.create();

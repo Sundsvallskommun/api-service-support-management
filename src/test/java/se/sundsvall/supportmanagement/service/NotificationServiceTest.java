@@ -1,16 +1,5 @@
 package se.sundsvall.supportmanagement.service;
 
-import static java.util.UUID.randomUUID;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static se.sundsvall.supportmanagement.TestObjectsBuilder.createNotificationEntity;
-
-import java.util.List;
-import java.util.Optional;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -19,12 +8,23 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.zalando.problem.Problem;
-
 import se.sundsvall.supportmanagement.TestObjectsBuilder;
 import se.sundsvall.supportmanagement.api.filter.ExecutingUserSupplier;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.NotificationRepository;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
+
+import java.util.List;
+import java.util.Optional;
+
+import static java.util.UUID.randomUUID;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrandEntity;
+import static se.sundsvall.supportmanagement.TestObjectsBuilder.createNotificationEntity;
 
 @ExtendWith(MockitoExtension.class)
 class NotificationServiceTest {
@@ -203,6 +203,47 @@ class NotificationServiceTest {
 
 		// Assert
 		verify(notificationRepositoryMock).deleteById(notificationId);
+	}
+
+	@Test
+	void doesNotificationWithSpecificDescriptionExistForOwnerAndErrand() {
+
+		// Arrange
+		final var municipalityId = "2281";
+		final var namespace = "namespace";
+		final var ownerId = randomUUID().toString();
+		final var errandEntity = buildErrandEntity();
+		final var description = "description";
+
+		when(notificationRepositoryMock.existsByNamespaceAndMunicipalityIdAndOwnerIdAndErrandEntityAndDescription(namespace, municipalityId, ownerId, errandEntity, description)).thenReturn(true);
+
+		// Act
+		final var result = notificationService.doesNotificationWithSpecificDescriptionExistForOwnerAndErrand(municipalityId, namespace, ownerId, errandEntity, description);
+
+		// Assert
+		assertThat(result).isTrue();
+
+		verify(notificationRepositoryMock).existsByNamespaceAndMunicipalityIdAndOwnerIdAndErrandEntityAndDescription(namespace, municipalityId, ownerId, errandEntity, description);
+	}
+
+	@Test
+	void doesNotificationWithSpecificDescriptionExistForOwnerAndErrand_NotFound() {
+		// Arrange
+		final var municipalityId = "2281";
+		final var namespace = "namespace";
+		final var ownerId = randomUUID().toString();
+		final var errandEntity = buildErrandEntity();
+		final var description = "description";
+
+		when(notificationRepositoryMock.existsByNamespaceAndMunicipalityIdAndOwnerIdAndErrandEntityAndDescription(namespace, municipalityId, ownerId, errandEntity, description)).thenReturn(false);
+
+		// Act
+		final var result = notificationService.doesNotificationWithSpecificDescriptionExistForOwnerAndErrand(municipalityId, namespace, ownerId, errandEntity, description);
+
+		// Assert
+		assertThat(result).isFalse();
+
+		verify(notificationRepositoryMock).existsByNamespaceAndMunicipalityIdAndOwnerIdAndErrandEntityAndDescription(namespace, municipalityId, ownerId, errandEntity, description);
 	}
 
 	@Test
