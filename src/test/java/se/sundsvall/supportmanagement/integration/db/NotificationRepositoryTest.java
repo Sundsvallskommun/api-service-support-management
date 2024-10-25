@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.integration.db;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Sort;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.transaction.annotation.Transactional;
@@ -77,6 +78,16 @@ class NotificationRepositoryTest {
 
 		// Assert
 		assertThat(notification).isPresent();
+	}
+
+	@Test
+	void findAllByNamespaceAndMunicipalityIdAndErrandEntityId() {
+
+		// Act
+		final var result = notificationRepository.findAllByNamespaceAndMunicipalityIdAndErrandEntityId("namespace-1", "municipalityId-1", "ERRAND_ID-1", Sort.by("modified").descending());
+
+		// Assert
+		assertThat(result).hasSize(1);
 	}
 
 	@Test
