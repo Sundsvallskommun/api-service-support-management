@@ -1,19 +1,18 @@
 package se.sundsvall.supportmanagement.integration.db;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.transaction.annotation.Transactional;
-
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
+
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @ActiveProfiles("junit")
@@ -132,6 +131,21 @@ class NotificationRepositoryTest {
 
 		// Act
 		final boolean exists = notificationRepository.existsByIdAndNamespaceAndMunicipalityId("1", "namespace-1", "municipalityId-1");
+
+		// Assert
+		assertThat(exists).isTrue();
+	}
+
+	@Test
+	void existsByNamespaceAndMunicipalityIdAndOwnerIdAndErrandEntityAndDescription() {
+
+		// Arrange
+		final var errandEntity = ErrandEntity.create()
+			.withId("ERRAND_ID-1")
+			.withErrandNumber("KC-23020001");
+
+		// Act
+		final boolean exists = notificationRepository.existsByNamespaceAndMunicipalityIdAndOwnerIdAndErrandEntityAndDescription("namespace-1", "municipalityId-1", "owner_id-1", errandEntity, "description-1");
 
 		// Assert
 		assertThat(exists).isTrue();
