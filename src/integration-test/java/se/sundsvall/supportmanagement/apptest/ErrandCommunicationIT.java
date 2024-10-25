@@ -109,7 +109,7 @@ class ErrandCommunicationIT extends AbstractAppTest {
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponse(RESPONSE_FILE)
-			.sendRequestAndVerifyResponse()
+			.sendRequestAndVerifyResponse();
 	}
 
 	@Test

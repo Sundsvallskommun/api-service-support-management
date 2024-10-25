@@ -75,7 +75,6 @@ class NotificationsResource {
 	}
 
 	@GetMapping("/errands/{errandId}/notifications")
-
 	@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true)
 	@ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	@Operation(summary = "Get notifications", description = "Get all notifications for the namespace, municipality and errand")
