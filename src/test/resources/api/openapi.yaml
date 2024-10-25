@@ -194,8 +194,17 @@ paths:
       responses:
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 =======
+=======
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "400":
           description: Bad Request
           content:
@@ -204,7 +213,11 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
+=======
+<<<<<<< HEAD
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "404":
           description: Not Found
           content:
@@ -217,7 +230,12 @@ paths:
 =======
                 $ref: "#/components/schemas/Problem"
 >>>>>>> 4aad4eb (UF-10583: Update API)
+<<<<<<< HEAD
 >>>>>>> fd310fe (UF-10583: Update API)
+=======
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "500":
           description: Internal Server Error
           content:
@@ -435,12 +453,15 @@ paths:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
 =======
 >>>>>>> ad6978c (UF-10583: Acted on review comments)
 =======
 <<<<<<< HEAD
+=======
+>>>>>>> ed9392e (F-10368: Add new resource for listing notifications by errandId)
 =======
 <<<<<<< HEAD
 =======
@@ -524,7 +545,12 @@ paths:
 =======
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
+<<<<<<< HEAD
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
+=======
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "400":
           description: Bad request
           content:
@@ -565,7 +591,10 @@ paths:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> fd310fe (UF-10583: Update API)
+=======
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "500":
           description: Internal Server error
           content:
@@ -573,9 +602,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 =======
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
+=======
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "204":
           description: Successful operation
 >>>>>>> 4aad4eb (UF-10583: Update API)
@@ -618,6 +650,7 @@ paths:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> 82ac2b5 (UF-10368: Add new resource for listing notifications by errandId)
 =======
@@ -633,6 +666,8 @@ paths:
 >>>>>>> 05cb6da (UF-10584: Add logic)
 >>>>>>> ab890a7 (UF-10584: Add logic)
 =======
+=======
+>>>>>>> ed9392e (F-10368: Add new resource for listing notifications by errandId)
 =======
 =======
 >>>>>>> 05cb6da (UF-10584: Add logic)
@@ -694,6 +729,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
+=======
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "400":
           description: Bad request
           content:
@@ -712,15 +749,30 @@ paths:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
         "500":
           description: Internal Server error
           content:
             application/problem+json:
+<<<<<<< HEAD
 >>>>>>> 4aad4eb (UF-10583: Update API)
               schema:
                 $ref: "#/components/schemas/Problem"
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
+=======
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "201":
+          description: Successful operation
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
     delete:
       tags:
         - Configuration for namespace
@@ -744,6 +796,7 @@ paths:
             type: string
           example: 2281
       responses:
+<<<<<<< HEAD
         "500":
           description: Internal Server error
           content:
@@ -757,6 +810,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
 <<<<<<< HEAD
 >>>>>>> ad6978c (UF-10583: Acted on review comments)
@@ -773,7 +827,16 @@ paths:
 =======
 =======
 >>>>>>> 05cb6da (UF-10584: Add logic)
+<<<<<<< HEAD
 >>>>>>> ab890a7 (UF-10584: Add logic)
+=======
+=======
+        "204":
+          description: Successful operation
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> ed9392e (F-10368: Add new resource for listing notifications by errandId)
         "400":
           description: Bad request
           content:
@@ -802,10 +865,17 @@ paths:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
 <<<<<<< HEAD
+<<<<<<< HEAD
         "500":
           description: Internal Server error
 >>>>>>> 4aad4eb (UF-10583: Update API)
+<<<<<<< HEAD
 >>>>>>> fd310fe (UF-10583: Update API)
+=======
+=======
+        "404":
+          description: Not Found
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
           content:
             application/problem+json:
 <<<<<<< HEAD
@@ -831,9 +901,18 @@ paths:
 >>>>>>> 4aad4eb (UF-10583: Update API)
               schema:
                 $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
 =======
+<<<<<<< HEAD
               schema:
                 type: string
 >>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
@@ -849,6 +928,9 @@ paths:
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "204":
           description: Successful operation
   /{municipalityId}/{namespace}/metadata/labels:
@@ -1230,6 +1312,9 @@ paths:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         "500":
@@ -1259,8 +1344,11 @@ paths:
 >>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> d974000 (UF-10368: Add new resource for listing notifications by errandId)
 =======
+=======
+>>>>>>> ed9392e (F-10368: Add new resource for listing notifications by errandId)
 =======
 >>>>>>> a5246de (UF-10368: Add new resource for listing notifications by errandId)
 <<<<<<< HEAD
@@ -1297,7 +1385,12 @@ paths:
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
+<<<<<<< HEAD
 >>>>>>> 789b9b3 (F-10583: Acted on review comments)
+=======
+=======
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> ed9392e (F-10368: Add new resource for listing notifications by errandId)
         "200":
           description: Successful operation
           content:
@@ -1316,20 +1409,26 @@ paths:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 =======
 >>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
 =======
 >>>>>>> a5246de (UF-10368: Add new resource for listing notifications by errandId)
 =======
+=======
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "500":
           description: Internal Server error
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 =======
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
+=======
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "400":
           description: Bad Request
           content:
@@ -1369,6 +1468,7 @@ paths:
                 $ref: "#/components/schemas/Label"
         required: true
       responses:
+<<<<<<< HEAD
         "500":
           description: Internal Server error
           content:
@@ -1383,6 +1483,8 @@ paths:
                 $ref: "#/components/schemas/Problem"
         "204":
           description: Successful operation
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
         "400":
           description: Bad request
           content:
@@ -1398,15 +1500,29 @@ paths:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
 <<<<<<< HEAD
+<<<<<<< HEAD
         "500":
           description: Internal Server error
 >>>>>>> 4aad4eb (UF-10583: Update API)
+=======
+        "404":
+          description: Not Found
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
         "204":
           description: Successful operation
     post:
@@ -1481,6 +1597,34 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
+=======
+        "202":
+          description: Successful operation
+    delete:
+      tags:
+        - Metadata for labels
+      summary: Delete label structure
+      description: Delete label structure for provided namespace and municipality
+      operationId: deleteLabels
+      parameters:
+        - name: namespace
+          in: path
+          description: Namespace
+          required: true
+          schema:
+            pattern: "[\\w|\\.|\\-]+"
+            type: string
+          example: my.namespace
+        - name: municipalityId
+          in: path
+          description: Municipality id
+          required: true
+          schema:
+            type: string
+          example: 2281
+      responses:
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
 <<<<<<< HEAD
         "500":
           description: Internal Server error
@@ -1909,6 +2053,8 @@ paths:
 =======
         "204":
           description: Successful operation
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
         "400":
           description: Bad request
           content:
@@ -1925,13 +2071,18 @@ paths:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
 <<<<<<< HEAD
+<<<<<<< HEAD
         "500":
           description: Internal Server error
 >>>>>>> 4aad4eb (UF-10583: Update API)
+=======
+        "404":
+          description: Not Found
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 >>>>>>> 4aad4eb (UF-10583: Update API)
@@ -1986,6 +2137,20 @@ paths:
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
+=======
+        "500":
+          description: Internal Server error
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "204":
           description: Successful operation
 >>>>>>> 05cb6da (UF-10584: Add logic)
@@ -2197,6 +2362,7 @@ paths:
 =======
 >>>>>>> 4aad4eb (UF-10583: Update API)
       responses:
+<<<<<<< HEAD
         "500":
           description: Internal Server error
           content:
@@ -2216,6 +2382,8 @@ paths:
 >>>>>>> ad6978c (UF-10583: Acted on review comments)
 =======
 =======
+=======
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "400":
           description: Bad request
           content:
@@ -2233,13 +2401,18 @@ paths:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
 <<<<<<< HEAD
+<<<<<<< HEAD
         "500":
           description: Internal Server error
 >>>>>>> 4aad4eb (UF-10583: Update API)
+=======
+        "404":
+          description: Not Found
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 <<<<<<< HEAD
         "500":
           description: Internal Server error
@@ -2247,6 +2420,9 @@ paths:
 =======
 <<<<<<< HEAD
 >>>>>>> 789b9b3 (F-10583: Acted on review comments)
+=======
+<<<<<<< HEAD
+>>>>>>> ed9392e (F-10368: Add new resource for listing notifications by errandId)
 >>>>>>> 4aad4eb (UF-10583: Update API)
 =======
 <<<<<<< HEAD
@@ -2330,6 +2506,10 @@ paths:
 =======
         "404":
           description: Not Found
+=======
+        "500":
+          description: Internal Server error
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
 >>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
           content:
             application/problem+json:
@@ -2356,6 +2536,7 @@ paths:
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
 =======
+<<<<<<< HEAD
 =======
 >>>>>>> a5246de (UF-10368: Add new resource for listing notifications by errandId)
         "500":
@@ -2409,7 +2590,13 @@ paths:
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
+<<<<<<< HEAD
 >>>>>>> 789b9b3 (F-10583: Acted on review comments)
+=======
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> ed9392e (F-10368: Add new resource for listing notifications by errandId)
         "200":
           description: Successful Operation
           content:
@@ -2535,18 +2722,6 @@ paths:
                 type: string
         required: true
       responses:
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-        "404":
-          description: Not Found
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -2565,27 +2740,45 @@ paths:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
 <<<<<<< HEAD
+<<<<<<< HEAD
         "500":
           description: Internal Server error
 >>>>>>> 4aad4eb (UF-10583: Update API)
+=======
+        "404":
+          description: Not Found
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
         "500":
           description: Internal Server error
+=======
+        "500":
+          description: Internal Server error
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
     put:
 =======
 =======
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
+=======
+<<<<<<< HEAD
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "204":
           description: No content
     post:
@@ -2666,6 +2859,7 @@ paths:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         "500":
           description: Internal Server error
 =======
@@ -2677,6 +2871,8 @@ paths:
 >>>>>>> 963894e (UF-10583: Update API)
 =======
 >>>>>>> 789b9b3 (F-10583: Acted on review comments)
+=======
+>>>>>>> ed9392e (F-10368: Add new resource for listing notifications by errandId)
 =======
 =======
 =======
@@ -2694,6 +2890,8 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+=======
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "400":
           description: Bad request
           content:
@@ -2702,6 +2900,24 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
+=======
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "201":
+          description: Created
+          content:
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
 <<<<<<< HEAD
 >>>>>>> fd310fe (UF-10583: Update API)
         "500":
@@ -3237,6 +3453,7 @@ paths:
 =======
 >>>>>>> 4aad4eb (UF-10583: Update API)
       responses:
+<<<<<<< HEAD
         "500":
           description: Internal Server error
           content:
@@ -3253,6 +3470,8 @@ paths:
 <<<<<<< HEAD
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
 =======
+=======
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "400":
           description: Bad request
           content:
@@ -3283,13 +3502,18 @@ paths:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
 <<<<<<< HEAD
+<<<<<<< HEAD
         "500":
           description: Internal Server error
 >>>>>>> 4aad4eb (UF-10583: Update API)
+=======
+        "404":
+          description: Not Found
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 >>>>>>> 4aad4eb (UF-10583: Update API)
@@ -3302,6 +3526,20 @@ paths:
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
+=======
+        "500":
+          description: Internal Server error
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "204":
           description: No content
   /{municipalityId}/{namespace}/errands/{errandId}/communication/{communicationId}/viewed/{isViewed}:
@@ -3388,6 +3626,7 @@ paths:
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
       responses:
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> fd310fe (UF-10583: Update API)
 =======
         "500":
@@ -3397,6 +3636,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
+=======
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "400":
           description: Bad request
           content:
@@ -3563,15 +3804,21 @@ paths:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
         "500":
           description: Internal Server error
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 >>>>>>> 4aad4eb (UF-10583: Update API)
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
         "204":
           description: No content - Successful operation
   /{municipalityId}/{namespace}/email-integration-config:
@@ -3673,10 +3920,19 @@ paths:
       responses:
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         "400":
           description: Bad request
 =======
 =======
+=======
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "400":
           description: Bad Request
           content:
@@ -3685,7 +3941,11 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
+=======
+<<<<<<< HEAD
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "404":
           description: Not Found
 >>>>>>> fd310fe (UF-10583: Update API)
@@ -3783,7 +4043,12 @@ paths:
 =======
                 $ref: "#/components/schemas/Problem"
 >>>>>>> 4aad4eb (UF-10583: Update API)
+<<<<<<< HEAD
 >>>>>>> fd310fe (UF-10583: Update API)
+=======
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "500":
           description: Internal Server Error
           content:
@@ -5311,6 +5576,7 @@ paths:
       responses:
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 <<<<<<< HEAD
 =======
@@ -5334,7 +5600,12 @@ paths:
 =======
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
+<<<<<<< HEAD
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
+=======
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "400":
           description: Bad request
           content:
@@ -5354,7 +5625,10 @@ paths:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> fd310fe (UF-10583: Update API)
+=======
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "500":
           description: Internal Server error
           content:
@@ -5362,9 +5636,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 =======
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
+=======
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "204":
           description: Successful operation
 >>>>>>> 4aad4eb (UF-10583: Update API)
@@ -5404,6 +5681,7 @@ paths:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 =======
 >>>>>>> 05cb6da (UF-10584: Add logic)
@@ -5442,6 +5720,8 @@ paths:
 >>>>>>> fd310fe (UF-10583: Update API)
 =======
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
+=======
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "400":
           description: Bad request
           content:
@@ -5506,10 +5786,14 @@ paths:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
         "500":
           description: Internal Server error
           content:
             application/problem+json:
+<<<<<<< HEAD
 >>>>>>> 4aad4eb (UF-10583: Update API)
               schema:
                 $ref: "#/components/schemas/Problem"
@@ -5518,7 +5802,21 @@ paths:
 =======
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
+<<<<<<< HEAD
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
+=======
+=======
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "201":
+          description: Successful operation
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
     delete:
       tags:
       - Configuration for email integration
@@ -5542,6 +5840,7 @@ paths:
           type: string
         example: 2281
       responses:
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -5613,6 +5912,8 @@ paths:
 >>>>>>> fd310fe (UF-10583: Update API)
 =======
 =======
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
+=======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
         "500":
@@ -5629,6 +5930,8 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
         "400":
           description: Bad request
           content:
@@ -5637,7 +5940,22 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
+=======
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
         "204":
           description: Successful operation
 <<<<<<< HEAD
@@ -5692,14 +6010,24 @@ paths:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
+=======
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "500":
           description: Internal Server error
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 <<<<<<< HEAD
 =======
 >>>>>>> 4aad4eb (UF-10583: Update API)
@@ -6982,6 +7310,10 @@ paths:
           items:
             type: string
       responses:
+=======
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "200":
           description: Successful operation
           content:
@@ -7186,6 +7518,12 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Status"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad Request
           content:
@@ -7235,12 +7573,23 @@ paths:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> 05cb6da (UF-10584: Add logic)
         "409":
           description: Conflict
 =======
 =======
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
+=======
+=======
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
         "201":
           description: Successful operation
           headers:
@@ -7248,6 +7597,7 @@ paths:
               style: simple
               schema:
                 type: string
+<<<<<<< HEAD
 >>>>>>> 4aad4eb (UF-10583: Update API)
         "500":
           description: Internal Server error
@@ -7259,8 +7609,13 @@ paths:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 4aad4eb (UF-10583: Update API)
 =======
+=======
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "400":
           description: Bad Request
           content:
@@ -7345,6 +7700,7 @@ paths:
       responses:
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         "500":
@@ -7366,6 +7722,8 @@ paths:
 >>>>>>> 4aad4eb (UF-10583: Update API)
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
         "200":
           description: Successful operation
           content:
@@ -7379,6 +7737,12 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Role"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad Request
           content:
@@ -7417,7 +7781,16 @@ paths:
         required: true
       responses:
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
         "201":
           description: Successful operation
           headers:
@@ -7425,6 +7798,7 @@ paths:
               style: simple
               schema:
                 type: string
+<<<<<<< HEAD
 >>>>>>> 4aad4eb (UF-10583: Update API)
         "500":
           description: Internal Server error
@@ -7432,6 +7806,8 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
         "400":
           description: Bad Request
           content:
@@ -7484,6 +7860,7 @@ paths:
       responses:
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         "500":
@@ -7505,6 +7882,8 @@ paths:
 >>>>>>> 4aad4eb (UF-10583: Update API)
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
         "200":
           description: Successful operation
           content:
@@ -7518,6 +7897,12 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ExternalIdType"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad Request
           content:
@@ -7562,7 +7947,16 @@ paths:
         required: true
       responses:
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
         "201":
           description: Successful operation
           headers:
@@ -7570,6 +7964,7 @@ paths:
               style: simple
               schema:
                 type: string
+<<<<<<< HEAD
 >>>>>>> 4aad4eb (UF-10583: Update API)
         "500":
           description: Internal Server error
@@ -7577,6 +7972,8 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
         "400":
           description: Bad Request
           content:
@@ -7621,6 +8018,7 @@ paths:
             type: string
           example: 2281
       responses:
+<<<<<<< HEAD
         "200":
           description: Successful operation
           content:
@@ -7635,6 +8033,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
         "400":
           description: Bad request
           content:
@@ -7648,15 +8048,25 @@ paths:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
         "500":
           description: Internal Server error
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 >>>>>>> 4aad4eb (UF-10583: Update API)
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
+=======
+        "200":
+          description: Successful operation
+          content:
+            application/json: {}
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
     post:
       tags:
         - Metadata for contact reasons
@@ -7686,19 +8096,6 @@ paths:
               $ref: "#/components/schemas/ContactReason"
         required: true
       responses:
-        "201":
-          description: Successful operation
-          headers:
-            Location:
-              style: simple
-              schema:
-                type: string
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -7712,13 +8109,19 @@ paths:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
         "500":
           description: Internal Server error
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 >>>>>>> 4aad4eb (UF-10583: Update API)
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
         "201":
           description: Successful operation
           headers:
@@ -7726,17 +8129,25 @@ paths:
               style: simple
               schema:
                 type: string
+<<<<<<< HEAD
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
   /{municipalityId}/{namespace}/metadata/categories:
     get:
       tags:
         - Metadata for categories
+=======
+  /{municipalityId}/{namespace}/metadata/categories:
+    get:
+      tags:
+      - Metadata for categories
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
       summary: Get categories and types
       description: Get all categories and their connected types for the namespace
         and municipality
       operationId: getCategories
       parameters:
+<<<<<<< HEAD
         - name: namespace
           in: path
           description: Namespace
@@ -7776,6 +8187,24 @@ paths:
 >>>>>>> 4aad4eb (UF-10583: Update API)
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
+=======
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      responses:
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
         "200":
           description: Successful operation
           content:
@@ -7789,6 +8218,12 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Category"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad Request
           content:
@@ -7827,7 +8262,16 @@ paths:
         required: true
       responses:
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
         "201":
           description: Successful operation
           headers:
@@ -7835,6 +8279,7 @@ paths:
               style: simple
               schema:
                 type: string
+<<<<<<< HEAD
 >>>>>>> 4aad4eb (UF-10583: Update API)
         "500":
           description: Internal Server error
@@ -7842,6 +8287,8 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
         "400":
           description: Bad Request
           content:
@@ -7971,6 +8418,7 @@ paths:
             type: string
       responses:
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> c8b56ec (UF-10368: Acted on review comnents)
 =======
@@ -8091,6 +8539,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
+=======
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "400":
           description: Bad request
           content:
@@ -8103,7 +8553,87 @@ paths:
 =======
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "201":
+          description: Successful operation
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
   /{municipalityId}/{namespace}/errands/{errandId}/notifications:
+    get:
+      tags:
+      - User notifications
+      summary: Get notifications
+      description: Get a specific notification for the namespace and municipality
+      operationId: getNotificationsByErrandId
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand id
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: sort
+        in: query
+        description: "Sorting criteria in the format: property,(asc|desc). Default\
+          \ sort order is ascending. Multiple sort criteria are supported."
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+      responses:
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "200":
+          description: Successful operation
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
     post:
       tags:
       - User notifications
@@ -8141,6 +8671,7 @@ paths:
         required: true
       responses:
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> fd310fe (UF-10583: Update API)
         "400":
           description: Bad request
@@ -8171,6 +8702,8 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+=======
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "409":
           description: Conflict
           content:
@@ -8222,7 +8755,23 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
+=======
+        "201":
+          description: Created - Successful operation
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
   /{municipalityId}/{namespace}/errands/{errandId}/notes:
     get:
       tags:
@@ -8725,6 +9274,7 @@ paths:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> 82ac2b5 (UF-10368: Add new resource for listing notifications by errandId)
 =======
@@ -8796,6 +9346,8 @@ paths:
 >>>>>>> ab890a7 (UF-10584: Add logic)
 =======
 =======
+>>>>>>> ed9392e (F-10368: Add new resource for listing notifications by errandId)
+=======
 =======
 >>>>>>> 05cb6da (UF-10584: Add logic)
 =======
@@ -8812,6 +9364,8 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+=======
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "400":
           description: Bad request
           content:
@@ -9450,7 +10004,10 @@ paths:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 4aad4eb (UF-10583: Update API)
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
         "500":
           description: Internal Server error
           content:
@@ -9458,17 +10015,22 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
 =======
 <<<<<<< HEAD
 >>>>>>> fd310fe (UF-10583: Update API)
+=======
+<<<<<<< HEAD
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "400":
           description: Bad request
           content:
             application/problem+json:
               schema:
                 oneOf:
+<<<<<<< HEAD
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
 <<<<<<< HEAD
@@ -9482,6 +10044,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
 <<<<<<< HEAD
+=======
+                  - $ref: "#/components/schemas/Problem"
+                  - $ref: "#/components/schemas/ConstraintViolationProblem"
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "201":
           description: Successful operation
           headers:
@@ -9490,10 +10058,13 @@ paths:
               schema:
                 type: string
 <<<<<<< HEAD
+<<<<<<< HEAD
   /{municipalityId}/{namespace}/notifications:
     get:
 =======
 =======
+=======
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
 =======
 >>>>>>> 4aad4eb (UF-10583: Update API)
 <<<<<<< HEAD
@@ -9501,7 +10072,12 @@ paths:
 =======
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
+<<<<<<< HEAD
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
+=======
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
   /{municipalityId}/{namespace}/errands/{errandId}/communication/sms:
     post:
 >>>>>>> 4aad4eb (UF-10583: Update API)
@@ -9590,12 +10166,6 @@ paths:
           type: string
         example: 12
       responses:
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -9612,6 +10182,9 @@ paths:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
         "500":
           description: Internal Server error
           content:
@@ -9620,12 +10193,17 @@ paths:
                 $ref: "#/components/schemas/Problem"
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         "200":
 =======
 =======
+=======
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
 >>>>>>> 4aad4eb (UF-10583: Update API)
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
         "204":
           description: Successful operation
   /{municipalityId}/{namespace}/errands/{errandId}/communication/email:
@@ -9690,12 +10268,6 @@ paths:
               $ref: "#/components/schemas/EmailRequest"
         required: true
       responses:
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -9704,6 +10276,12 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "204":
           description: Successful operation
   /{municipalityId}/{namespace}/errands/{errandId}/attachments:
@@ -9738,6 +10316,12 @@ paths:
           type: string
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
       responses:
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad Request
           content:
@@ -9746,12 +10330,6 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "404":
-          description: Not Found
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
         "500":
           description: Internal Server Error
           content:
@@ -9813,19 +10391,6 @@ paths:
                   format: binary
         required: true
       responses:
-        "201":
-          description: Successful operation
-          headers:
-            Location:
-              style: simple
-              schema:
-                type: string
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -9834,6 +10399,19 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "201":
+          description: Successful operation
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
   /{municipalityId}/{namespace}/notifications:
     get:
       tags:
@@ -9841,7 +10419,7 @@ paths:
       summary: Get notifications
       description: Get notifications for the namespace and municipality with the specified
         ownerId
-      operationId: getNotifications
+      operationId: getNotificationsByOwnerId
       parameters:
       - name: namespace
         in: path
@@ -9866,26 +10444,6 @@ paths:
           type: string
         example: 12
       responses:
-        "404":
-          description: Not found
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-        "200":
-          description: Successful operation
-          content:
-            '*/*':
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Notification"
         "400":
           description: Bad request
           content:
@@ -9894,6 +10452,26 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "200":
+          description: Successful operation
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
     patch:
       tags:
       - User notifications
@@ -9925,18 +10503,6 @@ paths:
                 $ref: "#/components/schemas/Notification"
         required: true
       responses:
-        "404":
-          description: Not found
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -9950,17 +10516,29 @@ paths:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
         "500":
           description: Internal Server error
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 >>>>>>> 4aad4eb (UF-10583: Update API)
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
         "204":
           description: Successful operation
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/metadata/contactreasons/{reason}:
     get:
       tags:
@@ -9992,6 +10570,7 @@ paths:
             type: string
           example: INVOICE
       responses:
+<<<<<<< HEAD
         "200":
           description: Successful operation
           content:
@@ -10006,6 +10585,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
         "400":
           description: Bad request
           content:
@@ -10019,15 +10600,25 @@ paths:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
         "500":
           description: Internal Server error
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 >>>>>>> 4aad4eb (UF-10583: Update API)
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
+=======
+        "200":
+          description: Successful operation
+          content:
+            application/json: {}
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
     delete:
       tags:
         - Metadata for contact reasons
@@ -10058,6 +10649,7 @@ paths:
             type: string
           example: INVOICE
       responses:
+<<<<<<< HEAD
         "500":
           description: Internal Server error
           content:
@@ -10074,6 +10666,13 @@ paths:
         "204":
 >>>>>>> 4aad4eb (UF-10583: Update API)
           description: Successful operation
+<<<<<<< HEAD
+=======
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
+        "400":
+          description: Bad request
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
           content:
             '*/*':
               schema:
@@ -10094,16 +10693,33 @@ paths:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
 <<<<<<< HEAD
+<<<<<<< HEAD
         "500":
           description: Internal Server error
 >>>>>>> 4aad4eb (UF-10583: Update API)
+<<<<<<< HEAD
 >>>>>>> fd310fe (UF-10583: Update API)
+=======
+=======
+        "404":
+          description: Not Found
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
         "204":
           description: Successful operation
     patch:
@@ -11338,6 +11954,7 @@ paths:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 =======
 >>>>>>> d974000 (UF-10368: Add new resource for listing notifications by errandId)
@@ -11346,6 +11963,11 @@ paths:
 =======
 =======
 >>>>>>> 963894e (UF-10583: Update API)
+=======
+=======
+=======
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> ed9392e (F-10368: Add new resource for listing notifications by errandId)
         "200":
           description: Successful operation
           content:
@@ -11408,6 +12030,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 <<<<<<< HEAD
 =======
 >>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
@@ -11473,6 +12096,13 @@ paths:
 =======
 >>>>>>> fd310fe (UF-10583: Update API)
 >>>>>>> 963894e (UF-10583: Update API)
+=======
+>>>>>>> fd310fe (UF-10583: Update API)
+=======
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> ed9392e (F-10368: Add new resource for listing notifications by errandId)
         "400":
           description: Bad request
           content:
@@ -11517,13 +12147,19 @@ paths:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
 <<<<<<< HEAD
+<<<<<<< HEAD
         "500":
           description: Internal Server error
 >>>>>>> 4aad4eb (UF-10583: Update API)
+=======
+        "404":
+          description: Not Found
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 >>>>>>> 05cb6da (UF-10584: Add logic)
@@ -11535,6 +12171,22 @@ paths:
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
+=======
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
+=======
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "200":
+          description: Successful operation
+          content:
+            application/json: {}
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
   /{municipalityId}/{namespace}/metadata/categories/{category}:
     get:
       tags:
@@ -11566,6 +12218,7 @@ paths:
             type: string
           example: KSK_SERVICE_CENTER_SALARY_AND_PENSION
       responses:
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 >>>>>>> fd310fe (UF-10583: Update API)
@@ -11702,6 +12355,8 @@ paths:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+=======
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
 <<<<<<< HEAD
 <<<<<<< HEAD
 >>>>>>> a5246de (UF-10368: Add new resource for listing notifications by errandId)
@@ -11811,8 +12466,11 @@ paths:
 =======
 >>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 0d64440 (UF-10368: Add new resource for listing notifications by errandId)
 =======
+=======
+>>>>>>> ed9392e (F-10368: Add new resource for listing notifications by errandId)
 =======
 >>>>>>> a5246de (UF-10368: Add new resource for listing notifications by errandId)
 <<<<<<< HEAD
@@ -11832,7 +12490,12 @@ paths:
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
+<<<<<<< HEAD
 >>>>>>> 789b9b3 (F-10583: Acted on review comments)
+=======
+=======
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> ed9392e (F-10368: Add new resource for listing notifications by errandId)
         "200":
           description: Successful operation
           content:
@@ -11851,6 +12514,7 @@ paths:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 =======
 >>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
@@ -11859,14 +12523,19 @@ paths:
         "500":
           description: Internal Server error
 =======
+=======
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "500":
           description: Internal Server error
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 =======
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
+=======
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "400":
           description: Bad Request
           content:
@@ -11905,6 +12574,7 @@ paths:
             type: string
           example: KSK_SERVICE_CENTER_SALARY_AND_PENSION
       responses:
+<<<<<<< HEAD
         "500":
           description: Internal Server error
           content:
@@ -11920,6 +12590,7 @@ paths:
                 $ref: "#/components/schemas/Problem"
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 4aad4eb (UF-10583: Update API)
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
@@ -11929,6 +12600,12 @@ paths:
 >>>>>>> a5246de (UF-10368: Add new resource for listing notifications by errandId)
 =======
 >>>>>>> c8b56ec (UF-10368: Acted on review comnents)
+=======
+        "204":
+          description: Successful operation
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "400":
           description: Bad Request
           content:
@@ -12019,13 +12696,18 @@ paths:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
 <<<<<<< HEAD
+<<<<<<< HEAD
         "500":
           description: Internal Server error
 >>>>>>> 4aad4eb (UF-10583: Update API)
+=======
+        "404":
+          description: Not Found
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -12037,6 +12719,8 @@ paths:
 =======
 =======
 >>>>>>> 789b9b3 (F-10583: Acted on review comments)
+=======
+>>>>>>> ed9392e (F-10368: Add new resource for listing notifications by errandId)
 >>>>>>> 4aad4eb (UF-10583: Update API)
 >>>>>>> 963894e (UF-10583: Update API)
 =======
@@ -12237,6 +12921,20 @@ paths:
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
+=======
+        "500":
+          description: Internal Server error
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "204":
           description: Successful operation
 >>>>>>> 05cb6da (UF-10584: Add logic)
@@ -12338,6 +13036,7 @@ paths:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         "404":
           description: Not Found
 =======
@@ -12364,10 +13063,17 @@ paths:
 >>>>>>> 963894e (UF-10583: Update API)
 =======
 =======
+>>>>>>> ed9392e (F-10368: Add new resource for listing notifications by errandId)
+=======
 >>>>>>> fd310fe (UF-10583: Update API)
 =======
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
+<<<<<<< HEAD
 >>>>>>> 789b9b3 (F-10583: Acted on review comments)
+=======
+=======
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> ed9392e (F-10368: Add new resource for listing notifications by errandId)
         "500":
           description: Internal Server error
 =======
@@ -12391,10 +13097,23 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 =======
 >>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
 =======
 >>>>>>> a5246de (UF-10368: Add new resource for listing notifications by errandId)
+=======
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/Problem"
+                  - $ref: "#/components/schemas/ConstraintViolationProblem"
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "200":
           description: Successful operation
           content:
@@ -12404,6 +13123,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Category"
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -12435,6 +13155,8 @@ paths:
 =======
 >>>>>>> 789b9b3 (F-10583: Acted on review comments)
 =======
+>>>>>>> ed9392e (F-10368: Add new resource for listing notifications by errandId)
+=======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
 =======
 =======
@@ -12443,14 +13165,25 @@ paths:
         "400":
           description: Bad Request
 =======
+=======
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "500":
           description: Internal Server error
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 =======
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
+=======
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "400":
           description: Bad Request
           content:
@@ -12459,12 +13192,6 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "404":
-          description: Not Found
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/errands/{errandId}:
     get:
       tags:
@@ -12521,6 +13248,12 @@ paths:
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
 >>>>>>> 4aad4eb (UF-10583: Update API)
       responses:
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad Request
           content:
@@ -12529,6 +13262,7 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
         "404":
           description: Not Found
 >>>>>>> fd310fe (UF-10583: Update API)
@@ -12707,7 +13441,12 @@ paths:
 =======
                 $ref: "#/components/schemas/Problem"
 >>>>>>> 4aad4eb (UF-10583: Update API)
+<<<<<<< HEAD
 >>>>>>> fd310fe (UF-10583: Update API)
+=======
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "500":
           description: Internal Server Error
           content:
@@ -12984,8 +13723,11 @@ paths:
 >>>>>>> 4aad4eb (UF-10583: Update API)
       responses:
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 963894e (UF-10583: Update API)
 =======
+=======
+>>>>>>> ed9392e (F-10368: Add new resource for listing notifications by errandId)
         "500":
           description: Internal Server error
           content:
@@ -13005,6 +13747,8 @@ paths:
 =======
         "204":
           description: Successful operation
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
         "400":
           description: Bad request
           content:
@@ -13021,13 +13765,18 @@ paths:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
 <<<<<<< HEAD
+<<<<<<< HEAD
         "500":
           description: Internal Server error
 >>>>>>> 4aad4eb (UF-10583: Update API)
+=======
+        "404":
+          description: Not Found
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 >>>>>>> 4aad4eb (UF-10583: Update API)
@@ -13056,6 +13805,20 @@ paths:
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
+=======
+        "500":
+          description: Internal Server error
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "204":
           description: Successful operation
 >>>>>>> 05cb6da (UF-10584: Add logic)
@@ -13389,6 +14152,7 @@ paths:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         "500":
           description: Internal Server error
 =======
@@ -13400,6 +14164,8 @@ paths:
 =======
 =======
 =======
+=======
+>>>>>>> ed9392e (F-10368: Add new resource for listing notifications by errandId)
 =======
         "404":
           description: Not found
@@ -13420,7 +14186,20 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
+<<<<<<< HEAD
 >>>>>>> 789b9b3 (F-10583: Acted on review comments)
+=======
+=======
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> ed9392e (F-10368: Add new resource for listing notifications by errandId)
         "200":
           description: Successful operation
           content:
@@ -13430,15 +14209,23 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Errand"
+<<<<<<< HEAD
 >>>>>>> ab890a7 (UF-10584: Add logic)
         "400":
           description: Bad request
+=======
+        "500":
+          description: Internal Server error
+>>>>>>> ed9392e (F-10368: Add new resource for listing notifications by errandId)
           content:
             application/problem+json:
               schema:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
                 oneOf:
 <<<<<<< HEAD
                 - $ref: "#/components/schemas/Problem"
@@ -13639,7 +14426,13 @@ paths:
               $ref: "#/components/schemas/UpdateErrandNoteRequest"
         required: true
       responses:
+<<<<<<< HEAD
 >>>>>>> fd310fe (UF-10583: Update API)
+=======
+=======
+                $ref: "#/components/schemas/Problem"
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "404":
           description: Not found
 >>>>>>> c8b56ec (UF-10368: Acted on review comnents)
@@ -13650,12 +14443,15 @@ paths:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> ad6978c (UF-10583: Acted on review comments)
 =======
 =======
 >>>>>>> 4ff10c4 (UF-10368: Acted on review comnents)
 =======
 >>>>>>> ab890a7 (UF-10584: Add logic)
+=======
+>>>>>>> ed9392e (F-10368: Add new resource for listing notifications by errandId)
 =======
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
@@ -13674,7 +14470,18 @@ paths:
 =======
 =======
 >>>>>>> c8b56ec (UF-10368: Acted on review comnents)
+<<<<<<< HEAD
 >>>>>>> 4ff10c4 (UF-10368: Acted on review comnents)
+=======
+=======
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> ed9392e (F-10368: Add new resource for listing notifications by errandId)
         "200":
           description: Successful operation
           content:
@@ -14098,8 +14905,16 @@ paths:
 =======
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
+<<<<<<< HEAD
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
+<<<<<<< HEAD
 >>>>>>> 789b9b3 (F-10583: Acted on review comments)
+=======
+=======
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> ed9392e (F-10368: Add new resource for listing notifications by errandId)
   /{municipalityId}/{namespace}/errands/{errandId}/parameters:
     get:
       tags:
@@ -14131,12 +14946,6 @@ paths:
           type: string
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
       responses:
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -14171,6 +14980,7 @@ paths:
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
+<<<<<<< HEAD
 >>>>>>> 0d64440 (UF-10368: Add new resource for listing notifications by errandId)
 =======
                 - $ref: "#/components/schemas/Problem"
@@ -14178,12 +14988,16 @@ paths:
 >>>>>>> 963894e (UF-10583: Update API)
 =======
 >>>>>>> 789b9b3 (F-10583: Acted on review comments)
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> ed9392e (F-10368: Add new resource for listing notifications by errandId)
         "500":
           description: Internal Server error
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -14220,6 +15034,8 @@ paths:
 =======
 >>>>>>> ab890a7 (UF-10584: Add logic)
 =======
+=======
+>>>>>>> ed9392e (F-10368: Add new resource for listing notifications by errandId)
 >>>>>>> 4aad4eb (UF-10583: Update API)
 <<<<<<< HEAD
 >>>>>>> fd310fe (UF-10583: Update API)
@@ -14229,8 +15045,16 @@ paths:
 =======
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
+<<<<<<< HEAD
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
+<<<<<<< HEAD
 >>>>>>> 789b9b3 (F-10583: Acted on review comments)
+=======
+=======
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> ed9392e (F-10368: Add new resource for listing notifications by errandId)
         "200":
           description: Successful Operation
           content:
@@ -14305,6 +15129,7 @@ paths:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         "500":
           description: Internal Server error
 =======
@@ -14316,6 +15141,8 @@ paths:
 >>>>>>> 0d64440 (UF-10368: Add new resource for listing notifications by errandId)
 =======
 >>>>>>> 82ac2b5 (UF-10368: Add new resource for listing notifications by errandId)
+=======
+>>>>>>> ed9392e (F-10368: Add new resource for listing notifications by errandId)
 =======
         "404":
           description: Not found
@@ -14346,6 +15173,8 @@ paths:
 >>>>>>> fd310fe (UF-10583: Update API)
 =======
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
+=======
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "400":
           description: Bad request
 >>>>>>> 7aecf15 (UF-10583: Update API)
@@ -14375,6 +15204,9 @@ paths:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
         "500":
           description: Internal Server error
 >>>>>>> fd310fe (UF-10583: Update API)
@@ -14383,6 +15215,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -14511,6 +15344,10 @@ paths:
 >>>>>>> ab890a7 (UF-10584: Add logic)
 =======
 =======
+>>>>>>> ed9392e (F-10368: Add new resource for listing notifications by errandId)
+=======
+=======
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
 >>>>>>> 4aad4eb (UF-10583: Update API)
 <<<<<<< HEAD
 >>>>>>> fd310fe (UF-10583: Update API)
@@ -14520,8 +15357,22 @@ paths:
 =======
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
+<<<<<<< HEAD
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
+<<<<<<< HEAD
 >>>>>>> 789b9b3 (F-10583: Acted on review comments)
+=======
+=======
+=======
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> ed9392e (F-10368: Add new resource for listing notifications by errandId)
         "200":
           description: Successful Operation
           content:
@@ -14595,6 +15446,7 @@ paths:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 =======
 >>>>>>> ad6978c (UF-10583: Acted on review comments)
@@ -14606,6 +15458,8 @@ paths:
 >>>>>>> 963894e (UF-10583: Update API)
 =======
 >>>>>>> 789b9b3 (F-10583: Acted on review comments)
+=======
+>>>>>>> ed9392e (F-10368: Add new resource for listing notifications by errandId)
 =======
 =======
         "500":
@@ -14637,6 +15491,8 @@ paths:
 >>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
 =======
 >>>>>>> a5246de (UF-10368: Add new resource for listing notifications by errandId)
+=======
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "400":
           description: Bad request
           content:
@@ -14673,6 +15529,7 @@ paths:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> fd310fe (UF-10583: Update API)
 <<<<<<< HEAD
 >>>>>>> 963894e (UF-10583: Update API)
@@ -14680,13 +15537,28 @@ paths:
 =======
 <<<<<<< HEAD
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
+<<<<<<< HEAD
 >>>>>>> 789b9b3 (F-10583: Acted on review comments)
+=======
+=======
+<<<<<<< HEAD
+=======
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> ed9392e (F-10368: Add new resource for listing notifications by errandId)
         "500":
           description: Internal Server error
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -14820,7 +15692,17 @@ paths:
 =======
 =======
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
+<<<<<<< HEAD
 >>>>>>> 789b9b3 (F-10583: Acted on review comments)
+=======
+=======
+>>>>>>> 4aad4eb (UF-10583: Update API)
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> ed9392e (F-10368: Add new resource for listing notifications by errandId)
         "200":
           description: Successful Operation
           content:
@@ -14880,6 +15762,7 @@ paths:
             type: string
           example: propertyInfo
       responses:
+<<<<<<< HEAD
         "500":
           description: Internal Server error
           content:
@@ -15039,6 +15922,8 @@ paths:
 =======
         "204":
           description: Successful operation
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
         "400":
           description: Bad request
           content:
@@ -15055,13 +15940,18 @@ paths:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
 <<<<<<< HEAD
+<<<<<<< HEAD
         "500":
           description: Internal Server error
 >>>>>>> 4aad4eb (UF-10583: Update API)
+=======
+        "404":
+          description: Not Found
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 >>>>>>> 4aad4eb (UF-10583: Update API)
@@ -15124,6 +16014,20 @@ paths:
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
+=======
+        "500":
+          description: Internal Server error
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "204":
           description: Successful operation
 >>>>>>> 05cb6da (UF-10584: Add logic)
@@ -15298,6 +16202,7 @@ paths:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
                   - $ref: "#/components/schemas/Problem"
                   - $ref: "#/components/schemas/ConstraintViolationProblem"
@@ -15320,6 +16225,8 @@ paths:
 >>>>>>> 0d64440 (UF-10368: Add new resource for listing notifications by errandId)
 =======
 >>>>>>> 82ac2b5 (UF-10368: Add new resource for listing notifications by errandId)
+=======
+>>>>>>> ed9392e (F-10368: Add new resource for listing notifications by errandId)
 =======
         "404":
           description: Not found
@@ -15365,7 +16272,12 @@ paths:
 =======
 =======
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
+<<<<<<< HEAD
 >>>>>>> 789b9b3 (F-10583: Acted on review comments)
+=======
+=======
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> ed9392e (F-10368: Add new resource for listing notifications by errandId)
         "400":
           description: Bad request
           content:
@@ -15397,6 +16309,9 @@ paths:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
         "500":
           description: Internal Server error
 >>>>>>> fd310fe (UF-10583: Update API)
@@ -15702,7 +16617,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
 >>>>>>> 4aad4eb (UF-10583: Update API)
 <<<<<<< HEAD
 >>>>>>> 3150afc (UF-10583: Update API)
@@ -15714,8 +16632,22 @@ paths:
 =======
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
+<<<<<<< HEAD
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
+<<<<<<< HEAD
 >>>>>>> 789b9b3 (F-10583: Acted on review comments)
+=======
+=======
+=======
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> ed9392e (F-10368: Add new resource for listing notifications by errandId)
         "200":
           description: Successful operation
           content:
@@ -16959,6 +17891,12 @@ paths:
         example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
 >>>>>>> 4aad4eb (UF-10583: Update API)
       responses:
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad Request
           content:
@@ -16967,6 +17905,7 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
         "404":
 >>>>>>> fd310fe (UF-10583: Update API)
           description: Not Found
@@ -16976,6 +17915,7 @@ paths:
                 $ref: "#/components/schemas/Problem"
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 0d64440 (UF-10368: Add new resource for listing notifications by errandId)
 =======
         "204":
@@ -16983,6 +17923,10 @@ paths:
 >>>>>>> 4ff10c4 (UF-10368: Acted on review comnents)
 =======
 >>>>>>> ab890a7 (UF-10584: Add logic)
+=======
+=======
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> ed9392e (F-10368: Add new resource for listing notifications by errandId)
         "500":
           description: Internal Server Error
           content:
@@ -17077,6 +18021,7 @@ paths:
               $ref: "#/components/schemas/UpdateErrandNoteRequest"
         required: true
       responses:
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -18714,6 +19659,8 @@ paths:
           description: Not found
 >>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
 =======
+=======
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "500":
           description: Internal Server error
           content:
@@ -18797,6 +19744,7 @@ paths:
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         "200":
           description: Successful operation
+<<<<<<< HEAD
           content:
             '*/*':
               schema:
@@ -18809,6 +19757,10 @@ paths:
 >>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
 =======
 >>>>>>> a5246de (UF-10368: Add new resource for listing notifications by errandId)
+=======
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "400":
           description: Bad request
           content:
@@ -19032,6 +19984,18 @@ paths:
 =======
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "204":
           description: Successful operation
     patch:
@@ -19148,18 +20112,14 @@ paths:
         required: true
 >>>>>>> 963894e (UF-10583: Update API)
       responses:
-        "404":
-          description: Not found
+        "400":
+          description: Bad request
           content:
             application/problem+json:
               schema:
-                $ref: "#/components/schemas/Problem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
         "200":
           description: Successful operation
           content:
@@ -19169,21 +20129,28 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ErrandNote"
-        "400":
-          description: Bad request
+        "500":
+          description: Internal Server error
           content:
             application/problem+json:
               schema:
+<<<<<<< HEAD
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
 <<<<<<< HEAD
         "500":
           description: Internal Server error
+=======
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: Not found
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 >>>>>>> 4aad4eb (UF-10583: Update API)
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
@@ -19191,10 +20158,17 @@ paths:
     get:
       tags:
         - Metadata
+=======
+  /{municipalityId}/{namespace}/metadata:
+    get:
+      tags:
+      - Metadata
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
       summary: Get all metadata
       description: Get all metadata for provided namespace and municipality
       operationId: getAll
       parameters:
+<<<<<<< HEAD
         - name: namespace
           in: path
           description: Namespace
@@ -19234,6 +20208,24 @@ paths:
 >>>>>>> 4aad4eb (UF-10583: Update API)
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
+=======
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      responses:
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
         "200":
           description: Successful operation
           content:
@@ -19243,6 +20235,12 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/MetadataResponse"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad Request
           content:
@@ -19284,6 +20282,7 @@ paths:
       responses:
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         "500":
           description: Internal Server error
 =======
@@ -19306,6 +20305,8 @@ paths:
                 oneOf:
                   - $ref: "#/components/schemas/Problem"
                   - $ref: "#/components/schemas/ConstraintViolationProblem"
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
         "200":
           description: Successful operation
           content:
@@ -19315,6 +20316,18 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Status"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad Request
           content:
@@ -19323,12 +20336,6 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "404":
-          description: Not Found
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
     delete:
       tags:
         - Metadata for statuses
@@ -19359,6 +20366,7 @@ paths:
             type: string
           example: PRIVATE
       responses:
+<<<<<<< HEAD
         "500":
           description: Internal Server error
           content:
@@ -19373,6 +20381,8 @@ paths:
                 $ref: "#/components/schemas/Problem"
         "204":
           description: Successful operation
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
         "400":
           description: Bad request
           content:
@@ -19388,15 +20398,29 @@ paths:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
 <<<<<<< HEAD
+<<<<<<< HEAD
         "500":
           description: Internal Server error
 >>>>>>> 4aad4eb (UF-10583: Update API)
+=======
+        "404":
+          description: Not Found
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
         "204":
           description: Successful operation
   /{municipalityId}/{namespace}/metadata/roles/{role}:
@@ -19432,6 +20456,7 @@ paths:
       responses:
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         "500":
           description: Internal Server error
 =======
@@ -19454,6 +20479,8 @@ paths:
                 oneOf:
                   - $ref: "#/components/schemas/Problem"
                   - $ref: "#/components/schemas/ConstraintViolationProblem"
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
         "200":
           description: Successful operation
           content:
@@ -19463,6 +20490,18 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Role"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad Request
           content:
@@ -19471,12 +20510,6 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "404":
-          description: Not Found
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
     delete:
       tags:
         - Metadata for roles
@@ -19507,6 +20540,7 @@ paths:
             type: string
           example: ROLE-1
       responses:
+<<<<<<< HEAD
         "500":
           description: Internal Server error
           content:
@@ -19521,6 +20555,8 @@ paths:
                 $ref: "#/components/schemas/Problem"
         "204":
           description: Successful operation
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
         "400":
           description: Bad request
           content:
@@ -19536,15 +20572,29 @@ paths:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
 <<<<<<< HEAD
+<<<<<<< HEAD
         "500":
           description: Internal Server error
 >>>>>>> 4aad4eb (UF-10583: Update API)
+=======
+        "404":
+          description: Not Found
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
         "204":
           description: Successful operation
   /{municipalityId}/{namespace}/metadata/external-id-types/{externalIdType}:
@@ -19588,6 +20638,7 @@ paths:
       responses:
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         "500":
           description: Internal Server error
 =======
@@ -19610,6 +20661,8 @@ paths:
                 oneOf:
                   - $ref: "#/components/schemas/Problem"
                   - $ref: "#/components/schemas/ConstraintViolationProblem"
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
         "200":
           description: Successful operation
           content:
@@ -19619,6 +20672,18 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ExternalIdType"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad Request
           content:
@@ -19627,12 +20692,6 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "404":
-          description: Not Found
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
     delete:
       tags:
 <<<<<<< HEAD
@@ -19693,6 +20752,7 @@ paths:
         example: PRIVATE
 >>>>>>> 4aad4eb (UF-10583: Update API)
       responses:
+<<<<<<< HEAD
         "500":
           description: Internal Server error
           content:
@@ -19707,6 +20767,8 @@ paths:
                 $ref: "#/components/schemas/Problem"
         "204":
           description: Successful operation
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
         "400":
           description: Bad request
           content:
@@ -19722,15 +20784,29 @@ paths:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
 <<<<<<< HEAD
+<<<<<<< HEAD
         "500":
           description: Internal Server error
 >>>>>>> 4aad4eb (UF-10583: Update API)
+=======
+        "404":
+          description: Not Found
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
         "204":
           description: Successful operation
   /{municipalityId}/{namespace}/metadata/categories/{category}/types:
@@ -19764,12 +20840,6 @@ paths:
             type: string
           example: KSK_SERVICE_CENTER_SALARY_AND_PENSION
       responses:
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
         "200":
           description: Successful operation
           content:
@@ -19783,6 +20853,12 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Type"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/errands/{errandId}/time-measure:
     get:
       tags:
@@ -19812,16 +20888,6 @@ paths:
           type: string
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
       responses:
-        "200":
-          description: Successful operation
-          content:
-            application/json: {}
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -19830,6 +20896,16 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "200":
+          description: Successful operation
+          content:
+            application/json: {}
   /{municipalityId}/{namespace}/errands/{errandId}/revisions:
     get:
       tags:
@@ -19887,6 +20963,7 @@ paths:
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
 >>>>>>> 4aad4eb (UF-10583: Update API)
       responses:
+<<<<<<< HEAD
 >>>>>>> fd310fe (UF-10583: Update API)
         "404":
           description: Not found
@@ -19924,6 +21001,16 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
+=======
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "200":
           description: Successful operation
           content:
@@ -19937,11 +21024,12 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Revision"
-        "400":
-          description: Bad request
+        "500":
+          description: Internal Server error
           content:
             application/problem+json:
               schema:
+<<<<<<< HEAD
                 oneOf:
 <<<<<<< HEAD
                   - $ref: "#/components/schemas/Problem"
@@ -19950,6 +21038,15 @@ paths:
 =======
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+=======
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
   /{municipalityId}/{namespace}/errands/{errandId}/revisions/difference:
 >>>>>>> 4aad4eb (UF-10583: Update API)
     get:
@@ -20040,6 +21137,7 @@ paths:
         example: 1
 >>>>>>> 4aad4eb (UF-10583: Update API)
       responses:
+<<<<<<< HEAD
         "404":
           description: Not found
 >>>>>>> fd310fe (UF-10583: Update API)
@@ -20067,6 +21165,16 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
+=======
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "200":
           description: Successful operation
           content:
@@ -20076,11 +21184,12 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/DifferenceResponse"
-        "400":
-          description: Bad request
+        "500":
+          description: Internal Server error
           content:
             application/problem+json:
               schema:
+<<<<<<< HEAD
                 oneOf:
 <<<<<<< HEAD
                   - $ref: "#/components/schemas/Problem"
@@ -20089,6 +21198,15 @@ paths:
 =======
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+=======
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
   /{municipalityId}/{namespace}/errands/{errandId}/notifications/{notificationId}:
     get:
       tags:
@@ -20127,24 +21245,6 @@ paths:
           type: string
         example: 12
       responses:
-        "404":
-          description: Not found
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-        "200":
-          description: Successful operation
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/Notification"
         "400":
           description: Bad request
           content:
@@ -20153,6 +21253,24 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "200":
+          description: Successful operation
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/Notification"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
     delete:
       tags:
       - User notifications
@@ -20189,18 +21307,6 @@ paths:
         schema:
           type: string
       responses:
-        "404":
-          description: Not found
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -20209,8 +21315,20 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "204":
           description: Successful operation
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/errands/{errandId}/notes/{noteId}/revisions:
 >>>>>>> 4aad4eb (UF-10583: Update API)
 >>>>>>> fd310fe (UF-10583: Update API)
@@ -20290,11 +21408,12 @@ paths:
 =======
 >>>>>>> 4aad4eb (UF-10583: Update API)
       responses:
-        "404":
-          description: Not found
+        "400":
+          description: Bad request
           content:
             application/problem+json:
               schema:
+<<<<<<< HEAD
                 $ref: "#/components/schemas/Problem"
 <<<<<<< HEAD
 >>>>>>> fd310fe (UF-10583: Update API)
@@ -20306,6 +21425,11 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
+=======
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "200":
           description: Successful operation
           content:
@@ -20319,14 +21443,17 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Revision"
-        "400":
-          description: Bad request
+        "500":
+          description: Internal Server error
           content:
             application/problem+json:
               schema:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
                 oneOf:
 <<<<<<< HEAD
                 - $ref: "#/components/schemas/Problem"
@@ -20340,6 +21467,7 @@ paths:
 =======
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
 <<<<<<< HEAD
 >>>>>>> fd310fe (UF-10583: Update API)
         "500":
@@ -20360,10 +21488,17 @@ paths:
         "404":
           description: Not found
 >>>>>>> c8b56ec (UF-10368: Acted on review comnents)
+=======
+=======
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: Not found
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -20373,6 +21508,8 @@ paths:
 >>>>>>> 4ff10c4 (UF-10368: Acted on review comnents)
 =======
 >>>>>>> ab890a7 (UF-10584: Add logic)
+=======
+>>>>>>> ed9392e (F-10368: Add new resource for listing notifications by errandId)
 =======
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
@@ -20577,6 +21714,9 @@ paths:
                 $ref: "#/components/schemas/Problem"
 =======
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
   /{municipalityId}/{namespace}/errands/{errandId}/notes/{noteId}/revisions/difference:
 >>>>>>> 4aad4eb (UF-10583: Update API)
 >>>>>>> fd310fe (UF-10583: Update API)
@@ -20717,11 +21857,12 @@ paths:
 =======
 >>>>>>> 4aad4eb (UF-10583: Update API)
       responses:
-        "404":
-          description: Not found
+        "400":
+          description: Bad request
           content:
             application/problem+json:
               schema:
+<<<<<<< HEAD
                 $ref: "#/components/schemas/Problem"
 <<<<<<< HEAD
 >>>>>>> fd310fe (UF-10583: Update API)
@@ -20733,6 +21874,11 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
+=======
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "200":
           description: Successful operation
           content:
@@ -20742,14 +21888,17 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/DifferenceResponse"
-        "400":
-          description: Bad request
+        "500":
+          description: Internal Server error
           content:
             application/problem+json:
               schema:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
                 oneOf:
 <<<<<<< HEAD
                 - $ref: "#/components/schemas/Problem"
@@ -20763,6 +21912,7 @@ paths:
 =======
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
 <<<<<<< HEAD
 >>>>>>> fd310fe (UF-10583: Update API)
         "500":
@@ -20783,10 +21933,17 @@ paths:
         "404":
           description: Not found
 >>>>>>> c8b56ec (UF-10368: Acted on review comnents)
+=======
+=======
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: Not found
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -20796,6 +21953,8 @@ paths:
 >>>>>>> 4ff10c4 (UF-10368: Acted on review comnents)
 =======
 >>>>>>> ab890a7 (UF-10584: Add logic)
+=======
+>>>>>>> ed9392e (F-10368: Add new resource for listing notifications by errandId)
 =======
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
@@ -20992,6 +22151,9 @@ paths:
                 $ref: "#/components/schemas/Problem"
 =======
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
   /{municipalityId}/{namespace}/errands/{errandId}/events:
 >>>>>>> 4aad4eb (UF-10583: Update API)
 >>>>>>> fd310fe (UF-10583: Update API)
@@ -21176,6 +22338,7 @@ paths:
 =======
       responses:
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
         "404":
           description: Not found
@@ -21193,6 +22356,16 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
+=======
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "200":
           description: Successful operation
           content:
@@ -21202,14 +22375,17 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/PageEvent"
-        "400":
-          description: Bad request
+        "500":
+          description: Internal Server error
           content:
             application/problem+json:
               schema:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
                 oneOf:
 <<<<<<< HEAD
                 - $ref: "#/components/schemas/Problem"
@@ -21276,10 +22452,16 @@ paths:
           description: Successful Operation
         "404":
           description: Not Found
+=======
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: Not found
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
     delete:
       tags:
         - Errand attachments
@@ -21745,8 +22927,16 @@ paths:
 =======
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
+<<<<<<< HEAD
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
+<<<<<<< HEAD
 >>>>>>> 789b9b3 (F-10583: Acted on review comments)
+=======
+=======
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> ed9392e (F-10368: Add new resource for listing notifications by errandId)
   /{municipalityId}/{namespace}/errands/{errandId}/communication:
     get:
       tags:
@@ -21827,12 +23017,6 @@ paths:
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
 >>>>>>> 789b9b3 (F-10583: Acted on review comments)
       responses:
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -21870,16 +23054,23 @@ paths:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> fd310fe (UF-10583: Update API)
 =======
 <<<<<<< HEAD
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
+=======
+<<<<<<< HEAD
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "500":
           description: Internal Server error
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -21914,6 +23105,10 @@ paths:
 >>>>>>> 82ac2b5 (UF-10368: Add new resource for listing notifications by errandId)
 =======
 =======
+>>>>>>> ed9392e (F-10368: Add new resource for listing notifications by errandId)
+=======
+=======
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
 >>>>>>> 4aad4eb (UF-10583: Update API)
 <<<<<<< HEAD
 >>>>>>> fd310fe (UF-10583: Update API)
@@ -21923,8 +23118,16 @@ paths:
 =======
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
+<<<<<<< HEAD
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
+<<<<<<< HEAD
 >>>>>>> 789b9b3 (F-10583: Acted on review comments)
+=======
+=======
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> ed9392e (F-10368: Add new resource for listing notifications by errandId)
         "200":
           description: OK - Successful operation
           content:
@@ -22771,6 +23974,7 @@ paths:
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
 <<<<<<< HEAD
       responses:
+<<<<<<< HEAD
         "500":
           description: Internal Server error
           content:
@@ -22785,6 +23989,8 @@ paths:
                 $ref: "#/components/schemas/Problem"
 =======
 >>>>>>> a5246de (UF-10368: Add new resource for listing notifications by errandId)
+=======
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "400":
           description: Bad request
           content:
@@ -22802,9 +24008,13 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 >>>>>>> a5246de (UF-10368: Add new resource for listing notifications by errandId)
 =======
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "500":
           description: Internal Server error
           content:
@@ -22815,6 +24025,8 @@ paths:
 >>>>>>> 4aad4eb (UF-10583: Update API)
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
         "200":
           description: Successful Operation
 =======
@@ -22878,6 +24090,12 @@ paths:
           type: string
         example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
       responses:
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad Request
           content:
@@ -22886,6 +24104,7 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
         "404":
           description: Not Found
           content:
@@ -22895,6 +24114,8 @@ paths:
 <<<<<<< HEAD
 >>>>>>> 05cb6da (UF-10584: Add logic)
 =======
+=======
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         "500":
           description: Internal Server Error
           content:
@@ -22941,18 +24162,6 @@ paths:
           type: string
         example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
       responses:
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-        "404":
-          description: Not Found
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -22961,6 +24170,18 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "204":
           description: Successful operation
 <<<<<<< HEAD
@@ -24656,6 +25877,7 @@ components:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         first:
           type: boolean
         last:
@@ -24668,6 +25890,8 @@ components:
 >>>>>>> 82ac2b5 (UF-10368: Add new resource for listing notifications by errandId)
 =======
 >>>>>>> 789b9b3 (F-10583: Acted on review comments)
+=======
+>>>>>>> ed9392e (F-10368: Add new resource for listing notifications by errandId)
         numberOfElements:
           type: integer
           format: int32
@@ -24707,14 +25931,24 @@ components:
 >>>>>>> 82ac2b5 (UF-10368: Add new resource for listing notifications by errandId)
 =======
 =======
+=======
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         numberOfElements:
           type: integer
           format: int32
 =======
         pageable:
           $ref: "#/components/schemas/PageableObject"
+<<<<<<< HEAD
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
+<<<<<<< HEAD
 >>>>>>> 789b9b3 (F-10583: Acted on review comments)
+=======
+=======
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> ed9392e (F-10368: Add new resource for listing notifications by errandId)
         numberOfElements:
           type: integer
           format: int32
@@ -24728,10 +25962,15 @@ components:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> 82ac2b5 (UF-10368: Add new resource for listing notifications by errandId)
 =======
 >>>>>>> 789b9b3 (F-10583: Acted on review comments)
+=======
+=======
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> ed9392e (F-10368: Add new resource for listing notifications by errandId)
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
 <<<<<<< HEAD
 >>>>>>> 539fb48 (UF-10583: Acted on review comments)
@@ -24746,10 +25985,13 @@ components:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> d974000 (UF-10368: Add new resource for listing notifications by errandId)
 =======
 =======
 >>>>>>> 82ac2b5 (UF-10368: Add new resource for listing notifications by errandId)
+=======
+>>>>>>> ed9392e (F-10368: Add new resource for listing notifications by errandId)
 =======
         pageable:
           $ref: "#/components/schemas/PageableObject"
@@ -24770,7 +26012,12 @@ components:
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
+<<<<<<< HEAD
 >>>>>>> 789b9b3 (F-10583: Acted on review comments)
+=======
+=======
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> ed9392e (F-10368: Add new resource for listing notifications by errandId)
         empty:
           type: boolean
     PageableObject:
@@ -24906,10 +26153,10 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/SortObject"
-        pageSize:
+        pageNumber:
           type: integer
           format: int32
-        pageNumber:
+        pageSize:
           type: integer
           format: int32
         paged:
@@ -25156,6 +26403,7 @@ components:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         first:
           type: boolean
         last:
@@ -25168,6 +26416,8 @@ components:
 >>>>>>> 82ac2b5 (UF-10368: Add new resource for listing notifications by errandId)
 =======
 >>>>>>> 789b9b3 (F-10583: Acted on review comments)
+=======
+>>>>>>> ed9392e (F-10368: Add new resource for listing notifications by errandId)
         numberOfElements:
           type: integer
           format: int32
@@ -25207,14 +26457,24 @@ components:
 >>>>>>> 82ac2b5 (UF-10368: Add new resource for listing notifications by errandId)
 =======
 =======
+=======
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
         numberOfElements:
           type: integer
           format: int32
 =======
         pageable:
           $ref: "#/components/schemas/PageableObject"
+<<<<<<< HEAD
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
+<<<<<<< HEAD
 >>>>>>> 789b9b3 (F-10583: Acted on review comments)
+=======
+=======
+=======
+>>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> ed9392e (F-10368: Add new resource for listing notifications by errandId)
         numberOfElements:
           type: integer
           format: int32
@@ -25228,10 +26488,15 @@ components:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> 82ac2b5 (UF-10368: Add new resource for listing notifications by errandId)
 =======
 >>>>>>> 789b9b3 (F-10583: Acted on review comments)
+=======
+=======
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> ed9392e (F-10368: Add new resource for listing notifications by errandId)
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
 <<<<<<< HEAD
 >>>>>>> 539fb48 (UF-10583: Acted on review comments)
@@ -25246,10 +26511,13 @@ components:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> d974000 (UF-10368: Add new resource for listing notifications by errandId)
 =======
 =======
 >>>>>>> 82ac2b5 (UF-10368: Add new resource for listing notifications by errandId)
+=======
+>>>>>>> ed9392e (F-10368: Add new resource for listing notifications by errandId)
 =======
         pageable:
           $ref: "#/components/schemas/PageableObject"
@@ -25268,7 +26536,12 @@ components:
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
+<<<<<<< HEAD
 >>>>>>> 789b9b3 (F-10583: Acted on review comments)
+=======
+=======
+>>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
+>>>>>>> ed9392e (F-10368: Add new resource for listing notifications by errandId)
         empty:
           type: boolean
 <<<<<<< HEAD
