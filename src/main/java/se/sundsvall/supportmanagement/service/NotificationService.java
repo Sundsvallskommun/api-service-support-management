@@ -5,6 +5,7 @@ import static org.zalando.problem.Status.NOT_FOUND;
 import java.util.List;
 import java.util.Objects;
 
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.zalando.problem.Problem;
@@ -21,10 +22,8 @@ public class NotificationService {
 	private static final String NOTIFICATION_ENTITY_NOT_FOUND = "Notification with id:'%s' not found in namespace:'%s' for municipality with id:'%s' and errand with id:'%s'";
 	private static final String ERRAND_ENTITY_NOT_FOUND = "Errand with id:'%s' not found in namespace:'%s' for municipality with id:'%s'";
 
-	public final ExecutingUserSupplier executingUserSupplier;
-
+	private final ExecutingUserSupplier executingUserSupplier;
 	private final NotificationRepository notificationRepository;
-
 	private final ErrandsRepository errandsRepository;
 
 	public NotificationService(final NotificationRepository notificationRepository, final ExecutingUserSupplier executingUserSupplier, final ErrandsRepository errandsRepository) {
@@ -39,8 +38,18 @@ public class NotificationService {
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, String.format(NOTIFICATION_ENTITY_NOT_FOUND, notificationId, namespace, municipalityId, errandId)));
 	}
 
-	public List<Notification> getNotifications(final String municipalityId, final String namespace, final String ownerId) {
-		return notificationRepository.findAllByNamespaceAndMunicipalityIdAndOwnerId(namespace, municipalityId, ownerId).stream().map(NotificationMapper::toNotification).toList();
+	public List<Notification> getNotificationsByOwnerId(final String municipalityId, final String namespace, final String ownerId) {
+		return notificationRepository.findAllByNamespaceAndMunicipalityIdAndOwnerId(namespace, municipalityId, ownerId)
+			.stream()
+			.map(NotificationMapper::toNotification)
+			.toList();
+	}
+
+	public List<Notification> getNotificationsByErrandId(final String municipalityId, final String namespace, final String errandId, final Sort sort) {
+		return notificationRepository.findAllByNamespaceAndMunicipalityIdAndErrandEntityId(namespace, municipalityId, errandId, sort)
+			.stream()
+			.map(NotificationMapper::toNotification)
+			.toList();
 	}
 
 	public String createNotification(final String municipalityId, final String namespace, final String errandId, final Notification notification) {

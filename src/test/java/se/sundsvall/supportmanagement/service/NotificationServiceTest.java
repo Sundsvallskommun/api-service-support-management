@@ -18,6 +18,7 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Sort;
 import org.zalando.problem.Problem;
 
 import se.sundsvall.supportmanagement.TestObjectsBuilder;
@@ -64,7 +65,7 @@ class NotificationServiceTest {
 	}
 
 	@Test
-	void getNotification_notFound() {
+	void getNotificationNotFound() {
 
 		// Arrange
 		final var municipalityId = "2281";
@@ -82,7 +83,7 @@ class NotificationServiceTest {
 	}
 
 	@Test
-	void getNotifications() {
+	void getNotificationsByOwnerId() {
 
 		// Arrange
 		final var municipalityId = "2281";
@@ -92,7 +93,7 @@ class NotificationServiceTest {
 		when(notificationRepositoryMock.findAllByNamespaceAndMunicipalityIdAndOwnerId(namespace, municipalityId, ownerId)).thenReturn(List.of(createNotificationEntity(n -> {})));
 
 		// Act
-		final var result = notificationService.getNotifications(municipalityId, namespace, ownerId);
+		final var result = notificationService.getNotificationsByOwnerId(municipalityId, namespace, ownerId);
 
 		// Assert
 		assertThat(result).isNotNull().hasSize(1);
@@ -100,7 +101,7 @@ class NotificationServiceTest {
 	}
 
 	@Test
-	void getNotifications_noneFound() {
+	void getNotificationsByOwnerIdNoneFound() {
 
 		// Arrange
 		final var municipalityId = "2281";
@@ -108,11 +109,46 @@ class NotificationServiceTest {
 		final var ownerId = randomUUID().toString();
 
 		// Act
-		final var result = notificationService.getNotifications(municipalityId, namespace, ownerId);
+		final var result = notificationService.getNotificationsByOwnerId(municipalityId, namespace, ownerId);
 
 		// Assert
 		assertThat(result).isNotNull().isEmpty();
 		verify(notificationRepositoryMock).findAllByNamespaceAndMunicipalityIdAndOwnerId(namespace, municipalityId, ownerId);
+	}
+
+	@Test
+	void getNotificationsByErrandId() {
+
+		// Arrange
+		final var municipalityId = "2281";
+		final var namespace = "namespace";
+		final var errandId = randomUUID().toString();
+		final var sort = Sort.by("modified");
+
+		when(notificationRepositoryMock.findAllByNamespaceAndMunicipalityIdAndErrandEntityId(namespace, municipalityId, errandId, sort)).thenReturn(List.of(createNotificationEntity(n -> {})));
+
+		// Act
+		final var result = notificationService.getNotificationsByErrandId(municipalityId, namespace, errandId, sort);
+
+		// Assert
+		assertThat(result).isNotNull().hasSize(1);
+		verify(notificationRepositoryMock).findAllByNamespaceAndMunicipalityIdAndErrandEntityId(namespace, municipalityId, errandId, sort);
+	}
+
+	@Test
+	void getNotificationsByErrandIdNoneFoundl() {
+
+		// Arrange
+		final var municipalityId = "2281";
+		final var namespace = "namespace";
+		final var errandId = randomUUID().toString();
+
+		// Act
+		final var result = notificationService.getNotificationsByErrandId(municipalityId, namespace, errandId, null);
+
+		// Assert
+		assertThat(result).isNotNull().isEmpty();
+		verify(notificationRepositoryMock).findAllByNamespaceAndMunicipalityIdAndErrandEntityId(namespace, municipalityId, errandId, null);
 	}
 
 	@Test
@@ -170,7 +206,7 @@ class NotificationServiceTest {
 	}
 
 	@Test
-	void updateNotification_notFound() {
+	void updateNotificationNotFound() {
 
 		// Arrange
 		final var municipalityId = "2281";
@@ -206,7 +242,7 @@ class NotificationServiceTest {
 	}
 
 	@Test
-	void deleteNotification_notFound() {
+	void deleteNotificationNotFound() {
 
 		// Arrange
 		final var municipalityId = "2281";
