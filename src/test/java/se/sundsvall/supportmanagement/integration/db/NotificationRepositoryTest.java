@@ -70,10 +70,10 @@ class NotificationRepositoryTest {
 	}
 
 	@Test
-	void findByIdAndNamespaceAndMunicipalityId() {
+	void findByIdAndNamespaceAndMunicipalityIdAndErrandEntityId() {
 
 		// Act
-		final var notification = notificationRepository.findByIdAndNamespaceAndMunicipalityId("1", "namespace-1", "municipalityId-1");
+		final var notification = notificationRepository.findByIdAndNamespaceAndMunicipalityIdAndErrandEntityId("1", "namespace-1", "municipalityId-1", "ERRAND_ID-1");
 
 		// Assert
 		assertThat(notification).isPresent();
@@ -128,10 +128,10 @@ class NotificationRepositoryTest {
 	}
 
 	@Test
-	void existsByIdAndNamespaceAndMunicipalityId() {
+	void existsByIdAndNamespaceAndMunicipalityIdAndErrandEntityId() {
 
 		// Act
-		final boolean exists = notificationRepository.existsByIdAndNamespaceAndMunicipalityId("1", "namespace-1", "municipalityId-1");
+		final boolean exists = notificationRepository.existsByIdAndNamespaceAndMunicipalityIdAndErrandEntityId("1", "namespace-1", "municipalityId-1", "ERRAND_ID-1");
 
 		// Assert
 		assertThat(exists).isTrue();

@@ -41,7 +41,7 @@ class ErrandTimeMeasurementsIT extends AbstractAppTest {
 
 	private static final String BASE_PATH = "/2281/NAMESPACE.1/errands";
 
-	private static final String TIME_MEASUREMENT_PATH = BASE_PATH + "/" + ERRAND_ID + "/timeMeasure";
+	private static final String TIME_MEASUREMENT_PATH = BASE_PATH + "/" + ERRAND_ID + "/time-measure";
 
 	private static final String REQUEST_FILE = "request.json";
 
@@ -109,7 +109,5 @@ class ErrandTimeMeasurementsIT extends AbstractAppTest {
 			}, () -> {
 				fail("Errand not found");
 			});
-
 	}
-
 }

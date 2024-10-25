@@ -41,7 +41,7 @@ class EmailIntegrationConfigIT extends AbstractAppTest {
 
 	private static final String MUNICIPALITY_ID = "2281";
 
-	private static final UnaryOperator<String> PATH = namespace -> "/" + MUNICIPALITY_ID + "/" + namespace + "/emailIntegrationConfig";
+	private static final UnaryOperator<String> PATH = namespace -> "/" + MUNICIPALITY_ID + "/" + namespace + "/email-integration-config";
 
 	@Autowired
 	private EmailWorkerConfigRepository repository;

@@ -45,11 +45,8 @@ import se.sundsvall.supportmanagement.service.MetadataService;
 class ErrandsCreateResourceFailureTest {
 
 	private static final String PATH = "/{municipalityId}/{namespace}/errands";
-
 	private static final String NAMESPACE = "namespace";
-
 	private static final String MUNICIPALITY_ID = "2281";
-
 	private static final String INVALID = "#invalid#";
 
 	@Autowired

@@ -29,7 +29,7 @@ import se.sundsvall.supportmanagement.service.MetadataService;
 @ActiveProfiles("junit")
 class MetadataExternalIdTypeResourceFailureTest {
 
-	private static final String PATH = "/{municipalityId}/{namespace}/metadata/externalIdTypes";
+	private static final String PATH = "/{municipalityId}/{namespace}/metadata/external-id-types";
 
 	@MockBean
 	private MetadataService metadataServiceMock;
