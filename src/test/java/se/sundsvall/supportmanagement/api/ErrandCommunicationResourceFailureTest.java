@@ -240,7 +240,7 @@ class ErrandCommunicationResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactly(tuple("updateViewedStatus.communicationID", "not a valid UUID"));
+			.containsExactly(tuple("updateViewedStatus.communicationId", "not a valid UUID"));
 
 		// Verification
 		verifyNoInteractions(serviceMock);
