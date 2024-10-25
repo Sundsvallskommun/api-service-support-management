@@ -20,11 +20,7 @@ public interface NotificationRepository extends JpaRepository<NotificationEntity
 		final String description,
 		final OffsetDateTime created);
 
-	Optional<NotificationEntity> findByIdAndNamespaceAndMunicipalityIdAndErrandEntityId(
-		final String id,
-		final String namespace,
-		final String municipalityId,
-		final String errandId);
+	boolean existsByIdAndNamespaceAndMunicipalityId(String id, String namespace, String municipalityId);
 
 	boolean existsByNamespaceAndMunicipalityIdAndOwnerIdAndErrandEntityAndDescription(
 		final String namespace,
@@ -32,6 +28,12 @@ public interface NotificationRepository extends JpaRepository<NotificationEntity
 		final String ownerId,
 		final ErrandEntity errandEntity,
 		final String description);
+
+	Optional<NotificationEntity> findByIdAndNamespaceAndMunicipalityIdAndErrandEntityId(
+		final String id,
+		final String namespace,
+		final String municipalityId,
+		final String errandId);
 
 	List<NotificationEntity> findAllByNamespaceAndMunicipalityIdAndErrandEntityId(
 		final String namespace,
