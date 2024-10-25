@@ -94,18 +94,18 @@ class NotificationsDeleteResourceFailureTest {
 	void deleteNotificationWithInvalidNotificationId() {
 
 		doThrow(Problem.valueOf(NOT_FOUND, "Notification id not found")).when(notificationServiceMock).deleteNotification(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, INVALID);
+
 		// Call
 		final var response = webTestClient.delete()
 			.uri(builder -> builder.path(PATH).build(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, INVALID))
 			.exchange()
-			.expectStatus().isNotFound()
-			.expectBody(Problem.class)
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
 			.returnResult()
 			.getResponseBody();
 
 		// Verification
 		assertThat(response).isNotNull();
-		assertThat(response.getStatus()).isEqualTo(NOT_FOUND);
-		assertThat(response.getDetail()).isEqualTo("Notification id not found");
+		assertThat(response.getViolations()).isNotEmpty();
 	}
 }
