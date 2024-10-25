@@ -20,6 +20,13 @@ public interface NotificationRepository extends JpaRepository<NotificationEntity
 		final String municipalityId,
 		final String errandId);
 
+	boolean existsByNamespaceAndMunicipalityIdAndOwnerIdAndErrandEntityAndDescription(
+		final String namespace,
+		final String municipalityId,
+		final String ownerId,
+		final ErrandEntity errandEntity,
+		final String description);
+
 	Optional<NotificationEntity> findByIdAndNamespaceAndMunicipalityIdAndErrandEntityId(
 		final String id,
 		final String namespace,
@@ -46,7 +53,4 @@ public interface NotificationRepository extends JpaRepository<NotificationEntity
 		final String type);
 
 	List<NotificationEntity> findByExpiresBefore(final OffsetDateTime expires);
-
-	boolean existsByNamespaceAndMunicipalityIdAndOwnerIdAndErrandEntityAndDescription(String namespace, String municipalityId, String ownerId, ErrandEntity errandEntity, String description);
-
 }
