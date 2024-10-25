@@ -1,18 +1,20 @@
 package se.sundsvall.supportmanagement.integration.db;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.jdbc.Sql;
-import org.springframework.transaction.annotation.Transactional;
-import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Sort;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.jdbc.Sql;
+import org.springframework.transaction.annotation.Transactional;
+
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
 
 @SpringBootTest
 @ActiveProfiles("junit")
@@ -76,6 +78,16 @@ class NotificationRepositoryTest {
 
 		// Assert
 		assertThat(notification).isPresent();
+	}
+
+	@Test
+	void findAllByNamespaceAndMunicipalityIdAndErrandEntityId() {
+
+		// Act
+		final var result = notificationRepository.findAllByNamespaceAndMunicipalityIdAndErrandEntityId("namespace-1", "municipalityId-1", "ERRAND_ID-1", Sort.by("modified").descending());
+
+		// Assert
+		assertThat(result).hasSize(1);
 	}
 
 	@Test
@@ -163,5 +175,4 @@ class NotificationRepositoryTest {
 		// Assert
 		assertThat(notificationRepository.findById("1")).isNotPresent();
 	}
-
 }

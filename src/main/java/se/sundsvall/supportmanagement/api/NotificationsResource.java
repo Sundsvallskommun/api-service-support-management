@@ -15,6 +15,8 @@ import static se.sundsvall.supportmanagement.Constants.NAMESPACE_VALIDATION_MESS
 import java.util.List;
 import java.util.Optional;
 
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -67,11 +69,24 @@ class NotificationsResource {
 	@Operation(summary = "Get notifications", description = "Get a specific notification for the namespace and municipality")
 	ResponseEntity<Notification> getNotification(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
-		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
-		@Parameter(name = "errandId", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable final String errandId,
-		@Parameter(name = "notificationId", description = "notificationId", example = "12") @PathVariable final String notificationId) {
+		@Parameter(name = "municipalityId", description = "Municipality ID", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
+		@Parameter(name = "errandId", description = "Errand ID", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable final String errandId,
+		@Parameter(name = "notificationId", description = "notification ID", example = "12") @ValidUuid @PathVariable final String notificationId) {
 
 		return ok(notificationService.getNotification(municipalityId, namespace, errandId, notificationId));
+	}
+
+	@GetMapping("/errands/{errandId}/notifications")
+	@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true)
+	@ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+	@Operation(summary = "Get notifications", description = "Get all notifications for the namespace, municipality and errand")
+	ResponseEntity<List<Notification>> getNotificationsByErrandId(
+		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
+		@Parameter(name = "municipalityId", description = "Municipality ID", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
+		@Parameter(name = "errandId", description = "Errand ID", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable final String errandId,
+		@ParameterObject final Sort sort) {
+
+		return ok(notificationService.getNotificationsByErrandId(municipalityId, namespace, errandId, sort));
 	}
 
 	@PostMapping("/errands/{errandId}/notifications")
@@ -80,8 +95,8 @@ class NotificationsResource {
 	@Operation(summary = "Create notification", description = "Create new notification for the namespace and municipality")
 	ResponseEntity<Void> createNotification(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
-		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
-		@Parameter(name = "errandId", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable final String errandId,
+		@Parameter(name = "municipalityId", description = "Municipality ID", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
+		@Parameter(name = "errandId", description = "Errand ID", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable final String errandId,
 		@Valid @NotNull @RequestBody final Notification notification) {
 
 		final var result = Optional.ofNullable(notificationService.createNotification(municipalityId, namespace, errandId, notification))
@@ -99,9 +114,9 @@ class NotificationsResource {
 	@Operation(summary = "Delete notification", description = "Delete notification for the namespace and municipality")
 	ResponseEntity<Void> deleteNotification(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
-		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
-		@Parameter(name = "errandId", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable final String errandId,
-		@Parameter(name = "notificationId", description = "Notification id") @PathVariable final String notificationId) {
+		@Parameter(name = "municipalityId", description = "Municipality ID", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
+		@Parameter(name = "errandId", description = "Errand ID", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable final String errandId,
+		@Parameter(name = "notificationId", description = "Notification ID") @ValidUuid @PathVariable final String notificationId) {
 
 		notificationService.deleteNotification(municipalityId, namespace, errandId, notificationId);
 		return noContent()
@@ -117,12 +132,12 @@ class NotificationsResource {
 	@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true)
 	@ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	@Operation(summary = "Get notifications", description = "Get notifications for the namespace and municipality with the specified ownerId")
-	ResponseEntity<List<Notification>> getNotifications(
+	ResponseEntity<List<Notification>> getNotificationsByOwnerId(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
-		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
-		@Parameter(name = "ownerId", description = "ownerId", example = "12") @RequestParam final String ownerId) {
+		@Parameter(name = "municipalityId", description = "Municipality ID", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
+		@Parameter(name = "ownerId", description = "owner ID", example = "12") @RequestParam final String ownerId) {
 
-		return ok(notificationService.getNotifications(municipalityId, namespace, ownerId));
+		return ok(notificationService.getNotificationsByOwnerId(municipalityId, namespace, ownerId));
 	}
 
 	@PatchMapping("/notifications")
@@ -131,7 +146,7 @@ class NotificationsResource {
 	@Operation(summary = "Update notification", description = "Update notifications for the namespace and municipality")
 	ResponseEntity<Void> updateNotifications(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
-		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
+		@Parameter(name = "municipalityId", description = "Municipality ID", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Valid @NotEmpty @RequestBody final List<Notification> notifications) {
 
 		notificationService.updateNotifications(municipalityId, namespace, notifications);
