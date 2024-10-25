@@ -43,7 +43,7 @@ class NotificationsResourceTest {
 	@Test
 	void getNotificationsByOwnerId() {
 		// Mock
-		when(notificationServiceMock.getNotifications(MUNICIPALITY_ID, NAMESPACE, "12")).thenReturn(List.of(Notification.create()));
+		when(notificationServiceMock.getNotificationsByOwnerId(MUNICIPALITY_ID, NAMESPACE, "12")).thenReturn(List.of(Notification.create()));
 
 		final var response = webTestClient.get()
 			.uri(builder -> builder.path(GLOBAL_NOTIFICATION_PATH)
@@ -58,7 +58,7 @@ class NotificationsResourceTest {
 
 		// Verification
 		assertThat(response).isNotNull();
-		verify(notificationServiceMock).getNotifications(MUNICIPALITY_ID, NAMESPACE, "12");
+		verify(notificationServiceMock).getNotificationsByOwnerId(MUNICIPALITY_ID, NAMESPACE, "12");
 	}
 
 	@Test
