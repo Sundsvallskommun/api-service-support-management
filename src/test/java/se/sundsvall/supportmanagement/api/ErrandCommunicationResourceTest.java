@@ -20,6 +20,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
+import jakarta.servlet.http.HttpServletResponse;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.communication.Communication;
 import se.sundsvall.supportmanagement.api.model.communication.EmailAttachment;
@@ -34,9 +35,12 @@ class ErrandCommunicationResourceTest {
 	private static final String NAMESPACE = "namespace";
 	private static final String MUNICIPALITY_ID = "2281";
 	private static final String ERRAND_ID = randomUUID().toString();
+	private static final String COMMUNICATION_ID = randomUUID().toString();
+	private static final String ATTACHMENT_ID = randomUUID().toString();
 	private static final String PATH_PREFIX = "/{municipalityId}/{namespace}/errands/{errandId}/communication";
 	private static final String PATH_SMS = "/sms";
 	private static final String PATH_EMAIL = "/email";
+	private static final String PATH_ATTACHMENTS = "/{communicationId}/attachments/{attachmentId}/streamed";
 
 	@MockBean
 	private CommunicationService serviceMock;
@@ -146,6 +150,21 @@ class ErrandCommunicationResourceTest {
 		// Verification
 		verify(serviceMock).sendEmail(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, requestBody);
 		verify(serviceMock, never()).sendSms(any(), any(), any(), any());
+	}
+
+	@Test
+	void getMessageAttachmentStreamed() {
+
+		// ACT
+		webTestClient.get()
+			.uri(uriBuilder -> uriBuilder.path(PATH_PREFIX + PATH_ATTACHMENTS)
+				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", ERRAND_ID, "communicationId", COMMUNICATION_ID, "attachmentId", ATTACHMENT_ID)))
+			.exchange()
+			.expectStatus().isOk()
+			.expectBody()
+			.returnResult();
+
+		verify(serviceMock).getMessageAttachmentStreamed(any(String.class), any(String.class), any(String.class), any(HttpServletResponse.class));
 	}
 
 	private static SmsRequest smsRequest() {
