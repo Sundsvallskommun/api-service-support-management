@@ -1,16 +1,5 @@
 package se.sundsvall.supportmanagement.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static se.sundsvall.supportmanagement.TestObjectsBuilder.createNotificationEntity;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -19,12 +8,23 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.zalando.problem.Problem;
-
 import se.sundsvall.supportmanagement.TestObjectsBuilder;
 import se.sundsvall.supportmanagement.api.filter.ExecutingUserSupplier;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.NotificationRepository;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
+
+import java.util.List;
+import java.util.Optional;
+
+import static java.util.UUID.randomUUID;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrandEntity;
+import static se.sundsvall.supportmanagement.TestObjectsBuilder.createNotificationEntity;
 
 @ExtendWith(MockitoExtension.class)
 class NotificationServiceTest {
@@ -50,7 +50,7 @@ class NotificationServiceTest {
 		// Arrange
 		final var municipalityId = "2281";
 		final var namespace = "namespace";
-		final var notificationId = UUID.randomUUID().toString();
+		final var notificationId = randomUUID().toString();
 
 		when(notificationRepositoryMock.findByIdAndNamespaceAndMunicipalityId(notificationId, namespace, municipalityId)).thenReturn(Optional.ofNullable(createNotificationEntity(n -> {})));
 
@@ -68,7 +68,7 @@ class NotificationServiceTest {
 		// Arrange
 		final var municipalityId = "2281";
 		final var namespace = "namespace";
-		final var notificationId = UUID.randomUUID().toString();
+		final var notificationId = randomUUID().toString();
 
 		// Act
 		assertThatThrownBy(() -> notificationService.getNotification(municipalityId, namespace, notificationId))
@@ -85,7 +85,7 @@ class NotificationServiceTest {
 		// Arrange
 		final var municipalityId = "2281";
 		final var namespace = "namespace";
-		final var ownerId = UUID.randomUUID().toString();
+		final var ownerId = randomUUID().toString();
 
 		when(notificationRepositoryMock.findAllByNamespaceAndMunicipalityIdAndOwnerId(namespace, municipalityId, ownerId)).thenReturn(List.of(createNotificationEntity(n -> {})));
 
@@ -103,7 +103,7 @@ class NotificationServiceTest {
 		// Arrange
 		final var municipalityId = "2281";
 		final var namespace = "namespace";
-		final var ownerId = UUID.randomUUID().toString();
+		final var ownerId = randomUUID().toString();
 
 		// Act
 		final var result = notificationService.getNotifications(municipalityId, namespace, ownerId);
@@ -145,7 +145,7 @@ class NotificationServiceTest {
 		// Arrange
 		final var municipalityId = "2281";
 		final var namespace = "namespace";
-		final var notificationId = UUID.randomUUID().toString();
+		final var notificationId = randomUUID().toString();
 		final var notification = TestObjectsBuilder.createNotification(n -> n.setId(notificationId));
 		when(notificationRepositoryMock.findByIdAndNamespaceAndMunicipalityId(notificationId, namespace, municipalityId))
 			.thenReturn(Optional.ofNullable(createNotificationEntity(n -> n.setId(notificationId))));
@@ -172,7 +172,7 @@ class NotificationServiceTest {
 		// Arrange
 		final var municipalityId = "2281";
 		final var namespace = "namespace";
-		final var notificationId = UUID.randomUUID().toString();
+		final var notificationId = randomUUID().toString();
 
 		final var notification = TestObjectsBuilder.createNotification(n -> n.setId(notificationId));
 		// Act
@@ -190,7 +190,7 @@ class NotificationServiceTest {
 		// Arrange
 		final var municipalityId = "2281";
 		final var namespace = "namespace";
-		final var notificationId = UUID.randomUUID().toString();
+		final var notificationId = randomUUID().toString();
 		when(notificationRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(notificationId, namespace, municipalityId)).thenReturn(true);
 
 		// Act
@@ -201,12 +201,53 @@ class NotificationServiceTest {
 	}
 
 	@Test
+	void doesNotificationWithSpecificDescriptionExistForOwnerAndErrand() {
+
+		// Arrange
+		final var municipalityId = "2281";
+		final var namespace = "namespace";
+		final var ownerId = randomUUID().toString();
+		final var errandEntity = buildErrandEntity();
+		final var description = "description";
+
+		when(notificationRepositoryMock.existsByNamespaceAndMunicipalityIdAndOwnerIdAndErrandEntityAndDescription(namespace, municipalityId, ownerId, errandEntity, description)).thenReturn(true);
+
+		// Act
+		final var result = notificationService.doesNotificationWithSpecificDescriptionExistForOwnerAndErrand(municipalityId, namespace, ownerId, errandEntity, description);
+
+		// Assert
+		assertThat(result).isTrue();
+
+		verify(notificationRepositoryMock).existsByNamespaceAndMunicipalityIdAndOwnerIdAndErrandEntityAndDescription(namespace, municipalityId, ownerId, errandEntity, description);
+	}
+
+	@Test
+	void doesNotificationWithSpecificDescriptionExistForOwnerAndErrand_NotFound() {
+		// Arrange
+		final var municipalityId = "2281";
+		final var namespace = "namespace";
+		final var ownerId = randomUUID().toString();
+		final var errandEntity = buildErrandEntity();
+		final var description = "description";
+
+		when(notificationRepositoryMock.existsByNamespaceAndMunicipalityIdAndOwnerIdAndErrandEntityAndDescription(namespace, municipalityId, ownerId, errandEntity, description)).thenReturn(false);
+
+		// Act
+		final var result = notificationService.doesNotificationWithSpecificDescriptionExistForOwnerAndErrand(municipalityId, namespace, ownerId, errandEntity, description);
+
+		// Assert
+		assertThat(result).isFalse();
+
+		verify(notificationRepositoryMock).existsByNamespaceAndMunicipalityIdAndOwnerIdAndErrandEntityAndDescription(namespace, municipalityId, ownerId, errandEntity, description);
+	}
+
+	@Test
 	void deleteNotification_notFound() {
 
 		// Arrange
 		final var municipalityId = "2281";
 		final var namespace = "namespace";
-		final var notificationId = UUID.randomUUID().toString();
+		final var notificationId = randomUUID().toString();
 
 		// Act
 		assertThatThrownBy(() -> notificationService.deleteNotification(municipalityId, namespace, notificationId))
