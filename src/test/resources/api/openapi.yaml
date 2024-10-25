@@ -92,8 +92,6 @@ tags:
   description: Errand communication operations
 - name: Configuration for email integration
   description: Settings for email integration per municipality/namespace
-- name: MessageAttachments
-  description: CommunicationAttachment operations
 - name: Errands
   description: Errand operations
 >>>>>>> 4aad4eb (UF-10583: Update API)
@@ -122,6 +120,14 @@ paths:
             type: string
           example: 2281
       responses:
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
         "404":
           description: Not Found
           content:
@@ -149,14 +155,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/NamespaceConfig"
-        "400":
-          description: Bad Request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
     put:
       tags:
         - Configuration for namespace
@@ -187,16 +185,22 @@ paths:
         required: true
       responses:
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         "500":
           description: Internal Server error
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
         "204":
           description: Successful operation
 =======
 >>>>>>> 4aad4eb (UF-10583: Update API)
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         "400":
           description: Bad request
           content:
@@ -209,12 +213,6 @@ paths:
 =======
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
         "204":
           description: Successful operation
 >>>>>>> 4aad4eb (UF-10583: Update API)
@@ -254,6 +252,12 @@ paths:
               style: simple
               schema:
                 type: string
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -271,6 +275,7 @@ paths:
 =======
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
         "500":
           description: Internal Server error
           content:
@@ -278,6 +283,8 @@ paths:
 >>>>>>> 4aad4eb (UF-10583: Update API)
               schema:
                 $ref: "#/components/schemas/Problem"
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
     delete:
       tags:
         - Configuration for namespace
@@ -301,6 +308,12 @@ paths:
             type: string
           example: 2281
       responses:
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "404":
           description: Not Found
           content:
@@ -323,6 +336,7 @@ paths:
 =======
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
         "500":
           description: Internal Server error
 >>>>>>> 4aad4eb (UF-10583: Update API)
@@ -330,6 +344,8 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         "204":
           description: Successful operation
   /{municipalityId}/{namespace}/metadata/labels:
@@ -357,12 +373,16 @@ paths:
           example: 2281
       responses:
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         "500":
           description: Internal Server error
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
         "400":
           description: Bad Request
           content:
@@ -373,6 +393,8 @@ paths:
                   - $ref: "#/components/schemas/ConstraintViolationProblem"
 =======
 >>>>>>> 4aad4eb (UF-10583: Update API)
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         "200":
           description: Successful operation
           content:
@@ -382,12 +404,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Labels"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad Request
           content:
@@ -427,6 +443,12 @@ paths:
                 $ref: "#/components/schemas/Label"
         required: true
       responses:
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "404":
           description: Not Found
           content:
@@ -449,6 +471,7 @@ paths:
 =======
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
         "500":
           description: Internal Server error
 >>>>>>> 4aad4eb (UF-10583: Update API)
@@ -456,6 +479,8 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         "204":
           description: Successful operation
     post:
@@ -495,6 +520,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
         "400":
           description: Bad Request
           content:
@@ -505,6 +531,8 @@ paths:
                   - $ref: "#/components/schemas/ConstraintViolationProblem"
         "202":
           description: Successful operation
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         "400":
           description: Bad Request
           content:
@@ -513,6 +541,8 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "202":
+          description: Successful operation
     delete:
       tags:
         - Metadata for labels
@@ -536,6 +566,12 @@ paths:
             type: string
           example: 2281
       responses:
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "404":
           description: Not Found
           content:
@@ -558,6 +594,7 @@ paths:
 =======
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
         "500":
           description: Internal Server error
 >>>>>>> 4aad4eb (UF-10583: Update API)
@@ -565,6 +602,8 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         "204":
           description: Successful operation
   /{municipalityId}/{namespace}/errands/{errandId}/labels:
@@ -623,6 +662,12 @@ paths:
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
 >>>>>>> 4aad4eb (UF-10583: Update API)
       responses:
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "404":
           description: Not Found
           content:
@@ -643,6 +688,7 @@ paths:
 =======
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
         "500":
           description: Internal Server error
 >>>>>>> 4aad4eb (UF-10583: Update API)
@@ -650,6 +696,8 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         "200":
           description: Successful Operation
           content:
@@ -726,6 +774,12 @@ paths:
                 type: string
         required: true
       responses:
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "404":
           description: Not Found
           content:
@@ -748,6 +802,7 @@ paths:
 =======
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
         "500":
           description: Internal Server error
 >>>>>>> 4aad4eb (UF-10583: Update API)
@@ -755,6 +810,8 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         "204":
           description: No content
     post:
@@ -820,6 +877,12 @@ paths:
                 type: string
         required: true
       responses:
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "404":
           description: Not Found
           content:
@@ -834,12 +897,6 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
         "201":
           description: Created
           content:
@@ -917,6 +974,12 @@ paths:
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
 >>>>>>> 4aad4eb (UF-10583: Update API)
       responses:
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "404":
           description: Not Found
           content:
@@ -939,6 +1002,7 @@ paths:
 =======
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
         "500":
           description: Internal Server error
 >>>>>>> 4aad4eb (UF-10583: Update API)
@@ -946,15 +1010,18 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         "204":
           description: No content
-  /{municipalityId}/{namespace}/errands/{errandId}/communication/{communicationID}/viewed/{isViewed}:
+  /{municipalityId}/{namespace}/errands/{errandId}/communication/{communicationId}/viewed/{isViewed}:
     put:
       tags:
         - Errand communication
       description: Set viewed status for communication.
       operationId: updateViewedStatus
       parameters:
+<<<<<<< HEAD
         - name: namespace
           in: path
           description: Namespace
@@ -991,7 +1058,51 @@ paths:
           schema:
             type: boolean
           example: true
+=======
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand id
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: communicationId
+        in: path
+        description: communication ID
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: isViewed
+        in: path
+        description: If a message is viewed
+        required: true
+        schema:
+          type: boolean
+        example: true
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
       responses:
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -1004,6 +1115,7 @@ paths:
 =======
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
         "500":
           description: Internal Server error
           content:
@@ -1011,6 +1123,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
 >>>>>>> 4aad4eb (UF-10583: Update API)
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         "204":
           description: No content - Successful operation
   /{municipalityId}/{namespace}/email-integration-config:
@@ -1037,6 +1151,14 @@ paths:
             type: string
           example: 2281
       responses:
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
         "404":
           description: Not Found
           content:
@@ -1064,14 +1186,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/EmailIntegration"
-        "400":
-          description: Bad Request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
     put:
       tags:
         - Configuration for email integration
@@ -1103,16 +1217,22 @@ paths:
         required: true
       responses:
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         "500":
           description: Internal Server error
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
         "204":
           description: Successful operation
 =======
 >>>>>>> 4aad4eb (UF-10583: Update API)
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         "400":
           description: Bad request
           content:
@@ -1125,12 +1245,6 @@ paths:
 =======
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
         "204":
           description: Successful operation
 >>>>>>> 4aad4eb (UF-10583: Update API)
@@ -1171,6 +1285,12 @@ paths:
               style: simple
               schema:
                 type: string
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -1188,6 +1308,7 @@ paths:
 =======
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
         "500":
           description: Internal Server error
           content:
@@ -1195,6 +1316,8 @@ paths:
 >>>>>>> 4aad4eb (UF-10583: Update API)
               schema:
                 $ref: "#/components/schemas/Problem"
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
     delete:
       tags:
         - Configuration for email integration
@@ -1219,12 +1342,32 @@ paths:
           example: 2281
       responses:
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         "500":
           description: Internal Server error
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
+=======
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         "204":
           description: Successful operation
         "400":
@@ -1450,12 +1593,16 @@ paths:
           example: 2281
       responses:
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         "500":
           description: Internal Server error
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
         "400":
           description: Bad Request
           content:
@@ -1466,6 +1613,8 @@ paths:
                   - $ref: "#/components/schemas/ConstraintViolationProblem"
 =======
 >>>>>>> 4aad4eb (UF-10583: Update API)
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         "200":
           description: Successful operation
           content:
@@ -1479,12 +1628,6 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Status"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad Request
           content:
@@ -1583,12 +1726,16 @@ paths:
           example: 2281
       responses:
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         "500":
           description: Internal Server error
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
         "400":
           description: Bad Request
           content:
@@ -1599,6 +1746,8 @@ paths:
                   - $ref: "#/components/schemas/ConstraintViolationProblem"
 =======
 >>>>>>> 4aad4eb (UF-10583: Update API)
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         "200":
           description: Successful operation
           content:
@@ -1612,12 +1761,6 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Role"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad Request
           content:
@@ -1722,12 +1865,16 @@ paths:
           example: 2281
       responses:
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         "500":
           description: Internal Server error
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
         "400":
           description: Bad Request
           content:
@@ -1738,6 +1885,8 @@ paths:
                   - $ref: "#/components/schemas/ConstraintViolationProblem"
 =======
 >>>>>>> 4aad4eb (UF-10583: Update API)
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         "200":
           description: Successful operation
           content:
@@ -1751,12 +1900,6 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ExternalIdType"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad Request
           content:
@@ -1863,7 +2006,17 @@ paths:
         "200":
           description: Successful operation
           content:
+<<<<<<< HEAD
             application/json: { }
+=======
+            application/json: {}
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         "400":
           description: Bad request
           content:
@@ -1876,6 +2029,7 @@ paths:
 =======
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
         "500":
           description: Internal Server error
           content:
@@ -1883,6 +2037,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
 >>>>>>> 4aad4eb (UF-10583: Update API)
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
     post:
       tags:
         - Metadata for contact reasons
@@ -1912,6 +2068,19 @@ paths:
               $ref: "#/components/schemas/ContactReason"
         required: true
       responses:
+        "201":
+          description: Successful operation
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -1924,6 +2093,7 @@ paths:
 =======
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
         "500":
           description: Internal Server error
           content:
@@ -1938,6 +2108,8 @@ paths:
               style: simple
               schema:
                 type: string
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
   /{municipalityId}/{namespace}/metadata/categories:
     get:
       tags:
@@ -1964,12 +2136,16 @@ paths:
           example: 2281
       responses:
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         "500":
           description: Internal Server error
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
         "400":
           description: Bad Request
           content:
@@ -1980,6 +2156,8 @@ paths:
                   - $ref: "#/components/schemas/ConstraintViolationProblem"
 =======
 >>>>>>> 4aad4eb (UF-10583: Update API)
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         "200":
           description: Successful operation
           content:
@@ -1993,12 +2171,6 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Category"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad Request
           content:
@@ -2131,16 +2303,24 @@ paths:
               type: string
       responses:
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         "400":
           description: Bad Request
           content:
             application/problem+json:
               schema:
                 oneOf:
+<<<<<<< HEAD
                   - $ref: "#/components/schemas/Problem"
                   - $ref: "#/components/schemas/ConstraintViolationProblem"
 =======
 >>>>>>> 4aad4eb (UF-10583: Update API)
+=======
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         "500":
           description: Internal Server Error
           content:
@@ -2156,14 +2336,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/PageErrand"
-        "400":
-          description: Bad Request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
     post:
       tags:
         - Errands
@@ -2200,6 +2372,12 @@ paths:
               style: simple
               schema:
                 type: string
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -2212,12 +2390,6 @@ paths:
 =======
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/errands/{errandId}/notifications:
     post:
       tags:
@@ -2255,14 +2427,13 @@ paths:
               $ref: "#/components/schemas/Notification"
         required: true
       responses:
-        "400":
-          description: Bad request
-          content:
-            application/problem+json:
+        "201":
+          description: Created - Successful operation
+          headers:
+            Location:
+              style: simple
               schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
+                type: string
         "500":
           description: Internal Server error
           content:
@@ -2275,14 +2446,23 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 >>>>>>> 4aad4eb (UF-10583: Update API)
         "201":
           description: Created - Successful operation
           headers:
             Location:
               style: simple
+=======
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
               schema:
-                type: string
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
   /{municipalityId}/{namespace}/errands/{errandId}/notes:
     get:
       tags:
@@ -2357,7 +2537,18 @@ paths:
         schema:
           $ref: "#/components/schemas/FindErrandNotesRequest"
       responses:
+<<<<<<< HEAD
 >>>>>>> 4aad4eb (UF-10583: Update API)
+=======
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         "500":
           description: Internal Server Error
           content:
@@ -2373,14 +2564,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/FindErrandNotesResponse"
-        "400":
-          description: Bad Request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
     post:
       tags:
         - Errand notes
@@ -2449,6 +2632,12 @@ paths:
               style: simple
               schema:
                 type: string
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -2575,6 +2764,7 @@ paths:
 =======
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
 >>>>>>> 4aad4eb (UF-10583: Update API)
         "500":
           description: Internal Server error
@@ -2600,6 +2790,8 @@ paths:
                 type: string
 =======
 >>>>>>> 4aad4eb (UF-10583: Update API)
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
   /{municipalityId}/{namespace}/errands/{errandId}/communication/sms:
     post:
       tags:
@@ -2608,6 +2800,7 @@ paths:
       description: Sends a sms message to the recipient specified in the request
       operationId: sendSms
       parameters:
+<<<<<<< HEAD
         - name: namespace
           in: path
           description: Namespace
@@ -2630,6 +2823,30 @@ paths:
           schema:
             type: string
           example: b82bd8ac-1507-4d9a-958d-369261eecc15
+=======
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality ID
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand ID
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
       requestBody:
         content:
           application/json:
@@ -2637,6 +2854,12 @@ paths:
               $ref: "#/components/schemas/SmsRequest"
         required: true
       responses:
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -2649,6 +2872,7 @@ paths:
 =======
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
         "500":
           description: Internal Server error
           content:
@@ -2656,6 +2880,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
 >>>>>>> 4aad4eb (UF-10583: Update API)
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         "204":
           description: Successful operation
   /{municipalityId}/{namespace}/errands/{errandId}/communication/email:
@@ -2666,6 +2892,7 @@ paths:
       description: Sends an email message to the recipient specified in the request
       operationId: sendEmail
       parameters:
+<<<<<<< HEAD
         - name: namespace
           in: path
           description: Namespace
@@ -2688,6 +2915,30 @@ paths:
           schema:
             type: string
           example: b82bd8ac-1507-4d9a-958d-369261eecc15
+=======
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality ID
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand ID
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
       requestBody:
         content:
           application/json:
@@ -2695,6 +2946,12 @@ paths:
               $ref: "#/components/schemas/EmailRequest"
         required: true
       responses:
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -2703,12 +2960,6 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
         "204":
           description: Successful operation
   /{municipalityId}/{namespace}/errands/{errandId}/attachments:
@@ -2743,6 +2994,14 @@ paths:
           type: string
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
       responses:
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
         "404":
           description: Not Found
           content:
@@ -2768,14 +3027,6 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ErrandAttachmentHeader"
-        "400":
-          description: Bad Request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
     post:
       tags:
       - Errand attachments
@@ -2825,6 +3076,12 @@ paths:
               style: simple
               schema:
                 type: string
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -2833,12 +3090,6 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/notifications:
     get:
       tags:
@@ -2877,6 +3128,12 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "200":
           description: Successful operation
           content:
@@ -2893,12 +3150,6 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
     patch:
       tags:
       - User notifications
@@ -2936,6 +3187,12 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -2948,6 +3205,7 @@ paths:
 =======
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
         "500":
           description: Internal Server error
           content:
@@ -2955,6 +3213,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
 >>>>>>> 4aad4eb (UF-10583: Update API)
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         "204":
           description: Successful operation
   /{municipalityId}/{namespace}/metadata/contactreasons/{reason}:
@@ -2991,7 +3251,17 @@ paths:
         "200":
           description: Successful operation
           content:
+<<<<<<< HEAD
             application/json: { }
+=======
+            application/json: {}
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         "400":
           description: Bad request
           content:
@@ -3004,6 +3274,7 @@ paths:
 =======
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
         "500":
           description: Internal Server error
           content:
@@ -3011,6 +3282,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
 >>>>>>> 4aad4eb (UF-10583: Update API)
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
     delete:
       tags:
         - Metadata for contact reasons
@@ -3041,6 +3314,12 @@ paths:
             type: string
           example: INVOICE
       responses:
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "404":
           description: Not Found
           content:
@@ -3063,6 +3342,7 @@ paths:
 =======
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
         "500":
           description: Internal Server error
 >>>>>>> 4aad4eb (UF-10583: Update API)
@@ -3070,6 +3350,8 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         "204":
           description: Successful operation
     patch:
@@ -3117,6 +3399,12 @@ paths:
           description: Internal Server error
 =======
             application/json: {}
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "404":
           description: Not Found
 >>>>>>> 4aad4eb (UF-10583: Update API)
@@ -3138,6 +3426,7 @@ paths:
 =======
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
         "500":
           description: Internal Server error
 >>>>>>> 4aad4eb (UF-10583: Update API)
@@ -3145,6 +3434,8 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
   /{municipalityId}/{namespace}/metadata/categories/{category}:
     get:
       tags:
@@ -3177,12 +3468,16 @@ paths:
           example: KSK_SERVICE_CENTER_SALARY_AND_PENSION
       responses:
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         "500":
           description: Internal Server error
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
         "400":
           description: Bad Request
           content:
@@ -3193,6 +3488,8 @@ paths:
                   - $ref: "#/components/schemas/ConstraintViolationProblem"
 =======
 >>>>>>> 4aad4eb (UF-10583: Update API)
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         "200":
           description: Successful operation
           content:
@@ -3202,12 +3499,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Category"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad Request
           content:
@@ -3246,6 +3537,12 @@ paths:
             type: string
           example: KSK_SERVICE_CENTER_SALARY_AND_PENSION
       responses:
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "404":
           description: Not Found
           content:
@@ -3268,6 +3565,7 @@ paths:
 =======
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
         "500":
           description: Internal Server error
 >>>>>>> 4aad4eb (UF-10583: Update API)
@@ -3275,6 +3573,8 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         "204":
           description: Successful operation
     patch:
@@ -3314,12 +3614,17 @@ paths:
         required: true
       responses:
 <<<<<<< HEAD
+<<<<<<< HEAD
         "500":
           description: Internal Server error
 =======
         "404":
           description: Not Found
 >>>>>>> 4aad4eb (UF-10583: Update API)
+=======
+        "500":
+          description: Internal Server error
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
           content:
             application/problem+json:
               schema:
@@ -3341,12 +3646,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Category"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad Request
           content:
@@ -3355,6 +3654,12 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/errands/{errandId}:
     get:
       tags:
@@ -3411,6 +3716,14 @@ paths:
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
 >>>>>>> 4aad4eb (UF-10583: Update API)
       responses:
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
         "404":
           description: Not Found
           content:
@@ -3438,14 +3751,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Errand"
-        "400":
-          description: Bad Request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
     delete:
       tags:
         - Errands
@@ -3501,6 +3806,12 @@ paths:
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
 >>>>>>> 4aad4eb (UF-10583: Update API)
       responses:
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "404":
           description: Not Found
           content:
@@ -3523,6 +3834,7 @@ paths:
 =======
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
         "500":
           description: Internal Server error
 >>>>>>> 4aad4eb (UF-10583: Update API)
@@ -3530,6 +3842,8 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         "204":
           description: Successful operation
     patch:
@@ -3595,6 +3909,12 @@ paths:
       responses:
         "404":
           description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
           content:
             application/problem+json:
               schema:
@@ -3726,6 +4046,7 @@ paths:
 =======
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
 >>>>>>> 4aad4eb (UF-10583: Update API)
         "500":
           description: Internal Server error
@@ -3825,6 +4146,8 @@ paths:
                   - $ref: "#/components/schemas/ConstraintViolationProblem"
 =======
 >>>>>>> 4aad4eb (UF-10583: Update API)
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
   /{municipalityId}/{namespace}/errands/{errandId}/parameters:
     get:
       tags:
@@ -3856,6 +4179,12 @@ paths:
             type: string
           example: b82bd8ac-1507-4d9a-958d-369261eecc15
       responses:
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -3868,6 +4197,7 @@ paths:
 =======
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
         "500":
           description: Internal Server error
           content:
@@ -3875,6 +4205,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
 >>>>>>> 4aad4eb (UF-10583: Update API)
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         "200":
           description: Successful Operation
           content:
@@ -3932,6 +4264,12 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -3944,6 +4282,7 @@ paths:
 =======
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
         "500":
           description: Internal Server error
           content:
@@ -3951,6 +4290,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
 >>>>>>> 4aad4eb (UF-10583: Update API)
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         "200":
           description: Successful Operation
           content:
@@ -4003,6 +4344,12 @@ paths:
             type: string
           example: propertyInfo
       responses:
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "404":
           description: Not Found
           content:
@@ -4021,6 +4368,7 @@ paths:
 =======
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
         "500":
           description: Internal Server error
           content:
@@ -4028,6 +4376,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
 >>>>>>> 4aad4eb (UF-10583: Update API)
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         "200":
           description: Successful Operation
           content:
@@ -4079,6 +4429,12 @@ paths:
             type: string
           example: propertyInfo
       responses:
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "404":
           description: Not Found
           content:
@@ -4101,6 +4457,7 @@ paths:
 =======
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
         "500":
           description: Internal Server error
 >>>>>>> 4aad4eb (UF-10583: Update API)
@@ -4108,6 +4465,8 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         "204":
           description: Successful operation
     patch:
@@ -4162,6 +4521,12 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -4174,6 +4539,7 @@ paths:
 =======
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
         "500":
           description: Internal Server error
           content:
@@ -4181,6 +4547,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
 >>>>>>> 4aad4eb (UF-10583: Update API)
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         "200":
           description: Successful Operation
           content:
@@ -4259,6 +4627,14 @@ paths:
         example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
 >>>>>>> 4aad4eb (UF-10583: Update API)
       responses:
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
         "404":
           description: Not Found
           content:
@@ -4280,6 +4656,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ErrandNote"
+<<<<<<< HEAD
         "400":
           description: Bad Request
           content:
@@ -4288,6 +4665,8 @@ paths:
                 oneOf:
                   - $ref: "#/components/schemas/Problem"
                   - $ref: "#/components/schemas/ConstraintViolationProblem"
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
     delete:
       tags:
 <<<<<<< HEAD
@@ -4355,6 +4734,12 @@ paths:
         example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
 >>>>>>> 4aad4eb (UF-10583: Update API)
       responses:
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "404":
           description: Not Found
           content:
@@ -4375,12 +4760,6 @@ paths:
 =======
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
         "204":
           description: Successful operation
     patch:
@@ -4433,6 +4812,12 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "200":
           description: Successful operation
           content:
@@ -4450,6 +4835,7 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
         "500":
           description: Internal Server error
           content:
@@ -4457,6 +4843,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
 >>>>>>> 4aad4eb (UF-10583: Update API)
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
   /{municipalityId}/{namespace}/metadata:
     get:
       tags:
@@ -4482,12 +4870,16 @@ paths:
           example: 2281
       responses:
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         "500":
           description: Internal Server error
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
         "400":
           description: Bad Request
           content:
@@ -4498,6 +4890,8 @@ paths:
                   - $ref: "#/components/schemas/ConstraintViolationProblem"
 =======
 >>>>>>> 4aad4eb (UF-10583: Update API)
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         "200":
           description: Successful operation
           content:
@@ -4507,12 +4901,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/MetadataResponse"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad Request
           content:
@@ -4553,12 +4941,17 @@ paths:
           example: NEW
       responses:
 <<<<<<< HEAD
+<<<<<<< HEAD
         "500":
           description: Internal Server error
 =======
         "404":
           description: Not Found
 >>>>>>> 4aad4eb (UF-10583: Update API)
+=======
+        "500":
+          description: Internal Server error
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
           content:
             application/problem+json:
               schema:
@@ -4580,12 +4973,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Status"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad Request
           content:
@@ -4594,6 +4981,12 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
     delete:
       tags:
         - Metadata for statuses
@@ -4624,6 +5017,12 @@ paths:
             type: string
           example: PRIVATE
       responses:
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "404":
           description: Not Found
           content:
@@ -4646,6 +5045,7 @@ paths:
 =======
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
         "500":
           description: Internal Server error
 >>>>>>> 4aad4eb (UF-10583: Update API)
@@ -4653,6 +5053,8 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         "204":
           description: Successful operation
   /{municipalityId}/{namespace}/metadata/roles/{role}:
@@ -4687,12 +5089,17 @@ paths:
           example: ROLE-1
       responses:
 <<<<<<< HEAD
+<<<<<<< HEAD
         "500":
           description: Internal Server error
 =======
         "404":
           description: Not Found
 >>>>>>> 4aad4eb (UF-10583: Update API)
+=======
+        "500":
+          description: Internal Server error
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
           content:
             application/problem+json:
               schema:
@@ -4714,12 +5121,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Role"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad Request
           content:
@@ -4728,6 +5129,12 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
     delete:
       tags:
         - Metadata for roles
@@ -4758,6 +5165,12 @@ paths:
             type: string
           example: ROLE-1
       responses:
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "404":
           description: Not Found
           content:
@@ -4780,6 +5193,7 @@ paths:
 =======
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
         "500":
           description: Internal Server error
 >>>>>>> 4aad4eb (UF-10583: Update API)
@@ -4787,6 +5201,8 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         "204":
           description: Successful operation
   /{municipalityId}/{namespace}/metadata/external-id-types/{externalIdType}:
@@ -4829,12 +5245,17 @@ paths:
           example: PRIVATE
       responses:
 <<<<<<< HEAD
+<<<<<<< HEAD
         "500":
           description: Internal Server error
 =======
         "404":
           description: Not Found
 >>>>>>> 4aad4eb (UF-10583: Update API)
+=======
+        "500":
+          description: Internal Server error
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
           content:
             application/problem+json:
               schema:
@@ -4856,12 +5277,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ExternalIdType"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad Request
           content:
@@ -4870,6 +5285,12 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
     delete:
       tags:
 <<<<<<< HEAD
@@ -4930,6 +5351,12 @@ paths:
         example: PRIVATE
 >>>>>>> 4aad4eb (UF-10583: Update API)
       responses:
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "404":
           description: Not Found
           content:
@@ -4952,6 +5379,7 @@ paths:
 =======
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
         "500":
           description: Internal Server error
 >>>>>>> 4aad4eb (UF-10583: Update API)
@@ -4959,6 +5387,8 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         "204":
           description: Successful operation
   /{municipalityId}/{namespace}/metadata/categories/{category}/types:
@@ -4992,6 +5422,12 @@ paths:
             type: string
           example: KSK_SERVICE_CENTER_SALARY_AND_PENSION
       responses:
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "200":
           description: Successful operation
           content:
@@ -5005,12 +5441,6 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Type"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/errands/{errandId}/time-measure:
     get:
       tags:
@@ -5044,6 +5474,12 @@ paths:
           description: Successful operation
           content:
             application/json: {}
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -5052,12 +5488,6 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/errands/{errandId}/revisions:
     get:
       tags:
@@ -5121,6 +5551,12 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "200":
           description: Successful operation
           content:
@@ -5147,12 +5583,6 @@ paths:
 =======
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/errands/{errandId}/revisions/difference:
 >>>>>>> 4aad4eb (UF-10583: Update API)
     get:
@@ -5249,6 +5679,12 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "200":
           description: Successful operation
           content:
@@ -5271,12 +5707,6 @@ paths:
 =======
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/errands/{errandId}/notifications/{notificationId}:
     get:
       tags:
@@ -5321,6 +5751,12 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "200":
           description: Successful operation
           content:
@@ -5335,12 +5771,6 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
     delete:
       tags:
       - User notifications
@@ -5383,6 +5813,12 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -5391,12 +5827,6 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
         "204":
           description: Successful operation
   /{municipalityId}/{namespace}/errands/{errandId}/notes/{noteId}/revisions:
@@ -5477,6 +5907,12 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "200":
           description: Successful operation
           content:
@@ -5503,12 +5939,6 @@ paths:
 =======
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/errands/{errandId}/notes/{noteId}/revisions/difference:
 >>>>>>> 4aad4eb (UF-10583: Update API)
     get:
@@ -5619,6 +6049,12 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "200":
           description: Successful operation
           content:
@@ -5641,12 +6077,6 @@ paths:
 =======
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/errands/{errandId}/events:
 >>>>>>> 4aad4eb (UF-10583: Update API)
     get:
@@ -5756,6 +6186,12 @@ paths:
       responses:
         "404":
           description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
           content:
             application/problem+json:
               schema:
@@ -5880,6 +6316,7 @@ paths:
 =======
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
 >>>>>>> 4aad4eb (UF-10583: Update API)
         "500":
           description: Internal Server error
@@ -5953,6 +6390,8 @@ paths:
                   - $ref: "#/components/schemas/ConstraintViolationProblem"
 =======
 >>>>>>> 4aad4eb (UF-10583: Update API)
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
   /{municipalityId}/{namespace}/errands/{errandId}/communication:
     get:
       tags:
@@ -5960,6 +6399,7 @@ paths:
       description: Get all communications for an errand.
       operationId: getCommunications
       parameters:
+<<<<<<< HEAD
         - name: namespace
           in: path
           description: Namespace
@@ -5982,7 +6422,37 @@ paths:
           schema:
             type: string
           example: b82bd8ac-1507-4d9a-958d-369261eecc15
+=======
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality ID
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand ID
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
       responses:
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -5995,6 +6465,7 @@ paths:
 =======
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
         "500":
           description: Internal Server error
           content:
@@ -6002,6 +6473,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
 >>>>>>> 4aad4eb (UF-10583: Update API)
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         "200":
           description: OK - Successful operation
           content:
@@ -6015,7 +6488,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Communication"
-  /{municipalityId}/{namespace}/errands/{errandId}/communication/{communicationID}/attachments/{attachmentID}/streamed:
+  /{municipalityId}/{namespace}/errands/{errandId}/communication/{communicationId}/attachments/{attachmentId}/streamed:
     get:
       tags:
 <<<<<<< HEAD
@@ -6062,7 +6535,7 @@ paths:
         example: my.namespace
       - name: municipalityId
         in: path
-        description: Municipality id
+        description: Municipality ID
         required: true
         schema:
           type: string
@@ -6074,22 +6547,28 @@ paths:
         schema:
           type: string
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
-      - name: communicationID
+      - name: communicationId
         in: path
-        description: communication id
+        description: communication ID
         required: true
         schema:
           type: string
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
-      - name: attachmentID
+      - name: attachmentId
         in: path
-        description: Message attachment id
+        description: Message attachment ID
         required: true
         schema:
           type: string
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
 >>>>>>> 4aad4eb (UF-10583: Update API)
       responses:
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "404":
           description: Not Found
           content:
@@ -6108,6 +6587,7 @@ paths:
 =======
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
         "500":
           description: Internal Server error
           content:
@@ -6115,6 +6595,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
 >>>>>>> 4aad4eb (UF-10583: Update API)
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         "200":
           description: Successful Operation
   /{municipalityId}/{namespace}/errands/{errandId}/attachments/{attachmentId}:
@@ -6156,6 +6638,14 @@ paths:
           type: string
         example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
       responses:
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
         "404":
           description: Not Found
           content:
@@ -6170,14 +6660,6 @@ paths:
                 $ref: "#/components/schemas/Problem"
         "200":
           description: Successful Operation
-        "400":
-          description: Bad Request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
     delete:
       tags:
       - Errand attachments
@@ -6216,6 +6698,12 @@ paths:
           type: string
         example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
       responses:
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "404":
           description: Not Found
           content:
@@ -6230,68 +6718,8 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
         "204":
           description: Successful operation
-  /{municipalityId}/{namespace}/communication/attachments/{attachmentId}/streamed:
-    get:
-      tags:
-      - MessageAttachments
-      summary: Get a streamed communication attachment.
-      description: Fetches the communication attachment that matches the provided
-        id in a streamed manner
-      operationId: getMessageAttachmentStreamed_1
-      parameters:
-      - name: namespace
-        in: path
-        description: Namespace
-        required: true
-        schema:
-          pattern: "[\\w|\\.|\\-]+"
-          type: string
-        example: my.namespace
-      - name: municipalityId
-        in: path
-        description: Municipality id
-        required: true
-        schema:
-          type: string
-        example: 2281
-      - name: attachmentId
-        in: path
-        description: Message attachment ID
-        required: true
-        schema:
-          type: string
-        example: b82bd8ac-1507-4d9a-958d-369261eecc15
-      responses:
-        "404":
-          description: Not Found
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-        "400":
-          description: Bad request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-        "200":
-          description: Successful Operation
   /namespace-configs:
     get:
       tags:
@@ -6309,16 +6737,24 @@ paths:
           example: 2281
       responses:
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         "400":
           description: Bad Request
           content:
             application/problem+json:
               schema:
                 oneOf:
+<<<<<<< HEAD
                   - $ref: "#/components/schemas/Problem"
                   - $ref: "#/components/schemas/ConstraintViolationProblem"
 =======
 >>>>>>> 4aad4eb (UF-10583: Update API)
+=======
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         "500":
           description: Internal Server Error
           content:
@@ -6338,14 +6774,6 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/NamespaceConfig"
-        "400":
-          description: Bad Request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
   /api-docs:
     get:
       tags:
@@ -6416,9 +6844,9 @@ components:
             type: object
         status:
           $ref: "#/components/schemas/StatusType"
-        detail:
-          type: string
         title:
+          type: string
+        detail:
           type: string
     StatusType:
       type: object
@@ -6551,9 +6979,9 @@ components:
             type: object
         status:
           $ref: "#/components/schemas/StatusType"
-        detail:
-          type: string
         title:
+          type: string
+        detail:
           type: string
         suppressed:
           type: array
@@ -7573,14 +8001,27 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/SortObject"
+<<<<<<< HEAD
         numberOfElements:
           type: integer
           format: int32
+=======
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
+        numberOfElements:
+          type: integer
+          format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         empty:
           type: boolean
     PageableObject:
       type: object
       properties:
+<<<<<<< HEAD
         paged:
           type: boolean
         pageNumber:
@@ -7607,6 +8048,23 @@ components:
           type: integer
           format: int32
 >>>>>>> 4aad4eb (UF-10583: Update API)
+=======
+        offset:
+          type: integer
+          format: int64
+        sort:
+          type: array
+          items:
+            $ref: "#/components/schemas/SortObject"
+        pageSize:
+          type: integer
+          format: int32
+        pageNumber:
+          type: integer
+          format: int32
+        paged:
+          type: boolean
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         unpaged:
           type: boolean
     SortObject:
@@ -7837,9 +8295,21 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/SortObject"
+<<<<<<< HEAD
         numberOfElements:
           type: integer
           format: int32
+=======
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
+        numberOfElements:
+          type: integer
+          format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
+>>>>>>> 29c3b9f (UF-10583: Acted on review comments)
         empty:
           type: boolean
 <<<<<<< HEAD
