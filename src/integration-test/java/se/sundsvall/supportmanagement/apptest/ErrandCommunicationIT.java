@@ -115,9 +115,9 @@ class ErrandCommunicationIT extends AbstractAppTest {
 	@Test
 	void test07_getMessageAttachmentStreamedNotFound() {
 
-		final var errandId = randomUUID().toString();
-		final var communicationId = randomUUID().toString();
-		final var attachmentId = "59328e70-4297-4bb5-ba69-cb17f2d15a17";
+		final var errandId = "ec677eb3-604c-4935-bff7-f8f0b500c8f4";
+		final var communicationId = "59328e70-4297-4bb5-ba69-cb17f2d15a17";
+		final var attachmentId = randomUUID().toString();
 
 		setupCall()
 			.withHttpMethod(GET)
@@ -130,8 +130,8 @@ class ErrandCommunicationIT extends AbstractAppTest {
 	@Test
 	void test08_getCommunicationAttachmentStreamed() throws Exception {
 
-		final var errandId = randomUUID().toString();
-		final var communicationId = randomUUID().toString();
+		final var errandId = "ec677eb3-604c-4935-bff7-f8f0b500c8f4";
+		final var communicationId = "59328e70-4297-4bb5-ba69-cb17f2d15a17";
 		final var attachmentId = "05b29c30-4512-46c0-9d82-d0f11cb04bae";
 
 		setupCall()
