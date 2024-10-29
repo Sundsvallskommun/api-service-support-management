@@ -30,6 +30,7 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.BodyInserters;
 
+import jakarta.servlet.http.HttpServletResponse;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachmentHeader;
 import se.sundsvall.supportmanagement.service.ErrandAttachmentService;
@@ -140,5 +141,23 @@ class ErrandAttachmentsResourceTest {
 
 		// Verification
 		verify(errandAttachmentServiceMock).deleteErrandAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, attachmentId);
+	}
+
+	@Test
+	void getAttachmentStreamed() {
+
+		// Parameter values
+		final var attachmentId = randomUUID().toString();
+
+		// ACT
+		webTestClient.get()
+			.uri(uriBuilder -> uriBuilder.path(PATH.concat("/{attachmentId}/streamed"))
+				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", ERRAND_ID, "attachmentId", attachmentId)))
+			.exchange()
+			.expectStatus().isOk()
+			.expectBody()
+			.returnResult();
+
+		verify(errandAttachmentServiceMock).getAttachmentStreamed(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(attachmentId), any(HttpServletResponse.class));
 	}
 }
