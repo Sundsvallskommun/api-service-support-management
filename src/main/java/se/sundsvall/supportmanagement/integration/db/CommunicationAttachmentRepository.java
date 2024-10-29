@@ -10,5 +10,5 @@ import se.sundsvall.supportmanagement.integration.db.model.CommunicationAttachme
 @CircuitBreaker(name = "communicationAttachmentRepository")
 public interface CommunicationAttachmentRepository extends JpaRepository<CommunicationAttachmentEntity, String> {
 
-	Optional<CommunicationAttachmentEntity> findByNamespaceAndMunicipalityIdAndId(final String namespace, final String municipalityId, final String id);
+	Optional<CommunicationAttachmentEntity> findByNamespaceAndMunicipalityIdAndCommunicationEntityIdAndId(final String namespace, final String municipalityId, final String communicationId, final String id);
 }
