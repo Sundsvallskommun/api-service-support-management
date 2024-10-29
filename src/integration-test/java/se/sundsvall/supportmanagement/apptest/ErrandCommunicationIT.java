@@ -8,7 +8,6 @@ import static org.springframework.http.HttpMethod.PUT;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
-import static org.springframework.http.MediaType.IMAGE_JPEG_VALUE;
 import static org.springframework.http.MediaType.IMAGE_PNG_VALUE;
 
 import java.util.List;
@@ -117,9 +116,9 @@ class ErrandCommunicationIT extends AbstractAppTest {
 	@Test
 	void test07_getMessageAttachmentStreamedNotFound() {
 
-		final var errandId = randomUUID().toString();
-		final var communicationId = randomUUID().toString();
-		final var attachmentId = "59328e70-4297-4bb5-ba69-cb17f2d15a17";
+		final var errandId = "ec677eb3-604c-4935-bff7-f8f0b500c8f4";
+		final var communicationId = "59328e70-4297-4bb5-ba69-cb17f2d15a17";
+		final var attachmentId = randomUUID().toString();
 
 		setupCall()
 			.withHttpMethod(GET)
@@ -132,8 +131,8 @@ class ErrandCommunicationIT extends AbstractAppTest {
 	@Test
 	void test08_getCommunicationAttachmentStreamed() throws Exception {
 
-		final var errandId = randomUUID().toString();
-		final var communicationId = randomUUID().toString();
+		final var errandId = "ec677eb3-604c-4935-bff7-f8f0b500c8f4";
+		final var communicationId = "59328e70-4297-4bb5-ba69-cb17f2d15a17";
 		final var attachmentId = "05b29c30-4512-46c0-9d82-d0f11cb04bae";
 
 		setupCall()
@@ -144,21 +143,4 @@ class ErrandCommunicationIT extends AbstractAppTest {
 			.withExpectedBinaryResponse("test_image.png")
 			.sendRequestAndVerifyResponse();
 	}
-
-	@Test
-	void test09_getErrandAttachmentStreamed() throws Exception {
-
-		final var errandId = randomUUID().toString();
-		final var communicationId = randomUUID().toString();
-		final var attachmentId = "b3b3b3b3-b3b3-b3b3-b3b3-b3b3b3b3b3b3";
-
-		setupCall()
-			.withHttpMethod(GET)
-			.withServicePath(PATH + "/" + errandId + "/communication/" + communicationId + "/attachments/" + attachmentId + "/streamed")
-			.withExpectedResponseStatus(OK)
-			.withExpectedResponseHeader(CONTENT_TYPE, List.of(IMAGE_JPEG_VALUE))
-			.withExpectedBinaryResponse("Test_image.jpg")
-			.sendRequestAndVerifyResponse();
-	}
-
 }

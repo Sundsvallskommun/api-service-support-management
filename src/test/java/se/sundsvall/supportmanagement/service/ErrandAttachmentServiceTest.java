@@ -1,10 +1,14 @@
 package se.sundsvall.supportmanagement.service;
 
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Optional.of;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -17,13 +21,16 @@ import static org.zalando.problem.Status.NOT_FOUND;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildAttachmentEntity;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrandEntity;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Blob;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
+import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -33,6 +40,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.util.StreamUtils;
 import org.springframework.web.multipart.MultipartFile;
+import org.zalando.problem.Problem;
 import org.zalando.problem.ThrowableProblem;
 
 import jakarta.persistence.EntityManager;
@@ -50,19 +58,12 @@ import se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapper;
 class ErrandAttachmentServiceTest {
 
 	private static final String NAMESPACE = "namespace";
-
 	private static final String MUNICIPALITY_ID = "municipalityId";
-
 	private static final String ERRAND_ID = "errandId";
-
 	private static final String ATTACHMENT_ID = "attachmentId";
-
 	private static final String FILE_NAME = "fileName";
-
 	private static final String MIME_TYPE = "mimeType";
-
 	private static final String EVENT_LOG_ADD_ATTACHMENT = "En bilaga har lagts till i ärendet.";
-
 	private static final String EVENT_LOG_REMOVE_ATTACHMENT = "En bilaga har tagits bort från ärendet.";
 
 	@Mock
@@ -103,6 +104,9 @@ class ErrandAttachmentServiceTest {
 
 	@Mock
 	private HttpServletResponse httpServletResponseMock;
+
+	@Mock
+	private ServletOutputStream servletOutputStreamMock;
 
 	@InjectMocks
 	private ErrandAttachmentService service;
@@ -328,4 +332,78 @@ class ErrandAttachmentServiceTest {
 		verifyNoMoreInteractions(attachmentRepositoryMock, revisionServiceMock, eventServiceMock);
 	}
 
+	@Test
+	void getAttachmentStreamed() throws SQLException, IOException {
+
+		// Parameter values
+		final var attachmentId = "attachmentId";
+		final var content = "content";
+		final var contentType = "contentType";
+		final var fileName = "fileName";
+		final var errandId = "errandId";
+		final var inputStream = IOUtils.toInputStream(content, UTF_8);
+
+		// Mock
+		when(attachmentRepositoryMock.findByNamespaceAndMunicipalityIdAndErrandEntityIdAndId(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(errandId), any())).thenReturn(Optional.of(attachmentMock));
+		when(attachmentMock.getMimeType()).thenReturn(contentType);
+		when(attachmentMock.getFileName()).thenReturn(fileName);
+		when(attachmentMock.getAttachmentData()).thenReturn(attachmentDataEntityMock);
+		when(attachmentDataEntityMock.getFile()).thenReturn(blobMock);
+		when(blobMock.length()).thenReturn((long) content.length());
+		when(blobMock.getBinaryStream()).thenReturn(inputStream);
+		when(httpServletResponseMock.getOutputStream()).thenReturn(servletOutputStreamMock);
+
+		// Call
+		service.getAttachmentStreamed(NAMESPACE, MUNICIPALITY_ID, errandId, attachmentId, httpServletResponseMock);
+
+		// Verification
+		verify(attachmentRepositoryMock).findByNamespaceAndMunicipalityIdAndErrandEntityIdAndId(NAMESPACE, MUNICIPALITY_ID, errandId, attachmentId);
+		verify(attachmentMock).getAttachmentData();
+		verify(attachmentDataEntityMock).getFile();
+		verify(blobMock).length();
+		verify(blobMock).getBinaryStream();
+		verify(httpServletResponseMock).addHeader(CONTENT_TYPE, contentType);
+		verify(httpServletResponseMock).addHeader(CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"");
+		verify(httpServletResponseMock).setContentLength(content.length());
+		verify(httpServletResponseMock).getOutputStream();
+
+		verifyNoMoreInteractions(attachmentRepositoryMock, attachmentMock, attachmentDataEntityMock, blobMock, httpServletResponseMock);
+		verifyNoInteractions(errandsRepositoryMock, revisionServiceMock, eventServiceMock);
+	}
+
+	@Test
+	void streamAttachmentDataSuccess() throws IOException, SQLException {
+		final byte[] fileContent = "file content".getBytes();
+		final ByteArrayInputStream inputStream = new ByteArrayInputStream(fileContent);
+
+		when(httpServletResponseMock.getOutputStream()).thenReturn(servletOutputStreamMock);
+		when(attachmentMock.getAttachmentData()).thenReturn(attachmentDataEntityMock);
+		when(attachmentDataEntityMock.getFile()).thenReturn(blobMock);
+		when(blobMock.length()).thenReturn((long) fileContent.length);
+		when(blobMock.getBinaryStream()).thenReturn(inputStream);
+		when(attachmentMock.getMimeType()).thenReturn("application/pdf");
+		when(attachmentMock.getFileName()).thenReturn("test.pdf");
+
+		service.streamAttachmentData(attachmentMock, httpServletResponseMock);
+
+		verify(httpServletResponseMock).addHeader(CONTENT_TYPE, "application/pdf");
+		verify(httpServletResponseMock).addHeader(CONTENT_DISPOSITION, "attachment; filename=\"test.pdf\"");
+		verify(httpServletResponseMock).setContentLength(fileContent.length);
+		verify(servletOutputStreamMock).write(any(byte[].class), eq(0), eq(fileContent.length));
+	}
+
+	@Test
+	void streamAttachmentDataThrowsSQLException() throws SQLException {
+		final byte[] fileContent = "file content".getBytes();
+		when(attachmentMock.getAttachmentData()).thenReturn(attachmentDataEntityMock);
+		when(attachmentDataEntityMock.getFile()).thenReturn(blobMock);
+		when(blobMock.length()).thenReturn((long) fileContent.length);
+		when(blobMock.getBinaryStream()).thenThrow(new SQLException("Test SQLException"));
+
+		assertThatThrownBy(() -> service.streamAttachmentData(attachmentMock, httpServletResponseMock))
+			.isInstanceOf(Problem.class)
+			.hasMessageContaining("SQLException occurred when copying file with attachment id");
+
+		verify(httpServletResponseMock, never()).addHeader(eq(CONTENT_TYPE), anyString());
+	}
 }
