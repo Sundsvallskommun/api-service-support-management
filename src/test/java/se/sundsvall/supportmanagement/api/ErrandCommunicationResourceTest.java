@@ -164,7 +164,7 @@ class ErrandCommunicationResourceTest {
 			.expectBody()
 			.returnResult();
 
-		verify(serviceMock).getMessageAttachmentStreamed(any(String.class), any(String.class), any(String.class), any(HttpServletResponse.class));
+		verify(serviceMock).getMessageAttachmentStreamed(any(String.class), any(String.class), any(String.class), any(String.class), any(String.class), any(HttpServletResponse.class));
 	}
 
 	private static SmsRequest smsRequest() {

@@ -36,23 +36,14 @@ import se.sundsvall.supportmanagement.service.CommunicationService;
 class ErrandCommunicationResourceFailureTest {
 
 	private static final String NAMESPACE = "name.space";
-
 	private static final String MUNICIPALITY_ID = "2281";
-
 	private static final String ERRAND_ID = randomUUID().toString();
-
 	private static final String MESSAGE_ID = randomUUID().toString();
-
 	private static final boolean IS_VIEWED = true;
-
 	private static final String INVALID = "#invalid#";
-
 	private static final String CONSTRAINT_VIOLATION = "Constraint Violation";
-
 	private static final String PATH_PREFIX = "/{municipalityId}/{namespace}/errands/{errandId}/communication";
-
 	private static final String PATH_SMS = "/sms";
-
 	private static final String PATH_EMAIL = "/email";
 
 	@MockBean
