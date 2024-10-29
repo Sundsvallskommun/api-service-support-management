@@ -194,9 +194,21 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
 =======
 >>>>>>> a5246de (UF-10368: Add new resource for listing notifications by errandId)
+=======
+        "200":
+          description: Successful Operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NamespaceConfig"
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/NamespaceConfig"
+>>>>>>> 05cb6da (UF-10584: Add logic)
         "400":
           description: Bad Request
           content:
@@ -223,6 +235,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 =======
 >>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
 =======
@@ -417,7 +430,12 @@ paths:
 =======
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
+<<<<<<< HEAD
 >>>>>>> 1f8513d (UF-10583: Acted on review comments)
+=======
+=======
+>>>>>>> 05cb6da (UF-10584: Add logic)
+>>>>>>> 13197b9 (UF-10584: Add logic)
     put:
       tags:
       - Configuration for namespace
@@ -640,6 +658,7 @@ paths:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 =======
 >>>>>>> 05cb6da (UF-10584: Add logic)
@@ -649,12 +668,18 @@ paths:
 >>>>>>> 7a702cb (UF-10584: Add logic)
 =======
 >>>>>>> 4aad4eb (UF-10583: Update API)
+<<<<<<< HEAD
 >>>>>>> 416de18 (UF-10583: Update API)
+=======
+=======
+>>>>>>> 05cb6da (UF-10584: Add logic)
+>>>>>>> 13197b9 (UF-10584: Add logic)
         "201":
           description: Successful operation
           headers:
             Location:
               style: simple
+<<<<<<< HEAD
 <<<<<<< HEAD
               schema:
                 type: string
@@ -712,7 +737,14 @@ paths:
 =======
 =======
 >>>>>>> a5246de (UF-10368: Add new resource for listing notifications by errandId)
+<<<<<<< HEAD
 >>>>>>> db09dc6 (UF-10368: Add new resource for listing notifications by errandId)
+=======
+=======
+              schema:
+                type: string
+>>>>>>> 05cb6da (UF-10584: Add logic)
+>>>>>>> 13197b9 (UF-10584: Add logic)
         "400":
           description: Bad request
           content:
@@ -749,6 +781,7 @@ paths:
 >>>>>>> a5246de (UF-10368: Add new resource for listing notifications by errandId)
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
         "201":
           description: Successful operation
           headers:
@@ -779,7 +812,12 @@ paths:
               schema:
                 type: string
 >>>>>>> a5246de (UF-10368: Add new resource for listing notifications by errandId)
+<<<<<<< HEAD
 >>>>>>> db09dc6 (UF-10368: Add new resource for listing notifications by errandId)
+=======
+=======
+>>>>>>> 05cb6da (UF-10584: Add logic)
+>>>>>>> 13197b9 (UF-10584: Add logic)
     delete:
       tags:
       - Configuration for namespace
@@ -841,15 +879,20 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "204":
+          description: Successful operation
         "404":
           description: Not Found
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
         "204":
           description: Successful operation
 >>>>>>> c8b56ec (UF-10368: Acted on review comnents)
+=======
+>>>>>>> 05cb6da (UF-10584: Add logic)
         "500":
           description: Internal Server error
           content:
@@ -1553,6 +1596,7 @@ paths:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         "204":
           description: Successful operation
 =======
@@ -1562,10 +1606,16 @@ paths:
 >>>>>>> 6b2aae2 (UF-10368: Add new resource for listing notifications by errandId)
 =======
 >>>>>>> db09dc6 (UF-10368: Add new resource for listing notifications by errandId)
+=======
+>>>>>>> 13197b9 (UF-10584: Add logic)
         "500":
           description: Internal Server error
 <<<<<<< HEAD
 =======
+=======
+        "204":
+          description: Successful operation
+>>>>>>> 05cb6da (UF-10584: Add logic)
         "404":
           description: Not Found
 >>>>>>> a5246de (UF-10368: Add new resource for listing notifications by errandId)
@@ -1573,6 +1623,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
         "204":
@@ -1599,6 +1650,8 @@ paths:
         "204":
           description: Successful operation
 >>>>>>> c8b56ec (UF-10368: Acted on review comnents)
+=======
+>>>>>>> 05cb6da (UF-10584: Add logic)
         "500":
           description: Internal Server error
           content:
@@ -1651,6 +1704,7 @@ paths:
       responses:
 <<<<<<< HEAD
 =======
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -1725,7 +1779,14 @@ paths:
 =======
 =======
 >>>>>>> c8b56ec (UF-10368: Acted on review comnents)
+<<<<<<< HEAD
 >>>>>>> 7fe314b (UF-10368: Acted on review comnents)
+=======
+=======
+        "202":
+          description: Successful operation
+>>>>>>> 05cb6da (UF-10584: Add logic)
+>>>>>>> 13197b9 (UF-10584: Add logic)
         "400":
           description: Bad Request
           content:
@@ -1740,6 +1801,7 @@ paths:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
         "202":
           description: Successful operation
@@ -1750,6 +1812,8 @@ paths:
 >>>>>>> 4aad4eb (UF-10583: Update API)
 =======
 >>>>>>> c8b56ec (UF-10368: Acted on review comnents)
+=======
+>>>>>>> 05cb6da (UF-10584: Add logic)
         "500":
           description: Internal Server error
           content:
@@ -1856,14 +1920,14 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "204":
+          description: Successful operation
         "404":
           description: Not Found
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        "204":
-          description: Successful operation
         "500":
           description: Internal Server error
           content:
@@ -2461,6 +2525,7 @@ paths:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         "500":
           description: Internal Server error
 <<<<<<< HEAD
@@ -2559,7 +2624,12 @@ paths:
 =======
 =======
 >>>>>>> a5246de (UF-10368: Add new resource for listing notifications by errandId)
+<<<<<<< HEAD
 >>>>>>> db09dc6 (UF-10368: Add new resource for listing notifications by errandId)
+=======
+=======
+>>>>>>> 05cb6da (UF-10584: Add logic)
+>>>>>>> 13197b9 (UF-10584: Add logic)
         "200":
           description: Successful Operation
           content:
@@ -2568,6 +2638,40 @@ paths:
                 type: array
                 items:
                   type: string
+<<<<<<< HEAD
+=======
+            application/problem+json:
+              schema:
+                type: array
+                items:
+                  type: string
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+=======
+=======
+=======
+>>>>>>> 05cb6da (UF-10584: Add logic)
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
+>>>>>>> 7a702cb (UF-10584: Add logic)
+=======
+>>>>>>> ea33d37 (UF-10806: Resolve merge conflicts)
+=======
+>>>>>>> 05cb6da (UF-10584: Add logic)
+>>>>>>> 13197b9 (UF-10584: Add logic)
     put:
       tags:
       - Errand labels
@@ -2704,6 +2808,7 @@ paths:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 =======
         "201":
@@ -2713,6 +2818,10 @@ paths:
 >>>>>>> 5f321e0 (UF-10368: Acted on review comnents)
 =======
 >>>>>>> 7a702cb (UF-10584: Add logic)
+=======
+        "204":
+          description: No content
+>>>>>>> 05cb6da (UF-10584: Add logic)
         "404":
           description: Not Found
 =======
@@ -2725,6 +2834,7 @@ paths:
                 $ref: "#/components/schemas/Problem"
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         "201":
           description: Created
           content:
@@ -2735,6 +2845,8 @@ paths:
         "204":
           description: No content
 >>>>>>> c8b56ec (UF-10368: Acted on review comnents)
+=======
+>>>>>>> 05cb6da (UF-10584: Add logic)
         "500":
           description: Internal Server error
           content:
@@ -2948,19 +3060,29 @@ paths:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 4aad4eb (UF-10583: Update API)
 =======
         "201":
           description: Created
           content:
             application/json: {}
+=======
+>>>>>>> 05cb6da (UF-10584: Add logic)
         "404":
           description: Not Found
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 >>>>>>> c8b56ec (UF-10368: Acted on review comnents)
+=======
+        "201":
+          description: Created
+          content:
+            application/json: {}
+>>>>>>> 05cb6da (UF-10584: Add logic)
         "500":
           description: Internal Server error
           content:
@@ -3149,15 +3271,20 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "204":
+          description: No content
         "404":
           description: Not Found
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
         "204":
           description: No content
 >>>>>>> c8b56ec (UF-10368: Acted on review comnents)
+=======
+>>>>>>> 05cb6da (UF-10584: Add logic)
         "500":
           description: Internal Server error
           content:
@@ -4879,6 +5006,15 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "200":
+          description: Successful Operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmailIntegration"
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/EmailIntegration"
         "400":
           description: Bad Request
           content:
@@ -4913,6 +5049,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
         "200":
           description: Successful Operation
           content:
@@ -4938,6 +5075,8 @@ paths:
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
+=======
+>>>>>>> 05cb6da (UF-10584: Add logic)
     put:
       tags:
       - Configuration for email integration
@@ -5056,7 +5195,10 @@ paths:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> 05cb6da (UF-10584: Add logic)
         "201":
           description: Successful operation
           headers:
@@ -5064,6 +5206,7 @@ paths:
               style: simple
               schema:
                 type: string
+<<<<<<< HEAD
 <<<<<<< HEAD
 >>>>>>> 4aad4eb (UF-10583: Update API)
 =======
@@ -5078,6 +5221,8 @@ paths:
 >>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
 =======
 >>>>>>> a5246de (UF-10368: Add new resource for listing notifications by errandId)
+=======
+>>>>>>> 05cb6da (UF-10584: Add logic)
         "400":
           description: Bad request
           content:
@@ -5106,6 +5251,7 @@ paths:
 >>>>>>> a5246de (UF-10368: Add new resource for listing notifications by errandId)
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
         "201":
           description: Successful operation
           headers:
@@ -5127,6 +5273,8 @@ paths:
               schema:
                 type: string
 >>>>>>> a5246de (UF-10368: Add new resource for listing notifications by errandId)
+=======
+>>>>>>> 05cb6da (UF-10584: Add logic)
     delete:
       tags:
       - Configuration for email integration
@@ -5180,14 +5328,14 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "204":
+          description: Successful operation
         "404":
           description: Not Found
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        "204":
-          description: Successful operation
         "500":
           description: Internal Server error
           content:
@@ -5403,6 +5551,7 @@ paths:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> 05cb6da (UF-10584: Add logic)
         "409":
@@ -5428,6 +5577,15 @@ paths:
 =======
 >>>>>>> a5246de (UF-10368: Add new resource for listing notifications by errandId)
 =======
+=======
+        "201":
+          description: Successful operation
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
+>>>>>>> 05cb6da (UF-10584: Add logic)
         "400":
           description: Bad Request
           content:
@@ -5443,6 +5601,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 >>>>>>> ea33d37 (UF-10806: Resolve merge conflicts)
@@ -5565,6 +5724,8 @@ paths:
 >>>>>>> 4aad4eb (UF-10583: Update API)
 =======
 >>>>>>> c8b56ec (UF-10368: Acted on review comnents)
+=======
+>>>>>>> 05cb6da (UF-10584: Add logic)
   /{municipalityId}/{namespace}/metadata/roles:
 >>>>>>> fd310fe (UF-10583: Update API)
     get:
@@ -5745,11 +5906,21 @@ paths:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
 =======
 >>>>>>> a5246de (UF-10368: Add new resource for listing notifications by errandId)
 =======
+=======
+        "201":
+          description: Successful operation
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
+>>>>>>> 05cb6da (UF-10584: Add logic)
         "400":
           description: Bad Request
           content:
@@ -5765,6 +5936,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -5806,6 +5978,8 @@ paths:
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
 =======
 >>>>>>> c8b56ec (UF-10368: Acted on review comnents)
+=======
+>>>>>>> 05cb6da (UF-10584: Add logic)
   /{municipalityId}/{namespace}/metadata/external-id-types:
     get:
       tags:
@@ -5938,11 +6112,21 @@ paths:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
 =======
 >>>>>>> a5246de (UF-10368: Add new resource for listing notifications by errandId)
 =======
+=======
+        "201":
+          description: Successful operation
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
+>>>>>>> 05cb6da (UF-10584: Add logic)
         "400":
           description: Bad Request
           content:
@@ -5958,6 +6142,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -5999,6 +6184,8 @@ paths:
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
 =======
 >>>>>>> c8b56ec (UF-10368: Acted on review comnents)
+=======
+>>>>>>> 05cb6da (UF-10584: Add logic)
   /{municipalityId}/{namespace}/metadata/contactreasons:
     get:
       tags:
@@ -6137,6 +6324,13 @@ paths:
               $ref: "#/components/schemas/ContactReason"
         required: true
       responses:
+        "201":
+          description: Successful operation
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
         "400":
           description: Bad request
           content:
@@ -6151,13 +6345,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        "201":
-          description: Successful operation
-          headers:
-            Location:
-              style: simple
-              schema:
-                type: string
   /{municipalityId}/{namespace}/metadata/categories:
     get:
       tags:
@@ -6291,11 +6478,21 @@ paths:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
 =======
 >>>>>>> a5246de (UF-10368: Add new resource for listing notifications by errandId)
 =======
+=======
+        "201":
+          description: Successful operation
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
+>>>>>>> 05cb6da (UF-10584: Add logic)
         "400":
           description: Bad Request
           content:
@@ -6311,6 +6508,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -6352,6 +6550,8 @@ paths:
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
 =======
 >>>>>>> c8b56ec (UF-10368: Acted on review comnents)
+=======
+>>>>>>> 05cb6da (UF-10584: Add logic)
   /{municipalityId}/{namespace}/errands:
     get:
       tags:
@@ -6422,6 +6622,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 >>>>>>> c8b56ec (UF-10368: Acted on review comnents)
         "400":
           description: Bad Request
@@ -6445,6 +6646,8 @@ paths:
 >>>>>>> 4aad4eb (UF-10583: Update API)
 =======
 >>>>>>> c8b56ec (UF-10368: Acted on review comnents)
+=======
+>>>>>>> 05cb6da (UF-10584: Add logic)
         "200":
           description: Successful Operation
           content:
@@ -6456,6 +6659,7 @@ paths:
                 $ref: "#/components/schemas/PageErrand"
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         "500":
           description: Internal Server Error
           content:
@@ -6463,6 +6667,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
 =======
+=======
+>>>>>>> 05cb6da (UF-10584: Add logic)
         "400":
           description: Bad Request
           content:
@@ -6471,9 +6677,12 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
 >>>>>>> 4aad4eb (UF-10583: Update API)
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
+=======
+>>>>>>> 05cb6da (UF-10584: Add logic)
     post:
       tags:
       - Errands
@@ -6738,7 +6947,10 @@ paths:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> 05cb6da (UF-10584: Add logic)
         "201":
           description: Successful operation
           headers:
@@ -6746,6 +6958,7 @@ paths:
               style: simple
               schema:
                 type: string
+<<<<<<< HEAD
         "500":
           description: Internal Server error
           content:
@@ -6757,6 +6970,8 @@ paths:
 >>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
 =======
 >>>>>>> a5246de (UF-10368: Add new resource for listing notifications by errandId)
+=======
+>>>>>>> 05cb6da (UF-10584: Add logic)
         "400":
           description: Bad request
           content:
@@ -6778,6 +6993,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
         "200":
@@ -6816,6 +7032,8 @@ paths:
               style: simple
               schema:
                 type: string
+=======
+>>>>>>> 05cb6da (UF-10584: Add logic)
   /{municipalityId}/{namespace}/errands/{errandId}/notifications:
     get:
       tags:
@@ -6856,6 +7074,14 @@ paths:
           items:
             type: string
       responses:
+        "200":
+          description: Successful operation
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
         "400":
           description: Bad request
           content:
@@ -6870,14 +7096,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        "200":
-          description: Successful operation
-          content:
-            '*/*':
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Notification"
         "500":
           description: Internal Server error
           content:
@@ -7019,10 +7237,22 @@ paths:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> fd310fe (UF-10583: Update API)
 =======
 >>>>>>> ea33d37 (UF-10806: Resolve merge conflicts)
+<<<<<<< HEAD
 >>>>>>> 1f8513d (UF-10583: Acted on review comments)
+=======
+=======
+        "409":
+          description: Conflict
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+>>>>>>> 05cb6da (UF-10584: Add logic)
+>>>>>>> 13197b9 (UF-10584: Add logic)
         "400":
           description: Bad request
           content:
@@ -7208,12 +7438,6 @@ paths:
               style: simple
               schema:
                 type: string
-        "409":
-          description: Conflict
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
         "500":
           description: Internal Server error
           content:
@@ -7314,6 +7538,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 >>>>>>> c8b56ec (UF-10368: Acted on review comnents)
         "400":
           description: Bad Request
@@ -7333,6 +7558,8 @@ paths:
                 $ref: "#/components/schemas/Problem"
 =======
 >>>>>>> c8b56ec (UF-10368: Acted on review comnents)
+=======
+>>>>>>> 05cb6da (UF-10584: Add logic)
         "200":
           description: Successful Operation
           content:
@@ -7343,13 +7570,17 @@ paths:
               schema:
                 $ref: "#/components/schemas/FindErrandNotesResponse"
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 4aad4eb (UF-10583: Update API)
+=======
+>>>>>>> 05cb6da (UF-10584: Add logic)
         "400":
           description: Bad Request
           content:
             application/problem+json:
               schema:
                 oneOf:
+<<<<<<< HEAD
 <<<<<<< HEAD
                   - $ref: "#/components/schemas/Problem"
                   - $ref: "#/components/schemas/ConstraintViolationProblem"
@@ -7361,6 +7592,10 @@ paths:
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
+=======
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+>>>>>>> 05cb6da (UF-10584: Add logic)
     post:
       tags:
       - Errand notes
@@ -7577,6 +7812,7 @@ paths:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 =======
 >>>>>>> 05cb6da (UF-10584: Add logic)
@@ -7622,6 +7858,8 @@ paths:
                   - $ref: "#/components/schemas/Problem"
                   - $ref: "#/components/schemas/ConstraintViolationProblem"
 >>>>>>> fd310fe (UF-10583: Update API)
+=======
+>>>>>>> 05cb6da (UF-10584: Add logic)
         "201":
           description: Successful operation
           headers:
@@ -7629,6 +7867,7 @@ paths:
               style: simple
               schema:
                 type: string
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 >>>>>>> 4aad4eb (UF-10583: Update API)
@@ -7660,7 +7899,12 @@ paths:
 =======
 =======
 >>>>>>> a5246de (UF-10368: Add new resource for listing notifications by errandId)
+<<<<<<< HEAD
 >>>>>>> db09dc6 (UF-10368: Add new resource for listing notifications by errandId)
+=======
+=======
+>>>>>>> 05cb6da (UF-10584: Add logic)
+>>>>>>> 13197b9 (UF-10584: Add logic)
         "400":
           description: Bad request
           content:
@@ -7700,6 +7944,7 @@ paths:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
 =======
@@ -7737,7 +7982,12 @@ paths:
 =======
 =======
 >>>>>>> a5246de (UF-10368: Add new resource for listing notifications by errandId)
+<<<<<<< HEAD
 >>>>>>> db09dc6 (UF-10368: Add new resource for listing notifications by errandId)
+=======
+=======
+>>>>>>> 05cb6da (UF-10584: Add logic)
+>>>>>>> 13197b9 (UF-10584: Add logic)
   /{municipalityId}/{namespace}/errands/{errandId}/communication/sms:
     post:
       tags:
@@ -8388,6 +8638,19 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "200":
+          description: Successful Operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ErrandAttachmentHeader"
+            application/problem+json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ErrandAttachmentHeader"
         "400":
           description: Bad Request
           content:
@@ -8404,6 +8667,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
         "200":
           description: Successful Operation
           content:
@@ -8693,6 +8957,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ErrandAttachmentHeader"
+=======
+>>>>>>> 05cb6da (UF-10584: Add logic)
     post:
       tags:
       - Errand attachments
@@ -8735,6 +9001,13 @@ paths:
                   format: binary
         required: true
       responses:
+        "201":
+          description: Successful operation
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
         "400":
           description: Bad request
           content:
@@ -8749,13 +9022,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        "201":
-          description: Successful operation
-          headers:
-            Location:
-              style: simple
-              schema:
-                type: string
   /{municipalityId}/{namespace}/notifications:
     get:
       tags:
@@ -8788,6 +9054,14 @@ paths:
           type: string
         example: 12
       responses:
+        "200":
+          description: Successful operation
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
         "400":
           description: Bad request
           content:
@@ -8802,14 +9076,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        "200":
-          description: Successful operation
-          content:
-            '*/*':
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Notification"
         "500":
           description: Internal Server error
           content:
@@ -8877,14 +9143,14 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "204":
+          description: Successful operation
         "404":
           description: Not found
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        "204":
-          description: Successful operation
         "500":
           description: Internal Server error
           content:
@@ -9451,6 +9717,8 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "204":
+          description: Successful operation
         "404":
           description: Not found
           content:
@@ -9458,9 +9726,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
         "204":
           description: Successful operation
+=======
+>>>>>>> 13197b9 (UF-10584: Add logic)
         "500":
           description: Internal Server error
           content:
@@ -9773,8 +10044,19 @@ paths:
           content:
             application/json: {}
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 416de18 (UF-10583: Update API)
 =======
+=======
+=======
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+>>>>>>> 05cb6da (UF-10584: Add logic)
+>>>>>>> 13197b9 (UF-10584: Add logic)
         "500":
           description: Internal Server error
           content:
@@ -10553,6 +10835,7 @@ paths:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         "500":
           description: Internal Server error
 <<<<<<< HEAD
@@ -10567,14 +10850,16 @@ paths:
 =======
 =======
 >>>>>>> a5246de (UF-10368: Add new resource for listing notifications by errandId)
+=======
+        "204":
+          description: Successful operation
+>>>>>>> 05cb6da (UF-10584: Add logic)
         "404":
           description: Not Found
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        "204":
-          description: Successful operation
         "500":
           description: Internal Server error
           content:
@@ -11043,6 +11328,15 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "200":
+          description: Successful Operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Errand"
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Errand"
         "400":
           description: Bad Request
           content:
@@ -11091,6 +11385,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
         "200":
           description: Successful Operation
           content:
@@ -11105,10 +11400,45 @@ paths:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 416de18 (UF-10583: Update API)
 =======
 <<<<<<< HEAD
 >>>>>>> 1f8513d (UF-10583: Acted on review comments)
+=======
+=======
+    delete:
+      tags:
+      - Errands
+      summary: Delete errand
+      description: Deletes the errand that matches the provided id
+      operationId: deleteErrand
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand id
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      responses:
+>>>>>>> 05cb6da (UF-10584: Add logic)
+>>>>>>> 13197b9 (UF-10584: Add logic)
         "400":
           description: Bad Request
           content:
@@ -11119,6 +11449,7 @@ paths:
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
 <<<<<<< HEAD
 =======
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -11134,14 +11465,16 @@ paths:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
 >>>>>>> c8b56ec (UF-10368: Acted on review comnents)
+=======
+        "204":
+          description: Successful operation
+>>>>>>> 05cb6da (UF-10584: Add logic)
         "404":
           description: Not Found
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        "204":
-          description: Successful operation
         "500":
           description: Internal Server error
           content:
@@ -11237,6 +11570,7 @@ paths:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
                   - $ref: "#/components/schemas/Problem"
                   - $ref: "#/components/schemas/ConstraintViolationProblem"
@@ -11270,6 +11604,10 @@ paths:
 <<<<<<< HEAD
         "200":
           description: Successful Operation
+=======
+        "200":
+          description: Successful operation
+>>>>>>> 05cb6da (UF-10584: Add logic)
           content:
             application/json:
               schema:
@@ -11277,6 +11615,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Errand"
+<<<<<<< HEAD
 <<<<<<< HEAD
         "400":
           description: Bad Request
@@ -11512,7 +11851,12 @@ paths:
 =======
 =======
 >>>>>>> a5246de (UF-10368: Add new resource for listing notifications by errandId)
+<<<<<<< HEAD
 >>>>>>> db09dc6 (UF-10368: Add new resource for listing notifications by errandId)
+=======
+=======
+>>>>>>> 05cb6da (UF-10584: Add logic)
+>>>>>>> 13197b9 (UF-10584: Add logic)
         "400":
           description: Bad request
           content:
@@ -11732,6 +12076,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Errand"
 =======
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -12083,6 +12428,8 @@ paths:
 =======
 >>>>>>> c8b56ec (UF-10368: Acted on review comnents)
 =======
+=======
+>>>>>>> 05cb6da (UF-10584: Add logic)
         "500":
           description: Internal Server error
           content:
@@ -12318,6 +12665,7 @@ paths:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 =======
 >>>>>>> bc1d833 (UF-10368: Add new resource for listing notifications by errandId)
@@ -12405,7 +12753,12 @@ paths:
 =======
 =======
 >>>>>>> a5246de (UF-10368: Add new resource for listing notifications by errandId)
+<<<<<<< HEAD
 >>>>>>> db09dc6 (UF-10368: Add new resource for listing notifications by errandId)
+=======
+=======
+>>>>>>> 05cb6da (UF-10584: Add logic)
+>>>>>>> 13197b9 (UF-10584: Add logic)
         "200":
           description: Successful Operation
           content:
@@ -12414,6 +12767,20 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Parameter"
+<<<<<<< HEAD
+=======
+            application/problem+json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Parameter"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+>>>>>>> 13197b9 (UF-10584: Add logic)
     patch:
       tags:
       - Errand Parameters
@@ -12479,6 +12846,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
         "500":
           description: Internal Server error
 >>>>>>> c8b56ec (UF-10368: Acted on review comnents)
@@ -12701,7 +13069,12 @@ paths:
 =======
 =======
 >>>>>>> a5246de (UF-10368: Add new resource for listing notifications by errandId)
+<<<<<<< HEAD
 >>>>>>> db09dc6 (UF-10368: Add new resource for listing notifications by errandId)
+=======
+=======
+>>>>>>> 05cb6da (UF-10584: Add logic)
+>>>>>>> 13197b9 (UF-10584: Add logic)
         "200":
           description: Successful Operation
           content:
@@ -12710,6 +13083,40 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Parameter"
+<<<<<<< HEAD
+=======
+            application/problem+json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Parameter"
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+        "404":
+          description: Not found
+=======
+        "500":
+          description: Internal Server error
+>>>>>>> 05cb6da (UF-10584: Add logic)
+=======
+        "500":
+          description: Internal Server error
+>>>>>>> 7a702cb (UF-10584: Add logic)
+=======
+        "404":
+          description: Not found
+>>>>>>> ea33d37 (UF-10806: Resolve merge conflicts)
+=======
+        "500":
+          description: Internal Server error
+>>>>>>> 05cb6da (UF-10584: Add logic)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+>>>>>>> 13197b9 (UF-10584: Add logic)
   /{municipalityId}/{namespace}/errands/{errandId}/parameters/{parameterKey}:
     get:
       tags:
@@ -12785,6 +13192,7 @@ paths:
           content:
             application/problem+json:
               schema:
+<<<<<<< HEAD
                 $ref: "#/components/schemas/Problem"
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -12993,7 +13401,15 @@ paths:
 =======
 =======
 >>>>>>> a5246de (UF-10368: Add new resource for listing notifications by errandId)
+<<<<<<< HEAD
 >>>>>>> db09dc6 (UF-10368: Add new resource for listing notifications by errandId)
+=======
+=======
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+>>>>>>> 05cb6da (UF-10584: Add logic)
+>>>>>>> 13197b9 (UF-10584: Add logic)
         "200":
           description: Successful Operation
           content:
@@ -13014,8 +13430,11 @@ paths:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 =======
+=======
+>>>>>>> 05cb6da (UF-10584: Add logic)
         "404":
           description: Not Found
           content:
@@ -13028,12 +13447,18 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 >>>>>>> 7a702cb (UF-10584: Add logic)
 =======
 >>>>>>> ea33d37 (UF-10806: Resolve merge conflicts)
 =======
 >>>>>>> 4aad4eb (UF-10583: Update API)
+<<<<<<< HEAD
 >>>>>>> 416de18 (UF-10583: Update API)
+=======
+=======
+>>>>>>> 05cb6da (UF-10584: Add logic)
+>>>>>>> 13197b9 (UF-10584: Add logic)
     delete:
       tags:
       - Errand Parameters
@@ -13094,6 +13519,7 @@ paths:
           content:
             application/problem+json:
               schema:
+<<<<<<< HEAD
                 $ref: "#/components/schemas/Problem"
 <<<<<<< HEAD
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
@@ -13102,15 +13528,23 @@ paths:
 =======
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
+<<<<<<< HEAD
 >>>>>>> 1f8513d (UF-10583: Acted on review comments)
+=======
+=======
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "204":
+          description: Successful operation
+>>>>>>> 05cb6da (UF-10584: Add logic)
+>>>>>>> 13197b9 (UF-10584: Add logic)
         "404":
           description: Not Found
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        "204":
-          description: Successful operation
         "500":
           description: Internal Server error
           content:
@@ -13480,6 +13914,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
         "500":
           description: Internal Server error
 >>>>>>> c8b56ec (UF-10368: Acted on review comnents)
@@ -13702,7 +14137,12 @@ paths:
 =======
 =======
 >>>>>>> a5246de (UF-10368: Add new resource for listing notifications by errandId)
+<<<<<<< HEAD
 >>>>>>> db09dc6 (UF-10368: Add new resource for listing notifications by errandId)
+=======
+=======
+>>>>>>> 05cb6da (UF-10584: Add logic)
+>>>>>>> 13197b9 (UF-10584: Add logic)
         "200":
           description: Successful Operation
           content:
@@ -13714,6 +14154,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Parameter"
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -14136,12 +14577,15 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+=======
+>>>>>>> 05cb6da (UF-10584: Add logic)
         "500":
           description: Internal Server error
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
         "204":
           description: Successful operation
 <<<<<<< HEAD
@@ -14149,6 +14593,8 @@ paths:
 =======
 =======
 >>>>>>> 7a702cb (UF-10584: Add logic)
+=======
+>>>>>>> 05cb6da (UF-10584: Add logic)
   /{municipalityId}/{namespace}/errands/{errandId}/notes/{noteId}:
     get:
       tags:
@@ -14194,6 +14640,15 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "200":
+          description: Successful Operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrandNote"
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrandNote"
         "400":
           description: Bad Request
           content:
@@ -14216,6 +14671,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -14255,6 +14711,8 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+=======
+>>>>>>> 05cb6da (UF-10584: Add logic)
     delete:
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
 =======
@@ -14365,6 +14823,7 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
 >>>>>>> a5246de (UF-10368: Add new resource for listing notifications by errandId)
 >>>>>>> db09dc6 (UF-10368: Add new resource for listing notifications by errandId)
         "200":
@@ -14716,14 +15175,16 @@ paths:
 =======
 =======
 =======
+=======
+        "204":
+          description: Successful operation
+>>>>>>> 05cb6da (UF-10584: Add logic)
         "404":
           description: Not Found
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        "204":
-          description: Successful operation
         "500":
           description: Internal Server error
           content:
@@ -16333,6 +16794,15 @@ paths:
               $ref: "#/components/schemas/UpdateErrandNoteRequest"
         required: true
       responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrandNote"
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrandNote"
         "400":
           description: Bad request
 <<<<<<< HEAD
@@ -16358,6 +16828,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
         "200":
           description: Successful operation
           content:
@@ -16386,6 +16857,8 @@ paths:
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
 =======
+=======
+>>>>>>> 05cb6da (UF-10584: Add logic)
         "500":
           description: Internal Server error
           content:
@@ -16616,13 +17089,21 @@ paths:
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         "500":
           description: Internal Server error
 <<<<<<< HEAD
+=======
+        "204":
+          description: Successful operation
+        "404":
+          description: Not Found
+>>>>>>> 05cb6da (UF-10584: Add logic)
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
         "204":
           description: Successful operation
 <<<<<<< HEAD
@@ -16644,6 +17125,8 @@ paths:
 =======
 =======
 >>>>>>> c8b56ec (UF-10368: Acted on review comnents)
+=======
+>>>>>>> 05cb6da (UF-10584: Add logic)
         "500":
           description: Internal Server error
           content:
@@ -16826,18 +17309,21 @@ paths:
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         "500":
           description: Internal Server error
 <<<<<<< HEAD
 =======
+=======
+        "204":
+          description: Successful operation
+>>>>>>> 05cb6da (UF-10584: Add logic)
         "404":
           description: Not Found
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        "204":
-          description: Successful operation
         "500":
           description: Internal Server error
 >>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
@@ -17039,13 +17525,21 @@ paths:
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         "500":
           description: Internal Server error
 <<<<<<< HEAD
+=======
+        "204":
+          description: Successful operation
+        "404":
+          description: Not Found
+>>>>>>> 05cb6da (UF-10584: Add logic)
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
         "204":
           description: Successful operation
 <<<<<<< HEAD
@@ -17067,6 +17561,8 @@ paths:
 =======
 =======
 >>>>>>> c8b56ec (UF-10368: Acted on review comnents)
+=======
+>>>>>>> 05cb6da (UF-10584: Add logic)
         "500":
           description: Internal Server error
           content:
@@ -17264,6 +17760,19 @@ paths:
           type: string
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
       responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Revision"
+            application/problem+json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Revision"
         "400":
           description: Bad request
           content:
@@ -17278,19 +17787,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        "200":
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Revision"
-            application/problem+json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Revision"
         "500":
           description: Internal Server error
           content:
@@ -17345,6 +17841,15 @@ paths:
           format: int32
         example: 1
       responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DifferenceResponse"
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/DifferenceResponse"
         "400":
           description: Bad request
           content:
@@ -17359,15 +17864,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        "200":
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/DifferenceResponse"
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/DifferenceResponse"
         "500":
           description: Internal Server error
           content:
@@ -17414,6 +17910,12 @@ paths:
           type: string
         example: 12
       responses:
+        "200":
+          description: Successful operation
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/Notification"
         "400":
           description: Bad request
           content:
@@ -17428,12 +17930,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        "200":
-          description: Successful operation
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/Notification"
         "500":
           description: Internal Server error
           content:
@@ -17484,14 +17980,14 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "204":
+          description: Successful operation
         "404":
           description: Not found
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        "204":
-          description: Successful operation
         "500":
           description: Internal Server error
           content:
@@ -17537,6 +18033,19 @@ paths:
           type: string
         example: 22a57c09-47ca-45bf-ab02-819011c6fd8d
       responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Revision"
+            application/problem+json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Revision"
         "400":
           description: Bad request
           content:
@@ -17551,19 +18060,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        "200":
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Revision"
-            application/problem+json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Revision"
         "500":
           description: Internal Server error
           content:
@@ -17625,6 +18121,15 @@ paths:
           format: int32
         example: 1
       responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DifferenceResponse"
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/DifferenceResponse"
         "400":
           description: Bad request
           content:
@@ -17639,15 +18144,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        "200":
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/DifferenceResponse"
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/DifferenceResponse"
         "500":
           description: Internal Server error
           content:
@@ -17711,6 +18207,15 @@ paths:
           items:
             type: string
       responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PageEvent"
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/PageEvent"
         "400":
           description: Bad request
           content:
@@ -17725,15 +18230,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        "200":
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/PageEvent"
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/PageEvent"
         "500":
           description: Internal Server error
           content:
@@ -18388,8 +18884,13 @@ paths:
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 =======
+=======
+        "200":
+          description: Successful Operation
+>>>>>>> 13197b9 (UF-10584: Add logic)
         "404":
           description: Not Found
           content:
@@ -18402,7 +18903,11 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 >>>>>>> 6b2aae2 (UF-10368: Add new resource for listing notifications by errandId)
+=======
+<<<<<<< HEAD
+>>>>>>> 13197b9 (UF-10584: Add logic)
         "200":
           description: Successful operation
           content:
@@ -18708,6 +19213,8 @@ paths:
 >>>>>>> 4aad4eb (UF-10583: Update API)
         "200":
           description: Successful Operation
+=======
+>>>>>>> 05cb6da (UF-10584: Add logic)
   /{municipalityId}/{namespace}/errands/{errandId}/attachments/{attachmentId}:
     get:
       tags:
@@ -18753,6 +19260,8 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "200":
+          description: Successful Operation
         "400":
           description: Bad Request
           content:
@@ -19347,7 +19856,11 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 >>>>>>> 7fe314b (UF-10368: Acted on review comnents)
+=======
+<<<<<<< HEAD
+>>>>>>> 13197b9 (UF-10584: Add logic)
         "200":
           description: Successful Operation
 <<<<<<< HEAD
@@ -20001,7 +20514,12 @@ paths:
 >>>>>>> 7a702cb (UF-10584: Add logic)
 =======
 >>>>>>> ea33d37 (UF-10806: Resolve merge conflicts)
+<<<<<<< HEAD
 >>>>>>> db09dc6 (UF-10368: Add new resource for listing notifications by errandId)
+=======
+=======
+>>>>>>> 05cb6da (UF-10584: Add logic)
+>>>>>>> 13197b9 (UF-10584: Add logic)
     delete:
       tags:
       - Errand attachments
@@ -20061,9 +20579,17 @@ paths:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
 <<<<<<< HEAD
-=======
 <<<<<<< HEAD
 =======
+<<<<<<< HEAD
+<<<<<<< HEAD
+=======
+=======
+=======
+        "204":
+          description: Successful operation
+>>>>>>> 05cb6da (UF-10584: Add logic)
+>>>>>>> 13197b9 (UF-10584: Add logic)
         "404":
           description: Not Found
           content:
@@ -20071,11 +20597,14 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> a5246de (UF-10368: Add new resource for listing notifications by errandId)
 =======
         "204":
           description: Successful operation
 >>>>>>> c8b56ec (UF-10368: Acted on review comnents)
+=======
+>>>>>>> 05cb6da (UF-10584: Add logic)
         "500":
           description: Internal Server error
           content:
@@ -20083,12 +20612,39 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> db09dc6 (UF-10368: Add new resource for listing notifications by errandId)
 =======
 <<<<<<< HEAD
 >>>>>>> 7fe314b (UF-10368: Acted on review comnents)
         "204":
           description: Successful operation
+=======
+<<<<<<< HEAD
+        "204":
+          description: Successful operation
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
+<<<<<<< HEAD
+        "204":
+          description: Successful operation
+<<<<<<< HEAD
+  /{municipalityId}/{namespace}/communication/attachments/{attachmentId}/streamed:
+    get:
+      tags:
+      - MessageAttachments
+      summary: Get a streamed communication attachment.
+      description: Fetches the communication attachment that matches the provided
+        id in a streamed manner
+=======
+=======
+>>>>>>> 05cb6da (UF-10584: Add logic)
+>>>>>>> 13197b9 (UF-10584: Add logic)
   /{municipalityId}/{namespace}/errands/{errandId}/attachments/{attachmentId}/streamed:
     get:
       tags:
@@ -20096,6 +20652,13 @@ paths:
       summary: Get a streamed attachment.
       description: Fetches the attachment that matches the provided id in a streamed
         manner
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> 7a702cb (UF-10584: Add logic)
+=======
+>>>>>>> 05cb6da (UF-10584: Add logic)
+>>>>>>> 13197b9 (UF-10584: Add logic)
       operationId: getMessageAttachmentStreamed_1
       parameters:
       - name: namespace
@@ -20108,18 +20671,57 @@ paths:
         example: my.namespace
       - name: municipalityId
         in: path
+<<<<<<< HEAD
         description: Municipality ID
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+        description: Municipality id
+=======
+        description: Municipality ID
+>>>>>>> 7a702cb (UF-10584: Add logic)
+=======
+        description: Municipality ID
+>>>>>>> 05cb6da (UF-10584: Add logic)
+>>>>>>> 13197b9 (UF-10584: Add logic)
         required: true
         schema:
           type: string
         example: 2281
+<<<<<<< HEAD
       - name: errandId
         in: path
         description: Errand id
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+      - name: attachmentId
+        in: path
+        description: Message attachment ID
+=======
+      - name: errandId
+        in: path
+        description: Errand id
+>>>>>>> 7a702cb (UF-10584: Add logic)
+=======
+      - name: errandId
+        in: path
+        description: Errand id
+>>>>>>> 05cb6da (UF-10584: Add logic)
+>>>>>>> 13197b9 (UF-10584: Add logic)
         required: true
         schema:
           type: string
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+      responses:
+=======
+=======
+>>>>>>> 05cb6da (UF-10584: Add logic)
+>>>>>>> 13197b9 (UF-10584: Add logic)
       - name: attachmentId
         in: path
         description: Errand attachment ID
@@ -20128,6 +20730,20 @@ paths:
           type: string
         example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
       responses:
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+        "200":
+          description: Successful Operation
+>>>>>>> 7a702cb (UF-10584: Add logic)
+=======
+>>>>>>> ea33d37 (UF-10806: Resolve merge conflicts)
+=======
+        "200":
+          description: Successful Operation
+>>>>>>> 05cb6da (UF-10584: Add logic)
+>>>>>>> 13197b9 (UF-10584: Add logic)
         "404":
           description: Not Found
           content:
@@ -20138,6 +20754,7 @@ paths:
         "200":
           description: Successful Operation
 =======
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -20184,7 +20801,12 @@ paths:
 =======
 =======
 >>>>>>> c8b56ec (UF-10368: Acted on review comnents)
+<<<<<<< HEAD
 >>>>>>> 7fe314b (UF-10368: Acted on review comnents)
+=======
+=======
+>>>>>>> 05cb6da (UF-10584: Add logic)
+>>>>>>> 13197b9 (UF-10584: Add logic)
   /namespace-configs:
     get:
       tags:
@@ -20236,6 +20858,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 >>>>>>> c8b56ec (UF-10368: Acted on review comnents)
         "400":
           description: Bad Request
@@ -20331,7 +20954,12 @@ paths:
 =======
 =======
 >>>>>>> c8b56ec (UF-10368: Acted on review comnents)
+<<<<<<< HEAD
 >>>>>>> 7fe314b (UF-10368: Acted on review comnents)
+=======
+=======
+>>>>>>> 05cb6da (UF-10584: Add logic)
+>>>>>>> 13197b9 (UF-10584: Add logic)
         "200":
           description: Successful Operation
           content:
@@ -20356,6 +20984,7 @@ paths:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         "500":
           description: Internal Server Error
           content:
@@ -20371,7 +21000,12 @@ paths:
 >>>>>>> 7a702cb (UF-10584: Add logic)
 =======
 >>>>>>> 4aad4eb (UF-10583: Update API)
+<<<<<<< HEAD
 >>>>>>> 416de18 (UF-10583: Update API)
+=======
+=======
+>>>>>>> 05cb6da (UF-10584: Add logic)
+>>>>>>> 13197b9 (UF-10584: Add logic)
         "400":
           description: Bad Request
           content:
@@ -20382,6 +21016,7 @@ paths:
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
 <<<<<<< HEAD
 =======
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -20412,7 +21047,12 @@ paths:
 =======
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
+<<<<<<< HEAD
 >>>>>>> 1f8513d (UF-10583: Acted on review comments)
+=======
+=======
+>>>>>>> 05cb6da (UF-10584: Add logic)
+>>>>>>> 13197b9 (UF-10584: Add logic)
   /api-docs:
     get:
       tags:
