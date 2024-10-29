@@ -8,6 +8,7 @@ import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.zalando.problem.Status.BAD_GATEWAY;
 import static org.zalando.problem.Status.BAD_REQUEST;
+import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
 import static org.zalando.problem.Status.NOT_FOUND;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapper.toAttachmentEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapper.toErrandAttachmentHeaders;
@@ -19,15 +20,14 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import jakarta.persistence.EntityManager;
-import jakarta.servlet.http.HttpServletResponse;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StreamUtils;
 import org.springframework.web.multipart.MultipartFile;
 import org.zalando.problem.Problem;
 
+import jakarta.persistence.EntityManager;
+import jakarta.servlet.http.HttpServletResponse;
 import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachmentHeader;
 import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
@@ -39,23 +39,15 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 public class ErrandAttachmentService {
 
 	private static final String ERRAND_ENTITY_NOT_FOUND = "An errand with id '%s' could not be found in namespace '%s' for municipality with id '%s'";
-
 	private static final String ATTACHMENT_ENTITY_NOT_FOUND = "An attachment with id '%s' could not be found on errand with id '%s'";
-
 	private static final String ATTACHMENT_ENTITY_NOT_CREATED = "Attachment could not be created";
-
 	private static final String EVENT_LOG_ADD_ATTACHMENT = "En bilaga har lagts till i ärendet.";
-
 	private static final String EVENT_LOG_REMOVE_ATTACHMENT = "En bilaga har tagits bort från ärendet.";
 
 	private final ErrandsRepository errandsRepository;
-
 	private final AttachmentRepository attachmentRepository;
-
 	private final RevisionService revisionService;
-
 	private final EventService eventService;
-
 	private final EntityManager entityManager;
 
 	public ErrandAttachmentService(final ErrandsRepository errandsRepository,
@@ -66,6 +58,13 @@ public class ErrandAttachmentService {
 		this.eventService = eventService;
 		this.attachmentRepository = attachmentRepository;
 		this.entityManager = entityManager;
+	}
+
+	public void getAttachmentStreamed(final String namespace, final String municipalityId, final String errandId, final String attachmentId, final HttpServletResponse response) {
+		final var attachment = attachmentRepository.findByNamespaceAndMunicipalityIdAndErrandEntityIdAndId(namespace, municipalityId, errandId, attachmentId)
+			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, ATTACHMENT_ENTITY_NOT_FOUND.formatted(attachmentId, errandId)));
+
+		streamAttachmentData(attachment, response);
 	}
 
 	public String createErrandAttachment(final String namespace, final String municipalityId, final String errandId, final MultipartFile errandAttachment) {
@@ -79,7 +78,6 @@ public class ErrandAttachmentService {
 
 		// Update errand with new attachment and create new revision
 		final var revisionResult = revisionService.createErrandRevision(errandEntity);
-
 
 		// Create log event
 		eventService.createErrandEvent(UPDATE, EVENT_LOG_ADD_ATTACHMENT, errandEntity, revisionResult.latest(), revisionResult.previous());
@@ -161,4 +159,16 @@ public class ErrandAttachmentService {
 		return attachments;
 	}
 
+	void streamAttachmentData(final AttachmentEntity attachment, final HttpServletResponse response) {
+		try {
+			final var file = attachment.getAttachmentData().getFile();
+
+			response.addHeader(CONTENT_TYPE, attachment.getMimeType());
+			response.addHeader(CONTENT_DISPOSITION, "attachment; filename=\"" + attachment.getFileName() + "\"");
+			response.setContentLength((int) file.length());
+			StreamUtils.copy(file.getBinaryStream(), response.getOutputStream());
+		} catch (final IOException | SQLException e) {
+			throw Problem.valueOf(INTERNAL_SERVER_ERROR, "%s occurred when copying file with attachment id '%s' to response: %s".formatted(e.getClass().getSimpleName(), attachment.getId(), e.getMessage()));
+		}
+	}
 }

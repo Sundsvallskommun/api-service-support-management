@@ -134,6 +134,6 @@ class ErrandCommunicationResource {
 		@Parameter(name = "attachmentId", description = "Message attachment ID", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable final String attachmentId,
 		final HttpServletResponse response) {
 
-		service.getMessageAttachmentStreamed(namespace, municipalityId, attachmentId, response);
+		service.getMessageAttachmentStreamed(namespace, municipalityId, errandId, communicationId, attachmentId, response);
 	}
 }
