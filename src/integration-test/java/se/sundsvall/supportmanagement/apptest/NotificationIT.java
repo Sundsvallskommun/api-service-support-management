@@ -62,7 +62,7 @@ class NotificationIT extends AbstractAppTest {
 	}
 
 	@Test
-	void test02_getNotification() {
+	void test02_getNotificationsByOwnerId() {
 		setupCall()
 			.withServicePath(GLOBAL_NOTIFICATIONS_PATH + "?ownerId=" + OWNER_ID)
 			.withHttpMethod(GET)
@@ -94,9 +94,19 @@ class NotificationIT extends AbstractAppTest {
 	}
 
 	@Test
-	void test05_getNotification() {
+	void test05_getNotificationById() {
 		setupCall()
 			.withServicePath(ERRAND_NOTIFICATIONS_PATH + "/" + NOTIFICATION_ID)
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	void test06_getNotificationsByErrandId() {
+		setupCall()
+			.withServicePath(ERRAND_NOTIFICATIONS_PATH)
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponse(RESPONSE_FILE)
