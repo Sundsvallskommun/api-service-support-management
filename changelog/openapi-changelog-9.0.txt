@@ -3,10 +3,14 @@
 ==============================================
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 [api-path-removed-without-deprecation]
 =======
 api-path-removed-without-deprecation]
 >>>>>>> 421bb26 (UF-10590: Add API changelog)
+=======
+[api-path-removed-without-deprecation]
+>>>>>>> f9dfbad (UF-10590:)
 in API GET /namespaceConfigs
 api path removed without deprecation
  
