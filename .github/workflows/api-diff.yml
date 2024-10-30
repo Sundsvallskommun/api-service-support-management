@@ -1,13 +1,13 @@
 name: Diff API documentation
 
 on:
+  workflow_dispatch:
   pull_request_target:
     branches:
-      - 9.0 # ← Change this to the name of your target main branch
+      - main # ← Change this to the name of your target main branch
 
 jobs:
   public-api-diff:
-    if: ${{ github.event_name == 'pull_request_target' }}
     name: Check public API diff on Bump
     runs-on: ubuntu-latest
     steps:
