@@ -2,7 +2,7 @@
 = Changes between openAPI version 8.2 and 9.0
 ==============================================
 
-api-path-removed-without-deprecation]
+[api-path-removed-without-deprecation]
 in API GET /namespaceConfigs
 api path removed without deprecation
  
