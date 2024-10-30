@@ -2,7 +2,11 @@
 = Changes between openAPI version 8.2 and 9.0
 ==============================================
 
+<<<<<<< HEAD
 [api-path-removed-without-deprecation]
+=======
+api-path-removed-without-deprecation]
+>>>>>>> 421bb26 (UF-10590: Add API changelog)
 in API GET /namespaceConfigs
 api path removed without deprecation
  
@@ -10,7 +14,11 @@ api path removed without deprecation
 in API GET /{municipalityId}/{namespace}/communication/attachments/{attachmentID}/streamed
 api path removed without deprecation
  
+<<<<<<< HEAD
 [api-path-removed-without-deprecation]
+=======
+error [api-path-removed-without-deprecation]
+>>>>>>> 421bb26 (UF-10590: Add API changelog)
 in API DELETE /{municipalityId}/{namespace}/emailIntegrationConfig
 api path removed without deprecation
  
@@ -26,6 +34,7 @@ api path removed without deprecation
 in API PUT /{municipalityId}/{namespace}/emailIntegrationConfig
 api path removed without deprecation
  
+<<<<<<< HEAD
 [response-media-type-removed]
 in API GET /{municipalityId}/{namespace}/errands
 removed the media type 'application/problem+json' for the response with the status '200'
@@ -54,10 +63,13 @@ removed the media type 'application/problem+json' for the response with the stat
 in API PATCH /{municipalityId}/{namespace}/errands/{errandId}/parameters/{parameterKey}
 removed the media type 'application/problem+json' for the response with the status '200'
  
+=======
+>>>>>>> 421bb26 (UF-10590: Add API changelog)
 [api-path-removed-without-deprecation]
 in API GET /{municipalityId}/{namespace}/errands/{errandId}/timeMeasure
 api path removed without deprecation
  
+<<<<<<< HEAD
 [response-media-type-removed]
 in API GET /{municipalityId}/{namespace}/errands/{id}
 removed the media type 'application/problem+json' for the response with the status '200'
@@ -146,6 +158,8 @@ for the 'path' request parameter 'reason', the type/format was changed from 'str
 in API PATCH /{municipalityId}/{namespace}/metadata/contactreasons/{reason}
 for the 'path' request parameter 'reason', the type/format was changed from 'string'/'' to 'integer'/'int64'
  
+=======
+>>>>>>> 421bb26 (UF-10590: Add API changelog)
 [api-path-removed-without-deprecation]
 in API GET /{municipalityId}/{namespace}/metadata/externalIdTypes
 api path removed without deprecation
@@ -162,6 +176,7 @@ api path removed without deprecation
 in API GET /{municipalityId}/{namespace}/metadata/externalIdTypes/{externalIdType}
 api path removed without deprecation
  
+<<<<<<< HEAD
 [response-media-type-removed]
 in API GET /{municipalityId}/{namespace}/metadata/labels
 removed the media type 'application/problem+json' for the response with the status '200'
@@ -182,6 +197,8 @@ removed the media type 'application/problem+json' for the response with the stat
 in API GET /{municipalityId}/{namespace}/metadata/statuses/{status}
 removed the media type 'application/problem+json' for the response with the status '200'
  
+=======
+>>>>>>> 421bb26 (UF-10590: Add API changelog)
 [api-path-removed-without-deprecation]
 in API DELETE /{municipalityId}/{namespace}/namespaceConfig
 api path removed without deprecation
@@ -198,10 +215,13 @@ api path removed without deprecation
 in API PUT /{municipalityId}/{namespace}/namespaceConfig
 api path removed without deprecation
  
+<<<<<<< HEAD
 [response-media-type-removed]
 in API GET /{municipalityId}/{namespace}/notifications
 removed the media type '*/*' for the response with the status '200'
  
+=======
+>>>>>>> 421bb26 (UF-10590: Add API changelog)
 [api-removed-without-deprecation]
 in API POST /{municipalityId}/{namespace}/notifications
 api removed without deprecation
@@ -214,6 +234,7 @@ api path removed without deprecation
 in API GET /{municipalityId}/{namespace}/notifications/{notificationId}
 api path removed without deprecation
  
+<<<<<<< HEAD
 [response-optional-property-removed]
 in API GET /{municipalityId}/{namespace}/errands
 removed the optional property 'content/items/stakeholders/items/metadata' from the response with the '200' status
@@ -234,6 +255,8 @@ removed the request property 'stakeholders/items/metadata'
 in API PATCH /{municipalityId}/{namespace}/errands/{id}
 removed the optional property 'stakeholders/items/metadata' from the response with the '200' status
  
+=======
+>>>>>>> 421bb26 (UF-10590: Add API changelog)
 [endpoint-added]
 in API GET /namespace-configs
 endpoint added
@@ -254,6 +277,7 @@ endpoint added
 in API PUT /{municipalityId}/{namespace}/email-integration-config
 endpoint added
  
+<<<<<<< HEAD
 [response-optional-property-added]
 in API GET /{municipalityId}/{namespace}/errands
 added the optional property 'content/items/stakeholders/items/parameters' to the response with the '200' status
@@ -266,6 +290,8 @@ added the new optional request property 'stakeholders/items/parameters'
 in API POST /{municipalityId}/{namespace}/errands
 the 'contactReasonDescription' request property's maxLength was increased from '255' to '4096'
  
+=======
+>>>>>>> 421bb26 (UF-10590: Add API changelog)
 [endpoint-added]
 in API GET /{municipalityId}/{namespace}/errands/{errandId}/attachments/{attachmentId}/streamed
 endpoint added
@@ -294,6 +320,7 @@ endpoint added
 in API GET /{municipalityId}/{namespace}/errands/{errandId}/time-measure
 endpoint added
  
+<<<<<<< HEAD
 [response-optional-property-added]
 in API GET /{municipalityId}/{namespace}/errands/{id}
 added the optional property 'stakeholders/items/parameters' to the response with the '200' status
@@ -318,6 +345,8 @@ added the optional property 'contactReasons/items/id' to the response with the '
 in API GET /{municipalityId}/{namespace}/metadata
 added the optional property 'roles/items/displayName' to the response with the '200' status
  
+=======
+>>>>>>> 421bb26 (UF-10590: Add API changelog)
 [endpoint-added]
 in API GET /{municipalityId}/{namespace}/metadata/external-id-types
 endpoint added
@@ -334,6 +363,7 @@ endpoint added
 in API GET /{municipalityId}/{namespace}/metadata/external-id-types/{externalIdType}
 endpoint added
  
+<<<<<<< HEAD
 [response-optional-property-added]
 in API GET /{municipalityId}/{namespace}/metadata/roles
 added the optional property '/items/displayName' to the response with the '200' status
@@ -346,6 +376,8 @@ added the new optional request property 'displayName'
 in API GET /{municipalityId}/{namespace}/metadata/roles/{role}
 added the optional property 'displayName' to the response with the '200' status
  
+=======
+>>>>>>> 421bb26 (UF-10590: Add API changelog)
 [endpoint-added]
 in API DELETE /{municipalityId}/{namespace}/namespace-config
 endpoint added
@@ -366,9 +398,15 @@ endpoint added
 in API GET /{municipalityId}/{namespace}/notifications
 api operation id 'getNotifications' removed and replaced with 'getNotificationsByOwnerId'
  
+<<<<<<< HEAD
 [response-media-type-added]
 in API GET /{municipalityId}/{namespace}/notifications
 added the media type 'application/json' for the response with the status '200'
+=======
+[response-optional-property-became-read-only]
+in API GET /{municipalityId}/{namespace}/notifications
+the response optional property '/items/errandId' became read-only for the status '200'
+>>>>>>> 421bb26 (UF-10590: Add API changelog)
  
 [request-optional-property-became-read-only]
 in API PATCH /{municipalityId}/{namespace}/notifications
