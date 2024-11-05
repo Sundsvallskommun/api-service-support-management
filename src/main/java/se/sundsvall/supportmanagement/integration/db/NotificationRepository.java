@@ -12,6 +12,14 @@ import java.util.Optional;
 @CircuitBreaker(name = "notificationRepository")
 public interface NotificationRepository extends JpaRepository<NotificationEntity, String> {
 
+	boolean existsByNamespaceAndMunicipalityIdAndOwnerIdAndErrandEntityAndDescriptionAndCreatedIsAfter(
+		final String namespace,
+		final String municipalityId,
+		final String ownerId,
+		final ErrandEntity errandEntity,
+		final String description,
+		final OffsetDateTime created);
+
 	boolean existsByIdAndNamespaceAndMunicipalityId(String id, String namespace, String municipalityId);
 
 	Optional<NotificationEntity> findByIdAndNamespaceAndMunicipalityId(String id, String namespace, String municipalityId);
@@ -22,7 +30,4 @@ public interface NotificationRepository extends JpaRepository<NotificationEntity
 		final String type);
 
 	List<NotificationEntity> findByExpiresBefore(final OffsetDateTime expires);
-
-	boolean existsByNamespaceAndMunicipalityIdAndOwnerIdAndErrandEntityAndDescription(String namespace, String municipalityId, String ownerId, ErrandEntity errandEntity, String description);
-
 }

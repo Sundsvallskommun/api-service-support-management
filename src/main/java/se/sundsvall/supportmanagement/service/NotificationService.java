@@ -10,6 +10,7 @@ import se.sundsvall.supportmanagement.integration.db.NotificationRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.service.mapper.NotificationMapper;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Objects;
 
@@ -75,12 +76,14 @@ public class NotificationService {
 			.isPresent();
 	}
 
-	public boolean doesNotificationWithSpecificDescriptionExistForOwnerAndErrand(final String municipalityId, final String namespace, final String ownerId, final ErrandEntity errandEntity, final String description) {
-		return notificationRepository.existsByNamespaceAndMunicipalityIdAndOwnerIdAndErrandEntityAndDescription(namespace,
+	public boolean doesNotificationWithSpecificDescriptionExistForOwnerAndErrandAndNotificationIsCreatedAfter(final String municipalityId, final String namespace, final String ownerId, final ErrandEntity errandEntity, final String description,
+		final OffsetDateTime created) {
+		return notificationRepository.existsByNamespaceAndMunicipalityIdAndOwnerIdAndErrandEntityAndDescriptionAndCreatedIsAfter(namespace,
 			municipalityId,
 			ownerId,
 			errandEntity,
-			description);
+			description,
+			created);
 	}
 
 	@Transactional
