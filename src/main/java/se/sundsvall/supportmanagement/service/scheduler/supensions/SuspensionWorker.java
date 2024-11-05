@@ -33,7 +33,7 @@ public class SuspensionWorker {
 			.findAllBySuspendedToBefore(now())
 			.forEach(entity -> {
 
-				if (!entity.getStatus().equals("SUSPENDED")) {
+				if (!"SUSPENDED".equals(entity.getStatus())) {
 					return;
 				}
 
