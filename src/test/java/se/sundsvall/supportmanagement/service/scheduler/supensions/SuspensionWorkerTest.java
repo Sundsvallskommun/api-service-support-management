@@ -57,6 +57,7 @@ class SuspensionWorkerTest {
 			.withSuspendedFrom(OffsetDateTime.now().minusDays(1))
 			.withSuspendedTo(OffsetDateTime.now().minusHours(1))
 			.withPreviousStatus(previousStatus)
+			.withStatus("SUSPENDED")
 			.withMunicipalityId(municipalityId);
 
 		final var owner = new PortalPersonData().fullname("ownerFullName");
@@ -110,6 +111,7 @@ class SuspensionWorkerTest {
 			.withMunicipalityId(municipalityId)
 			.withSuspendedFrom(OffsetDateTime.now().minusDays(1))
 			.withSuspendedTo(OffsetDateTime.now().minusHours(1))
+			.withStatus("SUSPENDED")
 			.withMunicipalityId(municipalityId);
 
 		when(notificationServiceMock.doesNotificationWithSpecificDescriptionExistForOwnerAndErrandAndNotificationIsCreatedAfter(municipalityId, namespace, errandEntity.getAssignedUserId(), errandEntity, "Parkering av ärendet har upphört",
@@ -138,6 +140,7 @@ class SuspensionWorkerTest {
 			.withMunicipalityId(municipalityId)
 			.withSuspendedFrom(OffsetDateTime.now().minusDays(1))
 			.withSuspendedTo(OffsetDateTime.now().minusHours(1))
+			.withStatus("SUSPENDED")
 			.withMunicipalityId(municipalityId);
 
 		final var owner = new PortalPersonData().fullname("ownerFullName");
