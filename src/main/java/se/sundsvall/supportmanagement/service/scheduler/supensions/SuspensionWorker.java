@@ -32,7 +32,13 @@ public class SuspensionWorker {
 		errandsRepository
 			.findAllBySuspendedToBefore(now())
 			.forEach(entity -> {
-				if (!notificationService.doesNotificationWithSpecificDescriptionExistForOwnerAndErrand(entity.getMunicipalityId(), entity.getNamespace(), entity.getAssignedUserId(), entity, NOTIFICATION_MESSAGE)) {
+
+				if (!"SUSPENDED".equals(entity.getStatus())) {
+					return;
+				}
+
+				if (!notificationService.doesNotificationWithSpecificDescriptionExistForOwnerAndErrandAndNotificationIsCreatedAfter(entity.getMunicipalityId(), entity.getNamespace(), entity.getAssignedUserId(), entity, NOTIFICATION_MESSAGE,
+					entity.getSuspendedFrom())) {
 					notificationService
 						.createNotification(entity.getMunicipalityId(), entity.getNamespace(), createNotification(entity));
 				}
