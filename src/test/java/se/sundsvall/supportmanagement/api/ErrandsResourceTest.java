@@ -46,6 +46,7 @@ import se.sundsvall.supportmanagement.api.model.errand.Stakeholder;
 import se.sundsvall.supportmanagement.api.model.errand.Suspension;
 import se.sundsvall.supportmanagement.api.model.metadata.Category;
 import se.sundsvall.supportmanagement.api.model.metadata.ContactReason;
+import se.sundsvall.supportmanagement.api.model.metadata.Role;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
 import se.sundsvall.supportmanagement.api.model.metadata.Type;
 import se.sundsvall.supportmanagement.service.ErrandService;
@@ -79,7 +80,7 @@ class ErrandsResourceTest {
 			.withAssignedGroupId("assignedGroupId")
 			.withAssignedUserId("assignedUserId")
 			.withClassification(Classification.create().withCategory("category_1").withType("type_1"))
-			.withStakeholders(withStakeholder ? List.of(Stakeholder.create().withExternalId(randomUUID().toString()).withExternalIdType("ENTERPRISE")) : null)
+			.withStakeholders(withStakeholder ? List.of(Stakeholder.create().withExternalId(randomUUID().toString()).withExternalIdType("ENTERPRISE").withRole("ROLE_1")) : null)
 			.withExternalTags(List.of(ExternalTag.create().withKey("externalTagKey").withValue("externalTagValue")))
 			.withPriority(Priority.HIGH)
 			.withReporterUserId(reporterUserId)
@@ -98,6 +99,7 @@ class ErrandsResourceTest {
 		when(metadataServiceMock.findStatuses(any(), any())).thenReturn(List.of(Status.create().withName("STATUS_1"), Status.create().withName("STATUS_2")));
 		when(metadataServiceMock.findTypes(any(), any(), any())).thenReturn(List.of(Type.create().withName("TYPE_1"), Type.create().withName("TYPE_2")));
 		when(metadataServiceMock.findContactReasons(any(), any())).thenReturn(List.of(ContactReason.create().withReason("REASON_1"), ContactReason.create().withReason("REASON_2")));
+		when(metadataServiceMock.findRoles(any(), any())).thenReturn(List.of(Role.create().withName("ROLE_1")));
 	}
 
 	@Test
@@ -123,6 +125,7 @@ class ErrandsResourceTest {
 		verify(metadataServiceMock).findCategories(any(), any());
 		verify(metadataServiceMock).findStatuses(any(), any());
 		verify(metadataServiceMock).findTypes(any(), any(), any());
+		verify(metadataServiceMock).findRoles(NAMESPACE, MUNICIPALITY_ID);
 		verify(errandServiceMock).createErrand(NAMESPACE, MUNICIPALITY_ID, errandInstance);
 	}
 
@@ -279,10 +282,10 @@ class ErrandsResourceTest {
 
 		// Call
 		final var response = webTestClient.get().uri(builder -> builder.path(PATH)
-			.queryParam("filter", filter)
-			.queryParam("page", page)
-			.queryParam("size", size)
-			.build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+				.queryParam("filter", filter)
+				.queryParam("page", page)
+				.queryParam("size", size)
+				.build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
 			.exchange()
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)
