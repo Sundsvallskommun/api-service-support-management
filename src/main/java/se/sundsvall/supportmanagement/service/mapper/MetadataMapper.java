@@ -139,7 +139,8 @@ public class MetadataMapper {
 			.map(e -> Role.create()
 				.withCreated(e.getCreated())
 				.withModified(e.getModified())
-				.withName(e.getName()))
+				.withName(e.getName())
+				.withDisplayName(e.getDisplayName()))
 			.orElse(null);
 	}
 
@@ -151,6 +152,7 @@ public class MetadataMapper {
 		return RoleEntity.create()
 			.withMunicipalityId(municipalityId)
 			.withName(role.getName())
+			.withDisplayName(role.getDisplayName())
 			.withNamespace(namespace);
 	}
 
@@ -198,7 +200,7 @@ public class MetadataMapper {
 		var updatedTypes = toTypeEntities(types);
 		updatedTypes.stream()
 			.filter(type -> existingTypes.containsKey(type.getName()))
-			.forEach(type ->  {
+			.forEach(type -> {
 				type.setId(existingTypes.get(type.getName()).getId());
 				type.setCreated(existingTypes.get(type.getName()).getCreated());
 			});

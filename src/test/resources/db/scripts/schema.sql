@@ -246,6 +246,7 @@
         created datetime(6),
         id bigint not null auto_increment,
         modified datetime(6),
+        display_name varchar(255),
         municipality_id varchar(255) not null,
         name varchar(255) not null,
         namespace varchar(255) not null,
