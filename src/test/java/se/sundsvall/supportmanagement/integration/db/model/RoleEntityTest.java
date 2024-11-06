@@ -44,6 +44,7 @@ class RoleEntityTest {
 		final var modified = OffsetDateTime.now();
 		final var municipalityId = "municipalityId";
 		final var name = "name";
+		final var displayName = "displayName";
 		final var namespace = "namespace";
 
 		final var entity = RoleEntity.create()
@@ -52,6 +53,7 @@ class RoleEntityTest {
 			.withModified(modified)
 			.withMunicipalityId(municipalityId)
 			.withName(name)
+			.withDisplayName(displayName)
 			.withNamespace(namespace);
 
 		assertThat(entity).hasNoNullFieldsOrProperties();
@@ -60,6 +62,7 @@ class RoleEntityTest {
 		assertThat(entity.getModified()).isEqualTo(modified);
 		assertThat(entity.getMunicipalityId()).isEqualTo(municipalityId);
 		assertThat(entity.getName()).isEqualTo(name);
+		assertThat(entity.getDisplayName()).isEqualTo(displayName);
 		assertThat(entity.getNamespace()).isEqualTo(namespace);
 	}
 

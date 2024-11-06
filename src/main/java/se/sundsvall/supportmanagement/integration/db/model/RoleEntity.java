@@ -39,6 +39,9 @@ public class RoleEntity {
 	@Column(name = "name", nullable = false)
 	private String name;
 
+	@Column(name = "display_name")
+	private String displayName;
+
 	@Column(name = "municipality_id", nullable = false)
 	private String municipalityId;
 
@@ -80,6 +83,19 @@ public class RoleEntity {
 
 	public RoleEntity withName(final String name) {
 		this.name = name;
+		return this;
+	}
+
+	public String getDisplayName() {
+		return displayName;
+	}
+
+	public void setDisplayName(String displayName) {
+		this.displayName = displayName;
+	}
+
+	public RoleEntity withDisplayName(String displayName) {
+		this.displayName = displayName;
 		return this;
 	}
 
@@ -147,7 +163,7 @@ public class RoleEntity {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(created, id, modified, municipalityId, name, namespace);
+		return Objects.hash(created, id, modified, municipalityId, name, namespace, displayName);
 	}
 
 	@Override
@@ -159,13 +175,20 @@ public class RoleEntity {
 			return false;
 		}
 		return Objects.equals(created, other.created) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(municipalityId, other.municipalityId) && Objects.equals(name, other.name) && Objects.equals(namespace,
-			other.namespace);
+			other.namespace) && Objects.equals(displayName, other.displayName);
 	}
 
 	@Override
 	public String toString() {
 		final StringBuilder builder = new StringBuilder();
-		builder.append("RoleEntity [id=").append(id).append(", name=").append(name).append(", municipalityId=").append(municipalityId).append(", namespace=").append(namespace).append(", created=").append(created).append(", modified=").append(modified)
+		builder.append("RoleEntity [id=").append(id)
+			.append(", name=").append(name)
+			.append(", displayName=").append(displayName)
+			.append(", municipalityId=").append(municipalityId)
+			.append(", namespace=").append(namespace)
+			.append(", created=").append(created)
+			.append(", modified=")
+			.append(modified)
 			.append("]");
 		return builder.toString();
 	}

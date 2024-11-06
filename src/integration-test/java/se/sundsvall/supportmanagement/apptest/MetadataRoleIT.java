@@ -116,4 +116,20 @@ class MetadataRoleIT extends AbstractAppTest {
 		assertThat(roleRepository.count()).isEqualTo(5);
 	}
 
+	@Test
+	void test06_createRoleWithDisplayName() {
+		assertThat(roleRepository.existsByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_2281, "ROLE_WITH_DISPLAY_NAME")).isFalse();
+
+		setupCall()
+			.withServicePath(PATH)
+			.withHttpMethod(POST)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(CREATED)
+			.withExpectedResponseHeader(LOCATION, List.of("/" + MUNICIPALITY_2281 + "/" + NAMESPACE + "/metadata/roles/ROLE_WITH_DISPLAY_NAME"))
+			.withExpectedResponseBodyIsNull()
+			.sendRequestAndVerifyResponse();
+
+		assertThat(roleRepository.existsByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_2281, "ROLE_WITH_DISPLAY_NAME")).isTrue();
+		assertThat(roleRepository.getByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_2281, "ROLE_WITH_DISPLAY_NAME").getDisplayName()).isEqualTo("Display name of role");
+	}
 }

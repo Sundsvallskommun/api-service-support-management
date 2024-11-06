@@ -87,13 +87,13 @@ class MetadataMapperTest {
 			Arguments.of("namespace", null, Category.create().withName("name"), null),
 			Arguments.of(null, "municipalityId", Category.create().withName("name"), null),
 			Arguments.of("namespace", "municipalityId", Category.create()
-				.withName("categoryName")
-				.withDisplayName("categoryDisplayName")
-				.withTypes(List.of(
-					Type.create()
-						.withName("typeName")
-						.withDisplayName("typeDisplayName")
-						.withEscalationEmail("typeEscalationEmail"))),
+					.withName("categoryName")
+					.withDisplayName("categoryDisplayName")
+					.withTypes(List.of(
+						Type.create()
+							.withName("typeName")
+							.withDisplayName("typeDisplayName")
+							.withEscalationEmail("typeEscalationEmail"))),
 				CategoryEntity.create()
 					.withNamespace("namespace")
 					.withMunicipalityId("municipalityId")
@@ -207,17 +207,20 @@ class MetadataMapperTest {
 		final var created = OffsetDateTime.now().minusDays(1);
 		final var modified = OffsetDateTime.now();
 		final var name = "roleName";
+		final var displayName = "displayName";
 
 		final var entity = RoleEntity.create()
 			.withCreated(created)
 			.withModified(modified)
-			.withName(name);
+			.withName(name)
+			.withDisplayName(displayName);
 
 		final var bean = MetadataMapper.toRole(entity);
 
 		assertThat(bean.getCreated()).isEqualTo(created);
 		assertThat(bean.getModified()).isEqualTo(modified);
 		assertThat(bean.getName()).isEqualTo(name);
+		assertThat(bean.getDisplayName()).isEqualTo(displayName);
 	}
 
 	@Test
@@ -241,7 +244,8 @@ class MetadataMapperTest {
 			Arguments.of("namespace", "municipalityId", null, null),
 			Arguments.of("namespace", null, Role.create().withName("name"), null),
 			Arguments.of(null, "municipalityId", Role.create().withName("name"), null),
-			Arguments.of("namespace", "municipalityId", Role.create().withName("name"), RoleEntity.create().withNamespace("namespace").withMunicipalityId("municipalityId").withName("name")));
+			Arguments.of("namespace", "municipalityId", Role.create().withName("name"), RoleEntity.create().withNamespace("namespace").withMunicipalityId("municipalityId").withName("name")),
+			Arguments.of("namespace", "municipalityId", Role.create().withName("name").withDisplayName("displayName"), RoleEntity.create().withNamespace("namespace").withMunicipalityId("municipalityId").withName("name").withDisplayName("displayName")));
 	}
 
 	private static CategoryEntity createCategoryEntity(final OffsetDateTime categoryCreated, final String categoryDisplayName, final OffsetDateTime categoryModified, final String categoryName,
