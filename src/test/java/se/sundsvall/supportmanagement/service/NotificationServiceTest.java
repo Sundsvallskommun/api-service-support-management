@@ -232,9 +232,6 @@ class NotificationServiceTest {
 		final var municipalityId = "2281";
 		final var namespace = "namespace";
 		final var notificationId = randomUUID().toString();
-
-		when(notificationRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(notificationId, namespace, municipalityId)).thenReturn(true);
-
 		final var errandId = randomUUID().toString();
 
 		when(notificationRepositoryMock.existsByIdAndNamespaceAndMunicipalityIdAndErrandEntityId(notificationId, namespace, municipalityId, errandId)).thenReturn(true);
