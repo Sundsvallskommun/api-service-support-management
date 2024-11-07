@@ -52,9 +52,7 @@ class MetadataExternalIdTypeResource {
 		this.metadataService = metadataService;
 	}
 
-	@PostMapping(consumes = APPLICATION_JSON_VALUE, produces = {
-		APPLICATION_PROBLEM_JSON_VALUE
-	})
+	@PostMapping(consumes = APPLICATION_JSON_VALUE, produces = ALL_VALUE)
 	@Operation(summary = "Create externalIdType", description = "Create new externalIdType for the namespace and municipality")
 	@ApiResponse(responseCode = "201", headers = @Header(name = LOCATION, schema = @Schema(type = "string")), description = "Successful operation", useReturnTypeSchema = true)
 	@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
@@ -72,9 +70,7 @@ class MetadataExternalIdTypeResource {
 			.build();
 	}
 
-	@GetMapping(path = "/{externalIdType}", produces = {
-		APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE
-	})
+	@GetMapping(path = "/{externalIdType}", produces = APPLICATION_JSON_VALUE)
 	@Operation(summary = "Get externalIdType", description = "Get externalIdType matching sent in namespace, municipality and externalIdType")
 	@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true)
 	@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
@@ -90,9 +86,7 @@ class MetadataExternalIdTypeResource {
 		return ok(metadataService.getExternalIdType(namespace, municipalityId, externalIdType));
 	}
 
-	@GetMapping(produces = {
-		APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE
-	})
+	@GetMapping(produces = APPLICATION_JSON_VALUE)
 	@Operation(summary = "Get externalIdTypes", description = "Get all externalIdTypes for the namespace and municipality")
 	@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true)
 	@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
@@ -106,9 +100,7 @@ class MetadataExternalIdTypeResource {
 		return ok(metadataService.findExternalIdTypes(namespace, municipalityId));
 	}
 
-	@DeleteMapping(path = "/{externalIdType}", produces = {
-		APPLICATION_PROBLEM_JSON_VALUE
-	})
+	@DeleteMapping(path = "/{externalIdType}", produces = ALL_VALUE)
 	@Operation(summary = "Delete externalIdType", description = "Delete externalid type matching namespace, municipality and externalIdType")
 	@ApiResponse(responseCode = "204", description = "Successful operation", useReturnTypeSchema = true)
 	@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {

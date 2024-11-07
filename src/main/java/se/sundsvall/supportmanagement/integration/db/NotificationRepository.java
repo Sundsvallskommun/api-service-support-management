@@ -22,15 +22,6 @@ public interface NotificationRepository extends JpaRepository<NotificationEntity
 		final String description,
 		final OffsetDateTime created);
 
-	boolean existsByIdAndNamespaceAndMunicipalityId(String id, String namespace, String municipalityId);
-
-	boolean existsByNamespaceAndMunicipalityIdAndOwnerIdAndErrandEntityAndDescription(
-		final String namespace,
-		final String municipalityId,
-		final String ownerId,
-		final ErrandEntity errandEntity,
-		final String description);
-
 	Optional<NotificationEntity> findByIdAndNamespaceAndMunicipalityIdAndErrandEntityId(
 		final String id,
 		final String namespace,

@@ -56,9 +56,7 @@ class ErrandCommunicationResource {
 	}
 
 	@Operation(description = "Get all communications for an errand.")
-	@GetMapping(produces = {
-		APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE
-	})
+	@GetMapping(produces = APPLICATION_JSON_VALUE)
 	@ApiResponse(responseCode = "200", description = "OK - Successful operation", useReturnTypeSchema = true)
 	ResponseEntity<List<Communication>> getCommunications(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
@@ -69,9 +67,7 @@ class ErrandCommunicationResource {
 	}
 
 	@Operation(description = "Set viewed status for communication.")
-	@PutMapping(path = "/{communicationId}/viewed/{isViewed}", produces = {
-		APPLICATION_PROBLEM_JSON_VALUE
-	})
+	@PutMapping(path = "/{communicationId}/viewed/{isViewed}", produces = ALL_VALUE)
 	@ApiResponse(responseCode = "204", description = "No content - Successful operation", useReturnTypeSchema = true)
 	ResponseEntity<Void> updateViewedStatus(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
@@ -86,9 +82,7 @@ class ErrandCommunicationResource {
 			.build();
 	}
 
-	@PostMapping(path = "/email", consumes = APPLICATION_JSON_VALUE, produces = {
-		ALL_VALUE, APPLICATION_PROBLEM_JSON_VALUE
-	})
+	@PostMapping(path = "/email", consumes = APPLICATION_JSON_VALUE, produces = ALL_VALUE)
 	@Operation(summary = "Send email to in context of an errand", description = "Sends an email message to the recipient specified in the request")
 	@ApiResponse(responseCode = "204", description = "Successful operation", useReturnTypeSchema = true)
 	ResponseEntity<Void> sendEmail(
@@ -103,9 +97,7 @@ class ErrandCommunicationResource {
 			.build();
 	}
 
-	@PostMapping(path = "/sms", consumes = APPLICATION_JSON_VALUE, produces = {
-		ALL_VALUE, APPLICATION_PROBLEM_JSON_VALUE
-	})
+	@PostMapping(path = "/sms", consumes = APPLICATION_JSON_VALUE, produces = ALL_VALUE)
 	@Operation(summary = "Send sms to in context of an errand", description = "Sends a sms message to the recipient specified in the request")
 	@ApiResponse(responseCode = "204", description = "Successful operation", useReturnTypeSchema = true)
 	ResponseEntity<Void> sendSms(
@@ -121,9 +113,7 @@ class ErrandCommunicationResource {
 	}
 
 	@Operation(summary = "Get a streamed communication attachment.", description = "Fetches the communication attachment that matches the provided id in a streamed manner")
-	@GetMapping(path = "/{communicationId}/attachments/{attachmentId}/streamed", produces = {
-		ALL_VALUE, APPLICATION_PROBLEM_JSON_VALUE
-	})
+	@GetMapping(path = "/{communicationId}/attachments/{attachmentId}/streamed", produces = ALL_VALUE)
 	@ApiResponse(responseCode = "200", description = "Successful Operation", useReturnTypeSchema = true)
 	@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	void getMessageAttachmentStreamed(
