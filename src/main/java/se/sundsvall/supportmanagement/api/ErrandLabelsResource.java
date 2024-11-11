@@ -54,9 +54,7 @@ class ErrandLabelsResource {
 		this.service = service;
 	}
 
-	@GetMapping(produces = {
-		APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE
-	})
+	@GetMapping(produces = APPLICATION_JSON_VALUE)
 	@Operation(summary = "Get errand labels", description = "Get errand labels")
 	@ApiResponse(responseCode = "200", description = "Successful Operation", useReturnTypeSchema = true)
 	ResponseEntity<List<String>> getErrandLabels(
@@ -67,9 +65,7 @@ class ErrandLabelsResource {
 		return ok(service.getErrandLabels(namespace, municipalityId, errandId));
 	}
 
-	@PostMapping(consumes = APPLICATION_JSON_VALUE, produces = {
-		ALL_VALUE, APPLICATION_PROBLEM_JSON_VALUE
-	})
+	@PostMapping(consumes = APPLICATION_JSON_VALUE, produces = ALL_VALUE)
 	@Operation(summary = "Add errand labels", description = "Add errand labels to an errand")
 	@ApiResponse(responseCode = "201", description = "Created", content = @Content(mediaType = APPLICATION_JSON_VALUE), useReturnTypeSchema = true)
 	ResponseEntity<Void> addErrandLabels(
@@ -86,9 +82,7 @@ class ErrandLabelsResource {
 			.build();
 	}
 
-	@PutMapping(consumes = APPLICATION_JSON_VALUE, produces = {
-		ALL_VALUE, APPLICATION_PROBLEM_JSON_VALUE
-	})
+	@PutMapping(consumes = APPLICATION_JSON_VALUE, produces = ALL_VALUE)
 	@Operation(summary = "Replace errand labels", description = "Replace all labels of an errand")
 	@ApiResponse(responseCode = "204", description = "No content", useReturnTypeSchema = true)
 	ResponseEntity<Void> updateErrandLabels(
@@ -103,7 +97,7 @@ class ErrandLabelsResource {
 			.build();
 	}
 
-	@DeleteMapping
+	@DeleteMapping(produces = ALL_VALUE)
 	@Operation(summary = "Remove errand labels", description = "Remove all labels of an errand")
 	@ApiResponse(responseCode = "204", description = "No content", useReturnTypeSchema = true)
 	ResponseEntity<Void> removeErrandLabel(

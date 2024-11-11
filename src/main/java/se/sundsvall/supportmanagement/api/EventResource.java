@@ -42,9 +42,7 @@ class EventResource {
 		this.eventService = eventService;
 	}
 
-	@GetMapping(path = "/errands/{errandId}/events", produces = {
-		APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE
-	})
+	@GetMapping(path = "/errands/{errandId}/events", produces = APPLICATION_JSON_VALUE)
 	@Operation(summary = "Read errand events", description = "Returns all existing events for the errand that matches the provided id")
 	@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true)
 	@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {

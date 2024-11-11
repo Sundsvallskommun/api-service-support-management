@@ -14,18 +14,13 @@ import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
 @CircuitBreaker(name = "notificationRepository")
 public interface NotificationRepository extends JpaRepository<NotificationEntity, String> {
 
-	boolean existsByIdAndNamespaceAndMunicipalityIdAndErrandEntityId(
-		final String id,
-		final String namespace,
-		final String municipalityId,
-		final String errandId);
-
-	boolean existsByNamespaceAndMunicipalityIdAndOwnerIdAndErrandEntityAndDescription(
+	boolean existsByNamespaceAndMunicipalityIdAndOwnerIdAndErrandEntityAndDescriptionAndCreatedIsAfter(
 		final String namespace,
 		final String municipalityId,
 		final String ownerId,
 		final ErrandEntity errandEntity,
-		final String description);
+		final String description,
+		final OffsetDateTime created);
 
 	Optional<NotificationEntity> findByIdAndNamespaceAndMunicipalityIdAndErrandEntityId(
 		final String id,
@@ -38,6 +33,12 @@ public interface NotificationRepository extends JpaRepository<NotificationEntity
 		final String municipalityId,
 		final String errandId,
 		final Sort sort);
+
+	boolean existsByIdAndNamespaceAndMunicipalityIdAndErrandEntityId(
+		final String id,
+		final String namespace,
+		final String municipalityId,
+		final String errandId);
 
 	List<NotificationEntity> findAllByNamespaceAndMunicipalityIdAndOwnerId(
 		final String namespace,

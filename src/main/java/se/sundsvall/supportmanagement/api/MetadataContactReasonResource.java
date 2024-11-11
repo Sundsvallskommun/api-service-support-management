@@ -58,9 +58,7 @@ class MetadataContactReasonResource {
 		this.metadataService = metadataService;
 	}
 
-	@PostMapping(consumes = APPLICATION_JSON_VALUE, produces = {
-		APPLICATION_PROBLEM_JSON_VALUE
-	})
+	@PostMapping(consumes = APPLICATION_JSON_VALUE, produces = ALL_VALUE)
 	@Operation(summary = "Create contact reason", description = "Create new contact reason for the namespace and municipality")
 	@ApiResponse(responseCode = "201", headers = @Header(name = LOCATION, schema = @Schema(type = "string")), description = "Successful operation", useReturnTypeSchema = true)
 	@Validated(OnCreate.class)
@@ -75,9 +73,7 @@ class MetadataContactReasonResource {
 			.build();
 	}
 
-	@GetMapping(path = "/{reason}", produces = {
-		APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE
-	})
+	@GetMapping(path = "/{reason}", produces = APPLICATION_JSON_VALUE)
 	@Operation(summary = "Get contact reason", description = "Get contact reason by reason, namespace and municipality")
 	@ApiResponse(responseCode = "200", description = "Successful operation", content = @Content(mediaType = APPLICATION_JSON_VALUE), useReturnTypeSchema = true)
 	ResponseEntity<ContactReason> getContactReason(
@@ -88,9 +84,7 @@ class MetadataContactReasonResource {
 		return ok(metadataService.getContactReasonByReasonAndNamespaceAndMunicipalityId(reason, namespace, municipalityId));
 	}
 
-	@GetMapping(produces = {
-		APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE
-	})
+	@GetMapping(produces = APPLICATION_JSON_VALUE)
 	@Operation(summary = "Get contact reasons for given namespace and municipalityId", description = "Get all contact reasons for the namespace and municipality")
 	@ApiResponse(responseCode = "200", description = "Successful operation", content = @Content(mediaType = APPLICATION_JSON_VALUE), useReturnTypeSchema = true)
 	ResponseEntity<List<ContactReason>> getContactReasons(
@@ -100,9 +94,7 @@ class MetadataContactReasonResource {
 		return ok(metadataService.getContactReasonsForNamespaceAndMunicipality(namespace, municipalityId));
 	}
 
-	@PatchMapping(path = "/{reason}", consumes = APPLICATION_JSON_VALUE, produces = {
-		APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE
-	})
+	@PatchMapping(path = "/{reason}", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
 	@Operation(summary = "Update contact reason", description = "Update contact reason matching namespace, municipality and reason")
 	@ApiResponse(responseCode = "200", description = "Successful operation", content = @Content(mediaType = APPLICATION_JSON_VALUE), useReturnTypeSchema = true)
 	@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
@@ -115,9 +107,7 @@ class MetadataContactReasonResource {
 		return ok(metadataService.patchContactReason(reason, namespace, municipalityId, body));
 	}
 
-	@DeleteMapping(path = "/{reason}", produces = {
-		APPLICATION_PROBLEM_JSON_VALUE
-	})
+	@DeleteMapping(path = "/{reason}", produces = ALL_VALUE)
 	@Operation(summary = "Delete contact reason", description = "Delete contact reason matching namespace, municipality and reason")
 	@ApiResponse(responseCode = "204", description = "Successful operation", useReturnTypeSchema = true)
 	@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))

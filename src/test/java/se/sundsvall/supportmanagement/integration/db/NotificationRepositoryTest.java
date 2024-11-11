@@ -1,8 +1,9 @@
 package se.sundsvall.supportmanagement.integration.db;
 
+import static java.time.OffsetDateTime.now;
+import static java.time.OffsetDateTime.of;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
 import org.junit.jupiter.api.Test;
@@ -33,7 +34,7 @@ class NotificationRepositoryTest {
 
 		// Arrange
 		final var id = "123e4567-e89b-12d3-a456-426614174000";
-		final var timestamp = OffsetDateTime.of(2022, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC); // fixed timestamp
+		final var timestamp = of(2022, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC); // fixed timestamp
 		final var owner = "Test Testorsson";
 		final var ownerId = "cb20c51f-fcf3-42c0-b613-de563634a8ec";
 		final var createdBy = "TestUser";
@@ -114,7 +115,7 @@ class NotificationRepositoryTest {
 	void findByExpiresBefore() {
 
 		// Arrange
-		final var timestamp = OffsetDateTime.of(2024, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
+		final var timestamp = of(2024, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
 
 		// Act
 		final var notifications = notificationRepository.findByExpiresBefore(timestamp);
@@ -157,7 +158,7 @@ class NotificationRepositoryTest {
 			.withErrandNumber("KC-23020001");
 
 		// Act
-		final boolean exists = notificationRepository.existsByNamespaceAndMunicipalityIdAndOwnerIdAndErrandEntityAndDescription("namespace-1", "municipalityId-1", "owner_id-1", errandEntity, "description-1");
+		final boolean exists = notificationRepository.existsByNamespaceAndMunicipalityIdAndOwnerIdAndErrandEntityAndDescriptionAndCreatedIsAfter("namespace-1", "municipalityId-1", "owner_id-1", errandEntity, "description-1", now().minusHours(6));
 
 		// Assert
 		assertThat(exists).isTrue();

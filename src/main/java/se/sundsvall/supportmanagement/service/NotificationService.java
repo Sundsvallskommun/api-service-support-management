@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.service;
 
 import static org.zalando.problem.Status.NOT_FOUND;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Objects;
 
@@ -82,12 +83,14 @@ public class NotificationService {
 			.isPresent();
 	}
 
-	public boolean doesNotificationWithSpecificDescriptionExistForOwnerAndErrand(final String municipalityId, final String namespace, final String ownerId, final ErrandEntity errandEntity, final String description) {
-		return notificationRepository.existsByNamespaceAndMunicipalityIdAndOwnerIdAndErrandEntityAndDescription(namespace,
+	public boolean doesNotificationWithSpecificDescriptionExistForOwnerAndErrandAndNotificationIsCreatedAfter(final String municipalityId, final String namespace, final String ownerId, final ErrandEntity errandEntity, final String description,
+		final OffsetDateTime created) {
+		return notificationRepository.existsByNamespaceAndMunicipalityIdAndOwnerIdAndErrandEntityAndDescriptionAndCreatedIsAfter(namespace,
 			municipalityId,
 			ownerId,
 			errandEntity,
-			description);
+			description,
+			created);
 	}
 
 	@Transactional

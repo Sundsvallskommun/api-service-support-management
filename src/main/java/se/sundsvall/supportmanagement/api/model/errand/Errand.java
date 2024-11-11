@@ -44,6 +44,7 @@ public class Errand {
 	@ArraySchema(schema = @Schema(implementation = Stakeholder.class), uniqueItems = true)
 	private Priority priority;
 
+	@Valid
 	private List<Stakeholder> stakeholders;
 
 	@ArraySchema(schema = @Schema(implementation = ExternalTag.class), uniqueItems = true)
@@ -447,21 +448,25 @@ public class Errand {
 
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj) { return true; }
-		if (!(obj instanceof final Errand other)) { return false; }
+		if (this == obj) {
+			return true;
+		}
+		if (!(obj instanceof final Errand other)) {
+			return false;
+		}
 		return Objects.equals(assignedGroupId, other.assignedGroupId) && Objects.equals(assignedUserId, other.assignedUserId) && Objects.equals(businessRelated, other.businessRelated) && Objects.equals(channel, other.channel) && Objects.equals(
 			classification, other.classification) && Objects.equals(contactReason, other.contactReason) && Objects.equals(contactReasonDescription, other.contactReasonDescription) && Objects.equals(created, other.created) && Objects.equals(description,
-				other.description) && Objects.equals(errandNumber, other.errandNumber) && Objects.equals(escalationEmail, other.escalationEmail) && Objects.equals(externalTags, other.externalTags) && Objects.equals(id, other.id) && Objects.equals(labels,
-					other.labels) && Objects.equals(modified, other.modified) && Objects.equals(parameters, other.parameters) && (priority == other.priority) && Objects.equals(reporterUserId, other.reporterUserId) && Objects.equals(resolution,
-						other.resolution) && Objects.equals(stakeholders, other.stakeholders) && Objects.equals(status, other.status) && Objects.equals(suspension, other.suspension) && Objects.equals(title, other.title) && Objects.equals(touched,
-							other.touched);
+			other.description) && Objects.equals(errandNumber, other.errandNumber) && Objects.equals(escalationEmail, other.escalationEmail) && Objects.equals(externalTags, other.externalTags) && Objects.equals(id, other.id) && Objects.equals(labels,
+			other.labels) && Objects.equals(modified, other.modified) && Objects.equals(parameters, other.parameters) && (priority == other.priority) && Objects.equals(reporterUserId, other.reporterUserId) && Objects.equals(resolution,
+			other.resolution) && Objects.equals(stakeholders, other.stakeholders) && Objects.equals(status, other.status) && Objects.equals(suspension, other.suspension) && Objects.equals(title, other.title) && Objects.equals(touched,
+			other.touched);
 	}
 
 	@Override
 	public String toString() {
 		final StringBuilder builder = new StringBuilder();
 		builder.append("Errand [id=").append(id).append(", errandNumber=").append(errandNumber).append(", title=").append(title).append(", priority=").append(priority).append(", stakeholders=").append(stakeholders).append(", externalTags=").append(
-			externalTags).append(", parameters=").append(parameters).append(", classification=").append(classification).append(", status=").append(status).append(", resolution=").append(resolution).append(", description=").append(description).append(
+				externalTags).append(", parameters=").append(parameters).append(", classification=").append(classification).append(", status=").append(status).append(", resolution=").append(resolution).append(", description=").append(description).append(
 				", channel=").append(channel).append(", reporterUserId=").append(reporterUserId).append(", assignedUserId=").append(assignedUserId).append(", assignedGroupId=").append(assignedGroupId).append(", escalationEmail=").append(escalationEmail)
 			.append(", contactReason=").append(contactReason).append(", contactReasonDescription=").append(contactReasonDescription).append(", suspension=").append(suspension).append(", businessRelated=").append(businessRelated).append(", labels=").append(
 				labels).append(", created=").append(created).append(", modified=").append(modified).append(", touched=").append(touched).append("]");
