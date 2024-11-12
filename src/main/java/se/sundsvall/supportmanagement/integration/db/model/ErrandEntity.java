@@ -44,7 +44,9 @@ import se.sundsvall.supportmanagement.integration.db.model.listener.ErrandListen
 		@Index(name = "idx_errand_number", columnList = "errand_number")
 	},
 	uniqueConstraints = {
-		@UniqueConstraint(name = "uq_errand_number", columnNames = { "errand_number" })
+		@UniqueConstraint(name = "uq_errand_number", columnNames = {
+			"errand_number"
+		})
 	})
 @EntityListeners(ErrandListener.class)
 public class ErrandEntity {
@@ -61,7 +63,9 @@ public class ErrandEntity {
 			@Index(name = "idx_external_tag_key", columnList = "\"key\"")
 		},
 		joinColumns = @JoinColumn(name = "errand_id", referencedColumnName = "id", foreignKey = @ForeignKey(name = "fk_errand_external_tag_errand_id")),
-		uniqueConstraints = @UniqueConstraint(name = "uq_external_tag_errand_id_key", columnNames = { "errand_id", "\"key\"" }))
+		uniqueConstraints = @UniqueConstraint(name = "uq_external_tag_errand_id_key", columnNames = {
+			"errand_id", "\"key\""
+		}))
 	private List<DbExternalTag> externalTags;
 
 	@OneToMany(mappedBy = "errandEntity", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -72,7 +76,7 @@ public class ErrandEntity {
 	@JoinColumn(name = "contact_reason_id")
 	private ContactReasonEntity contactReasonEntity;
 
-	@Column(name = "contact_reason_description")
+	@Column(name = "contact_reason_description", length = 4096)
 	private String contactReasonDescription;
 
 	@Column(name = "business_related")
