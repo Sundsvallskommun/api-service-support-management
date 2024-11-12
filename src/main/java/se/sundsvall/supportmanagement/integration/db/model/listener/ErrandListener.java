@@ -13,9 +13,6 @@ import jakarta.persistence.PostLoad;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreRemove;
 import jakarta.persistence.PreUpdate;
-
-import org.springframework.stereotype.Component;
-
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.TimeMeasurementEntity;
 
@@ -45,7 +42,8 @@ public class ErrandListener {
 			.ifPresent(st -> st.forEach(s -> s.setErrandEntity(errandEntity)));
 
 		// Status Changed
-		// The second statement is to prevent the same status from being added multiple times as preUpdate is called multiple times during the same transaction
+		// The second statement is to prevent the same status from being added multiple times as preUpdate is called multiple
+		// times during the same transaction
 		if (!errandEntity.getStatus().equals(errandEntity.getTempPreviousStatus()) && !Objects.equals(errandEntity.getTempPreviousStatus(), errandEntity.getPreviousStatus())) {
 			final var now = now();
 			Optional.ofNullable(errandEntity.getTimeMeasures())
@@ -77,5 +75,4 @@ public class ErrandListener {
 			.findFirst()
 			.ifPresent(tm -> tm.setStopTime(now));
 	}
-
 }

@@ -440,7 +440,7 @@ class ErrandsCreateResourceFailureTest {
 		final var response = webTestClient.post()
 			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
 			.contentType(APPLICATION_JSON)
-			.bodyValue(createErrandInstance().withContactReasonDescription(rightPad("Test", 260, 'X')))
+			.bodyValue(createErrandInstance().withContactReasonDescription(rightPad("Test", 4097, 'X')))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -452,7 +452,7 @@ class ErrandsCreateResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactly(tuple("contactReasonDescription", "size must be between 0 and 255"));
+			.containsExactly(tuple("contactReasonDescription", "size must be between 0 and 4096"));
 
 		// Verification
 		verify(metadataServiceMock).findStatuses(NAMESPACE, MUNICIPALITY_ID);
