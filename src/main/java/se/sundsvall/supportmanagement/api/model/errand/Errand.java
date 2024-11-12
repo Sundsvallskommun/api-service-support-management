@@ -28,11 +28,15 @@ import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
 public class Errand {
 
 	@Schema(description = "Unique id for the errand", example = "f0882f1d-06bc-47fd-b017-1d8307f5ce95", accessMode = READ_ONLY)
-	@Null(groups = { OnCreate.class, OnUpdate.class })
+	@Null(groups = {
+		OnCreate.class, OnUpdate.class
+	})
 	private String id;
 
 	@Schema(description = "Unique number for the errand", example = "KC-23010001", accessMode = READ_ONLY)
-	@Null(groups = { OnCreate.class, OnUpdate.class })
+	@Null(groups = {
+		OnCreate.class, OnUpdate.class
+	})
 	private String errandNumber;
 
 	@Schema(description = "Title for the errand", example = "Title for the errand")
@@ -92,11 +96,13 @@ public class Errand {
 	private String escalationEmail;
 
 	@Schema(description = "Contact reason for the errand", example = "The printer is not working")
-	@ValidContactReason(groups = { OnCreate.class, OnUpdate.class }, nullable = true)
+	@ValidContactReason(groups = {
+		OnCreate.class, OnUpdate.class
+	}, nullable = true)
 	private String contactReason;
 
 	@Schema(description = "Contact reason description for the errand", example = "The printer is not working since the power cord is missing")
-	@Size(max = 255)
+	@Size(max = 4096)
 	private String contactReasonDescription;
 
 	@Schema(description = "Suspension information")
@@ -111,17 +117,23 @@ public class Errand {
 
 	@Schema(description = "Timestamp when errand was created", example = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	@DateTimeFormat(iso = ISO.DATE_TIME)
-	@Null(groups = { OnCreate.class, OnUpdate.class })
+	@Null(groups = {
+		OnCreate.class, OnUpdate.class
+	})
 	private OffsetDateTime created;
 
 	@Schema(description = "Timestamp when errand was last modified", example = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	@DateTimeFormat(iso = ISO.DATE_TIME)
-	@Null(groups = { OnCreate.class, OnUpdate.class })
+	@Null(groups = {
+		OnCreate.class, OnUpdate.class
+	})
 	private OffsetDateTime modified;
 
 	@Schema(description = "Timestamp when errand was last touched (created or modified)", example = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	@DateTimeFormat(iso = ISO.DATE_TIME)
-	@Null(groups = { OnCreate.class, OnUpdate.class })
+	@Null(groups = {
+		OnCreate.class, OnUpdate.class
+	})
 	private OffsetDateTime touched;
 
 	public static Errand create() {
@@ -456,17 +468,17 @@ public class Errand {
 		}
 		return Objects.equals(assignedGroupId, other.assignedGroupId) && Objects.equals(assignedUserId, other.assignedUserId) && Objects.equals(businessRelated, other.businessRelated) && Objects.equals(channel, other.channel) && Objects.equals(
 			classification, other.classification) && Objects.equals(contactReason, other.contactReason) && Objects.equals(contactReasonDescription, other.contactReasonDescription) && Objects.equals(created, other.created) && Objects.equals(description,
-			other.description) && Objects.equals(errandNumber, other.errandNumber) && Objects.equals(escalationEmail, other.escalationEmail) && Objects.equals(externalTags, other.externalTags) && Objects.equals(id, other.id) && Objects.equals(labels,
-			other.labels) && Objects.equals(modified, other.modified) && Objects.equals(parameters, other.parameters) && (priority == other.priority) && Objects.equals(reporterUserId, other.reporterUserId) && Objects.equals(resolution,
-			other.resolution) && Objects.equals(stakeholders, other.stakeholders) && Objects.equals(status, other.status) && Objects.equals(suspension, other.suspension) && Objects.equals(title, other.title) && Objects.equals(touched,
-			other.touched);
+				other.description) && Objects.equals(errandNumber, other.errandNumber) && Objects.equals(escalationEmail, other.escalationEmail) && Objects.equals(externalTags, other.externalTags) && Objects.equals(id, other.id) && Objects.equals(labels,
+					other.labels) && Objects.equals(modified, other.modified) && Objects.equals(parameters, other.parameters) && (priority == other.priority) && Objects.equals(reporterUserId, other.reporterUserId) && Objects.equals(resolution,
+						other.resolution) && Objects.equals(stakeholders, other.stakeholders) && Objects.equals(status, other.status) && Objects.equals(suspension, other.suspension) && Objects.equals(title, other.title) && Objects.equals(touched,
+							other.touched);
 	}
 
 	@Override
 	public String toString() {
 		final StringBuilder builder = new StringBuilder();
 		builder.append("Errand [id=").append(id).append(", errandNumber=").append(errandNumber).append(", title=").append(title).append(", priority=").append(priority).append(", stakeholders=").append(stakeholders).append(", externalTags=").append(
-				externalTags).append(", parameters=").append(parameters).append(", classification=").append(classification).append(", status=").append(status).append(", resolution=").append(resolution).append(", description=").append(description).append(
+			externalTags).append(", parameters=").append(parameters).append(", classification=").append(classification).append(", status=").append(status).append(", resolution=").append(resolution).append(", description=").append(description).append(
 				", channel=").append(channel).append(", reporterUserId=").append(reporterUserId).append(", assignedUserId=").append(assignedUserId).append(", assignedGroupId=").append(assignedGroupId).append(", escalationEmail=").append(escalationEmail)
 			.append(", contactReason=").append(contactReason).append(", contactReasonDescription=").append(contactReasonDescription).append(", suspension=").append(suspension).append(", businessRelated=").append(businessRelated).append(", labels=").append(
 				labels).append(", created=").append(created).append(", modified=").append(modified).append(", touched=").append(touched).append("]");

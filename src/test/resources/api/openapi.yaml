@@ -5062,7 +5062,7 @@ components:
           description: Contact reason for the errand
           example: The printer is not working
         contactReasonDescription:
-          maxLength: 255
+          maxLength: 4096
           minLength: 0
           type: string
           description: Contact reason description for the errand
