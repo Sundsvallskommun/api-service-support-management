@@ -44,9 +44,7 @@ class RevisionResource {
 		this.revisionService = revisionService;
 	}
 
-	@GetMapping(path = "/errands/{errandId}/revisions", produces = {
-		APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE
-	})
+	@GetMapping(path = "/errands/{errandId}/revisions", produces = APPLICATION_JSON_VALUE)
 	@Operation(summary = "Read errand revisions", description = "Returns all existing revisions for the errand that matches the provided id")
 	@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true)
 	@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
@@ -62,9 +60,7 @@ class RevisionResource {
 		return ok(revisionService.getErrandRevisions(namespace, municipalityId, errandId));
 	}
 
-	@GetMapping(path = "/errands/{errandId}/revisions/difference", produces = {
-		APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE
-	})
+	@GetMapping(path = "/errands/{errandId}/revisions/difference", produces = APPLICATION_JSON_VALUE)
 	@Operation(summary = "Compare differences between two revision versions of an errand", description = "Returns the differences between the source and target revision for the provided errand id")
 	@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true)
 	@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
@@ -82,9 +78,7 @@ class RevisionResource {
 		return ok(revisionService.compareErrandRevisionVersions(namespace, municipalityId, errandId, source, target));
 	}
 
-	@GetMapping(path = "/errands/{errandId}/notes/{noteId}/revisions", produces = {
-		APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE
-	})
+	@GetMapping(path = "/errands/{errandId}/notes/{noteId}/revisions", produces = APPLICATION_JSON_VALUE)
 	@Operation(summary = "Read note revisions", description = "Returns all existing revisions for the errand note that matches the provided errand id and note id")
 	@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true)
 	@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
@@ -101,9 +95,7 @@ class RevisionResource {
 		return ok(revisionService.getNoteRevisions(namespace, municipalityId, errandId, noteId));
 	}
 
-	@GetMapping(path = "/errands/{errandId}/notes/{noteId}/revisions/difference", produces = {
-		APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE
-	})
+	@GetMapping(path = "/errands/{errandId}/notes/{noteId}/revisions/difference", produces = APPLICATION_JSON_VALUE)
 	@Operation(summary = "Compare differences between two revision versions of an errand note", description = "Returns the differences between the source and target revision for the provided errand id and note id")
 	@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true)
 	@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {

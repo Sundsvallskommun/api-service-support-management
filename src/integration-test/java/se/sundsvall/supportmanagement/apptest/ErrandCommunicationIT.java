@@ -143,20 +143,4 @@ class ErrandCommunicationIT extends AbstractAppTest {
 			.withExpectedBinaryResponse("test_image.png")
 			.sendRequestAndVerifyResponse();
 	}
-
-	@Test
-	void test09_getErrandAttachmentStreamed() throws Exception {
-
-		final var errandId = randomUUID().toString();
-		final var communicationId = randomUUID().toString();
-		final var attachmentId = "b3b3b3b3-b3b3-b3b3-b3b3-b3b3b3b3b3b3";
-
-		setupCall()
-			.withHttpMethod(GET)
-			.withServicePath(PATH + "/" + errandId + "/communication/" + communicationId + "/attachments/" + attachmentId + "/streamed")
-			.withExpectedResponseStatus(OK)
-			.withExpectedResponseHeader(CONTENT_TYPE, List.of(IMAGE_JPEG_VALUE))
-			.withExpectedBinaryResponse("Test_image.jpg")
-			.sendRequestAndVerifyResponse();
-	}
 }

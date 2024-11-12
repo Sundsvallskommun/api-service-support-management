@@ -55,9 +55,7 @@ class MetadataCategoryResource {
 		this.metadataService = metadataService;
 	}
 
-	@PostMapping(consumes = APPLICATION_JSON_VALUE, produces = {
-		APPLICATION_PROBLEM_JSON_VALUE
-	})
+	@PostMapping(consumes = APPLICATION_JSON_VALUE, produces = ALL_VALUE)
 	@Operation(summary = "Create category", description = "Create new category for the namespace and municipality")
 	@ApiResponse(responseCode = "201", headers = @Header(name = LOCATION, schema = @Schema(type = "string")), description = "Successful operation", useReturnTypeSchema = true)
 	@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
@@ -76,9 +74,7 @@ class MetadataCategoryResource {
 			.build();
 	}
 
-	@GetMapping(path = "/{category}", produces = {
-		APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE
-	})
+	@GetMapping(path = "/{category}", produces = APPLICATION_JSON_VALUE)
 	@Operation(summary = "Get category", description = "Get category and connected types for the namespace and municipality")
 	@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true)
 	@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
@@ -93,9 +89,7 @@ class MetadataCategoryResource {
 		return ok(metadataService.getCategory(namespace, municipalityId, category));
 	}
 
-	@GetMapping(produces = {
-		APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE
-	})
+	@GetMapping(produces = APPLICATION_JSON_VALUE)
 	@Operation(summary = "Get categories and types", description = "Get all categories and their connected types for the namespace and municipality")
 	@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true)
 	@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
@@ -109,9 +103,7 @@ class MetadataCategoryResource {
 		return ok(metadataService.findCategories(namespace, municipalityId));
 	}
 
-	@GetMapping(path = "/{category}/types", produces = {
-		APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE
-	})
+	@GetMapping(path = "/{category}/types", produces = APPLICATION_JSON_VALUE)
 	@Operation(summary = "Get types connected to category", description = "Get all types for the namespace, municipality and category")
 	@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true)
 	@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
@@ -123,9 +115,7 @@ class MetadataCategoryResource {
 		return ok(metadataService.findTypes(namespace, municipalityId, category));
 	}
 
-	@PatchMapping(path = "/{category}", consumes = APPLICATION_JSON_VALUE, produces = {
-		APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE
-	})
+	@PatchMapping(path = "/{category}", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
 	@Operation(summary = "Update category", description = "Update category matching namespace, municipality and id")
 	@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true)
 	@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
@@ -142,9 +132,7 @@ class MetadataCategoryResource {
 		return ok(metadataService.updateCategory(namespace, municipalityId, category, body));
 	}
 
-	@DeleteMapping(path = "/{category}", produces = {
-		APPLICATION_PROBLEM_JSON_VALUE
-	})
+	@DeleteMapping(path = "/{category}", produces = ALL_VALUE)
 	@Operation(summary = "Delete category", description = "Delete category matching namespace, municipality and id")
 	@ApiResponse(responseCode = "204", description = "Successful operation", useReturnTypeSchema = true)
 	@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {

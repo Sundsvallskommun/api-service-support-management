@@ -52,9 +52,7 @@ class NamespaceConfigResource {
 		this.service = service;
 	}
 
-	@PostMapping(path = "/{municipalityId}/{namespace}/namespace-config", consumes = APPLICATION_JSON_VALUE, produces = {
-		ALL_VALUE, APPLICATION_PROBLEM_JSON_VALUE
-	})
+	@PostMapping(path = "/{municipalityId}/{namespace}/namespace-config", consumes = APPLICATION_JSON_VALUE, produces = ALL_VALUE)
 	@Operation(summary = "Create namespace config", description = "Create config that is used within the namespace")
 	@ApiResponse(responseCode = "201", headers = @Header(name = LOCATION, schema = @Schema(type = "string")), description = "Successful operation", useReturnTypeSchema = true)
 	@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
@@ -74,9 +72,7 @@ class NamespaceConfigResource {
 			.build();
 	}
 
-	@GetMapping(path = "/{municipalityId}/{namespace}/namespace-config", produces = {
-		APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE
-	})
+	@GetMapping(path = "/{municipalityId}/{namespace}/namespace-config", produces = APPLICATION_JSON_VALUE)
 	@Operation(summary = "Read namespace config", description = "Fetches namespace config for a namespace/municipality")
 	@ApiResponse(responseCode = "200", description = "Successful Operation", useReturnTypeSchema = true)
 	@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
@@ -91,9 +87,7 @@ class NamespaceConfigResource {
 		return ok(service.get(namespace, municipalityId));
 	}
 
-	@GetMapping(path = "/namespace-configs", produces = {
-		APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE
-	})
+	@GetMapping(path = "/namespace-configs", produces = APPLICATION_JSON_VALUE)
 	@Operation(summary = "Read all namespace configurations, optionally filterered by municipalityId", description = "Fetches an optionally filtered list of namespace configurations")
 	@ApiResponse(responseCode = "200", description = "Successful Operation", useReturnTypeSchema = true)
 	@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
@@ -106,9 +100,7 @@ class NamespaceConfigResource {
 		return ok(service.findAll(municipalityId));
 	}
 
-	@PutMapping(path = "/{municipalityId}/{namespace}/namespace-config", consumes = APPLICATION_JSON_VALUE, produces = {
-		ALL_VALUE, APPLICATION_PROBLEM_JSON_VALUE
-	})
+	@PutMapping(path = "/{municipalityId}/{namespace}/namespace-config", consumes = APPLICATION_JSON_VALUE, produces = ALL_VALUE)
 	@Operation(summary = "Update namespace config", description = "Update config that is used within the namespace")
 	@ApiResponse(responseCode = "204", description = "Successful operation", useReturnTypeSchema = true)
 	@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
@@ -126,7 +118,7 @@ class NamespaceConfigResource {
 			.build();
 	}
 
-	@DeleteMapping(path = "/{municipalityId}/{namespace}/namespace-config")
+	@DeleteMapping(path = "/{municipalityId}/{namespace}/namespace-config", produces = ALL_VALUE)
 	@Operation(summary = "Delete namespace config", description = "Deletes the config for a namespace/municipality")
 	@ApiResponse(responseCode = "204", description = "Successful operation", useReturnTypeSchema = true)
 	@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
@@ -143,5 +135,4 @@ class NamespaceConfigResource {
 			.header(CONTENT_TYPE, ALL_VALUE)
 			.build();
 	}
-
 }

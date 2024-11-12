@@ -61,9 +61,7 @@ class ErrandsResource {
 		this.service = service;
 	}
 
-	@PostMapping(consumes = APPLICATION_JSON_VALUE, produces = {
-		ALL_VALUE, APPLICATION_PROBLEM_JSON_VALUE
-	})
+	@PostMapping(consumes = APPLICATION_JSON_VALUE, produces = ALL_VALUE)
 	@Operation(summary = "Create errand", description = "Creates a new errand based on the supplied attributes")
 	@ApiResponse(responseCode = "201", headers = @Header(name = LOCATION, schema = @Schema(type = "string")), description = "Successful operation", useReturnTypeSchema = true)
 	@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
@@ -82,9 +80,7 @@ class ErrandsResource {
 			.build();
 	}
 
-	@GetMapping(path = "/{errandId}", produces = {
-		APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE
-	})
+	@GetMapping(path = "/{errandId}", produces = APPLICATION_JSON_VALUE)
 	@Operation(summary = "Read errand", description = "Fetches the errand that matches the provided id")
 	@ApiResponse(responseCode = "200", description = "Successful Operation", useReturnTypeSchema = true)
 	@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
@@ -100,9 +96,7 @@ class ErrandsResource {
 		return ok(service.readErrand(namespace, municipalityId, errandId));
 	}
 
-	@GetMapping(produces = {
-		APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE
-	})
+	@GetMapping(produces = APPLICATION_JSON_VALUE)
 	@Operation(summary = "Read matching errands", description = "Query for errands with or without filters. The resource allows the client a wide range of variations on how to filter the result.")
 	@ApiResponse(responseCode = "200", description = "Successful Operation", useReturnTypeSchema = true)
 	@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
@@ -120,9 +114,7 @@ class ErrandsResource {
 		return ok(service.findErrands(namespace, municipalityId, filter, pageable));
 	}
 
-	@PatchMapping(path = "/{errandId}", consumes = APPLICATION_JSON_VALUE, produces = {
-		APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE
-	})
+	@PatchMapping(path = "/{errandId}", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
 	@Operation(summary = "Update errand", description = "Updates the errand matching provided id with the supplied attributes")
 	@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true)
 	@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
@@ -140,7 +132,7 @@ class ErrandsResource {
 		return ok(service.updateErrand(namespace, municipalityId, errandId, errand));
 	}
 
-	@DeleteMapping(path = "/{errandId}")
+	@DeleteMapping(path = "/{errandId}", produces = ALL_VALUE)
 	@Operation(summary = "Delete errand", description = "Deletes the errand that matches the provided id")
 	@ApiResponse(responseCode = "204", description = "Successful operation", useReturnTypeSchema = true)
 	@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
