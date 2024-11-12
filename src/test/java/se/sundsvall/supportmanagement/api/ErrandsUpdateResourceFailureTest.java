@@ -275,6 +275,32 @@ class ErrandsUpdateResourceFailureTest {
 	}
 
 	@Test
+	void updateErrandWithTooLongContactReasonDescription() {
+
+		// Call
+		final var response = webTestClient.patch()
+			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(Errand.create().withContactReasonDescription(rightPad("Test", 4097, 'X')))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::getField, Violation::getMessage)
+			.containsExactlyInAnyOrder(tuple("contactReasonDescription", "size must be between 0 and 4096"));
+
+		// Verification
+		verify(metadataServiceMock).findStatuses(any(), any());
+		verifyNoInteractions(errandServiceMock);
+	}
+
+	@Test
 	void updateErrandWithInvalidTags() {
 
 		// Call
