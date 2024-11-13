@@ -75,5 +75,4 @@ public class ErrandListener {
 			.findFirst()
 			.ifPresent(tm -> tm.setStopTime(now));
 	}
-
 }
