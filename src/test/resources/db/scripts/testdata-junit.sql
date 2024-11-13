@@ -178,3 +178,18 @@ INSERT INTO namespace_config(id, municipality_id, namespace, display_name, short
 values (1, 'municipality_id-1', 'namespace-1', 'display name 1', 'short_code-1', '2021-01-01 11:11:59.999', '2022-01-01 11:11:59.999'),
        (2, 'municipality_id-1', 'namespace-3', 'display name 3', 'short_code-3', '2022-03-03 13:13:59.999', '2023-03-03 13:13:59.999'),
        (3, 'municipality_id-2', 'namespace-2', 'display name 2', 'short_code-2', '2022-02-02 12:12:59.999', '2023-02-02 12:12:59.999');
+
+-------------------------------------
+-- WebMessageCollect
+-------------------------------------
+
+INSERT INTO web_message_collect(id, municipality_id, namespace, instance)
+VALUES (1, 'municipality_id-1', 'namespace-1', 'instance-1'),
+       (2, 'municipality_id-1', 'namespace-1', 'instance-2'),
+       (3, 'municipality_id-1', 'namespace-2', 'instance-1');
+
+INSERT INTO web_message_collect_family_ids(web_message_collect_id, family_id)
+VALUES (1, 'family_id-1'),
+       (1, 'family_id-2'),
+       (2, 'family_id-3'),
+       (2, 'family_id-4');
