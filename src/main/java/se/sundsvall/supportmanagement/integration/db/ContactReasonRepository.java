@@ -13,11 +13,13 @@ public interface ContactReasonRepository extends JpaRepository<ContactReasonEnti
 
 	Optional<ContactReasonEntity> findByReasonIgnoreCaseAndNamespaceAndMunicipalityId(final String reason, final String namespace, final String municipalityId);
 
-	ContactReasonEntity getByReasonIgnoreCaseAndNamespaceAndMunicipalityId(final String reason, final String namespace, final String municipalityId);
+	Optional<ContactReasonEntity> findByIdAndNamespaceAndMunicipalityId(final Long id, final String namespace, final String municipalityId);
+
+	ContactReasonEntity getByIdAndNamespaceAndMunicipalityId(final Long id, final String namespace, final String municipalityId);
 
 	List<ContactReasonEntity> findAllByNamespaceAndMunicipalityId(final String namespace, final String municipalityId);
 
-	boolean existsByReasonIgnoreCaseAndNamespaceAndMunicipalityId(final String reason, final String namespace, final String municipalityId);
+	boolean existsByIdAndNamespaceAndMunicipalityId(final Long id, final String namespace, final String municipalityId);
 
-	void deleteByReasonIgnoreCaseAndNamespaceAndMunicipalityId(final String reason, final String namespace, final String municipalityId);
+	void deleteByIdAndNamespaceAndMunicipalityId(final Long id, final String namespace, final String municipalityId);
 }

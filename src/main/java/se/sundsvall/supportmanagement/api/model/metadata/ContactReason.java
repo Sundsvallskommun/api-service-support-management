@@ -1,27 +1,44 @@
 package se.sundsvall.supportmanagement.api.model.metadata;
 
+import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
+
 import java.time.OffsetDateTime;
 import java.util.Objects;
 
-import jakarta.validation.constraints.NotBlank;
-
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
 
 @Schema(description = "Contact reason model")
 public class ContactReason {
+
+	@Schema(description = "ID", example = "123", accessMode = READ_ONLY)
+	private Long id;
 
 	@Schema(description = "Reason for contact", example = "Segt internet")
 	@NotBlank
 	private String reason;
 
-	@Schema(description = "Timestamp when the contact reason was created", example = "2000-10-31T01:30:00.000+02:00", accessMode = Schema.AccessMode.READ_ONLY)
+	@Schema(description = "Timestamp when the contact reason was created", example = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	private OffsetDateTime created;
 
-	@Schema(description = "Timestamp when the contact reason was last modified", example = "2000-10-31T01:30:00.000+02:00", accessMode = Schema.AccessMode.READ_ONLY)
+	@Schema(description = "Timestamp when the contact reason was last modified", example = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	private OffsetDateTime modified;
 
 	public static ContactReason create() {
 		return new ContactReason();
+	}
+
+	public Long getId() {
+		return id;
+	}
+
+	public void setId(Long id) {
+		this.id = id;
+	}
+
+	public ContactReason withId(Long id) {
+		this.id = id;
+		return this;
 	}
 
 	public String getReason() {
@@ -64,22 +81,21 @@ public class ContactReason {
 	}
 
 	@Override
-	public boolean equals(final Object o) {
-		if (this == o) return true;
-		if (o == null || getClass() != o.getClass()) return false;
-		final ContactReason that = (ContactReason) o;
-		return Objects.equals(reason, that.reason);
+	public int hashCode() {
+		return Objects.hash(created, id, modified, reason);
 	}
 
 	@Override
-	public int hashCode() {
-		return Objects.hash(reason);
+	public boolean equals(Object obj) {
+		if (this == obj) { return true; }
+		if (!(obj instanceof final ContactReason other)) { return false; }
+		return Objects.equals(created, other.created) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(reason, other.reason);
 	}
 
 	@Override
 	public String toString() {
-		return "ContactReason{" +
-			"reason='" + reason + '\'' +
-			'}';
+		final StringBuilder builder = new StringBuilder();
+		builder.append("ContactReason [id=").append(id).append(", reason=").append(reason).append(", created=").append(created).append(", modified=").append(modified).append("]");
+		return builder.toString();
 	}
 }
