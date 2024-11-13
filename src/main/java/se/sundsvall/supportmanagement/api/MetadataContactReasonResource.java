@@ -67,56 +67,56 @@ class MetadataContactReasonResource {
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId(groups = OnCreate.class) @PathVariable final String municipalityId,
 		@Valid @NotNull @RequestBody final ContactReason contactReason) {
 
-		return created(fromPath("/{municipalityId}/{namespace}/metadata/contactreasons/{reason}")
+		return created(fromPath("/{municipalityId}/{namespace}/metadata/contactreasons/{contactReasonId}")
 			.buildAndExpand(municipalityId, namespace, metadataService.createContactReason(namespace, municipalityId, contactReason)).toUri())
 			.header(CONTENT_TYPE, ALL_VALUE)
 			.build();
 	}
 
-	@GetMapping(path = "/{reason}", produces = APPLICATION_JSON_VALUE)
+	@GetMapping(path = "/{contactReasonId}", produces = APPLICATION_JSON_VALUE)
 	@Operation(summary = "Get contact reason", description = "Get contact reason by reason, namespace and municipality")
-	@ApiResponse(responseCode = "200", description = "Successful operation", content = @Content(mediaType = APPLICATION_JSON_VALUE), useReturnTypeSchema = true)
+	@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true)
 	ResponseEntity<ContactReason> getContactReason(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
-		@Parameter(name = "reason", description = "Reason", example = "INVOICE") @PathVariable final String reason) {
+		@Parameter(name = "contactReasonId", description = "ContactReason ID", example = "123") @PathVariable final Long contactReasonId) {
 
-		return ok(metadataService.getContactReasonByReasonAndNamespaceAndMunicipalityId(reason, namespace, municipalityId));
+		return ok(metadataService.getContactReasonByIdAndNamespaceAndMunicipalityId(contactReasonId, namespace, municipalityId));
 	}
 
 	@GetMapping(produces = APPLICATION_JSON_VALUE)
 	@Operation(summary = "Get contact reasons for given namespace and municipalityId", description = "Get all contact reasons for the namespace and municipality")
-	@ApiResponse(responseCode = "200", description = "Successful operation", content = @Content(mediaType = APPLICATION_JSON_VALUE), useReturnTypeSchema = true)
+	@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true)
 	ResponseEntity<List<ContactReason>> getContactReasons(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId) {
 
-		return ok(metadataService.getContactReasonsForNamespaceAndMunicipality(namespace, municipalityId));
+		return ok(metadataService.findContactReasonsForNamespaceAndMunicipality(namespace, municipalityId));
 	}
 
-	@PatchMapping(path = "/{reason}", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
+	@PatchMapping(path = "/{contactReasonId}", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
 	@Operation(summary = "Update contact reason", description = "Update contact reason matching namespace, municipality and reason")
-	@ApiResponse(responseCode = "200", description = "Successful operation", content = @Content(mediaType = APPLICATION_JSON_VALUE), useReturnTypeSchema = true)
+	@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true)
 	@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	ResponseEntity<ContactReason> updateContactReason(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
-		@Parameter(name = "reason", description = "Reason", example = "INVOICE") @PathVariable final String reason,
+		@Parameter(name = "contactReasonId", description = "ContactReason ID", example = "123") @PathVariable final Long contactReasonId,
 		@Valid @NotNull @RequestBody final ContactReason body) {
 
-		return ok(metadataService.patchContactReason(reason, namespace, municipalityId, body));
+		return ok(metadataService.patchContactReason(contactReasonId, namespace, municipalityId, body));
 	}
 
-	@DeleteMapping(path = "/{reason}", produces = ALL_VALUE)
+	@DeleteMapping(path = "/{contactReasonId}", produces = ALL_VALUE)
 	@Operation(summary = "Delete contact reason", description = "Delete contact reason matching namespace, municipality and reason")
 	@ApiResponse(responseCode = "204", description = "Successful operation", useReturnTypeSchema = true)
 	@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	ResponseEntity<Void> deleteContactReason(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
-		@Parameter(name = "reason", description = "Reason", example = "INVOICE") @PathVariable final String reason) {
+		@Parameter(name = "contactReasonId", description = "ContactReason ID", example = "123") @PathVariable final Long contactReasonId) {
 
-		metadataService.deleteContactReason(reason, namespace, municipalityId);
+		metadataService.deleteContactReason(contactReasonId, namespace, municipalityId);
 		return noContent()
 			.header(CONTENT_TYPE, ALL_VALUE)
 			.build();

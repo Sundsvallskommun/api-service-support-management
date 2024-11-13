@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
+import static java.time.OffsetDateTime.now;
 import static java.util.Collections.emptyList;
 import static java.util.Comparator.comparing;
 import static java.util.Comparator.naturalOrder;
@@ -9,7 +10,6 @@ import static java.util.Optional.ofNullable;
 import static org.apache.commons.lang3.ObjectUtils.anyNull;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 
-import java.time.OffsetDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -193,11 +193,11 @@ public class MetadataMapper {
 	}
 
 	private static void updateTypes(final CategoryEntity entity, final List<Type> types) {
-		var existingTypes = Stream.ofNullable(entity.getTypes())
+		final var existingTypes = Stream.ofNullable(entity.getTypes())
 			.flatMap(Collection::stream)
 			.collect(Collectors.toMap(TypeEntity::getName, Function.identity()));
 
-		var updatedTypes = toTypeEntities(types);
+		final var updatedTypes = toTypeEntities(types);
 		updatedTypes.stream()
 			.filter(type -> existingTypes.containsKey(type.getName()))
 			.forEach(type -> {
@@ -245,6 +245,7 @@ public class MetadataMapper {
 	public static ContactReason toContactReason(final ContactReasonEntity contactReasonEntity) {
 		return ofNullable(contactReasonEntity)
 			.map(entity -> ContactReason.create()
+				.withId(contactReasonEntity.getId())
 				.withReason(entity.getReason())
 				.withModified(entity.getModified())
 				.withCreated(entity.getCreated()))
@@ -257,8 +258,8 @@ public class MetadataMapper {
 				.withReason(request.getReason())
 				.withNamespace(namespace)
 				.withMunicipalityId(municipalityId)
-				.withCreated(OffsetDateTime.now())
-				.withModified(OffsetDateTime.now()))
+				.withCreated(now())
+				.withModified(now()))
 			.orElse(null);
 	}
 
@@ -271,5 +272,4 @@ public class MetadataMapper {
 
 		return entity;
 	}
-
 }
