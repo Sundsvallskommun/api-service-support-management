@@ -19,10 +19,14 @@ in API GET /{municipalityId}/{namespace}/communication/attachments/{attachmentID
 api path removed without deprecation
  
 <<<<<<< HEAD
+<<<<<<< HEAD
 [api-path-removed-without-deprecation]
 =======
 error [api-path-removed-without-deprecation]
 >>>>>>> 421bb26 (UF-10590: Add API changelog)
+=======
+[api-path-removed-without-deprecation]
+>>>>>>> 6e776f1 (UF-10888: Refactored contactReason API.)
 in API DELETE /{municipalityId}/{namespace}/emailIntegrationConfig
 api path removed without deprecation
  
@@ -39,6 +43,9 @@ in API PUT /{municipalityId}/{namespace}/emailIntegrationConfig
 api path removed without deprecation
  
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 6e776f1 (UF-10888: Refactored contactReason API.)
 [response-media-type-removed]
 in API GET /{municipalityId}/{namespace}/errands
 removed the media type 'application/problem+json' for the response with the status '200'
@@ -67,13 +74,19 @@ removed the media type 'application/problem+json' for the response with the stat
 in API PATCH /{municipalityId}/{namespace}/errands/{errandId}/parameters/{parameterKey}
 removed the media type 'application/problem+json' for the response with the status '200'
  
+<<<<<<< HEAD
 =======
 >>>>>>> 421bb26 (UF-10590: Add API changelog)
+=======
+>>>>>>> 6e776f1 (UF-10888: Refactored contactReason API.)
 [api-path-removed-without-deprecation]
 in API GET /{municipalityId}/{namespace}/errands/{errandId}/timeMeasure
 api path removed without deprecation
  
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 6e776f1 (UF-10888: Refactored contactReason API.)
 [response-media-type-removed]
 in API GET /{municipalityId}/{namespace}/errands/{id}
 removed the media type 'application/problem+json' for the response with the status '200'
@@ -162,8 +175,11 @@ for the 'path' request parameter 'reason', the type/format was changed from 'str
 in API PATCH /{municipalityId}/{namespace}/metadata/contactreasons/{reason}
 for the 'path' request parameter 'reason', the type/format was changed from 'string'/'' to 'integer'/'int64'
  
+<<<<<<< HEAD
 =======
 >>>>>>> 421bb26 (UF-10590: Add API changelog)
+=======
+>>>>>>> 6e776f1 (UF-10888: Refactored contactReason API.)
 [api-path-removed-without-deprecation]
 in API GET /{municipalityId}/{namespace}/metadata/externalIdTypes
 api path removed without deprecation
@@ -181,6 +197,9 @@ in API GET /{municipalityId}/{namespace}/metadata/externalIdTypes/{externalIdTyp
 api path removed without deprecation
  
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 6e776f1 (UF-10888: Refactored contactReason API.)
 [response-media-type-removed]
 in API GET /{municipalityId}/{namespace}/metadata/labels
 removed the media type 'application/problem+json' for the response with the status '200'
@@ -201,8 +220,11 @@ removed the media type 'application/problem+json' for the response with the stat
 in API GET /{municipalityId}/{namespace}/metadata/statuses/{status}
 removed the media type 'application/problem+json' for the response with the status '200'
  
+<<<<<<< HEAD
 =======
 >>>>>>> 421bb26 (UF-10590: Add API changelog)
+=======
+>>>>>>> 6e776f1 (UF-10888: Refactored contactReason API.)
 [api-path-removed-without-deprecation]
 in API DELETE /{municipalityId}/{namespace}/namespaceConfig
 api path removed without deprecation
@@ -220,12 +242,18 @@ in API PUT /{municipalityId}/{namespace}/namespaceConfig
 api path removed without deprecation
  
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 6e776f1 (UF-10888: Refactored contactReason API.)
 [response-media-type-removed]
 in API GET /{municipalityId}/{namespace}/notifications
 removed the media type '*/*' for the response with the status '200'
  
+<<<<<<< HEAD
 =======
 >>>>>>> 421bb26 (UF-10590: Add API changelog)
+=======
+>>>>>>> 6e776f1 (UF-10888: Refactored contactReason API.)
 [api-removed-without-deprecation]
 in API POST /{municipalityId}/{namespace}/notifications
 api removed without deprecation
@@ -282,6 +310,7 @@ in API PUT /{municipalityId}/{namespace}/email-integration-config
 endpoint added
  
 <<<<<<< HEAD
+<<<<<<< HEAD
 [response-optional-property-added]
 in API GET /{municipalityId}/{namespace}/errands
 added the optional property 'content/items/stakeholders/items/parameters' to the response with the '200' status
@@ -290,12 +319,17 @@ added the optional property 'content/items/stakeholders/items/parameters' to the
 in API POST /{municipalityId}/{namespace}/errands
 added the new optional request property 'stakeholders/items/parameters'
  
+=======
+>>>>>>> 6e776f1 (UF-10888: Refactored contactReason API.)
 [request-property-max-length-increased]
 in API POST /{municipalityId}/{namespace}/errands
 the 'contactReasonDescription' request property's maxLength was increased from '255' to '4096'
  
+<<<<<<< HEAD
 =======
 >>>>>>> 421bb26 (UF-10590: Add API changelog)
+=======
+>>>>>>> 6e776f1 (UF-10888: Refactored contactReason API.)
 [endpoint-added]
 in API GET /{municipalityId}/{namespace}/errands/{errandId}/attachments/{attachmentId}/streamed
 endpoint added
@@ -325,6 +359,7 @@ in API GET /{municipalityId}/{namespace}/errands/{errandId}/time-measure
 endpoint added
  
 <<<<<<< HEAD
+<<<<<<< HEAD
 [response-optional-property-added]
 in API GET /{municipalityId}/{namespace}/errands/{id}
 added the optional property 'stakeholders/items/parameters' to the response with the '200' status
@@ -333,15 +368,20 @@ added the optional property 'stakeholders/items/parameters' to the response with
 in API PATCH /{municipalityId}/{namespace}/errands/{id}
 added the new optional request property 'stakeholders/items/parameters'
  
+=======
+>>>>>>> 6e776f1 (UF-10888: Refactored contactReason API.)
 [request-property-max-length-increased]
 in API PATCH /{municipalityId}/{namespace}/errands/{id}
 the 'contactReasonDescription' request property's maxLength was increased from '255' to '4096'
  
 [response-optional-property-added]
+<<<<<<< HEAD
 in API PATCH /{municipalityId}/{namespace}/errands/{id}
 added the optional property 'stakeholders/items/parameters' to the response with the '200' status
  
 [response-optional-property-added]
+=======
+>>>>>>> 6e776f1 (UF-10888: Refactored contactReason API.)
 in API GET /{municipalityId}/{namespace}/metadata
 added the optional property 'contactReasons/items/id' to the response with the '200' status
  
@@ -349,8 +389,11 @@ added the optional property 'contactReasons/items/id' to the response with the '
 in API GET /{municipalityId}/{namespace}/metadata
 added the optional property 'roles/items/displayName' to the response with the '200' status
  
+<<<<<<< HEAD
 =======
 >>>>>>> 421bb26 (UF-10590: Add API changelog)
+=======
+>>>>>>> 6e776f1 (UF-10888: Refactored contactReason API.)
 [endpoint-added]
 in API GET /{municipalityId}/{namespace}/metadata/external-id-types
 endpoint added
@@ -368,6 +411,9 @@ in API GET /{municipalityId}/{namespace}/metadata/external-id-types/{externalIdT
 endpoint added
  
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 6e776f1 (UF-10888: Refactored contactReason API.)
 [response-optional-property-added]
 in API GET /{municipalityId}/{namespace}/metadata/roles
 added the optional property '/items/displayName' to the response with the '200' status
@@ -380,8 +426,11 @@ added the new optional request property 'displayName'
 in API GET /{municipalityId}/{namespace}/metadata/roles/{role}
 added the optional property 'displayName' to the response with the '200' status
  
+<<<<<<< HEAD
 =======
 >>>>>>> 421bb26 (UF-10590: Add API changelog)
+=======
+>>>>>>> 6e776f1 (UF-10888: Refactored contactReason API.)
 [endpoint-added]
 in API DELETE /{municipalityId}/{namespace}/namespace-config
 endpoint added
@@ -403,6 +452,7 @@ in API GET /{municipalityId}/{namespace}/notifications
 api operation id 'getNotifications' removed and replaced with 'getNotificationsByOwnerId'
  
 <<<<<<< HEAD
+<<<<<<< HEAD
 [response-media-type-added]
 in API GET /{municipalityId}/{namespace}/notifications
 added the media type 'application/json' for the response with the status '200'
@@ -411,6 +461,11 @@ added the media type 'application/json' for the response with the status '200'
 in API GET /{municipalityId}/{namespace}/notifications
 the response optional property '/items/errandId' became read-only for the status '200'
 >>>>>>> 421bb26 (UF-10590: Add API changelog)
+=======
+[response-media-type-added]
+in API GET /{municipalityId}/{namespace}/notifications
+added the media type 'application/json' for the response with the status '200'
+>>>>>>> 6e776f1 (UF-10888: Refactored contactReason API.)
  
 [request-optional-property-became-read-only]
 in API PATCH /{municipalityId}/{namespace}/notifications
