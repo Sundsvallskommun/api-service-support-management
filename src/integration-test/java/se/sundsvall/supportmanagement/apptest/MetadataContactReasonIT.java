@@ -32,14 +32,11 @@ import se.sundsvall.supportmanagement.integration.db.ContactReasonRepository;
 class MetadataContactReasonIT extends AbstractAppTest {
 
 	private static final String NAMESPACE = "CONTACTCENTER";
-
 	private static final String MUNICIPALITY_2281 = "2281";
-
 	private static final String PATH = "/" + MUNICIPALITY_2281 + "/" + NAMESPACE + "/metadata/contactreasons";
-
 	private static final String REQUEST_FILE = "request.json";
-
 	private static final String RESPONSE_FILE = "response.json";
+	private static final String CONTACT_REASON_ID = "123";
 
 	@Autowired
 	private ContactReasonRepository contactReasonRepository;
@@ -51,14 +48,14 @@ class MetadataContactReasonIT extends AbstractAppTest {
 			.withHttpMethod(POST)
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(CREATED)
-			.withExpectedResponseHeader(LOCATION, List.of("^" + PATH + "/(.*)$"))
+			.withExpectedResponseHeader(LOCATION, List.of("^" + PATH + "/(\\d+)$"))
 			.sendRequestAndVerifyResponse();
 	}
 
 	@Test
 	void test02_getContactReason() {
 		setupCall()
-			.withServicePath(PATH + "/reason1")
+			.withServicePath(PATH + "/" + CONTACT_REASON_ID)
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponse(RESPONSE_FILE)
@@ -78,7 +75,7 @@ class MetadataContactReasonIT extends AbstractAppTest {
 	@Test
 	void test04_updateContactReason() {
 		setupCall()
-			.withServicePath(PATH + "/reason2")
+			.withServicePath(PATH + "/" + CONTACT_REASON_ID)
 			.withHttpMethod(PATCH)
 			.withExpectedResponseStatus(OK)
 			.withRequest(REQUEST_FILE)
@@ -91,12 +88,11 @@ class MetadataContactReasonIT extends AbstractAppTest {
 		assertThat(contactReasonRepository.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId("reason3", NAMESPACE, MUNICIPALITY_2281)).isPresent();
 
 		setupCall()
-			.withServicePath(PATH + "/reason3")
+			.withServicePath(PATH + "/" + CONTACT_REASON_ID)
 			.withHttpMethod(DELETE)
 			.withExpectedResponseStatus(NO_CONTENT)
 			.sendRequestAndVerifyResponse();
 
-		assertThat(contactReasonRepository.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId("reason3", NAMESPACE, MUNICIPALITY_2281)).isNotPresent();
+		assertThat(contactReasonRepository.findByIdAndNamespaceAndMunicipalityId(Long.valueOf(CONTACT_REASON_ID), NAMESPACE, MUNICIPALITY_2281)).isNotPresent();
 	}
-
 }

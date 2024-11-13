@@ -42,11 +42,12 @@ class MetadataContactReasonResourceTest {
 	@Test
 	void createContactReason() {
 		final var body = ContactReason.create()
+			.withId(1L)
 			.withReason("reason")
 			.withCreated(OffsetDateTime.now())
 			.withModified(OffsetDateTime.now());
 
-		when(metadataServiceMock.createContactReason(NAMESPACE, MUNICIPALITY_ID, body)).thenReturn(body.getReason());
+		when(metadataServiceMock.createContactReason(NAMESPACE, MUNICIPALITY_ID, body)).thenReturn(body.getId());
 
 		webTestClient.post().uri(builder -> builder.path(PATH).build(MUNICIPALITY_ID, NAMESPACE))
 			.contentType(APPLICATION_JSON)
@@ -54,19 +55,22 @@ class MetadataContactReasonResourceTest {
 			.exchange()
 			.expectStatus().isCreated()
 			.expectHeader().contentType(ALL)
-			.expectHeader().location("/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/metadata/contactreasons/" + body.getReason())
+			.expectHeader().location("/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/metadata/contactreasons/" + body.getId())
 			.expectBody().isEmpty();
 	}
 
 	@Test
 	void getContactReason() {
+
+		final var contactReasonId = 1L;
 		final var reason = "reason";
+		final var contactReason = ContactReason.create()
+			.withId(contactReasonId)
+			.withReason(reason);
 
-		final var contactReason = ContactReason.create().withReason(reason);
+		when(metadataServiceMock.getContactReasonByIdAndNamespaceAndMunicipalityId(contactReasonId, NAMESPACE, MUNICIPALITY_ID)).thenReturn(contactReason);
 
-		when(metadataServiceMock.getContactReasonByReasonAndNamespaceAndMunicipalityId(reason, NAMESPACE, MUNICIPALITY_ID)).thenReturn(contactReason);
-
-		final var result = webTestClient.get().uri(builder -> builder.path(PATH + "/reason").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "reason", reason)))
+		final var result = webTestClient.get().uri(builder -> builder.path(PATH + "/{contactReasonId}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "contactReasonId", contactReasonId)))
 			.exchange()
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)
@@ -80,13 +84,13 @@ class MetadataContactReasonResourceTest {
 
 	@Test
 	void getContactReasons() {
-		final var reason = "reason";
 
+		final var reason = "reason";
 		final var contactReason1 = ContactReason.create().withReason("reason1");
 		final var contactReason2 = ContactReason.create().withReason("reason2");
 		final var contactReasons = List.of(contactReason1, contactReason2);
 
-		when(metadataServiceMock.getContactReasonsForNamespaceAndMunicipality(NAMESPACE, MUNICIPALITY_ID)).thenReturn(contactReasons);
+		when(metadataServiceMock.findContactReasonsForNamespaceAndMunicipality(NAMESPACE, MUNICIPALITY_ID)).thenReturn(contactReasons);
 
 		final var result = webTestClient.get().uri(builder -> builder.path(PATH).build(MUNICIPALITY_ID, NAMESPACE, reason))
 			.exchange()
@@ -97,36 +101,39 @@ class MetadataContactReasonResourceTest {
 			.getResponseBody();
 
 		assertThat(result).hasSize(2).extracting(ContactReason::getReason).containsExactly("reason1", "reason2");
-
 	}
 
 	@Test
 	void updateContactReason() {
-		final var reason = "reason";
-		final var patch = ContactReason.create().withReason("not-reason");
 
-		when(metadataServiceMock.patchContactReason(reason, NAMESPACE, MUNICIPALITY_ID, patch)).thenReturn(patch);
+		final var contactReasonId = 1L;
+		final var reason = "reason";
+		final var patch = ContactReason.create()
+			.withReason(reason)
+			.withId(contactReasonId);
+
+		when(metadataServiceMock.patchContactReason(contactReasonId, NAMESPACE, MUNICIPALITY_ID, patch)).thenReturn(patch);
 
 		webTestClient.patch()
-			.uri(builder -> builder.path(PATH + "/{reason}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "reason", reason)))
+			.uri(builder -> builder.path(PATH + "/{contactReasonId}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "contactReasonId", contactReasonId)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(patch)
 			.exchange()
 			.expectStatus().isEqualTo(HttpStatus.OK);
 
-		verify(metadataServiceMock).patchContactReason(reason, NAMESPACE, MUNICIPALITY_ID, patch);
+		verify(metadataServiceMock).patchContactReason(contactReasonId, NAMESPACE, MUNICIPALITY_ID, patch);
 	}
 
 	@Test
 	void deleteContactReason() {
-		final var reason = "reason";
+
+		final var contactReasonId = 1L;
 
 		webTestClient.delete()
-			.uri(builder -> builder.path(PATH + "/{reason}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "reason", reason)))
+			.uri(builder -> builder.path(PATH + "/{contactReasonId}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "contactReasonId", contactReasonId)))
 			.exchange()
 			.expectStatus().isEqualTo(HttpStatus.NO_CONTENT);
 
-		verify(metadataServiceMock).deleteContactReason(reason, NAMESPACE, MUNICIPALITY_ID);
+		verify(metadataServiceMock).deleteContactReason(contactReasonId, NAMESPACE, MUNICIPALITY_ID);
 	}
-
 }
