@@ -56,9 +56,7 @@ class ErrandAttachmentsResource {
 		this.errandAttachmentService = errandAttachmentService;
 	}
 
-	@PostMapping(consumes = MULTIPART_FORM_DATA_VALUE, produces = {
-		ALL_VALUE, APPLICATION_PROBLEM_JSON_VALUE
-	})
+	@PostMapping(consumes = MULTIPART_FORM_DATA_VALUE, produces = ALL_VALUE)
 	@Operation(summary = "Create errand attachment", description = "Creates a new errand attachment based on the supplied attributes")
 	@ApiResponse(responseCode = "201", headers = @Header(name = LOCATION, schema = @Schema(type = "string")), description = "Successful operation", useReturnTypeSchema = true)
 	@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
@@ -80,9 +78,7 @@ class ErrandAttachmentsResource {
 			.build();
 	}
 
-	@GetMapping(path = "/{attachmentId}", produces = {
-		ALL_VALUE, APPLICATION_PROBLEM_JSON_VALUE
-	})
+	@GetMapping(path = "/{attachmentId}", produces = ALL_VALUE)
 	@Operation(summary = "Read errand attachment", description = "Fetches the errand attachment that matches the provided errand id and attachment id")
 	@ApiResponse(responseCode = "200", description = "Successful Operation", useReturnTypeSchema = true)
 	@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
@@ -100,9 +96,7 @@ class ErrandAttachmentsResource {
 		errandAttachmentService.readErrandAttachment(namespace, municipalityId, errandId, attachmentId, response);
 	}
 
-	@GetMapping(produces = {
-		APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE
-	})
+	@GetMapping(produces = APPLICATION_JSON_VALUE)
 	@Operation(summary = "Read errand attachments", description = "Fetches the errand attachments that matches the provided errand id")
 	@ApiResponse(responseCode = "200", description = "Successful Operation", useReturnTypeSchema = true)
 	@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
@@ -139,9 +133,7 @@ class ErrandAttachmentsResource {
 	}
 
 	@Operation(summary = "Get a streamed attachment.", description = "Fetches the attachment that matches the provided id in a streamed manner")
-	@GetMapping(path = "/{attachmentId}/streamed", produces = {
-		ALL_VALUE, APPLICATION_PROBLEM_JSON_VALUE
-	})
+	@GetMapping(path = "/{attachmentId}/streamed", produces = ALL_VALUE)
 	@ApiResponse(responseCode = "200", description = "Successful Operation", useReturnTypeSchema = true)
 	@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	void getMessageAttachmentStreamed(

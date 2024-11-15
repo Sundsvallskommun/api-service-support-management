@@ -174,5 +174,4 @@ class NotificationRepositoryTest {
 		// Assert
 		assertThat(notificationRepository.findById("1")).isNotPresent();
 	}
-
 }

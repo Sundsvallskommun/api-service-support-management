@@ -12,6 +12,7 @@ servers:
 tags:
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
   - name: Errand Parameters
     description: Errand parameter operations
   - name: Errand attachments
@@ -132,6 +133,46 @@ tags:
 >>>>>>> fd310fe (UF-10583: Update API)
 =======
 >>>>>>> ea33d37 (UF-10806: Resolve merge conflicts)
+=======
+- name: Errand attachments
+  description: Errand attachments operations
+- name: Errand Parameters
+  description: Errand parameter operations
+- name: Configuration for namespace
+  description: Namespace configuration operations
+- name: Metadata for categories
+  description: Category metadata operations
+- name: Revisions
+  description: Errand and errand note revision operations
+- name: Metadata for labels
+  description: Label metadata operations
+- name: Errand notes
+  description: Errand notes operations
+- name: Metadata for contact reasons
+  description: Contact reason metadata operations
+- name: Errand events
+  description: Errand event operations
+- name: User notifications
+  description: User notifications operations
+- name: Metadata for externalid types
+  description: ExternalIdType metadata operations
+- name: Metadata
+  description: Metadata operations
+- name: Metadata for roles
+  description: Role metadata operations
+- name: Time measures
+  description: Time measure operations
+- name: Errand labels
+  description: Errand labels operations
+- name: Metadata for statuses
+  description: Status metadata operations
+- name: Errand communication
+  description: Errand communication operations
+- name: Configuration for email integration
+  description: Settings for email integration per municipality/namespace
+- name: Errands
+  description: Errand operations
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
 paths:
   /{municipalityId}/{namespace}/namespace-config:
     get:
@@ -167,12 +208,29 @@ paths:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 =======
 =======
         "404":
           description: Not Found
 =======
+=======
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         "500":
           description: Internal Server Error
 >>>>>>> 5f321e0 (UF-10368: Acted on review comnents)
@@ -204,10 +262,177 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/NamespaceConfig"
+<<<<<<< HEAD
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/NamespaceConfig"
 >>>>>>> 05cb6da (UF-10584: Add logic)
+=======
+    put:
+      tags:
+      - Configuration for namespace
+      summary: Update namespace config
+      description: Update config that is used within the namespace
+      operationId: updateNamespaceConfig
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NamespaceConfig"
+        required: true
+      responses:
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "204":
+          description: Successful operation
+    post:
+      tags:
+      - Configuration for namespace
+      summary: Create namespace config
+      description: Create config that is used within the namespace
+      operationId: createNamespaceConfig
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NamespaceConfig"
+        required: true
+      responses:
+        "201":
+          description: Successful operation
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+    delete:
+      tags:
+      - Configuration for namespace
+      summary: Delete namespace config
+      description: Deletes the config for a namespace/municipality
+      operationId: deleteNamespaceConfig
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      responses:
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "204":
+          description: Successful operation
+  /{municipalityId}/{namespace}/metadata/labels:
+    get:
+      tags:
+      - Metadata for labels
+      summary: Get label structure
+      description: Get label structure for provided namespace and municipality
+      operationId: getLabels
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      responses:
         "400":
           description: Bad Request
           content:
@@ -216,6 +441,7 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -1338,14 +1564,20 @@ paths:
 >>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
 =======
 >>>>>>> a5246de (UF-10368: Add new resource for listing notifications by errandId)
+=======
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         "200":
           description: Successful operation
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Labels"
+        "500":
+          description: Internal Server error
+          content:
             application/problem+json:
               schema:
+<<<<<<< HEAD
                 $ref: "#/components/schemas/Labels"
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -1425,6 +1657,8 @@ paths:
           content:
             application/problem+json:
               schema:
+=======
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
                 $ref: "#/components/schemas/Problem"
     put:
       tags:
@@ -1462,6 +1696,7 @@ paths:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 =======
         "500":
@@ -1473,12 +1708,15 @@ paths:
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
 =======
 >>>>>>> 6e0adf4 (UF-10888: Refactored contactReason API.)
+=======
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         "404":
           description: Not Found
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 <<<<<<< HEAD
 >>>>>>> 4aad4eb (UF-10583: Update API)
 =======
@@ -1569,6 +1807,24 @@ paths:
         "204":
           description: Successful operation
 >>>>>>> 6e0adf4 (UF-10888: Refactored contactReason API.)
+=======
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "204":
+          description: Successful operation
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
     post:
       tags:
       - Metadata for labels
@@ -1607,6 +1863,7 @@ paths:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> fd310fe (UF-10583: Update API)
 =======
 <<<<<<< HEAD
@@ -1637,16 +1894,25 @@ paths:
 =======
 >>>>>>> c8b56ec (UF-10368: Acted on review comnents)
 =======
+=======
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         "400":
           description: Bad Request
           content:
             application/problem+json:
               schema:
                 oneOf:
-                  - $ref: "#/components/schemas/Problem"
-                  - $ref: "#/components/schemas/ConstraintViolationProblem"
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "202":
           description: Successful operation
+<<<<<<< HEAD
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
 <<<<<<< HEAD
@@ -1674,6 +1940,370 @@ paths:
 >>>>>>> 05cb6da (UF-10584: Add logic)
 =======
 >>>>>>> 6e0adf4 (UF-10888: Refactored contactReason API.)
+=======
+    delete:
+      tags:
+      - Metadata for labels
+      summary: Delete label structure
+      description: Delete label structure for provided namespace and municipality
+      operationId: deleteLabels
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      responses:
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "204":
+          description: Successful operation
+  /{municipalityId}/{namespace}/errands/{errandId}/labels:
+    get:
+      tags:
+      - Errand labels
+      summary: Get errand labels
+      description: Get errand labels
+      operationId: getErrandLabels
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand id
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      responses:
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "200":
+          description: Successful Operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+    put:
+      tags:
+      - Errand labels
+      summary: Replace errand labels
+      description: Replace all labels of an errand
+      operationId: updateErrandLabels
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand id
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+        required: true
+      responses:
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "204":
+          description: No content
+    post:
+      tags:
+      - Errand labels
+      summary: Add errand labels
+      description: Add errand labels to an errand
+      operationId: addErrandLabels
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand id
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+        required: true
+      responses:
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "201":
+          description: Created
+          content:
+            application/json: {}
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+    delete:
+      tags:
+      - Errand labels
+      summary: Remove errand labels
+      description: Remove all labels of an errand
+      operationId: removeErrandLabel
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand errandId
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      responses:
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "204":
+          description: No content
+  /{municipalityId}/{namespace}/errands/{errandId}/communication/{communicationId}/viewed/{isViewed}:
+    put:
+      tags:
+      - Errand communication
+      description: Set viewed status for communication.
+      operationId: updateViewedStatus
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand id
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: communicationId
+        in: path
+        description: communication ID
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: isViewed
+        in: path
+        description: If a message is viewed
+        required: true
+        schema:
+          type: boolean
+        example: true
+      responses:
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "204":
+          description: No content - Successful operation
+  /{municipalityId}/{namespace}/email-integration-config:
+    get:
+      tags:
+      - Configuration for email integration
+      summary: Read email integration config
+      description: Fetches email integration config for a municipality/namespace
+      operationId: readEmailIntegrationConfig
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      responses:
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         "400":
           description: Bad Request
           content:
@@ -1688,8 +2318,17 @@ paths:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 =======
+=======
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         "500":
           description: Internal Server error
           content:
@@ -3801,6 +4440,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/EmailIntegration"
+<<<<<<< HEAD
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/EmailIntegration"
@@ -4016,6 +4656,8 @@ paths:
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
 =======
 >>>>>>> 7a702cb (UF-10584: Add logic)
+=======
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
     put:
       tags:
       - Configuration for email integration
@@ -4069,7 +4711,10 @@ paths:
                 $ref: "#/components/schemas/Problem"
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         "400":
           description: Bad request
           content:
@@ -4078,6 +4723,7 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
 >>>>>>> 6e0adf4 (UF-10888: Refactored contactReason API.)
         "204":
           description: Successful operation
@@ -4152,6 +4798,10 @@ paths:
 =======
 >>>>>>> c8b56ec (UF-10368: Acted on review comnents)
 >>>>>>> 5f321e0 (UF-10368: Acted on review comnents)
+=======
+        "204":
+          description: Successful operation
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
     post:
       tags:
       - Configuration for email integration
@@ -4190,6 +4840,7 @@ paths:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 =======
 >>>>>>> 05cb6da (UF-10584: Add logic)
@@ -4199,6 +4850,8 @@ paths:
 >>>>>>> 7a702cb (UF-10584: Add logic)
 =======
 >>>>>>> 6e0adf4 (UF-10888: Refactored contactReason API.)
+=======
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         "201":
           description: Successful operation
           headers:
@@ -4212,18 +4865,22 @@ paths:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 4aad4eb (UF-10583: Update API)
 =======
 =======
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
 =======
 >>>>>>> 6e0adf4 (UF-10888: Refactored contactReason API.)
+=======
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         "500":
           description: Internal Server error
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
@@ -4557,22 +5214,53 @@ paths:
 >>>>>>> 6e0adf4 (UF-10888: Refactored contactReason API.)
   /{municipalityId}/{namespace}/metadata/statuses:
 =======
+=======
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         "400":
           description: Bad request
           content:
             application/problem+json:
               schema:
                 oneOf:
+<<<<<<< HEAD
                   - $ref: "#/components/schemas/Problem"
                   - $ref: "#/components/schemas/ConstraintViolationProblem"
 =======
 >>>>>>> 4aad4eb (UF-10583: Update API)
+=======
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+    delete:
+      tags:
+      - Configuration for email integration
+      summary: Delete email integration config
+      description: Deletes the email integration config for a municipality/namespace
+      operationId: deleteEmailIntegrationConfig
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      responses:
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         "404":
           description: Not Found
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 <<<<<<< HEAD
   /{municipalityId}/{namespace}/notifications:
 >>>>>>> fd310fe (UF-10583: Update API)
@@ -4626,12 +5314,15 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
 >>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
+=======
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         "500":
           description: Internal Server error
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -6012,12 +6703,15 @@ paths:
                   $ref: "#/components/schemas/Notification"
 =======
 >>>>>>> 4aad4eb (UF-10583: Update API)
+=======
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         "400":
           description: Bad request
           content:
             application/problem+json:
               schema:
                 oneOf:
+<<<<<<< HEAD
 <<<<<<< HEAD
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
@@ -6132,8 +6826,13 @@ paths:
                 $ref: "#/components/schemas/Problem"
 <<<<<<< HEAD
 =======
+=======
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         "204":
           description: Successful operation
+<<<<<<< HEAD
         "400":
           description: Bad request
           content:
@@ -6146,9 +6845,12 @@ paths:
         "204":
           description: Successful operation
 >>>>>>> 4aad4eb (UF-10583: Update API)
+=======
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
   /{municipalityId}/{namespace}/metadata/statuses:
     get:
       tags:
+<<<<<<< HEAD
         - Metadata for statuses
 =======
         "204":
@@ -6160,10 +6862,14 @@ paths:
       tags:
       - Metadata for statuses
 >>>>>>> a5246de (UF-10368: Add new resource for listing notifications by errandId)
+=======
+      - Metadata for statuses
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
       summary: Get statuses
       description: Get all statuses for the namespace and municipality
       operationId: getStatuses
       parameters:
+<<<<<<< HEAD
 <<<<<<< HEAD
         - name: namespace
           in: path
@@ -6180,7 +6886,25 @@ paths:
           schema:
             type: string
           example: 2281
+=======
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
       responses:
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -6192,12 +6916,15 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
 <<<<<<< HEAD
+=======
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         "400":
           description: Bad Request
           content:
             application/problem+json:
               schema:
                 oneOf:
+<<<<<<< HEAD
                   - $ref: "#/components/schemas/Problem"
                   - $ref: "#/components/schemas/ConstraintViolationProblem"
 =======
@@ -6207,6 +6934,94 @@ paths:
 =======
 =======
 >>>>>>> ea33d37 (UF-10806: Resolve merge conflicts)
+      - name: namespace
+        in: path
+        description: Namespace
+=======
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Status"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    post:
+      tags:
+      - Metadata for statuses
+      summary: Create status
+      description: Create new status for the namespace and municipality
+      operationId: createStatus
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Status"
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
+        required: true
+<<<<<<< HEAD
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+=======
+      responses:
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "201":
+          description: Successful operation
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/metadata/roles:
+    get:
+      tags:
+      - Metadata for roles
+      summary: Get roles
+      description: Get all roles for the namespace and municipality
+      operationId: getRoles
+      parameters:
       - name: namespace
         in: path
         description: Namespace
@@ -6223,6 +7038,440 @@ paths:
           type: string
         example: 2281
       responses:
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Role"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    post:
+      tags:
+      - Metadata for roles
+      summary: Create role
+      description: Create new role for the namespace and municipality
+      operationId: createRole
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Role"
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
+        required: true
+        schema:
+          type: string
+        example: 2281
+      responses:
+<<<<<<< HEAD
+=======
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "201":
+          description: Successful operation
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/metadata/external-id-types:
+    get:
+      tags:
+      - Metadata for externalid types
+      summary: Get externalIdTypes
+      description: Get all externalIdTypes for the namespace and municipality
+      operationId: getExternalIdTypes
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      responses:
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ExternalIdType"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    post:
+      tags:
+      - Metadata for externalid types
+      summary: Create externalIdType
+      description: Create new externalIdType for the namespace and municipality
+      operationId: createExternalIdType
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExternalIdType"
+        required: true
+      responses:
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "201":
+          description: Successful operation
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/metadata/contactreasons:
+    get:
+      tags:
+      - Metadata for contact reasons
+      summary: Get contact reasons for given namespace and municipalityId
+      description: Get all contact reasons for the namespace and municipality
+      operationId: getContactReasons
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ContactReason"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+    post:
+      tags:
+      - Metadata for contact reasons
+      summary: Create contact reason
+      description: Create new contact reason for the namespace and municipality
+      operationId: createContactReason
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContactReason"
+        required: true
+      responses:
+        "201":
+          description: Successful operation
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+  /{municipalityId}/{namespace}/metadata/categories:
+    get:
+      tags:
+      - Metadata for categories
+      summary: Get categories and types
+      description: Get all categories and their connected types for the namespace
+        and municipality
+      operationId: getCategories
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      responses:
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Category"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    post:
+      tags:
+      - Metadata for categories
+      summary: Create category
+      description: Create new category for the namespace and municipality
+      operationId: createCategory
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Category"
+        required: true
+      responses:
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "201":
+          description: Successful operation
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/errands:
+    get:
+      tags:
+      - Errands
+      summary: Read matching errands
+      description: Query for errands with or without filters. The resource allows
+        the client a wide range of variations on how to filter the result.
+      operationId: findErrands
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: filter
+        in: query
+        description: "Syntax description: [spring-filter](https://github.com/turkraft/spring-filter/blob/85730f950a5f8623159cc0eb4d737555f9382bb7/README.md#syntax)"
+        required: true
+        schema:
+          type: string
+        example: categoryTag:'SUPPORT-CASE' and stakeholder.externalId:'81471222-5798-11e9-ae24-57fa13b361e1'
+          and externalTags.key:'caseid' and externalTags.value:'111' and created>'2022-09-08T12:00:00.000+02:00'
+      - name: page
+        in: query
+        description: Zero-based page index (0..N)
+        required: false
+        schema:
+          minimum: 0
+          type: integer
+          default: 0
+      - name: size
+        in: query
+        description: The size of the page to be returned
+        required: false
+        schema:
+          minimum: 1
+          type: integer
+          default: 20
+      - name: sort
+        in: query
+        description: "Sorting criteria in the format: property,(asc|desc). Default\
+          \ sort order is ascending. Multiple sort criteria are supported."
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+      responses:
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         "500":
           description: Internal Server Error
           content:
@@ -6234,6 +7483,7 @@ paths:
           content:
             application/json:
               schema:
+<<<<<<< HEAD
                 $ref: "#/components/schemas/EmailIntegration"
             application/problem+json:
               schema:
@@ -6353,13 +7603,23 @@ paths:
           description: Successful operation
 =======
 >>>>>>> c8b56ec (UF-10368: Acted on review comnents)
+=======
+                $ref: "#/components/schemas/PageErrand"
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
     post:
       tags:
+<<<<<<< HEAD
       - Configuration for email integration
       summary: Create email integration config
       description: Create email integration config that fetches emails from email-reader
         service
       operationId: createEmailIntegrationConfig
+=======
+      - Errands
+      summary: Create errand
+      description: Creates a new errand based on the supplied attributes
+      operationId: createErrand
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
       parameters:
       - name: namespace
         in: path
@@ -6376,6 +7636,7 @@ paths:
         schema:
           type: string
         example: 2281
+<<<<<<< HEAD
       requestBody:
         content:
           application/json:
@@ -7089,6 +8350,8 @@ paths:
         schema:
           type: string
         example: 2281
+=======
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
       requestBody:
         content:
           application/json:
@@ -7096,6 +8359,7 @@ paths:
               $ref: "#/components/schemas/Role"
         required: true
       responses:
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -8375,6 +9639,15 @@ paths:
 <<<<<<< HEAD
 >>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
 =======
+=======
+        "201":
+          description: Successful operation
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         "500":
           description: Internal Server error
           content:
@@ -8389,6 +9662,7 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
 >>>>>>> 6e0adf4 (UF-10888: Refactored contactReason API.)
     post:
       tags:
@@ -8442,6 +9716,112 @@ paths:
 >>>>>>> ea33d37 (UF-10806: Resolve merge conflicts)
 =======
 =======
+=======
+  /{municipalityId}/{namespace}/errands/{errandId}/notifications:
+    get:
+      tags:
+      - User notifications
+      summary: Get notifications
+      description: "Get all notifications for the namespace, municipality and errand"
+      operationId: getNotificationsByErrandId
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality ID
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand ID
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: sort
+        in: query
+        description: "Sorting criteria in the format: property,(asc|desc). Default\
+          \ sort order is ascending. Multiple sort criteria are supported."
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+    post:
+      tags:
+      - User notifications
+      summary: Create notification
+      description: Create new notification for the namespace and municipality
+      operationId: createNotification
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality ID
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand ID
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Notification"
+        required: true
+      responses:
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         "201":
           description: Created - Successful operation
           headers:
@@ -8449,6 +9829,7 @@ paths:
               style: simple
               schema:
                 type: string
+<<<<<<< HEAD
 >>>>>>> 6e0adf4 (UF-10888: Refactored contactReason API.)
         "409":
           description: Conflict
@@ -8656,6 +10037,28 @@ paths:
 >>>>>>> a5246de (UF-10368: Add new resource for listing notifications by errandId)
 =======
 >>>>>>> 6e0adf4 (UF-10888: Refactored contactReason API.)
+=======
+        "409":
+          description: Conflict
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
   /{municipalityId}/{namespace}/errands/{errandId}/notes:
     get:
       tags:
@@ -8664,6 +10067,7 @@ paths:
       description: Find the errand notes that matches the provided attributes
       operationId: findErrandNotes
       parameters:
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
       - name: namespace
@@ -8732,10 +10136,50 @@ paths:
           required: true
           schema:
             $ref: "#/components/schemas/FindErrandNotesRequest"
+=======
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand id
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: findErrandNotesRequest
+        in: query
+        required: true
+        schema:
+          $ref: "#/components/schemas/FindErrandNotesRequest"
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
       responses:
+<<<<<<< HEAD
 =======
 =======
 =======
+=======
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         "500":
           description: Internal Server Error
           content:
@@ -8770,6 +10214,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/FindErrandNotesResponse"
+<<<<<<< HEAD
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/FindErrandNotesResponse"
@@ -8800,6 +10245,8 @@ paths:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
 >>>>>>> 05cb6da (UF-10584: Add logic)
+=======
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
     post:
       tags:
       - Errand notes
@@ -8807,6 +10254,7 @@ paths:
       description: Creates a new errand note based on the supplied attributes
       operationId: createErrandNote
       parameters:
+<<<<<<< HEAD
 >>>>>>> 4aad4eb (UF-10583: Update API)
       - name: namespace
         in: path
@@ -9050,6 +10498,30 @@ paths:
 >>>>>>> fd310fe (UF-10583: Update API)
 =======
 >>>>>>> ea33d37 (UF-10806: Resolve merge conflicts)
+=======
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand id
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
       requestBody:
         content:
           application/json:
@@ -9057,6 +10529,7 @@ paths:
               $ref: "#/components/schemas/CreateErrandNoteRequest"
         required: true
       responses:
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -9086,6 +10559,15 @@ paths:
               schema:
                 type: string
 <<<<<<< HEAD
+=======
+        "201":
+          description: Successful operation
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         "500":
           description: Internal Server error
           content:
@@ -9107,6 +10589,7 @@ paths:
             application/problem+json:
               schema:
                 oneOf:
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
                   - $ref: "#/components/schemas/Problem"
@@ -10053,19 +11536,57 @@ paths:
   /{municipalityId}/{namespace}/notifications:
     get:
 =======
+=======
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
   /{municipalityId}/{namespace}/errands/{errandId}/communication/sms:
     post:
 >>>>>>> 4aad4eb (UF-10583: Update API)
       tags:
+<<<<<<< HEAD
       - User notifications
       summary: Get notifications
       description: Get notifications for the namespace and municipality with the specified
         ownerId
       operationId: getNotificationsByOwnerId
+=======
+      - Errand communication
+      summary: Send sms to in context of an errand
+      description: Sends a sms message to the recipient specified in the request
+      operationId: sendSms
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
       parameters:
       - name: namespace
         in: path
         description: Namespace
+<<<<<<< HEAD
+=======
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality ID
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand ID
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SmsRequest"
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         required: true
         schema:
           pattern: "[\\w|\\.|\\-]+"
@@ -10135,12 +11656,26 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
     patch:
+=======
+        "204":
+          description: Successful operation
+  /{municipalityId}/{namespace}/errands/{errandId}/communication/email:
+    post:
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
       tags:
+<<<<<<< HEAD
       - User notifications
       summary: Update notification
       description: Update notifications for the namespace and municipality
       operationId: updateNotifications
+=======
+      - Errand communication
+      summary: Send email to in context of an errand
+      description: Sends an email message to the recipient specified in the request
+      operationId: sendEmail
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
       parameters:
       - name: namespace
         in: path
@@ -10157,6 +11692,16 @@ paths:
         schema:
           type: string
         example: 2281
+<<<<<<< HEAD
+=======
+      - name: errandId
+        in: path
+        description: Errand ID
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
       requestBody:
         content:
           application/json:
@@ -10192,6 +11737,7 @@ paths:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
 <<<<<<< HEAD
+<<<<<<< HEAD
         "500":
           description: Internal Server error
           content:
@@ -10202,6 +11748,8 @@ paths:
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
 =======
 >>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
+=======
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         "204":
           description: Successful operation
   /{municipalityId}/{namespace}/errands/{errandId}/attachments:
@@ -10236,6 +11784,7 @@ paths:
           type: string
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
       responses:
+<<<<<<< HEAD
         "404":
           description: Not Found
           content:
@@ -10326,14 +11875,17 @@ paths:
               style: simple
               schema:
                 type: string
+=======
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         "400":
-          description: Bad request
+          description: Bad Request
           content:
             application/problem+json:
               schema:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
         "500":
           description: Internal Server error
           content:
@@ -10731,12 +12283,15 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
 <<<<<<< HEAD
+=======
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         "404":
           description: Not Found
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 >>>>>>> fd310fe (UF-10583: Update API)
 =======
 >>>>>>> ea33d37 (UF-10806: Resolve merge conflicts)
@@ -10797,8 +12352,148 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+=======
+        "500":
+          description: Internal Server Error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "200":
+          description: Successful Operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ErrandAttachmentHeader"
+    post:
+      tags:
+      - Errand attachments
+      summary: Create errand attachment
+      description: Creates a new errand attachment based on the supplied attributes
+      operationId: createErrandAttachment
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand id
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              required:
+              - errandAttachment
+              type: object
+              properties:
+                errandAttachment:
+                  type: string
+                  format: binary
+        required: true
+      responses:
+        "201":
+          description: Successful operation
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+  /{municipalityId}/{namespace}/notifications:
+    get:
+      tags:
+      - User notifications
+      summary: Get notifications
+      description: Get notifications for the namespace and municipality with the specified
+        ownerId
+      operationId: getNotificationsByOwnerId
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality ID
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: ownerId
+        in: query
+        description: owner ID
+        required: true
+        schema:
+          type: string
+        example: 12
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
     patch:
       tags:
+<<<<<<< HEAD
 <<<<<<< HEAD
       - User notifications
       summary: Update notification
@@ -11414,6 +13109,166 @@ paths:
       tags:
 =======
 >>>>>>> ea33d37 (UF-10806: Resolve merge conflicts)
+=======
+      - User notifications
+      summary: Update notification
+      description: Update notifications for the namespace and municipality
+      operationId: updateNotifications
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality ID
+        required: true
+        schema:
+          type: string
+        example: 2281
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/Notification"
+        required: true
+      responses:
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "204":
+          description: Successful operation
+  /{municipalityId}/{namespace}/metadata/contactreasons/{contactReasonId}:
+    get:
+      tags:
+      - Metadata for contact reasons
+      summary: Get contact reason
+      description: "Get contact reason by reason, namespace and municipality"
+      operationId: getContactReason
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: contactReasonId
+        in: path
+        description: ContactReason ID
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 123
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContactReason"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+    delete:
+      tags:
+      - Metadata for contact reasons
+      summary: Delete contact reason
+      description: "Delete contact reason matching namespace, municipality and reason"
+      operationId: deleteContactReason
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: contactReasonId
+        in: path
+        description: ContactReason ID
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 123
+      responses:
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "204":
+          description: Successful operation
+    patch:
+      tags:
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
       - Metadata for contact reasons
       summary: Update contact reason
       description: "Update contact reason matching namespace, municipality and reason"
@@ -11460,17 +13315,32 @@ paths:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 =======
 >>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
 =======
 >>>>>>> bc1d833 (UF-10368: Add new resource for listing notifications by errandId)
+=======
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         "200":
           description: Successful operation
           content:
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
             application/json: { }
+=======
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContactReason"
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         "500":
           description: Internal Server error
 =======
@@ -11480,6 +13350,7 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
         "200":
           description: Successful operation
           content:
@@ -11745,37 +13616,40 @@ paths:
             application/json: {}
 >>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
 >>>>>>> 4e60d60 (UF-10368: Add new resource for listing notifications by errandId)
+=======
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
   /{municipalityId}/{namespace}/metadata/categories/{category}:
     get:
       tags:
-        - Metadata for categories
+      - Metadata for categories
       summary: Get category
       description: Get category and connected types for the namespace and municipality
       operationId: getCategory
       parameters:
-        - name: namespace
-          in: path
-          description: Namespace
-          required: true
-          schema:
-            pattern: "[\\w|\\.|\\-]+"
-            type: string
-          example: my.namespace
-        - name: municipalityId
-          in: path
-          description: Municipality id
-          required: true
-          schema:
-            type: string
-          example: 2281
-        - name: category
-          in: path
-          description: Name of category
-          required: true
-          schema:
-            type: string
-          example: KSK_SERVICE_CENTER_SALARY_AND_PENSION
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: category
+        in: path
+        description: Name of category
+        required: true
+        schema:
+          type: string
+        example: KSK_SERVICE_CENTER_SALARY_AND_PENSION
       responses:
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -11825,12 +13699,15 @@ paths:
 >>>>>>> a5246de (UF-10368: Add new resource for listing notifications by errandId)
 =======
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
+=======
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         "400":
           description: Bad request
           content:
             application/problem+json:
               schema:
                 oneOf:
+<<<<<<< HEAD
 <<<<<<< HEAD
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
@@ -11959,12 +13836,17 @@ paths:
 >>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
 =======
 >>>>>>> a5246de (UF-10368: Add new resource for listing notifications by errandId)
+=======
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         "200":
           description: Successful operation
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Category"
+<<<<<<< HEAD
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Category"
@@ -11998,12 +13880,15 @@ paths:
 >>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
 =======
 >>>>>>> a5246de (UF-10368: Add new resource for listing notifications by errandId)
+=======
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         "500":
           description: Internal Server error
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -12092,12 +13977,45 @@ paths:
 =======
 =======
 =======
+=======
+    delete:
+      tags:
+      - Metadata for categories
+      summary: Delete category
+      description: "Delete category matching namespace, municipality and id"
+      operationId: deleteCategory
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: category
+        in: path
+        description: Name of category
+        required: true
+        schema:
+          type: string
+        example: KSK_SERVICE_CENTER_SALARY_AND_PENSION
+      responses:
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         "404":
           description: Not Found
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 >>>>>>> 6e0adf4 (UF-10888: Refactored contactReason API.)
         "500":
           description: Internal Server error
@@ -12398,6 +14316,24 @@ paths:
         "204":
           description: Successful operation
 >>>>>>> 6e0adf4 (UF-10888: Refactored contactReason API.)
+=======
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "204":
+          description: Successful operation
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
     patch:
       tags:
       - Metadata for categories
@@ -12434,6 +14370,7 @@ paths:
               $ref: "#/components/schemas/Category"
         required: true
       responses:
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -12499,12 +14436,15 @@ paths:
 =======
 >>>>>>> a5246de (UF-10368: Add new resource for listing notifications by errandId)
 =======
+=======
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         "400":
           description: Bad Request
           content:
             application/problem+json:
               schema:
                 oneOf:
+<<<<<<< HEAD
                   - $ref: "#/components/schemas/Problem"
                   - $ref: "#/components/schemas/ConstraintViolationProblem"
 =======
@@ -12565,6 +14505,59 @@ paths:
 =======
 =======
 >>>>>>> 6e0adf4 (UF-10888: Refactored contactReason API.)
+=======
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Category"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/errands/{errandId}:
+    get:
+      tags:
+      - Errands
+      summary: Read errand
+      description: Fetches the errand that matches the provided id
+      operationId: readErrand
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand id
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      responses:
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         "400":
           description: Bad Request
           content:
@@ -12573,6 +14566,7 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
 >>>>>>> c8b56ec (UF-10368: Acted on review comnents)
         "404":
           description: Not Found
@@ -12722,6 +14716,14 @@ paths:
                 $ref: "#/components/schemas/Problem"
 <<<<<<< HEAD
 =======
+=======
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         "500":
           description: Internal Server Error
           content:
@@ -12735,6 +14737,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Errand"
+<<<<<<< HEAD
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Errand"
@@ -12824,6 +14827,38 @@ paths:
 <<<<<<< HEAD
 >>>>>>> 05cb6da (UF-10584: Add logic)
 =======
+=======
+    delete:
+      tags:
+      - Errands
+      summary: Delete errand
+      description: Deletes the errand that matches the provided id
+      operationId: deleteErrand
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand id
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      responses:
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         "404":
           description: Not Found
           content:
@@ -12836,7 +14871,10 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 >>>>>>> 6e0adf4 (UF-10888: Refactored contactReason API.)
+=======
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         "400":
           description: Bad Request
           content:
@@ -12845,6 +14883,7 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -12937,13 +14976,23 @@ paths:
         "204":
           description: Successful operation
 >>>>>>> 6e0adf4 (UF-10888: Refactored contactReason API.)
+=======
+        "204":
+          description: Successful operation
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
     patch:
 >>>>>>> c8b56ec (UF-10368: Acted on review comnents)
       tags:
       - Errands
+<<<<<<< HEAD
       summary: Read errand
       description: Fetches the errand that matches the provided id
       operationId: readErrand
+=======
+      summary: Update errand
+      description: Updates the errand matching provided id with the supplied attributes
+      operationId: updateErrand
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
       parameters:
       - name: namespace
         in: path
@@ -12967,6 +15016,7 @@ paths:
         schema:
           type: string
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
+<<<<<<< HEAD
       responses:
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -13481,6 +15531,8 @@ paths:
 >>>>>>> fd310fe (UF-10583: Update API)
 =======
 >>>>>>> ea33d37 (UF-10806: Resolve merge conflicts)
+=======
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
       requestBody:
         content:
           application/json:
@@ -13494,9 +15546,18 @@ paths:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 =======
 >>>>>>> c8b56ec (UF-10368: Acted on review comnents)
+=======
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Errand"
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         "404":
           description: Not found
           content:
@@ -13519,6 +15580,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 >>>>>>> 6e0adf4 (UF-10888: Refactored contactReason API.)
         "400":
           description: Bad request
@@ -13584,6 +15646,8 @@ paths:
 <<<<<<< HEAD
 <<<<<<< HEAD
 >>>>>>> 7a702cb (UF-10584: Add logic)
+=======
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         "400":
           description: Bad request
 <<<<<<< HEAD
@@ -13593,6 +15657,7 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -14025,6 +16090,8 @@ paths:
 >>>>>>> c8b56ec (UF-10368: Acted on review comnents)
 =======
 >>>>>>> 6e0adf4 (UF-10888: Refactored contactReason API.)
+=======
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
   /{municipalityId}/{namespace}/errands/{errandId}/parameters:
     get:
       tags:
@@ -14068,6 +16135,7 @@ paths:
             application/problem+json:
               schema:
                 oneOf:
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -14144,6 +16212,10 @@ paths:
 >>>>>>> 05cb6da (UF-10584: Add logic)
 =======
 >>>>>>> 6e0adf4 (UF-10888: Refactored contactReason API.)
+=======
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         "200":
           description: Successful Operation
           content:
@@ -14152,6 +16224,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Parameter"
+<<<<<<< HEAD
             application/problem+json:
               schema:
                 type: array
@@ -14163,6 +16236,8 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+=======
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
     patch:
       tags:
       - Errand Parameters
@@ -14236,9 +16311,15 @@ paths:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
 <<<<<<< HEAD
+<<<<<<< HEAD
         "404":
           description: Not found
+=======
+        "200":
+          description: Successful Operation
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
           content:
+<<<<<<< HEAD
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
@@ -14261,6 +16342,58 @@ paths:
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
 =======
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
+=======
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Parameter"
+  /{municipalityId}/{namespace}/errands/{errandId}/parameters/{parameterKey}:
+    get:
+      tags:
+      - Errand Parameters
+      summary: Read errand parameter
+      description: Fetches the errand parameter that matches the provided errand id
+        and parameter id
+      operationId: readErrandParameter
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand id
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: parameterKey
+        in: path
+        description: Errand parameter key
+        required: true
+        schema:
+          type: string
+        example: propertyInfo
+      responses:
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         "500":
           description: Internal Server error
           content:
@@ -14294,6 +16427,7 @@ paths:
             application/problem+json:
               schema:
                 oneOf:
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -14428,6 +16562,10 @@ paths:
 >>>>>>> 05cb6da (UF-10584: Add logic)
 =======
 >>>>>>> 6e0adf4 (UF-10888: Refactored contactReason API.)
+=======
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         "200":
           description: Successful Operation
           content:
@@ -14435,6 +16573,7 @@ paths:
               schema:
                 type: array
                 items:
+<<<<<<< HEAD
                   $ref: "#/components/schemas/Parameter"
             application/problem+json:
               schema:
@@ -14552,12 +16691,54 @@ paths:
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
 =======
 >>>>>>> 6e0adf4 (UF-10888: Refactored contactReason API.)
+=======
+                  type: string
+    delete:
+      tags:
+      - Errand Parameters
+      summary: Delete errand parameter
+      description: Deletes the errand parameter that matches the provided errand id
+        and parameter id
+      operationId: deleteErrandParameter
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand id
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: parameterKey
+        in: path
+        description: Errand parameter key
+        required: true
+        schema:
+          type: string
+        example: propertyInfo
+      responses:
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         "404":
           description: Not Found
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 <<<<<<< HEAD
 >>>>>>> 4aad4eb (UF-10583: Update API)
 =======
@@ -14835,6 +17016,8 @@ paths:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+=======
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         "500":
           description: Internal Server error
 =======
@@ -14973,6 +17156,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
         "204":
           description: Successful operation
         "404":
@@ -14999,6 +17183,8 @@ paths:
 >>>>>>> 73802a4 (UF-10368: Add new resource for listing notifications by errandId)
 =======
 >>>>>>> a5246de (UF-10368: Add new resource for listing notifications by errandId)
+=======
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         "400":
           description: Bad request
           content:
@@ -15007,6 +17193,7 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -15147,6 +17334,10 @@ paths:
         "204":
           description: Successful operation
 >>>>>>> 6e0adf4 (UF-10888: Refactored contactReason API.)
+=======
+        "204":
+          description: Successful operation
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
     patch:
       tags:
       - Errand Parameters
@@ -15228,6 +17419,7 @@ paths:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
 <<<<<<< HEAD
+<<<<<<< HEAD
         "404":
           description: Not found
           content:
@@ -15420,12 +17612,15 @@ paths:
 >>>>>>> 05cb6da (UF-10584: Add logic)
 =======
 >>>>>>> 6e0adf4 (UF-10888: Refactored contactReason API.)
+=======
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         "200":
           description: Successful Operation
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Parameter"
+<<<<<<< HEAD
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Parameter"
@@ -21373,6 +23568,46 @@ paths:
           schema:
             type: string
           example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+=======
+  /{municipalityId}/{namespace}/errands/{errandId}/notes/{noteId}:
+    get:
+      tags:
+      - Errand notes
+      summary: Read errand note
+      description: Fetches the errand note that matches the provided errand id and
+        note id
+      operationId: readErrandNote
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand id
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: noteId
+        in: path
+        description: Errand note id
+        required: true
+        schema:
+          type: string
+        example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
       responses:
         "400":
           description: Bad Request
@@ -21380,8 +23615,14 @@ paths:
             application/problem+json:
               schema:
                 oneOf:
-                  - $ref: "#/components/schemas/Problem"
-                  - $ref: "#/components/schemas/ConstraintViolationProblem"
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "500":
           description: Internal Server Error
           content:
@@ -21394,6 +23635,7 @@ paths:
 >>>>>>> 6e0adf4 (UF-10888: Refactored contactReason API.)
         "200":
           description: Successful Operation
+<<<<<<< HEAD
 =======
 >>>>>>> 05cb6da (UF-10584: Add logic)
   /{municipalityId}/{namespace}/errands/{errandId}/attachments/{attachmentId}:
@@ -21437,10 +23679,57 @@ paths:
       responses:
         "500":
           description: Internal Server Error
+=======
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrandNote"
+    delete:
+      tags:
+      - Errand notes
+      summary: Delete errand note
+      description: Deletes the errand note that matches the provided errand id and
+        note id
+      operationId: deleteErrandNote
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand id
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: noteId
+        in: path
+        description: Errand note id
+        required: true
+        schema:
+          type: string
+        example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+      responses:
+        "404":
+          description: Not Found
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
         "200":
           description: Successful Operation
         "400":
@@ -21515,6 +23804,8 @@ paths:
 <<<<<<< HEAD
 >>>>>>> 4aad4eb (UF-10583: Update API)
 >>>>>>> fd310fe (UF-10583: Update API)
+=======
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         "500":
           description: Internal Server error
           content:
@@ -21523,6 +23814,7 @@ paths:
 =======
 >>>>>>> 4aad4eb (UF-10583: Update API)
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 <<<<<<< HEAD
         "500":
           description: Internal Server error
@@ -21571,12 +23863,15 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
 =======
+=======
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         "400":
           description: Bad request
           content:
             application/problem+json:
               schema:
                 oneOf:
+<<<<<<< HEAD
 <<<<<<< HEAD
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
@@ -21587,13 +23882,74 @@ paths:
 =======
                   - $ref: "#/components/schemas/Problem"
                   - $ref: "#/components/schemas/ConstraintViolationProblem"
+=======
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "204":
+          description: Successful operation
+    patch:
+      tags:
+      - Errand notes
+      summary: Update errand note
+      description: Updates the errand note matching provided errand id and note id
+        with the supplied attributes
+      operationId: updateErrandNote
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand id
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: noteId
+        in: path
+        description: Errand note id
+        required: true
+        schema:
+          type: string
+        example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateErrandNoteRequest"
+        required: true
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrandNote"
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         "404":
+<<<<<<< HEAD
           description: Not Found
 =======
+=======
+          description: Not found
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+<<<<<<< HEAD
 <<<<<<< HEAD
         "404":
           description: Not found
@@ -21633,14 +23989,173 @@ paths:
           example: b82bd8ac-1507-4d9a-958d-369261eecc15
       responses:
 >>>>>>> bc1d833 (UF-10368: Add new resource for listing notifications by errandId)
+=======
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         "500":
           description: Internal Server error
           content:
             application/problem+json:
               schema:
+<<<<<<< HEAD
 =======
         "500":
           description: Internal Server error
+=======
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+  /{municipalityId}/{namespace}/metadata:
+    get:
+      tags:
+      - Metadata
+      summary: Get all metadata
+      description: Get all metadata for provided namespace and municipality
+      operationId: getAll
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      responses:
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MetadataResponse"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/metadata/statuses/{status}:
+    get:
+      tags:
+      - Metadata for statuses
+      summary: Get status
+      description: "Get status matching sent in namespace, municipality and status"
+      operationId: getStatus
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: status
+        in: path
+        description: Name of status
+        required: true
+        schema:
+          type: string
+        example: NEW
+      responses:
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Status"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    delete:
+      tags:
+      - Metadata for statuses
+      summary: Delete status
+      description: "Delete status matching namespace, municipality and status"
+      operationId: deleteStatus
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: status
+        in: path
+        description: Name of status
+        required: true
+        schema:
+          type: string
+        example: PRIVATE
+      responses:
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
           content:
             application/problem+json:
               schema:
@@ -21662,6 +24177,7 @@ paths:
 >>>>>>> c8b56ec (UF-10368: Acted on review comnents)
 =======
                 oneOf:
+<<<<<<< HEAD
                   - $ref: "#/components/schemas/Problem"
                   - $ref: "#/components/schemas/ConstraintViolationProblem"
 =======
@@ -21689,6 +24205,810 @@ paths:
 >>>>>>> 5f321e0 (UF-10368: Acted on review comnents)
 =======
 >>>>>>> ea33d37 (UF-10806: Resolve merge conflicts)
+=======
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "204":
+          description: Successful operation
+  /{municipalityId}/{namespace}/metadata/roles/{role}:
+    get:
+      tags:
+      - Metadata for roles
+      summary: Get role
+      description: "Get role matching sent in namespace, municipality and role"
+      operationId: getRole
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: role
+        in: path
+        description: Name of role
+        required: true
+        schema:
+          type: string
+        example: ROLE-1
+      responses:
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Role"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    delete:
+      tags:
+      - Metadata for roles
+      summary: Delete role
+      description: "Delete role matching namespace, municipality and role"
+      operationId: deleteRole
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: role
+        in: path
+        description: Name of role
+        required: true
+        schema:
+          type: string
+        example: ROLE-1
+      responses:
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "204":
+          description: Successful operation
+  /{municipalityId}/{namespace}/metadata/external-id-types/{externalIdType}:
+    get:
+      tags:
+      - Metadata for externalid types
+      summary: Get externalIdType
+      description: "Get externalIdType matching sent in namespace, municipality and\
+        \ externalIdType"
+      operationId: getExternalIdType
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: externalIdType
+        in: path
+        description: Name of externalid type
+        required: true
+        schema:
+          type: string
+        example: PRIVATE
+      responses:
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExternalIdType"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    delete:
+      tags:
+      - Metadata for externalid types
+      summary: Delete externalIdType
+      description: "Delete externalid type matching namespace, municipality and externalIdType"
+      operationId: deleteExternalIdType
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: externalIdType
+        in: path
+        description: Name of externalIdType
+        required: true
+        schema:
+          type: string
+        example: PRIVATE
+      responses:
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "204":
+          description: Successful operation
+  /{municipalityId}/{namespace}/metadata/categories/{category}/types:
+    get:
+      tags:
+      - Metadata for categories
+      summary: Get types connected to category
+      description: "Get all types for the namespace, municipality and category"
+      operationId: getCategoryTypes
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: category
+        in: path
+        description: Name of category
+        required: true
+        schema:
+          type: string
+        example: KSK_SERVICE_CENTER_SALARY_AND_PENSION
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Type"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/errands/{errandId}/time-measure:
+    get:
+      tags:
+      - Time measures
+      operationId: getErrandTimeMeasure
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand id
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json: {}
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+  /{municipalityId}/{namespace}/errands/{errandId}/revisions:
+    get:
+      tags:
+      - Revisions
+      summary: Read errand revisions
+      description: Returns all existing revisions for the errand that matches the
+        provided id
+      operationId: getErrandRevisions
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand id
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Revision"
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+  /{municipalityId}/{namespace}/errands/{errandId}/revisions/difference:
+    get:
+      tags:
+      - Revisions
+      summary: Compare differences between two revision versions of an errand
+      description: Returns the differences between the source and target revision
+        for the provided errand id
+      operationId: getErrandDiffByVersions
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand id
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: source
+        in: query
+        description: Source version to compare
+        required: true
+        schema:
+          type: integer
+          format: int32
+        example: 0
+      - name: target
+        in: query
+        description: Target version to compare
+        required: true
+        schema:
+          type: integer
+          format: int32
+        example: 1
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DifferenceResponse"
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+  /{municipalityId}/{namespace}/errands/{errandId}/notifications/{notificationId}:
+    get:
+      tags:
+      - User notifications
+      summary: Get notifications
+      description: Get a specific notification for the namespace and municipality
+      operationId: getNotification
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality ID
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand ID
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: notificationId
+        in: path
+        description: notification ID
+        required: true
+        schema:
+          type: string
+        example: 12
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Notification"
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+    delete:
+      tags:
+      - User notifications
+      summary: Delete notification
+      description: Delete notification for the namespace and municipality
+      operationId: deleteNotification
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality ID
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand ID
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: notificationId
+        in: path
+        description: Notification ID
+        required: true
+        schema:
+          type: string
+      responses:
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "204":
+          description: Successful operation
+  /{municipalityId}/{namespace}/errands/{errandId}/notes/{noteId}/revisions:
+    get:
+      tags:
+      - Revisions
+      summary: Read note revisions
+      description: Returns all existing revisions for the errand note that matches
+        the provided errand id and note id
+      operationId: getErrandNoteRevisions
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand id
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: noteId
+        in: path
+        description: Errand note id
+        required: true
+        schema:
+          type: string
+        example: 22a57c09-47ca-45bf-ab02-819011c6fd8d
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Revision"
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+  /{municipalityId}/{namespace}/errands/{errandId}/notes/{noteId}/revisions/difference:
+    get:
+      tags:
+      - Revisions
+      summary: Compare differences between two revision versions of an errand note
+      description: Returns the differences between the source and target revision
+        for the provided errand id and note id
+      operationId: getErrandNoteDiffByVersions
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand id
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: noteId
+        in: path
+        description: Errand note id
+        required: true
+        schema:
+          type: string
+        example: 22a57c09-47ca-45bf-ab02-819011c6fd8d
+      - name: source
+        in: query
+        description: Source version to compare
+        required: true
+        schema:
+          type: integer
+          format: int32
+        example: 0
+      - name: target
+        in: query
+        description: Target version to compare
+        required: true
+        schema:
+          type: integer
+          format: int32
+        example: 1
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DifferenceResponse"
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+  /{municipalityId}/{namespace}/errands/{errandId}/events:
+    get:
+      tags:
+      - Errand events
+      summary: Read errand events
+      description: Returns all existing events for the errand that matches the provided
+        id
+      operationId: getErrandEvents
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand id
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: page
+        in: query
+        description: Zero-based page index (0..N)
+        required: false
+        schema:
+          minimum: 0
+          type: integer
+          default: 0
+      - name: size
+        in: query
+        description: The size of the page to be returned
+        required: false
+        schema:
+          minimum: 1
+          type: integer
+          default: 20
+      - name: sort
+        in: query
+        description: "Sorting criteria in the format: property,(asc|desc). Default\
+          \ sort order is ascending. Multiple sort criteria are supported."
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PageEvent"
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
   /{municipalityId}/{namespace}/errands/{errandId}/communication:
     get:
       tags:
@@ -21696,6 +25016,7 @@ paths:
       description: Get all communications for an errand.
       operationId: getCommunications
       parameters:
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -21755,6 +25076,30 @@ paths:
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
 =======
 >>>>>>> ea33d37 (UF-10806: Resolve merge conflicts)
+=======
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality ID
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand ID
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
       responses:
         "400":
           description: Bad request
@@ -21762,6 +25107,7 @@ paths:
             application/problem+json:
               schema:
                 oneOf:
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
                 - $ref: "#/components/schemas/Problem"
@@ -21840,6 +25186,10 @@ paths:
 >>>>>>> bc1d833 (UF-10368: Add new resource for listing notifications by errandId)
 =======
 >>>>>>> ea33d37 (UF-10806: Resolve merge conflicts)
+=======
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         "200":
           description: OK - Successful operation
           content:
@@ -21848,6 +25198,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Communication"
+<<<<<<< HEAD
             application/problem+json:
               schema:
                 type: array
@@ -21855,9 +25206,12 @@ paths:
                   $ref: "#/components/schemas/Communication"
 <<<<<<< HEAD
 <<<<<<< HEAD
+=======
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
   /{municipalityId}/{namespace}/errands/{errandId}/communication/{communicationId}/attachments/{attachmentId}/streamed:
     get:
       tags:
+<<<<<<< HEAD
 <<<<<<< HEAD
       - Errand communication
 =======
@@ -21876,6 +25230,9 @@ paths:
 =======
       - Errand communication
 >>>>>>> ea33d37 (UF-10806: Resolve merge conflicts)
+=======
+      - Errand communication
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
       summary: Get a streamed communication attachment.
       description: Fetches the communication attachment that matches the provided
         id in a streamed manner
@@ -21889,6 +25246,7 @@ paths:
       operationId: getCommunications
 >>>>>>> 4aad4eb (UF-10583: Update API)
       parameters:
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -21977,7 +25335,46 @@ paths:
 <<<<<<< HEAD
 =======
 >>>>>>> 4aad4eb (UF-10583: Update API)
+=======
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality ID
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand id
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: communicationId
+        in: path
+        description: communication ID
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: attachmentId
+        in: path
+        description: Message attachment ID
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
       responses:
+<<<<<<< HEAD
 =======
 >>>>>>> 4aad4eb (UF-10583: Update API)
       responses:
@@ -22811,6 +26208,8 @@ paths:
           type: string
         example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
       responses:
+=======
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         "404":
           description: Not Found
           content:
@@ -22831,6 +26230,7 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -22876,8 +26276,14 @@ paths:
           description: Successful operation
 <<<<<<< HEAD
   /{municipalityId}/{namespace}/communication/attachments/{attachmentId}/streamed:
+=======
+        "200":
+          description: Successful Operation
+  /{municipalityId}/{namespace}/errands/{errandId}/attachments/{attachmentId}:
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
     get:
       tags:
+<<<<<<< HEAD
       - MessageAttachments
       summary: Get a streamed communication attachment.
       description: Fetches the communication attachment that matches the provided
@@ -22901,6 +26307,13 @@ paths:
 =======
 >>>>>>> 05cb6da (UF-10584: Add logic)
       operationId: getMessageAttachmentStreamed_1
+=======
+      - Errand attachments
+      summary: Read errand attachment
+      description: Fetches the errand attachment that matches the provided errand
+        id and attachment id
+      operationId: readErrandAttachment
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
       parameters:
       - name: namespace
         in: path
@@ -22912,6 +26325,7 @@ paths:
         example: my.namespace
       - name: municipalityId
         in: path
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
         description: Municipality id
@@ -22946,6 +26360,27 @@ paths:
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
 <<<<<<< HEAD
 <<<<<<< HEAD
+=======
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand id
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: attachmentId
+        in: path
+        description: Errand attachment id
+        required: true
+        schema:
+          type: string
+        example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
       responses:
 =======
 =======
@@ -22988,6 +26423,7 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+<<<<<<< HEAD
         "500":
           description: Internal Server error
           content:
@@ -23058,6 +26494,153 @@ paths:
 =======
 =======
 =======
+=======
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server Error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "200":
+          description: Successful Operation
+    delete:
+      tags:
+      - Errand attachments
+      summary: Delete errand attachment
+      description: Deletes the errand attachment that matches the provided errand
+        id and attachment id
+      operationId: deleteErrandAttachment
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand id
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: attachmentId
+        in: path
+        description: Errand attachment id
+        required: true
+        schema:
+          type: string
+        example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+      responses:
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "204":
+          description: Successful operation
+  /{municipalityId}/{namespace}/errands/{errandId}/attachments/{attachmentId}/streamed:
+    get:
+      tags:
+      - Errand attachments
+      summary: Get a streamed attachment.
+      description: Fetches the attachment that matches the provided id in a streamed
+        manner
+      operationId: getMessageAttachmentStreamed_1
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\.|\\-]+"
+          type: string
+        example: my.namespace
+      - name: municipalityId
+        in: path
+        description: Municipality ID
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand id
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: attachmentId
+        in: path
+        description: Errand attachment ID
+        required: true
+        schema:
+          type: string
+        example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+      responses:
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "200":
+          description: Successful Operation
+  /namespace-configs:
+    get:
+      tags:
+      - Configuration for namespace
+      summary: "Read all namespace configurations, optionally filterered by municipalityId"
+      description: Fetches an optionally filtered list of namespace configurations
+      operationId: readAllNamespaceConfigs
+      parameters:
+      - name: municipalityId
+        in: query
+        description: Municipality id
+        required: false
+        schema:
+          type: string
+        example: 2281
+      responses:
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         "500":
           description: Internal Server Error
           content:
@@ -23164,6 +26747,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/NamespaceConfig"
+<<<<<<< HEAD
             application/problem+json:
               schema:
                 type: array
@@ -23234,6 +26818,8 @@ paths:
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
 =======
 >>>>>>> 05cb6da (UF-10584: Add logic)
+=======
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
   /api-docs:
     get:
       tags:
@@ -23597,6 +27183,7 @@ components:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 <<<<<<< HEAD
     Notification:
@@ -23675,6 +27262,8 @@ components:
 >>>>>>> ea33d37 (UF-10806: Resolve merge conflicts)
 =======
 >>>>>>> 4aad4eb (UF-10583: Update API)
+=======
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
     Status:
       required:
       - name
@@ -24453,6 +28042,7 @@ components:
         totalPages:
           type: integer
           format: int32
+<<<<<<< HEAD
         totalElements:
           type: integer
           format: int64
@@ -24460,6 +28050,8 @@ components:
           type: boolean
         last:
           type: boolean
+=======
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         size:
           type: integer
           format: int32
@@ -24484,11 +28076,19 @@ components:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+        first:
+          type: boolean
+        last:
+          type: boolean
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         numberOfElements:
           type: integer
           format: int32
         pageable:
           $ref: "#/components/schemas/PageableObject"
+<<<<<<< HEAD
 =======
         pageable:
           $ref: "#/components/schemas/PageableObject"
@@ -24583,11 +28183,14 @@ components:
         pageable:
           $ref: "#/components/schemas/PageableObject"
 >>>>>>> a5246de (UF-10368: Add new resource for listing notifications by errandId)
+=======
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         empty:
           type: boolean
     PageableObject:
       type: object
       properties:
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -24604,6 +28207,8 @@ components:
 >>>>>>> b0ad4fc (UF-10583: Acted on review comments)
 =======
 >>>>>>> ea33d37 (UF-10806: Resolve merge conflicts)
+=======
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         offset:
           type: integer
           format: int64
@@ -24611,6 +28216,7 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/SortObject"
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -24699,6 +28305,16 @@ components:
 >>>>>>> 29c3b9f (UF-10583: Acted on review comments)
 =======
 >>>>>>> 6e0adf4 (UF-10888: Refactored contactReason API.)
+=======
+        paged:
+          type: boolean
+        pageSize:
+          type: integer
+          format: int32
+        pageNumber:
+          type: integer
+          format: int32
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         unpaged:
           type: boolean
     SortObject:
@@ -24906,6 +28522,7 @@ components:
         totalPages:
           type: integer
           format: int32
+<<<<<<< HEAD
         totalElements:
           type: integer
           format: int64
@@ -24913,6 +28530,8 @@ components:
           type: boolean
         last:
           type: boolean
+=======
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         size:
           type: integer
           format: int32
@@ -24937,11 +28556,19 @@ components:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+        first:
+          type: boolean
+        last:
+          type: boolean
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         numberOfElements:
           type: integer
           format: int32
         pageable:
           $ref: "#/components/schemas/PageableObject"
+<<<<<<< HEAD
 =======
         pageable:
           $ref: "#/components/schemas/PageableObject"
@@ -25027,8 +28654,11 @@ components:
         pageable:
           $ref: "#/components/schemas/PageableObject"
 >>>>>>> a5246de (UF-10368: Add new resource for listing notifications by errandId)
+=======
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
         empty:
           type: boolean
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -25068,6 +28698,8 @@ components:
 >>>>>>> ea33d37 (UF-10806: Resolve merge conflicts)
 =======
 >>>>>>> 4aad4eb (UF-10583: Update API)
+=======
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git
     Communication:
       type: object
       properties:
@@ -25170,6 +28802,7 @@ components:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 <<<<<<< HEAD
   securitySchemes: { }
@@ -25212,3 +28845,25 @@ components:
 =======
   securitySchemes: {}
 >>>>>>> 4aad4eb (UF-10583: Update API)
+=======
+    ErrandAttachmentHeader:
+      required:
+      - fileName
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the attachment
+          readOnly: true
+          example: cb20c51f-fcf3-42c0-b613-de563634a8ec
+        fileName:
+          type: string
+          description: Name of the file
+          example: my-file.txt
+        mimeType:
+          type: string
+          description: Mime type of the file
+          readOnly: true
+      description: ErrandAttachmentHeader model
+  securitySchemes: {}
+>>>>>>> branch 'uf-10937-merge-from-main' of git@github.com:Sundsvallskommun/api-service-support-management.git

@@ -56,9 +56,7 @@ class MetadataContactReasonResource {
 		this.metadataService = metadataService;
 	}
 
-	@PostMapping(consumes = APPLICATION_JSON_VALUE, produces = {
-		APPLICATION_PROBLEM_JSON_VALUE
-	})
+	@PostMapping(consumes = APPLICATION_JSON_VALUE, produces = ALL_VALUE)
 	@Operation(summary = "Create contact reason", description = "Create new contact reason for the namespace and municipality")
 	@ApiResponse(responseCode = "201", headers = @Header(name = LOCATION, schema = @Schema(type = "string")), description = "Successful operation", useReturnTypeSchema = true)
 	@Validated(OnCreate.class)
@@ -84,9 +82,7 @@ class MetadataContactReasonResource {
 		return ok(metadataService.getContactReasonByIdAndNamespaceAndMunicipalityId(contactReasonId, namespace, municipalityId));
 	}
 
-	@GetMapping(produces = {
-		APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE
-	})
+	@GetMapping(produces = APPLICATION_JSON_VALUE)
 	@Operation(summary = "Get contact reasons for given namespace and municipalityId", description = "Get all contact reasons for the namespace and municipality")
 	@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true)
 	ResponseEntity<List<ContactReason>> getContactReasons(

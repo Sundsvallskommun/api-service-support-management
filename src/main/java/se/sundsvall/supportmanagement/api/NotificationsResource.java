@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.api;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpHeaders.LOCATION;
 import static org.springframework.http.MediaType.ALL_VALUE;
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON_VALUE;
 import static org.springframework.http.ResponseEntity.created;
 import static org.springframework.http.ResponseEntity.noContent;
@@ -61,7 +62,7 @@ class NotificationsResource {
 		this.notificationService = notificationService;
 	}
 
-	@GetMapping("/errands/{errandId}/notifications/{notificationId}")
+	@GetMapping(path = "/errands/{errandId}/notifications/{notificationId}", produces = APPLICATION_JSON_VALUE)
 	@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true)
 	@ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	@Operation(summary = "Get notifications", description = "Get a specific notification for the namespace and municipality")
@@ -74,7 +75,7 @@ class NotificationsResource {
 		return ok(notificationService.getNotification(municipalityId, namespace, errandId, notificationId));
 	}
 
-	@GetMapping("/errands/{errandId}/notifications")
+	@GetMapping(path = "/errands/{errandId}/notifications", produces = APPLICATION_JSON_VALUE)
 	@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true)
 	@ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	@Operation(summary = "Get notifications", description = "Get all notifications for the namespace, municipality and errand")
@@ -87,7 +88,7 @@ class NotificationsResource {
 		return ok(notificationService.getNotificationsByErrandId(municipalityId, namespace, errandId, sort));
 	}
 
-	@PostMapping("/errands/{errandId}/notifications")
+	@PostMapping(path = "/errands/{errandId}/notifications", consumes = APPLICATION_JSON_VALUE, produces = ALL_VALUE)
 	@ApiResponse(responseCode = "201", description = "Created - Successful operation", headers = @Header(name = LOCATION, schema = @Schema(type = "string")), useReturnTypeSchema = true)
 	@ApiResponse(responseCode = "409", description = "Conflict", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	@Operation(summary = "Create notification", description = "Create new notification for the namespace and municipality")
@@ -106,7 +107,7 @@ class NotificationsResource {
 			.build();
 	}
 
-	@DeleteMapping("/errands/{errandId}/notifications/{notificationId}")
+	@DeleteMapping(path = "/errands/{errandId}/notifications/{notificationId}", produces = ALL_VALUE)
 	@ApiResponse(responseCode = "204", description = "Successful operation", useReturnTypeSchema = true)
 	@ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	@Operation(summary = "Delete notification", description = "Delete notification for the namespace and municipality")
@@ -126,7 +127,7 @@ class NotificationsResource {
 	 * Global notifications path (not coupled with a specific errand)
 	 */
 
-	@GetMapping("/notifications")
+	@GetMapping(path = "/notifications", produces = APPLICATION_JSON_VALUE)
 	@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true)
 	@ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	@Operation(summary = "Get notifications", description = "Get notifications for the namespace and municipality with the specified ownerId")
@@ -138,7 +139,7 @@ class NotificationsResource {
 		return ok(notificationService.getNotificationsByOwnerId(municipalityId, namespace, ownerId));
 	}
 
-	@PatchMapping("/notifications")
+	@PatchMapping(path = "/notifications", consumes = APPLICATION_JSON_VALUE, produces = ALL_VALUE)
 	@ApiResponse(responseCode = "204", description = "Successful operation", useReturnTypeSchema = true)
 	@ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	@Operation(summary = "Update notification", description = "Update notifications for the namespace and municipality")

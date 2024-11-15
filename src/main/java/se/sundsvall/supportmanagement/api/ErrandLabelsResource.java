@@ -11,8 +11,14 @@ import static org.springframework.web.util.UriComponentsBuilder.fromPath;
 import static se.sundsvall.supportmanagement.Constants.NAMESPACE_REGEXP;
 import static se.sundsvall.supportmanagement.Constants.NAMESPACE_VALIDATION_MESSAGE;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.Pattern;
 import java.util.List;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -25,14 +31,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.zalando.problem.Problem;
 import org.zalando.problem.violations.ConstraintViolationProblem;
-
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.constraints.Pattern;
 import se.sundsvall.dept44.common.validators.annotation.ValidMunicipalityId;
 import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 import se.sundsvall.supportmanagement.service.ErrandLabelService;
@@ -54,9 +52,7 @@ class ErrandLabelsResource {
 		this.service = service;
 	}
 
-	@GetMapping(produces = {
-		APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE
-	})
+	@GetMapping(produces = APPLICATION_JSON_VALUE)
 	@Operation(summary = "Get errand labels", description = "Get errand labels")
 	@ApiResponse(responseCode = "200", description = "Successful Operation", useReturnTypeSchema = true)
 	ResponseEntity<List<String>> getErrandLabels(
@@ -67,9 +63,7 @@ class ErrandLabelsResource {
 		return ok(service.getErrandLabels(namespace, municipalityId, errandId));
 	}
 
-	@PostMapping(consumes = APPLICATION_JSON_VALUE, produces = {
-		ALL_VALUE, APPLICATION_PROBLEM_JSON_VALUE
-	})
+	@PostMapping(consumes = APPLICATION_JSON_VALUE, produces = ALL_VALUE)
 	@Operation(summary = "Add errand labels", description = "Add errand labels to an errand")
 	@ApiResponse(responseCode = "201", description = "Created", content = @Content(mediaType = APPLICATION_JSON_VALUE), useReturnTypeSchema = true)
 	ResponseEntity<Void> addErrandLabels(
@@ -86,9 +80,7 @@ class ErrandLabelsResource {
 			.build();
 	}
 
-	@PutMapping(consumes = APPLICATION_JSON_VALUE, produces = {
-		ALL_VALUE, APPLICATION_PROBLEM_JSON_VALUE
-	})
+	@PutMapping(consumes = APPLICATION_JSON_VALUE, produces = ALL_VALUE)
 	@Operation(summary = "Replace errand labels", description = "Replace all labels of an errand")
 	@ApiResponse(responseCode = "204", description = "No content", useReturnTypeSchema = true)
 	ResponseEntity<Void> updateErrandLabels(
@@ -103,7 +95,7 @@ class ErrandLabelsResource {
 			.build();
 	}
 
-	@DeleteMapping
+	@DeleteMapping(produces = ALL_VALUE)
 	@Operation(summary = "Remove errand labels", description = "Remove all labels of an errand")
 	@ApiResponse(responseCode = "204", description = "No content", useReturnTypeSchema = true)
 	ResponseEntity<Void> removeErrandLabel(

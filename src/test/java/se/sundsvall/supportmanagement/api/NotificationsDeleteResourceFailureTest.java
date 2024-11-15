@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.api;
 
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.groups.Tuple.tuple;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
@@ -15,6 +16,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.zalando.problem.Problem;
 import org.zalando.problem.violations.ConstraintViolationProblem;
+import org.zalando.problem.violations.Violation;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.service.NotificationService;
 
@@ -105,8 +107,9 @@ class NotificationsDeleteResourceFailureTest {
 
 		// Verification
 		assertThat(response).isNotNull();
-		assertThat(response.getViolations()).isNotEmpty();
-		assertThat(response.getStatus()).isEqualTo(NOT_FOUND);
-		assertThat(response.getDetail()).isEqualTo("Notification id not found");
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getViolations())
+			.extracting(Violation::getField, Violation::getMessage)
+			.containsExactly(tuple("deleteNotification.notificationId", "not a valid UUID"));
 	}
 }
