@@ -5,6 +5,7 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.same;
@@ -16,22 +17,25 @@ import static org.mockito.Mockito.when;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.Direction.INBOUND;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import generated.se.sundsvall.webmessagecollector.MessageAttachment;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Answers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import se.sundsvall.supportmanagement.Constants;
 import se.sundsvall.supportmanagement.integration.db.CommunicationRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.model.CommunicationAttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.webmessagecollector.WebMessageCollectorClient;
@@ -46,7 +50,7 @@ class WebMessageCollectorWorkerTest {
 
 	private static final String MUNICIPALITY_ID = "2281";
 
-	@Mock(answer = Answers.CALLS_REAL_METHODS)
+	@Mock
 	private WebMessageCollectorMapper webMessageCollectorMapperMock;
 
 	@Mock
@@ -64,34 +68,40 @@ class WebMessageCollectorWorkerTest {
 	@Mock
 	private CommunicationRepository communicationRepositoryMock;
 
+	@Mock
+	private CommunicationAttachmentDataEntity communicationAttachmentDataEntityMock;
+
 	@InjectMocks
 	private WebMessageCollectorWorker webMessageCollectorWorker;
 
 	@Captor
 	private ArgumentCaptor<CommunicationEntity> communicationEntityCaptor;
 
-	@Captor
-	private ArgumentCaptor<ErrandEntity> errandEntityCaptor;
-
 	@Test
-	void fetchWebMessages() {
+	void processMessage() {
 		// Arrange
-		final var familyId = "123";
-		final var instance = "instance";
+		final var caseId = "123";
+		final var messageId = 321;
 		final var errandNumber = "KC-2024-0101";
+		final var attachmentId = 666;
+		final var data = "data".getBytes();
+		final var messageAttachment = new MessageAttachment()
+			.attachmentId(attachmentId);
+
 		final var messagedto = new MessageDTO()
 			.direction(MessageDTO.DirectionEnum.INBOUND)
 			.email("email")
 			.externalCaseId("123")
 			.familyId("234")
 			.firstName("firstName")
-			.id(123)
+			.id(messageId)
 			.lastName("lastName")
 			.message("message")
 			.messageId("456")
 			.sent(LocalDateTime.now().toString())
 			.userId("userId")
-			.username("username");
+			.username("username")
+			.attachments(List.of(messageAttachment));
 
 		final var errandEntity = ErrandEntity.create()
 			.withMunicipalityId(MUNICIPALITY_ID)
@@ -99,30 +109,26 @@ class WebMessageCollectorWorkerTest {
 			.withErrandNumber(errandNumber)
 			.withStatus(Constants.ERRAND_STATUS_SOLVED)
 			.withTouched(now().minusDays(2));
-		// Mock
-		when(webMessageCollectorPropertiesMock.familyIds()).thenReturn(Map.of(MUNICIPALITY_ID, Map.of(instance, List.of(familyId))));
-		when(webMessageCollectorClientMock.getMessages(MUNICIPALITY_ID, familyId, instance)).thenReturn(List.of(messagedto));
-		when(errandsRepositoryMock.findByExternalTagsValue(any(String.class))).thenReturn(Optional.of(errandEntity));
 
+		// Mock
+		when(errandsRepositoryMock.findByExternalTagsValue(any(String.class))).thenReturn(Optional.of(errandEntity));
+		when(webMessageCollectorMapperMock.toCommunicationEntity(any(), any())).thenCallRealMethod();
+		when(webMessageCollectorClientMock.getAttachment(any(), anyInt())).thenReturn(data);
+		when(webMessageCollectorMapperMock.toCommunicationAttachmentDataEntity(any())).thenReturn(communicationAttachmentDataEntityMock);
 
 		// Act
-		webMessageCollectorWorker.fetchWebMessages();
+		webMessageCollectorWorker.processMessage(messagedto, MUNICIPALITY_ID);
+
 		// Verify
-		verify(webMessageCollectorPropertiesMock).familyIds();
-		verify(webMessageCollectorClientMock).getMessages(MUNICIPALITY_ID, familyId, instance);
-		verify(errandsRepositoryMock, times(1)).findByExternalTagsValue(familyId);
+		verify(errandsRepositoryMock).findByExternalTagsValue(caseId);
+		verify(webMessageCollectorMapperMock).toCommunicationEntity(messagedto, errandEntity);
+		verify(communicationRepositoryMock, times(2)).saveAndFlush(communicationEntityCaptor.capture());
+		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Ärendekommunikation har skapats."), same(errandEntity), isNull(), isNull());
+		verify(webMessageCollectorClientMock).getAttachment(MUNICIPALITY_ID, attachmentId);
+		verify(webMessageCollectorMapperMock).toCommunicationAttachmentDataEntity(data);
+		verify(webMessageCollectorClientMock).deleteMessages(eq(MUNICIPALITY_ID), eq(List.of(messageId)));
 
-		verify(errandsRepositoryMock).save(errandEntityCaptor.capture());
-
-		assertThat(errandEntityCaptor.getValue()).satisfies(
-			errand -> {
-				assertThat(errand.getErrandNumber()).isEqualTo(errandNumber);
-				assertThat(errand.getStatus()).isEqualTo(Constants.ERRAND_STATUS_ONGOING);
-				assertThat(errand.getTouched()).isCloseTo(now().minusDays(2), within(1, SECONDS));
-			});
-
-		verify(communicationRepositoryMock).saveAndFlush(communicationEntityCaptor.capture());
-		assertThat(communicationEntityCaptor.getValue()).satisfies(
+		assertThat(communicationEntityCaptor.getAllValues()).satisfiesExactly(
 			communication -> {
 				assertThat(communication).hasNoNullFieldsOrPropertiesExcept("subject", "target", "emailHeaders", "errandAttachments");
 				assertThat(communication.getDirection()).isEqualTo(INBOUND);
@@ -130,138 +136,43 @@ class WebMessageCollectorWorkerTest {
 				assertThat(communication.getMessageBody()).isEqualTo(messagedto.getMessage());
 				assertThat(communication.getSent()).isCloseTo(now(), within(1, SECONDS));
 				assertThat(communication.getErrandNumber()).isEqualTo(errandEntity.getErrandNumber());
+			}, communicationWithAttachment -> {
+				assertThat(communicationWithAttachment.getAttachments().size()).isEqualTo(1);
+				assertThat(communicationWithAttachment.getAttachments().getFirst().getAttachmentData()).isSameAs(communicationAttachmentDataEntityMock);
 			});
 
-		verify(webMessageCollectorMapperMock).toCommunicationEntity(messagedto, errandEntity);
-		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Ärendekommunikation har skapats."), same(errandEntity), isNull(), isNull());
 		verifyNoMoreInteractions(webMessageCollectorClientMock, webMessageCollectorPropertiesMock, errandsRepositoryMock, communicationRepositoryMock);
 	}
 
 	@Test
-	void fetchWebMessage_NothingFromWebMessageCollector() {
+	void processMessage_NoErrandFound() {
 		// Arrange
-		final var familyId = "123";
-		final var instance = "instance";
-		when(webMessageCollectorPropertiesMock.familyIds()).thenReturn(Map.of(MUNICIPALITY_ID, Map.of(instance, List.of(familyId))));
-		// Act
-		webMessageCollectorWorker.fetchWebMessages();
-		// Verify
-		verify(webMessageCollectorPropertiesMock).familyIds();
-		verify(webMessageCollectorClientMock).getMessages(MUNICIPALITY_ID, familyId, instance);
-		verifyNoMoreInteractions(webMessageCollectorClientMock, webMessageCollectorPropertiesMock, errandsRepositoryMock, communicationRepositoryMock);
-
-	}
-
-	@Test
-	void fetchWebMessage_NoErrandFound() {
-		// Arrange
-		final var familyId = "123";
-		final var instance = "instance";
+		final var externalCaseId = "123";
 		final var messagedto = new MessageDTO()
-			.direction(MessageDTO.DirectionEnum.INBOUND)
-			.email("email")
-			.externalCaseId("123")
-			.familyId("234")
-			.firstName("firstName")
-			.id(123)
-			.lastName("lastName")
-			.message("message")
-			.messageId("456")
-			.sent("sent")
-			.userId("userId")
-			.username("username");
-		// Mock
-		when(webMessageCollectorPropertiesMock.familyIds()).thenReturn(Map.of(MUNICIPALITY_ID, Map.of(instance, List.of(familyId))));
-		when(webMessageCollectorClientMock.getMessages(MUNICIPALITY_ID, familyId, instance)).thenReturn(List.of(messagedto));
-		// Act
-		webMessageCollectorWorker.fetchWebMessages();
-		// Verify
-		verify(webMessageCollectorPropertiesMock).familyIds();
-		verify(webMessageCollectorClientMock).getMessages(MUNICIPALITY_ID, familyId, instance);
-		verify(errandsRepositoryMock).findByExternalTagsValue(any(String.class));
-		verifyNoMoreInteractions(webMessageCollectorClientMock, webMessageCollectorPropertiesMock, errandsRepositoryMock, communicationRepositoryMock);
-
-	}
-
-
-	@Test
-	void fetchWebMessage_oldErrand() {
-		// Arrange
-		final var familyId = "123";
-		final var instance = "instance";
-		final var messagedto = new MessageDTO()
-			.direction(MessageDTO.DirectionEnum.INBOUND)
-			.email("email")
-			.externalCaseId("123")
-			.familyId("234")
-			.firstName("firstName")
-			.id(123)
-			.lastName("lastName")
-			.message("message")
-			.messageId("456")
-			.sent(LocalDateTime.now().toString())
-			.userId("userId")
-			.username("username");
-
-		final var errandEntity = ErrandEntity.create()
-			.withErrandNumber("KC-2024-0101")
-			.withStatus(Constants.ERRAND_STATUS_SOLVED)
-			.withTouched(now().minusDays(5).minusMinutes(1));
+			.externalCaseId(externalCaseId);
 
 		// Mock
-		when(webMessageCollectorPropertiesMock.familyIds()).thenReturn(Map.of(MUNICIPALITY_ID, Map.of(instance, List.of(familyId))));
-		when(webMessageCollectorClientMock.getMessages(MUNICIPALITY_ID, familyId, instance)).thenReturn(List.of(messagedto));
-		when(errandsRepositoryMock.findByExternalTagsValue(any(String.class))).thenReturn(Optional.of(errandEntity));
-
+		when(errandsRepositoryMock.findByExternalTagsValue(any())).thenReturn(Optional.empty());
 		// Act
-		webMessageCollectorWorker.fetchWebMessages();
+		webMessageCollectorWorker.processMessage(messagedto, MUNICIPALITY_ID);
 		// Verify
-		verify(webMessageCollectorPropertiesMock).familyIds();
-		verify(webMessageCollectorClientMock).getMessages(MUNICIPALITY_ID, familyId, instance);
-		verify(errandsRepositoryMock).findByExternalTagsValue(any(String.class));
-		verifyNoMoreInteractions(webMessageCollectorClientMock, webMessageCollectorPropertiesMock, errandsRepositoryMock, communicationRepositoryMock);
-
+		verify(errandsRepositoryMock).findByExternalTagsValue(externalCaseId);
+		verifyNoMoreInteractions(webMessageCollectorClientMock, errandsRepositoryMock, communicationRepositoryMock, webMessageCollectorMapperMock, eventServiceMock);
 	}
 
 	@Test
-	void fetchWebMessage_noFamilyId() {
-		// Act
-		webMessageCollectorWorker.fetchWebMessages();
+	void getWebMessages() {
 		// Arrange
-		verify(webMessageCollectorPropertiesMock).familyIds();
-		verifyNoMoreInteractions(webMessageCollectorPropertiesMock);
-		verifyNoInteractions(webMessageCollectorClientMock, errandsRepositoryMock, communicationRepositoryMock);
+		var instance = "instance";
+		var familyId = "familyId";
+		var list = List.of(new MessageDTO());
 
-	}
-
-	@Test
-	void fetchWebMessage_noExternalCaseId() {
-		// Arrange
-		final var familyId = "123";
-		final var instance = "instance";
-		final var messagedto = new MessageDTO()
-			.direction(MessageDTO.DirectionEnum.INBOUND)
-			.email("email")
-			.familyId("234")
-			.firstName("firstName")
-			.id(123)
-			.lastName("lastName")
-			.message("message")
-			.messageId("456")
-			.sent(LocalDateTime.now().toString())
-			.userId("userId")
-			.username("username");
 		// Mock
-		when(webMessageCollectorPropertiesMock.familyIds()).thenReturn(Map.of(MUNICIPALITY_ID, Map.of(instance, List.of(familyId))));
-		when(webMessageCollectorClientMock.getMessages(MUNICIPALITY_ID, familyId, instance)).thenReturn(List.of(messagedto));
+		when(webMessageCollectorClientMock.getMessages(any(), any(), any())).thenReturn(list);
 		// Act
-		webMessageCollectorWorker.fetchWebMessages();
-		//Verify
-		verify(webMessageCollectorPropertiesMock).familyIds();
+		var result = webMessageCollectorWorker.getWebMessages(instance, familyId, MUNICIPALITY_ID);
+		// Verify
 		verify(webMessageCollectorClientMock).getMessages(MUNICIPALITY_ID, familyId, instance);
-		verify(errandsRepositoryMock).findByExternalTagsValue(null);
-		verifyNoMoreInteractions(webMessageCollectorPropertiesMock, webMessageCollectorClientMock, errandsRepositoryMock);
-		verifyNoInteractions(communicationRepositoryMock);
+		assertThat(result).isSameAs(list);
 	}
-
 }

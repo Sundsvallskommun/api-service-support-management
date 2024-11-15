@@ -36,6 +36,7 @@ class CommunicationAttachmentEntityTest {
 		final var communicationEntity = CommunicationEntity.create();
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
+		final var foreignId = "foreignId";
 
 		final var entity = CommunicationAttachmentEntity.create()
 			.withId(id)
@@ -44,7 +45,8 @@ class CommunicationAttachmentEntityTest {
 			.withName(name)
 			.withContentType(contentType)
 			.withNamespace(namespace)
-			.withMunicipalityId(municipalityId);
+			.withMunicipalityId(municipalityId)
+			.withForeignId(foreignId);
 
 		assertThat(entity).hasNoNullFieldsOrProperties();
 		assertThat(entity.getId()).isEqualTo(id);
@@ -54,6 +56,7 @@ class CommunicationAttachmentEntityTest {
 		assertThat(entity.getContentType()).isEqualTo(contentType);
 		assertThat(entity.getNamespace()).isEqualTo(namespace);
 		assertThat(entity.getMunicipalityId()).isEqualTo(municipalityId);
+		assertThat(entity.getForeignId()).isEqualTo(foreignId);
 	}
 
 	@Test

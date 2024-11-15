@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import javax.sql.rowset.serial.SerialBlob;
 
@@ -33,7 +34,6 @@ class WebMessageCollectorMapperTest {
 
 	@Mock
 	private BlobBuilder blobBuilder;
-
 
 	@Test
 	void toCommunicationEntity() {
@@ -83,12 +83,12 @@ class WebMessageCollectorMapperTest {
 		assertThat(result.getMessageBody()).isEqualTo(messageString);
 		assertThat(result.getSent()).isCloseTo(OffsetDateTime.now(), within(1, ChronoUnit.SECONDS));
 		assertThat(result.getAttachments()).hasSize(1);
-		assertThat(result.getAttachments().getFirst().getId()).isEqualTo("1");
+		assertThat(result.getAttachments().getFirst().getForeignId()).isEqualTo("1");
+		assertThat(result.getAttachments().getFirst().getId()).containsPattern(Pattern.compile("([a-f0-9]{8}(-[a-f0-9]{4}){4}[a-f0-9]{8})"));
 		assertThat(result.getAttachments().getFirst().getContentType()).isEqualTo("text/plain");
 		assertThat(result.getAttachments().getFirst().getName()).isEqualTo("attachment.txt");
 
 	}
-
 
 	@Test
 	void toCommunicationAttachmentDataEntity() throws SQLException {
