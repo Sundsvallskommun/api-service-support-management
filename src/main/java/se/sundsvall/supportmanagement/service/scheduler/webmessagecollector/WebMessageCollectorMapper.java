@@ -58,7 +58,8 @@ public class WebMessageCollectorMapper {
 		return CommunicationAttachmentEntity.create()
 			.withMunicipalityId(communicationEntity.getMunicipalityId())
 			.withNamespace(communicationEntity.getNamespace())
-			.withId(String.valueOf(attachment.getAttachmentId()))
+			.withId(UUID.randomUUID().toString())
+			.withForeignId(attachment.getAttachmentId().toString())
 			.withCommunicationEntity(communicationEntity)
 			.withContentType(attachment.getMimeType())
 			.withName(attachment.getName());
