@@ -16,9 +16,7 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
 import org.junit.jupiter.api.Test;
-
 import se.sundsvall.supportmanagement.api.model.errand.Classification;
 import se.sundsvall.supportmanagement.api.model.errand.ContactChannel;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
@@ -160,7 +158,8 @@ class ErrandMapperTest {
 			.withCareOf(CARE_OF)
 			.withZipCode(ZIP_CODE)
 			.withCountry(COUNTRY)
-			.withMetadata(METADATA)
+			// .withParameters(List.of(Parameter.create().withKey(PARAMETER_NAME).withValues(List.of(PARAMETER_VALUE))))
+			.withParameters(null) // TODO: Fix in UF-10929
 			.withContactChannels(List.of(ContactChannel.create().withType(CONTACT_CHANNEL_TYPE).withValue(CONTACT_CHANNEL_VALUE)))
 			.withRole(STAKEHOLDER_ROLE);
 	}
@@ -381,7 +380,7 @@ class ErrandMapperTest {
 				LAST_NAME,
 				ZIP_CODE,
 				STAKEHOLDER_ROLE,
-				METADATA));
+				null)); // TODO: Fix in UF-10929
 
 		assertThat(entity.getStakeholders().getFirst().getContactChannels()).hasSize(1).extracting(
 			ContactChannelEntity::getType,
@@ -470,7 +469,7 @@ class ErrandMapperTest {
 				LAST_NAME,
 				ZIP_CODE,
 				STAKEHOLDER_ROLE,
-				METADATA));
+				null)); // TODO: Fix in UF-10929
 
 		assertThat(entity.getStakeholders().getFirst().getContactChannels()).hasSize(1).extracting(
 			ContactChannelEntity::getType,

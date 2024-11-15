@@ -16,8 +16,7 @@
 					"careOf": "CARE_OF-2",
 					"zipCode": "ZIP_CODE-2",
 					"country": "COUNTRY-2",
-					"contactChannels": [],
-					"metadata": {}
+					"contactChannels": []
 				},
 				{
 					"externalId": "USER_ID",
@@ -34,8 +33,7 @@
 							"type": "TYPE-1",
 							"value": "VALUE-1"
 						}
-					],
-					"metadata": {}
+					]
 				}
 			],
 			"externalTags": [
