@@ -1,13 +1,10 @@
 package se.sundsvall.supportmanagement.api.model.errand;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-
-import se.sundsvall.supportmanagement.api.validation.ValidRole;
-
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.List;
+import java.util.Objects;
+import se.sundsvall.supportmanagement.api.validation.ValidRole;
 
 @Schema(description = "Stakeholder model")
 public class Stakeholder {
@@ -49,8 +46,8 @@ public class Stakeholder {
 	@ArraySchema(schema = @Schema(implementation = ContactChannel.class))
 	private List<ContactChannel> contactChannels;
 
-	@Schema(description = "Metadata", example = "{\"key\": \"value\"}")
-	private Map<String, String> metadata;
+	@Schema(description = "Parameters for the stakeholder")
+	private List<Parameter> parameters;
 
 	public static Stakeholder create() {
 		return new Stakeholder();
@@ -212,49 +209,39 @@ public class Stakeholder {
 		return this;
 	}
 
-	public Map<String, String> getMetadata() {
-		return metadata;
+	public List<Parameter> getParameters() {
+		return parameters;
 	}
 
-	public void setMetadata(final Map<String, String> metadata) {
-		this.metadata = metadata;
+	public void setParameters(List<Parameter> parameters) {
+		this.parameters = parameters;
 	}
 
-	public Stakeholder withMetadata(final Map<String, String> metadata) {
-		this.metadata = metadata;
+	public Stakeholder withParameters(List<Parameter> parameters) {
+		this.parameters = parameters;
 		return this;
 	}
 
 	@Override
-	public String toString() {
-		return "Stakeholder{" +
-			"externalId='" + externalId + '\'' +
-			", externalIdType='" + externalIdType + '\'' +
-			", role='" + role + '\'' +
-			", city='" + city + '\'' +
-			", organizationName='" + organizationName + '\'' +
-			", firstName='" + firstName + '\'' +
-			", lastName='" + lastName + '\'' +
-			", address='" + address + '\'' +
-			", careOf='" + careOf + '\'' +
-			", zipCode='" + zipCode + '\'' +
-			", country='" + country + '\'' +
-			", contactChannels=" + contactChannels +
-			", metadata=" + metadata +
-			'}';
-	}
-
-	@Override
-	public boolean equals(final Object o) {
-		if (this == o) return true;
-		if (o == null || getClass() != o.getClass()) return false;
-		final Stakeholder that = (Stakeholder) o;
-		return Objects.equals(externalId, that.externalId) && Objects.equals(externalIdType, that.externalIdType) && Objects.equals(role, that.role) && Objects.equals(city, that.city) && Objects.equals(organizationName, that.organizationName) && Objects.equals(firstName, that.firstName) && Objects.equals(lastName, that.lastName) && Objects.equals(address, that.address) && Objects.equals(careOf, that.careOf) && Objects.equals(zipCode, that.zipCode) && Objects.equals(country, that.country) && Objects.equals(contactChannels, that.contactChannels) && Objects.equals(metadata, that.metadata);
-	}
-
-	@Override
 	public int hashCode() {
-		return Objects.hash(externalId, externalIdType, role, city, organizationName, firstName, lastName, address, careOf, zipCode, country, contactChannels, metadata);
+		return Objects.hash(address, careOf, city, contactChannels, country, externalId, externalIdType, firstName, lastName, organizationName, parameters, role, zipCode);
 	}
 
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) { return true; }
+		if (!(obj instanceof final Stakeholder other)) { return false; }
+		return Objects.equals(address, other.address) && Objects.equals(careOf, other.careOf) && Objects.equals(city, other.city) && Objects.equals(contactChannels, other.contactChannels) && Objects.equals(country, other.country) && Objects.equals(
+			externalId, other.externalId) && Objects.equals(externalIdType, other.externalIdType) && Objects.equals(firstName, other.firstName) && Objects.equals(lastName, other.lastName) && Objects.equals(organizationName, other.organizationName)
+			&& Objects.equals(parameters, other.parameters) && Objects.equals(role, other.role) && Objects.equals(zipCode, other.zipCode);
+	}
+
+	@Override
+	public String toString() {
+		final StringBuilder builder = new StringBuilder();
+		builder.append("Stakeholder [externalId=").append(externalId).append(", externalIdType=").append(externalIdType).append(", role=").append(role).append(", city=").append(city).append(", organizationName=").append(organizationName).append(
+			", firstName=").append(firstName).append(", lastName=").append(lastName).append(", address=").append(address).append(", careOf=").append(careOf).append(", zipCode=").append(zipCode).append(", country=").append(country).append(
+				", contactChannels=").append(contactChannels).append(", parameters=").append(parameters).append("]");
+		return builder.toString();
+	}
 }

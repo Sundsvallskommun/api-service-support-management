@@ -21,8 +21,7 @@
           "careOf": "Ford Prefect",
           "zipCode": "12345",
           "country": "United Kingdom",
-          "contactChannels": [],
-          "metadata": {}
+          "contactChannels": []
         },
         {
           "externalId": "cb20c51f-fcf3-42c0-b613-de563634a8ec",
@@ -33,8 +32,7 @@
           "address": "Northern skies",
           "zipCode": "23456",
           "country": "Norway",
-          "contactChannels": [],
-          "metadata": {}
+          "contactChannels": []
         }
       ],
       "externalTags": [],

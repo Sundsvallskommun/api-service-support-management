@@ -73,14 +73,6 @@ paths:
           type: string
         example: 2281
       responses:
-        "400":
-          description: Bad Request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
         "404":
           description: Not Found
           content:
@@ -99,6 +91,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/NamespaceConfig"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
     put:
       tags:
       - Configuration for namespace
@@ -263,6 +263,18 @@ paths:
           type: string
         example: 2281
       responses:
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Labels"
         "400":
           description: Bad Request
           content:
@@ -271,18 +283,6 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "200":
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Labels"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
     put:
       tags:
       - Metadata for labels
@@ -367,14 +367,6 @@ paths:
                 $ref: "#/components/schemas/Label"
         required: true
       responses:
-        "400":
-          description: Bad Request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
         "500":
           description: Internal Server error
           content:
@@ -383,6 +375,14 @@ paths:
                 $ref: "#/components/schemas/Problem"
         "202":
           description: Successful operation
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
     delete:
       tags:
       - Metadata for labels
@@ -591,16 +591,16 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        "201":
-          description: Created
-          content:
-            application/json: {}
         "500":
           description: Internal Server error
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "201":
+          description: Created
+          content:
+            application/json: {}
         "400":
           description: Bad request
           content:
@@ -745,14 +745,6 @@ paths:
           type: string
         example: 2281
       responses:
-        "400":
-          description: Bad Request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
         "404":
           description: Not Found
           content:
@@ -771,6 +763,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/EmailIntegration"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
     put:
       tags:
       - Configuration for email integration
@@ -937,14 +937,12 @@ paths:
           type: string
         example: 2281
       responses:
-        "400":
-          description: Bad Request
+        "500":
+          description: Internal Server error
           content:
             application/problem+json:
               schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
+                $ref: "#/components/schemas/Problem"
         "200":
           description: Successful operation
           content:
@@ -953,12 +951,14 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Status"
-        "500":
-          description: Internal Server error
+        "400":
+          description: Bad Request
           content:
             application/problem+json:
               schema:
-                $ref: "#/components/schemas/Problem"
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
     post:
       tags:
       - Metadata for statuses
@@ -988,14 +988,6 @@ paths:
               $ref: "#/components/schemas/Status"
         required: true
       responses:
-        "400":
-          description: Bad Request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
         "201":
           description: Successful operation
           headers:
@@ -1009,6 +1001,14 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
   /{municipalityId}/{namespace}/metadata/roles:
     get:
       tags:
@@ -1033,14 +1033,12 @@ paths:
           type: string
         example: 2281
       responses:
-        "400":
-          description: Bad Request
+        "500":
+          description: Internal Server error
           content:
             application/problem+json:
               schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
+                $ref: "#/components/schemas/Problem"
         "200":
           description: Successful operation
           content:
@@ -1049,12 +1047,14 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Role"
-        "500":
-          description: Internal Server error
+        "400":
+          description: Bad Request
           content:
             application/problem+json:
               schema:
-                $ref: "#/components/schemas/Problem"
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
     post:
       tags:
       - Metadata for roles
@@ -1084,14 +1084,6 @@ paths:
               $ref: "#/components/schemas/Role"
         required: true
       responses:
-        "400":
-          description: Bad Request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
         "201":
           description: Successful operation
           headers:
@@ -1105,6 +1097,14 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
   /{municipalityId}/{namespace}/metadata/external-id-types:
     get:
       tags:
@@ -1129,14 +1129,12 @@ paths:
           type: string
         example: 2281
       responses:
-        "400":
-          description: Bad Request
+        "500":
+          description: Internal Server error
           content:
             application/problem+json:
               schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
+                $ref: "#/components/schemas/Problem"
         "200":
           description: Successful operation
           content:
@@ -1145,12 +1143,14 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ExternalIdType"
-        "500":
-          description: Internal Server error
+        "400":
+          description: Bad Request
           content:
             application/problem+json:
               schema:
-                $ref: "#/components/schemas/Problem"
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
     post:
       tags:
       - Metadata for externalid types
@@ -1180,14 +1180,6 @@ paths:
               $ref: "#/components/schemas/ExternalIdType"
         required: true
       responses:
-        "400":
-          description: Bad Request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
         "201":
           description: Successful operation
           headers:
@@ -1201,6 +1193,14 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
   /{municipalityId}/{namespace}/metadata/contactreasons:
     get:
       tags:
@@ -1225,6 +1225,12 @@ paths:
           type: string
         example: 2281
       responses:
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "200":
           description: Successful operation
           content:
@@ -1233,12 +1239,6 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ContactReason"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -1322,14 +1322,12 @@ paths:
           type: string
         example: 2281
       responses:
-        "400":
-          description: Bad Request
+        "500":
+          description: Internal Server error
           content:
             application/problem+json:
               schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
+                $ref: "#/components/schemas/Problem"
         "200":
           description: Successful operation
           content:
@@ -1338,12 +1336,14 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Category"
-        "500":
-          description: Internal Server error
+        "400":
+          description: Bad Request
           content:
             application/problem+json:
               schema:
-                $ref: "#/components/schemas/Problem"
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
     post:
       tags:
       - Metadata for categories
@@ -1373,14 +1373,6 @@ paths:
               $ref: "#/components/schemas/Category"
         required: true
       responses:
-        "400":
-          description: Bad Request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
         "201":
           description: Successful operation
           headers:
@@ -1394,6 +1386,14 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
   /{municipalityId}/{namespace}/errands:
     get:
       tags:
@@ -1452,14 +1452,6 @@ paths:
           items:
             type: string
       responses:
-        "400":
-          description: Bad Request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
         "500":
           description: Internal Server Error
           content:
@@ -1472,6 +1464,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PageErrand"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
     post:
       tags:
       - Errands
@@ -1562,6 +1562,12 @@ paths:
           items:
             type: string
       responses:
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "200":
           description: Successful operation
           content:
@@ -1570,18 +1576,6 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Notification"
-        "404":
-          description: Not found
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -1590,6 +1584,12 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
     post:
       tags:
       - User notifications
@@ -1689,14 +1689,6 @@ paths:
         schema:
           $ref: "#/components/schemas/FindErrandNotesRequest"
       responses:
-        "400":
-          description: Bad Request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
         "500":
           description: Internal Server Error
           content:
@@ -1709,6 +1701,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/FindErrandNotesResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
     post:
       tags:
       - Errand notes
@@ -1904,14 +1904,6 @@ paths:
           type: string
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
       responses:
-        "400":
-          description: Bad Request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
         "404":
           description: Not Found
           content:
@@ -1932,6 +1924,14 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ErrandAttachmentHeader"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
     post:
       tags:
       - Errand attachments
@@ -2027,6 +2027,12 @@ paths:
           type: string
         example: 12
       responses:
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "200":
           description: Successful operation
           content:
@@ -2035,18 +2041,6 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Notification"
-        "404":
-          description: Not found
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -2055,6 +2049,12 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
     patch:
       tags:
       - User notifications
@@ -2086,12 +2086,6 @@ paths:
                 $ref: "#/components/schemas/Notification"
         required: true
       responses:
-        "404":
-          description: Not found
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
         "500":
           description: Internal Server error
           content:
@@ -2108,6 +2102,12 @@ paths:
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
         "204":
           description: Successful operation
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/metadata/contactreasons/{contactReasonId}:
     get:
       tags:
@@ -2140,18 +2140,18 @@ paths:
           format: int64
         example: 123
       responses:
-        "200":
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ContactReason"
         "500":
           description: Internal Server error
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContactReason"
         "400":
           description: Bad request
           content:
@@ -2256,18 +2256,18 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        "200":
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ContactReason"
         "500":
           description: Internal Server error
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContactReason"
         "400":
           description: Bad request
           content:
@@ -2307,6 +2307,18 @@ paths:
           type: string
         example: KSK_SERVICE_CENTER_SALARY_AND_PENSION
       responses:
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Category"
         "400":
           description: Bad Request
           content:
@@ -2315,18 +2327,6 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "200":
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Category"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
     delete:
       tags:
       - Metadata for categories
@@ -2415,16 +2415,14 @@ paths:
               $ref: "#/components/schemas/Category"
         required: true
       responses:
-        "400":
-          description: Bad Request
+        "404":
+          description: Not Found
           content:
             application/problem+json:
               schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "404":
-          description: Not Found
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
           content:
             application/problem+json:
               schema:
@@ -2435,12 +2433,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Category"
-        "500":
-          description: Internal Server error
+        "400":
+          description: Bad Request
           content:
             application/problem+json:
               schema:
-                $ref: "#/components/schemas/Problem"
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
   /{municipalityId}/{namespace}/errands/{errandId}:
     get:
       tags:
@@ -2472,14 +2472,6 @@ paths:
           type: string
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
       responses:
-        "400":
-          description: Bad Request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
         "404":
           description: Not Found
           content:
@@ -2498,6 +2490,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Errand"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
     delete:
       tags:
       - Errands
@@ -2586,24 +2586,18 @@ paths:
               $ref: "#/components/schemas/Errand"
         required: true
       responses:
-        "200":
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Errand"
-        "404":
-          description: Not found
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
         "500":
           description: Internal Server error
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Errand"
         "400":
           description: Bad request
           content:
@@ -2612,6 +2606,12 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/errands/{errandId}/parameters:
     get:
       tags:
@@ -2703,12 +2703,6 @@ paths:
                 $ref: "#/components/schemas/Parameter"
         required: true
       responses:
-        "404":
-          description: Not found
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
         "500":
           description: Internal Server error
           content:
@@ -2723,6 +2717,12 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "200":
           description: Successful Operation
           content:
@@ -2904,12 +2904,6 @@ paths:
                 type: string
         required: true
       responses:
-        "404":
-          description: Not found
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
         "500":
           description: Internal Server error
           content:
@@ -2924,6 +2918,12 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "200":
           description: Successful Operation
           content:
@@ -2969,14 +2969,6 @@ paths:
           type: string
         example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
       responses:
-        "400":
-          description: Bad Request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
         "404":
           description: Not Found
           content:
@@ -2995,6 +2987,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrandNote"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
     delete:
       tags:
       - Errand notes
@@ -3099,24 +3099,18 @@ paths:
               $ref: "#/components/schemas/UpdateErrandNoteRequest"
         required: true
       responses:
-        "200":
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrandNote"
-        "404":
-          description: Not found
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
         "500":
           description: Internal Server error
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrandNote"
         "400":
           description: Bad request
           content:
@@ -3125,6 +3119,12 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/metadata:
     get:
       tags:
@@ -3149,6 +3149,18 @@ paths:
           type: string
         example: 2281
       responses:
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MetadataResponse"
         "400":
           description: Bad Request
           content:
@@ -3157,18 +3169,6 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "200":
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/MetadataResponse"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/metadata/statuses/{status}:
     get:
       tags:
@@ -3200,16 +3200,14 @@ paths:
           type: string
         example: NEW
       responses:
-        "400":
-          description: Bad Request
+        "404":
+          description: Not Found
           content:
             application/problem+json:
               schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "404":
-          description: Not Found
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
           content:
             application/problem+json:
               schema:
@@ -3220,12 +3218,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Status"
-        "500":
-          description: Internal Server error
+        "400":
+          description: Bad Request
           content:
             application/problem+json:
               schema:
-                $ref: "#/components/schemas/Problem"
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
     delete:
       tags:
       - Metadata for statuses
@@ -3309,16 +3309,14 @@ paths:
           type: string
         example: ROLE-1
       responses:
-        "400":
-          description: Bad Request
+        "404":
+          description: Not Found
           content:
             application/problem+json:
               schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "404":
-          description: Not Found
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
           content:
             application/problem+json:
               schema:
@@ -3329,12 +3327,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Role"
-        "500":
-          description: Internal Server error
+        "400":
+          description: Bad Request
           content:
             application/problem+json:
               schema:
-                $ref: "#/components/schemas/Problem"
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
     delete:
       tags:
       - Metadata for roles
@@ -3419,16 +3419,14 @@ paths:
           type: string
         example: PRIVATE
       responses:
-        "400":
-          description: Bad Request
+        "404":
+          description: Not Found
           content:
             application/problem+json:
               schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "404":
-          description: Not Found
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
           content:
             application/problem+json:
               schema:
@@ -3439,12 +3437,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ExternalIdType"
-        "500":
-          description: Internal Server error
+        "400":
+          description: Bad Request
           content:
             application/problem+json:
               schema:
-                $ref: "#/components/schemas/Problem"
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
     delete:
       tags:
       - Metadata for externalid types
@@ -3528,6 +3528,12 @@ paths:
           type: string
         example: KSK_SERVICE_CENTER_SALARY_AND_PENSION
       responses:
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "200":
           description: Successful operation
           content:
@@ -3536,12 +3542,6 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Type"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/errands/{errandId}/time-measure:
     get:
       tags:
@@ -3571,10 +3571,6 @@ paths:
           type: string
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
       responses:
-        "200":
-          description: Successful operation
-          content:
-            application/json: {}
         "500":
           description: Internal Server error
           content:
@@ -3589,6 +3585,10 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "200":
+          description: Successful operation
+          content:
+            application/json: {}
   /{municipalityId}/{namespace}/errands/{errandId}/revisions:
     get:
       tags:
@@ -3621,6 +3621,12 @@ paths:
           type: string
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
       responses:
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "200":
           description: Successful operation
           content:
@@ -3629,18 +3635,6 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Revision"
-        "404":
-          description: Not found
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -3649,6 +3643,12 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/errands/{errandId}/revisions/difference:
     get:
       tags:
@@ -3697,24 +3697,18 @@ paths:
           format: int32
         example: 1
       responses:
-        "200":
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/DifferenceResponse"
-        "404":
-          description: Not found
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
         "500":
           description: Internal Server error
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DifferenceResponse"
         "400":
           description: Bad request
           content:
@@ -3723,6 +3717,12 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/errands/{errandId}/notifications/{notificationId}:
     get:
       tags:
@@ -3761,24 +3761,18 @@ paths:
           type: string
         example: 12
       responses:
-        "200":
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Notification"
-        "404":
-          description: Not found
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
         "500":
           description: Internal Server error
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Notification"
         "400":
           description: Bad request
           content:
@@ -3787,6 +3781,12 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
     delete:
       tags:
       - User notifications
@@ -3823,12 +3823,6 @@ paths:
         schema:
           type: string
       responses:
-        "404":
-          description: Not found
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
         "500":
           description: Internal Server error
           content:
@@ -3845,6 +3839,12 @@ paths:
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
         "204":
           description: Successful operation
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/errands/{errandId}/notes/{noteId}/revisions:
     get:
       tags:
@@ -3884,6 +3884,12 @@ paths:
           type: string
         example: 22a57c09-47ca-45bf-ab02-819011c6fd8d
       responses:
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "200":
           description: Successful operation
           content:
@@ -3892,18 +3898,6 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Revision"
-        "404":
-          description: Not found
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -3912,6 +3906,12 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/errands/{errandId}/notes/{noteId}/revisions/difference:
     get:
       tags:
@@ -3967,24 +3967,18 @@ paths:
           format: int32
         example: 1
       responses:
-        "200":
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/DifferenceResponse"
-        "404":
-          description: Not found
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
         "500":
           description: Internal Server error
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DifferenceResponse"
         "400":
           description: Bad request
           content:
@@ -3993,6 +3987,12 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/errands/{errandId}/events:
     get:
       tags:
@@ -4050,24 +4050,18 @@ paths:
           items:
             type: string
       responses:
-        "200":
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/PageEvent"
-        "404":
-          description: Not found
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
         "500":
           description: Internal Server error
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PageEvent"
         "400":
           description: Bad request
           content:
@@ -4076,6 +4070,12 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/errands/{errandId}/communication:
     get:
       tags:
@@ -4235,14 +4235,6 @@ paths:
           type: string
         example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
       responses:
-        "400":
-          description: Bad Request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
         "404":
           description: Not Found
           content:
@@ -4257,6 +4249,14 @@ paths:
                 $ref: "#/components/schemas/Problem"
         "200":
           description: Successful Operation
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
     delete:
       tags:
       - Errand attachments
@@ -4380,14 +4380,6 @@ paths:
           type: string
         example: 2281
       responses:
-        "400":
-          description: Bad Request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
         "500":
           description: Internal Server Error
           content:
@@ -4402,6 +4394,14 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/NamespaceConfig"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
   /api-docs:
     get:
       tags:
@@ -4472,9 +4472,9 @@ components:
             type: object
         status:
           $ref: "#/components/schemas/StatusType"
-        detail:
-          type: string
         title:
+          type: string
+        detail:
           type: string
     StatusType:
       type: object
@@ -4607,9 +4607,9 @@ components:
             type: object
         status:
           $ref: "#/components/schemas/StatusType"
-        detail:
-          type: string
         title:
+          type: string
+        detail:
           type: string
         suppressed:
           type: array
@@ -5162,15 +5162,11 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ContactChannel"
-        metadata:
-          type: object
-          additionalProperties:
-            type: string
-            description: Metadata
-            example: "{\"key\":\"value\"}"
-          description: Metadata
-          example:
-            key: value
+        parameters:
+          type: array
+          description: Parameters for the stakeholder
+          items:
+            $ref: "#/components/schemas/Parameter"
       description: Stakeholder model
     Suspension:
       type: object
@@ -5578,14 +5574,14 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/SortObject"
-        paged:
-          type: boolean
-        pageSize:
-          type: integer
-          format: int32
         pageNumber:
           type: integer
           format: int32
+        pageSize:
+          type: integer
+          format: int32
+        paged:
+          type: boolean
         unpaged:
           type: boolean
     SortObject:

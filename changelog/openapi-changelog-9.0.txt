@@ -214,6 +214,26 @@ api path removed without deprecation
 in API GET /{municipalityId}/{namespace}/notifications/{notificationId}
 api path removed without deprecation
  
+[response-optional-property-removed]
+in API GET /{municipalityId}/{namespace}/errands
+removed the optional property 'content/items/stakeholders/items/metadata' from the response with the '200' status
+ 
+[request-property-removed]
+in API POST /{municipalityId}/{namespace}/errands
+removed the request property 'stakeholders/items/metadata'
+ 
+[response-optional-property-removed]
+in API GET /{municipalityId}/{namespace}/errands/{id}
+removed the optional property 'stakeholders/items/metadata' from the response with the '200' status
+ 
+[request-property-removed]
+in API PATCH /{municipalityId}/{namespace}/errands/{id}
+removed the request property 'stakeholders/items/metadata'
+ 
+[response-optional-property-removed]
+in API PATCH /{municipalityId}/{namespace}/errands/{id}
+removed the optional property 'stakeholders/items/metadata' from the response with the '200' status
+ 
 [endpoint-added]
 in API GET /namespace-configs
 endpoint added
@@ -233,6 +253,14 @@ endpoint added
 [endpoint-added]
 in API PUT /{municipalityId}/{namespace}/email-integration-config
 endpoint added
+ 
+[response-optional-property-added]
+in API GET /{municipalityId}/{namespace}/errands
+added the optional property 'content/items/stakeholders/items/parameters' to the response with the '200' status
+ 
+[new-optional-request-property]
+in API POST /{municipalityId}/{namespace}/errands
+added the new optional request property 'stakeholders/items/parameters'
  
 [request-property-max-length-increased]
 in API POST /{municipalityId}/{namespace}/errands
@@ -266,9 +294,21 @@ endpoint added
 in API GET /{municipalityId}/{namespace}/errands/{errandId}/time-measure
 endpoint added
  
+[response-optional-property-added]
+in API GET /{municipalityId}/{namespace}/errands/{id}
+added the optional property 'stakeholders/items/parameters' to the response with the '200' status
+ 
+[new-optional-request-property]
+in API PATCH /{municipalityId}/{namespace}/errands/{id}
+added the new optional request property 'stakeholders/items/parameters'
+ 
 [request-property-max-length-increased]
 in API PATCH /{municipalityId}/{namespace}/errands/{id}
 the 'contactReasonDescription' request property's maxLength was increased from '255' to '4096'
+ 
+[response-optional-property-added]
+in API PATCH /{municipalityId}/{namespace}/errands/{id}
+added the optional property 'stakeholders/items/parameters' to the response with the '200' status
  
 [response-optional-property-added]
 in API GET /{municipalityId}/{namespace}/metadata

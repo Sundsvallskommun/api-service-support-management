@@ -11,7 +11,6 @@ import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMappe
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-
 import se.sundsvall.supportmanagement.api.model.errand.Classification;
 import se.sundsvall.supportmanagement.api.model.errand.ContactChannel;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
@@ -166,7 +165,7 @@ public final class ErrandMapper {
 					.withCareOf(stakeholderEntity.getCareOf())
 					.withZipCode(stakeholderEntity.getZipCode())
 					.withCountry(stakeholderEntity.getCountry())
-					.withMetadata(stakeholderEntity.getMetadata())
+					.withParameters(null) // TODO: Fix in UF-10929
 					.withContactChannels(toContactChannels(stakeholderEntity.getContactChannels())))
 				.toList())
 			.orElse(emptyList());
@@ -188,7 +187,7 @@ public final class ErrandMapper {
 					.withCareOf(stakeholder.getCareOf())
 					.withZipCode(stakeholder.getZipCode())
 					.withCountry(stakeholder.getCountry())
-					.withMetadata(stakeholder.getMetadata())
+					.withMetadata(null) // TODO: Fix in UF-10929
 					.withContactChannels(toContactChannelEntities(stakeholder.getContactChannels())))
 				.toList())
 			.orElse(emptyList()));
