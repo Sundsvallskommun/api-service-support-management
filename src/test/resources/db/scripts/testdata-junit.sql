@@ -80,8 +80,14 @@ INSERT INTO stakeholder(id, external_id, external_id_type, errand_id) VALUES
 -------------------------------------
 -- ContactChannel
 ------------------------------------
-
 INSERT INTO contact_channel(stakeholder_id, type, value) VALUES('3001', 'TYPE-1', 'VALUE-1');
+
+-------------------------------------
+-- StakeholderParameter
+------------------------------------
+INSERT INTO stakeholder_parameter(id, stakeholder_id, display_name, parameters_key) VALUES(201, 3001, 'Parameter X', 'parameterX');
+INSERT INTO stakeholder_parameter_values(stakeholder_parameter_id, `value`) VALUES(201, 'value-x1');
+INSERT INTO stakeholder_parameter_values(stakeholder_parameter_id, `value`) VALUES(201, 'value-x2');
 
 -------------------------------------
 -- ExternalTag

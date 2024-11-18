@@ -3,14 +3,12 @@ package se.sundsvall.supportmanagement.integration.db.model;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanEquals;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanHashCode;
-import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanToStringExcluding;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidGettersAndSetters;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.AllOf.allOf;
 
 import java.util.List;
-
 import org.junit.jupiter.api.Test;
 
 class StakeholderEntityTest {
@@ -21,13 +19,12 @@ class StakeholderEntityTest {
 			hasValidBeanConstructor(),
 			hasValidGettersAndSetters(),
 			hasValidBeanHashCode(),
-			hasValidBeanEquals(),
-			hasValidBeanToStringExcluding("errandEntity")));
+			hasValidBeanEquals()));
 	}
 
 	@Test
 	void hasValidBuilderMethods() {
-		final var id = 1;
+		final var id = 1L;
 		final var externalId = "externalId";
 		final var externalIdType = "externalIdTypeTag";
 		final var errand = ErrandEntity.create();
@@ -39,6 +36,7 @@ class StakeholderEntityTest {
 		final var country = "country";
 		final var role = "role";
 		final var contactChannel = ContactChannelEntity.create();
+		final var parameter = StakeholderParameterEntity.create().withId(123L);
 
 		final var stakeholderEntity = StakeholderEntity.create()
 			.withId(id)
@@ -52,7 +50,8 @@ class StakeholderEntityTest {
 			.withCareOf(careOf)
 			.withZipCode(zipCode)
 			.withCountry(country)
-			.withContactChannels(List.of(contactChannel));
+			.withContactChannels(List.of(contactChannel))
+			.withParameters(List.of(parameter));
 
 		assertThat(stakeholderEntity.getId()).isEqualTo(id);
 		assertThat(stakeholderEntity.getExternalId()).isEqualTo(externalId);
@@ -66,6 +65,7 @@ class StakeholderEntityTest {
 		assertThat(stakeholderEntity.getZipCode()).isEqualTo(zipCode);
 		assertThat(stakeholderEntity.getCountry()).isEqualTo(country);
 		assertThat(stakeholderEntity.getContactChannels()).containsExactly(contactChannel);
+		assertThat(stakeholderEntity.getParameters()).containsExactly(parameter);
 	}
 
 	@Test
