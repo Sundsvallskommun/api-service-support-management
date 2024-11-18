@@ -17,7 +17,6 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import org.zalando.problem.Problem;
 import org.zalando.problem.violations.ConstraintViolationProblem;
 import org.zalando.problem.violations.Violation;
-
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.service.NotificationService;
 
@@ -108,6 +107,7 @@ class NotificationsDeleteResourceFailureTest {
 
 		// Verification
 		assertThat(response).isNotNull();
+
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)

@@ -1,13 +1,11 @@
 package se.sundsvall.supportmanagement.integration.db;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
-
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
-
-import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
 
@@ -22,11 +20,7 @@ public interface NotificationRepository extends JpaRepository<NotificationEntity
 		final String description,
 		final OffsetDateTime created);
 
-	Optional<NotificationEntity> findByIdAndNamespaceAndMunicipalityIdAndErrandEntityId(
-		final String id,
-		final String namespace,
-		final String municipalityId,
-		final String errandId);
+	boolean existsByIdAndNamespaceAndMunicipalityId(String id, String namespace, String municipalityId);
 
 	boolean existsByNamespaceAndMunicipalityIdAndOwnerIdAndErrandEntityAndDescription(
 		final String namespace,
@@ -34,6 +28,12 @@ public interface NotificationRepository extends JpaRepository<NotificationEntity
 		final String ownerId,
 		final ErrandEntity errandEntity,
 		final String description);
+
+	Optional<NotificationEntity> findByIdAndNamespaceAndMunicipalityIdAndErrandEntityId(
+		final String id,
+		final String namespace,
+		final String municipalityId,
+		final String errandId);
 
 	List<NotificationEntity> findAllByNamespaceAndMunicipalityIdAndErrandEntityId(
 		final String namespace,

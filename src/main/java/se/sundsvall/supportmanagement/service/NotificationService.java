@@ -5,12 +5,10 @@ import static org.zalando.problem.Status.NOT_FOUND;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Objects;
-
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.zalando.problem.Problem;
-
 import se.sundsvall.supportmanagement.api.filter.ExecutingUserSupplier;
 import se.sundsvall.supportmanagement.api.model.notification.Notification;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
@@ -52,6 +50,10 @@ public class NotificationService {
 			.stream()
 			.map(NotificationMapper::toNotification)
 			.toList();
+	}
+
+	public List<Notification> getNotifications(final String municipalityId, final String namespace, final String ownerId) {
+		return notificationRepository.findAllByNamespaceAndMunicipalityIdAndOwnerId(namespace, municipalityId, ownerId).stream().map(NotificationMapper::toNotification).toList();
 	}
 
 	public String createNotification(final String municipalityId, final String namespace, final String errandId, final Notification notification) {
