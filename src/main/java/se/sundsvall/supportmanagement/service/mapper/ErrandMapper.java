@@ -192,9 +192,8 @@ public final class ErrandMapper {
 						.withCountry(stakeholder.getCountry())
 						.withContactChannels(toContactChannelEntities(stakeholder.getContactChannels()));
 
-					stakeholderEntity.withParameters(toStakeholderParameterEntityList(stakeholder.getParameters(), stakeholderEntity));
-
-					return stakeholderEntity;
+					return stakeholderEntity
+						.withParameters(toStakeholderParameterEntityList(stakeholder.getParameters(), stakeholderEntity));
 				})
 				.toList())
 			.orElse(emptyList()));
