@@ -135,6 +135,13 @@ VALUES ('3008', '155 Country Lane, Cottington', 'Ford Prefect', 'United Kingdom'
         '147d355f-dc94-4fde-a4cb-9ddd16cb1946', 'CAKE-EATER');
 
 -------------------------------------
+-- StakeholderParameter
+------------------------------------
+INSERT INTO stakeholder_parameter(id, stakeholder_id, display_name, parameters_key) VALUES(201, 3001, 'Parameter X', 'parameterX');
+INSERT INTO stakeholder_parameter_values(stakeholder_parameter_id, `value`) VALUES(201, 'value-x1');
+INSERT INTO stakeholder_parameter_values(stakeholder_parameter_id, `value`) VALUES(201, 'value-x2');
+
+-------------------------------------
 -- ContactChannel
 ------------------------------------
 

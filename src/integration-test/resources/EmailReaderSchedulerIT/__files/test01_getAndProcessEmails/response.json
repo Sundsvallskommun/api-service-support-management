@@ -24,6 +24,7 @@
               "value": "sender@this.is.a.test"
             }
           ],
+          "parameters":[],
           "role": "ROLE-1"
         }
       ],
@@ -54,6 +55,7 @@
               "value": "sender@this.is.a.test"
             }
           ],
+          "parameters":[],
           "role": "ROLE-1"
         }
       ],

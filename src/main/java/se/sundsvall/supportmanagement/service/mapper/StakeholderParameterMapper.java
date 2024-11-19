@@ -8,38 +8,38 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import se.sundsvall.supportmanagement.api.model.errand.Parameter;
-import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.integration.db.model.ParameterEntity;
+import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
+import se.sundsvall.supportmanagement.integration.db.model.StakeholderParameterEntity;
 
-public final class ErrandParameterMapper {
+public final class StakeholderParameterMapper {
 
-	private ErrandParameterMapper() {
+	private StakeholderParameterMapper() {
 		// Intentionally empty
 	}
 
-	public static List<ParameterEntity> toErrandParameterEntityList(final List<Parameter> parameters, ErrandEntity entity) {
+	public static List<StakeholderParameterEntity> toStakeholderParameterEntityList(final List<Parameter> parameters, StakeholderEntity entity) {
 		return new ArrayList<>(toUniqueKeyList(parameters).stream()
-			.map(parameter -> toErrandParameterEntity(parameter).withErrandEntity(entity))
+			.map(parameter -> toStakeholderParameterEntity(parameter).withStakeholderEntity(entity))
 			.toList());
 	}
 
-	public static ParameterEntity toErrandParameterEntity(final Parameter parameter) {
-		return ParameterEntity.create()
+	public static StakeholderParameterEntity toStakeholderParameterEntity(final Parameter parameter) {
+		return StakeholderParameterEntity.create()
 			.withDisplayName(parameter.getDisplayName())
 			.withKey(parameter.getKey())
 			.withValues(parameter.getValues());
 	}
 
-	public static Parameter toParameter(final ParameterEntity parameter) {
+	public static Parameter toParameter(final StakeholderParameterEntity parameter) {
 		return Parameter.create()
 			.withDisplayName(parameter.getDisplayName())
 			.withKey(parameter.getKey())
 			.withValues(parameter.getValues());
 	}
 
-	public static List<Parameter> toParameterList(final List<ParameterEntity> parameters) {
+	public static List<Parameter> toParameterList(final List<StakeholderParameterEntity> parameters) {
 		return Optional.ofNullable(parameters).orElse(emptyList()).stream()
-			.map(ErrandParameterMapper::toParameter)
+			.map(StakeholderParameterMapper::toParameter)
 			.toList();
 	}
 

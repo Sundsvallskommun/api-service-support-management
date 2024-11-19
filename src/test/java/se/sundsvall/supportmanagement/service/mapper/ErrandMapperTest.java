@@ -15,7 +15,6 @@ import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.updateE
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import org.junit.jupiter.api.Test;
 import se.sundsvall.supportmanagement.api.model.errand.Classification;
 import se.sundsvall.supportmanagement.api.model.errand.ContactChannel;
@@ -32,6 +31,7 @@ import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
+import se.sundsvall.supportmanagement.integration.db.model.StakeholderParameterEntity;
 
 class ErrandMapperTest {
 
@@ -119,8 +119,6 @@ class ErrandMapperTest {
 
 	private static final String LABEL_2 = "label2";
 
-	private static final Map<String, String> METADATA = Map.of("key", "value");
-
 	private static Errand createErrand() {
 		return Errand.create()
 			.withAssignedGroupId(ASSIGNED_GROUP_ID)
@@ -158,8 +156,7 @@ class ErrandMapperTest {
 			.withCareOf(CARE_OF)
 			.withZipCode(ZIP_CODE)
 			.withCountry(COUNTRY)
-			// .withParameters(List.of(Parameter.create().withKey(PARAMETER_NAME).withValues(List.of(PARAMETER_VALUE))))
-			.withParameters(null) // TODO: Fix in UF-10929
+			.withParameters(List.of(Parameter.create().withKey(PARAMETER_NAME).withValues(List.of(PARAMETER_VALUE))))
 			.withContactChannels(List.of(ContactChannel.create().withType(CONTACT_CHANNEL_TYPE).withValue(CONTACT_CHANNEL_VALUE)))
 			.withRole(STAKEHOLDER_ROLE);
 	}
@@ -207,7 +204,7 @@ class ErrandMapperTest {
 			.withCareOf(CARE_OF)
 			.withZipCode(ZIP_CODE)
 			.withCountry(COUNTRY)
-			.withMetadata(METADATA)
+			.withParameters(List.of(StakeholderParameterEntity.create().withKey(PARAMETER_NAME).withValues(List.of(PARAMETER_VALUE))))
 			.withContactChannels(List.of(ContactChannelEntity.create().withType(CONTACT_CHANNEL_TYPE).withValue(CONTACT_CHANNEL_VALUE)))
 			.withRole(STAKEHOLDER_ROLE);
 	}
@@ -369,8 +366,7 @@ class ErrandMapperTest {
 			StakeholderEntity::getFirstName,
 			StakeholderEntity::getLastName,
 			StakeholderEntity::getZipCode,
-			StakeholderEntity::getRole,
-			StakeholderEntity::getMetadata)
+			StakeholderEntity::getRole)
 			.containsExactly(tuple(ADDRESS,
 				CARE_OF,
 				COUNTRY,
@@ -379,8 +375,7 @@ class ErrandMapperTest {
 				FIRST_NAME,
 				LAST_NAME,
 				ZIP_CODE,
-				STAKEHOLDER_ROLE,
-				null)); // TODO: Fix in UF-10929
+				STAKEHOLDER_ROLE));
 
 		assertThat(entity.getStakeholders().getFirst().getContactChannels()).hasSize(1).extracting(
 			ContactChannelEntity::getType,
@@ -388,6 +383,13 @@ class ErrandMapperTest {
 			.containsExactly(tuple(
 				CONTACT_CHANNEL_TYPE,
 				CONTACT_CHANNEL_VALUE));
+
+		assertThat(entity.getStakeholders().getFirst().getParameters()).hasSize(1).extracting(
+			StakeholderParameterEntity::getKey,
+			StakeholderParameterEntity::getValues)
+			.containsExactly(tuple(
+				PARAMETER_NAME,
+				List.of(PARAMETER_VALUE)));
 
 		assertThat(entity.getCreated()).isNull();
 		assertThat(entity.getId()).isNull();
@@ -458,8 +460,7 @@ class ErrandMapperTest {
 			StakeholderEntity::getFirstName,
 			StakeholderEntity::getLastName,
 			StakeholderEntity::getZipCode,
-			StakeholderEntity::getRole,
-			StakeholderEntity::getMetadata)
+			StakeholderEntity::getRole)
 			.containsExactly(tuple(ADDRESS,
 				CARE_OF,
 				COUNTRY,
@@ -468,8 +469,7 @@ class ErrandMapperTest {
 				FIRST_NAME,
 				LAST_NAME,
 				ZIP_CODE,
-				STAKEHOLDER_ROLE,
-				null)); // TODO: Fix in UF-10929
+				STAKEHOLDER_ROLE));
 
 		assertThat(entity.getStakeholders().getFirst().getContactChannels()).hasSize(1).extracting(
 			ContactChannelEntity::getType,
@@ -477,6 +477,13 @@ class ErrandMapperTest {
 			.containsExactly(tuple(
 				CONTACT_CHANNEL_TYPE,
 				CONTACT_CHANNEL_VALUE));
+
+		assertThat(entity.getStakeholders().getFirst().getParameters()).hasSize(1).extracting(
+			StakeholderParameterEntity::getKey,
+			StakeholderParameterEntity::getValues)
+			.containsExactly(tuple(
+				PARAMETER_NAME,
+				List.of(PARAMETER_VALUE)));
 
 		assertThat(entity.getNamespace()).isNull();
 		assertThat(entity.getCreated()).isNull();
@@ -519,5 +526,4 @@ class ErrandMapperTest {
 	void testUpdateEntityWithNull() {
 		assertThat(updateEntity(createEntity(), null)).usingRecursiveComparison().isEqualTo(createEntity());
 	}
-
 }
