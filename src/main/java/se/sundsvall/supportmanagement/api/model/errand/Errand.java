@@ -2,13 +2,6 @@ package se.sundsvall.supportmanagement.api.model.errand;
 
 import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 
-import java.time.OffsetDateTime;
-import java.util.List;
-import java.util.Objects;
-
-import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.format.annotation.DateTimeFormat.ISO;
-
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
@@ -17,6 +10,11 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Null;
 import jakarta.validation.constraints.Size;
+import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.Objects;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.format.annotation.DateTimeFormat.ISO;
 import se.sundsvall.supportmanagement.api.validation.UniqueExternalTagKeys;
 import se.sundsvall.supportmanagement.api.validation.ValidClassification;
 import se.sundsvall.supportmanagement.api.validation.ValidContactReason;
@@ -57,6 +55,7 @@ public class Errand {
 	private List<ExternalTag> externalTags;
 
 	@Schema(description = "Parameters for the errand")
+	@Valid
 	private List<Parameter> parameters;
 
 	@Schema(implementation = Classification.class)

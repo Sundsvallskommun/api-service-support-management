@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.api.model.errand;
 
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Objects;
 import se.sundsvall.supportmanagement.api.validation.ValidRole;
@@ -47,7 +48,7 @@ public class Stakeholder {
 	private List<ContactChannel> contactChannels;
 
 	@Schema(description = "Parameters for the stakeholder")
-	private List<Parameter> parameters;
+	private List<@Valid Parameter> parameters;
 
 	public static Stakeholder create() {
 		return new Stakeholder();

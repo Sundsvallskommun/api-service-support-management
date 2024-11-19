@@ -1,13 +1,11 @@
 package se.sundsvall.supportmanagement.service.scheduler.webmessagecollector;
 
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-
 import se.sundsvall.dept44.requestid.RequestId;
-
-import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import se.sundsvall.supportmanagement.integration.db.WebMessageCollectRepository;
 
 @Service
@@ -37,23 +35,21 @@ public class WebMessageCollectorScheduler {
 			LOG.debug("Fetching messages from WebMessageCollector");
 
 			healthIndicator.resetErrors();
-			repository.findAll().forEach(entity -> {
-				entity.getFamilyIds().forEach(familyId -> {
-					try {
-						worker.getWebMessages(entity.getInstance(), familyId, entity.getMunicipalityId()).forEach(message -> {
-							try {
-								worker.processMessage(message, entity.getMunicipalityId());
-							} catch (Exception e) {
-								LOG.error("Error processing web message with id '{}'", message.getMessageId(), e);
-								healthIndicator.setUnhealthy();
-							}
-						});
-					} catch (Exception e) {
-						LOG.error("Error fetching web messages for familyId '{}'", familyId, e);
-						healthIndicator.setUnhealthy();
-					}
-				});
-			});
+			repository.findAll().forEach(entity -> entity.getFamilyIds().forEach(familyId -> {
+				try {
+					worker.getWebMessages(entity.getInstance(), familyId, entity.getMunicipalityId()).forEach(message -> {
+						try {
+							worker.processMessage(message, entity.getMunicipalityId());
+						} catch (final Exception e) {
+							LOG.error("Error processing web message with id '{}'", message.getMessageId(), e);
+							healthIndicator.setUnhealthy();
+						}
+					});
+				} catch (final Exception e) {
+					LOG.error("Error fetching web messages for familyId '{}'", familyId, e);
+					healthIndicator.setUnhealthy();
+				}
+			}));
 			if (!healthIndicator.hasErrors()) {
 				healthIndicator.setHealthy();
 			}
