@@ -10,7 +10,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 @SpringBootTest(classes = Application.class)
 @ActiveProfiles("junit")
-public class WebMessageSenderPropertiesTest {
+class WebMessageSenderPropertiesTest {
 
 	@Autowired
 	private WebMessageSenderProperties properties;

@@ -22,7 +22,7 @@ import static org.mockito.Mockito.when;
 import static se.sundsvall.supportmanagement.integration.webmessagesender.configuration.WebMessageSenderConfiguration.CLIENT_ID;
 
 @ExtendWith(MockitoExtension.class)
-public class WebMessageSenderConfigurationTest {
+class WebMessageSenderConfigurationTest {
 
 	@Mock
 	private ClientRegistrationRepository clientRegistrationRepositoryMock;
