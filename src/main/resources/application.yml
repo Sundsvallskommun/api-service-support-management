@@ -48,6 +48,9 @@ openapi:
   name: ${spring.application.name}
   title: ${spring.application.name}
   version: '@project.version@'
+springdoc:
+  swagger-ui:
+    operationsSorter: alpha
 resilience4j:
   circuitbreaker:
     instances:

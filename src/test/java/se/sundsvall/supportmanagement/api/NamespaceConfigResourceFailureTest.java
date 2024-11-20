@@ -26,7 +26,7 @@ import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 @ActiveProfiles("junit")
 class NamespaceConfigResourceFailureTest {
 
-	private static final String PATH = "/{municipalityId}/{namespace}/namespaceConfig";
+	private static final String PATH = "/{municipalityId}/{namespace}/namespace-config";
 	private static final String NAMESPACE = "namespace";
 	private static final String MUNICIPALITY_ID = "2281";
 	private static final String DISPLAY_NAME = "DisplayName";
@@ -229,7 +229,7 @@ class NamespaceConfigResourceFailureTest {
 	@Test
 	void readAllWithInvalidMunicipalityId() {
 		final var response = webTestClient.get()
-			.uri(uriBuilder -> uriBuilder.path("/namespaceConfigs").queryParam("municipalityId", INVALID).build())
+			.uri(uriBuilder -> uriBuilder.path("/namespace-configs").queryParam("municipalityId", INVALID).build())
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)

@@ -12,12 +12,17 @@ import static org.springframework.web.util.UriComponentsBuilder.fromPath;
 import static se.sundsvall.supportmanagement.Constants.NAMESPACE_REGEXP;
 import static se.sundsvall.supportmanagement.Constants.NAMESPACE_VALIDATION_MESSAGE;
 
-import java.util.List;
-
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.headers.Header;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
-
+import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -30,24 +35,17 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.zalando.problem.Problem;
 import org.zalando.problem.violations.ConstraintViolationProblem;
-
 import se.sundsvall.dept44.common.validators.annotation.ValidMunicipalityId;
 import se.sundsvall.supportmanagement.api.model.metadata.ContactReason;
 import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
 import se.sundsvall.supportmanagement.service.MetadataService;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.headers.Header;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.tags.Tag;
-
 @RestController
 @Validated
 @RequestMapping("/{municipalityId}/{namespace}/metadata/contactreasons")
-@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {Problem.class, ConstraintViolationProblem.class})))
+@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
+	Problem.class, ConstraintViolationProblem.class
+})))
 @ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 @Tag(name = "Metadata for contact reasons", description = "Contact reason metadata operations")
 class MetadataContactReasonResource {
@@ -58,7 +56,7 @@ class MetadataContactReasonResource {
 		this.metadataService = metadataService;
 	}
 
-	@PostMapping(consumes = APPLICATION_JSON_VALUE, produces = {APPLICATION_PROBLEM_JSON_VALUE})
+	@PostMapping(consumes = APPLICATION_JSON_VALUE, produces = ALL_VALUE)
 	@Operation(summary = "Create contact reason", description = "Create new contact reason for the namespace and municipality")
 	@ApiResponse(responseCode = "201", headers = @Header(name = LOCATION, schema = @Schema(type = "string")), description = "Successful operation", useReturnTypeSchema = true)
 	@Validated(OnCreate.class)
@@ -67,59 +65,58 @@ class MetadataContactReasonResource {
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId(groups = OnCreate.class) @PathVariable final String municipalityId,
 		@Valid @NotNull @RequestBody final ContactReason contactReason) {
 
-		return created(fromPath("/{municipalityId}/{namespace}/metadata/contactreasons/{reason}")
+		return created(fromPath("/{municipalityId}/{namespace}/metadata/contactreasons/{contactReasonId}")
 			.buildAndExpand(municipalityId, namespace, metadataService.createContactReason(namespace, municipalityId, contactReason)).toUri())
 			.header(CONTENT_TYPE, ALL_VALUE)
 			.build();
 	}
 
-	@GetMapping(path = "/{reason}", produces = {APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE})
+	@GetMapping(path = "/{contactReasonId}", produces = APPLICATION_JSON_VALUE)
 	@Operation(summary = "Get contact reason", description = "Get contact reason by reason, namespace and municipality")
-	@ApiResponse(responseCode = "200", description = "Successful operation", content = @Content(mediaType = APPLICATION_JSON_VALUE), useReturnTypeSchema = true)
+	@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true)
 	ResponseEntity<ContactReason> getContactReason(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
-		@Parameter(name = "reason", description = "Reason", example = "INVOICE") @PathVariable final String reason) {
+		@Parameter(name = "contactReasonId", description = "ContactReason ID", example = "123") @PathVariable final Long contactReasonId) {
 
-		return ok(metadataService.getContactReasonByReasonAndNamespaceAndMunicipalityId(reason, namespace, municipalityId));
+		return ok(metadataService.getContactReasonByIdAndNamespaceAndMunicipalityId(contactReasonId, namespace, municipalityId));
 	}
 
-	@GetMapping(produces = {APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE})
+	@GetMapping(produces = APPLICATION_JSON_VALUE)
 	@Operation(summary = "Get contact reasons for given namespace and municipalityId", description = "Get all contact reasons for the namespace and municipality")
-	@ApiResponse(responseCode = "200", description = "Successful operation", content = @Content(mediaType = APPLICATION_JSON_VALUE), useReturnTypeSchema = true)
+	@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true)
 	ResponseEntity<List<ContactReason>> getContactReasons(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId) {
 
-		return ok(metadataService.getContactReasonsForNamespaceAndMunicipality(namespace, municipalityId));
+		return ok(metadataService.findContactReasonsForNamespaceAndMunicipality(namespace, municipalityId));
 	}
 
-	@PatchMapping(path = "/{reason}", consumes = APPLICATION_JSON_VALUE, produces = {APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE})
+	@PatchMapping(path = "/{contactReasonId}", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
 	@Operation(summary = "Update contact reason", description = "Update contact reason matching namespace, municipality and reason")
-	@ApiResponse(responseCode = "200", description = "Successful operation", content = @Content(mediaType = APPLICATION_JSON_VALUE), useReturnTypeSchema = true)
+	@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true)
 	@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	ResponseEntity<ContactReason> updateContactReason(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
-		@Parameter(name = "reason", description = "Reason", example = "INVOICE") @PathVariable final String reason,
+		@Parameter(name = "contactReasonId", description = "ContactReason ID", example = "123") @PathVariable final Long contactReasonId,
 		@Valid @NotNull @RequestBody final ContactReason body) {
 
-		return ok(metadataService.patchContactReason(reason, namespace, municipalityId, body));
+		return ok(metadataService.patchContactReason(contactReasonId, namespace, municipalityId, body));
 	}
 
-	@DeleteMapping(path = "/{reason}", produces = {APPLICATION_PROBLEM_JSON_VALUE})
+	@DeleteMapping(path = "/{contactReasonId}", produces = ALL_VALUE)
 	@Operation(summary = "Delete contact reason", description = "Delete contact reason matching namespace, municipality and reason")
 	@ApiResponse(responseCode = "204", description = "Successful operation", useReturnTypeSchema = true)
 	@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	ResponseEntity<Void> deleteContactReason(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
-		@Parameter(name = "reason", description = "Reason", example = "INVOICE") @PathVariable final String reason) {
+		@Parameter(name = "contactReasonId", description = "ContactReason ID", example = "123") @PathVariable final Long contactReasonId) {
 
-		metadataService.deleteContactReason(reason, namespace, municipalityId);
+		metadataService.deleteContactReason(contactReasonId, namespace, municipalityId);
 		return noContent()
 			.header(CONTENT_TYPE, ALL_VALUE)
 			.build();
 	}
-
 }

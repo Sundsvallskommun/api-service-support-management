@@ -42,7 +42,7 @@ class ErrandsReadResourceFailureTest {
 	void readErrandWithInvalidNamespace() {
 		// Call
 		final var response = webTestClient.get()
-			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
+			.uri(builder -> builder.path(PATH + "/{errandId}").build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -64,7 +64,7 @@ class ErrandsReadResourceFailureTest {
 	void readErrandWithInvalidMunicipalityId() {
 		// Call
 		final var response = webTestClient.get()
-			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", NAMESPACE, "municipalityId", INVALID, "id", ERRAND_ID)))
+			.uri(builder -> builder.path(PATH + "/{errandId}").build(Map.of("namespace", NAMESPACE, "municipalityId", INVALID, "errandId", ERRAND_ID)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -86,7 +86,7 @@ class ErrandsReadResourceFailureTest {
 	void readErrandWithInvalidErrandId() {
 		// Call
 		final var response = webTestClient.get()
-			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", INVALID)))
+			.uri(builder -> builder.path(PATH + "/{errandId}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", INVALID)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -98,7 +98,7 @@ class ErrandsReadResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactly(tuple("readErrand.id", "not a valid UUID"));
+			.containsExactly(tuple("readErrand.errandId", "not a valid UUID"));
 
 		// Verification
 		verifyNoInteractions(errandServiceMock);
@@ -108,7 +108,7 @@ class ErrandsReadResourceFailureTest {
 	void findErrandsWithInvalidFilterString() {
 		// Call
 		final var response = webTestClient.get()
-			.uri(builder -> builder.path(PATH).queryParam("filter", "categoryTag:'SUPPORT_CASE' and").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
+			.uri(builder -> builder.path(PATH).queryParam("filter", "categoryTag:'SUPPORT_CASE' and").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(Problem.class)

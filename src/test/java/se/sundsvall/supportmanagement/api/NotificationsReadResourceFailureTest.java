@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.api;
 
+import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -25,20 +26,14 @@ import se.sundsvall.supportmanagement.service.NotificationService;
 @ActiveProfiles("junit")
 class NotificationsReadResourceFailureTest {
 
-	private static final String PATH = "/{municipalityId}/{namespace}/notifications";
-
+	private static final String PATH = "/{municipalityId}/{namespace}/errands/{errandId}/notifications";
 	private static final String PATH_NOTIFICATION = PATH + "/{notificationId}";
-
 	private static final String PATH_NOTIFICATIONS = PATH + "?ownerId={ownerId}";
-
 	private static final String NAMESPACE = "namespace";
-
 	private static final String MUNICIPALITY_ID = "2281";
-
 	private static final String OWNER_ID = UUID.randomUUID().toString();
-
+	private static final String ERRAND_ID = randomUUID().toString();
 	private static final String NOTIFICATION_ID = UUID.randomUUID().toString();
-
 	private static final String INVALID = "#invalid#";
 
 	@MockBean
@@ -51,7 +46,7 @@ class NotificationsReadResourceFailureTest {
 	void getNotificationsWithInvalidNamespace() {
 		// Call
 		final var response = webTestClient.get()
-			.uri(builder -> builder.path(PATH_NOTIFICATIONS).build(INVALID, MUNICIPALITY_ID, OWNER_ID))
+			.uri(builder -> builder.path(PATH_NOTIFICATIONS).build(INVALID, MUNICIPALITY_ID, ERRAND_ID, OWNER_ID))
 			.accept(APPLICATION_JSON)
 			.exchange()
 			.expectStatus().isNotFound()
@@ -68,7 +63,7 @@ class NotificationsReadResourceFailureTest {
 	void getNotificationsWithInvalidMunicipalityId() {
 		// Call
 		final var response = webTestClient.get()
-			.uri(builder -> builder.path(PATH_NOTIFICATIONS).build(NAMESPACE, INVALID, OWNER_ID))
+			.uri(builder -> builder.path(PATH_NOTIFICATIONS).build(NAMESPACE, INVALID, ERRAND_ID, OWNER_ID))
 			.accept(APPLICATION_JSON)
 			.exchange()
 			.expectStatus().isNotFound()
@@ -85,7 +80,7 @@ class NotificationsReadResourceFailureTest {
 	void getNotificationsWithInvalidOwnerId() {
 		// Call
 		final var response = webTestClient.get()
-			.uri(builder -> builder.path(PATH_NOTIFICATIONS).build(NAMESPACE, MUNICIPALITY_ID, INVALID))
+			.uri(builder -> builder.path(PATH_NOTIFICATIONS).build(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, INVALID))
 			.accept(APPLICATION_JSON)
 			.exchange()
 			.expectStatus().isNotFound()
@@ -102,7 +97,7 @@ class NotificationsReadResourceFailureTest {
 	void getNotificationWithInvalidNamespace() {
 		// Call
 		final var response = webTestClient.get()
-			.uri(builder -> builder.path(PATH_NOTIFICATION).build(INVALID, MUNICIPALITY_ID, NOTIFICATION_ID))
+			.uri(builder -> builder.path(PATH_NOTIFICATION).build(INVALID, MUNICIPALITY_ID, ERRAND_ID, NOTIFICATION_ID))
 			.accept(APPLICATION_JSON)
 			.exchange()
 			.expectStatus().isBadRequest()
@@ -114,13 +109,12 @@ class NotificationsReadResourceFailureTest {
 		assertThat(response).isNotNull();
 		verifyNoInteractions(notificationServiceMock);
 	}
-
 
 	@Test
 	void getNotificationWithInvalidMunicipalityId() {
 		// Call
 		final var response = webTestClient.get()
-			.uri(builder -> builder.path(PATH_NOTIFICATION).build(NAMESPACE, INVALID, NOTIFICATION_ID))
+			.uri(builder -> builder.path(PATH_NOTIFICATION).build(NAMESPACE, INVALID, ERRAND_ID, NOTIFICATION_ID))
 			.accept(APPLICATION_JSON)
 			.exchange()
 			.expectStatus().isBadRequest()
@@ -133,16 +127,17 @@ class NotificationsReadResourceFailureTest {
 		verifyNoInteractions(notificationServiceMock);
 	}
 
-
 	@Test
 	void getNotificationNotFound() {
 
 		// Arrange
-		when(notificationServiceMock.getNotification(MUNICIPALITY_ID, NAMESPACE, NOTIFICATION_ID)).thenThrow(Problem.valueOf(NOT_FOUND, String.format("Notification with id %s not found in namespace %s for municipality with id %s", NOTIFICATION_ID, NAMESPACE, MUNICIPALITY_ID)));
+		when(notificationServiceMock.getNotification(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, NOTIFICATION_ID)).thenThrow(Problem.valueOf(NOT_FOUND, String.format("Notification with id %s not found in namespace %s for municipality with id %s",
+			NOTIFICATION_ID,
+			NAMESPACE, MUNICIPALITY_ID)));
 
 		// Call
 		final var response = webTestClient.get()
-			.uri(builder -> builder.path(PATH_NOTIFICATION).build( MUNICIPALITY_ID,NAMESPACE, NOTIFICATION_ID))
+			.uri(builder -> builder.path(PATH_NOTIFICATION).build(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, NOTIFICATION_ID))
 			.accept(APPLICATION_JSON)
 			.exchange()
 			.expectStatus().isNotFound()
@@ -154,5 +149,4 @@ class NotificationsReadResourceFailureTest {
 		assertThat(response).isNotNull();
 		assertThat(response.getDetail()).isEqualTo(String.format("Notification with id %s not found in namespace %s for municipality with id %s", NOTIFICATION_ID, NAMESPACE, MUNICIPALITY_ID));
 	}
-
 }

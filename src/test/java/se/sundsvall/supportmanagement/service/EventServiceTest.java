@@ -22,6 +22,12 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Pageable;
 
+import generated.se.sundsvall.employee.PortalPersonData;
+import generated.se.sundsvall.eventlog.Event;
+import generated.se.sundsvall.eventlog.EventType;
+import generated.se.sundsvall.eventlog.Metadata;
+import generated.se.sundsvall.eventlog.PageEvent;
+import generated.se.sundsvall.notes.Note;
 import se.sundsvall.supportmanagement.api.filter.ExecutingUserSupplier;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.notification.Notification;
@@ -30,13 +36,6 @@ import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.eventlog.EventlogClient;
-
-import generated.se.sundsvall.employee.PortalPersonData;
-import generated.se.sundsvall.eventlog.Event;
-import generated.se.sundsvall.eventlog.EventType;
-import generated.se.sundsvall.eventlog.Metadata;
-import generated.se.sundsvall.eventlog.PageEvent;
-import generated.se.sundsvall.notes.Note;
 
 @ExtendWith(MockitoExtension.class)
 class EventServiceTest {
@@ -118,7 +117,7 @@ class EventServiceTest {
 		assertThat(event.getSourceType()).isEqualTo(sourceType);
 		assertThat(event.getType()).isEqualTo(eventType);
 
-		verify(notificationServiceMock).createNotification(eq(entity.getMunicipalityId()), eq(entity.getNamespace()), notificationCaptor.capture());
+		verify(notificationServiceMock).createNotification(eq(entity.getMunicipalityId()), eq(entity.getNamespace()), eq(entity.getId()), notificationCaptor.capture());
 		final var notification = notificationCaptor.getValue();
 		assertThat(notification.getCreatedBy()).isEqualTo(executingUserId);
 	}

@@ -121,7 +121,7 @@ public class MetadataService {
 	})
 	public String createExternalIdType(final String namespace, final String municipalityId, final ExternalIdType externalIdType) {
 		if (externalIdTypeRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, externalIdType.getName())) {
-			throw Problem.valueOf(BAD_REQUEST, String.format(ITEM_ALREADY_EXISTS_IN_NAMESPACE_FOR_MUNICIPALITY_ID, EXTERNAL_ID_TYPE, externalIdType.getName(), namespace, municipalityId));
+			throw Problem.valueOf(BAD_REQUEST, ITEM_ALREADY_EXISTS_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(EXTERNAL_ID_TYPE, externalIdType.getName(), namespace, municipalityId));
 		}
 
 		return externalIdTypeRepository.save(toExternalIdTypeEntity(namespace, municipalityId, externalIdType)).getName();
@@ -129,7 +129,7 @@ public class MetadataService {
 
 	public ExternalIdType getExternalIdType(final String namespace, final String municipalityId, final String name) {
 		if (!externalIdTypeRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)) {
-			throw Problem.valueOf(NOT_FOUND, String.format(ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID, EXTERNAL_ID_TYPE, name, namespace, municipalityId));
+			throw Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(EXTERNAL_ID_TYPE, name, namespace, municipalityId));
 		}
 
 		return toExternalIdType(externalIdTypeRepository.getByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name));
@@ -151,7 +151,7 @@ public class MetadataService {
 	})
 	public void deleteExternalIdType(final String namespace, final String municipalityId, final String name) {
 		if (!externalIdTypeRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)) {
-			throw Problem.valueOf(NOT_FOUND, String.format(ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID, EXTERNAL_ID_TYPE, name, namespace, municipalityId));
+			throw Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(EXTERNAL_ID_TYPE, name, namespace, municipalityId));
 		}
 
 		externalIdTypeRepository.deleteByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
@@ -167,7 +167,7 @@ public class MetadataService {
 	})
 	public String createStatus(final String namespace, final String municipalityId, final Status status) {
 		if (statusRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, status.getName())) {
-			throw Problem.valueOf(BAD_REQUEST, String.format(ITEM_ALREADY_EXISTS_IN_NAMESPACE_FOR_MUNICIPALITY_ID, STATUS, status.getName(), namespace, municipalityId));
+			throw Problem.valueOf(BAD_REQUEST, ITEM_ALREADY_EXISTS_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(STATUS, status.getName(), namespace, municipalityId));
 		}
 
 		return statusRepository.save(toStatusEntity(namespace, municipalityId, status)).getName();
@@ -175,7 +175,7 @@ public class MetadataService {
 
 	public Status getStatus(final String namespace, final String municipalityId, final String name) {
 		if (!statusRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)) {
-			throw Problem.valueOf(NOT_FOUND, String.format(ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID, STATUS, name, namespace, municipalityId));
+			throw Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(STATUS, name, namespace, municipalityId));
 		}
 
 		return toStatus(statusRepository.getByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name));
@@ -197,7 +197,7 @@ public class MetadataService {
 	})
 	public void deleteStatus(final String namespace, final String municipalityId, final String name) {
 		if (!statusRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)) {
-			throw Problem.valueOf(NOT_FOUND, String.format(ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID, STATUS, name, namespace, municipalityId));
+			throw Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(STATUS, name, namespace, municipalityId));
 		}
 
 		statusRepository.deleteByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
@@ -213,7 +213,7 @@ public class MetadataService {
 	})
 	public String createRole(final String namespace, final String municipalityId, final Role role) {
 		if (roleRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, role.getName())) {
-			throw Problem.valueOf(BAD_REQUEST, String.format(ITEM_ALREADY_EXISTS_IN_NAMESPACE_FOR_MUNICIPALITY_ID, ROLE, role.getName(), namespace, municipalityId));
+			throw Problem.valueOf(BAD_REQUEST, ITEM_ALREADY_EXISTS_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(ROLE, role.getName(), namespace, municipalityId));
 		}
 
 		return roleRepository.save(toRoleEntity(namespace, municipalityId, role)).getName();
@@ -221,7 +221,7 @@ public class MetadataService {
 
 	public Role getRole(final String namespace, final String municipalityId, final String name) {
 		if (!roleRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)) {
-			throw Problem.valueOf(NOT_FOUND, String.format(ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID, ROLE, name, namespace, municipalityId));
+			throw Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(ROLE, name, namespace, municipalityId));
 		}
 
 		return toRole(roleRepository.getByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name));
@@ -243,7 +243,7 @@ public class MetadataService {
 	})
 	public void deleteRole(final String namespace, final String municipalityId, final String name) {
 		if (!roleRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)) {
-			throw Problem.valueOf(NOT_FOUND, String.format(ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID, ROLE, name, namespace, municipalityId));
+			throw Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(ROLE, name, namespace, municipalityId));
 		}
 
 		roleRepository.deleteByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
@@ -259,32 +259,32 @@ public class MetadataService {
 	})
 	public void createLabels(final String namespace, final String municipalityId, final List<Label> labels) {
 		if (labelRepository.existsByNamespaceAndMunicipalityId(namespace, municipalityId)) {
-			throw Problem.valueOf(BAD_REQUEST, String.format("Labels already exists in namespace '%s' for municipalityId '%s'", namespace, municipalityId));
+			throw Problem.valueOf(BAD_REQUEST, "Labels already exists in namespace '%s' for municipalityId '%s'".formatted(namespace, municipalityId));
 		}
 		verifyUniqueNames(labels, new HashSet<>());
 		labelRepository.save(toLabelEntity(namespace, municipalityId, labels));
 	}
 
 	@Caching(evict = {
-			@CacheEvict(value = CACHE_NAME, key = "{'findLabels', #namespace, #municipalityId}"),
-			@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}")
+		@CacheEvict(value = CACHE_NAME, key = "{'findLabels', #namespace, #municipalityId}"),
+		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}")
 	})
 	public void updateLabels(final String namespace, final String municipalityId, final List<Label> labels) {
 		if (!labelRepository.existsByNamespaceAndMunicipalityId(namespace, municipalityId)) {
-			throw Problem.valueOf(NOT_FOUND, String.format("Labels dos not exists in namespace '%s' for municipalityId '%s'", namespace, municipalityId));
+			throw Problem.valueOf(NOT_FOUND, "Labels dos not exists in namespace '%s' for municipalityId '%s'".formatted(namespace, municipalityId));
 		}
 		verifyUniqueNames(labels, new HashSet<>());
-		var entity = labelRepository.findOneByNamespaceAndMunicipalityId(namespace, municipalityId);
+		final var entity = labelRepository.findOneByNamespaceAndMunicipalityId(namespace, municipalityId);
 		labelRepository.save(updateLabelEntity(entity, labels));
 	}
 
 	private void verifyUniqueNames(final List<Label> labels, final Set<String> names) {
-		if(labels == null) {
+		if (labels == null) {
 			return;
 		}
-		for(Label label : labels) {
-			if(names.contains(label.getName())) {
-				throw Problem.valueOf(BAD_REQUEST, String.format("Label names must be unique. Duplication detected for '%s'", label.getName()));
+		for (final Label label : labels) {
+			if (names.contains(label.getName())) {
+				throw Problem.valueOf(BAD_REQUEST, "Label names must be unique. Duplication detected for '%s'".formatted(label.getName()));
 			}
 			names.add(label.getName());
 			verifyUniqueNames(label.getLabels(), names);
@@ -302,7 +302,7 @@ public class MetadataService {
 	})
 	public void deleteLabels(final String namespace, final String municipalityId) {
 		if (!labelRepository.existsByNamespaceAndMunicipalityId(namespace, municipalityId)) {
-			throw Problem.valueOf(NOT_FOUND, String.format("Labels are not present in namespace '%s' for municipalityId '%s'", namespace, municipalityId));
+			throw Problem.valueOf(NOT_FOUND, "Labels are not present in namespace '%s' for municipalityId '%s'".formatted(namespace, municipalityId));
 		}
 		labelRepository.deleteByNamespaceAndMunicipalityId(namespace, municipalityId);
 	}
@@ -318,7 +318,7 @@ public class MetadataService {
 	})
 	public String createCategory(final String namespace, final String municipalityId, final Category category) {
 		if (categoryRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, category.getName())) {
-			throw Problem.valueOf(BAD_REQUEST, String.format(ITEM_ALREADY_EXISTS_IN_NAMESPACE_FOR_MUNICIPALITY_ID, CATEGORY, category.getName(), namespace, municipalityId));
+			throw Problem.valueOf(BAD_REQUEST, ITEM_ALREADY_EXISTS_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(CATEGORY, category.getName(), namespace, municipalityId));
 		}
 
 		return categoryRepository.save(toCategoryEntity(namespace, municipalityId, category)).getName();
@@ -326,7 +326,7 @@ public class MetadataService {
 
 	public Category getCategory(final String namespace, final String municipalityId, final String name) {
 		if (!categoryRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)) {
-			throw Problem.valueOf(NOT_FOUND, String.format(ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID, CATEGORY, name, namespace, municipalityId));
+			throw Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(CATEGORY, name, namespace, municipalityId));
 		}
 
 		return MetadataMapper.toCategory(categoryRepository.getByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name));
@@ -339,7 +339,7 @@ public class MetadataService {
 	})
 	public Category updateCategory(final String namespace, final String municipalityId, final String name, final Category category) {
 		if (!categoryRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)) {
-			throw Problem.valueOf(NOT_FOUND, String.format(ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID, CATEGORY, name, namespace, municipalityId));
+			throw Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(CATEGORY, name, namespace, municipalityId));
 		}
 		final var entity = updateEntity(categoryRepository.getByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name), category);
 		return toCategory(categoryRepository.save(entity));
@@ -375,12 +375,11 @@ public class MetadataService {
 	})
 	public void deleteCategory(final String namespace, final String municipalityId, final String name) {
 		if (!categoryRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)) {
-			throw Problem.valueOf(NOT_FOUND, String.format(ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID, CATEGORY, name, namespace, municipalityId));
+			throw Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(CATEGORY, name, namespace, municipalityId));
 		}
 
 		categoryRepository.deleteByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
 	}
-
 
 	// =================================================================
 	// ContactReason Operations
@@ -398,21 +397,17 @@ public class MetadataService {
 		@CacheEvict(value = CACHE_NAME, key = "{'findContactReasons', #namespace, #municipalityId}"),
 		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}")
 	})
-	public String createContactReason(final String namespace, final String municipalityId, final ContactReason contactReason) {
-		if (contactReasonRepository.existsByReasonIgnoreCaseAndNamespaceAndMunicipalityId(contactReason.getReason(), namespace, municipalityId)) {
-			throw Problem.valueOf(BAD_REQUEST, String.format(ITEM_ALREADY_EXISTS_IN_NAMESPACE_FOR_MUNICIPALITY_ID, CONTACT_REASON, contactReason.getReason(), namespace, municipalityId));
-		}
-
-		return contactReasonRepository.save(toContactReasonEntity(namespace, municipalityId, contactReason)).getReason();
+	public Long createContactReason(final String namespace, final String municipalityId, final ContactReason contactReason) {
+		return contactReasonRepository.save(toContactReasonEntity(namespace, municipalityId, contactReason)).getId();
 	}
 
-	public ContactReason getContactReasonByReasonAndNamespaceAndMunicipalityId(final String contactReason, final String namespace, final String municipalityId) {
-		var contactReasonEntity = contactReasonRepository.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId(contactReason, namespace, municipalityId)
-			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, String.format(ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID, CONTACT_REASON, contactReason, namespace, municipalityId)));
+	public ContactReason getContactReasonByIdAndNamespaceAndMunicipalityId(final Long contactReasonId, final String namespace, final String municipalityId) {
+		final var contactReasonEntity = contactReasonRepository.findByIdAndNamespaceAndMunicipalityId(contactReasonId, namespace, municipalityId)
+			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(CONTACT_REASON, contactReasonId, namespace, municipalityId)));
 		return toContactReason(contactReasonEntity);
 	}
 
-	public List<ContactReason> getContactReasonsForNamespaceAndMunicipality(final String namespace, final String municipalityId) {
+	public List<ContactReason> findContactReasonsForNamespaceAndMunicipality(final String namespace, final String municipalityId) {
 		return contactReasonRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId).stream()
 			.map(MetadataMapper::toContactReason)
 			.toList();
@@ -422,11 +417,11 @@ public class MetadataService {
 		@CacheEvict(value = CACHE_NAME, key = "{'findContactReasons', #namespace, #municipalityId}"),
 		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}")
 	})
-	public ContactReason patchContactReason(final String reason, final String namespace, final String municipalityId, final ContactReason contactReason) {
-		if (!contactReasonRepository.existsByReasonIgnoreCaseAndNamespaceAndMunicipalityId(reason, namespace, municipalityId)) {
-			throw Problem.valueOf(NOT_FOUND, String.format(ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID, CONTACT_REASON, reason, namespace, municipalityId));
+	public ContactReason patchContactReason(final Long contactReasonId, final String namespace, final String municipalityId, final ContactReason contactReason) {
+		if (!contactReasonRepository.existsByIdAndNamespaceAndMunicipalityId(contactReasonId, namespace, municipalityId)) {
+			throw Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(CONTACT_REASON, contactReasonId, namespace, municipalityId));
 		}
-		final var contactReasonEntity = updateContactReason(contactReasonRepository.getByReasonIgnoreCaseAndNamespaceAndMunicipalityId(reason, namespace, municipalityId), contactReason);
+		final var contactReasonEntity = updateContactReason(contactReasonRepository.getByIdAndNamespaceAndMunicipalityId(contactReasonId, namespace, municipalityId), contactReason);
 
 		return toContactReason(contactReasonRepository.save(contactReasonEntity));
 	}
@@ -436,10 +431,10 @@ public class MetadataService {
 		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}")
 	})
 	@Transactional
-	public void deleteContactReason(final String contactReason, final String namespace, final String municipalityId) {
-		if (!contactReasonRepository.existsByReasonIgnoreCaseAndNamespaceAndMunicipalityId(contactReason, namespace, municipalityId)) {
-			throw Problem.valueOf(NOT_FOUND, String.format(ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID, CONTACT_REASON, contactReason, namespace, municipalityId));
+	public void deleteContactReason(final Long contactReasonId, final String namespace, final String municipalityId) {
+		if (!contactReasonRepository.existsByIdAndNamespaceAndMunicipalityId(contactReasonId, namespace, municipalityId)) {
+			throw Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(CONTACT_REASON, contactReasonId, namespace, municipalityId));
 		}
-		contactReasonRepository.deleteByReasonIgnoreCaseAndNamespaceAndMunicipalityId(contactReason, namespace, municipalityId);
+		contactReasonRepository.deleteByIdAndNamespaceAndMunicipalityId(contactReasonId, namespace, municipalityId);
 	}
 }

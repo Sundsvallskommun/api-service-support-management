@@ -7,11 +7,12 @@ import static org.apache.commons.lang3.ObjectUtils.anyNull;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.toErrandParameterEntityList;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.toParameterList;
+import static se.sundsvall.supportmanagement.service.mapper.StakeholderParameterMapper.toParameterList;
+import static se.sundsvall.supportmanagement.service.mapper.StakeholderParameterMapper.toStakeholderParameterEntityList;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-
 import se.sundsvall.supportmanagement.api.model.errand.Classification;
 import se.sundsvall.supportmanagement.api.model.errand.ContactChannel;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
@@ -166,7 +167,7 @@ public final class ErrandMapper {
 					.withCareOf(stakeholderEntity.getCareOf())
 					.withZipCode(stakeholderEntity.getZipCode())
 					.withCountry(stakeholderEntity.getCountry())
-					.withMetadata(stakeholderEntity.getMetadata())
+					.withParameters(toParameterList(stakeholderEntity.getParameters()))
 					.withContactChannels(toContactChannels(stakeholderEntity.getContactChannels())))
 				.toList())
 			.orElse(emptyList());
@@ -175,21 +176,25 @@ public final class ErrandMapper {
 	private static List<StakeholderEntity> toStakeholderEntities(final ErrandEntity errandEntity, final List<Stakeholder> stakeholders) {
 		return new ArrayList<>(Optional.ofNullable(stakeholders)
 			.map(s -> s.stream()
-				.map(stakeholder -> StakeholderEntity.create()
-					.withErrandEntity(errandEntity)
-					.withExternalId(stakeholder.getExternalId())
-					.withExternalIdType(stakeholder.getExternalIdType())
-					.withCity(stakeholder.getCity())
-					.withOrganizationName(stakeholder.getOrganizationName())
-					.withRole(stakeholder.getRole())
-					.withFirstName(stakeholder.getFirstName())
-					.withLastName(stakeholder.getLastName())
-					.withAddress(stakeholder.getAddress())
-					.withCareOf(stakeholder.getCareOf())
-					.withZipCode(stakeholder.getZipCode())
-					.withCountry(stakeholder.getCountry())
-					.withMetadata(stakeholder.getMetadata())
-					.withContactChannels(toContactChannelEntities(stakeholder.getContactChannels())))
+				.map(stakeholder -> {
+					final var stakeholderEntity = StakeholderEntity.create()
+						.withErrandEntity(errandEntity)
+						.withExternalId(stakeholder.getExternalId())
+						.withExternalIdType(stakeholder.getExternalIdType())
+						.withCity(stakeholder.getCity())
+						.withOrganizationName(stakeholder.getOrganizationName())
+						.withRole(stakeholder.getRole())
+						.withFirstName(stakeholder.getFirstName())
+						.withLastName(stakeholder.getLastName())
+						.withAddress(stakeholder.getAddress())
+						.withCareOf(stakeholder.getCareOf())
+						.withZipCode(stakeholder.getZipCode())
+						.withCountry(stakeholder.getCountry())
+						.withContactChannels(toContactChannelEntities(stakeholder.getContactChannels()));
+
+					return stakeholderEntity
+						.withParameters(toStakeholderParameterEntityList(stakeholder.getParameters(), stakeholderEntity));
+				})
 				.toList())
 			.orElse(emptyList()));
 	}

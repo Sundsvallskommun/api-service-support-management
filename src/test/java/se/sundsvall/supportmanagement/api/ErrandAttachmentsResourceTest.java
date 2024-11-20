@@ -14,11 +14,11 @@ import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
 import static org.springframework.http.MediaType.TEXT_PLAIN;
 import static org.springframework.http.MediaType.TEXT_PLAIN_VALUE;
 
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
-
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +29,6 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.BodyInserters;
-
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachmentHeader;
 import se.sundsvall.supportmanagement.service.ErrandAttachmentService;
@@ -44,7 +43,7 @@ class ErrandAttachmentsResourceTest {
 
 	private static final String ERRAND_ID = randomUUID().toString();
 
-	private static final String PATH = "/{municipalityId}/{namespace}/errands/{id}/attachments";
+	private static final String PATH = "/{municipalityId}/{namespace}/errands/{errandId}/attachments";
 
 	@MockBean
 	private ErrandAttachmentService errandAttachmentServiceMock;
@@ -68,7 +67,7 @@ class ErrandAttachmentsResourceTest {
 
 		// Call
 		webTestClient.post().uri(builder -> builder.path(PATH)
-				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "id", ERRAND_ID)))
+			.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", ERRAND_ID)))
 			.contentType(MULTIPART_FORM_DATA)
 			.accept(APPLICATION_JSON)
 			.body(BodyInserters.fromMultipartData(body))
@@ -93,7 +92,7 @@ class ErrandAttachmentsResourceTest {
 		final var attachmentId = randomUUID().toString();
 
 		webTestClient.get().uri(builder -> builder.path(PATH.concat("/{attachmentId}"))
-				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "id", ERRAND_ID, "attachmentId", attachmentId)))
+			.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", ERRAND_ID, "attachmentId", attachmentId)))
 			.accept(APPLICATION_JSON)
 			.exchange()
 			.expectStatus().isOk();
@@ -113,7 +112,7 @@ class ErrandAttachmentsResourceTest {
 		when(errandAttachmentServiceMock.readErrandAttachmentHeaders(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID)).thenReturn(errandAttachments);
 
 		final var response = webTestClient.get().uri(builder -> builder.path(PATH)
-				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "id", ERRAND_ID)))
+			.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", ERRAND_ID)))
 			.exchange()
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)
@@ -133,7 +132,7 @@ class ErrandAttachmentsResourceTest {
 		final var attachmentId = randomUUID().toString();
 
 		webTestClient.delete().uri(builder -> builder.path(PATH.concat("/{attachmentId}"))
-				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "id", ERRAND_ID, "attachmentId", attachmentId)))
+			.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", ERRAND_ID, "attachmentId", attachmentId)))
 			.exchange()
 			.expectStatus().isNoContent()
 			.expectHeader().contentType(ALL_VALUE);
@@ -142,4 +141,21 @@ class ErrandAttachmentsResourceTest {
 		verify(errandAttachmentServiceMock).deleteErrandAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, attachmentId);
 	}
 
+	@Test
+	void getAttachmentStreamed() {
+
+		// Parameter values
+		final var attachmentId = randomUUID().toString();
+
+		// ACT
+		webTestClient.get()
+			.uri(uriBuilder -> uriBuilder.path(PATH.concat("/{attachmentId}/streamed"))
+				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", ERRAND_ID, "attachmentId", attachmentId)))
+			.exchange()
+			.expectStatus().isOk()
+			.expectBody()
+			.returnResult();
+
+		verify(errandAttachmentServiceMock).getAttachmentStreamed(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(attachmentId), any(HttpServletResponse.class));
+	}
 }
