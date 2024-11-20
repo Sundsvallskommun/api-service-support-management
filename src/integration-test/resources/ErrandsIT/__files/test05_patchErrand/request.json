@@ -17,6 +17,29 @@
 					"type": "Email",
 					"value": "arthur.dent@earth.com"
 				}
+			],
+			"parameters": [
+				{
+					"key": "the-key",
+					"values": [
+						"value1",
+						"value2"
+					]
+				},
+				{
+					"key": "some-other-key",
+					"displayName": "Some other key",
+					"values": [
+						"some other value"
+					]
+				},
+				{
+					"key": "the-key",
+					"values": [
+						"value3",
+						"value4"
+					]
+				}
 			]
 		}
 	],
