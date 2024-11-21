@@ -276,7 +276,7 @@ class ErrandCommunicationResourceFailureTest {
 			case PATH_SMS -> field = "sendSms.namespace";
 			case PATH_EMAIL -> field = "sendEmail.namespace";
 			case PATH_WEB_MESSAGE -> field = "sendWebMessage.namespace";
-			default -> throw new RuntimeException("Missing mapping for " + type);
+			default -> throw new IllegalArgumentException("Missing mapping for " + type);
 		}
 
 		// Call
@@ -311,7 +311,7 @@ class ErrandCommunicationResourceFailureTest {
 			case PATH_SMS -> field = "sendSms.municipalityId";
 			case PATH_EMAIL -> field = "sendEmail.municipalityId";
 			case PATH_WEB_MESSAGE -> field = "sendWebMessage.municipalityId";
-			default -> throw new RuntimeException("Missing mapping for " + type);
+			default -> throw new IllegalArgumentException("Missing mapping for " + type);
 		}
 
 		// Call
@@ -347,7 +347,7 @@ class ErrandCommunicationResourceFailureTest {
 			case PATH_SMS -> field = "sendSms.errandId";
 			case PATH_EMAIL -> field = "sendEmail.errandId";
 			case PATH_WEB_MESSAGE -> field = "sendWebMessage.errandId";
-			default -> throw new RuntimeException("Missing mapping for " + type);
+			default -> throw new IllegalArgumentException("Missing mapping for " + type);
 		}
 
 		// Call
@@ -584,7 +584,7 @@ class ErrandCommunicationResourceFailureTest {
 		switch (path) {
 			case PATH_EMAIL -> body = emailRequest().withAttachments(List.of(EmailAttachment.create()));
 			case PATH_WEB_MESSAGE -> body = webMessageRequest().withAttachments(List.of(WebMessageAttachment.create()));
-			default -> throw new RuntimeException("Missing mapping for " + path);
+			default -> throw new IllegalArgumentException("Missing mapping for " + path);
 		}
 
 		// Call
@@ -623,7 +623,7 @@ class ErrandCommunicationResourceFailureTest {
 			case PATH_WEB_MESSAGE -> body = webMessageRequest().withAttachments(List.of(WebMessageAttachment.create()
 				.withName(name)
 				.withBase64EncodedString(data)));
-			default -> throw new RuntimeException("Missing mapping for " + path);
+			default -> throw new IllegalArgumentException("Missing mapping for " + path);
 		}
 
 		// Call
