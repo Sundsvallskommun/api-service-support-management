@@ -24,6 +24,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import se.sundsvall.supportmanagement.api.model.communication.Communication;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
 import se.sundsvall.supportmanagement.api.model.communication.SmsRequest;
+import se.sundsvall.supportmanagement.api.model.communication.WebMessageRequest;
 import se.sundsvall.supportmanagement.integration.db.CommunicationAttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.CommunicationRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
@@ -143,6 +144,10 @@ public class CommunicationService {
 
 		saveCommunication(communicationEntity);
 		saveAttachment(communicationEntity, entity);
+	}
+
+	public void sendWebMessage(final String namespace, final String municipalityId, final String id, final WebMessageRequest request) {
+		//TODO implement logic
 	}
 
 	private ErrandEntity fetchErrand(final String id, final String namespace, final String municipalityId) {

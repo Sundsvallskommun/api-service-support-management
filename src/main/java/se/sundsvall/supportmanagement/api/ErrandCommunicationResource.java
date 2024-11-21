@@ -18,7 +18,9 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
+
 import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -35,6 +37,7 @@ import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 import se.sundsvall.supportmanagement.api.model.communication.Communication;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
 import se.sundsvall.supportmanagement.api.model.communication.SmsRequest;
+import se.sundsvall.supportmanagement.api.model.communication.WebMessageRequest;
 import se.sundsvall.supportmanagement.service.CommunicationService;
 
 @RestController
@@ -105,6 +108,21 @@ class ErrandCommunicationResource {
 		@Valid @NotNull @RequestBody final SmsRequest request) {
 
 		service.sendSms(namespace, municipalityId, errandId, request);
+		return noContent()
+			.header(CONTENT_TYPE, ALL_VALUE)
+			.build();
+	}
+
+	@PostMapping(path = "/webmessage", consumes = APPLICATION_JSON_VALUE, produces = ALL_VALUE)
+	@Operation(summary = "Send email to in context of an errand", description = "Sends an email message to the recipient specified in the request")
+	@ApiResponse(responseCode = "204", description = "Successful operation", useReturnTypeSchema = true)
+	ResponseEntity<Void> sendWebMessage(
+		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
+		@Parameter(name = "municipalityId", description = "Municipality ID", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
+		@Parameter(name = "errandId", description = "Errand ID", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("errandId") final String errandId,
+		@Valid @NotNull @RequestBody final WebMessageRequest request) {
+
+		service.sendWebMessage(namespace, municipalityId, errandId, request);
 		return noContent()
 			.header(CONTENT_TYPE, ALL_VALUE)
 			.build();

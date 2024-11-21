@@ -42,7 +42,7 @@
         target varchar(255),
         direction enum ('INBOUND','OUTBOUND'),
         message_body longtext,
-        type enum ('EMAIL','SMS'),
+        type enum ('EMAIL','SMS','WEB_MESSAGE'),
         primary key (id)
     ) engine=InnoDB;
 

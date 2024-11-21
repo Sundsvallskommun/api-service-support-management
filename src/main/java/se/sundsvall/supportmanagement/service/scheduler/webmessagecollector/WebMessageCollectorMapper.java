@@ -41,7 +41,7 @@ public class WebMessageCollectorMapper {
 			.withExternalCaseID(messageDTO.getExternalCaseId())
 			.withMessageBody(messageDTO.getMessage())
 			.withSent(OffsetDateTime.of(LocalDateTime.parse(messageDTO.getSent()), now(systemDefault()).getOffset()))
-			.withType(CommunicationType.EMAIL)
+			.withType(CommunicationType.WEB_MESSAGE)
 			.withViewed(true);
 
 		return communicationEntity.withAttachments(toCommunicationAttachmentEntities(messageDTO.getAttachments(), communicationEntity));

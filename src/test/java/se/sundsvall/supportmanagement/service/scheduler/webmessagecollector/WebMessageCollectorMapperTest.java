@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.service.scheduler.webmessagecollector;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static org.mockito.Mockito.when;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationType.WEB_MESSAGE;
 
 import java.sql.SQLException;
 import java.time.LocalDateTime;
@@ -76,6 +77,7 @@ class WebMessageCollectorMapperTest {
 		assertThat(result.getId()).isNotNull();
 		assertThat(result.getNamespace()).isEqualTo(namespace);
 		assertThat(result.getMunicipalityId()).isEqualTo(municipalityId);
+		assertThat(result.getType()).isEqualTo(WEB_MESSAGE);
 		assertThat(result.getSender()).isEqualTo(firstName + " " + lastName);
 		assertThat(ServiceUtil.isValidUuid(result.getId())).isTrue();
 		assertThat(result.getDirection()).isEqualTo(Direction.INBOUND);
