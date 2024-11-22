@@ -40,9 +40,9 @@
         sender varchar(255),
         subject varchar(255),
         target varchar(255),
+        type varchar(255) not null,
         direction enum ('INBOUND','OUTBOUND'),
         message_body longtext,
-        type enum ('EMAIL','SMS'),
         primary key (id)
     ) engine=InnoDB;
 

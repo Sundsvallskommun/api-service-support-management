@@ -6,14 +6,19 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
 import jakarta.servlet.http.HttpServletResponse;
+
 import java.util.List;
 import java.util.Map;
+
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -24,6 +29,8 @@ import se.sundsvall.supportmanagement.api.model.communication.Communication;
 import se.sundsvall.supportmanagement.api.model.communication.EmailAttachment;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
 import se.sundsvall.supportmanagement.api.model.communication.SmsRequest;
+import se.sundsvall.supportmanagement.api.model.communication.WebMessageAttachment;
+import se.sundsvall.supportmanagement.api.model.communication.WebMessageRequest;
 import se.sundsvall.supportmanagement.service.CommunicationService;
 
 @SpringBootTest(classes = Application.class, webEnvironment = RANDOM_PORT)
@@ -38,6 +45,7 @@ class ErrandCommunicationResourceTest {
 	private static final String PATH_PREFIX = "/{municipalityId}/{namespace}/errands/{errandId}/communication";
 	private static final String PATH_SMS = "/sms";
 	private static final String PATH_EMAIL = "/email";
+	private static final String PATH_WEB_MESSAGE = "/webmessage";
 	private static final String PATH_ATTACHMENTS = "/{communicationId}/attachments/{attachmentId}/streamed";
 
 	@MockBean
@@ -68,6 +76,7 @@ class ErrandCommunicationResourceTest {
 		assertThat(response).isNotNull();
 		assertThat(response.getResponseBody()).isNotNull().hasSize(1);
 		verify(serviceMock).readCommunications(anyString(), anyString(), anyString());
+		verifyNoMoreInteractions(serviceMock);
 	}
 
 	@Test
@@ -87,6 +96,7 @@ class ErrandCommunicationResourceTest {
 
 		// Verification
 		verify(serviceMock).updateViewedStatus(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, messageID, isViewed);
+		verifyNoMoreInteractions(serviceMock);
 	}
 
 	@Test
@@ -107,14 +117,15 @@ class ErrandCommunicationResourceTest {
 
 		// Verification
 		verify(serviceMock).sendSms(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, requestBody);
-		verify(serviceMock, never()).sendEmail(any(), any(), any(), any());
+		verifyNoMoreInteractions(serviceMock);
 	}
 
-	@Test
-	void sendEmail() {
+	@ParameterizedTest
+	@ValueSource(booleans = { true, false })
+	void sendEmail(boolean withAttachments) {
 
 		// Parameter values
-		final var requestBody = emailRequest(false);
+		final var requestBody = emailRequest(withAttachments);
 
 		webTestClient.post()
 			.uri(builder -> builder.path(PATH_PREFIX + PATH_EMAIL)
@@ -127,17 +138,18 @@ class ErrandCommunicationResourceTest {
 
 		// Verification
 		verify(serviceMock).sendEmail(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, requestBody);
-		verify(serviceMock, never()).sendSms(any(), any(), any(), any());
+		verifyNoMoreInteractions(serviceMock);
 	}
 
-	@Test
-	void sendEmailWithAttachment() {
+	@ParameterizedTest
+	@ValueSource(booleans = { true, false })
+	void sendWebMessage(boolean withAttachment) {
 
 		// Parameter values
-		final var requestBody = emailRequest(true);
+		final var requestBody = webMessageRequest(withAttachment);
 
 		webTestClient.post()
-			.uri(builder -> builder.path(PATH_PREFIX + PATH_EMAIL)
+			.uri(builder -> builder.path(PATH_PREFIX + PATH_WEB_MESSAGE)
 				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(requestBody)
@@ -146,8 +158,8 @@ class ErrandCommunicationResourceTest {
 			.expectBody().isEmpty();
 
 		// Verification
-		verify(serviceMock).sendEmail(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, requestBody);
-		verify(serviceMock, never()).sendSms(any(), any(), any(), any());
+		verify(serviceMock).sendWebMessage(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, requestBody);
+		verifyNoMoreInteractions(serviceMock);
 	}
 
 	@Test
@@ -163,6 +175,7 @@ class ErrandCommunicationResourceTest {
 			.returnResult();
 
 		verify(serviceMock).getMessageAttachmentStreamed(any(String.class), any(String.class), any(String.class), any(String.class), any(String.class), any(HttpServletResponse.class));
+		verifyNoMoreInteractions(serviceMock);
 	}
 
 	private static SmsRequest smsRequest() {
@@ -180,6 +193,13 @@ class ErrandCommunicationResourceTest {
 			.withSender("sender@sender.com")
 			.withSubject("subject")
 			.withAttachments(withAttachment ? List.of(attachment()) : null);
+	}
+
+	private static WebMessageRequest webMessageRequest(boolean withAttachment) {
+		return WebMessageRequest.create()
+			.withMessage("message")
+			.withAttachmentIds(List.of("1", "2"))
+			.withAttachments(withAttachment ? List.of(WebMessageAttachment.create().withName("attachmentName").withBase64EncodedString("ZGF0YQ==")) : null);
 	}
 
 	private static EmailAttachment attachment() {
