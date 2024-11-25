@@ -1,10 +1,12 @@
 package se.sundsvall.supportmanagement.integration.db;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
+import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.Assertions.within;
 import static org.junit.jupiter.api.Assertions.fail;
+import static se.sundsvall.supportmanagement.integration.db.specification.ErrandSpecification.hasMatchingTags;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -218,11 +220,28 @@ class ErrandsRepositoryTest {
 	}
 
 	@Test
-	void findByExternalTagValue() {
-		final var errandEntity = errandsRepository.findByExternalTagsValue("VALUE-1").orElse(null);
+	void findByOne() {
+		var specification = hasMatchingTags(List.of(
+			DbExternalTag.create().withKey("KEY-1").withValue("VALUE-1"),
+			DbExternalTag.create().withKey("KEY-2").withValue("VALUE-2")));
 
-		assertThat(errandEntity).isNotNull();
-		assertThat(errandEntity.getId()).isNotNull();
-		assertThat(errandEntity.getExternalTags()).anyMatch(val -> val.getValue().equals("VALUE-1"));
+		var errandEntity = errandsRepository.findOne(specification);
+
+		assertThat(errandEntity).isPresent();
+		assertThat(errandEntity.get().getId()).isEqualTo("ERRAND_ID-1");
+
+	}
+
+	@Test
+	void findByAllWithEmptyHasMatchingTags() {
+		var specification = hasMatchingTags(emptyList());
+
+		var errandEntity = errandsRepository.findAll(specification);
+
+		assertThat(errandEntity)
+			.hasSize(4)
+			.extracting(ErrandEntity::getId)
+			.containsExactlyInAnyOrder("ERRAND_ID-1", "ERRAND_ID-2", "ERRAND_ID-3", "ERRAND_ID-4");
+
 	}
 }

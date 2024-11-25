@@ -94,6 +94,7 @@ INSERT INTO stakeholder_parameter_values(stakeholder_parameter_id, `value`) VALU
 -------------------------------------
 INSERT INTO external_tag(errand_id, `key`, `value`) VALUES ('ERRAND_ID-1', 'KEY-1', 'VALUE-1');
 INSERT INTO external_tag(errand_id, `key`, `value`) VALUES ('ERRAND_ID-1', 'KEY-2', 'VALUE-2');
+INSERT INTO external_tag(errand_id, `key`, `value`) VALUES ('ERRAND_ID-2', 'KEY-2', 'VALUE-2');
 INSERT INTO external_tag(errand_id, `key`, `value`) VALUES ('ERRAND_ID-2', 'KEY-3', 'VALUE-3');
 INSERT INTO external_tag(errand_id, `key`, `value`) VALUES ('ERRAND_ID-3', 'KEY-4', 'VALUE-4');
 INSERT INTO external_tag(errand_id, `key`, `value`) VALUES ('ERRAND_ID-3', 'KEY-5', 'VALUE-5');
@@ -134,7 +135,7 @@ VALUES (1, now(), 'municipalityId-1', 'namespace-1', '[{"key": "value"}]'),
 -------------------------------------
 -- Communication
 -------------------------------------
-INSERT INTO communication(viewed, sender, sent, id, errand_number, external_case_id,
+INSERT INTO communication(viewed, sender, sent, id, errand_number, external_id,
                           message_body, target, subject, direction, type)
 VALUES (0,'Test Testorsson', '2023-01-01 12:00:00.000', 'comm1', 'errand1', 'case1',
         'message body 1', '1234567890', 'subject1', 'INBOUND', 'SMS'),

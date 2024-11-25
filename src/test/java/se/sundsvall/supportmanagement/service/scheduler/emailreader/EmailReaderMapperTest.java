@@ -101,7 +101,7 @@ class EmailReaderMapperTest {
 		// Assert
 		assertThat(result).isNotNull().hasNoNullFieldsOrPropertiesExcept("errandNumber", "errandAttachments");
 		assertThat(result.getSubject()).isEqualTo("someSubject");
-		assertThat(result.getExternalCaseID()).isEmpty();
+		assertThat(result.getExternalId()).isEmpty();
 		assertThat(result.getErrandNumber()).isEqualTo("someErrandNumber");
 		assertThat(result.getSent()).isNotNull().isCloseTo(OffsetDateTime.now(), org.assertj.core.api.Assertions.within(1, java.time.temporal.ChronoUnit.SECONDS));
 		assertThat(result.getDirection()).isEqualTo(INBOUND);

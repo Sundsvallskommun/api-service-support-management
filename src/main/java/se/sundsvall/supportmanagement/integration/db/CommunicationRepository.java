@@ -11,4 +11,6 @@ import se.sundsvall.supportmanagement.integration.db.model.CommunicationEntity;
 public interface CommunicationRepository extends JpaRepository<CommunicationEntity, String> {
 
 	List<CommunicationEntity> findByErrandNumber(String errandNumber);
+
+	boolean existsByErrandNumberAndExternalId(String errandNumber, String externalId);
 }

@@ -1,15 +1,19 @@
 package se.sundsvall.supportmanagement.service.scheduler.webmessagecollector;
 
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
+import static se.sundsvall.supportmanagement.integration.db.specification.ErrandSpecification.hasMatchingTags;
 
 import generated.se.sundsvall.webmessagecollector.MessageDTO;
+
 import java.util.Collection;
 import java.util.List;
+
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.supportmanagement.integration.db.CommunicationRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationAttachmentEntity;
+import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.webmessagecollector.WebMessageCollectorClient;
 import se.sundsvall.supportmanagement.service.EventService;
@@ -40,10 +44,14 @@ public class WebMessageCollectorWorker {
 
 	@Transactional
 	public void processMessage(MessageDTO message, String municipalityId) {
-		final var entity = errandsRepository.findByExternalTagsValue(message.getExternalCaseId());
+
+		final var entity = errandsRepository.findOne(hasMatchingTags(List.of(
+			DbExternalTag.create().withKey("caseId").withValue(message.getExternalCaseId()),
+			DbExternalTag.create().withKey("familyId").withValue(message.getFamilyId()))));
 
 		if (entity.isPresent()) {
 			entity
+				.filter(errand -> !communicationRepository.existsByErrandNumberAndExternalId(errand.getErrandNumber(), message.getMessageId()))
 				.map(errand -> processMessage(message, errand))
 				.stream()
 				.flatMap(Collection::stream)
