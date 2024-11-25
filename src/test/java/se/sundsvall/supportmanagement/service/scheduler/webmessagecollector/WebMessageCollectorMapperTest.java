@@ -81,7 +81,7 @@ class WebMessageCollectorMapperTest {
 		assertThat(result.getSender()).isEqualTo(firstName + " " + lastName);
 		assertThat(ServiceUtil.isValidUuid(result.getId())).isTrue();
 		assertThat(result.getDirection()).isEqualTo(Direction.INBOUND);
-		assertThat(result.getExternalCaseID()).isEqualTo(externalCaseId);
+		assertThat(result.getExternalId()).isEqualTo(messageId);
 		assertThat(result.getMessageBody()).isEqualTo(messageString);
 		assertThat(result.getSent()).isCloseTo(OffsetDateTime.now(), within(1, ChronoUnit.SECONDS));
 		assertThat(result.getAttachments()).hasSize(1);

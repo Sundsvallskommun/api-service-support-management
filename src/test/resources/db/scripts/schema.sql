@@ -33,7 +33,7 @@
         viewed bit,
         sent datetime(6),
         errand_number varchar(255),
-        external_case_id varchar(255),
+        external_id varchar(255),
         id varchar(255) not null,
         municipality_id varchar(255),
         namespace varchar(255),

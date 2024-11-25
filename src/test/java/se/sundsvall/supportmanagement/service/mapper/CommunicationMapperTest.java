@@ -137,7 +137,7 @@ class CommunicationMapperTest {
 
 		final var communicationEntity = communicationMapper.toCommunicationEntity(NAMESPACE, MUNICIPALITY_ID, emailRequest);
 
-		assertThat(communicationEntity).isNotNull().hasNoNullFieldsOrPropertiesExcept("errandNumber", "externalCaseID", "errandAttachments");
+		assertThat(communicationEntity).isNotNull().hasNoNullFieldsOrPropertiesExcept("errandNumber", "externalId", "errandAttachments");
 		assertThat(testValidUUID(communicationEntity.getId())).isTrue();
 		assertThat(communicationEntity.getSender()).isEqualTo(emailRequest.getSender());
 		assertThat(communicationEntity.getDirection()).isEqualTo(Direction.OUTBOUND);
@@ -160,7 +160,7 @@ class CommunicationMapperTest {
 
 		final var communicationEntity = communicationMapper.toCommunicationEntity(NAMESPACE, MUNICIPALITY_ID, smsRequest);
 
-		assertThat(communicationEntity).isNotNull().hasNoNullFieldsOrPropertiesExcept("errandNumber", "externalCaseID", "subject", "attachments", "emailHeaders", "errandAttachments");
+		assertThat(communicationEntity).isNotNull().hasNoNullFieldsOrPropertiesExcept("errandNumber", "externalId", "subject", "attachments", "emailHeaders", "errandAttachments");
 		assertThat(testValidUUID(communicationEntity.getId())).isTrue();
 		assertThat(communicationEntity.getSender()).isEqualTo(smsRequest.getSender());
 		assertThat(communicationEntity.getDirection()).isEqualTo(Direction.OUTBOUND);
