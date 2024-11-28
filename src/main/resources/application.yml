@@ -95,8 +95,8 @@ spring:
             provider: web-message-collector
   servlet:
     multipart:
-      max-file-size: 10MB
-      max-request-size: 10MB
+      max-file-size: 50MB
+      max-request-size: -1
 turkraft:
   springfilter:
     offsetdatetimeformatter:
