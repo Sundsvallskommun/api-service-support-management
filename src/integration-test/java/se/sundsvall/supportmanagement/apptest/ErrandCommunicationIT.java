@@ -11,6 +11,7 @@ import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.IMAGE_PNG_VALUE;
 
 import java.util.List;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.jdbc.Sql;
@@ -58,7 +59,7 @@ class ErrandCommunicationIT extends AbstractAppTest {
 			.withServicePath(PATH + "/cc236cf1-c00f-4479-8341-ecf5dd90b5b9/communication")
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
-			.withExpectedResponse("response.json")
+			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 	}
 
@@ -79,7 +80,7 @@ class ErrandCommunicationIT extends AbstractAppTest {
 			.withServicePath(PATH + "/ec677eb3-604c-4935-bff7-f8f0b500c8f4/communication")
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
-			.withExpectedResponse("response.json")
+			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 	}
 
@@ -139,6 +140,38 @@ class ErrandCommunicationIT extends AbstractAppTest {
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponseHeader(CONTENT_TYPE, List.of(IMAGE_PNG_VALUE))
 			.withExpectedBinaryResponse("test_image.png")
+			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	void test09_sendWebMessage() {
+		//external
+		setupCall()
+			.withServicePath(PATH + "/cad8ec4e-0b6b-473a-800d-feb063f59094/communication/webmessage")
+			.withHttpMethod(POST)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(NO_CONTENT)
+			.withExpectedResponseBodyIsNull()
+			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	void test10_sendWebMessageWithAttachments() {
+		//internal
+		setupCall()
+			.withServicePath(PATH + "/b481b191-dd37-47ca-b417-ed3a56ba724c/communication/webmessage")
+			.withHttpMethod(POST)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(NO_CONTENT)
+			.withExpectedResponseBodyIsNull()
+			.sendRequest();
+
+		// fetch attachment
+		setupCall()
+			.withServicePath(PATH + "/b481b191-dd37-47ca-b417-ed3a56ba724c/communication")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 	}
 }

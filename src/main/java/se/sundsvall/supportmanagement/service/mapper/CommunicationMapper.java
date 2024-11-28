@@ -19,7 +19,9 @@ import se.sundsvall.supportmanagement.api.model.communication.Communication;
 import se.sundsvall.supportmanagement.api.model.communication.CommunicationAttachment;
 import se.sundsvall.supportmanagement.api.model.communication.EmailAttachment;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
+import se.sundsvall.supportmanagement.api.model.communication.RequestAttachment;
 import se.sundsvall.supportmanagement.api.model.communication.SmsRequest;
+import se.sundsvall.supportmanagement.api.model.communication.WebMessageRequest;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationAttachmentDataEntity;
@@ -72,14 +74,14 @@ public class CommunicationMapper {
 	public List<AttachmentEntity> toAttachments(final CommunicationEntity communicationEntity) {
 		return Optional.ofNullable(communicationEntity.getAttachments()).orElse(Collections.emptyList())
 			.stream()
-			.map(emailAttachment -> AttachmentEntity.create()
+			.map(attachment -> AttachmentEntity.create()
 				.withId(UUID.randomUUID().toString())
-				.withFileName(emailAttachment.getName())
+				.withFileName(attachment.getName())
 				.withNamespace(communicationEntity.getNamespace())
 				.withMunicipalityId(communicationEntity.getMunicipalityId())
-				.withMimeType(emailAttachment.getContentType())
+				.withMimeType(attachment.getContentType())
 				.withAttachmentData(new AttachmentDataEntity()
-					.withFile(emailAttachment.getAttachmentData().getFile())))
+					.withFile(attachment.getAttachmentData().getFile())))
 			.toList();
 	}
 
@@ -149,15 +151,29 @@ public class CommunicationMapper {
 			.withViewed(false);
 	}
 
-	private List<CommunicationAttachmentEntity> toMessageAttachments(final String namespace, final String municipalityId, final List<EmailAttachment> attachments) {
+	public CommunicationEntity toCommunicationEntity(final String namespace, final String municipalityId, final String errandNumber, final WebMessageRequest request) {
+		return CommunicationEntity.create()
+			.withId(UUID.randomUUID().toString())
+			.withMunicipalityId(municipalityId)
+			.withNamespace(namespace)
+			.withErrandNumber(errandNumber)
+			.withDirection(Direction.OUTBOUND)
+			.withMessageBody(request.getMessage())
+			.withSent(OffsetDateTime.now())
+			.withType(CommunicationType.WEB_MESSAGE)
+			.withAttachments(toMessageAttachments(namespace, municipalityId, request.getAttachments()))
+			.withViewed(false);
+	}
+
+	private List<CommunicationAttachmentEntity> toMessageAttachments(final String namespace, final String municipalityId, final List<? extends RequestAttachment> attachments) {
 
 		return Optional.ofNullable(attachments)
 			.orElse(Collections.emptyList()).stream()
-			.map((EmailAttachment attachment) -> toMessageAttachment(namespace, municipalityId, attachment))
+			.map(attachment -> toMessageAttachment(namespace, municipalityId, attachment))
 			.toList();
 	}
 
-	private CommunicationAttachmentEntity toMessageAttachment(final String namespace, final String municipalityId, final EmailAttachment attachment) {
+	private CommunicationAttachmentEntity toMessageAttachment(final String namespace, final String municipalityId, final RequestAttachment attachment) {
 		final byte[] byteArray = decodeBase64(attachment.getBase64EncodedString());
 
 		return CommunicationAttachmentEntity.create()
@@ -170,9 +186,8 @@ public class CommunicationMapper {
 			.withAttachmentData(toMessageAttachmentData(attachment));
 	}
 
-	private CommunicationAttachmentDataEntity toMessageAttachmentData(final EmailAttachment attachment) {
+	private CommunicationAttachmentDataEntity toMessageAttachmentData(final RequestAttachment attachment) {
 		return CommunicationAttachmentDataEntity.create()
 			.withFile(blobBuilder.createBlob(attachment.getBase64EncodedString()));
 	}
-
 }

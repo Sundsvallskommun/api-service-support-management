@@ -10,7 +10,7 @@ import java.util.Objects;
 import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 
 @Schema(description = "WebMessageAttachment model")
-public class WebMessageAttachment {
+public class WebMessageAttachment implements RequestAttachment {
 
 	@NotBlank
 	@Schema(description = "The attachment filename", example = "test.txt", requiredMode = REQUIRED)
