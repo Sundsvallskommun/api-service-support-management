@@ -2,10 +2,7 @@ package se.sundsvall.supportmanagement.integration.db.model;
 
 import static jakarta.persistence.GenerationType.IDENTITY;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
@@ -16,7 +13,10 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import java.util.List;
+import java.util.Objects;
 
 @Entity
 @Table(name = "stakeholder")
@@ -68,9 +68,8 @@ public class StakeholderEntity {
 	@CollectionTable(name = "contact_channel", joinColumns = @JoinColumn(name = "stakeholder_id", referencedColumnName = "id", foreignKey = @ForeignKey(name = "fk_stakeholder_contact_channel_stakeholder_id")))
 	private List<ContactChannelEntity> contactChannels;
 
-	@ElementCollection
-	@CollectionTable(name = "stakeholder_metadata", joinColumns = @JoinColumn(name = "stakeholder_id", referencedColumnName = "id", foreignKey = @ForeignKey(name = "fk_stakeholder_metadata_stakeholder_id")))
-	private Map<String, String> metadata;
+	@OneToMany(mappedBy = "stakeholderEntity", cascade = CascadeType.ALL, orphanRemoval = true)
+	private List<StakeholderParameterEntity> parameters;
 
 	public static StakeholderEntity create() {
 		return new StakeholderEntity();
@@ -258,16 +257,16 @@ public class StakeholderEntity {
 		return this;
 	}
 
-	public Map<String, String> getMetadata() {
-		return metadata;
+	public List<StakeholderParameterEntity> getParameters() {
+		return parameters;
 	}
 
-	public void setMetadata(final Map<String, String> metadata) {
-		this.metadata = metadata;
+	public void setParameters(List<StakeholderParameterEntity> parameters) {
+		this.parameters = parameters;
 	}
 
-	public StakeholderEntity withMetadata(final Map<String, String> metadata) {
-		this.metadata = metadata;
+	public StakeholderEntity withParameters(List<StakeholderParameterEntity> parameters) {
+		this.parameters = parameters;
 		return this;
 	}
 
@@ -288,22 +287,22 @@ public class StakeholderEntity {
 			", zipCode='" + zipCode + '\'' +
 			", country='" + country + '\'' +
 			", contactChannels=" + contactChannels +
-			", metadata=" + metadata +
+			", parameters=" + parameters +
 			'}';
 
 	}
 
 	@Override
-	public boolean equals(final Object o) {
-		if (this == o) return true;
-		if (o == null || getClass() != o.getClass()) return false;
-		final StakeholderEntity that = (StakeholderEntity) o;
-		return id == that.id && Objects.equals(errandEntity, that.errandEntity) && Objects.equals(externalId, that.externalId) && Objects.equals(externalIdType, that.externalIdType) && Objects.equals(city, that.city) && Objects.equals(organizationName, that.organizationName) && Objects.equals(role, that.role) && Objects.equals(firstName, that.firstName) && Objects.equals(lastName, that.lastName) && Objects.equals(address, that.address) && Objects.equals(careOf, that.careOf) && Objects.equals(zipCode, that.zipCode) && Objects.equals(country, that.country) && Objects.equals(contactChannels, that.contactChannels) && Objects.equals(metadata, that.metadata);
+	public int hashCode() {
+		return Objects.hash(address, careOf, city, contactChannels, country, errandEntity, externalId, externalIdType, firstName, id, lastName, organizationName, parameters, role, zipCode);
 	}
 
 	@Override
-	public int hashCode() {
-		return Objects.hash(id, errandEntity, externalId, externalIdType, city, organizationName, role, firstName, lastName, address, careOf, zipCode, country, contactChannels, metadata);
+	public boolean equals(Object obj) {
+		if (this == obj) { return true; }
+		if (!(obj instanceof final StakeholderEntity other)) { return false; }
+		return Objects.equals(address, other.address) && Objects.equals(careOf, other.careOf) && Objects.equals(city, other.city) && Objects.equals(contactChannels, other.contactChannels) && Objects.equals(country, other.country) && Objects.equals(
+			errandEntity, other.errandEntity) && Objects.equals(externalId, other.externalId) && Objects.equals(externalIdType, other.externalIdType) && Objects.equals(firstName, other.firstName) && (id == other.id) && Objects.equals(lastName,
+				other.lastName) && Objects.equals(organizationName, other.organizationName) && Objects.equals(parameters, other.parameters) && Objects.equals(role, other.role) && Objects.equals(zipCode, other.zipCode);
 	}
-
 }

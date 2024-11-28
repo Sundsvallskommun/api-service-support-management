@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.api;
 
+import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -34,12 +35,10 @@ import se.sundsvall.supportmanagement.service.NotificationService;
 @ActiveProfiles("junit")
 class NotificationsCreateResourceFailureTest {
 
-	private static final String PATH = "/{municipalityId}/{namespace}/notifications";
-
+	private static final String PATH = "/{municipalityId}/{namespace}/errands/{errandId}/notifications";
 	private static final String NAMESPACE = "namespace";
-
 	private static final String MUNICIPALITY_ID = "2281";
-
+	private static final String ERRAND_ID = randomUUID().toString();
 	private static final String INVALID = "can only contain A-Z, a-z, 0-9, -, _ and .";
 
 	@MockBean
@@ -53,9 +52,7 @@ class NotificationsCreateResourceFailureTest {
 			Arguments.of(TestObjectsBuilder.createNotification(n -> n.withOwnerFullName(null)), "ownerFullName", "must not be blank"),
 			Arguments.of(TestObjectsBuilder.createNotification(n -> n.withOwnerId(null)), "ownerId", "must not be blank"),
 			Arguments.of(TestObjectsBuilder.createNotification(n -> n.withType(null)), "type", "must not be blank"),
-			Arguments.of(TestObjectsBuilder.createNotification(n -> n.withDescription(null)), "description", "must not be blank"),
-			Arguments.of(TestObjectsBuilder.createNotification(n -> n.withErrandId(null)), "errandId", "not a valid UUID")
-		);
+			Arguments.of(TestObjectsBuilder.createNotification(n -> n.withDescription(null)), "description", "must not be blank"));
 	}
 
 	@ParameterizedTest
@@ -64,7 +61,7 @@ class NotificationsCreateResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.post()
-			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
 			.bodyValue(notification)
 			.exchange()
 			.expectStatus().isBadRequest()
@@ -90,7 +87,7 @@ class NotificationsCreateResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.post()
-			.uri(builder -> builder.path(PATH).build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID)))
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.accept(APPLICATION_JSON)
 			.bodyValue(requestBody)
@@ -112,7 +109,29 @@ class NotificationsCreateResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.post()
-			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", INVALID)))
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", INVALID, "errandId", ERRAND_ID)))
+			.contentType(APPLICATION_JSON)
+			.accept(APPLICATION_JSON)
+			.bodyValue(requestBody)
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		// Verification
+		assertThat(response).isNotNull();
+		verifyNoInteractions(notificationServiceMock);
+	}
+
+	@Test
+	void createNotificationWithInvalidErrandId() {
+		// Parameter values
+		final var requestBody = TestObjectsBuilder.createNotification(n -> {});
+
+		// Call
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", INVALID)))
 			.contentType(APPLICATION_JSON)
 			.accept(APPLICATION_JSON)
 			.bodyValue(requestBody)
@@ -131,11 +150,11 @@ class NotificationsCreateResourceFailureTest {
 	void createNotificationAlreadyExists() {
 		// Parameter values
 		final var requestBody = TestObjectsBuilder.createNotification(n -> {});
-		when(notificationServiceMock.createNotification(MUNICIPALITY_ID, NAMESPACE, requestBody)).thenReturn(null);
+		when(notificationServiceMock.createNotification(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, requestBody)).thenReturn(null);
 
 		// Call
 		final var response = webTestClient.post()
-			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.accept(APPLICATION_JSON)
 			.bodyValue(requestBody)
@@ -152,5 +171,4 @@ class NotificationsCreateResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Conflict");
 		assertThat(response.getDetail()).isEqualTo("Notification already exists");
 	}
-
 }

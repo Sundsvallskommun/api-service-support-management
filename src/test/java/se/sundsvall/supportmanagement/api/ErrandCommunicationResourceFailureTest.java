@@ -24,11 +24,12 @@ import org.zalando.problem.AbstractThrowableProblem;
 import org.zalando.problem.Problem;
 import org.zalando.problem.violations.ConstraintViolationProblem;
 import org.zalando.problem.violations.Violation;
-
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.communication.EmailAttachment;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
 import se.sundsvall.supportmanagement.api.model.communication.SmsRequest;
+import se.sundsvall.supportmanagement.api.model.communication.WebMessageAttachment;
+import se.sundsvall.supportmanagement.api.model.communication.WebMessageRequest;
 import se.sundsvall.supportmanagement.service.CommunicationService;
 
 @SpringBootTest(classes = Application.class, webEnvironment = RANDOM_PORT)
@@ -36,24 +37,16 @@ import se.sundsvall.supportmanagement.service.CommunicationService;
 class ErrandCommunicationResourceFailureTest {
 
 	private static final String NAMESPACE = "name.space";
-
 	private static final String MUNICIPALITY_ID = "2281";
-
 	private static final String ERRAND_ID = randomUUID().toString();
-
 	private static final String MESSAGE_ID = randomUUID().toString();
-
 	private static final boolean IS_VIEWED = true;
-
 	private static final String INVALID = "#invalid#";
-
 	private static final String CONSTRAINT_VIOLATION = "Constraint Violation";
-
-	private static final String PATH_PREFIX = "/{municipalityId}/{namespace}/errands/{id}/communication";
-
+	private static final String PATH_PREFIX = "/{municipalityId}/{namespace}/errands/{errandId}/communication";
 	private static final String PATH_SMS = "/sms";
-
 	private static final String PATH_EMAIL = "/email";
+	private static final String PATH_WEB_MESSAGE = "/webmessage";
 
 	@MockBean
 	private CommunicationService serviceMock;
@@ -77,19 +70,23 @@ class ErrandCommunicationResourceFailureTest {
 			.withSubject("subject");
 	}
 
+	private static WebMessageRequest webMessageRequest() {
+		return WebMessageRequest.create()
+			.withMessage("message");
+	}
+
 	@Test
 	void getMessagesOnErrandWithInvalidNamespace() {
 
 		// Call
 		final var response = webTestClient.get()
-			.uri(builder -> builder.path(PATH_PREFIX).build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
+			.uri(builder -> builder.path(PATH_PREFIX).build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
 			.accept(APPLICATION_JSON)
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
 			.returnResult()
 			.getResponseBody();
-
 
 		assertThat(response).isNotNull();
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
@@ -107,14 +104,13 @@ class ErrandCommunicationResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.get()
-			.uri(builder -> builder.path(PATH_PREFIX).build(Map.of("namespace", NAMESPACE, "municipalityId", INVALID, "id", ERRAND_ID)))
+			.uri(builder -> builder.path(PATH_PREFIX).build(Map.of("namespace", NAMESPACE, "municipalityId", INVALID, "errandId", ERRAND_ID)))
 			.accept(APPLICATION_JSON)
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
 			.returnResult()
 			.getResponseBody();
-
 
 		assertThat(response).isNotNull();
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
@@ -133,14 +129,13 @@ class ErrandCommunicationResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.get()
-			.uri(builder -> builder.path(PATH_PREFIX).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", INVALID)))
+			.uri(builder -> builder.path(PATH_PREFIX).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", INVALID)))
 			.accept(APPLICATION_JSON)
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
 			.returnResult()
 			.getResponseBody();
-
 
 		assertThat(response).isNotNull();
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
@@ -151,7 +146,6 @@ class ErrandCommunicationResourceFailureTest {
 
 		// Verification
 		verifyNoInteractions(serviceMock);
-
 	}
 
 	@Test
@@ -159,14 +153,13 @@ class ErrandCommunicationResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.put()
-			.uri(builder -> builder.path(PATH_PREFIX + "/{messageID}/viewed/{isViewed}").build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "messageID", MESSAGE_ID, "isViewed", IS_VIEWED)))
+			.uri(builder -> builder.path(PATH_PREFIX + "/{messageID}/viewed/{isViewed}").build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "messageID", MESSAGE_ID, "isViewed", IS_VIEWED)))
 			.contentType(APPLICATION_JSON)
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
 			.returnResult()
 			.getResponseBody();
-
 
 		assertThat(response).isNotNull();
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
@@ -184,7 +177,7 @@ class ErrandCommunicationResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.put()
-			.uri(builder -> builder.path(PATH_PREFIX + "/{messageID}/viewed/{isViewed}").build(Map.of("namespace", NAMESPACE, "municipalityId", INVALID, "id", ERRAND_ID, "messageID", MESSAGE_ID, "isViewed", IS_VIEWED)))
+			.uri(builder -> builder.path(PATH_PREFIX + "/{messageID}/viewed/{isViewed}").build(Map.of("namespace", NAMESPACE, "municipalityId", INVALID, "errandId", ERRAND_ID, "messageID", MESSAGE_ID, "isViewed", IS_VIEWED)))
 			.contentType(APPLICATION_JSON)
 			.exchange()
 			.expectStatus().isBadRequest()
@@ -208,7 +201,7 @@ class ErrandCommunicationResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.put()
-			.uri(builder -> builder.path(PATH_PREFIX + "/{messageID}/viewed/{isViewed}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", INVALID, "messageID", MESSAGE_ID, "isViewed", IS_VIEWED)))
+			.uri(builder -> builder.path(PATH_PREFIX + "/{messageID}/viewed/{isViewed}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", INVALID, "messageID", MESSAGE_ID, "isViewed", IS_VIEWED)))
 			.contentType(APPLICATION_JSON)
 			.exchange()
 			.expectStatus().isBadRequest()
@@ -232,7 +225,7 @@ class ErrandCommunicationResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.put()
-			.uri(builder -> builder.path(PATH_PREFIX + "/{messageID}/viewed/{isViewed}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "messageID", INVALID, "isViewed", IS_VIEWED)))
+			.uri(builder -> builder.path(PATH_PREFIX + "/{messageID}/viewed/{isViewed}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "messageID", INVALID, "isViewed", IS_VIEWED)))
 			.contentType(APPLICATION_JSON)
 			.exchange()
 			.expectStatus().isBadRequest()
@@ -240,13 +233,12 @@ class ErrandCommunicationResourceFailureTest {
 			.returnResult()
 			.getResponseBody();
 
-
 		assertThat(response).isNotNull();
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactly(tuple("updateViewedStatus.communicationID", "not a valid UUID"));
+			.containsExactly(tuple("updateViewedStatus.communicationId", "not a valid UUID"));
 
 		// Verification
 		verifyNoInteractions(serviceMock);
@@ -257,7 +249,7 @@ class ErrandCommunicationResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.put()
-			.uri(builder -> builder.path(PATH_PREFIX + "/{messageID}/viewed/{isViewed}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID, "messageID", MESSAGE_ID, "isViewed", INVALID)))
+			.uri(builder -> builder.path(PATH_PREFIX + "/{messageID}/viewed/{isViewed}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "messageID", MESSAGE_ID, "isViewed", INVALID)))
 			.contentType(APPLICATION_JSON)
 			.exchange()
 			.expectStatus().isBadRequest()
@@ -274,12 +266,22 @@ class ErrandCommunicationResourceFailureTest {
 	}
 
 	@ParameterizedTest
-	@ValueSource(strings = {PATH_SMS, PATH_EMAIL})
+	@ValueSource(strings = {
+		PATH_SMS, PATH_EMAIL, PATH_WEB_MESSAGE
+	})
 	void sendNotificationWithInvalidNamespace(final String type) {
+
+		String field = null;
+		switch (type) {
+			case PATH_SMS -> field = "sendSms.namespace";
+			case PATH_EMAIL -> field = "sendEmail.namespace";
+			case PATH_WEB_MESSAGE -> field = "sendWebMessage.namespace";
+			default -> throw new IllegalArgumentException("Missing mapping for " + type);
+		}
 
 		// Call
 		final var response = webTestClient.post()
-			.uri(builder -> builder.path(PATH_PREFIX + type).build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
+			.uri(builder -> builder.path(PATH_PREFIX + type).build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
 			.bodyValue(PATH_SMS.equals(type) ? smsRequest() : emailRequest())
 			.exchange()
 			.expectStatus().isBadRequest()
@@ -292,19 +294,29 @@ class ErrandCommunicationResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactly(tuple("send" + StringUtils.capitalize(type.substring(1)) + ".namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."));
+			.containsExactly(tuple(field, "can only contain A-Z, a-z, 0-9, -, _ and ."));
 
 		// Verification
 		verifyNoInteractions(serviceMock);
 	}
 
 	@ParameterizedTest
-	@ValueSource(strings = {PATH_SMS, PATH_EMAIL})
+	@ValueSource(strings = {
+		PATH_SMS, PATH_EMAIL, PATH_WEB_MESSAGE
+	})
 	void sendNotificationWithInvalidMunicipalityId(final String type) {
 
+		String field = null;
+		switch (type) {
+			case PATH_SMS -> field = "sendSms.municipalityId";
+			case PATH_EMAIL -> field = "sendEmail.municipalityId";
+			case PATH_WEB_MESSAGE -> field = "sendWebMessage.municipalityId";
+			default -> throw new IllegalArgumentException("Missing mapping for " + type);
+		}
+
 		// Call
 		final var response = webTestClient.post()
-			.uri(builder -> builder.path(PATH_PREFIX + type).build(Map.of("namespace", NAMESPACE, "municipalityId", INVALID, "id", ERRAND_ID)))
+			.uri(builder -> builder.path(PATH_PREFIX + type).build(Map.of("namespace", NAMESPACE, "municipalityId", INVALID, "errandId", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(PATH_SMS.equals(type) ? smsRequest() : emailRequest())
 			.exchange()
@@ -318,19 +330,29 @@ class ErrandCommunicationResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactly(tuple("send" + StringUtils.capitalize(type.substring(1)) + ".municipalityId", "not a valid municipality ID"));
+			.containsExactly(tuple(field, "not a valid municipality ID"));
 
 		// Verification
 		verifyNoInteractions(serviceMock);
 	}
 
 	@ParameterizedTest
-	@ValueSource(strings = {PATH_SMS, PATH_EMAIL})
+	@ValueSource(strings = {
+		PATH_SMS, PATH_EMAIL, PATH_WEB_MESSAGE
+	})
 	void sendNotificationWithInvalidErrandId(final String type) {
+
+		String field = null;
+		switch (type) {
+			case PATH_SMS -> field = "sendSms.errandId";
+			case PATH_EMAIL -> field = "sendEmail.errandId";
+			case PATH_WEB_MESSAGE -> field = "sendWebMessage.errandId";
+			default -> throw new IllegalArgumentException("Missing mapping for " + type);
+		}
 
 		// Call
 		final var response = webTestClient.post()
-			.uri(builder -> builder.path(PATH_PREFIX + type).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", INVALID)))
+			.uri(builder -> builder.path(PATH_PREFIX + type).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", INVALID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(PATH_SMS.equals(type) ? smsRequest() : emailRequest())
 			.exchange()
@@ -344,7 +366,7 @@ class ErrandCommunicationResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactly(tuple("send" + StringUtils.capitalize(type.substring(1)) + ".errandId", "not a valid UUID"));
+			.containsExactly(tuple(field, "not a valid UUID"));
 
 		// Verification
 		verifyNoInteractions(serviceMock);
@@ -355,7 +377,7 @@ class ErrandCommunicationResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.post()
-			.uri(builder -> builder.path(PATH_PREFIX + PATH_SMS).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
+			.uri(builder -> builder.path(PATH_PREFIX + PATH_SMS).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.exchange()
 			.expectStatus().isBadRequest()
@@ -379,7 +401,7 @@ class ErrandCommunicationResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.post()
-			.uri(builder -> builder.path(PATH_PREFIX + PATH_SMS).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
+			.uri(builder -> builder.path(PATH_PREFIX + PATH_SMS).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(SmsRequest.create())
 			.exchange()
@@ -405,7 +427,7 @@ class ErrandCommunicationResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.post()
-			.uri(builder -> builder.path(PATH_PREFIX + PATH_SMS).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
+			.uri(builder -> builder.path(PATH_PREFIX + PATH_SMS).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(smsRequest()
 				.withRecipient("123")
@@ -432,7 +454,7 @@ class ErrandCommunicationResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.post()
-			.uri(builder -> builder.path(PATH_PREFIX + PATH_EMAIL).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
+			.uri(builder -> builder.path(PATH_PREFIX + PATH_EMAIL).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.exchange()
 			.expectStatus().isBadRequest()
@@ -456,7 +478,7 @@ class ErrandCommunicationResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.post()
-			.uri(builder -> builder.path(PATH_PREFIX + PATH_EMAIL).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
+			.uri(builder -> builder.path(PATH_PREFIX + PATH_EMAIL).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(EmailRequest.create())
 			.exchange()
@@ -484,7 +506,7 @@ class ErrandCommunicationResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.post()
-			.uri(builder -> builder.path(PATH_PREFIX + PATH_EMAIL).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
+			.uri(builder -> builder.path(PATH_PREFIX + PATH_EMAIL).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(emailRequest()
 				.withRecipient("not_an_email")
@@ -507,14 +529,69 @@ class ErrandCommunicationResourceFailureTest {
 	}
 
 	@Test
-	void sendEmailWithEmptyAttachment() {
+	void sendWebMessageWithEmptyBody() {
 
 		// Call
 		final var response = webTestClient.post()
-			.uri(builder -> builder.path(PATH_PREFIX + PATH_EMAIL).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
+			.uri(builder -> builder.path(PATH_PREFIX + PATH_WEB_MESSAGE).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
-			.bodyValue(emailRequest()
-				.withAttachments(List.of(EmailAttachment.create())))
+			.bodyValue(WebMessageRequest.create())
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo(CONSTRAINT_VIOLATION);
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
+			tuple("message", "must not be blank"));
+
+		// Verification
+		verifyNoInteractions(serviceMock);
+	}
+
+	@Test
+	void sendWebMessageWithoutBody() {
+
+		// Call
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH_PREFIX + PATH_WEB_MESSAGE).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
+			.contentType(APPLICATION_JSON)
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(Problem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getDetail()).isEqualTo("""
+			Required request body is missing: org.springframework.http.ResponseEntity<java.lang.Void> \
+			se.sundsvall.supportmanagement.api.ErrandCommunicationResource.sendWebMessage(java.lang.String,java.lang.String,\
+			java.lang.String,se.sundsvall.supportmanagement.api.model.communication.WebMessageRequest)""");
+
+		// Verification
+		verifyNoInteractions(serviceMock);
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = { PATH_EMAIL, PATH_WEB_MESSAGE })
+	void sendWithEmptyAttachment(String path) {
+
+		Object body = null;
+		switch (path) {
+			case PATH_EMAIL -> body = emailRequest().withAttachments(List.of(EmailAttachment.create()));
+			case PATH_WEB_MESSAGE -> body = webMessageRequest().withAttachments(List.of(WebMessageAttachment.create()));
+			default -> throw new IllegalArgumentException("Missing mapping for " + path);
+		}
+
+		// Call
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH_PREFIX + path).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(body)
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -532,17 +609,28 @@ class ErrandCommunicationResourceFailureTest {
 		verifyNoInteractions(serviceMock);
 	}
 
-	@Test
-	void sendEmailWithInvalidAttachmentString() {
+	@ParameterizedTest
+	@ValueSource(strings = { PATH_EMAIL, PATH_WEB_MESSAGE })
+	void sendWithInvalidAttachmentString(String path) {
+
+		var name = "name";
+		var data = "data:image/png;base64,iVBOR";
+		Object body = null;
+		switch (path) {
+			case PATH_EMAIL -> body = emailRequest().withAttachments(List.of(EmailAttachment.create()
+				.withName(name)
+				.withBase64EncodedString(data)));
+			case PATH_WEB_MESSAGE -> body = webMessageRequest().withAttachments(List.of(WebMessageAttachment.create()
+				.withName(name)
+				.withBase64EncodedString(data)));
+			default -> throw new IllegalArgumentException("Missing mapping for " + path);
+		}
 
 		// Call
 		final var response = webTestClient.post()
-			.uri(builder -> builder.path(PATH_PREFIX + PATH_EMAIL).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", ERRAND_ID)))
+			.uri(builder -> builder.path(PATH_PREFIX + path).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
-			.bodyValue(emailRequest()
-				.withAttachments(List.of(EmailAttachment.create()
-					.withName("name")
-					.withBase64EncodedString("data:image/png;base64,iVBOR"))))
+			.bodyValue(body)
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -558,5 +646,4 @@ class ErrandCommunicationResourceFailureTest {
 		// Verification
 		verifyNoInteractions(serviceMock);
 	}
-
 }

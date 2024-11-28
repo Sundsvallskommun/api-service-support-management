@@ -16,7 +16,6 @@ import static org.zalando.problem.Status.BAD_REQUEST;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,11 +26,11 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import org.zalando.problem.Problem;
 import org.zalando.problem.violations.ConstraintViolationProblem;
 import org.zalando.problem.violations.Violation;
-
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.errand.Classification;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
+import se.sundsvall.supportmanagement.api.model.errand.Parameter;
 import se.sundsvall.supportmanagement.api.model.errand.Priority;
 import se.sundsvall.supportmanagement.api.model.errand.Stakeholder;
 import se.sundsvall.supportmanagement.api.model.metadata.Category;
@@ -47,11 +46,8 @@ import se.sundsvall.supportmanagement.service.MetadataService;
 class ErrandsCreateResourceFailureTest {
 
 	private static final String PATH = "/{municipalityId}/{namespace}/errands";
-
 	private static final String NAMESPACE = "namespace";
-
 	private static final String MUNICIPALITY_ID = "2281";
-
 	private static final String INVALID = "#invalid#";
 
 	@Autowired
@@ -461,6 +457,36 @@ class ErrandsCreateResourceFailureTest {
 	}
 
 	@Test
+	void createErrandWithEmptyParameterKey() {
+		// Call
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(createErrandInstance().withId(null).withCreated(null).withModified(null)
+				.withParameters(List.of(Parameter.create().withValues(List.of("value1", "value2")))))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::getField, Violation::getMessage)
+			.containsExactly(tuple("parameters[0].key", "must not be blank"));
+
+		// Verification
+		verify(metadataServiceMock, times(3)).isValidated(any(), any(), any());
+		verify(metadataServiceMock).findCategories(NAMESPACE, MUNICIPALITY_ID);
+		verify(metadataServiceMock).findStatuses(NAMESPACE, MUNICIPALITY_ID);
+		verify(metadataServiceMock).findTypes(eq(NAMESPACE), eq(MUNICIPALITY_ID), any());
+		verify(metadataServiceMock).findRoles(NAMESPACE, MUNICIPALITY_ID);
+		verifyNoInteractions(errandServiceMock);
+	}
+
+	@Test
 	void createErrandWithInvalidStakeholderRole() {
 		// Call
 		final var response = webTestClient.post()
@@ -489,4 +515,35 @@ class ErrandsCreateResourceFailureTest {
 		verifyNoInteractions(errandServiceMock);
 	}
 
+	@Test
+	void createErrandWithEmptyStakeholderParameterKey() {
+		// Call
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(createErrandInstance().withId(null).withCreated(null).withModified(null)
+				.withStakeholders(List.of(
+					Stakeholder.create().withParameters(List.of(
+						Parameter.create().withValues(List.of("value1", "value2")))))))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::getField, Violation::getMessage)
+			.containsExactly(tuple("stakeholders[0].parameters[0].key", "must not be blank"));
+
+		// Verification
+		verify(metadataServiceMock, times(3)).isValidated(any(), any(), any());
+		verify(metadataServiceMock).findCategories(NAMESPACE, MUNICIPALITY_ID);
+		verify(metadataServiceMock).findStatuses(NAMESPACE, MUNICIPALITY_ID);
+		verify(metadataServiceMock).findTypes(eq(NAMESPACE), eq(MUNICIPALITY_ID), any());
+		verify(metadataServiceMock).findRoles(NAMESPACE, MUNICIPALITY_ID);
+		verifyNoInteractions(errandServiceMock);
+	}
 }

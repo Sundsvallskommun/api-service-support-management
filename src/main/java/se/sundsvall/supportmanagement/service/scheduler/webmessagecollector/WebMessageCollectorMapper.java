@@ -38,11 +38,10 @@ public class WebMessageCollectorMapper {
 			.withErrandNumber(errand.getErrandNumber())
 			.withMunicipalityId(errand.getMunicipalityId())
 			.withNamespace(errand.getNamespace())
-			.withExternalCaseID(messageDTO.getExternalCaseId())
+			.withExternalId(messageDTO.getMessageId())
 			.withMessageBody(messageDTO.getMessage())
 			.withSent(OffsetDateTime.of(LocalDateTime.parse(messageDTO.getSent()), now(systemDefault()).getOffset()))
-			.withType(CommunicationType.EMAIL)
-			.withViewed(true);
+			.withType(CommunicationType.WEB_MESSAGE);
 
 		return communicationEntity.withAttachments(toCommunicationAttachmentEntities(messageDTO.getAttachments(), communicationEntity));
 	}

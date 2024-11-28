@@ -1,6 +1,6 @@
 {
 	"id": "${json-unit.any-string}",
-	"errandNumber": "${json-unit.regex}(KC-\\d{8})",
+	"errandNumber": "KC-24110001",
 	"title": "test04_postErrand",
 	"priority": "LOW",
 	"stakeholders": [
@@ -8,9 +8,24 @@
 			"externalId": "cb20c51f-fcf3-42c0-b613-de563634a8ec",
 			"externalIdType": "PRIVATE",
 			"contactChannels": [],
-			"metadata": {
-				"key": "value"
-			}
+			"parameters": [
+				{
+					"key": "stakeholderparam-key-1",
+					"values": [
+						"value1",
+						"value2",
+						"value3",
+						"value4"
+					]
+				},
+				{
+					"key": "stakeholderparam-key-2",
+					"displayName": "The second stakeholderparam key",
+					"values": [
+						"the second value"
+					]
+				}
+			]
 		}
 	],
 	"externalTags": [
@@ -21,9 +36,19 @@
 	],
 	"parameters": [
 		{
-			"key": "keyA",
+			"key": "key-2",
+			"displayName": "The second key",
 			"values": [
-				"valueA1"
+				"the second value"
+			]
+		},
+		{
+			"key": "key-1",
+			"values": [
+				"value1",
+				"value2",
+				"value3",
+				"value4"
 			]
 		}
 	],
@@ -38,10 +63,10 @@
 	"reporterUserId": "joe01doe",
 	"assignedUserId": "joe01doe",
 	"assignedGroupId": "hardware support",
-	"suspension": {},
-	"businessRelated": true,
 	"contactReason": "reason1",
 	"contactReasonDescription": "This is the contact reason description",
+	"suspension": {},
+	"businessRelated": true,
 	"labels": [],
 	"created": "${json-unit.any-string}",
 	"touched": "${json-unit.any-string}"

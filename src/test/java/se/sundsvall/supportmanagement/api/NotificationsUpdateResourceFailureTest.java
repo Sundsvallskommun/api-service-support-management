@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.api;
 
+import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -33,11 +34,9 @@ import se.sundsvall.supportmanagement.service.NotificationService;
 class NotificationsUpdateResourceFailureTest {
 
 	private static final String PATH = "/{municipalityId}/{namespace}/notifications";
-
 	private static final String NAMESPACE = "namespace";
-
 	private static final String MUNICIPALITY_ID = "2281";
-
+	private static final String ERRAND_ID = randomUUID().toString();
 	private static final String INVALID = "can only contain A-Z, a-z, 0-9, -, _ and .";
 
 	@MockBean
@@ -52,9 +51,7 @@ class NotificationsUpdateResourceFailureTest {
 			Arguments.of(List.of(TestObjectsBuilder.createNotification(n -> n.withOwnerId(null))), "updateNotifications.notifications[0].ownerId", "must not be blank"),
 			Arguments.of(List.of(TestObjectsBuilder.createNotification(n -> n.withType(null))), "updateNotifications.notifications[0].type", "must not be blank"),
 			Arguments.of(List.of(TestObjectsBuilder.createNotification(n -> n.withDescription(null))), "updateNotifications.notifications[0].description", "must not be blank"),
-			Arguments.of(List.of(TestObjectsBuilder.createNotification(n -> n.withErrandId(null))), "updateNotifications.notifications[0].errandId", "not a valid UUID"),
-			Arguments.arguments(List.of(), "updateNotifications.notifications", "must not be empty")
-		);
+			Arguments.arguments(List.of(), "updateNotifications.notifications", "must not be empty"));
 	}
 
 	@ParameterizedTest
@@ -63,7 +60,7 @@ class NotificationsUpdateResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.patch()
-			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
 			.bodyValue(notifications)
 			.exchange()
 			.expectStatus().isBadRequest()
@@ -89,7 +86,7 @@ class NotificationsUpdateResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.patch()
-			.uri(builder -> builder.path(PATH).build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID)))
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.accept(APPLICATION_JSON)
 			.bodyValue(requestBody)
@@ -111,7 +108,7 @@ class NotificationsUpdateResourceFailureTest {
 
 		// Call
 		final var response = webTestClient.patch()
-			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", INVALID)))
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", INVALID, "errandId", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
 			.accept(APPLICATION_JSON)
 			.bodyValue(requestBody)
@@ -125,5 +122,4 @@ class NotificationsUpdateResourceFailureTest {
 		assertThat(response).isNotNull();
 		verifyNoInteractions(notificationServiceMock);
 	}
-
 }

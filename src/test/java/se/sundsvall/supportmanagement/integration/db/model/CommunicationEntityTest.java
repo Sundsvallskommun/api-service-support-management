@@ -70,7 +70,7 @@ class CommunicationEntityTest {
 			.withSender(sender)
 			.withErrandNumber(errandNumber)
 			.withDirection(direction)
-			.withExternalCaseID(externalCaseID)
+			.withExternalId(externalCaseID)
 			.withSubject(subject)
 			.withMessageBody(messageBody)
 			.withSent(sent)
@@ -88,7 +88,7 @@ class CommunicationEntityTest {
 		assertThat(entity.getSender()).isEqualTo(sender);
 		assertThat(entity.getErrandNumber()).isEqualTo(errandNumber);
 		assertThat(entity.getDirection()).isEqualTo(direction);
-		assertThat(entity.getExternalCaseID()).isEqualTo(externalCaseID);
+		assertThat(entity.getExternalId()).isEqualTo(externalCaseID);
 		assertThat(entity.getSubject()).isEqualTo(subject);
 		assertThat(entity.getMessageBody()).isEqualTo(messageBody);
 		assertThat(entity.getSent()).isEqualTo(sent);

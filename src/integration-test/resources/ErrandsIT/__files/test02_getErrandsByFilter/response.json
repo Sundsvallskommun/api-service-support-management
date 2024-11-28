@@ -17,7 +17,7 @@
 					"zipCode": "ZIP_CODE-2",
 					"country": "COUNTRY-2",
 					"contactChannels": [],
-					"metadata": {}
+					"parameters": []
 				},
 				{
 					"externalId": "USER_ID",
@@ -35,7 +35,16 @@
 							"value": "VALUE-1"
 						}
 					],
-					"metadata": {}
+					"parameters": [
+						{
+							"key": "parameterX",
+							"displayName": "Parameter X",
+							"values": [
+								"value-x1",
+								"value-x2"
+							]
+						}
+					]
 				}
 			],
 			"externalTags": [
@@ -84,16 +93,16 @@
 		"pageSize": 20,
 		"sort": [],
 		"offset": 0,
-		"paged": true,
-		"unpaged": false
+		"unpaged": false,
+		"paged": true
 	},
 	"last": true,
-	"totalElements": 1,
 	"totalPages": 1,
+	"totalElements": 1,
+	"first": true,
 	"size": 20,
 	"number": 0,
 	"sort": [],
-	"first": true,
 	"numberOfElements": 1,
 	"empty": false
 }

@@ -1,19 +1,19 @@
 package se.sundsvall.supportmanagement.integration.db;
 
+import static java.time.OffsetDateTime.now;
+import static java.time.OffsetDateTime.of;
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.time.ZoneOffset;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Sort;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
-
-import java.time.ZoneOffset;
-
-import static java.time.OffsetDateTime.now;
-import static java.time.OffsetDateTime.of;
-import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @ActiveProfiles("junit")
@@ -70,13 +70,23 @@ class NotificationRepositoryTest {
 	}
 
 	@Test
-	void findByIdAndNamespaceAndMunicipalityId() {
+	void findByIdAndNamespaceAndMunicipalityIdAndErrandEntityId() {
 
 		// Act
-		final var notification = notificationRepository.findByIdAndNamespaceAndMunicipalityId("1", "namespace-1", "municipalityId-1");
+		final var notification = notificationRepository.findByIdAndNamespaceAndMunicipalityIdAndErrandEntityId("1", "namespace-1", "municipalityId-1", "ERRAND_ID-1");
 
 		// Assert
 		assertThat(notification).isPresent();
+	}
+
+	@Test
+	void findAllByNamespaceAndMunicipalityIdAndErrandEntityId() {
+
+		// Act
+		final var result = notificationRepository.findAllByNamespaceAndMunicipalityIdAndErrandEntityId("namespace-1", "municipalityId-1", "ERRAND_ID-1", Sort.by("modified").descending());
+
+		// Assert
+		assertThat(result).hasSize(1);
 	}
 
 	@Test
@@ -128,10 +138,10 @@ class NotificationRepositoryTest {
 	}
 
 	@Test
-	void existsByIdAndNamespaceAndMunicipalityId() {
+	void existsByIdAndNamespaceAndMunicipalityIdAndErrandEntityId() {
 
 		// Act
-		final boolean exists = notificationRepository.existsByIdAndNamespaceAndMunicipalityId("1", "namespace-1", "municipalityId-1");
+		final boolean exists = notificationRepository.existsByIdAndNamespaceAndMunicipalityIdAndErrandEntityId("1", "namespace-1", "municipalityId-1", "ERRAND_ID-1");
 
 		// Assert
 		assertThat(exists).isTrue();
@@ -164,5 +174,4 @@ class NotificationRepositoryTest {
 		// Assert
 		assertThat(notificationRepository.findById("1")).isNotPresent();
 	}
-
 }

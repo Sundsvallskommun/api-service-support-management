@@ -11,8 +11,6 @@ integration:
     url: http://localhost:${wiremock.server.port:}/api-notes
   web-message-collector:
     url: http://localhost:${wiremock.server.port:}/api-web-message-collector
-  web-message-sender:
-    url: http://localhost:${wiremock.server.port:}/api-web-message-sender
 scheduler:
   emailreader:
     cron: "-"
@@ -51,8 +49,6 @@ spring:
             token-uri: http://localhost:${wiremock.server.port:}/api-gateway/token
           web-message-collector:
             token-uri: http://localhost:${wiremock.server.port:}/api-gateway/token
-          web-message-sender:
-            token-uri: http://localhost:${wiremock.server.port:}/api-gateway/token
         registration:
           emailreader:
             client-id: the-client-id
@@ -70,8 +66,5 @@ spring:
             client-id: the-client-id
             client-secret: the-client-secret
           web-message-collector:
-            client-id: the-client-id
-            client-secret: the-client-secret
-          web-message-sender:
             client-id: the-client-id
             client-secret: the-client-secret

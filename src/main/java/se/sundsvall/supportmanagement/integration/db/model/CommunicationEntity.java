@@ -26,13 +26,13 @@ import org.hibernate.annotations.TimeZoneStorage;
 import se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.Direction;
 
-
 @Entity
 @Table(name = "communication",
 	indexes = {
 		@Index(name = "idx_errand_number", columnList = "errand_number"),
 		@Index(name = "idx_communication_namespace", columnList = "namespace"),
-		@Index(name = "idx_communication_municipality_id", columnList = "municipality_id"),})
+		@Index(name = "idx_communication_municipality_id", columnList = "municipality_id"),
+	})
 public class CommunicationEntity {
 
 	@Id
@@ -55,8 +55,8 @@ public class CommunicationEntity {
 	@Enumerated(EnumType.STRING)
 	private Direction direction;
 
-	@Column(name = "external_case_id")
-	private String externalCaseID;
+	@Column(name = "external_id")
+	private String externalId;
 
 	@Column(name = "subject")
 	private String subject;
@@ -68,8 +68,7 @@ public class CommunicationEntity {
 	@TimeZoneStorage(NORMALIZE)
 	private OffsetDateTime sent;
 
-	@Column(name = "type")
-	@Enumerated(EnumType.STRING)
+	@Column(name = "type", nullable = false)
 	private CommunicationType type;
 
 	@Column(name = "target")
@@ -89,8 +88,8 @@ public class CommunicationEntity {
 	@ManyToMany
 	@JoinTable(
 		name = "communication_errand_attachment",
-		joinColumns = {@JoinColumn(name = "communication_id")},
-		inverseJoinColumns = {@JoinColumn(name = "errand_attachment_id")}
+		joinColumns = { @JoinColumn(name = "communication_id") },
+		inverseJoinColumns = { @JoinColumn(name = "errand_attachment_id") }
 	)
 	private List<AttachmentEntity> errandAttachments;
 
@@ -189,16 +188,16 @@ public class CommunicationEntity {
 		return this;
 	}
 
-	public String getExternalCaseID() {
-		return externalCaseID;
+	public String getExternalId() {
+		return externalId;
 	}
 
-	public void setExternalCaseID(final String externalCaseID) {
-		this.externalCaseID = externalCaseID;
+	public void setExternalId(final String externalId) {
+		this.externalId = externalId;
 	}
 
-	public CommunicationEntity withExternalCaseID(final String externalCaseID) {
-		this.externalCaseID = externalCaseID;
+	public CommunicationEntity withExternalId(final String externalId) {
+		this.externalId = externalId;
 		return this;
 	}
 
@@ -311,15 +310,19 @@ public class CommunicationEntity {
 
 	@Override
 	public boolean equals(final Object o) {
-		if (this == o) return true;
-		if (o == null || getClass() != o.getClass()) return false;
+		if (this == o)
+			return true;
+		if (o == null || getClass() != o.getClass())
+			return false;
 		final CommunicationEntity that = (CommunicationEntity) o;
-		return viewed == that.viewed && Objects.equals(id, that.id) && Objects.equals(namespace, that.namespace) && Objects.equals(municipalityId, that.municipalityId) && Objects.equals(sender, that.sender) && Objects.equals(errandNumber, that.errandNumber) && direction == that.direction && Objects.equals(externalCaseID, that.externalCaseID) && Objects.equals(subject, that.subject) && Objects.equals(messageBody, that.messageBody) && Objects.equals(sent, that.sent) && type == that.type && Objects.equals(target, that.target) && Objects.equals(attachments, that.attachments) && Objects.equals(emailHeaders, that.emailHeaders) && Objects.equals(errandAttachments, that.errandAttachments);
+		return viewed == that.viewed && Objects.equals(id, that.id) && Objects.equals(namespace, that.namespace) && Objects.equals(municipalityId, that.municipalityId) && Objects.equals(sender, that.sender) && Objects.equals(errandNumber,
+			that.errandNumber) && direction == that.direction && Objects.equals(externalId, that.externalId) && Objects.equals(subject, that.subject) && Objects.equals(messageBody, that.messageBody) && Objects.equals(sent, that.sent)
+			&& type == that.type && Objects.equals(target, that.target) && Objects.equals(attachments, that.attachments) && Objects.equals(emailHeaders, that.emailHeaders) && Objects.equals(errandAttachments, that.errandAttachments);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, namespace, municipalityId, sender, errandNumber, direction, externalCaseID, subject, messageBody, sent, type, target, viewed, attachments, emailHeaders, errandAttachments);
+		return Objects.hash(id, namespace, municipalityId, sender, errandNumber, direction, externalId, subject, messageBody, sent, type, target, viewed, attachments, emailHeaders, errandAttachments);
 	}
 
 	@Override
@@ -331,7 +334,7 @@ public class CommunicationEntity {
 			", sender='" + sender + '\'' +
 			", errandNumber='" + errandNumber + '\'' +
 			", direction=" + direction +
-			", externalCaseID='" + externalCaseID + '\'' +
+			", externalId='" + externalId + '\'' +
 			", subject='" + subject + '\'' +
 			", messageBody='" + messageBody + '\'' +
 			", sent=" + sent +

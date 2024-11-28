@@ -12,7 +12,7 @@
 	</parent>
 	<groupId>se.sundsvall</groupId>
 	<artifactId>api-service-support-management</artifactId>
-	<version>8.4</version>
+	<version>9.0</version>
 	<name>api-service-support-management</name>
 	<properties>
 		<spring-filter.version>3.1.8</spring-filter.version>
@@ -281,33 +281,6 @@
 								<dateLibrary>java8</dateLibrary>
 								<apiPackage>generated</apiPackage>
 								<modelPackage>generated.se.sundsvall.webmessagecollector
-								</modelPackage>
-								<openApiNullable>false</openApiNullable>
-								<generatePom>false</generatePom>
-								<useBeanValidation>true</useBeanValidation>
-								<useSwaggerAnnotations>true</useSwaggerAnnotations>
-								<interfaceOnly>true</interfaceOnly>
-							</configOptions>
-						</configuration>
-					</execution>
-					<execution>
-						<id>web-message-sender-api</id>
-						<goals>
-							<goal>generate</goal>
-						</goals>
-						<configuration>
-							<inputSpec>src/main/resources/integrations/webmessagesender.yaml
-							</inputSpec>
-							<output>${generated-sources-path}</output>
-							<generatorName>spring</generatorName>
-							<generateApis>false</generateApis>
-							<generateSupportingFiles>false</generateSupportingFiles>
-							<configOptions>
-								<useSpringBoot3>true</useSpringBoot3>
-								<sourceFolder>models</sourceFolder>
-								<dateLibrary>java8</dateLibrary>
-								<apiPackage>generated</apiPackage>
-								<modelPackage>generated.se.sundsvall.webmessagesender
 								</modelPackage>
 								<openApiNullable>false</openApiNullable>
 								<generatePom>false</generatePom>

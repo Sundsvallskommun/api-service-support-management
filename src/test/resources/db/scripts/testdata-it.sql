@@ -135,6 +135,13 @@ VALUES ('3008', '155 Country Lane, Cottington', 'Ford Prefect', 'United Kingdom'
         '147d355f-dc94-4fde-a4cb-9ddd16cb1946', 'CAKE-EATER');
 
 -------------------------------------
+-- StakeholderParameter
+------------------------------------
+INSERT INTO stakeholder_parameter(id, stakeholder_id, display_name, parameters_key) VALUES(201, 3001, 'Parameter X', 'parameterX');
+INSERT INTO stakeholder_parameter_values(stakeholder_parameter_id, `value`) VALUES(201, 'value-x1');
+INSERT INTO stakeholder_parameter_values(stakeholder_parameter_id, `value`) VALUES(201, 'value-x2');
+
+-------------------------------------
 -- ContactChannel
 ------------------------------------
 
@@ -205,7 +212,7 @@ VALUES ('59328e70-4297-4bb5-ba69-cb17f2d15a17', '2022-01-01 12:00:00.000',
 -------------------------------------
 -- Communication
 -------------------------------------
-INSERT INTO communication(viewed,sender, sent, id, errand_number, external_case_id,
+INSERT INTO communication(viewed,sender, sent, id, errand_number, external_id,
                           message_body, target, subject, direction, type, namespace, municipality_id)
 VALUES (0, 'Test Testorsson', '2023-01-01 12:00:00.000', 'cc236cf1-c00f-4479-8341-ecf5dd90b5b9', 'KC-23020001', 'case1',
         'message body 1', '1234567890', 'subject1', 'INBOUND', 'SMS', 'NAMESPACE.1', '2281'),
@@ -244,13 +251,13 @@ INSERT INTO notification(acknowledged, created, expires, modified, content, crea
 VALUES (0, '2023-12-31 23:59:59.999', '2024-12-31 23:59:59.999', '2023-12-31 23:59:59.999', 'content-1', 'created_by-1', 'description-1', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', '3ec421e9-56d1-4e47-9160-259d8dbe6a50', '2281', 'NAMESPACE.1', 'owner_full_name-1', 'owner_id-1', 'type-1'),
        (1, '2023-12-31 23:59:59.999', '2024-12-31 23:59:59.999', '2023-12-31 23:59:59.999', 'content-2', 'created_by-2', 'description-2', 'cc236cf1-c00f-4479-8341-ecf5dd90b5b9', '2', '2281', 'NAMESPACE.1', 'owner_full_name-2', 'owner_id-2', 'type-2');
 
-INSERT INTO contact_reason(id, reason, municipality_id, namespace, created, modified)
-VALUES(123, 'reason1', '2281', 'CONTACTCENTER', '2023-12-31 23:59:59.999', '2023-12-31 23:59:59.999'),
-(124, 'reason2', '2281', 'CONTACTCENTER', '2023-12-31 23:59:59.999', '2023-12-31 23:59:59.999'),
-(127, 'reason3', '2281', 'CONTACTCENTER', '2023-12-31 23:59:59.999', '2023-12-31 23:59:59.999'),
-(125, 'reason3', '2281', 'namespace_2', '2023-12-31 23:59:59.999', '2023-12-31 23:59:59.999'),
-(126, 'reason4', '2281', 'namespace_2', '2023-12-31 23:59:59.999', '2023-12-31 23:59:59.999'),
-(128, 'reason5', '2281', 'NAMESPACE.1', '2023-12-31 23:59:59.999', '2023-12-31 23:59:59.999');
+INSERT INTO contact_reason(id, reason, municipality_id, namespace, created, modified) 
+VALUES (123, 'reason1', '2281', 'CONTACTCENTER', '2023-12-31 23:59:59.999', '2023-12-31 23:59:59.999'),
+       (124, 'reason2', '2281', 'CONTACTCENTER', '2023-12-31 23:59:59.999', '2023-12-31 23:59:59.999'),
+       (127, 'reason3', '2281', 'CONTACTCENTER', '2023-12-31 23:59:59.999', '2023-12-31 23:59:59.999'),
+       (125, 'reason3', '2281', 'namespace_2', '2023-12-31 23:59:59.999', '2023-12-31 23:59:59.999'),
+       (126, 'reason4', '2281', 'namespace_2', '2023-12-31 23:59:59.999', '2023-12-31 23:59:59.999'),
+       (128, 'reason5', '2281', 'NAMESPACE.1', '2023-12-31 23:59:59.999', '2023-12-31 23:59:59.999');
 
 -------------------------------------
 -- Email integration config

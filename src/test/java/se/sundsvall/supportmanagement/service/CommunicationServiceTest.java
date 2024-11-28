@@ -30,9 +30,6 @@ import java.util.Base64.Decoder;
 import java.util.List;
 import java.util.Optional;
 
-import jakarta.servlet.ServletOutputStream;
-import jakarta.servlet.http.HttpServletResponse;
-
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -44,6 +41,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.zalando.problem.Problem;
 import org.zalando.problem.ThrowableProblem;
 
+import generated.se.sundsvall.messaging.ExternalReference;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.http.HttpServletResponse;
 import se.sundsvall.supportmanagement.api.model.communication.Communication;
 import se.sundsvall.supportmanagement.api.model.communication.EmailAttachment;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
@@ -52,7 +52,6 @@ import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.CommunicationAttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.CommunicationRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
-import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationAttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationAttachmentEntity;
@@ -61,37 +60,22 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.messaging.MessagingClient;
 import se.sundsvall.supportmanagement.service.mapper.CommunicationMapper;
 
-import generated.se.sundsvall.messaging.ExternalReference;
-
 @ExtendWith(MockitoExtension.class)
 class CommunicationServiceTest {
 
 	private static final Decoder BASE64_DECODER = Base64.getDecoder();
-
 	private static final String NAMESPACE = "namespace";
-
 	private static final String MUNICIPALITY_ID = "municipalityId";
-
 	private static final String ERRAND_ID = randomUUID().toString();
-
 	private static final String HTML_MESSAGE = "<html><h1>message</h1></html>";
-
 	private static final String PLAIN_MESSAGE = "message";
-
 	private static final String RECIPIENT = "recipient";
-
 	private static final String SENDER_EMAIL = "sender@sender.com";
-
 	private static final String SENDER_NAME = "senderName";
-
 	private static final String SUBJECT = "subject";
-
 	private static final String FILE_CONTENT = "iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==";
-
 	private static final String FILE_NAME = "fileName";
-
 	private static final String ERRAND_ID_KEY = "errandId";
-
 	private static final String MESSAGE_ID = "MESSAGE_ID";
 
 	@Mock
@@ -116,16 +100,13 @@ class CommunicationServiceTest {
 	private ErrandEntity errandEntityMock;
 
 	@Mock
-	private CommunicationAttachmentEntity communicationAttachmentEntity;
+	private CommunicationEntity communicationEntityMock;
 
 	@Mock
-	private CommunicationAttachmentDataEntity messageAttachmentDataMock;
+	private CommunicationAttachmentEntity communicationAttachmentEntityMock;
 
 	@Mock
-	private AttachmentEntity attachmentMock;
-
-	@Mock
-	private AttachmentDataEntity attachmentDataMock;
+	private CommunicationAttachmentDataEntity communicationAttachmentDataEntityMock;
 
 	@Captor
 	private ArgumentCaptor<generated.se.sundsvall.messaging.EmailRequest> messagingEmailCaptor;
@@ -178,7 +159,6 @@ class CommunicationServiceTest {
 		when(communicationRepositoryMock.findByErrandNumber(any(String.class))).thenReturn(List.of(CommunicationEntity.create()));
 		when(communicationMapperMock.toCommunications(anyList())).thenReturn(List.of(Communication.create()));
 
-
 		// Call
 		final var response = service.readCommunications(namespace, municipalityId, id);
 
@@ -227,29 +207,37 @@ class CommunicationServiceTest {
 	void getMessageAttachmentStreamed() throws SQLException, IOException {
 		// Parameter values
 		final var attachmentId = "attachmentId";
+		final var communicationId = "communicationId";
 		final var content = "content";
 		final var contentType = "contentType";
 		final var fileName = "fileName";
+		final var errandNumber = "errandNumber";
 		final var inputStream = IOUtils.toInputStream(content, UTF_8);
 
 		// Mock
-		when(attachmentRepositoryMock.findByNamespaceAndMunicipalityIdAndId(any(), any(), any())).thenReturn(Optional.empty());
-		when(communicationAttachmentRepositoryMock.findByNamespaceAndMunicipalityIdAndId(eq(NAMESPACE), eq(MUNICIPALITY_ID), any())).thenReturn(Optional.of(communicationAttachmentEntity));
-		when(communicationAttachmentEntity.getContentType()).thenReturn(contentType);
-		when(communicationAttachmentEntity.getName()).thenReturn(fileName);
-		when(communicationAttachmentEntity.getAttachmentData()).thenReturn(messageAttachmentDataMock);
-		when(messageAttachmentDataMock.getFile()).thenReturn(blobMock);
+		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
+		when(errandsRepositoryMock.findById(ERRAND_ID)).thenReturn(Optional.of(errandEntityMock));
+		when(errandEntityMock.getErrandNumber()).thenReturn(errandNumber);
+		when(communicationAttachmentRepositoryMock.findByNamespaceAndMunicipalityIdAndCommunicationEntityIdAndId(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(communicationId), any())).thenReturn(Optional.of(communicationAttachmentEntityMock));
+		when(communicationAttachmentEntityMock.getContentType()).thenReturn(contentType);
+		when(communicationAttachmentEntityMock.getName()).thenReturn(fileName);
+		when(communicationAttachmentEntityMock.getAttachmentData()).thenReturn(communicationAttachmentDataEntityMock);
+		when(communicationAttachmentDataEntityMock.getFile()).thenReturn(blobMock);
+		when(communicationAttachmentEntityMock.getCommunicationEntity()).thenReturn(communicationEntityMock);
+		when(communicationEntityMock.getErrandNumber()).thenReturn(errandNumber);
 		when(blobMock.length()).thenReturn((long) content.length());
 		when(blobMock.getBinaryStream()).thenReturn(inputStream);
 		when(servletResponseMock.getOutputStream()).thenReturn(servletOutputStreamMock);
 
 		// Call
-		service.getMessageAttachmentStreamed(NAMESPACE, MUNICIPALITY_ID, attachmentId, servletResponseMock);
+		service.getMessageAttachmentStreamed(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, communicationId, attachmentId, servletResponseMock);
 
 		// Verification
-		verify(communicationAttachmentRepositoryMock).findByNamespaceAndMunicipalityIdAndId(NAMESPACE, MUNICIPALITY_ID, attachmentId);
-		verify(communicationAttachmentEntity).getAttachmentData();
-		verify(messageAttachmentDataMock).getFile();
+		verify(errandsRepositoryMock).findById(ERRAND_ID);
+		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
+		verify(communicationAttachmentRepositoryMock).findByNamespaceAndMunicipalityIdAndCommunicationEntityIdAndId(NAMESPACE, MUNICIPALITY_ID, communicationId, attachmentId);
+		verify(communicationAttachmentEntityMock).getAttachmentData();
+		verify(communicationAttachmentDataEntityMock).getFile();
 		verify(blobMock).length();
 		verify(blobMock).getBinaryStream();
 		verify(servletResponseMock).addHeader(CONTENT_TYPE, contentType);
@@ -257,24 +245,24 @@ class CommunicationServiceTest {
 		verify(servletResponseMock).setContentLength(content.length());
 		verify(servletResponseMock).getOutputStream();
 
-		verifyNoMoreInteractions(communicationAttachmentRepositoryMock, communicationAttachmentEntity, messageAttachmentDataMock, blobMock, servletResponseMock);
-		verifyNoInteractions(errandsRepositoryMock, communicationRepositoryMock, messagingClientMock, communicationMapperMock);
+		verifyNoMoreInteractions(communicationAttachmentRepositoryMock, communicationAttachmentEntityMock, communicationAttachmentDataEntityMock, blobMock, servletResponseMock);
+		verifyNoInteractions(communicationRepositoryMock, messagingClientMock, communicationMapperMock);
 	}
 
 	@Test
-	void streamAttachmentData_Success() throws IOException, SQLException {
+	void streamAttachmentDataSuccess() throws IOException, SQLException {
 		final byte[] fileContent = "file content".getBytes();
 		final ByteArrayInputStream inputStream = new ByteArrayInputStream(fileContent);
 
 		when(servletResponseMock.getOutputStream()).thenReturn(servletOutputStreamMock);
-		when(attachmentMock.getAttachmentData()).thenReturn(attachmentDataMock);
-		when(attachmentDataMock.getFile()).thenReturn(blobMock);
+		when(communicationAttachmentEntityMock.getAttachmentData()).thenReturn(communicationAttachmentDataEntityMock);
+		when(communicationAttachmentDataEntityMock.getFile()).thenReturn(blobMock);
 		when(blobMock.length()).thenReturn((long) fileContent.length);
 		when(blobMock.getBinaryStream()).thenReturn(inputStream);
-		when(attachmentMock.getMimeType()).thenReturn("application/pdf");
-		when(attachmentMock.getFileName()).thenReturn("test.pdf");
+		when(communicationAttachmentEntityMock.getContentType()).thenReturn("application/pdf");
+		when(communicationAttachmentEntityMock.getName()).thenReturn("test.pdf");
 
-		service.streamAttachmentData(attachmentMock, servletResponseMock);
+		service.streamCommunicationAttachmentData(communicationAttachmentEntityMock, servletResponseMock);
 
 		verify(servletResponseMock).addHeader(CONTENT_TYPE, "application/pdf");
 		verify(servletResponseMock).addHeader(CONTENT_DISPOSITION, "attachment; filename=\"test.pdf\"");
@@ -283,14 +271,14 @@ class CommunicationServiceTest {
 	}
 
 	@Test
-	void streamAttachmentData_ThrowsSQLException() throws SQLException {
+	void streamAttachmentDataThrowsSQLException() throws SQLException {
 		final byte[] fileContent = "file content".getBytes();
-		when(attachmentMock.getAttachmentData()).thenReturn(attachmentDataMock);
-		when(attachmentDataMock.getFile()).thenReturn(blobMock);
+		when(communicationAttachmentEntityMock.getAttachmentData()).thenReturn(communicationAttachmentDataEntityMock);
+		when(communicationAttachmentDataEntityMock.getFile()).thenReturn(blobMock);
 		when(blobMock.length()).thenReturn((long) fileContent.length);
 		when(blobMock.getBinaryStream()).thenThrow(new SQLException("Test SQLException"));
 
-		assertThatThrownBy(() -> service.streamAttachmentData(attachmentMock, servletResponseMock))
+		assertThatThrownBy(() -> service.streamCommunicationAttachmentData(communicationAttachmentEntityMock, servletResponseMock))
 			.isInstanceOf(Problem.class)
 			.hasMessageContaining("SQLException occurred when copying file with attachment id");
 
@@ -338,11 +326,9 @@ class CommunicationServiceTest {
 			generated.se.sundsvall.messaging.EmailAttachment::getName).containsExactly(tuple(FILE_CONTENT, IMAGE_PNG_VALUE, FILE_NAME));
 		assertThat(arguments.getHeaders().get(MESSAGE_ID)).isNotNull().hasSize(1).extracting(String::toString).allMatch(s -> s.startsWith("<") && s.contains("@") && s.contains(NAMESPACE) && s.endsWith(">"));
 
-
 		// Verification
 		verifyNoMoreInteractions(errandsRepositoryMock, messagingClientMock, communicationMapperMock, communicationRepositoryMock);
 		verifyNoInteractions(communicationAttachmentRepositoryMock);
-
 
 	}
 
@@ -380,8 +366,6 @@ class CommunicationServiceTest {
 
 		verifyNoMoreInteractions(communicationRepositoryMock, errandsRepositoryMock, messagingClientMock, communicationMapperMock);
 		verifyNoInteractions(communicationAttachmentRepositoryMock);
-
-
 	}
 
 	@Test
@@ -396,7 +380,6 @@ class CommunicationServiceTest {
 		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 		verifyNoMoreInteractions(errandsRepositoryMock);
 		verifyNoInteractions(communicationRepositoryMock, communicationAttachmentRepositoryMock, messagingClientMock, communicationMapperMock);
-
 
 		assertThat(exception.getStatus()).isEqualTo(NOT_FOUND);
 		assertThat(exception.getTitle()).isEqualTo(NOT_FOUND.getReasonPhrase());
@@ -419,7 +402,5 @@ class CommunicationServiceTest {
 		verify(communicationRepositoryMock).save(any(CommunicationEntity.class));
 		verifyNoMoreInteractions(communicationRepositoryMock);
 		verifyNoInteractions(errandsRepositoryMock, communicationAttachmentRepositoryMock, messagingClientMock, communicationMapperMock);
-
 	}
-
 }

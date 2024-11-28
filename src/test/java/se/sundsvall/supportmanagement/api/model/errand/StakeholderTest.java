@@ -10,8 +10,6 @@ import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.util.List;
-import java.util.Map;
-
 import org.junit.jupiter.api.Test;
 
 class StakeholderTest {
@@ -40,7 +38,7 @@ class StakeholderTest {
 		final var city = "city";
 		final var organizationName = "organizationName";
 		final var contactChannel = ContactChannel.create();
-		final var metadata = Map.of("key", "value");
+		final var parameters = List.of(Parameter.create());
 
 		final var bean = Stakeholder.create()
 			.withExternalId(externalId)
@@ -55,7 +53,7 @@ class StakeholderTest {
 			.withCity(city)
 			.withOrganizationName(organizationName)
 			.withContactChannels(List.of(contactChannel))
-			.withMetadata(metadata);
+			.withParameters(parameters);
 
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(bean.getExternalId()).isEqualTo(externalId);
@@ -70,7 +68,7 @@ class StakeholderTest {
 		assertThat(bean.getCity()).isEqualTo(city);
 		assertThat(bean.getOrganizationName()).isEqualTo(organizationName);
 		assertThat(bean.getContactChannels()).containsExactly(contactChannel);
-		assertThat(bean.getMetadata()).isEqualTo(metadata);
+		assertThat(bean.getParameters()).isEqualTo(parameters);
 	}
 
 	@Test
@@ -78,5 +76,4 @@ class StakeholderTest {
 		assertThat(Stakeholder.create()).hasAllNullFieldsOrProperties();
 		assertThat(new Stakeholder()).hasAllNullFieldsOrProperties();
 	}
-
 }

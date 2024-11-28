@@ -31,9 +31,6 @@ integration:
   web-message-collector:
     connectTimeout: 5
     readTimeout: 30
-  web-message-sender:
-    connectTimeout: 5
-    readTimeout: 30
 logbook:
   body-filters:
     jsonPath:
@@ -48,6 +45,9 @@ openapi:
   name: ${spring.application.name}
   title: ${spring.application.name}
   version: '@project.version@'
+springdoc:
+  swagger-ui:
+    operationsSorter: alpha
 resilience4j:
   circuitbreaker:
     instances:
@@ -93,9 +93,6 @@ spring:
           web-message-collector:
             authorization-grant-type: client_credentials
             provider: web-message-collector
-          web-message-sender:
-            authorization-grant-type: client_credentials
-            provider: web-message-sender
   servlet:
     multipart:
       max-file-size: 10MB

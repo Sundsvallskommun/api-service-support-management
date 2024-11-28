@@ -18,6 +18,24 @@
 					"type": "Email",
 					"value": "arthur.dent@earth.com"
 				}
+			],
+			"parameters": [
+				{
+					"key": "some-other-key",
+					"displayName": "Some other key",
+					"values": [
+						"some other value"
+					]
+				},
+				{
+					"key": "the-key",
+					"values": [
+						"value1",
+						"value2",
+						"value3",
+						"value4"
+					]
+				}
 			]
 		}
 	],
@@ -55,12 +73,12 @@
 	"reporterUserId": "REPORTER_USER_ID-3",
 	"assignedUserId": "ASSIGNED_USER_ID-3",
 	"assignedGroupId": "ASSIGNED_GROUP_ID-3",
-	"suspension": {},
-	"businessRelated": true,
 	"contactReason": "reason5",
 	"contactReasonDescription": "This is an updated contact reason description",
+	"suspension": {},
+	"businessRelated": true,
 	"labels": [],
-	"created": "${json-unit.any-string}",
+	"created": "2022-03-01T12:00:00+01:00",
 	"modified": "${json-unit.any-string}",
-	"touched": "${json-unit.any-string}"
+	"touched": "2022-03-01T12:00:00+01:00"
 }

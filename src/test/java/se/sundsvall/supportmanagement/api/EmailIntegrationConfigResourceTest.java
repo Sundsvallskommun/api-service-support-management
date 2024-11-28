@@ -30,7 +30,7 @@ import se.sundsvall.supportmanagement.service.config.EmailIntegrationConfigServi
 @ActiveProfiles("junit")
 class EmailIntegrationConfigResourceTest {
 
-	private static final String PATH = "/{municipalityId}/{namespace}/emailIntegrationConfig";
+	private static final String PATH = "/{municipalityId}/{namespace}/email-integration-config";
 
 	private static final String NAMESPACE = "namespace";
 
@@ -61,7 +61,7 @@ class EmailIntegrationConfigResourceTest {
 			.exchange()
 			.expectStatus().isCreated()
 			.expectHeader().contentType(ALL)
-			.expectHeader().location("/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/emailIntegrationConfig")
+			.expectHeader().location("/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/email-integration-config")
 			.expectBody().isEmpty();
 
 		verify(serviceMock).create(emailConfig, NAMESPACE, MUNICIPALITY_ID);

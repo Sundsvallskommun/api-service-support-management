@@ -37,11 +37,10 @@ class MetadataContactReasonResourceFailureTest {
 
 	private static Stream<Arguments> createContactReasonArgumentProvider() {
 		return Stream.of(
-			Arguments.of(ContactReason.create().withReason(""),  "2281", "namespace","reason", "must not be blank"),
-			Arguments.of(ContactReason.create().withReason(null),  "2281", "namespace","reason", "must not be blank"),
-			Arguments.of(ContactReason.create().withReason("reason"), "2281","#not-a-valid-namespace",  "createContactReason.namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."),
-			Arguments.of(ContactReason.create().withReason("reason"),  "not-a-valid-municipalityId", "namespace","createContactReason.municipalityId", "not a valid municipality ID")
-		);
+			Arguments.of(ContactReason.create().withReason(""), "2281", "namespace", "reason", "must not be blank"),
+			Arguments.of(ContactReason.create().withReason(null), "2281", "namespace", "reason", "must not be blank"),
+			Arguments.of(ContactReason.create().withReason("reason"), "2281", "#not-a-valid-namespace", "createContactReason.namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."),
+			Arguments.of(ContactReason.create().withReason("reason"), "not-a-valid-municipalityId", "namespace", "createContactReason.municipalityId", "not a valid municipality ID"));
 	}
 
 	@ParameterizedTest
@@ -62,6 +61,5 @@ class MetadataContactReasonResourceFailureTest {
 		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactly(tuple(field, message));
 
 		verifyNoInteractions(metadataServiceMock);
-
 	}
 }

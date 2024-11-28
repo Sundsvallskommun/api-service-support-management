@@ -1,37 +1,26 @@
 package se.sundsvall.supportmanagement.service.scheduler.webmessagecollector;
 
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
-import static java.util.Collections.emptyMap;
-import static java.util.stream.Collectors.toMap;
-import static se.sundsvall.supportmanagement.Constants.ERRAND_STATUS_ONGOING;
-import static se.sundsvall.supportmanagement.Constants.ERRAND_STATUS_SOLVED;
+import static se.sundsvall.supportmanagement.integration.db.specification.ErrandSpecification.hasMatchingTags;
 
-import java.time.OffsetDateTime;
+import generated.se.sundsvall.webmessagecollector.MessageDTO;
+
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Optional;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-
 import se.sundsvall.supportmanagement.integration.db.CommunicationRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationAttachmentEntity;
+import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.webmessagecollector.WebMessageCollectorClient;
-import se.sundsvall.supportmanagement.integration.webmessagecollector.configuration.WebMessageCollectorProperties;
 import se.sundsvall.supportmanagement.service.EventService;
-
-import generated.se.sundsvall.webmessagecollector.MessageDTO;
 
 @Component
 public class WebMessageCollectorWorker {
 
-	private static final Logger LOG = LoggerFactory.getLogger(WebMessageCollectorWorker.class);
 	private static final String EVENT_LOG_COMMUNICATION = "Ärendekommunikation har skapats.";
 
 	private final WebMessageCollectorClient webMessageCollectorClient;
@@ -55,10 +44,14 @@ public class WebMessageCollectorWorker {
 
 	@Transactional
 	public void processMessage(MessageDTO message, String municipalityId) {
-		var entity = errandsRepository.findByExternalTagsValue(message.getExternalCaseId());
+
+		final var entity = errandsRepository.findOne(hasMatchingTags(List.of(
+			DbExternalTag.create().withKey("caseId").withValue(message.getExternalCaseId()),
+			DbExternalTag.create().withKey("familyId").withValue(message.getFamilyId()))));
 
 		if (entity.isPresent()) {
 			entity
+				.filter(errand -> !communicationRepository.existsByErrandNumberAndExternalId(errand.getErrandNumber(), message.getMessageId()))
 				.map(errand -> processMessage(message, errand))
 				.stream()
 				.flatMap(Collection::stream)

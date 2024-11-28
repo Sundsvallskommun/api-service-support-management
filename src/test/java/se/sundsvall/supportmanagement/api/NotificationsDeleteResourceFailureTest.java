@@ -1,6 +1,8 @@
 package se.sundsvall.supportmanagement.api;
 
+import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.groups.Tuple.tuple;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
@@ -14,7 +16,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.zalando.problem.Problem;
 import org.zalando.problem.violations.ConstraintViolationProblem;
-
+import org.zalando.problem.violations.Violation;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.service.NotificationService;
 
@@ -22,14 +24,11 @@ import se.sundsvall.supportmanagement.service.NotificationService;
 @ActiveProfiles("junit")
 class NotificationsDeleteResourceFailureTest {
 
-	private static final String PATH = "/{municipalityId}/{namespace}/notifications/{notificationId}";
-
+	private static final String PATH = "/{municipalityId}/{namespace}/errands/{errandId}/notifications/{notificationId}";
 	private static final String NAMESPACE = "namespace";
-
 	private static final String MUNICIPALITY_ID = "2281";
-
 	private static final String NOTIFICATION_ID = "123e4567-e89b-12d3-a456-426614174000";
-
+	private static final String ERRAND_ID = randomUUID().toString();
 	private static final String INVALID = "#invalid#";
 
 	@MockBean
@@ -42,7 +41,7 @@ class NotificationsDeleteResourceFailureTest {
 	void deleteNotificationWithInvalidNamespace() {
 		// Call
 		final var response = webTestClient.delete()
-			.uri(builder -> builder.path(PATH).build(INVALID, MUNICIPALITY_ID, NOTIFICATION_ID))
+			.uri(builder -> builder.path(PATH).build(INVALID, MUNICIPALITY_ID, ERRAND_ID, NOTIFICATION_ID))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -51,6 +50,7 @@ class NotificationsDeleteResourceFailureTest {
 
 		// Verification
 		assertThat(response).isNotNull();
+
 		verifyNoInteractions(notificationServiceMock);
 	}
 
@@ -58,7 +58,7 @@ class NotificationsDeleteResourceFailureTest {
 	void deleteNotificationWithInvalidMunicipalityId() {
 		// Call
 		final var response = webTestClient.delete()
-			.uri(builder -> builder.path(PATH).build(NAMESPACE, INVALID, NOTIFICATION_ID))
+			.uri(builder -> builder.path(PATH).build(NAMESPACE, INVALID, ERRAND_ID, NOTIFICATION_ID))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -68,27 +68,49 @@ class NotificationsDeleteResourceFailureTest {
 		// Verification
 		assertThat(response).isNotNull();
 		assertThat(response.getViolations()).isNotEmpty();
+
+		verifyNoInteractions(notificationServiceMock);
+	}
+
+	@Test
+	void deleteNotificationWithInvalidErrandId() {
+
+		// Call
+		final var response = webTestClient.delete()
+			.uri(builder -> builder.path(PATH).build(MUNICIPALITY_ID, NAMESPACE, INVALID, NOTIFICATION_ID))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		// Verification
+		assertThat(response).isNotNull();
+		assertThat(response.getViolations()).isNotEmpty();
+
 		verifyNoInteractions(notificationServiceMock);
 	}
 
 	@Test
 	void deleteNotificationWithInvalidNotificationId() {
 
-		doThrow(Problem.valueOf(NOT_FOUND, "Notification id not found")).when(notificationServiceMock).deleteNotification(MUNICIPALITY_ID, NAMESPACE, INVALID);
+		doThrow(Problem.valueOf(NOT_FOUND, "Notification id not found")).when(notificationServiceMock).deleteNotification(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, INVALID);
+
 		// Call
 		final var response = webTestClient.delete()
-			.uri(builder -> builder.path(PATH).build(MUNICIPALITY_ID,NAMESPACE, INVALID))
+			.uri(builder -> builder.path(PATH).build(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, INVALID))
 			.exchange()
-			.expectStatus().isNotFound()
-			.expectBody(Problem.class)
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
 			.returnResult()
 			.getResponseBody();
 
 		// Verification
 		assertThat(response).isNotNull();
-		assertThat(response.getStatus()).isEqualTo(NOT_FOUND);
-		assertThat(response.getDetail()).isEqualTo("Notification id not found");
 
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getViolations())
+			.extracting(Violation::getField, Violation::getMessage)
+			.containsExactly(tuple("deleteNotification.notificationId", "not a valid UUID"));
 	}
-
 }

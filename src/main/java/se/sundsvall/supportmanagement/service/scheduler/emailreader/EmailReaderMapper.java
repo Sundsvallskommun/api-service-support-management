@@ -67,7 +67,7 @@ public class EmailReaderMapper {
 			.withMunicipalityId(errand.getMunicipalityId())
 			.withErrandNumber(errand.getErrandNumber())
 			.withDirection(Direction.INBOUND)
-			.withExternalCaseID("")
+			.withExternalId("")
 			.withSubject(email.getSubject())
 			.withMessageBody(email.getMessage())
 			.withSender(email.getSender())

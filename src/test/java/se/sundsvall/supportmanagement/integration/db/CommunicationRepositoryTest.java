@@ -40,7 +40,7 @@ class CommunicationRepositoryTest {
 			.withSender("sender")
 			.withErrandNumber("errandNumber")
 			.withDirection(Direction.INBOUND)
-			.withExternalCaseID("externalCaseID")
+			.withExternalId("externalCaseID")
 			.withSubject("subject")
 			.withMessageBody("messageBody")
 			.withSent(OffsetDateTime.now())
@@ -58,7 +58,7 @@ class CommunicationRepositoryTest {
 		assertThat(persistedEntity.getSender()).isEqualTo("sender");
 		assertThat(persistedEntity.getErrandNumber()).isEqualTo("errandNumber");
 		assertThat(persistedEntity.getDirection()).isEqualTo(Direction.INBOUND);
-		assertThat(persistedEntity.getExternalCaseID()).isEqualTo("externalCaseID");
+		assertThat(persistedEntity.getExternalId()).isEqualTo("externalCaseID");
 		assertThat(persistedEntity.getSubject()).isEqualTo("subject");
 		assertThat(persistedEntity.getMessageBody()).isEqualTo("messageBody");
 		assertThat(persistedEntity.getSent()).isCloseTo(OffsetDateTime.now(), within(2, SECONDS));
@@ -91,6 +91,12 @@ class CommunicationRepositoryTest {
 
 		// Assertions
 		assertThat(communicationRepository.findById("communicationID")).isNotPresent();
+	}
+
+	@Test
+	void existsByErrandNumberAndExternalId() {
+		assertThat(communicationRepository.existsByErrandNumberAndExternalId("errand1", "case1")).isTrue();
+		assertThat(communicationRepository.existsByErrandNumberAndExternalId("errand1", "case2")).isFalse();
 	}
 
 }

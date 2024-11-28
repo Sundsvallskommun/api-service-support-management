@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.integration.messaging;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static se.sundsvall.supportmanagement.integration.messaging.configuration.MessagingConfiguration.CLIENT_ID;
 
+import generated.se.sundsvall.messaging.WebMessageRequest;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -45,4 +46,10 @@ public interface MessagingClient {
 		@PathVariable("municipalityId") final String municipalityId,
 		@RequestParam("async") final boolean sendAsynchronously,
 		@RequestBody final SmsRequest smsRequest);
+
+	@PostMapping(path = "/{municipalityId}/webmessage", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
+	MessageResult sendWebMessage(
+		@PathVariable("municipalityId") final String municipalityId,
+		@RequestParam("async") final boolean sendAsynchronously,
+		@RequestBody final WebMessageRequest webMessageRequest);
 }

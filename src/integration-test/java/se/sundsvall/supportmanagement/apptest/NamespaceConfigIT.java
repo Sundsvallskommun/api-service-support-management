@@ -32,16 +32,11 @@ import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
 class NamespaceConfigIT extends AbstractAppTest {
 
 	private static final String REQUEST_FILE = "request.json";
-
 	private static final String RESPONSE_FILE = "response.json";
-
 	private static final String NAMESPACE_1 = "NAMESPACE.1";
-
 	private static final String NAMESPACE_2 = "NAMESPACE.2";
-
 	private static final String MUNICIPALITY_ID = "2281";
-
-	private static final Function<String, String> PATH = namespace -> "/" + MUNICIPALITY_ID + "/" + namespace + "/namespaceConfig";
+	private static final Function<String, String> PATH = namespace -> "/" + MUNICIPALITY_ID + "/" + namespace + "/namespace-config";
 
 	@Autowired
 	private NamespaceConfigRepository repository;
@@ -119,7 +114,7 @@ class NamespaceConfigIT extends AbstractAppTest {
 	@Test
 	void test05_getAllConfigsFilteredByMunicipality() {
 		setupCall()
-			.withServicePath("/namespaceConfigs?municipalityId=" + MUNICIPALITY_ID)
+			.withServicePath("/namespace-configs?municipalityId=" + MUNICIPALITY_ID)
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
@@ -130,12 +125,11 @@ class NamespaceConfigIT extends AbstractAppTest {
 	@Test
 	void test06_getAllConfigs() {
 		setupCall()
-			.withServicePath("/namespaceConfigs")
+			.withServicePath("/namespace-configs")
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 	}
-
 }

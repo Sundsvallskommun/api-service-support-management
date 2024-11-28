@@ -33,16 +33,16 @@
         viewed bit,
         sent datetime(6),
         errand_number varchar(255),
-        external_case_id varchar(255),
+        external_id varchar(255),
         id varchar(255) not null,
         municipality_id varchar(255),
         namespace varchar(255),
         sender varchar(255),
         subject varchar(255),
         target varchar(255),
+        type varchar(255) not null,
         direction enum ('INBOUND','OUTBOUND'),
         message_body longtext,
-        type enum ('EMAIL','SMS'),
         primary key (id)
     ) engine=InnoDB;
 
@@ -270,11 +270,17 @@
         primary key (id)
     ) engine=InnoDB;
 
-    create table stakeholder_metadata (
+    create table stakeholder_parameter (
+        id bigint not null auto_increment,
         stakeholder_id bigint not null,
-        metadata varchar(255),
-        metadata_key varchar(255) not null,
-        primary key (stakeholder_id, metadata_key)
+        display_name varchar(255),
+        parameters_key varchar(255),
+        primary key (id)
+    ) engine=InnoDB;
+
+    create table stakeholder_parameter_values (
+        stakeholder_parameter_id bigint not null,
+        value varchar(255)
     ) engine=InnoDB;
 
     create table status (
@@ -320,7 +326,7 @@
         primary key (id)
     ) engine=InnoDB;
 
-	create table web_message_collect (
+    create table web_message_collect (
         id bigint not null auto_increment,
         instance varchar(255) not null,
         municipality_id varchar(255) not null,
@@ -328,7 +334,7 @@
         primary key (id)
     ) engine=InnoDB;
 
-	create table web_message_collect_family_ids (
+    create table web_message_collect_family_ids (
         web_message_collect_id bigint not null,
         family_id varchar(255)
     ) engine=InnoDB;
@@ -477,8 +483,8 @@
     alter table if exists validation 
        add constraint uq_namespace_municipality_id_type unique (namespace, municipality_id, type);
 
-	alter table if exists web_message_collect
-           add constraint uq_namespace_municipality_id_instance_family_id unique (namespace, municipality_id, instance);
+    alter table if exists web_message_collect 
+       add constraint uq_namespace_municipality_id_instance_family_id unique (namespace, municipality_id, instance);
 
     alter table if exists attachment 
        add constraint fk_attachment_data_attachment 
@@ -560,10 +566,15 @@
        foreign key (errand_id) 
        references errand (id);
 
-    alter table if exists stakeholder_metadata 
-       add constraint fk_stakeholder_metadata_stakeholder_id 
+    alter table if exists stakeholder_parameter 
+       add constraint fk_stakeholder_parameter_stakeholder_id 
        foreign key (stakeholder_id) 
        references stakeholder (id);
+
+    alter table if exists stakeholder_parameter_values 
+       add constraint fk_stakeholder_parameter_values_stakeholder_parameter_id 
+       foreign key (stakeholder_parameter_id) 
+       references stakeholder_parameter (id);
 
     alter table if exists time_measurement 
        add constraint fk_errand_time_measure_errand_id 
@@ -575,7 +586,7 @@
        foreign key (category_id) 
        references category (id);
 
-	alter table if exists web_message_collect_family_ids
-       add constraint fk_web_message_collect_family_ids_web_message_collect_id
-       foreign key (web_message_collect_id)
+    alter table if exists web_message_collect_family_ids 
+       add constraint fk_web_message_collect_family_ids_web_message_collect_id 
+       foreign key (web_message_collect_id) 
        references web_message_collect (id);
