@@ -10,7 +10,7 @@ import se.sundsvall.dept44.common.validators.annotation.ValidBase64;
 import se.sundsvall.supportmanagement.api.validation.ValidFileSize;
 
 @Schema(description = "EmailAttachment model")
-public class EmailAttachment {
+public class EmailAttachment implements RequestAttachment {
 
 	@NotBlank
 	@Schema(description = "The attachment filename", example = "test.txt", requiredMode = REQUIRED)

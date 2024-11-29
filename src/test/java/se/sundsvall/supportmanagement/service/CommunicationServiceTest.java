@@ -10,6 +10,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -37,6 +38,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.zalando.problem.Problem;
 import org.zalando.problem.ThrowableProblem;
@@ -48,6 +51,8 @@ import se.sundsvall.supportmanagement.api.model.communication.Communication;
 import se.sundsvall.supportmanagement.api.model.communication.EmailAttachment;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
 import se.sundsvall.supportmanagement.api.model.communication.SmsRequest;
+import se.sundsvall.supportmanagement.api.model.communication.WebMessageAttachment;
+import se.sundsvall.supportmanagement.api.model.communication.WebMessageRequest;
 import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.CommunicationAttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.CommunicationRepository;
@@ -59,6 +64,7 @@ import se.sundsvall.supportmanagement.integration.db.model.CommunicationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.messaging.MessagingClient;
 import se.sundsvall.supportmanagement.service.mapper.CommunicationMapper;
+import se.sundsvall.supportmanagement.service.mapper.MessagingMapper;
 
 @ExtendWith(MockitoExtension.class)
 class CommunicationServiceTest {
@@ -77,6 +83,7 @@ class CommunicationServiceTest {
 	private static final String FILE_NAME = "fileName";
 	private static final String ERRAND_ID_KEY = "errandId";
 	private static final String MESSAGE_ID = "MESSAGE_ID";
+	private static final String ATTACHMENT_ID = "attachmentId";
 
 	@Mock
 	private ErrandsRepository errandsRepositoryMock;
@@ -126,6 +133,12 @@ class CommunicationServiceTest {
 	@Mock
 	private ErrandAttachmentService errandAttachmentServiceMock;
 
+	@Mock
+	private List<AttachmentEntity> attachmentEntitiesMock;
+
+	@Mock
+	private AttachmentEntity attachmentEntityMock;
+
 	@InjectMocks
 	private CommunicationService service;
 
@@ -140,6 +153,15 @@ class CommunicationServiceTest {
 			.withSender(SENDER_EMAIL)
 			.withSenderName(SENDER_NAME)
 			.withSubject(SUBJECT);
+	}
+
+	private static WebMessageRequest createWebMessageRequest() {
+		return WebMessageRequest.create()
+			.withMessage(PLAIN_MESSAGE)
+			.withAttachments(List.of(WebMessageAttachment.create()
+				.withBase64EncodedString(FILE_CONTENT)
+				.withName(FILE_NAME)))
+			.withAttachmentIds(List.of(ATTACHMENT_ID));
 	}
 
 	@Test
@@ -365,6 +387,50 @@ class CommunicationServiceTest {
 		assertThat(arguments.getSender()).isEqualTo(SENDER_NAME);
 
 		verifyNoMoreInteractions(communicationRepositoryMock, errandsRepositoryMock, messagingClientMock, communicationMapperMock);
+		verifyNoInteractions(communicationAttachmentRepositoryMock);
+	}
+
+	@Test
+	void sendWebMessage() {
+		// Parameter values
+		final var request = createWebMessageRequest();
+		final var webMessageRequest = new generated.se.sundsvall.messaging.WebMessageRequest();
+
+		// Mock
+		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
+		when(errandsRepositoryMock.findById(ERRAND_ID)).thenReturn(Optional.of(errandEntityMock));
+		when(errandAttachmentServiceMock.findByNamespaceAndMunicipalityIdAndIdIn(any(), any(), any())).thenReturn(attachmentEntitiesMock);
+		when(errandEntityMock.getErrandNumber()).thenReturn(ERRAND_ID_KEY);
+		when(communicationMapperMock.toCommunicationEntity(any(), any(), any(), any())).thenReturn(communicationEntityMock);
+		when(communicationEntityMock.withErrandAttachments(any())).thenReturn(communicationEntityMock);
+		when(communicationMapperMock.toAttachments(any())).thenReturn(List.of(attachmentEntityMock));
+		when(attachmentEntityMock.withErrandEntity(any())).thenReturn(attachmentEntityMock);
+
+		try (MockedStatic<MessagingMapper> messagingMapper = Mockito.mockStatic(MessagingMapper.class)) {
+			// Mock static
+			messagingMapper.when(() -> MessagingMapper.toWebMessageRequest(any(), any(), any())).thenReturn(webMessageRequest);
+
+			// Call
+			service.sendWebMessage(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, request);
+
+			// Verify static
+			messagingMapper.verify(() -> MessagingMapper.toWebMessageRequest(same(errandEntityMock), same(request), same(attachmentEntitiesMock)));
+			messagingMapper.verifyNoMoreInteractions();
+		}
+
+		// Verifications
+		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
+		verify(errandsRepositoryMock).findById(ERRAND_ID);
+		verify(errandAttachmentServiceMock).findByNamespaceAndMunicipalityIdAndIdIn(NAMESPACE, MUNICIPALITY_ID, List.of(ATTACHMENT_ID));
+		verify(communicationMapperMock).toCommunicationEntity(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID_KEY), same(request));
+		verify(communicationEntityMock).withErrandAttachments(same(attachmentEntitiesMock));
+		verify(messagingClientMock).sendWebMessage(eq(MUNICIPALITY_ID), eq(true), same(webMessageRequest));
+		verify(communicationRepositoryMock).save(same(communicationEntityMock));
+		verify(communicationMapperMock).toAttachments(same(communicationEntityMock));
+		verify(attachmentEntityMock).withErrandEntity(same(errandEntityMock));
+		verify(errandAttachmentServiceMock).createErrandAttachment(same(attachmentEntityMock), same(errandEntityMock));
+
+		verifyNoMoreInteractions(errandsRepositoryMock, messagingClientMock, communicationMapperMock, communicationRepositoryMock, attachmentEntityMock, communicationEntityMock, errandAttachmentServiceMock);
 		verifyNoInteractions(communicationAttachmentRepositoryMock);
 	}
 

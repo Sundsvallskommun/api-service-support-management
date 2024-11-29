@@ -1,0 +1,12 @@
+{
+  "message": "Sending data!",
+  "attachmentIds": [
+    "1c49e30d-50d9-468f-89f3-3e3b87ea93e2"
+  ],
+  "attachments": [
+    {
+      "name": "data_stuff.txt",
+      "base64EncodedString": "U28gbXVjaCBkYXRhIQo="
+    }
+  ]
+}

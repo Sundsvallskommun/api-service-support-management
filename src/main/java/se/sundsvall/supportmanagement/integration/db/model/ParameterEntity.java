@@ -118,15 +118,20 @@ public class ParameterEntity {
 
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj) { return true; }
-		if (!(obj instanceof final ParameterEntity other)) { return false; }
+		if (this == obj) {
+			return true;
+		}
+		if (!(obj instanceof final ParameterEntity other)) {
+			return false;
+		}
 		return Objects.equals(displayName, other.displayName) && Objects.equals(errandEntity, other.errandEntity) && Objects.equals(id, other.id) && Objects.equals(key, other.key) && Objects.equals(values, other.values);
 	}
 
 	@Override
 	public String toString() {
 		final StringBuilder builder = new StringBuilder();
-		builder.append("ParameterEntity [id=").append(id).append(", errandEntity=").append(errandEntity).append(", displayName=").append(displayName).append(", key=").append(key).append(", values=").append(values).append("]");
+		builder.append("ParameterEntity [id=").append(id).append(", errandEntity=").append(errandEntity == null ? "null" : errandEntity.getId()).append(", displayName=").append(displayName).append(", key=").append(key).append(", values=").append(values)
+			.append("]");
 		return builder.toString();
 	}
 }

@@ -64,7 +64,7 @@ class ErrandTimeMeasurementsIT extends AbstractAppTest {
 	@Test
 	void test02_createErrandAndGetTimeMeasurements() {
 
-		assertThat(errandsRepository.findAll()).hasSize(6);
+		assertThat(errandsRepository.findAll()).hasSize(8);
 
 		// Create errand
 		setupCall()

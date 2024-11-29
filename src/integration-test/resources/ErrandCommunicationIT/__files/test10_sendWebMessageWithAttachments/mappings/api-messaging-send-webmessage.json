@@ -1,0 +1,53 @@
+{
+  "name": "api-messaging-webmessage",
+  "request": {
+    "method": "POST",
+    "url": "/api-messaging/2281/webmessage?async=true",
+    "headers": {
+      "Authorization": {
+        "equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
+      }
+    },
+    "bodyPatterns": [
+      {
+        "equalToJson": {
+          "party": {
+            "externalReferences": [
+              {
+                "key": "errandId",
+                "value": "b481b191-dd37-47ca-b417-ed3a56ba724c"
+              },
+              {
+                "key": "flowInstanceId",
+                "value": "1001"
+              }
+            ]
+          },
+          "oepInstance": "internal",
+          "message": "Sending data!",
+          "attachments": [
+            {
+              "fileName": "data.txt",
+              "mimeType": "text/plain",
+              "base64Data": "ZGF0YQ=="
+            },
+            {
+              "fileName": "data_stuff.txt",
+              "mimeType": "text/plain",
+              "base64Data": "U28gbXVjaCBkYXRhIQo="
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "response": {
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "status": 200,
+    "jsonBody": {
+      "messageId": "bb5f78fe-04dd-47e2-9d0b-5fe77f6d299d"
+    }
+  }
+}

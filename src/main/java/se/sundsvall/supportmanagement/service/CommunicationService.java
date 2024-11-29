@@ -7,6 +7,7 @@ import static org.zalando.problem.Status.NOT_FOUND;
 import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toEmailAttachments;
 import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toEmailRequest;
 import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toSmsRequest;
+import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toWebMessageRequest;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -147,7 +148,16 @@ public class CommunicationService {
 	}
 
 	public void sendWebMessage(final String namespace, final String municipalityId, final String id, final WebMessageRequest request) {
-		//TODO implement logic
+		final var entity = fetchErrand(id, namespace, municipalityId);
+		final var errandAttachments = errandAttachmentService.findByNamespaceAndMunicipalityIdAndIdIn(namespace, municipalityId, request.getAttachmentIds());
+
+		final var communicationEntity = communicationMapper.toCommunicationEntity(namespace, municipalityId, entity.getErrandNumber(), request)
+			.withErrandAttachments(errandAttachments);
+
+		messagingClient.sendWebMessage(municipalityId, ASYNCHRONOUSLY, toWebMessageRequest(entity, request, errandAttachments));
+
+		saveCommunication(communicationEntity);
+		saveAttachment(communicationEntity, entity);
 	}
 
 	private ErrandEntity fetchErrand(final String id, final String namespace, final String municipalityId) {

@@ -83,26 +83,32 @@ VALUES (100, '2281', 'NAMESPACE.1', 'CATEGORY', '2023-01-01 12:00:00.000', null,
 -------------------------------------
 INSERT INTO errand(municipality_id, id, assigned_group_id, assigned_user_id, category, namespace,
                    priority, reporter_user_id, status, title, type, created, modified, resolution,
-                   description, escalation_email, errand_number, business_related, previous_status)
+                   description, escalation_email, errand_number, business_related, previous_status, channel)
 VALUES ('2281', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', 'ASSIGNED_GROUP_ID-1', 'ASSIGNED_USER_ID-1',
         'CATEGORY-1', 'NAMESPACE.1', 'LOW', 'REPORTER_USER_ID-1', 'STATUS-1', 'TITLE-1', 'TYPE-1',
-        '2022-01-01 12:00:00.000', null, null, null, "ESCALATION_EMAIL_1", 'KC-23020001', false, 'STATUS-2'),
+        '2022-01-01 12:00:00.000', null, null, null, "ESCALATION_EMAIL_1", 'KC-23020001', false, 'STATUS-2', null),
        ('2281', 'cc236cf1-c00f-4479-8341-ecf5dd90b5b9', 'ASSIGNED_GROUP_ID-1', 'ASSIGNED_USER_ID-1',
         'CATEGORY-1', 'NAMESPACE.1', 'LOW', 'REPORTER_USER_ID-1', 'STATUS-1', 'TITLE-1', 'TYPE-1',
-        '2022-02-01 12:00:00.000', '2022-04-01 12:00:00.000', null, null, null, 'KC-23020002', false, 'STATUS-2'),
+        '2022-02-01 12:00:00.000', '2022-04-01 12:00:00.000', null, null, null, 'KC-23020002', false, 'STATUS-2', null),
        ('2281', '1be673c0-6ba3-4fb0-af4a-43acf23389f6', 'ASSIGNED_GROUP_ID-3', 'ASSIGNED_USER_ID-3',
         'CATEGORY-3', 'NAMESPACE.1', 'HIGH', 'REPORTER_USER_ID-3', 'STATUS-3', 'TITLE-3', 'TYPE-3',
-        '2022-03-01 12:00:00.000', null, "RESOLUTION", "DESCRIPTION", null, 'KC-23020003', false, 'STATUS-2'),
+        '2022-03-01 12:00:00.000', null, "RESOLUTION", "DESCRIPTION", null, 'KC-23020003', false, 'STATUS-2', null),
        ('2281', 'f4a7a771-bb75-487b-b7d8-2684a0c3512c', 'ASSIGNED_GROUP_ID-3', 'ASSIGNED_USER_ID-3',
         'CATEGORY-3', 'NAMESPACE.2', 'HIGH', 'REPORTER_USER_ID-3', 'STATUS-3', 'TITLE-3', 'TYPE-3',
-        '2022-03-01 12:00:00.000', null, "RESOLUTION", "DESCRIPTION", null, 'KC-23020004', false, 'STATUS-2'),
+        '2022-03-01 12:00:00.000', null, "RESOLUTION", "DESCRIPTION", null, 'KC-23020004', false, 'STATUS-2', null),
        ('2305', 'e29906af-3083-4dcf-bb8a-d787ccf2dcc4', 'ASSIGNED_GROUP_ID-3', 'ASSIGNED_USER_ID-3',
         'CATEGORY-3', 'NAMESPACE.1', 'HIGH', 'REPORTER_USER_ID-1', 'STATUS-3', 'TITLE-3', 'TYPE-3',
-        '2022-03-01 12:00:00.000', null, null, null, null, 'KC-23020005', false, 'STATUS-2'),
+        '2022-03-01 12:00:00.000', null, null, null, null, 'KC-23020005', false, 'STATUS-2', null),
        ('2281', '147d355f-dc94-4fde-a4cb-9ddd16cb1946', 'hardware support', 'jane11dane',
         'CATEGORY-1', 'NAMESPACE.1', 'HIGH', 'joe01doe', 'STATUS-1', 'It is my birthday', 'TYPE-1',
         '2023-04-26 15:48:17.124', '2023-04-26 16:05:08.806', 'FIXED', 'Order cake for everyone',
-        'joe.doe@email.com', 'KC-23020006', false, 'STATUS-2');
+        'joe.doe@email.com', 'KC-23020006', false, 'STATUS-2', null),
+        ('2281', 'cad8ec4e-0b6b-473a-800d-feb063f59094', 'ASSIGNED_GROUP_ID-X', 'ASSIGNED_USER_ID-X',
+         'CATEGORY-1', 'NAMESPACE.1', 'LOW', 'REPORTER_USER_ID-X', 'STATUS-1', 'E-service', 'TYPE-1',
+         '2024-01-01 12:00:00.000', null, null, null, "ESCALATION_EMAIL_1", 'KC-23020007', false, 'STATUS-2', 'ESERVICE'),
+        ('2281', 'b481b191-dd37-47ca-b417-ed3a56ba724c', 'ASSIGNED_GROUP_ID-X', 'ASSIGNED_USER_ID-X',
+         'CATEGORY-1', 'NAMESPACE.1', 'LOW', 'REPORTER_USER_ID-X', 'STATUS-1', 'E-service', 'TYPE-1',
+         '2024-01-01 12:00:00.000', null, null, null, "ESCALATION_EMAIL_1", 'KC-23020008', false, 'STATUS-2', 'ESERVICE_INTERNAL');
 
 -------------------------------------
 -- Stakeholder
@@ -156,7 +162,9 @@ VALUES ('ec677eb3-604c-4935-bff7-f8f0b500c8f4', 'KEY-1', 'VALUE-1'),
        ('ec677eb3-604c-4935-bff7-f8f0b500c8f4', 'KEY-2', 'VALUE-2'),
        ('cc236cf1-c00f-4479-8341-ecf5dd90b5b9', 'KEY-3', 'VALUE-3'),
        ('1be673c0-6ba3-4fb0-af4a-43acf23389f6', 'KEY-4', 'VALUE-4'),
-       ('1be673c0-6ba3-4fb0-af4a-43acf23389f6', 'KEY-5', 'VALUE-5');
+       ('1be673c0-6ba3-4fb0-af4a-43acf23389f6', 'KEY-5', 'VALUE-5'),
+       ('cad8ec4e-0b6b-473a-800d-feb063f59094', 'caseId', '1000'),
+       ('b481b191-dd37-47ca-b417-ed3a56ba724c', 'caseId', '1001');
 
 -------------------------------------
 -- Attachment Data
@@ -170,7 +178,8 @@ VALUES ('1',
         '89504E470D0A1A0A0000000D494844520000001000000010080200000090916836000000017352474200AECE1CE90000000467414D410000B18F0BFC6105000000097048597300000EC300000EC301C76FA8640000001E49444154384F6350DAE843126220493550F1A80662426C349406472801006AC91F1040F796BD0000000049454E44AE426082'),
        ('4',
         '89504E470D0A1A0A0000000D494844520000001000000010080200000090916836000000017352474200AECE1CE90000000467414D410000B18F0BFC6105000000097048597300000EC300000EC301C76FA8640000001E49444154384F6350DAE843126220493550F1A80662426C349406472801006AC91F1040F796BD0000000049454E44AE426082'),
-       ('5', 'happybirthday');
+       ('5', 'happybirthday'),
+       ('6', 'data');
 
 -------------------------------------
 -- Attachment
@@ -186,8 +195,10 @@ VALUES ('25d266a7-1ff2-4bf4-b6f3-0473b2b86fcd', '1', 'Test_image.jpg', 'image/jp
         '1be673c0-6ba3-4fb0-af4a-43acf23389f6', 'NAMESPACE.1', '2281'),
        ('95ea267a-28ec-4636-922c-a717d79bd029', '5', 'birthday-card.txt', 'text/plain',
         '147d355f-dc94-4fde-a4cb-9ddd16cb1946', 'NAMESPACE.1', '2281'),
-        ('b3b3b3b3-b3b3-b3b3-b3b3-b3b3b3b3b3b3', '1', 'Test_image.jpg', 'image/jpeg',
-        '147d355f-dc94-4fde-a4cb-9ddd16cb1946', 'NAMESPACE.1', '2281');
+       ('b3b3b3b3-b3b3-b3b3-b3b3-b3b3b3b3b3b3', '1', 'Test_image.jpg', 'image/jpeg',
+        '147d355f-dc94-4fde-a4cb-9ddd16cb1946', 'NAMESPACE.1', '2281'),
+       ('1c49e30d-50d9-468f-89f3-3e3b87ea93e2', '6', 'data.txt', 'text/plain',
+        'b481b191-dd37-47ca-b417-ed3a56ba724c', 'NAMESPACE.1', '2281');
 
 
 -- Revision
