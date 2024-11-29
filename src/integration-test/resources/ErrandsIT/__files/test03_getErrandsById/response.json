@@ -1,56 +1,52 @@
 {
-	"id": "1be673c0-6ba3-4fb0-af4a-43acf23389f6",
-	"errandNumber": "KC-23020003",
-	"title": "TITLE-3",
-	"priority": "HIGH",
-	"stakeholders": [
-		{
-			"externalId": "7fba994b-e99e-4beb-8ab5-63cc74483b66",
-			"externalIdType": "ENTERPRISE",
-			"contactChannels": [],
-			"parameters":[]
-		}
-	],
 	"externalTags": [
 		{
-			"key": "KEY-4",
-			"value": "VALUE-4"
+			"value": "VALUE-4",
+			"key": "KEY-4"
 		},
 		{
-			"key": "KEY-5",
-			"value": "VALUE-5"
+			"value": "VALUE-5",
+			"key": "KEY-5"
 		}
 	],
-	"parameters": [
-		{
-			"key": "keyA",
-			"displayName": "Displayname A",
-			"values": [
-				"valueA1",
-				"valueA2"
-			]
-		},
-		{
-			"key": "keyB",
-			"displayName": "Displayname B",
-			"values": [
-				"valueB1"
-			]
-		}
-	],
+	"touched": "2022-03-01T12:00:00+01:00",
+	"errandNumber": "KC-23020003",
+	"created": "2022-03-01T12:00:00+01:00",
+	"description": "DESCRIPTION",
+	"stakeholders": [{
+		"externalId": "7fba994b-e99e-4beb-8ab5-63cc74483b66",
+		"parameters": [],
+		"externalIdType": "ENTERPRISE",
+		"contactChannels": []
+	}],
+	"title": "TITLE-3",
+	"priority": "HIGH",
 	"classification": {
 		"category": "CATEGORY-3",
 		"type": "TYPE-3"
 	},
-	"status": "STATUS-3",
 	"resolution": "RESOLUTION",
-	"description": "DESCRIPTION",
-	"reporterUserId": "REPORTER_USER_ID-3",
-	"assignedUserId": "ASSIGNED_USER_ID-3",
-	"assignedGroupId": "ASSIGNED_GROUP_ID-3",
-	"suspension": {},
-	"businessRelated": false,
 	"labels": [],
-	"created": "2022-03-01T12:00:00+01:00",
-	"touched": "2022-03-01T12:00:00+01:00"
+	"assignedGroupId": "ASSIGNED_GROUP_ID-3",
+	"id": "1be673c0-6ba3-4fb0-af4a-43acf23389f6",
+	"businessRelated": false,
+	"reporterUserId": "REPORTER_USER_ID-3",
+	"parameters": [
+		{
+			"displayName": "Displayname A",
+			"values": [
+				"valueA1",
+				"valueA2"
+			],
+			"key": "keyA"
+		},
+		{
+			"displayName": "Displayname B",
+			"values": ["valueB1"],
+			"key": "keyB"
+		}
+	],
+	"assignedUserId": "ASSIGNED_USER_ID-3",
+	"suspension": {},
+	"status": "STATUS-3"
 }

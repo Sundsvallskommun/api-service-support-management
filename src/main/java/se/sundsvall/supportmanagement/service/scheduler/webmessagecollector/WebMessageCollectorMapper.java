@@ -28,7 +28,9 @@ public class WebMessageCollectorMapper {
 
 	private final BlobBuilder blobBuilder;
 
-	public WebMessageCollectorMapper(final BlobBuilder blobBuilder) {this.blobBuilder = blobBuilder;}
+	public WebMessageCollectorMapper(final BlobBuilder blobBuilder) {
+		this.blobBuilder = blobBuilder;
+	}
 
 	CommunicationEntity toCommunicationEntity(final MessageDTO messageDTO, final ErrandEntity errand) {
 		final var communicationEntity = CommunicationEntity.create()

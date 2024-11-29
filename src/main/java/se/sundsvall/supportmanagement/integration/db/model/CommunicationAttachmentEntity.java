@@ -24,7 +24,11 @@ import jakarta.persistence.UniqueConstraint;
 		@Index(name = "idx_communication_attachment_municipality_id", columnList = "municipality_id"),
 		@Index(name = "idx_communication_attachment_namespace", columnList = "namespace")
 	},
-	uniqueConstraints = { @UniqueConstraint(name = "uq_communication_attachment_data_id", columnNames = { "communication_attachment_data_id" }) })
+	uniqueConstraints = {
+		@UniqueConstraint(name = "uq_communication_attachment_data_id", columnNames = {
+			"communication_attachment_data_id"
+		})
+	})
 public class CommunicationAttachmentEntity {
 
 	@Id

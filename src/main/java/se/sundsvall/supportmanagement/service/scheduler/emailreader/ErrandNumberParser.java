@@ -4,15 +4,14 @@ public final class ErrandNumberParser {
 
 	private ErrandNumberParser() {}
 
-
 	/**
 	 * Parses the subject of an email and returns the errand number if it exists.
 	 * The errand number is expected to be in the format: PRH-2022-000001
 	 * The errand number is expected to be preceded by a '#' and followed by a space or the end of the string.
 	 * If the errand number is not found, null is returned.
 	 *
-	 * @param subject the subject of the email to parse
-	 * @return the errand number if it exists, otherwise null
+	 * @param  subject the subject of the email to parse
+	 * @return         the errand number if it exists, otherwise null
 	 */
 	public static String parseSubject(final String subject) {
 		if (subject == null || subject.isEmpty()) {

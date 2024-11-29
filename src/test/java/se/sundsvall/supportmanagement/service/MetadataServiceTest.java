@@ -796,11 +796,11 @@ class MetadataServiceTest {
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
 		final var labels = List.of(
-				Label.create().withName("name1")
-						.withLabels(List.of(Label.create().withName("name2"))),
-				Label.create().withName("name3"),
-				Label.create().withName("name4")
-						.withLabels(List.of(Label.create().withName("name1"))));
+			Label.create().withName("name1")
+				.withLabels(List.of(Label.create().withName("name2"))),
+			Label.create().withName("name3"),
+			Label.create().withName("name4")
+				.withLabels(List.of(Label.create().withName("name1"))));
 
 		// Call
 		final var e = assertThrows(ThrowableProblem.class, () -> metadataService.createLabels(namespace, municipalityId, labels));
@@ -840,11 +840,11 @@ class MetadataServiceTest {
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
 		final var labels = List.of(
-				Label.create().withName("name1")
-						.withLabels(List.of(Label.create().withName("name2"))),
-				Label.create().withName("name3"),
-				Label.create().withName("name4")
-						.withLabels(List.of(Label.create().withName("name1"))));
+			Label.create().withName("name1")
+				.withLabels(List.of(Label.create().withName("name2"))),
+			Label.create().withName("name3"),
+			Label.create().withName("name4")
+				.withLabels(List.of(Label.create().withName("name1"))));
 		// Mock
 		when(labelRepositoryMock.existsByNamespaceAndMunicipalityId(namespace, municipalityId)).thenReturn(true);
 		// Call
@@ -890,10 +890,10 @@ class MetadataServiceTest {
 
 		// Verifications
 		assertThat(labels.getLabelStructure()).hasSize(1).extracting(
-				Label::getClassification,
-				Label::getDisplayName,
-				Label::getName,
-				Label::getLabels)
+			Label::getClassification,
+			Label::getDisplayName,
+			Label::getName,
+			Label::getLabels)
 			.containsExactly(tuple(
 				"classification",
 				"displayName",

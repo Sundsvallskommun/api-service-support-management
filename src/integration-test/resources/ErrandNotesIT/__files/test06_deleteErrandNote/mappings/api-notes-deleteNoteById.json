@@ -1,16 +1,11 @@
 {
-	"name": "api-notes-deleteNoteById",
 	"request": {
-		"method": "DELETE",
-		"urlPath": "/api-notes/2281/notes/d1f2c8d4-d234-4504-a483-b74570a7941d",
 		"headers": {
-			"Authorization": {
-				"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
-			},
-			"sentbyuser": {
-				"equalTo": "del06ete"
-			}
-		}
+			"Authorization": {"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"},
+			"sentbyuser": {"equalTo": "del06ete"}
+		},
+		"method": "DELETE",
+		"urlPath": "/api-notes/2281/notes/d1f2c8d4-d234-4504-a483-b74570a7941d"
 	},
 	"response": {
 		"headers": {
@@ -18,5 +13,6 @@
 			"x-current-revision": "64c692d3-5384-434d-9cd5-ffb6806cc43d"
 		},
 		"status": 204
-	}
+	},
+	"name": "api-notes-deleteNoteById"
 }

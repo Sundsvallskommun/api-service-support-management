@@ -17,7 +17,6 @@ import org.junit.jupiter.api.Test;
 
 class CommunicationEmailHeaderEntityTest {
 
-
 	@Test
 	void testBean() {
 		MatcherAssert.assertThat(CommunicationEmailHeaderEntity.class, allOf(

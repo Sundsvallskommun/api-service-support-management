@@ -4,9 +4,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
 
 import java.util.List;
-
 import org.springframework.stereotype.Component;
-
 import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity;
 

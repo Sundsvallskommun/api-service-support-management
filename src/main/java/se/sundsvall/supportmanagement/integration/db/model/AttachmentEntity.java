@@ -34,7 +34,9 @@ import org.hibernate.annotations.UuidGenerator;
 		@Index(name = "idx_attachment_namespace", columnList = "namespace")
 	},
 	uniqueConstraints = {
-		@UniqueConstraint(name = "uq_attachment_data_id", columnNames = {"attachment_data_id"})
+		@UniqueConstraint(name = "uq_attachment_data_id", columnNames = {
+			"attachment_data_id"
+		})
 	})
 public class AttachmentEntity {
 
@@ -204,10 +206,13 @@ public class AttachmentEntity {
 
 	@Override
 	public boolean equals(final Object o) {
-		if (this == o) return true;
-		if (o == null || getClass() != o.getClass()) return false;
+		if (this == o)
+			return true;
+		if (o == null || getClass() != o.getClass())
+			return false;
 		final AttachmentEntity that = (AttachmentEntity) o;
-		return Objects.equals(id, that.id) && Objects.equals(namespace, that.namespace) && Objects.equals(municipalityId, that.municipalityId) && Objects.equals(fileName, that.fileName) && Objects.equals(mimeType, that.mimeType) && Objects.equals(attachmentData, that.attachmentData) && Objects.equals(created, that.created) && Objects.equals(modified, that.modified) && Objects.equals(errandEntity, that.errandEntity);
+		return Objects.equals(id, that.id) && Objects.equals(namespace, that.namespace) && Objects.equals(municipalityId, that.municipalityId) && Objects.equals(fileName, that.fileName) && Objects.equals(mimeType, that.mimeType) && Objects.equals(
+			attachmentData, that.attachmentData) && Objects.equals(created, that.created) && Objects.equals(modified, that.modified) && Objects.equals(errandEntity, that.errandEntity);
 	}
 
 	@Override

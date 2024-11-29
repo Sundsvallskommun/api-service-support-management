@@ -63,9 +63,7 @@ public final class ErrandMapper {
 	}
 
 	public static ErrandEntity updateEntity(final ErrandEntity entity, final Errand errand) {
-		if (isNull(errand)) {
-			return entity;
-		}
+		if (isNull(errand)) { return entity; }
 
 		ofNullable(errand.getAssignedGroupId()).ifPresent(value -> entity.setAssignedGroupId(isEmpty(value) ? null : value));
 		ofNullable(errand.getAssignedUserId()).ifPresent(value -> entity.setAssignedUserId(isEmpty(value) ? null : value));

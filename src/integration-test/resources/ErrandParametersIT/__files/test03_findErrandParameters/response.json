@@ -1,15 +1,15 @@
 [
 	{
-		"key": "key2",
 		"displayName": "Displayname 2",
-		"values": []
+		"values": [],
+		"key": "key2"
 	},
 	{
-		"key": "key1",
 		"displayName": "Displayname 1",
 		"values": [
 			"value1",
 			"value2"
-		]
+		],
+		"key": "key1"
 	}
 ]

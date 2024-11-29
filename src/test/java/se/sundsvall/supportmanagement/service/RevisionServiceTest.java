@@ -111,7 +111,8 @@ class RevisionServiceTest {
 		final var revisionId = UUID.randomUUID().toString();
 
 		// Mock
-		when(revisionRepositoryMock.findFirstByNamespaceAndMunicipalityIdAndEntityIdOrderByVersionDesc(NAMESPACE, MUNICIPALITY_ID, entityId)).thenReturn(Optional.of(RevisionEntity.create().withVersion(version).withSerializedSnapshot("{ omeKey\":\"someValue\"}")));
+		when(revisionRepositoryMock.findFirstByNamespaceAndMunicipalityIdAndEntityIdOrderByVersionDesc(NAMESPACE, MUNICIPALITY_ID, entityId)).thenReturn(Optional.of(RevisionEntity.create().withVersion(version).withSerializedSnapshot(
+			"{ omeKey\":\"someValue\"}")));
 		when(revisionRepositoryMock.save(any(RevisionEntity.class))).thenReturn(RevisionEntity.create().withId(revisionId));
 
 		// Call
@@ -162,7 +163,8 @@ class RevisionServiceTest {
 		final var revisionId = UUID.randomUUID().toString();
 
 		// Mock
-		when(revisionRepositoryMock.findFirstByNamespaceAndMunicipalityIdAndEntityIdOrderByVersionDesc(NAMESPACE, MUNICIPALITY_ID, entityId)).thenReturn(Optional.of(RevisionEntity.create().withVersion(version).withSerializedSnapshot("{\"id\":\"entityId\"")));
+		when(revisionRepositoryMock.findFirstByNamespaceAndMunicipalityIdAndEntityIdOrderByVersionDesc(NAMESPACE, MUNICIPALITY_ID, entityId)).thenReturn(Optional.of(RevisionEntity.create().withVersion(version).withSerializedSnapshot(
+			"{\"id\":\"entityId\"")));
 		when(revisionRepositoryMock.save(any(RevisionEntity.class))).thenReturn(RevisionEntity.create().withId(revisionId));
 
 		// Call
@@ -186,7 +188,8 @@ class RevisionServiceTest {
 		final var version = 4;
 
 		// Mock
-		when(revisionRepositoryMock.findFirstByNamespaceAndMunicipalityIdAndEntityIdOrderByVersionDesc(NAMESPACE, MUNICIPALITY_ID, entityId)).thenReturn(Optional.of(RevisionEntity.create().withMunicipalityId(MUNICIPALITY_ID).withNamespace(NAMESPACE).withVersion(version)
+		when(revisionRepositoryMock.findFirstByNamespaceAndMunicipalityIdAndEntityIdOrderByVersionDesc(NAMESPACE, MUNICIPALITY_ID, entityId)).thenReturn(Optional.of(RevisionEntity.create().withMunicipalityId(MUNICIPALITY_ID).withNamespace(NAMESPACE)
+			.withVersion(version)
 			.withSerializedSnapshot("{\"id\":\"entityId\", \"namespace\":\"" + NAMESPACE + "\", \"municipalityId\":\"" + MUNICIPALITY_ID + "\"}")));
 
 		// Call

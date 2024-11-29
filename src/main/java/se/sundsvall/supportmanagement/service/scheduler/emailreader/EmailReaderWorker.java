@@ -135,7 +135,7 @@ public class EmailReaderWorker {
 	private void sendEmailNew(final ErrandEntity errand, final Email email, final EmailWorkerConfigEntity config) {
 
 		if (isEmpty(config.getErrandNewEmailSender()) || isEmpty(config.getErrandNewEmailTemplate())) {
-			//Is optional to send email on new errand
+			// Is optional to send email on new errand
 			return;
 		}
 		final var subject = EMAIL_NEW_SUBJECT_PREFIX + "#" + errand.getErrandNumber() + " " + email.getSubject();

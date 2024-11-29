@@ -24,7 +24,7 @@ class ValidFileSizeConstraintValidatorTest {
 
 	@Mock
 	private ConstraintViolationBuilder constraintViolationBuilderMock;
-	
+
 	@InjectMocks
 	private ValidFileSizeConstraintValidator validator;
 
@@ -32,8 +32,8 @@ class ValidFileSizeConstraintValidatorTest {
 	void validFileSize() {
 		ReflectionTestUtils.setField(validator, "maximumByteSize", 10);
 
-		final var base64Data = "dGVzdHN0cmluZw=="; //Translates to 'Teststring'
-		
+		final var base64Data = "dGVzdHN0cmluZw=="; // Translates to 'Teststring'
+
 		assertThat(validator.isValid(base64Data, constraintValidatorContextMock)).isTrue();
 
 		verifyNoInteractions(constraintValidatorContextMock, constraintViolationBuilderMock);
@@ -43,8 +43,8 @@ class ValidFileSizeConstraintValidatorTest {
 	void fileSizeToLarge() {
 		ReflectionTestUtils.setField(validator, "maximumByteSize", 9);
 
-		final var base64Data = "dGVzdHN0cmluZw=="; //Translates to 'Teststring'
-		
+		final var base64Data = "dGVzdHN0cmluZw=="; // Translates to 'Teststring'
+
 		when(constraintValidatorContextMock.buildConstraintViolationWithTemplate(any())).thenReturn(constraintViolationBuilderMock);
 
 		assertThat(validator.isValid(base64Data, constraintValidatorContextMock)).isFalse();
@@ -52,8 +52,8 @@ class ValidFileSizeConstraintValidatorTest {
 		verify(constraintValidatorContextMock).disableDefaultConstraintViolation();
 		verify(constraintValidatorContextMock).buildConstraintViolationWithTemplate("attachment exceeds the maximum allowed size of 9 bytes");
 		verify(constraintViolationBuilderMock).addConstraintViolation();
-}
-	
+	}
+
 	@Test
 	void nullData() {
 		assertThat(validator.isValid(null, constraintValidatorContextMock)).isTrue();
@@ -64,9 +64,9 @@ class ValidFileSizeConstraintValidatorTest {
 	@Test
 	void notBase64Data() {
 		final var base64Data = "åäö";
-		
+
 		assertThat(validator.isValid(base64Data, constraintValidatorContextMock)).isTrue();
-		
+
 		verifyNoInteractions(constraintValidatorContextMock, constraintViolationBuilderMock);
 	}
 }

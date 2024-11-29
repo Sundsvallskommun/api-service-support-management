@@ -65,7 +65,9 @@ class EventlogMapperTest {
 	}
 
 	@ParameterizedTest
-	@ValueSource(classes = { Errand.class, Note.class })
+	@ValueSource(classes = {
+		Errand.class, Note.class
+	})
 	void toEventWithExecutingUserId(Class<?> clazz) {
 		// Setup
 		final var userId = "userId";
@@ -90,7 +92,9 @@ class EventlogMapperTest {
 	}
 
 	@ParameterizedTest
-	@ValueSource(classes = { Errand.class, Note.class })
+	@ValueSource(classes = {
+		Errand.class, Note.class
+	})
 	void toEventWithoutExecutingUserId(Class<?> clazz) {
 		// Execute
 		final var result = EventlogMapper.toEvent(EVENT_TYPE, MESSAGE, REVISION, clazz, META_DATA, null);

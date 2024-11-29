@@ -22,7 +22,6 @@ import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandNumberSequenceEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity;
 
-
 @ExtendWith(MockitoExtension.class)
 class ErrandNumberGeneratorTest {
 
@@ -30,7 +29,6 @@ class ErrandNumberGeneratorTest {
 	private static final String MUNICIPALITY_ID = "2281";
 	private static final String NAMESPACE = "CONTACTCENTER";
 	private static final String SHORT_CODE = "KC";
-
 
 	@Mock
 	private ErrandNumberSequenceRepository repositoryMock;
@@ -82,7 +80,6 @@ class ErrandNumberGeneratorTest {
 		assertThat(result).isEqualTo(String.format("%s-%s0001", SHORT_CODE, dateFormatter.format(LocalDate.now())));
 	}
 
-
 	@Test
 	void generateErrandNumber_unknownNamespace() {
 
@@ -115,8 +112,7 @@ class ErrandNumberGeneratorTest {
 		when(namespaceConfigRepositoryMock.getByNamespaceAndMunicipalityId(any(), any())).thenReturn(Optional.of(NamespaceConfigEntity.create().withShortCode(SHORT_CODE)));
 		when(repositoryMock.findByNamespaceAndMunicipalityId(any(String.class), any(String.class))).thenReturn(Optional.of(entity));
 
-		final var result = IntStream.range(0, maxCount).mapToObj(i ->
-				stringGeneratorService.generateErrandNumber(NAMESPACE, MUNICIPALITY_ID))
+		final var result = IntStream.range(0, maxCount).mapToObj(i -> stringGeneratorService.generateErrandNumber(NAMESPACE, MUNICIPALITY_ID))
 			.toList();
 
 		assertThat(result).hasSize(maxCount).doesNotHaveDuplicates();

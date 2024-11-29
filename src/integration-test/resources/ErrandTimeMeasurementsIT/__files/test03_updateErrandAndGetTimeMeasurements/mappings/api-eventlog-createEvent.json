@@ -1,45 +1,37 @@
 {
-  "name": "api-eventlog-createEvent",
-  "request": {
-    "method": "POST",
-    "urlPattern": "/api-eventlog/2281/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
-    "headers": {
-      "Authorization": {
-        "equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
-      }
-    },
-    "bodyPatterns": [
-      {
-        "ignoreArrayOrder": true,
-        "equalToJson": {
-          "type": "UPDATE",
-          "message": "Ärendet har uppdaterats.",
-          "owner": "SupportManagement",
-          "created": "${json-unit.any-string}",
-          "historyReference": "${json-unit.regex}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
-          "sourceType": "Errand",
-          "metadata": [
-            {
-              "key": "CurrentVersion",
-              "value": "0"
-            },
-            {
-              "key": "CurrentRevision",
-              "value": "${json-unit.regex}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
-            },
-            {
-              "key": "ExecutedBy",
-              "value": "UNKNOWN"
-            }
-          ]
-        }
-      }
-    ]
-  },
-  "response": {
-    "headers": {
-      "Content-Type": "*/*"
-    },
-    "status": 202
-  }
+	"request": {
+		"headers": {"Authorization": {"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"}},
+		"method": "POST",
+		"bodyPatterns": [{
+			"equalToJson": {
+				"owner": "SupportManagement",
+				"metadata": [
+					{
+						"value": "0",
+						"key": "CurrentVersion"
+					},
+					{
+						"value": "${json-unit.regex}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+						"key": "CurrentRevision"
+					},
+					{
+						"value": "UNKNOWN",
+						"key": "ExecutedBy"
+					}
+				],
+				"historyReference": "${json-unit.regex}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+				"sourceType": "Errand",
+				"created": "${json-unit.any-string}",
+				"type": "UPDATE",
+				"message": "Ärendet har uppdaterats."
+			},
+			"ignoreArrayOrder": true
+		}],
+		"urlPattern": "/api-eventlog/2281/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+	},
+	"response": {
+		"headers": {"Content-Type": "*/*"},
+		"status": 202
+	},
+	"name": "api-eventlog-createEvent"
 }

@@ -36,6 +36,7 @@ class EmailWorkerConfigEntityTest {
 			hasValidBeanEquals(),
 			hasValidBeanToString()));
 	}
+
 	@Test
 	void hasValidBuilderMethods() {
 		final var id = 1L;

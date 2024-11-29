@@ -1,6 +1,5 @@
 package se.sundsvall.supportmanagement.integration.db.model;
 
-
 import java.util.Objects;
 
 import jakarta.persistence.Column;
@@ -87,8 +86,10 @@ public class ErrandNumberSequenceEntity {
 
 	@Override
 	public boolean equals(final Object o) {
-		if (this == o) return true;
-		if (o == null || getClass() != o.getClass()) return false;
+		if (this == o)
+			return true;
+		if (o == null || getClass() != o.getClass())
+			return false;
 		final ErrandNumberSequenceEntity entity = (ErrandNumberSequenceEntity) o;
 		return lastSequenceNumber == entity.lastSequenceNumber
 			&& Objects.equals(namespace, entity.namespace)

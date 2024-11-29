@@ -52,6 +52,7 @@ public class Event {
 		this.type = type;
 		return this;
 	}
+
 	public String getMessage() {
 		return message;
 	}
@@ -90,6 +91,7 @@ public class Event {
 		this.created = created;
 		return this;
 	}
+
 	public String getHistoryReference() {
 		return historyReference;
 	}

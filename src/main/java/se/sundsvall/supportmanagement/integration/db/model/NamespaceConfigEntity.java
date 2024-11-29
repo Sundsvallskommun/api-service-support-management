@@ -26,7 +26,9 @@ import jakarta.persistence.UniqueConstraint;
 	@Index(name = "idx_namespace_municipality_id", columnList = "namespace, municipality_id"),
 	@Index(name = "idx_municipality_id", columnList = "municipality_id")
 }, uniqueConstraints = {
-	@UniqueConstraint(name = "uq_namespace_municipality_id", columnNames = { "namespace", "municipality_id" })
+	@UniqueConstraint(name = "uq_namespace_municipality_id", columnNames = {
+		"namespace", "municipality_id"
+	})
 })
 public class NamespaceConfigEntity {
 

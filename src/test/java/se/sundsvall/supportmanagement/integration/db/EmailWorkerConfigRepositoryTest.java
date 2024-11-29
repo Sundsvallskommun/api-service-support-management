@@ -92,7 +92,7 @@ class EmailWorkerConfigRepositoryTest {
 	}
 
 	@Test
-	void update () {
+	void update() {
 		final var optionalEntity = repository.getByNamespaceAndMunicipalityId("namespace-1", "municipality_id-1");
 
 		assertThat(optionalEntity).isPresent();

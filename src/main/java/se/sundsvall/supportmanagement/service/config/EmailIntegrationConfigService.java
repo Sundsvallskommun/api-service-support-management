@@ -19,7 +19,6 @@ public class EmailIntegrationConfigService {
 	private EmailIntegrationMapper mapper;
 	private NamespaceConfigRepository namespaceConfigRepository;
 
-
 	public EmailIntegrationConfigService(EmailWorkerConfigRepository configRepository, EmailIntegrationMapper mapper, NamespaceConfigRepository namespaceConfigRepository) {
 		this.configRepository = configRepository;
 		this.mapper = mapper;
@@ -27,7 +26,7 @@ public class EmailIntegrationConfigService {
 	}
 
 	public void create(EmailIntegration request, String namespace, String municipalityId) {
-		if(!namespaceConfigRepository.existsByNamespaceAndMunicipalityId(namespace, municipalityId)) {
+		if (!namespaceConfigRepository.existsByNamespaceAndMunicipalityId(namespace, municipalityId)) {
 			throw Problem.valueOf(INTERNAL_SERVER_ERROR, "Namespace config must be created before enabling email integration. Add via /namespaceConfig resource");
 		}
 		configRepository.save(mapper.toEntity(request, namespace, municipalityId));
@@ -52,7 +51,7 @@ public class EmailIntegrationConfigService {
 	}
 
 	public void delete(String namespace, String municipalityId) {
-		if(!configRepository.existsByNamespaceAndMunicipalityId(namespace, municipalityId)) {
+		if (!configRepository.existsByNamespaceAndMunicipalityId(namespace, municipalityId)) {
 			throw Problem.valueOf(NOT_FOUND, String.format(CONFIG_ENTITY_NOT_FOUND, namespace, municipalityId));
 		}
 

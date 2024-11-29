@@ -30,7 +30,9 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.EntityType;
 		@Index(name = "idx_namespace_municipality_id_type", columnList = "namespace, municipality_id, type")
 	},
 	uniqueConstraints = {
-		@UniqueConstraint(name = "uq_namespace_municipality_id_type", columnNames = { "namespace", "municipality_id", "type" })
+		@UniqueConstraint(name = "uq_namespace_municipality_id_type", columnNames = {
+			"namespace", "municipality_id", "type"
+		})
 	})
 public class ValidationEntity {
 

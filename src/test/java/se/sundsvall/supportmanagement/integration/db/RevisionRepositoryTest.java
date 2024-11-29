@@ -36,7 +36,6 @@ import se.sundsvall.supportmanagement.integration.db.model.RevisionEntity;
 })
 class RevisionRepositoryTest {
 
-
 	private static final String NAMESPACE = "namespace";
 
 	private static final String MUNICIPALITY_ID = "2281";

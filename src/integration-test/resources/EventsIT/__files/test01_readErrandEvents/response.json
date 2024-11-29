@@ -1,181 +1,177 @@
 {
-	"content": [
-		{
-			"type": "CREATE",
-			"message": "Ärendet har skapats.",
-			"owner": "SupportManagement",
-			"created": "2023-05-17T09:10:35.709+02:00",
-			"historyReference": "7e7d97e1-1cbf-4fa3-9c23-faf7a6b75a9a",
-			"sourceType": "Errand",
-			"metadata": [
-				{
-					"key": "CurrentVersion",
-					"value": "0"
-				},
-				{
-					"key": "CurrentRevision",
-					"value": "7e7d97e1-1cbf-4fa3-9c23-faf7a6b75a9a"
-				},
-				{
-					"key": "ExecutedBy",
-					"value": "nbr01usr"
-				}
-			]
-		},
-		{
-			"type": "UPDATE",
-			"message": "En bilaga har lagts till i ärendet.",
-			"owner": "SupportManagement",
-			"created": "2023-05-17T09:11:13.273+02:00",
-			"historyReference": "23c1af9f-7b83-49c2-a206-774f70d999b1",
-			"sourceType": "Errand",
-			"metadata": [
-				{
-					"key": "PreviousRevision",
-					"value": "7e7d97e1-1cbf-4fa3-9c23-faf7a6b75a9a"
-				},
-				{
-					"key": "CurrentVersion",
-					"value": "1"
-				},
-				{
-					"key": "PreviousVersion",
-					"value": "0"
-				},
-				{
-					"key": "CurrentRevision",
-					"value": "23c1af9f-7b83-49c2-a206-774f70d999b1"
-				},
-				{
-					"key": "ExecutedBy",
-					"value": "nbr01usr"
-				}
-			]
-		},
-		{
-			"type": "UPDATE",
-			"message": "Ärendet har uppdaterats.",
-			"owner": "SupportManagement",
-			"created": "2023-05-17T09:11:13.648+02:00",
-			"historyReference": "e3c342a9-750e-492b-8c69-a8b2457313f6",
-			"sourceType": "Errand",
-			"metadata": [
-				{
-					"key": "PreviousRevision",
-					"value": "23c1af9f-7b83-49c2-a206-774f70d999b1"
-				},
-				{
-					"key": "CurrentVersion",
-					"value": "2"
-				},
-				{
-					"key": "PreviousVersion",
-					"value": "1"
-				},
-				{
-					"key": "CurrentRevision",
-					"value": "e3c342a9-750e-492b-8c69-a8b2457313f6"
-				},
-				{
-					"key": "ExecutedBy",
-					"value": "nbr02usr"
-				}
-			]
-		},
-		{
-			"type": "UPDATE",
-			"message": "Ärendet har uppdaterats.",
-			"owner": "SupportManagement",
-			"created": "2023-05-17T09:16:37.45+02:00",
-			"historyReference": "b5d59549-a8ac-421c-a10a-9b5637e57e03",
-			"sourceType": "Errand",
-			"metadata": [
-				{
-					"key": "PreviousRevision",
-					"value": "e3c342a9-750e-492b-8c69-a8b2457313f6"
-				},
-				{
-					"key": "CurrentVersion",
-					"value": "3"
-				},
-				{
-					"key": "PreviousVersion",
-					"value": "2"
-				},
-				{
-					"key": "CurrentRevision",
-					"value": "b5d59549-a8ac-421c-a10a-9b5637e57e03"
-				},
-				{
-					"key": "ExecutedBy",
-					"value": "nbr02usr"
-				}
-			]
-		},
-		{
-			"type": "UPDATE",
-			"message": "Ärendet har uppdaterats.",
-			"owner": "SupportManagement",
-			"created": "2023-05-23T08:59:20.156+02:00",
-			"historyReference": "72cce12b-1fc0-4f0c-b13c-fb09b0aa8171",
-			"sourceType": "Errand",
-			"metadata": [
-				{
-					"key": "PreviousRevision",
-					"value": "b5d59549-a8ac-421c-a10a-9b5637e57e03"
-				},
-				{
-					"key": "CurrentVersion",
-					"value": "4"
-				},
-				{
-					"key": "PreviousVersion",
-					"value": "3"
-				},
-				{
-					"key": "CurrentRevision",
-					"value": "72cce12b-1fc0-4f0c-b13c-fb09b0aa8171"
-				},
-				{
-					"key": "ExecutedBy",
-					"value": "nbr03usr"
-				}
-			]
-		}
-	],
+	"number": 0,
+	"last": true,
+	"size": 20,
+	"numberOfElements": 5,
+	"totalPages": 1,
 	"pageable": {
-		"sort": [
-			{
-				"direction": "ASC",
-				"property": "created",
-				"ignoreCase": false,
-				"nullHandling": "NATIVE",
-				"ascending": true,
-				"descending": false
-			}
-		],
-		"offset": 0,
+		"paged": true,
 		"pageNumber": 0,
+		"offset": 0,
 		"pageSize": 20,
 		"unpaged": false,
-		"paged": true
-	},
-	"last": true,
-	"totalPages": 1,
-	"totalElements": 5,
-	"size": 20,
-	"number": 0,
-	"sort": [
-		{
-			"direction": "ASC",
-			"property": "created",
-			"ignoreCase": false,
+		"sort": [{
 			"nullHandling": "NATIVE",
+			"ignoreCase": false,
+			"property": "created",
 			"ascending": true,
-			"descending": false
+			"descending": false,
+			"direction": "ASC"
+		}]
+	},
+	"sort": [{
+		"nullHandling": "NATIVE",
+		"ignoreCase": false,
+		"property": "created",
+		"ascending": true,
+		"descending": false,
+		"direction": "ASC"
+	}],
+	"content": [
+		{
+			"owner": "SupportManagement",
+			"metadata": [
+				{
+					"value": "0",
+					"key": "CurrentVersion"
+				},
+				{
+					"value": "7e7d97e1-1cbf-4fa3-9c23-faf7a6b75a9a",
+					"key": "CurrentRevision"
+				},
+				{
+					"value": "nbr01usr",
+					"key": "ExecutedBy"
+				}
+			],
+			"historyReference": "7e7d97e1-1cbf-4fa3-9c23-faf7a6b75a9a",
+			"sourceType": "Errand",
+			"created": "2023-05-17T09:10:35.709+02:00",
+			"type": "CREATE",
+			"message": "Ärendet har skapats."
+		},
+		{
+			"owner": "SupportManagement",
+			"metadata": [
+				{
+					"value": "7e7d97e1-1cbf-4fa3-9c23-faf7a6b75a9a",
+					"key": "PreviousRevision"
+				},
+				{
+					"value": "1",
+					"key": "CurrentVersion"
+				},
+				{
+					"value": "0",
+					"key": "PreviousVersion"
+				},
+				{
+					"value": "23c1af9f-7b83-49c2-a206-774f70d999b1",
+					"key": "CurrentRevision"
+				},
+				{
+					"value": "nbr01usr",
+					"key": "ExecutedBy"
+				}
+			],
+			"historyReference": "23c1af9f-7b83-49c2-a206-774f70d999b1",
+			"sourceType": "Errand",
+			"created": "2023-05-17T09:11:13.273+02:00",
+			"type": "UPDATE",
+			"message": "En bilaga har lagts till i ärendet."
+		},
+		{
+			"owner": "SupportManagement",
+			"metadata": [
+				{
+					"value": "23c1af9f-7b83-49c2-a206-774f70d999b1",
+					"key": "PreviousRevision"
+				},
+				{
+					"value": "2",
+					"key": "CurrentVersion"
+				},
+				{
+					"value": "1",
+					"key": "PreviousVersion"
+				},
+				{
+					"value": "e3c342a9-750e-492b-8c69-a8b2457313f6",
+					"key": "CurrentRevision"
+				},
+				{
+					"value": "nbr02usr",
+					"key": "ExecutedBy"
+				}
+			],
+			"historyReference": "e3c342a9-750e-492b-8c69-a8b2457313f6",
+			"sourceType": "Errand",
+			"created": "2023-05-17T09:11:13.648+02:00",
+			"type": "UPDATE",
+			"message": "Ärendet har uppdaterats."
+		},
+		{
+			"owner": "SupportManagement",
+			"metadata": [
+				{
+					"value": "e3c342a9-750e-492b-8c69-a8b2457313f6",
+					"key": "PreviousRevision"
+				},
+				{
+					"value": "3",
+					"key": "CurrentVersion"
+				},
+				{
+					"value": "2",
+					"key": "PreviousVersion"
+				},
+				{
+					"value": "b5d59549-a8ac-421c-a10a-9b5637e57e03",
+					"key": "CurrentRevision"
+				},
+				{
+					"value": "nbr02usr",
+					"key": "ExecutedBy"
+				}
+			],
+			"historyReference": "b5d59549-a8ac-421c-a10a-9b5637e57e03",
+			"sourceType": "Errand",
+			"created": "2023-05-17T09:16:37.45+02:00",
+			"type": "UPDATE",
+			"message": "Ärendet har uppdaterats."
+		},
+		{
+			"owner": "SupportManagement",
+			"metadata": [
+				{
+					"value": "b5d59549-a8ac-421c-a10a-9b5637e57e03",
+					"key": "PreviousRevision"
+				},
+				{
+					"value": "4",
+					"key": "CurrentVersion"
+				},
+				{
+					"value": "3",
+					"key": "PreviousVersion"
+				},
+				{
+					"value": "72cce12b-1fc0-4f0c-b13c-fb09b0aa8171",
+					"key": "CurrentRevision"
+				},
+				{
+					"value": "nbr03usr",
+					"key": "ExecutedBy"
+				}
+			],
+			"historyReference": "72cce12b-1fc0-4f0c-b13c-fb09b0aa8171",
+			"sourceType": "Errand",
+			"created": "2023-05-23T08:59:20.156+02:00",
+			"type": "UPDATE",
+			"message": "Ärendet har uppdaterats."
 		}
 	],
 	"first": true,
-	"numberOfElements": 5,
+	"totalElements": 5,
 	"empty": false
 }

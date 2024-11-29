@@ -4,7 +4,6 @@ import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -12,10 +11,8 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
 import jakarta.servlet.http.HttpServletResponse;
-
 import java.util.List;
 import java.util.Map;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -121,7 +118,9 @@ class ErrandCommunicationResourceTest {
 	}
 
 	@ParameterizedTest
-	@ValueSource(booleans = { true, false })
+	@ValueSource(booleans = {
+		true, false
+	})
 	void sendEmail(boolean withAttachments) {
 
 		// Parameter values
@@ -142,7 +141,9 @@ class ErrandCommunicationResourceTest {
 	}
 
 	@ParameterizedTest
-	@ValueSource(booleans = { true, false })
+	@ValueSource(booleans = {
+		true, false
+	})
 	void sendWebMessage(boolean withAttachment) {
 
 		// Parameter values

@@ -30,7 +30,7 @@ class DifferenceResponseTest {
 		final var operations = List.of(Operation.create().withOp("op").withPath("path").withValue("value").withFromValue("fromValue"));
 
 		final var bean = DifferenceResponse.create()
-				.withOperations(operations);
+			.withOperations(operations);
 
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(bean.getOperations()).isEqualTo(operations);

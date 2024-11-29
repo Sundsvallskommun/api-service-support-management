@@ -1,38 +1,30 @@
 {
-	"name": "api-notes-createNote",
 	"request": {
-		"method": "POST",
-		"urlPath": "/api-notes/2281/notes",
 		"headers": {
-			"Authorization": {
-				"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
-			},
-			"sentbyuser": {
-				"equalTo": "cre03ate"
-			}
+			"Authorization": {"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"},
+			"sentbyuser": {"equalTo": "cre03ate"}
 		},
-		"bodyPatterns": [
-			{
-				"equalToJson": {
-					"context": "SUPPORT",
-					"role": "FIRST_LINE_SUPPORT",
-					"clientId": "api-support-management",
-					"partyId": "81471222-5798-11e9-ae24-57fa13b361e1",
-					"subject": "This is a subject",
-					"body": "This is a note",
-					"createdBy": "John Doe",
-					"caseId": "ec677eb3-604c-4935-bff7-f8f0b500c8f4"
-				}
-			}
-		]
+		"method": "POST",
+		"bodyPatterns": [{"equalToJson": {
+			"role": "FIRST_LINE_SUPPORT",
+			"clientId": "api-support-management",
+			"createdBy": "John Doe",
+			"subject": "This is a subject",
+			"caseId": "ec677eb3-604c-4935-bff7-f8f0b500c8f4",
+			"context": "SUPPORT",
+			"partyId": "81471222-5798-11e9-ae24-57fa13b361e1",
+			"body": "This is a note"
+		}}],
+		"urlPath": "/api-notes/2281/notes"
 	},
 	"response": {
 		"headers": {
-			"Content-Type": "*/*",
-			"Location": "/api-notes/notes/90572753-e8b0-48f8-b200-3623eaa76f8b",
 			"x-current-version": "0",
-			"x-current-revision": "90572753-e8b0-48f8-b200-3623eaa76f9a"
+			"x-current-revision": "90572753-e8b0-48f8-b200-3623eaa76f9a",
+			"Content-Type": "*/*",
+			"Location": "/api-notes/notes/90572753-e8b0-48f8-b200-3623eaa76f8b"
 		},
 		"status": 201
-	}
+	},
+	"name": "api-notes-createNote"
 }

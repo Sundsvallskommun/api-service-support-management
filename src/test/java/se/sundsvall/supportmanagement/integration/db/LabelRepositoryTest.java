@@ -127,7 +127,7 @@ class LabelRepositoryTest {
 
 		// Verify existing label
 		assertThat(labelRepository.existsByNamespaceAndMunicipalityId(namespace, municipalityId)).isTrue();
-		
+
 		// Act
 		labelRepository.deleteByNamespaceAndMunicipalityId(namespace, municipalityId);
 

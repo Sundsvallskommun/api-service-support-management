@@ -1,18 +1,12 @@
 {
-  "name": "api-employee-getPersonalData_assignedUserId1",
-  "request": {
-    "method": "GET",
-    "urlPath": "/api-employee/portalpersondata/personal/ASSIGNED_USER_ID-1",
-    "headers": {
-      "Authorization": {
-        "equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
-      }
-    }
-  },
-  "response": {
-    "headers": {
-      "Content-Type": "*/*"
-    },
-    "status": 200
-  }
+	"request": {
+		"headers": {"Authorization": {"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"}},
+		"method": "GET",
+		"urlPath": "/api-employee/portalpersondata/personal/ASSIGNED_USER_ID-1"
+	},
+	"response": {
+		"headers": {"Content-Type": "*/*"},
+		"status": 200
+	},
+	"name": "api-employee-getPersonalData_assignedUserId1"
 }

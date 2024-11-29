@@ -39,10 +39,10 @@ class EmployeeServiceTest {
 		final var portalPersonData = new PortalPersonData();
 
 		when(employeeClientMock.getEmployeeByDomainAndLoginName(domain, loginName)).thenReturn(Optional.of(portalPersonData));
-		//Act
+		// Act
 		final var result = employeeService.getEmployeeByLoginName(loginName);
 
-		//Assert
+		// Assert
 		assertThat(result).isNotNull().isSameAs(portalPersonData);
 
 		verify(employeeClientMock).getEmployeeByDomainAndLoginName(domain, loginName);
@@ -56,15 +56,14 @@ class EmployeeServiceTest {
 		final var domain = "personal";
 
 		when(employeeClientMock.getEmployeeByDomainAndLoginName(domain, loginName)).thenReturn(Optional.empty());
-		//Act
+		// Act
 		final var result = employeeService.getEmployeeByLoginName(loginName);
 
-		//Assert
+		// Assert
 		assertThat(result).isNull();
 
 		verify(employeeClientMock).getEmployeeByDomainAndLoginName(domain, loginName);
 	}
-
 
 	@Test
 	void getEmployeeByPartyId() {
@@ -101,6 +100,5 @@ class EmployeeServiceTest {
 
 		verify(employeeClientMock).getEmployeeInformation(any(String.class));
 	}
-
 
 }

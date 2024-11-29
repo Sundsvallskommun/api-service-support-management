@@ -209,8 +209,7 @@ class ErrandsRepositoryTest {
 		assertThat(errandEntities).isNotNull();
 		errandEntities.ifPresentOrElse(
 			errandEntity -> assertThat(errandEntity.getId()).isEqualTo("ERRAND_ID-1"),
-			() -> fail("Expected errandEntity to be present")
-		);
+			() -> fail("Expected errandEntity to be present"));
 	}
 
 	@Test

@@ -11,7 +11,6 @@ import jakarta.persistence.EntityManager;
 import org.hibernate.Session;
 import org.springframework.stereotype.Component;
 
-
 @Component
 public class BlobBuilder {
 
@@ -30,7 +29,6 @@ public class BlobBuilder {
 
 		return session.getLobHelper().createBlob(stream, decodedBytes.length);
 	}
-
 
 	public Blob createBlob(final byte[] content) {
 		final var session = entityManager.unwrap(Session.class);

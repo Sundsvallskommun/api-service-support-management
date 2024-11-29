@@ -274,7 +274,8 @@ class ErrandNoteServiceTest {
 		verify(repositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(repositoryMock).getReferenceById(ERRAND_ID);
 		verify(notesClientMock).updateNoteById(EXECUTING_USER, MUNICIPALITY_ID, NOTE_ID, updateNoteRequest);
-		verify(eventServiceMock).createErrandNoteEvent(EventType.UPDATE, "Ärendenotering har uppdaterats.", ERRAND_ID, ERRAND_ENTITY, NOTE_ID, Revision.create().withId("currentRevision").withVersion(1), Revision.create().withId("previousRevision").withVersion(0));
+		verify(eventServiceMock).createErrandNoteEvent(EventType.UPDATE, "Ärendenotering har uppdaterats.", ERRAND_ID, ERRAND_ENTITY, NOTE_ID, Revision.create().withId("currentRevision").withVersion(1), Revision.create().withId("previousRevision")
+			.withVersion(0));
 	}
 
 	@Test

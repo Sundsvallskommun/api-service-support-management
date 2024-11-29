@@ -9,6 +9,7 @@ import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toEm
 import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toSmsRequest;
 import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toWebMessageRequest;
 
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
@@ -16,12 +17,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-
 import org.springframework.stereotype.Service;
 import org.springframework.util.StreamUtils;
 import org.zalando.problem.Problem;
-
-import jakarta.servlet.http.HttpServletResponse;
 import se.sundsvall.supportmanagement.api.model.communication.Communication;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
 import se.sundsvall.supportmanagement.api.model.communication.SmsRequest;

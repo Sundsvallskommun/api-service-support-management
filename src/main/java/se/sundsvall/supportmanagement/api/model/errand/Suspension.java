@@ -63,8 +63,10 @@ public class Suspension {
 
 	@Override
 	public boolean equals(final Object o) {
-		if (this == o) return true;
-		if (o == null || getClass() != o.getClass()) return false;
+		if (this == o)
+			return true;
+		if (o == null || getClass() != o.getClass())
+			return false;
 		final Suspension that = (Suspension) o;
 		return Objects.equals(suspendedTo, that.suspendedTo) && Objects.equals(suspendedFrom, that.suspendedFrom);
 	}

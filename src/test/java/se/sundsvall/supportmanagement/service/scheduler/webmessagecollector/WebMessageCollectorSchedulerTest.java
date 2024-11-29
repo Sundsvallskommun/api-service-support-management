@@ -60,8 +60,7 @@ class WebMessageCollectorSchedulerTest {
 		when(webMessageCollectRepositoryMock.findAll()).thenReturn(List.of(WebMessageCollectEntity.create()
 			.withMunicipalityId(MUNICIPALITY_ID)
 			.withInstance(INSTANCE)
-			.withFamilyIds(FAMILY_IDS)
-		));
+			.withFamilyIds(FAMILY_IDS)));
 		when(webMessageCollectorWorkerMock.getWebMessages(any(), eq("1"), any())).thenReturn(List.of(message1));
 		when(webMessageCollectorWorkerMock.getWebMessages(any(), eq("2"), any())).thenReturn(List.of(message2));
 
@@ -92,8 +91,7 @@ class WebMessageCollectorSchedulerTest {
 		when(webMessageCollectRepositoryMock.findAll()).thenReturn(List.of(WebMessageCollectEntity.create()
 			.withMunicipalityId(MUNICIPALITY_ID)
 			.withInstance(INSTANCE)
-			.withFamilyIds(FAMILY_IDS)
-		));
+			.withFamilyIds(FAMILY_IDS)));
 		when(webMessageCollectorWorkerMock.getWebMessages(any(), eq("1"), any())).thenThrow(new RuntimeException("ERROR"));
 		when(webMessageCollectorWorkerMock.getWebMessages(any(), eq("2"), any())).thenReturn(List.of(message2));
 
@@ -122,8 +120,7 @@ class WebMessageCollectorSchedulerTest {
 		when(webMessageCollectRepositoryMock.findAll()).thenReturn(List.of(WebMessageCollectEntity.create()
 			.withMunicipalityId(MUNICIPALITY_ID)
 			.withInstance(INSTANCE)
-			.withFamilyIds(FAMILY_IDS)
-		));
+			.withFamilyIds(FAMILY_IDS)));
 		when(webMessageCollectorWorkerMock.getWebMessages(any(), eq("1"), any())).thenReturn(List.of(message1));
 		when(webMessageCollectorWorkerMock.getWebMessages(any(), eq("2"), any())).thenReturn(List.of(message2));
 		doThrow(new RuntimeException("ERROR")).when(webMessageCollectorWorkerMock).processMessage(same(message1), any());

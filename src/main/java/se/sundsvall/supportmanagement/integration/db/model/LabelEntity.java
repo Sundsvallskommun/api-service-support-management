@@ -25,8 +25,11 @@ import jakarta.persistence.UniqueConstraint;
 @Table(name = "label",
 	indexes = {
 		@Index(name = "idx_namespace_municipality_id", columnList = "namespace, municipality_id")
-	}, uniqueConstraints = {
-		@UniqueConstraint(name = "uq_namespace_municipality_id", columnNames = { "namespace", "municipality_id" })
+	},
+	uniqueConstraints = {
+		@UniqueConstraint(name = "uq_namespace_municipality_id", columnNames = {
+			"namespace", "municipality_id"
+		})
 	})
 public class LabelEntity {
 
