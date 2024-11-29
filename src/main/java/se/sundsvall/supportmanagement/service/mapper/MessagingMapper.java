@@ -6,6 +6,17 @@ import static org.apache.commons.codec.binary.Base64.decodeBase64;
 import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.detectMimeType;
 
+import generated.se.sundsvall.messaging.EmailAttachment;
+import generated.se.sundsvall.messaging.EmailRequest;
+import generated.se.sundsvall.messaging.EmailRequestParty;
+import generated.se.sundsvall.messaging.EmailSender;
+import generated.se.sundsvall.messaging.ExternalReference;
+import generated.se.sundsvall.messaging.SmsRequest;
+import generated.se.sundsvall.messaging.SmsRequestParty;
+import generated.se.sundsvall.messaging.WebMessageAttachment;
+import generated.se.sundsvall.messaging.WebMessageParty;
+import generated.se.sundsvall.messaging.WebMessageRequest;
+import io.netty.util.internal.StringUtil;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -17,12 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import generated.se.sundsvall.messaging.WebMessageAttachment;
-import generated.se.sundsvall.messaging.WebMessageParty;
-import generated.se.sundsvall.messaging.WebMessageRequest;
 import org.apache.commons.compress.utils.IOUtils;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zalando.problem.Problem;
@@ -30,15 +36,6 @@ import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
-
-import generated.se.sundsvall.messaging.EmailAttachment;
-import generated.se.sundsvall.messaging.EmailRequest;
-import generated.se.sundsvall.messaging.EmailRequestParty;
-import generated.se.sundsvall.messaging.EmailSender;
-import generated.se.sundsvall.messaging.ExternalReference;
-import generated.se.sundsvall.messaging.SmsRequest;
-import generated.se.sundsvall.messaging.SmsRequestParty;
-import io.netty.util.internal.StringUtil;
 
 public class MessagingMapper {
 
@@ -122,8 +119,8 @@ public class MessagingMapper {
 
 	static EmailAttachment toEmailAttachment(final AttachmentEntity attachment) {
 		try (InputStream attachmentInputStream = attachment.getAttachmentData().getFile().getBinaryStream()) {
-			byte[] bytes = IOUtils.toByteArray(attachmentInputStream);
-			String encoded = Base64.getEncoder().encodeToString(bytes);
+			final byte[] bytes = IOUtils.toByteArray(attachmentInputStream);
+			final String encoded = Base64.getEncoder().encodeToString(bytes);
 
 			return new EmailAttachment()
 				.content(encoded)
@@ -137,8 +134,8 @@ public class MessagingMapper {
 
 	static WebMessageAttachment toWebMessageAttachment(final AttachmentEntity attachment) {
 		try (InputStream attachmentInputStream = attachment.getAttachmentData().getFile().getBinaryStream()) {
-			byte[] bytes = IOUtils.toByteArray(attachmentInputStream);
-			String encoded = Base64.getEncoder().encodeToString(bytes);
+			final byte[] bytes = IOUtils.toByteArray(attachmentInputStream);
+			final String encoded = Base64.getEncoder().encodeToString(bytes);
 
 			return new WebMessageAttachment()
 				.base64Data(encoded)
@@ -157,7 +154,7 @@ public class MessagingMapper {
 	}
 
 	private static EmailAttachment toAttachment(se.sundsvall.supportmanagement.api.model.communication.EmailAttachment attachment) {
-		byte[] byteArray = decodeBase64(attachment.getBase64EncodedString());
+		final byte[] byteArray = decodeBase64(attachment.getBase64EncodedString());
 
 		return new EmailAttachment()
 			.content(attachment.getBase64EncodedString())
@@ -166,7 +163,7 @@ public class MessagingMapper {
 	}
 
 	private static WebMessageAttachment toWebMessageAttachment(se.sundsvall.supportmanagement.api.model.communication.WebMessageAttachment attachment) {
-		byte[] byteArray = decodeBase64(attachment.getBase64EncodedString());
+		final byte[] byteArray = decodeBase64(attachment.getBase64EncodedString());
 
 		return new WebMessageAttachment()
 			.base64Data(attachment.getBase64EncodedString())
@@ -214,7 +211,7 @@ public class MessagingMapper {
 		try {
 			BASE64_DECODER.decode(message.getBytes(StandardCharsets.UTF_8));
 			return message; // If decoding passes, the message is already in base64 format
-		} catch (Exception e) {
+		} catch (final Exception e) {
 			return BASE64_ENCODER.encodeToString(message.getBytes(StandardCharsets.UTF_8));
 		}
 	}
