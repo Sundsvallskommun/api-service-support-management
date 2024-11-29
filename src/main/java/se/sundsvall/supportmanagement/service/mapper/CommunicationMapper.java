@@ -17,7 +17,6 @@ import org.springframework.stereotype.Component;
 
 import se.sundsvall.supportmanagement.api.model.communication.Communication;
 import se.sundsvall.supportmanagement.api.model.communication.CommunicationAttachment;
-import se.sundsvall.supportmanagement.api.model.communication.EmailAttachment;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
 import se.sundsvall.supportmanagement.api.model.communication.RequestAttachment;
 import se.sundsvall.supportmanagement.api.model.communication.SmsRequest;

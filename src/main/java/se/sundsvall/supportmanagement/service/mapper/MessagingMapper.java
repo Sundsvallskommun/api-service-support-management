@@ -7,6 +7,7 @@ import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.detectMimeType;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.util.Base64;
@@ -22,6 +23,8 @@ import generated.se.sundsvall.messaging.WebMessageParty;
 import generated.se.sundsvall.messaging.WebMessageRequest;
 import org.apache.commons.compress.utils.IOUtils;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.zalando.problem.Problem;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
@@ -39,6 +42,7 @@ import io.netty.util.internal.StringUtil;
 
 public class MessagingMapper {
 
+	private static final Logger LOG = LoggerFactory.getLogger(MessagingMapper.class);
 	private static final String ERRAND_ID = "errandId";
 	private static final String CHANNEL_ESERVICE = "ESERVICE";
 	private static final String CHANNEL_ESERVICE_INTERNAL = "ESERVICE_INTERNAL";
@@ -109,18 +113,16 @@ public class MessagingMapper {
 	}
 
 	private static WebMessageRequest.OepInstanceEnum toOepInstance(String channel) {
-		WebMessageRequest.OepInstanceEnum instanceEnum;
-		switch (channel) {
-			case CHANNEL_ESERVICE -> instanceEnum = WebMessageRequest.OepInstanceEnum.EXTERNAL;
-			case CHANNEL_ESERVICE_INTERNAL -> instanceEnum = WebMessageRequest.OepInstanceEnum.INTERNAL;
+		return switch (channel) {
+			case CHANNEL_ESERVICE -> WebMessageRequest.OepInstanceEnum.EXTERNAL;
+			case CHANNEL_ESERVICE_INTERNAL -> WebMessageRequest.OepInstanceEnum.INTERNAL;
 			default -> throw Problem.valueOf(INTERNAL_SERVER_ERROR, String.format("Mapping is only possible when errand is created via channel '%s' or '%s'", CHANNEL_ESERVICE, CHANNEL_ESERVICE_INTERNAL));
-		}
-		return instanceEnum;
+		};
 	}
 
 	static EmailAttachment toEmailAttachment(final AttachmentEntity attachment) {
-		try {
-			byte[] bytes = IOUtils.toByteArray(attachment.getAttachmentData().getFile().getBinaryStream());
+		try (InputStream attachmentInputStream = attachment.getAttachmentData().getFile().getBinaryStream()) {
+			byte[] bytes = IOUtils.toByteArray(attachmentInputStream);
 			String encoded = Base64.getEncoder().encodeToString(bytes);
 
 			return new EmailAttachment()
@@ -128,13 +130,14 @@ public class MessagingMapper {
 				.contentType(detectMimeType(attachment.getFileName(), bytes))
 				.name(attachment.getFileName());
 		} catch (SQLException | IOException e) {
-			return null;
+			LOG.error("Attachment mapping error", e);
+			throw Problem.valueOf(INTERNAL_SERVER_ERROR, String.format("Failed to map attachment with id '%s'", attachment.getId()));
 		}
 	}
 
 	static WebMessageAttachment toWebMessageAttachment(final AttachmentEntity attachment) {
-		try {
-			byte[] bytes = IOUtils.toByteArray(attachment.getAttachmentData().getFile().getBinaryStream());
+		try (InputStream attachmentInputStream = attachment.getAttachmentData().getFile().getBinaryStream()) {
+			byte[] bytes = IOUtils.toByteArray(attachmentInputStream);
 			String encoded = Base64.getEncoder().encodeToString(bytes);
 
 			return new WebMessageAttachment()
@@ -142,7 +145,8 @@ public class MessagingMapper {
 				.mimeType(detectMimeType(attachment.getFileName(), bytes))
 				.fileName(attachment.getFileName());
 		} catch (SQLException | IOException e) {
-			return null;
+			LOG.error("Attachment mapping error", e);
+			throw Problem.valueOf(INTERNAL_SERVER_ERROR, String.format("Failed to map attachment with id '%s'", attachment.getId()));
 		}
 	}
 
