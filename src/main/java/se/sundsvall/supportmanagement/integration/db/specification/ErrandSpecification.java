@@ -7,13 +7,9 @@ import org.springframework.data.jpa.domain.Specification;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 
-public final class ErrandSpecification {
+public interface ErrandSpecification {
 
-	private ErrandSpecification() {
-		// Prevent instantiation
-	}
-
-	public static Specification<ErrandEntity> hasMatchingTags(final List<DbExternalTag> tags) {
+	static Specification<ErrandEntity> hasMatchingTags(final List<DbExternalTag> tags) {
 		return (root, query, criteriaBuilder) -> {
 			if (tags == null || tags.isEmpty()) {
 				return criteriaBuilder.conjunction();
