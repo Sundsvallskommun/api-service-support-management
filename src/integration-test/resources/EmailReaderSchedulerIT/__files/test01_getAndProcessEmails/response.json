@@ -1,83 +1,78 @@
 {
-  "content": [
-    {
-      "id": "${json-unit.any-string}",
-      "errandNumber": "${json-unit.regex}(NS1-\\d{8})",
-      "channel": "CHANNEL-1",
-      "title": "Test subject 1",
-      "description": "Should pass 1",
-      "classification": {
-        "category": "CATEGORY-1",
-        "type": "TYPE-1"
-      },
-      "created": "${json-unit.any-string}",
-      "touched": "${json-unit.any-string}",
-      "externalTags": [],
-      "labels": ["LABEL-1", "LABEL-2"],
-      "parameters": [],
-      "priority": "MEDIUM",
-      "stakeholders": [
-        {
-          "contactChannels": [
-            {
-              "type": "EMAIL",
-              "value": "sender@this.is.a.test"
-            }
-          ],
-          "parameters":[],
-          "role": "ROLE-1"
-        }
-      ],
-      "status": "STATUS-1",
-      "suspension": {}
-    },
-    {
-      "id": "${json-unit.any-string}",
-      "errandNumber": "${json-unit.regex}(NS1-\\d{8})",
-      "channel": "CHANNEL-1",
-      "title": "Test subject 2",
-      "description": "Should pass 2",
-      "classification": {
-        "category": "CATEGORY-1",
-        "type": "TYPE-1"
-      },
-      "created": "${json-unit.any-string}",
-      "touched": "${json-unit.any-string}",
-      "externalTags": [],
-      "labels": [],
-      "parameters": [],
-      "priority": "MEDIUM",
-      "stakeholders": [
-        {
-          "contactChannels": [
-            {
-              "type": "EMAIL",
-              "value": "sender@this.is.a.test"
-            }
-          ],
-          "parameters":[],
-          "role": "ROLE-1"
-        }
-      ],
-      "status": "STATUS-1",
-      "suspension": {}
-    }
-  ],
-  "empty": false,
-  "first": true,
-  "last": true,
-  "number": 0,
-  "numberOfElements": 2,
-  "pageable": {
-    "offset": 0,
-    "pageNumber": 0,
-    "pageSize": 20,
-    "paged": true,
-    "sort": [],
-    "unpaged": false
-  },
-  "size": 20,
-  "sort": [],
-  "totalElements": 2,
-  "totalPages": 1
+	"number": 0,
+	"last": true,
+	"numberOfElements": 2,
+	"size": 20,
+	"totalPages": 1,
+	"pageable": {
+		"paged": true,
+		"pageNumber": 0,
+		"offset": 0,
+		"pageSize": 20,
+		"unpaged": false,
+		"sort": []
+	},
+	"sort": [],
+	"content": [
+		{
+			"externalTags": [],
+			"touched": "${json-unit.any-string}",
+			"errandNumber": "${json-unit.regex}(NS1-\\d{8})",
+			"created": "${json-unit.any-string}",
+			"channel": "CHANNEL-1",
+			"description": "Should pass 1",
+			"stakeholders": [{
+				"role": "ROLE-1",
+				"parameters": [],
+				"contactChannels": [{
+					"type": "EMAIL",
+					"value": "sender@this.is.a.test"
+				}]
+			}],
+			"title": "Test subject 1",
+			"classification": {
+				"category": "CATEGORY-1",
+				"type": "TYPE-1"
+			},
+			"priority": "MEDIUM",
+			"labels": [
+				"LABEL-1",
+				"LABEL-2"
+			],
+			"id": "${json-unit.any-string}",
+			"parameters": [],
+			"suspension": {},
+			"status": "STATUS-1"
+		},
+		{
+			"externalTags": [],
+			"touched": "${json-unit.any-string}",
+			"errandNumber": "${json-unit.regex}(NS1-\\d{8})",
+			"created": "${json-unit.any-string}",
+			"channel": "CHANNEL-1",
+			"description": "Should pass 2",
+			"stakeholders": [{
+				"role": "ROLE-1",
+				"parameters": [],
+				"contactChannels": [{
+					"type": "EMAIL",
+					"value": "sender@this.is.a.test"
+				}]
+			}],
+			"title": "Test subject 2",
+			"classification": {
+				"category": "CATEGORY-1",
+				"type": "TYPE-1"
+			},
+			"priority": "MEDIUM",
+			"labels": [],
+			"id": "${json-unit.any-string}",
+			"parameters": [],
+			"suspension": {},
+			"status": "STATUS-1"
+		}
+	],
+	"first": true,
+	"empty": false,
+	"totalElements": 2
 }

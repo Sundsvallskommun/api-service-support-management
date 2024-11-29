@@ -1,12 +1,12 @@
 [
 	{
-		"id": "c697642d-4d8d-4b07-8816-025a2734b09a",
 		"fileName": "Test.txt",
+		"id": "c697642d-4d8d-4b07-8816-025a2734b09a",
 		"mimeType": "text/plain"
 	},
 	{
-		"id": "c8d88089-5136-4a1a-aa10-5f435cb6e69f",
 		"fileName": "Test2.txt",
+		"id": "c8d88089-5136-4a1a-aa10-5f435cb6e69f",
 		"mimeType": "text/plain"
 	}
 ]

@@ -1,89 +1,89 @@
 {
+	"number": 1,
+	"last": false,
+	"size": 2,
+	"numberOfElements": 2,
+	"totalPages": 3,
+	"pageable": {
+		"paged": true,
+		"pageNumber": 1,
+		"offset": 2,
+		"pageSize": 2,
+		"unpaged": false,
+		"sort": {
+			"unsorted": false,
+			"sorted": true,
+			"empty": false
+		}
+	},
+	"sort": {
+		"unsorted": false,
+		"sorted": true,
+		"empty": false
+	},
 	"content": [
 		{
-			"type": "UPDATE",
-			"message": "Ärendet har uppdaterats.",
 			"owner": "SupportManagement",
-			"created": "2023-05-17T09:11:13.648+02:00",
+			"metadata": [
+				{
+					"value": "23c1af9f-7b83-49c2-a206-774f70d999b1",
+					"key": "PreviousRevision"
+				},
+				{
+					"value": "2",
+					"key": "CurrentVersion"
+				},
+				{
+					"value": "1",
+					"key": "PreviousVersion"
+				},
+				{
+					"value": "e3c342a9-750e-492b-8c69-a8b2457313f6",
+					"key": "CurrentRevision"
+				},
+				{
+					"value": "nbr02usr",
+					"key": "ExecutedBy"
+				}
+			],
 			"historyReference": "e3c342a9-750e-492b-8c69-a8b2457313f6",
 			"sourceType": "Errand",
-			"metadata": [
-				{
-					"key": "PreviousRevision",
-					"value": "23c1af9f-7b83-49c2-a206-774f70d999b1"
-				},
-				{
-					"key": "CurrentVersion",
-					"value": "2"
-				},
-				{
-					"key": "PreviousVersion",
-					"value": "1"
-				},
-				{
-					"key": "CurrentRevision",
-					"value": "e3c342a9-750e-492b-8c69-a8b2457313f6"
-				},
-				{
-					"key": "ExecutedBy",
-					"value": "nbr02usr"
-				}
-			]
+			"created": "2023-05-17T09:11:13.648+02:00",
+			"type": "UPDATE",
+			"message": "Ärendet har uppdaterats."
 		},
 		{
-			"type": "UPDATE",
-			"message": "Ärendet har uppdaterats.",
 			"owner": "SupportManagement",
-			"created": "2023-05-17T09:16:37.45+02:00",
-			"historyReference": "b5d59549-a8ac-421c-a10a-9b5637e57e03",
-			"sourceType": "Errand",
 			"metadata": [
 				{
-					"key": "PreviousRevision",
-					"value": "e3c342a9-750e-492b-8c69-a8b2457313f6"
+					"value": "e3c342a9-750e-492b-8c69-a8b2457313f6",
+					"key": "PreviousRevision"
 				},
 				{
-					"key": "CurrentVersion",
-					"value": "3"
+					"value": "3",
+					"key": "CurrentVersion"
 				},
 				{
-					"key": "PreviousVersion",
-					"value": "2"
+					"value": "2",
+					"key": "PreviousVersion"
 				},
 				{
-					"key": "CurrentRevision",
-					"value": "b5d59549-a8ac-421c-a10a-9b5637e57e03"
+					"value": "b5d59549-a8ac-421c-a10a-9b5637e57e03",
+					"key": "CurrentRevision"
 				},
 				{
-					"key": "ExecutedBy",
-					"value": "nbr02usr"
+					"value": "nbr02usr",
+					"key": "ExecutedBy"
 				}
-			]
+			],
+			"historyReference": "b5d59549-a8ac-421c-a10a-9b5637e57e03",
+			"sourceType": "Errand",
+			"created": "2023-05-17T09:16:37.45+02:00",
+			"type": "UPDATE",
+			"message": "Ärendet har uppdaterats."
 		}
 	],
-	"pageable": {
-		"sort": {
-			"empty": false,
-			"unsorted": false,
-			"sorted": true
-		},
-		"offset": 2,
-		"pageNumber": 1,
-		"pageSize": 2,
-		"paged": true,
-		"unpaged": false
-	},
-	"last": false,
-	"totalPages": 3,
-	"totalElements": 5,
-	"size": 2,
-	"number": 1,
-	"sort": {
-		"empty": false,
-		"unsorted": false,
-		"sorted": true
-	},
 	"first": false,
-	"numberOfElements": 2,
+	"totalElements": 5,
 	"empty": false
 }

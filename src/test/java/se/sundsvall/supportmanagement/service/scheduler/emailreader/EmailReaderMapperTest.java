@@ -160,7 +160,9 @@ class EmailReaderMapperTest {
 	}
 
 	@ParameterizedTest
-	@CsvSource({ "true,role", "false,role", "true,null" })
+	@CsvSource({
+		"true,role", "false,role", "true,null"
+	})
 	void toErrand(final boolean addSenderAsStakeholder, final String stakeholderRole) {
 
 		final var email = new Email()

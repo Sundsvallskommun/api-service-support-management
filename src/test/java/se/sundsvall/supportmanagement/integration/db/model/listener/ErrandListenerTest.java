@@ -43,8 +43,7 @@ class ErrandListenerTest {
 		final var loginName = "loginName";
 		final var entity = new ErrandEntity()
 			.withAssignedUserId(loginName)
-			.withStakeholders(List.of(StakeholderEntity.create())
-			).withStatus(status);
+			.withStakeholders(List.of(StakeholderEntity.create())).withStatus(status);
 
 		// Act
 		errandListener.onCreate(entity);

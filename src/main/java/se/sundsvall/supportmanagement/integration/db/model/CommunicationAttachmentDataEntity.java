@@ -56,8 +56,10 @@ public class CommunicationAttachmentDataEntity {
 
 	@Override
 	public boolean equals(final Object o) {
-		if (this == o) return true;
-		if (o == null || getClass() != o.getClass()) return false;
+		if (this == o)
+			return true;
+		if (o == null || getClass() != o.getClass())
+			return false;
 		final CommunicationAttachmentDataEntity that = (CommunicationAttachmentDataEntity) o;
 		return id == that.id && Objects.equals(file, that.file);
 	}

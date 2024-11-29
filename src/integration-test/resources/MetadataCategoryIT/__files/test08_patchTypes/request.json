@@ -1,17 +1,15 @@
-{
-  "types": [
-    {
-      "name": "TYPE-2",
-      "displayName": "TYPE-DISPLAY-NAME-2"
-    },
-    {
-      "name": "TYPE-3",
-      "displayName": "TYPE-DISPLAY-NAME-3"
-    },
-    {
-      "name": "TYPE-4",
-      "displayName": "TYPE-DISPLAY-NAME-4",
-      "escalationEmail": "email@test.com"
-    }
-  ]
-}
+{"types": [
+	{
+		"displayName": "TYPE-DISPLAY-NAME-2",
+		"name": "TYPE-2"
+	},
+	{
+		"displayName": "TYPE-DISPLAY-NAME-3",
+		"name": "TYPE-3"
+	},
+	{
+		"escalationEmail": "email@test.com",
+		"displayName": "TYPE-DISPLAY-NAME-4",
+		"name": "TYPE-4"
+	}
+]}

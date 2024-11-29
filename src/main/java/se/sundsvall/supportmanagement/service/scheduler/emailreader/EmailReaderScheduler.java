@@ -31,15 +31,15 @@ public class EmailReaderScheduler {
 			LOG.debug("Fetching messages from Emailreader");
 			healthIndicator.resetErrors();
 			emailReaderWorker.getEnabledEmailConfigs()
-					.forEach(config -> emailReaderWorker.getEmailsFromConfig(config)
-							.forEach(email -> {
-								try {
-									emailReaderWorker.processEmail(email, config);
-								} catch (final Exception e) {
-									LOG.error("Error processing email with id: {}", email.getId(), e);
-									healthIndicator.setUnhealthy();
-								}
-							}));
+				.forEach(config -> emailReaderWorker.getEmailsFromConfig(config)
+					.forEach(email -> {
+						try {
+							emailReaderWorker.processEmail(email, config);
+						} catch (final Exception e) {
+							LOG.error("Error processing email with id: {}", email.getId(), e);
+							healthIndicator.setUnhealthy();
+						}
+					}));
 			if (!healthIndicator.hasErrors()) {
 				healthIndicator.setHealthy();
 			}

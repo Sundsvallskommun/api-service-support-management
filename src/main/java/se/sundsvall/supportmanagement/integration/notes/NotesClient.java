@@ -30,13 +30,13 @@ public interface NotesClient {
 	/**
 	 * Find all notes, filtered by provided parameters.
 	 *
-	 * @param municipalityId the municipalityId of the note
-	 * @param context the context of the note
-	 * @param role the role of the note
-	 * @param clientId the client id of the note
-	 * @param page the page number of the result
-	 * @param limit the number of results per page
-	 * @return the notes
+	 * @param  municipalityId the municipalityId of the note
+	 * @param  context        the context of the note
+	 * @param  role           the role of the note
+	 * @param  clientId       the client id of the note
+	 * @param  page           the page number of the result
+	 * @param  limit          the number of results per page
+	 * @return                the notes
 	 */
 	@GetMapping(path = "/{municipalityId}/notes", produces = APPLICATION_JSON_VALUE)
 	FindNotesResponse findNotes(
@@ -52,9 +52,9 @@ public interface NotesClient {
 	/**
 	 * Find note by id.
 	 *
-	 * @param municipalityId the municipalityId of the note
-	 * @param id the id of the note to find
-	 * @return the note
+	 * @param  municipalityId the municipalityId of the note
+	 * @param  id             the id of the note to find
+	 * @return                the note
 	 */
 	@GetMapping(path = "/{municipalityId}/notes/{id}", produces = APPLICATION_JSON_VALUE)
 	Note findNoteById(@PathVariable(name = "municipalityId") String municipalityId, @PathVariable(name = "id") String id);
@@ -63,7 +63,7 @@ public interface NotesClient {
 	 * Delete note by id.
 	 *
 	 * @param municipalityId the municipalityId of the note
-	 * @param id the id of the note to delete
+	 * @param id             the id of the note to delete
 	 */
 	@DeleteMapping(path = "/{municipalityId}/notes/{id}")
 	ResponseEntity<Void> deleteNoteById(
@@ -74,10 +74,10 @@ public interface NotesClient {
 	/**
 	 * Update note by id.
 	 *
-	 * @param municipalityId the municipalityId of the note
-	 * @param id the id of the note to update
-	 * @param updateNoteRequest the note to update
-	 * @return the updated note
+	 * @param  municipalityId    the municipalityId of the note
+	 * @param  id                the id of the note to update
+	 * @param  updateNoteRequest the note to update
+	 * @return                   the updated note
 	 */
 	@PatchMapping(path = "/{municipalityId}/notes/{id}", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
 	ResponseEntity<Note> updateNoteById(
@@ -89,7 +89,7 @@ public interface NotesClient {
 	/**
 	 * Create note.
 	 *
-	 * @param municipalityId the municipalityId of the note
+	 * @param municipalityId    the municipalityId of the note
 	 * @param createNoteRequest the note to create
 	 */
 	@PostMapping(path = "/{municipalityId}/notes", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
@@ -101,9 +101,9 @@ public interface NotesClient {
 	/**
 	 * Find all revisions for a note by id.
 	 *
-	 * @param municipalityId the municipalityId to find revisions for
-	 * @param id the id of the note to find revisions for
-	 * @return a list of revisions connected to the note
+	 * @param  municipalityId the municipalityId to find revisions for
+	 * @param  id             the id of the note to find revisions for
+	 * @return                a list of revisions connected to the note
 	 */
 	@GetMapping(path = "/{municipalityId}/notes/{id}/revisions", produces = APPLICATION_JSON_VALUE)
 	List<Revision> findAllNoteRevisions(@PathVariable(name = "municipalityId") String municipalityId, @PathVariable(name = "id") String id);
@@ -111,11 +111,11 @@ public interface NotesClient {
 	/**
 	 * Compare two revision versions of a note to each other.
 	 *
-	 * @param municipalityId the municipalityId of the revisions to compare
-	 * @param id            the id of the note to compare
-	 * @param sourceVersion the version to use as source
-	 * @param targetVersion the version to use as target
-	 * @return all found differences between the source and target version of the note
+	 * @param  municipalityId the municipalityId of the revisions to compare
+	 * @param  id             the id of the note to compare
+	 * @param  sourceVersion  the version to use as source
+	 * @param  targetVersion  the version to use as target
+	 * @return                all found differences between the source and target version of the note
 	 */
 	@GetMapping(path = "/{municipalityId}/notes/{id}/revisions/difference", produces = APPLICATION_JSON_VALUE)
 	DifferenceResponse compareNoteRevisions(

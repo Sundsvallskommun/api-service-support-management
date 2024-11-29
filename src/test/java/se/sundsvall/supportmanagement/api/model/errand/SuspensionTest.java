@@ -1,6 +1,5 @@
 package se.sundsvall.supportmanagement.api.model.errand;
 
-
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanEquals;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanHashCode;
@@ -37,7 +36,6 @@ class SuspensionTest {
 
 	@Test
 	void testBuilderMethods() {
-
 
 		final var suspendFrom = OffsetDateTime.now();
 		final var suspendTo = OffsetDateTime.now().plusDays(1);

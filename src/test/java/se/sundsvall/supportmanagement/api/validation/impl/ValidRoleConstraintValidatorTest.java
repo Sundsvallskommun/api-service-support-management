@@ -132,12 +132,12 @@ class ValidRoleConstraintValidatorTest {
 			when(requestAttributesMock.getAttribute(URI_TEMPLATE_VARIABLES_ATTRIBUTE, SCOPE_REQUEST)).thenReturn(attributes);
 			when(metadataServiceMock.isValidated(namespace, municipalityId, ROLE)).thenReturn(false);
 
-
 			assertThat(validator.isValid("role-1", constraintValidatorContextMock)).isTrue();
 			verify(metadataServiceMock).isValidated(namespace, municipalityId, ROLE);
 			verifyNoMoreInteractions(metadataServiceMock);
 		}
 	}
+
 	@Test
 	void noRequestPresent() {
 		final var e = assertThrows(ThrowableProblem.class, () -> validator.isValid("role-1", constraintValidatorContextMock));

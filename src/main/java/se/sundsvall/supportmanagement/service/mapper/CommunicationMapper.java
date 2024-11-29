@@ -37,7 +37,9 @@ public class CommunicationMapper {
 
 	private final BlobBuilder blobBuilder;
 
-	public CommunicationMapper(final BlobBuilder blobBuilder) {this.blobBuilder = blobBuilder;}
+	public CommunicationMapper(final BlobBuilder blobBuilder) {
+		this.blobBuilder = blobBuilder;
+	}
 
 	@NotNull
 	private static Map<EmailHeader, List<String>> toHeaders(final CommunicationEntity entity) {
@@ -55,18 +57,18 @@ public class CommunicationMapper {
 	public Communication toCommunication(final CommunicationEntity entity) {
 
 		return Optional.ofNullable(entity).map(communication -> Communication.create()
-				.withSender(entity.getSender())
-				.withEmailHeaders(toHeaders(entity))
-				.withCommunicationID(entity.getId())
-				.withErrandNumber(entity.getErrandNumber())
-				.withDirection(entity.getDirection())
-				.withMessageBody(entity.getMessageBody())
-				.withSent(entity.getSent())
-				.withSubject(entity.getSubject())
-				.withCommunicationType(entity.getType())
-				.withTarget(entity.getTarget())
-				.withViewed(entity.isViewed())
-				.withCommunicationAttachments(toCommunicationAttachments(entity.getAttachments(), entity.getErrandAttachments())))
+			.withSender(entity.getSender())
+			.withEmailHeaders(toHeaders(entity))
+			.withCommunicationID(entity.getId())
+			.withErrandNumber(entity.getErrandNumber())
+			.withDirection(entity.getDirection())
+			.withMessageBody(entity.getMessageBody())
+			.withSent(entity.getSent())
+			.withSubject(entity.getSubject())
+			.withCommunicationType(entity.getType())
+			.withTarget(entity.getTarget())
+			.withViewed(entity.isViewed())
+			.withCommunicationAttachments(toCommunicationAttachments(entity.getAttachments(), entity.getErrandAttachments())))
 			.orElse(null);
 	}
 

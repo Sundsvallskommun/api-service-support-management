@@ -14,7 +14,9 @@ public class ErrandLabelService {
 
 	private final ErrandsRepository errandsRepository;
 
-	public ErrandLabelService(final ErrandsRepository errandsRepository) {this.errandsRepository = errandsRepository;}
+	public ErrandLabelService(final ErrandsRepository errandsRepository) {
+		this.errandsRepository = errandsRepository;
+	}
 
 	public List<String> getErrandLabels(final String namespace, final String municipalityId, final String id) {
 		final var errand = getErrandEntity(namespace, municipalityId, id);

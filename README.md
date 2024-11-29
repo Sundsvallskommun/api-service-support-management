@@ -1,6 +1,7 @@
 # SupportManagement
 
 ## Beskrivning
+
 SupportManagement tillhandahåller funktioner för att hantera ärenden.
 
 ## Status
@@ -13,4 +14,5 @@ SupportManagement tillhandahåller funktioner för att hantera ärenden.
 [![Bugs](https://sonarcloud.io/api/project_badges/measure?project=Sundsvallskommun_api-service-support-management&metric=bugs)](https://sonarcloud.io/summary/overall?id=Sundsvallskommun_api-service-support-management)
 
 ## 
+
 Copyright (c) 2023 Sundsvalls kommun

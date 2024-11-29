@@ -1,24 +1,20 @@
 [
 	{
-	    "displayName": "display name A",
-		"key": "key1",
-		"values": [
-			"value1"
-		]
+		"displayName": "display name A",
+		"values": ["value1"],
+		"key": "key1"
 	},
 	{
-	    "displayName": "display name B",
-		"key": "key1",
+		"displayName": "display name B",
 		"values": [
 			"value2",
 			"value3"
-		]
+		],
+		"key": "key1"
 	},
 	{
-	    "displayName": "display name C",
-		"key": "key1",
-		"values": [
-			"value4"
-		]
+		"displayName": "display name C",
+		"values": ["value4"],
+		"key": "key1"
 	}
 ]

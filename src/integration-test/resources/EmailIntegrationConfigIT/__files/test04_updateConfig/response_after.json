@@ -1,15 +1,15 @@
 {
-  "enabled": false,
-  "errandClosedEmailSender": "sender-update",
-  "errandClosedEmailTemplate": "template-update",
-  "daysOfInactivityBeforeReject": 123,
-  "statusForNew": "STATUS-3",
-  "triggerStatusChangeOn": "STATUS-2",
-  "statusChangeTo": "STATUS-1",
-  "inactiveStatus": "STATUS-3",
-  "addSenderAsStakeholder": false,
-  "stakeholderRole": "ROLE-2",
-  "errandChannel":"CHANNEL-2",
-  "created": "2021-12-31T23:59:59.999+01:00",
-  "modified": "${json-unit.ignore}"
+	"errandClosedEmailSender": "sender-update",
+	"statusChangeTo": "STATUS-1",
+	"created": "2021-12-31T23:59:59.999+01:00",
+	"daysOfInactivityBeforeReject": 123,
+	"errandChannel": "CHANNEL-2",
+	"triggerStatusChangeOn": "STATUS-2",
+	"inactiveStatus": "STATUS-3",
+	"enabled": false,
+	"statusForNew": "STATUS-3",
+	"modified": "${json-unit.ignore}",
+	"stakeholderRole": "ROLE-2",
+	"addSenderAsStakeholder": false,
+	"errandClosedEmailTemplate": "template-update"
 }

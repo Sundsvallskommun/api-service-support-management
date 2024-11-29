@@ -33,7 +33,9 @@ import jakarta.persistence.UniqueConstraint;
 		@Index(name = "idx_namespace_municipality_id", columnList = "namespace, municipality_id")
 	},
 	uniqueConstraints = {
-		@UniqueConstraint(name = "uq_namespace_municipality_id_name", columnNames = { "namespace", "municipality_id", "name" })
+		@UniqueConstraint(name = "uq_namespace_municipality_id_name", columnNames = {
+			"namespace", "municipality_id", "name"
+		})
 	})
 public class CategoryEntity {
 

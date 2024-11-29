@@ -1,8 +1,8 @@
 {
-    "displayName": "Displayname 1",
-	"key": "key1",
+	"displayName": "Displayname 1",
 	"values": [
 		"value3",
 		"value4"
-	]
+	],
+	"key": "key1"
 }

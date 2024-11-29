@@ -1,6 +1,5 @@
 package se.sundsvall.supportmanagement.service;
 
-
 import static org.zalando.problem.Status.NOT_FOUND;
 import static se.sundsvall.supportmanagement.service.mapper.TimeMeasurementMapper.toTimeMeasurements;
 
@@ -19,7 +18,9 @@ public class TimeMeasurementService {
 
 	private final ErrandsRepository repository;
 
-	public TimeMeasurementService(final ErrandsRepository repository) {this.repository = repository;}
+	public TimeMeasurementService(final ErrandsRepository repository) {
+		this.repository = repository;
+	}
 
 	public List<TimeMeasurement> getErrandTimeMeasurements(final String namespace, final String municipalityId, final String errandId) {
 		return repository.findByIdAndNamespaceAndMunicipalityId(errandId, namespace, municipalityId)

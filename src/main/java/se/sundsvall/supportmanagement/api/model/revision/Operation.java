@@ -78,6 +78,7 @@ public class Operation {
 		this.fromValue = fromValue;
 		return this;
 	}
+
 	@Override
 	public int hashCode() {
 		return Objects.hash(op, path, value, fromValue);

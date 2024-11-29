@@ -11,7 +11,9 @@ import jakarta.validation.Payload;
 import se.sundsvall.supportmanagement.api.validation.impl.ValidLabelSiblingsConstraintValidator;
 
 @Documented
-@Target({ ElementType.FIELD, ElementType.CONSTRUCTOR, ElementType.PARAMETER, ElementType.TYPE_USE })
+@Target({
+	ElementType.FIELD, ElementType.CONSTRUCTOR, ElementType.PARAMETER, ElementType.TYPE_USE
+})
 @Retention(RetentionPolicy.RUNTIME)
 @Constraint(validatedBy = ValidLabelSiblingsConstraintValidator.class)
 public @interface ValidLabelSiblings {

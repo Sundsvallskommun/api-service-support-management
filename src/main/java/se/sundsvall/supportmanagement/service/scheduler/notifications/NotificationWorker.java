@@ -12,7 +12,9 @@ public class NotificationWorker {
 
 	private final NotificationRepository notificationRepository;
 
-	public NotificationWorker(final NotificationRepository notificationRepository) {this.notificationRepository = notificationRepository;}
+	public NotificationWorker(final NotificationRepository notificationRepository) {
+		this.notificationRepository = notificationRepository;
+	}
 
 	@Transactional
 	public void cleanUpNotifications() {

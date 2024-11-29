@@ -20,9 +20,10 @@ import java.util.Objects;
 @Table(name = "web_message_collect",
 	uniqueConstraints = {
 		@UniqueConstraint(name = "uq_namespace_municipality_id_instance_family_id",
-			columnNames = { "namespace", "municipality_id", "instance" })
-	}
-)
+			columnNames = {
+				"namespace", "municipality_id", "instance"
+			})
+	})
 public class WebMessageCollectEntity {
 
 	@Id

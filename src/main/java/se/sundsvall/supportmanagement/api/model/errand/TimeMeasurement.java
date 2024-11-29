@@ -23,7 +23,6 @@ public class TimeMeasurement {
 	@Schema(description = "Administrator for the time measurement period", example = "JO12DOE")
 	private String administrator;
 
-
 	public static TimeMeasurement create() {
 		return new TimeMeasurement();
 	}
@@ -100,8 +99,10 @@ public class TimeMeasurement {
 
 	@Override
 	public boolean equals(final Object o) {
-		if (this == o) return true;
-		if (o == null || getClass() != o.getClass()) return false;
+		if (this == o)
+			return true;
+		if (o == null || getClass() != o.getClass())
+			return false;
 		final TimeMeasurement that = (TimeMeasurement) o;
 		return Objects.equals(status, that.status) && Objects.equals(startTime, that.startTime) && Objects.equals(stopTime, that.stopTime) && Objects.equals(description, that.description) && Objects.equals(administrator, that.administrator);
 	}

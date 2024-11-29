@@ -1,43 +1,41 @@
-{
-  "operations": [
-    {
-      "op": "remove",
-      "path": "/externalTags/0",
-      "value": "{ \"key\" : \"caseid\", \"value\" : \"2222-3333\"}"
-    },
-    {
-      "op": "replace",
-      "path": "/stakeholders/0/role",
-      "value": "CAKE-BAKER",
-      "fromValue": "ADMINISTRATOR"
-    },
-    {
-      "op": "add",
-      "path": "/stakeholders/1",
-      "value": "{ \"externalId\" : \"cb20c51f-fcf3-42c0-b613-de563634a8ec\", \"externalIdType\" : \"PRIVATE\", \"role\" : \"CAKE-EATER\", \"firstName\" : \"Slartibartfast\", \"lastName\" : \"Magrathea\", \"address\" : \"Northern skies\", \"zipCode\" : \"23456\", \"country\" : \"Norway\", \"contactChannels\" : [ { \"type\" : \"Email\", \"value\" : \"slartibartfast@earth.com\" } ]}"
-    },
-    {
-      "op": "replace",
-      "path": "/title",
-      "value": "It is my birthday",
-      "fromValue": "Title for the errand"
-    },
-    {
-      "op": "replace",
-      "path": "/priority",
-      "value": "HIGH",
-      "fromValue": "LOW"
-    },
-    {
-      "op": "replace",
-      "path": "/assignedUserId",
-      "value": "jane11dane",
-      "fromValue": "joe01doe"
-    },
-    {
-      "op": "add",
-      "path": "/attachments",
-      "value": "[ ]"
-    }
-  ]
-}
+{"operations": [
+	{
+		"op": "remove",
+		"path": "/externalTags/0",
+		"value": "{ \"key\" : \"caseid\", \"value\" : \"2222-3333\"}"
+	},
+	{
+		"fromValue": "ADMINISTRATOR",
+		"op": "replace",
+		"path": "/stakeholders/0/role",
+		"value": "CAKE-BAKER"
+	},
+	{
+		"op": "add",
+		"path": "/stakeholders/1",
+		"value": "{ \"externalId\" : \"cb20c51f-fcf3-42c0-b613-de563634a8ec\", \"externalIdType\" : \"PRIVATE\", \"role\" : \"CAKE-EATER\", \"firstName\" : \"Slartibartfast\", \"lastName\" : \"Magrathea\", \"address\" : \"Northern skies\", \"zipCode\" : \"23456\", \"country\" : \"Norway\", \"contactChannels\" : [ { \"type\" : \"Email\", \"value\" : \"slartibartfast@earth.com\" } ]}"
+	},
+	{
+		"fromValue": "Title for the errand",
+		"op": "replace",
+		"path": "/title",
+		"value": "It is my birthday"
+	},
+	{
+		"fromValue": "LOW",
+		"op": "replace",
+		"path": "/priority",
+		"value": "HIGH"
+	},
+	{
+		"fromValue": "joe01doe",
+		"op": "replace",
+		"path": "/assignedUserId",
+		"value": "jane11dane"
+	},
+	{
+		"op": "add",
+		"path": "/attachments",
+		"value": "[ ]"
+	}
+]}

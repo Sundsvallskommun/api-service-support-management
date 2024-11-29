@@ -15,7 +15,9 @@ import org.springframework.test.context.ActiveProfiles;
 
 import se.sundsvall.supportmanagement.Application;
 
-@SpringBootTest(classes = {Application.class}, webEnvironment = MOCK)
+@SpringBootTest(classes = {
+	Application.class
+}, webEnvironment = MOCK)
 @ActiveProfiles("junit")
 class BlobBuilderTest {
 

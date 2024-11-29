@@ -126,10 +126,13 @@ public class MetadataResponse {
 
 	@Override
 	public boolean equals(final Object o) {
-		if (this == o) return true;
-		if (o == null || getClass() != o.getClass()) return false;
+		if (this == o)
+			return true;
+		if (o == null || getClass() != o.getClass())
+			return false;
 		final MetadataResponse that = (MetadataResponse) o;
-		return Objects.equals(categories, that.categories) && Objects.equals(externalIdTypes, that.externalIdTypes) && Objects.equals(labels, that.labels) && Objects.equals(statuses, that.statuses) && Objects.equals(roles, that.roles) && Objects.equals(contactReasons, that.contactReasons);
+		return Objects.equals(categories, that.categories) && Objects.equals(externalIdTypes, that.externalIdTypes) && Objects.equals(labels, that.labels) && Objects.equals(statuses, that.statuses) && Objects.equals(roles, that.roles) && Objects.equals(
+			contactReasons, that.contactReasons);
 	}
 
 	@Override

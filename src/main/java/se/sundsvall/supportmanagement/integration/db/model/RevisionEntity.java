@@ -29,7 +29,9 @@ import org.hibernate.annotations.UuidGenerator;
 		@Index(name = "revision_namespace_index", columnList = "namespace")
 	},
 	uniqueConstraints = {
-		@UniqueConstraint(name = "uq_entity_id_version", columnNames = {"entity_id", "version"})
+		@UniqueConstraint(name = "uq_entity_id_version", columnNames = {
+			"entity_id", "version"
+		})
 	})
 public class RevisionEntity {
 
@@ -175,10 +177,13 @@ public class RevisionEntity {
 
 	@Override
 	public boolean equals(final Object o) {
-		if (this == o) return true;
-		if (o == null || getClass() != o.getClass()) return false;
+		if (this == o)
+			return true;
+		if (o == null || getClass() != o.getClass())
+			return false;
 		final RevisionEntity that = (RevisionEntity) o;
-		return Objects.equals(id, that.id) && Objects.equals(entityId, that.entityId) && Objects.equals(namespace, that.namespace) && Objects.equals(municipalityId, that.municipalityId) && Objects.equals(entityType, that.entityType) && Objects.equals(version, that.version) && Objects.equals(serializedSnapshot, that.serializedSnapshot) && Objects.equals(created, that.created);
+		return Objects.equals(id, that.id) && Objects.equals(entityId, that.entityId) && Objects.equals(namespace, that.namespace) && Objects.equals(municipalityId, that.municipalityId) && Objects.equals(entityType, that.entityType) && Objects.equals(
+			version, that.version) && Objects.equals(serializedSnapshot, that.serializedSnapshot) && Objects.equals(created, that.created);
 	}
 
 	@Override

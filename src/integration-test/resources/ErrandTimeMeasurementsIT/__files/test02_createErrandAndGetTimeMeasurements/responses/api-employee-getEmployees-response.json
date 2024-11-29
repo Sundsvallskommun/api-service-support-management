@@ -1,34 +1,30 @@
-[
-  {
-    "personId": "97a4e786-e779-47f6-84e1-17d495837c79",
-    "personNumber": "199202120219",
-    "isClassified": false,
-    "givenname": "Linus",
-    "middlename": null,
-    "lastname": "Sjölinder",
-    "loginname": "lin12sjo",
-    "emailAddress": "linus.sjolinder@sundsvall.se",
-    "isManager": false,
-    "employments": [
-      {
-        "companyId": 1,
-        "startDate": "2024-05-27T14:28:00.326Z",
-        "endDate": "2024-05-27T14:28:00.326Z",
-        "employmentType": 0,
-        "title": "It-konsult",
-        "managerCode": null,
-        "orgId": 2836,
-        "orgName": "KSK Avd Digitalisering och IT",
-        "topOrgId": 28,
-        "topOrgName": "Kommunstyrelsekontoret",
-        "benefitGroupId": null,
-        "formOfEmploymentId": null,
-        "isManual": true,
-        "paTeam": null,
-        "isMainEmployment": false,
-        "manager": null,
-        "aid": null
-      }
-    ]
-  }
-]
+[{
+	"emailAddress": "linus.sjolinder@sundsvall.se",
+	"loginname": "lin12sjo",
+	"givenname": "Linus",
+	"isClassified": false,
+	"middlename": null,
+	"isManager": false,
+	"personId": "97a4e786-e779-47f6-84e1-17d495837c79",
+	"employments": [{
+		"orgName": "KSK Avd Digitalisering och IT",
+		"topOrgId": 28,
+		"manager": null,
+		"endDate": "2024-05-27T14:28:00.326Z",
+		"employmentType": 0,
+		"formOfEmploymentId": null,
+		"topOrgName": "Kommunstyrelsekontoret",
+		"isManual": true,
+		"title": "It-konsult",
+		"orgId": 2836,
+		"companyId": 1,
+		"paTeam": null,
+		"managerCode": null,
+		"isMainEmployment": false,
+		"benefitGroupId": null,
+		"aid": null,
+		"startDate": "2024-05-27T14:28:00.326Z"
+	}],
+	"personNumber": "199202120219",
+	"lastname": "Sjölinder"
+}]
