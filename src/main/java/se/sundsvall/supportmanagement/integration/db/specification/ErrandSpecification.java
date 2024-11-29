@@ -1,23 +1,22 @@
 package se.sundsvall.supportmanagement.integration.db.specification;
 
 import jakarta.persistence.criteria.Predicate;
+import java.util.ArrayList;
+import java.util.List;
 import org.springframework.data.jpa.domain.Specification;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 
-import java.util.ArrayList;
-import java.util.List;
+public interface ErrandSpecification {
 
-public class ErrandSpecification {
-
-	public static Specification<ErrandEntity> hasMatchingTags(List<DbExternalTag> tags) {
+	static Specification<ErrandEntity> hasMatchingTags(final List<DbExternalTag> tags) {
 		return (root, query, criteriaBuilder) -> {
 			if (tags == null || tags.isEmpty()) {
 				return criteriaBuilder.conjunction();
 			}
 
-			List<Predicate> predicates = new ArrayList<>();
-			for (DbExternalTag tag : tags) {
+			final List<Predicate> predicates = new ArrayList<>();
+			for (final DbExternalTag tag : tags) {
 				predicates.add(criteriaBuilder.and(
 					criteriaBuilder.equal(root.join("externalTags").get("key"), tag.getKey()),
 					criteriaBuilder.equal(root.join("externalTags").get("value"), tag.getValue())
