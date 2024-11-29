@@ -21,8 +21,9 @@ public class EmployeeService {
 
 	private final EmployeeClient employeeClient;
 
-	public EmployeeService(final EmployeeClient employeeClient) {this.employeeClient = employeeClient;}
-
+	public EmployeeService(final EmployeeClient employeeClient) {
+		this.employeeClient = employeeClient;
+	}
 
 	public PortalPersonData getEmployeeByLoginName(final String loginName) {
 		return employeeClient.getEmployeeByDomainAndLoginName(DOMAIN_PERSONAL, loginName)
@@ -31,8 +32,7 @@ public class EmployeeService {
 
 	public Employee getEmployeeByPartyId(final StakeholderEntity stakeholderEntity) {
 		return Optional.ofNullable(stakeholderEntity)
-			.flatMap(stakeholder ->
-			{
+			.flatMap(stakeholder -> {
 				final var filter = URLEncoder.encode("{\"PersonId\": \"" + stakeholder.getExternalId() + "\"}", StandardCharsets.UTF_8);
 				return employeeClient.getEmployeeInformation(filter)
 					.orElse(emptyList())

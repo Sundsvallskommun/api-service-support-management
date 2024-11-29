@@ -1,77 +1,69 @@
 {
+	"externalTags": [{
+		"value": "8849-2848",
+		"key": "caseid"
+	}],
+	"contactReasonDescription": "This is the contact reason description",
+	"channel": "The channel",
+	"description": "Fix as soon as possible!",
+	"stakeholders": [{
+		"externalId": "cb20c51f-fcf3-42c0-b613-de563634a8ec",
+		"parameters": [
+			{
+				"values": [
+					"value1",
+					"value2"
+				],
+				"key": "stakeholderparam-key-1"
+			},
+			{
+				"displayName": "The second stakeholderparam key",
+				"values": ["the second value"],
+				"key": "stakeholderparam-key-2"
+			},
+			{
+				"values": [
+					"value3",
+					"value4"
+				],
+				"key": "stakeholderparam-key-1"
+			}
+		],
+		"contactChannels": [],
+		"externalIdType": "PRIVATE"
+	}],
 	"title": "test04_postErrand",
 	"priority": "LOW",
-	"stakeholders": [
-		{
-			"contactChannels": [],
-			"externalId": "cb20c51f-fcf3-42c0-b613-de563634a8ec",
-			"externalIdType": "PRIVATE",
-			"parameters": [
-				{
-					"key": "stakeholderparam-key-1",
-					"values": [
-						"value1",
-						"value2"
-					]
-				},
-				{
-					"key": "stakeholderparam-key-2",
-					"displayName": "The second stakeholderparam key",
-					"values": [
-						"the second value"
-					]
-				},
-				{
-					"key": "stakeholderparam-key-1",
-					"values": [
-						"value3",
-						"value4"
-					]
-				}
-			]
-		}
-	],
-	"parameters": [
-		{
-			"key": "key-1",
-			"values": [
-				"value1",
-				"value2"
-			]
-		},
-		{
-			"key": "key-2",
-			"displayName": "The second key",
-			"values": [
-				"the second value"
-			]
-		},
-		{
-			"key": "key-1",
-			"values": [
-				"value3",
-				"value4"
-			]
-		}
-	],
-	"externalTags": [
-		{
-			"key": "caseid",
-			"value": "8849-2848"
-		}
-	],
 	"classification": {
 		"category": "CATEGORY-2",
 		"type": "TYPE-2"
 	},
-	"businessRelated": "true",
-	"status": "STATUS-2",
-	"reporterUserId": "joe01doe",
-	"assignedUserId": "joe01doe",
-	"assignedGroupId": "hardware support",
 	"resolution": "fixed",
-	"description": "Fix as soon as possible!",
+	"assignedGroupId": "hardware support",
 	"contactReason": "reason1",
-	"contactReasonDescription": "This is the contact reason description",
-	"channel": "The channel"
+	"businessRelated": "true",
+	"reporterUserId": "joe01doe",
+	"parameters": [
+		{
+			"values": [
+				"value1",
+				"value2"
+			],
+			"key": "key-1"
+		},
+		{
+			"displayName": "The second key",
+			"values": ["the second value"],
+			"key": "key-2"
+		},
+		{
+			"values": [
+				"value3",
+				"value4"
+			],
+			"key": "key-1"
+		}
+	],
+	"assignedUserId": "joe01doe",
+	"status": "STATUS-2"
 }

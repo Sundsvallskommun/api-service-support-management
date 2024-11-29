@@ -1,12 +1,10 @@
-[
-	{
-		"displayName": "display name A",
-		"key": "key1",
-		"values": [
-			"value1",
-			"value2",
-			"value3",
-			"value4"
-		]
-	}
-]
+[{
+	"displayName": "display name A",
+	"values": [
+		"value1",
+		"value2",
+		"value3",
+		"value4"
+	],
+	"key": "key1"
+}]

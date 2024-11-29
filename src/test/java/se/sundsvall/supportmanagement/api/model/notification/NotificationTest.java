@@ -86,7 +86,6 @@ class NotificationTest {
 		assertThat(notification.getErrandNumber()).isEqualTo(errandNumber);
 	}
 
-
 	@Test
 	void testNoDirtOnCreatedBean() {
 		assertThat(Notification.create()).hasAllNullFieldsOrPropertiesExcept("acknowledged");

@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test;
 
 class DirectionTest {
 
-
 	@Test
 	void enumValues() {
 		assertThat(Direction.values()).containsExactlyInAnyOrder(Direction.INBOUND, Direction.OUTBOUND);

@@ -70,7 +70,6 @@ class AttachmentEntityTest {
 		assertThat(attachmentEntity.getErrandEntity()).isEqualTo(errandEntity);
 	}
 
-
 	@Test
 	void testOnCreate() {
 		final var entity = new AttachmentEntity();

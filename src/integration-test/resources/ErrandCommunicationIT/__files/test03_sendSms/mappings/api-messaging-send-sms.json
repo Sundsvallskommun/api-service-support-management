@@ -1,36 +1,22 @@
 {
-	"name": "api-messaging-sms",
 	"request": {
+		"headers": {"Authorization": {"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"}},
 		"method": "POST",
-		"url": "/api-messaging/2281/sms?async=true",
-		"headers": {
-			"Authorization": {
-				"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
-			}
-		},
-		"bodyPatterns": [
-			{
-				"equalToJson": {
-					"party": {
-						"externalReferences": [
-							{
-								"key": "errandId",
-								"value": "1be673c0-6ba3-4fb0-af4a-43acf23389f6"
-							}
-						]
-					},
-					"sender": "0701234567",
-					"mobileNumber": "+46707654321",
-					"message": "Have you heard the news that Bender is suffering from a terminal manufacturing defect, effectively rendering him mortal?"
-				}
-			}
-		]
+		"bodyPatterns": [{"equalToJson": {
+			"sender": "0701234567",
+			"mobileNumber": "+46707654321",
+			"message": "Have you heard the news that Bender is suffering from a terminal manufacturing defect, effectively rendering him mortal?",
+			"party": {"externalReferences": [{
+				"value": "1be673c0-6ba3-4fb0-af4a-43acf23389f6",
+				"key": "errandId"
+			}]}
+		}}],
+		"url": "/api-messaging/2281/sms?async=true"
 	},
 	"response": {
-		"headers": {
-			"Content-Type": "application/json"
-		},
-		"status": 200,
-		"bodyFileName": "test03_sendSms/response/api-messaging-send-sms-response.json"
-	}
+		"headers": {"Content-Type": "application/json"},
+		"bodyFileName": "test03_sendSms/response/api-messaging-send-sms-response.json",
+		"status": 200
+	},
+	"name": "api-messaging-sms"
 }

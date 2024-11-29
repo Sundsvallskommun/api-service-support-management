@@ -282,10 +282,10 @@ class ErrandsResourceTest {
 
 		// Call
 		final var response = webTestClient.get().uri(builder -> builder.path(PATH)
-				.queryParam("filter", filter)
-				.queryParam("page", page)
-				.queryParam("size", size)
-				.build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+			.queryParam("filter", filter)
+			.queryParam("page", page)
+			.queryParam("size", size)
+			.build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
 			.exchange()
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)

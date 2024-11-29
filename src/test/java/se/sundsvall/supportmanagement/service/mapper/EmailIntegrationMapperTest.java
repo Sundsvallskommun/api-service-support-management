@@ -1,6 +1,5 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
-
 import org.junit.jupiter.api.Test;
 import se.sundsvall.supportmanagement.api.model.config.EmailIntegration;
 import se.sundsvall.supportmanagement.integration.db.model.EmailWorkerConfigEntity;
@@ -50,7 +49,6 @@ class EmailIntegrationMapperTest {
 			.withErrandChannel(errandChannel)
 			.withCreated(created)
 			.withModified(modified);
-
 
 		var entity = mapper.toEntity(config, namespace, municipalityId);
 

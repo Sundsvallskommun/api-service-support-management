@@ -25,8 +25,8 @@ public interface EventlogClient {
 	 * Create a log event under logKey.
 	 *
 	 * @param municipalityId municipality id to create event for
-	 * @param logKey containing UUID to create event for
-	 * @param event the event to create
+	 * @param logKey         containing UUID to create event for
+	 * @param event          the event to create
 	 */
 	@PostMapping(path = "/{municipalityId}/{logKey}", consumes = APPLICATION_JSON_VALUE, produces = ALL_VALUE)
 	ResponseEntity<Void> createEvent(
@@ -37,10 +37,10 @@ public interface EventlogClient {
 	/**
 	 * Fetch created log events for a logKey.
 	 *
-	 * @param municipalityId municipality id to fetch events for
-	 * @param logKey containing UUID to fetch events for
-	 * @param pageable information of page, size and sorting options for the request
-	 * @return response containing result of search based on the provided parameters
+	 * @param  municipalityId municipality id to fetch events for
+	 * @param  logKey         containing UUID to fetch events for
+	 * @param  pageable       information of page, size and sorting options for the request
+	 * @return                response containing result of search based on the provided parameters
 	 */
 	@GetMapping(path = "/{municipalityId}/{logKey}", produces = APPLICATION_JSON_VALUE)
 	PageEvent getEvents(

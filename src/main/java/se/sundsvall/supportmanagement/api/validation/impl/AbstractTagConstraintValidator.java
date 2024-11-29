@@ -27,8 +27,8 @@ abstract class AbstractTagConstraintValidator {
 	/**
 	 * Getting value for path variable name from current request
 	 * 
-	 * @param variableName path parameter to receive value for
-	 * @return value of path parameter that matches sent in variable name
+	 * @param  variableName path parameter to receive value for
+	 * @return              value of path parameter that matches sent in variable name
 	 */
 	String getPathVariable(String variableName) {
 		return Stream.ofNullable(RequestContextHolder.getRequestAttributes())

@@ -26,9 +26,10 @@ import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 		@Index(name = "idx_namespace_municipality_id", columnList = "namespace, municipality_id")
 	},
 	uniqueConstraints = {
-		@UniqueConstraint(name = "uq_namespace_municipality_id", columnNames = { "namespace", "municipality_id"})
-	}
-)
+		@UniqueConstraint(name = "uq_namespace_municipality_id", columnNames = {
+			"namespace", "municipality_id"
+		})
+	})
 public class EmailWorkerConfigEntity {
 
 	@Id
@@ -326,6 +327,7 @@ public class EmailWorkerConfigEntity {
 		setModified(modified);
 		return this;
 	}
+
 	@PrePersist
 	void onCreate() {
 		created = now(systemDefault()).truncatedTo(MILLIS);
@@ -335,7 +337,6 @@ public class EmailWorkerConfigEntity {
 	void onUpdate() {
 		modified = now(systemDefault()).truncatedTo(MILLIS);
 	}
-
 
 	@Override
 	public boolean equals(Object object) {

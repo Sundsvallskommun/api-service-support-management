@@ -136,10 +136,13 @@ public class ContactReasonEntity {
 
 	@Override
 	public boolean equals(final Object o) {
-		if (this == o) return true;
-		if (o == null || getClass() != o.getClass()) return false;
+		if (this == o)
+			return true;
+		if (o == null || getClass() != o.getClass())
+			return false;
 		final ContactReasonEntity that = (ContactReasonEntity) o;
-		return Objects.equals(id, that.id) && Objects.equals(reason, that.reason) && Objects.equals(municipalityId, that.municipalityId) && Objects.equals(namespace, that.namespace) && Objects.equals(created, that.created) && Objects.equals(modified, that.modified);
+		return Objects.equals(id, that.id) && Objects.equals(reason, that.reason) && Objects.equals(municipalityId, that.municipalityId) && Objects.equals(namespace, that.namespace) && Objects.equals(created, that.created) && Objects.equals(modified,
+			that.modified);
 	}
 
 	@Override
@@ -147,5 +150,3 @@ public class ContactReasonEntity {
 		return Objects.hash(id, reason, municipalityId, namespace, created, modified);
 	}
 }
-
-

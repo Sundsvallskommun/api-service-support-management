@@ -152,7 +152,6 @@ public class Communication {
 		return this;
 	}
 
-
 	public CommunicationType getCommunicationType() {
 		return communicationType;
 	}
@@ -220,10 +219,14 @@ public class Communication {
 
 	@Override
 	public boolean equals(final Object o) {
-		if (this == o) return true;
-		if (o == null || getClass() != o.getClass()) return false;
+		if (this == o)
+			return true;
+		if (o == null || getClass() != o.getClass())
+			return false;
 		final Communication that = (Communication) o;
-		return viewed == that.viewed && Objects.equals(communicationID, that.communicationID) && Objects.equals(sender, that.sender) && Objects.equals(errandNumber, that.errandNumber) && direction == that.direction && Objects.equals(messageBody, that.messageBody) && Objects.equals(sent, that.sent) && Objects.equals(subject, that.subject) && communicationType == that.communicationType && Objects.equals(target, that.target) && Objects.equals(emailHeaders, that.emailHeaders) && Objects.equals(communicationAttachments, that.communicationAttachments);
+		return viewed == that.viewed && Objects.equals(communicationID, that.communicationID) && Objects.equals(sender, that.sender) && Objects.equals(errandNumber, that.errandNumber) && direction == that.direction && Objects.equals(messageBody,
+			that.messageBody) && Objects.equals(sent, that.sent) && Objects.equals(subject, that.subject) && communicationType == that.communicationType && Objects.equals(target, that.target) && Objects.equals(emailHeaders, that.emailHeaders) && Objects
+				.equals(communicationAttachments, that.communicationAttachments);
 	}
 
 	@Override

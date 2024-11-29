@@ -22,7 +22,6 @@ import org.springframework.security.oauth2.client.registration.ClientRegistratio
 import se.sundsvall.dept44.configuration.feign.FeignMultiCustomizer;
 import se.sundsvall.dept44.configuration.feign.decoder.ProblemErrorDecoder;
 
-
 @ExtendWith(MockitoExtension.class)
 class EmailReaderConfigurationTest {
 

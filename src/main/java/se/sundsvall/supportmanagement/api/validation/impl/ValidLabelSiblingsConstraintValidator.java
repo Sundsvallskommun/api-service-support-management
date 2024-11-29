@@ -21,9 +21,9 @@ public class ValidLabelSiblingsConstraintValidator implements ConstraintValidato
 	/**
 	 * Recursive method to validate that each level of labels contains no entries with same name
 	 * 
-	 * @param value collection of labels to verify
-	 * @return true if collection (and its sub collections) only contains entries with unique names,
-	 *         false otherwise
+	 * @param  value collection of labels to verify
+	 * @return       true if collection (and its sub collections) only contains entries with unique names,
+	 *               false otherwise
 	 */
 	private boolean hasUniqueSiblingNames(final Collection<Label> value) {
 		final var childrenAreValid = ofNullable(value).orElse(emptyList())
@@ -50,9 +50,9 @@ public class ValidLabelSiblingsConstraintValidator implements ConstraintValidato
 	/**
 	 * Recursive method to validate that each level of labels contains entries with same classification
 	 * 
-	 * @param value collection of labels to verify
-	 * @return true if collection (and its sub collections) only contains entries with the same classification,
-	 *         false otherwise
+	 * @param  value collection of labels to verify
+	 * @return       true if collection (and its sub collections) only contains entries with the same classification,
+	 *               false otherwise
 	 */
 	private boolean hasSameClassification(final Collection<Label> value) {
 		final var childrenAreValid = ofNullable(value).orElse(emptyList())
@@ -61,13 +61,13 @@ public class ValidLabelSiblingsConstraintValidator implements ConstraintValidato
 			.allMatch(this::hasSameClassification);
 
 		if (childrenAreValid) {
-		return ofNullable(value).orElse(emptyList())
-			.stream()
-			.filter(Objects::nonNull)
-			.map(Label::getClassification)
-			.distinct()
-			.count() <= 1; // When list is empty (resulting in count 0) or having all entries with
-						   // same classification (resulting in count 1) is considered to be valid
+			return ofNullable(value).orElse(emptyList())
+				.stream()
+				.filter(Objects::nonNull)
+				.map(Label::getClassification)
+				.distinct()
+				.count() <= 1; // When list is empty (resulting in count 0) or having all entries with
+								// same classification (resulting in count 1) is considered to be valid
 		}
 		return false;
 	}

@@ -81,16 +81,20 @@ public class CommunicationEntity {
 	private List<CommunicationAttachmentEntity> attachments;
 
 	@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
-	@JoinColumn(name = "communication_id", referencedColumnName = "id",
+	@JoinColumn(name = "communication_id",
+		referencedColumnName = "id",
 		foreignKey = @ForeignKey(name = "fk_email_header_email_id"))
 	private List<CommunicationEmailHeaderEntity> emailHeaders;
 
 	@ManyToMany
 	@JoinTable(
 		name = "communication_errand_attachment",
-		joinColumns = { @JoinColumn(name = "communication_id") },
-		inverseJoinColumns = { @JoinColumn(name = "errand_attachment_id") }
-	)
+		joinColumns = {
+			@JoinColumn(name = "communication_id")
+		},
+		inverseJoinColumns = {
+			@JoinColumn(name = "errand_attachment_id")
+		})
 	private List<AttachmentEntity> errandAttachments;
 
 	public static CommunicationEntity create() {

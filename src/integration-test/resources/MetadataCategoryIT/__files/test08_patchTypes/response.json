@@ -1,25 +1,25 @@
 {
-  "name": "CATEGORY-1",
-  "created": "2023-01-01T12:00:00+01:00",
-  "displayName": "CATEGORY-DISPLAY-NAME-1",
-  "types": [
-    {
-      "name": "TYPE-2",
-      "displayName": "TYPE-DISPLAY-NAME-2",
-      "created": "2023-01-01T12:00:00+01:00",
-      "modified": "${json-unit.ignore}"
-    },
-    {
-      "name": "TYPE-3",
-      "displayName": "TYPE-DISPLAY-NAME-3",
-      "created": "2023-01-01T12:00:00+01:00",
-      "modified": "${json-unit.ignore}"
-    },
-    {
-      "name": "TYPE-4",
-      "displayName": "TYPE-DISPLAY-NAME-4",
-      "created": "${json-unit.ignore}",
-      "escalationEmail": "email@test.com"
-    }
-  ]
+	"types": [
+		{
+			"displayName": "TYPE-DISPLAY-NAME-2",
+			"created": "2023-01-01T12:00:00+01:00",
+			"name": "TYPE-2",
+			"modified": "${json-unit.ignore}"
+		},
+		{
+			"displayName": "TYPE-DISPLAY-NAME-3",
+			"created": "2023-01-01T12:00:00+01:00",
+			"name": "TYPE-3",
+			"modified": "${json-unit.ignore}"
+		},
+		{
+			"escalationEmail": "email@test.com",
+			"displayName": "TYPE-DISPLAY-NAME-4",
+			"created": "${json-unit.ignore}",
+			"name": "TYPE-4"
+		}
+	],
+	"created": "2023-01-01T12:00:00+01:00",
+	"displayName": "CATEGORY-DISPLAY-NAME-1",
+	"name": "CATEGORY-1"
 }

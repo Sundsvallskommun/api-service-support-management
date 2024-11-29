@@ -11,11 +11,15 @@ import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
 public class Classification {
 
 	@Schema(description = "Category for the errand", example = "SUPPORT_CASE")
-	@NotBlank(groups = { OnCreate.class, OnUpdate.class })
+	@NotBlank(groups = {
+		OnCreate.class, OnUpdate.class
+	})
 	private String category;
 
 	@Schema(description = "Type of errand", example = "OTHER_ISSUES")
-	@NotBlank(groups = { OnCreate.class, OnUpdate.class })
+	@NotBlank(groups = {
+		OnCreate.class, OnUpdate.class
+	})
 	private String type;
 
 	public static Classification create() {

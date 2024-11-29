@@ -94,8 +94,8 @@ public class MessagingMapper {
 			.party(toWebMessageRequestParty(errandEntity))
 			.oepInstance(toOepInstance(errandEntity.getChannel()))
 			.attachments(Stream.of(
-					toWebMessageAttachmentsFromAttachmentEntity(attachments),
-					toWebMessageAttachmentsFromRequest(webMessageRequest.getAttachments()))
+				toWebMessageAttachmentsFromAttachmentEntity(attachments),
+				toWebMessageAttachmentsFromRequest(webMessageRequest.getAttachments()))
 				.flatMap(List::stream)
 				.toList());
 	}

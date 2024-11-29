@@ -1,170 +1,164 @@
 {
-	"categories": [
-		{
-			"name": "CATEGORY-1",
-			"displayName": "CATEGORY-DISPLAY-NAME-1",
-			"types": [
-				{
-					"name": "TYPE-1",
-					"displayName": "TYPE-DISPLAY-NAME-1",
-					"escalationEmail": "ESCALATION-EMAIL-1",
-					"created": "2023-01-01T12:00:00+01:00"
-				},
-				{
-					"name": "TYPE-2",
-					"displayName": "TYPE-DISPLAY-NAME-2",
-					"escalationEmail": "ESCALATION-EMAIL-2",
-					"created": "2023-01-01T12:00:00+01:00"
-				},
-				{
-					"name": "TYPE-3",
-					"displayName": "TYPE-DISPLAY-NAME-3",
-					"escalationEmail": "ESCALATION-EMAIL-3",
-					"created": "2023-01-01T12:00:00+01:00"
-				}
-			],
-			"created": "2023-01-01T12:00:00+01:00"
-		},
-		{
-			"name": "CATEGORY-2",
-			"displayName": "CATEGORY-DISPLAY-NAME-2",
-			"types": [
-				{
-					"name": "TYPE-1",
-					"displayName": "TYPE-DISPLAY-NAME-1",
-					"escalationEmail": "ESCALATION-EMAIL-1",
-					"created": "2023-01-01T12:00:00+01:00"
-				},
-				{
-					"name": "TYPE-2",
-					"displayName": "TYPE-DISPLAY-NAME-2",
-					"escalationEmail": "ESCALATION-EMAIL-2",
-					"created": "2023-01-01T12:00:00+01:00"
-				}
-			],
-			"created": "2023-01-01T12:00:00+01:00"
-		},
-		{
-			"name": "CATEGORY-3",
-			"displayName": "CATEGORY-DISPLAY-NAME-3",
-			"types": [
-				{
-					"name": "TYPE-1",
-					"displayName": "TYPE-DISPLAY-NAME-1",
-					"escalationEmail": "ESCALATION-EMAIL-1",
-					"created": "2023-01-01T12:00:00+01:00"
-				}
-			],
-			"created": "2023-01-01T12:00:00+01:00"
-		}
-	],
 	"externalIdTypes": [
 		{
-			"name": "EXTERNAL-ID-TYPE-1",
-			"created": "2023-01-01T12:00:00+01:00"
+			"created": "2023-01-01T12:00:00+01:00",
+			"name": "EXTERNAL-ID-TYPE-1"
 		},
 		{
-			"name": "EXTERNAL-ID-TYPE-2",
-			"created": "2023-01-01T12:00:00+01:00"
+			"created": "2023-01-01T12:00:00+01:00",
+			"name": "EXTERNAL-ID-TYPE-2"
 		},
 		{
-			"name": "EXTERNAL-ID-TYPE-3",
-			"created": "2023-01-01T12:00:00+01:00"
-		}
-	],
-	"labels": {
-		"created": "2023-01-01T12:00:00+01:00",
-		"labelStructure": [
-			{
-				"classification": "CATEGORY",
-				"displayName": "CATEGORY-DISPLAY-NAME-1",
-				"name": "CATEGORY-1",
-				"labels": [
-					{
-						"classification": "TYPE",
-						"displayName": "TYPE-DISPLAY-NAME-1",
-						"name": "TYPE-1",
-						"labels": [
-							{
-								"classification": "SUBTYPE",
-								"displayName": "SUBTYPE-DISPLAY-NAME-1",
-								"name": "SUBTYPE-1"
-							},
-							{
-								"classification": "SUBTYPE",
-								"displayName": "SUBTYPE-DISPLAY-NAME-2",
-								"name": "SUBTYPE-2"
-							}
-						]
-					},
-					{
-						"classification": "TYPE",
-						"displayName": "TYPE-DISPLAY-NAME-2",
-						"name": "TYPE-2",
-						"labels": [
-							{
-								"classification": "SUBTYPE",
-								"displayName": "SUBTYPE-DISPLAY-NAME-1",
-								"name": "SUBTYPE-1"
-							},
-							{
-								"classification": "SUBTYPE",
-								"displayName": "SUBTYPE-DISPLAY-NAME-3",
-								"name": "SUBTYPE-3",
-								"labels": [
-									{
-										"classification": "DEEPSUBTYPE",
-										"displayName": "DEEPSUBTYPE-DISPLAY-NAME-1",
-										"name": "DEEPSUBTYPE-1"
-									},
-									{
-										"classification": "DEEPSUBTYPE",
-										"displayName": "DEEPSUBTYPE-DISPLAY-NAME-2",
-										"name": "DEEPSUBTYPE-2"
-									}
-								]
-							}
-						]
-					}
-				]
-			}
-		]
-	},
-	"statuses": [
-		{
-			"name": "STATUS-1",
-			"created": "2023-01-01T12:00:00+01:00"
-		},
-		{
-			"name": "STATUS-2",
-			"created": "2023-01-01T12:00:00+01:00"
-		},
-		{
-			"name": "STATUS-3",
-			"created": "2023-01-01T12:00:00+01:00"
+			"created": "2023-01-01T12:00:00+01:00",
+			"name": "EXTERNAL-ID-TYPE-3"
 		}
 	],
 	"roles": [
 		{
-			"name": "ROLE-1",
-			"created": "2023-01-01T12:00:00+01:00"
+			"created": "2023-01-01T12:00:00+01:00",
+			"name": "ROLE-1"
 		},
 		{
-			"name": "ROLE-2",
-			"created": "2023-01-01T12:00:00+01:00"
+			"created": "2023-01-01T12:00:00+01:00",
+			"name": "ROLE-2"
 		},
 		{
-			"name": "ROLE-3",
 			"displayName": "DISPLAY-NAME-3",
-			"created": "2023-01-01T12:00:00+01:00"
+			"created": "2023-01-01T12:00:00+01:00",
+			"name": "ROLE-3"
 		}
 	],
-	"contactReasons": [
+	"statuses": [
 		{
-			"id": 128,
-			"reason": "reason5",
-			"created": "2023-12-31T23:59:59.999+01:00",
-			"modified": "2023-12-31T23:59:59.999+01:00"
+			"created": "2023-01-01T12:00:00+01:00",
+			"name": "STATUS-1"
+		},
+		{
+			"created": "2023-01-01T12:00:00+01:00",
+			"name": "STATUS-2"
+		},
+		{
+			"created": "2023-01-01T12:00:00+01:00",
+			"name": "STATUS-3"
 		}
-	]
+	],
+	"categories": [
+		{
+			"types": [
+				{
+					"escalationEmail": "ESCALATION-EMAIL-1",
+					"displayName": "TYPE-DISPLAY-NAME-1",
+					"created": "2023-01-01T12:00:00+01:00",
+					"name": "TYPE-1"
+				},
+				{
+					"escalationEmail": "ESCALATION-EMAIL-2",
+					"displayName": "TYPE-DISPLAY-NAME-2",
+					"created": "2023-01-01T12:00:00+01:00",
+					"name": "TYPE-2"
+				},
+				{
+					"escalationEmail": "ESCALATION-EMAIL-3",
+					"displayName": "TYPE-DISPLAY-NAME-3",
+					"created": "2023-01-01T12:00:00+01:00",
+					"name": "TYPE-3"
+				}
+			],
+			"displayName": "CATEGORY-DISPLAY-NAME-1",
+			"created": "2023-01-01T12:00:00+01:00",
+			"name": "CATEGORY-1"
+		},
+		{
+			"types": [
+				{
+					"escalationEmail": "ESCALATION-EMAIL-1",
+					"displayName": "TYPE-DISPLAY-NAME-1",
+					"created": "2023-01-01T12:00:00+01:00",
+					"name": "TYPE-1"
+				},
+				{
+					"escalationEmail": "ESCALATION-EMAIL-2",
+					"displayName": "TYPE-DISPLAY-NAME-2",
+					"created": "2023-01-01T12:00:00+01:00",
+					"name": "TYPE-2"
+				}
+			],
+			"displayName": "CATEGORY-DISPLAY-NAME-2",
+			"created": "2023-01-01T12:00:00+01:00",
+			"name": "CATEGORY-2"
+		},
+		{
+			"types": [{
+				"escalationEmail": "ESCALATION-EMAIL-1",
+				"displayName": "TYPE-DISPLAY-NAME-1",
+				"created": "2023-01-01T12:00:00+01:00",
+				"name": "TYPE-1"
+			}],
+			"displayName": "CATEGORY-DISPLAY-NAME-3",
+			"created": "2023-01-01T12:00:00+01:00",
+			"name": "CATEGORY-3"
+		}
+	],
+	"contactReasons": [{
+		"reason": "reason5",
+		"created": "2023-12-31T23:59:59.999+01:00",
+		"modified": "2023-12-31T23:59:59.999+01:00",
+		"id": 128
+	}],
+	"labels": {
+		"labelStructure": [{
+			"displayName": "CATEGORY-DISPLAY-NAME-1",
+			"name": "CATEGORY-1",
+			"classification": "CATEGORY",
+			"labels": [
+				{
+					"displayName": "TYPE-DISPLAY-NAME-1",
+					"name": "TYPE-1",
+					"classification": "TYPE",
+					"labels": [
+						{
+							"displayName": "SUBTYPE-DISPLAY-NAME-1",
+							"name": "SUBTYPE-1",
+							"classification": "SUBTYPE"
+						},
+						{
+							"displayName": "SUBTYPE-DISPLAY-NAME-2",
+							"name": "SUBTYPE-2",
+							"classification": "SUBTYPE"
+						}
+					]
+				},
+				{
+					"displayName": "TYPE-DISPLAY-NAME-2",
+					"name": "TYPE-2",
+					"classification": "TYPE",
+					"labels": [
+						{
+							"displayName": "SUBTYPE-DISPLAY-NAME-1",
+							"name": "SUBTYPE-1",
+							"classification": "SUBTYPE"
+						},
+						{
+							"displayName": "SUBTYPE-DISPLAY-NAME-3",
+							"name": "SUBTYPE-3",
+							"classification": "SUBTYPE",
+							"labels": [
+								{
+									"displayName": "DEEPSUBTYPE-DISPLAY-NAME-1",
+									"name": "DEEPSUBTYPE-1",
+									"classification": "DEEPSUBTYPE"
+								},
+								{
+									"displayName": "DEEPSUBTYPE-DISPLAY-NAME-2",
+									"name": "DEEPSUBTYPE-2",
+									"classification": "DEEPSUBTYPE"
+								}
+							]
+						}
+					]
+				}
+			]
+		}],
+		"created": "2023-01-01T12:00:00+01:00"
+	}
 }

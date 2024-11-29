@@ -144,7 +144,9 @@ class MessagingMapperTest {
 	}
 
 	@ParameterizedTest
-	@ValueSource(strings = { CHANNEL_ESERVICE, CHANNEL_ESERVICE_INTERNAL })
+	@ValueSource(strings = {
+		CHANNEL_ESERVICE, CHANNEL_ESERVICE_INTERNAL
+	})
 	void testToWebMessageRequest(String channel) throws SQLException {
 		generated.se.sundsvall.messaging.WebMessageRequest.OepInstanceEnum instance;
 		switch (channel) {
@@ -163,8 +165,7 @@ class MessagingMapperTest {
 			.withAttachmentIds(List.of("1", "2"))
 			.withAttachments(List.of(WebMessageAttachment.create()
 				.withBase64EncodedString(FILE_CONTENT)
-				.withName(FILE_NAME)
-			));
+				.withName(FILE_NAME)));
 
 		String originalContent = "This is a test";
 		var contentBytes = originalContent.getBytes(StandardCharsets.UTF_8);
@@ -189,9 +190,9 @@ class MessagingMapperTest {
 				tuple(ERRAND_ID_KEY, ERRAND_ID),
 				tuple(FLOW_INSTANCE_ID_KEY, CASE_ID_VALUE));
 		assertThat(result.getAttachments()).extracting(
-				generated.se.sundsvall.messaging.WebMessageAttachment::getFileName,
-				generated.se.sundsvall.messaging.WebMessageAttachment::getMimeType,
-				generated.se.sundsvall.messaging.WebMessageAttachment::getBase64Data)
+			generated.se.sundsvall.messaging.WebMessageAttachment::getFileName,
+			generated.se.sundsvall.messaging.WebMessageAttachment::getMimeType,
+			generated.se.sundsvall.messaging.WebMessageAttachment::getBase64Data)
 			.containsExactly(
 				tuple("test.txt", "text/plain", Base64.getEncoder().encodeToString(originalContent.getBytes())),
 				tuple(FILE_NAME, IMAGE_PNG_VALUE, FILE_CONTENT));

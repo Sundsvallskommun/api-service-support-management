@@ -41,7 +41,6 @@ class ErrandNumberSequenceRepositoryTest {
 
 		final var result = errandNumberSequenceRepository.save(entity);
 
-
 		assertThat(result).isNotNull();
 		assertThat(result.getNamespace()).isNotNull().isEqualTo(namespace);
 		assertThat(result.getLastSequenceNumber()).isEqualTo(lastSequenceNumber);

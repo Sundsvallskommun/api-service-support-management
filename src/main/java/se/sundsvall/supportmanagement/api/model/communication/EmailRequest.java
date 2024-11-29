@@ -192,10 +192,13 @@ public class EmailRequest {
 
 	@Override
 	public boolean equals(final Object o) {
-		if (this == o) return true;
-		if (o == null || getClass() != o.getClass()) return false;
+		if (this == o)
+			return true;
+		if (o == null || getClass() != o.getClass())
+			return false;
 		final EmailRequest that = (EmailRequest) o;
-		return Objects.equals(sender, that.sender) && Objects.equals(senderName, that.senderName) && Objects.equals(recipient, that.recipient) && Objects.equals(subject, that.subject) && Objects.equals(htmlMessage, that.htmlMessage) && Objects.equals(message, that.message) && Objects.equals(emailHeaders, that.emailHeaders) && Objects.equals(attachments, that.attachments) && Objects.equals(attachmentIds, that.attachmentIds);
+		return Objects.equals(sender, that.sender) && Objects.equals(senderName, that.senderName) && Objects.equals(recipient, that.recipient) && Objects.equals(subject, that.subject) && Objects.equals(htmlMessage, that.htmlMessage) && Objects.equals(
+			message, that.message) && Objects.equals(emailHeaders, that.emailHeaders) && Objects.equals(attachments, that.attachments) && Objects.equals(attachmentIds, that.attachmentIds);
 	}
 
 	@Override

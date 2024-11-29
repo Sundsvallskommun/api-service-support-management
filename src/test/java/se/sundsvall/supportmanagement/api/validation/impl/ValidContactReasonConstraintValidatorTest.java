@@ -46,8 +46,7 @@ class ValidContactReasonConstraintValidatorTest {
 	private static Stream<Arguments> contactReasonArgumentProvider() {
 		return Stream.of(
 			Arguments.of("contactReason", true),
-			Arguments.of("invalid", false)
-		);
+			Arguments.of("invalid", false));
 	}
 
 	@ParameterizedTest

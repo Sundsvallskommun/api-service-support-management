@@ -10,7 +10,6 @@ import static org.zalando.problem.Status.BAD_REQUEST;
 
 import java.util.List;
 import java.util.Map;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -19,7 +18,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.reactive.server.WebTestClient;
-import org.springframework.util.StringUtils;
 import org.zalando.problem.AbstractThrowableProblem;
 import org.zalando.problem.Problem;
 import org.zalando.problem.violations.ConstraintViolationProblem;
@@ -260,7 +258,8 @@ class ErrandCommunicationResourceFailureTest {
 		assertThat(response).isNotNull();
 		assertThat(response.getTitle()).isEqualTo("Bad Request");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
-		assertThat(response.getDetail()).isEqualTo("Failed to convert value of type 'java.lang.String' to required type 'boolean'; Invalid boolean value [" + INVALID + "]");
+		assertThat(response.getDetail()).isEqualTo("Method parameter 'isViewed': Failed to convert value of type 'java.lang.String' to required type 'boolean'; Invalid boolean value [" + INVALID + "]");
+
 		// Verification
 		verifyNoInteractions(serviceMock);
 	}
@@ -577,7 +576,9 @@ class ErrandCommunicationResourceFailureTest {
 	}
 
 	@ParameterizedTest
-	@ValueSource(strings = { PATH_EMAIL, PATH_WEB_MESSAGE })
+	@ValueSource(strings = {
+		PATH_EMAIL, PATH_WEB_MESSAGE
+	})
 	void sendWithEmptyAttachment(String path) {
 
 		Object body = null;
@@ -610,11 +611,13 @@ class ErrandCommunicationResourceFailureTest {
 	}
 
 	@ParameterizedTest
-	@ValueSource(strings = { PATH_EMAIL, PATH_WEB_MESSAGE })
+	@ValueSource(strings = {
+		PATH_EMAIL, PATH_WEB_MESSAGE
+	})
 	void sendWithInvalidAttachmentString(String path) {
 
-		var name = "name";
-		var data = "data:image/png;base64,iVBOR";
+		final var name = "name";
+		final var data = "data:image/png;base64,iVBOR";
 		Object body = null;
 		switch (path) {
 			case PATH_EMAIL -> body = emailRequest().withAttachments(List.of(EmailAttachment.create()

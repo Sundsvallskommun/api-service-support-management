@@ -33,8 +33,10 @@ public class CommunicationEmailHeaderEntity {
 	private EmailHeader header;
 
 	@ElementCollection
-	@CollectionTable(name = "communication_email_header_value", joinColumns = @JoinColumn(name = "header_id", referencedColumnName = "id",
-		foreignKey = @ForeignKey(name = "fk_header_value_header_id")))
+	@CollectionTable(name = "communication_email_header_value",
+		joinColumns = @JoinColumn(name = "header_id",
+			referencedColumnName = "id",
+			foreignKey = @ForeignKey(name = "fk_header_value_header_id")))
 	@Column(name = "value", length = 2048)
 	@OrderColumn(name = "order_index")
 	private List<String> values;
@@ -55,7 +57,6 @@ public class CommunicationEmailHeaderEntity {
 		this.id = id;
 		return this;
 	}
-
 
 	public EmailHeader getHeader() {
 		return header;
@@ -85,8 +86,10 @@ public class CommunicationEmailHeaderEntity {
 
 	@Override
 	public boolean equals(final Object o) {
-		if (this == o) return true;
-		if (o == null || getClass() != o.getClass()) return false;
+		if (this == o)
+			return true;
+		if (o == null || getClass() != o.getClass())
+			return false;
 		final CommunicationEmailHeaderEntity that = (CommunicationEmailHeaderEntity) o;
 		return Objects.equals(id, that.id) && header == that.header && Objects.equals(values, that.values);
 	}

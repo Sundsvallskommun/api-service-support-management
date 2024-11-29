@@ -17,5 +17,5 @@ public enum EmailHeader {
 	public String getName() {
 		return name;
 	}
-	
+
 }

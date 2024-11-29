@@ -15,8 +15,7 @@ public class CommunicationAttachment {
 
 	@Schema(
 		description = "The attachment filename",
-		example = "test.txt"
-	)
+		example = "test.txt")
 	private String name;
 
 	@Schema(description = "The attachment content type", example = "text/plain")
@@ -68,8 +67,10 @@ public class CommunicationAttachment {
 
 	@Override
 	public boolean equals(final Object o) {
-		if (this == o) return true;
-		if (o == null || getClass() != o.getClass()) return false;
+		if (this == o)
+			return true;
+		if (o == null || getClass() != o.getClass())
+			return false;
 		final CommunicationAttachment that = (CommunicationAttachment) o;
 		return Objects.equals(attachmentID, that.attachmentID) && Objects.equals(name, that.name) && Objects.equals(contentType, that.contentType);
 	}

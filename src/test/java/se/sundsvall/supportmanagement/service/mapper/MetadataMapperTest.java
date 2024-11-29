@@ -87,13 +87,13 @@ class MetadataMapperTest {
 			Arguments.of("namespace", null, Category.create().withName("name"), null),
 			Arguments.of(null, "municipalityId", Category.create().withName("name"), null),
 			Arguments.of("namespace", "municipalityId", Category.create()
-					.withName("categoryName")
-					.withDisplayName("categoryDisplayName")
-					.withTypes(List.of(
-						Type.create()
-							.withName("typeName")
-							.withDisplayName("typeDisplayName")
-							.withEscalationEmail("typeEscalationEmail"))),
+				.withName("categoryName")
+				.withDisplayName("categoryDisplayName")
+				.withTypes(List.of(
+					Type.create()
+						.withName("typeName")
+						.withDisplayName("typeDisplayName")
+						.withEscalationEmail("typeEscalationEmail"))),
 				CategoryEntity.create()
 					.withNamespace("namespace")
 					.withMunicipalityId("municipalityId")

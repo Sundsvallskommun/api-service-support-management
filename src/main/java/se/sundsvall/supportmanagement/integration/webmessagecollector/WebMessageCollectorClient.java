@@ -11,19 +11,16 @@ import se.sundsvall.supportmanagement.integration.webmessagecollector.configurat
 
 import generated.se.sundsvall.webmessagecollector.MessageDTO;
 
-
 @FeignClient(
 	name = WebMessageCollectorConfiguration.CLIENT_ID,
 	url = "${integration.web-message-collector.url}",
-	configuration = WebMessageCollectorConfiguration.class
-)
+	configuration = WebMessageCollectorConfiguration.class)
 public interface WebMessageCollectorClient {
 
 	@GetMapping("/{municipalityId}/messages/{familyId}/{instance}")
 	List<MessageDTO> getMessages(
 		@PathVariable(name = "municipalityId") String municipalityId,
 		@PathVariable(name = "familyId") String familyId, @PathVariable(name = "instance") String instance);
-
 
 	@DeleteMapping("/{municipalityId}/messages")
 	void deleteMessages(@PathVariable(name = "municipalityId") String municipalityId, List<Integer> ids);

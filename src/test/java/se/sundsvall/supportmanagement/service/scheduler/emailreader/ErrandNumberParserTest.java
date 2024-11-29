@@ -10,7 +10,9 @@ import org.junit.jupiter.params.provider.ValueSource;
 class ErrandNumberParserTest {
 
 	@ParameterizedTest
-	@ValueSource(strings = {"PRH-2022-01", "PRH-2022-000001", "PH-2022-000001", "PRH-2022-011111111111", "##PRH-2022-011111111111", "asd"})
+	@ValueSource(strings = {
+		"PRH-2022-01", "PRH-2022-000001", "PH-2022-000001", "PRH-2022-011111111111", "##PRH-2022-011111111111", "asd"
+	})
 	void parseSubject(final String errandNumber) {
 
 		final var subject = MessageFormat.format("Ärende #{0} Ansökan om bygglov för fastighet KATARINA 4", errandNumber);
@@ -21,7 +23,9 @@ class ErrandNumberParserTest {
 	}
 
 	@ParameterizedTest
-	@ValueSource(strings = {"PRH-2022-01", "PRH-2022-000001", "PH-2022-000001", "PRH-2022-011111111111", "##PRH-2022-011111111111", "asd"})
+	@ValueSource(strings = {
+		"PRH-2022-01", "PRH-2022-000001", "PH-2022-000001", "PRH-2022-011111111111", "##PRH-2022-011111111111", "asd"
+	})
 	void parseSubject_WithNoSpaceAfterErrandNUmber(final String errandNumber) {
 
 		final var result = ErrandNumberParser.parseSubject(MessageFormat.format("Ärende #{0}", errandNumber));
@@ -30,7 +34,9 @@ class ErrandNumberParserTest {
 	}
 
 	@ParameterizedTest
-	@ValueSource(strings = {"", "PRH-2022-01", "Ärende PRH-2022-000001 Ansökan"})
+	@ValueSource(strings = {
+		"", "PRH-2022-01", "Ärende PRH-2022-000001 Ansökan"
+	})
 	void parseSubjectFaultyValues(final String subject) {
 
 		final var result = ErrandNumberParser.parseSubject(subject);
