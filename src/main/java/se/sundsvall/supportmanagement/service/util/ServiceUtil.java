@@ -1,10 +1,10 @@
 package se.sundsvall.supportmanagement.service.util;
 
+import static java.util.UUID.fromString;
 import static org.springframework.util.MimeTypeUtils.APPLICATION_OCTET_STREAM_VALUE;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.util.UUID;
 import org.apache.tika.Tika;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,7 +19,7 @@ public class ServiceUtil {
 
 	public static boolean isValidUuid(String uuid) {
 		try {
-			UUID.fromString(uuid);
+			fromString(uuid);
 			return true;
 		} catch (final Exception e) {
 			return false;
