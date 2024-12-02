@@ -4,7 +4,7 @@
 		"key": "caseid"
 	}],
 	"touched": "${json-unit.any-string}",
-	"errandNumber": "KC-24110001",
+	"errandNumber": "${json-unit.regex}(KC-\\d{8})",
 	"created": "${json-unit.any-string}",
 	"channel": "The channel",
 	"contactReasonDescription": "This is the contact reason description",
