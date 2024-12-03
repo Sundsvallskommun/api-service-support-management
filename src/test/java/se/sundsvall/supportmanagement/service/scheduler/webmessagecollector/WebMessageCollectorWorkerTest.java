@@ -42,6 +42,7 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.specification.ErrandSpecification;
 import se.sundsvall.supportmanagement.integration.webmessagecollector.WebMessageCollectorClient;
 import se.sundsvall.supportmanagement.integration.webmessagecollector.configuration.WebMessageCollectorProperties;
+import se.sundsvall.supportmanagement.service.CommunicationService;
 import se.sundsvall.supportmanagement.service.EventService;
 
 import generated.se.sundsvall.eventlog.EventType;
@@ -69,6 +70,9 @@ class WebMessageCollectorWorkerTest {
 
 	@Mock
 	private CommunicationRepository communicationRepositoryMock;
+
+	@Mock
+	private CommunicationService communicationServiceMock;
 
 	@Mock
 	private CommunicationAttachmentDataEntity communicationAttachmentDataEntityMock;
@@ -147,12 +151,15 @@ class WebMessageCollectorWorkerTest {
 		verify(errandsRepositoryMock).findOne(same(specificationMock));
 		verify(communicationRepositoryMock).existsByErrandNumberAndExternalId(errandNumber, messageId);
 		verify(webMessageCollectorMapperMock).toCommunicationEntity(messagedto, errandEntity);
-		verify(communicationRepositoryMock).saveAndFlush(communicationEntityCaptor.capture());
+		verify(communicationServiceMock).saveCommunication(communicationEntityCaptor.capture());
+		verify(communicationServiceMock).saveAttachment(communicationEntityCaptor.capture(), same(errandEntity));
 		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Ärendekommunikation har skapats."), same(errandEntity), isNull(), isNull());
 		verify(webMessageCollectorClientMock).getAttachment(MUNICIPALITY_ID, attachmentId);
 		verify(webMessageCollectorMapperMock).toCommunicationAttachmentDataEntity(data);
 		verify(webMessageCollectorClientMock).deleteMessages(MUNICIPALITY_ID, List.of(id));
 
+		assertThat(communicationEntityCaptor.getAllValues()).hasSize(2);
+		assertThat(communicationEntityCaptor.getAllValues().getFirst()).isSameAs(communicationEntityCaptor.getAllValues().getLast());
 		assertThat(communicationEntityCaptor.getValue()).satisfies(
 			communication -> {
 				assertThat(communication).hasNoNullFieldsOrPropertiesExcept("subject", "target", "emailHeaders", "errandAttachments");
@@ -165,7 +172,7 @@ class WebMessageCollectorWorkerTest {
 				assertThat(communication.getAttachments().getFirst().getAttachmentData()).isSameAs(communicationAttachmentDataEntityMock);
 			});
 
-		verifyNoMoreInteractions(webMessageCollectorClientMock, webMessageCollectorPropertiesMock, errandsRepositoryMock, communicationRepositoryMock);
+		verifyNoMoreInteractions(webMessageCollectorClientMock, webMessageCollectorPropertiesMock, errandsRepositoryMock, communicationRepositoryMock, communicationServiceMock);
 	}
 
 	@Test

@@ -16,6 +16,7 @@ import se.sundsvall.supportmanagement.integration.db.model.CommunicationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.webmessagecollector.WebMessageCollectorClient;
+import se.sundsvall.supportmanagement.service.CommunicationService;
 import se.sundsvall.supportmanagement.service.EventService;
 
 @Component
@@ -28,14 +29,17 @@ public class WebMessageCollectorWorker {
 	private final CommunicationRepository communicationRepository;
 	private final WebMessageCollectorMapper webMessageCollectorMapper;
 	private final EventService eventService;
+	private final CommunicationService communicationService;
 
 	public WebMessageCollectorWorker(final WebMessageCollectorClient webMessageCollectorClient, final ErrandsRepository errandsRepository,
-		final CommunicationRepository communicationRepository, final WebMessageCollectorMapper webMessageCollectorMapper, final EventService eventService) {
+		final CommunicationRepository communicationRepository, final WebMessageCollectorMapper webMessageCollectorMapper, final EventService eventService,
+		final CommunicationService communicationService) {
 		this.webMessageCollectorClient = webMessageCollectorClient;
 		this.errandsRepository = errandsRepository;
 		this.communicationRepository = communicationRepository;
 		this.webMessageCollectorMapper = webMessageCollectorMapper;
 		this.eventService = eventService;
+		this.communicationService = communicationService;
 	}
 
 	public List<MessageDTO> getWebMessages(final String instance, final String familyId, final String municipalityId) {
@@ -61,7 +65,8 @@ public class WebMessageCollectorWorker {
 	}
 
 	private void saveMessage(final CommunicationEntity communicationEntity, final ErrandEntity errand) {
-		communicationRepository.saveAndFlush(communicationEntity);
+		communicationService.saveCommunication(communicationEntity);
+		communicationService.saveAttachment(communicationEntity, errand);
 		eventService.createErrandEvent(UPDATE, EVENT_LOG_COMMUNICATION, errand, null, null);
 	}
 
