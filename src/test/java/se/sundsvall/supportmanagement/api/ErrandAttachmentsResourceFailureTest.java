@@ -4,15 +4,12 @@ import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
 import static org.springframework.http.MediaType.TEXT_PLAIN;
 import static org.zalando.problem.Status.BAD_REQUEST;
-import static org.zalando.problem.Status.TOO_MANY_REQUESTS;
 
 import java.util.Map;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -44,9 +41,6 @@ class ErrandAttachmentsResourceFailureTest {
 
 	@MockitoBean
 	private ErrandAttachmentService errandAttachmentServiceMock;
-
-	@MockBean
-	private Semaphore semaphoreMock;
 
 	@Test
 	void readErrandAttachmentWithInvalidNamespace() {
@@ -419,46 +413,4 @@ class ErrandAttachmentsResourceFailureTest {
 		verifyNoInteractions(errandAttachmentServiceMock);
 	}
 
-	@Test
-	void getAttachmentStreamedWhenBusy() {
-
-		// Arrange
-		when(semaphoreMock.tryAcquire()).thenReturn(false);
-
-		// Act
-		final var response = webTestClient.get()
-			.uri(builder -> builder.path(PATH.concat("/{attachmentId}/streamed")).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "attachmentId", ATTACHMENT_ID)))
-			.exchange()
-			.expectStatus().is4xxClientError()
-			.expectBody(Problem.class)
-			.returnResult()
-			.getResponseBody();
-
-		// Assert
-		assertThat(response).isNotNull();
-		assertThat(response.getStatus()).isEqualTo(TOO_MANY_REQUESTS);
-		assertThat(response.getDetail()).isEqualTo("Too many files being read. Try again later.");
-	}
-
-	@Test
-	void getAttachmentWhenBusy() {
-
-		// Arrange
-		when(semaphoreMock.tryAcquire()).thenReturn(false);
-
-		// Act
-		final var response = webTestClient.get()
-			.uri(builder -> builder.path(PATH.concat("/{attachmentId}")).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "attachmentId", ATTACHMENT_ID)))
-			.exchange()
-			.expectStatus().is4xxClientError()
-			.expectBody(Problem.class)
-			.returnResult()
-			.getResponseBody();
-
-		// Assert
-		assertThat(response).isNotNull();
-		assertThat(response.getStatus()).isEqualTo(TOO_MANY_REQUESTS);
-		assertThat(response.getDetail()).isEqualTo("Too many files being read. Try again later.");
-
-	}
 }

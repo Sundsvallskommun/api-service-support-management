@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.service;
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Optional.of;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertThrows;
@@ -32,6 +33,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.Semaphore;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -63,6 +65,9 @@ class ErrandAttachmentServiceTest {
 	private static final String MIME_TYPE = "mimeType";
 	private static final String EVENT_LOG_ADD_ATTACHMENT = "En bilaga har lagts till i ärendet.";
 	private static final String EVENT_LOG_REMOVE_ATTACHMENT = "En bilaga har tagits bort från ärendet.";
+
+	@Mock
+	private Semaphore semaphoreMock;
 
 	@Mock
 	private ErrandsRepository errandsRepositoryMock;
@@ -120,7 +125,7 @@ class ErrandAttachmentServiceTest {
 		when(attachmentMock.getId()).thenReturn(ATTACHMENT_ID);
 
 		// Call
-		try (MockedStatic<ErrandAttachmentMapper> mapper = Mockito.mockStatic(ErrandAttachmentMapper.class)) {
+		try (final MockedStatic<ErrandAttachmentMapper> mapper = Mockito.mockStatic(ErrandAttachmentMapper.class)) {
 			mapper.when(() -> ErrandAttachmentMapper.toAttachmentEntity(any(), any(), any())).thenReturn(attachmentMock);
 
 			final var result = service.createErrandAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, multipartFileMock);
@@ -158,9 +163,8 @@ class ErrandAttachmentServiceTest {
 		verifyNoInteractions(revisionServiceMock, eventServiceMock);
 	}
 
-	@SuppressWarnings("resource")
 	@Test
-	void readErrandAttachment() throws IOException, SQLException {
+	void readErrandAttachment() throws IOException, SQLException, InterruptedException {
 
 		// Mock
 		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
@@ -174,6 +178,7 @@ class ErrandAttachmentServiceTest {
 		final var inputStreamMock = Mockito.mock(InputStream.class);
 		when(blobMock.getBinaryStream()).thenReturn(inputStreamMock);
 		when(blobMock.length()).thenReturn(123L);
+		when(semaphoreMock.tryAcquire(123, 5, SECONDS)).thenReturn(true);
 
 		// Call
 		try (final MockedStatic<StreamUtils> streamMock = Mockito.mockStatic(StreamUtils.class)) {
@@ -331,7 +336,7 @@ class ErrandAttachmentServiceTest {
 	}
 
 	@Test
-	void getAttachmentStreamed() throws SQLException, IOException {
+	void getAttachmentStreamed() throws SQLException, IOException, InterruptedException {
 
 		// Parameter values
 		final var attachmentId = "attachmentId";
@@ -350,6 +355,7 @@ class ErrandAttachmentServiceTest {
 		when(blobMock.length()).thenReturn((long) content.length());
 		when(blobMock.getBinaryStream()).thenReturn(inputStream);
 		when(httpServletResponseMock.getOutputStream()).thenReturn(servletOutputStreamMock);
+		when(semaphoreMock.tryAcquire(content.length(), 5, SECONDS)).thenReturn(true);
 
 		// Call
 		service.getAttachmentStreamed(NAMESPACE, MUNICIPALITY_ID, errandId, attachmentId, httpServletResponseMock);
@@ -370,7 +376,7 @@ class ErrandAttachmentServiceTest {
 	}
 
 	@Test
-	void streamAttachmentDataSuccess() throws IOException, SQLException {
+	void streamAttachmentDataSuccess() throws IOException, SQLException, InterruptedException {
 		final byte[] fileContent = "file content".getBytes();
 		final ByteArrayInputStream inputStream = new ByteArrayInputStream(fileContent);
 
@@ -381,6 +387,7 @@ class ErrandAttachmentServiceTest {
 		when(blobMock.getBinaryStream()).thenReturn(inputStream);
 		when(attachmentMock.getMimeType()).thenReturn("application/pdf");
 		when(attachmentMock.getFileName()).thenReturn("test.pdf");
+		when(semaphoreMock.tryAcquire(fileContent.length, 5, SECONDS)).thenReturn(true);
 
 		service.streamAttachmentData(attachmentMock, httpServletResponseMock);
 
@@ -391,17 +398,50 @@ class ErrandAttachmentServiceTest {
 	}
 
 	@Test
-	void streamAttachmentDataThrowsSQLException() throws SQLException {
+	void streamAttachmentDataThrowsSQLException() throws SQLException, InterruptedException {
 		final byte[] fileContent = "file content".getBytes();
 		when(attachmentMock.getAttachmentData()).thenReturn(attachmentDataEntityMock);
 		when(attachmentDataEntityMock.getFile()).thenReturn(blobMock);
 		when(blobMock.length()).thenReturn((long) fileContent.length);
 		when(blobMock.getBinaryStream()).thenThrow(new SQLException("Test SQLException"));
+		when(semaphoreMock.tryAcquire(fileContent.length, 5, SECONDS)).thenReturn(true);
 
 		assertThatThrownBy(() -> service.streamAttachmentData(attachmentMock, httpServletResponseMock))
 			.isInstanceOf(Problem.class)
 			.hasMessageContaining("SQLException occurred when copying file with attachment id");
 
 		verify(httpServletResponseMock, never()).addHeader(eq(CONTENT_TYPE), anyString());
+	}
+
+	@Test
+	void streamAttachmentDataBusy() throws SQLException, InterruptedException {
+		// Arrange
+		final byte[] fileContent = "file content".getBytes();
+		when(attachmentMock.getAttachmentData()).thenReturn(attachmentDataEntityMock);
+		when(attachmentDataEntityMock.getFile()).thenReturn(blobMock);
+		when(blobMock.length()).thenReturn((long) fileContent.length);
+		when(semaphoreMock.tryAcquire(fileContent.length, 5, SECONDS)).thenReturn(false);
+
+		// Act and Assert
+		assertThatThrownBy(() -> service.streamAttachmentData(attachmentMock, httpServletResponseMock))
+			.isInstanceOf(Problem.class)
+			.hasMessageContaining("Too many files being read. Try again later.");
+	}
+
+	@Test
+	void readErrandAttachmentBusy() throws SQLException, InterruptedException {
+		// Arrange
+		final byte[] fileContent = "file content".getBytes();
+		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
+		when(attachmentRepositoryMock.findById(ATTACHMENT_ID)).thenReturn(of(attachmentMock));
+		when(attachmentMock.getAttachmentData()).thenReturn(attachmentDataEntityMock);
+		when(attachmentDataEntityMock.getFile()).thenReturn(blobMock);
+		when(blobMock.length()).thenReturn((long) fileContent.length);
+		when(semaphoreMock.tryAcquire(fileContent.length, 5, SECONDS)).thenReturn(false);
+
+		// Act and Assert
+		assertThatThrownBy(() -> service.readErrandAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ATTACHMENT_ID, httpServletResponseMock))
+			.isInstanceOf(Problem.class)
+			.hasMessageContaining("Too many files being read. Try again later.");
 	}
 }

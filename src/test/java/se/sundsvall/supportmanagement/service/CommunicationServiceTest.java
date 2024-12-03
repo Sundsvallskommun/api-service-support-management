@@ -33,6 +33,7 @@ import java.util.Base64;
 import java.util.Base64.Decoder;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.Semaphore;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -82,6 +83,9 @@ class CommunicationServiceTest {
 	private static final String ERRAND_ID_KEY = "errandId";
 	private static final String MESSAGE_ID = "MESSAGE_ID";
 	private static final String ATTACHMENT_ID = "attachmentId";
+
+	@Mock
+	private Semaphore semaphoreMock;
 
 	@Mock
 	private ErrandsRepository errandsRepositoryMock;
@@ -224,7 +228,7 @@ class CommunicationServiceTest {
 	}
 
 	@Test
-	void getMessageAttachmentStreamed() throws SQLException, IOException {
+	void getMessageAttachmentStreamed() throws SQLException, IOException, InterruptedException {
 		// Parameter values
 		final var attachmentId = "attachmentId";
 		final var communicationId = "communicationId";
@@ -248,6 +252,7 @@ class CommunicationServiceTest {
 		when(blobMock.length()).thenReturn((long) content.length());
 		when(blobMock.getBinaryStream()).thenReturn(inputStream);
 		when(servletResponseMock.getOutputStream()).thenReturn(servletOutputStreamMock);
+		when(semaphoreMock.tryAcquire(content.length(), 5, java.util.concurrent.TimeUnit.SECONDS)).thenReturn(true);
 
 		// Call
 		service.getMessageAttachmentStreamed(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, communicationId, attachmentId, servletResponseMock);
@@ -270,7 +275,7 @@ class CommunicationServiceTest {
 	}
 
 	@Test
-	void streamAttachmentDataSuccess() throws IOException, SQLException {
+	void streamAttachmentDataSuccess() throws IOException, SQLException, InterruptedException {
 		final byte[] fileContent = "file content".getBytes();
 		final ByteArrayInputStream inputStream = new ByteArrayInputStream(fileContent);
 
@@ -281,6 +286,7 @@ class CommunicationServiceTest {
 		when(blobMock.getBinaryStream()).thenReturn(inputStream);
 		when(communicationAttachmentEntityMock.getContentType()).thenReturn("application/pdf");
 		when(communicationAttachmentEntityMock.getName()).thenReturn("test.pdf");
+		when(semaphoreMock.tryAcquire(fileContent.length, 5, java.util.concurrent.TimeUnit.SECONDS)).thenReturn(true);
 
 		service.streamCommunicationAttachmentData(communicationAttachmentEntityMock, servletResponseMock);
 
@@ -291,12 +297,13 @@ class CommunicationServiceTest {
 	}
 
 	@Test
-	void streamAttachmentDataThrowsSQLException() throws SQLException {
+	void streamAttachmentDataThrowsSQLException() throws SQLException, InterruptedException {
 		final byte[] fileContent = "file content".getBytes();
 		when(communicationAttachmentEntityMock.getAttachmentData()).thenReturn(communicationAttachmentDataEntityMock);
 		when(communicationAttachmentDataEntityMock.getFile()).thenReturn(blobMock);
 		when(blobMock.length()).thenReturn((long) fileContent.length);
 		when(blobMock.getBinaryStream()).thenThrow(new SQLException("Test SQLException"));
+		when(semaphoreMock.tryAcquire(fileContent.length, 5, java.util.concurrent.TimeUnit.SECONDS)).thenReturn(true);
 
 		assertThatThrownBy(() -> service.streamCommunicationAttachmentData(communicationAttachmentEntityMock, servletResponseMock))
 			.isInstanceOf(Problem.class)
@@ -404,7 +411,7 @@ class CommunicationServiceTest {
 		when(communicationMapperMock.toAttachments(any())).thenReturn(List.of(attachmentEntityMock));
 		when(attachmentEntityMock.withErrandEntity(any())).thenReturn(attachmentEntityMock);
 
-		try (MockedStatic<MessagingMapper> messagingMapper = Mockito.mockStatic(MessagingMapper.class)) {
+		try (final MockedStatic<MessagingMapper> messagingMapper = Mockito.mockStatic(MessagingMapper.class)) {
 			// Mock static
 			messagingMapper.when(() -> MessagingMapper.toWebMessageRequest(any(), any(), any())).thenReturn(webMessageRequest);
 
