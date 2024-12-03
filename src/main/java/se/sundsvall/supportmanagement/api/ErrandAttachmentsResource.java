@@ -10,6 +10,7 @@ import static org.springframework.http.ResponseEntity.created;
 import static org.springframework.http.ResponseEntity.noContent;
 import static org.springframework.http.ResponseEntity.ok;
 import static org.springframework.web.util.UriComponentsBuilder.fromPath;
+import static org.zalando.problem.Status.TOO_MANY_REQUESTS;
 import static se.sundsvall.supportmanagement.Constants.NAMESPACE_REGEXP;
 import static se.sundsvall.supportmanagement.Constants.NAMESPACE_VALIDATION_MESSAGE;
 
@@ -26,6 +27,7 @@ import jakarta.validation.constraints.Pattern;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.concurrent.Semaphore;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -50,9 +52,11 @@ import se.sundsvall.supportmanagement.service.ErrandAttachmentService;
 @Tag(name = "Errand attachments", description = "Errand attachments operations")
 class ErrandAttachmentsResource {
 
+	private final Semaphore semaphore;
 	private final ErrandAttachmentService errandAttachmentService;
 
-	ErrandAttachmentsResource(final ErrandAttachmentService errandAttachmentService) {
+	ErrandAttachmentsResource(final Semaphore semaphore, final ErrandAttachmentService errandAttachmentService) {
+		this.semaphore = semaphore;
 		this.errandAttachmentService = errandAttachmentService;
 	}
 
@@ -95,7 +99,14 @@ class ErrandAttachmentsResource {
 		@Parameter(name = "attachmentId", description = "Errand attachment id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable("attachmentId") final String attachmentId,
 		final HttpServletResponse response) throws SQLException, IOException {
 
-		errandAttachmentService.readErrandAttachment(namespace, municipalityId, errandId, attachmentId, response);
+		if (!semaphore.tryAcquire()) {
+			throw Problem.valueOf(TOO_MANY_REQUESTS, "Too many files being read. Try again later.");
+		}
+		try {
+			errandAttachmentService.readErrandAttachment(namespace, municipalityId, errandId, attachmentId, response);
+		} finally {
+			semaphore.release();
+		}
 	}
 
 	@GetMapping(produces = APPLICATION_JSON_VALUE)
@@ -148,6 +159,13 @@ class ErrandAttachmentsResource {
 		@Parameter(name = "attachmentId", description = "Errand attachment ID", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable final String attachmentId,
 		final HttpServletResponse response) {
 
-		errandAttachmentService.getAttachmentStreamed(namespace, municipalityId, errandId, attachmentId, response);
+		if (!semaphore.tryAcquire()) {
+			throw Problem.valueOf(TOO_MANY_REQUESTS, "Too many files being read. Try again later.");
+		}
+		try {
+			errandAttachmentService.getAttachmentStreamed(namespace, municipalityId, errandId, attachmentId, response);
+		} finally {
+			semaphore.release();
+		}
 	}
 }

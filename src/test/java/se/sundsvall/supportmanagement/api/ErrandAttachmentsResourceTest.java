@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Semaphore;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,6 +48,9 @@ class ErrandAttachmentsResourceTest {
 
 	@MockitoBean
 	private ErrandAttachmentService errandAttachmentServiceMock;
+
+	@MockBean
+	private Semaphore semaphoreMock;
 
 	@Autowired
 	private WebTestClient webTestClient;
@@ -90,6 +94,7 @@ class ErrandAttachmentsResourceTest {
 
 		// Parameter values
 		final var attachmentId = randomUUID().toString();
+		when(semaphoreMock.tryAcquire()).thenReturn(true);
 
 		webTestClient.get().uri(builder -> builder.path(PATH.concat("/{attachmentId}"))
 			.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", ERRAND_ID, "attachmentId", attachmentId)))
@@ -98,7 +103,9 @@ class ErrandAttachmentsResourceTest {
 			.expectStatus().isOk();
 
 		// Verification
+		verify(semaphoreMock).tryAcquire();
 		verify(errandAttachmentServiceMock).readErrandAttachment(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(attachmentId), any());
+		verify(semaphoreMock).release();
 	}
 
 	@Test
@@ -146,6 +153,7 @@ class ErrandAttachmentsResourceTest {
 
 		// Parameter values
 		final var attachmentId = randomUUID().toString();
+		when(semaphoreMock.tryAcquire()).thenReturn(true);
 
 		// ACT
 		webTestClient.get()
@@ -156,6 +164,9 @@ class ErrandAttachmentsResourceTest {
 			.expectBody()
 			.returnResult();
 
+		verify(semaphoreMock).tryAcquire();
 		verify(errandAttachmentServiceMock).getAttachmentStreamed(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(attachmentId), any(HttpServletResponse.class));
+		verify(semaphoreMock).release();
+
 	}
 }

@@ -5,6 +5,7 @@ import static org.springframework.http.MediaType.ALL_VALUE;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON_VALUE;
 import static org.springframework.http.ResponseEntity.noContent;
+import static org.zalando.problem.Status.TOO_MANY_REQUESTS;
 import static se.sundsvall.supportmanagement.Constants.NAMESPACE_REGEXP;
 import static se.sundsvall.supportmanagement.Constants.NAMESPACE_VALIDATION_MESSAGE;
 
@@ -19,6 +20,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import java.util.List;
+import java.util.concurrent.Semaphore;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -48,9 +50,12 @@ import se.sundsvall.supportmanagement.service.CommunicationService;
 @ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 class ErrandCommunicationResource {
 
+	private final Semaphore semaphore;
+
 	private final CommunicationService service;
 
-	ErrandCommunicationResource(final CommunicationService service) {
+	ErrandCommunicationResource(final Semaphore semaphore, final CommunicationService service) {
+		this.semaphore = semaphore;
 		this.service = service;
 	}
 
@@ -144,6 +149,13 @@ class ErrandCommunicationResource {
 		@Parameter(name = "attachmentId", description = "Message attachment ID", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable final String attachmentId,
 		final HttpServletResponse response) {
 
-		service.getMessageAttachmentStreamed(namespace, municipalityId, errandId, communicationId, attachmentId, response);
+		if (!semaphore.tryAcquire()) {
+			throw Problem.valueOf(TOO_MANY_REQUESTS, "Too many files being read. Try again later.");
+		}
+		try {
+			service.getMessageAttachmentStreamed(namespace, municipalityId, errandId, communicationId, attachmentId, response);
+		} finally {
+			semaphore.release();
+		}
 	}
 }

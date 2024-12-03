@@ -13,11 +13,13 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Semaphore;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
@@ -46,10 +48,41 @@ class ErrandCommunicationResourceTest {
 	private static final String PATH_ATTACHMENTS = "/{communicationId}/attachments/{attachmentId}/streamed";
 
 	@MockitoBean
+	private Semaphore semaphoreMock;
+	@MockitoBean
 	private CommunicationService serviceMock;
-
 	@Autowired
 	private WebTestClient webTestClient;
+
+	private static SmsRequest smsRequest() {
+		return SmsRequest.create()
+			.withMessage("message")
+			.withRecipient("+46701234567")
+			.withSender("sender");
+	}
+
+	private static EmailRequest emailRequest(final boolean withAttachment) {
+		return EmailRequest.create()
+			.withHtmlMessage("htmlMessage")
+			.withMessage("message")
+			.withRecipient("recipient@recipient.com")
+			.withSender("sender@sender.com")
+			.withSubject("subject")
+			.withAttachments(withAttachment ? List.of(attachment()) : null);
+	}
+
+	private static WebMessageRequest webMessageRequest(final boolean withAttachment) {
+		return WebMessageRequest.create()
+			.withMessage("message")
+			.withAttachmentIds(List.of("1", "2"))
+			.withAttachments(withAttachment ? List.of(WebMessageAttachment.create().withName("attachmentName").withBase64EncodedString("ZGF0YQ==")) : null);
+	}
+
+	private static EmailAttachment attachment() {
+		return EmailAttachment.create()
+			.withBase64EncodedString("aGVsbG8gd29ybGQK")
+			.withName("name");
+	}
 
 	@Test
 	void getCommunicationsOnErrand() {
@@ -121,7 +154,7 @@ class ErrandCommunicationResourceTest {
 	@ValueSource(booleans = {
 		true, false
 	})
-	void sendEmail(boolean withAttachments) {
+	void sendEmail(final boolean withAttachments) {
 
 		// Parameter values
 		final var requestBody = emailRequest(withAttachments);
@@ -144,7 +177,7 @@ class ErrandCommunicationResourceTest {
 	@ValueSource(booleans = {
 		true, false
 	})
-	void sendWebMessage(boolean withAttachment) {
+	void sendWebMessage(final boolean withAttachment) {
 
 		// Parameter values
 		final var requestBody = webMessageRequest(withAttachment);
@@ -166,6 +199,9 @@ class ErrandCommunicationResourceTest {
 	@Test
 	void getMessageAttachmentStreamed() {
 
+		// Arrange
+		when(semaphoreMock.tryAcquire()).thenReturn(true);
+
 		// ACT
 		webTestClient.get()
 			.uri(uriBuilder -> uriBuilder.path(PATH_PREFIX + PATH_ATTACHMENTS)
@@ -175,37 +211,11 @@ class ErrandCommunicationResourceTest {
 			.expectBody()
 			.returnResult();
 
+		// Assert
+
+		verify(semaphoreMock).tryAcquire();
 		verify(serviceMock).getMessageAttachmentStreamed(any(String.class), any(String.class), any(String.class), any(String.class), any(String.class), any(HttpServletResponse.class));
+		verify(semaphoreMock).release();
 		verifyNoMoreInteractions(serviceMock);
-	}
-
-	private static SmsRequest smsRequest() {
-		return SmsRequest.create()
-			.withMessage("message")
-			.withRecipient("+46701234567")
-			.withSender("sender");
-	}
-
-	private static EmailRequest emailRequest(boolean withAttachment) {
-		return EmailRequest.create()
-			.withHtmlMessage("htmlMessage")
-			.withMessage("message")
-			.withRecipient("recipient@recipient.com")
-			.withSender("sender@sender.com")
-			.withSubject("subject")
-			.withAttachments(withAttachment ? List.of(attachment()) : null);
-	}
-
-	private static WebMessageRequest webMessageRequest(boolean withAttachment) {
-		return WebMessageRequest.create()
-			.withMessage("message")
-			.withAttachmentIds(List.of("1", "2"))
-			.withAttachments(withAttachment ? List.of(WebMessageAttachment.create().withName("attachmentName").withBase64EncodedString("ZGF0YQ==")) : null);
-	}
-
-	private static EmailAttachment attachment() {
-		return EmailAttachment.create()
-			.withBase64EncodedString("aGVsbG8gd29ybGQK")
-			.withName("name");
 	}
 }
