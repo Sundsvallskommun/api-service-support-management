@@ -10,24 +10,25 @@ import static org.zalando.problem.Status.BAD_GATEWAY;
 import static org.zalando.problem.Status.BAD_REQUEST;
 import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
 import static org.zalando.problem.Status.NOT_FOUND;
+import static org.zalando.problem.Status.TOO_MANY_REQUESTS;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapper.toAttachmentEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapper.toErrandAttachmentHeaders;
 
+import jakarta.persistence.EntityManager;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StreamUtils;
 import org.springframework.web.multipart.MultipartFile;
 import org.zalando.problem.Problem;
-
-import jakarta.persistence.EntityManager;
-import jakarta.servlet.http.HttpServletResponse;
 import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachmentHeader;
 import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
@@ -49,15 +50,17 @@ public class ErrandAttachmentService {
 	private final RevisionService revisionService;
 	private final EventService eventService;
 	private final EntityManager entityManager;
+	private final Semaphore semaphore;
 
 	public ErrandAttachmentService(final ErrandsRepository errandsRepository,
 		final RevisionService revisionService, final EventService eventService,
-		final AttachmentRepository attachmentRepository, final EntityManager entityManager) {
+		final AttachmentRepository attachmentRepository, final EntityManager entityManager, final Semaphore semaphore) {
 		this.errandsRepository = errandsRepository;
 		this.revisionService = revisionService;
 		this.eventService = eventService;
 		this.attachmentRepository = attachmentRepository;
 		this.entityManager = entityManager;
+		this.semaphore = semaphore;
 	}
 
 	public void getAttachmentStreamed(final String namespace, final String municipalityId, final String errandId, final String attachmentId, final HttpServletResponse response) {
@@ -65,6 +68,7 @@ public class ErrandAttachmentService {
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, ATTACHMENT_ENTITY_NOT_FOUND.formatted(attachmentId, errandId)));
 
 		streamAttachmentData(attachment, response);
+
 	}
 
 	public String createErrandAttachment(final String namespace, final String municipalityId, final String errandId, final MultipartFile errandAttachment) {
@@ -85,7 +89,7 @@ public class ErrandAttachmentService {
 		return attachmentEntity.getId();
 	}
 
-	public void readErrandAttachment(final String namespace, final String municipalityId, final String errandId, final String attachmentId, final HttpServletResponse response) throws SQLException, IOException {
+	public void readErrandAttachment(final String namespace, final String municipalityId, final String errandId, final String attachmentId, final HttpServletResponse response) {
 
 		if (!errandsRepository.existsByIdAndNamespaceAndMunicipalityId(errandId, namespace, municipalityId)) {
 			throw Problem.valueOf(NOT_FOUND, String.format(ERRAND_ENTITY_NOT_FOUND, errandId, namespace, municipalityId));
@@ -95,13 +99,7 @@ public class ErrandAttachmentService {
 			.findById(attachmentId)
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, String.format(ATTACHMENT_ENTITY_NOT_FOUND, attachmentId, errandId)));
 
-		final var file = attachmentEntity.getAttachmentData().getFile();
-
-		response.addHeader(CONTENT_TYPE, attachmentEntity.getMimeType());
-		response.addHeader(CONTENT_DISPOSITION, "attachment; filename=\"" + attachmentEntity.getFileName() + "\"");
-		response.setContentLength((int) file.length());
-
-		StreamUtils.copy(file.getBinaryStream(), response.getOutputStream());
+		streamAttachmentData(attachmentEntity, response);
 	}
 
 	public List<ErrandAttachmentHeader> readErrandAttachmentHeaders(final String namespace, final String municipalityId, final String errandId) {
@@ -160,15 +158,28 @@ public class ErrandAttachmentService {
 	}
 
 	void streamAttachmentData(final AttachmentEntity attachment, final HttpServletResponse response) {
+		final int fileSize;
+		final var file = attachment.getAttachmentData().getFile();
 		try {
-			final var file = attachment.getAttachmentData().getFile();
+			fileSize = (int) file.length();
+		} catch (final SQLException e) {
+			throw Problem.valueOf(INTERNAL_SERVER_ERROR, "%s occurred when copying file with attachment id '%s' to response: %s".formatted(e.getClass().getSimpleName(), attachment.getId(), e.getMessage()));
+		}
+		try {
+			if (!semaphore.tryAcquire(fileSize, 5, TimeUnit.SECONDS)) {
+				throw Problem.valueOf(TOO_MANY_REQUESTS, "Too many files being read. Try again later.");
+			}
 
 			response.addHeader(CONTENT_TYPE, attachment.getMimeType());
 			response.addHeader(CONTENT_DISPOSITION, "attachment; filename=\"" + attachment.getFileName() + "\"");
-			response.setContentLength((int) file.length());
+			response.setContentLength(fileSize);
 			StreamUtils.copy(file.getBinaryStream(), response.getOutputStream());
 		} catch (final IOException | SQLException e) {
 			throw Problem.valueOf(INTERNAL_SERVER_ERROR, "%s occurred when copying file with attachment id '%s' to response: %s".formatted(e.getClass().getSimpleName(), attachment.getId(), e.getMessage()));
+		} catch (final InterruptedException e) {
+			Thread.currentThread().interrupt();
+		} finally {
+			semaphore.release(fileSize);
 		}
 	}
 }

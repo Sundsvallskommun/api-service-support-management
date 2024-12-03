@@ -13,7 +13,6 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Semaphore;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -46,8 +45,6 @@ class ErrandCommunicationResourceTest {
 	private static final String PATH_WEB_MESSAGE = "/webmessage";
 	private static final String PATH_ATTACHMENTS = "/{communicationId}/attachments/{attachmentId}/streamed";
 
-	@MockBean
-	private Semaphore semaphoreMock;
 	@MockBean
 	private CommunicationService serviceMock;
 
@@ -199,9 +196,6 @@ class ErrandCommunicationResourceTest {
 	@Test
 	void getMessageAttachmentStreamed() {
 
-		// Arrange
-		when(semaphoreMock.tryAcquire()).thenReturn(true);
-
 		// ACT
 		webTestClient.get()
 			.uri(uriBuilder -> uriBuilder.path(PATH_PREFIX + PATH_ATTACHMENTS)
@@ -212,10 +206,7 @@ class ErrandCommunicationResourceTest {
 			.returnResult();
 
 		// Assert
-
-		verify(semaphoreMock).tryAcquire();
 		verify(serviceMock).getMessageAttachmentStreamed(any(String.class), any(String.class), any(String.class), any(String.class), any(String.class), any(HttpServletResponse.class));
-		verify(semaphoreMock).release();
 		verifyNoMoreInteractions(serviceMock);
 	}
 }

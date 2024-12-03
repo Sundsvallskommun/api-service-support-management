@@ -4,15 +4,12 @@ import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.zalando.problem.Status.BAD_REQUEST;
-import static org.zalando.problem.Status.TOO_MANY_REQUESTS;
 
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Semaphore;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -54,9 +51,6 @@ class ErrandCommunicationResourceFailureTest {
 
 	@Autowired
 	private WebTestClient webTestClient;
-
-	@MockBean
-	private Semaphore semaphoreMock;
 
 	private static SmsRequest smsRequest() {
 		return SmsRequest.create()
@@ -654,29 +648,5 @@ class ErrandCommunicationResourceFailureTest {
 
 		// Verification
 		verifyNoInteractions(serviceMock);
-	}
-
-	@Test
-	void getMessageAttachmentStreamedWhenBusy() {
-
-		// Arrange
-		when(semaphoreMock.tryAcquire()).thenReturn(false);
-
-		// Act
-		final var response = webTestClient.get()
-			.uri(builder -> builder.path(PATH_PREFIX + "/{messageID}/attachments/{attachmentId}/streamed")
-				.build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "messageID", MESSAGE_ID, "attachmentId", randomUUID().toString())))
-			.exchange()
-			.expectStatus().is4xxClientError()
-			.expectBody(Problem.class)
-			.returnResult()
-			.getResponseBody();
-
-		// Verification
-		assertThat(response).isNotNull();
-		assertThat(response.getStatus()).isEqualTo(TOO_MANY_REQUESTS);
-		assertThat(response.getDetail()).isEqualTo("Too many files being read. Try again later.");
-		verifyNoInteractions(serviceMock);
-
 	}
 }
