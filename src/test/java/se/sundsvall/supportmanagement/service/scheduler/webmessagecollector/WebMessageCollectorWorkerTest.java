@@ -10,7 +10,6 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.same;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -148,13 +147,13 @@ class WebMessageCollectorWorkerTest {
 		verify(errandsRepositoryMock).findOne(same(specificationMock));
 		verify(communicationRepositoryMock).existsByErrandNumberAndExternalId(errandNumber, messageId);
 		verify(webMessageCollectorMapperMock).toCommunicationEntity(messagedto, errandEntity);
-		verify(communicationRepositoryMock, times(2)).saveAndFlush(communicationEntityCaptor.capture());
+		verify(communicationRepositoryMock).saveAndFlush(communicationEntityCaptor.capture());
 		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Ärendekommunikation har skapats."), same(errandEntity), isNull(), isNull());
 		verify(webMessageCollectorClientMock).getAttachment(MUNICIPALITY_ID, attachmentId);
 		verify(webMessageCollectorMapperMock).toCommunicationAttachmentDataEntity(data);
 		verify(webMessageCollectorClientMock).deleteMessages(MUNICIPALITY_ID, List.of(id));
 
-		assertThat(communicationEntityCaptor.getAllValues()).satisfiesExactly(
+		assertThat(communicationEntityCaptor.getValue()).satisfies(
 			communication -> {
 				assertThat(communication).hasNoNullFieldsOrPropertiesExcept("subject", "target", "emailHeaders", "errandAttachments");
 				assertThat(communication.getDirection()).isEqualTo(INBOUND);
@@ -162,9 +161,8 @@ class WebMessageCollectorWorkerTest {
 				assertThat(communication.getMessageBody()).isEqualTo(messagedto.getMessage());
 				assertThat(communication.getSent()).isCloseTo(now(), within(1, SECONDS));
 				assertThat(communication.getErrandNumber()).isEqualTo(errandEntity.getErrandNumber());
-			}, communicationWithAttachment -> {
-				assertThat(communicationWithAttachment.getAttachments()).hasSize(1);
-				assertThat(communicationWithAttachment.getAttachments().getFirst().getAttachmentData()).isSameAs(communicationAttachmentDataEntityMock);
+				assertThat(communication.getAttachments()).hasSize(1);
+				assertThat(communication.getAttachments().getFirst().getAttachmentData()).isSameAs(communicationAttachmentDataEntityMock);
 			});
 
 		verifyNoMoreInteractions(webMessageCollectorClientMock, webMessageCollectorPropertiesMock, errandsRepositoryMock, communicationRepositoryMock);
