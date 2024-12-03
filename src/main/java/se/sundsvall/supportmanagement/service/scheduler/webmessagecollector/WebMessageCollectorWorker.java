@@ -5,7 +5,6 @@ import static se.sundsvall.supportmanagement.integration.db.specification.Errand
 
 import generated.se.sundsvall.webmessagecollector.MessageDTO;
 
-import java.util.Collection;
 import java.util.List;
 
 import org.springframework.stereotype.Component;
@@ -13,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.supportmanagement.integration.db.CommunicationRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationAttachmentEntity;
+import se.sundsvall.supportmanagement.integration.db.model.CommunicationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.webmessagecollector.WebMessageCollectorClient;
@@ -52,26 +52,26 @@ public class WebMessageCollectorWorker {
 		if (entity.isPresent()) {
 			entity
 				.filter(errand -> !communicationRepository.existsByErrandNumberAndExternalId(errand.getErrandNumber(), message.getMessageId()))
-				.map(errand -> processMessage(message, errand))
-				.stream()
-				.flatMap(Collection::stream)
-				.forEach(this::processAttachment);
+				.map(errand -> webMessageCollectorMapper.toCommunicationEntity(message, errand))
+				.map(this::addAttachments)
+				.ifPresent(communicationEntity -> saveMessage(communicationEntity, entity.get()));
 
 			webMessageCollectorClient.deleteMessages(municipalityId, List.of(message.getId()));
 		}
 	}
 
-	private List<CommunicationAttachmentEntity> processMessage(final MessageDTO messageDTO, final ErrandEntity errand) {
-		final var entity = webMessageCollectorMapper.toCommunicationEntity(messageDTO, errand);
-		communicationRepository.saveAndFlush(entity);
+	private void saveMessage(final CommunicationEntity communicationEntity, final ErrandEntity errand) {
+		communicationRepository.saveAndFlush(communicationEntity);
 		eventService.createErrandEvent(UPDATE, EVENT_LOG_COMMUNICATION, errand, null, null);
-
-		return entity.getAttachments();
 	}
 
-	private void processAttachment(final CommunicationAttachmentEntity attachment) {
+	private CommunicationEntity addAttachments(final CommunicationEntity communicationEntity) {
+		communicationEntity.getAttachments().forEach(this::addAttachment);
+		return communicationEntity;
+	}
+
+	private void addAttachment(final CommunicationAttachmentEntity attachment) {
 		final var attachmentData = webMessageCollectorClient.getAttachment(attachment.getMunicipalityId(), Integer.parseInt(attachment.getForeignId()));
 		attachment.setAttachmentData(webMessageCollectorMapper.toCommunicationAttachmentDataEntity(attachmentData));
-		communicationRepository.saveAndFlush(attachment.getCommunicationEntity());
 	}
 }
