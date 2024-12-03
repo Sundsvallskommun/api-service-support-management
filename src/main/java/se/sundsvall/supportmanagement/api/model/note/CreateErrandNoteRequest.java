@@ -144,8 +144,7 @@ public class CreateErrandNoteRequest {
 
 	@Override
 	public String toString() {
-		final String builder = "CreateErrandNoteRequest [context=" + context + ", role=" + role + ", partyId=" + partyId + ", subject=" + subject + ", body=" + body + ", createdBy=" + createdBy
+		return "CreateErrandNoteRequest [context=" + context + ", role=" + role + ", partyId=" + partyId + ", subject=" + subject + ", body=" + body + ", createdBy=" + createdBy
 			+ "]";
-		return builder;
 	}
 }
