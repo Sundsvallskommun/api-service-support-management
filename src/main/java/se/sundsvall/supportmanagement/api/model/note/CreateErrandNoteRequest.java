@@ -3,12 +3,10 @@ package se.sundsvall.supportmanagement.api.model.note;
 import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.NOT_REQUIRED;
 import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 
-import java.util.Objects;
-
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-
-import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.Objects;
 import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 
 @Schema(description = "CreateErrandNoteRequest model")
@@ -28,12 +26,12 @@ public class CreateErrandNoteRequest {
 	@ValidUuid(nullable = true)
 	private String partyId;
 
-	@Schema(description = "The note subject", example = "This is a subject", maximum = "255", requiredMode = REQUIRED)
+	@Schema(description = "The note subject", example = "This is a subject", maxLength = 255, requiredMode = REQUIRED)
 	@NotBlank
 	@Size(min = 1, max = 255)
 	private String subject;
 
-	@Schema(description = "The note body", example = "This is a note", maximum = "2048", requiredMode = REQUIRED)
+	@Schema(description = "The note body", example = "This is a note", maxLength = 2048, requiredMode = REQUIRED)
 	@NotBlank
 	@Size(min = 1, max = 2048)
 	private String body;
@@ -146,9 +144,7 @@ public class CreateErrandNoteRequest {
 
 	@Override
 	public String toString() {
-		final var builder = new StringBuilder();
-		builder.append("CreateErrandNoteRequest [context=").append(context).append(", role=").append(role).append(", partyId=").append(partyId).append(", subject=").append(subject).append(", body=").append(body).append(", createdBy=").append(createdBy)
-			.append("]");
-		return builder.toString();
+		return "CreateErrandNoteRequest [context=" + context + ", role=" + role + ", partyId=" + partyId + ", subject=" + subject + ", body=" + body + ", createdBy=" + createdBy
+			+ "]";
 	}
 }

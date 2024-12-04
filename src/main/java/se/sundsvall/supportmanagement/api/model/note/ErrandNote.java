@@ -1,11 +1,9 @@
 package se.sundsvall.supportmanagement.api.model.note;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.OffsetDateTime;
 import java.util.Objects;
-
-import com.fasterxml.jackson.annotation.JsonInclude;
-
-import io.swagger.v3.oas.annotations.media.Schema;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(description = "ErrandNote model")
@@ -231,9 +229,7 @@ public class ErrandNote {
 
 	@Override
 	public String toString() {
-		final var builder = new StringBuilder();
-		builder.append("ErrandNote [id=").append(id).append(", context=").append(context).append(", role=").append(role).append(", clientId=").append(clientId).append(", partyId=").append(partyId).append(", subject=").append(subject).append(", body=")
-			.append(body).append(", caseId=").append(caseId).append(", createdBy=").append(createdBy).append(", modifiedBy=").append(modifiedBy).append(", created=").append(created).append(", modified=").append(modified).append("]");
-		return builder.toString();
+		return "ErrandNote [id=" + id + ", context=" + context + ", role=" + role + ", clientId=" + clientId + ", partyId=" + partyId + ", subject=" + subject + ", body="
+			+ body + ", caseId=" + caseId + ", createdBy=" + createdBy + ", modifiedBy=" + modifiedBy + ", created=" + created + ", modified=" + modified + "]";
 	}
 }

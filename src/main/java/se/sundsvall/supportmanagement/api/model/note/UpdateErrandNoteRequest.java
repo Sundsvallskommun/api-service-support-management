@@ -2,12 +2,10 @@ package se.sundsvall.supportmanagement.api.model.note;
 
 import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 
-import java.util.Objects;
-
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-
-import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.Objects;
 
 @Schema(description = "UpdateErrandNoteRequest model")
 public class UpdateErrandNoteRequest {
@@ -17,7 +15,7 @@ public class UpdateErrandNoteRequest {
 	@Size(min = 1, max = 255)
 	private String subject;
 
-	@Schema(description = "The note nody", example = "This is a note", maximum = "2048", requiredMode = REQUIRED)
+	@Schema(description = "The note body", example = "This is a note", maxLength = 2048, requiredMode = REQUIRED)
 	@NotBlank
 	@Size(min = 1, max = 2048)
 	private String body;
@@ -91,8 +89,6 @@ public class UpdateErrandNoteRequest {
 
 	@Override
 	public String toString() {
-		final var builder = new StringBuilder();
-		builder.append("UpdateErrandNoteRequest [subject=").append(subject).append(", body=").append(body).append(", modifiedBy=").append(modifiedBy).append("]");
-		return builder.toString();
+		return "UpdateErrandNoteRequest [subject=" + subject + ", body=" + body + ", modifiedBy=" + modifiedBy + "]";
 	}
 }
