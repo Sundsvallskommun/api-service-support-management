@@ -2,12 +2,10 @@ package se.sundsvall.supportmanagement.api.model.note;
 
 import static java.lang.Integer.parseInt;
 
-import java.util.Objects;
-
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
-
-import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.Objects;
 import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 
 @Schema(description = "FindErrandNotesRequest model")
@@ -15,25 +13,20 @@ public class FindErrandNotesRequest {
 
 	private static final String DEFAULT_PAGE = "1";
 	private static final String DEFAULT_LIMIT = "100";
-
-	@Schema(description = "Context for note", example = "SUPPORT")
-	private String context;
-
-	@Schema(description = "Role of note creator", example = "FIRST_LINE_SUPPORT")
-	private String role;
-
-	@Schema(description = "Party id (e.g. a personId or an organizationId)", example = "81471222-5798-11e9-ae24-57fa13b361e1")
-	@ValidUuid(nullable = true)
-	private String partyId;
-
 	@Schema(description = "Page number", example = DEFAULT_PAGE, defaultValue = DEFAULT_PAGE)
 	@Min(1)
 	protected int page = parseInt(DEFAULT_PAGE);
-
 	@Schema(description = "Result size per page", example = DEFAULT_LIMIT, defaultValue = DEFAULT_LIMIT)
 	@Min(1)
 	@Max(1000)
 	protected int limit = parseInt(DEFAULT_LIMIT);
+	@Schema(description = "Context for note", example = "SUPPORT")
+	private String context;
+	@Schema(description = "Role of note creator", example = "FIRST_LINE_SUPPORT")
+	private String role;
+	@Schema(description = "Party id (e.g. a personId or an organizationId)", example = "81471222-5798-11e9-ae24-57fa13b361e1")
+	@ValidUuid(nullable = true)
+	private String partyId;
 
 	public static FindErrandNotesRequest create() {
 		return new FindErrandNotesRequest();
@@ -126,9 +119,7 @@ public class FindErrandNotesRequest {
 
 	@Override
 	public String toString() {
-		final var builder = new StringBuilder();
-		builder.append("FindErrandNotesRequest [context=").append(context).append(", role=").append(role).append(", partyId=").append(partyId).append(", page=").append(page).append(", limit=").append(limit).append("]");
-		return builder.toString();
+		return "FindErrandNotesRequest [context=" + context + ", role=" + role + ", partyId=" + partyId + ", page=" + page + ", limit=" + limit + "]";
 	}
 
 }
