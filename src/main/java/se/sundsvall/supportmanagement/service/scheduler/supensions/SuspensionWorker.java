@@ -1,6 +1,8 @@
 package se.sundsvall.supportmanagement.service.scheduler.supensions;
 
 import static java.time.OffsetDateTime.now;
+import static java.util.Objects.nonNull;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import org.springframework.stereotype.Component;
 import se.sundsvall.supportmanagement.api.model.notification.Notification;
@@ -39,6 +41,7 @@ public class SuspensionWorker {
 
 				if (!notificationService.doesNotificationWithSpecificDescriptionExistForOwnerAndErrandAndNotificationIsCreatedAfter(entity.getMunicipalityId(), entity.getNamespace(), entity.getAssignedUserId(), entity, NOTIFICATION_MESSAGE,
 					entity.getSuspendedFrom())) {
+
 					notificationService
 						.createNotification(entity.getMunicipalityId(), entity.getNamespace(), entity.getId(), createNotification(entity));
 				}
@@ -46,13 +49,26 @@ public class SuspensionWorker {
 	}
 
 	private Notification createNotification(final ErrandEntity errand) {
-		final var owner = employeeService.getEmployeeByLoginName(errand.getAssignedUserId());
+
+		final var ownerFullName = fetchFullNameByUserId(errand.getAssignedUserId());
+
 		return Notification.create()
-			.withOwnerFullName(owner.getFullname())
+			.withOwnerFullName(ownerFullName)
 			.withOwnerId(errand.getAssignedUserId())
 			.withType(NOTIFICATION_TYPE)
 			.withDescription(NOTIFICATION_MESSAGE)
 			.withErrandId(errand.getId())
 			.withErrandNumber(errand.getErrandNumber());
+	}
+
+	private String fetchFullNameByUserId(String userId) {
+		if (!isBlank(userId)) {
+			final var owner = employeeService.getEmployeeByLoginName(userId);
+			if (nonNull(owner)) {
+				return owner.getFullname();
+			}
+		}
+
+		return "UNKNOWN";
 	}
 }

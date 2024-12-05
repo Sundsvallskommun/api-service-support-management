@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
@@ -51,6 +52,7 @@ class SuspensionWorkerTest {
 		final var previousStatus = "previousStatus";
 		final var errandEntity = ErrandEntity.create()
 			.withNamespace(namespace)
+			.withAssignedUserId("assignedUserId")
 			.withId("id")
 			.withMunicipalityId(municipalityId)
 			.withSuspendedFrom(OffsetDateTime.now().minusDays(1))
@@ -70,6 +72,7 @@ class SuspensionWorkerTest {
 		suspensionWorker.processExpiredSuspensions();
 
 		// Assert
+		verify(employeeServiceMock).getEmployeeByLoginName(errandEntity.getAssignedUserId());
 		verify(errandsRepositoryMock).findAllBySuspendedToBefore(any(OffsetDateTime.class));
 		verify(notificationServiceMock).doesNotificationWithSpecificDescriptionExistForOwnerAndErrandAndNotificationIsCreatedAfter(municipalityId, namespace, errandEntity.getAssignedUserId(), errandEntity, "Parkering av ärendet har upphört",
 			errandEntity.getSuspendedFrom());
@@ -82,6 +85,48 @@ class SuspensionWorkerTest {
 		assertThat(notification.getOwnerFullName()).isEqualTo(owner.getFullname());
 		assertThat(notification.getOwnerId()).isEqualTo(errandEntity.getAssignedUserId());
 
+		verifyNoMoreInteractions(errandsRepositoryMock, notificationServiceMock);
+	}
+
+	@Test
+	void processExpiredSuspensionsWhneAssignbedUserIsNull() {
+
+		// Arrange
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		// When the previous time measurement is stopped and the current time measurement is started
+		final var previousStatus = "previousStatus";
+		final var errandEntity = ErrandEntity.create()
+			.withNamespace(namespace)
+			.withId("id")
+			.withMunicipalityId(municipalityId)
+			.withSuspendedFrom(OffsetDateTime.now().minusDays(1))
+			.withSuspendedTo(OffsetDateTime.now().minusHours(1))
+			.withPreviousStatus(previousStatus)
+			.withStatus("SUSPENDED")
+			.withMunicipalityId(municipalityId);
+
+		when(notificationServiceMock.doesNotificationWithSpecificDescriptionExistForOwnerAndErrandAndNotificationIsCreatedAfter(municipalityId, namespace, errandEntity.getAssignedUserId(), errandEntity, "Parkering av ärendet har upphört",
+			errandEntity.getSuspendedFrom())).thenReturn(false);
+		when(errandsRepositoryMock.findAllBySuspendedToBefore(any(OffsetDateTime.class))).thenReturn(List.of(errandEntity));
+
+		// Act
+		suspensionWorker.processExpiredSuspensions();
+
+		// Assert
+		verify(errandsRepositoryMock).findAllBySuspendedToBefore(any(OffsetDateTime.class));
+		verify(notificationServiceMock).doesNotificationWithSpecificDescriptionExistForOwnerAndErrandAndNotificationIsCreatedAfter(municipalityId, namespace, errandEntity.getAssignedUserId(), errandEntity, "Parkering av ärendet har upphört",
+			errandEntity.getSuspendedFrom());
+		verify(notificationServiceMock).createNotification(eq(municipalityId), eq(namespace), eq(errandEntity.getId()), notificationCaptor.capture());
+
+		final var notification = notificationCaptor.getValue();
+		assertThat(notification).isNotNull();
+		assertThat(notification.getErrandId()).isEqualTo(errandEntity.getId());
+		assertThat(notification.getErrandNumber()).isEqualTo(errandEntity.getErrandNumber());
+		assertThat(notification.getOwnerFullName()).isEqualTo("UNKNOWN");
+		assertThat(notification.getOwnerId()).isEqualTo(errandEntity.getAssignedUserId());
+
+		verifyNoInteractions(employeeServiceMock);
 		verifyNoMoreInteractions(errandsRepositoryMock, notificationServiceMock);
 	}
 
@@ -136,6 +181,7 @@ class SuspensionWorkerTest {
 
 		final var errandEntity = ErrandEntity.create()
 			.withNamespace(namespace)
+			.withAssignedUserId("assignedUserId")
 			.withId("id")
 			.withMunicipalityId(municipalityId)
 			.withSuspendedFrom(OffsetDateTime.now().minusDays(1))
@@ -157,6 +203,7 @@ class SuspensionWorkerTest {
 		verify(notificationServiceMock).doesNotificationWithSpecificDescriptionExistForOwnerAndErrandAndNotificationIsCreatedAfter(municipalityId, namespace, errandEntity.getAssignedUserId(), errandEntity, "Parkering av ärendet har upphört",
 			errandEntity.getSuspendedFrom());
 		verify(notificationServiceMock).createNotification(eq(municipalityId), eq(namespace), eq(errandEntity.getId()), notificationCaptor.capture());
+		verify(employeeServiceMock).getEmployeeByLoginName(errandEntity.getAssignedUserId());
 
 		final var notification = notificationCaptor.getValue();
 		assertThat(notification).isNotNull();
