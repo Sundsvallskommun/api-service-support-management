@@ -1,5 +1,7 @@
 package se.sundsvall.supportmanagement.config;
 
+import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON;
+import static org.springframework.http.ResponseEntity.badRequest;
 import static org.zalando.problem.Status.BAD_REQUEST;
 
 import com.turkraft.springfilter.parser.InvalidSyntaxException;
@@ -7,7 +9,6 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -27,15 +28,15 @@ public class ExceptionHandlerConfig {
 		@ExceptionHandler
 		@ResponseBody
 		ResponseEntity<Problem> handleInvalidSyntaxException(final InvalidSyntaxException exception) {
-			LOGGER.info(LOG_MESSAGE, exception);
+			LOGGER.error(LOG_MESSAGE, exception);
 
-			final var errorResponse = Problem.builder()
-				.withStatus(BAD_REQUEST)
-				.withTitle(TITLE)
-				.withDetail(extractMessage(exception))
-				.build();
-
-			return ResponseEntity.badRequest().contentType(MediaType.APPLICATION_PROBLEM_JSON).body(errorResponse);
+			return badRequest()
+				.contentType(APPLICATION_PROBLEM_JSON)
+				.body(Problem.builder()
+					.withStatus(BAD_REQUEST)
+					.withTitle(TITLE)
+					.withDetail(extractMessage(exception))
+					.build());
 		}
 
 		private String extractMessage(final Exception e) {
