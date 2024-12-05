@@ -9,7 +9,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
 
 @SpringBootTest(classes = SemaphoreConfig.class)
-@TestPropertySource(properties = "semaphore.maxPermits=4")
+@TestPropertySource(properties = "semaphore.maxMemoryUsage=4")
 class SemaphoreConfigTest {
 
 	@Autowired

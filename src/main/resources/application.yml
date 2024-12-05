@@ -103,4 +103,4 @@ turkraft:
       pattern: yyyy-MM-dd'T'HH:mm:ss.SSSXXX
 
 semaphore:
-  maxPermits: 209715200
+  maxMemoryUsage: 209715200
