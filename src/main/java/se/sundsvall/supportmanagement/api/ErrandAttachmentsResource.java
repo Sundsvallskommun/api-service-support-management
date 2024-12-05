@@ -23,8 +23,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
-import java.io.IOException;
-import java.sql.SQLException;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -91,7 +89,7 @@ class ErrandAttachmentsResource {
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "errandId", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("errandId") final String errandId,
 		@Parameter(name = "attachmentId", description = "Errand attachment id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable("attachmentId") final String attachmentId,
-		final HttpServletResponse response) throws SQLException, IOException {
+		final HttpServletResponse response) {
 
 		errandAttachmentService.readErrandAttachment(namespace, municipalityId, errandId, attachmentId, response);
 	}
@@ -142,7 +140,6 @@ class ErrandAttachmentsResource {
 		@Parameter(name = "errandId", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("errandId") final String errandId,
 		@Parameter(name = "attachmentId", description = "Errand attachment ID", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable final String attachmentId,
 		final HttpServletResponse response) {
-
 		errandAttachmentService.getAttachmentStreamed(namespace, municipalityId, errandId, attachmentId, response);
 	}
 }

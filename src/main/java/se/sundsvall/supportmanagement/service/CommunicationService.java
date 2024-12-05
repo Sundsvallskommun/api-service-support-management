@@ -4,6 +4,7 @@ import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
 import static org.zalando.problem.Status.NOT_FOUND;
+import static org.zalando.problem.Status.TOO_MANY_REQUESTS;
 import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toEmailAttachments;
 import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toEmailRequest;
 import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toSmsRequest;
@@ -17,6 +18,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StreamUtils;
 import org.zalando.problem.Problem;
@@ -49,6 +52,7 @@ public class CommunicationService {
 	private final ErrandAttachmentService errandAttachmentService;
 	private final MessagingClient messagingClient;
 	private final CommunicationMapper communicationMapper;
+	private final Semaphore semaphore;
 
 	public CommunicationService(
 		final ErrandsRepository errandsRepository,
@@ -56,7 +60,7 @@ public class CommunicationService {
 		final CommunicationRepository communicationRepository,
 		final CommunicationAttachmentRepository communicationAttachmentRepository,
 		final CommunicationMapper communicationMapper,
-		final ErrandAttachmentService errandAttachmentService) {
+		final ErrandAttachmentService errandAttachmentService, final Semaphore semaphore) {
 
 		this.errandsRepository = errandsRepository;
 		this.messagingClient = messagingClient;
@@ -64,6 +68,7 @@ public class CommunicationService {
 		this.communicationAttachmentRepository = communicationAttachmentRepository;
 		this.communicationMapper = communicationMapper;
 		this.errandAttachmentService = errandAttachmentService;
+		this.semaphore = semaphore;
 	}
 
 	public List<Communication> readCommunications(final String namespace, final String municipalityId, final String errandId) {
@@ -96,15 +101,28 @@ public class CommunicationService {
 	}
 
 	void streamCommunicationAttachmentData(final CommunicationAttachmentEntity attachment, final HttpServletResponse response) {
-		try {
-			final var file = attachment.getAttachmentData().getFile();
 
+		final var file = attachment.getAttachmentData().getFile();
+		final int fileLength;
+		try {
+			fileLength = (int) file.length();
+		} catch (final SQLException e) {
+			throw Problem.valueOf(INTERNAL_SERVER_ERROR, "%s occurred when copying file with attachment id '%s' to response: %s".formatted(e.getClass().getSimpleName(), attachment.getId(), e.getMessage()));
+		}
+		try {
+			if (!semaphore.tryAcquire(fileLength, 5, TimeUnit.SECONDS)) {
+				throw Problem.valueOf(TOO_MANY_REQUESTS, "Too many files being read. Try again later.");
+			}
 			response.addHeader(CONTENT_TYPE, attachment.getContentType());
 			response.addHeader(CONTENT_DISPOSITION, "attachment; filename=\"" + attachment.getName() + "\"");
-			response.setContentLength((int) file.length());
+			response.setContentLength(fileLength);
 			StreamUtils.copy(file.getBinaryStream(), response.getOutputStream());
 		} catch (final IOException | SQLException e) {
 			throw Problem.valueOf(INTERNAL_SERVER_ERROR, "%s occurred when copying file with attachment id '%s' to response: %s".formatted(e.getClass().getSimpleName(), attachment.getId(), e.getMessage()));
+		} catch (final InterruptedException e) {
+			Thread.currentThread().interrupt();
+		} finally {
+			semaphore.release(fileLength);
 		}
 	}
 
