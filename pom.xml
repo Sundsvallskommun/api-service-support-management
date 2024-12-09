@@ -19,6 +19,7 @@
 		<generated-sources-path>${project.build.directory}/generated-sources</generated-sources-path>
 		<generated-sources-java-path>src/main/java</generated-sources-java-path>
 		<shedlock.version>6.0.2</shedlock.version>
+		<commons-validator.version>1.9.0</commons-validator.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -63,6 +64,11 @@
 			<groupId>com.turkraft.springfilter</groupId>
 			<artifactId>jpa</artifactId>
 			<version>${spring-filter.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>commons-validator</groupId>
+			<artifactId>commons-validator</artifactId>
+			<version>${commons-validator.version}</version>
 		</dependency>
 		<dependency>
 			<!-- Necessary for the mime-type detection in ServiceUtil -->
