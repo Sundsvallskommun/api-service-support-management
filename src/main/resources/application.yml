@@ -101,3 +101,6 @@ turkraft:
   springfilter:
     offsetdatetimeformatter:
       pattern: yyyy-MM-dd'T'HH:mm:ss.SSSXXX
+
+semaphore:
+  maxMemoryUsage: 209715200
