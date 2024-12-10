@@ -1,20 +1,28 @@
 {
 	"request": {
 		"headers": {
-			"Authorization": {"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"},
-			"sentbyuser": {"equalTo": "cre03ate"}
+			"Authorization": {
+				"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
+			},
+			"sentbyuser": {
+				"equalTo": "cre03ate"
+			}
 		},
 		"method": "POST",
-		"bodyPatterns": [{"equalToJson": {
-			"role": "FIRST_LINE_SUPPORT",
-			"clientId": "api-support-management",
-			"createdBy": "John Doe",
-			"subject": "This is a subject",
-			"caseId": "ec677eb3-604c-4935-bff7-f8f0b500c8f4",
-			"context": "SUPPORT",
-			"partyId": "81471222-5798-11e9-ae24-57fa13b361e1",
-			"body": "This is a note"
-		}}],
+		"bodyPatterns": [
+			{
+				"equalToJson": {
+					"role": "FIRST_LINE_SUPPORT",
+					"clientId": "api-support-management",
+					"createdBy": "John Doe",
+					"subject": "This is a subject",
+					"caseId": "ec677eb3-604c-4935-bff7-f8f0b500c8f4",
+					"context": "SUPPORT",
+					"partyId": "81471222-5798-11e9-ae24-57fa13b361e1",
+					"body": "This is a note"
+				}
+			}
+		],
 		"urlPath": "/api-notes/2281/notes"
 	},
 	"response": {

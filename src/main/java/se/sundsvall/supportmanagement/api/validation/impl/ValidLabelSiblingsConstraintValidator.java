@@ -3,11 +3,10 @@ package se.sundsvall.supportmanagement.api.validation.impl;
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
 
-import java.util.Collection;
-import java.util.Objects;
-
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
+import java.util.Collection;
+import java.util.Objects;
 import se.sundsvall.supportmanagement.api.model.metadata.Label;
 import se.sundsvall.supportmanagement.api.validation.ValidLabelSiblings;
 
@@ -67,7 +66,7 @@ public class ValidLabelSiblingsConstraintValidator implements ConstraintValidato
 				.map(Label::getClassification)
 				.distinct()
 				.count() <= 1; // When list is empty (resulting in count 0) or having all entries with
-								// same classification (resulting in count 1) is considered to be valid
+								 // same classification (resulting in count 1) is considered to be valid
 		}
 		return false;
 	}

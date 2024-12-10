@@ -1,7 +1,11 @@
 {
 	"emailHeaders": {
-		"MESSAGE_ID": ["873e64eb-3ed7-43b6-b1ea-082e7ce0d41e@test.com"],
-		"IN_REPLY_TO": ["301e977e-2a89-47c8-b9b3-dce5ee506ef4@test.com"],
+		"MESSAGE_ID": [
+			"873e64eb-3ed7-43b6-b1ea-082e7ce0d41e@test.com"
+		],
+		"IN_REPLY_TO": [
+			"301e977e-2a89-47c8-b9b3-dce5ee506ef4@test.com"
+		],
 		"REFERENCES": [
 			"301e977e-2a89-47c8-b9b3-dce5ee506ef4@test.com",
 			"83e13aaf-33aa-4aa2-ae31-abf46eaf0152@test.com"
@@ -11,7 +15,9 @@
 	"sender": "bender@rodriguez.com",
 	"subject": "Insane in the Mainframe",
 	"recipient": "john.a@zoidberg.com",
-	"htmlMessage": "<html>Some message about the HAL Institute for <b>Criminally Insane Robots<\/b>, where robots that <i>murderously<\/i> turns against its human crew are held<\/html>",
-	"attachmentIds": ["99fa4dd0-9308-4d45-bb8e-4bb881a9a536"],
+	"htmlMessage": "<html>Some message about the HAL Institute for <b>Criminally Insane Robots</b>, where robots that <i>murderously</i> turns against its human crew are held</html>",
+	"attachmentIds": [
+		"99fa4dd0-9308-4d45-bb8e-4bb881a9a536"
+	],
 	"message": "Some message about the HAL Institute for Criminally Insane Robots, where robots that murderously turns against its human crew are held"
 }

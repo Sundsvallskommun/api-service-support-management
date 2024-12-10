@@ -10,23 +10,27 @@
 		"offset": 0,
 		"pageSize": 20,
 		"unpaged": false,
-		"sort": [{
+		"sort": [
+			{
+				"nullHandling": "NATIVE",
+				"ignoreCase": false,
+				"property": "created",
+				"ascending": true,
+				"descending": false,
+				"direction": "ASC"
+			}
+		]
+	},
+	"sort": [
+		{
 			"nullHandling": "NATIVE",
 			"ignoreCase": false,
 			"property": "created",
 			"ascending": true,
 			"descending": false,
 			"direction": "ASC"
-		}]
-	},
-	"sort": [{
-		"nullHandling": "NATIVE",
-		"ignoreCase": false,
-		"property": "created",
-		"ascending": true,
-		"descending": false,
-		"direction": "ASC"
-	}],
+		}
+	],
 	"content": [
 		{
 			"owner": "SupportManagement",

@@ -1,15 +1,11 @@
 package se.sundsvall.supportmanagement.api.model.errand;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.FutureOrPresent;
 import java.time.OffsetDateTime;
 import java.util.Objects;
-
-import jakarta.validation.constraints.FutureOrPresent;
-
 import org.springframework.format.annotation.DateTimeFormat;
-
 import se.sundsvall.supportmanagement.api.validation.ValidSuspension;
-
-import io.swagger.v3.oas.annotations.media.Schema;
 
 @ValidSuspension
 public class Suspension {

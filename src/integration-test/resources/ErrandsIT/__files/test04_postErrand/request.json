@@ -1,37 +1,43 @@
 {
-	"externalTags": [{
-		"value": "8849-2848",
-		"key": "caseid"
-	}],
+	"externalTags": [
+		{
+			"value": "8849-2848",
+			"key": "caseid"
+		}
+	],
 	"contactReasonDescription": "This is the contact reason description",
 	"channel": "The channel",
 	"description": "Fix as soon as possible!",
-	"stakeholders": [{
-		"externalId": "cb20c51f-fcf3-42c0-b613-de563634a8ec",
-		"parameters": [
-			{
-				"values": [
-					"value1",
-					"value2"
-				],
-				"key": "stakeholderparam-key-1"
-			},
-			{
-				"displayName": "The second stakeholderparam key",
-				"values": ["the second value"],
-				"key": "stakeholderparam-key-2"
-			},
-			{
-				"values": [
-					"value3",
-					"value4"
-				],
-				"key": "stakeholderparam-key-1"
-			}
-		],
-		"contactChannels": [],
-		"externalIdType": "PRIVATE"
-	}],
+	"stakeholders": [
+		{
+			"externalId": "cb20c51f-fcf3-42c0-b613-de563634a8ec",
+			"parameters": [
+				{
+					"values": [
+						"value1",
+						"value2"
+					],
+					"key": "stakeholderparam-key-1"
+				},
+				{
+					"displayName": "The second stakeholderparam key",
+					"values": [
+						"the second value"
+					],
+					"key": "stakeholderparam-key-2"
+				},
+				{
+					"values": [
+						"value3",
+						"value4"
+					],
+					"key": "stakeholderparam-key-1"
+				}
+			],
+			"contactChannels": [],
+			"externalIdType": "PRIVATE"
+		}
+	],
 	"title": "test04_postErrand",
 	"priority": "LOW",
 	"classification": {
@@ -53,7 +59,9 @@
 		},
 		{
 			"displayName": "The second key",
-			"values": ["the second value"],
+			"values": [
+				"the second value"
+			],
 			"key": "key-2"
 		},
 		{

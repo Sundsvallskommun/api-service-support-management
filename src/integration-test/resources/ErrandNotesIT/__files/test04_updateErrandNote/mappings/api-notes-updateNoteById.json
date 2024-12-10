@@ -1,15 +1,23 @@
 {
 	"request": {
 		"headers": {
-			"Authorization": {"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"},
-			"sentbyuser": {"equalTo": "UNKNOWN"}
+			"Authorization": {
+				"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
+			},
+			"sentbyuser": {
+				"equalTo": "UNKNOWN"
+			}
 		},
 		"method": "PATCH",
-		"bodyPatterns": [{"equalToJson": {
-			"subject": "This is an updated subject",
-			"modifiedBy": "Santa Claus",
-			"body": "This is an updated note"
-		}}],
+		"bodyPatterns": [
+			{
+				"equalToJson": {
+					"subject": "This is an updated subject",
+					"modifiedBy": "Santa Claus",
+					"body": "This is an updated note"
+				}
+			}
+		],
 		"urlPath": "/api-notes/2281/notes/d1f2c8d4-d234-4504-a483-b74570a7941d"
 	},
 	"response": {

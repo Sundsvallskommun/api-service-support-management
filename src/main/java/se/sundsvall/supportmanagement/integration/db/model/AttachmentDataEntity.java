@@ -1,16 +1,15 @@
 package se.sundsvall.supportmanagement.integration.db.model;
 
+import static jakarta.persistence.GenerationType.IDENTITY;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.Lob;
 import jakarta.persistence.Table;
-
 import java.sql.Blob;
 import java.util.Objects;
-
-import static jakarta.persistence.GenerationType.IDENTITY;
 
 @Entity
 @Table(name = "attachment_data")

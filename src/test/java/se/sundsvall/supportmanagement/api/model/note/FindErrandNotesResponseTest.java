@@ -10,9 +10,7 @@ import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.util.List;
-
 import org.junit.jupiter.api.Test;
-
 import se.sundsvall.supportmanagement.api.model.MetaData;
 
 class FindErrandNotesResponseTest {

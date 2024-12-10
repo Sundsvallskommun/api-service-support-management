@@ -21,14 +21,18 @@
 			"created": "${json-unit.any-string}",
 			"channel": "CHANNEL-1",
 			"description": "Should pass 1",
-			"stakeholders": [{
-				"role": "ROLE-1",
-				"parameters": [],
-				"contactChannels": [{
-					"type": "EMAIL",
-					"value": "sender@this.is.a.test"
-				}]
-			}],
+			"stakeholders": [
+				{
+					"role": "ROLE-1",
+					"parameters": [],
+					"contactChannels": [
+						{
+							"type": "EMAIL",
+							"value": "sender@this.is.a.test"
+						}
+					]
+				}
+			],
 			"title": "Test subject 1",
 			"classification": {
 				"category": "CATEGORY-1",
@@ -51,14 +55,18 @@
 			"created": "${json-unit.any-string}",
 			"channel": "CHANNEL-1",
 			"description": "Should pass 2",
-			"stakeholders": [{
-				"role": "ROLE-1",
-				"parameters": [],
-				"contactChannels": [{
-					"type": "EMAIL",
-					"value": "sender@this.is.a.test"
-				}]
-			}],
+			"stakeholders": [
+				{
+					"role": "ROLE-1",
+					"parameters": [],
+					"contactChannels": [
+						{
+							"type": "EMAIL",
+							"value": "sender@this.is.a.test"
+						}
+					]
+				}
+			],
 			"title": "Test subject 2",
 			"classification": {
 				"category": "CATEGORY-1",

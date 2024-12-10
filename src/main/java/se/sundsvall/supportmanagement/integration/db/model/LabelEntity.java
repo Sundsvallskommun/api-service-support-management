@@ -5,12 +5,6 @@ import static java.time.OffsetDateTime.now;
 import static java.time.temporal.ChronoUnit.MILLIS;
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 
-import java.time.OffsetDateTime;
-import java.time.ZoneId;
-import java.util.Objects;
-
-import org.hibernate.annotations.TimeZoneStorage;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -20,6 +14,10 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.util.Objects;
+import org.hibernate.annotations.TimeZoneStorage;
 
 @Entity
 @Table(name = "label",

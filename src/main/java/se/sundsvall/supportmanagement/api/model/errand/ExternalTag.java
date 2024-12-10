@@ -1,9 +1,8 @@
 package se.sundsvall.supportmanagement.api.model.errand;
 
-import java.util.Objects;
-
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import java.util.Objects;
 
 @Schema(description = "External tag model")
 public class ExternalTag {

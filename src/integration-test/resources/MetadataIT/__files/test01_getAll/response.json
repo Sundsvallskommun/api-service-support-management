@@ -88,77 +88,83 @@
 			"name": "CATEGORY-2"
 		},
 		{
-			"types": [{
-				"escalationEmail": "ESCALATION-EMAIL-1",
-				"displayName": "TYPE-DISPLAY-NAME-1",
-				"created": "2023-01-01T12:00:00+01:00",
-				"name": "TYPE-1"
-			}],
+			"types": [
+				{
+					"escalationEmail": "ESCALATION-EMAIL-1",
+					"displayName": "TYPE-DISPLAY-NAME-1",
+					"created": "2023-01-01T12:00:00+01:00",
+					"name": "TYPE-1"
+				}
+			],
 			"displayName": "CATEGORY-DISPLAY-NAME-3",
 			"created": "2023-01-01T12:00:00+01:00",
 			"name": "CATEGORY-3"
 		}
 	],
-	"contactReasons": [{
-		"reason": "reason5",
-		"created": "2023-12-31T23:59:59.999+01:00",
-		"modified": "2023-12-31T23:59:59.999+01:00",
-		"id": 128
-	}],
+	"contactReasons": [
+		{
+			"reason": "reason5",
+			"created": "2023-12-31T23:59:59.999+01:00",
+			"modified": "2023-12-31T23:59:59.999+01:00",
+			"id": 128
+		}
+	],
 	"labels": {
-		"labelStructure": [{
-			"displayName": "CATEGORY-DISPLAY-NAME-1",
-			"name": "CATEGORY-1",
-			"classification": "CATEGORY",
-			"labels": [
-				{
-					"displayName": "TYPE-DISPLAY-NAME-1",
-					"name": "TYPE-1",
-					"classification": "TYPE",
-					"labels": [
-						{
-							"displayName": "SUBTYPE-DISPLAY-NAME-1",
-							"name": "SUBTYPE-1",
-							"classification": "SUBTYPE"
-						},
-						{
-							"displayName": "SUBTYPE-DISPLAY-NAME-2",
-							"name": "SUBTYPE-2",
-							"classification": "SUBTYPE"
-						}
-					]
-				},
-				{
-					"displayName": "TYPE-DISPLAY-NAME-2",
-					"name": "TYPE-2",
-					"classification": "TYPE",
-					"labels": [
-						{
-							"displayName": "SUBTYPE-DISPLAY-NAME-1",
-							"name": "SUBTYPE-1",
-							"classification": "SUBTYPE"
-						},
-						{
-							"displayName": "SUBTYPE-DISPLAY-NAME-3",
-							"name": "SUBTYPE-3",
-							"classification": "SUBTYPE",
-							"labels": [
-								{
-									"displayName": "DEEPSUBTYPE-DISPLAY-NAME-1",
-									"name": "DEEPSUBTYPE-1",
-									"classification": "DEEPSUBTYPE"
-								},
-								{
-									"displayName": "DEEPSUBTYPE-DISPLAY-NAME-2",
-									"name": "DEEPSUBTYPE-2",
-									"classification": "DEEPSUBTYPE"
-								}
-							]
-						}
-					]
-				}
-			]
-		}],
+		"labelStructure": [
+			{
+				"displayName": "CATEGORY-DISPLAY-NAME-1",
+				"name": "CATEGORY-1",
+				"classification": "CATEGORY",
+				"labels": [
+					{
+						"displayName": "TYPE-DISPLAY-NAME-1",
+						"name": "TYPE-1",
+						"classification": "TYPE",
+						"labels": [
+							{
+								"displayName": "SUBTYPE-DISPLAY-NAME-1",
+								"name": "SUBTYPE-1",
+								"classification": "SUBTYPE"
+							},
+							{
+								"displayName": "SUBTYPE-DISPLAY-NAME-2",
+								"name": "SUBTYPE-2",
+								"classification": "SUBTYPE"
+							}
+						]
+					},
+					{
+						"displayName": "TYPE-DISPLAY-NAME-2",
+						"name": "TYPE-2",
+						"classification": "TYPE",
+						"labels": [
+							{
+								"displayName": "SUBTYPE-DISPLAY-NAME-1",
+								"name": "SUBTYPE-1",
+								"classification": "SUBTYPE"
+							},
+							{
+								"displayName": "SUBTYPE-DISPLAY-NAME-3",
+								"name": "SUBTYPE-3",
+								"classification": "SUBTYPE",
+								"labels": [
+									{
+										"displayName": "DEEPSUBTYPE-DISPLAY-NAME-1",
+										"name": "DEEPSUBTYPE-1",
+										"classification": "DEEPSUBTYPE"
+									},
+									{
+										"displayName": "DEEPSUBTYPE-DISPLAY-NAME-2",
+										"name": "DEEPSUBTYPE-2",
+										"classification": "DEEPSUBTYPE"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		],
 		"created": "2023-01-01T12:00:00+01:00"
 	}
 }

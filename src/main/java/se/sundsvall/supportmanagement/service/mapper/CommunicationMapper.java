@@ -11,10 +11,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
-
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
-
 import se.sundsvall.supportmanagement.api.model.communication.Communication;
 import se.sundsvall.supportmanagement.api.model.communication.CommunicationAttachment;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;

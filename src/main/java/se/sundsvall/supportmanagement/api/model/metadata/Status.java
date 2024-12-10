@@ -2,16 +2,13 @@ package se.sundsvall.supportmanagement.api.model.metadata;
 
 import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 
-import java.time.OffsetDateTime;
-import java.util.Objects;
-
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Null;
-
+import java.time.OffsetDateTime;
+import java.util.Objects;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.format.annotation.DateTimeFormat.ISO;
-
-import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "Status model")
 public class Status {

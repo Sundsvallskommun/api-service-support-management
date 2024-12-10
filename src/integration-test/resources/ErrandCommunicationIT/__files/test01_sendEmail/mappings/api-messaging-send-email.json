@@ -1,34 +1,52 @@
 {
 	"request": {
-		"headers": {"Authorization": {"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"}},
+		"headers": {
+			"Authorization": {
+				"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
+			}
+		},
 		"method": "POST",
-		"bodyPatterns": [{"equalToJson": {
-			"headers": {
-				"MESSAGE_ID": ["873e64eb-3ed7-43b6-b1ea-082e7ce0d41e@test.com"],
-				"IN_REPLY_TO": ["301e977e-2a89-47c8-b9b3-dce5ee506ef4@test.com"],
-				"REFERENCES": [
-					"301e977e-2a89-47c8-b9b3-dce5ee506ef4@test.com",
-					"83e13aaf-33aa-4aa2-ae31-abf46eaf0152@test.com"
-				]
-			},
-			"emailAddress": "john.a@zoidberg.com",
-			"attachments": [],
-			"sender": {
-				"address": "bender@rodriguez.com",
-				"name": "Bender Bending Rodriguez"
-			},
-			"subject": "Insane in the Mainframe",
-			"htmlMessage": "PGh0bWw+U29tZSBtZXNzYWdlIGFib3V0IHRoZSBIQUwgSW5zdGl0dXRlIGZvciA8Yj5DcmltaW5hbGx5IEluc2FuZSBSb2JvdHM8L2I+LCB3aGVyZSByb2JvdHMgdGhhdCA8aT5tdXJkZXJvdXNseTwvaT4gdHVybnMgYWdhaW5zdCBpdHMgaHVtYW4gY3JldyBhcmUgaGVsZDwvaHRtbD4=",
-			"message": "Some message about the HAL Institute for Criminally Insane Robots, where robots that murderously turns against its human crew are held",
-			"party": {"externalReferences": [{
-				"value": "ec677eb3-604c-4935-bff7-f8f0b500c8f4",
-				"key": "errandId"
-			}]}
-		}}],
+		"bodyPatterns": [
+			{
+				"equalToJson": {
+					"headers": {
+						"MESSAGE_ID": [
+							"873e64eb-3ed7-43b6-b1ea-082e7ce0d41e@test.com"
+						],
+						"IN_REPLY_TO": [
+							"301e977e-2a89-47c8-b9b3-dce5ee506ef4@test.com"
+						],
+						"REFERENCES": [
+							"301e977e-2a89-47c8-b9b3-dce5ee506ef4@test.com",
+							"83e13aaf-33aa-4aa2-ae31-abf46eaf0152@test.com"
+						]
+					},
+					"emailAddress": "john.a@zoidberg.com",
+					"attachments": [],
+					"sender": {
+						"address": "bender@rodriguez.com",
+						"name": "Bender Bending Rodriguez"
+					},
+					"subject": "Insane in the Mainframe",
+					"htmlMessage": "PGh0bWw+U29tZSBtZXNzYWdlIGFib3V0IHRoZSBIQUwgSW5zdGl0dXRlIGZvciA8Yj5DcmltaW5hbGx5IEluc2FuZSBSb2JvdHM8L2I+LCB3aGVyZSByb2JvdHMgdGhhdCA8aT5tdXJkZXJvdXNseTwvaT4gdHVybnMgYWdhaW5zdCBpdHMgaHVtYW4gY3JldyBhcmUgaGVsZDwvaHRtbD4=",
+					"message": "Some message about the HAL Institute for Criminally Insane Robots, where robots that murderously turns against its human crew are held",
+					"party": {
+						"externalReferences": [
+							{
+								"value": "ec677eb3-604c-4935-bff7-f8f0b500c8f4",
+								"key": "errandId"
+							}
+						]
+					}
+				}
+			}
+		],
 		"url": "/api-messaging/2281/email?async=true"
 	},
 	"response": {
-		"headers": {"Content-Type": "application/json"},
+		"headers": {
+			"Content-Type": "application/json"
+		},
 		"bodyFileName": "test01_sendEmail/response/api-messaging-send-email-response.json",
 		"status": 200
 	},

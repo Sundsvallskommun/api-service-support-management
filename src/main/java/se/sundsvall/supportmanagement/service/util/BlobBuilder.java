@@ -2,12 +2,10 @@ package se.sundsvall.supportmanagement.service.util;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import jakarta.persistence.EntityManager;
 import java.io.ByteArrayInputStream;
 import java.sql.Blob;
 import java.util.Base64;
-
-import jakarta.persistence.EntityManager;
-
 import org.hibernate.Session;
 import org.springframework.stereotype.Component;
 

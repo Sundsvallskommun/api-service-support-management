@@ -2,18 +2,15 @@ package se.sundsvall.supportmanagement.integration.employee;
 
 import static se.sundsvall.supportmanagement.integration.employee.configuration.EmployeeConfiguration.CLIENT_ID;
 
+import generated.se.sundsvall.employee.Employee;
+import generated.se.sundsvall.employee.PortalPersonData;
 import java.util.List;
 import java.util.Optional;
-
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-
 import se.sundsvall.supportmanagement.integration.employee.configuration.EmployeeConfiguration;
-
-import generated.se.sundsvall.employee.Employee;
-import generated.se.sundsvall.employee.PortalPersonData;
 
 @FeignClient(
 	name = CLIENT_ID,

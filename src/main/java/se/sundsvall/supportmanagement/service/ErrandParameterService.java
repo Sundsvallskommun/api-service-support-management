@@ -9,10 +9,8 @@ import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMappe
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-
 import org.springframework.stereotype.Service;
 import org.zalando.problem.Problem;
-
 import se.sundsvall.supportmanagement.api.model.errand.Parameter;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;

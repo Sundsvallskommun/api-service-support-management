@@ -1,22 +1,5 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
-import generated.se.sundsvall.eventlog.Event;
-import generated.se.sundsvall.eventlog.EventType;
-import generated.se.sundsvall.eventlog.Metadata;
-import se.sundsvall.supportmanagement.api.model.event.EventMetaData;
-import se.sundsvall.supportmanagement.api.model.revision.Revision;
-import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
-import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Objects;
-import java.util.Optional;
-
 import static java.time.OffsetDateTime.now;
 import static java.time.ZoneId.systemDefault;
 import static java.util.Collections.emptyList;
@@ -30,6 +13,22 @@ import static se.sundsvall.supportmanagement.Constants.EXTERNAL_TAG_KEY_EXECUTED
 import static se.sundsvall.supportmanagement.Constants.EXTERNAL_TAG_KEY_NOTE_ID;
 import static se.sundsvall.supportmanagement.Constants.EXTERNAL_TAG_KEY_PREVIOUS_REVISION;
 import static se.sundsvall.supportmanagement.Constants.EXTERNAL_TAG_KEY_PREVIOUS_VERSION;
+
+import generated.se.sundsvall.eventlog.Event;
+import generated.se.sundsvall.eventlog.EventType;
+import generated.se.sundsvall.eventlog.Metadata;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Optional;
+import se.sundsvall.supportmanagement.api.model.event.EventMetaData;
+import se.sundsvall.supportmanagement.api.model.revision.Revision;
+import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 
 public class EventlogMapper {
 

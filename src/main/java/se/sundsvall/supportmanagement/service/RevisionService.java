@@ -1,31 +1,5 @@
 package se.sundsvall.supportmanagement.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.flipkart.zjsonpatch.DiffFlags;
-import com.flipkart.zjsonpatch.JsonDiff;
-import com.jayway.jsonpath.Configuration;
-import com.jayway.jsonpath.JsonPath;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.zalando.problem.Problem;
-
-import se.sundsvall.supportmanagement.api.model.revision.DifferenceResponse;
-import se.sundsvall.supportmanagement.api.model.revision.Operation;
-import se.sundsvall.supportmanagement.api.model.revision.Revision;
-import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
-import se.sundsvall.supportmanagement.integration.db.RevisionRepository;
-import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.integration.db.model.RevisionEntity;
-import se.sundsvall.supportmanagement.integration.notes.NotesClient;
-import se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper;
-import se.sundsvall.supportmanagement.service.mapper.RevisionMapper;
-
-import java.util.EnumSet;
-import java.util.List;
-
 import static com.flipkart.zjsonpatch.DiffFlags.ADD_ORIGINAL_VALUE_ON_REPLACE;
 import static com.flipkart.zjsonpatch.DiffFlags.OMIT_COPY_OPERATION;
 import static com.flipkart.zjsonpatch.DiffFlags.OMIT_MOVE_OPERATION;
@@ -37,6 +11,30 @@ import static org.zalando.problem.Status.NOT_FOUND;
 import static se.sundsvall.supportmanagement.service.mapper.RevisionMapper.toRevision;
 import static se.sundsvall.supportmanagement.service.mapper.RevisionMapper.toRevisionEntity;
 import static se.sundsvall.supportmanagement.service.mapper.RevisionMapper.toSerializedSnapshot;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.flipkart.zjsonpatch.DiffFlags;
+import com.flipkart.zjsonpatch.JsonDiff;
+import com.jayway.jsonpath.Configuration;
+import com.jayway.jsonpath.JsonPath;
+import java.util.EnumSet;
+import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.zalando.problem.Problem;
+import se.sundsvall.supportmanagement.api.model.revision.DifferenceResponse;
+import se.sundsvall.supportmanagement.api.model.revision.Operation;
+import se.sundsvall.supportmanagement.api.model.revision.Revision;
+import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.RevisionRepository;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.RevisionEntity;
+import se.sundsvall.supportmanagement.integration.notes.NotesClient;
+import se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper;
+import se.sundsvall.supportmanagement.service.mapper.RevisionMapper;
 
 @Service
 @Transactional

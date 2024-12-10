@@ -3,11 +3,9 @@ package se.sundsvall.supportmanagement.api.validation.impl;
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
 
-import java.util.List;
-
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
-
+import java.util.List;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
 import se.sundsvall.supportmanagement.api.validation.ValidStatus;
 import se.sundsvall.supportmanagement.service.MetadataService;

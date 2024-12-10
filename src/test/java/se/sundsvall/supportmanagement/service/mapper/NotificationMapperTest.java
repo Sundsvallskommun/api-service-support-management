@@ -4,13 +4,11 @@ import static java.time.OffsetDateTime.now;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-import java.time.OffsetDateTime;
-
-import org.junit.jupiter.api.Test;
-
 import generated.se.sundsvall.employee.PortalPersonData;
 import generated.se.sundsvall.eventlog.Event;
 import generated.se.sundsvall.eventlog.EventType;
+import java.time.OffsetDateTime;
+import org.junit.jupiter.api.Test;
 import se.sundsvall.supportmanagement.api.model.notification.Notification;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;

@@ -1,38 +1,52 @@
 {
 	"request": {
-		"headers": {"Authorization": {"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"}},
+		"headers": {
+			"Authorization": {
+				"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
+			}
+		},
 		"method": "POST",
-		"bodyPatterns": [{"equalToJson": {
-			"attachments": [
-				{
-					"fileName": "data.txt",
-					"base64Data": "ZGF0YQ==",
-					"mimeType": "text/plain"
-				},
-				{
-					"fileName": "data_stuff.txt",
-					"base64Data": "U28gbXVjaCBkYXRhIQo=",
-					"mimeType": "text/plain"
+		"bodyPatterns": [
+			{
+				"equalToJson": {
+					"attachments": [
+						{
+							"fileName": "data.txt",
+							"base64Data": "ZGF0YQ==",
+							"mimeType": "text/plain"
+						},
+						{
+							"fileName": "data_stuff.txt",
+							"base64Data": "U28gbXVjaCBkYXRhIQo=",
+							"mimeType": "text/plain"
+						}
+					],
+					"oepInstance": "internal",
+					"message": "Sending data!",
+					"party": {
+						"externalReferences": [
+							{
+								"value": "b481b191-dd37-47ca-b417-ed3a56ba724c",
+								"key": "errandId"
+							},
+							{
+								"value": "1001",
+								"key": "flowInstanceId"
+							}
+						]
+					}
 				}
-			],
-			"oepInstance": "internal",
-			"message": "Sending data!",
-			"party": {"externalReferences": [
-				{
-					"value": "b481b191-dd37-47ca-b417-ed3a56ba724c",
-					"key": "errandId"
-				},
-				{
-					"value": "1001",
-					"key": "flowInstanceId"
-				}
-			]}
-		}}],
+			}
+		],
 		"url": "/api-messaging/2281/webmessage?async=true"
 	},
 	"response": {
-		"headers": {"Content-Type": "application/json"},
-		"jsonBody": {"messageId": "bb5f78fe-04dd-47e2-9d0b-5fe77f6d299d"},
+		"headers": {
+			"Content-Type": "application/json"
+		},
+		"jsonBody": {
+			"messageId": "bb5f78fe-04dd-47e2-9d0b-5fe77f6d299d"
+		},
 		"status": 200
 	},
 	"name": "api-messaging-webmessage"

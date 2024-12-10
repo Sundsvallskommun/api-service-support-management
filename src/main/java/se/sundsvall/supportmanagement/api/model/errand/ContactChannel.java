@@ -1,8 +1,7 @@
 package se.sundsvall.supportmanagement.api.model.errand;
 
-import java.util.Objects;
-
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.Objects;
 
 @Schema(description = "Contact channel model")
 public class ContactChannel {

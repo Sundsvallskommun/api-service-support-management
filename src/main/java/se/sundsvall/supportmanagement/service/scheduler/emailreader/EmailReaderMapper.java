@@ -5,17 +5,15 @@ import static java.util.Objects.isNull;
 import static java.util.UUID.randomUUID;
 import static java.util.stream.Collectors.toMap;
 
+import generated.se.sundsvall.emailreader.Email;
+import generated.se.sundsvall.emailreader.EmailAttachment;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
-
-import generated.se.sundsvall.emailreader.Email;
-import generated.se.sundsvall.emailreader.EmailAttachment;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
 import se.sundsvall.supportmanagement.api.model.errand.Classification;
 import se.sundsvall.supportmanagement.api.model.errand.ContactChannel;

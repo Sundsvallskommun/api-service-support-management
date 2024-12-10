@@ -1,11 +1,13 @@
 [
 	{
 		"emailHeaders": {},
-		"communicationAttachments": [{
-			"name": "attachment2",
-			"attachmentID": "05b29c30-4512-46c0-9d82-d0f11cb04bae",
-			"contentType": "image/png"
-		}],
+		"communicationAttachments": [
+			{
+				"name": "attachment2",
+				"attachmentID": "05b29c30-4512-46c0-9d82-d0f11cb04bae",
+				"contentType": "image/png"
+			}
+		],
 		"messageBody": "message body 2",
 		"sender": "Test Testorsson",
 		"errandNumber": "KC-23020001",
@@ -18,15 +20,19 @@
 		"target": "0987654321"
 	},
 	{
-		"emailHeaders": {"REFERENCES": [
-			"someValue",
-			"someOtherValue"
-		]},
-		"communicationAttachments": [{
-			"name": "attachment1",
-			"attachmentID": "896a44d8-724b-11ed-a840-0242ac110002",
-			"contentType": "text/plain"
-		}],
+		"emailHeaders": {
+			"REFERENCES": [
+				"someValue",
+				"someOtherValue"
+			]
+		},
+		"communicationAttachments": [
+			{
+				"name": "attachment1",
+				"attachmentID": "896a44d8-724b-11ed-a840-0242ac110002",
+				"contentType": "text/plain"
+			}
+		],
 		"messageBody": "message body 1",
 		"sender": "Test Testorsson",
 		"errandNumber": "KC-23020001",

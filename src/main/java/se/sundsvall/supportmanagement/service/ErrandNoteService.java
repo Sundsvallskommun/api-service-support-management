@@ -1,5 +1,19 @@
 package se.sundsvall.supportmanagement.service;
 
+import static generated.se.sundsvall.eventlog.EventType.CREATE;
+import static generated.se.sundsvall.eventlog.EventType.DELETE;
+import static generated.se.sundsvall.eventlog.EventType.UPDATE;
+import static java.util.Collections.emptyList;
+import static java.util.Objects.nonNull;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
+import static org.springframework.http.HttpHeaders.LOCATION;
+import static org.zalando.problem.Status.NOT_FOUND;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper.toCreateNoteRequest;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper.toErrandNote;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper.toFindErrandNotesResponse;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper.toUpdateNoteRequest;
+
+import java.util.Optional;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -13,21 +27,6 @@ import se.sundsvall.supportmanagement.api.model.note.UpdateErrandNoteRequest;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.notes.NotesClient;
-
-import java.util.Optional;
-
-import static generated.se.sundsvall.eventlog.EventType.CREATE;
-import static generated.se.sundsvall.eventlog.EventType.DELETE;
-import static generated.se.sundsvall.eventlog.EventType.UPDATE;
-import static java.util.Collections.emptyList;
-import static java.util.Objects.nonNull;
-import static org.apache.commons.lang3.StringUtils.EMPTY;
-import static org.springframework.http.HttpHeaders.LOCATION;
-import static org.zalando.problem.Status.NOT_FOUND;
-import static se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper.toCreateNoteRequest;
-import static se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper.toErrandNote;
-import static se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper.toFindErrandNotesResponse;
-import static se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper.toUpdateNoteRequest;
 
 @Service
 public class ErrandNoteService {

@@ -11,9 +11,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.util.List;
 import java.util.Map;
-
 import org.junit.jupiter.api.Test;
-
 import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
 
 class EmailRequestTest {

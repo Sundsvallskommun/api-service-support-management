@@ -10,29 +10,35 @@
 		"offset": 0,
 		"pageSize": 20,
 		"unpaged": false,
-		"sort": [{
+		"sort": [
+			{
+				"nullHandling": "NATIVE",
+				"ignoreCase": false,
+				"property": "touched",
+				"ascending": false,
+				"descending": true,
+				"direction": "DESC"
+			}
+		]
+	},
+	"sort": [
+		{
 			"nullHandling": "NATIVE",
 			"ignoreCase": false,
 			"property": "touched",
 			"ascending": false,
 			"descending": true,
 			"direction": "DESC"
-		}]
-	},
-	"sort": [{
-		"nullHandling": "NATIVE",
-		"ignoreCase": false,
-		"property": "touched",
-		"ascending": false,
-		"descending": true,
-		"direction": "DESC"
-	}],
+		}
+	],
 	"content": [
 		{
-			"externalTags": [{
-				"value": "1001",
-				"key": "caseId"
-			}],
+			"externalTags": [
+				{
+					"value": "1001",
+					"key": "caseId"
+				}
+			],
 			"touched": "2024-01-01T12:00:00+01:00",
 			"errandNumber": "KC-23020008",
 			"escalationEmail": "ESCALATION_EMAIL_1",
@@ -56,10 +62,12 @@
 			"status": "STATUS-1"
 		},
 		{
-			"externalTags": [{
-				"value": "1000",
-				"key": "caseId"
-			}],
+			"externalTags": [
+				{
+					"value": "1000",
+					"key": "caseId"
+				}
+			],
 			"touched": "2024-01-01T12:00:00+01:00",
 			"errandNumber": "KC-23020007",
 			"escalationEmail": "ESCALATION_EMAIL_1",
@@ -138,19 +146,23 @@
 			"status": "STATUS-1"
 		},
 		{
-			"externalTags": [{
-				"value": "VALUE-3",
-				"key": "KEY-3"
-			}],
+			"externalTags": [
+				{
+					"value": "VALUE-3",
+					"key": "KEY-3"
+				}
+			],
 			"touched": "2022-04-01T12:00:00+02:00",
 			"errandNumber": "KC-23020002",
 			"created": "2022-02-01T12:00:00+01:00",
-			"stakeholders": [{
-				"externalId": "def57969-9b83-4e54-9351-667dc896a19d",
-				"parameters": [],
-				"externalIdType": "PRIVATE",
-				"contactChannels": []
-			}],
+			"stakeholders": [
+				{
+					"externalId": "def57969-9b83-4e54-9351-667dc896a19d",
+					"parameters": [],
+					"externalIdType": "PRIVATE",
+					"contactChannels": []
+				}
+			],
 			"title": "TITLE-1",
 			"priority": "LOW",
 			"classification": {
@@ -183,12 +195,14 @@
 			"errandNumber": "KC-23020003",
 			"created": "2022-03-01T12:00:00+01:00",
 			"description": "DESCRIPTION",
-			"stakeholders": [{
-				"externalId": "7fba994b-e99e-4beb-8ab5-63cc74483b66",
-				"parameters": [],
-				"externalIdType": "ENTERPRISE",
-				"contactChannels": []
-			}],
+			"stakeholders": [
+				{
+					"externalId": "7fba994b-e99e-4beb-8ab5-63cc74483b66",
+					"parameters": [],
+					"externalIdType": "ENTERPRISE",
+					"contactChannels": []
+				}
+			],
 			"title": "TITLE-3",
 			"priority": "HIGH",
 			"classification": {
@@ -212,7 +226,9 @@
 				},
 				{
 					"displayName": "Displayname B",
-					"values": ["valueB1"],
+					"values": [
+						"valueB1"
+					],
 					"key": "keyB"
 				}
 			],
@@ -258,19 +274,23 @@
 					"address": "ADDRESS-1",
 					"careOf": "CARE_OF-1",
 					"externalId": "USER_ID",
-					"parameters": [{
-						"displayName": "Parameter X",
-						"values": [
-							"value-x1",
-							"value-x2"
-						],
-						"key": "parameterX"
-					}],
+					"parameters": [
+						{
+							"displayName": "Parameter X",
+							"values": [
+								"value-x1",
+								"value-x2"
+							],
+							"key": "parameterX"
+						}
+					],
 					"externalIdType": "EMPLOYEE",
-					"contactChannels": [{
-						"type": "TYPE-1",
-						"value": "VALUE-1"
-					}]
+					"contactChannels": [
+						{
+							"type": "TYPE-1",
+							"value": "VALUE-1"
+						}
+					]
 				}
 			],
 			"title": "TITLE-1",

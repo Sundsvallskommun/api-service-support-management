@@ -14,7 +14,6 @@ import static org.zalando.problem.Status.NOT_FOUND;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -25,7 +24,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.zalando.problem.Problem;
 import org.zalando.problem.Status;
 import org.zalando.problem.ThrowableProblem;
-
 import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
 import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity;

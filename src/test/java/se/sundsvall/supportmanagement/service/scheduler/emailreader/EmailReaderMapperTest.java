@@ -5,11 +5,12 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.Direction.INBOUND;
 
+import generated.se.sundsvall.emailreader.Email;
+import generated.se.sundsvall.emailreader.EmailAttachment;
 import java.sql.Blob;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -17,9 +18,6 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import generated.se.sundsvall.emailreader.Email;
-import generated.se.sundsvall.emailreader.EmailAttachment;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;

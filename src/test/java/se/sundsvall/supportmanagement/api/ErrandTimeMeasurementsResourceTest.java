@@ -13,15 +13,13 @@ import static org.zalando.problem.Status.NOT_FOUND;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.zalando.problem.Problem;
-
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.errand.TimeMeasurement;
 import se.sundsvall.supportmanagement.service.TimeMeasurementService;
@@ -39,7 +37,7 @@ class ErrandTimeMeasurementsResourceTest {
 	@Autowired
 	private WebTestClient webTestClient;
 
-	@MockBean
+	@MockitoBean
 	private TimeMeasurementService serviceMock;
 
 	@Test

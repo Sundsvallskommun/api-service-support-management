@@ -15,11 +15,12 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.Direction.INBOUND;
 
+import generated.se.sundsvall.eventlog.EventType;
+import generated.se.sundsvall.webmessagecollector.MessageAttachment;
+import generated.se.sundsvall.webmessagecollector.MessageDTO;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-
-import generated.se.sundsvall.webmessagecollector.MessageAttachment;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -30,7 +31,6 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-
 import org.springframework.data.jpa.domain.Specification;
 import se.sundsvall.supportmanagement.Constants;
 import se.sundsvall.supportmanagement.integration.db.CommunicationRepository;
@@ -44,9 +44,6 @@ import se.sundsvall.supportmanagement.integration.webmessagecollector.WebMessage
 import se.sundsvall.supportmanagement.integration.webmessagecollector.configuration.WebMessageCollectorProperties;
 import se.sundsvall.supportmanagement.service.CommunicationService;
 import se.sundsvall.supportmanagement.service.EventService;
-
-import generated.se.sundsvall.eventlog.EventType;
-import generated.se.sundsvall.webmessagecollector.MessageDTO;
 
 @ExtendWith(MockitoExtension.class)
 class WebMessageCollectorWorkerTest {

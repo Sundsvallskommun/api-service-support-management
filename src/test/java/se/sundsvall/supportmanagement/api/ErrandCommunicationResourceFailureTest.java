@@ -15,8 +15,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.zalando.problem.AbstractThrowableProblem;
 import org.zalando.problem.Problem;
@@ -46,7 +46,7 @@ class ErrandCommunicationResourceFailureTest {
 	private static final String PATH_EMAIL = "/email";
 	private static final String PATH_WEB_MESSAGE = "/webmessage";
 
-	@MockBean
+	@MockitoBean
 	private CommunicationService serviceMock;
 
 	@Autowired

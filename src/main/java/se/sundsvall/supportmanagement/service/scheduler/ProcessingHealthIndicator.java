@@ -1,9 +1,8 @@
 package se.sundsvall.supportmanagement.service.scheduler;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
-
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class ProcessingHealthIndicator implements HealthIndicator {
 

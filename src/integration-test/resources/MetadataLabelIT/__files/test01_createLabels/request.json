@@ -1,22 +1,26 @@
-[{
-	"displayName": "Nivå 1",
-	"name": "LABEL-1",
-	"classification": "TOP-LEVEL",
-	"labels": [{
-		"displayName": "Nivå 1.1",
-		"name": "LEVEL-1-1",
-		"classification": "MIDDLE-LEVEL",
+[
+	{
+		"displayName": "Nivå 1",
+		"name": "LABEL-1",
+		"classification": "TOP-LEVEL",
 		"labels": [
 			{
-				"displayName": "Nivå 1.1.1",
-				"name": "LEVEL-1-1-1",
-				"classification": "LOWEST-LEVEL"
-			},
-			{
-				"displayName": "Nivå 1.1.2",
-				"name": "LEVEL-1-1-2",
-				"classification": "LOWEST-LEVEL"
+				"displayName": "Nivå 1.1",
+				"name": "LEVEL-1-1",
+				"classification": "MIDDLE-LEVEL",
+				"labels": [
+					{
+						"displayName": "Nivå 1.1.1",
+						"name": "LEVEL-1-1-1",
+						"classification": "LOWEST-LEVEL"
+					},
+					{
+						"displayName": "Nivå 1.1.2",
+						"name": "LEVEL-1-1-2",
+						"classification": "LOWEST-LEVEL"
+					}
+				]
 			}
 		]
-	}]
-}]
+	}
+]

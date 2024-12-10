@@ -1,12 +1,10 @@
 package se.sundsvall.supportmanagement.api.model.metadata;
 
-import java.util.List;
-import java.util.Objects;
-
 import com.fasterxml.jackson.annotation.JsonInclude;
-
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.List;
+import java.util.Objects;
 
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 @Schema(description = "MetadataResponse model")

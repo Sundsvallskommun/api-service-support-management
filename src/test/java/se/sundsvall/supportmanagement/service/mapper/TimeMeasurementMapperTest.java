@@ -4,9 +4,7 @@ import static java.time.OffsetDateTime.now;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
-
 import org.junit.jupiter.api.Test;
-
 import se.sundsvall.supportmanagement.integration.db.model.TimeMeasurementEntity;
 
 class TimeMeasurementMapperTest {

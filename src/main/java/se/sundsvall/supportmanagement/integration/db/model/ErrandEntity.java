@@ -3,14 +3,6 @@ package se.sundsvall.supportmanagement.integration.db.model;
 import static org.hibernate.Length.LONG32;
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 
-import java.time.OffsetDateTime;
-import java.util.List;
-import java.util.Objects;
-
-import org.hibernate.annotations.Formula;
-import org.hibernate.annotations.TimeZoneStorage;
-import org.hibernate.annotations.UuidGenerator;
-
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
@@ -28,6 +20,12 @@ import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import jakarta.persistence.UniqueConstraint;
+import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.Objects;
+import org.hibernate.annotations.Formula;
+import org.hibernate.annotations.TimeZoneStorage;
+import org.hibernate.annotations.UuidGenerator;
 import se.sundsvall.supportmanagement.integration.db.model.listener.ErrandListener;
 
 @Entity

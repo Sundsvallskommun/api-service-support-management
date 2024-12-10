@@ -13,21 +13,19 @@ import static org.zalando.problem.Status.NOT_FOUND;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapper.toAttachmentEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapper.toErrandAttachmentHeaders;
 
+import jakarta.persistence.EntityManager;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StreamUtils;
 import org.springframework.web.multipart.MultipartFile;
 import org.zalando.problem.Problem;
-
-import jakarta.persistence.EntityManager;
-import jakarta.servlet.http.HttpServletResponse;
 import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachmentHeader;
 import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;

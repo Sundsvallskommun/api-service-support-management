@@ -21,6 +21,9 @@ import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.util.MimeTypeUtils.IMAGE_PNG_VALUE;
 import static org.zalando.problem.Status.NOT_FOUND;
 
+import generated.se.sundsvall.messaging.ExternalReference;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -30,7 +33,6 @@ import java.util.Base64;
 import java.util.Base64.Decoder;
 import java.util.List;
 import java.util.Optional;
-
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -43,10 +45,6 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.zalando.problem.Problem;
 import org.zalando.problem.ThrowableProblem;
-
-import generated.se.sundsvall.messaging.ExternalReference;
-import jakarta.servlet.ServletOutputStream;
-import jakarta.servlet.http.HttpServletResponse;
 import se.sundsvall.supportmanagement.api.model.communication.Communication;
 import se.sundsvall.supportmanagement.api.model.communication.EmailAttachment;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;

@@ -1,11 +1,17 @@
 {
 	"request": {
-		"headers": {"Authorization": {"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"}},
+		"headers": {
+			"Authorization": {
+				"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
+			}
+		},
 		"method": "DELETE",
 		"urlPattern": "/api-emailreader/2281/email/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
 	},
 	"response": {
-		"headers": {"Content-Type": "*/*"},
+		"headers": {
+			"Content-Type": "*/*"
+		},
 		"status": 204
 	},
 	"name": "api-email-reader-deleteEmail"

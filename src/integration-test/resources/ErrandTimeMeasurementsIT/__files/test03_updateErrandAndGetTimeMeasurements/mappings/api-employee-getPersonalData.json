@@ -1,11 +1,17 @@
 {
 	"request": {
-		"headers": {"Authorization": {"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"}},
+		"headers": {
+			"Authorization": {
+				"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
+			}
+		},
 		"method": "GET",
 		"urlPath": "/api-employee/portalpersondata/personal/UNKNOWN"
 	},
 	"response": {
-		"headers": {"Content-Type": "application/json"},
+		"headers": {
+			"Content-Type": "application/json"
+		},
 		"bodyFileName": "test02_createErrandAndGetTimeMeasurements/responses/api-employee-getPersonalData-response.json",
 		"status": 200
 	},

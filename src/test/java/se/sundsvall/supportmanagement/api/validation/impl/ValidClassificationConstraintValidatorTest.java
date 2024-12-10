@@ -11,12 +11,10 @@ import static se.sundsvall.supportmanagement.api.validation.impl.AbstractTagCons
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EntityType.CATEGORY;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EntityType.TYPE;
 
-import java.util.List;
-import java.util.Map;
-
 import jakarta.validation.ConstraintValidatorContext;
 import jakarta.validation.ConstraintValidatorContext.ConstraintViolationBuilder;
-
+import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -26,7 +24,6 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
-
 import se.sundsvall.supportmanagement.api.model.errand.Classification;
 import se.sundsvall.supportmanagement.api.model.metadata.Category;
 import se.sundsvall.supportmanagement.api.model.metadata.Type;

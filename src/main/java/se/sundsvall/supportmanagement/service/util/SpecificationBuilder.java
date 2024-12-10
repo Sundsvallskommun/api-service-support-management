@@ -3,7 +3,6 @@ package se.sundsvall.supportmanagement.service.util;
 import static java.util.Objects.nonNull;
 
 import org.springframework.data.jpa.domain.Specification;
-
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 
 public class SpecificationBuilder<T> {

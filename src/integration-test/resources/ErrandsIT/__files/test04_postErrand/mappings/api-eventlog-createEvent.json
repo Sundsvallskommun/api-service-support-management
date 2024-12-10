@@ -1,36 +1,44 @@
 {
 	"request": {
-		"headers": {"Authorization": {"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"}},
+		"headers": {
+			"Authorization": {
+				"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
+			}
+		},
 		"method": "POST",
-		"bodyPatterns": [{
-			"equalToJson": {
-				"owner": "SupportManagement",
-				"metadata": [
-					{
-						"value": "0",
-						"key": "CurrentVersion"
-					},
-					{
-						"value": "${json-unit.regex}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
-						"key": "CurrentRevision"
-					},
-					{
-						"value": "joe01doe",
-						"key": "ExecutedBy"
-					}
-				],
-				"historyReference": "${json-unit.regex}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
-				"sourceType": "Errand",
-				"created": "${json-unit.any-string}",
-				"type": "CREATE",
-				"message": "Ärendet har skapats."
-			},
-			"ignoreArrayOrder": true
-		}],
+		"bodyPatterns": [
+			{
+				"equalToJson": {
+					"owner": "SupportManagement",
+					"metadata": [
+						{
+							"value": "0",
+							"key": "CurrentVersion"
+						},
+						{
+							"value": "${json-unit.regex}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+							"key": "CurrentRevision"
+						},
+						{
+							"value": "joe01doe",
+							"key": "ExecutedBy"
+						}
+					],
+					"historyReference": "${json-unit.regex}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+					"sourceType": "Errand",
+					"created": "${json-unit.any-string}",
+					"type": "CREATE",
+					"message": "Ärendet har skapats."
+				},
+				"ignoreArrayOrder": true
+			}
+		],
 		"urlPattern": "/api-eventlog/2281/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
 	},
 	"response": {
-		"headers": {"Content-Type": "*/*"},
+		"headers": {
+			"Content-Type": "*/*"
+		},
 		"status": 202
 	},
 	"name": "api-eventlog-createEvent"

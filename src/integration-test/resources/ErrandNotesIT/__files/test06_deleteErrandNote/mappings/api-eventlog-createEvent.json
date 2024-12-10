@@ -1,40 +1,48 @@
 {
 	"request": {
-		"headers": {"Authorization": {"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"}},
+		"headers": {
+			"Authorization": {
+				"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
+			}
+		},
 		"method": "POST",
-		"bodyPatterns": [{
-			"equalToJson": {
-				"owner": "SupportManagement",
-				"metadata": [
-					{
-						"value": "d1f2c8d4-d234-4504-a483-b74570a7941d",
-						"key": "NoteId"
-					},
-					{
-						"value": "1",
-						"key": "CurrentVersion"
-					},
-					{
-						"value": "64c692d3-5384-434d-9cd5-ffb6806cc43d",
-						"key": "CurrentRevision"
-					},
-					{
-						"value": "del06ete",
-						"key": "ExecutedBy"
-					}
-				],
-				"historyReference": "64c692d3-5384-434d-9cd5-ffb6806cc43d",
-				"sourceType": "Note",
-				"created": "${json-unit.any-string}",
-				"type": "DELETE",
-				"message": "Ärendenotering har raderats."
-			},
-			"ignoreArrayOrder": true
-		}],
+		"bodyPatterns": [
+			{
+				"equalToJson": {
+					"owner": "SupportManagement",
+					"metadata": [
+						{
+							"value": "d1f2c8d4-d234-4504-a483-b74570a7941d",
+							"key": "NoteId"
+						},
+						{
+							"value": "1",
+							"key": "CurrentVersion"
+						},
+						{
+							"value": "64c692d3-5384-434d-9cd5-ffb6806cc43d",
+							"key": "CurrentRevision"
+						},
+						{
+							"value": "del06ete",
+							"key": "ExecutedBy"
+						}
+					],
+					"historyReference": "64c692d3-5384-434d-9cd5-ffb6806cc43d",
+					"sourceType": "Note",
+					"created": "${json-unit.any-string}",
+					"type": "DELETE",
+					"message": "Ärendenotering har raderats."
+				},
+				"ignoreArrayOrder": true
+			}
+		],
 		"urlPattern": "/api-eventlog/2281/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
 	},
 	"response": {
-		"headers": {"Content-Type": "*/*"},
+		"headers": {
+			"Content-Type": "*/*"
+		},
 		"status": 202
 	},
 	"name": "api-eventlog-createEvent"

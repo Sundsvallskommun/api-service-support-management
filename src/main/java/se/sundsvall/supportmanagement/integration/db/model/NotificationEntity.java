@@ -5,12 +5,6 @@ import static java.time.ZoneId.systemDefault;
 import static java.time.temporal.ChronoUnit.MILLIS;
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 
-import java.time.OffsetDateTime;
-import java.util.Objects;
-
-import org.hibernate.annotations.TimeZoneStorage;
-import org.hibernate.annotations.UuidGenerator;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -23,6 +17,10 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
+import java.time.OffsetDateTime;
+import java.util.Objects;
+import org.hibernate.annotations.TimeZoneStorage;
+import org.hibernate.annotations.UuidGenerator;
 
 @Entity
 @Table(name = "notification",

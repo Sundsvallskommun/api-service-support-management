@@ -4,6 +4,9 @@ import static org.springframework.http.MediaType.ALL_VALUE;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static se.sundsvall.supportmanagement.integration.eventlog.configuration.EventlogConfiguration.CLIENT_ID;
 
+import feign.QueryMap;
+import generated.se.sundsvall.eventlog.Event;
+import generated.se.sundsvall.eventlog.PageEvent;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -11,12 +14,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-
 import se.sundsvall.supportmanagement.integration.eventlog.configuration.EventlogConfiguration;
-
-import feign.QueryMap;
-import generated.se.sundsvall.eventlog.Event;
-import generated.se.sundsvall.eventlog.PageEvent;
 
 @FeignClient(name = CLIENT_ID, url = "${integration.eventlog.url}", configuration = EventlogConfiguration.class)
 public interface EventlogClient {

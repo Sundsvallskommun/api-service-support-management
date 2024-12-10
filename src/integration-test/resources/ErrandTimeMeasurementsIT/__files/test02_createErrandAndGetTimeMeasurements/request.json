@@ -1,16 +1,20 @@
 {
-	"externalTags": [{
-		"value": "8849-2848",
-		"key": "caseid"
-	}],
+	"externalTags": [
+		{
+			"value": "8849-2848",
+			"key": "caseid"
+		}
+	],
 	"assignedGroupId": "hardware support",
 	"description": "Fix as soon as possible!",
-	"stakeholders": [{
-		"role": "ADMINISTRATOR",
-		"externalId": "cb20c51f-fcf3-42c0-b613-de563634a8ec",
-		"contactChannels": [],
-		"externalIdType": "PRIVATE"
-	}],
+	"stakeholders": [
+		{
+			"role": "ADMINISTRATOR",
+			"externalId": "cb20c51f-fcf3-42c0-b613-de563634a8ec",
+			"contactChannels": [],
+			"externalIdType": "PRIVATE"
+		}
+	],
 	"businessRelated": "true",
 	"title": "test04_postErrand",
 	"priority": "LOW",
