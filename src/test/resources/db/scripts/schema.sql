@@ -390,20 +390,20 @@
     create index idx_errand_municipality_id 
        on errand (municipality_id);
 
-    create index idx_errand_status 
-       on errand (status);
+    create index idx_errand_municipality_id_namespace_status
+       on errand (municipality_id, namespace, status);
 
-    create index idx_errand_category 
-       on errand (category);
+    create index idx_errand_municipality_id_namespace_category
+       on errand (municipality_id, namespace, category);
 
-    create index idx_errand_type 
-       on errand (type);
+    create index idx_errand_municipality_id_namespace_type
+       on errand (municipality_id, namespace, type);
 
-    create index idx_errand_assigned_user_id 
-       on errand (assigned_user_id);
+    create index idx_errand_municipality_id_namespace_assigned_user_id
+       on errand (municipality_id, namespace, assigned_user_id);
 
-    create index idx_errand_reporter_user_id 
-       on errand (reporter_user_id);
+    create index idx_errand_municipality_id_namespace_reporter_user_id
+       on errand (municipality_id, namespace, reporter_user_id);
 
     create index idx_errand_number 
        on errand (errand_number);

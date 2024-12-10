@@ -1,7 +1,16 @@
 package se.sundsvall.supportmanagement.service.scheduler.emailreader;
 
+import static org.apache.commons.lang3.StringUtils.isEmpty;
+import static se.sundsvall.supportmanagement.service.scheduler.emailreader.ErrandNumberParser.parseSubject;
+
 import generated.se.sundsvall.emailreader.Email;
 import generated.se.sundsvall.eventlog.EventType;
+import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import org.apache.commons.validator.routines.EmailValidator;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.supportmanagement.integration.db.EmailWorkerConfigRepository;
@@ -12,15 +21,6 @@ import se.sundsvall.supportmanagement.integration.emailreader.EmailReaderClient;
 import se.sundsvall.supportmanagement.service.CommunicationService;
 import se.sundsvall.supportmanagement.service.ErrandService;
 import se.sundsvall.supportmanagement.service.EventService;
-
-import java.time.OffsetDateTime;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import static org.apache.commons.lang3.StringUtils.isEmpty;
-import static se.sundsvall.supportmanagement.service.scheduler.emailreader.ErrandNumberParser.parseSubject;
 
 @Service
 public class EmailReaderWorker {
@@ -128,6 +128,11 @@ public class EmailReaderWorker {
 
 	private void sendEmailClosed(final ErrandEntity errand, final Email email, final EmailWorkerConfigEntity config) {
 
+		if (!isValidEmailAddress(email.getSender())) {
+			// Don't send to a bad email address.
+			return;
+		}
+
 		final var emailRequest = emailReaderMapper.createEmailRequest(email, config.getErrandClosedEmailSender(), config.getErrandClosedEmailTemplate(), email.getSubject());
 		communicationService.sendEmail(config.getNamespace(), config.getMunicipalityId(), errand.getId(), emailRequest);
 	}
@@ -138,9 +143,18 @@ public class EmailReaderWorker {
 			// Is optional to send email on new errand
 			return;
 		}
+
+		if (!isValidEmailAddress(email.getSender())) {
+			// Don't send to a bad email address.
+			return;
+		}
+
 		final var subject = EMAIL_NEW_SUBJECT_PREFIX + "#" + errand.getErrandNumber() + " " + email.getSubject();
 		final var emailRequest = emailReaderMapper.createEmailRequest(email, config.getErrandNewEmailSender(), config.getErrandNewEmailTemplate(), subject);
 		communicationService.sendEmail(config.getNamespace(), config.getMunicipalityId(), errand.getId(), emailRequest);
 	}
 
+	private boolean isValidEmailAddress(String value) {
+		return EmailValidator.getInstance().isValid(value);
+	}
 }
