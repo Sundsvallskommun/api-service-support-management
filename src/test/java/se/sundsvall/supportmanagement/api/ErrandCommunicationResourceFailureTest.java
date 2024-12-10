@@ -579,7 +579,7 @@ class ErrandCommunicationResourceFailureTest {
 	@ValueSource(strings = {
 		PATH_EMAIL, PATH_WEB_MESSAGE
 	})
-	void sendWithEmptyAttachment(String path) {
+	void sendWithEmptyAttachment(final String path) {
 
 		Object body = null;
 		switch (path) {
@@ -614,7 +614,7 @@ class ErrandCommunicationResourceFailureTest {
 	@ValueSource(strings = {
 		PATH_EMAIL, PATH_WEB_MESSAGE
 	})
-	void sendWithInvalidAttachmentString(String path) {
+	void sendWithInvalidAttachmentString(final String path) {
 
 		final var name = "name";
 		final var data = "data:image/png;base64,iVBOR";
