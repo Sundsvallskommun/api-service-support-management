@@ -18,7 +18,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import se.sundsvall.supportmanagement.Application;
@@ -45,7 +45,7 @@ class ErrandCommunicationResourceTest {
 	private static final String PATH_WEB_MESSAGE = "/webmessage";
 	private static final String PATH_ATTACHMENTS = "/{communicationId}/attachments/{attachmentId}/streamed";
 
-	@MockBean
+	@MockitoBean
 	private CommunicationService serviceMock;
 
 	@Autowired

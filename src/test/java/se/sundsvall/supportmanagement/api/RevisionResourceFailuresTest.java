@@ -13,7 +13,7 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.zalando.problem.Problem;
@@ -35,7 +35,7 @@ class RevisionResourceFailuresTest {
 
 	private static final String ERRAND_NOTES_PATH = "{municipalityId}/{namespace}/errands/{errandId}/notes/{noteId}/revisions";
 
-	@MockBean
+	@MockitoBean
 	private RevisionService revisionServiceMock;
 
 	@Autowired

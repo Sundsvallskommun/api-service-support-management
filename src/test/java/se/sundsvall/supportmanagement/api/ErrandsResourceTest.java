@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -69,10 +69,10 @@ class ErrandsResourceTest {
 	@Autowired
 	private WebTestClient webTestClient;
 
-	@MockBean
+	@MockitoBean
 	private MetadataService metadataServiceMock;
 
-	@MockBean
+	@MockitoBean
 	private ErrandService errandServiceMock;
 
 	private static Errand createErrandInstance(final String reporterUserId, final boolean withStakeholder) {

@@ -15,7 +15,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
@@ -34,7 +34,7 @@ class NotificationsResourceTest {
 	private static final String ERRAND_ID = randomUUID().toString();
 	private static final String MUNICIPALITY_ID = "2281";
 
-	@MockBean
+	@MockitoBean
 	private NotificationService notificationServiceMock;
 
 	@Autowired

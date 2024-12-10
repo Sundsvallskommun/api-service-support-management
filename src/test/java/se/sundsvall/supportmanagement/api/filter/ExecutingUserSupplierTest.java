@@ -13,7 +13,7 @@ import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,13 +24,13 @@ class ExecutingUserSupplierTest {
 	private static final String AD_USER_HEADER_KEY = "sentbyuser";
 	private static final String UNKNOWN = "UNKNOWN";
 
-	@MockBean
+	@MockitoBean
 	private HttpServletRequest requestMock;
 
-	@MockBean
+	@MockitoBean
 	private HttpServletResponse responseMock;
 
-	@MockBean
+	@MockitoBean
 	private FilterChain filterChainMock;
 
 	@Autowired
