@@ -4,10 +4,8 @@ import static org.zalando.problem.Status.NOT_FOUND;
 import static se.sundsvall.supportmanagement.service.mapper.TimeMeasurementMapper.toTimeMeasurements;
 
 import java.util.List;
-
 import org.springframework.stereotype.Service;
 import org.zalando.problem.Problem;
-
 import se.sundsvall.supportmanagement.api.model.errand.TimeMeasurement;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 

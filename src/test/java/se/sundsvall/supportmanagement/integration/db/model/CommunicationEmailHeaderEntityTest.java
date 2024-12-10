@@ -11,7 +11,6 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.EmailHea
 
 import java.util.List;
 import java.util.UUID;
-
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Test;
 

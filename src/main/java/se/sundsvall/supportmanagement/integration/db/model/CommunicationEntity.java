@@ -2,10 +2,6 @@ package se.sundsvall.supportmanagement.integration.db.model;
 
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 
-import java.time.OffsetDateTime;
-import java.util.List;
-import java.util.Objects;
-
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -19,10 +15,11 @@ import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
-
+import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.Objects;
 import org.hibernate.Length;
 import org.hibernate.annotations.TimeZoneStorage;
-
 import se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.Direction;
 

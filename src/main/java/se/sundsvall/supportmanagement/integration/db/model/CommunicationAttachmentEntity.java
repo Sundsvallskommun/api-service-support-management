@@ -1,8 +1,5 @@
 package se.sundsvall.supportmanagement.integration.db.model;
 
-import java.util.Objects;
-import java.util.Optional;
-
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -16,6 +13,8 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import jakarta.persistence.UniqueConstraint;
+import java.util.Objects;
+import java.util.Optional;
 
 @Entity
 @Table(

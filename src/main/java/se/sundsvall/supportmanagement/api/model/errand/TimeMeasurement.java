@@ -1,9 +1,8 @@
 package se.sundsvall.supportmanagement.api.model.errand;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.OffsetDateTime;
 import java.util.Objects;
-
-import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "Time measure model", accessMode = Schema.AccessMode.READ_ONLY)
 public class TimeMeasurement {

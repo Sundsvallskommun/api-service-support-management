@@ -1,7 +1,9 @@
 [
 	{
 		"displayName": "display name A",
-		"values": ["value1"],
+		"values": [
+			"value1"
+		],
 		"key": "key1"
 	},
 	{
@@ -14,7 +16,9 @@
 	},
 	{
 		"displayName": "display name C",
-		"values": ["value4"],
+		"values": [
+			"value4"
+		],
 		"key": "key1"
 	}
 ]

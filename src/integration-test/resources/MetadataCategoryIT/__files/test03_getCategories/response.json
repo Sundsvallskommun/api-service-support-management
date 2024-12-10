@@ -44,12 +44,14 @@
 		"name": "CATEGORY-2"
 	},
 	{
-		"types": [{
-			"escalationEmail": "ESCALATION-EMAIL-1",
-			"displayName": "TYPE-DISPLAY-NAME-1",
-			"created": "2023-01-01T12:00:00+01:00",
-			"name": "TYPE-1"
-		}],
+		"types": [
+			{
+				"escalationEmail": "ESCALATION-EMAIL-1",
+				"displayName": "TYPE-DISPLAY-NAME-1",
+				"created": "2023-01-01T12:00:00+01:00",
+				"name": "TYPE-1"
+			}
+		],
 		"displayName": "CATEGORY-DISPLAY-NAME-3",
 		"created": "2023-01-01T12:00:00+01:00",
 		"name": "CATEGORY-3"

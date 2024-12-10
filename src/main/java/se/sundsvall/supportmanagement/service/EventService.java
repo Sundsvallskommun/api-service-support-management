@@ -8,16 +8,14 @@ import static se.sundsvall.supportmanagement.service.mapper.EventlogMapper.toEve
 import static se.sundsvall.supportmanagement.service.mapper.EventlogMapper.toMetadataMap;
 import static se.sundsvall.supportmanagement.service.mapper.NotificationMapper.toNotification;
 
+import generated.se.sundsvall.eventlog.EventType;
+import generated.se.sundsvall.notes.Note;
 import java.util.Objects;
 import java.util.Optional;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-
-import generated.se.sundsvall.eventlog.EventType;
-import generated.se.sundsvall.notes.Note;
 import se.sundsvall.supportmanagement.api.filter.ExecutingUserSupplier;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.event.Event;

@@ -1,16 +1,28 @@
 {
 	"request": {
-		"headers": {"Authorization": {"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"}},
+		"headers": {
+			"Authorization": {
+				"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
+			}
+		},
 		"method": "GET",
 		"queryParameters": {
-			"size": {"equalTo": "20"},
-			"page": {"equalTo": "0"},
-			"sort": {"equalTo": "created,ASC"}
+			"size": {
+				"equalTo": "20"
+			},
+			"page": {
+				"equalTo": "0"
+			},
+			"sort": {
+				"equalTo": "created,ASC"
+			}
 		},
 		"urlPath": "/api-eventlog/2281/147d355f-dc94-4fde-a4cb-9ddd16cb1946"
 	},
 	"response": {
-		"headers": {"Content-Type": "application/json"},
+		"headers": {
+			"Content-Type": "application/json"
+		},
 		"bodyFileName": "test01_readErrandEvents/responses/api-eventlog-getEvents-response.json",
 		"status": 200
 	},

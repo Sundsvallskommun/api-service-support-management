@@ -8,10 +8,9 @@ import static org.assertj.core.api.Assertions.within;
 import static org.junit.jupiter.api.Assertions.fail;
 import static se.sundsvall.supportmanagement.integration.db.specification.ErrandSpecification.hasMatchingTags;
 
+import com.turkraft.springfilter.converter.FilterSpecificationConverter;
 import java.time.OffsetDateTime;
 import java.util.List;
-
-import com.turkraft.springfilter.converter.FilterSpecificationConverter;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -23,7 +22,6 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.transaction.annotation.Transactional;
-
 import se.sundsvall.supportmanagement.integration.db.model.ContactChannelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;

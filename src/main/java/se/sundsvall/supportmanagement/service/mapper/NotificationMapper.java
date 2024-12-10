@@ -2,11 +2,10 @@ package se.sundsvall.supportmanagement.service.mapper;
 
 import static org.apache.commons.lang3.ObjectUtils.anyNull;
 
-import java.time.OffsetDateTime;
-import java.util.Optional;
-
 import generated.se.sundsvall.employee.PortalPersonData;
 import generated.se.sundsvall.eventlog.Event;
+import java.time.OffsetDateTime;
+import java.util.Optional;
 import se.sundsvall.supportmanagement.api.model.notification.Notification;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;

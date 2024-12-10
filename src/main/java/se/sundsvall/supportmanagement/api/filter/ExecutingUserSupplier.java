@@ -3,17 +3,15 @@ package se.sundsvall.supportmanagement.api.filter;
 import static java.util.Optional.ofNullable;
 import static se.sundsvall.supportmanagement.Constants.AD_USER_HEADER_KEY;
 
-import java.io.IOException;
-
-import org.jetbrains.annotations.NotNull;
-import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
-import org.springframework.web.filter.OncePerRequestFilter;
-
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
+import org.springframework.web.filter.OncePerRequestFilter;
 
 @Component
 public class ExecutingUserSupplier extends OncePerRequestFilter {
