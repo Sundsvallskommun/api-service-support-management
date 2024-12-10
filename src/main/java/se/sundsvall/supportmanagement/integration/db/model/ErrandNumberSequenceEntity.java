@@ -1,12 +1,11 @@
 package se.sundsvall.supportmanagement.integration.db.model;
 
-import java.util.Objects;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
+import java.util.Objects;
 
 @Entity
 @Table(name = "errand_number_sequence",

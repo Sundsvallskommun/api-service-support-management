@@ -1,11 +1,16 @@
 package se.sundsvall.supportmanagement.integration.notes;
 
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import static se.sundsvall.supportmanagement.Constants.AD_USER_HEADER_KEY;
+import static se.sundsvall.supportmanagement.integration.notes.configuration.NotesConfiguration.CLIENT_ID;
+
 import generated.se.sundsvall.notes.CreateNoteRequest;
 import generated.se.sundsvall.notes.DifferenceResponse;
 import generated.se.sundsvall.notes.FindNotesResponse;
 import generated.se.sundsvall.notes.Note;
 import generated.se.sundsvall.notes.Revision;
 import generated.se.sundsvall.notes.UpdateNoteRequest;
+import java.util.List;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -17,12 +22,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import se.sundsvall.supportmanagement.integration.notes.configuration.NotesConfiguration;
-
-import java.util.List;
-
-import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
-import static se.sundsvall.supportmanagement.Constants.AD_USER_HEADER_KEY;
-import static se.sundsvall.supportmanagement.integration.notes.configuration.NotesConfiguration.CLIENT_ID;
 
 @FeignClient(name = CLIENT_ID, url = "${integration.notes.url}", configuration = NotesConfiguration.class)
 public interface NotesClient {

@@ -12,7 +12,6 @@ import static org.zalando.problem.Status.NOT_FOUND;
 
 import java.time.OffsetDateTime;
 import java.util.Optional;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -21,7 +20,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.zalando.problem.Problem;
-
 import se.sundsvall.supportmanagement.api.model.config.EmailIntegration;
 import se.sundsvall.supportmanagement.integration.db.EmailWorkerConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;

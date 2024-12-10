@@ -1,6 +1,10 @@
 [
 	{
-		"headers": {"MESSAGE_ID": ["<e58b1cbb-60c0-414a-a48e-58726625f274@this.is.a.test>"]},
+		"headers": {
+			"MESSAGE_ID": [
+				"<e58b1cbb-60c0-414a-a48e-58726625f274@this.is.a.test>"
+			]
+		},
 		"metadata": {
 			"classification.type": "TYPE-1",
 			"classification.category": "CATEGORY-1",
@@ -8,35 +12,49 @@
 		},
 		"attachments": [],
 		"sender": "sender@this.is.a.test",
-		"recipients": ["name@this.is.a.test"],
+		"recipients": [
+			"name@this.is.a.test"
+		],
 		"subject": "Test subject 1",
 		"id": "7854c6e3-a188-45cb-90bd-c6b135e665b7",
 		"message": "Should pass 1",
 		"receivedAt": "2024-08-28T13:20:27+02:00"
 	},
 	{
-		"headers": {"MESSAGE_ID": ["<785f7bb6-8fdd-4f04-b256-148009dfc4ae@this.is.a.test>"]},
+		"headers": {
+			"MESSAGE_ID": [
+				"<785f7bb6-8fdd-4f04-b256-148009dfc4ae@this.is.a.test>"
+			]
+		},
 		"metadata": {
 			"classification.type": "TYPE-1",
 			"classification.category": "CATEGORY-1"
 		},
 		"attachments": [],
 		"sender": "sender@this.is.a.test",
-		"recipients": ["name@this.is.a.test"],
+		"recipients": [
+			"name@this.is.a.test"
+		],
 		"subject": "Error subject",
 		"id": "54ac95cb-6e96-4acd-961a-e29a01ded9b4",
 		"message": "Error 😊",
 		"receivedAt": "2024-08-28T13:47:36+02:00"
 	},
 	{
-		"headers": {"MESSAGE_ID": ["<43bcc555-cb70-4f1e-86d6-b3401c823b1a@this.is.a.test>"]},
+		"headers": {
+			"MESSAGE_ID": [
+				"<43bcc555-cb70-4f1e-86d6-b3401c823b1a@this.is.a.test>"
+			]
+		},
 		"metadata": {
 			"classification.type": "TYPE-1",
 			"classification.category": "CATEGORY-1"
 		},
 		"attachments": [],
 		"sender": "sender@this.is.a.test",
-		"recipients": ["name@this.is.a.test"],
+		"recipients": [
+			"name@this.is.a.test"
+		],
 		"subject": "Test subject 2",
 		"id": "3883348a-797e-4c8a-b58a-f1670f6b8b95",
 		"message": "Should pass 2",

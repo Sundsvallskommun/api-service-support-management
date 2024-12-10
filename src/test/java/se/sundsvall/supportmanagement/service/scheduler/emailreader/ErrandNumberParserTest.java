@@ -3,7 +3,6 @@ package se.sundsvall.supportmanagement.service.scheduler.emailreader;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.text.MessageFormat;
-
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 

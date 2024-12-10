@@ -1,27 +1,41 @@
 {
 	"request": {
-		"headers": {"Authorization": {"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"}},
+		"headers": {
+			"Authorization": {
+				"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
+			}
+		},
 		"method": "POST",
-		"bodyPatterns": [{"equalToJson": {
-			"attachments": [],
-			"oepInstance": "external",
-			"message": "Order pizza for everyone!",
-			"party": {"externalReferences": [
-				{
-					"value": "cad8ec4e-0b6b-473a-800d-feb063f59094",
-					"key": "errandId"
-				},
-				{
-					"value": "1000",
-					"key": "flowInstanceId"
+		"bodyPatterns": [
+			{
+				"equalToJson": {
+					"attachments": [],
+					"oepInstance": "external",
+					"message": "Order pizza for everyone!",
+					"party": {
+						"externalReferences": [
+							{
+								"value": "cad8ec4e-0b6b-473a-800d-feb063f59094",
+								"key": "errandId"
+							},
+							{
+								"value": "1000",
+								"key": "flowInstanceId"
+							}
+						]
+					}
 				}
-			]}
-		}}],
+			}
+		],
 		"url": "/api-messaging/2281/webmessage?async=true"
 	},
 	"response": {
-		"headers": {"Content-Type": "application/json"},
-		"jsonBody": {"messageId": "c413796a-502b-4487-85b2-69a43cc9b6d7"},
+		"headers": {
+			"Content-Type": "application/json"
+		},
+		"jsonBody": {
+			"messageId": "c413796a-502b-4487-85b2-69a43cc9b6d7"
+		},
 		"status": 200
 	},
 	"name": "api-messaging-webmessage"

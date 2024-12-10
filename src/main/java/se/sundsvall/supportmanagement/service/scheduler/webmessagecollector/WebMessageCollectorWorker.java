@@ -4,9 +4,7 @@ import static generated.se.sundsvall.eventlog.EventType.UPDATE;
 import static se.sundsvall.supportmanagement.integration.db.specification.ErrandSpecification.hasMatchingTags;
 
 import generated.se.sundsvall.webmessagecollector.MessageDTO;
-
 import java.util.List;
-
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.supportmanagement.integration.db.CommunicationRepository;

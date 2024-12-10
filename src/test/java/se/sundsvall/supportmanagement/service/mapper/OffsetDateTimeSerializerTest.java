@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
-
 import org.junit.jupiter.api.Test;
 
 class OffsetDateTimeSerializerTest {

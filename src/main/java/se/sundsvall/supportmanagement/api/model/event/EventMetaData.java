@@ -1,8 +1,7 @@
 package se.sundsvall.supportmanagement.api.model.event;
 
-import java.util.Objects;
-
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.Objects;
 
 @Schema(description = "Event Metadata model")
 public class EventMetaData {

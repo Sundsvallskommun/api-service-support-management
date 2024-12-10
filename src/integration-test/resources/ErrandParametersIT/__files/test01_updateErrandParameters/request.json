@@ -9,7 +9,9 @@
 	},
 	{
 		"displayName": "display name 2",
-		"values": ["value4"],
+		"values": [
+			"value4"
+		],
 		"key": "key2"
 	}
 ]

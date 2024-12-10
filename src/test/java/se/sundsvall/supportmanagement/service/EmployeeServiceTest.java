@@ -5,21 +5,18 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import generated.se.sundsvall.employee.Employee;
+import generated.se.sundsvall.employee.PortalPersonData;
 import java.util.List;
 import java.util.Optional;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.employee.EmployeeClient;
-
-import generated.se.sundsvall.employee.Employee;
-import generated.se.sundsvall.employee.PortalPersonData;
 
 @ExtendWith(MockitoExtension.class)
 class EmployeeServiceTest {

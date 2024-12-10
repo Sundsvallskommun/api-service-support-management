@@ -1,40 +1,48 @@
 {
 	"request": {
-		"headers": {"Authorization": {"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"}},
+		"headers": {
+			"Authorization": {
+				"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
+			}
+		},
 		"method": "POST",
-		"bodyPatterns": [{
-			"equalToJson": {
-				"owner": "SupportManagement",
-				"metadata": [
-					{
-						"value": "90572753-e8b0-48f8-b200-3623eaa76f8b",
-						"key": "NoteId"
-					},
-					{
-						"value": "0",
-						"key": "CurrentVersion"
-					},
-					{
-						"value": "90572753-e8b0-48f8-b200-3623eaa76f9a",
-						"key": "CurrentRevision"
-					},
-					{
-						"value": "cre03ate",
-						"key": "ExecutedBy"
-					}
-				],
-				"historyReference": "90572753-e8b0-48f8-b200-3623eaa76f9a",
-				"sourceType": "Note",
-				"created": "${json-unit.any-string}",
-				"type": "CREATE",
-				"message": "Ärendenotering har skapats."
-			},
-			"ignoreArrayOrder": true
-		}],
+		"bodyPatterns": [
+			{
+				"equalToJson": {
+					"owner": "SupportManagement",
+					"metadata": [
+						{
+							"value": "90572753-e8b0-48f8-b200-3623eaa76f8b",
+							"key": "NoteId"
+						},
+						{
+							"value": "0",
+							"key": "CurrentVersion"
+						},
+						{
+							"value": "90572753-e8b0-48f8-b200-3623eaa76f9a",
+							"key": "CurrentRevision"
+						},
+						{
+							"value": "cre03ate",
+							"key": "ExecutedBy"
+						}
+					],
+					"historyReference": "90572753-e8b0-48f8-b200-3623eaa76f9a",
+					"sourceType": "Note",
+					"created": "${json-unit.any-string}",
+					"type": "CREATE",
+					"message": "Ärendenotering har skapats."
+				},
+				"ignoreArrayOrder": true
+			}
+		],
 		"urlPattern": "/api-eventlog/2281/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
 	},
 	"response": {
-		"headers": {"Content-Type": "*/*"},
+		"headers": {
+			"Content-Type": "*/*"
+		},
 		"status": 202
 	},
 	"name": "api-eventlog-createEvent"

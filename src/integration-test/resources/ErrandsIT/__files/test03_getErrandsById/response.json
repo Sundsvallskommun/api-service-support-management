@@ -13,12 +13,14 @@
 	"errandNumber": "KC-23020003",
 	"created": "2022-03-01T12:00:00+01:00",
 	"description": "DESCRIPTION",
-	"stakeholders": [{
-		"externalId": "7fba994b-e99e-4beb-8ab5-63cc74483b66",
-		"parameters": [],
-		"externalIdType": "ENTERPRISE",
-		"contactChannels": []
-	}],
+	"stakeholders": [
+		{
+			"externalId": "7fba994b-e99e-4beb-8ab5-63cc74483b66",
+			"parameters": [],
+			"externalIdType": "ENTERPRISE",
+			"contactChannels": []
+		}
+	],
 	"title": "TITLE-3",
 	"priority": "HIGH",
 	"classification": {
@@ -42,7 +44,9 @@
 		},
 		{
 			"displayName": "Displayname B",
-			"values": ["valueB1"],
+			"values": [
+				"valueB1"
+			],
 			"key": "keyB"
 		}
 	],

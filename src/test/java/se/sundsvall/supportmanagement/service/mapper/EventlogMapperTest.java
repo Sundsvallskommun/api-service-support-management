@@ -9,20 +9,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static org.assertj.core.groups.Tuple.tuple;
 
+import generated.se.sundsvall.eventlog.Event;
+import generated.se.sundsvall.eventlog.EventType;
+import generated.se.sundsvall.eventlog.Metadata;
+import generated.se.sundsvall.notes.Note;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
-
-import generated.se.sundsvall.eventlog.Event;
-import generated.se.sundsvall.eventlog.EventType;
-import generated.se.sundsvall.eventlog.Metadata;
-import generated.se.sundsvall.notes.Note;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.event.EventMetaData;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;

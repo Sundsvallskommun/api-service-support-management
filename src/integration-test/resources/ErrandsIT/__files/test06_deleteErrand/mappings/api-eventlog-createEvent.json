@@ -1,36 +1,44 @@
 {
 	"request": {
-		"headers": {"Authorization": {"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"}},
+		"headers": {
+			"Authorization": {
+				"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
+			}
+		},
 		"method": "POST",
-		"bodyPatterns": [{
-			"equalToJson": {
-				"owner": "SupportManagement",
-				"metadata": [
-					{
-						"value": "0",
-						"key": "CurrentVersion"
-					},
-					{
-						"value": "59328e70-4297-4bb5-ba69-cb17f2d15a17",
-						"key": "CurrentRevision"
-					},
-					{
-						"value": "smo02key",
-						"key": "ExecutedBy"
-					}
-				],
-				"historyReference": "59328e70-4297-4bb5-ba69-cb17f2d15a17",
-				"sourceType": "Errand",
-				"created": "${json-unit.any-string}",
-				"type": "DELETE",
-				"message": "Ärendet har raderats."
-			},
-			"ignoreArrayOrder": true
-		}],
+		"bodyPatterns": [
+			{
+				"equalToJson": {
+					"owner": "SupportManagement",
+					"metadata": [
+						{
+							"value": "0",
+							"key": "CurrentVersion"
+						},
+						{
+							"value": "59328e70-4297-4bb5-ba69-cb17f2d15a17",
+							"key": "CurrentRevision"
+						},
+						{
+							"value": "smo02key",
+							"key": "ExecutedBy"
+						}
+					],
+					"historyReference": "59328e70-4297-4bb5-ba69-cb17f2d15a17",
+					"sourceType": "Errand",
+					"created": "${json-unit.any-string}",
+					"type": "DELETE",
+					"message": "Ärendet har raderats."
+				},
+				"ignoreArrayOrder": true
+			}
+		],
 		"urlPath": "/api-eventlog/2281/1be673c0-6ba3-4fb0-af4a-43acf23389f6"
 	},
 	"response": {
-		"headers": {"Content-Type": "*/*"},
+		"headers": {
+			"Content-Type": "*/*"
+		},
 		"status": 202
 	},
 	"name": "api-eventlog-createEvent"

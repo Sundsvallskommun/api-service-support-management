@@ -2,14 +2,12 @@ package se.sundsvall.supportmanagement.api.model.notification;
 
 import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 
-import java.time.OffsetDateTime;
-import java.util.Objects;
-
-import org.springframework.format.annotation.DateTimeFormat;
-
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Null;
+import java.time.OffsetDateTime;
+import java.util.Objects;
+import org.springframework.format.annotation.DateTimeFormat;
 import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
 
 public class Notification {

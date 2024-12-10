@@ -1,20 +1,16 @@
 package se.sundsvall.supportmanagement.api.model.communication;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-
 import org.springframework.format.annotation.DateTimeFormat;
-
 import se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.Direction;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
-
-import io.swagger.v3.oas.annotations.media.Schema;
 
 public class Communication {
 

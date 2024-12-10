@@ -10,6 +10,7 @@ import static org.springframework.util.MimeTypeUtils.IMAGE_PNG_VALUE;
 import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
 import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toWebMessageRequest;
 
+import generated.se.sundsvall.messaging.ExternalReference;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.sql.Blob;
@@ -18,12 +19,10 @@ import java.util.Base64;
 import java.util.Base64.Decoder;
 import java.util.List;
 import java.util.Map;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
-
 import org.zalando.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.communication.EmailAttachment;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
@@ -35,8 +34,6 @@ import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
-
-import generated.se.sundsvall.messaging.ExternalReference;
 
 class MessagingMapperTest {
 
