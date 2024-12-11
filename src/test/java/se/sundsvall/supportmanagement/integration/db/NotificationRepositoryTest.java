@@ -31,7 +31,6 @@ class NotificationRepositoryTest {
 	void createNotification() {
 
 		// Arrange
-		final var id = "123e4567-e89b-12d3-a456-426614174000";
 		final var timestamp = of(2022, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC); // fixed timestamp
 		final var owner = "Test Testorsson";
 		final var ownerId = "cb20c51f-fcf3-42c0-b613-de563634a8ec";
@@ -47,7 +46,6 @@ class NotificationRepositoryTest {
 		final var namespace = "namespace";
 
 		final var notification = NotificationEntity.create()
-			.withId(id)
 			.withCreated(timestamp)
 			.withModified(timestamp)
 			.withOwnerFullName(owner)

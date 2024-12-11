@@ -54,9 +54,10 @@ class ErrandCommunicationResource {
 		this.service = service;
 	}
 
-	@Operation(description = "Get all communications for an errand.")
 	@GetMapping(produces = APPLICATION_JSON_VALUE)
-	@ApiResponse(responseCode = "200", description = "OK - Successful operation", useReturnTypeSchema = true)
+	@Operation(description = "Get all communications for an errand.", responses = {
+		@ApiResponse(responseCode = "200", description = "OK - Successful operation", useReturnTypeSchema = true)
+	})
 	ResponseEntity<List<Communication>> getCommunications(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality ID", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
@@ -65,9 +66,10 @@ class ErrandCommunicationResource {
 		return ResponseEntity.ok(service.readCommunications(namespace, municipalityId, errandId));
 	}
 
-	@Operation(description = "Set viewed status for communication.")
 	@PutMapping(path = "/{communicationId}/viewed/{isViewed}", produces = ALL_VALUE)
-	@ApiResponse(responseCode = "204", description = "No content - Successful operation", useReturnTypeSchema = true)
+	@Operation(description = "Set viewed status for communication.", responses = {
+		@ApiResponse(responseCode = "204", description = "No content - Successful operation", useReturnTypeSchema = true)
+	})
 	ResponseEntity<Void> updateViewedStatus(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
@@ -82,8 +84,9 @@ class ErrandCommunicationResource {
 	}
 
 	@PostMapping(path = "/email", consumes = APPLICATION_JSON_VALUE, produces = ALL_VALUE)
-	@Operation(summary = "Send email to in context of an errand", description = "Sends an email message to the recipient specified in the request")
-	@ApiResponse(responseCode = "204", description = "Successful operation", useReturnTypeSchema = true)
+	@Operation(summary = "Send email to in context of an errand", description = "Sends an email message to the recipient specified in the request", responses = {
+		@ApiResponse(responseCode = "204", description = "Successful operation", useReturnTypeSchema = true)
+	})
 	ResponseEntity<Void> sendEmail(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality ID", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
@@ -97,8 +100,9 @@ class ErrandCommunicationResource {
 	}
 
 	@PostMapping(path = "/sms", consumes = APPLICATION_JSON_VALUE, produces = ALL_VALUE)
-	@Operation(summary = "Send sms to in context of an errand", description = "Sends a sms message to the recipient specified in the request")
-	@ApiResponse(responseCode = "204", description = "Successful operation", useReturnTypeSchema = true)
+	@Operation(summary = "Send sms to in context of an errand", description = "Sends a sms message to the recipient specified in the request", responses = {
+		@ApiResponse(responseCode = "204", description = "Successful operation", useReturnTypeSchema = true)
+	})
 	ResponseEntity<Void> sendSms(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality ID", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
@@ -112,8 +116,9 @@ class ErrandCommunicationResource {
 	}
 
 	@PostMapping(path = "/webmessage", consumes = APPLICATION_JSON_VALUE, produces = ALL_VALUE)
-	@Operation(summary = "Send email to in context of an errand", description = "Sends an email message to the recipient specified in the request")
-	@ApiResponse(responseCode = "204", description = "Successful operation", useReturnTypeSchema = true)
+	@Operation(summary = "Send email to in context of an errand", description = "Sends an email message to the recipient specified in the request", responses = {
+		@ApiResponse(responseCode = "204", description = "Successful operation", useReturnTypeSchema = true)
+	})
 	ResponseEntity<Void> sendWebMessage(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality ID", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
@@ -126,10 +131,11 @@ class ErrandCommunicationResource {
 			.build();
 	}
 
-	@Operation(summary = "Get a streamed communication attachment.", description = "Fetches the communication attachment that matches the provided id in a streamed manner")
 	@GetMapping(path = "/{communicationId}/attachments/{attachmentId}/streamed", produces = ALL_VALUE)
-	@ApiResponse(responseCode = "200", description = "Successful Operation", useReturnTypeSchema = true)
-	@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+	@Operation(summary = "Get a streamed communication attachment.", description = "Fetches the communication attachment that matches the provided id in a streamed manner", responses = {
+		@ApiResponse(responseCode = "200", description = "Successful Operation", useReturnTypeSchema = true),
+		@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+	})
 	void getMessageAttachmentStreamed(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality ID", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
