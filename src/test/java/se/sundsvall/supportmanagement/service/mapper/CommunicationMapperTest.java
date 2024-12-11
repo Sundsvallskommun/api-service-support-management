@@ -102,7 +102,7 @@ class CommunicationMapperTest {
 		assertThat(attachments.getFirst().getMimeType()).isEqualTo("application/octet-stream");
 		assertThat(attachments.getFirst().getNamespace()).isEqualTo(NAMESPACE);
 		assertThat(attachments.getFirst().getMunicipalityId()).isEqualTo(MUNICIPALITY_ID);
-		assertThat(attachments.getFirst().getId()).isNotNull();
+		assertThat(attachments.getFirst().getId()).isNull();
 		assertThat(attachments.getFirst().getAttachmentData().getFile()).isEqualTo(entity.getAttachments().getFirst().getAttachmentData().getFile());
 	}
 

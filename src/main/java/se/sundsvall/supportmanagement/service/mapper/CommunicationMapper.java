@@ -74,7 +74,6 @@ public class CommunicationMapper {
 		return Optional.ofNullable(communicationEntity.getAttachments()).orElse(Collections.emptyList())
 			.stream()
 			.map(attachment -> AttachmentEntity.create()
-				.withId(UUID.randomUUID().toString())
 				.withFileName(attachment.getName())
 				.withNamespace(communicationEntity.getNamespace())
 				.withMunicipalityId(communicationEntity.getMunicipalityId())
