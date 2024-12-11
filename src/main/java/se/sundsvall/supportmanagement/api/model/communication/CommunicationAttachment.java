@@ -1,8 +1,7 @@
 package se.sundsvall.supportmanagement.api.model.communication;
 
-import java.util.Objects;
-
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.Objects;
 
 public class CommunicationAttachment {
 

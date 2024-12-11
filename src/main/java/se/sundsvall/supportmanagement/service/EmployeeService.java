@@ -2,17 +2,14 @@ package se.sundsvall.supportmanagement.service;
 
 import static java.util.Collections.emptyList;
 
+import generated.se.sundsvall.employee.Employee;
+import generated.se.sundsvall.employee.PortalPersonData;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
-
 import org.springframework.stereotype.Service;
-
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.employee.EmployeeClient;
-
-import generated.se.sundsvall.employee.Employee;
-import generated.se.sundsvall.employee.PortalPersonData;
 
 @Service
 public class EmployeeService {

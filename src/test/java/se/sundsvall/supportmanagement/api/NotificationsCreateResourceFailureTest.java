@@ -12,20 +12,18 @@ import static org.zalando.problem.Status.CONFLICT;
 
 import java.util.Map;
 import java.util.stream.Stream;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.zalando.problem.Problem;
 import org.zalando.problem.violations.ConstraintViolationProblem;
 import org.zalando.problem.violations.Violation;
-
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.TestObjectsBuilder;
 import se.sundsvall.supportmanagement.api.model.notification.Notification;
@@ -41,7 +39,7 @@ class NotificationsCreateResourceFailureTest {
 	private static final String ERRAND_ID = randomUUID().toString();
 	private static final String INVALID = "can only contain A-Z, a-z, 0-9, -, _ and .";
 
-	@MockBean
+	@MockitoBean
 	private NotificationService notificationServiceMock;
 
 	@Autowired

@@ -1,12 +1,11 @@
 package se.sundsvall.supportmanagement.api.validation.impl;
 
-import org.junit.jupiter.api.Test;
-
-import java.util.List;
-
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static se.sundsvall.supportmanagement.api.model.errand.ExternalTag.create;
+
+import java.util.List;
+import org.junit.jupiter.api.Test;
 
 class UniqueExternalTagKeysConstraintValidatorTest {
 

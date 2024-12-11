@@ -51,12 +51,13 @@ class EmailIntegrationConfigResource {
 	}
 
 	@PostMapping(consumes = APPLICATION_JSON_VALUE, produces = ALL_VALUE)
-	@Operation(summary = "Create email integration config", description = "Create email integration config that fetches emails from email-reader service")
-	@ApiResponse(responseCode = "201", headers = @Header(name = LOCATION, schema = @Schema(type = "string")), description = "Successful operation", useReturnTypeSchema = true)
-	@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
-		Problem.class, ConstraintViolationProblem.class
-	})))
-	@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+	@Operation(summary = "Create email integration config", description = "Create email integration config that fetches emails from email-reader service", responses = {
+		@ApiResponse(responseCode = "201", headers = @Header(name = LOCATION, schema = @Schema(type = "string")), description = "Successful operation", useReturnTypeSchema = true),
+		@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
+			Problem.class, ConstraintViolationProblem.class
+		}))),
+		@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+	})
 	ResponseEntity<Void> createEmailIntegrationConfig(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
@@ -71,13 +72,14 @@ class EmailIntegrationConfigResource {
 	}
 
 	@GetMapping(produces = APPLICATION_JSON_VALUE)
-	@Operation(summary = "Read email integration config", description = "Fetches email integration config for a municipality/namespace")
-	@ApiResponse(responseCode = "200", description = "Successful Operation", useReturnTypeSchema = true)
-	@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
-		Problem.class, ConstraintViolationProblem.class
-	})))
-	@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
-	@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+	@Operation(summary = "Read email integration config", description = "Fetches email integration config for a municipality/namespace", responses = {
+		@ApiResponse(responseCode = "200", description = "Successful Operation", useReturnTypeSchema = true),
+		@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
+			Problem.class, ConstraintViolationProblem.class
+		}))),
+		@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
+		@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+	})
 	ResponseEntity<EmailIntegration> readEmailIntegrationConfig(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId) {
@@ -86,12 +88,13 @@ class EmailIntegrationConfigResource {
 	}
 
 	@PutMapping(consumes = APPLICATION_JSON_VALUE, produces = ALL_VALUE)
-	@Operation(summary = "Update email integration config", description = "Update email integration config that fetches emails from email-reader service")
-	@ApiResponse(responseCode = "204", description = "Successful operation", useReturnTypeSchema = true)
-	@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
-		Problem.class, ConstraintViolationProblem.class
-	})))
-	@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+	@Operation(summary = "Update email integration config", description = "Update email integration config that fetches emails from email-reader service", responses = {
+		@ApiResponse(responseCode = "204", description = "Successful operation", useReturnTypeSchema = true),
+		@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
+			Problem.class, ConstraintViolationProblem.class
+		}))),
+		@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+	})
 	ResponseEntity<Void> updateEmailIntegrationConfig(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
@@ -104,13 +107,14 @@ class EmailIntegrationConfigResource {
 	}
 
 	@DeleteMapping(produces = ALL_VALUE)
-	@Operation(summary = "Delete email integration config", description = "Deletes the email integration config for a municipality/namespace")
-	@ApiResponse(responseCode = "204", description = "Successful operation", useReturnTypeSchema = true)
-	@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
-		Problem.class, ConstraintViolationProblem.class
-	})))
-	@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
-	@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+	@Operation(summary = "Delete email integration config", description = "Deletes the email integration config for a municipality/namespace", responses = {
+		@ApiResponse(responseCode = "204", description = "Successful operation", useReturnTypeSchema = true),
+		@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
+			Problem.class, ConstraintViolationProblem.class
+		}))),
+		@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
+		@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+	})
 	ResponseEntity<Void> deleteEmailIntegrationConfig(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId) {

@@ -10,6 +10,8 @@ import static java.util.Optional.ofNullable;
 import static org.apache.commons.lang3.ObjectUtils.anyNull;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -17,10 +19,6 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
-
 import se.sundsvall.supportmanagement.api.model.metadata.Category;
 import se.sundsvall.supportmanagement.api.model.metadata.ContactReason;
 import se.sundsvall.supportmanagement.api.model.metadata.ExternalIdType;

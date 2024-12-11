@@ -9,13 +9,11 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 import java.util.stream.IntStream;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
 import org.zalando.problem.Problem;
 import se.sundsvall.supportmanagement.integration.db.ErrandNumberSequenceRepository;
 import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;

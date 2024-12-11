@@ -2,8 +2,10 @@ package se.sundsvall.supportmanagement.apptest;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import java.util.List;
-
+import net.javacrumbs.jsonunit.core.Option;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,11 +15,6 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.core.io.Resource;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.web.util.UriComponentsBuilder;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
-
-import net.javacrumbs.jsonunit.core.Option;
 import se.sundsvall.dept44.util.ResourceUtils;
 import se.sundsvall.supportmanagement.Application;
 
@@ -50,10 +47,10 @@ class OpenApiSpecificationIT {
 	void compareOpenApiSpecifications() {
 		final String existingOpenApiSpecification = ResourceUtils.asString(openApiResource);
 		final String currentOpenApiSpecification = getCurrentOpenApiSpecification();
-		assertThatJson(toJson(existingOpenApiSpecification))
+		assertThatJson(toJson(currentOpenApiSpecification))
 			.withOptions(List.of(Option.IGNORING_ARRAY_ORDER))
 			.whenIgnoringPaths("servers")
-			.isEqualTo(toJson(currentOpenApiSpecification));
+			.isEqualTo(toJson(existingOpenApiSpecification));
 	}
 
 	/**
@@ -72,8 +69,8 @@ class OpenApiSpecificationIT {
 	/**
 	 * Attempts to convert the given YAML (no YAML-check...) to JSON.
 	 *
-	 * @param  yaml the YAML to convert
-	 * @return      a JSON string
+	 * @param yaml the YAML to convert
+	 * @return a JSON string
 	 */
 	private String toJson(final String yaml) {
 		try {

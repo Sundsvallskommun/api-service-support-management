@@ -2,10 +2,9 @@ package se.sundsvall.supportmanagement.api.model.communication;
 
 import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 
-import java.util.Objects;
-
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import java.util.Objects;
 import se.sundsvall.dept44.common.validators.annotation.ValidBase64;
 import se.sundsvall.supportmanagement.api.validation.ValidFileSize;
 

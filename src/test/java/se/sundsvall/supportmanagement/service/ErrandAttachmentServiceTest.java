@@ -21,6 +21,9 @@ import static org.zalando.problem.Status.NOT_FOUND;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildAttachmentEntity;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrandEntity;
 
+import jakarta.persistence.EntityManager;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,7 +32,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -42,10 +44,6 @@ import org.springframework.util.StreamUtils;
 import org.springframework.web.multipart.MultipartFile;
 import org.zalando.problem.Problem;
 import org.zalando.problem.ThrowableProblem;
-
-import jakarta.persistence.EntityManager;
-import jakarta.servlet.ServletOutputStream;
-import jakarta.servlet.http.HttpServletResponse;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;

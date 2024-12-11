@@ -11,14 +11,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
 import se.sundsvall.supportmanagement.api.model.communication.Communication;
 import se.sundsvall.supportmanagement.api.model.communication.CommunicationAttachment;
 import se.sundsvall.supportmanagement.api.model.communication.EmailAttachment;
@@ -104,7 +102,7 @@ class CommunicationMapperTest {
 		assertThat(attachments.getFirst().getMimeType()).isEqualTo("application/octet-stream");
 		assertThat(attachments.getFirst().getNamespace()).isEqualTo(NAMESPACE);
 		assertThat(attachments.getFirst().getMunicipalityId()).isEqualTo(MUNICIPALITY_ID);
-		assertThat(attachments.getFirst().getId()).isNotNull();
+		assertThat(attachments.getFirst().getId()).isNull();
 		assertThat(attachments.getFirst().getAttachmentData().getFile()).isEqualTo(entity.getAttachments().getFirst().getAttachmentData().getFile());
 	}
 

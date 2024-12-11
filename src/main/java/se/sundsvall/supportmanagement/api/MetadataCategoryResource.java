@@ -54,12 +54,13 @@ class MetadataCategoryResource {
 	}
 
 	@PostMapping(consumes = APPLICATION_JSON_VALUE, produces = ALL_VALUE)
-	@Operation(summary = "Create category", description = "Create new category for the namespace and municipality")
-	@ApiResponse(responseCode = "201", headers = @Header(name = LOCATION, schema = @Schema(type = "string")), description = "Successful operation", useReturnTypeSchema = true)
-	@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
-		Problem.class, ConstraintViolationProblem.class
-	})))
-	@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+	@Operation(summary = "Create category", description = "Create new category for the namespace and municipality", responses = {
+		@ApiResponse(responseCode = "201", headers = @Header(name = LOCATION, schema = @Schema(type = "string")), description = "Successful operation", useReturnTypeSchema = true),
+		@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
+			Problem.class, ConstraintViolationProblem.class
+		}))),
+		@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+	})
 	@Validated(OnCreate.class)
 	ResponseEntity<Void> createCategory(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE, groups = OnCreate.class) @PathVariable final String namespace,
@@ -73,12 +74,13 @@ class MetadataCategoryResource {
 	}
 
 	@GetMapping(path = "/{category}", produces = APPLICATION_JSON_VALUE)
-	@Operation(summary = "Get category", description = "Get category and connected types for the namespace and municipality")
-	@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true)
-	@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
-		Problem.class, ConstraintViolationProblem.class
-	})))
-	@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+	@Operation(summary = "Get category", description = "Get category and connected types for the namespace and municipality", responses = {
+		@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true),
+		@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
+			Problem.class, ConstraintViolationProblem.class
+		}))),
+		@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+	})
 	ResponseEntity<Category> getCategory(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
@@ -88,12 +90,13 @@ class MetadataCategoryResource {
 	}
 
 	@GetMapping(produces = APPLICATION_JSON_VALUE)
-	@Operation(summary = "Get categories and types", description = "Get all categories and their connected types for the namespace and municipality")
-	@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true)
-	@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
-		Problem.class, ConstraintViolationProblem.class
-	})))
-	@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+	@Operation(summary = "Get categories and types", description = "Get all categories and their connected types for the namespace and municipality", responses = {
+		@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true),
+		@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
+			Problem.class, ConstraintViolationProblem.class
+		}))),
+		@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+	})
 	ResponseEntity<List<Category>> getCategories(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId) {
@@ -102,9 +105,10 @@ class MetadataCategoryResource {
 	}
 
 	@GetMapping(path = "/{category}/types", produces = APPLICATION_JSON_VALUE)
-	@Operation(summary = "Get types connected to category", description = "Get all types for the namespace, municipality and category")
-	@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true)
-	@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+	@Operation(summary = "Get types connected to category", description = "Get all types for the namespace, municipality and category", responses = {
+		@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true),
+		@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+	})
 	ResponseEntity<List<Type>> getCategoryTypes(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
@@ -114,13 +118,14 @@ class MetadataCategoryResource {
 	}
 
 	@PatchMapping(path = "/{category}", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
-	@Operation(summary = "Update category", description = "Update category matching namespace, municipality and id")
-	@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true)
-	@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
-		Problem.class, ConstraintViolationProblem.class
-	})))
-	@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
-	@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+	@Operation(summary = "Update category", description = "Update category matching namespace, municipality and id", responses = {
+		@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true),
+		@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
+			Problem.class, ConstraintViolationProblem.class
+		}))),
+		@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
+		@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+	})
 	ResponseEntity<Category> updateCategory(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
@@ -131,13 +136,14 @@ class MetadataCategoryResource {
 	}
 
 	@DeleteMapping(path = "/{category}", produces = ALL_VALUE)
-	@Operation(summary = "Delete category", description = "Delete category matching namespace, municipality and id")
-	@ApiResponse(responseCode = "204", description = "Successful operation", useReturnTypeSchema = true)
-	@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
-		Problem.class, ConstraintViolationProblem.class
-	})))
-	@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
-	@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+	@Operation(summary = "Delete category", description = "Delete category matching namespace, municipality and id", responses = {
+		@ApiResponse(responseCode = "204", description = "Successful operation", useReturnTypeSchema = true),
+		@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
+			Problem.class, ConstraintViolationProblem.class
+		}))),
+		@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
+		@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+	})
 	ResponseEntity<Void> deleteCategory(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,

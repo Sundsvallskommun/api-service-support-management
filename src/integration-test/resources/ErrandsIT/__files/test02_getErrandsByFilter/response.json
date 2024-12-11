@@ -13,89 +13,95 @@
 		"sort": []
 	},
 	"sort": [],
-	"content": [{
-		"externalTags": [
-			{
-				"value": "VALUE-1",
-				"key": "KEY-1"
-			},
-			{
-				"value": "VALUE-2",
-				"key": "KEY-2"
-			}
-		],
-		"touched": "2022-01-01T12:00:00+01:00",
-		"errandNumber": "KC-23020001",
-		"escalationEmail": "ESCALATION_EMAIL_1",
-		"created": "2022-01-01T12:00:00+01:00",
-		"stakeholders": [
-			{
-				"firstName": "FIRST_NAME-1",
-				"lastName": "LAST_NAME-1",
-				"zipCode": "ZIP_CODE-2",
-				"country": "COUNTRY-2",
-				"role": "ROLE-2",
-				"address": "ADDRESS-2",
-				"careOf": "CARE_OF-2",
-				"externalId": "01e159b4-724d-40f9-91a4-9a7d021b8563",
-				"parameters": [],
-				"externalIdType": "PRIVATE",
-				"contactChannels": []
-			},
-			{
-				"firstName": "FIRST_NAME-1",
-				"lastName": "LAST_NAME-1",
-				"zipCode": "ZIP_CODE-1",
-				"country": "COUNTRY-1",
-				"role": "ROLE-1",
-				"address": "ADDRESS-1",
-				"careOf": "CARE_OF-1",
-				"externalId": "USER_ID",
-				"parameters": [{
-					"displayName": "Parameter X",
-					"values": [
-						"value-x1",
-						"value-x2"
+	"content": [
+		{
+			"externalTags": [
+				{
+					"value": "VALUE-1",
+					"key": "KEY-1"
+				},
+				{
+					"value": "VALUE-2",
+					"key": "KEY-2"
+				}
+			],
+			"touched": "2022-01-01T12:00:00+01:00",
+			"errandNumber": "KC-23020001",
+			"escalationEmail": "ESCALATION_EMAIL_1",
+			"created": "2022-01-01T12:00:00+01:00",
+			"stakeholders": [
+				{
+					"firstName": "FIRST_NAME-1",
+					"lastName": "LAST_NAME-1",
+					"zipCode": "ZIP_CODE-2",
+					"country": "COUNTRY-2",
+					"role": "ROLE-2",
+					"address": "ADDRESS-2",
+					"careOf": "CARE_OF-2",
+					"externalId": "01e159b4-724d-40f9-91a4-9a7d021b8563",
+					"parameters": [],
+					"externalIdType": "PRIVATE",
+					"contactChannels": []
+				},
+				{
+					"firstName": "FIRST_NAME-1",
+					"lastName": "LAST_NAME-1",
+					"zipCode": "ZIP_CODE-1",
+					"country": "COUNTRY-1",
+					"role": "ROLE-1",
+					"address": "ADDRESS-1",
+					"careOf": "CARE_OF-1",
+					"externalId": "USER_ID",
+					"parameters": [
+						{
+							"displayName": "Parameter X",
+							"values": [
+								"value-x1",
+								"value-x2"
+							],
+							"key": "parameterX"
+						}
 					],
-					"key": "parameterX"
-				}],
-				"externalIdType": "EMPLOYEE",
-				"contactChannels": [{
-					"type": "TYPE-1",
-					"value": "VALUE-1"
-				}]
-			}
-		],
-		"title": "TITLE-1",
-		"priority": "LOW",
-		"classification": {
-			"category": "CATEGORY-1",
-			"type": "TYPE-1"
-		},
-		"labels": [],
-		"assignedGroupId": "ASSIGNED_GROUP_ID-1",
-		"id": "ec677eb3-604c-4935-bff7-f8f0b500c8f4",
-		"businessRelated": false,
-		"reporterUserId": "REPORTER_USER_ID-1",
-		"parameters": [
-			{
-				"displayName": "Displayname 2",
-				"values": [],
-				"key": "key2"
+					"externalIdType": "EMPLOYEE",
+					"contactChannels": [
+						{
+							"type": "TYPE-1",
+							"value": "VALUE-1"
+						}
+					]
+				}
+			],
+			"title": "TITLE-1",
+			"priority": "LOW",
+			"classification": {
+				"category": "CATEGORY-1",
+				"type": "TYPE-1"
 			},
-			{
-				"displayName": "Displayname 1",
-				"values": [
-					"value1",
-					"value2"
-				],
-				"key": "key1"
-			}
-		],
-		"assignedUserId": "ASSIGNED_USER_ID-1",
-		"suspension": {},
-		"status": "STATUS-1"
-	}],
+			"labels": [],
+			"assignedGroupId": "ASSIGNED_GROUP_ID-1",
+			"id": "ec677eb3-604c-4935-bff7-f8f0b500c8f4",
+			"businessRelated": false,
+			"reporterUserId": "REPORTER_USER_ID-1",
+			"parameters": [
+				{
+					"displayName": "Displayname 2",
+					"values": [],
+					"key": "key2"
+				},
+				{
+					"displayName": "Displayname 1",
+					"values": [
+						"value1",
+						"value2"
+					],
+					"key": "key1"
+				}
+			],
+			"assignedUserId": "ASSIGNED_USER_ID-1",
+			"suspension": {},
+			"status": "STATUS-1"
+		}
+	],
 	"first": true,
 	"totalElements": 1,
 	"empty": false

@@ -8,9 +8,7 @@ import static org.assertj.core.groups.Tuple.tuple;
 
 import java.time.OffsetDateTime;
 import java.util.List;
-
 import org.junit.jupiter.api.Test;
-
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.RevisionEntity;

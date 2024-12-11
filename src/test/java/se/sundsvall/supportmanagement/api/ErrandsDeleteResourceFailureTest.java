@@ -8,16 +8,14 @@ import static org.zalando.problem.Status.BAD_REQUEST;
 
 import java.util.Map;
 import java.util.UUID;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.zalando.problem.violations.ConstraintViolationProblem;
 import org.zalando.problem.violations.Violation;
-
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.service.ErrandService;
 
@@ -34,7 +32,7 @@ class ErrandsDeleteResourceFailureTest {
 	@Autowired
 	private WebTestClient webTestClient;
 
-	@MockBean
+	@MockitoBean
 	private ErrandService errandServiceMock;
 
 	@Test

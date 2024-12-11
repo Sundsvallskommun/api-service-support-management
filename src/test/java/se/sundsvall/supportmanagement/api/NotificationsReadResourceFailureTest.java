@@ -9,16 +9,14 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.zalando.problem.Status.NOT_FOUND;
 
 import java.util.UUID;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.zalando.problem.Problem;
 import org.zalando.problem.violations.ConstraintViolationProblem;
-
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.service.NotificationService;
 
@@ -36,7 +34,7 @@ class NotificationsReadResourceFailureTest {
 	private static final String NOTIFICATION_ID = UUID.randomUUID().toString();
 	private static final String INVALID = "#invalid#";
 
-	@MockBean
+	@MockitoBean
 	private NotificationService notificationServiceMock;
 
 	@Autowired

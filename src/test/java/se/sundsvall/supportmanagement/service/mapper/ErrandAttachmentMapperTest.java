@@ -7,14 +7,12 @@ import static org.mockito.Mockito.when;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildAttachmentEntity;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrandEntity;
 
+import jakarta.persistence.EntityManager;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.sql.Blob;
 import java.util.ArrayList;
 import java.util.List;
-
-import jakarta.persistence.EntityManager;
-
 import org.hibernate.LobHelper;
 import org.hibernate.Session;
 import org.junit.jupiter.api.Test;

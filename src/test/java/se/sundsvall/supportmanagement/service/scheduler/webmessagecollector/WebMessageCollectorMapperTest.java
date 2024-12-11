@@ -5,27 +5,23 @@ import static org.assertj.core.api.Assertions.within;
 import static org.mockito.Mockito.when;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationType.WEB_MESSAGE;
 
+import generated.se.sundsvall.webmessagecollector.MessageAttachment;
+import generated.se.sundsvall.webmessagecollector.MessageDTO;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.regex.Pattern;
-
 import javax.sql.rowset.serial.SerialBlob;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.Direction;
 import se.sundsvall.supportmanagement.service.util.BlobBuilder;
 import se.sundsvall.supportmanagement.service.util.ServiceUtil;
-
-import generated.se.sundsvall.webmessagecollector.MessageAttachment;
-import generated.se.sundsvall.webmessagecollector.MessageDTO;
 
 @ExtendWith(org.mockito.junit.jupiter.MockitoExtension.class)
 class WebMessageCollectorMapperTest {

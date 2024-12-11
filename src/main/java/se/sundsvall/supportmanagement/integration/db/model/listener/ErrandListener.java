@@ -4,15 +4,14 @@ import static java.time.OffsetDateTime.now;
 import static java.time.ZoneId.systemDefault;
 import static java.time.temporal.ChronoUnit.MILLIS;
 
-import java.time.OffsetDateTime;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-
 import jakarta.persistence.PostLoad;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreRemove;
 import jakarta.persistence.PreUpdate;
+import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.TimeMeasurementEntity;
 

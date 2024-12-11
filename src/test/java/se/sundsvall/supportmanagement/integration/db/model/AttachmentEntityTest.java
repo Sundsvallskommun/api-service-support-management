@@ -12,11 +12,10 @@ import static org.assertj.core.api.Assertions.within;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.AllOf.allOf;
 
+import com.google.code.beanmatchers.BeanMatchers;
 import java.time.OffsetDateTime;
 import java.util.Random;
 import java.util.UUID;
-
-import com.google.code.beanmatchers.BeanMatchers;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mariadb.jdbc.MariaDbBlob;

@@ -3,15 +3,13 @@ package se.sundsvall.supportmanagement.integration.db.model;
 import static jakarta.persistence.GenerationType.IDENTITY;
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 
-import java.time.OffsetDateTime;
-import java.util.Objects;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-
+import java.time.OffsetDateTime;
+import java.util.Objects;
 import org.hibernate.annotations.TimeZoneStorage;
 
 @Entity

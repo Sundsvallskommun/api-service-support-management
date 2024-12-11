@@ -2,9 +2,9 @@ package se.sundsvall.supportmanagement.api.model.revision;
 
 import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 
-import java.util.Objects;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.Objects;
 import se.sundsvall.supportmanagement.api.model.revision.deserializer.RawDataDeserializer;
 
 @Schema(description = "Operation model", accessMode = READ_ONLY)

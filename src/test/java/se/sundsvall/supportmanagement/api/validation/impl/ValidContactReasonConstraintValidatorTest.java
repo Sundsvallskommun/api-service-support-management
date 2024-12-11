@@ -8,12 +8,10 @@ import static org.springframework.web.servlet.HandlerMapping.URI_TEMPLATE_VARIAB
 import static se.sundsvall.supportmanagement.api.validation.impl.AbstractTagConstraintValidator.PATHVARIABLE_MUNICIPALITY_ID;
 import static se.sundsvall.supportmanagement.api.validation.impl.AbstractTagConstraintValidator.PATHVARIABLE_NAMESPACE;
 
+import jakarta.validation.ConstraintValidatorContext;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
-
-import jakarta.validation.ConstraintValidatorContext;
-
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -24,7 +22,6 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
-
 import se.sundsvall.supportmanagement.api.model.metadata.ContactReason;
 import se.sundsvall.supportmanagement.service.MetadataService;
 

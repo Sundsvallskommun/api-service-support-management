@@ -9,8 +9,17 @@ import static org.springframework.http.ResponseEntity.ok;
 import static se.sundsvall.supportmanagement.Constants.NAMESPACE_REGEXP;
 import static se.sundsvall.supportmanagement.Constants.NAMESPACE_VALIDATION_MESSAGE;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import java.util.List;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -22,17 +31,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.zalando.problem.Problem;
 import org.zalando.problem.violations.ConstraintViolationProblem;
-
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
 import se.sundsvall.dept44.common.validators.annotation.ValidMunicipalityId;
 import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 import se.sundsvall.supportmanagement.service.ErrandParameterService;
@@ -54,9 +52,10 @@ class ErrandParameterResource {
 	}
 
 	@PatchMapping(consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
-	@Operation(summary = "Update errand parameters", description = "Creates a new errand parameter based on the supplied attributes")
-	@ApiResponse(responseCode = "200", description = "Successful Operation", useReturnTypeSchema = true)
-	@ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+	@Operation(summary = "Update errand parameters", description = "Creates a new errand parameter based on the supplied attributes", responses = {
+		@ApiResponse(responseCode = "200", description = "Successful Operation", useReturnTypeSchema = true),
+		@ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+	})
 	ResponseEntity<List<se.sundsvall.supportmanagement.api.model.errand.Parameter>> updateErrandParameters(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
@@ -67,9 +66,10 @@ class ErrandParameterResource {
 	}
 
 	@GetMapping(path = "/{parameterKey}", produces = APPLICATION_JSON_VALUE)
-	@Operation(summary = "Read errand parameter", description = "Fetches the errand parameter that matches the provided errand id and parameter id")
-	@ApiResponse(responseCode = "200", description = "Successful Operation", useReturnTypeSchema = true)
-	@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+	@Operation(summary = "Read errand parameter", description = "Fetches the errand parameter that matches the provided errand id and parameter id", responses = {
+		@ApiResponse(responseCode = "200", description = "Successful Operation", useReturnTypeSchema = true),
+		@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+	})
 	ResponseEntity<List<String>> readErrandParameter(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
@@ -80,8 +80,9 @@ class ErrandParameterResource {
 	}
 
 	@GetMapping(produces = APPLICATION_JSON_VALUE)
-	@Operation(summary = "Find errand parameters", description = "Find the errand parameters that matches the provided attributes")
-	@ApiResponse(responseCode = "200", description = "Successful Operation", useReturnTypeSchema = true)
+	@Operation(summary = "Find errand parameters", description = "Find the errand parameters that matches the provided attributes", responses = {
+		@ApiResponse(responseCode = "200", description = "Successful Operation", useReturnTypeSchema = true)
+	})
 	ResponseEntity<List<se.sundsvall.supportmanagement.api.model.errand.Parameter>> findErrandParameters(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
@@ -91,9 +92,10 @@ class ErrandParameterResource {
 	}
 
 	@PatchMapping(path = "/{parameterKey}", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
-	@Operation(summary = "Update errand parameter", description = "Updates the errand parameter matching provided errand id and parameter id with the supplied attributes")
-	@ApiResponse(responseCode = "200", description = "Successful Operation", useReturnTypeSchema = true)
-	@ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+	@Operation(summary = "Update errand parameter", description = "Updates the errand parameter matching provided errand id and parameter id with the supplied attributes", responses = {
+		@ApiResponse(responseCode = "200", description = "Successful Operation", useReturnTypeSchema = true),
+		@ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+	})
 	ResponseEntity<se.sundsvall.supportmanagement.api.model.errand.Parameter> updateErrandParameter(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
@@ -105,9 +107,10 @@ class ErrandParameterResource {
 	}
 
 	@DeleteMapping(path = "/{parameterKey}", produces = ALL_VALUE)
-	@Operation(summary = "Delete errand parameter", description = "Deletes the errand parameter that matches the provided errand id and parameter id")
-	@ApiResponse(responseCode = "204", description = "Successful operation", useReturnTypeSchema = true)
-	@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+	@Operation(summary = "Delete errand parameter", description = "Deletes the errand parameter that matches the provided errand id and parameter id", responses = {
+		@ApiResponse(responseCode = "204", description = "Successful operation", useReturnTypeSchema = true),
+		@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+	})
 	ResponseEntity<Void> deleteErrandParameter(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,

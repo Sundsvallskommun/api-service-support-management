@@ -4,7 +4,6 @@ import static java.time.OffsetDateTime.now;
 
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-
 import se.sundsvall.supportmanagement.integration.db.NotificationRepository;
 
 @Component

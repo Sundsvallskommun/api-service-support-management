@@ -20,8 +20,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.zalando.problem.Problem;
 import org.zalando.problem.violations.ConstraintViolationProblem;
@@ -53,10 +53,10 @@ class ErrandsCreateResourceFailureTest {
 	@Autowired
 	private WebTestClient webTestClient;
 
-	@MockBean
+	@MockitoBean
 	private ErrandService errandServiceMock;
 
-	@MockBean
+	@MockitoBean
 	private MetadataService metadataServiceMock;
 
 	private static Errand createErrandInstance() {

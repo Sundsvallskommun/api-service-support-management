@@ -1,18 +1,14 @@
 package se.sundsvall.supportmanagement.integration.db;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import jakarta.persistence.LockModeType;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
-
-import jakarta.persistence.LockModeType;
-
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Lock;
-
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-
-import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 
 @CircuitBreaker(name = "errandsRepository")
 public interface ErrandsRepository extends JpaRepository<ErrandEntity, String>, JpaSpecificationExecutor<ErrandEntity> {
