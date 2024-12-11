@@ -405,7 +405,7 @@
     create index idx_errand_municipality_id_namespace_reporter_user_id
        on errand (municipality_id, namespace, reporter_user_id);
 
-    create index idx_errand_number 
+    create index idx_errand_errand_number
        on errand (errand_number);
 
     create index idx_errand_municipality_id_namespace_created
