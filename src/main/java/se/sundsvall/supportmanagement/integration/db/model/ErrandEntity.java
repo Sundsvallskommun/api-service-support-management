@@ -39,7 +39,9 @@ import se.sundsvall.supportmanagement.integration.db.model.listener.ErrandListen
 		@Index(name = "idx_errand_municipality_id_namespace_type", columnList = "municipality_id,namespace,type"),
 		@Index(name = "idx_errand_municipality_id_namespace_assigned_user_id", columnList = "municipality_id,namespace,assigned_user_id"),
 		@Index(name = "idx_errand_municipality_id_namespace_reporter_user_id", columnList = "municipality_id,namespace,reporter_user_id"),
-		@Index(name = "idx_errand_number", columnList = "errand_number")
+		@Index(name = "idx_errand_errand_number", columnList = "errand_number"),
+		@Index(name = "idx_errand_municipality_id_namespace_created", columnList = "municipality_id,namespace,created"),
+		@Index(name = "idx_errand_suspended_to", columnList = "suspended_to")
 	},
 	uniqueConstraints = {
 		@UniqueConstraint(name = "uq_errand_number", columnNames = {
