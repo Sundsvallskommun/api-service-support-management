@@ -408,6 +408,12 @@
     create index idx_errand_number 
        on errand (errand_number);
 
+    create index idx_errand_municipality_id_namespace_created
+       on errand (municipality_id, namespace, created);
+
+    create index idx_errand_suspended_to
+       on errand (suspended_to);
+
     alter table if exists errand 
        add constraint uq_errand_number unique (errand_number);
 
