@@ -158,22 +158,20 @@ public class ErrandAttachmentService {
 	}
 
 	void streamAttachmentData(final AttachmentEntity attachment, final HttpServletResponse response) {
-		final int fileSize;
-		final var file = attachment.getAttachmentData().getFile();
-		try {
-			fileSize = (int) file.length();
-		} catch (final SQLException e) {
-			throw Problem.valueOf(INTERNAL_SERVER_ERROR, "%s occurred when copying file with attachment id '%s' to response: %s".formatted(e.getClass().getSimpleName(), attachment.getId(), e.getMessage()));
+		final var fileSize = attachment.getFileSize();
+
+		if (fileSize == null || fileSize == 0) {
+			throw Problem.valueOf(NOT_FOUND, "Attachment with id '%s' has no data".formatted(attachment.getId()));
 		}
+
 		try {
 			if (!semaphore.tryAcquire(fileSize, 5, TimeUnit.SECONDS)) {
 				throw Problem.valueOf(TOO_MANY_REQUESTS, "Too many files being read. Try again later.");
 			}
-
 			response.addHeader(CONTENT_TYPE, attachment.getMimeType());
 			response.addHeader(CONTENT_DISPOSITION, "attachment; filename=\"" + attachment.getFileName() + "\"");
 			response.setContentLength(fileSize);
-			StreamUtils.copy(file.getBinaryStream(), response.getOutputStream());
+			StreamUtils.copy(attachment.getAttachmentData().getFile().getBinaryStream(), response.getOutputStream());
 		} catch (final IOException | SQLException e) {
 			throw Problem.valueOf(INTERNAL_SERVER_ERROR, "%s occurred when copying file with attachment id '%s' to response: %s".formatted(e.getClass().getSimpleName(), attachment.getId(), e.getMessage()));
 		} catch (final InterruptedException e) {

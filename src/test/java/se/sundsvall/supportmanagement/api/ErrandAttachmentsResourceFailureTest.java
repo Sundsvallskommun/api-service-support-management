@@ -3,11 +3,16 @@ package se.sundsvall.supportmanagement.api;
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
 import static org.springframework.http.MediaType.TEXT_PLAIN;
 import static org.zalando.problem.Status.BAD_REQUEST;
+import static org.zalando.problem.Status.TOO_MANY_REQUESTS;
 
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -411,6 +416,32 @@ class ErrandAttachmentsResourceFailureTest {
 
 		// Verification
 		verifyNoInteractions(errandAttachmentServiceMock);
+	}
+
+	@Test
+	void getAttachmentStreamedServiceBusy() {
+
+		// Parameter values
+		final var attachmentId = randomUUID().toString();
+		doThrow(Problem.valueOf(TOO_MANY_REQUESTS, "Service is currently unavailable, please try again later."))
+			.when(errandAttachmentServiceMock).getAttachmentStreamed(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(attachmentId), any());
+
+		// ACT
+		final var response = webTestClient.get()
+			.uri(uriBuilder -> uriBuilder.path(PATH.concat("/{attachmentId}/streamed"))
+				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", ERRAND_ID, "attachmentId", attachmentId)))
+			.exchange()
+			.expectStatus().is4xxClientError()
+			.expectBody(Problem.class)
+			.returnResult().getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Too Many Requests");
+		assertThat(response.getStatus()).isEqualTo(TOO_MANY_REQUESTS);
+		assertThat(response.getDetail()).isEqualTo("Service is currently unavailable, please try again later.");
+
+		// Verification
+		verify(errandAttachmentServiceMock).getAttachmentStreamed(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(attachmentId), any());
 	}
 
 }

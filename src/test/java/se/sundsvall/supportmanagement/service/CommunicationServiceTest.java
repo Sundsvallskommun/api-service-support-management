@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.service;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.UUID.randomUUID;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.groups.Tuple.tuple;
@@ -249,9 +250,9 @@ class CommunicationServiceTest {
 		when(communicationAttachmentDataEntityMock.getFile()).thenReturn(blobMock);
 		when(communicationAttachmentEntityMock.getCommunicationEntity()).thenReturn(communicationEntityMock);
 		when(communicationEntityMock.getErrandNumber()).thenReturn(errandNumber);
-		when(blobMock.length()).thenReturn((long) content.length());
 		when(blobMock.getBinaryStream()).thenReturn(inputStream);
 		when(servletResponseMock.getOutputStream()).thenReturn(servletOutputStreamMock);
+		when(communicationAttachmentEntityMock.getFileSize()).thenReturn(content.length());
 		when(semaphoreMock.tryAcquire(content.length(), 5, java.util.concurrent.TimeUnit.SECONDS)).thenReturn(true);
 
 		// Call
@@ -263,7 +264,6 @@ class CommunicationServiceTest {
 		verify(communicationAttachmentRepositoryMock).findByNamespaceAndMunicipalityIdAndCommunicationEntityIdAndId(NAMESPACE, MUNICIPALITY_ID, communicationId, attachmentId);
 		verify(communicationAttachmentEntityMock).getAttachmentData();
 		verify(communicationAttachmentDataEntityMock).getFile();
-		verify(blobMock).length();
 		verify(blobMock).getBinaryStream();
 		verify(servletResponseMock).addHeader(CONTENT_TYPE, contentType);
 		verify(servletResponseMock).addHeader(CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"");
@@ -282,10 +282,10 @@ class CommunicationServiceTest {
 		when(servletResponseMock.getOutputStream()).thenReturn(servletOutputStreamMock);
 		when(communicationAttachmentEntityMock.getAttachmentData()).thenReturn(communicationAttachmentDataEntityMock);
 		when(communicationAttachmentDataEntityMock.getFile()).thenReturn(blobMock);
-		when(blobMock.length()).thenReturn((long) fileContent.length);
 		when(blobMock.getBinaryStream()).thenReturn(inputStream);
 		when(communicationAttachmentEntityMock.getContentType()).thenReturn("application/pdf");
 		when(communicationAttachmentEntityMock.getName()).thenReturn("test.pdf");
+		when(communicationAttachmentEntityMock.getFileSize()).thenReturn(fileContent.length);
 		when(semaphoreMock.tryAcquire(fileContent.length, 5, java.util.concurrent.TimeUnit.SECONDS)).thenReturn(true);
 
 		service.streamCommunicationAttachmentData(communicationAttachmentEntityMock, servletResponseMock);
@@ -301,8 +301,8 @@ class CommunicationServiceTest {
 		final byte[] fileContent = "file content".getBytes();
 		when(communicationAttachmentEntityMock.getAttachmentData()).thenReturn(communicationAttachmentDataEntityMock);
 		when(communicationAttachmentDataEntityMock.getFile()).thenReturn(blobMock);
-		when(blobMock.length()).thenReturn((long) fileContent.length);
 		when(blobMock.getBinaryStream()).thenThrow(new SQLException("Test SQLException"));
+		when(communicationAttachmentEntityMock.getFileSize()).thenReturn(fileContent.length);
 		when(semaphoreMock.tryAcquire(fileContent.length, 5, java.util.concurrent.TimeUnit.SECONDS)).thenReturn(true);
 
 		assertThatThrownBy(() -> service.streamCommunicationAttachmentData(communicationAttachmentEntityMock, servletResponseMock))
@@ -310,6 +310,43 @@ class CommunicationServiceTest {
 			.hasMessageContaining("SQLException occurred when copying file with attachment id");
 
 		verify(servletResponseMock, never()).addHeader(eq(CONTENT_TYPE), anyString());
+	}
+
+	@Test
+	void streamAttachmentDataFileSizeNull() {
+		when(communicationAttachmentEntityMock.getFileSize()).thenReturn(null);
+		when(communicationAttachmentEntityMock.getId()).thenReturn("attachmentId");
+
+		assertThatThrownBy(() -> service.streamCommunicationAttachmentData(communicationAttachmentEntityMock, servletResponseMock))
+			.isInstanceOf(Problem.class)
+			.hasMessageContaining("Attachment with id 'attachmentId' has no data");
+
+		verify(servletResponseMock, never()).addHeader(eq(CONTENT_TYPE), anyString());
+	}
+
+	@Test
+	void streamAttachmentDataFileSizeZero() {
+		when(communicationAttachmentEntityMock.getFileSize()).thenReturn(0);
+		when(communicationAttachmentEntityMock.getId()).thenReturn("attachmentId");
+
+		assertThatThrownBy(() -> service.streamCommunicationAttachmentData(communicationAttachmentEntityMock, servletResponseMock))
+			.isInstanceOf(Problem.class)
+			.hasMessageContaining("Attachment with id 'attachmentId' has no data");
+
+		verify(servletResponseMock, never()).addHeader(eq(CONTENT_TYPE), anyString());
+	}
+
+	@Test
+	void streamAttachmentDataBusy() throws InterruptedException {
+		// Arrange
+		final byte[] fileContent = "file content".getBytes();
+		when(communicationAttachmentEntityMock.getFileSize()).thenReturn(fileContent.length);
+		when(semaphoreMock.tryAcquire(fileContent.length, 5, SECONDS)).thenReturn(false);
+
+		// Act and Assert
+		assertThatThrownBy(() -> service.streamCommunicationAttachmentData(communicationAttachmentEntityMock, servletResponseMock))
+			.isInstanceOf(Problem.class)
+			.hasMessageContaining("Too many files being read. Try again later.");
 	}
 
 	@Test

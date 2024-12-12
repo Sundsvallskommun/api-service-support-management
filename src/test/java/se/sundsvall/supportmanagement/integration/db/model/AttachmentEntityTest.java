@@ -47,6 +47,7 @@ class AttachmentEntityTest {
 		final var errandEntity = ErrandEntity.create().withId(UUID.randomUUID().toString());
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
+		final var fileSize = 100;
 
 		final var attachmentEntity = AttachmentEntity.create()
 			.withId(id)
@@ -57,7 +58,8 @@ class AttachmentEntityTest {
 			.withMimeType(mimeType)
 			.withErrandEntity(errandEntity)
 			.withCreated(now().truncatedTo(SECONDS))
-			.withModified(now().truncatedTo(SECONDS));
+			.withModified(now().truncatedTo(SECONDS))
+			.withFileSize(fileSize);
 
 		assertThat(attachmentEntity).hasNoNullFieldsOrProperties();
 		assertThat(attachmentEntity.getId()).isEqualTo(id);
@@ -67,6 +69,7 @@ class AttachmentEntityTest {
 		assertThat(attachmentEntity.getAttachmentData()).isEqualTo(file);
 		assertThat(attachmentEntity.getMimeType()).isEqualTo(mimeType);
 		assertThat(attachmentEntity.getErrandEntity()).isEqualTo(errandEntity);
+		assertThat(attachmentEntity.getFileSize()).isEqualTo(fileSize);
 	}
 
 	@Test

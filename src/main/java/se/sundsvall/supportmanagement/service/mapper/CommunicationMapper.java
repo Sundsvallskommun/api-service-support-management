@@ -78,6 +78,7 @@ public class CommunicationMapper {
 				.withNamespace(communicationEntity.getNamespace())
 				.withMunicipalityId(communicationEntity.getMunicipalityId())
 				.withMimeType(attachment.getContentType())
+				.withFileSize(attachment.getFileSize())
 				.withAttachmentData(new AttachmentDataEntity()
 					.withFile(attachment.getAttachmentData().getFile())))
 			.toList();
@@ -179,9 +180,9 @@ public class CommunicationMapper {
 			.withMunicipalityId(municipalityId)
 			.withId(UUID.randomUUID().toString())
 			.withName(attachment.getName())
+			.withFileSize(attachment.getBase64EncodedString().length())
 			.withAttachmentData(toMessageAttachmentData(attachment))
-			.withContentType(detectMimeType(attachment.getName(), byteArray))
-			.withAttachmentData(toMessageAttachmentData(attachment));
+			.withContentType(detectMimeType(attachment.getName(), byteArray));
 	}
 
 	private CommunicationAttachmentDataEntity toMessageAttachmentData(final RequestAttachment attachment) {

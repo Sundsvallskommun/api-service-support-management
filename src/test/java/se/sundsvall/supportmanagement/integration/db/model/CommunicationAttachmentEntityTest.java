@@ -37,6 +37,7 @@ class CommunicationAttachmentEntityTest {
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
 		final var foreignId = "foreignId";
+		final var fileSize = 100;
 
 		final var entity = CommunicationAttachmentEntity.create()
 			.withId(id)
@@ -46,7 +47,8 @@ class CommunicationAttachmentEntityTest {
 			.withContentType(contentType)
 			.withNamespace(namespace)
 			.withMunicipalityId(municipalityId)
-			.withForeignId(foreignId);
+			.withForeignId(foreignId)
+			.withFileSize(fileSize);
 
 		assertThat(entity).hasNoNullFieldsOrProperties();
 		assertThat(entity.getId()).isEqualTo(id);
@@ -57,6 +59,7 @@ class CommunicationAttachmentEntityTest {
 		assertThat(entity.getNamespace()).isEqualTo(namespace);
 		assertThat(entity.getMunicipalityId()).isEqualTo(municipalityId);
 		assertThat(entity.getForeignId()).isEqualTo(foreignId);
+		assertThat(entity.getFileSize()).isEqualTo(fileSize);
 	}
 
 	@Test

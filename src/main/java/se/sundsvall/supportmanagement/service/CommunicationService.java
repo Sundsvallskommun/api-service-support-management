@@ -102,13 +102,12 @@ public class CommunicationService {
 
 	void streamCommunicationAttachmentData(final CommunicationAttachmentEntity attachment, final HttpServletResponse response) {
 
-		final var file = attachment.getAttachmentData().getFile();
-		final int fileLength;
-		try {
-			fileLength = (int) file.length();
-		} catch (final SQLException e) {
-			throw Problem.valueOf(INTERNAL_SERVER_ERROR, "%s occurred when copying file with attachment id '%s' to response: %s".formatted(e.getClass().getSimpleName(), attachment.getId(), e.getMessage()));
+		final var fileLength = attachment.getFileSize();
+
+		if (fileLength == null || fileLength == 0) {
+			throw Problem.valueOf(NOT_FOUND, "Attachment with id '%s' has no data".formatted(attachment.getId()));
 		}
+
 		try {
 			if (!semaphore.tryAcquire(fileLength, 5, TimeUnit.SECONDS)) {
 				throw Problem.valueOf(TOO_MANY_REQUESTS, "Too many files being read. Try again later.");
@@ -116,7 +115,7 @@ public class CommunicationService {
 			response.addHeader(CONTENT_TYPE, attachment.getContentType());
 			response.addHeader(CONTENT_DISPOSITION, "attachment; filename=\"" + attachment.getName() + "\"");
 			response.setContentLength(fileLength);
-			StreamUtils.copy(file.getBinaryStream(), response.getOutputStream());
+			StreamUtils.copy(attachment.getAttachmentData().getFile().getBinaryStream(), response.getOutputStream());
 		} catch (final IOException | SQLException e) {
 			throw Problem.valueOf(INTERNAL_SERVER_ERROR, "%s occurred when copying file with attachment id '%s' to response: %s".formatted(e.getClass().getSimpleName(), attachment.getId(), e.getMessage()));
 		} catch (final InterruptedException e) {

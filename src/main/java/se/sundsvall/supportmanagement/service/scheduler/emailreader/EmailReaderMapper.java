@@ -94,6 +94,7 @@ public class EmailReaderMapper {
 				.withNamespace(errand.getNamespace())
 				.withId(randomUUID().toString())
 				.withName(attachment.getName())
+				.withFileSize(attachment.getContent().length())
 				.withAttachmentData(toMessageAttachmentData(attachment))
 				.withContentType(attachment.getContentType()))
 			.toList();

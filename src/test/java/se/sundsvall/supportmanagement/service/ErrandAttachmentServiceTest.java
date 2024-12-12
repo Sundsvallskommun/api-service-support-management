@@ -177,7 +177,7 @@ class ErrandAttachmentServiceTest {
 		when(httpServletResponseMock.getOutputStream()).thenReturn(outputStreamMock);
 		final var inputStreamMock = Mockito.mock(InputStream.class);
 		when(blobMock.getBinaryStream()).thenReturn(inputStreamMock);
-		when(blobMock.length()).thenReturn(123L);
+		when(attachmentMock.getFileSize()).thenReturn(123);
 		when(semaphoreMock.tryAcquire(123, 5, SECONDS)).thenReturn(true);
 
 		// Call
@@ -352,9 +352,9 @@ class ErrandAttachmentServiceTest {
 		when(attachmentMock.getFileName()).thenReturn(fileName);
 		when(attachmentMock.getAttachmentData()).thenReturn(attachmentDataEntityMock);
 		when(attachmentDataEntityMock.getFile()).thenReturn(blobMock);
-		when(blobMock.length()).thenReturn((long) content.length());
 		when(blobMock.getBinaryStream()).thenReturn(inputStream);
 		when(httpServletResponseMock.getOutputStream()).thenReturn(servletOutputStreamMock);
+		when(attachmentMock.getFileSize()).thenReturn(content.length());
 		when(semaphoreMock.tryAcquire(content.length(), 5, SECONDS)).thenReturn(true);
 
 		// Call
@@ -364,7 +364,6 @@ class ErrandAttachmentServiceTest {
 		verify(attachmentRepositoryMock).findByNamespaceAndMunicipalityIdAndErrandEntityIdAndId(NAMESPACE, MUNICIPALITY_ID, errandId, attachmentId);
 		verify(attachmentMock).getAttachmentData();
 		verify(attachmentDataEntityMock).getFile();
-		verify(blobMock).length();
 		verify(blobMock).getBinaryStream();
 		verify(httpServletResponseMock).addHeader(CONTENT_TYPE, contentType);
 		verify(httpServletResponseMock).addHeader(CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"");
@@ -383,10 +382,10 @@ class ErrandAttachmentServiceTest {
 		when(httpServletResponseMock.getOutputStream()).thenReturn(servletOutputStreamMock);
 		when(attachmentMock.getAttachmentData()).thenReturn(attachmentDataEntityMock);
 		when(attachmentDataEntityMock.getFile()).thenReturn(blobMock);
-		when(blobMock.length()).thenReturn((long) fileContent.length);
 		when(blobMock.getBinaryStream()).thenReturn(inputStream);
 		when(attachmentMock.getMimeType()).thenReturn("application/pdf");
 		when(attachmentMock.getFileName()).thenReturn("test.pdf");
+		when(attachmentMock.getFileSize()).thenReturn(fileContent.length);
 		when(semaphoreMock.tryAcquire(fileContent.length, 5, SECONDS)).thenReturn(true);
 
 		service.streamAttachmentData(attachmentMock, httpServletResponseMock);
@@ -402,8 +401,8 @@ class ErrandAttachmentServiceTest {
 		final byte[] fileContent = "file content".getBytes();
 		when(attachmentMock.getAttachmentData()).thenReturn(attachmentDataEntityMock);
 		when(attachmentDataEntityMock.getFile()).thenReturn(blobMock);
-		when(blobMock.length()).thenReturn((long) fileContent.length);
 		when(blobMock.getBinaryStream()).thenThrow(new SQLException("Test SQLException"));
+		when(attachmentMock.getFileSize()).thenReturn(fileContent.length);
 		when(semaphoreMock.tryAcquire(fileContent.length, 5, SECONDS)).thenReturn(true);
 
 		assertThatThrownBy(() -> service.streamAttachmentData(attachmentMock, httpServletResponseMock))
@@ -414,12 +413,34 @@ class ErrandAttachmentServiceTest {
 	}
 
 	@Test
-	void streamAttachmentDataBusy() throws SQLException, InterruptedException {
+	void streamAttachmentDataFileSizeNull() {
+		when(attachmentMock.getFileSize()).thenReturn(null);
+		when(attachmentMock.getId()).thenReturn("attachmentId");
+
+		assertThatThrownBy(() -> service.streamAttachmentData(attachmentMock, httpServletResponseMock))
+			.isInstanceOf(Problem.class)
+			.hasMessageContaining("Attachment with id 'attachmentId' has no data");
+
+		verify(httpServletResponseMock, never()).addHeader(eq(CONTENT_TYPE), anyString());
+	}
+
+	@Test
+	void streamAttachmentDataFileSizeZero() {
+		when(attachmentMock.getFileSize()).thenReturn(0);
+		when(attachmentMock.getId()).thenReturn("attachmentId");
+
+		assertThatThrownBy(() -> service.streamAttachmentData(attachmentMock, httpServletResponseMock))
+			.isInstanceOf(Problem.class)
+			.hasMessageContaining("Attachment with id 'attachmentId' has no data");
+
+		verify(httpServletResponseMock, never()).addHeader(eq(CONTENT_TYPE), anyString());
+	}
+
+	@Test
+	void streamAttachmentDataBusy() throws InterruptedException {
 		// Arrange
 		final byte[] fileContent = "file content".getBytes();
-		when(attachmentMock.getAttachmentData()).thenReturn(attachmentDataEntityMock);
-		when(attachmentDataEntityMock.getFile()).thenReturn(blobMock);
-		when(blobMock.length()).thenReturn((long) fileContent.length);
+		when(attachmentMock.getFileSize()).thenReturn(fileContent.length);
 		when(semaphoreMock.tryAcquire(fileContent.length, 5, SECONDS)).thenReturn(false);
 
 		// Act and Assert
@@ -429,14 +450,12 @@ class ErrandAttachmentServiceTest {
 	}
 
 	@Test
-	void readErrandAttachmentBusy() throws SQLException, InterruptedException {
+	void readErrandAttachmentBusy() throws InterruptedException {
 		// Arrange
 		final byte[] fileContent = "file content".getBytes();
 		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
 		when(attachmentRepositoryMock.findById(ATTACHMENT_ID)).thenReturn(of(attachmentMock));
-		when(attachmentMock.getAttachmentData()).thenReturn(attachmentDataEntityMock);
-		when(attachmentDataEntityMock.getFile()).thenReturn(blobMock);
-		when(blobMock.length()).thenReturn((long) fileContent.length);
+		when(attachmentMock.getFileSize()).thenReturn(fileContent.length);
 		when(semaphoreMock.tryAcquire(fileContent.length, 5, SECONDS)).thenReturn(false);
 
 		// Act and Assert

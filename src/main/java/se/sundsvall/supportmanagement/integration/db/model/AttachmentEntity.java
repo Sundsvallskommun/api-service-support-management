@@ -55,6 +55,9 @@ public class AttachmentEntity {
 	@Column(name = "mime_type")
 	private String mimeType;
 
+	@Column(name = "file_size")
+	private Integer fileSize;
+
 	@OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
 	@JoinColumn(name = "attachment_data_id", nullable = false, foreignKey = @ForeignKey(name = "fk_attachment_data_attachment"))
 	private AttachmentDataEntity attachmentData;
@@ -202,20 +205,32 @@ public class AttachmentEntity {
 		return this;
 	}
 
+	public Integer getFileSize() {
+		return fileSize;
+	}
+
+	public void setFileSize(final Integer fileSize) {
+		this.fileSize = fileSize;
+	}
+
+	public AttachmentEntity withFileSize(final Integer fileSize) {
+		this.fileSize = fileSize;
+		return this;
+	}
+
 	@Override
 	public boolean equals(final Object o) {
-		if (this == o)
-			return true;
 		if (o == null || getClass() != o.getClass())
 			return false;
 		final AttachmentEntity that = (AttachmentEntity) o;
-		return Objects.equals(id, that.id) && Objects.equals(namespace, that.namespace) && Objects.equals(municipalityId, that.municipalityId) && Objects.equals(fileName, that.fileName) && Objects.equals(mimeType, that.mimeType) && Objects.equals(
-			attachmentData, that.attachmentData) && Objects.equals(created, that.created) && Objects.equals(modified, that.modified) && Objects.equals(errandEntity, that.errandEntity);
+		return Objects.equals(id, that.id) && Objects.equals(namespace, that.namespace) && Objects.equals(municipalityId, that.municipalityId) && Objects.equals(fileName, that.fileName) && Objects.equals(
+			mimeType, that.mimeType) && Objects.equals(fileSize, that.fileSize) && Objects.equals(attachmentData, that.attachmentData) && Objects.equals(created, that.created) && Objects.equals(modified, that.modified)
+			&& Objects.equals(errandEntity, that.errandEntity);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, namespace, municipalityId, fileName, mimeType, attachmentData, created, modified, errandEntity);
+		return Objects.hash(id, namespace, municipalityId, fileName, mimeType, fileSize, attachmentData, created, modified, errandEntity);
 	}
 
 	@Override
@@ -226,10 +241,11 @@ public class AttachmentEntity {
 			", municipalityId='" + municipalityId + '\'' +
 			", fileName='" + fileName + '\'' +
 			", mimeType='" + mimeType + '\'' +
+			", fileSize=" + fileSize +
 			", attachmentData=" + attachmentData +
 			", created=" + created +
 			", modified=" + modified +
+			", errandEntity=" + errandEntity +
 			'}';
 	}
-
 }

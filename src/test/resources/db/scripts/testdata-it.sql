@@ -184,21 +184,21 @@ VALUES ('1',
 -------------------------------------
 -- Attachment
 -------------------------------------
-INSERT INTO attachment(id, attachment_data_id, file_name, mime_type, errand_id, namespace, municipality_id)
+INSERT INTO attachment(id, attachment_data_id, file_name, mime_type, errand_id, namespace, municipality_id, file_size)
 VALUES ('25d266a7-1ff2-4bf4-b6f3-0473b2b86fcd', '1', 'Test_image.jpg', 'image/jpeg',
-        'ec677eb3-604c-4935-bff7-f8f0b500c8f4', 'NAMESPACE.1', '2281'),
+        'ec677eb3-604c-4935-bff7-f8f0b500c8f4', 'NAMESPACE.1', '2281',5068),
        ('c697642d-4d8d-4b07-8816-025a2734b09a', '2', 'Test.txt', 'text/plain',
-        'cc236cf1-c00f-4479-8341-ecf5dd90b5b9', 'NAMESPACE.1', '2281'),
+        'cc236cf1-c00f-4479-8341-ecf5dd90b5b9', 'NAMESPACE.1', '2281',274),
        ('c8d88089-5136-4a1a-aa10-5f435cb6e69f', '3', 'Test2.txt', 'text/plain',
-        'cc236cf1-c00f-4479-8341-ecf5dd90b5b9', 'NAMESPACE.1', '2281'),
+        'cc236cf1-c00f-4479-8341-ecf5dd90b5b9', 'NAMESPACE.1', '2281', 274),
        ('99fa4dd0-9308-4d45-bb8e-4bb881a9a536', '4', 'Test3.txt', 'text/plain',
-        '1be673c0-6ba3-4fb0-af4a-43acf23389f6', 'NAMESPACE.1', '2281'),
+        '1be673c0-6ba3-4fb0-af4a-43acf23389f6', 'NAMESPACE.1', '2281',274),
        ('95ea267a-28ec-4636-922c-a717d79bd029', '5', 'birthday-card.txt', 'text/plain',
-        '147d355f-dc94-4fde-a4cb-9ddd16cb1946', 'NAMESPACE.1', '2281'),
+        '147d355f-dc94-4fde-a4cb-9ddd16cb1946', 'NAMESPACE.1', '2281',13),
        ('b3b3b3b3-b3b3-b3b3-b3b3-b3b3b3b3b3b3', '1', 'Test_image.jpg', 'image/jpeg',
-        '147d355f-dc94-4fde-a4cb-9ddd16cb1946', 'NAMESPACE.1', '2281'),
+        '147d355f-dc94-4fde-a4cb-9ddd16cb1946', 'NAMESPACE.1', '2281',5068),
        ('1c49e30d-50d9-468f-89f3-3e3b87ea93e2', '6', 'data.txt', 'text/plain',
-        'b481b191-dd37-47ca-b417-ed3a56ba724c', 'NAMESPACE.1', '2281');
+        'b481b191-dd37-47ca-b417-ed3a56ba724c', 'NAMESPACE.1', '2281',4);
 
 
 -- Revision
@@ -241,9 +241,9 @@ VALUES (1, UNHEX('48656C6C6F20576F726C6421')), -- 'Hello World!' in hexadecimal
 -- Communication_attachment
 -------------------------------------
 INSERT INTO communication_attachment(communication_attachment_data_id, id,
-                                     communication_id, content_type, name, namespace, municipality_id)
-VALUES (1, '896a44d8-724b-11ed-a840-0242ac110002', 'cc236cf1-c00f-4479-8341-ecf5dd90b5b9', 'text/plain', 'attachment1', 'NAMESPACE.1', '2281'),
-       (2, '05b29c30-4512-46c0-9d82-d0f11cb04bae', '59328e70-4297-4bb5-ba69-cb17f2d15a17', 'image/png', 'attachment2', 'NAMESPACE.1', '2281');
+                                     communication_id, content_type, name, namespace, municipality_id, file_size)
+VALUES (1, '896a44d8-724b-11ed-a840-0242ac110002', 'cc236cf1-c00f-4479-8341-ecf5dd90b5b9', 'text/plain', 'attachment1', 'NAMESPACE.1', '2281',12),
+       (2, '05b29c30-4512-46c0-9d82-d0f11cb04bae', '59328e70-4297-4bb5-ba69-cb17f2d15a17', 'image/png', 'attachment2', 'NAMESPACE.1', '2281',4437);
 
 -- Insert into communication_email_header
 INSERT INTO communication_email_header (communication_id, id, header_key)

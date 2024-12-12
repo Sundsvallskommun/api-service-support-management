@@ -134,7 +134,8 @@ class ErrandCommunicationResource {
 	@GetMapping(path = "/{communicationId}/attachments/{attachmentId}/streamed", produces = ALL_VALUE)
 	@Operation(summary = "Get a streamed communication attachment.", description = "Fetches the communication attachment that matches the provided id in a streamed manner", responses = {
 		@ApiResponse(responseCode = "200", description = "Successful Operation", useReturnTypeSchema = true),
-		@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+		@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
+		@ApiResponse(responseCode = "429", description = "Too Many Requests", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	})
 	void getMessageAttachmentStreamed(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,

@@ -49,6 +49,9 @@ public class CommunicationAttachmentEntity {
 	@Transient
 	private String foreignId;
 
+	@Column(name = "file_size")
+	private Integer fileSize;
+
 	@OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
 	@JoinColumn(name = "communication_attachment_data_id", nullable = false, foreignKey = @ForeignKey(name = "fk_communication_attachment_data_communication_attachment"))
 	private CommunicationAttachmentDataEntity attachmentData;
@@ -156,30 +159,42 @@ public class CommunicationAttachmentEntity {
 		return foreignId;
 	}
 
-	public void setForeignId(String foreignId) {
+	public void setForeignId(final String foreignId) {
 		this.foreignId = foreignId;
 	}
 
-	public CommunicationAttachmentEntity withForeignId(String foreignId) {
+	public CommunicationAttachmentEntity withForeignId(final String foreignId) {
 		this.foreignId = foreignId;
+		return this;
+	}
+
+	public Integer getFileSize() {
+		return fileSize;
+	}
+
+	public void setFileSize(final Integer fileSize) {
+		this.fileSize = fileSize;
+	}
+
+	public CommunicationAttachmentEntity withFileSize(final Integer fileSize) {
+		this.fileSize = fileSize;
 		return this;
 	}
 
 	@Override
 	public boolean equals(final Object o) {
-		if (this == o)
-			return true;
 		if (o == null || getClass() != o.getClass())
 			return false;
 		final CommunicationAttachmentEntity that = (CommunicationAttachmentEntity) o;
-		return Objects.equals(id, that.id) && Objects.equals(namespace, that.namespace) && Objects.equals(municipalityId, that.municipalityId) && Objects.equals(name, that.name) && Objects.equals(contentType, that.contentType) && Objects.equals(
-			attachmentData, that.attachmentData) && Objects.equals(communicationEntity, that.communicationEntity) && Objects.equals(foreignId, that.foreignId);
+		return Objects.equals(id, that.id) && Objects.equals(namespace, that.namespace) && Objects.equals(municipalityId, that.municipalityId) && Objects.equals(name, that.name) && Objects.equals(contentType,
+			that.contentType) && Objects.equals(foreignId, that.foreignId) && Objects.equals(fileSize, that.fileSize) && Objects.equals(attachmentData, that.attachmentData) && Objects.equals(communicationEntity,
+				that.communicationEntity);
 	}
 
 	@Override
 	public int hashCode() {
 		final var communicationId = Optional.ofNullable(communicationEntity).map(CommunicationEntity::getId).orElse(null);
-		return Objects.hash(id, communicationId, namespace, municipalityId, attachmentData, name, contentType, foreignId);
+		return Objects.hash(id, namespace, municipalityId, name, contentType, foreignId, fileSize, attachmentData, communicationId);
 	}
 
 	@Override
@@ -194,6 +209,7 @@ public class CommunicationAttachmentEntity {
 			", name='" + name + '\'' +
 			", contentType='" + contentType + '\'' +
 			", foreignId='" + foreignId + '\'' +
+			", fileSize=" + fileSize + '\'' +
 			'}';
 	}
 

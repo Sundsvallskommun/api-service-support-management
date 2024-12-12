@@ -45,7 +45,7 @@ public class WebMessageCollectorWorker {
 	}
 
 	@Transactional
-	public void processMessage(MessageDTO message, String municipalityId) {
+	public void processMessage(final MessageDTO message, final String municipalityId) {
 
 		final var entity = errandsRepository.findOne(hasMatchingTags(List.of(
 			DbExternalTag.create().withKey("caseId").withValue(message.getExternalCaseId()),
@@ -75,6 +75,7 @@ public class WebMessageCollectorWorker {
 
 	private void addAttachment(final CommunicationAttachmentEntity attachment) {
 		final var attachmentData = webMessageCollectorClient.getAttachment(attachment.getMunicipalityId(), Integer.parseInt(attachment.getForeignId()));
-		attachment.setAttachmentData(webMessageCollectorMapper.toCommunicationAttachmentDataEntity(attachmentData));
+		attachment.withAttachmentData(webMessageCollectorMapper.toCommunicationAttachmentDataEntity(attachmentData))
+			.withFileSize(attachmentData.length);
 	}
 }
