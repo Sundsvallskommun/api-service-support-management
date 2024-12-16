@@ -10,7 +10,6 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import org.springframework.stereotype.Component;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationAttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationAttachmentEntity;
@@ -32,7 +31,6 @@ public class WebMessageCollectorMapper {
 	CommunicationEntity toCommunicationEntity(final MessageDTO messageDTO, final ErrandEntity errand) {
 		final var communicationEntity = CommunicationEntity.create()
 			.withSender(messageDTO.getFirstName() + " " + messageDTO.getLastName())
-			.withId(UUID.randomUUID().toString())
 			.withDirection(Direction.INBOUND)
 			.withErrandNumber(errand.getErrandNumber())
 			.withMunicipalityId(errand.getMunicipalityId())
@@ -56,7 +54,6 @@ public class WebMessageCollectorMapper {
 		return CommunicationAttachmentEntity.create()
 			.withMunicipalityId(communicationEntity.getMunicipalityId())
 			.withNamespace(communicationEntity.getNamespace())
-			.withId(UUID.randomUUID().toString())
 			.withForeignId(attachment.getAttachmentId().toString())
 			.withCommunicationEntity(communicationEntity)
 			.withContentType(attachment.getMimeType())

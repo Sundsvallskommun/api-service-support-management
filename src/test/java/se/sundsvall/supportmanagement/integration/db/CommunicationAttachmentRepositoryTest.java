@@ -26,7 +26,6 @@ class CommunicationAttachmentRepositoryTest {
 	void create() {
 		// Setup
 		final var communicationAttachmentEntity = CommunicationAttachmentEntity.create()
-			.withId("id")
 			.withName("name")
 			.withContentType("contentType");
 
@@ -34,8 +33,7 @@ class CommunicationAttachmentRepositoryTest {
 		final var persistedEntity = communicationAttachmentRepository.save(communicationAttachmentEntity);
 
 		// Assertions
-		assertThat(persistedEntity).isNotNull();
-		assertThat(persistedEntity.getId()).isEqualTo("id");
+		assertThat(persistedEntity).isNotNull().hasAllNullFieldsOrPropertiesExcept("id", "name", "contentType");
 		assertThat(persistedEntity.getName()).isEqualTo("name");
 		assertThat(persistedEntity.getContentType()).isEqualTo("contentType");
 	}

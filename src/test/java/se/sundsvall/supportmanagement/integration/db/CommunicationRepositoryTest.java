@@ -6,14 +6,15 @@ import static org.assertj.core.api.Assertions.within;
 
 import java.time.OffsetDateTime;
 import java.util.List;
-import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.transaction.annotation.Transactional;
+import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationAttachmentEntity;
+import se.sundsvall.supportmanagement.integration.db.model.CommunicationEmailHeaderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.Direction;
@@ -34,7 +35,10 @@ class CommunicationRepositoryTest {
 	void create() {
 		// Setup
 		final var communicationEntity = CommunicationEntity.create()
-			.withId("id")
+			.withMunicipalityId("municipalityId")
+			.withNamespace("namespace")
+			.withErrandAttachments(List.of(AttachmentEntity.create()))
+			.withEmailHeaders(List.of(CommunicationEmailHeaderEntity.create()))
 			.withSender("sender")
 			.withErrandNumber("errandNumber")
 			.withDirection(Direction.INBOUND)
@@ -45,14 +49,13 @@ class CommunicationRepositoryTest {
 			.withType(CommunicationType.EMAIL)
 			.withTarget("target")
 			.withViewed(true)
-			.withAttachments(List.of(CommunicationAttachmentEntity.create().withId(UUID.randomUUID().toString())));
+			.withAttachments(List.of(CommunicationAttachmentEntity.create()));
 
 		// Execution
 		final var persistedEntity = communicationRepository.save(communicationEntity);
 
 		// Assertions
-		assertThat(persistedEntity).isNotNull();
-		assertThat(persistedEntity.getId()).isEqualTo("id");
+		assertThat(persistedEntity).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(persistedEntity.getSender()).isEqualTo("sender");
 		assertThat(persistedEntity.getErrandNumber()).isEqualTo("errandNumber");
 		assertThat(persistedEntity.getDirection()).isEqualTo(Direction.INBOUND);
@@ -64,6 +67,10 @@ class CommunicationRepositoryTest {
 		assertThat(persistedEntity.getTarget()).isEqualTo("target");
 		assertThat(persistedEntity.isViewed()).isTrue();
 		assertThat(persistedEntity.getAttachments()).hasSize(1);
+		assertThat(persistedEntity.getEmailHeaders()).hasSize(1);
+		assertThat(persistedEntity.getErrandAttachments()).hasSize(1);
+		assertThat(persistedEntity.getNamespace()).isEqualTo("namespace");
+		assertThat(persistedEntity.getMunicipalityId()).isEqualTo("municipalityId");
 	}
 
 	@Test

@@ -445,7 +445,7 @@ class RevisionServiceTest {
 		verify(revisionRepositoryMock).findByNamespaceAndMunicipalityIdAndEntityIdAndVersion(NAMESPACE, MUNICIPALITY_ID, errandId, targetVersion);
 
 		assertThat(e.getStatus()).isEqualTo(INTERNAL_SERVER_ERROR);
-		assertThat(e.getMessage()).isEqualTo("Internal Server Error: An error occured when comparing version 5 to version 6 of entityId 'errandId'");
+		assertThat(e.getMessage()).isEqualTo("Internal Server Error: An error occurred when comparing version 5 to version 6 of entityId 'errandId'");
 
 	}
 

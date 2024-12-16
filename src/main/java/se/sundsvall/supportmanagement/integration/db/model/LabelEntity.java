@@ -61,11 +61,11 @@ public class LabelEntity {
 		return id;
 	}
 
-	public void setId(Long id) {
+	public void setId(final Long id) {
 		this.id = id;
 	}
 
-	public LabelEntity withId(Long id) {
+	public LabelEntity withId(final Long id) {
 		setId(id);
 		return this;
 	}
@@ -74,11 +74,11 @@ public class LabelEntity {
 		return municipalityId;
 	}
 
-	public void setMunicipalityId(String municipalityId) {
+	public void setMunicipalityId(final String municipalityId) {
 		this.municipalityId = municipalityId;
 	}
 
-	public LabelEntity withMunicipalityId(String municipalityId) {
+	public LabelEntity withMunicipalityId(final String municipalityId) {
 		setMunicipalityId(municipalityId);
 		return this;
 	}
@@ -87,11 +87,11 @@ public class LabelEntity {
 		return namespace;
 	}
 
-	public void setNamespace(String namespace) {
+	public void setNamespace(final String namespace) {
 		this.namespace = namespace;
 	}
 
-	public LabelEntity withNamespace(String namespace) {
+	public LabelEntity withNamespace(final String namespace) {
 		setNamespace(namespace);
 		return this;
 	}
@@ -100,11 +100,11 @@ public class LabelEntity {
 		return jsonStructure;
 	}
 
-	public void setJsonStructure(String jsonStructure) {
+	public void setJsonStructure(final String jsonStructure) {
 		this.jsonStructure = jsonStructure;
 	}
 
-	public LabelEntity withJsonStructure(String jsonStructure) {
+	public LabelEntity withJsonStructure(final String jsonStructure) {
 		setJsonStructure(jsonStructure);
 		return this;
 	}
@@ -113,11 +113,11 @@ public class LabelEntity {
 		return created;
 	}
 
-	public void setCreated(OffsetDateTime created) {
+	public void setCreated(final OffsetDateTime created) {
 		this.created = created;
 	}
 
-	public LabelEntity withCreated(OffsetDateTime created) {
+	public LabelEntity withCreated(final OffsetDateTime created) {
 		setCreated(created);
 		return this;
 	}
@@ -126,11 +126,11 @@ public class LabelEntity {
 		return modified;
 	}
 
-	public void setModified(OffsetDateTime modified) {
+	public void setModified(final OffsetDateTime modified) {
 		this.modified = modified;
 	}
 
-	public LabelEntity withModified(OffsetDateTime modified) {
+	public LabelEntity withModified(final OffsetDateTime modified) {
 		setModified(modified);
 		return this;
 	}
@@ -151,24 +151,21 @@ public class LabelEntity {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(final Object obj) {
 		if (this == obj) {
 			return true;
 		}
-		if (!(obj instanceof LabelEntity)) {
+		if (!(obj instanceof final LabelEntity other)) {
 			return false;
 		}
-		LabelEntity other = (LabelEntity) obj;
 		return Objects.equals(created, other.created) && Objects.equals(id, other.id) && Objects.equals(jsonStructure, other.jsonStructure) && Objects.equals(modified, other.modified) && Objects.equals(municipalityId, other.municipalityId) &&
 			Objects.equals(namespace, other.namespace);
 	}
 
 	@Override
 	public String toString() {
-		StringBuilder builder = new StringBuilder();
-		builder.append("LabelEntity [id=").append(id).append(", municipalityId=").append(municipalityId).append(", namespace=").append(namespace).append(", jsonStructure=").append(jsonStructure).append(", created=").append(created).append(
-			", modified=")
-			.append(modified).append("]");
-		return builder.toString();
+		return "LabelEntity [id=" + id + ", municipalityId=" + municipalityId + ", namespace=" + namespace + ", jsonStructure=" + jsonStructure + ", created=" + created
+			+ ", modified="
+			+ modified + "]";
 	}
 }

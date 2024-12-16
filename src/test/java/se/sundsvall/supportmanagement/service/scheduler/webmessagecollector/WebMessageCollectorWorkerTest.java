@@ -128,7 +128,7 @@ class WebMessageCollectorWorkerTest {
 		when(webMessageCollectorClientMock.getAttachment(any(), anyInt())).thenReturn(data);
 		when(webMessageCollectorMapperMock.toCommunicationAttachmentDataEntity(any())).thenReturn(communicationAttachmentDataEntityMock);
 
-		try (MockedStatic<ErrandSpecification> specificationMockedStatic = Mockito.mockStatic(ErrandSpecification.class)) {
+		try (final MockedStatic<ErrandSpecification> specificationMockedStatic = Mockito.mockStatic(ErrandSpecification.class)) {
 			specificationMockedStatic.when(() -> ErrandSpecification.hasMatchingTags(any())).thenReturn(specificationMock);
 
 			// Act
@@ -159,7 +159,7 @@ class WebMessageCollectorWorkerTest {
 		assertThat(communicationEntityCaptor.getAllValues().getFirst()).isSameAs(communicationEntityCaptor.getAllValues().getLast());
 		assertThat(communicationEntityCaptor.getValue()).satisfies(
 			communication -> {
-				assertThat(communication).hasNoNullFieldsOrPropertiesExcept("subject", "target", "emailHeaders", "errandAttachments");
+				assertThat(communication).hasNoNullFieldsOrPropertiesExcept("id", "subject", "target", "emailHeaders", "errandAttachments");
 				assertThat(communication.getDirection()).isEqualTo(INBOUND);
 				assertThat(communication.getExternalId()).isEqualTo(messagedto.getMessageId());
 				assertThat(communication.getMessageBody()).isEqualTo(messagedto.getMessage());
@@ -184,7 +184,7 @@ class WebMessageCollectorWorkerTest {
 		// Mock
 		when(errandsRepositoryMock.findOne(ArgumentMatchers.<Specification<ErrandEntity>>any())).thenReturn(Optional.empty());
 
-		try (MockedStatic<ErrandSpecification> specificationMockedStatic = Mockito.mockStatic(ErrandSpecification.class)) {
+		try (final MockedStatic<ErrandSpecification> specificationMockedStatic = Mockito.mockStatic(ErrandSpecification.class)) {
 			specificationMockedStatic.when(() -> ErrandSpecification.hasMatchingTags(any())).thenReturn(specificationMock);
 
 			// Act
@@ -208,14 +208,14 @@ class WebMessageCollectorWorkerTest {
 	@Test
 	void getWebMessages() {
 		// Arrange
-		var instance = "instance";
-		var familyId = "familyId";
-		var list = List.of(new MessageDTO());
+		final var instance = "instance";
+		final var familyId = "familyId";
+		final var list = List.of(new MessageDTO());
 
 		// Mock
 		when(webMessageCollectorClientMock.getMessages(any(), any(), any())).thenReturn(list);
 		// Act
-		var result = webMessageCollectorWorker.getWebMessages(instance, familyId, MUNICIPALITY_ID);
+		final var result = webMessageCollectorWorker.getWebMessages(instance, familyId, MUNICIPALITY_ID);
 		// Verify
 		verify(webMessageCollectorClientMock).getMessages(MUNICIPALITY_ID, familyId, instance);
 		assertThat(result).isSameAs(list);

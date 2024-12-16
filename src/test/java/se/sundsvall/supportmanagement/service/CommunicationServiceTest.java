@@ -346,7 +346,7 @@ class CommunicationServiceTest {
 		// Act and Assert
 		assertThatThrownBy(() -> service.streamCommunicationAttachmentData(communicationAttachmentEntityMock, servletResponseMock))
 			.isInstanceOf(Problem.class)
-			.hasMessageContaining("Too many files being read. Try again later.");
+			.hasMessageContaining("Insufficient Storage: Insufficient storage available to process the request.");
 	}
 
 	@Test

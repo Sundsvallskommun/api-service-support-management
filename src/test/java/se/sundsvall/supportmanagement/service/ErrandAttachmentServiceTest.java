@@ -446,7 +446,7 @@ class ErrandAttachmentServiceTest {
 		// Act and Assert
 		assertThatThrownBy(() -> service.streamAttachmentData(attachmentMock, httpServletResponseMock))
 			.isInstanceOf(Problem.class)
-			.hasMessageContaining("Too many files being read. Try again later.");
+			.hasMessageContaining("Insufficient Storage: Insufficient storage available to process the request.");
 	}
 
 	@Test
@@ -461,6 +461,6 @@ class ErrandAttachmentServiceTest {
 		// Act and Assert
 		assertThatThrownBy(() -> service.readErrandAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ATTACHMENT_ID, httpServletResponseMock))
 			.isInstanceOf(Problem.class)
-			.hasMessageContaining("Too many files being read. Try again later.");
+			.hasMessageContaining("Insufficient Storage: Insufficient storage available to process the request.");
 	}
 }

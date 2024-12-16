@@ -9,7 +9,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
@@ -116,7 +115,6 @@ public class CommunicationMapper {
 			.withMunicipalityId(municipalityId)
 			.withSender(request.getSender())
 			.withEmailHeaders(toEmailHeaders(request.getEmailHeaders()))
-			.withId(UUID.randomUUID().toString())
 			.withDirection(Direction.OUTBOUND)
 			.withMessageBody(request.getMessage())
 			.withSent(OffsetDateTime.now())
@@ -141,7 +139,6 @@ public class CommunicationMapper {
 			.withNamespace(namespace)
 			.withMunicipalityId(municipalityId)
 			.withSender(request.getSender())
-			.withId(UUID.randomUUID().toString())
 			.withDirection(Direction.OUTBOUND)
 			.withMessageBody(request.getMessage())
 			.withSent(OffsetDateTime.now())
@@ -152,7 +149,6 @@ public class CommunicationMapper {
 
 	public CommunicationEntity toCommunicationEntity(final String namespace, final String municipalityId, final String errandNumber, final WebMessageRequest request) {
 		return CommunicationEntity.create()
-			.withId(UUID.randomUUID().toString())
 			.withMunicipalityId(municipalityId)
 			.withNamespace(namespace)
 			.withErrandNumber(errandNumber)
@@ -178,9 +174,8 @@ public class CommunicationMapper {
 		return CommunicationAttachmentEntity.create()
 			.withNamespace(namespace)
 			.withMunicipalityId(municipalityId)
-			.withId(UUID.randomUUID().toString())
 			.withName(attachment.getName())
-			.withFileSize(attachment.getBase64EncodedString().length())
+			.withFileSize(byteArray.length)
 			.withAttachmentData(toMessageAttachmentData(attachment))
 			.withContentType(detectMimeType(attachment.getName(), byteArray));
 	}

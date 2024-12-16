@@ -14,7 +14,7 @@ public class SmsRequest {
 
 	@NotNull
 	@Size(min = 1, max = 11)
-	@Schema(description = "The sender of the SMS", maxLength = 11, example = "sender", requiredMode = REQUIRED)
+	@Schema(description = "The sender of the SMS", minLength = 1, maxLength = 11, example = "sender", requiredMode = REQUIRED)
 	private String sender;
 
 	@ValidMSISDN
@@ -33,11 +33,11 @@ public class SmsRequest {
 		return sender;
 	}
 
-	public void setSender(String sender) {
+	public void setSender(final String sender) {
 		this.sender = sender;
 	}
 
-	public SmsRequest withSender(String sender) {
+	public SmsRequest withSender(final String sender) {
 		this.sender = sender;
 		return this;
 	}
@@ -46,11 +46,11 @@ public class SmsRequest {
 		return recipient;
 	}
 
-	public void setRecipient(String recipient) {
+	public void setRecipient(final String recipient) {
 		this.recipient = recipient;
 	}
 
-	public SmsRequest withRecipient(String recipient) {
+	public SmsRequest withRecipient(final String recipient) {
 		this.recipient = recipient;
 		return this;
 	}
@@ -59,11 +59,11 @@ public class SmsRequest {
 		return message;
 	}
 
-	public void setMessage(String message) {
+	public void setMessage(final String message) {
 		this.message = message;
 	}
 
-	public SmsRequest withMessage(String message) {
+	public SmsRequest withMessage(final String message) {
 		this.message = message;
 		return this;
 	}
@@ -74,7 +74,7 @@ public class SmsRequest {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(final Object obj) {
 		if (this == obj) {
 			return true;
 		}
@@ -92,8 +92,6 @@ public class SmsRequest {
 
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder();
-		builder.append("SmsRequest [sender=").append(sender).append("recipient=").append(recipient).append(", message=").append(message).append("]");
-		return builder.toString();
+		return "SmsRequest [sender=" + sender + "recipient=" + recipient + ", message=" + message + "]";
 	}
 }

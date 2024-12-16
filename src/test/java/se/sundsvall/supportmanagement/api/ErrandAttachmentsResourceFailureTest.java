@@ -396,7 +396,7 @@ class ErrandAttachmentsResourceFailureTest {
 	}
 
 	@Test
-	void deleteErrandAttachmenteWithInvalidAttachmentId() {
+	void deleteErrandAttachmentsWithInvalidAttachmentId() {
 
 		// Call
 		final var response = webTestClient.delete()

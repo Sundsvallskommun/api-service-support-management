@@ -15,6 +15,7 @@ import jakarta.persistence.Transient;
 import jakarta.persistence.UniqueConstraint;
 import java.util.Objects;
 import java.util.Optional;
+import org.hibernate.annotations.UuidGenerator;
 
 @Entity
 @Table(
@@ -31,6 +32,7 @@ import java.util.Optional;
 public class CommunicationAttachmentEntity {
 
 	@Id
+	@UuidGenerator
 	@Column(name = "id")
 	private String id;
 

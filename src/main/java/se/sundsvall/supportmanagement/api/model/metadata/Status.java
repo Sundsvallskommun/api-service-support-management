@@ -13,7 +13,7 @@ import org.springframework.format.annotation.DateTimeFormat.ISO;
 @Schema(description = "Status model")
 public class Status {
 
-	@Schema(description = "Name for the status", example = "statusname")
+	@Schema(description = "Name for the status", example = "statusName")
 	@NotBlank
 	private String name;
 
@@ -35,11 +35,11 @@ public class Status {
 		return name;
 	}
 
-	public void setName(String name) {
+	public void setName(final String name) {
 		this.name = name;
 	}
 
-	public Status withName(String name) {
+	public Status withName(final String name) {
 		this.name = name;
 		return this;
 	}
@@ -48,11 +48,11 @@ public class Status {
 		return created;
 	}
 
-	public void setCreated(OffsetDateTime created) {
+	public void setCreated(final OffsetDateTime created) {
 		this.created = created;
 	}
 
-	public Status withCreated(OffsetDateTime created) {
+	public Status withCreated(final OffsetDateTime created) {
 		this.created = created;
 		return this;
 	}
@@ -61,11 +61,11 @@ public class Status {
 		return modified;
 	}
 
-	public void setModified(OffsetDateTime modified) {
+	public void setModified(final OffsetDateTime modified) {
 		this.modified = modified;
 	}
 
-	public Status withModified(OffsetDateTime modified) {
+	public Status withModified(final OffsetDateTime modified) {
 		this.modified = modified;
 		return this;
 	}
@@ -76,7 +76,7 @@ public class Status {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(final Object obj) {
 		if (this == obj) {
 			return true;
 		}
@@ -86,14 +86,12 @@ public class Status {
 		if (getClass() != obj.getClass()) {
 			return false;
 		}
-		Status other = (Status) obj;
+		final Status other = (Status) obj;
 		return Objects.equals(created, other.created) && Objects.equals(modified, other.modified) && Objects.equals(name, other.name);
 	}
 
 	@Override
 	public String toString() {
-		StringBuilder builder = new StringBuilder();
-		builder.append("Status [name=").append(name).append(", created=").append(created).append(", modified=").append(modified).append("]");
-		return builder.toString();
+		return "Status [name=" + name + ", created=" + created + ", modified=" + modified + "]";
 	}
 }

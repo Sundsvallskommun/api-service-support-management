@@ -32,11 +32,11 @@ public class Labels {
 		return created;
 	}
 
-	public void setCreated(OffsetDateTime created) {
+	public void setCreated(final OffsetDateTime created) {
 		this.created = created;
 	}
 
-	public Labels withCreated(OffsetDateTime created) {
+	public Labels withCreated(final OffsetDateTime created) {
 		setCreated(created);
 		return this;
 	}
@@ -45,11 +45,11 @@ public class Labels {
 		return modified;
 	}
 
-	public void setModified(OffsetDateTime modified) {
+	public void setModified(final OffsetDateTime modified) {
 		this.modified = modified;
 	}
 
-	public Labels withModified(OffsetDateTime modified) {
+	public Labels withModified(final OffsetDateTime modified) {
 		setModified(modified);
 		return this;
 	}
@@ -73,21 +73,18 @@ public class Labels {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(final Object obj) {
 		if (this == obj) {
 			return true;
 		}
-		if (!(obj instanceof Labels)) {
+		if (!(obj instanceof final Labels other)) {
 			return false;
 		}
-		Labels other = (Labels) obj;
 		return Objects.equals(created, other.created) && Objects.equals(labelStructure, other.labelStructure) && Objects.equals(modified, other.modified);
 	}
 
 	@Override
 	public String toString() {
-		StringBuilder builder = new StringBuilder();
-		builder.append("Labels [created=").append(created).append(", modified=").append(modified).append(", labelStructure=").append(labelStructure).append("]");
-		return builder.toString();
+		return "Labels [created=" + created + ", modified=" + modified + ", labelStructure=" + labelStructure + "]";
 	}
 }

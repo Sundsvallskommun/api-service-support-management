@@ -79,9 +79,9 @@ class ErrandAttachmentMapperTest {
 		final var result = ErrandAttachmentMapper.toErrandAttachmentHeaders(List.of(buildAttachmentEntity(buildErrandEntity())));
 
 		assertThat(result).isNotNull();
-		assertThat(result.get(0).getId()).isEqualTo(ATTACHMENT_ID);
-		assertThat(result.get(0).getFileName()).isEqualTo(FILE_NAME);
-		assertThat(result.get(0).getMimeType()).isEqualTo(MIME_TYPE);
+		assertThat(result.getFirst().getId()).isEqualTo(ATTACHMENT_ID);
+		assertThat(result.getFirst().getFileName()).isEqualTo(FILE_NAME);
+		assertThat(result.getFirst().getMimeType()).isEqualTo(MIME_TYPE);
 	}
 
 	@Test

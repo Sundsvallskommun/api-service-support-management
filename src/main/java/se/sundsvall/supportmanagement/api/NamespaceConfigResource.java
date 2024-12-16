@@ -88,7 +88,7 @@ class NamespaceConfigResource {
 	}
 
 	@GetMapping(path = "/namespace-configs", produces = APPLICATION_JSON_VALUE)
-	@Operation(summary = "Read all namespace configurations, optionally filterered by municipalityId", description = "Fetches an optionally filtered list of namespace configurations", responses = {
+	@Operation(summary = "Read all namespace configurations, optionally filtered by municipalityId", description = "Fetches an optionally filtered list of namespace configurations", responses = {
 		@ApiResponse(responseCode = "200", description = "Successful Operation", useReturnTypeSchema = true),
 		@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
 			Problem.class, ConstraintViolationProblem.class

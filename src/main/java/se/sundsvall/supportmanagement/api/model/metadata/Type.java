@@ -18,7 +18,7 @@ public class Type {
 	@NotBlank
 	private String name;
 
-	@Schema(description = "Displayname for the type", example = "Displayed name")
+	@Schema(description = "Display name for the type", example = "Displayed name")
 	private String displayName;
 
 	@Schema(description = "Email for where to escalate the errand if needed", example = "escalationgroup@sesamestreet.com")
@@ -43,11 +43,11 @@ public class Type {
 		return name;
 	}
 
-	public void setName(String name) {
+	public void setName(final String name) {
 		this.name = name;
 	}
 
-	public Type withName(String name) {
+	public Type withName(final String name) {
 		this.name = name;
 		return this;
 	}
@@ -56,11 +56,11 @@ public class Type {
 		return displayName;
 	}
 
-	public void setDisplayName(String displayName) {
+	public void setDisplayName(final String displayName) {
 		this.displayName = displayName;
 	}
 
-	public Type withDisplayName(String displayName) {
+	public Type withDisplayName(final String displayName) {
 		this.displayName = displayName;
 		return this;
 	}
@@ -69,11 +69,11 @@ public class Type {
 		return escalationEmail;
 	}
 
-	public void setEscalationEmail(String escalationEmail) {
+	public void setEscalationEmail(final String escalationEmail) {
 		this.escalationEmail = escalationEmail;
 	}
 
-	public Type withEscalationEmail(String escalationEmail) {
+	public Type withEscalationEmail(final String escalationEmail) {
 		this.escalationEmail = escalationEmail;
 		return this;
 	}
@@ -82,11 +82,11 @@ public class Type {
 		return created;
 	}
 
-	public void setCreated(OffsetDateTime created) {
+	public void setCreated(final OffsetDateTime created) {
 		this.created = created;
 	}
 
-	public Type withCreated(OffsetDateTime created) {
+	public Type withCreated(final OffsetDateTime created) {
 		this.created = created;
 		return this;
 	}
@@ -95,11 +95,11 @@ public class Type {
 		return modified;
 	}
 
-	public void setModified(OffsetDateTime modified) {
+	public void setModified(final OffsetDateTime modified) {
 		this.modified = modified;
 	}
 
-	public Type withModified(OffsetDateTime modified) {
+	public Type withModified(final OffsetDateTime modified) {
 		this.modified = modified;
 		return this;
 	}
@@ -110,7 +110,7 @@ public class Type {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(final Object obj) {
 		if (this == obj) {
 			return true;
 		}
@@ -120,14 +120,12 @@ public class Type {
 		if (getClass() != obj.getClass()) {
 			return false;
 		}
-		Type other = (Type) obj;
+		final Type other = (Type) obj;
 		return Objects.equals(created, other.created) && Objects.equals(displayName, other.displayName) && Objects.equals(escalationEmail, other.escalationEmail) && Objects.equals(modified, other.modified) && Objects.equals(name, other.name);
 	}
 
 	@Override
 	public String toString() {
-		StringBuilder builder = new StringBuilder();
-		builder.append("Type [name=").append(name).append(", displayName=").append(displayName).append(", escalationEmail=").append(escalationEmail).append(", created=").append(created).append(", modified=").append(modified).append("]");
-		return builder.toString();
+		return "Type [name=" + name + ", displayName=" + displayName + ", escalationEmail=" + escalationEmail + ", created=" + created + ", modified=" + modified + "]";
 	}
 }

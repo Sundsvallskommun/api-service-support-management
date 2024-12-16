@@ -20,7 +20,7 @@ public class NamespaceConfig {
 	private String municipalityId;
 
 	@NotNull
-	@Schema(description = "Displayname for the namespace", example = "Kontaktcenter")
+	@Schema(description = "Display name for the namespace", example = "Kontaktcenter")
 	private String displayName;
 
 	@NotNull
@@ -41,11 +41,11 @@ public class NamespaceConfig {
 		return municipalityId;
 	}
 
-	public void setMunicipalityId(String municipalityId) {
+	public void setMunicipalityId(final String municipalityId) {
 		this.municipalityId = municipalityId;
 	}
 
-	public NamespaceConfig withMunicipalityId(String municipalityId) {
+	public NamespaceConfig withMunicipalityId(final String municipalityId) {
 		this.municipalityId = municipalityId;
 		return this;
 	}
@@ -54,11 +54,11 @@ public class NamespaceConfig {
 		return namespace;
 	}
 
-	public void setNamespace(String namespace) {
+	public void setNamespace(final String namespace) {
 		this.namespace = namespace;
 	}
 
-	public NamespaceConfig withNamespace(String namespace) {
+	public NamespaceConfig withNamespace(final String namespace) {
 		this.namespace = namespace;
 		return this;
 	}
@@ -67,11 +67,11 @@ public class NamespaceConfig {
 		return displayName;
 	}
 
-	public void setDisplayName(String displayName) {
+	public void setDisplayName(final String displayName) {
 		this.displayName = displayName;
 	}
 
-	public NamespaceConfig withDisplayName(String displayName) {
+	public NamespaceConfig withDisplayName(final String displayName) {
 		this.displayName = displayName;
 		return this;
 	}
@@ -80,11 +80,11 @@ public class NamespaceConfig {
 		return shortCode;
 	}
 
-	public void setShortCode(String shortCode) {
+	public void setShortCode(final String shortCode) {
 		this.shortCode = shortCode;
 	}
 
-	public NamespaceConfig withShortCode(String shortCode) {
+	public NamespaceConfig withShortCode(final String shortCode) {
 		this.shortCode = shortCode;
 		return this;
 	}
@@ -93,11 +93,11 @@ public class NamespaceConfig {
 		return created;
 	}
 
-	public void setCreated(OffsetDateTime created) {
+	public void setCreated(final OffsetDateTime created) {
 		this.created = created;
 	}
 
-	public NamespaceConfig withCreated(OffsetDateTime created) {
+	public NamespaceConfig withCreated(final OffsetDateTime created) {
 		this.created = created;
 		return this;
 	}
@@ -106,11 +106,11 @@ public class NamespaceConfig {
 		return modified;
 	}
 
-	public void setModified(OffsetDateTime modified) {
+	public void setModified(final OffsetDateTime modified) {
 		this.modified = modified;
 	}
 
-	public NamespaceConfig withModified(OffsetDateTime modified) {
+	public NamespaceConfig withModified(final OffsetDateTime modified) {
 		this.modified = modified;
 		return this;
 	}
@@ -121,7 +121,7 @@ public class NamespaceConfig {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(final Object obj) {
 		if (this == obj) {
 			return true;
 		}
@@ -134,9 +134,8 @@ public class NamespaceConfig {
 
 	@Override
 	public String toString() {
-		final var builder = new StringBuilder();
-		builder.append("NamespaceConfig [namespace=").append(namespace).append(", municipalityId=").append(municipalityId).append(", displayName=").append(displayName).append(", shortCode=").append(shortCode).append(", created=").append(created)
-			.append(", modified=").append(modified).append("]");
-		return builder.toString();
+		final String builder = "NamespaceConfig [namespace=" + namespace + ", municipalityId=" + municipalityId + ", displayName=" + displayName + ", shortCode=" + shortCode + ", created=" + created
+			+ ", modified=" + modified + "]";
+		return builder;
 	}
 }

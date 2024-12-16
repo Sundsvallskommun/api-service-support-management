@@ -60,7 +60,6 @@ public class EmailReaderMapper {
 			return null;
 		}
 		return CommunicationEntity.create()
-			.withId(randomUUID().toString())
 			.withNamespace(errand.getNamespace())
 			.withMunicipalityId(errand.getMunicipalityId())
 			.withErrandNumber(errand.getErrandNumber())
@@ -92,7 +91,6 @@ public class EmailReaderMapper {
 			.map(attachment -> CommunicationAttachmentEntity.create()
 				.withMunicipalityId(errand.getMunicipalityId())
 				.withNamespace(errand.getNamespace())
-				.withId(randomUUID().toString())
 				.withName(attachment.getName())
 				.withFileSize(attachment.getContent().length())
 				.withAttachmentData(toMessageAttachmentData(attachment))

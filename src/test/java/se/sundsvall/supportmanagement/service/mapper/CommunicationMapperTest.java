@@ -10,8 +10,6 @@ import java.time.OffsetDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -137,8 +135,7 @@ class CommunicationMapperTest {
 
 		final var communicationEntity = communicationMapper.toCommunicationEntity(NAMESPACE, MUNICIPALITY_ID, emailRequest);
 
-		assertThat(communicationEntity).isNotNull().hasNoNullFieldsOrPropertiesExcept("errandNumber", "externalId", "errandAttachments");
-		assertThat(testValidUUID(communicationEntity.getId())).isTrue();
+		assertThat(communicationEntity).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "errandNumber", "externalId", "errandAttachments");
 		assertThat(communicationEntity.getSender()).isEqualTo(emailRequest.getSender());
 		assertThat(communicationEntity.getDirection()).isEqualTo(Direction.OUTBOUND);
 		assertThat(communicationEntity.getTarget()).isEqualTo(emailRequest.getRecipient());
@@ -160,8 +157,7 @@ class CommunicationMapperTest {
 
 		final var communicationEntity = communicationMapper.toCommunicationEntity(NAMESPACE, MUNICIPALITY_ID, smsRequest);
 
-		assertThat(communicationEntity).isNotNull().hasNoNullFieldsOrPropertiesExcept("errandNumber", "externalId", "subject", "attachments", "emailHeaders", "errandAttachments");
-		assertThat(testValidUUID(communicationEntity.getId())).isTrue();
+		assertThat(communicationEntity).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "errandNumber", "externalId", "subject", "attachments", "emailHeaders", "errandAttachments");
 		assertThat(communicationEntity.getSender()).isEqualTo(smsRequest.getSender());
 		assertThat(communicationEntity.getDirection()).isEqualTo(Direction.OUTBOUND);
 		assertThat(communicationEntity.getTarget()).isEqualTo(smsRequest.getRecipient());
@@ -180,8 +176,7 @@ class CommunicationMapperTest {
 
 		final var communicationEntity = communicationMapper.toCommunicationEntity(NAMESPACE, MUNICIPALITY_ID, ERRAND_NUMBER, webMessageRequest);
 
-		assertThat(communicationEntity).isNotNull().hasNoNullFieldsOrPropertiesExcept("externalId", "sender", "target", "subject", "errandAttachments", "emailHeaders");
-		assertThat(testValidUUID(communicationEntity.getId())).isTrue();
+		assertThat(communicationEntity).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "externalId", "sender", "target", "subject", "errandAttachments", "emailHeaders");
 		assertThat(communicationEntity.getErrandNumber()).isEqualTo(ERRAND_NUMBER);
 		assertThat(communicationEntity.getDirection()).isEqualTo(Direction.OUTBOUND);
 		assertThat(communicationEntity.getType()).isEqualTo(CommunicationType.WEB_MESSAGE);
@@ -192,22 +187,8 @@ class CommunicationMapperTest {
 		assertThat(communicationEntity.getAttachments().getFirst().getAttachmentData().getFile()).isSameAs(blobMock);
 	}
 
-	private boolean testValidUUID(final String id) {
-
-		try {
-			UUID.fromString(id);
-			return true;
-			// If no exception is thrown, then the ID is a valid UUID.
-		} catch (final IllegalArgumentException e) {
-			Assertions.fail("ID is not a valid UUID");
-
-		}
-		return false;
-	}
-
 	private CommunicationEntity createCommunicationEntity() {
 		return new CommunicationEntity()
-			.withId("testid")
 			.withSender("testSender")
 			.withMunicipalityId(MUNICIPALITY_ID)
 			.withNamespace(NAMESPACE)
@@ -240,7 +221,7 @@ class CommunicationMapperTest {
 	}
 
 	private void assertCommunicationMatchesEntity(final Communication communication, final CommunicationEntity entity) {
-		assertThat(communication).isNotNull().hasNoNullFieldsOrProperties();
+		assertThat(communication).isNotNull().hasNoNullFieldsOrPropertiesExcept("communicationID");
 		assertThat(communication.getCommunicationID()).isEqualTo(entity.getId());
 		assertThat(communication.getSender()).isEqualTo(entity.getSender());
 		assertThat(communication.getErrandNumber()).isEqualTo(entity.getErrandNumber());

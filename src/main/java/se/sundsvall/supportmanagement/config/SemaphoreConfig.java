@@ -12,7 +12,7 @@ public class SemaphoreConfig {
 	private int maxMemoryUsage;
 
 	@Bean
-	public Semaphore semaphore() {
+	Semaphore semaphore() {
 		return new Semaphore(maxMemoryUsage);
 	}
 }

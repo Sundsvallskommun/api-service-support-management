@@ -2,9 +2,9 @@ package se.sundsvall.supportmanagement.service;
 
 import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
+import static org.zalando.problem.Status.INSUFFICIENT_STORAGE;
 import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
 import static org.zalando.problem.Status.NOT_FOUND;
-import static org.zalando.problem.Status.TOO_MANY_REQUESTS;
 import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toEmailAttachments;
 import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toEmailRequest;
 import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toSmsRequest;
@@ -110,7 +110,7 @@ public class CommunicationService {
 
 		try {
 			if (!semaphore.tryAcquire(fileLength, 5, TimeUnit.SECONDS)) {
-				throw Problem.valueOf(TOO_MANY_REQUESTS, "Too many files being read. Try again later.");
+				throw Problem.valueOf(INSUFFICIENT_STORAGE, "Insufficient storage available to process the request.");
 			}
 			response.addHeader(CONTENT_TYPE, attachment.getContentType());
 			response.addHeader(CONTENT_DISPOSITION, "attachment; filename=\"" + attachment.getName() + "\"");

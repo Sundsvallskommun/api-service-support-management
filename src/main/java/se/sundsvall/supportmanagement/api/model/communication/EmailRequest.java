@@ -22,7 +22,7 @@ public class EmailRequest {
 	@Schema(description = "Email address for sender", example = "sender@sender.se", requiredMode = REQUIRED)
 	private String sender;
 
-	@Schema(description = "Optional displayname of sender on email. If left out, email will be displayed as sender name.", example = "Firstname Lastname", requiredMode = NOT_REQUIRED)
+	@Schema(description = "Optional display name of sender on email. If left out, email will be displayed as sender name.", example = "Firstname Lastname", requiredMode = NOT_REQUIRED)
 	private String senderName;
 
 	@NotNull
@@ -98,13 +98,13 @@ public class EmailRequest {
 		return recipient;
 	}
 
+	public void setRecipient(final String recipient) {
+		this.recipient = recipient;
+	}
+
 	public EmailRequest withRecipient(final String recipient) {
 		this.recipient = recipient;
 		return this;
-	}
-
-	public void setRecipient(final String recipient) {
-		this.recipient = recipient;
 	}
 
 	public String getSubject() {
