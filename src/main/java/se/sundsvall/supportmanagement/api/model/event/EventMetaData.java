@@ -20,11 +20,11 @@ public class EventMetaData {
 		return key;
 	}
 
-	public void setKey(String key) {
+	public void setKey(final String key) {
 		this.key = key;
 	}
 
-	public EventMetaData withKey(String key) {
+	public EventMetaData withKey(final String key) {
 		this.key = key;
 		return this;
 	}
@@ -33,24 +33,24 @@ public class EventMetaData {
 		return value;
 	}
 
-	public void setValue(String value) {
+	public void setValue(final String value) {
 		this.value = value;
 	}
 
-	public EventMetaData withValue(String value) {
+	public EventMetaData withValue(final String value) {
 		this.value = value;
 		return this;
 	}
 
 	@Override
-	public boolean equals(Object o) {
+	public boolean equals(final Object o) {
 		if (this == o) {
 			return true;
 		}
 		if (o == null || getClass() != o.getClass()) {
 			return false;
 		}
-		EventMetaData metadata = (EventMetaData) o;
+		final EventMetaData metadata = (EventMetaData) o;
 		return Objects.equals(key, metadata.key) && Objects.equals(value, metadata.value);
 	}
 
@@ -61,10 +61,9 @@ public class EventMetaData {
 
 	@Override
 	public String toString() {
-		final StringBuilder sb = new StringBuilder("EventMetaData{");
-		sb.append("key='").append(key).append('\'');
-		sb.append(", value='").append(value).append('\'');
-		sb.append('}');
-		return sb.toString();
+		return "EventMetaData{" +
+			"key='" + key + '\'' +
+			", value='" + value + '\'' +
+			'}';
 	}
 }

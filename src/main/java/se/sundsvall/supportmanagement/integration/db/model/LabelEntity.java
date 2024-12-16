@@ -164,8 +164,13 @@ public class LabelEntity {
 
 	@Override
 	public String toString() {
-		return "LabelEntity [id=" + id + ", municipalityId=" + municipalityId + ", namespace=" + namespace + ", jsonStructure=" + jsonStructure + ", created=" + created
-			+ ", modified="
-			+ modified + "]";
+		return "LabelEntity{" +
+			"id=" + id +
+			", municipalityId='" + municipalityId + '\'' +
+			", namespace='" + namespace + '\'' +
+			", jsonStructure='" + jsonStructure + '\'' +
+			", created=" + created +
+			", modified=" + modified +
+			'}';
 	}
 }

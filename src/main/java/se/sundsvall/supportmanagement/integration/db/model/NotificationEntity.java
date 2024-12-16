@@ -309,9 +309,22 @@ public class NotificationEntity {
 
 	@Override
 	public String toString() {
-		final String builder = "NotificationEntity [id=" + id + ", created=" + created + ", modified=" + modified + ", ownerFullName=" + ownerFullName + ", ownerId=" + ownerId + ", createdBy="
-			+ createdBy + ", createdByFullName=" + createdByFullName + ", type=" + type + ", description=" + description + ", content=" + content + ", expires=" + expires + ", acknowledged="
-			+ acknowledged + ", errandEntity=" + errandEntity + ", municipalityId=" + municipalityId + ", namespace=" + namespace + "]";
-		return builder;
+		return "NotificationEntity{" +
+			"id='" + id + '\'' +
+			", created=" + created +
+			", modified=" + modified +
+			", ownerFullName='" + ownerFullName + '\'' +
+			", ownerId='" + ownerId + '\'' +
+			", createdBy='" + createdBy + '\'' +
+			", createdByFullName='" + createdByFullName + '\'' +
+			", type='" + type + '\'' +
+			", description='" + description + '\'' +
+			", content='" + content + '\'' +
+			", expires=" + expires +
+			", acknowledged=" + acknowledged +
+			", errandEntity=" + errandEntity +
+			", municipalityId='" + municipalityId + '\'' +
+			", namespace='" + namespace + '\'' +
+			'}';
 	}
 }

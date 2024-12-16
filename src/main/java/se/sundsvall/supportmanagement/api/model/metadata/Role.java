@@ -77,11 +77,11 @@ public class Role {
 		return displayName;
 	}
 
-	public void setDisplayName(String displayName) {
+	public void setDisplayName(final String displayName) {
 		this.displayName = displayName;
 	}
 
-	public Role withDisplayName(String displayName) {
+	public Role withDisplayName(final String displayName) {
 		this.displayName = displayName;
 		return this;
 	}
@@ -96,7 +96,7 @@ public class Role {
 		if (this == obj) {
 			return true;
 		}
-		if (!(obj instanceof Role other)) {
+		if (!(obj instanceof final Role other)) {
 			return false;
 		}
 		return Objects.equals(created, other.created) && Objects.equals(modified, other.modified) && Objects.equals(name, other.name) && Objects.equals(displayName, other.displayName);
@@ -104,12 +104,11 @@ public class Role {
 
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder();
-		builder.append("Role [name=").append(name)
-			.append(", displayName=").append(displayName)
-			.append(", created=").append(created)
-			.append(", modified=").append(modified)
-			.append("]");
-		return builder.toString();
+		return "Role{" +
+			"name='" + name + '\'' +
+			", displayName='" + displayName + '\'' +
+			", created=" + created +
+			", modified=" + modified +
+			'}';
 	}
 }

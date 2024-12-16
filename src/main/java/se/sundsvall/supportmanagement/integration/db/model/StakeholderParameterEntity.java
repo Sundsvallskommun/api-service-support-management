@@ -55,7 +55,7 @@ public class StakeholderParameterEntity {
 		this.id = id;
 	}
 
-	public StakeholderParameterEntity withId(long id) {
+	public StakeholderParameterEntity withId(final long id) {
 		this.id = id;
 		return this;
 	}
@@ -64,11 +64,11 @@ public class StakeholderParameterEntity {
 		return stakeholderEntity;
 	}
 
-	public void setStakeholderEntity(StakeholderEntity stakeholderEntity) {
+	public void setStakeholderEntity(final StakeholderEntity stakeholderEntity) {
 		this.stakeholderEntity = stakeholderEntity;
 	}
 
-	public StakeholderParameterEntity withStakeholderEntity(StakeholderEntity stakeholderEntity) {
+	public StakeholderParameterEntity withStakeholderEntity(final StakeholderEntity stakeholderEntity) {
 		this.stakeholderEntity = stakeholderEntity;
 		return this;
 	}
@@ -77,11 +77,11 @@ public class StakeholderParameterEntity {
 		return displayName;
 	}
 
-	public void setDisplayName(String displayName) {
+	public void setDisplayName(final String displayName) {
 		this.displayName = displayName;
 	}
 
-	public StakeholderParameterEntity withDisplayName(String displayName) {
+	public StakeholderParameterEntity withDisplayName(final String displayName) {
 		this.displayName = displayName;
 		return this;
 	}
@@ -90,11 +90,11 @@ public class StakeholderParameterEntity {
 		return key;
 	}
 
-	public void setKey(String key) {
+	public void setKey(final String key) {
 		this.key = key;
 	}
 
-	public StakeholderParameterEntity withKey(String key) {
+	public StakeholderParameterEntity withKey(final String key) {
 		this.key = key;
 		return this;
 	}
@@ -118,17 +118,24 @@ public class StakeholderParameterEntity {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) { return true; }
-		if (!(obj instanceof final StakeholderParameterEntity other)) { return false; }
+	public boolean equals(final Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (!(obj instanceof final StakeholderParameterEntity other)) {
+			return false;
+		}
 		return Objects.equals(displayName, other.displayName) && (id == other.id) && Objects.equals(key, other.key) && Objects.equals(stakeholderEntity, other.stakeholderEntity) && Objects.equals(values, other.values);
 	}
 
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder();
-		builder.append("StakeholderParameterEntity [id=").append(id).append(", stakeholderEntity.id=").append((stakeholderEntity != null ? stakeholderEntity.getId() : "null")).append(", displayName=").append(displayName).append(", key=").append(key)
-			.append(", values=").append(values).append("]");
-		return builder.toString();
+		return "StakeholderParameterEntity{" +
+			"id=" + id +
+			", stakeholderEntity=" + stakeholderEntity +
+			", displayName='" + displayName + '\'' +
+			", key='" + key + '\'' +
+			", values=" + values +
+			'}';
 	}
 }

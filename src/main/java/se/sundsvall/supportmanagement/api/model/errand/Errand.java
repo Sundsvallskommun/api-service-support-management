@@ -475,11 +475,32 @@ public class Errand {
 
 	@Override
 	public String toString() {
-		final String builder = "Errand [id=" + id + ", errandNumber=" + errandNumber + ", title=" + title + ", priority=" + priority + ", stakeholders=" + stakeholders + ", externalTags="
-			+ externalTags + ", parameters=" + parameters + ", classification=" + classification + ", status=" + status + ", resolution=" + resolution + ", description=" + description
-			+ ", channel=" + channel + ", reporterUserId=" + reporterUserId + ", assignedUserId=" + assignedUserId + ", assignedGroupId=" + assignedGroupId + ", escalationEmail=" + escalationEmail
-			+ ", contactReason=" + contactReason + ", contactReasonDescription=" + contactReasonDescription + ", suspension=" + suspension + ", businessRelated=" + businessRelated + ", labels="
-			+ labels + ", created=" + created + ", modified=" + modified + ", touched=" + touched + "]";
-		return builder;
+		return "Errand{" +
+			"id='" + id + '\'' +
+			", errandNumber='" + errandNumber + '\'' +
+			", title='" + title + '\'' +
+			", priority=" + priority +
+			", stakeholders=" + stakeholders +
+			", externalTags=" + externalTags +
+			", parameters=" + parameters +
+			", classification=" + classification +
+			", status='" + status + '\'' +
+			", resolution='" + resolution + '\'' +
+			", description='" + description + '\'' +
+			", channel='" + channel + '\'' +
+			", reporterUserId='" + reporterUserId + '\'' +
+			", assignedUserId='" + assignedUserId + '\'' +
+			", assignedGroupId='" + assignedGroupId + '\'' +
+			", escalationEmail='" + escalationEmail + '\'' +
+			", contactReason='" + contactReason + '\'' +
+			", contactReasonDescription='" + contactReasonDescription + '\'' +
+			", suspension=" + suspension +
+			", businessRelated=" + businessRelated +
+			", labels=" + labels +
+			", created=" + created +
+			", modified=" + modified +
+			", touched=" + touched +
+			'}';
 	}
+
 }

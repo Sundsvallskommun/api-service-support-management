@@ -28,11 +28,11 @@ public class WebMessageAttachment implements RequestAttachment {
 		return name;
 	}
 
-	public void setName(String name) {
+	public void setName(final String name) {
 		this.name = name;
 	}
 
-	public WebMessageAttachment withName(String name) {
+	public WebMessageAttachment withName(final String name) {
 		this.name = name;
 		return this;
 	}
@@ -41,11 +41,11 @@ public class WebMessageAttachment implements RequestAttachment {
 		return base64EncodedString;
 	}
 
-	public void setBase64EncodedString(String base64EncodedString) {
+	public void setBase64EncodedString(final String base64EncodedString) {
 		this.base64EncodedString = base64EncodedString;
 	}
 
-	public WebMessageAttachment withBase64EncodedString(String base64EncodedString) {
+	public WebMessageAttachment withBase64EncodedString(final String base64EncodedString) {
 		this.base64EncodedString = base64EncodedString;
 		return this;
 	}
@@ -56,7 +56,7 @@ public class WebMessageAttachment implements RequestAttachment {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(final Object obj) {
 		if (this == obj) {
 			return true;
 		}
@@ -72,8 +72,9 @@ public class WebMessageAttachment implements RequestAttachment {
 
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder();
-		builder.append("WebMessageAttachment [name=").append(name).append(", base64EncodedString=").append(base64EncodedString).append("]");
-		return builder.toString();
+		return "WebMessageAttachment{" +
+			"name='" + name + '\'' +
+			", base64EncodedString='" + base64EncodedString + '\'' +
+			'}';
 	}
 }

@@ -63,11 +63,11 @@ public class NamespaceConfigEntity {
 		return id;
 	}
 
-	public void setId(Long id) {
+	public void setId(final Long id) {
 		this.id = id;
 	}
 
-	public NamespaceConfigEntity withId(Long id) {
+	public NamespaceConfigEntity withId(final Long id) {
 		this.id = id;
 		return this;
 	}
@@ -76,11 +76,11 @@ public class NamespaceConfigEntity {
 		return municipalityId;
 	}
 
-	public void setMunicipalityId(String municipalityId) {
+	public void setMunicipalityId(final String municipalityId) {
 		this.municipalityId = municipalityId;
 	}
 
-	public NamespaceConfigEntity withMunicipalityId(String municipalityId) {
+	public NamespaceConfigEntity withMunicipalityId(final String municipalityId) {
 		this.municipalityId = municipalityId;
 		return this;
 	}
@@ -89,11 +89,11 @@ public class NamespaceConfigEntity {
 		return namespace;
 	}
 
-	public void setNamespace(String namespace) {
+	public void setNamespace(final String namespace) {
 		this.namespace = namespace;
 	}
 
-	public NamespaceConfigEntity withNamespace(String namespace) {
+	public NamespaceConfigEntity withNamespace(final String namespace) {
 		this.namespace = namespace;
 		return this;
 	}
@@ -102,11 +102,11 @@ public class NamespaceConfigEntity {
 		return displayName;
 	}
 
-	public void setDisplayName(String displayName) {
+	public void setDisplayName(final String displayName) {
 		this.displayName = displayName;
 	}
 
-	public NamespaceConfigEntity withDisplayName(String displayName) {
+	public NamespaceConfigEntity withDisplayName(final String displayName) {
 		this.displayName = displayName;
 		return this;
 	}
@@ -115,11 +115,11 @@ public class NamespaceConfigEntity {
 		return shortCode;
 	}
 
-	public void setShortCode(String shortCode) {
+	public void setShortCode(final String shortCode) {
 		this.shortCode = shortCode;
 	}
 
-	public NamespaceConfigEntity withShortCode(String shortCode) {
+	public NamespaceConfigEntity withShortCode(final String shortCode) {
 		this.shortCode = shortCode;
 		return this;
 	}
@@ -128,11 +128,11 @@ public class NamespaceConfigEntity {
 		return created;
 	}
 
-	public void setCreated(OffsetDateTime created) {
+	public void setCreated(final OffsetDateTime created) {
 		this.created = created;
 	}
 
-	public NamespaceConfigEntity withCreated(OffsetDateTime created) {
+	public NamespaceConfigEntity withCreated(final OffsetDateTime created) {
 		this.created = created;
 		return this;
 	}
@@ -141,11 +141,11 @@ public class NamespaceConfigEntity {
 		return modified;
 	}
 
-	public void setModified(OffsetDateTime modified) {
+	public void setModified(final OffsetDateTime modified) {
 		this.modified = modified;
 	}
 
-	public NamespaceConfigEntity withModified(OffsetDateTime modified) {
+	public NamespaceConfigEntity withModified(final OffsetDateTime modified) {
 		this.modified = modified;
 		return this;
 	}
@@ -166,7 +166,7 @@ public class NamespaceConfigEntity {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(final Object obj) {
 		if (this == obj) {
 			return true;
 		}
@@ -179,10 +179,14 @@ public class NamespaceConfigEntity {
 
 	@Override
 	public String toString() {
-		final var builder = new StringBuilder();
-		builder.append("NamespaceConfigEntity [id=").append(id).append(", municipalityId=").append(municipalityId).append(", namespace=").append(namespace).append(", displayName=").append(displayName).append(", shortCode=").append(shortCode).append(
-			", created=").append(created).append(", modified=").append(modified).append("]");
-		return builder.toString();
+		return "NamespaceConfigEntity{" +
+			"id=" + id +
+			", municipalityId='" + municipalityId + '\'' +
+			", namespace='" + namespace + '\'' +
+			", displayName='" + displayName + '\'' +
+			", shortCode='" + shortCode + '\'' +
+			", created=" + created +
+			", modified=" + modified +
+			'}';
 	}
-
 }

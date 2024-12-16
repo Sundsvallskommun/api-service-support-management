@@ -21,11 +21,11 @@ public class DbExternalTag {
 		return key;
 	}
 
-	public void setKey(String key) {
+	public void setKey(final String key) {
 		this.key = key;
 	}
 
-	public DbExternalTag withKey(String key) {
+	public DbExternalTag withKey(final String key) {
 		this.key = key;
 		return this;
 	}
@@ -34,11 +34,11 @@ public class DbExternalTag {
 		return value;
 	}
 
-	public void setValue(String value) {
+	public void setValue(final String value) {
 		this.value = value;
 	}
 
-	public DbExternalTag withValue(String value) {
+	public DbExternalTag withValue(final String value) {
 		this.value = value;
 		return this;
 	}
@@ -49,23 +49,22 @@ public class DbExternalTag {
 	}
 
 	@Override
-	public boolean equals(Object o) {
+	public boolean equals(final Object o) {
 		if (this == o) {
 			return true;
 		}
 		if (o == null || getClass() != o.getClass()) {
 			return false;
 		}
-		var that = (DbExternalTag) o;
+		final var that = (DbExternalTag) o;
 		return Objects.equals(key, that.key) && Objects.equals(value, that.value);
 	}
 
 	@Override
 	public String toString() {
-		var builder = new StringBuilder();
-
-		builder.append("DbExternalTag [key=").append(key).append(", value=").append(value).append("]");
-
-		return builder.toString();
+		return "DbExternalTag{" +
+			"key='" + key + '\'' +
+			", value='" + value + '\'' +
+			'}';
 	}
 }

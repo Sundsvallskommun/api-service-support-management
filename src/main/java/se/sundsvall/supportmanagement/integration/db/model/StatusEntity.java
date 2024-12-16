@@ -61,11 +61,11 @@ public class StatusEntity {
 		return id;
 	}
 
-	public void setId(Long id) {
+	public void setId(final Long id) {
 		this.id = id;
 	}
 
-	public StatusEntity withId(Long id) {
+	public StatusEntity withId(final Long id) {
 		this.id = id;
 		return this;
 	}
@@ -74,11 +74,11 @@ public class StatusEntity {
 		return name;
 	}
 
-	public void setName(String name) {
+	public void setName(final String name) {
 		this.name = name;
 	}
 
-	public StatusEntity withName(String name) {
+	public StatusEntity withName(final String name) {
 		this.name = name;
 		return this;
 	}
@@ -87,11 +87,11 @@ public class StatusEntity {
 		return municipalityId;
 	}
 
-	public void setMunicipalityId(String municipalityId) {
+	public void setMunicipalityId(final String municipalityId) {
 		this.municipalityId = municipalityId;
 	}
 
-	public StatusEntity withMunicipalityId(String municipalityId) {
+	public StatusEntity withMunicipalityId(final String municipalityId) {
 		this.municipalityId = municipalityId;
 		return this;
 	}
@@ -100,11 +100,11 @@ public class StatusEntity {
 		return namespace;
 	}
 
-	public void setNamespace(String namespace) {
+	public void setNamespace(final String namespace) {
 		this.namespace = namespace;
 	}
 
-	public StatusEntity withNamespace(String namespace) {
+	public StatusEntity withNamespace(final String namespace) {
 		this.namespace = namespace;
 		return this;
 	}
@@ -113,11 +113,11 @@ public class StatusEntity {
 		return created;
 	}
 
-	public void setCreated(OffsetDateTime created) {
+	public void setCreated(final OffsetDateTime created) {
 		this.created = created;
 	}
 
-	public StatusEntity withCreated(OffsetDateTime created) {
+	public StatusEntity withCreated(final OffsetDateTime created) {
 		this.created = created;
 		return this;
 	}
@@ -126,11 +126,11 @@ public class StatusEntity {
 		return modified;
 	}
 
-	public void setModified(OffsetDateTime modified) {
+	public void setModified(final OffsetDateTime modified) {
 		this.modified = modified;
 	}
 
-	public StatusEntity withModified(OffsetDateTime modified) {
+	public StatusEntity withModified(final OffsetDateTime modified) {
 		this.modified = modified;
 		return this;
 	}
@@ -151,7 +151,7 @@ public class StatusEntity {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(final Object obj) {
 		if (this == obj) {
 			return true;
 		}
@@ -168,9 +168,13 @@ public class StatusEntity {
 
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder();
-		builder.append("StatusEntity [id=").append(id).append(", name=").append(name).append(", municipalityId=").append(municipalityId).append(", namespace=").append(namespace).append(", created=").append(created).append(", modified=").append(
-			modified).append("]");
-		return builder.toString();
+		return "StatusEntity{" +
+			"id=" + id +
+			", name='" + name + '\'' +
+			", municipalityId='" + municipalityId + '\'' +
+			", namespace='" + namespace + '\'' +
+			", created=" + created +
+			", modified=" + modified +
+			'}';
 	}
 }

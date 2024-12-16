@@ -21,11 +21,11 @@ public class DifferenceResponse {
 		return operations;
 	}
 
-	public void setOperations(List<Operation> operations) {
+	public void setOperations(final List<Operation> operations) {
 		this.operations = operations;
 	}
 
-	public DifferenceResponse withOperations(List<Operation> operations) {
+	public DifferenceResponse withOperations(final List<Operation> operations) {
 		this.operations = operations;
 		return this;
 	}
@@ -36,7 +36,7 @@ public class DifferenceResponse {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(final Object obj) {
 		if (this == obj) {
 			return true;
 		}
@@ -46,14 +46,14 @@ public class DifferenceResponse {
 		if (getClass() != obj.getClass()) {
 			return false;
 		}
-		DifferenceResponse other = (DifferenceResponse) obj;
+		final DifferenceResponse other = (DifferenceResponse) obj;
 		return Objects.equals(operations, other.operations);
 	}
 
 	@Override
 	public String toString() {
-		StringBuilder builder = new StringBuilder();
-		builder.append("DifferenceResponse [operations=").append(operations).append("]");
-		return builder.toString();
+		return "DifferenceResponse{" +
+			"operations=" + operations +
+			'}';
 	}
 }

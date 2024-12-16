@@ -97,11 +97,11 @@ public class EmailWorkerConfigEntity {
 		return id;
 	}
 
-	public void setId(Long id) {
+	public void setId(final Long id) {
 		this.id = id;
 	}
 
-	public EmailWorkerConfigEntity withId(Long id) {
+	public EmailWorkerConfigEntity withId(final Long id) {
 		setId(id);
 		return this;
 	}
@@ -110,11 +110,11 @@ public class EmailWorkerConfigEntity {
 		return municipalityId;
 	}
 
-	public void setMunicipalityId(String municipalityId) {
+	public void setMunicipalityId(final String municipalityId) {
 		this.municipalityId = municipalityId;
 	}
 
-	public EmailWorkerConfigEntity withMunicipalityId(String municipalityId) {
+	public EmailWorkerConfigEntity withMunicipalityId(final String municipalityId) {
 		setMunicipalityId(municipalityId);
 		return this;
 	}
@@ -123,11 +123,11 @@ public class EmailWorkerConfigEntity {
 		return namespace;
 	}
 
-	public void setNamespace(String namespace) {
+	public void setNamespace(final String namespace) {
 		this.namespace = namespace;
 	}
 
-	public EmailWorkerConfigEntity withNamespace(String namespace) {
+	public EmailWorkerConfigEntity withNamespace(final String namespace) {
 		setNamespace(namespace);
 		return this;
 	}
@@ -136,11 +136,11 @@ public class EmailWorkerConfigEntity {
 		return enabled;
 	}
 
-	public void setEnabled(boolean enabled) {
+	public void setEnabled(final boolean enabled) {
 		this.enabled = enabled;
 	}
 
-	public EmailWorkerConfigEntity withEnabled(Boolean enabled) {
+	public EmailWorkerConfigEntity withEnabled(final Boolean enabled) {
 		setEnabled(enabled);
 		return this;
 	}
@@ -149,11 +149,11 @@ public class EmailWorkerConfigEntity {
 		return errandClosedEmailSender;
 	}
 
-	public void setErrandClosedEmailSender(String errandClosedEmailSender) {
+	public void setErrandClosedEmailSender(final String errandClosedEmailSender) {
 		this.errandClosedEmailSender = errandClosedEmailSender;
 	}
 
-	public EmailWorkerConfigEntity withErrandClosedEmailSender(String errandClosedEmailSender) {
+	public EmailWorkerConfigEntity withErrandClosedEmailSender(final String errandClosedEmailSender) {
 		setErrandClosedEmailSender(errandClosedEmailSender);
 		return this;
 	}
@@ -162,11 +162,11 @@ public class EmailWorkerConfigEntity {
 		return errandClosedEmailTemplate;
 	}
 
-	public void setErrandClosedEmailTemplate(String errandClosedEmailTemplate) {
+	public void setErrandClosedEmailTemplate(final String errandClosedEmailTemplate) {
 		this.errandClosedEmailTemplate = errandClosedEmailTemplate;
 	}
 
-	public EmailWorkerConfigEntity withErrandClosedEmailTemplate(String errandClosedEmailTemplate) {
+	public EmailWorkerConfigEntity withErrandClosedEmailTemplate(final String errandClosedEmailTemplate) {
 		setErrandClosedEmailTemplate(errandClosedEmailTemplate);
 		return this;
 	}
@@ -175,11 +175,11 @@ public class EmailWorkerConfigEntity {
 		return errandNewEmailSender;
 	}
 
-	public void setErrandNewEmailSender(String errandNewEmailSender) {
+	public void setErrandNewEmailSender(final String errandNewEmailSender) {
 		this.errandNewEmailSender = errandNewEmailSender;
 	}
 
-	public EmailWorkerConfigEntity withErrandNewEmailSender(String errandNewEmailSender) {
+	public EmailWorkerConfigEntity withErrandNewEmailSender(final String errandNewEmailSender) {
 		setErrandNewEmailSender(errandNewEmailSender);
 		return this;
 	}
@@ -188,11 +188,11 @@ public class EmailWorkerConfigEntity {
 		return errandNewEmailTemplate;
 	}
 
-	public void setErrandNewEmailTemplate(String errandNewEmailTemplate) {
+	public void setErrandNewEmailTemplate(final String errandNewEmailTemplate) {
 		this.errandNewEmailTemplate = errandNewEmailTemplate;
 	}
 
-	public EmailWorkerConfigEntity withErrandNewEmailTemplate(String errandNewEmailTemplate) {
+	public EmailWorkerConfigEntity withErrandNewEmailTemplate(final String errandNewEmailTemplate) {
 		setErrandNewEmailTemplate(errandNewEmailTemplate);
 		return this;
 	}
@@ -201,11 +201,11 @@ public class EmailWorkerConfigEntity {
 		return daysOfInactivityBeforeReject;
 	}
 
-	public void setDaysOfInactivityBeforeReject(Integer daysOfInactivityBeforeReject) {
+	public void setDaysOfInactivityBeforeReject(final Integer daysOfInactivityBeforeReject) {
 		this.daysOfInactivityBeforeReject = daysOfInactivityBeforeReject;
 	}
 
-	public EmailWorkerConfigEntity withDaysOfInactivityBeforeReject(Integer daysOfInactivityBeforeReject) {
+	public EmailWorkerConfigEntity withDaysOfInactivityBeforeReject(final Integer daysOfInactivityBeforeReject) {
 		setDaysOfInactivityBeforeReject(daysOfInactivityBeforeReject);
 		return this;
 	}
@@ -214,11 +214,11 @@ public class EmailWorkerConfigEntity {
 		return statusForNew;
 	}
 
-	public void setStatusForNew(String statusForNew) {
+	public void setStatusForNew(final String statusForNew) {
 		this.statusForNew = statusForNew;
 	}
 
-	public EmailWorkerConfigEntity withStatusForNew(String statusForNew) {
+	public EmailWorkerConfigEntity withStatusForNew(final String statusForNew) {
 		setStatusForNew(statusForNew);
 		return this;
 	}
@@ -227,11 +227,11 @@ public class EmailWorkerConfigEntity {
 		return triggerStatusChangeOn;
 	}
 
-	public void setTriggerStatusChangeOn(String triggerStatusChangeOn) {
+	public void setTriggerStatusChangeOn(final String triggerStatusChangeOn) {
 		this.triggerStatusChangeOn = triggerStatusChangeOn;
 	}
 
-	public EmailWorkerConfigEntity withTriggerStatusChangeOn(String triggerStatusChangeOn) {
+	public EmailWorkerConfigEntity withTriggerStatusChangeOn(final String triggerStatusChangeOn) {
 		setTriggerStatusChangeOn(triggerStatusChangeOn);
 		return this;
 	}
@@ -240,11 +240,11 @@ public class EmailWorkerConfigEntity {
 		return statusChangeTo;
 	}
 
-	public void setStatusChangeTo(String statusChangeTo) {
+	public void setStatusChangeTo(final String statusChangeTo) {
 		this.statusChangeTo = statusChangeTo;
 	}
 
-	public EmailWorkerConfigEntity withStatusChangeTo(String statusChangeTo) {
+	public EmailWorkerConfigEntity withStatusChangeTo(final String statusChangeTo) {
 		setStatusChangeTo(statusChangeTo);
 		return this;
 	}
@@ -253,11 +253,11 @@ public class EmailWorkerConfigEntity {
 		return inactiveStatus;
 	}
 
-	public void setInactiveStatus(String inactiveStatus) {
+	public void setInactiveStatus(final String inactiveStatus) {
 		this.inactiveStatus = inactiveStatus;
 	}
 
-	public EmailWorkerConfigEntity withInactiveStatus(String inactiveStatus) {
+	public EmailWorkerConfigEntity withInactiveStatus(final String inactiveStatus) {
 		setInactiveStatus(inactiveStatus);
 		return this;
 	}
@@ -266,11 +266,11 @@ public class EmailWorkerConfigEntity {
 		return addSenderAsStakeholder;
 	}
 
-	public void setAddSenderAsStakeholder(boolean addSenderAsStakeholder) {
+	public void setAddSenderAsStakeholder(final boolean addSenderAsStakeholder) {
 		this.addSenderAsStakeholder = addSenderAsStakeholder;
 	}
 
-	public EmailWorkerConfigEntity withAddSenderAsStakeholder(boolean addSenderAsStakeholder) {
+	public EmailWorkerConfigEntity withAddSenderAsStakeholder(final boolean addSenderAsStakeholder) {
 		setAddSenderAsStakeholder(addSenderAsStakeholder);
 		return this;
 	}
@@ -279,11 +279,11 @@ public class EmailWorkerConfigEntity {
 		return stakeholderRole;
 	}
 
-	public void setStakeholderRole(String stakeholderRole) {
+	public void setStakeholderRole(final String stakeholderRole) {
 		this.stakeholderRole = stakeholderRole;
 	}
 
-	public EmailWorkerConfigEntity withStakeholderRole(String stakeholderRole) {
+	public EmailWorkerConfigEntity withStakeholderRole(final String stakeholderRole) {
 		setStakeholderRole(stakeholderRole);
 		return this;
 	}
@@ -292,11 +292,11 @@ public class EmailWorkerConfigEntity {
 		return errandChannel;
 	}
 
-	public void setErrandChannel(String errandChannel) {
+	public void setErrandChannel(final String errandChannel) {
 		this.errandChannel = errandChannel;
 	}
 
-	public EmailWorkerConfigEntity withErrandChannel(String errandChannel) {
+	public EmailWorkerConfigEntity withErrandChannel(final String errandChannel) {
 		setErrandChannel(errandChannel);
 		return this;
 	}
@@ -305,11 +305,11 @@ public class EmailWorkerConfigEntity {
 		return created;
 	}
 
-	public void setCreated(OffsetDateTime created) {
+	public void setCreated(final OffsetDateTime created) {
 		this.created = created;
 	}
 
-	public EmailWorkerConfigEntity withCreated(OffsetDateTime created) {
+	public EmailWorkerConfigEntity withCreated(final OffsetDateTime created) {
 		setCreated(created);
 		return this;
 	}
@@ -318,11 +318,11 @@ public class EmailWorkerConfigEntity {
 		return modified;
 	}
 
-	public void setModified(OffsetDateTime modified) {
+	public void setModified(final OffsetDateTime modified) {
 		this.modified = modified;
 	}
 
-	public EmailWorkerConfigEntity withModified(OffsetDateTime modified) {
+	public EmailWorkerConfigEntity withModified(final OffsetDateTime modified) {
 		setModified(modified);
 		return this;
 	}
@@ -338,14 +338,14 @@ public class EmailWorkerConfigEntity {
 	}
 
 	@Override
-	public boolean equals(Object object) {
+	public boolean equals(final Object object) {
 		if (this == object) {
 			return true;
 		}
 		if (object == null || getClass() != object.getClass()) {
 			return false;
 		}
-		EmailWorkerConfigEntity that = (EmailWorkerConfigEntity) object;
+		final EmailWorkerConfigEntity that = (EmailWorkerConfigEntity) object;
 		return Objects.equals(id, that.id)
 			&& Objects.equals(municipalityId, that.municipalityId)
 			&& Objects.equals(namespace, that.namespace)
@@ -375,26 +375,24 @@ public class EmailWorkerConfigEntity {
 
 	@Override
 	public String toString() {
-		final StringBuilder sb = new StringBuilder("EmailWorkerConfigEntity{");
-		sb.append("id=").append(id);
-		sb.append(", municipalityId='").append(municipalityId).append('\'');
-		sb.append(", namespace='").append(namespace).append('\'');
-		sb.append(", enabled=").append(enabled);
-		sb.append(", errandClosedEmailSender='").append(errandClosedEmailSender).append('\'');
-		sb.append(", errandClosedEmailTemplate='").append(errandClosedEmailTemplate).append('\'');
-		sb.append(", errandNewEmailSender='").append(errandNewEmailSender).append('\'');
-		sb.append(", errandNewEmailTemplate='").append(errandNewEmailTemplate).append('\'');
-		sb.append(", daysOfInactivityBeforeReject=").append(daysOfInactivityBeforeReject);
-		sb.append(", statusForNew='").append(statusForNew).append('\'');
-		sb.append(", triggerStatusChangeOn='").append(triggerStatusChangeOn).append('\'');
-		sb.append(", statusChangeTo='").append(statusChangeTo).append('\'');
-		sb.append(", inactiveStatus='").append(inactiveStatus).append('\'');
-		sb.append(", addSenderAsStakeholder='").append(addSenderAsStakeholder).append('\'');
-		sb.append(", stakeholderRole='").append(stakeholderRole).append('\'');
-		sb.append(", errandChannel='").append(errandChannel).append('\'');
-		sb.append(", created=").append(created);
-		sb.append(", modified=").append(modified);
-		sb.append('}');
-		return sb.toString();
+		return "EmailWorkerConfigEntity{" + "id=" + id
+			+ ", municipalityId='" + municipalityId + '\''
+			+ ", namespace='" + namespace + '\''
+			+ ", enabled=" + enabled
+			+ ", errandClosedEmailSender='" + errandClosedEmailSender + '\''
+			+ ", errandClosedEmailTemplate='" + errandClosedEmailTemplate + '\''
+			+ ", errandNewEmailSender='" + errandNewEmailSender + '\''
+			+ ", errandNewEmailTemplate='" + errandNewEmailTemplate + '\''
+			+ ", daysOfInactivityBeforeReject=" + daysOfInactivityBeforeReject
+			+ ", statusForNew='" + statusForNew + '\''
+			+ ", triggerStatusChangeOn='" + triggerStatusChangeOn + '\''
+			+ ", statusChangeTo='" + statusChangeTo + '\''
+			+ ", inactiveStatus='" + inactiveStatus + '\''
+			+ ", addSenderAsStakeholder='" + addSenderAsStakeholder + '\''
+			+ ", stakeholderRole='" + stakeholderRole + '\''
+			+ ", errandChannel='" + errandChannel + '\''
+			+ ", created=" + created
+			+ ", modified=" + modified
+			+ '}';
 	}
 }

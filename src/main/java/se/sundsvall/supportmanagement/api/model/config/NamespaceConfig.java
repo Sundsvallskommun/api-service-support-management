@@ -134,8 +134,13 @@ public class NamespaceConfig {
 
 	@Override
 	public String toString() {
-		final String builder = "NamespaceConfig [namespace=" + namespace + ", municipalityId=" + municipalityId + ", displayName=" + displayName + ", shortCode=" + shortCode + ", created=" + created
-			+ ", modified=" + modified + "]";
-		return builder;
+		return "NamespaceConfig{" +
+			"namespace='" + namespace + '\'' +
+			", municipalityId='" + municipalityId + '\'' +
+			", displayName='" + displayName + '\'' +
+			", shortCode='" + shortCode + '\'' +
+			", created=" + created +
+			", modified=" + modified +
+			'}';
 	}
 }
