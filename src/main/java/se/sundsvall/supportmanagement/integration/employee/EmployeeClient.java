@@ -4,6 +4,7 @@ import static se.sundsvall.supportmanagement.integration.employee.configuration.
 
 import generated.se.sundsvall.employee.Employee;
 import generated.se.sundsvall.employee.PortalPersonData;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.cloud.openfeign.FeignClient;
@@ -11,12 +12,14 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import se.sundsvall.supportmanagement.integration.employee.configuration.EmployeeConfiguration;
+import se.sundsvall.supportmanagement.integration.eventlog.configuration.EventlogConfiguration;
 
 @FeignClient(
 	name = CLIENT_ID,
 	url = "${integration.employee.url}",
 	configuration = EmployeeConfiguration.class,
 	dismiss404 = true)
+@CircuitBreaker(name = EventlogConfiguration.CLIENT_ID)
 public interface EmployeeClient {
 
 	/**
