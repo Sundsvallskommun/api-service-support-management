@@ -7,6 +7,7 @@ import static se.sundsvall.supportmanagement.integration.eventlog.configuration.
 import feign.QueryMap;
 import generated.se.sundsvall.eventlog.Event;
 import generated.se.sundsvall.eventlog.PageEvent;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import se.sundsvall.supportmanagement.integration.eventlog.configuration.EventlogConfiguration;
 
 @FeignClient(name = CLIENT_ID, url = "${integration.eventlog.url}", configuration = EventlogConfiguration.class)
+@CircuitBreaker(name = CLIENT_ID)
 public interface EventlogClient {
 
 	/**
