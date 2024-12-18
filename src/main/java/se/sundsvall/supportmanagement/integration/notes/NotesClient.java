@@ -10,6 +10,7 @@ import generated.se.sundsvall.notes.FindNotesResponse;
 import generated.se.sundsvall.notes.Note;
 import generated.se.sundsvall.notes.Revision;
 import generated.se.sundsvall.notes.UpdateNoteRequest;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import java.util.List;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import se.sundsvall.supportmanagement.integration.notes.configuration.NotesConfiguration;
 
 @FeignClient(name = CLIENT_ID, url = "${integration.notes.url}", configuration = NotesConfiguration.class)
+@CircuitBreaker(name = CLIENT_ID)
 public interface NotesClient {
 
 	/**
