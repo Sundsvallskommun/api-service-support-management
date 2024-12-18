@@ -261,13 +261,31 @@ public class StakeholderEntity {
 		return parameters;
 	}
 
-	public void setParameters(List<StakeholderParameterEntity> parameters) {
+	public void setParameters(final List<StakeholderParameterEntity> parameters) {
 		this.parameters = parameters;
 	}
 
-	public StakeholderEntity withParameters(List<StakeholderParameterEntity> parameters) {
+	public StakeholderEntity withParameters(final List<StakeholderParameterEntity> parameters) {
 		this.parameters = parameters;
 		return this;
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(address, careOf, city, contactChannels, country, errandEntity, externalId, externalIdType, firstName, id, lastName, organizationName, parameters, role, zipCode);
+	}
+
+	@Override
+	public boolean equals(final Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (!(obj instanceof final StakeholderEntity other)) {
+			return false;
+		}
+		return Objects.equals(address, other.address) && Objects.equals(careOf, other.careOf) && Objects.equals(city, other.city) && Objects.equals(contactChannels, other.contactChannels) && Objects.equals(country, other.country) && Objects.equals(
+			errandEntity, other.errandEntity) && Objects.equals(externalId, other.externalId) && Objects.equals(externalIdType, other.externalIdType) && Objects.equals(firstName, other.firstName) && (id == other.id) && Objects.equals(lastName,
+				other.lastName) && Objects.equals(organizationName, other.organizationName) && Objects.equals(parameters, other.parameters) && Objects.equals(role, other.role) && Objects.equals(zipCode, other.zipCode);
 	}
 
 	@Override
@@ -290,19 +308,5 @@ public class StakeholderEntity {
 			", parameters=" + parameters +
 			'}';
 
-	}
-
-	@Override
-	public int hashCode() {
-		return Objects.hash(address, careOf, city, contactChannels, country, errandEntity, externalId, externalIdType, firstName, id, lastName, organizationName, parameters, role, zipCode);
-	}
-
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) { return true; }
-		if (!(obj instanceof final StakeholderEntity other)) { return false; }
-		return Objects.equals(address, other.address) && Objects.equals(careOf, other.careOf) && Objects.equals(city, other.city) && Objects.equals(contactChannels, other.contactChannels) && Objects.equals(country, other.country) && Objects.equals(
-			errandEntity, other.errandEntity) && Objects.equals(externalId, other.externalId) && Objects.equals(externalIdType, other.externalIdType) && Objects.equals(firstName, other.firstName) && (id == other.id) && Objects.equals(lastName,
-				other.lastName) && Objects.equals(organizationName, other.organizationName) && Objects.equals(parameters, other.parameters) && Objects.equals(role, other.role) && Objects.equals(zipCode, other.zipCode);
 	}
 }

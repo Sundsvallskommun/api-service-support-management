@@ -29,11 +29,11 @@ public class Classification {
 		return category;
 	}
 
-	public void setCategory(String category) {
+	public void setCategory(final String category) {
 		this.category = category;
 	}
 
-	public Classification withCategory(String category) {
+	public Classification withCategory(final String category) {
 		this.category = category;
 		return this;
 	}
@@ -42,17 +42,17 @@ public class Classification {
 		return type;
 	}
 
-	public void setType(String type) {
+	public void setType(final String type) {
 		this.type = type;
 	}
 
-	public Classification withType(String type) {
+	public Classification withType(final String type) {
 		this.type = type;
 		return this;
 	}
 
 	@Override
-	public boolean equals(Object o) {
+	public boolean equals(final Object o) {
 		if (this == o) {
 			return true;
 		}
@@ -70,10 +70,9 @@ public class Classification {
 
 	@Override
 	public String toString() {
-		final StringBuilder sb = new StringBuilder("Classification{");
-		sb.append("category='").append(category).append('\'');
-		sb.append(", type='").append(type).append('\'');
-		sb.append('}');
-		return sb.toString();
+		return "Classification{" +
+			"category='" + category + '\'' +
+			", type='" + type + '\'' +
+			'}';
 	}
 }

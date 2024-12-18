@@ -71,7 +71,7 @@ public class NotificationEntity {
 	private boolean acknowledged;
 
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "errand_id", nullable = true, foreignKey = @ForeignKey(name = "fk_notification_errand_id"))
+	@JoinColumn(name = "errand_id", foreignKey = @ForeignKey(name = "fk_notification_errand_id"))
 	private ErrandEntity errandEntity;
 
 	@Column(name = "municipality_id", nullable = false)
@@ -254,11 +254,11 @@ public class NotificationEntity {
 		return errandEntity;
 	}
 
-	public void setErrandEntity(ErrandEntity errandEntity) {
+	public void setErrandEntity(final ErrandEntity errandEntity) {
 		this.errandEntity = errandEntity;
 	}
 
-	public NotificationEntity withErrandEntity(ErrandEntity errandEntity) {
+	public NotificationEntity withErrandEntity(final ErrandEntity errandEntity) {
 		this.errandEntity = errandEntity;
 		return this;
 	}
@@ -295,9 +295,13 @@ public class NotificationEntity {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) { return true; }
-		if (!(obj instanceof final NotificationEntity other)) { return false; }
+	public boolean equals(final Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (!(obj instanceof final NotificationEntity other)) {
+			return false;
+		}
 		return (acknowledged == other.acknowledged) && Objects.equals(content, other.content) && Objects.equals(created, other.created) && Objects.equals(createdBy, other.createdBy) && Objects.equals(createdByFullName, other.createdByFullName) && Objects
 			.equals(description, other.description) && Objects.equals(errandEntity, other.errandEntity) && Objects.equals(expires, other.expires) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(municipalityId,
 				other.municipalityId) && Objects.equals(namespace, other.namespace) && Objects.equals(ownerFullName, other.ownerFullName) && Objects.equals(ownerId, other.ownerId) && Objects.equals(type, other.type);
@@ -305,10 +309,22 @@ public class NotificationEntity {
 
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder();
-		builder.append("NotificationEntity [id=").append(id).append(", created=").append(created).append(", modified=").append(modified).append(", ownerFullName=").append(ownerFullName).append(", ownerId=").append(ownerId).append(", createdBy=").append(
-			createdBy).append(", createdByFullName=").append(createdByFullName).append(", type=").append(type).append(", description=").append(description).append(", content=").append(content).append(", expires=").append(expires).append(", acknowledged=")
-			.append(acknowledged).append(", errandEntity=").append(errandEntity).append(", municipalityId=").append(municipalityId).append(", namespace=").append(namespace).append("]");
-		return builder.toString();
+		return "NotificationEntity{" +
+			"id='" + id + '\'' +
+			", created=" + created +
+			", modified=" + modified +
+			", ownerFullName='" + ownerFullName + '\'' +
+			", ownerId='" + ownerId + '\'' +
+			", createdBy='" + createdBy + '\'' +
+			", createdByFullName='" + createdByFullName + '\'' +
+			", type='" + type + '\'' +
+			", description='" + description + '\'' +
+			", content='" + content + '\'' +
+			", expires=" + expires +
+			", acknowledged=" + acknowledged +
+			", errandEntity=" + errandEntity +
+			", municipalityId='" + municipalityId + '\'' +
+			", namespace='" + namespace + '\'' +
+			'}';
 	}
 }

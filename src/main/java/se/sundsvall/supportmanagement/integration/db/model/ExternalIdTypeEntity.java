@@ -61,11 +61,11 @@ public class ExternalIdTypeEntity {
 		return id;
 	}
 
-	public void setId(Long id) {
+	public void setId(final Long id) {
 		this.id = id;
 	}
 
-	public ExternalIdTypeEntity withId(Long id) {
+	public ExternalIdTypeEntity withId(final Long id) {
 		this.id = id;
 		return this;
 	}
@@ -74,11 +74,11 @@ public class ExternalIdTypeEntity {
 		return name;
 	}
 
-	public void setName(String name) {
+	public void setName(final String name) {
 		this.name = name;
 	}
 
-	public ExternalIdTypeEntity withName(String name) {
+	public ExternalIdTypeEntity withName(final String name) {
 		this.name = name;
 		return this;
 	}
@@ -87,11 +87,11 @@ public class ExternalIdTypeEntity {
 		return municipalityId;
 	}
 
-	public void setMunicipalityId(String municipalityId) {
+	public void setMunicipalityId(final String municipalityId) {
 		this.municipalityId = municipalityId;
 	}
 
-	public ExternalIdTypeEntity withMunicipalityId(String municipalityId) {
+	public ExternalIdTypeEntity withMunicipalityId(final String municipalityId) {
 		this.municipalityId = municipalityId;
 		return this;
 	}
@@ -100,11 +100,11 @@ public class ExternalIdTypeEntity {
 		return namespace;
 	}
 
-	public void setNamespace(String namespace) {
+	public void setNamespace(final String namespace) {
 		this.namespace = namespace;
 	}
 
-	public ExternalIdTypeEntity withNamespace(String namespace) {
+	public ExternalIdTypeEntity withNamespace(final String namespace) {
 		this.namespace = namespace;
 		return this;
 	}
@@ -113,11 +113,11 @@ public class ExternalIdTypeEntity {
 		return created;
 	}
 
-	public void setCreated(OffsetDateTime created) {
+	public void setCreated(final OffsetDateTime created) {
 		this.created = created;
 	}
 
-	public ExternalIdTypeEntity withCreated(OffsetDateTime created) {
+	public ExternalIdTypeEntity withCreated(final OffsetDateTime created) {
 		this.created = created;
 		return this;
 	}
@@ -126,11 +126,11 @@ public class ExternalIdTypeEntity {
 		return modified;
 	}
 
-	public void setModified(OffsetDateTime modified) {
+	public void setModified(final OffsetDateTime modified) {
 		this.modified = modified;
 	}
 
-	public ExternalIdTypeEntity withModified(OffsetDateTime modified) {
+	public ExternalIdTypeEntity withModified(final OffsetDateTime modified) {
 		this.modified = modified;
 		return this;
 	}
@@ -151,7 +151,7 @@ public class ExternalIdTypeEntity {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(final Object obj) {
 		if (this == obj) {
 			return true;
 		}
@@ -168,9 +168,13 @@ public class ExternalIdTypeEntity {
 
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder();
-		builder.append("ExternalIdTypeEntity [id=").append(id).append(", name=").append(name).append(", municipalityId=").append(municipalityId).append(", namespace=").append(namespace).append(", created=").append(created).append(", modified=")
-			.append(modified).append("]");
-		return builder.toString();
+		return "ExternalIdTypeEntity{" +
+			"id=" + id +
+			", name='" + name + '\'' +
+			", municipalityId='" + municipalityId + '\'' +
+			", namespace='" + namespace + '\'' +
+			", created=" + created +
+			", modified=" + modified +
+			'}';
 	}
 }

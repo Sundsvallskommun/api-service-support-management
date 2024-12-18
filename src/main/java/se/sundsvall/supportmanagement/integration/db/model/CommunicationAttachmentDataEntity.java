@@ -60,7 +60,7 @@ public class CommunicationAttachmentDataEntity {
 		if (o == null || getClass() != o.getClass())
 			return false;
 		final CommunicationAttachmentDataEntity that = (CommunicationAttachmentDataEntity) o;
-		return id == that.id && Objects.equals(file, that.file);
+		return Objects.equals(id, that.id) && Objects.equals(file, that.file);
 	}
 
 	@Override

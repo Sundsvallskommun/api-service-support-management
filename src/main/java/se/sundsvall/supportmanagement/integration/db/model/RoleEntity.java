@@ -90,11 +90,11 @@ public class RoleEntity {
 		return displayName;
 	}
 
-	public void setDisplayName(String displayName) {
+	public void setDisplayName(final String displayName) {
 		this.displayName = displayName;
 	}
 
-	public RoleEntity withDisplayName(String displayName) {
+	public RoleEntity withDisplayName(final String displayName) {
 		this.displayName = displayName;
 		return this;
 	}
@@ -180,16 +180,14 @@ public class RoleEntity {
 
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder();
-		builder.append("RoleEntity [id=").append(id)
-			.append(", name=").append(name)
-			.append(", displayName=").append(displayName)
-			.append(", municipalityId=").append(municipalityId)
-			.append(", namespace=").append(namespace)
-			.append(", created=").append(created)
-			.append(", modified=")
-			.append(modified)
-			.append("]");
-		return builder.toString();
+		return "RoleEntity [id=" + id
+			+ ", name=" + name
+			+ ", displayName=" + displayName
+			+ ", municipalityId=" + municipalityId
+			+ ", namespace=" + namespace
+			+ ", created=" + created
+			+ ", modified="
+			+ modified
+			+ "]";
 	}
 }

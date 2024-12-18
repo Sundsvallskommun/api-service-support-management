@@ -26,11 +26,11 @@ public class Parameter {
 		return key;
 	}
 
-	public void setKey(String key) {
+	public void setKey(final String key) {
 		this.key = key;
 	}
 
-	public Parameter withKey(String key) {
+	public Parameter withKey(final String key) {
 		this.key = key;
 		return this;
 	}
@@ -39,11 +39,11 @@ public class Parameter {
 		return displayName;
 	}
 
-	public void setDisplayName(String displayName) {
+	public void setDisplayName(final String displayName) {
 		this.displayName = displayName;
 	}
 
-	public Parameter withDisplayName(String displayName) {
+	public Parameter withDisplayName(final String displayName) {
 		this.displayName = displayName;
 		return this;
 	}
@@ -52,11 +52,11 @@ public class Parameter {
 		return values;
 	}
 
-	public void setValues(List<String> values) {
+	public void setValues(final List<String> values) {
 		this.values = values;
 	}
 
-	public Parameter withValues(List<String> values) {
+	public Parameter withValues(final List<String> values) {
 		this.values = values;
 		return this;
 	}
@@ -67,16 +67,22 @@ public class Parameter {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) { return true; }
-		if (!(obj instanceof final Parameter other)) { return false; }
+	public boolean equals(final Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (!(obj instanceof final Parameter other)) {
+			return false;
+		}
 		return Objects.equals(displayName, other.displayName) && Objects.equals(key, other.key) && Objects.equals(values, other.values);
 	}
 
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder();
-		builder.append("Parameter [key=").append(key).append(", displayName=").append(displayName).append(", values=").append(values).append("]");
-		return builder.toString();
+		return "Parameter{" +
+			"key='" + key + '\'' +
+			", displayName='" + displayName + '\'' +
+			", values=" + values +
+			'}';
 	}
 }

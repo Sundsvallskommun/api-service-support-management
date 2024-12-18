@@ -106,7 +106,7 @@ public class Revision {
 		if (this == obj) {
 			return true;
 		}
-		if (!(obj instanceof Revision other)) {
+		if (!(obj instanceof final Revision other)) {
 			return false;
 		}
 		return Objects.equals(created, other.created) && Objects.equals(entityId, other.entityId) && Objects.equals(entityType, other.entityType) && Objects.equals(id, other.id) && Objects.equals(version, other.version);
@@ -114,13 +114,12 @@ public class Revision {
 
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder();
-		builder.append("Revision [id=")
-			.append(id).append(", entityId=").append(entityId)
-			.append(", entityType=").append(entityType)
-			.append(", version=").append(version)
-			.append(", created=").append(created)
-			.append("]");
-		return builder.toString();
+		return "Revision{" +
+			"id='" + id + '\'' +
+			", entityId='" + entityId + '\'' +
+			", entityType='" + entityType + '\'' +
+			", version=" + version +
+			", created=" + created +
+			'}';
 	}
 }

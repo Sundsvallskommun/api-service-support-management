@@ -73,11 +73,11 @@ public class CategoryEntity {
 		return id;
 	}
 
-	public void setId(Long id) {
+	public void setId(final Long id) {
 		this.id = id;
 	}
 
-	public CategoryEntity withId(Long id) {
+	public CategoryEntity withId(final Long id) {
 		this.id = id;
 		return this;
 	}
@@ -86,11 +86,11 @@ public class CategoryEntity {
 		return name;
 	}
 
-	public void setName(String name) {
+	public void setName(final String name) {
 		this.name = name;
 	}
 
-	public CategoryEntity withName(String name) {
+	public CategoryEntity withName(final String name) {
 		this.name = name;
 		return this;
 	}
@@ -99,11 +99,11 @@ public class CategoryEntity {
 		return displayName;
 	}
 
-	public void setDisplayName(String displayName) {
+	public void setDisplayName(final String displayName) {
 		this.displayName = displayName;
 	}
 
-	public CategoryEntity withDisplayName(String displayName) {
+	public CategoryEntity withDisplayName(final String displayName) {
 		this.displayName = displayName;
 		return this;
 	}
@@ -112,7 +112,7 @@ public class CategoryEntity {
 		return types;
 	}
 
-	public void setTypes(List<TypeEntity> types) {
+	public void setTypes(final List<TypeEntity> types) {
 		Optional.ofNullable(this.types).ifPresentOrElse(
 			List::clear,
 			() -> this.types = new ArrayList<>());
@@ -122,7 +122,7 @@ public class CategoryEntity {
 			.forEach(type -> this.types.add(type.withCategoryEntity(this)));
 	}
 
-	public CategoryEntity withTypes(List<TypeEntity> types) {
+	public CategoryEntity withTypes(final List<TypeEntity> types) {
 		setTypes(types);
 		return this;
 	}
@@ -131,11 +131,11 @@ public class CategoryEntity {
 		return municipalityId;
 	}
 
-	public void setMunicipalityId(String municipalityId) {
+	public void setMunicipalityId(final String municipalityId) {
 		this.municipalityId = municipalityId;
 	}
 
-	public CategoryEntity withMunicipalityId(String municipalityId) {
+	public CategoryEntity withMunicipalityId(final String municipalityId) {
 		this.municipalityId = municipalityId;
 		return this;
 	}
@@ -144,11 +144,11 @@ public class CategoryEntity {
 		return namespace;
 	}
 
-	public void setNamespace(String namespace) {
+	public void setNamespace(final String namespace) {
 		this.namespace = namespace;
 	}
 
-	public CategoryEntity withNamespace(String namespace) {
+	public CategoryEntity withNamespace(final String namespace) {
 		this.namespace = namespace;
 		return this;
 	}
@@ -157,11 +157,11 @@ public class CategoryEntity {
 		return created;
 	}
 
-	public void setCreated(OffsetDateTime created) {
+	public void setCreated(final OffsetDateTime created) {
 		this.created = created;
 	}
 
-	public CategoryEntity withCreated(OffsetDateTime created) {
+	public CategoryEntity withCreated(final OffsetDateTime created) {
 		this.created = created;
 		return this;
 	}
@@ -170,11 +170,11 @@ public class CategoryEntity {
 		return modified;
 	}
 
-	public void setModified(OffsetDateTime modified) {
+	public void setModified(final OffsetDateTime modified) {
 		this.modified = modified;
 	}
 
-	public CategoryEntity withModified(OffsetDateTime modified) {
+	public CategoryEntity withModified(final OffsetDateTime modified) {
 		this.modified = modified;
 		return this;
 	}
@@ -199,7 +199,7 @@ public class CategoryEntity {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(final Object obj) {
 		if (this == obj) {
 			return true;
 		}
@@ -216,9 +216,15 @@ public class CategoryEntity {
 
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder();
-		builder.append("CategoryEntity [id=").append(id).append(", name=").append(name).append(", displayName=").append(displayName).append(", types=").append(types).append(", municipalityId=").append(municipalityId).append(", namespace=")
-			.append(namespace).append(", created=").append(created).append(", modified=").append(modified).append("]");
-		return builder.toString();
+		return "CategoryEntity{" +
+			"id=" + id +
+			", name='" + name + '\'' +
+			", displayName='" + displayName + '\'' +
+			", types=" + types +
+			", municipalityId='" + municipalityId + '\'' +
+			", namespace='" + namespace + '\'' +
+			", created=" + created +
+			", modified=" + modified +
+			'}';
 	}
 }

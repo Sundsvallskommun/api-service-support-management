@@ -30,7 +30,7 @@ import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 /**
  * Tag repository tests.
  *
- * @see /src/test/resources/db/testdata.sql for data setup.
+ * @see <a href="file:src/test/resources/db/testdata.sql">src/test/resources/db/testdata.sql</a> for data setup.
  */
 @SpringBootTest
 @ActiveProfiles("junit")
@@ -130,8 +130,8 @@ class ErrandsRepositoryTest {
 			.extracting(StakeholderEntity::getId, StakeholderEntity::getExternalIdType, StakeholderEntity::getExternalId, StakeholderEntity::getFirstName, StakeholderEntity::getLastName, StakeholderEntity::getAddress, StakeholderEntity::getCareOf,
 				StakeholderEntity::getZipCode, StakeholderEntity::getCountry, StakeholderEntity::getRole)
 			.containsExactly(tuple(3001L, "EMPLOYEE", "EXTERNAL_ID-1", "FIRST_NAME-1", "LAST_NAME-1", "ADDRESS-1", "CARE_OF-1", "ZIP_CODE-1", "COUNTRY-1", "ROLE-1"));
-		assertThat(errandEntity.get().getStakeholders().get(0).getContactChannels()).hasSize(1);
-		assertThat(errandEntity.get().getStakeholders().get(0).getContactChannels())
+		assertThat(errandEntity.get().getStakeholders().getFirst().getContactChannels()).hasSize(1);
+		assertThat(errandEntity.get().getStakeholders().getFirst().getContactChannels())
 			.extracting(ContactChannelEntity::getType, ContactChannelEntity::getValue)
 			.containsExactly(tuple("TYPE-1", "VALUE-1"));
 	}
@@ -143,7 +143,7 @@ class ErrandsRepositoryTest {
 		"(stakeholders.externalId : 'EXTERNAL_ID-1' and externalTags is not empty)",
 		"(stakeholders.externalId : 'EXTERNAL_ID-1' and attachments is not empty)"
 	})
-	void findByFilter(String filter) {
+	void findByFilter(final String filter) {
 
 		final Specification<ErrandEntity> specification = filterSpecificationConverter.convert(filter);
 
@@ -218,11 +218,11 @@ class ErrandsRepositoryTest {
 
 	@Test
 	void findByOne() {
-		var specification = hasMatchingTags(List.of(
+		final var specification = hasMatchingTags(List.of(
 			DbExternalTag.create().withKey("KEY-1").withValue("VALUE-1"),
 			DbExternalTag.create().withKey("KEY-2").withValue("VALUE-2")));
 
-		var errandEntity = errandsRepository.findOne(specification);
+		final var errandEntity = errandsRepository.findOne(specification);
 
 		assertThat(errandEntity).isPresent();
 		assertThat(errandEntity.get().getId()).isEqualTo("ERRAND_ID-1");
@@ -231,9 +231,9 @@ class ErrandsRepositoryTest {
 
 	@Test
 	void findByAllWithEmptyHasMatchingTags() {
-		var specification = hasMatchingTags(emptyList());
+		final var specification = hasMatchingTags(emptyList());
 
-		var errandEntity = errandsRepository.findAll(specification);
+		final var errandEntity = errandsRepository.findAll(specification);
 
 		assertThat(errandEntity)
 			.hasSize(4)

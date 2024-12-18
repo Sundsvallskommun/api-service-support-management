@@ -68,11 +68,11 @@ public class ValidationEntity {
 		return id;
 	}
 
-	public void setId(Long id) {
+	public void setId(final Long id) {
 		this.id = id;
 	}
 
-	public ValidationEntity withId(Long id) {
+	public ValidationEntity withId(final Long id) {
 		this.id = id;
 		return this;
 	}
@@ -81,11 +81,11 @@ public class ValidationEntity {
 		return this.type;
 	}
 
-	public void setType(EntityType type) {
+	public void setType(final EntityType type) {
 		this.type = type;
 	}
 
-	public ValidationEntity withType(EntityType type) {
+	public ValidationEntity withType(final EntityType type) {
 		this.type = type;
 		return this;
 	}
@@ -94,11 +94,11 @@ public class ValidationEntity {
 		return this.validated;
 	}
 
-	public void setValidated(boolean validated) {
+	public void setValidated(final boolean validated) {
 		this.validated = validated;
 	}
 
-	public ValidationEntity withValidated(boolean validated) {
+	public ValidationEntity withValidated(final boolean validated) {
 		this.validated = validated;
 		return this;
 	}
@@ -107,11 +107,11 @@ public class ValidationEntity {
 		return municipalityId;
 	}
 
-	public void setMunicipalityId(String municipalityId) {
+	public void setMunicipalityId(final String municipalityId) {
 		this.municipalityId = municipalityId;
 	}
 
-	public ValidationEntity withMunicipalityId(String municipalityId) {
+	public ValidationEntity withMunicipalityId(final String municipalityId) {
 		this.municipalityId = municipalityId;
 		return this;
 	}
@@ -120,11 +120,11 @@ public class ValidationEntity {
 		return namespace;
 	}
 
-	public void setNamespace(String namespace) {
+	public void setNamespace(final String namespace) {
 		this.namespace = namespace;
 	}
 
-	public ValidationEntity withNamespace(String namespace) {
+	public ValidationEntity withNamespace(final String namespace) {
 		this.namespace = namespace;
 		return this;
 	}
@@ -133,11 +133,11 @@ public class ValidationEntity {
 		return created;
 	}
 
-	public void setCreated(OffsetDateTime created) {
+	public void setCreated(final OffsetDateTime created) {
 		this.created = created;
 	}
 
-	public ValidationEntity withCreated(OffsetDateTime created) {
+	public ValidationEntity withCreated(final OffsetDateTime created) {
 		this.created = created;
 		return this;
 	}
@@ -146,11 +146,11 @@ public class ValidationEntity {
 		return modified;
 	}
 
-	public void setModified(OffsetDateTime modified) {
+	public void setModified(final OffsetDateTime modified) {
 		this.modified = modified;
 	}
 
-	public ValidationEntity withModified(OffsetDateTime modified) {
+	public ValidationEntity withModified(final OffsetDateTime modified) {
 		this.modified = modified;
 		return this;
 	}
@@ -171,7 +171,7 @@ public class ValidationEntity {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(final Object obj) {
 		if (this == obj) {
 			return true;
 		}
@@ -188,9 +188,14 @@ public class ValidationEntity {
 
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder();
-		builder.append("ValidationEntity [id=").append(id).append(", type=").append(type).append(", validated=").append(validated).append(", municipalityId=").append(municipalityId).append(", namespace=").append(namespace).append(", created=")
-			.append(created).append(", modified=").append(modified).append("]");
-		return builder.toString();
+		return "ValidationEntity{" +
+			"id=" + id +
+			", type=" + type +
+			", validated=" + validated +
+			", municipalityId='" + municipalityId + '\'' +
+			", namespace='" + namespace + '\'' +
+			", created=" + created +
+			", modified=" + modified +
+			'}';
 	}
 }

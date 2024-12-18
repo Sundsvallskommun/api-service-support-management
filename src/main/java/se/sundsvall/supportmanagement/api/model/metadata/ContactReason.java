@@ -31,11 +31,11 @@ public class ContactReason {
 		return id;
 	}
 
-	public void setId(Long id) {
+	public void setId(final Long id) {
 		this.id = id;
 	}
 
-	public ContactReason withId(Long id) {
+	public ContactReason withId(final Long id) {
 		this.id = id;
 		return this;
 	}
@@ -85,16 +85,23 @@ public class ContactReason {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) { return true; }
-		if (!(obj instanceof final ContactReason other)) { return false; }
+	public boolean equals(final Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (!(obj instanceof final ContactReason other)) {
+			return false;
+		}
 		return Objects.equals(created, other.created) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(reason, other.reason);
 	}
 
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder();
-		builder.append("ContactReason [id=").append(id).append(", reason=").append(reason).append(", created=").append(created).append(", modified=").append(modified).append("]");
-		return builder.toString();
+		return "ContactReason{" +
+			"id=" + id +
+			", reason='" + reason + '\'' +
+			", created=" + created +
+			", modified=" + modified +
+			'}';
 	}
 }

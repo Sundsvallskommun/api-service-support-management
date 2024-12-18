@@ -15,12 +15,10 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Example;
 import org.springframework.test.context.jdbc.Sql;
-
 import se.sundsvall.dept44.test.AbstractAppTest;
 import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.supportmanagement.Application;
@@ -106,8 +104,6 @@ class ErrandTimeMeasurementsIT extends AbstractAppTest {
 				assertThat(errand.getTimeMeasures().getLast().getStartTime()).isCloseTo(OffsetDateTime.now(), within(10, ChronoUnit.SECONDS));
 				assertThat(errand.getTimeMeasures().getLast().getStatus()).isEqualTo("STATUS-3");
 				assertThat(errand.getTimeMeasures().getLast().getStopTime()).isNull();
-			}, () -> {
-				fail("Errand not found");
-			});
+			}, () -> fail("Errand not found"));
 	}
 }

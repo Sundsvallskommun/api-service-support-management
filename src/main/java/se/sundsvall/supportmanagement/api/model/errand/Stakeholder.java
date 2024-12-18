@@ -214,11 +214,11 @@ public class Stakeholder {
 		return parameters;
 	}
 
-	public void setParameters(List<Parameter> parameters) {
+	public void setParameters(final List<Parameter> parameters) {
 		this.parameters = parameters;
 	}
 
-	public Stakeholder withParameters(List<Parameter> parameters) {
+	public Stakeholder withParameters(final List<Parameter> parameters) {
 		this.parameters = parameters;
 		return this;
 	}
@@ -229,9 +229,13 @@ public class Stakeholder {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) { return true; }
-		if (!(obj instanceof final Stakeholder other)) { return false; }
+	public boolean equals(final Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (!(obj instanceof final Stakeholder other)) {
+			return false;
+		}
 		return Objects.equals(address, other.address) && Objects.equals(careOf, other.careOf) && Objects.equals(city, other.city) && Objects.equals(contactChannels, other.contactChannels) && Objects.equals(country, other.country) && Objects.equals(
 			externalId, other.externalId) && Objects.equals(externalIdType, other.externalIdType) && Objects.equals(firstName, other.firstName) && Objects.equals(lastName, other.lastName) && Objects.equals(organizationName, other.organizationName)
 			&& Objects.equals(parameters, other.parameters) && Objects.equals(role, other.role) && Objects.equals(zipCode, other.zipCode);
@@ -239,10 +243,20 @@ public class Stakeholder {
 
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder();
-		builder.append("Stakeholder [externalId=").append(externalId).append(", externalIdType=").append(externalIdType).append(", role=").append(role).append(", city=").append(city).append(", organizationName=").append(organizationName).append(
-			", firstName=").append(firstName).append(", lastName=").append(lastName).append(", address=").append(address).append(", careOf=").append(careOf).append(", zipCode=").append(zipCode).append(", country=").append(country).append(
-				", contactChannels=").append(contactChannels).append(", parameters=").append(parameters).append("]");
-		return builder.toString();
+		return "Stakeholder{" +
+			"externalId='" + externalId + '\'' +
+			", externalIdType='" + externalIdType + '\'' +
+			", role='" + role + '\'' +
+			", city='" + city + '\'' +
+			", organizationName='" + organizationName + '\'' +
+			", firstName='" + firstName + '\'' +
+			", lastName='" + lastName + '\'' +
+			", address='" + address + '\'' +
+			", careOf='" + careOf + '\'' +
+			", zipCode='" + zipCode + '\'' +
+			", country='" + country + '\'' +
+			", contactChannels=" + contactChannels +
+			", parameters=" + parameters +
+			'}';
 	}
 }

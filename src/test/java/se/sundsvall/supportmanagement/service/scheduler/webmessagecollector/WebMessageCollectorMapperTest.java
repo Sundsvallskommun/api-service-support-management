@@ -12,7 +12,6 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
-import java.util.regex.Pattern;
 import javax.sql.rowset.serial.SerialBlob;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,7 +20,6 @@ import org.mockito.Mock;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.Direction;
 import se.sundsvall.supportmanagement.service.util.BlobBuilder;
-import se.sundsvall.supportmanagement.service.util.ServiceUtil;
 
 @ExtendWith(org.mockito.junit.jupiter.MockitoExtension.class)
 class WebMessageCollectorMapperTest {
@@ -69,20 +67,17 @@ class WebMessageCollectorMapperTest {
 		final var result = webMessageCollectorMapper.toCommunicationEntity(messagedto, errand);
 
 		// Assert
-		assertThat(result).hasNoNullFieldsOrPropertiesExcept("subject", "target", "attachments", "emailHeaders", "errandAttachments");
-		assertThat(result.getId()).isNotNull();
+		assertThat(result).hasNoNullFieldsOrPropertiesExcept("id", "subject", "target", "attachments", "emailHeaders", "errandAttachments");
 		assertThat(result.getNamespace()).isEqualTo(namespace);
 		assertThat(result.getMunicipalityId()).isEqualTo(municipalityId);
 		assertThat(result.getType()).isEqualTo(WEB_MESSAGE);
 		assertThat(result.getSender()).isEqualTo(firstName + " " + lastName);
-		assertThat(ServiceUtil.isValidUuid(result.getId())).isTrue();
 		assertThat(result.getDirection()).isEqualTo(Direction.INBOUND);
 		assertThat(result.getExternalId()).isEqualTo(messageId);
 		assertThat(result.getMessageBody()).isEqualTo(messageString);
 		assertThat(result.getSent()).isCloseTo(OffsetDateTime.now(), within(1, ChronoUnit.SECONDS));
 		assertThat(result.getAttachments()).hasSize(1);
 		assertThat(result.getAttachments().getFirst().getForeignId()).isEqualTo("1");
-		assertThat(result.getAttachments().getFirst().getId()).containsPattern(Pattern.compile("([a-f0-9]{8}(-[a-f0-9]{4}){4}[a-f0-9]{8})"));
 		assertThat(result.getAttachments().getFirst().getContentType()).isEqualTo("text/plain");
 		assertThat(result.getAttachments().getFirst().getName()).isEqualTo("attachment.txt");
 

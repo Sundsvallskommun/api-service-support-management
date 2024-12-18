@@ -31,11 +31,11 @@ public class Operation {
 		return op;
 	}
 
-	public void setOp(String op) {
+	public void setOp(final String op) {
 		this.op = op;
 	}
 
-	public Operation withOp(String op) {
+	public Operation withOp(final String op) {
 		this.op = op;
 		return this;
 	}
@@ -44,11 +44,11 @@ public class Operation {
 		return path;
 	}
 
-	public void setPath(String path) {
+	public void setPath(final String path) {
 		this.path = path;
 	}
 
-	public Operation withPath(String path) {
+	public Operation withPath(final String path) {
 		this.path = path;
 		return this;
 	}
@@ -57,11 +57,11 @@ public class Operation {
 		return value;
 	}
 
-	public void setValue(String value) {
+	public void setValue(final String value) {
 		this.value = value;
 	}
 
-	public Operation withValue(String value) {
+	public Operation withValue(final String value) {
 		this.value = value;
 		return this;
 	}
@@ -70,11 +70,11 @@ public class Operation {
 		return fromValue;
 	}
 
-	public void setFromValue(String fromValue) {
+	public void setFromValue(final String fromValue) {
 		this.fromValue = fromValue;
 	}
 
-	public Operation withFromValue(String fromValue) {
+	public Operation withFromValue(final String fromValue) {
 		this.fromValue = fromValue;
 		return this;
 	}
@@ -85,7 +85,7 @@ public class Operation {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(final Object obj) {
 		if (this == obj) {
 			return true;
 		}
@@ -95,22 +95,17 @@ public class Operation {
 		if (getClass() != obj.getClass()) {
 			return false;
 		}
-		Operation other = (Operation) obj;
+		final Operation other = (Operation) obj;
 		return Objects.equals(op, other.op) && Objects.equals(path, other.path) && Objects.equals(value, other.value) && Objects.equals(fromValue, other.fromValue);
 	}
 
 	@Override
 	public String toString() {
-		StringBuilder builder = new StringBuilder();
-		builder.append("Operation [op=");
-		builder.append(op);
-		builder.append(", path=");
-		builder.append(path);
-		builder.append(", value=");
-		builder.append(value);
-		builder.append(", fromValue=");
-		builder.append(fromValue);
-		builder.append("]");
-		return builder.toString();
+		return "Operation{" +
+			"op='" + op + '\'' +
+			", path='" + path + '\'' +
+			", value='" + value + '\'' +
+			", fromValue='" + fromValue + '\'' +
+			'}';
 	}
 }

@@ -114,7 +114,7 @@ class ErrandNumberGeneratorTest {
 			.toList();
 
 		assertThat(result).hasSize(maxCount).doesNotHaveDuplicates();
-		assertThat(result.get(result.size() - 1)).endsWith("99999");
+		assertThat(result.getLast()).endsWith("99999");
 	}
 
 }

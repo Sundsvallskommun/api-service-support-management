@@ -35,11 +35,11 @@ public class ExternalIdType {
 		return name;
 	}
 
-	public void setName(String name) {
+	public void setName(final String name) {
 		this.name = name;
 	}
 
-	public ExternalIdType withName(String name) {
+	public ExternalIdType withName(final String name) {
 		this.name = name;
 		return this;
 	}
@@ -48,11 +48,11 @@ public class ExternalIdType {
 		return created;
 	}
 
-	public void setCreated(OffsetDateTime created) {
+	public void setCreated(final OffsetDateTime created) {
 		this.created = created;
 	}
 
-	public ExternalIdType withCreated(OffsetDateTime created) {
+	public ExternalIdType withCreated(final OffsetDateTime created) {
 		this.created = created;
 		return this;
 	}
@@ -61,11 +61,11 @@ public class ExternalIdType {
 		return modified;
 	}
 
-	public void setModified(OffsetDateTime modified) {
+	public void setModified(final OffsetDateTime modified) {
 		this.modified = modified;
 	}
 
-	public ExternalIdType withModified(OffsetDateTime modified) {
+	public ExternalIdType withModified(final OffsetDateTime modified) {
 		this.modified = modified;
 		return this;
 	}
@@ -76,7 +76,7 @@ public class ExternalIdType {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(final Object obj) {
 		if (this == obj) {
 			return true;
 		}
@@ -86,14 +86,16 @@ public class ExternalIdType {
 		if (getClass() != obj.getClass()) {
 			return false;
 		}
-		ExternalIdType other = (ExternalIdType) obj;
+		final ExternalIdType other = (ExternalIdType) obj;
 		return Objects.equals(created, other.created) && Objects.equals(modified, other.modified) && Objects.equals(name, other.name);
 	}
 
 	@Override
 	public String toString() {
-		StringBuilder builder = new StringBuilder();
-		builder.append("ExternalIdType [name=").append(name).append(", created=").append(created).append(", modified=").append(modified).append("]");
-		return builder.toString();
+		return "ExternalIdType{" +
+			"name='" + name + '\'' +
+			", created=" + created +
+			", modified=" + modified +
+			'}';
 	}
 }

@@ -74,11 +74,11 @@ public class ParameterEntity {
 		return displayName;
 	}
 
-	public void setDisplayName(String displayName) {
+	public void setDisplayName(final String displayName) {
 		this.displayName = displayName;
 	}
 
-	public ParameterEntity withDisplayName(String displayName) {
+	public ParameterEntity withDisplayName(final String displayName) {
 		this.displayName = displayName;
 		return this;
 	}
@@ -87,11 +87,11 @@ public class ParameterEntity {
 		return key;
 	}
 
-	public void setKey(String key) {
+	public void setKey(final String key) {
 		this.key = key;
 	}
 
-	public ParameterEntity withKey(String key) {
+	public ParameterEntity withKey(final String key) {
 		this.key = key;
 		return this;
 	}
@@ -115,7 +115,7 @@ public class ParameterEntity {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(final Object obj) {
 		if (this == obj) {
 			return true;
 		}
@@ -127,9 +127,12 @@ public class ParameterEntity {
 
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder();
-		builder.append("ParameterEntity [id=").append(id).append(", errandEntity=").append(errandEntity == null ? "null" : errandEntity.getId()).append(", displayName=").append(displayName).append(", key=").append(key).append(", values=").append(values)
-			.append("]");
-		return builder.toString();
+		return "ParameterEntity{" +
+			"id='" + id + '\'' +
+			", errandEntity=" + errandEntity +
+			", displayName='" + displayName + '\'' +
+			", key='" + key + '\'' +
+			", values=" + values +
+			'}';
 	}
 }

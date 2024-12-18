@@ -23,7 +23,7 @@ import se.sundsvall.supportmanagement.integration.db.model.RevisionEntity;
 /**
  * Revision repository tests.
  *
- * @see src/test/resources/db/testdata-junit.sql for data setup.
+ * @see <a href="file:src/test/resources/db/testdata.sql">src/test/resources/db/testdata.sql</a> for data setup.
  */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = NONE)
@@ -77,7 +77,7 @@ class RevisionRepositoryTest {
 
 		repository.saveAndFlush(entity1);
 
-		// Second save. Will fail due to to unique constraint violation on entityId and version.
+		// Second save. Will fail due to unique constraint violation on entityId and version.
 		final var exception = assertThrows(DataIntegrityViolationException.class, () -> repository.saveAndFlush(entity2));
 
 		assertThat(exception.getMessage()).contains("Duplicate entry", version, entityId, "for key 'uq_entity_id_version");

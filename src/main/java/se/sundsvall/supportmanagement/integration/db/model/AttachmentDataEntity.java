@@ -32,11 +32,11 @@ public class AttachmentDataEntity {
 		return id;
 	}
 
-	public void setId(int id) {
+	public void setId(final int id) {
 		this.id = id;
 	}
 
-	public AttachmentDataEntity withId(int id) {
+	public AttachmentDataEntity withId(final int id) {
 		this.id = id;
 		return this;
 	}
@@ -45,38 +45,36 @@ public class AttachmentDataEntity {
 		return file;
 	}
 
-	public void setFile(Blob file) {
+	public void setFile(final Blob file) {
 		this.file = file;
 	}
 
-	public AttachmentDataEntity withFile(Blob file) {
+	public AttachmentDataEntity withFile(final Blob file) {
 		this.file = file;
 		return this;
 	}
 
 	@Override
-	public String toString() {
-		final StringBuilder sb = new StringBuilder("AttachmentDataEntity{");
-		sb.append("id='").append(id).append('\'');
-		sb.append(", file").append(file);
-		sb.append('}');
-		return sb.toString();
-	}
-
-	@Override
-	public boolean equals(Object o) {
+	public boolean equals(final Object o) {
 		if (this == o) {
 			return true;
 		}
 		if (o == null || getClass() != o.getClass()) {
 			return false;
 		}
-		AttachmentDataEntity that = (AttachmentDataEntity) o;
+		final AttachmentDataEntity that = (AttachmentDataEntity) o;
 		return Objects.equals(id, that.id) && Objects.equals(file, that.file);
 	}
 
 	@Override
 	public int hashCode() {
 		return Objects.hash(id, file);
+	}
+
+	@Override
+	public String toString() {
+		return "AttachmentDataEntity{" + "id='" + id + '\''
+			+ ", file" + file
+			+ '}';
 	}
 }

@@ -73,11 +73,11 @@ public class EmailIntegration {
 		return enabled;
 	}
 
-	public void setEnabled(Boolean enabled) {
+	public void setEnabled(final Boolean enabled) {
 		this.enabled = enabled;
 	}
 
-	public EmailIntegration withEnabled(Boolean enabled) {
+	public EmailIntegration withEnabled(final Boolean enabled) {
 		this.enabled = enabled;
 		return this;
 	}
@@ -86,7 +86,7 @@ public class EmailIntegration {
 		return errandClosedEmailSender;
 	}
 
-	public void setErrandClosedEmailSender(String errandClosedEmailSender) {
+	public void setErrandClosedEmailSender(final String errandClosedEmailSender) {
 		this.errandClosedEmailSender = errandClosedEmailSender;
 	}
 
@@ -94,11 +94,11 @@ public class EmailIntegration {
 		return errandClosedEmailTemplate;
 	}
 
-	public void setErrandClosedEmailTemplate(String errandClosedEmailTemplate) {
+	public void setErrandClosedEmailTemplate(final String errandClosedEmailTemplate) {
 		this.errandClosedEmailTemplate = errandClosedEmailTemplate;
 	}
 
-	public EmailIntegration withErrandClosedEmailSender(String errandClosedEmailSender) {
+	public EmailIntegration withErrandClosedEmailSender(final String errandClosedEmailSender) {
 		this.errandClosedEmailSender = errandClosedEmailSender;
 		return this;
 	}
@@ -107,11 +107,11 @@ public class EmailIntegration {
 		return errandNewEmailSender;
 	}
 
-	public void setErrandNewEmailSender(String errandNewEmailSender) {
+	public void setErrandNewEmailSender(final String errandNewEmailSender) {
 		this.errandNewEmailSender = errandNewEmailSender;
 	}
 
-	public EmailIntegration withErrandNewEmailSender(String errandNewEmailSender) {
+	public EmailIntegration withErrandNewEmailSender(final String errandNewEmailSender) {
 		this.errandNewEmailSender = errandNewEmailSender;
 		return this;
 	}
@@ -120,16 +120,16 @@ public class EmailIntegration {
 		return errandNewEmailTemplate;
 	}
 
-	public void setErrandNewEmailTemplate(String errandNewEmailTemplate) {
+	public void setErrandNewEmailTemplate(final String errandNewEmailTemplate) {
 		this.errandNewEmailTemplate = errandNewEmailTemplate;
 	}
 
-	public EmailIntegration withErrandNewEmailTemplate(String errandNewEmailTemplate) {
+	public EmailIntegration withErrandNewEmailTemplate(final String errandNewEmailTemplate) {
 		this.errandNewEmailTemplate = errandNewEmailTemplate;
 		return this;
 	}
 
-	public EmailIntegration withErrandClosedEmailTemplate(String errandClosedEmailTemplate) {
+	public EmailIntegration withErrandClosedEmailTemplate(final String errandClosedEmailTemplate) {
 		this.errandClosedEmailTemplate = errandClosedEmailTemplate;
 		return this;
 	}
@@ -138,11 +138,11 @@ public class EmailIntegration {
 		return daysOfInactivityBeforeReject;
 	}
 
-	public void setDaysOfInactivityBeforeReject(Integer daysOfInactivityBeforeReject) {
+	public void setDaysOfInactivityBeforeReject(final Integer daysOfInactivityBeforeReject) {
 		this.daysOfInactivityBeforeReject = daysOfInactivityBeforeReject;
 	}
 
-	public EmailIntegration withDaysOfInactivityBeforeReject(Integer daysOfInactivityBeforeReject) {
+	public EmailIntegration withDaysOfInactivityBeforeReject(final Integer daysOfInactivityBeforeReject) {
 		this.daysOfInactivityBeforeReject = daysOfInactivityBeforeReject;
 		return this;
 	}
@@ -151,11 +151,11 @@ public class EmailIntegration {
 		return statusForNew;
 	}
 
-	public void setStatusForNew(String statusForNew) {
+	public void setStatusForNew(final String statusForNew) {
 		this.statusForNew = statusForNew;
 	}
 
-	public EmailIntegration withStatusForNew(String statusForNew) {
+	public EmailIntegration withStatusForNew(final String statusForNew) {
 		this.statusForNew = statusForNew;
 		return this;
 	}
@@ -164,11 +164,11 @@ public class EmailIntegration {
 		return triggerStatusChangeOn;
 	}
 
-	public void setTriggerStatusChangeOn(String triggerStatusChangeOn) {
+	public void setTriggerStatusChangeOn(final String triggerStatusChangeOn) {
 		this.triggerStatusChangeOn = triggerStatusChangeOn;
 	}
 
-	public EmailIntegration withTriggerStatusChangeOn(String triggerStatusChangeOn) {
+	public EmailIntegration withTriggerStatusChangeOn(final String triggerStatusChangeOn) {
 		this.triggerStatusChangeOn = triggerStatusChangeOn;
 		return this;
 	}
@@ -177,11 +177,11 @@ public class EmailIntegration {
 		return statusChangeTo;
 	}
 
-	public void setStatusChangeTo(String statusChangeTo) {
+	public void setStatusChangeTo(final String statusChangeTo) {
 		this.statusChangeTo = statusChangeTo;
 	}
 
-	public EmailIntegration withStatusChangeTo(String statusChangeTo) {
+	public EmailIntegration withStatusChangeTo(final String statusChangeTo) {
 		this.statusChangeTo = statusChangeTo;
 		return this;
 	}
@@ -190,11 +190,11 @@ public class EmailIntegration {
 		return inactiveStatus;
 	}
 
-	public void setInactiveStatus(String inactiveStatus) {
+	public void setInactiveStatus(final String inactiveStatus) {
 		this.inactiveStatus = inactiveStatus;
 	}
 
-	public EmailIntegration withInactiveStatus(String inactiveStatus) {
+	public EmailIntegration withInactiveStatus(final String inactiveStatus) {
 		this.inactiveStatus = inactiveStatus;
 		return this;
 	}
@@ -203,11 +203,11 @@ public class EmailIntegration {
 		return created;
 	}
 
-	public void setCreated(OffsetDateTime created) {
+	public void setCreated(final OffsetDateTime created) {
 		this.created = created;
 	}
 
-	public EmailIntegration withCreated(OffsetDateTime created) {
+	public EmailIntegration withCreated(final OffsetDateTime created) {
 		this.created = created;
 		return this;
 	}
@@ -216,11 +216,11 @@ public class EmailIntegration {
 		return modified;
 	}
 
-	public void setModified(OffsetDateTime modified) {
+	public void setModified(final OffsetDateTime modified) {
 		this.modified = modified;
 	}
 
-	public EmailIntegration withModified(OffsetDateTime modified) {
+	public EmailIntegration withModified(final OffsetDateTime modified) {
 		this.modified = modified;
 		return this;
 	}
@@ -229,11 +229,11 @@ public class EmailIntegration {
 		return addSenderAsStakeholder;
 	}
 
-	public void setAddSenderAsStakeholder(Boolean addSenderAsStakeholder) {
+	public void setAddSenderAsStakeholder(final Boolean addSenderAsStakeholder) {
 		this.addSenderAsStakeholder = addSenderAsStakeholder;
 	}
 
-	public EmailIntegration withAddSenderAsStakeholder(Boolean addSenderAsStakeholder) {
+	public EmailIntegration withAddSenderAsStakeholder(final Boolean addSenderAsStakeholder) {
 		this.addSenderAsStakeholder = addSenderAsStakeholder;
 		return this;
 	}
@@ -242,11 +242,11 @@ public class EmailIntegration {
 		return stakeholderRole;
 	}
 
-	public void setStakeholderRole(String stakeholderRole) {
+	public void setStakeholderRole(final String stakeholderRole) {
 		this.stakeholderRole = stakeholderRole;
 	}
 
-	public EmailIntegration withStakeholderRole(String stakeholderRole) {
+	public EmailIntegration withStakeholderRole(final String stakeholderRole) {
 		this.stakeholderRole = stakeholderRole;
 		return this;
 	}
@@ -255,24 +255,24 @@ public class EmailIntegration {
 		return errandChannel;
 	}
 
-	public void setErrandChannel(String errandChannel) {
+	public void setErrandChannel(final String errandChannel) {
 		this.errandChannel = errandChannel;
 	}
 
-	public EmailIntegration withErrandChannel(String errandChannel) {
+	public EmailIntegration withErrandChannel(final String errandChannel) {
 		this.errandChannel = errandChannel;
 		return this;
 	}
 
 	@Override
-	public boolean equals(Object o) {
+	public boolean equals(final Object o) {
 		if (this == o) {
 			return true;
 		}
 		if (o == null || getClass() != o.getClass()) {
 			return false;
 		}
-		EmailIntegration that = (EmailIntegration) o;
+		final EmailIntegration that = (EmailIntegration) o;
 		return Objects.equals(enabled, that.enabled)
 			&& Objects.equals(errandClosedEmailSender, that.errandClosedEmailSender)
 			&& Objects.equals(errandClosedEmailTemplate, that.errandClosedEmailTemplate)
@@ -299,23 +299,22 @@ public class EmailIntegration {
 
 	@Override
 	public String toString() {
-		final StringBuilder sb = new StringBuilder("EmailIntegration{");
-		sb.append("enabled=").append(enabled);
-		sb.append(", errandClosedEmailSender='").append(errandClosedEmailSender).append('\'');
-		sb.append(", errandClosedEmailTemplate='").append(errandClosedEmailTemplate).append('\'');
-		sb.append(", errandNewEmailSender='").append(errandNewEmailSender).append('\'');
-		sb.append(", errandNewEmailTemplate='").append(errandNewEmailTemplate).append('\'');
-		sb.append(", daysOfInactivityBeforeReject=").append(daysOfInactivityBeforeReject);
-		sb.append(", statusForNew='").append(statusForNew).append('\'');
-		sb.append(", triggerStatusChangeOn='").append(triggerStatusChangeOn).append('\'');
-		sb.append(", statusChangeTo='").append(statusChangeTo).append('\'');
-		sb.append(", inactiveStatus='").append(inactiveStatus).append('\'');
-		sb.append(", addSenderAsStakeholder=").append(addSenderAsStakeholder);
-		sb.append(", stakeholderRole='").append(stakeholderRole).append('\'');
-		sb.append(", errandChannel='").append(errandChannel).append('\'');
-		sb.append(", created=").append(created);
-		sb.append(", modified=").append(modified);
-		sb.append('}');
-		return sb.toString();
+		return "EmailIntegration{" +
+			"enabled=" + enabled +
+			", errandClosedEmailSender='" + errandClosedEmailSender + '\'' +
+			", errandClosedEmailTemplate='" + errandClosedEmailTemplate + '\'' +
+			", errandNewEmailSender='" + errandNewEmailSender + '\'' +
+			", errandNewEmailTemplate='" + errandNewEmailTemplate + '\'' +
+			", daysOfInactivityBeforeReject=" + daysOfInactivityBeforeReject +
+			", statusForNew='" + statusForNew + '\'' +
+			", triggerStatusChangeOn='" + triggerStatusChangeOn + '\'' +
+			", statusChangeTo='" + statusChangeTo + '\'' +
+			", inactiveStatus='" + inactiveStatus + '\'' +
+			", addSenderAsStakeholder=" + addSenderAsStakeholder +
+			", stakeholderRole='" + stakeholderRole + '\'' +
+			", errandChannel='" + errandChannel + '\'' +
+			", created=" + created +
+			", modified=" + modified +
+			'}';
 	}
 }

@@ -15,8 +15,6 @@ import static org.springframework.http.MediaType.TEXT_PLAIN;
 import static org.springframework.http.MediaType.TEXT_PLAIN_VALUE;
 
 import jakarta.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -86,7 +84,7 @@ class ErrandAttachmentsResourceTest {
 	}
 
 	@Test
-	void readErrandAttachment() throws SQLException, IOException {
+	void readErrandAttachment() {
 
 		// Parameter values
 		final var attachmentId = randomUUID().toString();
@@ -157,5 +155,6 @@ class ErrandAttachmentsResourceTest {
 			.returnResult();
 
 		verify(errandAttachmentServiceMock).getAttachmentStreamed(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(attachmentId), any(HttpServletResponse.class));
+
 	}
 }

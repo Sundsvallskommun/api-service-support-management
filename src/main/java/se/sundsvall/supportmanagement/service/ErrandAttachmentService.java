@@ -8,6 +8,7 @@ import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.zalando.problem.Status.BAD_GATEWAY;
 import static org.zalando.problem.Status.BAD_REQUEST;
+import static org.zalando.problem.Status.INSUFFICIENT_STORAGE;
 import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
 import static org.zalando.problem.Status.NOT_FOUND;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapper.toAttachmentEntity;
@@ -20,6 +21,8 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,15 +50,17 @@ public class ErrandAttachmentService {
 	private final RevisionService revisionService;
 	private final EventService eventService;
 	private final EntityManager entityManager;
+	private final Semaphore semaphore;
 
 	public ErrandAttachmentService(final ErrandsRepository errandsRepository,
 		final RevisionService revisionService, final EventService eventService,
-		final AttachmentRepository attachmentRepository, final EntityManager entityManager) {
+		final AttachmentRepository attachmentRepository, final EntityManager entityManager, final Semaphore semaphore) {
 		this.errandsRepository = errandsRepository;
 		this.revisionService = revisionService;
 		this.eventService = eventService;
 		this.attachmentRepository = attachmentRepository;
 		this.entityManager = entityManager;
+		this.semaphore = semaphore;
 	}
 
 	public void getAttachmentStreamed(final String namespace, final String municipalityId, final String errandId, final String attachmentId, final HttpServletResponse response) {
@@ -63,6 +68,7 @@ public class ErrandAttachmentService {
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, ATTACHMENT_ENTITY_NOT_FOUND.formatted(attachmentId, errandId)));
 
 		streamAttachmentData(attachment, response);
+
 	}
 
 	public String createErrandAttachment(final String namespace, final String municipalityId, final String errandId, final MultipartFile errandAttachment) {
@@ -83,7 +89,7 @@ public class ErrandAttachmentService {
 		return attachmentEntity.getId();
 	}
 
-	public void readErrandAttachment(final String namespace, final String municipalityId, final String errandId, final String attachmentId, final HttpServletResponse response) throws SQLException, IOException {
+	public void readErrandAttachment(final String namespace, final String municipalityId, final String errandId, final String attachmentId, final HttpServletResponse response) {
 
 		if (!errandsRepository.existsByIdAndNamespaceAndMunicipalityId(errandId, namespace, municipalityId)) {
 			throw Problem.valueOf(NOT_FOUND, String.format(ERRAND_ENTITY_NOT_FOUND, errandId, namespace, municipalityId));
@@ -93,13 +99,7 @@ public class ErrandAttachmentService {
 			.findById(attachmentId)
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, String.format(ATTACHMENT_ENTITY_NOT_FOUND, attachmentId, errandId)));
 
-		final var file = attachmentEntity.getAttachmentData().getFile();
-
-		response.addHeader(CONTENT_TYPE, attachmentEntity.getMimeType());
-		response.addHeader(CONTENT_DISPOSITION, "attachment; filename=\"" + attachmentEntity.getFileName() + "\"");
-		response.setContentLength((int) file.length());
-
-		StreamUtils.copy(file.getBinaryStream(), response.getOutputStream());
+		streamAttachmentData(attachmentEntity, response);
 	}
 
 	public List<ErrandAttachmentHeader> readErrandAttachmentHeaders(final String namespace, final String municipalityId, final String errandId) {
@@ -158,15 +158,26 @@ public class ErrandAttachmentService {
 	}
 
 	void streamAttachmentData(final AttachmentEntity attachment, final HttpServletResponse response) {
-		try {
-			final var file = attachment.getAttachmentData().getFile();
+		final var fileSize = attachment.getFileSize();
 
+		if (fileSize == null || fileSize == 0) {
+			throw Problem.valueOf(NOT_FOUND, "Attachment with id '%s' has no data".formatted(attachment.getId()));
+		}
+
+		try {
+			if (!semaphore.tryAcquire(fileSize, 5, TimeUnit.SECONDS)) {
+				throw Problem.valueOf(INSUFFICIENT_STORAGE, "Insufficient storage available to process the request.");
+			}
 			response.addHeader(CONTENT_TYPE, attachment.getMimeType());
 			response.addHeader(CONTENT_DISPOSITION, "attachment; filename=\"" + attachment.getFileName() + "\"");
-			response.setContentLength((int) file.length());
-			StreamUtils.copy(file.getBinaryStream(), response.getOutputStream());
+			response.setContentLength(fileSize);
+			StreamUtils.copy(attachment.getAttachmentData().getFile().getBinaryStream(), response.getOutputStream());
 		} catch (final IOException | SQLException e) {
 			throw Problem.valueOf(INTERNAL_SERVER_ERROR, "%s occurred when copying file with attachment id '%s' to response: %s".formatted(e.getClass().getSimpleName(), attachment.getId(), e.getMessage()));
+		} catch (final InterruptedException e) {
+			Thread.currentThread().interrupt();
+		} finally {
+			semaphore.release(fileSize);
 		}
 	}
 }

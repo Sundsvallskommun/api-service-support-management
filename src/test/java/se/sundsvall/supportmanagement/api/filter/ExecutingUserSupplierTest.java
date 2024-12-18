@@ -11,7 +11,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
-import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -46,11 +45,9 @@ class ExecutingUserSupplierTest {
 
 		when(requestMock.getHeader(AD_USER_HEADER_KEY)).thenReturn(adUser);
 
-		doAnswer(new Answer<>() {
-			public Object answer(InvocationOnMock invocation) {
-				assertThat(executingUserSupplier.getAdUser()).isEqualTo(adUser);
-				return null;
-			}
+		doAnswer((Answer<Object>) invocation -> {
+			assertThat(executingUserSupplier.getAdUser()).isEqualTo(adUser);
+			return null;
 		}).when(filterChainMock).doFilter(requestMock, responseMock);
 
 		executingUserSupplier.doFilterInternal(requestMock, responseMock, filterChainMock);
@@ -62,13 +59,11 @@ class ExecutingUserSupplierTest {
 
 	@ParameterizedTest
 	@NullAndEmptySource
-	void doFilterInternalWhenNoUserPresent(String adUser) throws Exception {
+	void doFilterInternalWhenNoUserPresent(final String adUser) throws Exception {
 
-		doAnswer(new Answer<>() {
-			public Object answer(InvocationOnMock invocation) {
-				assertThat(executingUserSupplier.getAdUser()).isEqualTo(UNKNOWN);
-				return null;
-			}
+		doAnswer((Answer<Object>) invocation -> {
+			assertThat(executingUserSupplier.getAdUser()).isEqualTo(UNKNOWN);
+			return null;
 		}).when(filterChainMock).doFilter(requestMock, responseMock);
 
 		executingUserSupplier.doFilterInternal(requestMock, responseMock, filterChainMock);

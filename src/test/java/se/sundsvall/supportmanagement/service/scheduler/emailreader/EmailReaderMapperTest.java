@@ -97,7 +97,7 @@ class EmailReaderMapperTest {
 		final var result = emailReaderMapper.toCommunicationEntity(email, errandEntity);
 
 		// Assert
-		assertThat(result).isNotNull().hasNoNullFieldsOrPropertiesExcept("errandNumber", "errandAttachments");
+		assertThat(result).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "errandNumber", "errandAttachments");
 		assertThat(result.getSubject()).isEqualTo("someSubject");
 		assertThat(result.getExternalId()).isEmpty();
 		assertThat(result.getErrandNumber()).isEqualTo("someErrandNumber");
@@ -142,11 +142,11 @@ class EmailReaderMapperTest {
 		final var result = emailReaderMapper.toCommunicationEntity(email, errandEntity);
 
 		// Assert
-		assertThat(result).isNotNull().hasNoNullFieldsOrPropertiesExcept("target", "errandNumber", "errandAttachments");
+		assertThat(result).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "target", "errandNumber", "errandAttachments");
 		assertThat(result.getTarget()).isNull();
 		assertThat(result.getErrandNumber()).isEqualTo("someErrandNumber");
 		assertThat(result.getAttachments()).isNotNull().hasSize(1);
-		assertThat(result.getAttachments().getFirst()).hasNoNullFieldsOrPropertiesExcept("foreignId");
+		assertThat(result.getAttachments().getFirst()).hasNoNullFieldsOrPropertiesExcept("id", "foreignId");
 	}
 
 	@Test

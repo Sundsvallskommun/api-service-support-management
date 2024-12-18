@@ -37,6 +37,7 @@ public final class ErrandAttachmentMapper {
 				.withErrandEntity(errandEntity)
 				.withNamespace(errandEntity.getNamespace())
 				.withMunicipalityId(errandEntity.getMunicipalityId())
+				.withFileSize(Math.toIntExact(errandAttachment.getSize()))
 				.withAttachmentData(new AttachmentDataEntity().withFile(session.getLobHelper().createBlob(errandAttachment.getInputStream(), errandAttachment.getSize())))
 				.withFileName(errandAttachment.getOriginalFilename())
 				.withMimeType(detectMimeTypeFromStream(errandAttachment.getOriginalFilename(), errandAttachment.getInputStream()));

@@ -41,7 +41,7 @@ import se.sundsvall.supportmanagement.service.MetadataService;
 @RestController
 @Validated
 @RequestMapping("/{municipalityId}/{namespace}/metadata/external-id-types")
-@Tag(name = "Metadata for externalid types", description = "ExternalIdType metadata operations")
+@Tag(name = "Metadata for external ID types", description = "ExternalIdType metadata operations")
 class MetadataExternalIdTypeResource {
 
 	private final MetadataService metadataService;
@@ -80,8 +80,8 @@ class MetadataExternalIdTypeResource {
 	})
 	ResponseEntity<ExternalIdType> getExternalIdType(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
-		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
-		@Parameter(name = "externalIdType", description = "Name of externalid type", example = "PRIVATE") @PathVariable final String externalIdType) {
+		@Parameter(name = "municipalityId", description = "Municipality ID", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
+		@Parameter(name = "externalIdType", description = "Name of external ID type", example = "PRIVATE") @PathVariable final String externalIdType) {
 
 		return ok(metadataService.getExternalIdType(namespace, municipalityId, externalIdType));
 	}
@@ -96,13 +96,13 @@ class MetadataExternalIdTypeResource {
 	})
 	ResponseEntity<List<ExternalIdType>> getExternalIdTypes(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
-		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId) {
+		@Parameter(name = "municipalityId", description = "Municipality ID", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId) {
 
 		return ok(metadataService.findExternalIdTypes(namespace, municipalityId));
 	}
 
 	@DeleteMapping(path = "/{externalIdType}", produces = ALL_VALUE)
-	@Operation(summary = "Delete externalIdType", description = "Delete externalid type matching namespace, municipality and externalIdType", responses = {
+	@Operation(summary = "Delete externalIdType", description = "Delete external ID type matching namespace, municipality and externalIdType", responses = {
 		@ApiResponse(responseCode = "204", description = "Successful operation", useReturnTypeSchema = true),
 		@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
 			Problem.class, ConstraintViolationProblem.class
@@ -112,7 +112,7 @@ class MetadataExternalIdTypeResource {
 	})
 	ResponseEntity<Void> deleteExternalIdType(
 		@Parameter(name = "namespace", description = "Namespace", example = "my.namespace") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
-		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
+		@Parameter(name = "municipalityId", description = "Municipality ID", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "externalIdType", description = "Name of externalIdType", example = "PRIVATE") @PathVariable final String externalIdType) {
 
 		metadataService.deleteExternalIdType(namespace, municipalityId, externalIdType);

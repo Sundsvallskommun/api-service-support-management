@@ -7,7 +7,7 @@ import java.util.Objects;
 @Schema(description = "External tag model")
 public class ExternalTag {
 
-	@Schema(description = "Key for external tag", example = "caseid")
+	@Schema(description = "Key for external tag", example = "caseId")
 	@NotBlank
 	private String key;
 
@@ -23,11 +23,11 @@ public class ExternalTag {
 		return key;
 	}
 
-	public void setKey(String key) {
+	public void setKey(final String key) {
 		this.key = key;
 	}
 
-	public ExternalTag withKey(String key) {
+	public ExternalTag withKey(final String key) {
 		this.key = key;
 		return this;
 	}
@@ -36,11 +36,11 @@ public class ExternalTag {
 		return value;
 	}
 
-	public void setValue(String value) {
+	public void setValue(final String value) {
 		this.value = value;
 	}
 
-	public ExternalTag withValue(String value) {
+	public ExternalTag withValue(final String value) {
 		this.value = value;
 		return this;
 	}
@@ -51,7 +51,7 @@ public class ExternalTag {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(final Object obj) {
 		if (this == obj) {
 			return true;
 		}
@@ -67,8 +67,6 @@ public class ExternalTag {
 
 	@Override
 	public String toString() {
-		final var builder = new StringBuilder();
-		builder.append("ExternalTag [key=").append(key).append(", value=").append(value).append("]");
-		return builder.toString();
+		return "ExternalTag [key=" + key + ", value=" + value + "]";
 	}
 }

@@ -24,7 +24,7 @@ import se.sundsvall.supportmanagement.integration.db.model.TypeEntity;
 /**
  * CategoryRepository tests.
  *
- * @see src/test/resources/db/testdata.sql for data setup.
+ * @see <a href="file:src/test/resources/db/testdata.sql">src/test/resources/db/testdata.sql</a> for data setup.
  */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = NONE)
@@ -185,21 +185,19 @@ class CategoryRepositoryTest {
 		assertThat(categoryRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, nonexisting_categoryname)).isFalse();
 	}
 
-	private void verifyTypes(List<CategoryEntity> matches, Map<String, List<Tuple>> verifications) {
+	private void verifyTypes(final List<CategoryEntity> matches, final Map<String, List<Tuple>> verifications) {
 		verifications.entrySet()
-			.forEach(entry -> {
-				assertThat(extractTypes(matches, entry))
-					.hasSize(entry.getValue().size())
-					.extracting(
-						TypeEntity::getDisplayName,
-						TypeEntity::getEscalationEmail,
-						TypeEntity::getId,
-						TypeEntity::getName)
-					.containsExactlyInAnyOrderElementsOf(entry.getValue());
-			});
+			.forEach(entry -> assertThat(extractTypes(matches, entry))
+				.hasSize(entry.getValue().size())
+				.extracting(
+					TypeEntity::getDisplayName,
+					TypeEntity::getEscalationEmail,
+					TypeEntity::getId,
+					TypeEntity::getName)
+				.containsExactlyInAnyOrderElementsOf(entry.getValue()));
 	}
 
-	private List<TypeEntity> extractTypes(List<CategoryEntity> matches, Entry<String, List<Tuple>> entry) {
+	private List<TypeEntity> extractTypes(final List<CategoryEntity> matches, final Entry<String, List<Tuple>> entry) {
 		return matches.stream()
 			.filter(ct -> entry.getKey().equals(ct.getName())).findAny()
 			.map(CategoryEntity::getTypes)

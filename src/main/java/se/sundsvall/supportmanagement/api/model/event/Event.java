@@ -42,11 +42,11 @@ public class Event {
 		return type;
 	}
 
-	public void setType(EventType type) {
+	public void setType(final EventType type) {
 		this.type = type;
 	}
 
-	public Event withType(EventType type) {
+	public Event withType(final EventType type) {
 		this.type = type;
 		return this;
 	}
@@ -55,11 +55,11 @@ public class Event {
 		return message;
 	}
 
-	public void setMessage(String message) {
+	public void setMessage(final String message) {
 		this.message = message;
 	}
 
-	public Event withMessage(String message) {
+	public Event withMessage(final String message) {
 		this.message = message;
 		return this;
 	}
@@ -68,11 +68,11 @@ public class Event {
 		return owner;
 	}
 
-	public void setOwner(String owner) {
+	public void setOwner(final String owner) {
 		this.owner = owner;
 	}
 
-	public Event withOwner(String owner) {
+	public Event withOwner(final String owner) {
 		this.owner = owner;
 		return this;
 	}
@@ -81,11 +81,11 @@ public class Event {
 		return created;
 	}
 
-	public void setCreated(OffsetDateTime created) {
+	public void setCreated(final OffsetDateTime created) {
 		this.created = created;
 	}
 
-	public Event withCreated(OffsetDateTime created) {
+	public Event withCreated(final OffsetDateTime created) {
 		this.created = created;
 		return this;
 	}
@@ -94,11 +94,11 @@ public class Event {
 		return historyReference;
 	}
 
-	public void setHistoryReference(String historyReference) {
+	public void setHistoryReference(final String historyReference) {
 		this.historyReference = historyReference;
 	}
 
-	public Event withHistoryReference(String historyReference) {
+	public Event withHistoryReference(final String historyReference) {
 		this.historyReference = historyReference;
 		return this;
 	}
@@ -107,11 +107,11 @@ public class Event {
 		return sourceType;
 	}
 
-	public void setSourceType(String sourceType) {
+	public void setSourceType(final String sourceType) {
 		this.sourceType = sourceType;
 	}
 
-	public Event withSourceType(String sourceType) {
+	public Event withSourceType(final String sourceType) {
 		this.sourceType = sourceType;
 		return this;
 	}
@@ -120,11 +120,11 @@ public class Event {
 		return metadata;
 	}
 
-	public void setMetadata(List<EventMetaData> metadata) {
+	public void setMetadata(final List<EventMetaData> metadata) {
 		this.metadata = metadata;
 	}
 
-	public Event withMetadata(List<EventMetaData> metadata) {
+	public Event withMetadata(final List<EventMetaData> metadata) {
 		this.metadata = metadata;
 		return this;
 	}
@@ -135,23 +135,20 @@ public class Event {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(final Object obj) {
 		if (this == obj) {
 			return true;
 		}
-		if (!(obj instanceof Event)) {
+		if (!(obj instanceof final Event other)) {
 			return false;
 		}
-		Event other = (Event) obj;
 		return Objects.equals(created, other.created) && Objects.equals(historyReference, other.historyReference) && Objects.equals(message, other.message) && Objects.equals(metadata, other.metadata) && Objects.equals(owner, other.owner) && Objects
 			.equals(sourceType, other.sourceType) && type == other.type;
 	}
 
 	@Override
 	public String toString() {
-		StringBuilder builder = new StringBuilder();
-		builder.append("Event [type=").append(type).append(", message=").append(message).append(", owner=").append(owner).append(", created=").append(created).append(", historyReference=").append(historyReference).append(", sourceType=").append(
-			sourceType).append(", metadata=").append(metadata).append("]");
-		return builder.toString();
+		return "Event [type=" + type + ", message=" + message + ", owner=" + owner + ", created=" + created + ", historyReference=" + historyReference + ", sourceType="
+			+ sourceType + ", metadata=" + metadata + "]";
 	}
 }

@@ -20,11 +20,11 @@ public class ContactChannel {
 		return type;
 	}
 
-	public void setType(String type) {
+	public void setType(final String type) {
 		this.type = type;
 	}
 
-	public ContactChannel withType(String type) {
+	public ContactChannel withType(final String type) {
 		this.type = type;
 		return this;
 	}
@@ -33,17 +33,17 @@ public class ContactChannel {
 		return value;
 	}
 
-	public void setValue(String value) {
+	public void setValue(final String value) {
 		this.value = value;
 	}
 
-	public ContactChannel withValue(String value) {
+	public ContactChannel withValue(final String value) {
 		this.value = value;
 		return this;
 	}
 
 	@Override
-	public boolean equals(Object o) {
+	public boolean equals(final Object o) {
 		if (this == o) {
 			return true;
 		}
@@ -61,10 +61,9 @@ public class ContactChannel {
 
 	@Override
 	public String toString() {
-		final StringBuilder sb = new StringBuilder("ContactChannel{");
-		sb.append("type='").append(type).append('\'');
-		sb.append(", value='").append(value).append('\'');
-		sb.append('}');
-		return sb.toString();
+		return "ContactChannel{" +
+			"type='" + type + '\'' +
+			", value='" + value + '\'' +
+			'}';
 	}
 }

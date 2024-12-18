@@ -48,9 +48,9 @@ public class RevisionService {
 
 	private static final List<String> EXCLUDED_ATTRIBUTES = List.of("$..stakeholders[*].id", "$..attachments[*].id", "$..attachments[*].file", "$..modified", "$..touched");
 
-	private static final String COMPARISON_ERROR_LOG_MESSAGE = "An error occured during comparison";
+	private static final String COMPARISON_ERROR_LOG_MESSAGE = "An error occurred during comparison";
 
-	private static final String COMPARISON_ERROR_PROBLEM = "An error occured when comparing version %s to version %s of entityId '%s'";
+	private static final String COMPARISON_ERROR_PROBLEM = "An error occurred when comparing version %s to version %s of entityId '%s'";
 
 	private static final String VERSION_DOES_NOT_EXIST = "The version requested for the %s revision does not exist";
 
@@ -76,9 +76,8 @@ public class RevisionService {
 	/**
 	 * Create a new revision.
 	 * <p>
-	 * A new revision will be created if:
-	 * - the last revisions serialized-snapshot differs from the current (i.e. provided) entity.
-	 * - no previous revisions exist for the provided entity.
+	 * A new revision will be created if: - the last revisions serialized-snapshot differs from the current (i.e. provided)
+	 * entity. - no previous revisions exist for the provided entity.
 	 *
 	 * @param  entity the entity that will have a new revision.
 	 * @return        the created revision.
@@ -86,7 +85,7 @@ public class RevisionService {
 	public RevisionResult createErrandRevision(final ErrandEntity entity) {
 
 		final var lastRevision = revisionRepository.findFirstByNamespaceAndMunicipalityIdAndEntityIdOrderByVersionDesc(entity.getNamespace(), entity.getMunicipalityId(), entity.getId());
-		Revision newRevision = null;
+		final Revision newRevision;
 
 		if (lastRevision.isPresent()) {
 			// No changes since last revision, return.
@@ -135,7 +134,7 @@ public class RevisionService {
 	}
 
 	/**
-	 * Returns the lastest (current) revision of the errand
+	 * Returns the latest (current) revision of the errand
 	 *
 	 * @param  namespace      namespace of the errand owning the note to compare.
 	 * @param  municipalityId id of the municipality owning the errand.

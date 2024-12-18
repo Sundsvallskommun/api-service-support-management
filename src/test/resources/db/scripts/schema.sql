@@ -1,6 +1,7 @@
 
     create table attachment (
         attachment_data_id integer not null,
+        file_size integer,
         created datetime(6),
         modified datetime(6),
         errand_id varchar(255) not null,
@@ -47,6 +48,7 @@
     ) engine=InnoDB;
 
     create table communication_attachment (
+        file_size integer,
         communication_attachment_data_id bigint not null,
         communication_id varchar(255) not null,
         content_type varchar(255),
@@ -390,28 +392,28 @@
     create index idx_errand_municipality_id 
        on errand (municipality_id);
 
-    create index idx_errand_municipality_id_namespace_status
+    create index idx_errand_municipality_id_namespace_status 
        on errand (municipality_id, namespace, status);
 
-    create index idx_errand_municipality_id_namespace_category
+    create index idx_errand_municipality_id_namespace_category 
        on errand (municipality_id, namespace, category);
 
-    create index idx_errand_municipality_id_namespace_type
+    create index idx_errand_municipality_id_namespace_type 
        on errand (municipality_id, namespace, type);
 
-    create index idx_errand_municipality_id_namespace_assigned_user_id
+    create index idx_errand_municipality_id_namespace_assigned_user_id 
        on errand (municipality_id, namespace, assigned_user_id);
 
-    create index idx_errand_municipality_id_namespace_reporter_user_id
+    create index idx_errand_municipality_id_namespace_reporter_user_id 
        on errand (municipality_id, namespace, reporter_user_id);
 
-    create index idx_errand_errand_number
+    create index idx_errand_errand_number 
        on errand (errand_number);
 
-    create index idx_errand_municipality_id_namespace_created
+    create index idx_errand_municipality_id_namespace_created 
        on errand (municipality_id, namespace, created);
 
-    create index idx_errand_suspended_to
+    create index idx_errand_suspended_to 
        on errand (suspended_to);
 
     alter table if exists errand 

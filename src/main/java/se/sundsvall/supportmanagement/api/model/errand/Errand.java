@@ -75,7 +75,7 @@ public class Errand {
 	@Schema(description = "Errand description text", example = "Order cake for everyone")
 	private String description;
 
-	@Schema(description = "The channel from which the errand originated", example = "THE_CHANNEL")
+	@Schema(description = "The channel from which the errand originated", maxLength = 255, example = "THE_CHANNEL")
 	@Size(max = 255)
 	private String channel;
 
@@ -100,7 +100,7 @@ public class Errand {
 	}, nullable = true)
 	private String contactReason;
 
-	@Schema(description = "Contact reason description for the errand", example = "The printer is not working since the power cord is missing")
+	@Schema(description = "Contact reason description for the errand", maxLength = 4096, example = "The printer is not working since the power cord is missing")
 	@Size(max = 4096)
 	private String contactReasonDescription;
 
@@ -458,7 +458,7 @@ public class Errand {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(final Object obj) {
 		if (this == obj) {
 			return true;
 		}
@@ -475,12 +475,32 @@ public class Errand {
 
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder();
-		builder.append("Errand [id=").append(id).append(", errandNumber=").append(errandNumber).append(", title=").append(title).append(", priority=").append(priority).append(", stakeholders=").append(stakeholders).append(", externalTags=").append(
-			externalTags).append(", parameters=").append(parameters).append(", classification=").append(classification).append(", status=").append(status).append(", resolution=").append(resolution).append(", description=").append(description).append(
-				", channel=").append(channel).append(", reporterUserId=").append(reporterUserId).append(", assignedUserId=").append(assignedUserId).append(", assignedGroupId=").append(assignedGroupId).append(", escalationEmail=").append(escalationEmail)
-			.append(", contactReason=").append(contactReason).append(", contactReasonDescription=").append(contactReasonDescription).append(", suspension=").append(suspension).append(", businessRelated=").append(businessRelated).append(", labels=").append(
-				labels).append(", created=").append(created).append(", modified=").append(modified).append(", touched=").append(touched).append("]");
-		return builder.toString();
+		return "Errand{" +
+			"id='" + id + '\'' +
+			", errandNumber='" + errandNumber + '\'' +
+			", title='" + title + '\'' +
+			", priority=" + priority +
+			", stakeholders=" + stakeholders +
+			", externalTags=" + externalTags +
+			", parameters=" + parameters +
+			", classification=" + classification +
+			", status='" + status + '\'' +
+			", resolution='" + resolution + '\'' +
+			", description='" + description + '\'' +
+			", channel='" + channel + '\'' +
+			", reporterUserId='" + reporterUserId + '\'' +
+			", assignedUserId='" + assignedUserId + '\'' +
+			", assignedGroupId='" + assignedGroupId + '\'' +
+			", escalationEmail='" + escalationEmail + '\'' +
+			", contactReason='" + contactReason + '\'' +
+			", contactReasonDescription='" + contactReasonDescription + '\'' +
+			", suspension=" + suspension +
+			", businessRelated=" + businessRelated +
+			", labels=" + labels +
+			", created=" + created +
+			", modified=" + modified +
+			", touched=" + touched +
+			'}';
 	}
+
 }

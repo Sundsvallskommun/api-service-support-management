@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Objects;
 import org.hibernate.Length;
 import org.hibernate.annotations.TimeZoneStorage;
+import org.hibernate.annotations.UuidGenerator;
 import se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.Direction;
 
@@ -33,6 +34,7 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.Direction;
 public class CommunicationEntity {
 
 	@Id
+	@UuidGenerator
 	@Column(name = "id")
 	private String id;
 

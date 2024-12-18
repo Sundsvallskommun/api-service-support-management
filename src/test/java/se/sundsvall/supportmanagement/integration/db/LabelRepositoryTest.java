@@ -20,7 +20,7 @@ import se.sundsvall.supportmanagement.integration.db.model.LabelEntity;
 /**
  * StatusRepository tests.
  *
- * @see src/test/resources/db/testdata.sql for data setup.
+ * @see <a href="file:src/test/resources/db/testdata.sql">src/test/resources/db/testdata.sql</a> for data setup.
  */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = NONE)

@@ -66,11 +66,11 @@ public class TypeEntity {
 		return id;
 	}
 
-	public void setId(Long id) {
+	public void setId(final Long id) {
 		this.id = id;
 	}
 
-	public TypeEntity withId(Long id) {
+	public TypeEntity withId(final Long id) {
 		this.id = id;
 		return this;
 	}
@@ -79,11 +79,11 @@ public class TypeEntity {
 		return name;
 	}
 
-	public void setName(String name) {
+	public void setName(final String name) {
 		this.name = name;
 	}
 
-	public TypeEntity withName(String name) {
+	public TypeEntity withName(final String name) {
 		this.name = name;
 		return this;
 	}
@@ -92,11 +92,11 @@ public class TypeEntity {
 		return displayName;
 	}
 
-	public void setDisplayName(String displayName) {
+	public void setDisplayName(final String displayName) {
 		this.displayName = displayName;
 	}
 
-	public TypeEntity withDisplayName(String displayName) {
+	public TypeEntity withDisplayName(final String displayName) {
 		this.displayName = displayName;
 		return this;
 	}
@@ -105,11 +105,11 @@ public class TypeEntity {
 		return escalationEmail;
 	}
 
-	public void setEscalationEmail(String escalationEmail) {
+	public void setEscalationEmail(final String escalationEmail) {
 		this.escalationEmail = escalationEmail;
 	}
 
-	public TypeEntity withEscalationEmail(String escalationEmail) {
+	public TypeEntity withEscalationEmail(final String escalationEmail) {
 		this.escalationEmail = escalationEmail;
 		return this;
 	}
@@ -118,11 +118,11 @@ public class TypeEntity {
 		return created;
 	}
 
-	public void setCreated(OffsetDateTime created) {
+	public void setCreated(final OffsetDateTime created) {
 		this.created = created;
 	}
 
-	public TypeEntity withCreated(OffsetDateTime created) {
+	public TypeEntity withCreated(final OffsetDateTime created) {
 		this.created = created;
 		return this;
 	}
@@ -131,11 +131,11 @@ public class TypeEntity {
 		return modified;
 	}
 
-	public void setModified(OffsetDateTime modified) {
+	public void setModified(final OffsetDateTime modified) {
 		this.modified = modified;
 	}
 
-	public TypeEntity withModified(OffsetDateTime modified) {
+	public TypeEntity withModified(final OffsetDateTime modified) {
 		this.modified = modified;
 		return this;
 	}
@@ -144,11 +144,11 @@ public class TypeEntity {
 		return categoryEntity;
 	}
 
-	public void setCategoryEntity(CategoryEntity categoryEntity) {
+	public void setCategoryEntity(final CategoryEntity categoryEntity) {
 		this.categoryEntity = categoryEntity;
 	}
 
-	public TypeEntity withCategoryEntity(CategoryEntity categoryEntity) {
+	public TypeEntity withCategoryEntity(final CategoryEntity categoryEntity) {
 		this.categoryEntity = categoryEntity;
 		return this;
 	}
@@ -170,7 +170,7 @@ public class TypeEntity {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(final Object obj) {
 		if (this == obj) {
 			return true;
 		}
@@ -191,10 +191,7 @@ public class TypeEntity {
 	@Override
 	public String toString() {
 		final var categoryId = Optional.ofNullable(categoryEntity).map(CategoryEntity::getId).orElse(null);
-		final StringBuilder builder = new StringBuilder();
-		builder.append("TypeEntity [id=").append(id).append(", name=").append(name).append(", displayName=").append(displayName).append(", escalationEmail=").append(escalationEmail).append(", created=").append(created).append(", modified=")
-			.append(modified).append(", categoryEntity.id=").append(categoryId).append("]");
-		return builder.toString();
+		return "TypeEntity [id=" + id + ", name=" + name + ", displayName=" + displayName + ", escalationEmail=" + escalationEmail + ", created=" + created + ", modified="
+			+ modified + ", categoryEntity.id=" + categoryId + "]";
 	}
-
 }

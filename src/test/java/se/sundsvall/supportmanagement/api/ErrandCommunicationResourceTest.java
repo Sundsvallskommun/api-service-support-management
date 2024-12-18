@@ -47,9 +47,38 @@ class ErrandCommunicationResourceTest {
 
 	@MockitoBean
 	private CommunicationService serviceMock;
-
 	@Autowired
 	private WebTestClient webTestClient;
+
+	private static SmsRequest smsRequest() {
+		return SmsRequest.create()
+			.withMessage("message")
+			.withRecipient("+46701234567")
+			.withSender("sender");
+	}
+
+	private static EmailRequest emailRequest(final boolean withAttachment) {
+		return EmailRequest.create()
+			.withHtmlMessage("htmlMessage")
+			.withMessage("message")
+			.withRecipient("recipient@recipient.com")
+			.withSender("sender@sender.com")
+			.withSubject("subject")
+			.withAttachments(withAttachment ? List.of(attachment()) : null);
+	}
+
+	private static WebMessageRequest webMessageRequest(final boolean withAttachment) {
+		return WebMessageRequest.create()
+			.withMessage("message")
+			.withAttachmentIds(List.of("1", "2"))
+			.withAttachments(withAttachment ? List.of(WebMessageAttachment.create().withName("attachmentName").withBase64EncodedString("ZGF0YQ==")) : null);
+	}
+
+	private static EmailAttachment attachment() {
+		return EmailAttachment.create()
+			.withBase64EncodedString("aGVsbG8gd29ybGQK")
+			.withName("name");
+	}
 
 	@Test
 	void getCommunicationsOnErrand() {
@@ -121,7 +150,7 @@ class ErrandCommunicationResourceTest {
 	@ValueSource(booleans = {
 		true, false
 	})
-	void sendEmail(boolean withAttachments) {
+	void sendEmail(final boolean withAttachments) {
 
 		// Parameter values
 		final var requestBody = emailRequest(withAttachments);
@@ -144,7 +173,7 @@ class ErrandCommunicationResourceTest {
 	@ValueSource(booleans = {
 		true, false
 	})
-	void sendWebMessage(boolean withAttachment) {
+	void sendWebMessage(final boolean withAttachment) {
 
 		// Parameter values
 		final var requestBody = webMessageRequest(withAttachment);
@@ -175,37 +204,8 @@ class ErrandCommunicationResourceTest {
 			.expectBody()
 			.returnResult();
 
+		// Assert
 		verify(serviceMock).getMessageAttachmentStreamed(any(String.class), any(String.class), any(String.class), any(String.class), any(String.class), any(HttpServletResponse.class));
 		verifyNoMoreInteractions(serviceMock);
-	}
-
-	private static SmsRequest smsRequest() {
-		return SmsRequest.create()
-			.withMessage("message")
-			.withRecipient("+46701234567")
-			.withSender("sender");
-	}
-
-	private static EmailRequest emailRequest(boolean withAttachment) {
-		return EmailRequest.create()
-			.withHtmlMessage("htmlMessage")
-			.withMessage("message")
-			.withRecipient("recipient@recipient.com")
-			.withSender("sender@sender.com")
-			.withSubject("subject")
-			.withAttachments(withAttachment ? List.of(attachment()) : null);
-	}
-
-	private static WebMessageRequest webMessageRequest(boolean withAttachment) {
-		return WebMessageRequest.create()
-			.withMessage("message")
-			.withAttachmentIds(List.of("1", "2"))
-			.withAttachments(withAttachment ? List.of(WebMessageAttachment.create().withName("attachmentName").withBase64EncodedString("ZGF0YQ==")) : null);
-	}
-
-	private static EmailAttachment attachment() {
-		return EmailAttachment.create()
-			.withBase64EncodedString("aGVsbG8gd29ybGQK")
-			.withName("name");
 	}
 }

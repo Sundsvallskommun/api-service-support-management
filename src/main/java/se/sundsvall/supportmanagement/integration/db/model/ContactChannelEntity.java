@@ -21,11 +21,11 @@ public class ContactChannelEntity {
 		return type;
 	}
 
-	public void setType(String type) {
+	public void setType(final String type) {
 		this.type = type;
 	}
 
-	public ContactChannelEntity withType(String type) {
+	public ContactChannelEntity withType(final String type) {
 		this.type = type;
 		return this;
 	}
@@ -34,24 +34,24 @@ public class ContactChannelEntity {
 		return value;
 	}
 
-	public void setValue(String value) {
+	public void setValue(final String value) {
 		this.value = value;
 	}
 
-	public ContactChannelEntity withValue(String value) {
+	public ContactChannelEntity withValue(final String value) {
 		this.value = value;
 		return this;
 	}
 
 	@Override
-	public boolean equals(Object o) {
+	public boolean equals(final Object o) {
 		if (this == o) {
 			return true;
 		}
 		if (o == null || getClass() != o.getClass()) {
 			return false;
 		}
-		ContactChannelEntity that = (ContactChannelEntity) o;
+		final ContactChannelEntity that = (ContactChannelEntity) o;
 		return Objects.equals(type, that.type) && Objects.equals(value, that.value);
 	}
 
@@ -62,10 +62,8 @@ public class ContactChannelEntity {
 
 	@Override
 	public String toString() {
-		final StringBuilder sb = new StringBuilder("ContactChannelEntity{");
-		sb.append("type='").append(type).append('\'');
-		sb.append(", value='").append(value).append('\'');
-		sb.append('}');
-		return sb.toString();
+		return "ContactChannelEntity{" + "type='" + type + '\''
+			+ ", value='" + value + '\''
+			+ '}';
 	}
 }

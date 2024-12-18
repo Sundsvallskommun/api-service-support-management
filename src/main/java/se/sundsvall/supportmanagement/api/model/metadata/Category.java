@@ -17,11 +17,11 @@ import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
 @Schema(description = "Category model")
 public class Category {
 
-	@Schema(description = "Name for the category", example = "categoryname")
+	@Schema(description = "Name for the category", example = "Category name")
 	@NotBlank(groups = OnCreate.class)
 	private String name;
 
-	@Schema(description = "Displayname for the category", example = "Displayed name")
+	@Schema(description = "Display name for the category", example = "Displayed name")
 	private String displayName;
 
 	@ArraySchema(schema = @Schema(implementation = Type.class), uniqueItems = true)
@@ -46,11 +46,11 @@ public class Category {
 		return name;
 	}
 
-	public void setName(String name) {
+	public void setName(final String name) {
 		this.name = name;
 	}
 
-	public Category withName(String name) {
+	public Category withName(final String name) {
 		this.name = name;
 		return this;
 	}
@@ -59,11 +59,11 @@ public class Category {
 		return displayName;
 	}
 
-	public void setDisplayName(String displayName) {
+	public void setDisplayName(final String displayName) {
 		this.displayName = displayName;
 	}
 
-	public Category withDisplayName(String displayName) {
+	public Category withDisplayName(final String displayName) {
 		this.displayName = displayName;
 		return this;
 	}
@@ -72,11 +72,11 @@ public class Category {
 		return types;
 	}
 
-	public void setTypes(List<Type> types) {
+	public void setTypes(final List<Type> types) {
 		this.types = types;
 	}
 
-	public Category withTypes(List<Type> types) {
+	public Category withTypes(final List<Type> types) {
 		this.types = types;
 		return this;
 	}
@@ -85,11 +85,11 @@ public class Category {
 		return created;
 	}
 
-	public void setCreated(OffsetDateTime created) {
+	public void setCreated(final OffsetDateTime created) {
 		this.created = created;
 	}
 
-	public Category withCreated(OffsetDateTime created) {
+	public Category withCreated(final OffsetDateTime created) {
 		this.created = created;
 		return this;
 	}
@@ -98,11 +98,11 @@ public class Category {
 		return modified;
 	}
 
-	public void setModified(OffsetDateTime modified) {
+	public void setModified(final OffsetDateTime modified) {
 		this.modified = modified;
 	}
 
-	public Category withModified(OffsetDateTime modified) {
+	public Category withModified(final OffsetDateTime modified) {
 		this.modified = modified;
 		return this;
 	}
@@ -113,7 +113,7 @@ public class Category {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(final Object obj) {
 		if (this == obj) {
 			return true;
 		}
@@ -123,14 +123,12 @@ public class Category {
 		if (getClass() != obj.getClass()) {
 			return false;
 		}
-		Category other = (Category) obj;
+		final Category other = (Category) obj;
 		return Objects.equals(created, other.created) && Objects.equals(displayName, other.displayName) && Objects.equals(modified, other.modified) && Objects.equals(name, other.name) && Objects.equals(types, other.types);
 	}
 
 	@Override
 	public String toString() {
-		StringBuilder builder = new StringBuilder();
-		builder.append("Category [name=").append(name).append(", displayName=").append(displayName).append(", types=").append(types).append(", created=").append(created).append(", modified=").append(modified).append("]");
-		return builder.toString();
+		return "Category [name=" + name + ", displayName=" + displayName + ", types=" + types + ", created=" + created + ", modified=" + modified + "]";
 	}
 }

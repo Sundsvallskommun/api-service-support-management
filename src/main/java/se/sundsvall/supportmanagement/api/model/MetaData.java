@@ -114,8 +114,12 @@ public class MetaData {
 
 	@Override
 	public String toString() {
-		final var builder = new StringBuilder();
-		builder.append("MetaData [page=").append(page).append(", limit=").append(limit).append(", count=").append(count).append(", totalRecords=").append(totalRecords).append(", totalPages=").append(totalPages).append("]");
-		return builder.toString();
+		return "MetaData{" +
+			"page=" + page +
+			", limit=" + limit +
+			", count=" + count +
+			", totalRecords=" + totalRecords +
+			", totalPages=" + totalPages +
+			'}';
 	}
 }

@@ -16,7 +16,7 @@ public class Label {
 	@Schema(description = "Display name for the label", example = "Nyckelkort")
 	private String displayName;
 
-	@Schema(description = "Name for the label", example = "keycard")
+	@Schema(description = "Name for the label", example = "keyCard")
 	@NotBlank
 	private String name;
 
@@ -85,21 +85,18 @@ public class Label {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(final Object obj) {
 		if (this == obj) {
 			return true;
 		}
-		if (!(obj instanceof Label)) {
+		if (!(obj instanceof final Label other)) {
 			return false;
 		}
-		Label other = (Label) obj;
 		return Objects.equals(classification, other.classification) && Objects.equals(displayName, other.displayName) && Objects.equals(labels, other.labels) && Objects.equals(name, other.name);
 	}
 
 	@Override
 	public String toString() {
-		StringBuilder builder = new StringBuilder();
-		builder.append("Label [classification=").append(classification).append(", displayName=").append(displayName).append(", name=").append(name).append(", labels=").append(labels).append("]");
-		return builder.toString();
+		return "Label [classification=" + classification + ", displayName=" + displayName + ", name=" + name + ", labels=" + labels + "]";
 	}
 }

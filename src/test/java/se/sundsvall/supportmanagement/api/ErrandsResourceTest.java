@@ -15,6 +15,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
+import java.io.Serial;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -392,6 +393,7 @@ class ErrandsResourceTest {
 	@JsonIgnoreProperties(ignoreUnknown = true)
 	private static class RestResponsePage<T> extends PageImpl<T> {
 
+		@Serial
 		private static final long serialVersionUID = -7361702892303169935L;
 
 		@JsonCreator(mode = PROPERTIES)

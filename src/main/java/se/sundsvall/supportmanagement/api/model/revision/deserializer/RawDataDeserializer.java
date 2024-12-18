@@ -15,9 +15,9 @@ public class RawDataDeserializer extends JsonDeserializer<String> {
 	private static final String EXCESSIVE_SPACES = " {2,}";
 
 	@Override
-	public String deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-		ObjectMapper mapper = (ObjectMapper) p.getCodec();
-		JsonNode node = mapper.readTree(p);
+	public String deserialize(final JsonParser p, final DeserializationContext context) throws IOException {
+		final ObjectMapper mapper = (ObjectMapper) p.getCodec();
+		final JsonNode node = mapper.readTree(p);
 		// if node is interpreted as a container node the node content is formatted and returned as raw data
 		if (node.isContainerNode()) {
 			return mapper.writeValueAsString(node)
