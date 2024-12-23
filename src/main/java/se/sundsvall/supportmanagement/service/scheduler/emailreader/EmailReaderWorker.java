@@ -128,7 +128,7 @@ public class EmailReaderWorker {
 
 	private void sendEmailClosed(final ErrandEntity errand, final Email email, final EmailWorkerConfigEntity config) {
 
-		if (!isValidEmailAddress(email.getSender())) {
+		if (isInvalidEmailAddress(email.getSender())) {
 			// Don't send to a bad email address.
 			return;
 		}
@@ -144,7 +144,7 @@ public class EmailReaderWorker {
 			return;
 		}
 
-		if (!isValidEmailAddress(email.getSender())) {
+		if (isInvalidEmailAddress(email.getSender())) {
 			// Don't send to a bad email address.
 			return;
 		}
@@ -154,7 +154,7 @@ public class EmailReaderWorker {
 		communicationService.sendEmail(config.getNamespace(), config.getMunicipalityId(), errand.getId(), emailRequest);
 	}
 
-	private boolean isValidEmailAddress(String value) {
-		return EmailValidator.getInstance().isValid(value);
+	private boolean isInvalidEmailAddress(final String value) {
+		return !EmailValidator.getInstance().isValid(value);
 	}
 }

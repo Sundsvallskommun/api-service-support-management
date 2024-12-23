@@ -17,6 +17,7 @@ import generated.se.sundsvall.emailreader.Email;
 import generated.se.sundsvall.eventlog.EventType;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -214,7 +215,7 @@ class EmailReaderWorkerTest {
 
 		final var errandEntity = ErrandEntity.create().withId("id").withErrandNumber("errandNumber").withStatus("NEW").withCreated(OffsetDateTime.now());
 		final var communicationEntity = CommunicationEntity.create();
-		final var emailRequest = new EmailRequest();
+		final var emailRequest = new EmailRequest().withEmailHeaders(Map.of());
 
 		// MOCK
 		when(errandRepositoryMock.findById(anyString())).thenReturn(Optional.of(errandEntity));
