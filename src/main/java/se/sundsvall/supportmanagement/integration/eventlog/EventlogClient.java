@@ -1,6 +1,5 @@
 package se.sundsvall.supportmanagement.integration.eventlog;
 
-import static org.springframework.http.MediaType.ALL_VALUE;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static se.sundsvall.supportmanagement.integration.eventlog.configuration.EventlogConfiguration.CLIENT_ID;
 
@@ -28,7 +27,7 @@ public interface EventlogClient {
 	 * @param logKey         containing UUID to create event for
 	 * @param event          the event to create
 	 */
-	@PostMapping(path = "/{municipalityId}/{logKey}", consumes = APPLICATION_JSON_VALUE, produces = ALL_VALUE)
+	@PostMapping(path = "/{municipalityId}/{logKey}", consumes = APPLICATION_JSON_VALUE)
 	ResponseEntity<Void> createEvent(
 		@PathVariable("municipalityId") String municipalityId,
 		@PathVariable("logKey") String logKey,
