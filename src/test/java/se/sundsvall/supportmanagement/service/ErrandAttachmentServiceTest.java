@@ -163,6 +163,7 @@ class ErrandAttachmentServiceTest {
 		verifyNoInteractions(revisionServiceMock, eventServiceMock);
 	}
 
+	@SuppressWarnings("resource")
 	@Test
 	void readErrandAttachment() throws IOException, SQLException, InterruptedException {
 
