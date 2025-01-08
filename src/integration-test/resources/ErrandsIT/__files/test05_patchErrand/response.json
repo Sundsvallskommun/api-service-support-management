@@ -13,7 +13,7 @@
 			"key": "KEY-6"
 		}
 	],
-	"touched": "2022-03-01T12:00:00+01:00",
+	"touched": "${json-unit.any-string}",
 	"errandNumber": "KC-23020003",
 	"created": "2022-03-01T12:00:00+01:00",
 	"channel": "Updated channel",

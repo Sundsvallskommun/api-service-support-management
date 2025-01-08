@@ -41,16 +41,17 @@ class ErrandListenerTest {
 		final var loginName = "loginName";
 		final var entity = new ErrandEntity()
 			.withAssignedUserId(loginName)
-			.withStakeholders(List.of(StakeholderEntity.create())).withStatus(status);
+			.withStakeholders(List.of(StakeholderEntity.create()))
+			.withStatus(status);
 
 		// Act
 		errandListener.onCreate(entity);
 
 		// Assert
 		assertThat(entity.getCreated()).isCloseTo(now(), within(1, SECONDS));
+		assertThat(entity.getTouched()).isCloseTo(now(), within(1, SECONDS));
 		assertThat(entity.getStakeholders().getFirst().getErrandEntity()).isSameAs(entity);
-		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("created", "stakeholders", "timeMeasures", "status", "previousStatus", "assignedUserId", "touched");
-
+		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("created", "touched", "stakeholders", "timeMeasures", "status", "previousStatus", "assignedUserId");
 		assertThat(entity.getTimeMeasures()).isNotEmpty().hasSize(1);
 		assertThat(entity.getTimeMeasures().getFirst()).isNotNull();
 		assertThat(entity.getTimeMeasures().getFirst().getStartTime()).isNotNull();
@@ -76,9 +77,9 @@ class ErrandListenerTest {
 
 		// Assert
 		assertThat(entity.getModified()).isCloseTo(now(), within(1, SECONDS));
+		assertThat(entity.getTouched()).isCloseTo(now(), within(1, SECONDS));
 		assertThat(entity.getStakeholders().getFirst().getErrandEntity()).isSameAs(entity);
-		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("modified", "stakeholders", "status", "previousStatus", "timeMeasures", "assignedUserId");
-
+		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("modified", "touched", "stakeholders", "status", "previousStatus", "timeMeasures", "assignedUserId");
 		assertThat(entity.getTimeMeasures()).isNotEmpty().hasSize(1);
 		assertThat(entity.getTimeMeasures().getFirst()).isNotNull();
 		assertThat(entity.getTimeMeasures().getFirst().getStartTime()).isCloseTo(now(), within(1, SECONDS));
