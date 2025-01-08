@@ -23,7 +23,6 @@ import jakarta.persistence.UniqueConstraint;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Objects;
-import org.hibernate.annotations.Formula;
 import org.hibernate.annotations.TimeZoneStorage;
 import org.hibernate.annotations.UuidGenerator;
 import se.sundsvall.supportmanagement.integration.db.model.listener.ErrandListener;
@@ -41,7 +40,8 @@ import se.sundsvall.supportmanagement.integration.db.model.listener.ErrandListen
 		@Index(name = "idx_errand_municipality_id_namespace_reporter_user_id", columnList = "municipality_id,namespace,reporter_user_id"),
 		@Index(name = "idx_errand_errand_number", columnList = "errand_number"),
 		@Index(name = "idx_errand_municipality_id_namespace_created", columnList = "municipality_id,namespace,created"),
-		@Index(name = "idx_errand_suspended_to", columnList = "suspended_to")
+		@Index(name = "idx_errand_suspended_to", columnList = "suspended_to"),
+		@Index(name = "idx_errand_municipality_id_namespace_touched", columnList = "municipality_id,namespace,touched")
 	},
 	uniqueConstraints = {
 		@UniqueConstraint(name = "uq_errand_number", columnNames = {
@@ -152,8 +152,7 @@ public class ErrandEntity {
 	@TimeZoneStorage(NORMALIZE)
 	private OffsetDateTime modified;
 
-	// If formula is modified, make sure to update getTouched accordingly.
-	@Formula("greatest(coalesce(created, 0), coalesce(modified, 0))")
+	@Column(name = "touched")
 	@TimeZoneStorage(NORMALIZE)
 	private OffsetDateTime touched;
 
