@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.service.scheduler.emailreader;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
 import static java.util.UUID.randomUUID;
@@ -8,6 +9,7 @@ import static java.util.stream.Collectors.toMap;
 import generated.se.sundsvall.emailreader.Email;
 import generated.se.sundsvall.emailreader.EmailAttachment;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +36,8 @@ import se.sundsvall.supportmanagement.service.util.BlobBuilder;
 
 @Component
 public class EmailReaderMapper {
+
+	private static final Base64.Decoder BASE64_DECODER = Base64.getDecoder();
 
 	private final BlobBuilder blobBuilder;
 
@@ -92,7 +96,7 @@ public class EmailReaderMapper {
 				.withMunicipalityId(errand.getMunicipalityId())
 				.withNamespace(errand.getNamespace())
 				.withName(attachment.getName())
-				.withFileSize(attachment.getContent().length())
+				.withFileSize(getFileSize(attachment.getContent()))
 				.withAttachmentData(toMessageAttachmentData(attachment))
 				.withContentType(attachment.getContentType()))
 			.toList();
@@ -160,5 +164,9 @@ public class EmailReaderMapper {
 		}
 
 		return map;
+	}
+
+	private int getFileSize(String base64Content) {
+		return BASE64_DECODER.decode(Optional.ofNullable(base64Content).orElse("").getBytes(UTF_8)).length;
 	}
 }
