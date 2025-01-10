@@ -1,5 +1,7 @@
 package se.sundsvall.supportmanagement.integration.webmessagecollector;
 
+import static se.sundsvall.supportmanagement.integration.webmessagecollector.configuration.WebMessageCollectorConfiguration.CLIENT_ID;
+
 import generated.se.sundsvall.webmessagecollector.MessageDTO;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import java.util.List;
@@ -10,10 +12,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import se.sundsvall.supportmanagement.integration.webmessagecollector.configuration.WebMessageCollectorConfiguration;
 
 @FeignClient(
-	name = WebMessageCollectorConfiguration.CLIENT_ID,
+	name = CLIENT_ID,
 	url = "${integration.web-message-collector.url}",
 	configuration = WebMessageCollectorConfiguration.class)
-@CircuitBreaker(name = WebMessageCollectorConfiguration.CLIENT_ID)
+@CircuitBreaker(name = CLIENT_ID)
 public interface WebMessageCollectorClient {
 
 	@GetMapping("/{municipalityId}/messages/{familyId}/{instance}")

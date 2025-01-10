@@ -24,7 +24,9 @@ public class ErrandListener {
 
 	@PrePersist
 	void onCreate(final ErrandEntity errandEntity) {
-		errandEntity.setCreated(now(systemDefault()).truncatedTo(MILLIS));
+		final var now = now(systemDefault()).truncatedTo(MILLIS);
+		errandEntity.setCreated(now);
+		errandEntity.setTouched(now);
 		Optional.ofNullable(errandEntity.getStakeholders())
 			.ifPresent(st -> st.forEach(s -> s.setErrandEntity(errandEntity)));
 
@@ -36,7 +38,9 @@ public class ErrandListener {
 
 	@PreUpdate
 	void onUpdate(final ErrandEntity errandEntity) {
-		errandEntity.setModified(now(systemDefault()).truncatedTo(MILLIS));
+		final var now = now(systemDefault()).truncatedTo(MILLIS);
+		errandEntity.setModified(now);
+		errandEntity.setTouched(now);
 		Optional.ofNullable(errandEntity.getStakeholders())
 			.ifPresent(st -> st.forEach(s -> s.setErrandEntity(errandEntity)));
 
@@ -44,7 +48,6 @@ public class ErrandListener {
 		// The second statement is to prevent the same status from being added multiple times as preUpdate is called multiple
 		// times during the same transaction
 		if (!errandEntity.getStatus().equals(errandEntity.getTempPreviousStatus()) && !Objects.equals(errandEntity.getTempPreviousStatus(), errandEntity.getPreviousStatus())) {
-			final var now = now();
 			Optional.ofNullable(errandEntity.getTimeMeasures())
 				.ifPresentOrElse(list -> {
 					findTimeMeasureEntityWithoutStopTime(errandEntity, now);

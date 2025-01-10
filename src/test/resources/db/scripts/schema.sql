@@ -129,6 +129,7 @@
         modified datetime(6),
         suspended_from datetime(6),
         suspended_to datetime(6),
+        touched datetime(6),
         contact_reason_description varchar(4096),
         assigned_group_id varchar(255),
         assigned_user_id varchar(255),
@@ -415,6 +416,9 @@
 
     create index idx_errand_suspended_to 
        on errand (suspended_to);
+
+    create index idx_errand_municipality_id_namespace_touched 
+       on errand (municipality_id, namespace, touched);
 
     alter table if exists errand 
        add constraint uq_errand_number unique (errand_number);
