@@ -163,6 +163,8 @@ public class EmailReaderMapper {
 			map.remove(EmailHeader.MESSAGE_ID);
 		}
 
+		map.put(EmailHeader.AUTO_SUBMITTED, List.of("auto-generated"));
+
 		return map;
 	}
 

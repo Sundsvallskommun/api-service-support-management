@@ -6,7 +6,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 public enum EmailHeader {
 	IN_REPLY_TO("In-Reply-To"),
 	REFERENCES("References"),
-	MESSAGE_ID("Message-ID");
+	MESSAGE_ID("Message-ID"),
+	AUTO_SUBMITTED("Auto-Submitted");
 
 	private final String name;
 

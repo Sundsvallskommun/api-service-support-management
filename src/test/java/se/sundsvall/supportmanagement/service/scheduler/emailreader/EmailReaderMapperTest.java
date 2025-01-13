@@ -225,9 +225,10 @@ class EmailReaderMapperTest {
 		assertThat(result.getSender()).isEqualTo(sender);
 		assertThat(result.getSenderName()).isEqualTo(sender);
 		assertThat(result.getMessage()).isEqualTo(template);
-		assertThat(result.getEmailHeaders()).isNotNull().hasSize(2);
+		assertThat(result.getEmailHeaders()).isNotNull().hasSize(3);
 		assertThat(result.getEmailHeaders().get(EmailHeader.MESSAGE_ID)).isNull();
 		assertThat(result.getEmailHeaders().get(EmailHeader.IN_REPLY_TO)).isNotNull().hasSize(1).contains("someValue");
 		assertThat(result.getEmailHeaders().get(EmailHeader.REFERENCES)).isNotNull().hasSize(1).contains("someValue");
+		assertThat(result.getEmailHeaders().get(EmailHeader.AUTO_SUBMITTED)).isNotNull().hasSize(1).contains("auto-generated");
 	}
 }
