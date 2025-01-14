@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.api.model.notification;
 
 import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
+import static org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
@@ -54,11 +55,14 @@ public class Notification {
 	@Schema(description = "Content of the notification", example = "Some content of the notification")
 	private String content;
 
-	@DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+	@DateTimeFormat(iso = DATE_TIME)
 	@Schema(description = "Timestamp when the notification expires", example = "2000-10-31T01:30:00.000+02:00")
 	private OffsetDateTime expires;
 
-	@Schema(description = "Acknowledged status of the notification", example = "true")
+	@Schema(description = "Acknowledged status of the notification (global level). I.e. this notification is acknowledged by anyone.", example = "true")
+	private boolean globalAcknowledged;
+
+	@Schema(description = "Acknowledged status of the notification (owner level). I.e. this notification is acknowledged by the owner of this notification.", example = "true")
 	private boolean acknowledged;
 
 	@Null(groups = {
@@ -220,6 +224,19 @@ public class Notification {
 		return this;
 	}
 
+	public boolean isGlobalAcknowledged() {
+		return globalAcknowledged;
+	}
+
+	public void setGlobalAcknowledged(boolean globalAcknowledged) {
+		this.globalAcknowledged = globalAcknowledged;
+	}
+
+	public Notification withGlobalAcknowledged(boolean globalAcknowledged) {
+		this.globalAcknowledged = globalAcknowledged;
+		return this;
+	}
+
 	public boolean isAcknowledged() {
 		return acknowledged;
 	}
@@ -260,42 +277,30 @@ public class Notification {
 	}
 
 	@Override
-	public boolean equals(final Object o) {
-		if (this == o) {
-			return true;
-		}
-		if ((o == null) || (getClass() != o.getClass())) {
-			return false;
-		}
-		final Notification that = (Notification) o;
-		return (acknowledged == that.acknowledged) && Objects.equals(id, that.id) && Objects.equals(created, that.created) && Objects.equals(modified, that.modified) && Objects.equals(ownerFullName, that.ownerFullName) && Objects.equals(ownerId,
-			that.ownerId) && Objects.equals(createdBy, that.createdBy) && Objects.equals(createdByFullName, that.createdByFullName) && Objects.equals(type, that.type) && Objects.equals(description, that.description) && Objects.equals(content, that.content)
-			&& Objects.equals(expires, that.expires) && Objects.equals(errandId, that.errandId) && Objects.equals(errandNumber, that.errandNumber);
+	public int hashCode() {
+		return Objects.hash(acknowledged, content, created, createdBy, createdByFullName, description, errandId, errandNumber, expires, globalAcknowledged, id, modified, ownerFullName, ownerId, type);
 	}
 
 	@Override
-	public int hashCode() {
-		return Objects.hash(id, created, modified, ownerFullName, ownerId, createdBy, createdByFullName, type, description, content, expires, acknowledged, errandId, errandNumber);
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (getClass() != obj.getClass()) {
+			return false;
+		}
+		Notification other = (Notification) obj;
+		return acknowledged == other.acknowledged && Objects.equals(content, other.content) && Objects.equals(created, other.created) && Objects.equals(createdBy, other.createdBy) && Objects.equals(createdByFullName, other.createdByFullName) && Objects
+			.equals(description, other.description) && Objects.equals(errandId, other.errandId) && Objects.equals(errandNumber, other.errandNumber) && Objects.equals(expires, other.expires) && globalAcknowledged == other.globalAcknowledged && Objects
+				.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(ownerFullName, other.ownerFullName) && Objects.equals(ownerId, other.ownerId) && Objects.equals(type, other.type);
 	}
 
 	@Override
 	public String toString() {
-		return "Notification{" +
-			"id=" + id +
-			", created=" + created +
-			", modified=" + modified +
-			", ownerFullName='" + ownerFullName + '\'' +
-			", ownerId='" + ownerId + '\'' +
-			", createdBy='" + createdBy + '\'' +
-			", createdByFullName='" + createdByFullName + '\'' +
-			", type='" + type + '\'' +
-			", description='" + description + '\'' +
-			", content='" + content + '\'' +
-			", expires=" + expires +
-			", acknowledged=" + acknowledged +
-			", errandId='" + errandId + '\'' +
-			", errandNumber='" + errandNumber + '\'' +
-			'}';
+		return "Notification [id=" + id + ", created=" + created + ", modified=" + modified + ", ownerFullName=" + ownerFullName + ", ownerId=" + ownerId + ", createdBy=" + createdBy + ", createdByFullName=" + createdByFullName + ", type=" + type
+			+ ", description=" + description + ", content=" + content + ", expires=" + expires + ", globalAcknowledged=" + globalAcknowledged + ", acknowledged=" + acknowledged + ", errandId=" + errandId + ", errandNumber=" + errandNumber + "]";
 	}
-
 }
