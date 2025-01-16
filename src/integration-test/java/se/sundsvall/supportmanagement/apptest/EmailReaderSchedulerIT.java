@@ -9,16 +9,13 @@ import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import java.util.List;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.jdbc.Sql;
-
 import se.sundsvall.dept44.test.AbstractAppTest;
 import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.service.scheduler.emailreader.EmailReaderScheduler;
-
 
 @WireMockAppTestSuite(files = "classpath:/EmailReaderSchedulerIT/", classes = Application.class)
 @Sql({
@@ -27,8 +24,7 @@ import se.sundsvall.supportmanagement.service.scheduler.emailreader.EmailReaderS
 })
 class EmailReaderSchedulerIT extends AbstractAppTest {
 
-	private static final String PATH = "/2281/NAMESPACE.1/errands";
-
+	private static final String PATH = "/2281/NAMESPACE-1/errands";
 	private static final String RESPONSE_FILE = "response.json";
 
 	@Autowired
@@ -51,7 +47,5 @@ class EmailReaderSchedulerIT extends AbstractAppTest {
 		// Verify mocks
 		verify(2, deleteRequestedFor(urlMatching("/api-emailreader/2281/email/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")));
 		verifyStubs();
-
 	}
-
 }

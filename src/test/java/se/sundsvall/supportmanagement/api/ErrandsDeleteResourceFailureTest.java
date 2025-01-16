@@ -51,7 +51,7 @@ class ErrandsDeleteResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactly(tuple("deleteErrand.namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."));
+			.containsExactly(tuple("deleteErrand.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
 
 		// Verification
 		verifyNoInteractions(errandServiceMock);

@@ -69,7 +69,7 @@ class EmailIntegrationConfigResourceFailureTest {
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
 			.containsExactly(
-				tuple("createEmailIntegrationConfig.namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."));
+				tuple("createEmailIntegrationConfig.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
 
 		verifyNoInteractions(serviceMock);
 	}
@@ -185,7 +185,7 @@ class EmailIntegrationConfigResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactly(tuple("readEmailIntegrationConfig.namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."));
+			.containsExactly(tuple("readEmailIntegrationConfig.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
 
 		verifyNoInteractions(serviceMock);
 	}
@@ -230,7 +230,7 @@ class EmailIntegrationConfigResourceFailureTest {
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
 			.containsExactly(
-				tuple("updateEmailIntegrationConfig.namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."));
+				tuple("updateEmailIntegrationConfig.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
 
 		verifyNoInteractions(serviceMock);
 	}
@@ -345,7 +345,7 @@ class EmailIntegrationConfigResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactly(tuple("deleteEmailIntegrationConfig.namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."));
+			.containsExactly(tuple("deleteEmailIntegrationConfig.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
 
 		verifyNoInteractions(serviceMock);
 	}

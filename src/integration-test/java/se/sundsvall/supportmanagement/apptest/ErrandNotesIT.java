@@ -12,11 +12,9 @@ import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import java.util.List;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.jdbc.Sql;
-
 import se.sundsvall.dept44.test.AbstractAppTest;
 import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.supportmanagement.Application;
@@ -32,14 +30,10 @@ import se.sundsvall.supportmanagement.Application;
 @DirtiesContext
 class ErrandNotesIT extends AbstractAppTest {
 
-	private static final String PATH = "/2281/NAMESPACE.1/errands/";
-
+	private static final String PATH = "/2281/NAMESPACE-1/errands/";
 	private static final String REQUEST_FILE = "request.json";
-
 	private static final String RESPONSE_FILE = "response.json";
-
 	private static final String NOTE_ID = "d1f2c8d4-d234-4504-a483-b74570a7941d";
-
 	private static final String ERRAND_ID = "ec677eb3-604c-4935-bff7-f8f0b500c8f4";
 
 	@Test

@@ -99,7 +99,7 @@ class ErrandsUpdateResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
-			tuple("updateErrand.namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."));
+			tuple("updateErrand.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
 
 		// Verification
 		verify(metadataServiceMock).findStatuses(any(), any());

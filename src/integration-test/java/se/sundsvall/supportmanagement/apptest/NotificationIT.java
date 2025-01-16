@@ -28,7 +28,7 @@ class NotificationIT extends AbstractAppTest {
 
 	private static final String REQUEST_FILE = "request.json";
 	private static final String RESPONSE_FILE = "response.json";
-	private static final String NAMESPACE = "NAMESPACE.1";
+	private static final String NAMESPACE = "NAMESPACE-1";
 	private static final String MUNICIPALITY_2281 = "2281";
 	private static final String ERRAND_ID = "ec677eb3-604c-4935-bff7-f8f0b500c8f4";
 	private static final String GLOBAL_NOTIFICATIONS_PATH = "/" + MUNICIPALITY_2281 + "/" + NAMESPACE + "/notifications";

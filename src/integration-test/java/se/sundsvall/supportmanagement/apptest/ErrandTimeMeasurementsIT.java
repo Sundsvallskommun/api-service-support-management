@@ -36,13 +36,9 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 class ErrandTimeMeasurementsIT extends AbstractAppTest {
 
 	private static final String ERRAND_ID = "ec677eb3-604c-4935-bff7-f8f0b500c8f4";
-
-	private static final String BASE_PATH = "/2281/NAMESPACE.1/errands";
-
+	private static final String BASE_PATH = "/2281/NAMESPACE-1/errands";
 	private static final String TIME_MEASUREMENT_PATH = BASE_PATH + "/" + ERRAND_ID + "/time-measure";
-
 	private static final String REQUEST_FILE = "request.json";
-
 	private static final String RESPONSE_FILE = "response.json";
 
 	@Autowired
@@ -67,7 +63,7 @@ class ErrandTimeMeasurementsIT extends AbstractAppTest {
 		// Create errand
 		setupCall()
 			.withHeader("sentbyuser", "joe01doe")
-			.withServicePath(BASE_PATH.replace("NAMESPACE.1", "CONTACTCENTER"))
+			.withServicePath(BASE_PATH.replace("NAMESPACE-1", "CONTACTCENTER"))
 			.withHttpMethod(POST)
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(CREATED)
@@ -98,7 +94,7 @@ class ErrandTimeMeasurementsIT extends AbstractAppTest {
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 
-		errandsRepository.findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, "NAMESPACE.1", "2281")
+		errandsRepository.findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, "NAMESPACE-1", "2281")
 			.ifPresentOrElse(errand -> {
 				assertThat(errand.getTimeMeasures()).hasSize(3);
 				assertThat(errand.getTimeMeasures().getLast().getStartTime()).isCloseTo(OffsetDateTime.now(), within(10, ChronoUnit.SECONDS));

@@ -33,14 +33,10 @@ import se.sundsvall.supportmanagement.integration.db.model.RevisionEntity;
 })
 class ErrandsIT extends AbstractAppTest {
 
-	private static final String NAMESPACE = "NAMESPACE.1";
-
+	private static final String NAMESPACE = "NAMESPACE-1";
 	private static final String MUNICIPALITY_ID = "2281";
-
 	private static final String PATH = "/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/errands";
-
 	private static final String REQUEST_FILE = "request.json";
-
 	private static final String RESPONSE_FILE = "response.json";
 
 	@Autowired
@@ -86,7 +82,7 @@ class ErrandsIT extends AbstractAppTest {
 	void test04_postErrand() {
 		final var headers = setupCall()
 			.withHeader("sentbyuser", "joe01doe")
-			.withServicePath(PATH.replace("NAMESPACE.1", "CONTACTCENTER"))
+			.withServicePath(PATH.replace("NAMESPACE-1", "CONTACTCENTER"))
 			.withHttpMethod(POST)
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(CREATED)

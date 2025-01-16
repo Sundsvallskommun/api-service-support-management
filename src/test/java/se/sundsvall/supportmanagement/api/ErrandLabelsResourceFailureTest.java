@@ -54,7 +54,7 @@ class ErrandLabelsResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactlyInAnyOrder(tuple("getErrandLabels.namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."));
+			.containsExactlyInAnyOrder(tuple("getErrandLabels.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
 
 		verifyNoInteractions(errandLabelServiceMock);
 	}
@@ -115,7 +115,7 @@ class ErrandLabelsResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactlyInAnyOrder(tuple("addErrandLabels.namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."));
+			.containsExactlyInAnyOrder(tuple("addErrandLabels.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
 
 		verifyNoInteractions(errandLabelServiceMock);
 	}
@@ -136,7 +136,7 @@ class ErrandLabelsResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactlyInAnyOrder(tuple("updateErrandLabels.namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."));
+			.containsExactlyInAnyOrder(tuple("updateErrandLabels.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
 
 		verifyNoInteractions(errandLabelServiceMock);
 	}
@@ -156,7 +156,7 @@ class ErrandLabelsResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactlyInAnyOrder(tuple("removeErrandLabel.namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."));
+			.containsExactlyInAnyOrder(tuple("removeErrandLabel.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
 
 		verifyNoInteractions(errandLabelServiceMock);
 	}

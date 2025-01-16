@@ -45,7 +45,7 @@ class MetadataResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
-			tuple("getAll.namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."));
+			tuple("getAll.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
 
 		// Verification
 		verifyNoInteractions(metadataServiceMock);
@@ -55,7 +55,7 @@ class MetadataResourceFailureTest {
 	void getWithInvalidMunicipalityId() {
 		// Call
 		final var response = webTestClient.get()
-			.uri(builder -> builder.path(PATH).build(Map.of("municipalityId", "666", "namespace", "my.namspace")))
+			.uri(builder -> builder.path(PATH).build(Map.of("municipalityId", "666", "namespace", "my-namspace")))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)

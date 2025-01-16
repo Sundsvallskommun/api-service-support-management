@@ -61,7 +61,7 @@ class ErrandParameterResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactlyInAnyOrder(tuple("updateErrandParameters.namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."));
+			.containsExactlyInAnyOrder(tuple("updateErrandParameters.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
 
 		verifyNoInteractions(errandParameterServiceMock);
 	}
@@ -132,7 +132,7 @@ class ErrandParameterResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactlyInAnyOrder(tuple("readErrandParameter.namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."));
+			.containsExactlyInAnyOrder(tuple("readErrandParameter.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
 
 		verifyNoInteractions(errandParameterServiceMock);
 	}
@@ -214,7 +214,7 @@ class ErrandParameterResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactly(tuple("findErrandParameters.namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."));
+			.containsExactly(tuple("findErrandParameters.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
 
 		verifyNoInteractions(errandParameterServiceMock);
 	}
@@ -261,7 +261,7 @@ class ErrandParameterResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactlyInAnyOrder(tuple("updateErrandParameter.namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."));
+			.containsExactlyInAnyOrder(tuple("updateErrandParameter.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
 
 		verifyNoInteractions(errandParameterServiceMock);
 	}
@@ -358,7 +358,7 @@ class ErrandParameterResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactlyInAnyOrder(tuple("deleteErrandParameter.namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."));
+			.containsExactlyInAnyOrder(tuple("deleteErrandParameter.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
 
 		verifyNoInteractions(errandParameterServiceMock);
 	}

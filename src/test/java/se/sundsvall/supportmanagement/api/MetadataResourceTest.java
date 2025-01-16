@@ -31,7 +31,7 @@ import se.sundsvall.supportmanagement.service.MetadataService;
 @ActiveProfiles("junit")
 class MetadataResourceTest {
 
-	private static final String NAMESPACE = "my.namespace";
+	private static final String NAMESPACE = "my-namespace";
 	private static final String MUNICIPALITY_ID = "2281";
 	private static final String PATH = "{municipalityId}/{namespace}/metadata";
 
@@ -69,6 +69,6 @@ class MetadataResourceTest {
 		// Verification
 		assertThat(response).isEqualTo(metadataResponse);
 
-		verify(metadataServiceMock).findAll("my.namespace", "2281");
+		verify(metadataServiceMock).findAll("my-namespace", "2281");
 	}
 }

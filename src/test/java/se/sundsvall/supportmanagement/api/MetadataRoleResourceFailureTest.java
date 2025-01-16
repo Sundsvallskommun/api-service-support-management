@@ -57,8 +57,8 @@ class MetadataRoleResourceFailureTest {
 
 	private static Stream<Arguments> createRoleArguments() {
 		return Stream.of(
-			Arguments.of("my.namespace", "666", tuple("createRole.municipalityId", "not a valid municipality ID")),
-			Arguments.of("invalid,namespace", "2281", tuple("createRole.namespace", "can only contain A-Z, a-z, 0-9, -, _ and .")));
+			Arguments.of("my-namespace", "666", tuple("createRole.municipalityId", "not a valid municipality ID")),
+			Arguments.of("invalid,namespace", "2281", tuple("createRole.namespace", "can only contain A-Z, a-z, 0-9, - and _")));
 	}
 
 	@ParameterizedTest
@@ -81,8 +81,8 @@ class MetadataRoleResourceFailureTest {
 
 	private static Stream<Arguments> getRoleArguments() {
 		return Stream.of(
-			Arguments.of("my.namespace", "666", tuple("getRole.municipalityId", "not a valid municipality ID")),
-			Arguments.of("invalid,namespace", "2281", tuple("getRole.namespace", "can only contain A-Z, a-z, 0-9, -, _ and .")));
+			Arguments.of("my-namespace", "666", tuple("getRole.municipalityId", "not a valid municipality ID")),
+			Arguments.of("invalid,namespace", "2281", tuple("getRole.namespace", "can only contain A-Z, a-z, 0-9, - and _")));
 	}
 
 	@ParameterizedTest
@@ -106,8 +106,8 @@ class MetadataRoleResourceFailureTest {
 
 	private static Stream<Arguments> getRolesArguments() {
 		return Stream.of(
-			Arguments.of("my.namespace", "666", tuple("getRoles.municipalityId", "not a valid municipality ID")),
-			Arguments.of("invalid,namespace", "2281", tuple("getRoles.namespace", "can only contain A-Z, a-z, 0-9, -, _ and .")));
+			Arguments.of("my-namespace", "666", tuple("getRoles.municipalityId", "not a valid municipality ID")),
+			Arguments.of("invalid,namespace", "2281", tuple("getRoles.namespace", "can only contain A-Z, a-z, 0-9, - and _")));
 	}
 
 	@ParameterizedTest
@@ -131,7 +131,7 @@ class MetadataRoleResourceFailureTest {
 
 	private static Stream<Arguments> deleteArguments() {
 		return Stream.of(
-			Arguments.of("my.namespace", "666", tuple("deleteRole.municipalityId", "not a valid municipality ID")),
-			Arguments.of("invalid,namespace", "2281", tuple("deleteRole.namespace", "can only contain A-Z, a-z, 0-9, -, _ and .")));
+			Arguments.of("my-namespace", "666", tuple("deleteRole.municipalityId", "not a valid municipality ID")),
+			Arguments.of("invalid,namespace", "2281", tuple("deleteRole.namespace", "can only contain A-Z, a-z, 0-9, - and _")));
 	}
 }

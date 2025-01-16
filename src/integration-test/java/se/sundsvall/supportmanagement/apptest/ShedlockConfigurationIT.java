@@ -4,16 +4,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Duration;
 import java.time.Instant;
-
+import net.javacrumbs.shedlock.core.LockConfiguration;
+import net.javacrumbs.shedlock.core.LockProvider;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
-
 import se.sundsvall.supportmanagement.Application;
-
-import net.javacrumbs.shedlock.core.LockConfiguration;
-import net.javacrumbs.shedlock.core.LockProvider;
 
 @SpringBootTest(classes = Application.class)
 @ActiveProfiles("it")
@@ -37,5 +34,4 @@ class ShedlockConfigurationIT { // Needs to be run in IT-phase as we need flyway
 
 		lock.get().unlock();
 	}
-
 }

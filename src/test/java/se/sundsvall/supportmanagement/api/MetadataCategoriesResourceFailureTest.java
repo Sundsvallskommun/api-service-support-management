@@ -55,16 +55,16 @@ class MetadataCategoriesResourceFailureTest {
 	private static Stream<Arguments> getWithInvalidParametersArguments() {
 		return Stream.of(
 			// Get category
-			Arguments.of("2281/invalid,namespace/metadata/categories/category-name", tuple("getCategory.namespace", "can only contain A-Z, a-z, 0-9, -, _ and .")),
-			Arguments.of("666/my.namespace/metadata/categories/category-name", tuple("getCategory.municipalityId", "not a valid municipality ID")),
+			Arguments.of("2281/invalid,namespace/metadata/categories/category-name", tuple("getCategory.namespace", "can only contain A-Z, a-z, 0-9, - and _")),
+			Arguments.of("666/my-namespace/metadata/categories/category-name", tuple("getCategory.municipalityId", "not a valid municipality ID")),
 
 			// Get categories
-			Arguments.of("2281/invalid,namespace/metadata/categories", tuple("getCategories.namespace", "can only contain A-Z, a-z, 0-9, -, _ and .")),
-			Arguments.of("666/my.namespace/metadata/categories", tuple("getCategories.municipalityId", "not a valid municipality ID")),
+			Arguments.of("2281/invalid,namespace/metadata/categories", tuple("getCategories.namespace", "can only contain A-Z, a-z, 0-9, - and _")),
+			Arguments.of("666/my-namespace/metadata/categories", tuple("getCategories.municipalityId", "not a valid municipality ID")),
 
 			// Get category type.
-			Arguments.of("2281/invalid,namespace/metadata/categories/category-name/types", tuple("getCategoryTypes.namespace", "can only contain A-Z, a-z, 0-9, -, _ and .")),
-			Arguments.of("666/my.namespace/metadata/categories/category-name/types", tuple("getCategoryTypes.municipalityId", "not a valid municipality ID")));
+			Arguments.of("2281/invalid,namespace/metadata/categories/category-name/types", tuple("getCategoryTypes.namespace", "can only contain A-Z, a-z, 0-9, - and _")),
+			Arguments.of("666/my-namespace/metadata/categories/category-name/types", tuple("getCategoryTypes.municipalityId", "not a valid municipality ID")));
 	}
 
 	@Test
@@ -82,7 +82,7 @@ class MetadataCategoriesResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
-			tuple("createCategory.namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."));
+			tuple("createCategory.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
 
 		verifyNoInteractions(metadataServiceMock);
 	}
@@ -90,7 +90,7 @@ class MetadataCategoriesResourceFailureTest {
 	@Test
 	void createWithInvalidMunicipalityId() {
 
-		final var response = webTestClient.post().uri("666/my.namespace/metadata/categories")
+		final var response = webTestClient.post().uri("666/my-namespace/metadata/categories")
 			.bodyValue(ExternalIdType.create().withName("name"))
 			.exchange()
 			.expectStatus().isBadRequest()
@@ -122,7 +122,7 @@ class MetadataCategoriesResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
-			tuple("updateCategory.namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."));
+			tuple("updateCategory.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
 
 		verifyNoInteractions(metadataServiceMock);
 	}
@@ -130,7 +130,7 @@ class MetadataCategoriesResourceFailureTest {
 	@Test
 	void updateWithInvalidMunicipalityId() {
 
-		final var response = webTestClient.patch().uri("666/my.namespace/metadata/categories/category-name")
+		final var response = webTestClient.patch().uri("666/my-namespace/metadata/categories/category-name")
 			.bodyValue(Category.create().withName("name"))
 			.exchange()
 			.expectStatus().isBadRequest()
@@ -161,7 +161,7 @@ class MetadataCategoriesResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
-			tuple("deleteCategory.namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."));
+			tuple("deleteCategory.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
 
 		verifyNoInteractions(metadataServiceMock);
 	}
@@ -169,7 +169,7 @@ class MetadataCategoriesResourceFailureTest {
 	@Test
 	void deleteWithInvalidMunicipalityId() {
 
-		final var response = webTestClient.delete().uri("666/my.namespace/metadata/categories/category-name")
+		final var response = webTestClient.delete().uri("666/my-namespace/metadata/categories/category-name")
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)

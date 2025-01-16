@@ -35,7 +35,7 @@ class NotificationsUpdateResourceFailureTest {
 	private static final String NAMESPACE = "namespace";
 	private static final String MUNICIPALITY_ID = "2281";
 	private static final String ERRAND_ID = randomUUID().toString();
-	private static final String INVALID = "can only contain A-Z, a-z, 0-9, -, _ and .";
+	private static final String INVALID = "can only contain A-Z, a-z, 0-9, - and _";
 
 	@MockitoBean
 	private NotificationService notificationServiceMock;
