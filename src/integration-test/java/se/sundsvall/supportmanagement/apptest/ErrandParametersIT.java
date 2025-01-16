@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.jdbc.Sql;
-
 import se.sundsvall.dept44.test.AbstractAppTest;
 import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.supportmanagement.Application;
@@ -28,12 +27,9 @@ import se.sundsvall.supportmanagement.integration.db.ParameterRepository;
 @DirtiesContext
 class ErrandParametersIT extends AbstractAppTest {
 
-	private static final String PATH = "/2281/NAMESPACE.1/errands/";
-
+	private static final String PATH = "/2281/NAMESPACE-1/errands/";
 	private static final String REQUEST_FILE = "request.json";
-
 	private static final String RESPONSE_FILE = "response.json";
-
 	private static final String ERRAND_ID = "ec677eb3-604c-4935-bff7-f8f0b500c8f4";
 
 	@Autowired

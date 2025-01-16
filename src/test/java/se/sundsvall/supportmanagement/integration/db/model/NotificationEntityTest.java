@@ -49,6 +49,7 @@ class NotificationEntityTest {
 		final var description = "Some description of the notification";
 		final var content = "Some content of the notification";
 		final var expires = now();
+		final var globalAcknowledged = true;
 		final var acknowledged = true;
 		final var errandEntity = ErrandEntity.create()
 			.withId("f0882f1d-06bc-47fd-b017-1d8307f5ce95")
@@ -69,6 +70,7 @@ class NotificationEntityTest {
 			.withDescription(description)
 			.withContent(content)
 			.withExpires(expires)
+			.withGlobalAcknowledged(globalAcknowledged)
 			.withAcknowledged(acknowledged)
 			.withErrandEntity(errandEntity)
 			.withMunicipalityId(municipalityId)
@@ -86,6 +88,7 @@ class NotificationEntityTest {
 		assertThat(notification.getDescription()).isEqualTo(description);
 		assertThat(notification.getContent()).isEqualTo(content);
 		assertThat(notification.getExpires()).isEqualTo(expires);
+		assertThat(notification.isGlobalAcknowledged()).isEqualTo(globalAcknowledged);
 		assertThat(notification.isAcknowledged()).isEqualTo(acknowledged);
 		assertThat(notification.getErrandEntity()).isEqualTo(errandEntity);
 		assertThat(notification.getMunicipalityId()).isEqualTo(municipalityId);
@@ -94,8 +97,8 @@ class NotificationEntityTest {
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(NotificationEntity.create()).hasAllNullFieldsOrPropertiesExcept("acknowledged");
-		assertThat(new NotificationEntity()).hasAllNullFieldsOrPropertiesExcept("acknowledged");
+		assertThat(NotificationEntity.create()).hasAllNullFieldsOrPropertiesExcept("globalAcknowledged", "acknowledged");
+		assertThat(new NotificationEntity()).hasAllNullFieldsOrPropertiesExcept("globalAcknowledged", "acknowledged");
 	}
 
 	@Test
@@ -104,7 +107,7 @@ class NotificationEntityTest {
 		entity.onCreate();
 
 		assertThat(entity.getCreated()).isCloseTo(now(), within(1, SECONDS));
-		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("created", "acknowledged");
+		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("created", "globalAcknowledged", "acknowledged");
 	}
 
 	@Test
@@ -113,7 +116,6 @@ class NotificationEntityTest {
 		entity.onUpdate();
 
 		assertThat(entity.getModified()).isCloseTo(now(), within(1, SECONDS));
-		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("modified", "acknowledged");
+		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("modified", "globalAcknowledged", "acknowledged");
 	}
-
 }

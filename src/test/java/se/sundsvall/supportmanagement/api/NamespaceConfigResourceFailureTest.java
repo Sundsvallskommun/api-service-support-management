@@ -57,7 +57,7 @@ class NamespaceConfigResourceFailureTest {
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
 			.containsExactly(
-				tuple("createNamespaceConfig.namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."));
+				tuple("createNamespaceConfig.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
 
 		verifyNoInteractions(serviceMock);
 	}
@@ -199,7 +199,7 @@ class NamespaceConfigResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactly(tuple("readNamespaceConfig.namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."));
+			.containsExactly(tuple("readNamespaceConfig.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
 
 		verifyNoInteractions(serviceMock);
 	}
@@ -264,7 +264,7 @@ class NamespaceConfigResourceFailureTest {
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
 			.containsExactly(
-				tuple("updateNamespaceConfig.namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."));
+				tuple("updateNamespaceConfig.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
 
 		verifyNoInteractions(serviceMock);
 	}
@@ -406,7 +406,7 @@ class NamespaceConfigResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactly(tuple("deleteNamespaceConfig.namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."));
+			.containsExactly(tuple("deleteNamespaceConfig.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
 
 		verifyNoInteractions(serviceMock);
 	}

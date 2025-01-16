@@ -6,10 +6,8 @@ import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import java.util.List;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.test.context.jdbc.Sql;
-
 import se.sundsvall.dept44.test.AbstractAppTest;
 import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.supportmanagement.Application;
@@ -25,8 +23,7 @@ import se.sundsvall.supportmanagement.Application;
 class RevisionsIT extends AbstractAppTest {
 
 	private static final String RESPONSE_FILE = "response.json";
-
-	private static final String PATH = "/2281/namespace.1/errands/";
+	private static final String PATH = "/2281/namespace-1/errands/";
 
 	@Test
 	void test01_readErrandRevisions() {

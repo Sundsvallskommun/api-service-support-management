@@ -57,8 +57,8 @@ class MetadataStatusResourceFailureTest {
 
 	private static Stream<Arguments> createStatusArguments() {
 		return Stream.of(
-			Arguments.of("my.namespace", "666", tuple("createStatus.municipalityId", "not a valid municipality ID")),
-			Arguments.of("invalid,namespace", "2281", tuple("createStatus.namespace", "can only contain A-Z, a-z, 0-9, -, _ and .")));
+			Arguments.of("my-namespace", "666", tuple("createStatus.municipalityId", "not a valid municipality ID")),
+			Arguments.of("invalid,namespace", "2281", tuple("createStatus.namespace", "can only contain A-Z, a-z, 0-9, - and _")));
 	}
 
 	@ParameterizedTest
@@ -81,8 +81,8 @@ class MetadataStatusResourceFailureTest {
 
 	private static Stream<Arguments> getStatusArguments() {
 		return Stream.of(
-			Arguments.of("my.namespace", "666", tuple("getStatus.municipalityId", "not a valid municipality ID")),
-			Arguments.of("invalid,namespace", "2281", tuple("getStatus.namespace", "can only contain A-Z, a-z, 0-9, -, _ and .")));
+			Arguments.of("my-namespace", "666", tuple("getStatus.municipalityId", "not a valid municipality ID")),
+			Arguments.of("invalid,namespace", "2281", tuple("getStatus.namespace", "can only contain A-Z, a-z, 0-9, - and _")));
 	}
 
 	@ParameterizedTest
@@ -106,8 +106,8 @@ class MetadataStatusResourceFailureTest {
 
 	private static Stream<Arguments> getStatusesArguments() {
 		return Stream.of(
-			Arguments.of("my.namespace", "666", tuple("getStatuses.municipalityId", "not a valid municipality ID")),
-			Arguments.of("invalid,namespace", "2281", tuple("getStatuses.namespace", "can only contain A-Z, a-z, 0-9, -, _ and .")));
+			Arguments.of("my-namespace", "666", tuple("getStatuses.municipalityId", "not a valid municipality ID")),
+			Arguments.of("invalid,namespace", "2281", tuple("getStatuses.namespace", "can only contain A-Z, a-z, 0-9, - and _")));
 	}
 
 	@ParameterizedTest
@@ -131,7 +131,7 @@ class MetadataStatusResourceFailureTest {
 
 	private static Stream<Arguments> deleteArguments() {
 		return Stream.of(
-			Arguments.of("my.namespace", "666", tuple("deleteStatus.municipalityId", "not a valid municipality ID")),
-			Arguments.of("invalid,namespace", "2281", tuple("deleteStatus.namespace", "can only contain A-Z, a-z, 0-9, -, _ and .")));
+			Arguments.of("my-namespace", "666", tuple("deleteStatus.municipalityId", "not a valid municipality ID")),
+			Arguments.of("invalid,namespace", "2281", tuple("deleteStatus.namespace", "can only contain A-Z, a-z, 0-9, - and _")));
 	}
 }

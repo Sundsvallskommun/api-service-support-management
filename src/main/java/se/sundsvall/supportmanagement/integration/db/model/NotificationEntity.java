@@ -66,8 +66,12 @@ public class NotificationEntity {
 	@Column(name = "expires")
 	private OffsetDateTime expires;
 
+	@Column(name = "globalAcknowledged")
 	@NotNull
+	private boolean globalAcknowledged;
+
 	@Column(name = "acknowledged")
+	@NotNull
 	private boolean acknowledged;
 
 	@ManyToOne(fetch = FetchType.LAZY)
@@ -237,6 +241,19 @@ public class NotificationEntity {
 		return this;
 	}
 
+	public boolean isGlobalAcknowledged() {
+		return globalAcknowledged;
+	}
+
+	public void setGlobalAcknowledged(boolean globalAcknowledged) {
+		this.globalAcknowledged = globalAcknowledged;
+	}
+
+	public NotificationEntity withGlobalAcknowledged(boolean globalAcknowledged) {
+		this.globalAcknowledged = globalAcknowledged;
+		return this;
+	}
+
 	public boolean isAcknowledged() {
 		return acknowledged;
 	}
@@ -291,40 +308,31 @@ public class NotificationEntity {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(acknowledged, content, created, createdBy, createdByFullName, description, errandEntity, expires, id, modified, municipalityId, namespace, ownerFullName, ownerId, type);
+		return Objects.hash(acknowledged, content, created, createdBy, createdByFullName, description, errandEntity, expires, globalAcknowledged, id, modified, municipalityId, namespace, ownerFullName, ownerId, type);
 	}
 
 	@Override
-	public boolean equals(final Object obj) {
+	public boolean equals(Object obj) {
 		if (this == obj) {
 			return true;
 		}
-		if (!(obj instanceof final NotificationEntity other)) {
+		if (obj == null) {
 			return false;
 		}
-		return (acknowledged == other.acknowledged) && Objects.equals(content, other.content) && Objects.equals(created, other.created) && Objects.equals(createdBy, other.createdBy) && Objects.equals(createdByFullName, other.createdByFullName) && Objects
-			.equals(description, other.description) && Objects.equals(errandEntity, other.errandEntity) && Objects.equals(expires, other.expires) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(municipalityId,
-				other.municipalityId) && Objects.equals(namespace, other.namespace) && Objects.equals(ownerFullName, other.ownerFullName) && Objects.equals(ownerId, other.ownerId) && Objects.equals(type, other.type);
+		if (getClass() != obj.getClass()) {
+			return false;
+		}
+		NotificationEntity other = (NotificationEntity) obj;
+		return acknowledged == other.acknowledged && Objects.equals(content, other.content) && Objects.equals(created, other.created) && Objects.equals(createdBy, other.createdBy) && Objects.equals(createdByFullName, other.createdByFullName) && Objects
+			.equals(description, other.description) && Objects.equals(errandEntity, other.errandEntity) && Objects.equals(expires, other.expires) && globalAcknowledged == other.globalAcknowledged && Objects.equals(id, other.id) && Objects.equals(modified,
+				other.modified) && Objects.equals(municipalityId, other.municipalityId) && Objects.equals(namespace, other.namespace) && Objects.equals(ownerFullName, other.ownerFullName) && Objects.equals(ownerId, other.ownerId) && Objects.equals(type,
+					other.type);
 	}
 
 	@Override
 	public String toString() {
-		return "NotificationEntity{" +
-			"id='" + id + '\'' +
-			", created=" + created +
-			", modified=" + modified +
-			", ownerFullName='" + ownerFullName + '\'' +
-			", ownerId='" + ownerId + '\'' +
-			", createdBy='" + createdBy + '\'' +
-			", createdByFullName='" + createdByFullName + '\'' +
-			", type='" + type + '\'' +
-			", description='" + description + '\'' +
-			", content='" + content + '\'' +
-			", expires=" + expires +
-			", acknowledged=" + acknowledged +
-			", errandEntity=" + errandEntity +
-			", municipalityId='" + municipalityId + '\'' +
-			", namespace='" + namespace + '\'' +
-			'}';
+		return "NotificationEntity [id=" + id + ", created=" + created + ", modified=" + modified + ", ownerFullName=" + ownerFullName + ", ownerId=" + ownerId + ", createdBy=" + createdBy + ", createdByFullName=" + createdByFullName + ", type=" + type
+			+ ", description=" + description + ", content=" + content + ", expires=" + expires + ", globalAcknowledged=" + globalAcknowledged + ", acknowledged=" + acknowledged + ", errandEntity=" + errandEntity + ", municipalityId=" + municipalityId
+			+ ", namespace=" + namespace + "]";
 	}
 }

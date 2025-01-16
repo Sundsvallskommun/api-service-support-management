@@ -27,7 +27,7 @@ import se.sundsvall.supportmanagement.service.ErrandNoteService;
 @ActiveProfiles("junit")
 class ErrandNotesResourceFailureTest {
 
-	private static final String NAMESPACE = "name.space";
+	private static final String NAMESPACE = "namespace";
 	private static final String MUNICIPALITY_ID = "2281";
 	private static final String ERRAND_ID = randomUUID().toString();
 	private static final String NOTE_ID = randomUUID().toString();
@@ -57,7 +57,7 @@ class ErrandNotesResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactlyInAnyOrder(tuple("readErrandNote.namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."));
+			.containsExactlyInAnyOrder(tuple("readErrandNote.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
 
 		// Verification
 		verifyNoInteractions(errandNotesServiceMock);
@@ -149,7 +149,7 @@ class ErrandNotesResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactly(tuple("findErrandNotes.namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."));
+			.containsExactly(tuple("findErrandNotes.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
 
 		// Verification
 		verifyNoInteractions(errandNotesServiceMock);
@@ -220,7 +220,7 @@ class ErrandNotesResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactlyInAnyOrder(tuple("createErrandNote.namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."));
+			.containsExactlyInAnyOrder(tuple("createErrandNote.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
 
 		// Verification
 		verifyNoInteractions(errandNotesServiceMock);
@@ -329,7 +329,7 @@ class ErrandNotesResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactlyInAnyOrder(tuple("updateErrandNote.namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."));
+			.containsExactlyInAnyOrder(tuple("updateErrandNote.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
 
 		// Verification
 		verifyNoInteractions(errandNotesServiceMock);
@@ -459,7 +459,7 @@ class ErrandNotesResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactlyInAnyOrder(tuple("deleteErrandNote.namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."));
+			.containsExactlyInAnyOrder(tuple("deleteErrandNote.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
 
 		// Verification
 		verifyNoInteractions(errandNotesServiceMock);

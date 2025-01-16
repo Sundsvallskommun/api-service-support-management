@@ -25,7 +25,7 @@ import se.sundsvall.supportmanagement.service.RevisionService;
 @ActiveProfiles("junit")
 class RevisionResourceFailuresTest {
 
-	private static final String NAMESPACE = "name.space";
+	private static final String NAMESPACE = "namespace";
 
 	private static final String MUNICIPALITY_ID = "2281";
 

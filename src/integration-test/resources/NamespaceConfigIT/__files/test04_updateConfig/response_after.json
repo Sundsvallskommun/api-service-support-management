@@ -2,7 +2,7 @@
 	"municipalityId": "2281",
 	"created": "2021-12-31T23:59:59.999+01:00",
 	"displayName": "Updated displayname",
-	"namespace": "NAMESPACE.1",
+	"namespace": "NAMESPACE-1",
 	"modified": "${json-unit.any-string}",
 	"shortCode": "NS1-UPDATE"
 }

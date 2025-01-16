@@ -105,7 +105,7 @@ class ErrandsCreateResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactly(tuple("createErrand.namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."));
+			.containsExactly(tuple("createErrand.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
 
 		// Verification
 		verify(metadataServiceMock, times(3)).isValidated(any(), any(), any());

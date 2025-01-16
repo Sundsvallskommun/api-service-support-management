@@ -15,12 +15,10 @@ import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
 import static org.springframework.http.MediaType.TEXT_PLAIN_VALUE;
 
 import java.util.List;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.jdbc.Sql;
-
 import se.sundsvall.dept44.test.AbstractAppTest;
 import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.supportmanagement.Application;
@@ -38,14 +36,10 @@ import se.sundsvall.supportmanagement.integration.db.model.RevisionEntity;
 @DirtiesContext
 class ErrandAttachmentsIT extends AbstractAppTest {
 
-	private static final String NAMESPACE = "NAMESPACE.1";
-
+	private static final String NAMESPACE = "NAMESPACE-1";
 	private static final String MUNICIPALITY_ID = "2281";
-
 	private static final String PATH = "/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/errands/";
-
 	private static final String REQUEST_FILE = "request.json";
-
 	private static final String RESPONSE_FILE = "response.json";
 
 	@Autowired

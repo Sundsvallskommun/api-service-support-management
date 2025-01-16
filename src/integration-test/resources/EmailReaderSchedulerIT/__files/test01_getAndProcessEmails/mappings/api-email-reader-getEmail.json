@@ -6,7 +6,7 @@
 			}
 		},
 		"method": "GET",
-		"urlPath": "/api-emailreader/2281/email/NAMESPACE.1"
+		"urlPath": "/api-emailreader/2281/email/NAMESPACE-1"
 	},
 	"response": {
 		"headers": {

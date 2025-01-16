@@ -11,7 +11,6 @@ import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.IMAGE_PNG_VALUE;
 
 import java.util.List;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.jdbc.Sql;
@@ -30,7 +29,7 @@ import se.sundsvall.supportmanagement.Application;
 @DirtiesContext
 class ErrandCommunicationIT extends AbstractAppTest {
 
-	private static final String PATH = "/2281/NAMESPACE.1/errands";
+	private static final String PATH = "/2281/NAMESPACE-1/errands";
 	private static final String REQUEST_FILE = "request.json";
 	private static final String RESPONSE_FILE = "response.json";
 
@@ -145,7 +144,7 @@ class ErrandCommunicationIT extends AbstractAppTest {
 
 	@Test
 	void test09_sendWebMessage() {
-		//external
+		// external
 		setupCall()
 			.withServicePath(PATH + "/cad8ec4e-0b6b-473a-800d-feb063f59094/communication/webmessage")
 			.withHttpMethod(POST)
@@ -157,7 +156,7 @@ class ErrandCommunicationIT extends AbstractAppTest {
 
 	@Test
 	void test10_sendWebMessageWithAttachments() {
-		//internal
+		// internal
 		setupCall()
 			.withServicePath(PATH + "/b481b191-dd37-47ca-b417-ed3a56ba724c/communication/webmessage")
 			.withHttpMethod(POST)

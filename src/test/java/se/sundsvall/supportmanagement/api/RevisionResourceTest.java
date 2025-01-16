@@ -24,12 +24,9 @@ import se.sundsvall.supportmanagement.service.RevisionService;
 @ActiveProfiles("junit")
 class RevisionResourceTest {
 
-	private static final String NAMESPACE = "name.space";
-
+	private static final String NAMESPACE = "namespace";
 	private static final String MUNICIPALITY_ID = "2281";
-
 	private static final String ERRANDS_PATH = "{municipalityId}/{namespace}/errands/{errandId}/revisions";
-
 	private static final String ERRAND_NOTES_PATH = "{municipalityId}/{namespace}/errands/{errandId}/notes/{noteId}/revisions";
 
 	@MockitoBean

@@ -203,6 +203,7 @@
 
     create table notification (
         acknowledged bit not null,
+        global_acknowledged bit not null,
         created datetime(6),
         expires datetime(6),
         modified datetime(6),

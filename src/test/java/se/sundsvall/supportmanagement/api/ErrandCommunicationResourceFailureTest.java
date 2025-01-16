@@ -41,7 +41,7 @@ import se.sundsvall.supportmanagement.service.CommunicationService;
 @ActiveProfiles("junit")
 class ErrandCommunicationResourceFailureTest {
 
-	private static final String NAMESPACE = "name.space";
+	private static final String NAMESPACE = "namespace";
 	private static final String MUNICIPALITY_ID = "2281";
 	private static final String ERRAND_ID = randomUUID().toString();
 	private static final String MESSAGE_ID = randomUUID().toString();
@@ -99,7 +99,7 @@ class ErrandCommunicationResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactly(tuple("getCommunications.namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."));
+			.containsExactly(tuple("getCommunications.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
 
 		// Verification
 		verifyNoInteractions(serviceMock);
@@ -172,7 +172,7 @@ class ErrandCommunicationResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactly(tuple("updateViewedStatus.namespace", "can only contain A-Z, a-z, 0-9, -, _ and ."));
+			.containsExactly(tuple("updateViewedStatus.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
 
 		// Verification
 		verifyNoInteractions(serviceMock);
@@ -301,7 +301,7 @@ class ErrandCommunicationResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactly(tuple(field, "can only contain A-Z, a-z, 0-9, -, _ and ."));
+			.containsExactly(tuple(field, "can only contain A-Z, a-z, 0-9, - and _"));
 
 		// Verification
 		verifyNoInteractions(serviceMock);
