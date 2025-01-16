@@ -104,7 +104,7 @@ class NotificationsResource {
 		final var result = Optional.ofNullable(notificationService.createNotification(municipalityId, namespace, errandId, notification))
 			.orElseThrow(() -> Problem.valueOf(CONFLICT, "Notification already exists"));
 
-		return created(fromPath("/{municipalityId}/{namespace}/errands/{errandId}//notifications/{notificationId}")
+		return created(fromPath("/{municipalityId}/{namespace}/errands/{errandId}/notifications/{notificationId}")
 			.buildAndExpand(municipalityId, namespace, errandId, result).toUri())
 			.header(CONTENT_TYPE, ALL_VALUE)
 			.build();
