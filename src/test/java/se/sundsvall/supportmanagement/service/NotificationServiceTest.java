@@ -22,7 +22,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Sort;
 import org.zalando.problem.Problem;
 import se.sundsvall.supportmanagement.TestObjectsBuilder;
-import se.sundsvall.supportmanagement.api.filter.ExecutingUserSupplier;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.NotificationRepository;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
@@ -32,9 +31,6 @@ class NotificationServiceTest {
 
 	@Mock
 	private ErrandsRepository errandsRepositoryMock;
-
-	@Mock
-	private ExecutingUserSupplier executingUserSupplierMock;
 
 	@Mock
 	private NotificationRepository notificationRepositoryMock;
@@ -162,7 +158,6 @@ class NotificationServiceTest {
 		final var id = "SomeId";
 
 		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(notification.getErrandId(), namespace, municipalityId)).thenReturn(Optional.of(errandEntity));
-		when(executingUserSupplierMock.getAdUser()).thenReturn("otherAD");
 		when(notificationRepositoryMock.findByNamespaceAndMunicipalityIdAndOwnerIdAndAcknowledgedAndErrandEntityIdAndType(namespace, municipalityId, notification.getOwnerId(), notification.isAcknowledged(), notification.getErrandId(), notification
 			.getType()))
 			.thenReturn(Optional.empty());
@@ -201,6 +196,7 @@ class NotificationServiceTest {
 		assertThat(notificationEntityArgumentCaptor.getValue().getDescription()).isEqualTo(notification.getDescription());
 		assertThat(notificationEntityArgumentCaptor.getValue().getErrandEntity().getId()).isEqualTo(notification.getErrandId());
 		assertThat(notificationEntityArgumentCaptor.getValue().isAcknowledged()).isEqualTo(notification.isAcknowledged());
+		assertThat(notificationEntityArgumentCaptor.getValue().isGlobalAcknowledged()).isEqualTo(notification.isGlobalAcknowledged());
 		assertThat(notificationEntityArgumentCaptor.getValue().getNamespace()).isEqualTo(namespace);
 		assertThat(notificationEntityArgumentCaptor.getValue().getMunicipalityId()).isEqualTo(municipalityId);
 	}

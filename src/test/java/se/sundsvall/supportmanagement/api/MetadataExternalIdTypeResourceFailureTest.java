@@ -57,7 +57,7 @@ class MetadataExternalIdTypeResourceFailureTest {
 
 	private static Stream<Arguments> createExternalIdTypeArguments() {
 		return Stream.of(
-			Arguments.of("my-namespace", "666", tuple("createExternalIdType.municipalityId", "not a valid municipality ID")),
+			Arguments.of("MY_NAMESPACE", "666", tuple("createExternalIdType.municipalityId", "not a valid municipality ID")),
 			Arguments.of("invalid,namespace", "2281", tuple("createExternalIdType.namespace", "can only contain A-Z, a-z, 0-9, - and _")));
 	}
 
@@ -81,7 +81,7 @@ class MetadataExternalIdTypeResourceFailureTest {
 
 	private static Stream<Arguments> getExternalIdTypeArguments() {
 		return Stream.of(
-			Arguments.of("my-namespace", "666", tuple("getExternalIdType.municipalityId", "not a valid municipality ID")),
+			Arguments.of("MY_NAMESPACE", "666", tuple("getExternalIdType.municipalityId", "not a valid municipality ID")),
 			Arguments.of("invalid,namespace", "2281", tuple("getExternalIdType.namespace", "can only contain A-Z, a-z, 0-9, - and _")));
 	}
 
@@ -105,7 +105,7 @@ class MetadataExternalIdTypeResourceFailureTest {
 
 	private static Stream<Arguments> getExternalIdTypesArguments() {
 		return Stream.of(
-			Arguments.of("my-namespace", "666", tuple("getExternalIdTypes.municipalityId", "not a valid municipality ID")),
+			Arguments.of("MY_NAMESPACE", "666", tuple("getExternalIdTypes.municipalityId", "not a valid municipality ID")),
 			Arguments.of("invalid,namespace", "2281", tuple("getExternalIdTypes.namespace", "can only contain A-Z, a-z, 0-9, - and _")));
 	}
 
@@ -130,7 +130,7 @@ class MetadataExternalIdTypeResourceFailureTest {
 
 	private static Stream<Arguments> deleteArguments() {
 		return Stream.of(
-			Arguments.of("my-namespace", "666", tuple("deleteExternalIdType.municipalityId", "not a valid municipality ID")),
+			Arguments.of("MY_NAMESPACE", "666", tuple("deleteExternalIdType.municipalityId", "not a valid municipality ID")),
 			Arguments.of("invalid,namespace", "2281", tuple("deleteExternalIdType.namespace", "can only contain A-Z, a-z, 0-9, - and _")));
 	}
 }

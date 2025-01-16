@@ -47,7 +47,7 @@ class NotificationIT extends AbstractAppTest {
 			.withHttpMethod(POST)
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(CREATED)
-			.withExpectedResponseHeader(LOCATION, List.of("/" + MUNICIPALITY_2281 + "/" + NAMESPACE + "/notifications/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"))
+			.withExpectedResponseHeader(LOCATION, List.of("/" + MUNICIPALITY_2281 + "/" + NAMESPACE + "/errands/" + ERRAND_ID + "/notifications/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"))
 			.withExpectedResponseBodyIsNull()
 			.sendRequestAndVerifyResponse()
 			.getResponseHeaders()
@@ -56,7 +56,6 @@ class NotificationIT extends AbstractAppTest {
 		assertThat(result).isNotBlank();
 		final var createdNotificationId = result.substring(result.lastIndexOf('/') + 1);
 		assertThat(notificationRepository.existsByIdAndNamespaceAndMunicipalityIdAndErrandEntityId(createdNotificationId, NAMESPACE, MUNICIPALITY_2281, ERRAND_ID)).isTrue();
-
 	}
 
 	@Test
@@ -78,7 +77,6 @@ class NotificationIT extends AbstractAppTest {
 			.withExpectedResponseStatus(NO_CONTENT)
 			.withExpectedResponseBodyIsNull()
 			.sendRequestAndVerifyResponse();
-
 	}
 
 	@Test

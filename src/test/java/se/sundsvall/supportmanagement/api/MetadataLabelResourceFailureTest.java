@@ -85,11 +85,11 @@ class MetadataLabelResourceFailureTest {
 
 	private static Stream<Arguments> labelsArguments(String method) {
 		return Stream.of(
-			Arguments.of("my-namespace", "2281", List.of(createLabel("class", "name"), createLabel("class", "name")), tuple(method + ".body", "each entry must have unique name and same classification compared to its siblings")),
-			Arguments.of("my-namespace", "2281", List.of(createLabel("class_1", "name_1"), createLabel("class_2", "name_2")), tuple(method + ".body", "each entry must have unique name and same classification compared to its siblings")),
-			Arguments.of("my-namespace", "2281", List.of(createLabel("classification", null)), tuple(method + ".body[0].name", "must not be blank")),
-			Arguments.of("my-namespace", "2281", List.of(createLabel(null, "name")), tuple(method + ".body[0].classification", "must not be blank")),
-			Arguments.of("my-namespace", "666", List.of(createLabel("classification", "name")), tuple(method + ".municipalityId", "not a valid municipality ID")),
+			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabel("class", "name"), createLabel("class", "name")), tuple(method + ".body", "each entry must have unique name and same classification compared to its siblings")),
+			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabel("class_1", "name_1"), createLabel("class_2", "name_2")), tuple(method + ".body", "each entry must have unique name and same classification compared to its siblings")),
+			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabel("classification", null)), tuple(method + ".body[0].name", "must not be blank")),
+			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabel(null, "name")), tuple(method + ".body[0].classification", "must not be blank")),
+			Arguments.of("MY_NAMESPACE", "666", List.of(createLabel("classification", "name")), tuple(method + ".municipalityId", "not a valid municipality ID")),
 			Arguments.of("invalid,namespace", "2281", List.of(createLabel("classification", "name")), tuple(method + ".namespace", "can only contain A-Z, a-z, 0-9, - and _")));
 	}
 
@@ -117,7 +117,7 @@ class MetadataLabelResourceFailureTest {
 
 	private static Stream<Arguments> getLabelsArguments() {
 		return Stream.of(
-			Arguments.of("my-namespace", "666", tuple("getLabels.municipalityId", "not a valid municipality ID")),
+			Arguments.of("MY_NAMESPACE", "666", tuple("getLabels.municipalityId", "not a valid municipality ID")),
 			Arguments.of("invalid,namespace", "2281", tuple("getLabels.namespace", "can only contain A-Z, a-z, 0-9, - and _")));
 	}
 
@@ -142,7 +142,7 @@ class MetadataLabelResourceFailureTest {
 
 	private static Stream<Arguments> deleteLabelArguments() {
 		return Stream.of(
-			Arguments.of("my-namespace", "666", tuple("deleteLabels.municipalityId", "not a valid municipality ID")),
+			Arguments.of("MY_NAMESPACE", "666", tuple("deleteLabels.municipalityId", "not a valid municipality ID")),
 			Arguments.of("invalid,namespace", "2281", tuple("deleteLabels.namespace", "can only contain A-Z, a-z, 0-9, - and _")));
 	}
 }
