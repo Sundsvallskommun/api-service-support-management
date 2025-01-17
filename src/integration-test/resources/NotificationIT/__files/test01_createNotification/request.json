@@ -3,6 +3,7 @@
 	"errandId": "1be673c0-6ba3-4fb0-af4a-43acf23389f6",
 	"ownerFullName": "Test Testorsson",
 	"acknowledged": true,
+	"globalAcknowledged": true,
 	"createdBy": "TestUser",
 	"description": "Some description of the notification",
 	"ownerId": "AD01",
