@@ -24,66 +24,37 @@ import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 public class TestObjectsBuilder {
 
 	private static final String MUNICIPALITY_ID = "2281";
-
 	private static final String ERRAND_ID = "errandId";
-
 	private static final String ASSIGNED_GROUP_ID = "assignedGroupId";
-
 	private static final String ASSIGNED_USER_ID = "assignedUserId";
-
 	private static final String CATEGORY = "category";
-
 	private static final String NAMESPACE = "namespace";
-
 	private static final OffsetDateTime CREATED = now().minusWeeks(1);
-
 	private static final String EXTERNAL_ID = "externalId";
-
 	private static final String EXTERNAL_ID_TYPE = "PRIVATE";
-
 	private static final String TAG_KEY = "tagKey";
-
 	private static final String TAG_VALUE = "tagValue";
-
 	private static final OffsetDateTime MODIFIED = now();
-
 	private static final String PRIORITY = HIGH.name();
-
 	private static final String REPORTER_USER_ID = "reporterUserId";
-
 	private static final String STATUS = "status";
-
 	private static final String TITLE = "title";
-
 	private static final String TYPE = "type";
-
 	private static final String ATTACHMENT_ID = "attachmentId";
-
 	private static final String FILE_NAME = "fileName";
-
 	private static final String MIME_TYPE = "mimeType";
-
 	private static final String ID = "id";
-
 	private static final String NOTIFICATION_OWNER = "Test Owner";
-
 	private static final String NOTIFICATION_OWNER_ID = "TE07ST";
-
 	private static final String NOTIFICATION_CREATED_BY = "TestUser";
-
 	private static final String NOTIFICATION_TYPE = "TestType";
-
 	private static final String NOTIFICATION_DESCRIPTION = "TestDescription";
-
 	private static final String NOTIFICATION_CONTENT = "TestContent";
-
 	private static final String PARAMETER_KEY = "parameterKey";
-
 	private static final String PARAMETER_VALUE = "parameterValue";
-
 	private static final String PARAMETER_ID = "parameterId";
-
-	private static final boolean NOTIFICATION_ACKNOWLEDGED = false;
+	private static final boolean NOTIFICATION_ACKNOWLEDGED = true;
+	private static final boolean NOTIFICATION_GLOBAL_ACKNOWLEDGED = true;
 
 	private static final ErrandEntity NOTIFICATION_ERRAND_ENTITY = ErrandEntity.create()
 		.withId("cb20c51f-fcf3-42c0-b613-de563634a8ec")
@@ -163,6 +134,7 @@ public class TestObjectsBuilder {
 			.withContent(NOTIFICATION_CONTENT)
 			.withExpires(NOTIFICATION_EXPIRES)
 			.withAcknowledged(NOTIFICATION_ACKNOWLEDGED)
+			.withGlobalAcknowledged(NOTIFICATION_GLOBAL_ACKNOWLEDGED)
 			.withErrandId(NOTIFICATION_ERRAND_ENTITY.getId());
 
 		Optional.ofNullable(modifier).ifPresent(m -> m.accept(notification));
@@ -182,6 +154,7 @@ public class TestObjectsBuilder {
 			.withContent(NOTIFICATION_CONTENT)
 			.withExpires(NOTIFICATION_EXPIRES)
 			.withAcknowledged(NOTIFICATION_ACKNOWLEDGED)
+			.withGlobalAcknowledged(NOTIFICATION_GLOBAL_ACKNOWLEDGED)
 			.withNamespace(NAMESPACE)
 			.withMunicipalityId(MUNICIPALITY_ID)
 			.withErrandEntity(NOTIFICATION_ERRAND_ENTITY);

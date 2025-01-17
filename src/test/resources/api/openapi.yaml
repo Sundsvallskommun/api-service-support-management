@@ -64,7 +64,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -113,7 +113,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -158,7 +158,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -208,7 +208,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -254,7 +254,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -297,7 +297,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -350,7 +350,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -397,7 +397,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -443,7 +443,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -467,14 +467,6 @@ paths:
                 type: array
                 items:
                   type: string
-        "400":
-          description: Bad request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
         "404":
           description: Not Found
           content:
@@ -487,6 +479,14 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
     put:
       tags:
       - Errand labels
@@ -501,7 +501,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -527,14 +527,6 @@ paths:
       responses:
         "204":
           description: No content
-        "400":
-          description: Bad request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
         "404":
           description: Not Found
           content:
@@ -547,6 +539,14 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
     post:
       tags:
       - Errand labels
@@ -561,7 +561,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -589,14 +589,6 @@ paths:
           description: Created
           content:
             application/json: {}
-        "400":
-          description: Bad request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
         "404":
           description: Not Found
           content:
@@ -609,6 +601,14 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
     delete:
       tags:
       - Errand labels
@@ -623,7 +623,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -641,14 +641,6 @@ paths:
       responses:
         "204":
           description: No content
-        "400":
-          description: Bad request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
         "404":
           description: Not Found
           content:
@@ -661,6 +653,14 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
   /{municipalityId}/{namespace}/errands/{errandId}/communication/{communicationId}/viewed/{isViewed}:
     put:
       tags:
@@ -675,7 +675,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -707,6 +707,12 @@ paths:
       responses:
         "204":
           description: No content - Successful operation
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -715,12 +721,6 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/email-integration-config:
     get:
       tags:
@@ -736,7 +736,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -786,7 +786,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -832,7 +832,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -882,7 +882,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -928,7 +928,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -973,7 +973,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -1024,7 +1024,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -1069,7 +1069,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -1120,7 +1120,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality ID
@@ -1165,7 +1165,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -1216,7 +1216,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -1233,6 +1233,12 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ContactReason"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -1241,12 +1247,6 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
     post:
       tags:
       - Metadata for contact reasons
@@ -1261,7 +1261,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -1283,6 +1283,12 @@ paths:
               style: simple
               schema:
                 type: string
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -1291,12 +1297,6 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/metadata/categories:
     get:
       tags:
@@ -1313,7 +1313,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -1358,7 +1358,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -1410,7 +1410,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -1486,7 +1486,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -1537,7 +1537,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality ID
@@ -1576,6 +1576,12 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -1584,12 +1590,6 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
     post:
       tags:
       - User notifications
@@ -1604,7 +1604,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality ID
@@ -1639,6 +1639,12 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -1647,12 +1653,6 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/errands/{errandId}/notes:
     get:
       tags:
@@ -1668,7 +1668,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -1723,7 +1723,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -1781,7 +1781,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality ID
@@ -1805,6 +1805,12 @@ paths:
       responses:
         "204":
           description: Successful operation
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -1813,12 +1819,6 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/errands/{errandId}/communication/sms:
     post:
       tags:
@@ -1834,7 +1834,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality ID
@@ -1858,6 +1858,12 @@ paths:
       responses:
         "204":
           description: Successful operation
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -1866,12 +1872,6 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/errands/{errandId}/communication/email:
     post:
       tags:
@@ -1887,7 +1887,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality ID
@@ -1911,6 +1911,12 @@ paths:
       responses:
         "204":
           description: Successful operation
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -1919,12 +1925,6 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/errands/{errandId}/attachments:
     get:
       tags:
@@ -1941,7 +1941,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -1999,7 +1999,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -2064,7 +2064,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality ID
@@ -2094,6 +2094,12 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -2102,12 +2108,6 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
     patch:
       tags:
       - User notifications
@@ -2122,7 +2122,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality ID
@@ -2147,6 +2147,12 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -2155,12 +2161,6 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/metadata/contactreasons/{contactReasonId}:
     get:
       tags:
@@ -2176,7 +2176,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -2199,6 +2199,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ContactReason"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -2207,12 +2213,6 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
     delete:
       tags:
       - Metadata for contact reasons
@@ -2227,7 +2227,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -2252,6 +2252,12 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -2260,12 +2266,6 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
     patch:
       tags:
       - Metadata for contact reasons
@@ -2280,7 +2280,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -2315,6 +2315,12 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -2323,12 +2329,6 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/metadata/categories/{category}:
     get:
       tags:
@@ -2344,7 +2344,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -2394,7 +2394,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -2446,7 +2446,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -2509,7 +2509,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -2565,7 +2565,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -2617,7 +2617,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -2680,7 +2680,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -2704,6 +2704,12 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Parameter"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -2712,12 +2718,6 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
     patch:
       tags:
       - Errand Parameters
@@ -2732,7 +2732,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -2770,6 +2770,12 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -2778,12 +2784,6 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/errands/{errandId}/parameters/{parameterKey}:
     get:
       tags:
@@ -2800,7 +2800,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -2837,6 +2837,12 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -2845,12 +2851,6 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
     delete:
       tags:
       - Errand Parameters
@@ -2866,7 +2866,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -2897,6 +2897,12 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -2905,12 +2911,6 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
     patch:
       tags:
       - Errand Parameters
@@ -2926,7 +2926,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -2969,6 +2969,12 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -2977,12 +2983,6 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/errands/{errandId}/notes/{noteId}:
     get:
       tags:
@@ -2999,7 +2999,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -3063,7 +3063,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -3123,7 +3123,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -3193,7 +3193,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -3237,7 +3237,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -3293,7 +3293,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -3346,7 +3346,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -3402,7 +3402,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -3456,7 +3456,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality ID
@@ -3512,7 +3512,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality ID
@@ -3565,7 +3565,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -3610,7 +3610,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -3630,6 +3630,12 @@ paths:
           description: Successful operation
           content:
             application/json: {}
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -3638,12 +3644,6 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/errands/{errandId}/revisions:
     get:
       tags:
@@ -3660,7 +3660,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -3720,7 +3720,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -3797,7 +3797,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality ID
@@ -3818,7 +3818,7 @@ paths:
         required: true
         schema:
           type: string
-        example: 12
+        example: 74540a24-70e1-4e82-90f7-7d8ad4666cdc
       responses:
         "200":
           description: Successful operation
@@ -3832,6 +3832,12 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -3840,12 +3846,6 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
     delete:
       tags:
       - User notifications
@@ -3860,7 +3860,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality ID
@@ -3881,11 +3881,18 @@ paths:
         required: true
         schema:
           type: string
+        example: 74540a24-70e1-4e82-90f7-7d8ad4666cdc
       responses:
         "204":
           description: Successful operation
         "404":
           description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
           content:
             application/problem+json:
               schema:
@@ -3898,12 +3905,6 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/errands/{errandId}/notes/{noteId}/revisions:
     get:
       tags:
@@ -3920,7 +3921,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -3987,7 +3988,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -4072,7 +4073,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -4153,7 +4154,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality ID
@@ -4177,6 +4178,12 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Communication"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -4185,12 +4192,6 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/errands/{errandId}/communication/{communicationId}/attachments/{attachmentId}/streamed:
     get:
       tags:
@@ -4207,7 +4208,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality ID
@@ -4251,6 +4252,12 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -4259,12 +4266,6 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/errands/{errandId}/attachments/{attachmentId}:
     get:
       tags:
@@ -4281,7 +4282,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -4341,7 +4342,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality id
@@ -4402,7 +4403,7 @@ paths:
         schema:
           pattern: "[\\w|\\-]+"
           type: string
-        example: my.namespace
+        example: MY_NAMESPACE
       - name: municipalityId
         in: path
         description: Municipality ID
@@ -4510,9 +4511,9 @@ components:
             type: object
         status:
           $ref: "#/components/schemas/StatusType"
-        title:
-          type: string
         detail:
+          type: string
+        title:
           type: string
     StatusType:
       type: object
@@ -4645,9 +4646,9 @@ components:
             type: object
         status:
           $ref: "#/components/schemas/StatusType"
-        title:
-          type: string
         detail:
+          type: string
+        title:
           type: string
         suppressed:
           type: array
@@ -5273,11 +5274,13 @@ components:
           type: string
           description: Timestamp when the notification was created
           format: date-time
+          readOnly: true
           example: 2000-10-31T01:30:00+02:00
         modified:
           type: string
           description: Timestamp when the notification was last modified
           format: date-time
+          readOnly: true
           example: 2000-10-31T01:30:00+02:00
         ownerFullName:
           type: string
@@ -5683,14 +5686,14 @@ components:
           format: int64
         sort:
           $ref: "#/components/schemas/SortObject"
-        pageNumber:
-          type: integer
-          format: int32
+        paged:
+          type: boolean
         pageSize:
           type: integer
           format: int32
-        paged:
-          type: boolean
+        pageNumber:
+          type: integer
+          format: int32
         unpaged:
           type: boolean
     SortObject:

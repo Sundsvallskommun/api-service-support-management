@@ -85,7 +85,7 @@ class NotificationsResourceTest {
 			.exchange()
 			.expectStatus().isCreated()
 			.expectHeader().contentType(ALL)
-			.expectHeader().location("/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/notifications/" + notificationId)
+			.expectHeader().location("/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/errands/" + ERRAND_ID + "/notifications/" + notificationId)
 			.expectBody().isEmpty();
 
 		// Verification

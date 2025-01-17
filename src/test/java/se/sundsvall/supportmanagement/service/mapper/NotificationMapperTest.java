@@ -16,57 +16,34 @@ import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
 class NotificationMapperTest {
 
 	private static final String ID = "id";
-
 	private static final String NAMESPACE = "namespace";
-
 	private static final String MUNICIPALITY_ID = "municipalityId";
-
 	private static final String FIRST_NAME = "firstName";
-
 	private static final String LAST_NAME = "lastName";
-
 	private static final String OWNER_FULL_NAME = FIRST_NAME + " " + LAST_NAME;
-
 	private static final String OWNER_ID = "ownerId";
-
 	private static final String CREATED_BY = "createdBy";
-
 	private static final String CREATED_BY_FULL_NAME = "createdByFullName";
-
 	private static final String TYPE = "type";
-
 	private static final String DESCRIPTION = "description";
-
 	private static final String CONTENT = "content";
-
 	private static final String ERRAND_ID = "errandId";
-
 	private static final String ERRAND_NUMBER = "errandNumber";
-
+	private static final boolean ACKNOWLEDGED = false;
+	private static final boolean GLOBAL_ACKNOWLEDGED = false;
 	private static final OffsetDateTime CREATED = now();
-
 	private static final OffsetDateTime MODIFIED = now();
-
 	private static final OffsetDateTime EXPIRES = now().plusDays(30);
-
 	private static final String NEW_OWNER_FULL_NAME = "newOwnerFullName";
-
 	private static final String NEW_OWNER_ID = "newOwnerId";
-
 	private static final String NEW_CREATED_BY = "newCreatedBy";
-
 	private static final String NEW_CREATED_BY_FULL_NAME = "newCreatedByFullName";
-
 	private static final String NEW_TYPE = "newType";
-
 	private static final String NEW_DESCRIPTION = "newDescription";
-
 	private static final String NEW_CONTENT = "newContent";
-
 	private static final OffsetDateTime NEW_EXPIRES = now().plusDays(10);
-
 	private static final boolean NEW_ACKNOWLEDGED = true;
-
+	private static final boolean NEW_GLOBAL_ACKNOWLEDGED = true;
 	private static final ErrandEntity ERRAND_ENTITY = ErrandEntity.create()
 		.withId(ERRAND_ID)
 		.withErrandNumber("ERRAND-NUMBER");
@@ -91,6 +68,8 @@ class NotificationMapperTest {
 	private static NotificationEntity createEntity() {
 		return NotificationEntity.create()
 			.withId(ID)
+			.withAcknowledged(ACKNOWLEDGED)
+			.withGlobalAcknowledged(GLOBAL_ACKNOWLEDGED)
 			.withCreated(CREATED)
 			.withModified(MODIFIED)
 			.withExpires(EXPIRES)
@@ -119,6 +98,8 @@ class NotificationMapperTest {
 		assertThat(notification.getDescription()).isEqualTo(DESCRIPTION);
 		assertThat(notification.getContent()).isEqualTo(CONTENT);
 		assertThat(notification.getErrandId()).isEqualTo(ERRAND_ID);
+		assertThat(notification.isAcknowledged()).isEqualTo(ACKNOWLEDGED);
+		assertThat(notification.isGlobalAcknowledged()).isEqualTo(GLOBAL_ACKNOWLEDGED);
 	}
 
 	@Test
@@ -141,6 +122,8 @@ class NotificationMapperTest {
 		assertThat(entity.getErrandEntity().getId()).isEqualTo(ERRAND_ID);
 		assertThat(entity.getMunicipalityId()).isEqualTo(MUNICIPALITY_ID);
 		assertThat(entity.getNamespace()).isEqualTo(NAMESPACE);
+		assertThat(entity.isAcknowledged()).isEqualTo(ACKNOWLEDGED);
+		assertThat(entity.isGlobalAcknowledged()).isEqualTo(GLOBAL_ACKNOWLEDGED);
 	}
 
 	@Test
@@ -156,6 +139,7 @@ class NotificationMapperTest {
 		notification.setContent(NEW_CONTENT);
 		notification.setExpires(NEW_EXPIRES);
 		notification.setAcknowledged(NEW_ACKNOWLEDGED);
+		notification.setGlobalAcknowledged(NEW_GLOBAL_ACKNOWLEDGED);
 		notification.setErrandNumber(NEW_ERRAND_NUMBER);
 
 		final var updatedEntity = NotificationMapper.updateEntity(entity, notification);
@@ -174,6 +158,7 @@ class NotificationMapperTest {
 		assertThat(updatedEntity.getContent()).isEqualTo(NEW_CONTENT);
 		assertThat(updatedEntity.getExpires()).isEqualTo(NEW_EXPIRES);
 		assertThat(updatedEntity.isAcknowledged()).isEqualTo(NEW_ACKNOWLEDGED);
+		assertThat(updatedEntity.isGlobalAcknowledged()).isEqualTo(NEW_GLOBAL_ACKNOWLEDGED);
 	}
 
 	@Test

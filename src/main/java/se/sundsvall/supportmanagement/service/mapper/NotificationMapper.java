@@ -27,6 +27,7 @@ public final class NotificationMapper {
 			.withContent(notification.getContent())
 			.withExpires(Optional.ofNullable(notification.getExpires()).orElse(OffsetDateTime.now().plusDays(30)))
 			.withAcknowledged(notification.isAcknowledged())
+			.withGlobalAcknowledged(notification.isGlobalAcknowledged())
 			.withErrandEntity(errandEntity)
 			.withMunicipalityId(municipalityId)
 			.withNamespace(namespace);
@@ -45,6 +46,7 @@ public final class NotificationMapper {
 		Optional.ofNullable(notification.getContent()).ifPresent(entity::setContent);
 		Optional.ofNullable(notification.getExpires()).ifPresent(entity::setExpires);
 		Optional.of(notification.isAcknowledged()).ifPresent(entity::setAcknowledged);
+		Optional.of(notification.isGlobalAcknowledged()).ifPresent(entity::setGlobalAcknowledged);
 		return entity;
 	}
 
@@ -61,6 +63,7 @@ public final class NotificationMapper {
 				.withContent(entity.getContent())
 				.withExpires(entity.getExpires())
 				.withAcknowledged(entity.isAcknowledged())
+				.withGlobalAcknowledged(entity.isGlobalAcknowledged())
 				.withErrandId(entity.getErrandEntity().getId())
 				.withErrandNumber(entity.getErrandEntity().getErrandNumber())
 				.withModified(entity.getModified())
