@@ -70,12 +70,20 @@ class NotificationIT extends AbstractAppTest {
 
 	@Test
 	void test03_updateNotification() {
+
 		setupCall()
 			.withServicePath(GLOBAL_NOTIFICATIONS_PATH)
 			.withHttpMethod(PATCH)
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(NO_CONTENT)
 			.withExpectedResponseBodyIsNull()
+			.sendRequest();
+
+		setupCall()
+			.withServicePath(ERRAND_NOTIFICATIONS_PATH + "/" + NOTIFICATION_ID)
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 	}
 
