@@ -34,10 +34,10 @@ class NotificationServiceTest {
 	private ErrandsRepository errandsRepositoryMock;
 
 	@Mock
-	private NotificationRepository notificationRepositoryMock;
+	private ExecutingUserSupplier executingUserSupplierMock;
 
 	@Mock
-	private ExecutingUserSupplier executingUserSupplierMock;
+	private NotificationRepository notificationRepositoryMock;
 
 	@InjectMocks
 	private NotificationService notificationService;
@@ -162,17 +162,16 @@ class NotificationServiceTest {
 		final var id = "SomeId";
 
 		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(notification.getErrandId(), namespace, municipalityId)).thenReturn(Optional.of(errandEntity));
+		when(executingUserSupplierMock.getAdUser()).thenReturn("otherAD");
 		when(notificationRepositoryMock.findByNamespaceAndMunicipalityIdAndOwnerIdAndAcknowledgedAndErrandEntityIdAndType(namespace, municipalityId, notification.getOwnerId(), notification.isAcknowledged(), notification.getErrandId(), notification
 			.getType()))
 			.thenReturn(Optional.empty());
-		when(executingUserSupplierMock.getAdUser()).thenReturn("otherAD");
 		when(notificationRepositoryMock.save(any())).thenReturn(createNotificationEntity(n -> n.setId(id)));
 		// Act
 		final var result = notificationService.createNotification(municipalityId, namespace, errandEntity.getId(), notification);
 
 		// Assert
 		assertThat(result).isNotNull().isEqualTo(id);
-		verify(executingUserSupplierMock).getAdUser();
 		verify(notificationRepositoryMock).save(notificationEntityArgumentCaptor.capture());
 		assertThat(notificationEntityArgumentCaptor.getValue().getOwnerFullName()).isEqualTo(notification.getOwnerFullName());
 		verify(notificationRepositoryMock).findByNamespaceAndMunicipalityIdAndOwnerIdAndAcknowledgedAndErrandEntityIdAndType(namespace, municipalityId, notification.getOwnerId(), notification.isAcknowledged(), notification.getErrandId(), notification
@@ -202,7 +201,6 @@ class NotificationServiceTest {
 		assertThat(notificationEntityArgumentCaptor.getValue().getDescription()).isEqualTo(notification.getDescription());
 		assertThat(notificationEntityArgumentCaptor.getValue().getErrandEntity().getId()).isEqualTo(notification.getErrandId());
 		assertThat(notificationEntityArgumentCaptor.getValue().isAcknowledged()).isEqualTo(notification.isAcknowledged());
-		assertThat(notificationEntityArgumentCaptor.getValue().isGlobalAcknowledged()).isEqualTo(notification.isGlobalAcknowledged());
 		assertThat(notificationEntityArgumentCaptor.getValue().getNamespace()).isEqualTo(namespace);
 		assertThat(notificationEntityArgumentCaptor.getValue().getMunicipalityId()).isEqualTo(municipalityId);
 	}

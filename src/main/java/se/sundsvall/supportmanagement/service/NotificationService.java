@@ -1,6 +1,5 @@
 package se.sundsvall.supportmanagement.service;
 
-import static java.util.Objects.isNull;
 import static org.zalando.problem.Status.NOT_FOUND;
 
 import java.time.OffsetDateTime;
@@ -58,7 +57,7 @@ public class NotificationService {
 	}
 
 	public String createNotification(final String municipalityId, final String namespace, final String errandId, final Notification notification) {
-		if (isExecutingUserTheOwner(notification.getOwnerId()) || notificationExist(municipalityId, namespace, errandId, notification)) {
+		if ((notification.getOwnerId() == null) || isExecutingUserTheOwner(notification.getOwnerId()) || doesNotificationExist(municipalityId, namespace, errandId, notification)) {
 			return null;
 		}
 
@@ -71,13 +70,10 @@ public class NotificationService {
 	}
 
 	private boolean isExecutingUserTheOwner(final String ownerId) {
-		if (isNull(ownerId)) {
-			return false;
-		}
 		return Objects.equals(ownerId, executingUserSupplier.getAdUser());
 	}
 
-	private boolean notificationExist(final String municipalityId, final String namespace, final String errandId, final Notification notification) {
+	private boolean doesNotificationExist(final String municipalityId, final String namespace, final String errandId, final Notification notification) {
 		return notificationRepository
 			.findByNamespaceAndMunicipalityIdAndOwnerIdAndAcknowledgedAndErrandEntityIdAndType(
 				namespace,
