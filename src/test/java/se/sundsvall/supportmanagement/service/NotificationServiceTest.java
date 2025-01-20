@@ -22,6 +22,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Sort;
 import org.zalando.problem.Problem;
 import se.sundsvall.supportmanagement.TestObjectsBuilder;
+import se.sundsvall.supportmanagement.api.filter.ExecutingUserSupplier;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.NotificationRepository;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
@@ -34,6 +35,9 @@ class NotificationServiceTest {
 
 	@Mock
 	private NotificationRepository notificationRepositoryMock;
+
+	@Mock
+	private ExecutingUserSupplier executingUserSupplierMock;
 
 	@InjectMocks
 	private NotificationService notificationService;
