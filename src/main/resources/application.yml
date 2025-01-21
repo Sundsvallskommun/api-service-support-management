@@ -1,16 +1,24 @@
 scheduler:
   emailreader:
+    name: fetch_emails
     cron: 0 */5 * * * *
     shedlock-lock-at-most-for: PT10M
+    maximum-execution-time: PT2M
   web-message-collector:
+    name: fetch_webMessages
     cron: 15 */5 * * * *
     shedlock-lock-at-most-for: PT10M
+    maximum-execution-time: PT2M
   notification:
+    name: clean_notifications
     cron: 0 0 0 * * *
     shedlock-lock-at-most-for: PT10M
+    maximum-execution-time: PT2M
   suspension:
+    name: clean_suspensions
     cron: 0 */15 * * * *
     shedlock-lock-at-most-for: PT10M
+    maximum-execution-time: PT2M
 
 integration:
   emailreader:
