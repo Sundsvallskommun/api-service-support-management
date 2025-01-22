@@ -3,22 +3,22 @@ scheduler:
     name: fetch_emails
     cron: 0 */5 * * * *
     shedlock-lock-at-most-for: PT10M
-    maximum-execution-time: PT2M
+    maximum-execution-time: PT5M
   web-message-collector:
     name: fetch_webMessages
     cron: 15 */5 * * * *
     shedlock-lock-at-most-for: PT10M
-    maximum-execution-time: PT2M
+    maximum-execution-time: PT5M
   notification:
     name: clean_notifications
     cron: 0 0 0 * * *
-    shedlock-lock-at-most-for: PT10M
+    shedlock-lock-at-most-for: PT4M
     maximum-execution-time: PT2M
   suspension:
     name: clean_suspensions
-    cron: 0 */15 * * * *
-    shedlock-lock-at-most-for: PT10M
-    maximum-execution-time: PT2M
+    cron: 0 */2 * * * *
+    shedlock-lock-at-most-for: PT4M
+    maximum-execution-time: PT2Mew
 
 integration:
   emailreader:

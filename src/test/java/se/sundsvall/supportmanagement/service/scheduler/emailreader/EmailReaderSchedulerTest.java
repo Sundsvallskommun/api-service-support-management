@@ -2,7 +2,6 @@ package se.sundsvall.supportmanagement.service.scheduler.emailreader;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
@@ -73,7 +72,7 @@ class EmailReaderSchedulerTest {
 		verify(emailReaderWorkerMock).getEnabledEmailConfigs();
 		verify(emailReaderWorkerMock).getEmailsFromConfig(same(emailWorkerConfigEntityMock));
 		verify(emailReaderWorkerMock, times(2)).processEmail(emailArgumentCaptor.capture(), same(emailWorkerConfigEntityMock));
-		verify(healthIndicatorMock).setHealthIndicatorUnhealthy(eq("emailreader"), any(String.class));
+		verify(healthIndicatorMock).setHealthIndicatorUnhealthy("emailreader", "Error processing email");
 		assertThat(emailArgumentCaptor.getAllValues()).containsExactly(emailMock1, emailMock2);
 		verifyNoMoreInteractions(emailReaderWorkerMock, healthIndicatorMock);
 	}

@@ -36,7 +36,7 @@ public class EmailReaderScheduler {
 						emailReaderWorker.processEmail(email, config);
 					} catch (final Exception e) {
 						LOG.error("Error processing email with id: {}", email.getId(), e);
-						healthUtility.setHealthIndicatorUnhealthy(jobName, String.format("Error processing email with id: %s", email.getId()));
+						healthUtility.setHealthIndicatorUnhealthy(jobName, "Error processing email");
 					}
 				}));
 	}

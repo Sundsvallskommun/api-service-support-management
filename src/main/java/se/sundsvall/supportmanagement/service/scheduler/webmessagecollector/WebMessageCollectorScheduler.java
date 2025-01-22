@@ -43,12 +43,12 @@ public class WebMessageCollectorScheduler {
 						worker.processMessage(message, entity.getMunicipalityId());
 					} catch (final Exception e) {
 						LOG.error("Error processing web message with id '{}'", message.getMessageId(), e);
-						healthUtility.setHealthIndicatorUnhealthy(jobName, String.format("Error processing web message with id: %s", message.getMessageId()));
+						healthUtility.setHealthIndicatorUnhealthy(jobName, "Error processing individual web messages");
 					}
 				});
 			} catch (final Exception e) {
 				LOG.error("Error fetching web messages for familyId '{}'", familyId, e);
-				healthUtility.setHealthIndicatorUnhealthy(jobName, String.format("Error fetching web messages for familyId: %s", familyId));
+				healthUtility.setHealthIndicatorUnhealthy(jobName, "Error fetching web messages");
 			}
 		}));
 	}
