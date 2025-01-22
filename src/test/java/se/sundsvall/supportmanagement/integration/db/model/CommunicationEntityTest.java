@@ -46,7 +46,7 @@ class CommunicationEntityTest {
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
 		final var sender = "sender";
-		final var senderId = "senderId";
+		final var senderUserId = "senderUserId";
 		final var errandNumber = "errandNumber";
 		final var direction = Direction.OUTBOUND;
 		final var externalCaseID = "externalCaseID";
@@ -67,7 +67,7 @@ class CommunicationEntityTest {
 			.withNamespace(namespace)
 			.withMunicipalityId(municipalityId)
 			.withSender(sender)
-			.withSenderId(senderId)
+			.withSenderUserId(senderUserId)
 			.withErrandNumber(errandNumber)
 			.withDirection(direction)
 			.withExternalId(externalCaseID)
@@ -86,7 +86,7 @@ class CommunicationEntityTest {
 		assertThat(entity.getNamespace()).isEqualTo(namespace);
 		assertThat(entity.getMunicipalityId()).isEqualTo(municipalityId);
 		assertThat(entity.getSender()).isEqualTo(sender);
-		assertThat(entity.getSenderId()).isEqualTo(senderId);
+		assertThat(entity.getSenderUserId()).isEqualTo(senderUserId);
 		assertThat(entity.getErrandNumber()).isEqualTo(errandNumber);
 		assertThat(entity.getDirection()).isEqualTo(direction);
 		assertThat(entity.getExternalId()).isEqualTo(externalCaseID);

@@ -157,7 +157,7 @@ class MessagingMapperTest {
 				.withKey(CASE_ID_KEY)
 				.withValue(CASE_ID_VALUE)));
 
-		final var senderId = "senderId";
+		final var senderUserId = "senderUserId";
 
 		final var webMessageRequest = WebMessageRequest.create()
 			.withMessage(MESSAGE)
@@ -178,7 +178,7 @@ class MessagingMapperTest {
 		when(mockFile.getBinaryStream()).thenReturn(inputStream);
 		when(mockAttachment.getFileName()).thenReturn("test.txt");
 
-		final var result = toWebMessageRequest(errandEntity, webMessageRequest, List.of(mockAttachment), senderId);
+		final var result = toWebMessageRequest(errandEntity, webMessageRequest, List.of(mockAttachment), senderUserId);
 
 		assertThat(result).isNotNull();
 		assertThat(result.getMessage()).isEqualTo(MESSAGE);
@@ -188,7 +188,7 @@ class MessagingMapperTest {
 			.containsExactly(
 				tuple(ERRAND_ID_KEY, ERRAND_ID),
 				tuple(FLOW_INSTANCE_ID_KEY, CASE_ID_VALUE));
-		assertThat(result.getSender().getUserId()).isEqualTo(senderId);
+		assertThat(result.getSender().getUserId()).isEqualTo(senderUserId);
 		assertThat(result.getAttachments()).extracting(
 			generated.se.sundsvall.messaging.WebMessageAttachment::getFileName,
 			generated.se.sundsvall.messaging.WebMessageAttachment::getMimeType,
@@ -206,9 +206,9 @@ class MessagingMapperTest {
 			.withExternalTags(List.of(DbExternalTag.create()
 				.withKey(CASE_ID_KEY)
 				.withValue(CASE_ID_VALUE)));
-		final var senderId = "senderId";
+		final var senderUserId = "senderUserId";
 
-		assertThatThrownBy(() -> toWebMessageRequest(errandEntity, WebMessageRequest.create(), null, senderId))
+		assertThatThrownBy(() -> toWebMessageRequest(errandEntity, WebMessageRequest.create(), null, senderUserId))
 			.isInstanceOf(Problem.class)
 			.hasMessage("Internal Server Error: Mapping is only possible when errand is created via channel 'ESERVICE' or 'ESERVICE_INTERNAL'")
 			.extracting("status").isEqualTo(INTERNAL_SERVER_ERROR);
@@ -219,9 +219,9 @@ class MessagingMapperTest {
 	void testToWebMessageRequestMissingExternalTags() {
 		final var errandEntity = createErrandEntity()
 			.withChannel(CHANNEL_ESERVICE);
-		final var senderId = "senderId";
+		final var senderUserId = "senderUserId";
 
-		assertThatThrownBy(() -> toWebMessageRequest(errandEntity, WebMessageRequest.create(), null, senderId))
+		assertThatThrownBy(() -> toWebMessageRequest(errandEntity, WebMessageRequest.create(), null, senderUserId))
 			.isInstanceOf(Problem.class)
 			.hasMessage("Internal Server Error: Web message cannot be created without externalTag with key 'caseId'")
 			.extracting("status").isEqualTo(INTERNAL_SERVER_ERROR);
@@ -234,9 +234,9 @@ class MessagingMapperTest {
 			.withExternalTags(List.of(DbExternalTag.create()
 				.withKey("not_case_id")
 				.withValue(CASE_ID_VALUE)));
-		final var senderId = "senderId";
+		final var senderUserId = "senderUserId";
 
-		assertThatThrownBy(() -> toWebMessageRequest(errandEntity, WebMessageRequest.create(), null, senderId))
+		assertThatThrownBy(() -> toWebMessageRequest(errandEntity, WebMessageRequest.create(), null, senderUserId))
 			.isInstanceOf(Problem.class)
 			.hasMessage("Internal Server Error: Web message cannot be created without externalTag with key 'caseId'")
 			.extracting("status").isEqualTo(INTERNAL_SERVER_ERROR);

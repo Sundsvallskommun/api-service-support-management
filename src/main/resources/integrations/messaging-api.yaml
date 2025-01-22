@@ -6,9 +6,6 @@ info:
     name: MIT License
     url: https://opensource.org/licenses/MIT
   version: "6.1"
-servers:
-  - url: https://messaging-af-messaging.apps.ocp201.sundsvall.se
-    description: Generated server url
 paths:
   /{municipalityId}/webmessage:
     post:

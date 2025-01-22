@@ -88,11 +88,11 @@ public class MessagingMapper {
 	}
 
 	public static WebMessageRequest toWebMessageRequest(ErrandEntity errandEntity, se.sundsvall.supportmanagement.api.model.communication.WebMessageRequest webMessageRequest,
-		final List<AttachmentEntity> attachments, final String senderId) {
+		final List<AttachmentEntity> attachments, final String senderUserId) {
 		return new WebMessageRequest()
 			.message(webMessageRequest.getMessage())
 			.party(toWebMessageRequestParty(errandEntity))
-			.sender(toWebMessageRequestSender(senderId))
+			.sender(toWebMessageRequestSender(senderUserId))
 			.oepInstance(toOepInstance(errandEntity.getChannel()))
 			.attachments(Stream.of(
 				toWebMessageAttachmentsFromAttachmentEntity(attachments),
@@ -195,9 +195,9 @@ public class MessagingMapper {
 					.orElseThrow(() -> Problem.valueOf(INTERNAL_SERVER_ERROR, String.format("Web message cannot be created without externalTag with key '%s'", CASE_ID_KEY)))));
 	}
 
-	private static WebMessageSender toWebMessageRequestSender(String senderId) {
-		return Optional.ofNullable(senderId)
-			.map(id -> new WebMessageSender().userId(senderId))
+	private static WebMessageSender toWebMessageRequestSender(String senderUserId) {
+		return Optional.ofNullable(senderUserId)
+			.map(id -> new WebMessageSender().userId(senderUserId))
 			.orElse(null);
 	}
 

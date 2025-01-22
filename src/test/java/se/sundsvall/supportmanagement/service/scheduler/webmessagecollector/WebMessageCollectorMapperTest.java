@@ -74,7 +74,7 @@ class WebMessageCollectorMapperTest {
 		assertThat(result.getMunicipalityId()).isEqualTo(municipalityId);
 		assertThat(result.getType()).isEqualTo(WEB_MESSAGE);
 		assertThat(result.getSender()).isEqualTo(firstName + " " + lastName);
-		assertThat(result.getSenderId()).isEqualTo(userId);
+		assertThat(result.getSenderUserId()).isEqualTo(userId);
 		assertThat(result.getDirection()).isEqualTo(Direction.INBOUND);
 		assertThat(result.getExternalId()).isEqualTo(messageId);
 		assertThat(result.getMessageBody()).isEqualTo(messageString);

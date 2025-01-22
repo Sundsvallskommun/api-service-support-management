@@ -135,7 +135,7 @@ class CommunicationMapperTest {
 
 		final var communicationEntity = communicationMapper.toCommunicationEntity(NAMESPACE, MUNICIPALITY_ID, emailRequest);
 
-		assertThat(communicationEntity).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "errandNumber", "externalId", "errandAttachments", "senderId");
+		assertThat(communicationEntity).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "errandNumber", "externalId", "errandAttachments", "senderUserId");
 		assertThat(communicationEntity.getSender()).isEqualTo(emailRequest.getSender());
 		assertThat(communicationEntity.getDirection()).isEqualTo(Direction.OUTBOUND);
 		assertThat(communicationEntity.getTarget()).isEqualTo(emailRequest.getRecipient());
@@ -157,7 +157,7 @@ class CommunicationMapperTest {
 
 		final var communicationEntity = communicationMapper.toCommunicationEntity(NAMESPACE, MUNICIPALITY_ID, smsRequest);
 
-		assertThat(communicationEntity).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "errandNumber", "externalId", "subject", "attachments", "emailHeaders", "errandAttachments", "senderId");
+		assertThat(communicationEntity).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "errandNumber", "externalId", "subject", "attachments", "emailHeaders", "errandAttachments", "senderUserId");
 		assertThat(communicationEntity.getSender()).isEqualTo(smsRequest.getSender());
 		assertThat(communicationEntity.getDirection()).isEqualTo(Direction.OUTBOUND);
 		assertThat(communicationEntity.getTarget()).isEqualTo(smsRequest.getRecipient());
@@ -184,7 +184,7 @@ class CommunicationMapperTest {
 		assertThat(communicationEntity.getDirection()).isEqualTo(Direction.OUTBOUND);
 		assertThat(communicationEntity.getType()).isEqualTo(CommunicationType.WEB_MESSAGE);
 		assertThat(communicationEntity.getSender()).isEqualTo(fullName);
-		assertThat(communicationEntity.getSenderId()).isEqualTo(adUser);
+		assertThat(communicationEntity.getSenderUserId()).isEqualTo(adUser);
 		assertThat(communicationEntity.getMessageBody()).isEqualTo(webMessageRequest.getMessage());
 		assertThat(communicationEntity.getAttachments()).hasSize(1);
 		assertThat(communicationEntity.getAttachments().getFirst().getName()).isEqualTo("name");

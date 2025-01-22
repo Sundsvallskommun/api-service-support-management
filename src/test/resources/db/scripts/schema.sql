@@ -39,7 +39,7 @@
         municipality_id varchar(255),
         namespace varchar(255),
         sender varchar(255),
-        sender_id varchar(255),
+        sender_user_id varchar(255),
         subject varchar(255),
         target varchar(255),
         type varchar(255) not null,
