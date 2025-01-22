@@ -18,7 +18,7 @@ scheduler:
     name: clean_suspensions
     cron: 0 */2 * * * *
     shedlock-lock-at-most-for: PT4M
-    maximum-execution-time: PT2Mew
+    maximum-execution-time: PT2M
 
 integration:
   emailreader:
