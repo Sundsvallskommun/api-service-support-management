@@ -94,6 +94,29 @@ class NotificationsResourceTest {
 	}
 
 	@Test
+	void globalAcknowledgeNotifications() {
+
+		// Mock
+		// TODO: Mock service
+		// when(notificationServiceMock.globalAcknowledge(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID));
+
+		// Call
+		final var response = webTestClient.put()
+			.uri(builder -> builder.path(ERRAND_NOTIFICATION_PATH + "/global-acknowledged")
+				.build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
+			.exchange()
+			.expectStatus().isNoContent()
+			.expectHeader().contentType(ALL)
+			.expectBody().isEmpty();
+
+		// Verification
+		assertThat(response).isNotNull();
+
+		// TODO: Verify service
+		// verify(notificationServiceMock).globalAcknowledge(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID);
+	}
+
+	@Test
 	void updateNotification() {
 		// Parameter values
 		final var notificationId = randomUUID().toString();
