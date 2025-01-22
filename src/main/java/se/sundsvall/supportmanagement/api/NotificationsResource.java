@@ -35,6 +35,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -122,6 +123,23 @@ class NotificationsResource {
 		@Parameter(name = "notificationId", description = "Notification ID", example = "74540a24-70e1-4e82-90f7-7d8ad4666cdc") @ValidUuid @PathVariable final String notificationId) {
 
 		notificationService.deleteNotification(municipalityId, namespace, errandId, notificationId);
+		return noContent()
+			.header(CONTENT_TYPE, ALL_VALUE)
+			.build();
+	}
+
+	@PutMapping(path = "/errands/{errandId}/notifications/global-acknowledged", produces = ALL_VALUE)
+	@Operation(summary = "Global acknowledge notifications", description = "Set the globalAcknowledged-attribute to 'true' for all notifications on the errand", responses = {
+		@ApiResponse(responseCode = "204", description = "Successful operation", useReturnTypeSchema = true),
+		@ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+	})
+	ResponseEntity<Void> globalAcknowledgeNotification(
+		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
+		@Parameter(name = "municipalityId", description = "Municipality ID", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
+		@Parameter(name = "errandId", description = "Errand ID", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable final String errandId) {
+
+		// TODO: Implement
+
 		return noContent()
 			.header(CONTENT_TYPE, ALL_VALUE)
 			.build();
