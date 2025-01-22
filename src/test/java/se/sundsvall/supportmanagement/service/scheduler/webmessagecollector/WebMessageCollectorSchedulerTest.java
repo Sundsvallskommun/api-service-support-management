@@ -12,14 +12,16 @@ import static org.mockito.Mockito.when;
 
 import generated.se.sundsvall.webmessagecollector.MessageDTO;
 import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
+import se.sundsvall.dept44.scheduling.health.Dept44HealthUtility;
 import se.sundsvall.supportmanagement.integration.db.WebMessageCollectRepository;
 import se.sundsvall.supportmanagement.integration.db.model.WebMessageCollectEntity;
 
@@ -36,8 +38,8 @@ class WebMessageCollectorSchedulerTest {
 	@Mock
 	private WebMessageCollectRepository webMessageCollectRepositoryMock;
 
-	@Spy
-	private WebMessageCollectorProcessingHealthIndicator healthIndicatorSpy;
+	@Mock
+	private Dept44HealthUtility healthIndicatorMock;
 
 	@InjectMocks
 	private WebMessageCollectorScheduler scheduler;
@@ -48,11 +50,16 @@ class WebMessageCollectorSchedulerTest {
 	@Captor
 	private ArgumentCaptor<String> familyIdCaptor;
 
+	@BeforeEach
+	void setUp() {
+		ReflectionTestUtils.setField(scheduler, "jobName", "web-message-collector");
+	}
+
 	@Test
 	void fetchWebMessages() {
 		// Arrange
-		var message1 = new MessageDTO();
-		var message2 = new MessageDTO();
+		final var message1 = new MessageDTO();
+		final var message2 = new MessageDTO();
 
 		// Mock
 		when(webMessageCollectRepositoryMock.findAll()).thenReturn(List.of(WebMessageCollectEntity.create()
@@ -66,13 +73,10 @@ class WebMessageCollectorSchedulerTest {
 		scheduler.fetchWebMessages();
 
 		// Verify
-		verify(healthIndicatorSpy).resetErrors();
 		verify(webMessageCollectRepositoryMock).findAll();
 		verify(webMessageCollectorWorkerMock, times(2)).getWebMessages(eq(INSTANCE), familyIdCaptor.capture(), eq(MUNICIPALITY_ID));
 		verify(webMessageCollectorWorkerMock, times(2)).processMessage(messageCaptor.capture(), eq(MUNICIPALITY_ID));
-		verify(healthIndicatorSpy).hasErrors();
-		verify(healthIndicatorSpy).setHealthy();
-		verifyNoMoreInteractions(webMessageCollectorWorkerMock, webMessageCollectRepositoryMock, healthIndicatorSpy);
+		verifyNoMoreInteractions(webMessageCollectorWorkerMock, webMessageCollectRepositoryMock, healthIndicatorMock);
 
 		assertThat(familyIdCaptor.getAllValues()).containsExactly("1", "2");
 		assertThat(messageCaptor.getAllValues()).satisfiesExactly(
@@ -83,7 +87,7 @@ class WebMessageCollectorSchedulerTest {
 	@Test
 	void fetchWebMessagesErrorFetchingForFamilyId() {
 		// Arrange
-		var message2 = new MessageDTO();
+		final var message2 = new MessageDTO();
 
 		// Mock
 		when(webMessageCollectRepositoryMock.findAll()).thenReturn(List.of(WebMessageCollectEntity.create()
@@ -97,13 +101,11 @@ class WebMessageCollectorSchedulerTest {
 		scheduler.fetchWebMessages();
 
 		// Verify
-		verify(healthIndicatorSpy).resetErrors();
 		verify(webMessageCollectRepositoryMock).findAll();
 		verify(webMessageCollectorWorkerMock, times(2)).getWebMessages(eq(INSTANCE), familyIdCaptor.capture(), eq(MUNICIPALITY_ID));
-		verify(healthIndicatorSpy).setUnhealthy();
+		verify(healthIndicatorMock).setHealthIndicatorUnhealthy("web-message-collector", "Error fetching web messages");
 		verify(webMessageCollectorWorkerMock, times(1)).processMessage(same(message2), eq(MUNICIPALITY_ID));
-		verify(healthIndicatorSpy).hasErrors();
-		verifyNoMoreInteractions(webMessageCollectorWorkerMock, webMessageCollectRepositoryMock, healthIndicatorSpy);
+		verifyNoMoreInteractions(webMessageCollectorWorkerMock, webMessageCollectRepositoryMock, healthIndicatorMock);
 
 		assertThat(familyIdCaptor.getAllValues()).containsExactly("1", "2");
 	}
@@ -111,8 +113,8 @@ class WebMessageCollectorSchedulerTest {
 	@Test
 	void fetchWebMessagesErrorProcessingMessage() {
 		// Arrange
-		var message1 = new MessageDTO();
-		var message2 = new MessageDTO();
+		final var message1 = new MessageDTO();
+		final var message2 = new MessageDTO();
 
 		// Mock
 		when(webMessageCollectRepositoryMock.findAll()).thenReturn(List.of(WebMessageCollectEntity.create()
@@ -127,14 +129,11 @@ class WebMessageCollectorSchedulerTest {
 		scheduler.fetchWebMessages();
 
 		// Verify
-		verify(healthIndicatorSpy).resetErrors();
 		verify(webMessageCollectRepositoryMock).findAll();
 		verify(webMessageCollectorWorkerMock, times(2)).getWebMessages(eq(INSTANCE), familyIdCaptor.capture(), eq(MUNICIPALITY_ID));
 		verify(webMessageCollectorWorkerMock, times(2)).processMessage(messageCaptor.capture(), eq(MUNICIPALITY_ID));
-		verify(healthIndicatorSpy).setUnhealthy();
-		verify(healthIndicatorSpy).hasErrors();
-		verifyNoMoreInteractions(webMessageCollectorWorkerMock, webMessageCollectRepositoryMock, healthIndicatorSpy);
-
+		verify(healthIndicatorMock).setHealthIndicatorUnhealthy("web-message-collector", "Error processing individual web messages");
+		verifyNoMoreInteractions(webMessageCollectorWorkerMock, webMessageCollectRepositoryMock, healthIndicatorMock);
 		assertThat(familyIdCaptor.getAllValues()).containsExactly("1", "2");
 		assertThat(messageCaptor.getAllValues()).satisfiesExactly(
 			first -> assertThat(first).isSameAs(message1),
