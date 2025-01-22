@@ -10,6 +10,7 @@ import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toEm
 import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toSmsRequest;
 import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toWebMessageRequest;
 
+import generated.se.sundsvall.employee.PortalPersonData;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.SQLException;
@@ -23,6 +24,7 @@ import java.util.concurrent.TimeUnit;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StreamUtils;
 import org.zalando.problem.Problem;
+import se.sundsvall.supportmanagement.api.filter.ExecutingUserSupplier;
 import se.sundsvall.supportmanagement.api.model.communication.Communication;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
 import se.sundsvall.supportmanagement.api.model.communication.SmsRequest;
@@ -45,6 +47,7 @@ public class CommunicationService {
 	private static final String ATTACHMENT_NOT_FOUND = "Communication attachment not found";
 	private static final String ATTACHMENT_WITH_ERRAND_NUMBER_NOT_FOUND = "Communication attachment not found for this errand";
 	private static final boolean ASYNCHRONOUSLY = true;
+	private static final String UNKNOWN_AD_USER = "UNKNOWN";
 
 	private final ErrandsRepository errandsRepository;
 	private final CommunicationRepository communicationRepository;
@@ -53,6 +56,8 @@ public class CommunicationService {
 	private final MessagingClient messagingClient;
 	private final CommunicationMapper communicationMapper;
 	private final Semaphore semaphore;
+	private final ExecutingUserSupplier executingUserSupplier;
+	private final EmployeeService employeeService;
 
 	public CommunicationService(
 		final ErrandsRepository errandsRepository,
@@ -60,7 +65,10 @@ public class CommunicationService {
 		final CommunicationRepository communicationRepository,
 		final CommunicationAttachmentRepository communicationAttachmentRepository,
 		final CommunicationMapper communicationMapper,
-		final ErrandAttachmentService errandAttachmentService, final Semaphore semaphore) {
+		final ErrandAttachmentService errandAttachmentService,
+		final Semaphore semaphore,
+		final ExecutingUserSupplier executingUserSupplier,
+		final EmployeeService employeeService) {
 
 		this.errandsRepository = errandsRepository;
 		this.messagingClient = messagingClient;
@@ -69,6 +77,8 @@ public class CommunicationService {
 		this.communicationMapper = communicationMapper;
 		this.errandAttachmentService = errandAttachmentService;
 		this.semaphore = semaphore;
+		this.executingUserSupplier = executingUserSupplier;
+		this.employeeService = employeeService;
 	}
 
 	public List<Communication> readCommunications(final String namespace, final String municipalityId, final String errandId) {
@@ -165,11 +175,17 @@ public class CommunicationService {
 	public void sendWebMessage(final String namespace, final String municipalityId, final String id, final WebMessageRequest request) {
 		final var entity = fetchErrand(id, namespace, municipalityId);
 		final var errandAttachments = errandAttachmentService.findByNamespaceAndMunicipalityIdAndIdIn(namespace, municipalityId, request.getAttachmentIds());
+		var adUser = executingUserSupplier.getAdUser();
 
-		final var communicationEntity = communicationMapper.toCommunicationEntity(namespace, municipalityId, entity.getErrandNumber(), request)
+		if (UNKNOWN_AD_USER.equals(adUser)) {
+			adUser = null;
+		}
+		final var fullName = getFullName(adUser);
+
+		final var communicationEntity = communicationMapper.toCommunicationEntity(namespace, municipalityId, entity.getErrandNumber(), request, fullName, adUser)
 			.withErrandAttachments(errandAttachments);
 
-		messagingClient.sendWebMessage(municipalityId, ASYNCHRONOUSLY, toWebMessageRequest(entity, request, errandAttachments));
+		messagingClient.sendWebMessage(municipalityId, ASYNCHRONOUSLY, toWebMessageRequest(entity, request, errandAttachments, adUser));
 
 		saveCommunication(communicationEntity);
 		saveAttachment(communicationEntity, entity);
@@ -192,5 +208,12 @@ public class CommunicationService {
 
 	public void saveCommunication(final CommunicationEntity communicationEntity) {
 		communicationRepository.save(communicationEntity);
+	}
+
+	private String getFullName(final String adUser) {
+		return Optional.ofNullable(adUser)
+			.map(employeeService::getEmployeeByLoginName)
+			.map(PortalPersonData::getFullname)
+			.orElse(null);
 	}
 }

@@ -147,7 +147,8 @@ public class CommunicationMapper {
 			.withViewed(false);
 	}
 
-	public CommunicationEntity toCommunicationEntity(final String namespace, final String municipalityId, final String errandNumber, final WebMessageRequest request) {
+	public CommunicationEntity toCommunicationEntity(final String namespace, final String municipalityId, final String errandNumber, final WebMessageRequest request,
+		final String sender, final String senderUserId) {
 		return CommunicationEntity.create()
 			.withMunicipalityId(municipalityId)
 			.withNamespace(namespace)
@@ -157,7 +158,9 @@ public class CommunicationMapper {
 			.withSent(OffsetDateTime.now())
 			.withType(CommunicationType.WEB_MESSAGE)
 			.withAttachments(toMessageAttachments(namespace, municipalityId, request.getAttachments()))
-			.withViewed(false);
+			.withViewed(false)
+			.withSender(sender)
+			.withSenderUserId(senderUserId);
 	}
 
 	private List<CommunicationAttachmentEntity> toMessageAttachments(final String namespace, final String municipalityId, final List<? extends RequestAttachment> attachments) {

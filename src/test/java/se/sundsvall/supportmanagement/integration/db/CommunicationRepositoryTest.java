@@ -40,6 +40,7 @@ class CommunicationRepositoryTest {
 			.withErrandAttachments(List.of(AttachmentEntity.create()))
 			.withEmailHeaders(List.of(CommunicationEmailHeaderEntity.create()))
 			.withSender("sender")
+			.withSenderUserId("senderUserId")
 			.withErrandNumber("errandNumber")
 			.withDirection(Direction.INBOUND)
 			.withExternalId("externalCaseID")
@@ -57,6 +58,7 @@ class CommunicationRepositoryTest {
 		// Assertions
 		assertThat(persistedEntity).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(persistedEntity.getSender()).isEqualTo("sender");
+		assertThat(persistedEntity.getSenderUserId()).isEqualTo("senderUserId");
 		assertThat(persistedEntity.getErrandNumber()).isEqualTo("errandNumber");
 		assertThat(persistedEntity.getDirection()).isEqualTo(Direction.INBOUND);
 		assertThat(persistedEntity.getExternalId()).isEqualTo("externalCaseID");
