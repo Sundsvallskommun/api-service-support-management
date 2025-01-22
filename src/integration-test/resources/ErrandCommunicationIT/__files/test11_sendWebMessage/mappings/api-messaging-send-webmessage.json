@@ -9,31 +9,20 @@
 		"bodyPatterns": [
 			{
 				"equalToJson": {
-					"attachments": [
-						{
-							"fileName": "data.txt",
-							"base64Data": "ZGF0YQ==",
-							"mimeType": "text/plain"
-						},
-						{
-							"fileName": "data_stuff.txt",
-							"base64Data": "U28gbXVjaCBkYXRhIQo=",
-							"mimeType": "text/plain"
-						}
-					],
-					"oepInstance": "internal",
-					"message": "Sending data!",
+					"attachments": [],
+					"oepInstance": "external",
+					"message": "Order pizza for everyone!",
 					"sender": {
 						"userId": "someUserId"
 					},
 					"party": {
 						"externalReferences": [
 							{
-								"value": "b481b191-dd37-47ca-b417-ed3a56ba724c",
+								"value": "cad8ec4e-0b6b-473a-800d-feb063f59094",
 								"key": "errandId"
 							},
 							{
-								"value": "1001",
+								"value": "1000",
 								"key": "flowInstanceId"
 							}
 						]
@@ -48,7 +37,7 @@
 			"Content-Type": "application/json"
 		},
 		"jsonBody": {
-			"messageId": "bb5f78fe-04dd-47e2-9d0b-5fe77f6d299d"
+			"messageId": "c413796a-502b-4487-85b2-69a43cc9b6d7"
 		},
 		"status": 200
 	},

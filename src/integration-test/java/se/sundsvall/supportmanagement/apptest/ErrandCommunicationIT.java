@@ -143,7 +143,7 @@ class ErrandCommunicationIT extends AbstractAppTest {
 	}
 
 	@Test
-	void test09_sendWebMessage() {
+	void test09_sendWebMessageUserUnknown() {
 		// external
 		setupCall()
 			.withServicePath(PATH + "/cad8ec4e-0b6b-473a-800d-feb063f59094/communication/webmessage")
@@ -160,6 +160,7 @@ class ErrandCommunicationIT extends AbstractAppTest {
 		setupCall()
 			.withServicePath(PATH + "/b481b191-dd37-47ca-b417-ed3a56ba724c/communication/webmessage")
 			.withHttpMethod(POST)
+			.withHeader("sentbyuser", "someUserId")
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(NO_CONTENT)
 			.withExpectedResponseBodyIsNull()
@@ -171,6 +172,19 @@ class ErrandCommunicationIT extends AbstractAppTest {
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	void test11_sendWebMessage() {
+		// external
+		setupCall()
+			.withServicePath(PATH + "/cad8ec4e-0b6b-473a-800d-feb063f59094/communication/webmessage")
+			.withHttpMethod(POST)
+			.withHeader("sentbyuser", "someUserId")
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(NO_CONTENT)
+			.withExpectedResponseBodyIsNull()
 			.sendRequestAndVerifyResponse();
 	}
 }
