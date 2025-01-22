@@ -135,7 +135,7 @@ class CommunicationMapperTest {
 
 		final var communicationEntity = communicationMapper.toCommunicationEntity(NAMESPACE, MUNICIPALITY_ID, emailRequest);
 
-		assertThat(communicationEntity).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "errandNumber", "externalId", "errandAttachments");
+		assertThat(communicationEntity).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "errandNumber", "externalId", "errandAttachments", "senderUserId");
 		assertThat(communicationEntity.getSender()).isEqualTo(emailRequest.getSender());
 		assertThat(communicationEntity.getDirection()).isEqualTo(Direction.OUTBOUND);
 		assertThat(communicationEntity.getTarget()).isEqualTo(emailRequest.getRecipient());
@@ -157,7 +157,7 @@ class CommunicationMapperTest {
 
 		final var communicationEntity = communicationMapper.toCommunicationEntity(NAMESPACE, MUNICIPALITY_ID, smsRequest);
 
-		assertThat(communicationEntity).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "errandNumber", "externalId", "subject", "attachments", "emailHeaders", "errandAttachments");
+		assertThat(communicationEntity).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "errandNumber", "externalId", "subject", "attachments", "emailHeaders", "errandAttachments", "senderUserId");
 		assertThat(communicationEntity.getSender()).isEqualTo(smsRequest.getSender());
 		assertThat(communicationEntity.getDirection()).isEqualTo(Direction.OUTBOUND);
 		assertThat(communicationEntity.getTarget()).isEqualTo(smsRequest.getRecipient());
@@ -168,18 +168,23 @@ class CommunicationMapperTest {
 	@Test
 	void toCommunicationEntityFromWebMessageRequest() {
 
+		final var adUser = "adUser";
+		final var fullName = "fullName";
+
 		when(blobBuilder.createBlob(anyString())).thenReturn(blobMock);
 
 		final var webMessageRequest = new WebMessageRequest()
 			.withMessage("message")
 			.withAttachments(List.of(new WebMessageAttachment().withName("name").withBase64EncodedString("base64EncodedString")));
 
-		final var communicationEntity = communicationMapper.toCommunicationEntity(NAMESPACE, MUNICIPALITY_ID, ERRAND_NUMBER, webMessageRequest);
+		final var communicationEntity = communicationMapper.toCommunicationEntity(NAMESPACE, MUNICIPALITY_ID, ERRAND_NUMBER, webMessageRequest, fullName, adUser);
 
 		assertThat(communicationEntity).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "externalId", "sender", "target", "subject", "errandAttachments", "emailHeaders");
 		assertThat(communicationEntity.getErrandNumber()).isEqualTo(ERRAND_NUMBER);
 		assertThat(communicationEntity.getDirection()).isEqualTo(Direction.OUTBOUND);
 		assertThat(communicationEntity.getType()).isEqualTo(CommunicationType.WEB_MESSAGE);
+		assertThat(communicationEntity.getSender()).isEqualTo(fullName);
+		assertThat(communicationEntity.getSenderUserId()).isEqualTo(adUser);
 		assertThat(communicationEntity.getMessageBody()).isEqualTo(webMessageRequest.getMessage());
 		assertThat(communicationEntity.getAttachments()).hasSize(1);
 		assertThat(communicationEntity.getAttachments().getFirst().getName()).isEqualTo("name");
