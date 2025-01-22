@@ -31,6 +31,7 @@ public class WebMessageCollectorMapper {
 	CommunicationEntity toCommunicationEntity(final MessageDTO messageDTO, final ErrandEntity errand) {
 		final var communicationEntity = CommunicationEntity.create()
 			.withSender(messageDTO.getFirstName() + " " + messageDTO.getLastName())
+			.withSenderId(messageDTO.getUserId())
 			.withDirection(Direction.INBOUND)
 			.withErrandNumber(errand.getErrandNumber())
 			.withMunicipalityId(errand.getMunicipalityId())

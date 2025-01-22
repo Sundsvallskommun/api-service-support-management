@@ -22,6 +22,7 @@ import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.util.MimeTypeUtils.IMAGE_PNG_VALUE;
 import static org.zalando.problem.Status.NOT_FOUND;
 
+import generated.se.sundsvall.employee.PortalPersonData;
 import generated.se.sundsvall.messaging.ExternalReference;
 import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletResponse;
@@ -47,6 +48,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.zalando.problem.Problem;
 import org.zalando.problem.ThrowableProblem;
+import se.sundsvall.supportmanagement.api.filter.ExecutingUserSupplier;
 import se.sundsvall.supportmanagement.api.model.communication.Communication;
 import se.sundsvall.supportmanagement.api.model.communication.EmailAttachment;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
@@ -141,6 +143,15 @@ class CommunicationServiceTest {
 
 	@Mock
 	private AttachmentEntity attachmentEntityMock;
+
+	@Mock
+	private ExecutingUserSupplier executingUserSupplierMock;
+
+	@Mock
+	private EmployeeService employeeServiceMock;
+
+	@Mock
+	private PortalPersonData portalPersonDataMock;
 
 	@InjectMocks
 	private CommunicationService service;
@@ -437,26 +448,31 @@ class CommunicationServiceTest {
 		// Parameter values
 		final var request = createWebMessageRequest();
 		final var webMessageRequest = new generated.se.sundsvall.messaging.WebMessageRequest();
+		final var adUser = "adUser";
+		final var fullName = "fullname";
 
 		// Mock
 		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
 		when(errandsRepositoryMock.findById(ERRAND_ID)).thenReturn(Optional.of(errandEntityMock));
 		when(errandAttachmentServiceMock.findByNamespaceAndMunicipalityIdAndIdIn(any(), any(), any())).thenReturn(attachmentEntitiesMock);
 		when(errandEntityMock.getErrandNumber()).thenReturn(ERRAND_ID_KEY);
-		when(communicationMapperMock.toCommunicationEntity(any(), any(), any(), any())).thenReturn(communicationEntityMock);
+		when(communicationMapperMock.toCommunicationEntity(anyString(), anyString(), anyString(), any(), anyString(), anyString())).thenReturn(communicationEntityMock);
 		when(communicationEntityMock.withErrandAttachments(any())).thenReturn(communicationEntityMock);
 		when(communicationMapperMock.toAttachments(any())).thenReturn(List.of(attachmentEntityMock));
 		when(attachmentEntityMock.withErrandEntity(any())).thenReturn(attachmentEntityMock);
+		when(executingUserSupplierMock.getAdUser()).thenReturn(adUser);
+		when(employeeServiceMock.getEmployeeByLoginName(adUser)).thenReturn(portalPersonDataMock);
+		when(portalPersonDataMock.getFullname()).thenReturn(fullName);
 
 		try (final MockedStatic<MessagingMapper> messagingMapper = Mockito.mockStatic(MessagingMapper.class)) {
 			// Mock static
-			messagingMapper.when(() -> MessagingMapper.toWebMessageRequest(any(), any(), any())).thenReturn(webMessageRequest);
+			messagingMapper.when(() -> MessagingMapper.toWebMessageRequest(any(), any(), any(), anyString())).thenReturn(webMessageRequest);
 
 			// Call
 			service.sendWebMessage(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, request);
 
 			// Verify static
-			messagingMapper.verify(() -> MessagingMapper.toWebMessageRequest(same(errandEntityMock), same(request), same(attachmentEntitiesMock)));
+			messagingMapper.verify(() -> MessagingMapper.toWebMessageRequest(same(errandEntityMock), same(request), same(attachmentEntitiesMock), same(adUser)));
 			messagingMapper.verifyNoMoreInteractions();
 		}
 
@@ -464,7 +480,7 @@ class CommunicationServiceTest {
 		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(errandsRepositoryMock).findById(ERRAND_ID);
 		verify(errandAttachmentServiceMock).findByNamespaceAndMunicipalityIdAndIdIn(NAMESPACE, MUNICIPALITY_ID, List.of(ATTACHMENT_ID));
-		verify(communicationMapperMock).toCommunicationEntity(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID_KEY), same(request));
+		verify(communicationMapperMock).toCommunicationEntity(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID_KEY), same(request), eq(fullName), eq(adUser));
 		verify(communicationEntityMock).withErrandAttachments(same(attachmentEntitiesMock));
 		verify(messagingClientMock).sendWebMessage(eq(MUNICIPALITY_ID), eq(true), same(webMessageRequest));
 		verify(communicationRepositoryMock).save(same(communicationEntityMock));
@@ -472,7 +488,8 @@ class CommunicationServiceTest {
 		verify(attachmentEntityMock).withErrandEntity(same(errandEntityMock));
 		verify(errandAttachmentServiceMock).createErrandAttachment(same(attachmentEntityMock), same(errandEntityMock));
 
-		verifyNoMoreInteractions(errandsRepositoryMock, messagingClientMock, communicationMapperMock, communicationRepositoryMock, attachmentEntityMock, communicationEntityMock, errandAttachmentServiceMock);
+		verifyNoMoreInteractions(errandsRepositoryMock, messagingClientMock, communicationMapperMock, communicationRepositoryMock, attachmentEntityMock, communicationEntityMock, errandAttachmentServiceMock,
+			attachmentEntitiesMock, portalPersonDataMock, employeeServiceMock);
 		verifyNoInteractions(communicationAttachmentRepositoryMock);
 	}
 

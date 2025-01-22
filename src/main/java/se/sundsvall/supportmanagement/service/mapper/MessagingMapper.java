@@ -16,6 +16,7 @@ import generated.se.sundsvall.messaging.SmsRequestParty;
 import generated.se.sundsvall.messaging.WebMessageAttachment;
 import generated.se.sundsvall.messaging.WebMessageParty;
 import generated.se.sundsvall.messaging.WebMessageRequest;
+import generated.se.sundsvall.messaging.WebMessageSender;
 import io.netty.util.internal.StringUtil;
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,6 +27,7 @@ import java.util.Base64.Decoder;
 import java.util.Base64.Encoder;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.compress.utils.IOUtils;
@@ -85,10 +87,12 @@ public class MessagingMapper {
 			.toList();
 	}
 
-	public static WebMessageRequest toWebMessageRequest(ErrandEntity errandEntity, se.sundsvall.supportmanagement.api.model.communication.WebMessageRequest webMessageRequest, final List<AttachmentEntity> attachments) {
+	public static WebMessageRequest toWebMessageRequest(ErrandEntity errandEntity, se.sundsvall.supportmanagement.api.model.communication.WebMessageRequest webMessageRequest,
+		final List<AttachmentEntity> attachments, final String senderId) {
 		return new WebMessageRequest()
 			.message(webMessageRequest.getMessage())
 			.party(toWebMessageRequestParty(errandEntity))
+			.sender(toWebMessageRequestSender(senderId))
 			.oepInstance(toOepInstance(errandEntity.getChannel()))
 			.attachments(Stream.of(
 				toWebMessageAttachmentsFromAttachmentEntity(attachments),
@@ -189,6 +193,12 @@ public class MessagingMapper {
 					.map(DbExternalTag::getValue)
 					.findFirst()
 					.orElseThrow(() -> Problem.valueOf(INTERNAL_SERVER_ERROR, String.format("Web message cannot be created without externalTag with key '%s'", CASE_ID_KEY)))));
+	}
+
+	private static WebMessageSender toWebMessageRequestSender(String senderId) {
+		return Optional.ofNullable(senderId)
+			.map(id -> new WebMessageSender().userId(senderId))
+			.orElse(null);
 	}
 
 	private static ExternalReference toExternalReference(String id) {

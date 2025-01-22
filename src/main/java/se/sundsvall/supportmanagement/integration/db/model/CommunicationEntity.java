@@ -47,6 +47,9 @@ public class CommunicationEntity {
 	@Column(name = "sender")
 	private String sender;
 
+	@Column(name = "sender_id")
+	private String senderId;
+
 	@Column(name = "errand_number")
 	private String errandNumber;
 
@@ -162,6 +165,19 @@ public class CommunicationEntity {
 
 	public CommunicationEntity withSender(final String sender) {
 		this.sender = sender;
+		return this;
+	}
+
+	public String getSenderId() {
+		return senderId;
+	}
+
+	public void setSenderId(final String senderId) {
+		this.senderId = senderId;
+	}
+
+	public CommunicationEntity withSenderId(final String senderId) {
+		this.senderId = senderId;
 		return this;
 	}
 
@@ -318,14 +334,15 @@ public class CommunicationEntity {
 		if (o == null || getClass() != o.getClass())
 			return false;
 		final CommunicationEntity that = (CommunicationEntity) o;
-		return viewed == that.viewed && Objects.equals(id, that.id) && Objects.equals(namespace, that.namespace) && Objects.equals(municipalityId, that.municipalityId) && Objects.equals(sender, that.sender) && Objects.equals(errandNumber,
-			that.errandNumber) && direction == that.direction && Objects.equals(externalId, that.externalId) && Objects.equals(subject, that.subject) && Objects.equals(messageBody, that.messageBody) && Objects.equals(sent, that.sent)
-			&& type == that.type && Objects.equals(target, that.target) && Objects.equals(attachments, that.attachments) && Objects.equals(emailHeaders, that.emailHeaders) && Objects.equals(errandAttachments, that.errandAttachments);
+		return viewed == that.viewed && Objects.equals(id, that.id) && Objects.equals(namespace, that.namespace) && Objects.equals(municipalityId, that.municipalityId) && Objects.equals(sender, that.sender)
+			&& Objects.equals(senderId, that.senderId) && Objects.equals(errandNumber, that.errandNumber) && direction == that.direction && Objects.equals(externalId, that.externalId) && Objects.equals(subject, that.subject)
+			&& Objects.equals(messageBody, that.messageBody) && Objects.equals(sent, that.sent) && type == that.type && Objects.equals(target, that.target) && Objects.equals(attachments, that.attachments)
+			&& Objects.equals(emailHeaders, that.emailHeaders) && Objects.equals(errandAttachments, that.errandAttachments);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, namespace, municipalityId, sender, errandNumber, direction, externalId, subject, messageBody, sent, type, target, viewed, attachments, emailHeaders, errandAttachments);
+		return Objects.hash(id, namespace, municipalityId, sender, senderId, errandNumber, direction, externalId, subject, messageBody, sent, type, target, viewed, attachments, emailHeaders, errandAttachments);
 	}
 
 	@Override
@@ -335,6 +352,7 @@ public class CommunicationEntity {
 			", namespace='" + namespace + '\'' +
 			", municipalityId='" + municipalityId + '\'' +
 			", sender='" + sender + '\'' +
+			", senderId='" + senderId + '\'' +
 			", errandNumber='" + errandNumber + '\'' +
 			", direction=" + direction +
 			", externalId='" + externalId + '\'' +

@@ -116,23 +116,23 @@ class MessagingMapperTest {
 	@Test
 	void testToEmailAttachment() throws Exception {
 
-		String originalContent = "This is a test";
-		var contentBytes = originalContent.getBytes(StandardCharsets.UTF_8);
-		var inputStream = new ByteArrayInputStream(contentBytes);
-		var mockAttachment = Mockito.mock(AttachmentEntity.class);
-		var mockAttachmentData = Mockito.mock(AttachmentDataEntity.class);
-		Blob mockFile = Mockito.mock(Blob.class);
+		final var originalContent = "This is a test";
+		final var contentBytes = originalContent.getBytes(StandardCharsets.UTF_8);
+		final var inputStream = new ByteArrayInputStream(contentBytes);
+		final var mockAttachment = Mockito.mock(AttachmentEntity.class);
+		final var mockAttachmentData = Mockito.mock(AttachmentDataEntity.class);
+		final Blob mockFile = Mockito.mock(Blob.class);
 
 		when(mockAttachment.getAttachmentData()).thenReturn(mockAttachmentData);
 		when(mockAttachmentData.getFile()).thenReturn(mockFile);
 		when(mockFile.getBinaryStream()).thenReturn(inputStream);
 		when(mockAttachment.getFileName()).thenReturn("test.txt");
 
-		String expectedEncodedContent = Base64.getEncoder().encodeToString(contentBytes);
-		String expectedContentType = "text/plain";
-		String expectedFileName = "test.txt";
+		final var expectedEncodedContent = Base64.getEncoder().encodeToString(contentBytes);
+		final var expectedContentType = "text/plain";
+		final var expectedFileName = "test.txt";
 
-		var result = MessagingMapper.toEmailAttachment(mockAttachment);
+		final var result = MessagingMapper.toEmailAttachment(mockAttachment);
 
 		assertThat(result).isNotNull();
 		assertThat(result.getContent()).isEqualTo(expectedEncodedContent);
@@ -144,39 +144,41 @@ class MessagingMapperTest {
 	@ValueSource(strings = {
 		CHANNEL_ESERVICE, CHANNEL_ESERVICE_INTERNAL
 	})
-	void testToWebMessageRequest(String channel) throws SQLException {
+	void testToWebMessageRequest(final String channel) throws SQLException {
 		generated.se.sundsvall.messaging.WebMessageRequest.OepInstanceEnum instance;
 		switch (channel) {
 			case CHANNEL_ESERVICE -> instance = generated.se.sundsvall.messaging.WebMessageRequest.OepInstanceEnum.EXTERNAL;
 			case CHANNEL_ESERVICE_INTERNAL -> instance = generated.se.sundsvall.messaging.WebMessageRequest.OepInstanceEnum.INTERNAL;
 			default -> throw new IllegalArgumentException("channel not supported my mapper");
 		}
-		var errandEntity = createErrandEntity()
+		final var errandEntity = createErrandEntity()
 			.withChannel(channel)
 			.withExternalTags(List.of(DbExternalTag.create()
 				.withKey(CASE_ID_KEY)
 				.withValue(CASE_ID_VALUE)));
 
-		var webMessageRequest = WebMessageRequest.create()
+		final var senderId = "senderId";
+
+		final var webMessageRequest = WebMessageRequest.create()
 			.withMessage(MESSAGE)
 			.withAttachmentIds(List.of("1", "2"))
 			.withAttachments(List.of(WebMessageAttachment.create()
 				.withBase64EncodedString(FILE_CONTENT)
 				.withName(FILE_NAME)));
 
-		String originalContent = "This is a test";
-		var contentBytes = originalContent.getBytes(StandardCharsets.UTF_8);
-		var inputStream = new ByteArrayInputStream(contentBytes);
-		var mockAttachment = Mockito.mock(AttachmentEntity.class);
-		var mockAttachmentData = Mockito.mock(AttachmentDataEntity.class);
-		Blob mockFile = Mockito.mock(Blob.class);
+		final var originalContent = "This is a test";
+		final var contentBytes = originalContent.getBytes(StandardCharsets.UTF_8);
+		final var inputStream = new ByteArrayInputStream(contentBytes);
+		final var mockAttachment = Mockito.mock(AttachmentEntity.class);
+		final var mockAttachmentData = Mockito.mock(AttachmentDataEntity.class);
+		final Blob mockFile = Mockito.mock(Blob.class);
 
 		when(mockAttachment.getAttachmentData()).thenReturn(mockAttachmentData);
 		when(mockAttachmentData.getFile()).thenReturn(mockFile);
 		when(mockFile.getBinaryStream()).thenReturn(inputStream);
 		when(mockAttachment.getFileName()).thenReturn("test.txt");
 
-		var result = toWebMessageRequest(errandEntity, webMessageRequest, List.of(mockAttachment));
+		final var result = toWebMessageRequest(errandEntity, webMessageRequest, List.of(mockAttachment), senderId);
 
 		assertThat(result).isNotNull();
 		assertThat(result.getMessage()).isEqualTo(MESSAGE);
@@ -186,6 +188,7 @@ class MessagingMapperTest {
 			.containsExactly(
 				tuple(ERRAND_ID_KEY, ERRAND_ID),
 				tuple(FLOW_INSTANCE_ID_KEY, CASE_ID_VALUE));
+		assertThat(result.getSender().getUserId()).isEqualTo(senderId);
 		assertThat(result.getAttachments()).extracting(
 			generated.se.sundsvall.messaging.WebMessageAttachment::getFileName,
 			generated.se.sundsvall.messaging.WebMessageAttachment::getMimeType,
@@ -198,13 +201,14 @@ class MessagingMapperTest {
 
 	@Test
 	void testToWebMessageRequestUnsupportedChannel() {
-		var errandEntity = createErrandEntity()
+		final var errandEntity = createErrandEntity()
 			.withChannel("bad_channel")
 			.withExternalTags(List.of(DbExternalTag.create()
 				.withKey(CASE_ID_KEY)
 				.withValue(CASE_ID_VALUE)));
+		final var senderId = "senderId";
 
-		assertThatThrownBy(() -> toWebMessageRequest(errandEntity, WebMessageRequest.create(), null))
+		assertThatThrownBy(() -> toWebMessageRequest(errandEntity, WebMessageRequest.create(), null, senderId))
 			.isInstanceOf(Problem.class)
 			.hasMessage("Internal Server Error: Mapping is only possible when errand is created via channel 'ESERVICE' or 'ESERVICE_INTERNAL'")
 			.extracting("status").isEqualTo(INTERNAL_SERVER_ERROR);
@@ -213,10 +217,11 @@ class MessagingMapperTest {
 
 	@Test
 	void testToWebMessageRequestMissingExternalTags() {
-		var errandEntity = createErrandEntity()
+		final var errandEntity = createErrandEntity()
 			.withChannel(CHANNEL_ESERVICE);
+		final var senderId = "senderId";
 
-		assertThatThrownBy(() -> toWebMessageRequest(errandEntity, WebMessageRequest.create(), null))
+		assertThatThrownBy(() -> toWebMessageRequest(errandEntity, WebMessageRequest.create(), null, senderId))
 			.isInstanceOf(Problem.class)
 			.hasMessage("Internal Server Error: Web message cannot be created without externalTag with key 'caseId'")
 			.extracting("status").isEqualTo(INTERNAL_SERVER_ERROR);
@@ -224,13 +229,14 @@ class MessagingMapperTest {
 
 	@Test
 	void testToWebMessageRequestMissingCaseId() {
-		var errandEntity = createErrandEntity()
+		final var errandEntity = createErrandEntity()
 			.withChannel(CHANNEL_ESERVICE)
 			.withExternalTags(List.of(DbExternalTag.create()
 				.withKey("not_case_id")
 				.withValue(CASE_ID_VALUE)));
+		final var senderId = "senderId";
 
-		assertThatThrownBy(() -> toWebMessageRequest(errandEntity, WebMessageRequest.create(), null))
+		assertThatThrownBy(() -> toWebMessageRequest(errandEntity, WebMessageRequest.create(), null, senderId))
 			.isInstanceOf(Problem.class)
 			.hasMessage("Internal Server Error: Web message cannot be created without externalTag with key 'caseId'")
 			.extracting("status").isEqualTo(INTERNAL_SERVER_ERROR);
