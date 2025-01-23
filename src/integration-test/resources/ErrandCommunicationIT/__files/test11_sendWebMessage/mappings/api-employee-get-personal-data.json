@@ -17,5 +17,5 @@
 		},
 		"status": 200
 	},
-	"name": "api-employee-getPersonalData"
+	"name": "api-employee-get-personal-data"
 }

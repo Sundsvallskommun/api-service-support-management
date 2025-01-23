@@ -13,6 +13,7 @@
 				"contentType": "text/plain"
 			}
 		],
+		"sender": "Anka Kalle",
 		"messageBody": "Sending data!",
 		"errandNumber": "KC-23020008",
 		"communicationID": "${json-unit.regex}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
