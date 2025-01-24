@@ -44,6 +44,7 @@ public final class ErrandParameterMapper {
 	}
 
 	public static List<Parameter> toUniqueKeyList(List<Parameter> parameterList) {
+		// TODO: Add mapping for group
 		return new ArrayList<>(Optional.ofNullable(parameterList).orElse(emptyList()).stream()
 			.collect(groupingBy(Parameter::getKey))
 			.entrySet()
