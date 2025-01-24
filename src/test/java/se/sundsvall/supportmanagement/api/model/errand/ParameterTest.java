@@ -30,16 +30,19 @@ class ParameterTest {
 		final var displayName = "displayName";
 		final var key = "key";
 		final var values = List.of("value");
+		final var group = "group";
 
 		final var bean = Parameter.create()
 			.withDisplayName(displayName)
 			.withKey(key)
-			.withValues(values);
+			.withValues(values)
+			.withGroup(group);
 
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(bean.getDisplayName()).isEqualTo(displayName);
 		assertThat(bean.getKey()).isEqualTo(key);
 		assertThat(bean.getValues()).isEqualTo(values);
+		assertThat(bean.getGroup()).isEqualTo(group);
 	}
 
 	@Test
