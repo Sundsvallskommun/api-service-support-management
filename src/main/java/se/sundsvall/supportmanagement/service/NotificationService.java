@@ -1,10 +1,16 @@
 package se.sundsvall.supportmanagement.service;
 
+import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
+import static org.springframework.data.domain.Sort.unsorted;
+import static org.springframework.util.StringUtils.hasText;
 import static org.zalando.problem.Status.NOT_FOUND;
+import static se.sundsvall.supportmanagement.service.mapper.NotificationMapper.toNotificationEntity;
+import static se.sundsvall.supportmanagement.service.mapper.NotificationMapper.updateEntity;
 
+import generated.se.sundsvall.employee.PortalPersonData;
 import java.time.OffsetDateTime;
 import java.util.List;
-import java.util.Objects;
+import java.util.Optional;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,6 +20,7 @@ import se.sundsvall.supportmanagement.api.model.notification.Notification;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.NotificationRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
 import se.sundsvall.supportmanagement.service.mapper.NotificationMapper;
 
 @Service
@@ -25,11 +32,13 @@ public class NotificationService {
 	private final ExecutingUserSupplier executingUserSupplier;
 	private final NotificationRepository notificationRepository;
 	private final ErrandsRepository errandsRepository;
+	private final EmployeeService employeeService;
 
-	public NotificationService(final NotificationRepository notificationRepository, final ExecutingUserSupplier executingUserSupplier, final ErrandsRepository errandsRepository) {
+	public NotificationService(final NotificationRepository notificationRepository, final ExecutingUserSupplier executingUserSupplier, final ErrandsRepository errandsRepository, final EmployeeService employeeService) {
 		this.notificationRepository = notificationRepository;
 		this.executingUserSupplier = executingUserSupplier;
 		this.errandsRepository = errandsRepository;
+		this.employeeService = employeeService;
 	}
 
 	public Notification getNotification(final String municipalityId, final String namespace, final String errandId, final String notificationId) {
@@ -57,32 +66,14 @@ public class NotificationService {
 	}
 
 	public String createNotification(final String municipalityId, final String namespace, final String errandId, final Notification notification) {
-		if ((notification.getOwnerId() == null) || isExecutingUserTheOwner(notification.getOwnerId()) || doesNotificationExist(municipalityId, namespace, errandId, notification)) {
-			return null;
-		}
-
 		final var errandEntity = errandsRepository.findByIdAndNamespaceAndMunicipalityId(errandId, namespace, municipalityId)
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, String.format(ERRAND_ENTITY_NOT_FOUND, notification.getErrandId(), namespace, municipalityId)));
 
-		final var entity = NotificationMapper.toNotificationEntity(namespace, municipalityId, notification, errandEntity);
+		final var entity = toNotificationEntity(namespace, municipalityId, notification, errandEntity);
+
+		applyBusinessLogicForCreate(entity);
 
 		return notificationRepository.save(entity).getId();
-	}
-
-	private boolean isExecutingUserTheOwner(final String ownerId) {
-		return Objects.equals(ownerId, executingUserSupplier.getAdUser());
-	}
-
-	private boolean doesNotificationExist(final String municipalityId, final String namespace, final String errandId, final Notification notification) {
-		return notificationRepository
-			.findByNamespaceAndMunicipalityIdAndOwnerIdAndAcknowledgedAndErrandEntityIdAndType(
-				namespace,
-				municipalityId,
-				notification.getOwnerId(),
-				notification.isAcknowledged(),
-				errandId,
-				notification.getType())
-			.isPresent();
 	}
 
 	public boolean doesNotificationWithSpecificDescriptionExistForOwnerAndErrandAndNotificationIsCreatedAfter(final String municipalityId, final String namespace, final String ownerId, final ErrandEntity errandEntity, final String description,
@@ -100,10 +91,24 @@ public class NotificationService {
 		notifications.forEach(notification -> updateNotification(municipalityId, namespace, notification.getId(), notification));
 	}
 
+	public void globalAcknowledgeNotificationsByErrandId(final String municipalityId, final String namespace, final String errandId) {
+
+		final var errandEntityList = notificationRepository.findAllByNamespaceAndMunicipalityIdAndErrandEntityId(namespace, municipalityId, errandId, unsorted());
+
+		errandEntityList.forEach(errand -> errand.withGlobalAcknowledged(true));
+
+		notificationRepository.saveAll(errandEntityList);
+	}
+
 	private void updateNotification(final String municipalityId, final String namespace, final String notificationId, final Notification notification) {
 		final var entity = notificationRepository.findByIdAndNamespaceAndMunicipalityIdAndErrandEntityId(notificationId, namespace, municipalityId, notification.getErrandId())
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, String.format(NOTIFICATION_ENTITY_NOT_FOUND, notificationId, namespace, municipalityId, notification.getErrandId())));
-		notificationRepository.save(NotificationMapper.updateEntity(entity, notification));
+
+		updateEntity(entity, notification);
+
+		applyBusinessLogicForUpdate(notification, entity);
+
+		notificationRepository.save(entity);
 	}
 
 	public void deleteNotification(final String municipalityId, final String namespace, final String errandId, final String notificationId) {
@@ -111,5 +116,52 @@ public class NotificationService {
 			throw Problem.valueOf(NOT_FOUND, String.format(NOTIFICATION_ENTITY_NOT_FOUND, notificationId, namespace, municipalityId, errandId));
 		}
 		notificationRepository.deleteById(notificationId);
+	}
+
+	private void applyBusinessLogicForCreate(final NotificationEntity notificationEntity) {
+
+		final var executingUser = executingUserSupplier.getAdUser();
+
+		// If notification is created by the user that owns the notification (ownnerId) it should be acknowledged from start.
+		if (equalsIgnoreCase(notificationEntity.getOwnerId(), executingUserSupplier.getAdUser())) {
+			notificationEntity.setAcknowledged(true);
+		}
+
+		// If ownerId is set, use this to fetch "ownerFullName".
+		if (hasText(notificationEntity.getOwnerId())) {
+			final var ownerFullName = Optional.ofNullable(employeeService.getEmployeeByLoginName(notificationEntity.getOwnerId()))
+				.map(PortalPersonData::getFullname)
+				.orElse(null);
+
+			notificationEntity.setOwnerFullName(ownerFullName);
+		}
+
+		// If executingUser is set, use this to populate "createdBy" and createdByFullName (but only if createdBy is empty).
+		if (hasText(executingUser)) {
+
+			final var createdByFullName = Optional.ofNullable(employeeService.getEmployeeByLoginName(executingUser))
+				.map(PortalPersonData::getFullname)
+				.orElse(null);
+
+			notificationEntity.setCreatedBy(executingUser);
+			notificationEntity.setCreatedByFullName(createdByFullName);
+		}
+	}
+
+	private void applyBusinessLogicForUpdate(final Notification notification, final NotificationEntity notificationEntity) {
+
+		// If a notification is acknowledged, it's also global_acknowledged.
+		if (notification.isAcknowledged()) {
+			notificationEntity.setGlobalAcknowledged(true);
+		}
+
+		// If ownerId is set, fetch "ownerFullName" again.
+		if (hasText(notification.getOwnerId())) {
+			final var ownerFullName = Optional.ofNullable(employeeService.getEmployeeByLoginName(notification.getOwnerId()))
+				.map(PortalPersonData::getFullname)
+				.orElse(null);
+
+			notificationEntity.setOwnerFullName(ownerFullName);
+		}
 	}
 }

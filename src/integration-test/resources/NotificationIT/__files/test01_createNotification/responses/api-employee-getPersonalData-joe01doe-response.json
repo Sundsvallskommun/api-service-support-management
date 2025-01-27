@@ -1,0 +1,17 @@
+{
+	"personid": "f739a0d1-605a-4236-8b81-3da5db391124",
+	"givenname": "Joe",
+	"lastname": "Doe",
+	"fullname": "Doe Joe",
+	"address": "",
+	"postalCode": "",
+	"city": "",
+	"aboutMe": "",
+	"email": "joe.doe@sundsvall.se",
+	"mailNickname": "joe.doe",
+	"company": "Sundsvalls kommun",
+	"companyId": 1,
+	"orgTree": "2|22|Kommunstyrelsekontoret¤3|222|KSK Avdelningar¤4|2222|KSK AVD Digital Transformation¤5|2222|KSK AVD Digitalisering IT stab¤6|2836|KSK AVD Digitalisering IT stab",
+	"isManager": false,
+	"loginName": "PERSONAL\\joe01doe"
+}

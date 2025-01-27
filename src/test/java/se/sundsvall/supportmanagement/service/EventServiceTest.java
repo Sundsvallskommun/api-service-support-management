@@ -11,7 +11,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import generated.se.sundsvall.employee.PortalPersonData;
 import generated.se.sundsvall.eventlog.Event;
 import generated.se.sundsvall.eventlog.EventType;
 import generated.se.sundsvall.eventlog.Metadata;
@@ -37,9 +36,6 @@ import se.sundsvall.supportmanagement.integration.eventlog.EventlogClient;
 
 @ExtendWith(MockitoExtension.class)
 class EventServiceTest {
-
-	@Mock
-	private EmployeeService employeeServiceMock;
 
 	@Mock
 	private NotificationService notificationServiceMock;
@@ -87,8 +83,6 @@ class EventServiceTest {
 
 		// Mock
 		when(executingUserSupplierMock.getAdUser()).thenReturn(executingUserId);
-		when(employeeServiceMock.getEmployeeByLoginName(assignedUserId)).thenReturn(new PortalPersonData().loginName(assignedUserId));
-		when(employeeServiceMock.getEmployeeByLoginName(executingUserId)).thenReturn(new PortalPersonData().loginName(executingUserId));
 
 		// Call
 		service.createErrandEvent(eventType, message, entity, currentRevision, previousRevision);
@@ -164,8 +158,6 @@ class EventServiceTest {
 
 		final var entity = ErrandEntity.create().withMunicipalityId(municipalityId).withId(errandId).withAssignedUserId(assignedUserId);
 		final var currentRevision = Revision.create().withId(currentRevisionId).withVersion(currentRevisionVersion);
-
-		when(employeeServiceMock.getEmployeeByLoginName(assignedUserId)).thenReturn(new PortalPersonData());
 
 		// Call
 		service.createErrandEvent(eventType, message, entity, currentRevision, null);
@@ -311,6 +303,7 @@ class EventServiceTest {
 
 	@Test
 	void readUnknownEvents() {
+
 		final var errandId = randomUUID().toString();
 		final var pageable = Pageable.unpaged();
 		final var municipalityId = "2281";
@@ -329,5 +322,4 @@ class EventServiceTest {
 			.extracting(se.sundsvall.supportmanagement.api.model.event.Event::getType)
 			.containsOnly(se.sundsvall.supportmanagement.api.model.event.EventType.UNKNOWN);
 	}
-
 }

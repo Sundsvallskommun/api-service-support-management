@@ -3,14 +3,16 @@ package se.sundsvall.supportmanagement.api;
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.zalando.problem.Status.BAD_REQUEST;
-import static org.zalando.problem.Status.CONFLICT;
 
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -21,7 +23,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
-import org.zalando.problem.Problem;
 import org.zalando.problem.violations.ConstraintViolationProblem;
 import org.zalando.problem.violations.Violation;
 import se.sundsvall.supportmanagement.Application;
@@ -47,15 +48,17 @@ class NotificationsCreateResourceFailureTest {
 
 	private static Stream<Arguments> provideBadRequests() {
 		return Stream.of(
-			Arguments.of(TestObjectsBuilder.createNotification(n -> n.withOwnerFullName(null)), "ownerFullName", "must not be blank"),
-			Arguments.of(TestObjectsBuilder.createNotification(n -> n.withOwnerId(null)), "ownerId", "must not be blank"),
-			Arguments.of(TestObjectsBuilder.createNotification(n -> n.withType(null)), "type", "must not be blank"),
-			Arguments.of(TestObjectsBuilder.createNotification(n -> n.withDescription(null)), "description", "must not be blank"));
+			Arguments.of(TestObjectsBuilder.createNotification(n -> n.withOwnerId(null).withErrandId(null)), "createNotification.notification.ownerId", "must not be blank"),
+			Arguments.of(TestObjectsBuilder.createNotification(n -> n.withType(null).withErrandId(null)), "createNotification.notification.type", "must not be blank"),
+			Arguments.of(TestObjectsBuilder.createNotification(n -> n.withDescription(null).withErrandId(null)), "createNotification.notification.description", "must not be blank"),
+			Arguments.of(TestObjectsBuilder.createNotification(n -> n.withErrandId("something").withOwnerFullName(null)), "createNotification.notification.errandId", "must be null"));
 	}
 
 	@ParameterizedTest
 	@MethodSource("provideBadRequests")
 	void createNotificationWithInvalidInputs(final Notification notification, final String expectedField, final String expectedMessage) {
+
+		when(notificationServiceMock.createNotification(eq(MUNICIPALITY_ID), eq(NAMESPACE), eq(ERRAND_ID), any())).thenReturn(UUID.randomUUID().toString());
 
 		// Call
 		final var response = webTestClient.post()
@@ -142,31 +145,5 @@ class NotificationsCreateResourceFailureTest {
 		// Verification
 		assertThat(response).isNotNull();
 		verifyNoInteractions(notificationServiceMock);
-	}
-
-	@Test
-	void createNotificationAlreadyExists() {
-		// Parameter values
-		final var requestBody = TestObjectsBuilder.createNotification(n -> {});
-		when(notificationServiceMock.createNotification(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, requestBody)).thenReturn(null);
-
-		// Call
-		final var response = webTestClient.post()
-			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
-			.contentType(APPLICATION_JSON)
-			.accept(APPLICATION_JSON)
-			.bodyValue(requestBody)
-			.exchange()
-			.expectStatus().is4xxClientError()
-			.expectBody(Problem.class)
-			.returnResult()
-			.getResponseBody();
-
-		// Verification
-		assertThat(response).isNotNull();
-
-		assertThat(response.getStatus()).isEqualTo(CONFLICT);
-		assertThat(response.getTitle()).isEqualTo("Conflict");
-		assertThat(response.getDetail()).isEqualTo("Notification already exists");
 	}
 }

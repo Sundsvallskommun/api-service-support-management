@@ -4,7 +4,6 @@ import static java.time.OffsetDateTime.now;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-import generated.se.sundsvall.employee.PortalPersonData;
 import generated.se.sundsvall.eventlog.Event;
 import generated.se.sundsvall.eventlog.EventType;
 import java.time.OffsetDateTime;
@@ -111,11 +110,11 @@ class NotificationMapperTest {
 	void testToNotificationEntity() {
 		final var entity = NotificationMapper.toNotificationEntity(NAMESPACE, MUNICIPALITY_ID, createNotification(), ERRAND_ENTITY);
 
-		assertThat(entity).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "created", "modified", "expires");
-		assertThat(entity.getOwnerFullName()).isEqualTo(OWNER_FULL_NAME);
+		assertThat(entity).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "created", "modified", "expires", "ownerFullName", "createdByFullName");
+		assertThat(entity.getOwnerFullName()).isNull();
 		assertThat(entity.getOwnerId()).isEqualTo(OWNER_ID);
 		assertThat(entity.getCreatedBy()).isEqualTo(CREATED_BY);
-		assertThat(entity.getCreatedByFullName()).isEqualTo(CREATED_BY_FULL_NAME);
+		assertThat(entity.getCreatedByFullName()).isNull();
 		assertThat(entity.getType()).isEqualTo(TYPE);
 		assertThat(entity.getDescription()).isEqualTo(DESCRIPTION);
 		assertThat(entity.getContent()).isEqualTo(CONTENT);
@@ -149,10 +148,10 @@ class NotificationMapperTest {
 		assertThat(updatedEntity.getCreated()).isEqualTo(CREATED);
 		assertThat(updatedEntity.getModified()).isEqualTo(MODIFIED);
 		assertThat(updatedEntity.getExpires()).isEqualTo(NEW_EXPIRES);
-		assertThat(updatedEntity.getOwnerFullName()).isEqualTo(NEW_OWNER_FULL_NAME);
+		assertThat(updatedEntity.getOwnerFullName()).isEqualTo(OWNER_FULL_NAME);
 		assertThat(updatedEntity.getOwnerId()).isEqualTo(NEW_OWNER_ID);
-		assertThat(updatedEntity.getCreatedBy()).isEqualTo(NEW_CREATED_BY);
-		assertThat(updatedEntity.getCreatedByFullName()).isEqualTo(NEW_CREATED_BY_FULL_NAME);
+		assertThat(updatedEntity.getCreatedBy()).isEqualTo(CREATED_BY);
+		assertThat(updatedEntity.getCreatedByFullName()).isEqualTo(CREATED_BY_FULL_NAME);
 		assertThat(updatedEntity.getType()).isEqualTo(NEW_TYPE);
 		assertThat(updatedEntity.getDescription()).isEqualTo(NEW_DESCRIPTION);
 		assertThat(updatedEntity.getContent()).isEqualTo(NEW_CONTENT);
@@ -175,16 +174,12 @@ class NotificationMapperTest {
 			.withId(ERRAND_ID)
 			.withAssignedUserId(OWNER_ID)
 			.withErrandNumber(ERRAND_NUMBER);
-		final var owner = new PortalPersonData()
-			.fullname(OWNER_FULL_NAME);
-		final var creator = new PortalPersonData()
-			.fullname(CREATED_BY_FULL_NAME);
 
 		// Act
-		final var notification = NotificationMapper.toNotification(event, errandEntity, owner, creator, CREATED_BY);
+		final var notification = NotificationMapper.toNotification(event, errandEntity, CREATED_BY);
 
 		// Assert
-		assertThat(notification).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "content", "expires");
+		assertThat(notification).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "content", "expires", "ownerFullName", "createdByFullName");
 		assertThat(notification.getDescription()).isEqualTo(DESCRIPTION);
 		assertThat(notification.getErrandId()).isEqualTo(ERRAND_ID);
 		assertThat(notification.getErrandNumber()).isEqualTo(ERRAND_NUMBER);
@@ -192,9 +187,9 @@ class NotificationMapperTest {
 		assertThat(notification.getExpires()).isEqualTo(EXPIRES);
 		assertThat(notification.getCreated()).isEqualTo(CREATED);
 		assertThat(notification.getOwnerId()).isEqualTo(OWNER_ID);
-		assertThat(notification.getOwnerFullName()).isEqualTo(OWNER_FULL_NAME);
+		assertThat(notification.getOwnerFullName()).isNull();
 		assertThat(notification.getCreatedBy()).isEqualTo(CREATED_BY);
-		assertThat(notification.getCreatedByFullName()).isEqualTo(CREATED_BY_FULL_NAME);
+		assertThat(notification.getCreatedByFullName()).isNull();
 	}
 
 	@Test
@@ -213,10 +208,10 @@ class NotificationMapperTest {
 			.withErrandNumber(ERRAND_NUMBER);
 
 		// Act
-		final var notification = NotificationMapper.toNotification(event, errandEntity, null, null, CREATED_BY);
+		final var notification = NotificationMapper.toNotification(event, errandEntity, CREATED_BY);
 
 		// Assert
-		assertThat(notification).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "content", "expires");
+		assertThat(notification).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "content", "expires", "ownerFullName", "createdByFullName");
 		assertThat(notification.getDescription()).isEqualTo(DESCRIPTION);
 		assertThat(notification.getErrandId()).isEqualTo(ERRAND_ID);
 		assertThat(notification.getErrandNumber()).isEqualTo(ERRAND_NUMBER);
@@ -224,8 +219,8 @@ class NotificationMapperTest {
 		assertThat(notification.getExpires()).isEqualTo(EXPIRES);
 		assertThat(notification.getCreated()).isEqualTo(CREATED);
 		assertThat(notification.getOwnerId()).isEqualTo(OWNER_ID);
-		assertThat(notification.getOwnerFullName()).isEqualTo("unknown");
+		assertThat(notification.getOwnerFullName()).isNull();
 		assertThat(notification.getCreatedBy()).isEqualTo(CREATED_BY);
-		assertThat(notification.getCreatedByFullName()).isEqualTo("unknown");
+		assertThat(notification.getCreatedByFullName()).isNull();
 	}
 }

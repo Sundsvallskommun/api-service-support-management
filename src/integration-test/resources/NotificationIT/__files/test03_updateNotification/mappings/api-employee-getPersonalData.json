@@ -1,0 +1,19 @@
+{
+	"request": {
+		"headers": {
+			"Authorization": {
+				"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
+			}
+		},
+		"method": "GET",
+		"urlPath": "/api-employee/portalpersondata/personal/owner_id_new"
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/json"
+		},
+		"bodyFileName": "test03_updateNotification/responses/api-employee-getPersonalData-response.json",
+		"status": 200
+	},
+	"name": "api-employee-getPersonalData"
+}

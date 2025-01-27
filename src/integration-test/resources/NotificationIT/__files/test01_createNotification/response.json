@@ -1,0 +1,16 @@
+{
+	"id": "${json-unit.any-string}",
+	"created": "${json-unit.any-string}",
+	"ownerFullName": "Doe Joe",
+	"ownerId": "joe01doe",
+	"createdBy": "jane02doe",
+	"createdByFullName": "Doe Jane",
+	"type": "CREATE",
+	"description": "Some description of the notification",
+	"content": "Some content of the notification",
+	"expires": "2000-10-30T23:30:00Z",
+	"globalAcknowledged": false,
+	"acknowledged": false,
+	"errandId": "ec677eb3-604c-4935-bff7-f8f0b500c8f4",
+	"errandNumber": "KC-23020001"
+}

@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.api;
 
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
@@ -10,7 +11,6 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
 
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -63,12 +63,10 @@ class NotificationsResourceTest {
 	void createNotification() {
 		// Parameter values
 		final var requestBody = Notification.create()
-			.withOwnerFullName("SomeOwner")
 			.withOwnerId("SomeOwnerId")
 			.withCreatedBy("SomeUser")
 			.withType("SomeType")
 			.withDescription("Some description")
-			.withErrandId(UUID.randomUUID().toString())
 			.withAcknowledged(true);
 
 		// Mock
@@ -97,8 +95,7 @@ class NotificationsResourceTest {
 	void globalAcknowledgeNotifications() {
 
 		// Mock
-		// TODO: Mock service
-		// when(notificationServiceMock.globalAcknowledge(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID));
+		doNothing().when(notificationServiceMock).globalAcknowledgeNotificationsByErrandId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID);
 
 		// Call
 		final var response = webTestClient.put()
@@ -111,16 +108,14 @@ class NotificationsResourceTest {
 
 		// Verification
 		assertThat(response).isNotNull();
-
-		// TODO: Verify service
-		// verify(notificationServiceMock).globalAcknowledge(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID);
+		verify(notificationServiceMock).globalAcknowledgeNotificationsByErrandId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID);
 	}
 
 	@Test
 	void updateNotification() {
 		// Parameter values
 		final var notificationId = randomUUID().toString();
-		final var requestBody = List.of(TestObjectsBuilder.createNotification(n -> n.withOwnerId(notificationId)));
+		final var requestBody = List.of(TestObjectsBuilder.createNotification(n -> n.withId(notificationId)));
 
 		// Call
 		final var response = webTestClient.patch()

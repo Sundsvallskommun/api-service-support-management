@@ -45,10 +45,8 @@ class NotificationsUpdateResourceFailureTest {
 
 	private static Stream<Arguments> provideBadRequests() {
 		return Stream.of(
-			Arguments.of(List.of(TestObjectsBuilder.createNotification(n -> n.withOwnerFullName(null))), "updateNotifications.notifications[0].ownerFullName", "must not be blank"),
-			Arguments.of(List.of(TestObjectsBuilder.createNotification(n -> n.withOwnerId(null))), "updateNotifications.notifications[0].ownerId", "must not be blank"),
-			Arguments.of(List.of(TestObjectsBuilder.createNotification(n -> n.withType(null))), "updateNotifications.notifications[0].type", "must not be blank"),
-			Arguments.of(List.of(TestObjectsBuilder.createNotification(n -> n.withDescription(null))), "updateNotifications.notifications[0].description", "must not be blank"),
+			Arguments.of(List.of(TestObjectsBuilder.createNotification(n -> {}).withId(null)), "updateNotifications.notifications[0].id", "not a valid UUID"),
+			Arguments.of(List.of(TestObjectsBuilder.createNotification(n -> {}).withId(randomUUID().toString()).withErrandId(null)), "updateNotifications.notifications[0].errandId", "not a valid UUID"),
 			Arguments.arguments(List.of(), "updateNotifications.notifications", "must not be empty"));
 	}
 
