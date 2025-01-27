@@ -4,10 +4,10 @@ info:
   contact: { }
   license:
     name: MIT License
-    url: 'https://opensource.org/licenses/MIT'
-  version: '2.0'
+    url: https://opensource.org/licenses/MIT
+  version: "4.0"
 servers:
-  - url: 'http://localhost:55919'
+  - url: http://localhost:55654
     description: Generated server url
 tags:
   - name: Email
@@ -15,7 +15,7 @@ tags:
   - name: Credentials
     description: Credentials
 paths:
-  '/{municipalityId}/credentials/{id}':
+  /{municipalityId}/credentials/{id}:
     put:
       tags:
         - Credentials
@@ -26,8 +26,6 @@ paths:
           in: path
           description: Municipality id
           required: true
-          style: simple
-          explode: false
           schema:
             type: string
           example: 2281
@@ -35,8 +33,6 @@ paths:
           in: path
           description: Email message ID
           required: true
-          style: simple
-          explode: false
           schema:
             type: string
           example: 81471222-5798-11e9-ae24-57fa13b361e1
@@ -44,45 +40,31 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Credentials'
+              $ref: "#/components/schemas/Credentials"
         required: true
       responses:
-        '204':
+        "204":
           description: No content
-        '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        '500':
+        "500":
           description: Internal Server Error
           content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
             application/problem+json:
               schema:
-                $ref: '#/components/schemas/Problem'
-        '502':
+                $ref: "#/components/schemas/Problem"
+        "502":
           description: Bad Gateway
           content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
             application/problem+json:
               schema:
-                $ref: '#/components/schemas/Problem'
-      security:
-        - default: [ ]
-      x-throttling-tier: Unlimited
-      x-wso2-application-security:
-        security-types:
-          - oauth2
-        optional: false
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/Problem"
+                  - $ref: "#/components/schemas/ConstraintViolationProblem"
     delete:
       tags:
         - Credentials
@@ -93,8 +75,6 @@ paths:
           in: path
           description: Municipality id
           required: true
-          style: simple
-          explode: false
           schema:
             type: string
           example: 2281
@@ -102,49 +82,33 @@ paths:
           in: path
           description: Email message ID
           required: true
-          style: simple
-          explode: false
           schema:
             type: string
           example: 81471222-5798-11e9-ae24-57fa13b361e1
       responses:
-        '204':
+        "204":
           description: No content
-        '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        '500':
+        "500":
           description: Internal Server Error
           content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
             application/problem+json:
               schema:
-                $ref: '#/components/schemas/Problem'
-        '502':
+                $ref: "#/components/schemas/Problem"
+        "502":
           description: Bad Gateway
           content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
             application/problem+json:
               schema:
-                $ref: '#/components/schemas/Problem'
-      security:
-        - default: [ ]
-      x-throttling-tier: Unlimited
-      x-wso2-application-security:
-        security-types:
-          - oauth2
-        optional: false
-  '/{municipalityId}/credentials':
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/Problem"
+                  - $ref: "#/components/schemas/ConstraintViolationProblem"
+  /{municipalityId}/credentials:
     get:
       tags:
         - Credentials
@@ -155,59 +119,38 @@ paths:
           in: path
           description: Municipality id
           required: true
-          style: simple
-          explode: false
           schema:
             type: string
           example: 2281
       responses:
-        '200':
+        "200":
           description: Ok
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Credentials'
-            application/problem+json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Credentials'
-        '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        '500':
+                  $ref: "#/components/schemas/Credentials"
+        "500":
           description: Internal Server Error
           content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
             application/problem+json:
               schema:
-                $ref: '#/components/schemas/Problem'
-        '502':
+                $ref: "#/components/schemas/Problem"
+        "502":
           description: Bad Gateway
           content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
             application/problem+json:
               schema:
-                $ref: '#/components/schemas/Problem'
-      security:
-        - default: [ ]
-      x-throttling-tier: Unlimited
-      x-wso2-application-security:
-        security-types:
-          - oauth2
-        optional: false
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/Problem"
+                  - $ref: "#/components/schemas/ConstraintViolationProblem"
     post:
       tags:
         - Credentials
@@ -218,8 +161,6 @@ paths:
           in: path
           description: Municipality id
           required: true
-          style: simple
-          explode: false
           schema:
             type: string
           example: 2281
@@ -227,46 +168,32 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Credentials'
+              $ref: "#/components/schemas/Credentials"
         required: true
       responses:
-        '204':
+        "204":
           description: No content
-        '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        '500':
+        "500":
           description: Internal Server Error
           content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
             application/problem+json:
               schema:
-                $ref: '#/components/schemas/Problem'
-        '502':
+                $ref: "#/components/schemas/Problem"
+        "502":
           description: Bad Gateway
           content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
             application/problem+json:
               schema:
-                $ref: '#/components/schemas/Problem'
-      security:
-        - default: [ ]
-      x-throttling-tier: Unlimited
-      x-wso2-application-security:
-        security-types:
-          - oauth2
-        optional: false
-  '/{municipalityId}/email/{namespace}':
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/Problem"
+                  - $ref: "#/components/schemas/ConstraintViolationProblem"
+  /{municipalityId}/email/{namespace}:
     get:
       tags:
         - Email
@@ -277,8 +204,6 @@ paths:
           in: path
           description: Municipality id
           required: true
-          style: simple
-          explode: false
           schema:
             type: string
           example: 2281
@@ -286,59 +211,84 @@ paths:
           in: path
           description: A specific namespace
           required: true
-          style: simple
-          explode: false
           schema:
             type: string
           example: CONTACTCENTER
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Email'
-            application/problem+json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Email'
-        '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        '500':
+                  $ref: "#/components/schemas/Email"
+        "500":
           description: Internal Server Error
           content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
             application/problem+json:
               schema:
-                $ref: '#/components/schemas/Problem'
-        '502':
+                $ref: "#/components/schemas/Problem"
+        "502":
           description: Bad Gateway
           content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
             application/problem+json:
               schema:
-                $ref: '#/components/schemas/Problem'
-      security:
-        - default: [ ]
-      x-throttling-tier: Unlimited
-      x-wso2-application-security:
-        security-types:
-          - oauth2
-        optional: false
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/Problem"
+                  - $ref: "#/components/schemas/ConstraintViolationProblem"
+  /{municipalityId}/email/attachments/{attachmentId}:
+    get:
+      tags:
+        - Email
+      summary: Get a messageAttachment
+      description: Returns a messageAttachment as a stream for the specified attachmentId
+      operationId: getAttachment
+      parameters:
+        - name: municipalityId
+          in: path
+          description: Municipality Id
+          required: true
+          schema:
+            type: string
+          example: 2281
+        - name: attachmentId
+          in: path
+          description: MessageId to fetch attachment for
+          required: true
+          schema:
+            type: integer
+            format: int32
+          example: 123
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "502":
+          description: Bad Gateway
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/Problem"
+                  - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "200":
+          description: Successful Operation
   /api-docs:
     get:
       tags:
@@ -346,22 +296,16 @@ paths:
       summary: OpenAPI
       operationId: getApiDocs
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/yaml:
               schema:
                 type: string
-      security:
-        - default: [ ]
       x-auth-type: None
       x-throttling-tier: Unlimited
       x-wso2-mutual-ssl: Optional
-      x-wso2-application-security:
-        security-types:
-          - oauth2
-        optional: false
-  '/{municipalityId}/email/{id}':
+  /{municipalityId}/email/{id}:
     delete:
       tags:
         - Email
@@ -372,8 +316,6 @@ paths:
           in: path
           description: Municipality id
           required: true
-          style: simple
-          explode: false
           schema:
             type: string
           example: 2281
@@ -381,48 +323,32 @@ paths:
           in: path
           description: Email message ID
           required: true
-          style: simple
-          explode: false
           schema:
             type: string
           example: 81471222-5798-11e9-ae24-57fa13b361e1
       responses:
-        '204':
+        "204":
           description: No content
-        '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        '500':
+        "500":
           description: Internal Server Error
           content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
             application/problem+json:
               schema:
-                $ref: '#/components/schemas/Problem'
-        '502':
+                $ref: "#/components/schemas/Problem"
+        "502":
           description: Bad Gateway
           content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
             application/problem+json:
               schema:
-                $ref: '#/components/schemas/Problem'
-      security:
-        - default: [ ]
-      x-throttling-tier: Unlimited
-      x-wso2-application-security:
-        security-types:
-          - oauth2
-        optional: false
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/Problem"
+                  - $ref: "#/components/schemas/ConstraintViolationProblem"
 components:
   schemas:
     Credentials:
@@ -451,9 +377,8 @@ components:
           example: mySecretPassword
         emailAddress:
           type: array
-          description: >-
-            List of email addresses to check for new emails. The provided user
-            must have access to these email addresses.
+          description: List of email addresses to check for new emails. The provided
+            user must have access to these email addresses.
           example:
             - myothersupportemail@sundsvall.se
             - mysupportemail@sundsvall.se
@@ -462,17 +387,21 @@ components:
         domain:
           type: string
           description: domain for the email server
-          example: 'https://mail.example.com/EWS/Exchange.asmx'
+          example: https://mail.example.com/EWS/Exchange.asmx
         namespace:
           type: string
           description: Namespace
           example: my.namespace
+        action:
+          type: string
+          description: Action to take for new emails
+          example: PERSIST
         metadata:
           type: object
           additionalProperties:
             type: string
             description: Metadata to add to the email
-            example: '{"casetype":"myCaseType","key2":"value2"}'
+            example: "{\"casetype\":\"myCaseType\",\"key2\":\"value2\"}"
           description: Metadata to add to the email
           example:
             casetype: myCaseType
@@ -496,7 +425,7 @@ components:
           additionalProperties:
             type: object
         status:
-          $ref: '#/components/schemas/StatusType'
+          $ref: "#/components/schemas/StatusType"
         title:
           type: string
         detail:
@@ -508,6 +437,173 @@ components:
           type: integer
           format: int32
         reasonPhrase:
+          type: string
+    ConstraintViolationProblem:
+      type: object
+      properties:
+        cause:
+          $ref: "#/components/schemas/ThrowableProblem"
+        stackTrace:
+          type: array
+          items:
+            type: object
+            properties:
+              classLoaderName:
+                type: string
+              moduleName:
+                type: string
+              moduleVersion:
+                type: string
+              methodName:
+                type: string
+              fileName:
+                type: string
+              lineNumber:
+                type: integer
+                format: int32
+              className:
+                type: string
+              nativeMethod:
+                type: boolean
+        type:
+          type: string
+          format: uri
+        status:
+          $ref: "#/components/schemas/StatusType"
+        violations:
+          type: array
+          items:
+            $ref: "#/components/schemas/Violation"
+        title:
+          type: string
+        message:
+          type: string
+        instance:
+          type: string
+          format: uri
+        parameters:
+          type: object
+          additionalProperties:
+            type: object
+        detail:
+          type: string
+        suppressed:
+          type: array
+          items:
+            type: object
+            properties:
+              stackTrace:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    classLoaderName:
+                      type: string
+                    moduleName:
+                      type: string
+                    moduleVersion:
+                      type: string
+                    methodName:
+                      type: string
+                    fileName:
+                      type: string
+                    lineNumber:
+                      type: integer
+                      format: int32
+                    className:
+                      type: string
+                    nativeMethod:
+                      type: boolean
+              message:
+                type: string
+              localizedMessage:
+                type: string
+        localizedMessage:
+          type: string
+    ThrowableProblem:
+      type: object
+      properties:
+        cause:
+          $ref: "#/components/schemas/ThrowableProblem"
+        stackTrace:
+          type: array
+          items:
+            type: object
+            properties:
+              classLoaderName:
+                type: string
+              moduleName:
+                type: string
+              moduleVersion:
+                type: string
+              methodName:
+                type: string
+              fileName:
+                type: string
+              lineNumber:
+                type: integer
+                format: int32
+              className:
+                type: string
+              nativeMethod:
+                type: boolean
+        message:
+          type: string
+        instance:
+          type: string
+          format: uri
+        type:
+          type: string
+          format: uri
+        parameters:
+          type: object
+          additionalProperties:
+            type: object
+        status:
+          $ref: "#/components/schemas/StatusType"
+        title:
+          type: string
+        detail:
+          type: string
+        suppressed:
+          type: array
+          items:
+            type: object
+            properties:
+              stackTrace:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    classLoaderName:
+                      type: string
+                    moduleName:
+                      type: string
+                    moduleVersion:
+                      type: string
+                    methodName:
+                      type: string
+                    fileName:
+                      type: string
+                    lineNumber:
+                      type: integer
+                      format: int32
+                    className:
+                      type: string
+                    nativeMethod:
+                      type: boolean
+              message:
+                type: string
+              localizedMessage:
+                type: string
+        localizedMessage:
+          type: string
+    Violation:
+      type: object
+      properties:
+        field:
+          type: string
+        message:
           type: string
     Email:
       type: object
@@ -541,7 +637,7 @@ components:
           additionalProperties:
             type: string
             description: Metadata for the email
-            example: '{"casetype":"myCaseType","key2":"value2"}'
+            example: "{\"casetype\":\"myCaseType\",\"key2\":\"value2\"}"
           description: Metadata for the email
           example:
             casetype: myCaseType
@@ -550,7 +646,7 @@ components:
           type: string
           description: The date and time the email was received
           format: date-time
-          example: '2021-09-01T10:00:00Z'
+          example: 2021-09-01T12:00:00+02:00
         headers:
           type: object
           additionalProperties:
@@ -563,12 +659,12 @@ components:
                 - reference1
                 - reference2
               MESSAGE_ID:
-                - '123456789'
+                - "123456789"
             items:
               type: string
               description: The email headers
-              example: >-
-                {"IN_REPLY_TO":["reply-to@example.com"],"REFERENCES":["reference1","reference2"],"MESSAGE_ID":["123456789"]}
+              example: "{\"IN_REPLY_TO\":[\"reply-to@example.com\"],\"REFERENCES\"\
+                :[\"reference1\",\"reference2\"],\"MESSAGE_ID\":[\"123456789\"]}"
           description: The email headers
           example:
             IN_REPLY_TO:
@@ -577,16 +673,21 @@ components:
               - reference1
               - reference2
             MESSAGE_ID:
-              - '123456789'
+              - "123456789"
         attachments:
           type: array
           items:
-            $ref: '#/components/schemas/EmailAttachment'
+            $ref: "#/components/schemas/EmailAttachment"
       description: Email
       readOnly: true
     EmailAttachment:
       type: object
       properties:
+        id:
+          type: integer
+          description: The attachment id
+          format: int64
+          example: 1
         name:
           type: string
           description: The attachment filename
@@ -595,45 +696,5 @@ components:
           type: string
           description: The attachment content type
           example: text/plain
-        content:
-          type: string
-          description: The attachment (file) content as a BASE64-encoded string
-          example: aGVsbG8gd29ybGQK
       description: Attachment
-  securitySchemes:
-    default:
-      type: oauth2
-      flows:
-        implicit:
-          authorizationUrl: 'https://test.com'
-          scopes: { }
-x-wso2-cors:
-  corsConfigurationEnabled: false
-  accessControlAllowOrigins:
-    - '*'
-  accessControlAllowCredentials: false
-  accessControlAllowHeaders:
-    - authorization
-    - Access-Control-Allow-Origin
-    - Content-Type
-    - SOAPAction
-    - apikey
-    - testKey
-  accessControlAllowMethods:
-    - GET
-    - PUT
-    - POST
-    - DELETE
-    - PATCH
-    - OPTIONS
-x-wso2-production-endpoints:
-  urls:
-    - 'https://email-reader-af-emailreader.apps.ocp101.sundsvall.se/'
-  type: http
-x-wso2-basePath: /email-reader/2.0
-x-wso2-transports:
-  - http
-  - https
-x-wso2-response-cache:
-  enabled: false
-  cacheTimeoutInSeconds: 300
+  securitySchemes: { }

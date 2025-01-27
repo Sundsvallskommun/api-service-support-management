@@ -1,16 +1,16 @@
 package se.sundsvall.supportmanagement.service.scheduler.emailreader;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.Direction.INBOUND;
 
 import generated.se.sundsvall.emailreader.Email;
 import generated.se.sundsvall.emailreader.EmailAttachment;
-import java.sql.Blob;
+import java.sql.SQLException;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
+import javax.sql.rowset.serial.SerialBlob;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -29,52 +29,13 @@ class EmailReaderMapperTest {
 	@Mock
 	private BlobBuilder blobBuilderMock;
 
-	@Mock
-	private Blob blobMock;
-
 	@InjectMocks
 	private EmailReaderMapper emailReaderMapper;
-
-	@Test
-	void toAttachments() {
-
-		when(blobBuilderMock.createBlob(anyString())).thenReturn(blobMock);
-
-		final var email = new Email()
-			.id("someId")
-			.subject("someSubject")
-			.recipients(List.of("someRecipient"))
-			.sender("someSender")
-			.message("someMessage")
-			.receivedAt(OffsetDateTime.now())
-			.attachments(List.of(new EmailAttachment()
-				.name("someName")
-				.content("someContent")
-				.contentType("text/plain")));
-
-		final var result = emailReaderMapper.toAttachments(email).getFirst();
-
-		assertThat(result).isNotNull();
-		assertThat(result.getFileName()).isEqualTo("someName");
-		assertThat(result.getAttachmentData().getFile()).isSameAs(blobMock);
-		assertThat(result.getMimeType()).isEqualTo("text/plain");
-		assertThat(result.getErrandEntity()).isNull();
-	}
-
-	@Test
-	void toAttachments_null() {
-
-		final var result = emailReaderMapper.toAttachments(null);
-
-		assertThat(result).isNotNull().isEmpty();
-	}
 
 	@Test
 	void toCommunicationEntity() {
 
 		// Arrange
-		when(blobBuilderMock.createBlob(anyString())).thenReturn(blobMock);
-
 		final var errandEntity = ErrandEntity.create()
 			.withNamespace("someNamespace")
 			.withMunicipalityId("someMunicipalityId")
@@ -90,14 +51,13 @@ class EmailReaderMapperTest {
 			.receivedAt(OffsetDateTime.now())
 			.attachments(List.of(new EmailAttachment()
 				.name("someName")
-				.content("someContent")
 				.contentType("text/plain")));
 
 		// Act
 		final var result = emailReaderMapper.toCommunicationEntity(email, errandEntity);
 
 		// Assert
-		assertThat(result).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "errandNumber", "errandAttachments", "senderUserId");
+		assertThat(result).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "errandNumber", "errandAttachments", "senderUserId", "attachmentData");
 		assertThat(result.getSubject()).isEqualTo("someSubject");
 		assertThat(result.getExternalId()).isEmpty();
 		assertThat(result.getErrandNumber()).isEqualTo("someErrandNumber");
@@ -110,7 +70,7 @@ class EmailReaderMapperTest {
 		assertThat(result.getAttachments()).isNotNull().hasSize(1);
 		assertThat(result.getAttachments().getFirst().getName()).isEqualTo("someName");
 		assertThat(result.getAttachments().getFirst().getContentType()).isEqualTo("text/plain");
-		assertThat(result.getAttachments().getFirst().getAttachmentData().getFile()).isNotNull().isEqualTo(blobMock);
+		assertThat(result.getAttachments().getFirst().getAttachmentData()).isNull();
 		assertThat(result.getEmailHeaders()).isNotNull().hasSize(1);
 		assertThat(result.getEmailHeaders().getFirst().getHeader()).isEqualTo(EmailHeader.MESSAGE_ID);
 		assertThat(result.getEmailHeaders().getFirst().getValues()).isNotNull().hasSize(1).contains("someValue");
@@ -135,7 +95,6 @@ class EmailReaderMapperTest {
 			.receivedAt(OffsetDateTime.now())
 			.attachments(List.of(new EmailAttachment()
 				.name("someName")
-				.content("someContent")
 				.contentType("text/plain")));
 
 		// Act
@@ -146,7 +105,7 @@ class EmailReaderMapperTest {
 		assertThat(result.getTarget()).isNull();
 		assertThat(result.getErrandNumber()).isEqualTo("someErrandNumber");
 		assertThat(result.getAttachments()).isNotNull().hasSize(1);
-		assertThat(result.getAttachments().getFirst()).hasNoNullFieldsOrPropertiesExcept("id", "foreignId");
+		assertThat(result.getAttachments().getFirst()).hasNoNullFieldsOrPropertiesExcept("id", "foreignId", "fileSize", "attachmentData");
 	}
 
 	@Test
@@ -230,5 +189,22 @@ class EmailReaderMapperTest {
 		assertThat(result.getEmailHeaders().get(EmailHeader.IN_REPLY_TO)).isNotNull().hasSize(1).contains("someValue");
 		assertThat(result.getEmailHeaders().get(EmailHeader.REFERENCES)).isNotNull().hasSize(1).contains("someValue");
 		assertThat(result.getEmailHeaders().get(EmailHeader.AUTO_SUBMITTED)).isNotNull().hasSize(1).contains("auto-generated");
+	}
+
+	@Test
+	void toCommunicationAttachmentDataEntity() throws SQLException {
+
+		// Arrange
+		final var attachmentData = "attachmentData".getBytes();
+		final var blob = new SerialBlob(attachmentData);
+		when(blobBuilderMock.createBlob(attachmentData)).thenReturn(blob);
+
+		// Act
+		final var result = emailReaderMapper.toCommunicationAttachmentDataEntity(attachmentData);
+
+		// Assert
+		assertThat(result).isNotNull();
+		assertThat(result.getFile()).isNotNull();
+		assertThat(result.getFile()).isSameAs(blob);
 	}
 }

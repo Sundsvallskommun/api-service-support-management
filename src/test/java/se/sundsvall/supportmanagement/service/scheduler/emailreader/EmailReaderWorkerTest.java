@@ -28,6 +28,7 @@ import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.integration.db.EmailWorkerConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.model.CommunicationAttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.EmailWorkerConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
@@ -104,14 +105,14 @@ class EmailReaderWorkerTest {
 	@Test
 	void shouldProcessEmails() {
 		// ARRANGE
-
 		final var email = new Email();
 		email.setSubject("Ärende #PRH-2022-000001 Ansökan om bygglov för fastighet KATARINA 4");
 		email.setId("id");
+		final var bytes = "someFileContet".getBytes();
 
 		final var emailConfig = EmailWorkerConfigEntity.create()
 			.withEnabled(true)
-			.withMunicipalityId("municipalityId")
+			.withMunicipalityId(MUNICIPALITY_ID)
 			.withNamespace("namespace")
 			.withErrandClosedEmailSender("errandClosedEmailSender")
 			.withErrandClosedEmailTemplate("errandClosedEmailTemplate")
@@ -122,11 +123,13 @@ class EmailReaderWorkerTest {
 			.withInactiveStatus("SOLVED");
 
 		final var errandEntity = ErrandEntity.create().withId("id").withStatus("SOLVED").withCreated(OffsetDateTime.now().minusDays(1)).withModified(OffsetDateTime.now()).withTouched(OffsetDateTime.now());
-		final var communicationEntity = CommunicationEntity.create();
+		final var communicationEntity = CommunicationEntity.create().withAttachments(List.of(CommunicationAttachmentEntity
+			.create().withForeignId("2").withMunicipalityId(MUNICIPALITY_ID)));
 
 		// MOCK
 		when(errandRepositoryMock.findByErrandNumber(anyString())).thenReturn(Optional.of(errandEntity));
 		when(emailReaderMapperMock.toCommunicationEntity(any(), any())).thenReturn(communicationEntity);
+		when(emailReaderClientMock.getAttachment(MUNICIPALITY_ID, 2)).thenReturn(bytes);
 
 		// ACT
 		emailReaderWorker.processEmail(email, emailConfig);
@@ -135,10 +138,12 @@ class EmailReaderWorkerTest {
 		verify(errandRepositoryMock).findByErrandNumber("PRH-2022-000001");
 		verify(errandRepositoryMock).save(same(errandEntity));
 		verify(emailReaderMapperMock).toCommunicationEntity(same(email), same(errandEntity));
-		verify(emailReaderClientMock).deleteEmail("municipalityId", email.getId());
+		verify(emailReaderClientMock).deleteEmail(MUNICIPALITY_ID, email.getId());
 		verify(communicationServiceMock).saveAttachment(same(communicationEntity), same(errandEntity));
 		verify(communicationServiceMock).saveCommunication(same(communicationEntity));
 		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Ärendekommunikation har skapats."), same(errandEntity), isNull(), isNull());
+		verify(emailReaderClientMock).getAttachment(MUNICIPALITY_ID, 2);
+		verify(emailReaderMapperMock).toCommunicationAttachmentDataEntity(bytes);
 		verifyNoInteractions(errandServiceMock);
 		verifyNoMoreInteractions(emailReaderClientMock, errandRepositoryMock, emailReaderMapperMock, communicationServiceMock, emailWorkerConfigRepositoryMock, eventServiceMock);
 	}
