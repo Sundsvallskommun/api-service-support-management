@@ -2,7 +2,7 @@
 	{
 		"id": "27e2d65d-e0d1-4b4c-b0ac-9bcc872977a9",
 		"created": "2023-12-31T23:59:59.999+01:00",
-		"modified": "2023-12-31T23:59:59.999+01:00",
+		"modified": "${json-unit.any-string}",
 		"ownerFullName": "owner_full_name-1",
 		"ownerId": "owner_id-1",
 		"createdBy": "created_by-1",
@@ -10,7 +10,7 @@
 		"description": "description-1-c",
 		"content": "content-1-c",
 		"expires": "2024-12-31T23:59:59.999Z",
-		"globalAcknowledged": false,
+		"globalAcknowledged": true,
 		"acknowledged": false,
 		"errandId": "ec677eb3-604c-4935-bff7-f8f0b500c8f4",
 		"errandNumber": "KC-23020001"
@@ -18,7 +18,7 @@
 	{
 		"id": "3ec421e9-56d1-4e47-9160-259d8dbe6a50",
 		"created": "2023-12-31T23:59:59.999+01:00",
-		"modified": "2023-12-31T23:59:59.999+01:00",
+		"modified": "${json-unit.any-string}",
 		"ownerFullName": "owner_full_name-1",
 		"ownerId": "owner_id-1",
 		"createdBy": "created_by-1",
@@ -26,7 +26,7 @@
 		"description": "description-1-a",
 		"content": "content-1-a",
 		"expires": "2024-12-31T23:59:59.999Z",
-		"globalAcknowledged": false,
+		"globalAcknowledged": true,
 		"acknowledged": false,
 		"errandId": "ec677eb3-604c-4935-bff7-f8f0b500c8f4",
 		"errandNumber": "KC-23020001"
@@ -34,7 +34,7 @@
 	{
 		"id": "5049e4d5-0969-4cb5-b6a6-6a3d3d057dfc",
 		"created": "2023-12-31T23:59:59.999+01:00",
-		"modified": "2023-12-31T23:59:59.999+01:00",
+		"modified": "${json-unit.any-string}",
 		"ownerFullName": "owner_full_name-1",
 		"ownerId": "owner_id-1",
 		"createdBy": "created_by-1",
@@ -42,7 +42,7 @@
 		"description": "description-1-b",
 		"content": "content-1-b",
 		"expires": "2024-12-31T23:59:59.999Z",
-		"globalAcknowledged": false,
+		"globalAcknowledged": true,
 		"acknowledged": false,
 		"errandId": "ec677eb3-604c-4935-bff7-f8f0b500c8f4",
 		"errandNumber": "KC-23020001"
@@ -50,7 +50,7 @@
 	{
 		"id": "627fa5b9-e75c-4bff-b6d5-93511a5565a1",
 		"created": "2023-12-31T23:59:59.999+01:00",
-		"modified": "2023-12-31T23:59:59.999+01:00",
+		"modified": "${json-unit.any-string}",
 		"ownerFullName": "owner_full_name-1",
 		"ownerId": "owner_id-1",
 		"createdBy": "created_by-1",
@@ -58,7 +58,7 @@
 		"description": "description-1-d",
 		"content": "content-1-d",
 		"expires": "2024-12-31T23:59:59.999Z",
-		"globalAcknowledged": false,
+		"globalAcknowledged": true,
 		"acknowledged": false,
 		"errandId": "ec677eb3-604c-4935-bff7-f8f0b500c8f4",
 		"errandNumber": "KC-23020001"

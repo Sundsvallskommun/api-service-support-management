@@ -271,8 +271,11 @@ VALUES ('81471222-5798-11e9-ae24-57fa13b361e1', 'someValue', 0),
 -- Notification
 -- -----------------------------------
 INSERT INTO notification(acknowledged, global_acknowledged, created, expires, modified, content, created_by, description, errand_id, id, municipality_id, namespace, owner_full_name, owner_id, type)
-VALUES (0, 0, '2023-12-31 23:59:59.999', '2024-12-31 23:59:59.999', '2023-12-31 23:59:59.999', 'content-1', 'created_by-1', 'description-1', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', '3ec421e9-56d1-4e47-9160-259d8dbe6a50', '2281', 'NAMESPACE-1', 'owner_full_name-1', 'owner_id-1', 'type-1'),
-       (1, 0, '2023-12-31 23:59:59.999', '2024-12-31 23:59:59.999', '2023-12-31 23:59:59.999', 'content-2', 'created_by-2', 'description-2', 'cc236cf1-c00f-4479-8341-ecf5dd90b5b9', '3b0a942d-b618-4b4f-8144-575d66e58170', '2281', 'NAMESPACE-1', 'owner_full_name-2', 'owner_id-2', 'type-2');
+VALUES	(0, 0, '2023-12-31 23:59:59.999', '2024-12-31 23:59:59.999', '2023-12-31 23:59:59.999', 'content-1-a', 'created_by-1', 'description-1-a', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', '3ec421e9-56d1-4e47-9160-259d8dbe6a50', '2281', 'NAMESPACE-1', 'owner_full_name-1', 'owner_id-1', 'type-1'),
+		(0, 0, '2023-12-31 23:59:59.999', '2024-12-31 23:59:59.999', '2023-12-31 23:59:59.999', 'content-1-b', 'created_by-1', 'description-1-b', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', '5049e4d5-0969-4cb5-b6a6-6a3d3d057dfc', '2281', 'NAMESPACE-1', 'owner_full_name-1', 'owner_id-1', 'type-1'),
+		(0, 0, '2023-12-31 23:59:59.999', '2024-12-31 23:59:59.999', '2023-12-31 23:59:59.999', 'content-1-c', 'created_by-1', 'description-1-c', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', '27e2d65d-e0d1-4b4c-b0ac-9bcc872977a9', '2281', 'NAMESPACE-1', 'owner_full_name-1', 'owner_id-1', 'type-1'),
+		(0, 0, '2023-12-31 23:59:59.999', '2024-12-31 23:59:59.999', '2023-12-31 23:59:59.999', 'content-1-d', 'created_by-1', 'description-1-d', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', '627fa5b9-e75c-4bff-b6d5-93511a5565a1', '2281', 'NAMESPACE-1', 'owner_full_name-1', 'owner_id-1', 'type-1'),
+		(1, 0, '2023-12-31 23:59:59.999', '2024-12-31 23:59:59.999', '2023-12-31 23:59:59.999', 'content-2', 'created_by-2', 'description-2', 'cc236cf1-c00f-4479-8341-ecf5dd90b5b9', '3b0a942d-b618-4b4f-8144-575d66e58170', '2281', 'NAMESPACE-1', 'owner_full_name-2', 'owner_id-2', 'type-2');
 
 INSERT INTO contact_reason(id, reason, municipality_id, namespace, created, modified)
 VALUES (123, 'reason1', '2281', 'CONTACTCENTER', '2023-12-31 23:59:59.999', '2023-12-31 23:59:59.999'),
