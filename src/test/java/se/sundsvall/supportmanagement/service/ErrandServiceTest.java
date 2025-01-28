@@ -124,7 +124,6 @@ class ErrandServiceTest {
 
 		// Mock
 		when(errandRepositoryMock.findAll(ArgumentMatchers.<Specification<ErrandEntity>>any(), eq(pageable))).thenReturn(new PageImpl<>(List.of(buildErrandEntity(), buildErrandEntity()), pageable, 2L));
-		when(errandRepositoryMock.count(ArgumentMatchers.<Specification<ErrandEntity>>any())).thenReturn(10L);
 
 		// Call
 		final var matches = service.findErrands(NAMESPACE, MUNICIPALITY_ID, filter, pageable);
@@ -132,15 +131,14 @@ class ErrandServiceTest {
 		// Assertions and verifications
 		assertThat(matches.getContent()).isNotEmpty().hasSize(2);
 		assertThat(matches.getNumberOfElements()).isEqualTo(2);
-		assertThat(matches.getTotalElements()).isEqualTo(10);
-		assertThat(matches.getTotalPages()).isEqualTo(5);
+		assertThat(matches.getTotalElements()).isEqualTo(4);
+		assertThat(matches.getTotalPages()).isEqualTo(2);
 		assertThat(matches.getPageable()).usingRecursiveComparison().isEqualTo(pageable);
 		assertThat(matches.getSort()).usingRecursiveComparison().isEqualTo(sort);
 
 		verify(errandRepositoryMock).findAll(specificationCaptor.capture(), eq(pageable));
 		assertThat(specificationCaptor.getValue()).usingRecursiveComparison().isEqualTo(distinct().and(withNamespace(NAMESPACE)).and(withMunicipalityId(MUNICIPALITY_ID)).and(filter));
 
-		verify(errandRepositoryMock).count(specificationCaptor.capture());
 		assertThat(specificationCaptor.getValue()).usingRecursiveComparison().isEqualTo(distinct().and(withNamespace(NAMESPACE)).and(withMunicipalityId(MUNICIPALITY_ID)).and(filter));
 	}
 
@@ -168,7 +166,6 @@ class ErrandServiceTest {
 		verify(errandRepositoryMock).findAll(specificationCaptor.capture(), eq(pageable));
 		assertThat(specificationCaptor.getValue()).usingRecursiveComparison().isEqualTo(distinct().and(withNamespace(NAMESPACE)).and(withMunicipalityId(MUNICIPALITY_ID)).and(filter));
 
-		verify(errandRepositoryMock).count(specificationCaptor.capture());
 		assertThat(specificationCaptor.getValue()).usingRecursiveComparison().isEqualTo(distinct().and(withNamespace(NAMESPACE)).and(withMunicipalityId(MUNICIPALITY_ID)).and(filter));
 	}
 

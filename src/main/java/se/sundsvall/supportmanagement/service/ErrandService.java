@@ -85,7 +85,7 @@ public class ErrandService {
 		final var fullFilter = distinct().and(withNamespace(namespace)).and(withMunicipalityId(municipalityId)).and(filter);
 		final var matches = repository.findAll(fullFilter, pageable);
 
-		return new PageImpl<>(toErrands(matches.getContent()), pageable, repository.count(fullFilter));
+		return new PageImpl<>(toErrands(matches.getContent()), pageable, matches.getTotalElements());
 	}
 
 	public Errand readErrand(String namespace, String municipalityId, String id) {
