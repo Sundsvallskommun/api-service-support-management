@@ -319,12 +319,12 @@ VALUES ('ec677eb3-604c-4935-bff7-f8f0b500c8f4', '45d266a7-1ff2-4bf4-b6f3-0473b2b
        ('1be673c0-6ba3-4fb0-af4a-43acf23389f6', 'cb638956-0823-402b-ab2a-ae947c0ba006', 'keyA', 'Displayname A', null, 0),
        ('1be673c0-6ba3-4fb0-af4a-43acf23389f6', 'db93ed18-8f7b-4809-8bc0-1d8971be7291', 'keyB', 'Displayname B', null, 1);
 
-INSERT INTO parameter_values(parameter_id, value)
-VALUES ('45d266a7-1ff2-4bf4-b6f3-0473b2b86fcd', 'value1'),
-       ('45d266a7-1ff2-4bf4-b6f3-0473b2b86fcd', 'value2'),
-       ('cb638956-0823-402b-ab2a-ae947c0ba006', 'valueA1'),
-       ('cb638956-0823-402b-ab2a-ae947c0ba006', 'valueA2'),
-       ('db93ed18-8f7b-4809-8bc0-1d8971be7291', 'valueB1');
+INSERT INTO parameter_values(parameter_id, value, value_order)
+VALUES ('45d266a7-1ff2-4bf4-b6f3-0473b2b86fcd', 'value1', 0),
+       ('45d266a7-1ff2-4bf4-b6f3-0473b2b86fcd', 'value2', 1),
+       ('cb638956-0823-402b-ab2a-ae947c0ba006', 'valueA1', 0),
+       ('cb638956-0823-402b-ab2a-ae947c0ba006', 'valueA2',  1),
+       ('db93ed18-8f7b-4809-8bc0-1d8971be7291', 'valueB1', 0);
 
 -- -----------------------------------
 -- errandLabel

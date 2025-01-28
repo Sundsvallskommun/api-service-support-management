@@ -9,6 +9,7 @@ import jakarta.persistence.ForeignKey;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OrderColumn;
 import jakarta.persistence.Table;
 import java.util.List;
 import java.util.Objects;
@@ -40,6 +41,7 @@ public class ParameterEntity {
 		name = "parameter_values",
 		joinColumns = @JoinColumn(name = "parameter_id",
 			foreignKey = @ForeignKey(name = "fk_parameter_values_parameter_id")))
+	@OrderColumn(name = "value_order")
 	@Column(name = "value")
 	private List<String> values;
 

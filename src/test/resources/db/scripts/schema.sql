@@ -232,9 +232,11 @@
         primary key (id)
     ) engine=InnoDB;
 
-    create table parameter_values (
+	create table parameter_values (
+        value_order integer not null,
         parameter_id varchar(255) not null,
-        value varchar(255)
+        value varchar(255),
+        primary key (value_order, parameter_id)
     ) engine=InnoDB;
 
     create table revision (
