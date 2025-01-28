@@ -63,14 +63,6 @@ public class ErrandAttachmentService {
 		this.semaphore = semaphore;
 	}
 
-	public void getAttachmentStreamed(final String namespace, final String municipalityId, final String errandId, final String attachmentId, final HttpServletResponse response) {
-		final var attachment = attachmentRepository.findByNamespaceAndMunicipalityIdAndErrandEntityIdAndId(namespace, municipalityId, errandId, attachmentId)
-			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, ATTACHMENT_ENTITY_NOT_FOUND.formatted(attachmentId, errandId)));
-
-		streamAttachmentData(attachment, response);
-
-	}
-
 	public String createErrandAttachment(final String namespace, final String municipalityId, final String errandId, final MultipartFile errandAttachment) {
 		final var errandEntity = getErrand(errandId, namespace, municipalityId, true);
 		var attachmentEntity = ofNullable(toAttachmentEntity(errandEntity, errandAttachment, entityManager))

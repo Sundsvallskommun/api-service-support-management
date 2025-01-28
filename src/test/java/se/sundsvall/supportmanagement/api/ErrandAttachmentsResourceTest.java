@@ -14,7 +14,6 @@ import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
 import static org.springframework.http.MediaType.TEXT_PLAIN;
 import static org.springframework.http.MediaType.TEXT_PLAIN_VALUE;
 
-import jakarta.servlet.http.HttpServletResponse;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -137,24 +136,5 @@ class ErrandAttachmentsResourceTest {
 
 		// Verification
 		verify(errandAttachmentServiceMock).deleteErrandAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, attachmentId);
-	}
-
-	@Test
-	void getAttachmentStreamed() {
-
-		// Parameter values
-		final var attachmentId = randomUUID().toString();
-
-		// ACT
-		webTestClient.get()
-			.uri(uriBuilder -> uriBuilder.path(PATH.concat("/{attachmentId}/streamed"))
-				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", ERRAND_ID, "attachmentId", attachmentId)))
-			.exchange()
-			.expectStatus().isOk()
-			.expectBody()
-			.returnResult();
-
-		verify(errandAttachmentServiceMock).getAttachmentStreamed(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(attachmentId), any(HttpServletResponse.class));
-
 	}
 }
