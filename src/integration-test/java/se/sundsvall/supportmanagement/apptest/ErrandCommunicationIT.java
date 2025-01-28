@@ -18,6 +18,15 @@ import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.IMAGE_PNG_VALUE;
 
+import java.util.List;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.jdbc.Sql;
+import se.sundsvall.dept44.test.AbstractAppTest;
+import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
+import se.sundsvall.supportmanagement.Application;
+
 /**
  * ErrandCommunication IT tests.
  */
@@ -120,14 +129,14 @@ class ErrandCommunicationIT extends AbstractAppTest {
 
 		setupCall()
 			.withHttpMethod(GET)
-			.withServicePath(PATH + "/" + errandId + "/communication/" + communicationId + "/attachments/" + attachmentId + "/streamed")
+			.withServicePath(PATH + "/" + errandId + "/communication/" + communicationId + "/attachments/" + attachmentId)
 			.withExpectedResponseStatus(NOT_FOUND)
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 	}
 
 	@Test
-	void test08_getCommunicationAttachmentStreamed() throws Exception {
+	void test08_getCommunicationAttachment() throws Exception {
 
 		final var errandId = "ec677eb3-604c-4935-bff7-f8f0b500c8f4";
 		final var communicationId = "59328e70-4297-4bb5-ba69-cb17f2d15a17";
@@ -135,7 +144,7 @@ class ErrandCommunicationIT extends AbstractAppTest {
 
 		setupCall()
 			.withHttpMethod(GET)
-			.withServicePath(PATH + "/" + errandId + "/communication/" + communicationId + "/attachments/" + attachmentId + "/streamed")
+			.withServicePath(PATH + "/" + errandId + "/communication/" + communicationId + "/attachments/" + attachmentId)
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponseHeader(CONTENT_TYPE, List.of(IMAGE_PNG_VALUE))
 			.withExpectedBinaryResponse("test_image.png")

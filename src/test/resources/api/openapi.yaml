@@ -4246,14 +4246,14 @@ paths:
                 oneOf:
                   - $ref: "#/components/schemas/Problem"
                   - $ref: "#/components/schemas/ConstraintViolationProblem"
-  /{municipalityId}/{namespace}/errands/{errandId}/communication/{communicationId}/attachments/{attachmentId}/streamed:
+  /{municipalityId}/{namespace}/errands/{errandId}/communication/{communicationId}/attachments/{attachmentId}:
     get:
       tags:
         - Errand communication
       summary: Get a streamed communication attachment.
       description: Fetches the communication attachment that matches the provided
         id in a streamed manner
-      operationId: getMessageAttachmentStreamed
+      operationId: getMessageAttachment
       parameters:
         - name: namespace
           in: path

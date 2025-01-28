@@ -52,7 +52,7 @@ class ErrandCommunicationResourceFailureTest {
 	private static final String PATH_SMS = "/sms";
 	private static final String PATH_EMAIL = "/email";
 	private static final String PATH_WEB_MESSAGE = "/webmessage";
-	private static final String PATH_ATTACHMENTS = "/{communicationId}/attachments/{attachmentId}/streamed";
+	private static final String PATH_ATTACHMENTS = "/{communicationId}/attachments/{attachmentId}";
 
 	@MockitoBean
 	private CommunicationService serviceMock;
@@ -659,7 +659,7 @@ class ErrandCommunicationResourceFailureTest {
 	}
 
 	@Test
-	void getMessageAttachmentStreamedServiceBusy() {
+	void getMessageAttachmentServiceBusy() {
 
 		// Arrange
 		final var attachmentId = randomUUID().toString();

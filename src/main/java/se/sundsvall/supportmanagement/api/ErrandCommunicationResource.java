@@ -143,13 +143,13 @@ class ErrandCommunicationResource {
 			.build();
 	}
 
-	@GetMapping(path = "/{communicationId}/attachments/{attachmentId}/streamed", produces = ALL_VALUE)
+	@GetMapping(path = "/{communicationId}/attachments/{attachmentId}", produces = ALL_VALUE)
 	@Operation(summary = "Get a streamed communication attachment.", description = "Fetches the communication attachment that matches the provided id in a streamed manner", responses = {
 		@ApiResponse(responseCode = "200", description = "Successful Operation", useReturnTypeSchema = true),
 		@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
 		@ApiResponse(responseCode = "507", description = "Insufficient Storage", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	})
-	void getMessageAttachmentStreamed(
+	void getMessageAttachment(
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality ID", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "errandId", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("errandId") final String errandId,

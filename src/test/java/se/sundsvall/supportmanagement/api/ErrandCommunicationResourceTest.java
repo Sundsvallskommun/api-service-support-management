@@ -43,7 +43,7 @@ class ErrandCommunicationResourceTest {
 	private static final String PATH_SMS = "/sms";
 	private static final String PATH_EMAIL = "/email";
 	private static final String PATH_WEB_MESSAGE = "/webmessage";
-	private static final String PATH_ATTACHMENTS = "/{communicationId}/attachments/{attachmentId}/streamed";
+	private static final String PATH_ATTACHMENTS = "/{communicationId}/attachments/{attachmentId}";
 
 	@MockitoBean
 	private CommunicationService serviceMock;
@@ -193,7 +193,7 @@ class ErrandCommunicationResourceTest {
 	}
 
 	@Test
-	void getMessageAttachmentStreamed() {
+	void getMessageAttachment() {
 
 		// ACT
 		webTestClient.get()
