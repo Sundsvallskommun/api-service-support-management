@@ -1,15 +1,17 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
+import static java.time.OffsetDateTime.now;
 import static org.apache.commons.lang3.ObjectUtils.anyNull;
 
 import generated.se.sundsvall.eventlog.Event;
-import java.time.OffsetDateTime;
 import java.util.Optional;
 import se.sundsvall.supportmanagement.api.model.notification.Notification;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
 
 public final class NotificationMapper {
+
+	private static final int DEFAULT_EXPIRE_TIME_IN_DAYS = 30;
 
 	private NotificationMapper() {
 		// Intentionally empty
@@ -22,7 +24,7 @@ public final class NotificationMapper {
 			.withType(notification.getType())
 			.withDescription(notification.getDescription())
 			.withContent(notification.getContent())
-			.withExpires(Optional.ofNullable(notification.getExpires()).orElse(OffsetDateTime.now().plusDays(30)))
+			.withExpires(Optional.ofNullable(notification.getExpires()).orElse(now().plusDays(DEFAULT_EXPIRE_TIME_IN_DAYS)))
 			.withAcknowledged(notification.isAcknowledged())
 			.withGlobalAcknowledged(notification.isGlobalAcknowledged())
 			.withErrandEntity(errandEntity)
