@@ -15,7 +15,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 @Component
 public class ExecutingUserSupplier extends OncePerRequestFilter {
-	private static final String UNKNOWN = "UNKNOWN";
+
+	public static final String UNKNOWN = "UNKNOWN";
 
 	private static final ThreadLocal<String> THREAD_LOCAL_AD_USER = new ThreadLocal<>();
 
