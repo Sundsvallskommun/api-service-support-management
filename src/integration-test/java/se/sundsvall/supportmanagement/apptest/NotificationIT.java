@@ -5,6 +5,7 @@ import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.PATCH;
 import static org.springframework.http.HttpMethod.POST;
+import static org.springframework.http.HttpMethod.PUT;
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
@@ -107,6 +108,25 @@ class NotificationIT extends AbstractAppTest {
 
 	@Test
 	void test06_getNotificationsByErrandId() {
+		setupCall()
+			.withServicePath(ERRAND_NOTIFICATIONS_PATH)
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	void test07_globalAcknowledgeNotifications() {
+
+		setupCall()
+			.withServicePath(ERRAND_NOTIFICATIONS_PATH + "/global-acknowledged")
+			.withHttpMethod(PUT)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(NO_CONTENT)
+			.withExpectedResponseBodyIsNull()
+			.sendRequest();
+
 		setupCall()
 			.withServicePath(ERRAND_NOTIFICATIONS_PATH)
 			.withHttpMethod(GET)
