@@ -1,6 +1,7 @@
 [
 	{
 		"displayName": "display name 1",
+		"group": "group 1",
 		"values": [
 			"value2",
 			"value3"

@@ -26,6 +26,7 @@ public final class ErrandParameterMapper {
 	public static ParameterEntity toErrandParameterEntity(final Parameter parameter) {
 		return ParameterEntity.create()
 			.withDisplayName(parameter.getDisplayName())
+			.withParameterGroup(parameter.getGroup())
 			.withKey(parameter.getKey())
 			.withValues(parameter.getValues());
 	}
@@ -33,6 +34,7 @@ public final class ErrandParameterMapper {
 	public static Parameter toParameter(final ParameterEntity parameter) {
 		return Parameter.create()
 			.withDisplayName(parameter.getDisplayName())
+			.withGroup(parameter.getParameterGroup())
 			.withKey(parameter.getKey())
 			.withValues(parameter.getValues());
 	}
@@ -44,13 +46,13 @@ public final class ErrandParameterMapper {
 	}
 
 	public static List<Parameter> toUniqueKeyList(List<Parameter> parameterList) {
-		// TODO: Add mapping for group
 		return new ArrayList<>(Optional.ofNullable(parameterList).orElse(emptyList()).stream()
 			.collect(groupingBy(Parameter::getKey))
 			.entrySet()
 			.stream()
 			.map(entry -> Parameter.create()
 				.withDisplayName(entry.getValue().getFirst().getDisplayName())
+				.withGroup(entry.getValue().getFirst().getGroup())
 				.withKey(entry.getKey())
 				.withValues(new ArrayList<>(entry.getValue().stream()
 					.map(Parameter::getValues)

@@ -29,6 +29,9 @@ public class ParameterEntity {
 	@Column(name = "display_name")
 	private String displayName;
 
+	@Column(name = "parameter_group")
+	private String parameterGroup;
+
 	@Column(name = "parameters_key")
 	private String key;
 
@@ -83,6 +86,19 @@ public class ParameterEntity {
 		return this;
 	}
 
+	public String getParameterGroup() {
+		return parameterGroup;
+	}
+
+	public void setParameterGroup(final String parameterGroup) {
+		this.parameterGroup = parameterGroup;
+	}
+
+	public ParameterEntity withParameterGroup(final String parameterGroup) {
+		this.parameterGroup = parameterGroup;
+		return this;
+	}
+
 	public String getKey() {
 		return key;
 	}
@@ -111,7 +127,7 @@ public class ParameterEntity {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(displayName, errandEntity, id, key, values);
+		return Objects.hash(displayName, parameterGroup, id, key, values);
 	}
 
 	@Override
@@ -122,15 +138,17 @@ public class ParameterEntity {
 		if (!(obj instanceof final ParameterEntity other)) {
 			return false;
 		}
-		return Objects.equals(displayName, other.displayName) && Objects.equals(errandEntity, other.errandEntity) && Objects.equals(id, other.id) && Objects.equals(key, other.key) && Objects.equals(values, other.values);
+		return Objects.equals(displayName, other.displayName) && Objects.equals(parameterGroup, other.parameterGroup) && Objects.equals(id, other.id) && Objects.equals(key, other.key) && Objects.equals(
+			values,
+			other.values);
 	}
 
 	@Override
 	public String toString() {
 		return "ParameterEntity{" +
 			"id='" + id + '\'' +
-			", errandEntity=" + errandEntity +
 			", displayName='" + displayName + '\'' +
+			", parameterGroup='" + parameterGroup + '\'' +
 			", key='" + key + '\'' +
 			", values=" + values +
 			'}';

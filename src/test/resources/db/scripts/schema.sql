@@ -223,9 +223,11 @@
     ) engine=InnoDB;
 
     create table parameter (
+        parameter_order integer,
         display_name varchar(255),
         errand_id varchar(255) not null,
         id varchar(255) not null,
+        parameter_group varchar(255),
         parameters_key varchar(255),
         primary key (id)
     ) engine=InnoDB;

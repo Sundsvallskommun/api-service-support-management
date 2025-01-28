@@ -1,15 +1,17 @@
 [
 	{
-		"displayName": "Displayname 2",
-		"values": [],
-		"key": "key2"
-	},
-	{
+		"key": "key1",
 		"displayName": "Displayname 1",
+		"group": "A",
 		"values": [
 			"value1",
 			"value2"
-		],
-		"key": "key1"
+		]
+	},
+	{
+		"key": "key2",
+		"displayName": "Displayname 2",
+		"group": "A",
+		"values": []
 	}
 ]

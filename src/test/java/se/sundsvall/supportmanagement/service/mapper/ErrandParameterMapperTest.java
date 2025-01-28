@@ -16,6 +16,7 @@ class ErrandParameterMapperTest {
 		final var parameterList = List.of(
 			Parameter.create()
 				.withDisplayName("displayNameA")
+				.withGroup("groupA")
 				.withKey("keyA")
 				.withValues(List.of("value1", "value2", "value3")),
 			Parameter.create()
@@ -35,6 +36,7 @@ class ErrandParameterMapperTest {
 			.isEqualTo(List.of(
 				Parameter.create()
 					.withDisplayName("displayNameA")
+					.withGroup("groupA")
 					.withKey("keyA")
 					.withValues(List.of("value1", "value2", "value3", "value7", "value8", "value9")),
 				Parameter.create()
@@ -50,6 +52,7 @@ class ErrandParameterMapperTest {
 		final var parameterList = List.of(
 			Parameter.create()
 				.withDisplayName("displayNameA")
+				.withGroup("groupA")
 				.withKey("keyA")
 				.withValues(List.of("value1")),
 			Parameter.create()
@@ -69,6 +72,7 @@ class ErrandParameterMapperTest {
 			.isEqualTo(List.of(
 				Parameter.create()
 					.withDisplayName("displayNameA")
+					.withGroup("groupA")
 					.withKey("keyA")
 					.withValues(List.of("value1", "value2", "value3"))));
 	}
@@ -80,6 +84,7 @@ class ErrandParameterMapperTest {
 		final var parameterList = List.of(
 			Parameter.create()
 				.withDisplayName("displayNameA")
+				.withGroup("groupA")
 				.withKey("keyA")
 				.withValues(null), // List with null value in one parameter object.
 			Parameter.create()
@@ -99,6 +104,7 @@ class ErrandParameterMapperTest {
 			.isEqualTo(List.of(
 				Parameter.create()
 					.withDisplayName("displayNameA")
+					.withGroup("groupA")
 					.withKey("keyA")
 					.withValues(List.of("value7", "value8", "value9")),
 				Parameter.create()
