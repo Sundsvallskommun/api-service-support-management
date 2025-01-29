@@ -612,7 +612,7 @@ class ErrandCommunicationResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
 			tuple("attachments[0].base64EncodedString", "not a valid BASE64-encoded string"),
-			tuple("attachments[0].name", "must not be blank"));
+			tuple("attachments[0].fileName", "must not be blank"));
 
 		// Verification
 		verifyNoInteractions(serviceMock);
@@ -629,10 +629,10 @@ class ErrandCommunicationResourceFailureTest {
 		Object body = null;
 		switch (path) {
 			case PATH_EMAIL -> body = emailRequest().withAttachments(List.of(EmailAttachment.create()
-				.withName(name)
+				.withFileName(name)
 				.withBase64EncodedString(data)));
 			case PATH_WEB_MESSAGE -> body = webMessageRequest().withAttachments(List.of(WebMessageAttachment.create()
-				.withName(name)
+				.withFileName(name)
 				.withBase64EncodedString(data)));
 			default -> throw new IllegalArgumentException("Missing mapping for " + path);
 		}

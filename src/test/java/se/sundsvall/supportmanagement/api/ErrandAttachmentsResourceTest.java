@@ -27,7 +27,7 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.BodyInserters;
 import se.sundsvall.supportmanagement.Application;
-import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachmentHeader;
+import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
 import se.sundsvall.supportmanagement.service.ErrandAttachmentService;
 
 @SpringBootTest(classes = Application.class, webEnvironment = RANDOM_PORT)
@@ -101,7 +101,7 @@ class ErrandAttachmentsResourceTest {
 	@Test
 	void readErrandAttachments() {
 		// Parameter values
-		final var errandAttachments = List.of(ErrandAttachmentHeader.create()
+		final var errandAttachments = List.of(ErrandAttachment.create()
 			.withFileName("test.txt")
 			.withId(randomUUID().toString())
 			.withMimeType("text/plain"));
@@ -113,7 +113,7 @@ class ErrandAttachmentsResourceTest {
 			.exchange()
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)
-			.expectBodyList(ErrandAttachmentHeader.class)
+			.expectBodyList(ErrandAttachment.class)
 			.returnResult();
 
 		assertThat(response.getResponseBody()).isEqualTo(errandAttachments);

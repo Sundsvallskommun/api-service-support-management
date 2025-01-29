@@ -8,8 +8,8 @@ import jakarta.validation.constraints.Null;
 import java.util.Objects;
 import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
 
-@Schema(description = "ErrandAttachmentHeader model")
-public class ErrandAttachmentHeader {
+@Schema(description = "ErrandAttachment model")
+public class ErrandAttachment {
 
 	@Schema(description = "Unique identifier for the attachment", example = "cb20c51f-fcf3-42c0-b613-de563634a8ec", accessMode = READ_ONLY)
 	@Null(groups = OnCreate.class)
@@ -22,8 +22,8 @@ public class ErrandAttachmentHeader {
 	@Schema(description = "Mime type of the file", accessMode = Schema.AccessMode.READ_ONLY)
 	private String mimeType;
 
-	public static ErrandAttachmentHeader create() {
-		return new ErrandAttachmentHeader();
+	public static ErrandAttachment create() {
+		return new ErrandAttachment();
 	}
 
 	public String getId() {
@@ -34,7 +34,7 @@ public class ErrandAttachmentHeader {
 		this.id = id;
 	}
 
-	public ErrandAttachmentHeader withId(String id) {
+	public ErrandAttachment withId(String id) {
 		this.id = id;
 		return this;
 	}
@@ -47,7 +47,7 @@ public class ErrandAttachmentHeader {
 		this.fileName = fileName;
 	}
 
-	public ErrandAttachmentHeader withFileName(String fileName) {
+	public ErrandAttachment withFileName(String fileName) {
 		this.fileName = fileName;
 		return this;
 	}
@@ -60,7 +60,7 @@ public class ErrandAttachmentHeader {
 		this.mimeType = mimeType;
 	}
 
-	public ErrandAttachmentHeader withMimeType(String mimeType) {
+	public ErrandAttachment withMimeType(String mimeType) {
 		this.mimeType = mimeType;
 		return this;
 	}
@@ -81,12 +81,12 @@ public class ErrandAttachmentHeader {
 		if (getClass() != obj.getClass()) {
 			return false;
 		}
-		var other = (ErrandAttachmentHeader) obj;
+		var other = (ErrandAttachment) obj;
 		return Objects.equals(id, other.id) && Objects.equals(fileName, other.fileName) && Objects.equals(mimeType, other.mimeType);
 	}
 
 	@Override
 	public String toString() {
-		return "ErrandAttachmentHeader [id=" + id + ", fileName=" + fileName + ", mimeType=" + mimeType + "]";
+		return "ErrandAttachment [id=" + id + ", fileName=" + fileName + ", mimeType=" + mimeType + "]";
 	}
 }

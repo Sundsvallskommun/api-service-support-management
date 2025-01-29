@@ -162,8 +162,8 @@ public class MessagingMapper {
 
 		return new EmailAttachment()
 			.content(attachment.getBase64EncodedString())
-			.contentType(detectMimeType(attachment.getName(), byteArray))
-			.name(attachment.getName());
+			.contentType(detectMimeType(attachment.getFileName(), byteArray))
+			.name(attachment.getFileName());
 	}
 
 	private static WebMessageAttachment toWebMessageAttachment(se.sundsvall.supportmanagement.api.model.communication.WebMessageAttachment attachment) {
@@ -171,8 +171,8 @@ public class MessagingMapper {
 
 		return new WebMessageAttachment()
 			.base64Data(attachment.getBase64EncodedString())
-			.mimeType(detectMimeType(attachment.getName(), byteArray))
-			.fileName(attachment.getName());
+			.mimeType(detectMimeType(attachment.getFileName(), byteArray))
+			.fileName(attachment.getFileName());
 	}
 
 	private static EmailRequestParty toEmailRequestParty(ErrandEntity errandEntity) {

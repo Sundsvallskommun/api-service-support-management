@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.web.multipart.MultipartFile;
 import org.zalando.problem.Problem;
 import org.zalando.problem.Status;
-import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachmentHeader;
+import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
@@ -47,16 +47,16 @@ public final class ErrandAttachmentMapper {
 		}
 	}
 
-	public static List<ErrandAttachmentHeader> toErrandAttachmentHeaders(final List<AttachmentEntity> attachmentEntities) {
+	public static List<ErrandAttachment> toErrandAttachmentHeaders(final List<AttachmentEntity> attachmentEntities) {
 		return Optional.ofNullable(attachmentEntities).orElse(emptyList()).stream()
 			.map(ErrandAttachmentMapper::toErrandAttachmentHeader)
 			.filter(Objects::nonNull)
 			.toList();
 	}
 
-	public static ErrandAttachmentHeader toErrandAttachmentHeader(final AttachmentEntity attachmentEntity) {
+	public static ErrandAttachment toErrandAttachmentHeader(final AttachmentEntity attachmentEntity) {
 		return Optional.ofNullable(attachmentEntity)
-			.map(e -> ErrandAttachmentHeader.create()
+			.map(e -> ErrandAttachment.create()
 				.withFileName(e.getFileName())
 				.withId(e.getId())
 				.withMimeType(e.getMimeType()))

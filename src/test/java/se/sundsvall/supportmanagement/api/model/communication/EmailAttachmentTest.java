@@ -33,12 +33,12 @@ class EmailAttachmentTest {
 
 		final var bean = EmailAttachment.create()
 			.withBase64EncodedString(base64EncodedString)
-			.withName(name);
+			.withFileName(name);
 
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(bean.getBase64EncodedString()).isEqualTo(base64EncodedString);
 		assertThat(new String(decodeBase64(bean.getBase64EncodedString()))).isEqualTo(string);
-		assertThat(bean.getName()).isEqualTo(name);
+		assertThat(bean.getFileName()).isEqualTo(name);
 	}
 
 	@Test

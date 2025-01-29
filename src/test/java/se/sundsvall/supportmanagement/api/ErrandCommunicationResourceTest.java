@@ -71,13 +71,13 @@ class ErrandCommunicationResourceTest {
 		return WebMessageRequest.create()
 			.withMessage("message")
 			.withAttachmentIds(List.of("1", "2"))
-			.withAttachments(withAttachment ? List.of(WebMessageAttachment.create().withName("attachmentName").withBase64EncodedString("ZGF0YQ==")) : null);
+			.withAttachments(withAttachment ? List.of(WebMessageAttachment.create().withFileName("attachmentName").withBase64EncodedString("ZGF0YQ==")) : null);
 	}
 
 	private static EmailAttachment attachment() {
 		return EmailAttachment.create()
 			.withBase64EncodedString("aGVsbG8gd29ybGQK")
-			.withName("name");
+			.withFileName("name");
 	}
 
 	@Test

@@ -31,12 +31,12 @@ class CommunicationAttachmentTest {
 
 		final var bean = CommunicationAttachment.create()
 			.withAttachmentID(attachmentID)
-			.withName(name)
+			.withFileName(name)
 			.withContentType(contentType);
 
-		assertThat(bean.getAttachmentID()).isEqualTo(attachmentID);
-		assertThat(bean.getName()).isEqualTo(name);
-		assertThat(bean.getContentType()).isEqualTo(contentType);
+		assertThat(bean.getId()).isEqualTo(attachmentID);
+		assertThat(bean.getFileName()).isEqualTo(name);
+		assertThat(bean.getMimeType()).isEqualTo(contentType);
 	}
 
 	@Test

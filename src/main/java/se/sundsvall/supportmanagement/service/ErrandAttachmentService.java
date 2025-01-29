@@ -29,7 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StreamUtils;
 import org.springframework.web.multipart.MultipartFile;
 import org.zalando.problem.Problem;
-import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachmentHeader;
+import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
 import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
@@ -94,7 +94,7 @@ public class ErrandAttachmentService {
 		streamAttachmentData(attachmentEntity, response);
 	}
 
-	public List<ErrandAttachmentHeader> readErrandAttachmentHeaders(final String namespace, final String municipalityId, final String errandId) {
+	public List<ErrandAttachment> readErrandAttachmentHeaders(final String namespace, final String municipalityId, final String errandId) {
 		final var errandEntity = getErrand(errandId, namespace, municipalityId, false);
 		return toErrandAttachmentHeaders(errandEntity.getAttachments());
 	}

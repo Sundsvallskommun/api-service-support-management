@@ -10,57 +10,57 @@ public class CommunicationAttachment {
 		example = "aGVsbG8gd29ybGQK"
 
 	)
-	private String attachmentID;
+	private String id;
 
 	@Schema(
-		description = "The attachment filename",
+		description = "The attachment file name",
 		example = "test.txt")
-	private String name;
+	private String fileName;
 
-	@Schema(description = "The attachment content type", example = "text/plain")
-	private String contentType;
+	@Schema(description = "The attachment MIME type", example = "text/plain")
+	private String mimeType;
 
 	public static CommunicationAttachment create() {
 		return new CommunicationAttachment();
 
 	}
 
-	public String getAttachmentID() {
-		return attachmentID;
+	public String getId() {
+		return id;
 	}
 
-	public void setAttachmentID(final String attachmentID) {
-		this.attachmentID = attachmentID;
+	public void setId(final String id) {
+		this.id = id;
 	}
 
 	public CommunicationAttachment withAttachmentID(final String attachmentID) {
-		this.attachmentID = attachmentID;
+		this.id = attachmentID;
 		return this;
 	}
 
-	public String getName() {
-		return name;
+	public String getFileName() {
+		return fileName;
 	}
 
-	public void setName(final String name) {
-		this.name = name;
+	public void setFileName(final String fileName) {
+		this.fileName = fileName;
 	}
 
-	public CommunicationAttachment withName(final String name) {
-		this.name = name;
+	public CommunicationAttachment withFileName(final String fileName) {
+		this.fileName = fileName;
 		return this;
 	}
 
-	public String getContentType() {
-		return contentType;
+	public String getMimeType() {
+		return mimeType;
 	}
 
-	public void setContentType(final String contentType) {
-		this.contentType = contentType;
+	public void setMimeType(final String mimeType) {
+		this.mimeType = mimeType;
 	}
 
 	public CommunicationAttachment withContentType(final String contentType) {
-		this.contentType = contentType;
+		this.mimeType = contentType;
 		return this;
 	}
 
@@ -71,20 +71,20 @@ public class CommunicationAttachment {
 		if (o == null || getClass() != o.getClass())
 			return false;
 		final CommunicationAttachment that = (CommunicationAttachment) o;
-		return Objects.equals(attachmentID, that.attachmentID) && Objects.equals(name, that.name) && Objects.equals(contentType, that.contentType);
+		return Objects.equals(id, that.id) && Objects.equals(fileName, that.fileName) && Objects.equals(mimeType, that.mimeType);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(attachmentID, name, contentType);
+		return Objects.hash(id, fileName, mimeType);
 	}
 
 	@Override
 	public String toString() {
 		return "CommunicationAttachment{" +
-			"attachmentID='" + attachmentID + '\'' +
-			", name='" + name + '\'' +
-			", contentType='" + contentType + '\'' +
+			"id='" + id + '\'' +
+			", fileName='" + fileName + '\'' +
+			", mimeType='" + mimeType + '\'' +
 			'}';
 	}
 
