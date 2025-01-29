@@ -1,10 +1,9 @@
-ALTER TABLE parameter
-    ADD COLUMN parameter_order INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE if exists parameter
+    ADD COLUMN if not exists parameter_order INTEGER NOT NULL DEFAULT 0;
 ALTER TABLE if exists parameter
     ADD COLUMN if not exists parameter_group VARCHAR(255);
 ALTER TABLE if exists parameter_values
-    ADD COLUMN if not exists value_order INTEGER NOT NULL DEFAULT 0,
-    ADD PRIMARY KEY if not exists (value_order, parameter_id);
+    ADD COLUMN if not exists value_order INTEGER NOT NULL DEFAULT 0;
 
 START TRANSACTION;
 -- Create a temporary table to store the calculated parameter order
@@ -38,4 +37,7 @@ SET pv.value_order = sp.value_order;
 -- Clean up the temporary table
 DROP TEMPORARY TABLE IF EXISTS sorted_parameter_values;
 
+-- Add primary key to parameter_values table
+ALTER TABLE if exists parameter_values
+    ADD PRIMARY KEY if not exists (value_order, parameter_id);
 COMMIT;
