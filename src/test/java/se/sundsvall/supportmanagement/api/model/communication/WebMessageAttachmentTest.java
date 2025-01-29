@@ -30,11 +30,11 @@ class WebMessageAttachmentTest {
 
 		final var bean = WebMessageAttachment.create()
 			.withBase64EncodedString(base64EncodedString)
-			.withName(name);
+			.withFileName(name);
 
 		Assertions.assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
 		Assertions.assertThat(bean.getBase64EncodedString()).isEqualTo(base64EncodedString);
-		Assertions.assertThat(bean.getName()).isEqualTo(name);
+		Assertions.assertThat(bean.getFileName()).isEqualTo(name);
 	}
 
 	@Test

@@ -2018,7 +2018,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/ErrandAttachmentHeader"
+                  $ref: "#/components/schemas/ErrandAttachment"
         "400":
           description: Bad Request
           content:
@@ -5578,12 +5578,12 @@ components:
     WebMessageAttachment:
       required:
         - base64EncodedString
-        - name
+        - fileName
       type: object
       properties:
-        name:
+        fileName:
           type: string
-          description: The attachment filename
+          description: The attachment file name
           example: test.txt
         base64EncodedString:
           type: string
@@ -5643,12 +5643,12 @@ components:
     EmailAttachment:
       required:
         - base64EncodedString
-        - name
+        - fileName
       type: object
       properties:
-        name:
+        fileName:
           type: string
-          description: The attachment filename
+          description: The attachment file name
           example: test.txt
         base64EncodedString:
           type: string
@@ -6223,20 +6223,20 @@ components:
     CommunicationAttachment:
       type: object
       properties:
-        attachmentID:
+        id:
           type: string
           description: The attachment ID
           example: aGVsbG8gd29ybGQK
-        name:
+        fileName:
           type: string
-          description: The attachment filename
+          description: The attachment file name
           example: test.txt
-        contentType:
+        mimeType:
           type: string
-          description: The attachment content type
+          description: The attachment MIME type
           example: text/plain
       description: List of communicationAttachments on the message
-    ErrandAttachmentHeader:
+    ErrandAttachment:
       required:
         - fileName
       type: object
@@ -6254,5 +6254,5 @@ components:
           type: string
           description: Mime type of the file
           readOnly: true
-      description: ErrandAttachmentHeader model
+      description: ErrandAttachment model
   securitySchemes: { }

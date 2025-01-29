@@ -12,8 +12,8 @@ import se.sundsvall.supportmanagement.api.validation.ValidFileSize;
 public class WebMessageAttachment implements RequestAttachment {
 
 	@NotBlank
-	@Schema(description = "The attachment filename", example = "test.txt", requiredMode = REQUIRED)
-	private String name;
+	@Schema(description = "The attachment file name", example = "test.txt", requiredMode = REQUIRED)
+	private String fileName;
 
 	@Schema(description = "The attachment (file) content as a BASE64-encoded string, max size 10 MB", format = "base64", example = "aGVsbG8gd29ybGQK", requiredMode = REQUIRED)
 	@ValidBase64
@@ -24,16 +24,16 @@ public class WebMessageAttachment implements RequestAttachment {
 		return new WebMessageAttachment();
 	}
 
-	public String getName() {
-		return name;
+	public String getFileName() {
+		return fileName;
 	}
 
-	public void setName(final String name) {
-		this.name = name;
+	public void setFileName(final String fileName) {
+		this.fileName = fileName;
 	}
 
-	public WebMessageAttachment withName(final String name) {
-		this.name = name;
+	public WebMessageAttachment withFileName(final String name) {
+		this.fileName = name;
 		return this;
 	}
 
@@ -52,7 +52,7 @@ public class WebMessageAttachment implements RequestAttachment {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(base64EncodedString, name);
+		return Objects.hash(base64EncodedString, fileName);
 	}
 
 	@Override
@@ -67,13 +67,13 @@ public class WebMessageAttachment implements RequestAttachment {
 			return false;
 		}
 		final var other = (WebMessageAttachment) obj;
-		return Objects.equals(base64EncodedString, other.base64EncodedString) && Objects.equals(name, other.name);
+		return Objects.equals(base64EncodedString, other.base64EncodedString) && Objects.equals(fileName, other.fileName);
 	}
 
 	@Override
 	public String toString() {
 		return "WebMessageAttachment{" +
-			"name='" + name + '\'' +
+			"fileName='" + fileName + '\'' +
 			", base64EncodedString='" + base64EncodedString + '\'' +
 			'}';
 	}

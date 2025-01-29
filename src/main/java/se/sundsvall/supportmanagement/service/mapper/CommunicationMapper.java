@@ -99,14 +99,14 @@ public class CommunicationMapper {
 	public CommunicationAttachment toAttachment(final CommunicationAttachmentEntity entity) {
 		return CommunicationAttachment.create()
 			.withAttachmentID(entity.getId())
-			.withName(entity.getName())
+			.withFileName(entity.getName())
 			.withContentType(entity.getContentType());
 	}
 
 	public CommunicationAttachment toAttachment(final AttachmentEntity entity) {
 		return CommunicationAttachment.create()
 			.withAttachmentID(entity.getId())
-			.withName(entity.getFileName())
+			.withFileName(entity.getFileName())
 			.withContentType(entity.getMimeType());
 	}
 
@@ -181,10 +181,10 @@ public class CommunicationMapper {
 		return CommunicationAttachmentEntity.create()
 			.withNamespace(namespace)
 			.withMunicipalityId(municipalityId)
-			.withName(attachment.getName())
+			.withName(attachment.getFileName())
 			.withFileSize(byteArray.length)
 			.withAttachmentData(toMessageAttachmentData(attachment))
-			.withContentType(detectMimeType(attachment.getName(), byteArray));
+			.withContentType(detectMimeType(attachment.getFileName(), byteArray));
 	}
 
 	private CommunicationAttachmentDataEntity toMessageAttachmentData(final RequestAttachment attachment) {

@@ -132,7 +132,7 @@ class CommunicationMapperTest {
 			.withHtmlMessage("htmlMessage")
 			.withInternal(true)
 			.withEmailHeaders(Map.of(EmailHeader.MESSAGE_ID, List.of("<test@test.se>")))
-			.withAttachments(singletonList(new EmailAttachment().withName("name").withBase64EncodedString("base64EncodedString")));
+			.withAttachments(singletonList(new EmailAttachment().withFileName("name").withBase64EncodedString("base64EncodedString")));
 
 		final var communicationEntity = communicationMapper.toCommunicationEntity(NAMESPACE, MUNICIPALITY_ID, emailRequest);
 
@@ -181,7 +181,7 @@ class CommunicationMapperTest {
 		final var webMessageRequest = new WebMessageRequest()
 			.withMessage("message")
 			.withInternal(true)
-			.withAttachments(List.of(new WebMessageAttachment().withName("name").withBase64EncodedString("base64EncodedString")));
+			.withAttachments(List.of(new WebMessageAttachment().withFileName("name").withBase64EncodedString("base64EncodedString")));
 
 		final var communicationEntity = communicationMapper.toCommunicationEntity(NAMESPACE, MUNICIPALITY_ID, ERRAND_NUMBER, webMessageRequest, fullName, adUser);
 
@@ -260,9 +260,9 @@ class CommunicationMapperTest {
 	}
 
 	private void assertAttachmentMatchesEntity(final CommunicationAttachment attachment, final CommunicationAttachmentEntity entity) {
-		assertThat(attachment.getAttachmentID()).isEqualTo(entity.getId());
-		assertThat(attachment.getName()).isEqualTo(entity.getName());
-		assertThat(attachment.getContentType()).isEqualTo(entity.getContentType());
+		assertThat(attachment.getId()).isEqualTo(entity.getId());
+		assertThat(attachment.getFileName()).isEqualTo(entity.getName());
+		assertThat(attachment.getMimeType()).isEqualTo(entity.getContentType());
 	}
 
 }

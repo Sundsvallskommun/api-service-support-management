@@ -160,7 +160,7 @@ class CommunicationServiceTest {
 		return EmailRequest.create()
 			.withAttachments(List.of(EmailAttachment.create()
 				.withBase64EncodedString(FILE_CONTENT)
-				.withName(FILE_NAME)))
+				.withFileName(FILE_NAME)))
 			.withHtmlMessage(HTML_MESSAGE)
 			.withMessage(PLAIN_MESSAGE)
 			.withRecipient(RECIPIENT)
@@ -174,7 +174,7 @@ class CommunicationServiceTest {
 			.withMessage(PLAIN_MESSAGE)
 			.withAttachments(List.of(WebMessageAttachment.create()
 				.withBase64EncodedString(FILE_CONTENT)
-				.withName(FILE_NAME)))
+				.withFileName(FILE_NAME)))
 			.withAttachmentIds(List.of(ATTACHMENT_ID));
 	}
 

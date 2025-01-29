@@ -3,14 +3,14 @@
 		"emailHeaders": {},
 		"communicationAttachments": [
 			{
-				"name": "data_stuff.txt",
-				"attachmentID": "${json-unit.regex}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
-				"contentType": "text/plain"
+				"fileName": "data_stuff.txt",
+				"id": "${json-unit.regex}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+				"mimeType": "text/plain"
 			},
 			{
-				"name": "data.txt",
-				"attachmentID": "1c49e30d-50d9-468f-89f3-3e3b87ea93e2",
-				"contentType": "text/plain"
+				"fileName": "data.txt",
+				"id": "1c49e30d-50d9-468f-89f3-3e3b87ea93e2",
+				"mimeType": "text/plain"
 			}
 		],
 		"sender": "Anka Kalle",
