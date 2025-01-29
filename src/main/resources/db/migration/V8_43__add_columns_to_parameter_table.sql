@@ -1,10 +1,10 @@
 ALTER TABLE parameter
     ADD COLUMN parameter_order INTEGER NOT NULL DEFAULT 0;
-ALTER TABLE parameter
-    ADD COLUMN parameter_group VARCHAR(255);
-ALTER TABLE parameter_values
-    ADD COLUMN value_order INTEGER NOT NULL DEFAULT 0,
-    ADD PRIMARY KEY (value_order, parameter_id);
+ALTER TABLE if exists parameter
+    ADD COLUMN if not exists parameter_group VARCHAR(255);
+ALTER TABLE if exists parameter_values
+    ADD COLUMN if not exists value_order INTEGER NOT NULL DEFAULT 0,
+    ADD PRIMARY KEY if not exists (value_order, parameter_id);
 
 START TRANSACTION;
 -- Create a temporary table to store the calculated parameter order
