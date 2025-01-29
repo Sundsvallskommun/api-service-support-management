@@ -86,7 +86,7 @@ Refer to the [API Documentation](#api-documentation) for detailed information on
 ### Example Request
 
 ```bash
-curl -X GET http://localhost:8080/api/resource
+curl -X GET http://localhost:8080/api/2281/my.namespace/errands/b82bd8ac-1507-4d9a-958d-369261eecc15/communication
 ```
 
 ## Configuration
@@ -118,17 +118,17 @@ Configuration is crucial for the application to run successfully. Ensure all nec
       url: http://dependency_service_url
   integration:
     emailreader:
-        url: http://dependency_service_url
+      url: http://dependency_service_url
     employee:
-        url: http://dependency_service_url
+      url: http://dependency_service_url
     eventlog:
-        url: http://dependency_service_url
+      url: http://dependency_service_url
     messaging:
-        url: http://dependency_service_url
+      url: http://dependency_service_url
     notes:
-        url: http://dependency_service_url
+      url: http://dependency_service_url
     web-message-collector:
-        url: http://dependency_service_url
+      url: http://dependency_service_url
 
   spring:
     security:
@@ -136,36 +136,27 @@ Configuration is crucial for the application to run successfully. Ensure all nec
         client:
           provider:
             emailreader:
-                token-uri: http://dependecy_service_token_url
+              token-uri: http://dependecy_service_token_url
             employee:
-                token-uri: http://dependecy_service_token_url
+              token-uri: http://dependecy_service_token_url
             eventlog:
-                token-uri: http://dependecy_service_token_url
+              token-uri: http://dependecy_service_token_url
             messaging:
-                token-uri: http://dependecy_service_token_url
+              token-uri: http://dependecy_service_token_url
             notes:
-                token-uri: http://dependecy_service_token_url
+              token-uri: http://dependecy_service_token_url
             web-message-collector:
-                token-uri: http://dependecy_service_token_url
-            registration:
-                emailreader:
-                    client-id: the-client-id
-                    client-secret: the-client-secret
-                employee:
-                    client-id: the-client-id
-                    client-secret: the-client-secret
-                eventlog:
-                    client-id: the-client-id
-                    client-secret: the-client-secret
-                messaging:
-                    client-id: the-client-id
-                    client-secret: the-client-secret
-                notes:
-                    client-id: the-client-id
-                    client-secret: the-client-secret
-                web-message-collector:
-                    client-id: the-client-id
-                    client-secret: the-client-secret
+              token-uri: http://dependecy_service_token_url
+          registration:
+            emailreader:
+              client-id: the-client-id
+              client-secret: the-client-secret
+            employee:
+              client-id: the-client-id
+              client-secret: the-client-secret
+            eventlog:
+              client-id: the-client-id
+              client-secret: the-client-secret
   ```
 
 ### Database Initialization
