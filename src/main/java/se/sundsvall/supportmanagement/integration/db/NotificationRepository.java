@@ -52,13 +52,5 @@ public interface NotificationRepository extends JpaRepository<NotificationEntity
 		final String municipalityId,
 		final String ownerId);
 
-	Optional<NotificationEntity> findByNamespaceAndMunicipalityIdAndOwnerIdAndAcknowledgedAndErrandEntityIdAndType(
-		final String namespace,
-		final String municipalityId,
-		final String ownerId,
-		final boolean acknowledged,
-		final String errandId,
-		final String type);
-
 	List<NotificationEntity> findByExpiresBefore(final OffsetDateTime expires);
 }

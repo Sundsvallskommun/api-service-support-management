@@ -1,8 +1,9 @@
 {
+	"key": "key1",
 	"displayName": "Displayname 1",
+	"group": "A",
 	"values": [
 		"value3",
 		"value4"
-	],
-	"key": "key1"
+	]
 }

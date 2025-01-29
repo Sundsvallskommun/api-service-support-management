@@ -9,6 +9,7 @@ import jakarta.persistence.ForeignKey;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OrderColumn;
 import jakarta.persistence.Table;
 import java.util.List;
 import java.util.Objects;
@@ -29,6 +30,9 @@ public class ParameterEntity {
 	@Column(name = "display_name")
 	private String displayName;
 
+	@Column(name = "parameter_group")
+	private String parameterGroup;
+
 	@Column(name = "parameters_key")
 	private String key;
 
@@ -37,6 +41,7 @@ public class ParameterEntity {
 		name = "parameter_values",
 		joinColumns = @JoinColumn(name = "parameter_id",
 			foreignKey = @ForeignKey(name = "fk_parameter_values_parameter_id")))
+	@OrderColumn(name = "value_order", nullable = false, columnDefinition = "integer default 0")
 	@Column(name = "value")
 	private List<String> values;
 
@@ -83,6 +88,19 @@ public class ParameterEntity {
 		return this;
 	}
 
+	public String getParameterGroup() {
+		return parameterGroup;
+	}
+
+	public void setParameterGroup(final String parameterGroup) {
+		this.parameterGroup = parameterGroup;
+	}
+
+	public ParameterEntity withParameterGroup(final String parameterGroup) {
+		this.parameterGroup = parameterGroup;
+		return this;
+	}
+
 	public String getKey() {
 		return key;
 	}
@@ -111,7 +129,7 @@ public class ParameterEntity {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(displayName, errandEntity, id, key, values);
+		return Objects.hash(displayName, parameterGroup, id, key, values);
 	}
 
 	@Override
@@ -122,15 +140,17 @@ public class ParameterEntity {
 		if (!(obj instanceof final ParameterEntity other)) {
 			return false;
 		}
-		return Objects.equals(displayName, other.displayName) && Objects.equals(errandEntity, other.errandEntity) && Objects.equals(id, other.id) && Objects.equals(key, other.key) && Objects.equals(values, other.values);
+		return Objects.equals(displayName, other.displayName) && Objects.equals(parameterGroup, other.parameterGroup) && Objects.equals(id, other.id) && Objects.equals(key, other.key) && Objects.equals(
+			values,
+			other.values);
 	}
 
 	@Override
 	public String toString() {
 		return "ParameterEntity{" +
 			"id='" + id + '\'' +
-			", errandEntity=" + errandEntity +
 			", displayName='" + displayName + '\'' +
+			", parameterGroup='" + parameterGroup + '\'' +
 			", key='" + key + '\'' +
 			", values=" + values +
 			'}';
