@@ -126,7 +126,7 @@ public class ErrandEntity {
 	private String escalationEmail;
 
 	@OneToMany(mappedBy = "errandEntity", cascade = CascadeType.ALL, orphanRemoval = true)
-	@OrderColumn(name = "parameter_order")
+	@OrderColumn(name = "parameter_order", nullable = false, columnDefinition = "integer default 0")
 	private List<ParameterEntity> parameters;
 
 	@OneToMany(mappedBy = "errandEntity", cascade = CascadeType.ALL, orphanRemoval = true)
