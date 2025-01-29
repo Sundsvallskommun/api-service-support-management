@@ -1,8 +1,8 @@
 package se.sundsvall.supportmanagement.integration.db.model;
 
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;
-import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanEquals;
-import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanHashCode;
+import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanEqualsExcluding;
+import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanHashCodeExcluding;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanToStringExcluding;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidGettersAndSetters;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -19,8 +19,8 @@ class ParameterEntityTest {
 		MatcherAssert.assertThat(ParameterEntity.class, allOf(
 			hasValidBeanConstructor(),
 			hasValidGettersAndSetters(),
-			hasValidBeanHashCode(),
-			hasValidBeanEquals(),
+			hasValidBeanHashCodeExcluding("errandEntity"),
+			hasValidBeanEqualsExcluding("errandEntity"),
 			hasValidBeanToStringExcluding("errandEntity")));
 	}
 
@@ -29,6 +29,7 @@ class ParameterEntityTest {
 
 		final var id = "id";
 		final var displayName = "displayName";
+		final var parameterGroup = "parameterGroup";
 		final var key = "key";
 		final var values = List.of("value");
 		final var errandEntity = ErrandEntity.create().withId("id");
@@ -36,6 +37,7 @@ class ParameterEntityTest {
 		final var parameterEntity = ParameterEntity.create()
 			.withId(id)
 			.withDisplayName(displayName)
+			.withParameterGroup(parameterGroup)
 			.withErrandEntity(errandEntity)
 			.withKey(key)
 			.withValues(values);
@@ -43,6 +45,7 @@ class ParameterEntityTest {
 		assertThat(parameterEntity).hasNoNullFieldsOrProperties();
 		assertThat(parameterEntity.getKey()).isEqualTo(key);
 		assertThat(parameterEntity.getDisplayName()).isEqualTo(displayName);
+		assertThat(parameterEntity.getParameterGroup()).isEqualTo(parameterGroup);
 		assertThat(parameterEntity.getValues()).isEqualTo(values);
 		assertThat(parameterEntity.getId()).isEqualTo(id);
 		assertThat(parameterEntity.getErrandEntity()).isEqualTo(errandEntity);

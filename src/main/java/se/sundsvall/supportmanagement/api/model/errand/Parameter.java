@@ -15,6 +15,9 @@ public class Parameter {
 	@Schema(description = "Parameter display name")
 	private String displayName;
 
+	@Schema(description = "Parameter group name")
+	private String group;
+
 	@Schema(description = "Parameter values")
 	private List<String> values;
 
@@ -48,6 +51,19 @@ public class Parameter {
 		return this;
 	}
 
+	public String getGroup() {
+		return group;
+	}
+
+	public void setGroup(final String group) {
+		this.group = group;
+	}
+
+	public Parameter withGroup(final String group) {
+		this.group = group;
+		return this;
+	}
+
 	public List<String> getValues() {
 		return values;
 	}
@@ -63,7 +79,7 @@ public class Parameter {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(displayName, key, values);
+		return Objects.hash(displayName, group, key, values);
 	}
 
 	@Override
@@ -74,7 +90,7 @@ public class Parameter {
 		if (!(obj instanceof final Parameter other)) {
 			return false;
 		}
-		return Objects.equals(displayName, other.displayName) && Objects.equals(key, other.key) && Objects.equals(values, other.values);
+		return Objects.equals(displayName, other.displayName) && Objects.equals(group, other.group) && Objects.equals(key, other.key) && Objects.equals(values, other.values);
 	}
 
 	@Override
@@ -82,6 +98,7 @@ public class Parameter {
 		return "Parameter{" +
 			"key='" + key + '\'' +
 			", displayName='" + displayName + '\'' +
+			", group='" + group + '\'' +
 			", values=" + values +
 			'}';
 	}

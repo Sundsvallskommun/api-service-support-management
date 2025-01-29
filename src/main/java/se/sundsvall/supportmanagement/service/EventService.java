@@ -29,20 +29,13 @@ import se.sundsvall.supportmanagement.service.mapper.EventlogMapper;
 public class EventService {
 
 	private final ExecutingUserSupplier executingUserSupplier;
-
 	private final EventlogClient eventLogClient;
-
 	private final NotificationService notificationService;
 
-	private final EmployeeService employeeService;
-
-	public EventService(final ExecutingUserSupplier executingUserSupplier,
-		final EventlogClient eventLogClient, final NotificationService notificationService, final EmployeeService employeeService) {
+	public EventService(final ExecutingUserSupplier executingUserSupplier, final EventlogClient eventLogClient, final NotificationService notificationService) {
 		this.executingUserSupplier = executingUserSupplier;
 		this.eventLogClient = eventLogClient;
 		this.notificationService = notificationService;
-
-		this.employeeService = employeeService;
 	}
 
 	public void createErrandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final Revision currentRevision, final Revision previousRevision, boolean sendNotification) {
@@ -82,15 +75,10 @@ public class EventService {
 	}
 
 	private void createNotification(final ErrandEntity errandEntity, final generated.se.sundsvall.eventlog.Event event) {
-
-		Optional.ofNullable(errandEntity.getAssignedUserId()).ifPresent(loginName -> {
-			final var owner = employeeService.getEmployeeByLoginName(loginName);
-			final var creator = employeeService.getEmployeeByLoginName(executingUserSupplier.getAdUser());
-
-			final var notification = toNotification(event, errandEntity, owner, creator, executingUserSupplier.getAdUser());
+		Optional.ofNullable(errandEntity.getAssignedUserId()).ifPresent(assignedUserId -> {
+			final var notification = toNotification(event, errandEntity, executingUserSupplier.getAdUser());
 			notificationService.createNotification(errandEntity.getMunicipalityId(), errandEntity.getNamespace(), errandEntity.getId(), notification);
 		});
-
 	}
 
 	private String extractCaseId(final ErrandEntity errand) {
@@ -102,7 +90,5 @@ public class EventService {
 			.map(DbExternalTag::getValue)
 			.findAny()
 			.orElse(null);
-
 	}
-
 }
