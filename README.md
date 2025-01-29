@@ -114,9 +114,6 @@ Configuration is crucial for the application to run successfully. Ensure all nec
 
   ```yaml
   integration:
-    service:
-      url: http://dependency_service_url
-  integration:
     emailreader:
       url: http://dependency_service_url
     employee:
