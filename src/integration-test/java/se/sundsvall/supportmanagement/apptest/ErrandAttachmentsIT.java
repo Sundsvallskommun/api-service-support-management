@@ -82,7 +82,6 @@ class ErrandAttachmentsIT extends AbstractAppTest {
 			.withHttpMethod(POST)
 			.withContentType(MULTIPART_FORM_DATA)
 			.withRequestFile("errandAttachment", "test.txt")
-			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(CREATED)
 			.withExpectedResponseHeader(LOCATION, List.of(PATH + entityId + "/attachments/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"))
 			.sendRequest()

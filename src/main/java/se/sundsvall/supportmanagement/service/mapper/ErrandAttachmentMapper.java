@@ -47,14 +47,14 @@ public final class ErrandAttachmentMapper {
 		}
 	}
 
-	public static List<ErrandAttachment> toErrandAttachmentHeaders(final List<AttachmentEntity> attachmentEntities) {
+	public static List<ErrandAttachment> toErrandAttachments(final List<AttachmentEntity> attachmentEntities) {
 		return Optional.ofNullable(attachmentEntities).orElse(emptyList()).stream()
-			.map(ErrandAttachmentMapper::toErrandAttachmentHeader)
+			.map(ErrandAttachmentMapper::toErrandAttachment)
 			.filter(Objects::nonNull)
 			.toList();
 	}
 
-	public static ErrandAttachment toErrandAttachmentHeader(final AttachmentEntity attachmentEntity) {
+	public static ErrandAttachment toErrandAttachment(final AttachmentEntity attachmentEntity) {
 		return Optional.ofNullable(attachmentEntity)
 			.map(e -> ErrandAttachment.create()
 				.withFileName(e.getFileName())

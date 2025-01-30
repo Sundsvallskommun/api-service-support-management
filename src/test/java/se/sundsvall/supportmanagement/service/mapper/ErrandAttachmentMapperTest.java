@@ -74,9 +74,9 @@ class ErrandAttachmentMapperTest {
 	}
 
 	@Test
-	void toErrandAttachmentHeaders() {
+	void toErrandAttachments() {
 
-		final var result = ErrandAttachmentMapper.toErrandAttachmentHeaders(List.of(buildAttachmentEntity(buildErrandEntity())));
+		final var result = ErrandAttachmentMapper.toErrandAttachments(List.of(buildAttachmentEntity(buildErrandEntity())));
 
 		assertThat(result).isNotNull();
 		assertThat(result.getFirst().getId()).isEqualTo(ATTACHMENT_ID);
@@ -87,7 +87,7 @@ class ErrandAttachmentMapperTest {
 	@Test
 	void toErrandAttachmentsFromNullInput() {
 
-		assertThat(ErrandAttachmentMapper.toErrandAttachmentHeaders(null))
+		assertThat(ErrandAttachmentMapper.toErrandAttachments(null))
 			.isNotNull().isEmpty();
 	}
 
