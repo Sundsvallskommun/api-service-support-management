@@ -1,23 +1,21 @@
 package se.sundsvall.supportmanagement.apptest;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.HttpHeaders.LOCATION;
 import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.PATCH;
 import static org.springframework.http.HttpMethod.POST;
+import static org.springframework.http.HttpMethod.PUT;
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.jdbc.Sql;
 import se.sundsvall.dept44.test.AbstractAppTest;
 import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.supportmanagement.Application;
-import se.sundsvall.supportmanagement.integration.db.NotificationRepository;
 
 @WireMockAppTestSuite(files = "classpath:/NotificationIT/", classes = Application.class)
 @Sql({
@@ -36,26 +34,27 @@ class NotificationIT extends AbstractAppTest {
 	private static final String OWNER_ID = "owner_id-1";
 	private static final String NOTIFICATION_ID = "3ec421e9-56d1-4e47-9160-259d8dbe6a50";
 
-	@Autowired
-	private NotificationRepository notificationRepository;
-
 	@Test
 	void test01_createNotification() {
 
-		final var result = setupCall()
+		final var location = setupCall()
 			.withServicePath(ERRAND_NOTIFICATIONS_PATH)
 			.withHttpMethod(POST)
+			.withHeader("sentbyuser", "jane02doe")
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(CREATED)
 			.withExpectedResponseHeader(LOCATION, List.of("/" + MUNICIPALITY_2281 + "/" + NAMESPACE + "/errands/" + ERRAND_ID + "/notifications/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"))
 			.withExpectedResponseBodyIsNull()
-			.sendRequestAndVerifyResponse()
+			.sendRequest()
 			.getResponseHeaders()
 			.getFirst(LOCATION);
 
-		assertThat(result).isNotBlank();
-		final var createdNotificationId = result.substring(result.lastIndexOf('/') + 1);
-		assertThat(notificationRepository.existsByIdAndNamespaceAndMunicipalityIdAndErrandEntityId(createdNotificationId, NAMESPACE, MUNICIPALITY_2281, ERRAND_ID)).isTrue();
+		setupCall()
+			.withServicePath(location)
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
 	}
 
 	@Test
@@ -109,6 +108,25 @@ class NotificationIT extends AbstractAppTest {
 
 	@Test
 	void test06_getNotificationsByErrandId() {
+		setupCall()
+			.withServicePath(ERRAND_NOTIFICATIONS_PATH)
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	void test07_globalAcknowledgeNotifications() {
+
+		setupCall()
+			.withServicePath(ERRAND_NOTIFICATIONS_PATH + "/global-acknowledged")
+			.withHttpMethod(PUT)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(NO_CONTENT)
+			.withExpectedResponseBodyIsNull()
+			.sendRequest();
+
 		setupCall()
 			.withServicePath(ERRAND_NOTIFICATIONS_PATH)
 			.withHttpMethod(GET)

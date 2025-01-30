@@ -1,14 +1,11 @@
 [
 	{
 		"expires": "2024-12-31T23:59:59.999Z",
-		"globalAcknowledged": true,
 		"acknowledged": true,
-		"ownerFullName": "owner_full_name-1 (modified)",
-		"createdBy": "created_by-1 (modified)",
 		"description": "description-1 (modified)",
 		"id": "3ec421e9-56d1-4e47-9160-259d8dbe6a50",
 		"errandId": "ec677eb3-604c-4935-bff7-f8f0b500c8f4",
-		"ownerId": "owner_id-1 (modified)",
+		"ownerId": "owner_id_new",
 		"type": "type-1 (modified)",
 		"content": "content-1 (modified)"
 	}

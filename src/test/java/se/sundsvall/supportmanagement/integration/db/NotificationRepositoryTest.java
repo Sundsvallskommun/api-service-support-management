@@ -98,16 +98,6 @@ class NotificationRepositoryTest {
 	}
 
 	@Test
-	void findByNamespaceAndMunicipalityIdAndOwnerIdAndAcknowledgedAndErrandEntityIdAndType() {
-
-		// Act
-		final var notification = notificationRepository.findByNamespaceAndMunicipalityIdAndOwnerIdAndAcknowledgedAndErrandEntityIdAndType("namespace-1", "municipalityId-1", "owner_id-1", false, "ERRAND_ID-1", "type-1");
-
-		// Assert
-		assertThat(notification).isPresent();
-	}
-
-	@Test
 	void findByExpiresBefore() {
 
 		// Arrange

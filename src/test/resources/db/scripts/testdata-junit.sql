@@ -161,8 +161,9 @@ VALUES (1, 'attach1', 'comm1', 'text/plain', 'attachment1'),
 -- Notification
 -------------------------------------
 INSERT INTO notification(acknowledged, global_acknowledged, created, expires, modified, content, created_by, description, errand_id, id, municipality_id, namespace, owner_full_name, owner_id, type)
-VALUES (0, 0, now(), '2023-12-31 23:59:59.999', now(), 'content-1', 'created_by-1', 'description-1', 'ERRAND_ID-1', '1', 'municipalityId-1', 'namespace-1', 'owner_full_name-1', 'owner_id-1', 'type-1'),
-       (1, 0, now(), '2024-12-31 23:59:59.999', now(), 'content-2', 'created_by-2', 'description-2', 'ERRAND_ID-2', '2', 'municipalityId-1', 'namespace-1', 'owner_full_name-2', 'owner_id-2', 'type-2');
+VALUES	(0, 0, now(), '2023-12-31 23:59:59.999', now(), 'content-1', 'created_by-1', 'description-1', 'ERRAND_ID-1', '1', 'municipalityId-1', 'namespace-1', 'owner_full_name-1', 'owner_id-1', 'type-1'),
+		(0, 0, now(), '2024-12-31 23:59:59.999', now(), 'content-2', 'created_by-2', 'description-2', 'ERRAND_ID-2', '2', 'municipalityId-1', 'namespace-1', 'owner_full_name-2', 'owner_id-2', 'type-2'),
+		(1, 0, now(), '2024-12-31 23:59:59.999', now(), 'content-3', 'created_by-3', 'description-3', 'ERRAND_ID-3', '3', 'municipalityId-1', 'namespace-1', 'owner_full_name-3', 'owner_id-3', 'type-3');
 
 -------------------------------------
 -- EmailWorkerConfig

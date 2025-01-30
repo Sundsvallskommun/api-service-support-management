@@ -53,10 +53,11 @@ public class TestObjectsBuilder {
 	private static final String PARAMETER_KEY = "parameterKey";
 	private static final String PARAMETER_VALUE = "parameterValue";
 	private static final String PARAMETER_ID = "parameterId";
-	private static final boolean NOTIFICATION_ACKNOWLEDGED = true;
-	private static final boolean NOTIFICATION_GLOBAL_ACKNOWLEDGED = true;
+	private static final boolean NOTIFICATION_ACKNOWLEDGED = false;
+	private static final boolean NOTIFICATION_GLOBAL_ACKNOWLEDGED = false;
 
 	private static final ErrandEntity NOTIFICATION_ERRAND_ENTITY = ErrandEntity.create()
+		.withAssignedUserId(NOTIFICATION_OWNER_ID)
 		.withId("cb20c51f-fcf3-42c0-b613-de563634a8ec")
 		.withErrandNumber("ERRAND-NUMBER");
 
