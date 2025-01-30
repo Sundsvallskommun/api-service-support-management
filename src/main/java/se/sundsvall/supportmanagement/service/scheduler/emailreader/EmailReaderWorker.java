@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.service.scheduler.emailreader;
 
+import static java.util.Collections.emptyList;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static se.sundsvall.supportmanagement.service.scheduler.emailreader.ErrandNumberParser.parseSubject;
 
@@ -15,6 +16,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.supportmanagement.integration.db.EmailWorkerConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.model.CommunicationAttachmentEntity;
+import se.sundsvall.supportmanagement.integration.db.model.CommunicationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.EmailWorkerConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.emailreader.EmailReaderClient;
@@ -109,9 +112,11 @@ public class EmailReaderWorker {
 	private void saveEmail(final Email email, final ErrandEntity errand) {
 
 		final var communicationEntity = emailReaderMapper.toCommunicationEntity(email, errand);
+		addAttachments(communicationEntity);
 
 		communicationService.saveCommunication(communicationEntity);
 		communicationService.saveAttachment(communicationEntity, errand);
+
 	}
 
 	private boolean isErrandInactive(final ErrandEntity errand, final EmailWorkerConfigEntity config) {
@@ -156,5 +161,15 @@ public class EmailReaderWorker {
 
 	private boolean isInvalidEmailAddress(final String value) {
 		return !EmailValidator.getInstance().isValid(value);
+	}
+
+	void addAttachments(final CommunicationEntity communicationEntity) {
+		Optional.ofNullable(communicationEntity.getAttachments()).orElse(emptyList()).forEach(this::addAttachment);
+	}
+
+	private void addAttachment(final CommunicationAttachmentEntity attachment) {
+		final var attachmentData = emailReaderClient.getAttachment(attachment.getMunicipalityId(), Integer.parseInt(attachment.getForeignId()));
+		attachment.withAttachmentData(emailReaderMapper.toCommunicationAttachmentDataEntity(attachmentData))
+			.withFileSize(attachmentData.length);
 	}
 }
