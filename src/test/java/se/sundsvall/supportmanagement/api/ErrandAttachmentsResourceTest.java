@@ -106,7 +106,7 @@ class ErrandAttachmentsResourceTest {
 			.withId(randomUUID().toString())
 			.withMimeType("text/plain"));
 
-		when(errandAttachmentServiceMock.readErrandAttachmentHeaders(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID)).thenReturn(errandAttachments);
+		when(errandAttachmentServiceMock.readErrandAttachments(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID)).thenReturn(errandAttachments);
 
 		final var response = webTestClient.get().uri(builder -> builder.path(PATH)
 			.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", ERRAND_ID)))
@@ -119,7 +119,7 @@ class ErrandAttachmentsResourceTest {
 		assertThat(response.getResponseBody()).isEqualTo(errandAttachments);
 
 		// Verification
-		verify(errandAttachmentServiceMock).readErrandAttachmentHeaders(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
+		verify(errandAttachmentServiceMock).readErrandAttachments(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 	}
 
 	@Test

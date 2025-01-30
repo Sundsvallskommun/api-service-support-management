@@ -8,9 +8,9 @@
 		},
 		"communicationAttachments": [
 			{
-				"name": "attachment1",
-				"attachmentID": "896a44d8-724b-11ed-a840-0242ac110002",
-				"contentType": "text/plain"
+				"fileName": "attachment1",
+				"id": "896a44d8-724b-11ed-a840-0242ac110002",
+				"mimeType": "text/plain"
 			}
 		],
 		"messageBody": "message body 1",

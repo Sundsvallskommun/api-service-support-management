@@ -204,7 +204,7 @@ class ErrandAttachmentServiceTest {
 		when(errandMock.getAttachments()).thenReturn(List.of(buildAttachmentEntity(buildErrandEntity())));
 
 		// Call
-		final var result = service.readErrandAttachmentHeaders(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
+		final var result = service.readErrandAttachments(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 
 		// Assertions and verifications
 		assertThat(result).isNotNull().hasSize(1);

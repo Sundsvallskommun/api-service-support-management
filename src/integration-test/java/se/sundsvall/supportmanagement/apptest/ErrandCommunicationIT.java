@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.apptest;
 
 import java.util.List;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.jdbc.Sql;
@@ -121,7 +122,7 @@ class ErrandCommunicationIT extends AbstractAppTest {
 	}
 
 	@Test
-	void test07_getMessageAttachmentStreamedNotFound() {
+	void test07_getMessageAttachmentNotFound() {
 
 		final var errandId = "ec677eb3-604c-4935-bff7-f8f0b500c8f4";
 		final var communicationId = "59328e70-4297-4bb5-ba69-cb17f2d15a17";

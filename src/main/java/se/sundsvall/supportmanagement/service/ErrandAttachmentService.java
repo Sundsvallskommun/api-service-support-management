@@ -12,7 +12,7 @@ import static org.zalando.problem.Status.INSUFFICIENT_STORAGE;
 import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
 import static org.zalando.problem.Status.NOT_FOUND;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapper.toAttachmentEntity;
-import static se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapper.toErrandAttachmentHeaders;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapper.toErrandAttachments;
 
 import jakarta.persistence.EntityManager;
 import jakarta.servlet.http.HttpServletResponse;
@@ -94,9 +94,9 @@ public class ErrandAttachmentService {
 		streamAttachmentData(attachmentEntity, response);
 	}
 
-	public List<ErrandAttachment> readErrandAttachmentHeaders(final String namespace, final String municipalityId, final String errandId) {
+	public List<ErrandAttachment> readErrandAttachments(final String namespace, final String municipalityId, final String errandId) {
 		final var errandEntity = getErrand(errandId, namespace, municipalityId, false);
-		return toErrandAttachmentHeaders(errandEntity.getAttachments());
+		return toErrandAttachments(errandEntity.getAttachments());
 	}
 
 	public void deleteErrandAttachment(final String namespace, final String municipalityId, final String errandId, final String attachmentId) {

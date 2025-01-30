@@ -40,7 +40,6 @@ class ErrandAttachmentsIT extends AbstractAppTest {
 	private static final String NAMESPACE = "NAMESPACE-1";
 	private static final String MUNICIPALITY_ID = "2281";
 	private static final String PATH = "/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/errands/";
-	private static final String REQUEST_FILE = "request.json";
 	private static final String RESPONSE_FILE = "response.json";
 
 	@Autowired
@@ -82,7 +81,6 @@ class ErrandAttachmentsIT extends AbstractAppTest {
 			.withHttpMethod(POST)
 			.withContentType(MULTIPART_FORM_DATA)
 			.withRequestFile("errandAttachment", "test.txt")
-			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(CREATED)
 			.withExpectedResponseHeader(LOCATION, List.of(PATH + entityId + "/attachments/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"))
 			.sendRequest()
