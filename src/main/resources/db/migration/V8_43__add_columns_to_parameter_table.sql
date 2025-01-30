@@ -29,10 +29,12 @@ SELECT
  ROW_NUMBER() OVER (PARTITION BY parameter_values.parameter_id ORDER BY parameter_values.value) - 1 AS value_order
 FROM parameter_values;
 
+TRUNCATE TABLE parameter_values;
+
 -- Update the parameter table with the calculated parameter order
-UPDATE parameter_values pv
-JOIN sorted_parameter_values sp ON pv.parameter_id = sp.parameter_id AND pv.value = sp.value
-SET pv.value_order = sp.value_order;
+INSERT INTO parameter_values (parameter_id, value, value_order)
+  SELECT sorted_parameter_values.parameter_id, sorted_parameter_values.value, sorted_parameter_values.value_order
+  FROM sorted_parameter_values;
 
 -- Clean up the temporary table
 DROP TEMPORARY TABLE IF EXISTS sorted_parameter_values;
