@@ -51,7 +51,8 @@ class EmailReaderMapperTest {
 			.receivedAt(OffsetDateTime.now())
 			.attachments(List.of(new EmailAttachment()
 				.name("someName")
-				.contentType("text/plain")));
+				.contentType("text/plain")
+				.id(99L)));
 
 		// Act
 		final var result = emailReaderMapper.toCommunicationEntity(email, errandEntity);
@@ -71,6 +72,7 @@ class EmailReaderMapperTest {
 		assertThat(result.getAttachments().getFirst().getName()).isEqualTo("someName");
 		assertThat(result.getAttachments().getFirst().getContentType()).isEqualTo("text/plain");
 		assertThat(result.getAttachments().getFirst().getAttachmentData()).isNull();
+		assertThat(result.getAttachments().getFirst().getForeignId()).isEqualTo("99");
 		assertThat(result.getEmailHeaders()).isNotNull().hasSize(1);
 		assertThat(result.getEmailHeaders().getFirst().getHeader()).isEqualTo(EmailHeader.MESSAGE_ID);
 		assertThat(result.getEmailHeaders().getFirst().getValues()).isNotNull().hasSize(1).contains("someValue");
@@ -95,7 +97,8 @@ class EmailReaderMapperTest {
 			.receivedAt(OffsetDateTime.now())
 			.attachments(List.of(new EmailAttachment()
 				.name("someName")
-				.contentType("text/plain")));
+				.contentType("text/plain")
+				.id(99L)));
 
 		// Act
 		final var result = emailReaderMapper.toCommunicationEntity(email, errandEntity);
@@ -105,7 +108,7 @@ class EmailReaderMapperTest {
 		assertThat(result.getTarget()).isNull();
 		assertThat(result.getErrandNumber()).isEqualTo("someErrandNumber");
 		assertThat(result.getAttachments()).isNotNull().hasSize(1);
-		assertThat(result.getAttachments().getFirst()).hasNoNullFieldsOrPropertiesExcept("id", "foreignId", "fileSize", "attachmentData");
+		assertThat(result.getAttachments().getFirst()).hasNoNullFieldsOrPropertiesExcept("id", "fileSize", "attachmentData");
 	}
 
 	@Test

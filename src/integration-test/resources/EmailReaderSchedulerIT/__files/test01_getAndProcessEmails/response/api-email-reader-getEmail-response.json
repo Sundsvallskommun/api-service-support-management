@@ -10,7 +10,13 @@
 			"classification.category": "CATEGORY-1",
 			"labels": "LABEL-1;LABEL-2"
 		},
-		"attachments": [],
+		"attachments": [
+			{
+				"id": 123,
+				"name": "file.txt",
+				"contentType": "text/plain"
+			}
+		],
 		"sender": "sender@this.is.a.test",
 		"recipients": [
 			"name@this.is.a.test"
