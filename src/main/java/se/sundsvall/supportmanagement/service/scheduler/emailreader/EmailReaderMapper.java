@@ -75,6 +75,7 @@ public class EmailReaderMapper {
 				.withMunicipalityId(errand.getMunicipalityId())
 				.withNamespace(errand.getNamespace())
 				.withName(attachment.getName())
+				.withForeignId(attachment.getId().toString())
 				.withContentType(attachment.getContentType()))
 			.toList();
 	}
