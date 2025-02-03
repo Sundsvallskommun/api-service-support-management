@@ -164,7 +164,7 @@ class MessagingMapperTest {
 			.withAttachmentIds(List.of("1", "2"))
 			.withAttachments(List.of(WebMessageAttachment.create()
 				.withBase64EncodedString(FILE_CONTENT)
-				.withName(FILE_NAME)));
+				.withFileName(FILE_NAME)));
 
 		final var originalContent = "This is a test";
 		final var contentBytes = originalContent.getBytes(StandardCharsets.UTF_8);
@@ -253,7 +253,7 @@ class MessagingMapperTest {
 		return EmailRequest.create()
 			.withAttachments(List.of(EmailAttachment.create()
 				.withBase64EncodedString(FILE_CONTENT)
-				.withName(FILE_NAME)))
+				.withFileName(FILE_NAME)))
 			.withHtmlMessage(htmlMessage)
 			.withMessage(MESSAGE)
 			.withRecipient(RECIPIENT)

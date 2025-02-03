@@ -43,7 +43,7 @@ class ErrandCommunicationResourceTest {
 	private static final String PATH_SMS = "/sms";
 	private static final String PATH_EMAIL = "/email";
 	private static final String PATH_WEB_MESSAGE = "/webmessage";
-	private static final String PATH_ATTACHMENTS = "/{communicationId}/attachments/{attachmentId}/streamed";
+	private static final String PATH_ATTACHMENTS = "/{communicationId}/attachments/{attachmentId}";
 
 	@MockitoBean
 	private CommunicationService serviceMock;
@@ -71,13 +71,13 @@ class ErrandCommunicationResourceTest {
 		return WebMessageRequest.create()
 			.withMessage("message")
 			.withAttachmentIds(List.of("1", "2"))
-			.withAttachments(withAttachment ? List.of(WebMessageAttachment.create().withName("attachmentName").withBase64EncodedString("ZGF0YQ==")) : null);
+			.withAttachments(withAttachment ? List.of(WebMessageAttachment.create().withFileName("attachmentName").withBase64EncodedString("ZGF0YQ==")) : null);
 	}
 
 	private static EmailAttachment attachment() {
 		return EmailAttachment.create()
 			.withBase64EncodedString("aGVsbG8gd29ybGQK")
-			.withName("name");
+			.withFileName("name");
 	}
 
 	@Test
@@ -193,7 +193,7 @@ class ErrandCommunicationResourceTest {
 	}
 
 	@Test
-	void getMessageAttachmentStreamed() {
+	void getMessageAttachment() {
 
 		// ACT
 		webTestClient.get()
