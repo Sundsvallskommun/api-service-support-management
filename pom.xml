@@ -14,7 +14,7 @@
 	<name>api-service-support-management</name>
 	<properties>
 		<spring-filter.version>3.1.9</spring-filter.version>
-		<tika-core.version>3.0.0</tika-core.version>
+		<tika-core.version>3.1.0</tika-core.version>
 		<flipkart.zjsonpatch.version>0.4.16</flipkart.zjsonpatch.version>
 		<generated-sources-path>${project.build.directory}/generated-sources</generated-sources-path>
 		<generated-sources-java-path>src/main/java</generated-sources-java-path>
