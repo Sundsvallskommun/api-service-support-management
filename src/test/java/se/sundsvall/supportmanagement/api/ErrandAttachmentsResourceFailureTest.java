@@ -419,16 +419,16 @@ class ErrandAttachmentsResourceFailureTest {
 	}
 
 	@Test
-	void getAttachmentStreamedServiceBusy() {
+	void readErrandAttachmentServiceBusy() {
 
 		// Parameter values
 		final var attachmentId = randomUUID().toString();
 		doThrow(Problem.valueOf(TOO_MANY_REQUESTS, "Service is currently unavailable, please try again later."))
-			.when(errandAttachmentServiceMock).getAttachmentStreamed(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(attachmentId), any());
+			.when(errandAttachmentServiceMock).readErrandAttachment(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(attachmentId), any());
 
 		// ACT
 		final var response = webTestClient.get()
-			.uri(uriBuilder -> uriBuilder.path(PATH.concat("/{attachmentId}/streamed"))
+			.uri(uriBuilder -> uriBuilder.path(PATH.concat("/{attachmentId}"))
 				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", ERRAND_ID, "attachmentId", attachmentId)))
 			.exchange()
 			.expectStatus().is4xxClientError()
@@ -441,7 +441,7 @@ class ErrandAttachmentsResourceFailureTest {
 		assertThat(response.getDetail()).isEqualTo("Service is currently unavailable, please try again later.");
 
 		// Verification
-		verify(errandAttachmentServiceMock).getAttachmentStreamed(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(attachmentId), any());
+		verify(errandAttachmentServiceMock).readErrandAttachment(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(attachmentId), any());
 	}
 
 }

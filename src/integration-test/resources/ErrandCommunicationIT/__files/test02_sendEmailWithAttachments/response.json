@@ -7,14 +7,14 @@
 		},
 		"communicationAttachments": [
 			{
-				"name": "internet_history.png",
-				"attachmentID": "${json-unit.regex}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
-				"contentType": "image/png"
+				"fileName": "internet_history.png",
+				"id": "${json-unit.regex}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+				"mimeType": "image/png"
 			},
 			{
-				"name": "those_happy_days.png",
-				"attachmentID": "${json-unit.regex}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
-				"contentType": "image/png"
+				"fileName": "those_happy_days.png",
+				"id": "${json-unit.regex}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+				"mimeType": "image/png"
 			}
 		],
 		"messageBody": "Since when is the internet about robbing people of their privacy? Since August 6, 1991 when the World Wide Web project was announced.",
