@@ -58,6 +58,13 @@
 			"key": "key-1"
 		},
 		{
+			"displayName": "The third key which will stay in order",
+			"values": [
+				"the second value"
+			],
+			"key": "key-3"
+		},
+		{
 			"displayName": "The second key",
 			"values": [
 				"the second value"
