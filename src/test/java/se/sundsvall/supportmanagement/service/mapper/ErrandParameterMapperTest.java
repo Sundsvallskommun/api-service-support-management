@@ -20,6 +20,10 @@ class ErrandParameterMapperTest {
 				.withKey("keyA")
 				.withValues(List.of("value1", "value2", "value3")),
 			Parameter.create()
+				.withDisplayName("displayNameD")
+				.withKey("keyC")
+				.withValues(List.of("value4", "value5", "value6")),
+			Parameter.create()
 				.withDisplayName("displayNameB")
 				.withKey("keyB")
 				.withValues(List.of("value4", "value5", "value6")),
@@ -32,13 +36,17 @@ class ErrandParameterMapperTest {
 
 		// Assert
 		assertThat(result)
-			.hasSize(2)
+			.hasSize(3)
 			.isEqualTo(List.of(
 				Parameter.create()
 					.withDisplayName("displayNameA")
 					.withGroup("groupA")
 					.withKey("keyA")
 					.withValues(List.of("value1", "value2", "value3", "value7", "value8", "value9")),
+				Parameter.create()
+					.withDisplayName("displayNameD")
+					.withKey("keyC")
+					.withValues(List.of("value4", "value5", "value6")),
 				Parameter.create()
 					.withDisplayName("displayNameB")
 					.withKey("keyB")

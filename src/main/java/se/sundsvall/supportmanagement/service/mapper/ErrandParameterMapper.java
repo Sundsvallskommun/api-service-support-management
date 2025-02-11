@@ -4,9 +4,11 @@ import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.groupingBy;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import se.sundsvall.supportmanagement.api.model.errand.Parameter;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ParameterEntity;
@@ -46,8 +48,8 @@ public final class ErrandParameterMapper {
 	}
 
 	public static List<Parameter> toUniqueKeyList(List<Parameter> parameterList) {
-		return new ArrayList<>(Optional.ofNullable(parameterList).orElse(emptyList()).stream()
-			.collect(groupingBy(Parameter::getKey))
+		return Optional.ofNullable(parameterList).orElse(emptyList()).stream()
+			.collect(groupingBy(Parameter::getKey, LinkedHashMap::new, Collectors.toList()))
 			.entrySet()
 			.stream()
 			.map(entry -> Parameter.create()
@@ -59,6 +61,6 @@ public final class ErrandParameterMapper {
 					.filter(Objects::nonNull)
 					.flatMap(List::stream)
 					.toList())))
-			.toList());
+			.toList();
 	}
 }
