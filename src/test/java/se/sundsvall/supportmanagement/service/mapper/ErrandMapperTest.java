@@ -242,7 +242,7 @@ class ErrandMapperTest {
 		assertThat(errand.getContactReason()).isEqualTo(CONTACT_REASON);
 		assertThat(errand.getContactReasonDescription()).isEqualTo(CONTACT_REASON_DESCRIPTION);
 		assertThat(errand.getLabels()).containsExactly(LABEL_1, LABEL_2);
-		assertThat(errand).hasNoNullFieldsOrProperties();
+		assertThat(errand).hasNoNullFieldsOrPropertiesExcept("notifications");
 	}
 
 	@Test
@@ -302,7 +302,7 @@ class ErrandMapperTest {
 				ERRAND_NUMBER,
 				List.of(LABEL_1, LABEL_2)));
 
-		assertThat(errands.getFirst()).hasNoNullFieldsOrProperties();
+		assertThat(errands.getFirst()).hasNoNullFieldsOrPropertiesExcept("notifications");
 	}
 
 	@Test

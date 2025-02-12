@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Objects;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.format.annotation.DateTimeFormat.ISO;
+import se.sundsvall.supportmanagement.api.model.notification.Notification;
 import se.sundsvall.supportmanagement.api.validation.UniqueExternalTagKeys;
 import se.sundsvall.supportmanagement.api.validation.ValidClassification;
 import se.sundsvall.supportmanagement.api.validation.ValidContactReason;
@@ -113,6 +114,12 @@ public class Errand {
 
 	@Schema(description = "List of labels for the errand", example = "[\"label1\",\"label2\"]")
 	private List<String> labels;
+
+	@Schema(description = "List of active notifications for the errand", accessMode = READ_ONLY)
+	@Null(groups = {
+		OnCreate.class, OnUpdate.class
+	})
+	private List<Notification> notifications;
 
 	@Schema(description = "Timestamp when errand was created", example = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	@DateTimeFormat(iso = ISO.DATE_TIME)
@@ -438,6 +445,19 @@ public class Errand {
 		return this;
 	}
 
+	public List<Notification> getNotifications() {
+		return notifications;
+	}
+
+	public void setNotifications(final List<Notification> notifications) {
+		this.notifications = notifications;
+	}
+
+	public Errand withNotifications(final List<Notification> notifications) {
+		this.notifications = notifications;
+		return this;
+	}
+
 	public Suspension getSuspension() {
 		return suspension;
 	}
@@ -453,8 +473,8 @@ public class Errand {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(assignedGroupId, assignedUserId, businessRelated, channel, classification, contactReason, contactReasonDescription, created, description, errandNumber, escalationEmail, externalTags, id, labels, modified, parameters, priority,
-			reporterUserId, resolution, stakeholders, status, suspension, title, touched);
+		return Objects.hash(assignedGroupId, assignedUserId, businessRelated, channel, classification, contactReason, contactReasonDescription, created, description, errandNumber, escalationEmail, externalTags, id, labels, notifications, modified,
+			parameters, priority, reporterUserId, resolution, stakeholders, status, suspension, title, touched);
 	}
 
 	@Override
@@ -468,9 +488,10 @@ public class Errand {
 		return Objects.equals(assignedGroupId, other.assignedGroupId) && Objects.equals(assignedUserId, other.assignedUserId) && Objects.equals(businessRelated, other.businessRelated) && Objects.equals(channel, other.channel) && Objects.equals(
 			classification, other.classification) && Objects.equals(contactReason, other.contactReason) && Objects.equals(contactReasonDescription, other.contactReasonDescription) && Objects.equals(created, other.created) && Objects.equals(description,
 				other.description) && Objects.equals(errandNumber, other.errandNumber) && Objects.equals(escalationEmail, other.escalationEmail) && Objects.equals(externalTags, other.externalTags) && Objects.equals(id, other.id) && Objects.equals(labels,
-					other.labels) && Objects.equals(modified, other.modified) && Objects.equals(parameters, other.parameters) && (priority == other.priority) && Objects.equals(reporterUserId, other.reporterUserId) && Objects.equals(resolution,
-						other.resolution) && Objects.equals(stakeholders, other.stakeholders) && Objects.equals(status, other.status) && Objects.equals(suspension, other.suspension) && Objects.equals(title, other.title) && Objects.equals(touched,
-							other.touched);
+					other.labels) && Objects.equals(notifications, other.notifications) && Objects.equals(modified, other.modified) && Objects.equals(parameters, other.parameters) && (priority == other.priority) && Objects.equals(reporterUserId,
+						other.reporterUserId) && Objects.equals(resolution, other.resolution) && Objects.equals(stakeholders, other.stakeholders) && Objects.equals(status, other.status) && Objects.equals(suspension, other.suspension) && Objects.equals(
+							title, other.title)
+			&& Objects.equals(touched, other.touched);
 	}
 
 	@Override
@@ -497,6 +518,7 @@ public class Errand {
 			", suspension=" + suspension +
 			", businessRelated=" + businessRelated +
 			", labels=" + labels +
+			", notifications=" + notifications +
 			", created=" + created +
 			", modified=" + modified +
 			", touched=" + touched +

@@ -90,7 +90,7 @@ public class ErrandService {
 
 	public Errand readErrand(String namespace, String municipalityId, String id) {
 		verifyExistingErrand(id, namespace, municipalityId, false);
-
+		// TODO add notifications to errand
 		return toErrand(repository.getReferenceById(id));
 	}
 
