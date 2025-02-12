@@ -64,7 +64,7 @@ class ErrandTest {
 		final var contactReason = "reason";
 		final var contactReasonDescription = "contactReasonDescription";
 		final var labels = List.of("label");
-		final var notifications = List.of(Notification.create().withErrandId("errandId").withType("type").withDescription("description").withCreatedBy("createdBy").withCreated(OffsetDateTime.now()));
+		final var notifications = List.of(Notification.create());
 
 		final var bean = Errand.create()
 			.withAssignedGroupId(assignedGroupId)
