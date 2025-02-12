@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Random;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import se.sundsvall.supportmanagement.api.model.notification.Notification;
 
 class ErrandTest {
 
@@ -63,6 +64,7 @@ class ErrandTest {
 		final var contactReason = "reason";
 		final var contactReasonDescription = "contactReasonDescription";
 		final var labels = List.of("label");
+		final var notifications = List.of(Notification.create().withErrandId("errandId").withType("type").withDescription("description").withCreatedBy("createdBy").withCreated(OffsetDateTime.now()));
 
 		final var bean = Errand.create()
 			.withAssignedGroupId(assignedGroupId)
@@ -88,7 +90,8 @@ class ErrandTest {
 			.withBusinessRelated(businessRelated)
 			.withContactReason(contactReason)
 			.withContactReasonDescription(contactReasonDescription)
-			.withLabels(labels);
+			.withLabels(labels)
+			.withNotifications(notifications);
 
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(bean.getAssignedGroupId()).isEqualTo(assignedGroupId);
@@ -116,6 +119,7 @@ class ErrandTest {
 		assertThat(bean.getContactReason()).isEqualTo(contactReason);
 		assertThat(bean.getContactReasonDescription()).isEqualTo(contactReasonDescription);
 		assertThat(bean.getLabels()).isEqualTo(labels);
+		assertThat(bean.getNotifications()).isEqualTo(notifications);
 	}
 
 	@Test
