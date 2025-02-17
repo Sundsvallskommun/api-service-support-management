@@ -43,6 +43,7 @@
 				"LABEL-1",
 				"LABEL-2"
 			],
+			"activeNotifications": [],
 			"id": "${json-unit.any-string}",
 			"parameters": [],
 			"suspension": {},
@@ -74,6 +75,7 @@
 			},
 			"priority": "MEDIUM",
 			"labels": [],
+			"activeNotifications": [],
 			"id": "${json-unit.any-string}",
 			"parameters": [],
 			"suspension": {},

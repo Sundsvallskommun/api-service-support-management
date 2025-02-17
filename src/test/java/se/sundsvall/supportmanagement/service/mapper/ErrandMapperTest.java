@@ -6,6 +6,8 @@ import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static org.assertj.core.groups.Tuple.tuple;
+import static se.sundsvall.supportmanagement.TestObjectsBuilder.createNotification;
+import static se.sundsvall.supportmanagement.TestObjectsBuilder.createNotificationEntity;
 import static se.sundsvall.supportmanagement.api.model.errand.Priority.HIGH;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrand;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandEntity;
@@ -190,7 +192,8 @@ class ErrandMapperTest {
 			.withSuspendedTo(SUSPENDED_TO)
 			.withErrandNumber(ERRAND_NUMBER)
 			.withBusinessRelated(BUSINESS_RELATED)
-			.withLabels(List.of(LABEL_1, LABEL_2));
+			.withLabels(List.of(LABEL_1, LABEL_2))
+			.withNotifications(List.of(createNotificationEntity(null)));
 
 	}
 
@@ -277,7 +280,8 @@ class ErrandMapperTest {
 				Errand::getBusinessRelated,
 				Errand::getContactReason,
 				Errand::getErrandNumber,
-				Errand::getLabels)
+				Errand::getLabels,
+				Errand::getActiveNotifications)
 			.containsExactly(tuple(
 				ASSIGNED_GROUP_ID,
 				ASSIGNED_USER_ID,
@@ -300,7 +304,11 @@ class ErrandMapperTest {
 				BUSINESS_RELATED,
 				CONTACT_REASON,
 				ERRAND_NUMBER,
-				List.of(LABEL_1, LABEL_2)));
+				List.of(LABEL_1, LABEL_2),
+				List.of(createNotification(notification -> {
+					notification.setErrandNumber("ERRAND-NUMBER");
+					notification.setErrandId("cb20c51f-fcf3-42c0-b613-de563634a8ec");
+				}))));
 
 		assertThat(errands.getFirst()).hasNoNullFieldsOrPropertiesExcept("notifications");
 	}

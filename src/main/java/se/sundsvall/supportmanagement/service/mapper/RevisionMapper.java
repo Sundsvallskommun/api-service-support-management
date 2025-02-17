@@ -34,6 +34,7 @@ public class RevisionMapper {
 	}
 
 	public static String toSerializedSnapshot(final ErrandEntity entity) {
+
 		return Optional.ofNullable(entity)
 			.map(GSON::toJson)
 			.orElse(null);

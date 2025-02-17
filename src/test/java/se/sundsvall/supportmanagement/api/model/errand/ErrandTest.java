@@ -64,7 +64,7 @@ class ErrandTest {
 		final var contactReason = "reason";
 		final var contactReasonDescription = "contactReasonDescription";
 		final var labels = List.of("label");
-		final var notifications = List.of(Notification.create());
+		final var activeNotifications = List.of(Notification.create());
 
 		final var bean = Errand.create()
 			.withAssignedGroupId(assignedGroupId)
@@ -91,7 +91,7 @@ class ErrandTest {
 			.withContactReason(contactReason)
 			.withContactReasonDescription(contactReasonDescription)
 			.withLabels(labels)
-			.withNotifications(notifications);
+			.withActiveNotifications(activeNotifications);
 
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(bean.getAssignedGroupId()).isEqualTo(assignedGroupId);
@@ -119,7 +119,7 @@ class ErrandTest {
 		assertThat(bean.getContactReason()).isEqualTo(contactReason);
 		assertThat(bean.getContactReasonDescription()).isEqualTo(contactReasonDescription);
 		assertThat(bean.getLabels()).isEqualTo(labels);
-		assertThat(bean.getNotifications()).isEqualTo(notifications);
+		assertThat(bean.getActiveNotifications()).isEqualTo(activeNotifications);
 	}
 
 	@Test

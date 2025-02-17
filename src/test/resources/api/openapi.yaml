@@ -5,7 +5,7 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "9.3"
+  version: "9.4"
 servers:
   - url: http://localhost:8080
     description: Generated server url
@@ -5182,7 +5182,7 @@ components:
             type: string
             description: List of labels for the errand
             example: "[\"label1\",\"label2\"]"
-        notifications:
+        activeNotifications:
           type: array
           description: List of active notifications for the errand
           readOnly: true

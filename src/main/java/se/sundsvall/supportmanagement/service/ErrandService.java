@@ -90,7 +90,6 @@ public class ErrandService {
 
 	public Errand readErrand(String namespace, String municipalityId, String id) {
 		verifyExistingErrand(id, namespace, municipalityId, false);
-		// TODO add notifications to errand
 		return toErrand(repository.getReferenceById(id));
 	}
 
@@ -121,7 +120,6 @@ public class ErrandService {
 		verifyExistingErrand(id, namespace, municipalityId, true);
 
 		final var entity = repository.getReferenceById(id);
-
 		// Delete errand
 		repository.deleteById(id);
 
