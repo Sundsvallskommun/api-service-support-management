@@ -60,6 +60,7 @@
 				"label-1",
 				"label-2"
 			],
+			"activeNotifications": [],
 			"assignedGroupId": "hardware support",
 			"modified": "2023-04-26T16:05:08.806+02:00",
 			"id": "147d355f-dc94-4fde-a4cb-9ddd16cb1946",

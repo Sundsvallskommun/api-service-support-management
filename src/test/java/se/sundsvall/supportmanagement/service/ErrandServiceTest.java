@@ -183,6 +183,7 @@ class ErrandServiceTest {
 
 		// Assertions and verifications
 		assertThat(response.getId()).isEqualTo(ERRAND_ID);
+		assertThat(response.getActiveNotifications()).hasSize(1);
 
 		verify(errandRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(errandRepositoryMock).getReferenceById(ERRAND_ID);

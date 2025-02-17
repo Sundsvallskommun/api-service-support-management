@@ -21,10 +21,12 @@ import se.sundsvall.supportmanagement.api.model.errand.Parameter;
 import se.sundsvall.supportmanagement.api.model.errand.Priority;
 import se.sundsvall.supportmanagement.api.model.errand.Stakeholder;
 import se.sundsvall.supportmanagement.api.model.errand.Suspension;
+import se.sundsvall.supportmanagement.api.model.notification.Notification;
 import se.sundsvall.supportmanagement.integration.db.model.ContactChannelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 
 public final class ErrandMapper {
@@ -146,7 +148,8 @@ public final class ErrandMapper {
 				.withContactReason(Optional.ofNullable(e.getContactReason()).map(ContactReasonEntity::getReason).orElse(null))
 				.withContactReasonDescription(e.getContactReasonDescription())
 				.withEscalationEmail(e.getEscalationEmail())
-				.withLabels(e.getLabels()))
+				.withLabels(e.getLabels())
+				.withActiveNotifications(toActiveNotifications(e.getNotifications())))
 			.orElse(null);
 	}
 
@@ -228,5 +231,13 @@ public final class ErrandMapper {
 		return ExternalTag.create()
 			.withKey(entity.getKey())
 			.withValue(entity.getValue());
+	}
+
+	private static List<Notification> toActiveNotifications(final List<NotificationEntity> entities) {
+		return Optional.ofNullable(entities).orElse(emptyList())
+			.stream()
+			.filter(notification -> !notification.isGlobalAcknowledged() || !notification.isAcknowledged())
+			.map(NotificationMapper::toNotification)
+			.toList();
 	}
 }

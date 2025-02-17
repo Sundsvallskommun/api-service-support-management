@@ -87,6 +87,7 @@ public class TestObjectsBuilder {
 			.withStatus(STATUS)
 			.withTitle(TITLE)
 			.withParameters(List.of(createParameterEntity()))
+			.withNotifications(List.of(createNotificationEntity(null)))
 			.withType(TYPE);
 	}
 
