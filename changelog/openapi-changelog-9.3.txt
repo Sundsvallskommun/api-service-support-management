@@ -1,0 +1,15 @@
+==============================================
+= Changes between openAPI version 9.2 and 9.3
+==============================================
+
+[response-property-added]
+in API GET /{municipalityId}/{namespace}/errands
+added the property 'activeNotifications' to the response with the '200' status
+
+[response-property-added]
+in API GET /{municipalityId}/{namespace}/errands/{errandId}
+added the property 'activeNotifications' to the response with the '200' status
+
+
+
+
