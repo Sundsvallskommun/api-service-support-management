@@ -1,0 +1,34 @@
+==============================================
+= Changes between openAPI version 9.1 and 9.2
+==============================================
+
+[endpoint-added]
+in API PUT /{municipalityId}/{namespace}/errands/{errandId}/notifications/global-acknowledged
+endpoint added
+
+[response-property-added]
+in API GET /{municipalityId}/{namespace}/errands/{errandId}/parameters
+added the property 'group' to the response with the '200' status
+
+[new-optional-request-property]
+in API PATCH /{municipalityId}/{namespace}/errands/{errandId}/parameters
+added the new optional request property 'group'
+
+[response-property-added]
+in API GET /{municipalityId}/{namespace}/errands
+added the property 'parameters/group' to the response with the '200' status
+
+[new-optional-request-property]
+in API POST /{municipalityId}/{namespace}/errands
+added the new optional request property 'parameters/group'
+
+[response-property-added]
+in API GET /{municipalityId}/{namespace}/errands/{errandId}
+added the property 'parameters/group' to the response with the '200' status
+
+[new-optional-request-property]
+in API PATCH /{municipalityId}/{namespace}/errands
+added the new optional request property 'parameters/group'
+
+
+
