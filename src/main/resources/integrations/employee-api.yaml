@@ -1,13 +1,20 @@
 openapi: 3.0.1
 info:
   title: Employee API
-  version: v1
+  version: v2
 paths:
-  /api/v1/employee/api-docs:
+  '/api/v2/employee/{municipalityId}/api-docs':
     get:
       tags:
         - Employee
       summary: OpenAPI specification
+      parameters:
+        - name: municipalityId
+          in: path
+          description: Kommunkod
+          required: true
+          schema:
+            type: string
       responses:
         '200':
           description: Success
@@ -22,13 +29,20 @@ paths:
               schema:
                 type: string
       x-auth-type: None
-  '/api/v1/employee/employed/{personalNumber}/loginname':
+  '/api/v2/employee/{municipalityId}/employed/{personId}/accounts':
     get:
       tags:
         - Employee
       parameters:
-        - name: personalNumber
+        - name: personId
           in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: municipalityId
+          in: path
+          description: Kommunkod
           required: true
           schema:
             type: string
@@ -40,17 +54,17 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/LoginName'
+                  $ref: '#/components/schemas/Account'
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/LoginName'
+                  $ref: '#/components/schemas/Account'
             text/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/LoginName'
+                  $ref: '#/components/schemas/Account'
         '404':
           description: Not Found
           content:
@@ -63,7 +77,7 @@ paths:
             text/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
-  '/api/v1/employee/portalpersondata/{domain}/{loginName}':
+  '/api/v2/employee/{municipalityId}/portalpersondata/{domain}/{loginName}':
     get:
       tags:
         - Employee
@@ -78,26 +92,9 @@ paths:
           required: true
           schema:
             type: string
-      responses:
-        '200':
-          description: Success
-          content:
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/PortalPersonData'
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PortalPersonData'
-            text/json:
-              schema:
-                $ref: '#/components/schemas/PortalPersonData'
-  '/api/v1/employee/portalpersondata/{email}':
-    get:
-      tags:
-        - Employee
-      parameters:
-        - name: email
+        - name: municipalityId
           in: path
+          description: Kommunkod
           required: true
           schema:
             type: string
@@ -114,13 +111,78 @@ paths:
             text/json:
               schema:
                 $ref: '#/components/schemas/PortalPersonData'
-  /api/v1/employee/employments:
+  '/api/v2/employee/{municipalityId}/portalpersondata/{email}':
     get:
       tags:
         - Employee
       parameters:
-        - name: filter
+        - name: email
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: municipalityId
+          in: path
+          description: Kommunkod
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/PortalPersonData'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortalPersonData'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/PortalPersonData'
+  '/api/v2/employee/{municipalityId}/employments':
+    get:
+      tags:
+        - Employee
+      parameters:
+        - name: CompanyId
           in: query
+          description: Filtrera en eller flera CompanyId
+          schema:
+            type: array
+            items:
+              type: integer
+              format: int32
+        - name: HireDateFrom
+          in: query
+          description: Filtrera på anställningsdatum från och med
+          schema:
+            type: string
+            format: date
+            example: '2023-01-01'
+        - name: HireDateTo
+          in: query
+          description: Filtrera på anställningsdatum till och med
+          schema:
+            type: string
+            format: date
+            example: '2023-01-01'
+        - name: IsManual
+          in: query
+          description: Filtrera på manuella eller vanliga anställningar
+          schema:
+            type: integer
+            format: int32
+        - name: PersonId
+          in: query
+          description: Filtrera på personId
+          schema:
+            type: string
+            format: uuid
+        - name: municipalityId
+          in: path
+          description: Kommunkod
+          required: true
           schema:
             type: string
       responses:
@@ -131,24 +193,66 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Employee'
+                  $ref: '#/components/schemas/Employeev2'
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Employee'
+                  $ref: '#/components/schemas/Employeev2'
             text/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Employee'
-  /api/v1/employee/newemployments:
+                  $ref: '#/components/schemas/Employeev2'
+  '/api/v2/employee/{municipalityId}/newemployments':
     get:
       tags:
         - Employee
       parameters:
-        - name: filter
+        - name: CompanyId
           in: query
+          description: Filtrera en eller flera CompanyId
+          schema:
+            type: array
+            items:
+              type: integer
+              format: int32
+        - name: HireDateFrom
+          in: query
+          description: Filtrera på anställningsdatum från och med
+          schema:
+            type: string
+            format: date
+            example: '2023-01-01'
+        - name: HireDateTo
+          in: query
+          description: Filtrera på anställningsdatum till och med
+          schema:
+            type: string
+            format: date
+            example: '2023-01-01'
+        - name: EventInfo
+          in: query
+          description: 'Filtrera på eventinfo: "Company","Rehire,Company","Corporate","Rehire,Corporate","Mover","Jumper"'
+          schema:
+            type: array
+            items:
+              type: string
+        - name: Title
+          in: query
+          description: Filtrera på anställningstitel
+          schema:
+            type: string
+        - name: PersonId
+          in: query
+          description: Filtrera personId
+          schema:
+            type: string
+            format: uuid
+        - name: municipalityId
+          in: path
+          description: Kommunkod
+          required: true
           schema:
             type: string
       responses:
@@ -159,46 +263,18 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Employee'
+                  $ref: '#/components/schemas/NewEmployee'
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Employee'
+                  $ref: '#/components/schemas/NewEmployee'
             text/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Employee'
-  /api/v1/employee/endedemployments:
-    get:
-      tags:
-        - Employee
-      parameters:
-        - name: filter
-          in: query
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Success
-          content:
-            text/plain:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Employee'
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Employee'
-            text/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Employee'
-  '/api/v1/employee/{personId}/personimage':
+                  $ref: '#/components/schemas/NewEmployee'
+  '/api/v2/employee/{municipalityId}/{personId}/personimage':
     get:
       tags:
         - Employee
@@ -214,6 +290,12 @@ paths:
           schema:
             type: integer
             format: int32
+        - name: municipalityId
+          in: path
+          description: Kommunkod
+          required: true
+          schema:
+            type: string
       responses:
         '200':
           description: Success
@@ -227,6 +309,12 @@ paths:
           schema:
             type: string
             format: uuid
+        - name: municipalityId
+          in: path
+          description: Kommunkod
+          required: true
+          schema:
+            type: string
       requestBody:
         content:
           application/json:
@@ -251,10 +339,16 @@ paths:
           schema:
             type: string
             format: uuid
+        - name: municipalityId
+          in: path
+          description: Kommunkod
+          required: true
+          schema:
+            type: string
       responses:
         '200':
           description: Success
-  '/api/v1/employee/manageremployees/{managerId}':
+  '/api/v2/employee/{municipalityId}/manageremployees/{managerId}':
     get:
       tags:
         - Employee
@@ -265,6 +359,12 @@ paths:
           schema:
             type: string
             format: uuid
+        - name: municipalityId
+          in: path
+          description: Kommunkod
+          required: true
+          schema:
+            type: string
       responses:
         '200':
           description: Success
@@ -286,7 +386,23 @@ paths:
                   $ref: '#/components/schemas/ManagerEmployee'
 components:
   schemas:
-    Employee:
+    Account:
+      type: object
+      properties:
+        domain:
+          type: string
+          nullable: true
+        loginname:
+          type: string
+          nullable: true
+        companyId:
+          type: integer
+          format: int32
+        emailAddress:
+          type: string
+          nullable: true
+      additionalProperties: false
+    Employeev2:
       type: object
       properties:
         personId:
@@ -306,67 +422,20 @@ components:
         lastname:
           type: string
           nullable: true
-        loginname:
-          type: string
+        accounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Account'
           nullable: true
-        emailAddress:
-          type: string
-          nullable: true
-        referenceNumber:
-          type: string
-          nullable: true
-        isManager:
-          type: boolean
+        referenceNumbers:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReferenceNumberCompany'
           nullable: true
         employments:
           type: array
           items:
             $ref: '#/components/schemas/Employment'
-          nullable: true
-        employeeEvents:
-          type: array
-          items:
-            $ref: '#/components/schemas/EmployeeEvent'
-          nullable: true
-      additionalProperties: false
-    EmployeeEvent:
-      type: object
-      properties:
-        companyId:
-          type: integer
-          format: int32
-        startDate:
-          type: string
-          format: date-time
-          nullable: true
-        endDate:
-          type: string
-          format: date-time
-          nullable: true
-        title:
-          type: string
-          nullable: true
-        orgId:
-          type: integer
-          format: int32
-        orgName:
-          type: string
-          nullable: true
-        topOrgId:
-          type: integer
-          format: int32
-        topOrgName:
-          type: string
-          nullable: true
-        benefitGroupId:
-          type: integer
-          format: int32
-          nullable: true
-        eventType:
-          type: string
-          nullable: true
-        eventInfo:
-          type: string
           nullable: true
       additionalProperties: false
     Employment:
@@ -417,25 +486,15 @@ components:
           nullable: true
         isMainEmployment:
           type: boolean
+        isManager:
+          type: boolean
+          nullable: true
         manager:
           $ref: '#/components/schemas/Manager'
         aid:
           type: string
           nullable: true
-        eventType:
-          type: string
-          nullable: true
-        eventInfo:
-          type: string
-          nullable: true
-      additionalProperties: false
-    LoginName:
-      type: object
-      properties:
-        domain:
-          type: string
-          nullable: true
-        loginName:
+        empRowId:
           type: string
           nullable: true
       additionalProperties: false
@@ -486,6 +545,108 @@ components:
           type: string
           nullable: true
         imageData:
+          type: string
+          nullable: true
+      additionalProperties: false
+    NewEmployee:
+      type: object
+      properties:
+        personId:
+          type: string
+          format: uuid
+        personNumber:
+          type: string
+          nullable: true
+        isClassified:
+          type: boolean
+        givenname:
+          type: string
+          nullable: true
+        middlename:
+          type: string
+          nullable: true
+        lastname:
+          type: string
+          nullable: true
+        accounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Account'
+          nullable: true
+        referenceNumbers:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReferenceNumberCompany'
+          nullable: true
+        employments:
+          type: array
+          items:
+            $ref: '#/components/schemas/NewEmployment'
+          nullable: true
+      additionalProperties: false
+    NewEmployment:
+      type: object
+      properties:
+        companyId:
+          type: integer
+          format: int32
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+          nullable: true
+        employmentType:
+          type: integer
+          format: int32
+        title:
+          type: string
+          nullable: true
+        managerCode:
+          type: string
+          nullable: true
+        orgId:
+          type: integer
+          format: int32
+        orgName:
+          type: string
+          nullable: true
+        topOrgId:
+          type: integer
+          format: int32
+        topOrgName:
+          type: string
+          nullable: true
+        benefitGroupId:
+          type: integer
+          format: int32
+          nullable: true
+        formOfEmploymentId:
+          type: string
+          nullable: true
+        isManual:
+          type: boolean
+        paTeam:
+          type: string
+          nullable: true
+        isMainEmployment:
+          type: boolean
+        isManager:
+          type: boolean
+          nullable: true
+        manager:
+          $ref: '#/components/schemas/Manager'
+        aid:
+          type: string
+          nullable: true
+        empRowId:
+          type: string
+          nullable: true
+        eventType:
+          type: string
+          nullable: true
+        eventInfo:
           type: string
           nullable: true
       additionalProperties: false
@@ -548,6 +709,9 @@ components:
         loginName:
           type: string
           nullable: true
+        fullOrgTree:
+          type: string
+          nullable: true
       additionalProperties: false
     ProblemDetails:
       type: object
@@ -569,6 +733,16 @@ components:
           type: string
           nullable: true
       additionalProperties: { }
+    ReferenceNumberCompany:
+      type: object
+      properties:
+        referenceNumber:
+          type: string
+          nullable: true
+        companyId:
+          type: integer
+          format: int32
+      additionalProperties: false
   securitySchemes:
     Bearer:
       type: apiKey

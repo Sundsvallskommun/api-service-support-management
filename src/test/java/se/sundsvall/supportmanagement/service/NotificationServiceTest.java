@@ -178,8 +178,8 @@ class NotificationServiceTest {
 
 		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(notification.getErrandId(), namespace, municipalityId)).thenReturn(Optional.of(errandEntity));
 		when(notificationRepositoryMock.save(any())).thenReturn(createNotificationEntity(n -> n.setId(id)));
-		when(employeeServiceMock.getEmployeeByLoginName(errandEntity.getAssignedUserId())).thenReturn(new PortalPersonData().loginName(errandEntity.getAssignedUserId()).fullname(ownerFullName));
-		when(employeeServiceMock.getEmployeeByLoginName(executingUserId)).thenReturn(new PortalPersonData().loginName(executingUserId).fullname(createdByFullName));
+		when(employeeServiceMock.getEmployeeByLoginName(municipalityId, errandEntity.getAssignedUserId())).thenReturn(new PortalPersonData().loginName(errandEntity.getAssignedUserId()).fullname(ownerFullName));
+		when(employeeServiceMock.getEmployeeByLoginName(municipalityId, executingUserId)).thenReturn(new PortalPersonData().loginName(executingUserId).fullname(createdByFullName));
 		when(executingUserSupplierMock.getAdUser()).thenReturn(executingUserId);
 
 		// Act
@@ -187,8 +187,8 @@ class NotificationServiceTest {
 
 		// Assert
 		assertThat(result).isNotNull().isEqualTo(id);
-		verify(employeeServiceMock).getEmployeeByLoginName(executingUserId);
-		verify(employeeServiceMock).getEmployeeByLoginName(errandEntity.getAssignedUserId());
+		verify(employeeServiceMock).getEmployeeByLoginName(municipalityId, executingUserId);
+		verify(employeeServiceMock).getEmployeeByLoginName(municipalityId, errandEntity.getAssignedUserId());
 		verify(notificationRepositoryMock).save(notificationEntityArgumentCaptor.capture());
 		assertThat(notificationEntityArgumentCaptor.getValue().getOwnerFullName()).isEqualTo(ownerFullName);
 		assertThat(notificationEntityArgumentCaptor.getValue().getCreatedByFullName()).isEqualTo(createdByFullName);
@@ -210,7 +210,7 @@ class NotificationServiceTest {
 
 		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(notification.getErrandId(), namespace, municipalityId)).thenReturn(Optional.of(errandEntity));
 		when(notificationRepositoryMock.save(any())).thenReturn(createNotificationEntity(n -> n.setId(id)));
-		when(employeeServiceMock.getEmployeeByLoginName(executingUserId)).thenReturn(new PortalPersonData().loginName(executingUserId).fullname(fullName));
+		when(employeeServiceMock.getEmployeeByLoginName(municipalityId, executingUserId)).thenReturn(new PortalPersonData().loginName(executingUserId).fullname(fullName));
 		when(executingUserSupplierMock.getAdUser()).thenReturn(executingUserId);
 
 		// Act
@@ -218,7 +218,7 @@ class NotificationServiceTest {
 
 		// Assert
 		assertThat(result).isNotNull().isEqualTo(id);
-		verify(employeeServiceMock, times(2)).getEmployeeByLoginName(executingUserId);
+		verify(employeeServiceMock, times(2)).getEmployeeByLoginName(municipalityId, executingUserId);
 		verify(notificationRepositoryMock).save(notificationEntityArgumentCaptor.capture());
 		assertThat(notificationEntityArgumentCaptor.getValue().getOwnerFullName()).isEqualTo(fullName);
 		assertThat(notificationEntityArgumentCaptor.getValue().getCreatedByFullName()).isEqualTo(fullName);
@@ -239,14 +239,14 @@ class NotificationServiceTest {
 
 		when(notificationRepositoryMock.findByIdAndNamespaceAndMunicipalityIdAndErrandEntityId(notificationId, namespace, municipalityId, notification.getErrandId()))
 			.thenReturn(Optional.ofNullable(createNotificationEntity(n -> n.setId(notificationId))));
-		when(employeeServiceMock.getEmployeeByLoginName(executingUserId)).thenReturn(new PortalPersonData().loginName(executingUserId).fullname(ownerFullName));
+		when(employeeServiceMock.getEmployeeByLoginName(municipalityId, executingUserId)).thenReturn(new PortalPersonData().loginName(executingUserId).fullname(ownerFullName));
 
 		// Act
 		notificationService.updateNotifications(municipalityId, namespace, List.of(notification));
 
 		// Assert
 		verify(notificationRepositoryMock).save(notificationEntityArgumentCaptor.capture());
-		verify(employeeServiceMock).getEmployeeByLoginName(executingUserId);
+		verify(employeeServiceMock).getEmployeeByLoginName(municipalityId, executingUserId);
 		assertThat(notificationEntityArgumentCaptor.getValue().getOwnerFullName()).isEqualTo(ownerFullName);
 		assertThat(notificationEntityArgumentCaptor.getValue().getOwnerId()).isEqualTo(notification.getOwnerId());
 		assertThat(notificationEntityArgumentCaptor.getValue().getCreatedBy()).isEqualTo(notification.getCreatedBy());
@@ -273,7 +273,7 @@ class NotificationServiceTest {
 			.hasMessage(String.format("Not Found: Notification with id:'%s' not found in namespace:'%s' for municipality with id:'%s' and errand with id:'%s'", notificationId, namespace, municipalityId, notification.getErrandId()));
 
 		// Assert
-		verify(employeeServiceMock, never()).getEmployeeByLoginName(any());
+		verify(employeeServiceMock, never()).getEmployeeByLoginName(eq(municipalityId), any());
 		verify(notificationRepositoryMock).findByIdAndNamespaceAndMunicipalityIdAndErrandEntityId(notificationId, namespace, municipalityId, notification.getErrandId());
 	}
 

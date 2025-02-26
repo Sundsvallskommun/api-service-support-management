@@ -121,6 +121,7 @@ public class NotificationService {
 	private void applyBusinessLogicForCreate(final NotificationEntity notificationEntity) {
 
 		final var executingUser = executingUserSupplier.getAdUser();
+		final var municipalityId = notificationEntity.getMunicipalityId();
 
 		// If notification is created by the user that owns the notification (ownnerId) it should be acknowledged from start.
 		if (equalsIgnoreCase(notificationEntity.getOwnerId(), executingUserSupplier.getAdUser())) {
@@ -129,7 +130,7 @@ public class NotificationService {
 
 		// If ownerId is set, use this to fetch "ownerFullName".
 		if (hasText(notificationEntity.getOwnerId())) {
-			final var ownerFullName = Optional.ofNullable(employeeService.getEmployeeByLoginName(notificationEntity.getOwnerId()))
+			final var ownerFullName = Optional.ofNullable(employeeService.getEmployeeByLoginName(municipalityId, notificationEntity.getOwnerId()))
 				.map(PortalPersonData::getFullname)
 				.orElse(null);
 
@@ -139,7 +140,7 @@ public class NotificationService {
 		// If executingUser is set, use this to populate "createdBy" and createdByFullName (but only if createdBy is empty).
 		if (hasText(executingUser)) {
 
-			final var createdByFullName = Optional.ofNullable(employeeService.getEmployeeByLoginName(executingUser))
+			final var createdByFullName = Optional.ofNullable(employeeService.getEmployeeByLoginName(municipalityId, executingUser))
 				.map(PortalPersonData::getFullname)
 				.orElse(null);
 
@@ -157,7 +158,7 @@ public class NotificationService {
 
 		// If ownerId is set, fetch "ownerFullName" again.
 		if (hasText(notification.getOwnerId())) {
-			final var ownerFullName = Optional.ofNullable(employeeService.getEmployeeByLoginName(notification.getOwnerId()))
+			final var ownerFullName = Optional.ofNullable(employeeService.getEmployeeByLoginName(notificationEntity.getMunicipalityId(), notification.getOwnerId()))
 				.map(PortalPersonData::getFullname)
 				.orElse(null);
 

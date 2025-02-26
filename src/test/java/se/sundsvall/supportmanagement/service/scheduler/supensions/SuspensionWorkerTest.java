@@ -66,13 +66,13 @@ class SuspensionWorkerTest {
 		when(notificationServiceMock.doesNotificationWithSpecificDescriptionExistForOwnerAndErrandAndNotificationIsCreatedAfter(municipalityId, namespace, errandEntity.getAssignedUserId(), errandEntity, "Parkering av ärendet har upphört",
 			errandEntity.getSuspendedFrom())).thenReturn(false);
 		when(errandsRepositoryMock.findAllBySuspendedToBefore(any(OffsetDateTime.class))).thenReturn(List.of(errandEntity));
-		when(employeeServiceMock.getEmployeeByLoginName(errandEntity.getAssignedUserId())).thenReturn(owner);
+		when(employeeServiceMock.getEmployeeByLoginName(municipalityId, errandEntity.getAssignedUserId())).thenReturn(owner);
 
 		// Act
 		suspensionWorker.processExpiredSuspensions();
 
 		// Assert
-		verify(employeeServiceMock).getEmployeeByLoginName(errandEntity.getAssignedUserId());
+		verify(employeeServiceMock).getEmployeeByLoginName(municipalityId, errandEntity.getAssignedUserId());
 		verify(errandsRepositoryMock).findAllBySuspendedToBefore(any(OffsetDateTime.class));
 		verify(notificationServiceMock).doesNotificationWithSpecificDescriptionExistForOwnerAndErrandAndNotificationIsCreatedAfter(municipalityId, namespace, errandEntity.getAssignedUserId(), errandEntity, "Parkering av ärendet har upphört",
 			errandEntity.getSuspendedFrom());
@@ -178,7 +178,6 @@ class SuspensionWorkerTest {
 		// Arrange
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
-
 		final var errandEntity = ErrandEntity.create()
 			.withNamespace(namespace)
 			.withAssignedUserId("assignedUserId")
@@ -193,7 +192,7 @@ class SuspensionWorkerTest {
 		when(notificationServiceMock.doesNotificationWithSpecificDescriptionExistForOwnerAndErrandAndNotificationIsCreatedAfter(municipalityId, namespace, errandEntity.getAssignedUserId(), errandEntity, "Parkering av ärendet har upphört",
 			errandEntity.getSuspendedFrom())).thenReturn(false);
 		when(errandsRepositoryMock.findAllBySuspendedToBefore(any(OffsetDateTime.class))).thenReturn(List.of(errandEntity));
-		when(employeeServiceMock.getEmployeeByLoginName(errandEntity.getAssignedUserId())).thenReturn(owner);
+		when(employeeServiceMock.getEmployeeByLoginName(municipalityId, errandEntity.getAssignedUserId())).thenReturn(owner);
 
 		// Act
 		suspensionWorker.processExpiredSuspensions();
@@ -203,7 +202,7 @@ class SuspensionWorkerTest {
 		verify(notificationServiceMock).doesNotificationWithSpecificDescriptionExistForOwnerAndErrandAndNotificationIsCreatedAfter(municipalityId, namespace, errandEntity.getAssignedUserId(), errandEntity, "Parkering av ärendet har upphört",
 			errandEntity.getSuspendedFrom());
 		verify(notificationServiceMock).createNotification(eq(municipalityId), eq(namespace), eq(errandEntity.getId()), notificationCaptor.capture());
-		verify(employeeServiceMock).getEmployeeByLoginName(errandEntity.getAssignedUserId());
+		verify(employeeServiceMock).getEmployeeByLoginName(municipalityId, errandEntity.getAssignedUserId());
 
 		final var notification = notificationCaptor.getValue();
 		assertThat(notification).isNotNull();
@@ -214,5 +213,4 @@ class SuspensionWorkerTest {
 
 		verifyNoMoreInteractions(errandsRepositoryMock, notificationServiceMock, employeeServiceMock);
 	}
-
 }

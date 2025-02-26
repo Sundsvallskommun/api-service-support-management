@@ -6,7 +6,7 @@
 			}
 		},
 		"method": "GET",
-		"urlPath": "/api-employee/portalpersondata/personal/del06ete"
+		"urlPath": "/api-employee/2281/portalpersondata/personal/del06ete"
 	},
 	"response": {
 		"headers": {
