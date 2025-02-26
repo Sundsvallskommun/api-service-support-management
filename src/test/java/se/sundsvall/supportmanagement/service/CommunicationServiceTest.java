@@ -461,7 +461,7 @@ class CommunicationServiceTest {
 		when(communicationMapperMock.toAttachments(any())).thenReturn(List.of(attachmentEntityMock));
 		when(attachmentEntityMock.withErrandEntity(any())).thenReturn(attachmentEntityMock);
 		when(executingUserSupplierMock.getAdUser()).thenReturn(adUser);
-		when(employeeServiceMock.getEmployeeByLoginName(adUser)).thenReturn(portalPersonDataMock);
+		when(employeeServiceMock.getEmployeeByLoginName(MUNICIPALITY_ID, adUser)).thenReturn(portalPersonDataMock);
 		when(portalPersonDataMock.getFullname()).thenReturn(fullName);
 
 		try (final MockedStatic<MessagingMapper> messagingMapper = Mockito.mockStatic(MessagingMapper.class)) {

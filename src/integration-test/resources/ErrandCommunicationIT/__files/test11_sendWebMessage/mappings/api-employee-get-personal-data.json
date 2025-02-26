@@ -6,7 +6,7 @@
 			}
 		},
 		"method": "GET",
-		"urlPath": "/api-employee/portalpersondata/personal/someUserId"
+		"urlPath": "/api-employee/2281/portalpersondata/personal/someUserId"
 	},
 	"response": {
 		"headers": {

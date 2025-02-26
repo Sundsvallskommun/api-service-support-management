@@ -180,7 +180,7 @@ public class CommunicationService {
 		if (UNKNOWN_AD_USER.equals(adUser)) {
 			adUser = null;
 		}
-		final var fullName = getFullName(adUser);
+		final var fullName = getFullName(municipalityId, adUser);
 
 		final var communicationEntity = communicationMapper.toCommunicationEntity(namespace, municipalityId, entity.getErrandNumber(), request, fullName, adUser)
 			.withErrandAttachments(errandAttachments);
@@ -210,9 +210,9 @@ public class CommunicationService {
 		communicationRepository.save(communicationEntity);
 	}
 
-	private String getFullName(final String adUser) {
+	private String getFullName(final String municipalityId, final String adUser) {
 		return Optional.ofNullable(adUser)
-			.map(employeeService::getEmployeeByLoginName)
+			.map(user -> employeeService.getEmployeeByLoginName(municipalityId, user))
 			.map(PortalPersonData::getFullname)
 			.orElse(null);
 	}

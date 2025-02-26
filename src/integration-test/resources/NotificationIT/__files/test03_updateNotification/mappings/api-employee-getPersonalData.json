@@ -6,7 +6,7 @@
 			}
 		},
 		"method": "GET",
-		"urlPath": "/api-employee/portalpersondata/personal/owner_id_new"
+		"urlPath": "/api-employee/2281/portalpersondata/personal/owner_id_new"
 	},
 	"response": {
 		"headers": {

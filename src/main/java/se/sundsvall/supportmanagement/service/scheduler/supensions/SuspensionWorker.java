@@ -50,7 +50,7 @@ public class SuspensionWorker {
 
 	private Notification createNotification(final ErrandEntity errand) {
 
-		final var ownerFullName = fetchFullNameByUserId(errand.getAssignedUserId());
+		final var ownerFullName = fetchFullNameByMunicipalityIdAndUserId(errand.getMunicipalityId(), errand.getAssignedUserId());
 
 		return Notification.create()
 			.withOwnerFullName(ownerFullName)
@@ -61,9 +61,9 @@ public class SuspensionWorker {
 			.withErrandNumber(errand.getErrandNumber());
 	}
 
-	private String fetchFullNameByUserId(String userId) {
+	private String fetchFullNameByMunicipalityIdAndUserId(String municipalityId, String userId) {
 		if (!isBlank(userId)) {
-			final var owner = employeeService.getEmployeeByLoginName(userId);
+			final var owner = employeeService.getEmployeeByLoginName(municipalityId, userId);
 			if (nonNull(owner)) {
 				return owner.getFullname();
 			}
