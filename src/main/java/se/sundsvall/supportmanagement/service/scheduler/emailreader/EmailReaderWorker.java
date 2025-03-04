@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.validator.routines.EmailValidator;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
 import se.sundsvall.supportmanagement.integration.db.EmailWorkerConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationAttachmentEntity;
@@ -73,10 +74,17 @@ public class EmailReaderWorker {
 		final var errandNumber = parseSubject(email.getSubject());
 
 		getErrand(errandNumber, email, config).ifPresent(errand -> {
-			processErrand(errand, email, config);
+			final var emailRequest = processErrand(errand, email, config);
 			emailReaderClient.deleteEmail(config.getMunicipalityId(), email.getId());
+			sendEmail(config, errand, emailRequest);
 		});
 
+	}
+
+	private void sendEmail(final EmailWorkerConfigEntity config, final ErrandEntity errand, final EmailRequest emailRequest) {
+		if (emailRequest != null) {
+			communicationService.sendEmail(config.getNamespace(), config.getMunicipalityId(), errand.getId(), emailRequest);
+		}
 	}
 
 	private Optional<ErrandEntity> getErrand(final String errandNumber, final Email email, final EmailWorkerConfigEntity config) {
@@ -95,18 +103,20 @@ public class EmailReaderWorker {
 						config.getErrandChannel()))));
 	}
 
-	private void processErrand(final ErrandEntity errand, final Email email, final EmailWorkerConfigEntity config) {
+	private EmailRequest processErrand(final ErrandEntity errand, final Email email, final EmailWorkerConfigEntity config) {
 
+		EmailRequest emailRequest = null;
 		if (isErrandInactive(errand, config)) {
-			sendEmailClosed(errand, email, config);
+			emailRequest = createEmailClosed(email, config);
 		} else if (isErrandNew(errand, config)) {
-			sendEmailNew(errand, email, config);
+			emailRequest = createEmailNew(errand, email, config);
 		} else if ((config.getTriggerStatusChangeOn() != null) && errand.getStatus().equals(config.getTriggerStatusChangeOn())) {
 			errand.setStatus(config.getStatusChangeTo());
 			errandRepository.save(errand);
 		}
-		eventService.createErrandEvent(EventType.UPDATE, EVENT_LOG_COMMUNICATION, errand, null, null);
 		saveEmail(email, errand);
+		eventService.createErrandEvent(EventType.UPDATE, EVENT_LOG_COMMUNICATION, errand, null, null);
+		return emailRequest;
 	}
 
 	private void saveEmail(final Email email, final ErrandEntity errand) {
@@ -131,32 +141,32 @@ public class EmailReaderWorker {
 			&& errand.getStatus().equals(config.getStatusForNew());
 	}
 
-	private void sendEmailClosed(final ErrandEntity errand, final Email email, final EmailWorkerConfigEntity config) {
+	private EmailRequest createEmailClosed(final Email email, final EmailWorkerConfigEntity config) {
 
 		if (isInvalidEmailAddress(email.getSender())) {
 			// Don't send to a bad email address.
-			return;
+			return null;
 		}
 
-		final var emailRequest = emailReaderMapper.createEmailRequest(email, config.getErrandClosedEmailSender(), config.getErrandClosedEmailTemplate(), email.getSubject());
-		communicationService.sendEmail(config.getNamespace(), config.getMunicipalityId(), errand.getId(), emailRequest);
+		return emailReaderMapper.createEmailRequest(email, config.getErrandClosedEmailSender(), config.getErrandClosedEmailTemplate(), email.getSubject());
+		//
 	}
 
-	private void sendEmailNew(final ErrandEntity errand, final Email email, final EmailWorkerConfigEntity config) {
+	private EmailRequest createEmailNew(final ErrandEntity errand, final Email email, final EmailWorkerConfigEntity config) {
 
 		if (isEmpty(config.getErrandNewEmailSender()) || isEmpty(config.getErrandNewEmailTemplate())) {
 			// Is optional to send email on new errand
-			return;
+			return null;
 		}
 
 		if (isInvalidEmailAddress(email.getSender())) {
 			// Don't send to a bad email address.
-			return;
+			return null;
 		}
 
 		final var subject = EMAIL_NEW_SUBJECT_PREFIX + "#" + errand.getErrandNumber() + " " + email.getSubject();
-		final var emailRequest = emailReaderMapper.createEmailRequest(email, config.getErrandNewEmailSender(), config.getErrandNewEmailTemplate(), subject);
-		communicationService.sendEmail(config.getNamespace(), config.getMunicipalityId(), errand.getId(), emailRequest);
+
+		return emailReaderMapper.createEmailRequest(email, config.getErrandNewEmailSender(), config.getErrandNewEmailTemplate(), subject);
 	}
 
 	private boolean isInvalidEmailAddress(final String value) {
