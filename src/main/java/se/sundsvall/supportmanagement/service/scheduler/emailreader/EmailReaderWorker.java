@@ -149,7 +149,6 @@ public class EmailReaderWorker {
 		}
 
 		return emailReaderMapper.createEmailRequest(email, config.getErrandClosedEmailSender(), config.getErrandClosedEmailTemplate(), email.getSubject());
-		//
 	}
 
 	private EmailRequest createEmailNew(final ErrandEntity errand, final Email email, final EmailWorkerConfigEntity config) {
