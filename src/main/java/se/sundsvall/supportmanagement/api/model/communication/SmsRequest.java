@@ -25,6 +25,9 @@ public class SmsRequest {
 	@Schema(description = "Message", requiredMode = REQUIRED)
 	private String message;
 
+	@Schema(description = "Indicates if the message is internal", example = "false")
+	private boolean internal;
+
 	public static SmsRequest create() {
 		return new SmsRequest();
 	}
@@ -68,30 +71,39 @@ public class SmsRequest {
 		return this;
 	}
 
-	@Override
-	public int hashCode() {
-		return Objects.hash(sender, recipient, message);
+	public boolean getInternal() {
+		return internal;
+	}
+
+	public void setInternal(final boolean internal) {
+		this.internal = internal;
+	}
+
+	public SmsRequest withInternal(final boolean internal) {
+		this.internal = internal;
+		return this;
 	}
 
 	@Override
-	public boolean equals(final Object obj) {
-		if (this == obj) {
-			return true;
-		}
-		if (obj == null) {
+	public boolean equals(final Object o) {
+		if (o == null || getClass() != o.getClass())
 			return false;
-		}
-		if (getClass() != obj.getClass()) {
-			return false;
-		}
-		final SmsRequest other = (SmsRequest) obj;
-		return Objects.equals(sender, other.sender) &&
-			Objects.equals(recipient, other.recipient) &&
-			Objects.equals(message, other.message);
+		final SmsRequest that = (SmsRequest) o;
+		return Objects.equals(sender, that.sender) && Objects.equals(recipient, that.recipient) && Objects.equals(message, that.message) && Objects.equals(internal, that.internal);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(sender, recipient, message, internal);
 	}
 
 	@Override
 	public String toString() {
-		return "SmsRequest [sender=" + sender + "recipient=" + recipient + ", message=" + message + "]";
+		return "SmsRequest{" +
+			"sender='" + sender + '\'' +
+			", recipient='" + recipient + '\'' +
+			", message='" + message + '\'' +
+			", internal=" + internal +
+			'}';
 	}
 }

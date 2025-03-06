@@ -7,7 +7,7 @@ info:
     url: https://opensource.org/licenses/MIT
   version: "9.3"
 servers:
-  - url: http://localhost:8080
+  - url: http://localhost:53692
     description: Generated server url
 tags:
   - name: Errand attachments
@@ -521,14 +521,14 @@ paths:
                 type: array
                 items:
                   type: string
-        "500":
-          description: Internal Server error
+        "404":
+          description: Not Found
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        "404":
-          description: Not Found
+        "500":
+          description: Internal Server error
           content:
             application/problem+json:
               schema:
@@ -581,14 +581,14 @@ paths:
       responses:
         "204":
           description: No content
-        "500":
-          description: Internal Server error
+        "404":
+          description: Not Found
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        "404":
-          description: Not Found
+        "500":
+          description: Internal Server error
           content:
             application/problem+json:
               schema:
@@ -643,14 +643,14 @@ paths:
           description: Created
           content:
             application/json: { }
-        "500":
-          description: Internal Server error
+        "404":
+          description: Not Found
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        "404":
-          description: Not Found
+        "500":
+          description: Internal Server error
           content:
             application/problem+json:
               schema:
@@ -695,14 +695,14 @@ paths:
       responses:
         "204":
           description: No content
-        "500":
-          description: Internal Server error
+        "404":
+          description: Not Found
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        "404":
-          description: Not Found
+        "500":
+          description: Internal Server error
           content:
             application/problem+json:
               schema:
@@ -4553,8 +4553,6 @@ components:
     Problem:
       type: object
       properties:
-        status:
-          $ref: "#/components/schemas/StatusType"
         instance:
           type: string
           format: uri
@@ -4565,6 +4563,8 @@ components:
           type: object
           additionalProperties:
             type: object
+        status:
+          $ref: "#/components/schemas/StatusType"
         title:
           type: string
         detail:
@@ -4688,8 +4688,6 @@ components:
                 type: boolean
         message:
           type: string
-        status:
-          $ref: "#/components/schemas/StatusType"
         instance:
           type: string
           format: uri
@@ -4700,6 +4698,8 @@ components:
           type: object
           additionalProperties:
             type: object
+        status:
+          $ref: "#/components/schemas/StatusType"
         title:
           type: string
         detail:
@@ -5466,6 +5466,10 @@ components:
         - message
       type: object
       properties:
+        internal:
+          type: boolean
+          description: Indicates if the message is internal
+          example: false
         message:
           type: string
           description: Message in plain text
@@ -5500,6 +5504,10 @@ components:
         message:
           type: string
           description: Message
+        internal:
+          type: boolean
+          description: Indicates if the message is internal
+          example: false
       description: SmsRequest model
     EmailAttachment:
       required:
@@ -5552,6 +5560,10 @@ components:
           type: string
           description: Message in plain text
           example: Message in plain text
+        internal:
+          type: boolean
+          description: Indicates if the message is internal
+          example: false
         emailHeaders:
           type: object
           additionalProperties:
@@ -5715,12 +5727,16 @@ components:
     PageErrand:
       type: object
       properties:
-        totalElements:
-          type: integer
-          format: int64
         totalPages:
           type: integer
           format: int32
+        totalElements:
+          type: integer
+          format: int64
+        first:
+          type: boolean
+        last:
+          type: boolean
         size:
           type: integer
           format: int32
@@ -5733,15 +5749,11 @@ components:
           format: int32
         sort:
           $ref: "#/components/schemas/SortObject"
-        first:
-          type: boolean
-        last:
-          type: boolean
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
         numberOfElements:
           type: integer
           format: int32
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
         empty:
           type: boolean
     PageableObject:
@@ -5752,14 +5764,14 @@ components:
           format: int64
         sort:
           $ref: "#/components/schemas/SortObject"
-        paged:
-          type: boolean
         unpaged:
           type: boolean
-        pageSize:
+        paged:
+          type: boolean
+        pageNumber:
           type: integer
           format: int32
-        pageNumber:
+        pageSize:
           type: integer
           format: int32
     SortObject:
@@ -5960,12 +5972,16 @@ components:
     PageEvent:
       type: object
       properties:
-        totalElements:
-          type: integer
-          format: int64
         totalPages:
           type: integer
           format: int32
+        totalElements:
+          type: integer
+          format: int64
+        first:
+          type: boolean
+        last:
+          type: boolean
         size:
           type: integer
           format: int32
@@ -5978,15 +5994,11 @@ components:
           format: int32
         sort:
           $ref: "#/components/schemas/SortObject"
-        first:
-          type: boolean
-        last:
-          type: boolean
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
         numberOfElements:
           type: integer
           format: int32
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
         empty:
           type: boolean
     Communication:
@@ -6037,6 +6049,10 @@ components:
           description: The mobile number or email adress the communication was sent
             to
           example: "+46701234567"
+        internal:
+          type: boolean
+          description: Indicates if the message is internal
+          example: false
         viewed:
           type: boolean
           description: Signal if the message has been viewed or not

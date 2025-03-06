@@ -28,21 +28,24 @@ class SmsRequestTest {
 		final var message = "message";
 		final var recipient = "recipient";
 		final var sender = "sender";
+		final var internal = true;
 
 		final var bean = SmsRequest.create()
 			.withMessage(message)
 			.withRecipient(recipient)
-			.withSender(sender);
+			.withSender(sender)
+			.withInternal(internal);
 
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(bean.getMessage()).isEqualTo(message);
 		assertThat(bean.getRecipient()).isEqualTo(recipient);
 		assertThat(bean.getSender()).isEqualTo(sender);
+		assertThat(bean.getInternal()).isEqualTo(internal);
 	}
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(SmsRequest.create()).hasAllNullFieldsOrProperties();
-		assertThat(new SmsRequest()).hasAllNullFieldsOrProperties();
+		assertThat(SmsRequest.create()).hasAllNullFieldsOrPropertiesExcept("internal");
+		assertThat(new SmsRequest()).hasAllNullFieldsOrPropertiesExcept("internal");
 	}
 }

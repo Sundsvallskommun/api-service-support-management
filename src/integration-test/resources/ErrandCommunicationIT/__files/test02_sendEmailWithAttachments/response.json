@@ -26,6 +26,7 @@
 		"communicationType": "EMAIL",
 		"sent": "${json-unit.ignore}",
 		"direction": "OUTBOUND",
-		"target": "turanga@leela.com"
+		"target": "turanga@leela.com",
+		"internal": false
 	}
 ]

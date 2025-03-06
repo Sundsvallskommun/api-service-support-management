@@ -53,6 +53,7 @@ class CommunicationTest {
 		final var viewed = true;
 		final var emailHeaders = Map.of(EmailHeader.REFERENCES, List.of("reference1", "reference2"));
 		final var communicationAttachments = List.of(CommunicationAttachment.create());
+		final var internal = true;
 
 		// Act
 		final var bean = Communication.create()
@@ -67,7 +68,8 @@ class CommunicationTest {
 			.withTarget(target)
 			.withViewed(viewed)
 			.withCommunicationAttachments(communicationAttachments)
-			.withEmailHeaders(emailHeaders);
+			.withEmailHeaders(emailHeaders)
+			.withInternal(internal);
 		// Assert
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(bean.getCommunicationID()).isEqualTo(id);
@@ -82,13 +84,14 @@ class CommunicationTest {
 		assertThat(bean.isViewed()).isEqualTo(viewed);
 		assertThat(bean.getCommunicationAttachments()).isEqualTo(communicationAttachments);
 		assertThat(bean.getEmailHeaders()).isEqualTo(emailHeaders);
+		assertThat(bean.getInternal()).isEqualTo(internal);
 
 	}
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(Communication.create()).hasAllNullFieldsOrPropertiesExcept("viewed");
-		assertThat(new Communication()).hasAllNullFieldsOrPropertiesExcept("viewed");
+		assertThat(Communication.create()).hasAllNullFieldsOrPropertiesExcept("viewed", "internal");
+		assertThat(new Communication()).hasAllNullFieldsOrPropertiesExcept("viewed", "internal");
 	}
 
 }
