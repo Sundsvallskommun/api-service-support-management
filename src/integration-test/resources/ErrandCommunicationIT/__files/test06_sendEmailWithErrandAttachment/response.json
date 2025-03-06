@@ -28,6 +28,7 @@
 		"communicationType": "EMAIL",
 		"sent": "${json-unit.any-string}",
 		"direction": "OUTBOUND",
-		"target": "john.a@zoidberg.com"
+		"target": "john.a@zoidberg.com",
+		"internal": false
 	}
 ]

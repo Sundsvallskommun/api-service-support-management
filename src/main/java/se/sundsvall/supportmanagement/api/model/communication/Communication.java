@@ -44,6 +44,9 @@ public class Communication {
 	@Schema(description = "The mobile number or email adress the communication was sent to", example = "+46701234567")
 	private String target;
 
+	@Schema(description = "Indicates if the message is internal", example = "false")
+	private boolean internal;
+
 	@Schema(description = "Signal if the message has been viewed or not", example = "true")
 	private boolean viewed;
 
@@ -156,6 +159,19 @@ public class Communication {
 		this.communicationType = communicationType;
 	}
 
+	public boolean getInternal() {
+		return internal;
+	}
+
+	public void setInternal(final boolean internal) {
+		this.internal = internal;
+	}
+
+	public Communication withInternal(final boolean internal) {
+		this.internal = internal;
+		return this;
+	}
+
 	public Communication withCommunicationType(final CommunicationType communicationType) {
 		this.communicationType = communicationType;
 		return this;
@@ -215,19 +231,17 @@ public class Communication {
 
 	@Override
 	public boolean equals(final Object o) {
-		if (this == o)
-			return true;
 		if (o == null || getClass() != o.getClass())
 			return false;
 		final Communication that = (Communication) o;
-		return viewed == that.viewed && Objects.equals(communicationID, that.communicationID) && Objects.equals(sender, that.sender) && Objects.equals(errandNumber, that.errandNumber) && direction == that.direction && Objects.equals(messageBody,
-			that.messageBody) && Objects.equals(sent, that.sent) && Objects.equals(subject, that.subject) && communicationType == that.communicationType && Objects.equals(target, that.target) && Objects.equals(emailHeaders, that.emailHeaders) && Objects
-				.equals(communicationAttachments, that.communicationAttachments);
+		return viewed == that.viewed && Objects.equals(communicationID, that.communicationID) && Objects.equals(sender, that.sender) && Objects.equals(errandNumber, that.errandNumber) && direction == that.direction
+			&& Objects.equals(messageBody, that.messageBody) && Objects.equals(sent, that.sent) && Objects.equals(subject, that.subject) && communicationType == that.communicationType && Objects.equals(target,
+				that.target) && Objects.equals(internal, that.internal) && Objects.equals(emailHeaders, that.emailHeaders) && Objects.equals(communicationAttachments, that.communicationAttachments);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(communicationID, sender, errandNumber, direction, messageBody, sent, subject, communicationType, target, viewed, emailHeaders, communicationAttachments);
+		return Objects.hash(communicationID, sender, errandNumber, direction, messageBody, sent, subject, communicationType, target, internal, viewed, emailHeaders, communicationAttachments);
 	}
 
 	@Override
@@ -242,10 +256,10 @@ public class Communication {
 			", subject='" + subject + '\'' +
 			", communicationType=" + communicationType +
 			", target='" + target + '\'' +
+			", internal=" + internal +
 			", viewed=" + viewed +
 			", emailHeaders=" + emailHeaders +
 			", communicationAttachments=" + communicationAttachments +
 			'}';
 	}
-
 }

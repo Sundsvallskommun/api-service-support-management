@@ -38,6 +38,7 @@ class EmailRequestTest {
 		final var subject = "subject";
 		final var attachmentsIds = List.of("attachment1", "attachment2");
 		final var emailHeaders = Map.of(EmailHeader.REFERENCES, List.of("reference1", "reference2"));
+		final var internal = true;
 		// Act
 		final var bean = EmailRequest.create()
 			.withAttachments(attachments)
@@ -48,7 +49,8 @@ class EmailRequestTest {
 			.withSenderName(senderName)
 			.withSubject(subject)
 			.withEmailHeaders(emailHeaders)
-			.withAttachmentIds(attachmentsIds);
+			.withAttachmentIds(attachmentsIds)
+			.withInternal(internal);
 		// Assert
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(bean.getAttachments()).isEqualTo(attachments);
@@ -60,11 +62,12 @@ class EmailRequestTest {
 		assertThat(bean.getSubject()).isEqualTo(subject);
 		assertThat(bean.getEmailHeaders()).isEqualTo(emailHeaders);
 		assertThat(bean.getAttachmentIds()).isEqualTo(attachmentsIds);
+		assertThat(bean.getInternal()).isEqualTo(internal);
 	}
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(EmailRequest.create()).hasAllNullFieldsOrProperties();
-		assertThat(new EmailRequest()).hasAllNullFieldsOrProperties();
+		assertThat(EmailRequest.create()).hasAllNullFieldsOrPropertiesExcept("internal");
+		assertThat(new EmailRequest()).hasAllNullFieldsOrPropertiesExcept("internal");
 	}
 }
