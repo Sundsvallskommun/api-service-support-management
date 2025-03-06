@@ -56,6 +56,7 @@ class CommunicationEntityTest {
 		final var type = CommunicationType.EMAIL;
 		final var target = "target";
 		final var viewed = true;
+		final var internal = true;
 		final var attachments = List.of(CommunicationAttachmentEntity.create());
 		final var errandAttachments = List.of(AttachmentEntity.create());
 		final var emailHeaders = List.of(CommunicationEmailHeaderEntity.create()
@@ -79,7 +80,8 @@ class CommunicationEntityTest {
 			.withViewed(viewed)
 			.withErrandAttachments(errandAttachments)
 			.withAttachments(attachments)
-			.withEmailHeaders(emailHeaders);
+			.withEmailHeaders(emailHeaders)
+			.withInternal(internal);
 
 		assertThat(entity).hasNoNullFieldsOrProperties();
 		assertThat(entity.getId()).isEqualTo(id);
@@ -100,12 +102,13 @@ class CommunicationEntityTest {
 		assertThat(entity.getAttachments()).isEqualTo(attachments);
 		assertThat(entity.getAttachments()).allMatch(attachment -> attachment.getCommunicationEntity() == entity);
 		assertThat(entity.getEmailHeaders()).isEqualTo(emailHeaders);
+		assertThat(entity.isInternal()).isEqualTo(internal);
 	}
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(CommunicationEntity.create()).hasAllNullFieldsOrPropertiesExcept("viewed");
-		assertThat(new CommunicationEntity()).hasAllNullFieldsOrPropertiesExcept("viewed");
+		assertThat(CommunicationEntity.create()).hasAllNullFieldsOrPropertiesExcept("viewed", "internal");
+		assertThat(new CommunicationEntity()).hasAllNullFieldsOrPropertiesExcept("viewed", "internal");
 	}
 
 }

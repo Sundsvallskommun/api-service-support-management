@@ -31,6 +31,7 @@
     ) engine=InnoDB;
 
     create table communication (
+        internal bit,
         viewed bit,
         sent datetime(6),
         errand_number varchar(255),

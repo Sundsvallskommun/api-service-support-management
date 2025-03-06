@@ -30,6 +30,7 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.Direction;
 		@Index(name = "idx_errand_number", columnList = "errand_number"),
 		@Index(name = "idx_communication_namespace", columnList = "namespace"),
 		@Index(name = "idx_communication_municipality_id", columnList = "municipality_id"),
+
 	})
 public class CommunicationEntity {
 
@@ -78,6 +79,9 @@ public class CommunicationEntity {
 
 	@Column(name = "viewed")
 	private boolean viewed;
+
+	@Column(name = "internal")
+	private boolean internal;
 
 	@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, mappedBy = "communicationEntity")
 	private List<CommunicationAttachmentEntity> attachments;
@@ -327,22 +331,33 @@ public class CommunicationEntity {
 		return this;
 	}
 
+	public boolean isInternal() {
+		return internal;
+	}
+
+	public void setInternal(final boolean internal) {
+		this.internal = internal;
+	}
+
+	public CommunicationEntity withInternal(final boolean internal) {
+		this.internal = internal;
+		return this;
+	}
+
 	@Override
 	public boolean equals(final Object o) {
-		if (this == o)
-			return true;
 		if (o == null || getClass() != o.getClass())
 			return false;
 		final CommunicationEntity that = (CommunicationEntity) o;
-		return viewed == that.viewed && Objects.equals(id, that.id) && Objects.equals(namespace, that.namespace) && Objects.equals(municipalityId, that.municipalityId) && Objects.equals(sender, that.sender)
-			&& Objects.equals(senderUserId, that.senderUserId) && Objects.equals(errandNumber, that.errandNumber) && direction == that.direction && Objects.equals(externalId, that.externalId) && Objects.equals(subject, that.subject)
-			&& Objects.equals(messageBody, that.messageBody) && Objects.equals(sent, that.sent) && type == that.type && Objects.equals(target, that.target) && Objects.equals(attachments, that.attachments)
-			&& Objects.equals(emailHeaders, that.emailHeaders) && Objects.equals(errandAttachments, that.errandAttachments);
+		return viewed == that.viewed && internal == that.internal && Objects.equals(id, that.id) && Objects.equals(namespace, that.namespace) && Objects.equals(municipalityId, that.municipalityId) && Objects.equals(
+			sender, that.sender) && Objects.equals(senderUserId, that.senderUserId) && Objects.equals(errandNumber, that.errandNumber) && direction == that.direction && Objects.equals(externalId, that.externalId)
+			&& Objects.equals(subject, that.subject) && Objects.equals(messageBody, that.messageBody) && Objects.equals(sent, that.sent) && type == that.type && Objects.equals(target, that.target)
+			&& Objects.equals(attachments, that.attachments) && Objects.equals(emailHeaders, that.emailHeaders) && Objects.equals(errandAttachments, that.errandAttachments);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, namespace, municipalityId, sender, senderUserId, errandNumber, direction, externalId, subject, messageBody, sent, type, target, viewed, attachments, emailHeaders, errandAttachments);
+		return Objects.hash(id, namespace, municipalityId, sender, senderUserId, errandNumber, direction, externalId, subject, messageBody, sent, type, target, viewed, internal, attachments, emailHeaders, errandAttachments);
 	}
 
 	@Override
@@ -362,10 +377,10 @@ public class CommunicationEntity {
 			", type=" + type +
 			", target='" + target + '\'' +
 			", viewed=" + viewed +
+			", internal=" + internal +
 			", attachments=" + attachments +
 			", emailHeaders=" + emailHeaders +
 			", errandAttachments=" + errandAttachments +
 			'}';
 	}
-
 }
