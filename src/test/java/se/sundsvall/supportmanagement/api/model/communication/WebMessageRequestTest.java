@@ -29,22 +29,25 @@ class WebMessageRequestTest {
 		final var message = "message";
 		final var attachments = List.of(WebMessageAttachment.create());
 		final var attachmentsIds = List.of("1", "2");
+		final var internal = true;
 
 		final var result = WebMessageRequest.create()
 			.withMessage(message)
 			.withAttachments(attachments)
-			.withAttachmentIds(attachmentsIds);
+			.withAttachmentIds(attachmentsIds)
+			.withInternal(internal);
 
 		assertThat(result).hasNoNullFieldsOrProperties();
 		assertThat(result.getMessage()).isEqualTo(message);
 		assertThat(result.getAttachments()).isSameAs(attachments);
 		assertThat(result.getAttachmentIds()).isSameAs(attachmentsIds);
+		assertThat(result.getInternal()).isEqualTo(internal);
 
 	}
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(WebMessageRequest.create()).hasAllNullFieldsOrProperties();
-		assertThat(new WebMessageRequest()).hasAllNullFieldsOrProperties();
+		assertThat(WebMessageRequest.create()).hasAllNullFieldsOrPropertiesExcept("internal");
+		assertThat(new WebMessageRequest()).hasAllNullFieldsOrPropertiesExcept("internal");
 	}
 }

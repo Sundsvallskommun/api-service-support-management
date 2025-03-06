@@ -20,6 +20,7 @@
 		"viewed": false,
 		"communicationType": "WEB_MESSAGE",
 		"sent": "${json-unit.ignore}",
-		"direction": "OUTBOUND"
+		"direction": "OUTBOUND",
+		"internal": false
 	}
 ]

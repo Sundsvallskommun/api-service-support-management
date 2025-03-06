@@ -42,6 +42,9 @@ public class EmailRequest {
 	@Schema(description = "Message in plain text", example = "Message in plain text", requiredMode = REQUIRED)
 	private String message;
 
+	@Schema(description = "Indicates if the message is internal", example = "false")
+	private boolean internal;
+
 	@Schema(description = "Headers for keeping track of email conversations", example = "{\"IN_REPLY_TO\": [\"reply-to@example.com\"], \"REFERENCES\": [\"reference1\", \"reference2\"], \"MESSAGE_ID\": [\"123456789\"]}")
 	private Map<EmailHeader, List<String>> emailHeaders;
 
@@ -172,6 +175,34 @@ public class EmailRequest {
 		return this;
 	}
 
+	public boolean getInternal() {
+		return internal;
+	}
+
+	public void setInternal(final boolean internal) {
+		this.internal = internal;
+	}
+
+	public EmailRequest withInternal(final boolean internal) {
+		this.internal = internal;
+		return this;
+	}
+
+	@Override
+	public boolean equals(final Object o) {
+		if (o == null || getClass() != o.getClass())
+			return false;
+		final EmailRequest that = (EmailRequest) o;
+		return Objects.equals(sender, that.sender) && Objects.equals(senderName, that.senderName) && Objects.equals(recipient, that.recipient) && Objects.equals(subject, that.subject) && Objects.equals(
+			htmlMessage, that.htmlMessage) && Objects.equals(message, that.message) && Objects.equals(internal, that.internal) && Objects.equals(emailHeaders, that.emailHeaders) && Objects.equals(attachments,
+				that.attachments) && Objects.equals(attachmentIds, that.attachmentIds);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(sender, senderName, recipient, subject, htmlMessage, message, internal, emailHeaders, attachments, attachmentIds);
+	}
+
 	@Override
 	public String toString() {
 		return "EmailRequest{" +
@@ -181,25 +212,10 @@ public class EmailRequest {
 			", subject='" + subject + '\'' +
 			", htmlMessage='" + htmlMessage + '\'' +
 			", message='" + message + '\'' +
+			", internal=" + internal +
 			", emailHeaders=" + emailHeaders +
 			", attachments=" + attachments +
 			", attachmentIds=" + attachmentIds +
 			'}';
-	}
-
-	@Override
-	public boolean equals(final Object o) {
-		if (this == o)
-			return true;
-		if (o == null || getClass() != o.getClass())
-			return false;
-		final EmailRequest that = (EmailRequest) o;
-		return Objects.equals(sender, that.sender) && Objects.equals(senderName, that.senderName) && Objects.equals(recipient, that.recipient) && Objects.equals(subject, that.subject) && Objects.equals(htmlMessage, that.htmlMessage) && Objects.equals(
-			message, that.message) && Objects.equals(emailHeaders, that.emailHeaders) && Objects.equals(attachments, that.attachments) && Objects.equals(attachmentIds, that.attachmentIds);
-	}
-
-	@Override
-	public int hashCode() {
-		return Objects.hash(sender, senderName, recipient, subject, htmlMessage, message, emailHeaders, attachments, attachmentIds);
 	}
 }
