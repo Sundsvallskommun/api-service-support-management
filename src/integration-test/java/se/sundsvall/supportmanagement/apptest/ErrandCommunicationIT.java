@@ -1,5 +1,13 @@
 package se.sundsvall.supportmanagement.apptest;
 
+import java.util.List;
+import org.junit.jupiter.api.Test;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.jdbc.Sql;
+import se.sundsvall.dept44.test.AbstractAppTest;
+import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
+import se.sundsvall.supportmanagement.Application;
+
 import static java.util.UUID.randomUUID;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpMethod.GET;
@@ -9,14 +17,6 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.IMAGE_PNG_VALUE;
-
-import java.util.List;
-import org.junit.jupiter.api.Test;
-import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.jdbc.Sql;
-import se.sundsvall.dept44.test.AbstractAppTest;
-import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
-import se.sundsvall.supportmanagement.Application;
 
 /**
  * ErrandCommunication IT tests.
@@ -185,6 +185,16 @@ class ErrandCommunicationIT extends AbstractAppTest {
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(NO_CONTENT)
 			.withExpectedResponseBodyIsNull()
+			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	void test12_readExternalCommunications() {
+		setupCall()
+			.withServicePath(PATH + "/ec677eb3-604c-4935-bff7-f8f0b500c8f4/communication/external")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 	}
 }

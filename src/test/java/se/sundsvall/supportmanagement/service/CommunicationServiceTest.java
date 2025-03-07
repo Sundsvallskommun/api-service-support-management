@@ -231,7 +231,7 @@ class CommunicationServiceTest {
 
 		// Verification
 		assertThat(response).isNotNull().hasSize(1);
-		assertThat(response.getFirst().isViewed()).isFalse();
+		assertThat(response.getFirst().getViewed()).isNull();
 
 		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
 		verify(errandsRepositoryMock).findById(id);

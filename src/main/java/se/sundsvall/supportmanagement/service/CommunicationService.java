@@ -89,9 +89,9 @@ public class CommunicationService {
 
 	public List<Communication> readExternalCommunications(final String namespace, final String municipalityId, final String errandId) {
 		final var errand = fetchErrand(errandId, namespace, municipalityId);
-		final var communications = communicationRepository.findByErrandNumberAndInternal(errand.getErrandNumber(), false);
-		communications.forEach(communication -> communication.setViewed(false));
-		return communicationMapper.toCommunications(communications);
+		final var communications = communicationMapper.toCommunications(communicationRepository.findByErrandNumberAndInternal(errand.getErrandNumber(), false));
+		communications.forEach(communication -> communication.setViewed(null));
+		return communications;
 	}
 
 	public void updateViewedStatus(final String namespace, final String municipalityId, final String id, final String communicationId, final boolean isViewed) {
