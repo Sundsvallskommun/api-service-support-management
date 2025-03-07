@@ -245,7 +245,7 @@ class CommunicationMapperTest {
 		assertThat(communication.getSubject()).isEqualTo(entity.getSubject());
 		assertThat(communication.getCommunicationType()).isEqualTo(entity.getType());
 		assertThat(communication.getTarget()).isEqualTo(entity.getTarget());
-		assertThat(communication.isViewed()).isEqualTo(entity.isViewed());
+		assertThat(communication.getViewed()).isEqualTo(entity.isViewed());
 		assertThat(communication.isInternal()).isEqualTo(entity.isInternal());
 		assertThat(communication.getCommunicationAttachments()).hasSize(2);
 		assertAttachmentMatchesEntity(communication.getCommunicationAttachments().getFirst(), entity.getAttachments().getFirst());

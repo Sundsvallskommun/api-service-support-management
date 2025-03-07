@@ -1,26 +1,5 @@
 [
 	{
-		"emailHeaders": {},
-		"communicationAttachments": [
-			{
-				"name": "attachment2",
-				"attachmentID": "05b29c30-4512-46c0-9d82-d0f11cb04bae",
-				"contentType": "image/png"
-			}
-		],
-		"messageBody": "message body 2",
-		"sender": "Test Testorsson",
-		"errandNumber": "KC-23020001",
-		"subject": "subject2",
-		"communicationID": "59328e70-4297-4bb5-ba69-cb17f2d15a17",
-		"viewed": true,
-		"communicationType": "EMAIL",
-		"sent": "2023-01-02T12:00:00+01:00",
-		"direction": "OUTBOUND",
-		"target": "0987654321",
-		"internal": true
-	},
-	{
 		"emailHeaders": {
 			"REFERENCES": [
 				"someValue",
@@ -39,7 +18,6 @@
 		"errandNumber": "KC-23020001",
 		"subject": "subject1",
 		"communicationID": "cc236cf1-c00f-4479-8341-ecf5dd90b5b9",
-		"viewed": false,
 		"communicationType": "SMS",
 		"sent": "2023-01-01T12:00:00+01:00",
 		"direction": "INBOUND",

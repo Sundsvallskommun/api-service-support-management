@@ -48,7 +48,7 @@ public class Communication {
 	private boolean internal;
 
 	@Schema(description = "Signal if the message has been viewed or not", example = "true")
-	private boolean viewed;
+	private Boolean viewed;
 
 	@Schema(description = "Headers for keeping track of email conversations", example = "{\"IN_REPLY_TO\": [\"reply-to@example.com\"], \"REFERENCES\": [\"reference1\", \"reference2\"], \"MESSAGE_ID\": [\"123456789\"]}")
 	private Map<EmailHeader, List<String>> emailHeaders;
@@ -190,15 +190,15 @@ public class Communication {
 		return this;
 	}
 
-	public boolean isViewed() {
+	public Boolean getViewed() {
 		return viewed;
 	}
 
-	public void setViewed(final boolean viewed) {
+	public void setViewed(final Boolean viewed) {
 		this.viewed = viewed;
 	}
 
-	public Communication withViewed(final boolean viewed) {
+	public Communication withViewed(final Boolean viewed) {
 		this.viewed = viewed;
 		return this;
 	}
