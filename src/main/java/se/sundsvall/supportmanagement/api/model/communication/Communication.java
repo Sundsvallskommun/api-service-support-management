@@ -159,7 +159,7 @@ public class Communication {
 		this.communicationType = communicationType;
 	}
 
-	public boolean getInternal() {
+	public boolean isInternal() {
 		return internal;
 	}
 
