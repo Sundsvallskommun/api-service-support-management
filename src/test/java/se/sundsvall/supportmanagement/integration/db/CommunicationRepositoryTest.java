@@ -50,6 +50,7 @@ class CommunicationRepositoryTest {
 			.withType(CommunicationType.EMAIL)
 			.withTarget("target")
 			.withViewed(true)
+			.withInternal(true)
 			.withAttachments(List.of(CommunicationAttachmentEntity.create()));
 
 		// Execution
@@ -73,6 +74,7 @@ class CommunicationRepositoryTest {
 		assertThat(persistedEntity.getErrandAttachments()).hasSize(1);
 		assertThat(persistedEntity.getNamespace()).isEqualTo("namespace");
 		assertThat(persistedEntity.getMunicipalityId()).isEqualTo("municipalityId");
+		assertThat(persistedEntity.isInternal()).isTrue();
 	}
 
 	@Test
@@ -104,6 +106,12 @@ class CommunicationRepositoryTest {
 	void existsByErrandNumberAndExternalId() {
 		assertThat(communicationRepository.existsByErrandNumberAndExternalId("errand1", "case1")).isTrue();
 		assertThat(communicationRepository.existsByErrandNumberAndExternalId("errand1", "case2")).isFalse();
+	}
+
+	@Test
+	void findByErrandNumberAndInternal() {
+		final var communications = communicationRepository.findByErrandNumberAndInternal("errand1", true);
+		assertThat(communications).isNotEmpty().hasSize(1).allMatch(CommunicationEntity::isInternal);
 	}
 
 }

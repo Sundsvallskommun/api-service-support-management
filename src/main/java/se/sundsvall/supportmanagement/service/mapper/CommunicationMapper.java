@@ -65,6 +65,7 @@ public class CommunicationMapper {
 			.withCommunicationType(entity.getType())
 			.withTarget(entity.getTarget())
 			.withViewed(entity.isViewed())
+			.withInternal(entity.isInternal())
 			.withCommunicationAttachments(toCommunicationAttachments(entity.getAttachments(), entity.getErrandAttachments())))
 			.orElse(null);
 	}
@@ -121,6 +122,7 @@ public class CommunicationMapper {
 			.withSubject(request.getSubject())
 			.withType(CommunicationType.EMAIL)
 			.withTarget(request.getRecipient())
+			.withInternal(request.getInternal())
 			.withAttachments(toMessageAttachments(namespace, municipalityId, request.getAttachments()))
 			.withViewed(false);
 	}
@@ -143,6 +145,7 @@ public class CommunicationMapper {
 			.withMessageBody(request.getMessage())
 			.withSent(OffsetDateTime.now())
 			.withType(CommunicationType.SMS)
+			.withInternal(request.getInternal())
 			.withTarget(request.getRecipient())
 			.withViewed(false);
 	}
@@ -160,6 +163,7 @@ public class CommunicationMapper {
 			.withAttachments(toMessageAttachments(namespace, municipalityId, request.getAttachments()))
 			.withViewed(false)
 			.withSender(sender)
+			.withInternal(request.getInternal())
 			.withSenderUserId(senderUserId);
 	}
 

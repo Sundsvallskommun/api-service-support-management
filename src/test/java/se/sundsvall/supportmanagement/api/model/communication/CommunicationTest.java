@@ -84,7 +84,7 @@ class CommunicationTest {
 		assertThat(bean.isViewed()).isEqualTo(viewed);
 		assertThat(bean.getCommunicationAttachments()).isEqualTo(communicationAttachments);
 		assertThat(bean.getEmailHeaders()).isEqualTo(emailHeaders);
-		assertThat(bean.getInternal()).isEqualTo(internal);
+		assertThat(bean.isInternal()).isEqualTo(internal);
 
 	}
 

@@ -87,6 +87,13 @@ public class CommunicationService {
 		return communicationMapper.toCommunications(communicationRepository.findByErrandNumber(errand.getErrandNumber()));
 	}
 
+	public List<Communication> readExternalCommunications(final String namespace, final String municipalityId, final String errandId) {
+		final var errand = fetchErrand(errandId, namespace, municipalityId);
+		final var communications = communicationRepository.findByErrandNumberAndInternal(errand.getErrandNumber(), false);
+		communications.forEach(communication -> communication.setViewed(false));
+		return communicationMapper.toCommunications(communications);
+	}
+
 	public void updateViewedStatus(final String namespace, final String municipalityId, final String id, final String communicationId, final boolean isViewed) {
 		fetchErrand(id, namespace, municipalityId);
 
@@ -216,4 +223,5 @@ public class CommunicationService {
 			.map(PortalPersonData::getFullname)
 			.orElse(null);
 	}
+
 }

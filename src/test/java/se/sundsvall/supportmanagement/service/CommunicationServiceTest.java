@@ -211,6 +211,38 @@ class CommunicationServiceTest {
 	}
 
 	@Test
+	void readExternalCommunications() {
+
+		// Parameter values
+		final var namespace = "namespace";
+		final var municipalityId = "2281";
+		final var id = randomUUID().toString();
+		final var errandNumber = "errandNumber";
+
+		// Mock
+		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(true);
+		when(errandsRepositoryMock.findById(id)).thenReturn(Optional.of(errandEntityMock));
+		when(errandEntityMock.getErrandNumber()).thenReturn(errandNumber);
+		when(communicationRepositoryMock.findByErrandNumberAndInternal(errandNumber, false)).thenReturn(List.of(CommunicationEntity.create().withInternal(true)));
+		when(communicationMapperMock.toCommunications(anyList())).thenReturn(List.of(Communication.create()));
+
+		// Call
+		final var response = service.readExternalCommunications(namespace, municipalityId, id);
+
+		// Verification
+		assertThat(response).isNotNull().hasSize(1);
+		assertThat(response.getFirst().isViewed()).isFalse();
+
+		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verify(errandsRepositoryMock).findById(id);
+		verify(communicationRepositoryMock).findByErrandNumberAndInternal(errandNumber, false);
+		verify(communicationMapperMock).toCommunications(anyList());
+
+		verifyNoMoreInteractions(errandsRepositoryMock, communicationMapperMock, communicationRepositoryMock);
+		verifyNoInteractions(communicationAttachmentRepositoryMock, messagingClientMock);
+	}
+
+	@Test
 	void updateViewedStatus() {
 
 		// Parameter values

@@ -10,5 +10,7 @@ public interface CommunicationRepository extends JpaRepository<CommunicationEnti
 
 	List<CommunicationEntity> findByErrandNumber(String errandNumber);
 
+	List<CommunicationEntity> findByErrandNumberAndInternal(String errandNumber, boolean isInternal);
+
 	boolean existsByErrandNumberAndExternalId(String errandNumber, String externalId);
 }
