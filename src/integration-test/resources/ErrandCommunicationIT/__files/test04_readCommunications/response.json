@@ -3,9 +3,9 @@
 		"emailHeaders": {},
 		"communicationAttachments": [
 			{
-				"name": "attachment2",
-				"attachmentID": "05b29c30-4512-46c0-9d82-d0f11cb04bae",
-				"contentType": "image/png"
+				"fileName": "attachment2",
+				"id": "05b29c30-4512-46c0-9d82-d0f11cb04bae",
+				"mimeType": "image/png"
 			}
 		],
 		"messageBody": "message body 2",
@@ -29,9 +29,9 @@
 		},
 		"communicationAttachments": [
 			{
-				"name": "attachment1",
-				"attachmentID": "896a44d8-724b-11ed-a840-0242ac110002",
-				"contentType": "text/plain"
+				"fileName": "attachment1",
+				"id": "896a44d8-724b-11ed-a840-0242ac110002",
+				"mimeType": "text/plain"
 			}
 		],
 		"messageBody": "message body 1",

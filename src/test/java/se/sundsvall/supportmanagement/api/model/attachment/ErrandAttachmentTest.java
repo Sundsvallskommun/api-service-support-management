@@ -11,11 +11,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 import org.junit.jupiter.api.Test;
 
-class ErrandAttachmentHeaderTest {
+class ErrandAttachmentTest {
 
 	@Test
 	void testBean() {
-		assertThat(ErrandAttachmentHeader.class, allOf(
+		assertThat(ErrandAttachment.class, allOf(
 			hasValidBeanConstructor(),
 			hasValidGettersAndSetters(),
 			hasValidBeanHashCode(),
@@ -29,7 +29,7 @@ class ErrandAttachmentHeaderTest {
 		final var fileName = "fileName";
 		final var mimeType = "mimeType";
 
-		final var bean = ErrandAttachmentHeader.create()
+		final var bean = ErrandAttachment.create()
 			.withId(id)
 			.withFileName(fileName)
 			.withMimeType(mimeType);
@@ -42,6 +42,6 @@ class ErrandAttachmentHeaderTest {
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(ErrandAttachmentHeader.create()).hasAllNullFieldsOrProperties();
+		assertThat(ErrandAttachment.create()).hasAllNullFieldsOrProperties();
 	}
 }

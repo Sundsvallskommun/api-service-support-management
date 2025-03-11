@@ -1,7 +1,6 @@
 package se.sundsvall.supportmanagement.service;
 
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Optional.of;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -32,9 +31,7 @@ import java.sql.Blob;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.Semaphore;
-import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -207,7 +204,7 @@ class ErrandAttachmentServiceTest {
 		when(errandMock.getAttachments()).thenReturn(List.of(buildAttachmentEntity(buildErrandEntity())));
 
 		// Call
-		final var result = service.readErrandAttachmentHeaders(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
+		final var result = service.readErrandAttachments(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 
 		// Assertions and verifications
 		assertThat(result).isNotNull().hasSize(1);
@@ -334,45 +331,6 @@ class ErrandAttachmentServiceTest {
 		verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_ADD_ATTACHMENT, errandMock, currentRevisionMock, previousRevisionMock);
 		verifyNoInteractions(errandsRepositoryMock);
 		verifyNoMoreInteractions(attachmentRepositoryMock, revisionServiceMock, eventServiceMock);
-	}
-
-	@Test
-	void getAttachmentStreamed() throws SQLException, IOException, InterruptedException {
-
-		// Parameter values
-		final var attachmentId = "attachmentId";
-		final var content = "content";
-		final var contentType = "contentType";
-		final var fileName = "fileName";
-		final var errandId = "errandId";
-		final var inputStream = IOUtils.toInputStream(content, UTF_8);
-
-		// Mock
-		when(attachmentRepositoryMock.findByNamespaceAndMunicipalityIdAndErrandEntityIdAndId(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(errandId), any())).thenReturn(Optional.of(attachmentMock));
-		when(attachmentMock.getMimeType()).thenReturn(contentType);
-		when(attachmentMock.getFileName()).thenReturn(fileName);
-		when(attachmentMock.getAttachmentData()).thenReturn(attachmentDataEntityMock);
-		when(attachmentDataEntityMock.getFile()).thenReturn(blobMock);
-		when(blobMock.getBinaryStream()).thenReturn(inputStream);
-		when(httpServletResponseMock.getOutputStream()).thenReturn(servletOutputStreamMock);
-		when(attachmentMock.getFileSize()).thenReturn(content.length());
-		when(semaphoreMock.tryAcquire(content.length(), 5, SECONDS)).thenReturn(true);
-
-		// Call
-		service.getAttachmentStreamed(NAMESPACE, MUNICIPALITY_ID, errandId, attachmentId, httpServletResponseMock);
-
-		// Verification
-		verify(attachmentRepositoryMock).findByNamespaceAndMunicipalityIdAndErrandEntityIdAndId(NAMESPACE, MUNICIPALITY_ID, errandId, attachmentId);
-		verify(attachmentMock).getAttachmentData();
-		verify(attachmentDataEntityMock).getFile();
-		verify(blobMock).getBinaryStream();
-		verify(httpServletResponseMock).addHeader(CONTENT_TYPE, contentType);
-		verify(httpServletResponseMock).addHeader(CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"");
-		verify(httpServletResponseMock).setContentLength(content.length());
-		verify(httpServletResponseMock).getOutputStream();
-
-		verifyNoMoreInteractions(attachmentRepositoryMock, attachmentMock, attachmentDataEntityMock, blobMock, httpServletResponseMock);
-		verifyNoInteractions(errandsRepositoryMock, revisionServiceMock, eventServiceMock);
 	}
 
 	@Test

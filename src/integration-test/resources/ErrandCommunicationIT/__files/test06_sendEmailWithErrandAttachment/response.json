@@ -14,9 +14,9 @@
 		},
 		"communicationAttachments": [
 			{
-				"name": "Test3.txt",
-				"attachmentID": "99fa4dd0-9308-4d45-bb8e-4bb881a9a536",
-				"contentType": "text/plain"
+				"fileName": "Test3.txt",
+				"id": "99fa4dd0-9308-4d45-bb8e-4bb881a9a536",
+				"mimeType": "text/plain"
 			}
 		],
 		"messageBody": "Some message about the HAL Institute for Criminally Insane Robots, where robots that murderously turns against its human crew are held",

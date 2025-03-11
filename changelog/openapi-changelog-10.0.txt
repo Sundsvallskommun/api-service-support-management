@@ -1,0 +1,88 @@
+==============================================
+= Changes between openAPI version 9.4 and 10.0
+==============================================
+
+Generated with https://www.oasdiff.com/
+
+
+20 changes: 4 error, 8 warning, 8 info
+error	[api-path-removed-without-deprecation] at https://raw.githubusercontent.com/Sundsvallskommun/api-service-support-management/refs/heads/main/src/test/resources/api/openapi.yaml	
+	in API GET /{municipalityId}/{namespace}/errands/{errandId}/attachments/{attachmentId}/streamed
+		api path removed without deprecation
+
+error	[new-required-request-property] at https://raw.githubusercontent.com/Sundsvallskommun/api-service-support-management/refs/heads/uf-14181-attachment/src/test/resources/api/openapi.yaml	
+	in API POST /{municipalityId}/{namespace}/errands/{errandId}/communication/email
+		added the new required request property 'attachments/items/fileName'
+
+error	[new-required-request-property] at https://raw.githubusercontent.com/Sundsvallskommun/api-service-support-management/refs/heads/uf-14181-attachment/src/test/resources/api/openapi.yaml	
+	in API POST /{municipalityId}/{namespace}/errands/{errandId}/communication/webmessage
+		added the new required request property 'attachments/items/fileName'
+
+error	[api-path-removed-without-deprecation] at https://raw.githubusercontent.com/Sundsvallskommun/api-service-support-management/refs/heads/main/src/test/resources/api/openapi.yaml	
+	in API GET /{municipalityId}/{namespace}/errands/{errandId}/communication/{communicationId}/attachments/{attachmentId}/streamed
+		api path removed without deprecation
+
+warning	[response-optional-property-removed] at https://raw.githubusercontent.com/Sundsvallskommun/api-service-support-management/refs/heads/uf-14181-attachment/src/test/resources/api/openapi.yaml	
+	in API GET /{municipalityId}/{namespace}/errands/{errandId}/communication
+		removed the optional property '/items/communicationAttachments/items/attachmentID' from the response with the '200' status
+
+warning	[response-optional-property-removed] at https://raw.githubusercontent.com/Sundsvallskommun/api-service-support-management/refs/heads/uf-14181-attachment/src/test/resources/api/openapi.yaml	
+	in API GET /{municipalityId}/{namespace}/errands/{errandId}/communication
+		removed the optional property '/items/communicationAttachments/items/contentType' from the response with the '200' status
+
+warning	[response-optional-property-removed] at https://raw.githubusercontent.com/Sundsvallskommun/api-service-support-management/refs/heads/uf-14181-attachment/src/test/resources/api/openapi.yaml	
+	in API GET /{municipalityId}/{namespace}/errands/{errandId}/communication
+		removed the optional property '/items/communicationAttachments/items/name' from the response with the '200' status
+
+warning	[request-property-removed] at https://raw.githubusercontent.com/Sundsvallskommun/api-service-support-management/refs/heads/uf-14181-attachment/src/test/resources/api/openapi.yaml	
+	in API POST /{municipalityId}/{namespace}/errands/{errandId}/communication/email
+		removed the request property 'attachments/items/name'
+
+warning	[response-optional-property-removed] at https://raw.githubusercontent.com/Sundsvallskommun/api-service-support-management/refs/heads/uf-14181-attachment/src/test/resources/api/openapi.yaml	
+	in API GET /{municipalityId}/{namespace}/errands/{errandId}/communication/external
+		removed the optional property '/items/communicationAttachments/items/attachmentID' from the response with the '200' status
+
+warning	[response-optional-property-removed] at https://raw.githubusercontent.com/Sundsvallskommun/api-service-support-management/refs/heads/uf-14181-attachment/src/test/resources/api/openapi.yaml	
+	in API GET /{municipalityId}/{namespace}/errands/{errandId}/communication/external
+		removed the optional property '/items/communicationAttachments/items/contentType' from the response with the '200' status
+
+warning	[response-optional-property-removed] at https://raw.githubusercontent.com/Sundsvallskommun/api-service-support-management/refs/heads/uf-14181-attachment/src/test/resources/api/openapi.yaml	
+	in API GET /{municipalityId}/{namespace}/errands/{errandId}/communication/external
+		removed the optional property '/items/communicationAttachments/items/name' from the response with the '200' status
+
+warning	[request-property-removed] at https://raw.githubusercontent.com/Sundsvallskommun/api-service-support-management/refs/heads/uf-14181-attachment/src/test/resources/api/openapi.yaml	
+	in API POST /{municipalityId}/{namespace}/errands/{errandId}/communication/webmessage
+		removed the request property 'attachments/items/name'
+
+info	[api-schema-removed] 	
+	in components/schemas
+		removed the schema 'ErrandAttachmentHeader'
+
+info	[response-optional-property-added] at https://raw.githubusercontent.com/Sundsvallskommun/api-service-support-management/refs/heads/uf-14181-attachment/src/test/resources/api/openapi.yaml	
+	in API GET /{municipalityId}/{namespace}/errands/{errandId}/communication
+		added the optional property '/items/communicationAttachments/items/fileName' to the response with the '200' status
+
+info	[response-optional-property-added] at https://raw.githubusercontent.com/Sundsvallskommun/api-service-support-management/refs/heads/uf-14181-attachment/src/test/resources/api/openapi.yaml	
+	in API GET /{municipalityId}/{namespace}/errands/{errandId}/communication
+		added the optional property '/items/communicationAttachments/items/id' to the response with the '200' status
+
+info	[response-optional-property-added] at https://raw.githubusercontent.com/Sundsvallskommun/api-service-support-management/refs/heads/uf-14181-attachment/src/test/resources/api/openapi.yaml	
+	in API GET /{municipalityId}/{namespace}/errands/{errandId}/communication
+		added the optional property '/items/communicationAttachments/items/mimeType' to the response with the '200' status
+
+info	[response-optional-property-added] at https://raw.githubusercontent.com/Sundsvallskommun/api-service-support-management/refs/heads/uf-14181-attachment/src/test/resources/api/openapi.yaml	
+	in API GET /{municipalityId}/{namespace}/errands/{errandId}/communication/external
+		added the optional property '/items/communicationAttachments/items/fileName' to the response with the '200' status
+
+info	[response-optional-property-added] at https://raw.githubusercontent.com/Sundsvallskommun/api-service-support-management/refs/heads/uf-14181-attachment/src/test/resources/api/openapi.yaml	
+	in API GET /{municipalityId}/{namespace}/errands/{errandId}/communication/external
+		added the optional property '/items/communicationAttachments/items/id' to the response with the '200' status
+
+info	[response-optional-property-added] at https://raw.githubusercontent.com/Sundsvallskommun/api-service-support-management/refs/heads/uf-14181-attachment/src/test/resources/api/openapi.yaml	
+	in API GET /{municipalityId}/{namespace}/errands/{errandId}/communication/external
+		added the optional property '/items/communicationAttachments/items/mimeType' to the response with the '200' status
+
+info	[endpoint-added] at https://raw.githubusercontent.com/Sundsvallskommun/api-service-support-management/refs/heads/uf-14181-attachment/src/test/resources/api/openapi.yaml	
+	in API GET /{municipalityId}/{namespace}/errands/{errandId}/communication/{communicationId}/attachments/{attachmentId}
+		endpoint added
+

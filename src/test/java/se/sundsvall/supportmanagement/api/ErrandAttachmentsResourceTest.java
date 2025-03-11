@@ -14,7 +14,6 @@ import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
 import static org.springframework.http.MediaType.TEXT_PLAIN;
 import static org.springframework.http.MediaType.TEXT_PLAIN_VALUE;
 
-import jakarta.servlet.http.HttpServletResponse;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -28,7 +27,7 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.BodyInserters;
 import se.sundsvall.supportmanagement.Application;
-import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachmentHeader;
+import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
 import se.sundsvall.supportmanagement.service.ErrandAttachmentService;
 
 @SpringBootTest(classes = Application.class, webEnvironment = RANDOM_PORT)
@@ -102,25 +101,25 @@ class ErrandAttachmentsResourceTest {
 	@Test
 	void readErrandAttachments() {
 		// Parameter values
-		final var errandAttachments = List.of(ErrandAttachmentHeader.create()
+		final var errandAttachments = List.of(ErrandAttachment.create()
 			.withFileName("test.txt")
 			.withId(randomUUID().toString())
 			.withMimeType("text/plain"));
 
-		when(errandAttachmentServiceMock.readErrandAttachmentHeaders(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID)).thenReturn(errandAttachments);
+		when(errandAttachmentServiceMock.readErrandAttachments(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID)).thenReturn(errandAttachments);
 
 		final var response = webTestClient.get().uri(builder -> builder.path(PATH)
 			.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", ERRAND_ID)))
 			.exchange()
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)
-			.expectBodyList(ErrandAttachmentHeader.class)
+			.expectBodyList(ErrandAttachment.class)
 			.returnResult();
 
 		assertThat(response.getResponseBody()).isEqualTo(errandAttachments);
 
 		// Verification
-		verify(errandAttachmentServiceMock).readErrandAttachmentHeaders(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
+		verify(errandAttachmentServiceMock).readErrandAttachments(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 	}
 
 	@Test
@@ -137,24 +136,5 @@ class ErrandAttachmentsResourceTest {
 
 		// Verification
 		verify(errandAttachmentServiceMock).deleteErrandAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, attachmentId);
-	}
-
-	@Test
-	void getAttachmentStreamed() {
-
-		// Parameter values
-		final var attachmentId = randomUUID().toString();
-
-		// ACT
-		webTestClient.get()
-			.uri(uriBuilder -> uriBuilder.path(PATH.concat("/{attachmentId}/streamed"))
-				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", ERRAND_ID, "attachmentId", attachmentId)))
-			.exchange()
-			.expectStatus().isOk()
-			.expectBody()
-			.returnResult();
-
-		verify(errandAttachmentServiceMock).getAttachmentStreamed(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(attachmentId), any(HttpServletResponse.class));
-
 	}
 }

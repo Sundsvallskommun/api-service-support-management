@@ -15,6 +15,7 @@ import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
 import static org.springframework.http.MediaType.TEXT_PLAIN_VALUE;
 
 import java.util.List;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
@@ -39,7 +40,6 @@ class ErrandAttachmentsIT extends AbstractAppTest {
 	private static final String NAMESPACE = "NAMESPACE-1";
 	private static final String MUNICIPALITY_ID = "2281";
 	private static final String PATH = "/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/errands/";
-	private static final String REQUEST_FILE = "request.json";
 	private static final String RESPONSE_FILE = "response.json";
 
 	@Autowired
@@ -81,7 +81,6 @@ class ErrandAttachmentsIT extends AbstractAppTest {
 			.withHttpMethod(POST)
 			.withContentType(MULTIPART_FORM_DATA)
 			.withRequestFile("errandAttachment", "test.txt")
-			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(CREATED)
 			.withExpectedResponseHeader(LOCATION, List.of(PATH + entityId + "/attachments/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"))
 			.sendRequest()
@@ -121,20 +120,5 @@ class ErrandAttachmentsIT extends AbstractAppTest {
 		assertThat(revisionRepository.findAllByNamespaceAndMunicipalityIdAndEntityIdOrderByVersion(NAMESPACE, MUNICIPALITY_ID, entityId)).hasSize(2)
 			.extracting(RevisionEntity::getVersion)
 			.containsExactlyInAnyOrder(0, 1);
-	}
-
-	@Test
-	void test05_getErrandAttachmentStreamed() throws Exception {
-
-		final var errandId = "147d355f-dc94-4fde-a4cb-9ddd16cb1946";
-		final var attachmentId = "b3b3b3b3-b3b3-b3b3-b3b3-b3b3b3b3b3b3";
-
-		setupCall()
-			.withHttpMethod(GET)
-			.withServicePath(PATH + "/" + errandId + "/attachments/" + attachmentId + "/streamed")
-			.withExpectedResponseStatus(OK)
-			.withExpectedResponseHeader(CONTENT_TYPE, List.of(IMAGE_JPEG_VALUE))
-			.withExpectedBinaryResponse("Test_image.jpg")
-			.sendRequestAndVerifyResponse();
 	}
 }
