@@ -47,7 +47,7 @@ class WebMessageRequestTest {
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(WebMessageRequest.create()).hasAllNullFieldsOrPropertiesExcept("internal");
-		assertThat(new WebMessageRequest()).hasAllNullFieldsOrPropertiesExcept("internal");
+		assertThat(WebMessageRequest.create()).hasAllNullFieldsOrPropertiesExcept("internal", "dispatch");
+		assertThat(new WebMessageRequest()).hasAllNullFieldsOrPropertiesExcept("internal", "dispatch");
 	}
 }
