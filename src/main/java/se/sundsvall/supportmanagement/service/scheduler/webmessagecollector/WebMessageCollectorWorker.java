@@ -20,7 +20,7 @@ import se.sundsvall.supportmanagement.service.EventService;
 @Component
 public class WebMessageCollectorWorker {
 
-	private static final String EVENT_LOG_COMMUNICATION = "Ärendekommunikation har skapats.";
+	private static final String EVENT_LOG_COMMUNICATION = "Nytt meddelande";
 
 	private final WebMessageCollectorClient webMessageCollectorClient;
 	private final ErrandsRepository errandsRepository;
