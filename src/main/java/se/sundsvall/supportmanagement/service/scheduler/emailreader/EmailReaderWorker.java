@@ -29,7 +29,7 @@ import se.sundsvall.supportmanagement.service.EventService;
 @Service
 public class EmailReaderWorker {
 
-	private static final String EVENT_LOG_COMMUNICATION = "Ärendekommunikation har skapats.";
+	private static final String EVENT_LOG_COMMUNICATION = "Nytt meddelande";
 	private static final String EMAIL_NEW_SUBJECT_PREFIX = "Bekräftelse ärende ";
 
 	private final EmailReaderClient emailReaderClient;
@@ -126,7 +126,6 @@ public class EmailReaderWorker {
 
 		communicationService.saveCommunication(communicationEntity);
 		communicationService.saveAttachment(communicationEntity, errand);
-
 	}
 
 	private boolean isErrandInactive(final ErrandEntity errand, final EmailWorkerConfigEntity config) {

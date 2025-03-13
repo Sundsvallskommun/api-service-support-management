@@ -150,7 +150,7 @@ class WebMessageCollectorWorkerTest {
 		verify(webMessageCollectorMapperMock).toCommunicationEntity(messagedto, errandEntity);
 		verify(communicationServiceMock).saveCommunication(communicationEntityCaptor.capture());
 		verify(communicationServiceMock).saveAttachment(communicationEntityCaptor.capture(), same(errandEntity));
-		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Ärendekommunikation har skapats."), same(errandEntity), isNull(), isNull());
+		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Nytt meddelande"), same(errandEntity), isNull(), isNull());
 		verify(webMessageCollectorClientMock).getAttachment(MUNICIPALITY_ID, attachmentId);
 		verify(webMessageCollectorMapperMock).toCommunicationAttachmentDataEntity(data);
 		verify(webMessageCollectorClientMock).deleteMessages(MUNICIPALITY_ID, List.of(id));

@@ -14,7 +14,7 @@
 					"sourceType": "Errand",
 					"created": "${json-unit.any-string}",
 					"type": "UPDATE",
-					"message": "Ärendekommunikation har skapats."
+					"message": "Nytt meddelande"
 				},
 				"ignoreArrayOrder": true
 			}
