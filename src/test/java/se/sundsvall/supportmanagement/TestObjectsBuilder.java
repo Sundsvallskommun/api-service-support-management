@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement;
 import static java.time.OffsetDateTime.now;
 import static se.sundsvall.supportmanagement.api.model.errand.Priority.HIGH;
 
+import generated.se.sundsvall.citizen.CitizenExtended;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -164,5 +165,12 @@ public class TestObjectsBuilder {
 		Optional.ofNullable(modifier).ifPresent(m -> m.accept(notification));
 
 		return notification;
+	}
+
+	public static CitizenExtended createCitizenExtended(final String firstName, final String lastName) {
+		var citizenExtended = new CitizenExtended();
+		citizenExtended.setGivenname(firstName);
+		citizenExtended.setLastname(lastName);
+		return citizenExtended;
 	}
 }

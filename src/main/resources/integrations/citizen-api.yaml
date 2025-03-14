@@ -1,0 +1,717 @@
+openapi: 3.0.1
+info:
+  title: Citizen API
+  version: v3
+paths:
+  '/api/v3/citizen/{municipalityId}/api-docs':
+    get:
+      tags:
+        - Citizen
+      summary: OpenAPI specification
+      parameters:
+        - name: municipalityId
+          in: path
+          description: Kommunkod
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                type: string
+            text/json:
+              schema:
+                type: string
+      x-auth-type: None
+  '/api/v3/citizen/{municipalityId}/{personId}':
+    get:
+      tags:
+        - Citizen
+      summary: Visar en information om en invånare
+      parameters:
+        - name: personId
+          in: path
+          description: Id på efterfrågad person
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: ShowClassified
+          in: query
+          description: 'If true, include search for classified persons'
+          schema:
+            type: boolean
+            default: false
+        - name: municipalityId
+          in: path
+          description: Kommunkod
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/CitizenExtended'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CitizenExtended'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/CitizenExtended'
+        '204':
+          description: No Content
+        '400':
+          description: Bad Request
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '500':
+          description: Server Error
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '503':
+          description: Server Error
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  '/api/v3/citizen/{municipalityId}/batch':
+    post:
+      tags:
+        - Citizen
+      summary: Visar information om önskade invånare
+      parameters:
+        - name: ShowClassified
+          in: query
+          description: 'If true, include search for classified persons'
+          schema:
+            type: boolean
+            default: false
+        - name: municipalityId
+          in: path
+          description: Kommunkod
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: List med PersonId som förfrågas
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+                format: uuid
+          text/json:
+            schema:
+              type: array
+              items:
+                type: string
+                format: uuid
+          application/*+json:
+            schema:
+              type: array
+              items:
+                type: string
+                format: uuid
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CitizenExtended'
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CitizenExtended'
+            text/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CitizenExtended'
+        '400':
+          description: Bad Request
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '500':
+          description: Server Error
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '503':
+          description: Server Error
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  '/api/v3/citizen/{municipalityId}/changedaddress':
+    get:
+      tags:
+        - Citizen
+      summary: Show citizens that have moved since the given date
+      parameters:
+        - name: changedDateFrom
+          in: query
+          description: From-date for move.
+          schema:
+            type: string
+            format: date-time
+        - name: municipalityId
+          in: path
+          description: Kommunkod
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CitizenWithChangedAddress'
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CitizenWithChangedAddress'
+            text/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CitizenWithChangedAddress'
+        '204':
+          description: No Content
+        '400':
+          description: Bad Request
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '500':
+          description: Server Error
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '503':
+          description: Server Error
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  '/api/v3/citizen/{municipalityId}/{personId}/personnumber':
+    get:
+      tags:
+        - Citizen
+      summary: Get Personal identity number from personId
+      parameters:
+        - name: personId
+          in: path
+          description: 'personID, Guid, for specific citizen'
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: municipalityId
+          in: path
+          description: Kommunkod
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                type: string
+            text/json:
+              schema:
+                type: string
+        '204':
+          description: No Content
+        '400':
+          description: Bad Request
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '500':
+          description: Server Error
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '503':
+          description: Server Error
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  '/api/v3/citizen/{municipalityId}/{personNumber}/guid':
+    get:
+      tags:
+        - Citizen
+      summary: Get the personId from Personal the identity number
+      parameters:
+        - name: personNumber
+          in: path
+          description: Personal identity number for specific citizen
+          required: true
+          schema:
+            type: string
+        - name: municipalityId
+          in: path
+          description: Kommunkod
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: string
+                format: uuid
+            application/json:
+              schema:
+                type: string
+                format: uuid
+            text/json:
+              schema:
+                type: string
+                format: uuid
+        '204':
+          description: No Content
+        '400':
+          description: Bad Request
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '404':
+          description: Not Found
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '500':
+          description: Server Error
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '503':
+          description: Server Error
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  '/api/v3/citizen/{municipalityId}/guid/batch':
+    post:
+      tags:
+        - Citizen
+      summary: Get an array of personIds from Personal identity numbers
+      parameters:
+        - name: municipalityId
+          in: path
+          description: Kommunkod
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: A string array of Personal identity number for specific citizen
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+          text/json:
+            schema:
+              type: array
+              items:
+                type: string
+          application/*+json:
+            schema:
+              type: array
+              items:
+                type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PersonGuidBatch'
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PersonGuidBatch'
+            text/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PersonGuidBatch'
+        '400':
+          description: Bad Request
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '500':
+          description: Server Error
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '503':
+          description: Server Error
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+components:
+  schemas:
+    CitizenAddress:
+      type: object
+      properties:
+        status:
+          type: string
+          nullable: true
+        nrDate:
+          type: string
+          format: date-time
+          nullable: true
+        realEstateDescription:
+          type: string
+          nullable: true
+        co:
+          type: string
+          nullable: true
+        address:
+          type: string
+          nullable: true
+        addressArea:
+          type: string
+          nullable: true
+        addressNumber:
+          type: string
+          nullable: true
+        addressLetter:
+          type: string
+          nullable: true
+        appartmentNumber:
+          type: string
+          nullable: true
+        postalCode:
+          type: string
+          nullable: true
+        city:
+          type: string
+          nullable: true
+        county:
+          type: string
+          nullable: true
+        municipality:
+          type: string
+          nullable: true
+        country:
+          type: string
+          nullable: true
+        emigrated:
+          type: boolean
+          nullable: true
+        addressType:
+          type: string
+          nullable: true
+        xCoordLocal:
+          type: number
+          format: double
+          nullable: true
+        yCoordLocal:
+          type: number
+          format: double
+          nullable: true
+      additionalProperties: false
+    CitizenExtended:
+      type: object
+      properties:
+        personId:
+          type: string
+          format: uuid
+        givenname:
+          type: string
+          nullable: true
+        lastname:
+          type: string
+          nullable: true
+        gender:
+          type: string
+          nullable: true
+        civilStatus:
+          type: string
+          nullable: true
+        nrDate:
+          type: string
+          nullable: true
+        classified:
+          type: string
+          nullable: true
+        protectedNR:
+          type: string
+          nullable: true
+        addresses:
+          type: array
+          items:
+            $ref: '#/components/schemas/CitizenAddress'
+          nullable: true
+      additionalProperties: false
+    CitizenWithChangedAddress:
+      type: object
+      properties:
+        personId:
+          type: string
+          format: uuid
+        personNumber:
+          type: string
+          nullable: true
+        classified:
+          type: string
+          nullable: true
+        unRegCode:
+          type: string
+          nullable: true
+        unRegDate:
+          type: string
+          format: date-time
+          nullable: true
+        gender:
+          type: string
+          nullable: true
+        givenname:
+          type: string
+          nullable: true
+        lastname:
+          type: string
+          nullable: true
+        typeOfSchool:
+          type: string
+          nullable: true
+        custodianFor:
+          type: array
+          items:
+            $ref: '#/components/schemas/CustodyChildrenPupil'
+          nullable: true
+        addresses:
+          type: array
+          items:
+            $ref: '#/components/schemas/CitizenAddress'
+          nullable: true
+      additionalProperties: false
+    CustodyChildrenPupil:
+      type: object
+      properties:
+        personnumber:
+          type: string
+          nullable: true
+        typeOfSchool:
+          type: string
+          nullable: true
+        unRegCode:
+          type: string
+          nullable: true
+        unRegDate:
+          type: string
+          format: date-time
+          nullable: true
+      additionalProperties: false
+    PersonGuidBatch:
+      type: object
+      properties:
+        personNumber:
+          type: string
+          nullable: true
+        personId:
+          type: string
+          format: uuid
+          nullable: true
+        success:
+          type: boolean
+        errorMessage:
+          type: string
+          nullable: true
+      additionalProperties: false
+    ProblemDetails:
+      type: object
+      properties:
+        type:
+          type: string
+          nullable: true
+        title:
+          type: string
+          nullable: true
+        status:
+          type: integer
+          format: int32
+          nullable: true
+        detail:
+          type: string
+          nullable: true
+        instance:
+          type: string
+          nullable: true
+      additionalProperties: { }
+  securitySchemes:
+    Bearer:
+      type: apiKey
+      description: JWT Authorization header using the Bearer scheme.
+      name: X-JWT-Assertion
+      in: header
+security:
+  - Bearer: [ ]
+tags:
+  - name: Citizen
+    description: Handles information about Citizens

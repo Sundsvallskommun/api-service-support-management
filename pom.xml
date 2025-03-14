@@ -182,6 +182,31 @@
 						</configuration>
 					</execution>
 					<execution>
+						<id>citizen-api</id>
+						<goals>
+							<goal>generate</goal>
+						</goals>
+						<configuration>
+							<inputSpec>src/main/resources/integrations/citizen-api.yaml</inputSpec>
+							<output>${generated-sources-path}</output>
+							<generatorName>spring</generatorName>
+							<generateApis>false</generateApis>
+							<generateSupportingFiles>false</generateSupportingFiles>
+							<configOptions>
+								<useSpringBoot3>true</useSpringBoot3>
+								<sourceFolder>models</sourceFolder>
+								<dateLibrary>java8</dateLibrary>
+								<apiPackage>generated</apiPackage>
+								<modelPackage>generated.se.sundsvall.citizen</modelPackage>
+								<openApiNullable>false</openApiNullable>
+								<generatePom>false</generatePom>
+								<useBeanValidation>true</useBeanValidation>
+								<useSwaggerAnnotations>true</useSwaggerAnnotations>
+								<interfaceOnly>true</interfaceOnly>
+							</configOptions>
+						</configuration>
+					</execution>
+					<execution>
 						<id>eventlog-api</id>
 						<goals>
 							<goal>generate</goal>
