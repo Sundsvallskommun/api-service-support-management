@@ -7,6 +7,7 @@ public final class Constants {
 	public static final String NAMESPACE_REGEXP = "[\\w|\\-]+";
 	public static final String NAMESPACE_VALIDATION_MESSAGE = "can only contain A-Z, a-z, 0-9, - and _";
 	public static final String AD_USER_HEADER_KEY = "sentbyuser";
+	public static final String SENT_BY_HEADER = "X-Sent-By";
 
 	public static final String EXTERNAL_TAG_KEY_CASE_ID = "CaseId";
 	public static final String EXTERNAL_TAG_KEY_NOTE_ID = "NoteId";
