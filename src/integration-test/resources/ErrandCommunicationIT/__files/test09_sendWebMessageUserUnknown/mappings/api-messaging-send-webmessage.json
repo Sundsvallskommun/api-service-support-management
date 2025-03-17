@@ -12,6 +12,9 @@
 					"attachments": [],
 					"oepInstance": "external",
 					"message": "Order pizza for everyone!",
+					"sender": {
+						"userId": "UNKNOWN"
+					},
 					"party": {
 						"externalReferences": [
 							{
