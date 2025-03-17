@@ -25,10 +25,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StreamUtils;
 import org.zalando.problem.Problem;
 import se.sundsvall.supportmanagement.api.filter.ExecutingUserSupplier;
+import se.sundsvall.supportmanagement.api.filter.SentByHeaderFilter;
 import se.sundsvall.supportmanagement.api.model.communication.Communication;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
 import se.sundsvall.supportmanagement.api.model.communication.SmsRequest;
 import se.sundsvall.supportmanagement.api.model.communication.WebMessageRequest;
+import se.sundsvall.supportmanagement.integration.citizen.CitizenIntegration;
 import se.sundsvall.supportmanagement.integration.db.CommunicationAttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.CommunicationRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
@@ -58,6 +60,8 @@ public class CommunicationService {
 	private final Semaphore semaphore;
 	private final ExecutingUserSupplier executingUserSupplier;
 	private final EmployeeService employeeService;
+	private final SentByHeaderFilter sentByHeaderFilter;
+	private final CitizenIntegration citizenIntegration;
 
 	public CommunicationService(
 		final ErrandsRepository errandsRepository,
@@ -68,7 +72,9 @@ public class CommunicationService {
 		final ErrandAttachmentService errandAttachmentService,
 		final Semaphore semaphore,
 		final ExecutingUserSupplier executingUserSupplier,
-		final EmployeeService employeeService) {
+		final EmployeeService employeeService,
+		final SentByHeaderFilter sentByHeaderFilter,
+		final CitizenIntegration citizenIntegration) {
 
 		this.errandsRepository = errandsRepository;
 		this.messagingClient = messagingClient;
@@ -79,6 +85,8 @@ public class CommunicationService {
 		this.semaphore = semaphore;
 		this.executingUserSupplier = executingUserSupplier;
 		this.employeeService = employeeService;
+		this.sentByHeaderFilter = sentByHeaderFilter;
+		this.citizenIntegration = citizenIntegration;
 	}
 
 	public List<Communication> readCommunications(final String namespace, final String municipalityId, final String errandId) {
@@ -182,23 +190,62 @@ public class CommunicationService {
 	public void sendWebMessage(final String namespace, final String municipalityId, final String id, final WebMessageRequest request) {
 		final var entity = fetchErrand(id, namespace, municipalityId);
 		final var errandAttachments = errandAttachmentService.findByNamespaceAndMunicipalityIdAndIdIn(namespace, municipalityId, request.getAttachmentIds());
-		var adUser = executingUserSupplier.getAdUser();
 
-		if (UNKNOWN_AD_USER.equals(adUser)) {
-			adUser = null;
-		}
-		final var fullName = getFullName(municipalityId, adUser);
+		final var fullName = getFullName(municipalityId);
+
+		var adUser = Optional.ofNullable(sentByHeaderFilter.getSenderId())
+			.orElse(executingUserSupplier.getAdUser());
 
 		final var communicationEntity = communicationMapper.toCommunicationEntity(namespace, municipalityId, entity.getErrandNumber(), request, fullName, adUser)
 			.withErrandAttachments(errandAttachments);
 
-		messagingClient.sendWebMessage(municipalityId, ASYNCHRONOUSLY, toWebMessageRequest(entity, request, errandAttachments, adUser));
+		if (request.isDispatch()) {
+			messagingClient.sendWebMessage(municipalityId, ASYNCHRONOUSLY, toWebMessageRequest(entity, request, errandAttachments, adUser));
+		}
 
 		saveCommunication(communicationEntity);
 		saveAttachment(communicationEntity, entity);
 	}
 
-	private ErrandEntity fetchErrand(final String id, final String namespace, final String municipalityId) {
+	String getFullName(final String municipalityId) {
+		var senderType = sentByHeaderFilter.getSenderType();
+		var senderId = sentByHeaderFilter.getSenderId();
+
+		switch (senderType) {
+			case null -> {
+				// If senderType is null, use the sentbyuser header.
+				return getEmployeeName(municipalityId, executingUserSupplier.getAdUser());
+			}
+			case "adAccount" -> {
+				// If senderType is adAccount, use the senderId to get the employee name
+				return getEmployeeName(municipalityId, senderId);
+			}
+			case "partyId" -> {
+				// If senderType is partyId, use the senderId to get the citizen name
+				return getCitizenName(municipalityId, senderId);
+			}
+			default -> {
+				// This should be unreachable, but if it happens, return null
+				return null;
+			}
+		}
+	}
+
+	String getEmployeeName(final String municipalityId, final String adUser) {
+		return Optional.ofNullable(adUser)
+			.map(user -> UNKNOWN_AD_USER.equals(user) ? null : user)
+			.map(user -> employeeService.getEmployeeByLoginName(municipalityId, user))
+			.map(PortalPersonData::getFullname)
+			.orElse(null);
+	}
+
+	String getCitizenName(final String municipalityId, final String partyId) {
+		return Optional.ofNullable(partyId)
+			.map(party -> citizenIntegration.getCitizenName(municipalityId, party))
+			.orElse(null);
+	}
+
+	ErrandEntity fetchErrand(final String id, final String namespace, final String municipalityId) {
 		if (!errandsRepository.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)) {
 			throw Problem.valueOf(NOT_FOUND, String.format(ERRAND_ENTITY_NOT_FOUND, id, namespace, municipalityId));
 		}
@@ -215,13 +262,6 @@ public class CommunicationService {
 
 	public void saveCommunication(final CommunicationEntity communicationEntity) {
 		communicationRepository.save(communicationEntity);
-	}
-
-	private String getFullName(final String municipalityId, final String adUser) {
-		return Optional.ofNullable(adUser)
-			.map(user -> employeeService.getEmployeeByLoginName(municipalityId, user))
-			.map(PortalPersonData::getFullname)
-			.orElse(null);
 	}
 
 }

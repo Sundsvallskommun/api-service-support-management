@@ -17,6 +17,8 @@ integration:
     url: http://notes.url
   web-message-collector:
     url: http://web-message-collector.url
+  citizen:
+    url: http://citizen.url
 spring:
   cache:
     type: none
@@ -56,6 +58,8 @@ spring:
             token-uri: http://token.url
           web-message-collector:
             token-uri: http://token.url
+          citizen:
+            token-uri: http://token.url
         registration:
           emailreader:
             client-id: the-client-id
@@ -73,5 +77,8 @@ spring:
             client-id: the-client-id
             client-secret: the-client-secret
           web-message-collector:
+            client-id: the-client-id
+            client-secret: the-client-secret
+          citizen:
             client-id: the-client-id
             client-secret: the-client-secret
