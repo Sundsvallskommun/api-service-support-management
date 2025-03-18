@@ -26,7 +26,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.stubbing.Answer;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.zalando.problem.ThrowableProblem;
 import se.sundsvall.supportmanagement.api.filter.ExecutingUserSupplier;
 import se.sundsvall.supportmanagement.api.model.note.CreateErrandNoteRequest;
@@ -72,7 +71,7 @@ class ErrandNoteServiceTest {
 
 	private static final String SUBJECT = "subject";
 
-	private static final String APPLICATION_NAME = "applicationName";
+	private static final String APPLICATION_NAME = "support-management";
 
 	private static final String EXECUTING_USER = "executingUser";
 
@@ -126,8 +125,6 @@ class ErrandNoteServiceTest {
 		final var createNoteRequest = toCreateNoteRequest(ERRAND_ID, APPLICATION_NAME, errandNote);
 
 		// Mock
-		ReflectionTestUtils.setField(service, "clientId", APPLICATION_NAME);
-
 		when(repositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
 		when(repositoryMock.getReferenceById(ERRAND_ID)).thenReturn(new ErrandEntity().withExternalTags(List.of(DbExternalTag.create().withKey(EXTERNAL_TAG_KEY_CASE_ID).withValue(CASE_ID))));
 		when(executingUserSupplierMock.getAdUser()).thenReturn(EXECUTING_USER);
@@ -200,7 +197,6 @@ class ErrandNoteServiceTest {
 			.withRole(ROLE);
 
 		// Mock
-		ReflectionTestUtils.setField(service, "clientId", APPLICATION_NAME);
 		when(repositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
 		when(notesClientMock.findNotes(anyString(), anyString(), anyString(), anyString(), anyString(), anyString(), anyInt(), anyInt()))
 			.thenReturn(new FindNotesResponse().notes(List.of(new Note())));

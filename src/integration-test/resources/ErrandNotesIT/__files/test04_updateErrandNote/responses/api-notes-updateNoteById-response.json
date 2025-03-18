@@ -1,6 +1,6 @@
 {
 	"role": "FIRST_LINE_SUPPORT",
-	"clientId": "api-support-management",
+	"clientId": "support-management",
 	"createdBy": "John Doe",
 	"subject": "This is an updated subject",
 	"created": "2022-12-20T16:10:30.841+01:00",

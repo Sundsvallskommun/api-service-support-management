@@ -2,7 +2,7 @@
 	"notes": [
 		{
 			"role": "FIRST_LINE_SUPPORT",
-			"clientId": "api-support-management",
+			"clientId": "support-management",
 			"createdBy": "John Doe",
 			"subject": "This is a subject",
 			"created": "2022-12-20T16:10:30.841+01:00",
@@ -14,7 +14,7 @@
 		},
 		{
 			"role": "FIRST_LINE_SUPPORT",
-			"clientId": "api-support-management",
+			"clientId": "support-management",
 			"createdBy": "John Doe",
 			"subject": "XXX",
 			"created": "2022-12-20T12:44:53.26+01:00",

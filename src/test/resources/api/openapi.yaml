@@ -1,6 +1,6 @@
 openapi: 3.0.1
 info:
-  title: api-support-management
+  title: support-management
   contact: { }
   license:
     name: MIT License

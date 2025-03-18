@@ -14,7 +14,6 @@ import static se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper.toF
 import static se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper.toUpdateNoteRequest;
 
 import java.util.Optional;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.zalando.problem.Problem;
@@ -39,6 +38,8 @@ public class ErrandNoteService {
 
 	private static final String EVENT_LOG_DELETE_ERRAND_NOTE = "Ärendenotering har raderats.";
 
+	private static final String CLIENT_ID = "support-management";
+
 	private final NotesClient notesClient;
 
 	private final ErrandsRepository errandsRepository;
@@ -46,9 +47,6 @@ public class ErrandNoteService {
 	private final EventService eventService;
 
 	private final ExecutingUserSupplier executingUserSupplier;
-
-	@Value("${spring.application.name:}")
-	private String clientId;
 
 	public ErrandNoteService(final NotesClient notesClient,
 		final ErrandsRepository errandsRepository, final EventService eventService,
@@ -62,7 +60,7 @@ public class ErrandNoteService {
 	public String createErrandNote(final String namespace, final String municipalityId, final String id, final CreateErrandNoteRequest createErrandNoteRequest) {
 		verifyExistingErrand(id, namespace, municipalityId);
 
-		final var response = notesClient.createNote(executingUserSupplier.getAdUser(), municipalityId, toCreateNoteRequest(id, clientId, createErrandNoteRequest));
+		final var response = notesClient.createNote(executingUserSupplier.getAdUser(), municipalityId, toCreateNoteRequest(id, CLIENT_ID, createErrandNoteRequest));
 
 		// Create log event
 		final var currentRevision = extractRevisionInformationFromHeader(response, RevisionType.CURRENT);
@@ -85,7 +83,7 @@ public class ErrandNoteService {
 			findErrandNotesRequest.getContext(),
 			findErrandNotesRequest.getRole(),
 			id,
-			clientId,
+			CLIENT_ID,
 			findErrandNotesRequest.getPartyId(),
 			findErrandNotesRequest.getPage(),
 			findErrandNotesRequest.getLimit()));
