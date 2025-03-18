@@ -63,7 +63,7 @@ resilience4j:
         ignoreExceptions: se.sundsvall.dept44.exception.ClientProblem
 spring:
   application:
-    name: api-support-management
+    name: support-management
   cache:
     cache-names: metadataCache, namespaceConfigCache
     caffeine:
