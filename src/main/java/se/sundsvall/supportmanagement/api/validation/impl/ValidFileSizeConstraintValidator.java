@@ -16,7 +16,7 @@ public class ValidFileSizeConstraintValidator implements ConstraintValidator<Val
 	// Defaults to 10 MB if property is not set. Observe that setting for max_allowed_packet in DB must be set to larger
 	// value than byte size in validator, as DB transaction will fail if file is bigger than value allowed by DB. See
 	// https://mariadb.com/kb/en/server-system-variables/#max_allowed_packet for further documentation on setting.
-	@Value("${attachment.maximum.bytesize:10485760}")
+	@Value("${attachment.maximum.bytesize:52430000}")
 	private int maximumByteSize;
 
 	@Override
@@ -28,8 +28,8 @@ public class ValidFileSizeConstraintValidator implements ConstraintValidator<Val
 		return true; // Returns true if string is empty or contains non base64 encoded data
 	}
 
-	private boolean isValidSize(String base64Data, ConstraintValidatorContext context) {
-		boolean isValidSize = decodeBase64(base64Data.getBytes(UTF_8)).length <= maximumByteSize;
+	private boolean isValidSize(final String base64Data, final ConstraintValidatorContext context) {
+		final boolean isValidSize = decodeBase64(base64Data.getBytes(UTF_8)).length <= maximumByteSize;
 
 		if (!isValidSize) {
 			useCustomMessageForValidation(context, String.format(CUSTOM_ERROR_MESSAGE_TEMPLATE, maximumByteSize));
@@ -38,7 +38,7 @@ public class ValidFileSizeConstraintValidator implements ConstraintValidator<Val
 		return isValidSize;
 	}
 
-	private void useCustomMessageForValidation(ConstraintValidatorContext constraintContext, String message) {
+	private void useCustomMessageForValidation(final ConstraintValidatorContext constraintContext, final String message) {
 		constraintContext.disableDefaultConstraintViolation();
 		constraintContext.buildConstraintViolationWithTemplate(message).addConstraintViolation();
 	}

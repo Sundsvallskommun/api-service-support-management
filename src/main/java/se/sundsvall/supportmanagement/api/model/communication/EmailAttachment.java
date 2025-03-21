@@ -15,7 +15,7 @@ public class EmailAttachment implements RequestAttachment {
 	@Schema(description = "The attachment file name", example = "test.txt", requiredMode = REQUIRED)
 	private String fileName;
 
-	@Schema(description = "The attachment (file) content as a BASE64-encoded string, max size 10 MB", format = "base64", example = "aGVsbG8gd29ybGQK", requiredMode = REQUIRED)
+	@Schema(description = "The attachment (file) content as a BASE64-encoded string, max size 50 MB", format = "base64", example = "aGVsbG8gd29ybGQK", requiredMode = REQUIRED)
 	@ValidBase64
 	@ValidFileSize
 	private String base64EncodedString;
