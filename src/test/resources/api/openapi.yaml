@@ -5456,7 +5456,7 @@ components:
         base64EncodedString:
           type: string
           description: "The attachment (file) content as a BASE64-encoded string,\
-            \ max size 10 MB"
+            \ max size 50 MB"
           format: base64
           example: aGVsbG8gd29ybGQK
       description: WebMessageAttachment model
@@ -5527,7 +5527,7 @@ components:
         base64EncodedString:
           type: string
           description: "The attachment (file) content as a BASE64-encoded string,\
-            \ max size 10 MB"
+            \ max size 50 MB"
           format: base64
           example: aGVsbG8gd29ybGQK
       description: EmailAttachment model
