@@ -6,7 +6,6 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.Base64;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -21,18 +20,6 @@ class BlobBuilderTest {
 
 	@Autowired
 	private BlobBuilder blobBuilder;
-
-	@Test
-	void createBlob() throws IOException, SQLException {
-		// Arrange
-		final var fileContent = "text-content-of-file";
-
-		// Act
-		final var blob = blobBuilder.createBlob(Base64.getEncoder().encodeToString(fileContent.getBytes(UTF_8)));
-
-		// Assert
-		assertThat(blob.getBinaryStream().readAllBytes()).isEqualTo(fileContent.getBytes());
-	}
 
 	@Test
 	void createBlobWithByteArray() throws IOException, SQLException {

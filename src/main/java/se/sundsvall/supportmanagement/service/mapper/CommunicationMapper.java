@@ -183,12 +183,12 @@ public class CommunicationMapper {
 			.withMunicipalityId(municipalityId)
 			.withName(attachment.getFileName())
 			.withFileSize(byteArray.length)
-			.withAttachmentData(toMessageAttachmentData(attachment))
+			.withAttachmentData(toMessageAttachmentData(byteArray))
 			.withContentType(detectMimeType(attachment.getFileName(), byteArray));
 	}
 
-	private CommunicationAttachmentDataEntity toMessageAttachmentData(final RequestAttachment attachment) {
+	private CommunicationAttachmentDataEntity toMessageAttachmentData(final byte[] byteArray) {
 		return CommunicationAttachmentDataEntity.create()
-			.withFile(blobBuilder.createBlob(attachment.getBase64EncodedString()));
+			.withFile(blobBuilder.createBlob(byteArray));
 	}
 }

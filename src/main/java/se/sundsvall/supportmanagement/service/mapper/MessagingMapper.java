@@ -166,12 +166,11 @@ public class MessagingMapper {
 			.name(attachment.getFileName());
 	}
 
-	private static WebMessageAttachment toWebMessageAttachment(se.sundsvall.supportmanagement.api.model.communication.WebMessageAttachment attachment) {
-		final byte[] byteArray = decodeBase64(attachment.getBase64EncodedString());
+	private static WebMessageAttachment toWebMessageAttachment(final se.sundsvall.supportmanagement.api.model.communication.WebMessageAttachment attachment) {
 
 		return new WebMessageAttachment()
 			.base64Data(attachment.getBase64EncodedString())
-			.mimeType(detectMimeType(attachment.getFileName(), byteArray))
+			.mimeType(detectMimeType(attachment.getFileName(), decodeBase64(attachment.getBase64EncodedString())))
 			.fileName(attachment.getFileName());
 	}
 
