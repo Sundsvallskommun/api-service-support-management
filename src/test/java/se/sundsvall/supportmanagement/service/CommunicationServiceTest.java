@@ -421,7 +421,7 @@ class CommunicationServiceTest {
 		// Verifications and assertions
 		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(errandsRepositoryMock).findById(ERRAND_ID);
-		verify(messagingClientMock).sendEmail(eq(MUNICIPALITY_ID), eq(true), messagingEmailCaptor.capture());
+		verify(messagingClientMock).sendEmail(eq(MUNICIPALITY_ID), eq(false), messagingEmailCaptor.capture());
 		verify(communicationMapperMock).toCommunicationEntity(NAMESPACE, MUNICIPALITY_ID, request);
 		verify(communicationRepositoryMock).save(any(CommunicationEntity.class));
 		verify(communicationMapperMock).toAttachments(any(CommunicationEntity.class));
@@ -468,7 +468,7 @@ class CommunicationServiceTest {
 		// Verifications and assertions
 		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(errandsRepositoryMock).findById(ERRAND_ID);
-		verify(messagingClientMock).sendSms(eq(MUNICIPALITY_ID), eq(true), messagingSmsCaptor.capture());
+		verify(messagingClientMock).sendSms(eq(MUNICIPALITY_ID), eq(false), messagingSmsCaptor.capture());
 		verify(communicationMapperMock).toCommunicationEntity(NAMESPACE, MUNICIPALITY_ID, request);
 		verify(communicationRepositoryMock).save(any(CommunicationEntity.class));
 		verify(communicationMapperMock).toAttachments(any(CommunicationEntity.class));
@@ -525,7 +525,7 @@ class CommunicationServiceTest {
 		verify(errandAttachmentServiceMock).findByNamespaceAndMunicipalityIdAndIdIn(NAMESPACE, MUNICIPALITY_ID, List.of(ATTACHMENT_ID));
 		verify(communicationMapperMock).toCommunicationEntity(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID_KEY), same(request), eq(fullName), eq(adUser));
 		verify(communicationEntityMock).withErrandAttachments(same(attachmentEntitiesMock));
-		verify(messagingClientMock).sendWebMessage(eq(MUNICIPALITY_ID), eq(true), same(webMessageRequest));
+		verify(messagingClientMock).sendWebMessage(eq(MUNICIPALITY_ID), eq(false), same(webMessageRequest));
 		verify(communicationRepositoryMock).save(same(communicationEntityMock));
 		verify(communicationMapperMock).toAttachments(same(communicationEntityMock));
 		verify(attachmentEntityMock).withErrandEntity(same(errandEntityMock));
@@ -542,7 +542,7 @@ class CommunicationServiceTest {
 	 */
 	@Test
 	void sendWebMessage_2() {
-		var request = createWebMessageRequest();
+		final var request = createWebMessageRequest();
 		final var webMessageRequest = new generated.se.sundsvall.messaging.WebMessageRequest();
 
 		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
@@ -574,7 +574,7 @@ class CommunicationServiceTest {
 		verify(errandAttachmentServiceMock).findByNamespaceAndMunicipalityIdAndIdIn(NAMESPACE, MUNICIPALITY_ID, List.of(ATTACHMENT_ID));
 		verify(communicationMapperMock).toCommunicationEntity(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq("123"), same(request), eq("John Doe"), eq("Joh01Doe"));
 		verify(communicationEntityMock).withErrandAttachments(same(attachmentEntitiesMock));
-		verify(messagingClientMock).sendWebMessage(eq(MUNICIPALITY_ID), eq(true), same(webMessageRequest));
+		verify(messagingClientMock).sendWebMessage(eq(MUNICIPALITY_ID), eq(false), same(webMessageRequest));
 		verify(communicationRepositoryMock).save(any());
 		verify(communicationMapperMock).toAttachments(any());
 	}
@@ -585,7 +585,7 @@ class CommunicationServiceTest {
 	 */
 	@Test
 	void sendWebMessage_3() {
-		var request = createWebMessageRequest();
+		final var request = createWebMessageRequest();
 		request.setDispatch(false);
 
 		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
@@ -616,7 +616,7 @@ class CommunicationServiceTest {
 	 */
 	@Test
 	void sendWebMessage_4() {
-		var request = createWebMessageRequest();
+		final var request = createWebMessageRequest();
 		request.setDispatch(false);
 
 		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
@@ -683,9 +683,9 @@ class CommunicationServiceTest {
 	 */
 	@Test
 	void getEmployeeName_1() {
-		var adUser = "UNKNOWN";
+		final var adUser = "UNKNOWN";
 
-		var result = communicationService.getEmployeeName(MUNICIPALITY_ID, adUser);
+		final var result = communicationService.getEmployeeName(MUNICIPALITY_ID, adUser);
 
 		assertThat(result).isNull();
 		verify(employeeServiceMock, never()).getEmployeeByLoginName(MUNICIPALITY_ID, adUser);
@@ -696,12 +696,12 @@ class CommunicationServiceTest {
 	 */
 	@Test
 	void getEmployeeName_2() {
-		var adUser = "jon03doe";
-		var portalPersonData = new PortalPersonData();
+		final var adUser = "jon03doe";
+		final var portalPersonData = new PortalPersonData();
 		portalPersonData.setFullname("John Doe");
 		when(employeeServiceMock.getEmployeeByLoginName(MUNICIPALITY_ID, adUser)).thenReturn(portalPersonData);
 
-		var result = communicationService.getEmployeeName(MUNICIPALITY_ID, adUser);
+		final var result = communicationService.getEmployeeName(MUNICIPALITY_ID, adUser);
 
 		assertThat(result).isNotNull().isEqualTo("John Doe");
 		verify(employeeServiceMock).getEmployeeByLoginName(MUNICIPALITY_ID, adUser);
@@ -712,8 +712,8 @@ class CommunicationServiceTest {
 	 */
 	@Test
 	void getCitizenName_1() {
-		String partyId = null;
-		var result = communicationService.getCitizenName(MUNICIPALITY_ID, partyId);
+		final String partyId = null;
+		final var result = communicationService.getCitizenName(MUNICIPALITY_ID, partyId);
 
 		assertThat(result).isNull();
 		verify(citizenIntegrationMock, never()).getCitizenName(MUNICIPALITY_ID, partyId);
@@ -724,10 +724,10 @@ class CommunicationServiceTest {
 	 */
 	@Test
 	void getCitizenName_2() {
-		var partyId = UUID.randomUUID().toString();
+		final var partyId = UUID.randomUUID().toString();
 		when(citizenIntegrationMock.getCitizenName(MUNICIPALITY_ID, partyId)).thenReturn("Johnny Doe");
 
-		var result = communicationService.getCitizenName(MUNICIPALITY_ID, partyId);
+		final var result = communicationService.getCitizenName(MUNICIPALITY_ID, partyId);
 
 		assertThat(result).isNotNull().isEqualTo("Johnny Doe");
 		verify(citizenIntegrationMock).getCitizenName(MUNICIPALITY_ID, partyId);
