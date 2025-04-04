@@ -41,7 +41,7 @@
 				}
 			}
 		],
-		"url": "/api-messaging/2281/webmessage?async=true"
+		"url": "/api-messaging/2281/webmessage?async=false"
 	},
 	"response": {
 		"headers": {

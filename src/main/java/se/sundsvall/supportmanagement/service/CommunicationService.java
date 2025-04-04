@@ -48,7 +48,7 @@ public class CommunicationService {
 	private static final String COMMUNICATION_NOT_FOUND = "Communication with id %s not found";
 	private static final String ATTACHMENT_NOT_FOUND = "Communication attachment not found";
 	private static final String ATTACHMENT_WITH_ERRAND_NUMBER_NOT_FOUND = "Communication attachment not found for this errand";
-	private static final boolean ASYNCHRONOUSLY = true;
+	private static final boolean ASYNCHRONOUSLY = false;
 	private static final String UNKNOWN_AD_USER = "UNKNOWN";
 
 	private final ErrandsRepository errandsRepository;
@@ -193,7 +193,7 @@ public class CommunicationService {
 
 		final var fullName = getFullName(municipalityId);
 
-		var adUser = Optional.ofNullable(sentByHeaderFilter.getSenderId())
+		final var adUser = Optional.ofNullable(sentByHeaderFilter.getSenderId())
 			.orElse(executingUserSupplier.getAdUser());
 
 		final var communicationEntity = communicationMapper.toCommunicationEntity(namespace, municipalityId, entity.getErrandNumber(), request, fullName, adUser)
@@ -208,8 +208,8 @@ public class CommunicationService {
 	}
 
 	String getFullName(final String municipalityId) {
-		var senderType = sentByHeaderFilter.getSenderType();
-		var senderId = sentByHeaderFilter.getSenderId();
+		final var senderType = sentByHeaderFilter.getSenderType();
+		final var senderId = sentByHeaderFilter.getSenderId();
 
 		switch (senderType) {
 			case null -> {
