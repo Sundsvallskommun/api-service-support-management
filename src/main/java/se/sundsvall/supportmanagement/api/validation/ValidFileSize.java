@@ -16,7 +16,7 @@ import se.sundsvall.supportmanagement.api.validation.impl.ValidFileSizeConstrain
 @Retention(RetentionPolicy.RUNTIME)
 @Constraint(validatedBy = ValidFileSizeConstraintValidator.class)
 public @interface ValidFileSize {
-	String message() default "object exceeds the maximum allowed size";
+	String message() default "object exceeds the maximum allowed size or is not base64 encoded";
 
 	Class<?>[] groups() default {};
 

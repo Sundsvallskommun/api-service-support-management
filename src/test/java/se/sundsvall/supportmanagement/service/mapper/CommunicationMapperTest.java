@@ -2,7 +2,7 @@ package se.sundsvall.supportmanagement.service.mapper;
 
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import java.sql.Blob;
@@ -121,7 +121,7 @@ class CommunicationMapperTest {
 	@Test
 	void toCommunicationEntityFromEmailRequest() {
 
-		when(blobBuilder.createBlob(anyString())).thenReturn(blobMock);
+		when(blobBuilder.createBlob(any())).thenReturn(blobMock);
 
 		final var emailRequest = new EmailRequest()
 			.withRecipient("recipient")
@@ -176,7 +176,7 @@ class CommunicationMapperTest {
 		final var adUser = "adUser";
 		final var fullName = "fullName";
 
-		when(blobBuilder.createBlob(anyString())).thenReturn(blobMock);
+		when(blobBuilder.createBlob(any())).thenReturn(blobMock);
 
 		final var webMessageRequest = new WebMessageRequest()
 			.withMessage("message")

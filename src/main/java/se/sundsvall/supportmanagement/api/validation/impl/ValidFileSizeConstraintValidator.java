@@ -1,8 +1,6 @@
 package se.sundsvall.supportmanagement.api.validation.impl;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.nonNull;
-import static org.apache.commons.codec.binary.Base64.decodeBase64;
 import static org.apache.commons.codec.binary.Base64.isBase64;
 
 import jakarta.validation.ConstraintValidator;
@@ -29,13 +27,28 @@ public class ValidFileSizeConstraintValidator implements ConstraintValidator<Val
 	}
 
 	private boolean isValidSize(final String base64Data, final ConstraintValidatorContext context) {
-		final boolean isValidSize = decodeBase64(base64Data.getBytes(UTF_8)).length <= maximumByteSize;
+
+		final var padding = determinePadding(base64Data);
+
+		final int decodedLength = (base64Data.length() * 3) / 4 - padding;
+		final boolean isValidSize = decodedLength <= maximumByteSize;
 
 		if (!isValidSize) {
 			useCustomMessageForValidation(context, String.format(CUSTOM_ERROR_MESSAGE_TEMPLATE, maximumByteSize));
 		}
 
 		return isValidSize;
+	}
+
+	private int determinePadding(final String base64Data) {
+		if (base64Data.endsWith("==")) {
+			return 2;
+		}
+
+		if (base64Data.endsWith("=")) {
+			return 1;
+		}
+		return 0;
 	}
 
 	private void useCustomMessageForValidation(final ConstraintValidatorContext constraintContext, final String message) {
