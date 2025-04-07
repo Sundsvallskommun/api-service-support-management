@@ -469,6 +469,9 @@
     create index idx_namespace_municipality_id 
        on notification (namespace, municipality_id);
 
+    create index idx_notification_municipality_id_namespace_owner_id
+       on notification (municipality_id, namespace, owner_id);
+
     create index revision_entity_id_index 
        on revision (entity_id);
 
