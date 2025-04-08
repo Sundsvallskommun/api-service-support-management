@@ -85,12 +85,10 @@ public class SentByHeaderFilter extends OncePerRequestFilter {
 		}
 		var typeValue = type.trim().substring(5);
 
-		if ("partyId".equals(typeValue)) {
+		if ("partyId".equals(typeValue) || "adAccount".equals(typeValue)) {
 			return typeValue;
 		}
-		if ("adAccount".equals(typeValue)) {
-			return typeValue;
-		}
+
 		throw Problem.valueOf(BAD_REQUEST, "Invalid X-Sent-By type value");
 	}
 

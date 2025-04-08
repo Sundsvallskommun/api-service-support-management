@@ -557,5 +557,4 @@ class RevisionServiceTest {
 			.withSerializedSnapshot("{}")
 			.withVersion(0);
 	}
-
 }

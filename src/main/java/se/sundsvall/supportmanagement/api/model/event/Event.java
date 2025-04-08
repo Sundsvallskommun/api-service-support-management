@@ -12,7 +12,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 @Schema(description = "Event model", accessMode = READ_ONLY)
 public class Event {
 
-	@Schema(implementation = EventType.class, enumAsRef = true)
+	@Schema(implementation = EventType.class)
 	private EventType type;
 
 	@Schema(description = "Event description", example = "Errand has been created")
