@@ -10,7 +10,6 @@ import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErran
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrands;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.updateEntity;
-import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.distinct;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withMunicipalityId;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withNamespace;
 
@@ -82,7 +81,7 @@ public class ErrandService {
 	}
 
 	public Page<Errand> findErrands(String namespace, String municipalityId, Specification<ErrandEntity> filter, Pageable pageable) {
-		final var fullFilter = distinct().and(withNamespace(namespace)).and(withMunicipalityId(municipalityId)).and(filter);
+		final var fullFilter = withNamespace(namespace).and(withMunicipalityId(municipalityId)).and(filter);
 		final var matches = repository.findAll(fullFilter, pageable);
 
 		return new PageImpl<>(toErrands(matches.getContent()), pageable, matches.getTotalElements());

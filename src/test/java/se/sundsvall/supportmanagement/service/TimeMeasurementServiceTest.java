@@ -95,5 +95,4 @@ class TimeMeasurementServiceTest {
 		verify(repository).findByIdAndNamespaceAndMunicipalityId(errandId, namespace, municipalityId);
 		assertThat(result).isEmpty();
 	}
-
 }
