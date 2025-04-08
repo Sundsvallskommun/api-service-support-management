@@ -25,7 +25,8 @@ import org.hibernate.annotations.UuidGenerator;
 @Entity
 @Table(name = "notification",
 	indexes = {
-		@Index(name = "idx_namespace_municipality_id", columnList = "namespace, municipality_id")
+		@Index(name = "idx_namespace_municipality_id", columnList = "namespace, municipality_id"),
+		@Index(name = "idx_notification_municipality_id_namespace_owner_id", columnList = "municipality_id, namespace, owner_id")
 	})
 public class NotificationEntity {
 
