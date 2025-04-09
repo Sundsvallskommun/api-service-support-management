@@ -17,13 +17,6 @@ public class SpecificationBuilder<T> {
 		return ERRAND_ENTITY_BUILDER.buildEqualFilter("municipalityId", municipalityId);
 	}
 
-	public static Specification<ErrandEntity> distinct() {
-		return (root, query, cb) -> {
-			query.distinct(true);
-			return null;
-		};
-	}
-
 	/**
 	 * Method builds an equal filter if value is not null. If value is null, method returns
 	 * an always-true predicate (meaning no filtering will be applied for sent in attribute)

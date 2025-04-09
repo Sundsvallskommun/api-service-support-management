@@ -145,7 +145,13 @@ public class ErrandEntity {
 	private OffsetDateTime suspendedFrom;
 
 	@ElementCollection
-	@CollectionTable(name = "errand_labels", joinColumns = @JoinColumn(name = "errand_id"), foreignKey = @ForeignKey(name = "fk_errand_labels_errand_id"))
+	@CollectionTable(
+		name = "errand_labels",
+		indexes = {
+			@Index(name = "idx_errand_labels_errand_id_label", columnList = "errand_id,label")
+		},
+		joinColumns = @JoinColumn(name = "errand_id"),
+		foreignKey = @ForeignKey(name = "fk_errand_labels_errand_id"))
 	@Column(name = "label")
 	private List<String> labels;
 

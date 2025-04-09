@@ -430,6 +430,9 @@
     alter table if exists errand 
        add constraint uq_errand_number unique (errand_number);
 
+    create index idx_errand_labels_errand_id_label 
+       on errand_labels (errand_id, label);
+
     create index idx_errand_number_sequence_namespace_municipality_id 
        on errand_number_sequence (namespace, municipality_id);
 
@@ -465,6 +468,9 @@
 
     create index idx_namespace_municipality_id 
        on notification (namespace, municipality_id);
+
+    create index idx_notification_municipality_id_namespace_owner_id
+       on notification (municipality_id, namespace, owner_id);
 
     create index revision_entity_id_index 
        on revision (entity_id);
