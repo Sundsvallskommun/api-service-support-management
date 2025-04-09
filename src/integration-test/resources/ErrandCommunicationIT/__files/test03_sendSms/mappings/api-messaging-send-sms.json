@@ -23,7 +23,7 @@
 				}
 			}
 		],
-		"url": "/api-messaging/2281/sms?async=true"
+		"url": "/api-messaging/2281/sms?async=false"
 	},
 	"response": {
 		"headers": {

@@ -41,7 +41,7 @@
 				}
 			}
 		],
-		"url": "/api-messaging/2281/email?async=true"
+		"url": "/api-messaging/2281/email?async=false"
 	},
 	"response": {
 		"headers": {
