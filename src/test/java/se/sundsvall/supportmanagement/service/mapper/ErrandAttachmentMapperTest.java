@@ -1,6 +1,9 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
+import static java.time.OffsetDateTime.now;
+import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
@@ -11,6 +14,7 @@ import jakarta.persistence.EntityManager;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.sql.Blob;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import org.hibernate.LobHelper;
@@ -29,6 +33,8 @@ class ErrandAttachmentMapperTest {
 	private static final String FILE_NAME = "fileName";
 
 	private static final String MIME_TYPE = "mimeType";
+
+	private static final OffsetDateTime CREATED = now().minusWeeks(1);
 
 	@Mock
 	private EntityManager entityManagerMock;
@@ -76,12 +82,13 @@ class ErrandAttachmentMapperTest {
 	@Test
 	void toErrandAttachments() {
 
-		final var result = ErrandAttachmentMapper.toErrandAttachments(List.of(buildAttachmentEntity(buildErrandEntity())));
+		final var result = ErrandAttachmentMapper.toErrandAttachments(List.of(buildAttachmentEntity(buildErrandEntity()).withCreated(CREATED)));
 
 		assertThat(result).isNotNull();
 		assertThat(result.getFirst().getId()).isEqualTo(ATTACHMENT_ID);
 		assertThat(result.getFirst().getFileName()).isEqualTo(FILE_NAME);
 		assertThat(result.getFirst().getMimeType()).isEqualTo(MIME_TYPE);
+		assertThat(result.getFirst().getCreated()).isCloseTo(CREATED, within(5, SECONDS));
 	}
 
 	@Test

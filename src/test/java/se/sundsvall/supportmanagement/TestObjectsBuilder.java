@@ -168,7 +168,7 @@ public class TestObjectsBuilder {
 	}
 
 	public static CitizenExtended createCitizenExtended(final String firstName, final String lastName) {
-		var citizenExtended = new CitizenExtended();
+		final var citizenExtended = new CitizenExtended();
 		citizenExtended.setGivenname(firstName);
 		citizenExtended.setLastname(lastName);
 		return citizenExtended;

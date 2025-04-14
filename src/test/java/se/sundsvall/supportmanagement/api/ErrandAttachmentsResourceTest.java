@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.api;
 
+import static java.time.OffsetDateTime.now;
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -103,6 +104,7 @@ class ErrandAttachmentsResourceTest {
 		// Parameter values
 		final var errandAttachments = List.of(ErrandAttachment.create()
 			.withFileName("test.txt")
+			.withCreated(now())
 			.withId(randomUUID().toString())
 			.withMimeType("text/plain"));
 
