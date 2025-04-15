@@ -53,6 +53,9 @@ public class Notification {
 	@Schema(description = "Type of the notification", example = "CREATE")
 	private String type;
 
+	@Schema(description = "Subtype of the notification", example = "ATTACHMENT")
+	private String subtype;
+
 	@NotBlank(groups = {
 		OnCreate.class
 	})
@@ -192,6 +195,19 @@ public class Notification {
 		return this;
 	}
 
+	public String getSubtype() {
+		return subtype;
+	}
+
+	public void setSubtype(final String subtype) {
+		this.subtype = subtype;
+	}
+
+	public Notification withSubtype(final String subtype) {
+		this.subtype = subtype;
+		return this;
+	}
+
 	public String getDescription() {
 		return description;
 	}
@@ -235,11 +251,11 @@ public class Notification {
 		return globalAcknowledged;
 	}
 
-	public void setGlobalAcknowledged(boolean globalAcknowledged) {
+	public void setGlobalAcknowledged(final boolean globalAcknowledged) {
 		this.globalAcknowledged = globalAcknowledged;
 	}
 
-	public Notification withGlobalAcknowledged(boolean globalAcknowledged) {
+	public Notification withGlobalAcknowledged(final boolean globalAcknowledged) {
 		this.globalAcknowledged = globalAcknowledged;
 		return this;
 	}
@@ -284,30 +300,41 @@ public class Notification {
 	}
 
 	@Override
+	public boolean equals(final Object o) {
+		if (o == null || getClass() != o.getClass())
+			return false;
+		final Notification that = (Notification) o;
+		return globalAcknowledged == that.globalAcknowledged && acknowledged == that.acknowledged && Objects.equals(id, that.id) && Objects.equals(created, that.created) && Objects.equals(modified, that.modified)
+			&& Objects.equals(ownerFullName, that.ownerFullName) && Objects.equals(ownerId, that.ownerId) && Objects.equals(createdBy, that.createdBy) && Objects.equals(createdByFullName, that.createdByFullName)
+			&& Objects.equals(type, that.type) && Objects.equals(subtype, that.subtype) && Objects.equals(description, that.description) && Objects.equals(content, that.content) && Objects.equals(expires,
+				that.expires) && Objects.equals(errandId, that.errandId) && Objects.equals(errandNumber, that.errandNumber);
+	}
+
+	@Override
 	public int hashCode() {
-		return Objects.hash(acknowledged, content, created, createdBy, createdByFullName, description, errandId, errandNumber, expires, globalAcknowledged, id, modified, ownerFullName, ownerId, type);
+		return Objects.hash(id, created, modified, ownerFullName, ownerId, createdBy, createdByFullName, type, subtype, description, content, expires, globalAcknowledged, acknowledged, errandId, errandNumber);
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
-			return true;
-		}
-		if (obj == null) {
-			return false;
-		}
-		if (getClass() != obj.getClass()) {
-			return false;
-		}
-		Notification other = (Notification) obj;
-		return acknowledged == other.acknowledged && Objects.equals(content, other.content) && Objects.equals(created, other.created) && Objects.equals(createdBy, other.createdBy) && Objects.equals(createdByFullName, other.createdByFullName) && Objects
-			.equals(description, other.description) && Objects.equals(errandId, other.errandId) && Objects.equals(errandNumber, other.errandNumber) && Objects.equals(expires, other.expires) && globalAcknowledged == other.globalAcknowledged && Objects
-				.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(ownerFullName, other.ownerFullName) && Objects.equals(ownerId, other.ownerId) && Objects.equals(type, other.type);
-	}
-
-	@Override
-	public String toString() {
-		return "Notification [id=" + id + ", created=" + created + ", modified=" + modified + ", ownerFullName=" + ownerFullName + ", ownerId=" + ownerId + ", createdBy=" + createdBy + ", createdByFullName=" + createdByFullName + ", type=" + type
-			+ ", description=" + description + ", content=" + content + ", expires=" + expires + ", globalAcknowledged=" + globalAcknowledged + ", acknowledged=" + acknowledged + ", errandId=" + errandId + ", errandNumber=" + errandNumber + "]";
+	public String
+		toString() {
+		return "Notification{" +
+			"id='" + id + '\'' +
+			", created=" + created +
+			", modified=" + modified +
+			", ownerFullName='" + ownerFullName + '\'' +
+			", ownerId='" + ownerId + '\'' +
+			", createdBy='" + createdBy + '\'' +
+			", createdByFullName='" + createdByFullName + '\'' +
+			", type='" + type + '\'' +
+			", subtype='" + subtype + '\'' +
+			", description='" + description + '\'' +
+			", content='" + content + '\'' +
+			", expires=" + expires +
+			", globalAcknowledged=" + globalAcknowledged +
+			", acknowledged=" + acknowledged +
+			", errandId='" + errandId + '\'' +
+			", errandNumber='" + errandNumber + '\'' +
+			'}';
 	}
 }
