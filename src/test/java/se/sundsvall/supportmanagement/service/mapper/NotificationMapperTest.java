@@ -110,7 +110,7 @@ class NotificationMapperTest {
 	void testToNotificationEntity() {
 		final var entity = NotificationMapper.toNotificationEntity(NAMESPACE, MUNICIPALITY_ID, createNotification(), ERRAND_ENTITY);
 
-		assertThat(entity).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "created", "modified", "expires", "ownerFullName", "createdByFullName");
+		assertThat(entity).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "created", "modified", "expires", "ownerFullName", "createdByFullName", "subtype");
 		assertThat(entity.getOwnerFullName()).isNull();
 		assertThat(entity.getOwnerId()).isEqualTo(OWNER_ID);
 		assertThat(entity.getCreatedBy()).isEqualTo(CREATED_BY);
@@ -143,7 +143,7 @@ class NotificationMapperTest {
 
 		final var updatedEntity = NotificationMapper.updateEntity(entity, notification);
 
-		assertThat(updatedEntity).isNotNull().hasNoNullFieldsOrPropertiesExcept();
+		assertThat(updatedEntity).isNotNull().hasNoNullFieldsOrPropertiesExcept("subtype");
 		assertThat(updatedEntity.getId()).isEqualTo(ID);
 		assertThat(updatedEntity.getCreated()).isEqualTo(CREATED);
 		assertThat(updatedEntity.getModified()).isEqualTo(MODIFIED);
