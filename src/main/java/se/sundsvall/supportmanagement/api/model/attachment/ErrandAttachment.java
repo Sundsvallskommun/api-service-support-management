@@ -5,6 +5,7 @@ import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Null;
+import java.time.OffsetDateTime;
 import java.util.Objects;
 import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
 
@@ -22,6 +23,9 @@ public class ErrandAttachment {
 	@Schema(description = "Mime type of the file", accessMode = Schema.AccessMode.READ_ONLY)
 	private String mimeType;
 
+	@Schema(description = "The attachment created date", example = "2023-01-01T00:00:00Z")
+	private OffsetDateTime created;
+
 	public static ErrandAttachment create() {
 		return new ErrandAttachment();
 	}
@@ -30,11 +34,11 @@ public class ErrandAttachment {
 		return id;
 	}
 
-	public void setId(String id) {
+	public void setId(final String id) {
 		this.id = id;
 	}
 
-	public ErrandAttachment withId(String id) {
+	public ErrandAttachment withId(final String id) {
 		this.id = id;
 		return this;
 	}
@@ -43,11 +47,11 @@ public class ErrandAttachment {
 		return fileName;
 	}
 
-	public void setFileName(String fileName) {
+	public void setFileName(final String fileName) {
 		this.fileName = fileName;
 	}
 
-	public ErrandAttachment withFileName(String fileName) {
+	public ErrandAttachment withFileName(final String fileName) {
 		this.fileName = fileName;
 		return this;
 	}
@@ -56,37 +60,48 @@ public class ErrandAttachment {
 		return this.mimeType;
 	}
 
-	public void setMimeType(String mimeType) {
+	public void setMimeType(final String mimeType) {
 		this.mimeType = mimeType;
 	}
 
-	public ErrandAttachment withMimeType(String mimeType) {
+	public ErrandAttachment withMimeType(final String mimeType) {
 		this.mimeType = mimeType;
 		return this;
 	}
 
-	@Override
-	public int hashCode() {
-		return Objects.hash(id, fileName, mimeType);
+	public OffsetDateTime getCreated() {
+		return created;
+	}
+
+	public void setCreated(final OffsetDateTime created) {
+		this.created = created;
+	}
+
+	public ErrandAttachment withCreated(final OffsetDateTime created) {
+		this.created = created;
+		return this;
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
-			return true;
-		}
-		if (obj == null) {
+	public boolean equals(final Object o) {
+		if (o == null || getClass() != o.getClass())
 			return false;
-		}
-		if (getClass() != obj.getClass()) {
-			return false;
-		}
-		var other = (ErrandAttachment) obj;
-		return Objects.equals(id, other.id) && Objects.equals(fileName, other.fileName) && Objects.equals(mimeType, other.mimeType);
+		final ErrandAttachment that = (ErrandAttachment) o;
+		return Objects.equals(id, that.id) && Objects.equals(fileName, that.fileName) && Objects.equals(mimeType, that.mimeType) && Objects.equals(created, that.created);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(id, fileName, mimeType, created);
 	}
 
 	@Override
 	public String toString() {
-		return "ErrandAttachment [id=" + id + ", fileName=" + fileName + ", mimeType=" + mimeType + "]";
+		return "ErrandAttachment{" +
+			"id='" + id + '\'' +
+			", fileName='" + fileName + '\'' +
+			", mimeType='" + mimeType + '\'' +
+			", created=" + created +
+			'}';
 	}
 }

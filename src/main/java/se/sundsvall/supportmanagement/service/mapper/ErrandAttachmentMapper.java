@@ -58,6 +58,7 @@ public final class ErrandAttachmentMapper {
 		return Optional.ofNullable(attachmentEntity)
 			.map(e -> ErrandAttachment.create()
 				.withFileName(e.getFileName())
+				.withCreated(e.getCreated())
 				.withId(e.getId())
 				.withMimeType(e.getMimeType()))
 			.orElse(null);
