@@ -306,6 +306,7 @@ class ErrandMapperTest {
 				ERRAND_NUMBER,
 				List.of(LABEL_1, LABEL_2),
 				List.of(createNotification(notification -> {
+					notification.setSubtype(null);// todo change when entity is updated
 					notification.setErrandNumber("ERRAND-NUMBER");
 					notification.setErrandId("cb20c51f-fcf3-42c0-b613-de563634a8ec");
 				}))));
