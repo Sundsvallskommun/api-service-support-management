@@ -155,6 +155,7 @@ public class TestObjectsBuilder {
 			.withOwnerId(NOTIFICATION_OWNER_ID)
 			.withCreatedBy(NOTIFICATION_CREATED_BY)
 			.withType(NOTIFICATION_TYPE)
+			.withSubtype(NOTIFICATION_SUBTYPE)
 			.withDescription(NOTIFICATION_DESCRIPTION)
 			.withContent(NOTIFICATION_CONTENT)
 			.withExpires(NOTIFICATION_EXPIRES)
