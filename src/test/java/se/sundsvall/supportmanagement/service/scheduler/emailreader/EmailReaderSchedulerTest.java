@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 import generated.se.sundsvall.emailreader.Email;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,7 +37,8 @@ class EmailReaderSchedulerTest {
 	private Email emailMock1;
 	@Mock
 	private Email emailMock2;
-
+	@Mock
+	private Consumer<String> consumerMock;
 	@InjectMocks
 	private EmailReaderScheduler emailReaderScheduler;
 
@@ -55,8 +57,8 @@ class EmailReaderSchedulerTest {
 		// Verify
 		verify(emailReaderWorkerMock).getEnabledEmailConfigs();
 		verify(emailReaderWorkerMock).getEmailsFromConfig(same(emailWorkerConfigEntityMock));
-		verify(emailReaderWorkerMock).processEmail(same(emailMock1), same(emailWorkerConfigEntityMock));
-		verifyNoMoreInteractions(emailReaderWorkerMock, healthIndicatorMock);
+		verify(emailReaderWorkerMock).processEmail(same(emailMock1), same(emailWorkerConfigEntityMock), any());
+		verifyNoMoreInteractions(emailReaderWorkerMock, consumerMock);
 	}
 
 	@Test
@@ -64,17 +66,17 @@ class EmailReaderSchedulerTest {
 		// ARRANGE
 		when(emailReaderWorkerMock.getEnabledEmailConfigs()).thenReturn(Set.of(emailWorkerConfigEntityMock));
 		when(emailReaderWorkerMock.getEmailsFromConfig(any())).thenReturn(List.of(emailMock1, emailMock2));
-		doThrow(new RuntimeException("error")).when(emailReaderWorkerMock).processEmail(same(emailMock1), any());
+
+		doThrow(new RuntimeException("error")).when(emailReaderWorkerMock).processEmail(same(emailMock1), any(), any());
 		// Act
 		emailReaderScheduler.getAndProcessEmails();
 		// Verify
 		final ArgumentCaptor<Email> emailArgumentCaptor = ArgumentCaptor.forClass(Email.class);
 		verify(emailReaderWorkerMock).getEnabledEmailConfigs();
 		verify(emailReaderWorkerMock).getEmailsFromConfig(same(emailWorkerConfigEntityMock));
-		verify(emailReaderWorkerMock, times(2)).processEmail(emailArgumentCaptor.capture(), same(emailWorkerConfigEntityMock));
-		verify(healthIndicatorMock).setHealthIndicatorUnhealthy("emailreader", "Error processing email");
+		verify(emailReaderWorkerMock, times(2)).processEmail(emailArgumentCaptor.capture(), same(emailWorkerConfigEntityMock), any());
 		assertThat(emailArgumentCaptor.getAllValues()).containsExactly(emailMock1, emailMock2);
-		verifyNoMoreInteractions(emailReaderWorkerMock, healthIndicatorMock);
+		verifyNoMoreInteractions(emailReaderWorkerMock, consumerMock);
 	}
 
 }

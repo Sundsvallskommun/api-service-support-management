@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.service.scheduler.emailreader;
 
+import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,14 +14,15 @@ public class EmailReaderScheduler {
 	private static final Logger LOG = LoggerFactory.getLogger(EmailReaderScheduler.class);
 
 	private final EmailReaderWorker emailReaderWorker;
-	private final Dept44HealthUtility healthUtility;
+	private final Consumer<String> emailSetUnHealthyConsumer;
 
 	@Value("${scheduler.emailreader.name}")
 	private String jobName;
 
-	public EmailReaderScheduler(final EmailReaderWorker emailReaderWorker, final Dept44HealthUtility healthUtility) {
+	public EmailReaderScheduler(final EmailReaderWorker emailReaderWorker, final Dept44HealthUtility dept44HealthUtility) {
 		this.emailReaderWorker = emailReaderWorker;
-		this.healthUtility = healthUtility;
+		this.emailSetUnHealthyConsumer = msg -> dept44HealthUtility.setHealthIndicatorUnhealthy(jobName, String.format("Email error: %s", msg));
+
 	}
 
 	@Dept44Scheduled(cron = "${scheduler.emailreader.cron}",
@@ -33,10 +35,10 @@ public class EmailReaderScheduler {
 			.forEach(config -> emailReaderWorker.getEmailsFromConfig(config)
 				.forEach(email -> {
 					try {
-						emailReaderWorker.processEmail(email, config);
+						emailReaderWorker.processEmail(email, config, emailSetUnHealthyConsumer);
 					} catch (final Exception e) {
 						LOG.error("Error processing email with id: {}", email.getId(), e);
-						healthUtility.setHealthIndicatorUnhealthy(jobName, "Error processing email");
+						emailSetUnHealthyConsumer.accept("Error processing email");
 					}
 				}));
 	}

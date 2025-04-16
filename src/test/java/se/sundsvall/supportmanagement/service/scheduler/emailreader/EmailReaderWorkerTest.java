@@ -19,6 +19,7 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -67,6 +68,9 @@ class EmailReaderWorkerTest {
 
 	@Mock
 	private ErrandNumberGeneratorService errandNumberGeneratorServiceMock;
+
+	@Mock
+	private Consumer<String> consumerMock;
 
 	@InjectMocks
 	private EmailReaderWorker emailReaderWorker;
@@ -132,7 +136,7 @@ class EmailReaderWorkerTest {
 		when(emailReaderClientMock.getAttachment(MUNICIPALITY_ID, 2)).thenReturn(bytes);
 
 		// ACT
-		emailReaderWorker.processEmail(email, emailConfig);
+		emailReaderWorker.processEmail(email, emailConfig, consumerMock);
 
 		// VERIFY
 		verify(errandRepositoryMock).findByErrandNumber("PRH-2022-000001");
@@ -145,7 +149,7 @@ class EmailReaderWorkerTest {
 		verify(emailReaderClientMock).getAttachment(MUNICIPALITY_ID, 2);
 		verify(emailReaderMapperMock).toCommunicationAttachmentDataEntity(bytes);
 		verifyNoInteractions(errandServiceMock);
-		verifyNoMoreInteractions(emailReaderClientMock, errandRepositoryMock, emailReaderMapperMock, communicationServiceMock, emailWorkerConfigRepositoryMock, eventServiceMock);
+		verifyNoMoreInteractions(emailReaderClientMock, errandRepositoryMock, emailReaderMapperMock, communicationServiceMock, emailWorkerConfigRepositoryMock, eventServiceMock, consumerMock);
 	}
 
 	@Test
@@ -179,7 +183,7 @@ class EmailReaderWorkerTest {
 		when(emailReaderMapperMock.createEmailRequest(any(Email.class), any(String.class), any(String.class), any(String.class))).thenReturn(emailRequest);
 
 		// ACT
-		emailReaderWorker.processEmail(email, emailConfig);
+		emailReaderWorker.processEmail(email, emailConfig, consumerMock);
 
 		// VERIFY
 		verify(errandRepositoryMock).findByErrandNumber("PRH-2022-000002");
@@ -231,7 +235,7 @@ class EmailReaderWorkerTest {
 		when(emailReaderMapperMock.createEmailRequest(any(Email.class), any(String.class), any(String.class), any(String.class))).thenReturn(emailRequest);
 
 		// ACT
-		emailReaderWorker.processEmail(email, emailConfig);
+		emailReaderWorker.processEmail(email, emailConfig, consumerMock);
 
 		// VERIFY
 		verify(errandRepositoryMock).findById(errandEntity.getId());
@@ -283,7 +287,7 @@ class EmailReaderWorkerTest {
 		when(emailReaderMapperMock.createEmailRequest(any(Email.class), any(String.class), any(String.class), any(String.class))).thenReturn(emailRequest);
 
 		// ACT
-		emailReaderWorker.processEmail(email, emailConfig);
+		emailReaderWorker.processEmail(email, emailConfig, consumerMock);
 
 		// VERIFY
 		verify(errandRepositoryMock).findById(errandEntity.getId());
@@ -328,7 +332,7 @@ class EmailReaderWorkerTest {
 		when(emailReaderMapperMock.toCommunicationEntity(any(), any())).thenReturn(communicationEntity);
 
 		// ACT
-		emailReaderWorker.processEmail(email, emailConfig);
+		emailReaderWorker.processEmail(email, emailConfig, consumerMock);
 
 		// VERIFY
 		verify(errandRepositoryMock).findById(errandEntity.getId());
@@ -376,7 +380,7 @@ class EmailReaderWorkerTest {
 		when(emailReaderMapperMock.toErrand(any(), any(), anyBoolean(), any(), any())).thenReturn(errand);
 
 		// ACT
-		emailReaderWorker.processEmail(email, emailConfig);
+		emailReaderWorker.processEmail(email, emailConfig, consumerMock);
 
 		// VERIFY
 		verify(errandRepositoryMock).findById(errandEntity.getId());
@@ -426,7 +430,7 @@ class EmailReaderWorkerTest {
 		when(emailReaderMapperMock.toErrand(any(), any(), anyBoolean(), any(), any())).thenReturn(errand);
 
 		// ACT
-		emailReaderWorker.processEmail(email, emailConfig);
+		emailReaderWorker.processEmail(email, emailConfig, consumerMock);
 
 		// VERIFY
 		verify(errandRepositoryMock).findByErrandNumber("Ansökan");
