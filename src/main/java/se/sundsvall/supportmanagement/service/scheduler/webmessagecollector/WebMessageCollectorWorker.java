@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.service.scheduler.webmessagecollector;
 
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationSubType.MESSAGE;
 import static se.sundsvall.supportmanagement.integration.db.specification.ErrandSpecification.hasMatchingTags;
 
 import generated.se.sundsvall.webmessagecollector.MessageDTO;
@@ -65,7 +66,7 @@ public class WebMessageCollectorWorker {
 	private void saveMessage(final CommunicationEntity communicationEntity, final ErrandEntity errand) {
 		communicationService.saveCommunication(communicationEntity);
 		communicationService.saveAttachment(communicationEntity, errand);
-		eventService.createErrandEvent(UPDATE, EVENT_LOG_COMMUNICATION, errand, null, null);
+		eventService.createErrandEvent(UPDATE, EVENT_LOG_COMMUNICATION, errand, null, null, MESSAGE);
 	}
 
 	private CommunicationEntity addAttachments(final CommunicationEntity communicationEntity) {

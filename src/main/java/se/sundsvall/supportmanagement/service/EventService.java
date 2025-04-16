@@ -4,6 +4,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static se.sundsvall.supportmanagement.Constants.EXTERNAL_TAG_KEY_CASE_ID;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationSubType.NOTE;
 import static se.sundsvall.supportmanagement.service.mapper.EventlogMapper.toEvent;
 import static se.sundsvall.supportmanagement.service.mapper.EventlogMapper.toMetadataMap;
 import static se.sundsvall.supportmanagement.service.mapper.NotificationMapper.toNotification;
@@ -22,6 +23,7 @@ import se.sundsvall.supportmanagement.api.model.event.Event;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.NotificationSubType;
 import se.sundsvall.supportmanagement.integration.eventlog.EventlogClient;
 import se.sundsvall.supportmanagement.service.mapper.EventlogMapper;
 
@@ -38,18 +40,18 @@ public class EventService {
 		this.notificationService = notificationService;
 	}
 
-	public void createErrandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final Revision currentRevision, final Revision previousRevision, boolean sendNotification) {
+	public void createErrandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final Revision currentRevision, final Revision previousRevision, final boolean sendNotification, final NotificationSubType subtype) {
 		final var metadata = toMetadataMap(errandEntity, currentRevision, previousRevision);
 		final var event = toEvent(eventType, message, extractId(currentRevision), Errand.class, metadata, executingUserSupplier.getAdUser());
 		eventLogClient.createEvent(errandEntity.getMunicipalityId(), errandEntity.getId(), event);
 
 		if (sendNotification) {
-			createNotification(errandEntity, event);
+			createNotification(errandEntity, event, subtype);
 		}
 	}
 
-	public void createErrandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final Revision currentRevision, final Revision previousRevision) {
-		createErrandEvent(eventType, message, errandEntity, currentRevision, previousRevision, true);
+	public void createErrandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final Revision currentRevision, final Revision previousRevision, final NotificationSubType subtype) {
+		createErrandEvent(eventType, message, errandEntity, currentRevision, previousRevision, true, subtype);
 	}
 
 	public void createErrandNoteEvent(final EventType eventType, final String message, final String logKey, final ErrandEntity errandEntity, final String noteId, final Revision currentRevision, final Revision previousRevision) {
@@ -57,7 +59,7 @@ public class EventService {
 		final var metadata = toMetadataMap(caseId, noteId, currentRevision, previousRevision);
 		final var event = toEvent(eventType, message, extractId(currentRevision), Note.class, metadata, executingUserSupplier.getAdUser());
 		eventLogClient.createEvent(errandEntity.getMunicipalityId(), logKey, event);
-		createNotification(errandEntity, event);
+		createNotification(errandEntity, event, NOTE);
 
 	}
 
@@ -74,9 +76,9 @@ public class EventService {
 		return ofNullable(currentRevision).map(Revision::getId).orElse(null);
 	}
 
-	private void createNotification(final ErrandEntity errandEntity, final generated.se.sundsvall.eventlog.Event event) {
+	private void createNotification(final ErrandEntity errandEntity, final generated.se.sundsvall.eventlog.Event event, final NotificationSubType subtype) {
 		Optional.ofNullable(errandEntity.getAssignedUserId()).ifPresent(assignedUserId -> {
-			final var notification = toNotification(event, errandEntity, executingUserSupplier.getAdUser());
+			final var notification = toNotification(event, errandEntity, executingUserSupplier.getAdUser(), subtype);
 			notificationService.createNotification(errandEntity.getMunicipalityId(), errandEntity.getNamespace(), errandEntity.getId(), notification);
 		});
 	}

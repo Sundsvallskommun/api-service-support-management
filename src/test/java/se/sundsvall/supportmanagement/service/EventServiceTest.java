@@ -10,6 +10,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationSubType.ERRAND;
 
 import generated.se.sundsvall.eventlog.Event;
 import generated.se.sundsvall.eventlog.EventType;
@@ -85,7 +86,7 @@ class EventServiceTest {
 		when(executingUserSupplierMock.getAdUser()).thenReturn(executingUserId);
 
 		// Call
-		service.createErrandEvent(eventType, message, entity, currentRevision, previousRevision);
+		service.createErrandEvent(eventType, message, entity, currentRevision, previousRevision, ERRAND);
 
 		// Verifications and assertions
 		verify(eventLogClientMock).createEvent(eq(municipalityId), eq(errandId), eventCaptor.capture());
@@ -127,7 +128,7 @@ class EventServiceTest {
 		final var entity = ErrandEntity.create().withMunicipalityId(municipalityId).withId(errandId);
 
 		// Call
-		service.createErrandEvent(eventType, message, entity, null, null);
+		service.createErrandEvent(eventType, message, entity, null, null, ERRAND);
 
 		// Verifications and assertions
 		verify(eventLogClientMock).createEvent(eq(municipalityId), eq(errandId), eventCaptor.capture());
@@ -160,7 +161,7 @@ class EventServiceTest {
 		final var currentRevision = Revision.create().withId(currentRevisionId).withVersion(currentRevisionVersion);
 
 		// Call
-		service.createErrandEvent(eventType, message, entity, currentRevision, null);
+		service.createErrandEvent(eventType, message, entity, currentRevision, null, ERRAND);
 
 		// Verifications and assertions
 		verify(eventLogClientMock).createEvent(eq(municipalityId), eq(errandId), eventCaptor.capture());

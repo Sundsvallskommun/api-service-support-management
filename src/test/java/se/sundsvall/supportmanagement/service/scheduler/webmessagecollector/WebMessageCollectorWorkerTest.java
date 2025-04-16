@@ -14,6 +14,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.Direction.INBOUND;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationSubType.MESSAGE;
 
 import generated.se.sundsvall.eventlog.EventType;
 import generated.se.sundsvall.webmessagecollector.MessageAttachment;
@@ -150,7 +151,7 @@ class WebMessageCollectorWorkerTest {
 		verify(webMessageCollectorMapperMock).toCommunicationEntity(messagedto, errandEntity);
 		verify(communicationServiceMock).saveCommunication(communicationEntityCaptor.capture());
 		verify(communicationServiceMock).saveAttachment(communicationEntityCaptor.capture(), same(errandEntity));
-		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Nytt meddelande"), same(errandEntity), isNull(), isNull());
+		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Nytt meddelande"), same(errandEntity), isNull(), isNull(), same(MESSAGE));
 		verify(webMessageCollectorClientMock).getAttachment(MUNICIPALITY_ID, attachmentId);
 		verify(webMessageCollectorMapperMock).toCommunicationAttachmentDataEntity(data);
 		verify(webMessageCollectorClientMock).deleteMessages(MUNICIPALITY_ID, List.of(id));

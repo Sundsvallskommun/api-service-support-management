@@ -24,6 +24,7 @@ import se.sundsvall.supportmanagement.integration.db.model.CommunicationAttachme
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.EmailWorkerConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.NotificationSubType;
 import se.sundsvall.supportmanagement.integration.emailreader.EmailReaderClient;
 import se.sundsvall.supportmanagement.service.CommunicationService;
 import se.sundsvall.supportmanagement.service.ErrandService;
@@ -126,7 +127,7 @@ public class EmailReaderWorker {
 			errandRepository.save(errand);
 		}
 		saveEmail(email, errand);
-		eventService.createErrandEvent(EventType.UPDATE, EVENT_LOG_COMMUNICATION, errand, null, null);
+		eventService.createErrandEvent(EventType.UPDATE, EVENT_LOG_COMMUNICATION, errand, null, null, NotificationSubType.MESSAGE);
 		return emailRequest;
 	}
 

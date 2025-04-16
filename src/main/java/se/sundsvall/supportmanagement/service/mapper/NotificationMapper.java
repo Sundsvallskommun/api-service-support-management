@@ -8,6 +8,7 @@ import java.util.Optional;
 import se.sundsvall.supportmanagement.api.model.notification.Notification;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.NotificationSubType;
 
 public final class NotificationMapper {
 
@@ -22,6 +23,7 @@ public final class NotificationMapper {
 			.withOwnerId(notification.getOwnerId())
 			.withCreatedBy(notification.getCreatedBy())
 			.withType(notification.getType())
+			.withSubtype(notification.getSubtype())
 			.withDescription(notification.getDescription())
 			.withContent(notification.getContent())
 			.withExpires(Optional.ofNullable(notification.getExpires()).orElse(now().plusDays(DEFAULT_EXPIRE_TIME_IN_DAYS)))
@@ -39,6 +41,7 @@ public final class NotificationMapper {
 
 		Optional.ofNullable(notification.getOwnerId()).ifPresent(entity::setOwnerId);
 		Optional.ofNullable(notification.getType()).ifPresent(entity::setType);
+		Optional.ofNullable(notification.getSubtype()).ifPresent(entity::setSubtype);
 		Optional.ofNullable(notification.getDescription()).ifPresent(entity::setDescription);
 		Optional.ofNullable(notification.getContent()).ifPresent(entity::setContent);
 		Optional.ofNullable(notification.getExpires()).ifPresent(entity::setExpires);
@@ -57,6 +60,7 @@ public final class NotificationMapper {
 				.withCreatedBy(entity.getCreatedBy())
 				.withCreatedByFullName(entity.getCreatedByFullName())
 				.withType(entity.getType())
+				.withSubtype(entity.getSubtype())
 				.withDescription(entity.getDescription())
 				.withContent(entity.getContent())
 				.withExpires(entity.getExpires())
@@ -69,12 +73,13 @@ public final class NotificationMapper {
 			.orElse(null);
 	}
 
-	public static Notification toNotification(final Event event, final ErrandEntity errandEntity, final String executingUser) {
+	public static Notification toNotification(final Event event, final ErrandEntity errandEntity, final String executingUser, final NotificationSubType subtype) {
 		return Notification.create()
 			.withDescription(event.getMessage())
 			.withErrandId(errandEntity.getId())
 			.withErrandNumber(errandEntity.getErrandNumber())
 			.withType(event.getType().getValue())
+			.withSubtype(subtype.getValue())
 			.withExpires(event.getExpires())
 			.withModified(event.getCreated())
 			.withCreated(event.getCreated())

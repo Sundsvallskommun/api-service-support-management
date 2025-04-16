@@ -44,6 +44,7 @@ class NotificationTest {
 		final var createdBy = "TestUser";
 		final var createdByFullName = "Test Testorsson";
 		final var type = "SomeType";
+		final var subtype = "SomeSubtype";
 		final var description = "Some description of the notification";
 		final var content = "Some content of the notification";
 		final var expires = now();
@@ -62,6 +63,7 @@ class NotificationTest {
 			.withCreatedBy(createdBy)
 			.withCreatedByFullName(createdByFullName)
 			.withType(type)
+			.withSubtype(subtype)
 			.withDescription(description)
 			.withContent(content)
 			.withExpires(expires)
@@ -79,6 +81,7 @@ class NotificationTest {
 		assertThat(notification.getCreatedBy()).isEqualTo(createdBy);
 		assertThat(notification.getCreatedByFullName()).isEqualTo(createdByFullName);
 		assertThat(notification.getType()).isEqualTo(type);
+		assertThat(notification.getSubtype()).isEqualTo(subtype);
 		assertThat(notification.getDescription()).isEqualTo(description);
 		assertThat(notification.getContent()).isEqualTo(content);
 		assertThat(notification.getExpires()).isEqualTo(expires);

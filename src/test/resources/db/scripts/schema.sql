@@ -219,6 +219,7 @@
         namespace varchar(255) not null,
         owner_full_name varchar(255),
         owner_id varchar(255),
+        subtype varchar(255),
         type varchar(255),
         primary key (id)
     ) engine=InnoDB;
@@ -469,7 +470,7 @@
     create index idx_namespace_municipality_id 
        on notification (namespace, municipality_id);
 
-    create index idx_notification_municipality_id_namespace_owner_id
+    create index idx_notification_municipality_id_namespace_owner_id 
        on notification (municipality_id, namespace, owner_id);
 
     create index revision_entity_id_index 

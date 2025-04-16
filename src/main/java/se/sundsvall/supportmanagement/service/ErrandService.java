@@ -6,6 +6,7 @@ import static generated.se.sundsvall.eventlog.EventType.UPDATE;
 import static java.util.Objects.nonNull;
 import static org.zalando.problem.Status.BAD_REQUEST;
 import static org.zalando.problem.Status.NOT_FOUND;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationSubType.ERRAND;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrand;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrands;
@@ -56,7 +57,7 @@ public class ErrandService {
 		this.errandNumberGeneratorService = errandNumberGeneratorService;
 	}
 
-	public String createErrand(String namespace, String municipalityId, Errand errand) {
+	public String createErrand(final String namespace, final String municipalityId, final Errand errand) {
 		// Generate unique errand number
 		errand.withErrandNumber(errandNumberGeneratorService.generateErrandNumber(namespace, municipalityId));
 
@@ -75,24 +76,24 @@ public class ErrandService {
 		final var revision = revisionService.createErrandRevision(persistedEntity);
 
 		// Create log event
-		eventService.createErrandEvent(CREATE, EVENT_LOG_CREATE_ERRAND, persistedEntity, revision.latest(), null);
+		eventService.createErrandEvent(CREATE, EVENT_LOG_CREATE_ERRAND, persistedEntity, revision.latest(), null, ERRAND);
 
 		return persistedEntity.getId();
 	}
 
-	public Page<Errand> findErrands(String namespace, String municipalityId, Specification<ErrandEntity> filter, Pageable pageable) {
+	public Page<Errand> findErrands(final String namespace, final String municipalityId, final Specification<ErrandEntity> filter, final Pageable pageable) {
 		final var fullFilter = withNamespace(namespace).and(withMunicipalityId(municipalityId)).and(filter);
 		final var matches = repository.findAll(fullFilter, pageable);
 
 		return new PageImpl<>(toErrands(matches.getContent()), pageable, matches.getTotalElements());
 	}
 
-	public Errand readErrand(String namespace, String municipalityId, String id) {
+	public Errand readErrand(final String namespace, final String municipalityId, final String id) {
 		verifyExistingErrand(id, namespace, municipalityId, false);
 		return toErrand(repository.getReferenceById(id));
 	}
 
-	public Errand updateErrand(String namespace, String municipalityId, String id, Errand errand) {
+	public Errand updateErrand(final String namespace, final String municipalityId, final String id, final Errand errand) {
 		verifyExistingErrand(id, namespace, municipalityId, true);
 
 		final var errandEntity = updateEntity(repository.getReferenceById(id), errand);
@@ -109,13 +110,13 @@ public class ErrandService {
 
 		// Create log event if the update has modified the errand (and thus has created a new revision)
 		if (nonNull(revisionResult)) {
-			eventService.createErrandEvent(UPDATE, EVENT_LOG_UPDATE_ERRAND, entity, revisionResult.latest(), revisionResult.previous());
+			eventService.createErrandEvent(UPDATE, EVENT_LOG_UPDATE_ERRAND, entity, revisionResult.latest(), revisionResult.previous(), ERRAND);
 		}
 
 		return toErrand(entity);
 	}
 
-	public void deleteErrand(String namespace, String municipalityId, String id) {
+	public void deleteErrand(final String namespace, final String municipalityId, final String id) {
 		verifyExistingErrand(id, namespace, municipalityId, true);
 
 		final var entity = repository.getReferenceById(id);
@@ -124,12 +125,12 @@ public class ErrandService {
 
 		// Create log event
 		final var latestRevision = revisionService.getLatestErrandRevision(namespace, municipalityId, id);
-		eventService.createErrandEvent(DELETE, EVENT_LOG_DELETE_ERRAND, entity, latestRevision, null, false);
+		eventService.createErrandEvent(DELETE, EVENT_LOG_DELETE_ERRAND, entity, latestRevision, null, false, ERRAND);
 	}
 
-	private void verifyExistingErrand(String id, String namespace, String municipalityId, boolean lock) {
+	private void verifyExistingErrand(final String id, final String namespace, final String municipalityId, final boolean lock) {
 
-		Supplier<Boolean> exists;
+		final Supplier<Boolean> exists;
 		if (lock) {
 			exists = () -> repository.existsWithLockingByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
 		} else {
