@@ -66,6 +66,7 @@ class NotificationsResourceTest {
 			.withOwnerId("SomeOwnerId")
 			.withCreatedBy("SomeUser")
 			.withType("SomeType")
+			.withSubtype("SomeSubtype")
 			.withDescription("Some description")
 			.withAcknowledged(true);
 

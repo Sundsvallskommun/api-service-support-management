@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.service.scheduler.supensions;
 import static java.time.OffsetDateTime.now;
 import static java.util.Objects.nonNull;
 import static org.apache.commons.lang3.StringUtils.isBlank;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationSubType.SUSPENSION;
 
 import org.springframework.stereotype.Component;
 import se.sundsvall.supportmanagement.api.model.notification.Notification;
@@ -56,12 +57,13 @@ public class SuspensionWorker {
 			.withOwnerFullName(ownerFullName)
 			.withOwnerId(errand.getAssignedUserId())
 			.withType(NOTIFICATION_TYPE)
+			.withSubtype(SUSPENSION.getValue())
 			.withDescription(NOTIFICATION_MESSAGE)
 			.withErrandId(errand.getId())
 			.withErrandNumber(errand.getErrandNumber());
 	}
 
-	private String fetchFullNameByMunicipalityIdAndUserId(String municipalityId, String userId) {
+	private String fetchFullNameByMunicipalityIdAndUserId(final String municipalityId, final String userId) {
 		if (!isBlank(userId)) {
 			final var owner = employeeService.getEmployeeByLoginName(municipalityId, userId);
 			if (nonNull(owner)) {

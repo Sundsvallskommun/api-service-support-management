@@ -56,7 +56,8 @@
 			"globalAcknowledged": false,
 			"id": "${json-unit.any-string}",
 			"ownerId": "joe01doe",
-			"type": "CREATE"
+			"type": "CREATE",
+			"subtype": "ERRAND"
 		}
 	],
 	"assignedGroupId": "hardware support",

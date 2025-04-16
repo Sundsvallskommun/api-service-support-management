@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.service.mapper;
 import static java.time.OffsetDateTime.now;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationSubType.ERRAND;
 
 import generated.se.sundsvall.eventlog.Event;
 import generated.se.sundsvall.eventlog.EventType;
@@ -11,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import se.sundsvall.supportmanagement.api.model.notification.Notification;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.NotificationSubType;
 
 class NotificationMapperTest {
 
@@ -24,6 +26,7 @@ class NotificationMapperTest {
 	private static final String CREATED_BY = "createdBy";
 	private static final String CREATED_BY_FULL_NAME = "createdByFullName";
 	private static final String TYPE = "type";
+	private static final NotificationSubType SUBTYPE = ERRAND;
 	private static final String DESCRIPTION = "description";
 	private static final String CONTENT = "content";
 	private static final String ERRAND_ID = "errandId";
@@ -38,6 +41,7 @@ class NotificationMapperTest {
 	private static final String NEW_CREATED_BY = "newCreatedBy";
 	private static final String NEW_CREATED_BY_FULL_NAME = "newCreatedByFullName";
 	private static final String NEW_TYPE = "newType";
+	private static final String NEW_SUBTYPE = "newSubtype";
 	private static final String NEW_DESCRIPTION = "newDescription";
 	private static final String NEW_CONTENT = "newContent";
 	private static final OffsetDateTime NEW_EXPIRES = now().plusDays(10);
@@ -58,6 +62,7 @@ class NotificationMapperTest {
 			.withCreatedBy(CREATED_BY)
 			.withCreatedByFullName(CREATED_BY_FULL_NAME)
 			.withType(TYPE)
+			.withSubtype(SUBTYPE.getValue())
 			.withDescription(DESCRIPTION)
 			.withContent(CONTENT)
 			.withErrandId(ERRAND_ID)
@@ -77,6 +82,7 @@ class NotificationMapperTest {
 			.withCreatedBy(CREATED_BY)
 			.withCreatedByFullName(CREATED_BY_FULL_NAME)
 			.withType(TYPE)
+			.withSubtype(SUBTYPE.getValue())
 			.withDescription(DESCRIPTION)
 			.withContent(CONTENT)
 			.withErrandEntity(ERRAND_ENTITY)
@@ -99,6 +105,7 @@ class NotificationMapperTest {
 		assertThat(notification.getErrandId()).isEqualTo(ERRAND_ID);
 		assertThat(notification.isAcknowledged()).isEqualTo(ACKNOWLEDGED);
 		assertThat(notification.isGlobalAcknowledged()).isEqualTo(GLOBAL_ACKNOWLEDGED);
+		assertThat(notification.getSubtype()).isEqualTo(SUBTYPE.getValue());
 	}
 
 	@Test
@@ -134,6 +141,7 @@ class NotificationMapperTest {
 		notification.setCreatedBy(NEW_CREATED_BY);
 		notification.setCreatedByFullName(NEW_CREATED_BY_FULL_NAME);
 		notification.setType(NEW_TYPE);
+		notification.setSubtype(NEW_SUBTYPE);
 		notification.setDescription(NEW_DESCRIPTION);
 		notification.setContent(NEW_CONTENT);
 		notification.setExpires(NEW_EXPIRES);
@@ -153,6 +161,7 @@ class NotificationMapperTest {
 		assertThat(updatedEntity.getCreatedBy()).isEqualTo(CREATED_BY);
 		assertThat(updatedEntity.getCreatedByFullName()).isEqualTo(CREATED_BY_FULL_NAME);
 		assertThat(updatedEntity.getType()).isEqualTo(NEW_TYPE);
+		assertThat(updatedEntity.getSubtype()).isEqualTo(NEW_SUBTYPE);
 		assertThat(updatedEntity.getDescription()).isEqualTo(NEW_DESCRIPTION);
 		assertThat(updatedEntity.getContent()).isEqualTo(NEW_CONTENT);
 		assertThat(updatedEntity.getExpires()).isEqualTo(NEW_EXPIRES);
@@ -176,7 +185,7 @@ class NotificationMapperTest {
 			.withErrandNumber(ERRAND_NUMBER);
 
 		// Act
-		final var notification = NotificationMapper.toNotification(event, errandEntity, CREATED_BY);
+		final var notification = NotificationMapper.toNotification(event, errandEntity, CREATED_BY, SUBTYPE);
 
 		// Assert
 		assertThat(notification).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "content", "expires", "ownerFullName", "createdByFullName");
@@ -190,6 +199,7 @@ class NotificationMapperTest {
 		assertThat(notification.getOwnerFullName()).isNull();
 		assertThat(notification.getCreatedBy()).isEqualTo(CREATED_BY);
 		assertThat(notification.getCreatedByFullName()).isNull();
+		assertThat(notification.getSubtype()).isEqualTo(SUBTYPE.getValue());
 	}
 
 	@Test
@@ -200,6 +210,7 @@ class NotificationMapperTest {
 			.type(EVENT_TYPE)
 			.created(CREATED)
 			.expires(EXPIRES)
+
 			.message(DESCRIPTION);
 
 		final var errandEntity = new ErrandEntity()
@@ -208,7 +219,7 @@ class NotificationMapperTest {
 			.withErrandNumber(ERRAND_NUMBER);
 
 		// Act
-		final var notification = NotificationMapper.toNotification(event, errandEntity, CREATED_BY);
+		final var notification = NotificationMapper.toNotification(event, errandEntity, CREATED_BY, SUBTYPE);
 
 		// Assert
 		assertThat(notification).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "content", "expires", "ownerFullName", "createdByFullName");
@@ -222,5 +233,6 @@ class NotificationMapperTest {
 		assertThat(notification.getOwnerFullName()).isNull();
 		assertThat(notification.getCreatedBy()).isEqualTo(CREATED_BY);
 		assertThat(notification.getCreatedByFullName()).isNull();
+		assertThat(notification.getSubtype()).isEqualTo(SUBTYPE.getValue());
 	}
 }

@@ -49,6 +49,7 @@ public class TestObjectsBuilder {
 	private static final String NOTIFICATION_OWNER_ID = "TE07ST";
 	private static final String NOTIFICATION_CREATED_BY = "TestUser";
 	private static final String NOTIFICATION_TYPE = "TestType";
+	private static final String NOTIFICATION_SUBTYPE = "TestSubtype";
 	private static final String NOTIFICATION_DESCRIPTION = "TestDescription";
 	private static final String NOTIFICATION_CONTENT = "TestContent";
 	private static final String PARAMETER_KEY = "parameterKey";
@@ -133,6 +134,7 @@ public class TestObjectsBuilder {
 			.withOwnerId(NOTIFICATION_OWNER_ID)
 			.withCreatedBy(NOTIFICATION_CREATED_BY)
 			.withType(NOTIFICATION_TYPE)
+			.withSubtype(NOTIFICATION_SUBTYPE)
 			.withDescription(NOTIFICATION_DESCRIPTION)
 			.withContent(NOTIFICATION_CONTENT)
 			.withExpires(NOTIFICATION_EXPIRES)
@@ -153,6 +155,7 @@ public class TestObjectsBuilder {
 			.withOwnerId(NOTIFICATION_OWNER_ID)
 			.withCreatedBy(NOTIFICATION_CREATED_BY)
 			.withType(NOTIFICATION_TYPE)
+			.withSubtype(NOTIFICATION_SUBTYPE)
 			.withDescription(NOTIFICATION_DESCRIPTION)
 			.withContent(NOTIFICATION_CONTENT)
 			.withExpires(NOTIFICATION_EXPIRES)
