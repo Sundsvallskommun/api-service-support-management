@@ -132,7 +132,7 @@ public class ErrandAttachmentService {
 	}
 
 	public void createErrandAttachment(final AttachmentEntity attachmentEntity, final ErrandEntity errandEntity) {
-		attachmentRepository.save(attachmentEntity);
+		attachmentRepository.saveAndFlush(attachmentEntity);
 		final var revisionResult = revisionService.createErrandRevision(errandEntity);
 		if (revisionResult != null) {
 			eventService.createErrandEvent(UPDATE, EVENT_LOG_ADD_ATTACHMENT, errandEntity, revisionResult.latest(), revisionResult.previous(), ATTACHMENT);

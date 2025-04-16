@@ -10,8 +10,11 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.apache.commons.validator.routines.EmailValidator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
@@ -29,6 +32,7 @@ import se.sundsvall.supportmanagement.service.EventService;
 
 @Service
 public class EmailReaderWorker {
+	private static final Logger LOG = LoggerFactory.getLogger(EmailReaderWorker.class);
 
 	private static final String EVENT_LOG_COMMUNICATION = "Nytt meddelande";
 	private static final String EMAIL_NEW_SUBJECT_PREFIX = "Bekräftelse ärende ";
@@ -70,14 +74,21 @@ public class EmailReaderWorker {
 	}
 
 	@Transactional
-	public void processEmail(final Email email, final EmailWorkerConfigEntity config) {
+	public void processEmail(final Email email, final EmailWorkerConfigEntity config, final Consumer<String> setUnHealthyConsumer) {
 
 		final var errandNumber = parseSubject(email.getSubject());
 
 		getErrand(errandNumber, email, config).ifPresent(errand -> {
 			final var emailRequest = processErrand(errand, email, config);
+
 			emailReaderClient.deleteEmail(config.getMunicipalityId(), email.getId());
-			sendEmail(config, errand, emailRequest);
+
+			try {
+				sendEmail(config, errand, emailRequest);
+			} catch (final Exception e) {
+				LOG.error("Failed to send confirmation email. Error: {}", e.getMessage());
+				setUnHealthyConsumer.accept("Failed to send confirmation email");
+			}
 		});
 
 	}

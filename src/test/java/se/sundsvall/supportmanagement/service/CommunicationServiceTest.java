@@ -423,7 +423,7 @@ class CommunicationServiceTest {
 		verify(errandsRepositoryMock).findById(ERRAND_ID);
 		verify(messagingClientMock).sendEmail(eq(MUNICIPALITY_ID), eq(false), messagingEmailCaptor.capture());
 		verify(communicationMapperMock).toCommunicationEntity(NAMESPACE, MUNICIPALITY_ID, request);
-		verify(communicationRepositoryMock).save(any(CommunicationEntity.class));
+		verify(communicationRepositoryMock).saveAndFlush(any(CommunicationEntity.class));
 		verify(communicationMapperMock).toAttachments(any(CommunicationEntity.class));
 		verify(errandAttachmentServiceMock).createErrandAttachment(any(AttachmentEntity.class), any(ErrandEntity.class));
 
@@ -470,7 +470,7 @@ class CommunicationServiceTest {
 		verify(errandsRepositoryMock).findById(ERRAND_ID);
 		verify(messagingClientMock).sendSms(eq(MUNICIPALITY_ID), eq(false), messagingSmsCaptor.capture());
 		verify(communicationMapperMock).toCommunicationEntity(NAMESPACE, MUNICIPALITY_ID, request);
-		verify(communicationRepositoryMock).save(any(CommunicationEntity.class));
+		verify(communicationRepositoryMock).saveAndFlush(any(CommunicationEntity.class));
 		verify(communicationMapperMock).toAttachments(any(CommunicationEntity.class));
 		verify(errandAttachmentServiceMock).createErrandAttachment(any(AttachmentEntity.class), any(ErrandEntity.class));
 
@@ -526,7 +526,7 @@ class CommunicationServiceTest {
 		verify(communicationMapperMock).toCommunicationEntity(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID_KEY), same(request), eq(fullName), eq(adUser));
 		verify(communicationEntityMock).withErrandAttachments(same(attachmentEntitiesMock));
 		verify(messagingClientMock).sendWebMessage(eq(MUNICIPALITY_ID), eq(false), same(webMessageRequest));
-		verify(communicationRepositoryMock).save(same(communicationEntityMock));
+		verify(communicationRepositoryMock).saveAndFlush(same(communicationEntityMock));
 		verify(communicationMapperMock).toAttachments(same(communicationEntityMock));
 		verify(attachmentEntityMock).withErrandEntity(same(errandEntityMock));
 		verify(errandAttachmentServiceMock).createErrandAttachment(same(attachmentEntityMock), same(errandEntityMock));
@@ -575,7 +575,7 @@ class CommunicationServiceTest {
 		verify(communicationMapperMock).toCommunicationEntity(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq("123"), same(request), eq("John Doe"), eq("Joh01Doe"));
 		verify(communicationEntityMock).withErrandAttachments(same(attachmentEntitiesMock));
 		verify(messagingClientMock).sendWebMessage(eq(MUNICIPALITY_ID), eq(false), same(webMessageRequest));
-		verify(communicationRepositoryMock).save(any());
+		verify(communicationRepositoryMock).saveAndFlush(any());
 		verify(communicationMapperMock).toAttachments(any());
 	}
 
@@ -605,7 +605,7 @@ class CommunicationServiceTest {
 		verify(errandAttachmentServiceMock).findByNamespaceAndMunicipalityIdAndIdIn(NAMESPACE, MUNICIPALITY_ID, List.of(ATTACHMENT_ID));
 		verify(communicationMapperMock).toCommunicationEntity(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq("123"), same(request), eq("John Doe"), eq("e82c8029-7676-467d-8ebb-8638d0abd2b4"));
 		verify(communicationEntityMock).withErrandAttachments(same(attachmentEntitiesMock));
-		verify(communicationRepositoryMock).save(any());
+		verify(communicationRepositoryMock).saveAndFlush(any());
 		verify(communicationMapperMock).toAttachments(any());
 		verify(messagingClientMock, never()).sendWebMessage(any(), anyBoolean(), any());
 	}
@@ -638,7 +638,7 @@ class CommunicationServiceTest {
 		verify(communicationMapperMock).toCommunicationEntity(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq("123"), same(request), eq("John Doe"), eq("jon01doe"));
 		verify(communicationMapperMock).toAttachments(any());
 		verify(communicationEntityMock).withErrandAttachments(same(attachmentEntitiesMock));
-		verify(communicationRepositoryMock).save(any());
+		verify(communicationRepositoryMock).saveAndFlush(any());
 		verify(messagingClientMock, never()).sendWebMessage(any(), anyBoolean(), any());
 	}
 
@@ -673,7 +673,7 @@ class CommunicationServiceTest {
 
 		communicationService.saveCommunication(CommunicationEntity.create().withErrandNumber("123"));
 
-		verify(communicationRepositoryMock).save(any(CommunicationEntity.class));
+		verify(communicationRepositoryMock).saveAndFlush(any(CommunicationEntity.class));
 		verifyNoMoreInteractions(communicationRepositoryMock);
 		verifyNoInteractions(errandsRepositoryMock, communicationAttachmentRepositoryMock, messagingClientMock, communicationMapperMock);
 	}

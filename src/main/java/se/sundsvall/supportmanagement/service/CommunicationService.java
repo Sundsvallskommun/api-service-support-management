@@ -261,7 +261,7 @@ public class CommunicationService {
 	}
 
 	public void saveCommunication(final CommunicationEntity communicationEntity) {
-		communicationRepository.save(communicationEntity);
+		communicationRepository.saveAndFlush(communicationEntity);
 	}
 
 }

@@ -326,7 +326,7 @@ class ErrandAttachmentServiceTest {
 		service.createErrandAttachment(attachmentMock, errandMock);
 
 		// Assertions and verifications
-		verify(attachmentRepositoryMock).save(attachmentMock);
+		verify(attachmentRepositoryMock).saveAndFlush(attachmentMock);
 		verify(revisionServiceMock).createErrandRevision(errandMock);
 		verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_ADD_ATTACHMENT, errandMock, currentRevisionMock, previousRevisionMock, ATTACHMENT);
 		verifyNoInteractions(errandsRepositoryMock);
