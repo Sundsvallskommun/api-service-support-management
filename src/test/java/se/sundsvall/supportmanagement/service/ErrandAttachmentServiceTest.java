@@ -20,6 +20,7 @@ import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.zalando.problem.Status.NOT_FOUND;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildAttachmentEntity;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrandEntity;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationSubType.ATTACHMENT;
 
 import jakarta.persistence.EntityManager;
 import jakarta.servlet.ServletOutputStream;
@@ -134,7 +135,7 @@ class ErrandAttachmentServiceTest {
 			verify(errandsRepositoryMock).findWithLockingById(ERRAND_ID);
 			verify(attachmentRepositoryMock).save(attachmentMock);
 			verify(revisionServiceMock).createErrandRevision(errandMock);
-			verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_ADD_ATTACHMENT, errandMock, currentRevisionMock, previousRevisionMock);
+			verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_ADD_ATTACHMENT, errandMock, currentRevisionMock, previousRevisionMock, ATTACHMENT);
 		}
 
 	}
@@ -160,7 +161,6 @@ class ErrandAttachmentServiceTest {
 		verifyNoInteractions(revisionServiceMock, eventServiceMock);
 	}
 
-	@SuppressWarnings("resource")
 	@Test
 	void readErrandAttachment() throws IOException, SQLException, InterruptedException {
 
@@ -274,7 +274,7 @@ class ErrandAttachmentServiceTest {
 		verify(errandsRepositoryMock).save(any(ErrandEntity.class));
 		verify(revisionServiceMock).createErrandRevision(errandMock);
 
-		verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_REMOVE_ATTACHMENT, errandMock, currentRevisionMock, previousRevisionMock);
+		verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_REMOVE_ATTACHMENT, errandMock, currentRevisionMock, previousRevisionMock, ATTACHMENT);
 	}
 
 	@Test
@@ -328,7 +328,7 @@ class ErrandAttachmentServiceTest {
 		// Assertions and verifications
 		verify(attachmentRepositoryMock).save(attachmentMock);
 		verify(revisionServiceMock).createErrandRevision(errandMock);
-		verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_ADD_ATTACHMENT, errandMock, currentRevisionMock, previousRevisionMock);
+		verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_ADD_ATTACHMENT, errandMock, currentRevisionMock, previousRevisionMock, ATTACHMENT);
 		verifyNoInteractions(errandsRepositoryMock);
 		verifyNoMoreInteractions(attachmentRepositoryMock, revisionServiceMock, eventServiceMock);
 	}
