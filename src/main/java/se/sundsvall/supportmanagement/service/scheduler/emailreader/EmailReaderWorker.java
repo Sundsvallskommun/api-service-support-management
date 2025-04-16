@@ -85,7 +85,7 @@ public class EmailReaderWorker {
 			try {
 				sendEmail(config, errand, emailRequest);
 			} catch (final Exception e) {
-				LOG.info("Failed to send confirmation email. Error: {}", e.getMessage());
+				LOG.error("Failed to send confirmation email. Error: {}", e.getMessage());
 				setUnHealthyConsumer.accept("Failed to send confirmation email");
 			}
 		});
