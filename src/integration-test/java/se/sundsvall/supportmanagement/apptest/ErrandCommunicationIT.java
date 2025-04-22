@@ -138,7 +138,7 @@ class ErrandCommunicationIT extends AbstractAppTest {
 			.withServicePath(PATH + "/" + errandId + "/communication/" + communicationId + "/attachments/" + attachmentId)
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponseHeader(CONTENT_TYPE, List.of(IMAGE_PNG_VALUE))
-			.withExpectedBinaryResponse("test_image.png")
+			.withExpectedBinaryResponse("Test_image.jpg")
 			.sendRequestAndVerifyResponse();
 	}
 

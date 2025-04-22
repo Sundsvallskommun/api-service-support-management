@@ -22,8 +22,8 @@ import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
 import se.sundsvall.supportmanagement.api.model.communication.SmsRequest;
 import se.sundsvall.supportmanagement.api.model.communication.WebMessageAttachment;
 import se.sundsvall.supportmanagement.api.model.communication.WebMessageRequest;
+import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
-import se.sundsvall.supportmanagement.integration.db.model.CommunicationAttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationAttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationEmailHeaderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationEntity;
@@ -231,7 +231,7 @@ class CommunicationMapperTest {
 			.withId("testId")
 			.withName("testName")
 			.withContentType("application/octet-stream")
-			.withAttachmentData(new CommunicationAttachmentDataEntity().withFile(blobMock));
+			.withAttachmentData(new AttachmentDataEntity().withFile(blobMock));
 	}
 
 	private void assertCommunicationMatchesEntity(final Communication communication, final CommunicationEntity entity) {

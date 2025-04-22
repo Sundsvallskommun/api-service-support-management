@@ -20,7 +20,6 @@ import se.sundsvall.supportmanagement.api.model.communication.SmsRequest;
 import se.sundsvall.supportmanagement.api.model.communication.WebMessageRequest;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
-import se.sundsvall.supportmanagement.integration.db.model.CommunicationAttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationAttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationEmailHeaderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationEntity;
@@ -187,8 +186,8 @@ public class CommunicationMapper {
 			.withContentType(detectMimeType(attachment.getFileName(), byteArray));
 	}
 
-	private CommunicationAttachmentDataEntity toMessageAttachmentData(final byte[] byteArray) {
-		return CommunicationAttachmentDataEntity.create()
+	private AttachmentDataEntity toMessageAttachmentData(final byte[] byteArray) {
+		return AttachmentDataEntity.create()
 			.withFile(blobBuilder.createBlob(byteArray));
 	}
 }

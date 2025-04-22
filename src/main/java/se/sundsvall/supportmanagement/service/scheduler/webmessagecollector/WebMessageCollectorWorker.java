@@ -76,7 +76,7 @@ public class WebMessageCollectorWorker {
 
 	private void addAttachment(final CommunicationAttachmentEntity attachment) {
 		final var attachmentData = webMessageCollectorClient.getAttachment(attachment.getMunicipalityId(), Integer.parseInt(attachment.getForeignId()));
-		attachment.withAttachmentData(webMessageCollectorMapper.toCommunicationAttachmentDataEntity(attachmentData))
+		attachment.withAttachmentData(webMessageCollectorMapper.toAttachmentDataEntity(attachmentData))
 			.withFileSize(attachmentData.length);
 	}
 }

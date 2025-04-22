@@ -36,7 +36,7 @@ import org.springframework.data.jpa.domain.Specification;
 import se.sundsvall.supportmanagement.Constants;
 import se.sundsvall.supportmanagement.integration.db.CommunicationRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
-import se.sundsvall.supportmanagement.integration.db.model.CommunicationAttachmentDataEntity;
+import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
@@ -73,7 +73,7 @@ class WebMessageCollectorWorkerTest {
 	private CommunicationService communicationServiceMock;
 
 	@Mock
-	private CommunicationAttachmentDataEntity communicationAttachmentDataEntityMock;
+	private AttachmentDataEntity attachmentDataEntityMock;
 
 	@InjectMocks
 	private WebMessageCollectorWorker webMessageCollectorWorker;
@@ -127,7 +127,7 @@ class WebMessageCollectorWorkerTest {
 		when(communicationRepositoryMock.existsByErrandNumberAndExternalId(any(), any())).thenReturn(false);
 		when(webMessageCollectorMapperMock.toCommunicationEntity(any(), any())).thenCallRealMethod();
 		when(webMessageCollectorClientMock.getAttachment(any(), anyInt())).thenReturn(data);
-		when(webMessageCollectorMapperMock.toCommunicationAttachmentDataEntity(any())).thenReturn(communicationAttachmentDataEntityMock);
+		when(webMessageCollectorMapperMock.toAttachmentDataEntity(any())).thenReturn(attachmentDataEntityMock);
 
 		try (final MockedStatic<ErrandSpecification> specificationMockedStatic = Mockito.mockStatic(ErrandSpecification.class)) {
 			specificationMockedStatic.when(() -> ErrandSpecification.hasMatchingTags(any())).thenReturn(specificationMock);
@@ -153,7 +153,7 @@ class WebMessageCollectorWorkerTest {
 		verify(communicationServiceMock).saveAttachment(communicationEntityCaptor.capture(), same(errandEntity));
 		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Nytt meddelande"), same(errandEntity), isNull(), isNull(), same(MESSAGE));
 		verify(webMessageCollectorClientMock).getAttachment(MUNICIPALITY_ID, attachmentId);
-		verify(webMessageCollectorMapperMock).toCommunicationAttachmentDataEntity(data);
+		verify(webMessageCollectorMapperMock).toAttachmentDataEntity(data);
 		verify(webMessageCollectorClientMock).deleteMessages(MUNICIPALITY_ID, List.of(id));
 
 		assertThat(communicationEntityCaptor.getAllValues()).hasSize(2);
@@ -167,7 +167,7 @@ class WebMessageCollectorWorkerTest {
 				assertThat(communication.getSent()).isCloseTo(now(), within(1, SECONDS));
 				assertThat(communication.getErrandNumber()).isEqualTo(errandEntity.getErrandNumber());
 				assertThat(communication.getAttachments()).hasSize(1);
-				assertThat(communication.getAttachments().getFirst().getAttachmentData()).isSameAs(communicationAttachmentDataEntityMock);
+				assertThat(communication.getAttachments().getFirst().getAttachmentData()).isSameAs(attachmentDataEntityMock);
 			});
 
 		verifyNoMoreInteractions(webMessageCollectorClientMock, webMessageCollectorPropertiesMock, errandsRepositoryMock, communicationRepositoryMock, communicationServiceMock);

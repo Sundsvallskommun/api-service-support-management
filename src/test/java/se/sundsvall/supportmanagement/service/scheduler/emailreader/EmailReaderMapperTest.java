@@ -203,7 +203,7 @@ class EmailReaderMapperTest {
 		when(blobBuilderMock.createBlob(attachmentData)).thenReturn(blob);
 
 		// Act
-		final var result = emailReaderMapper.toCommunicationAttachmentDataEntity(attachmentData);
+		final var result = emailReaderMapper.toAttachmentDataEntity(attachmentData);
 
 		// Assert
 		assertThat(result).isNotNull();

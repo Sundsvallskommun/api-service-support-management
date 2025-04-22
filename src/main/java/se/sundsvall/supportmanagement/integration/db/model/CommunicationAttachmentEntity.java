@@ -1,15 +1,17 @@
 package se.sundsvall.supportmanagement.integration.db.model;
 
-import jakarta.persistence.CascadeType;
+import static jakarta.persistence.CascadeType.MERGE;
+import static jakarta.persistence.CascadeType.PERSIST;
+import static jakarta.persistence.CascadeType.REFRESH;
+import static jakarta.persistence.FetchType.LAZY;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.ForeignKey;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import jakarta.persistence.UniqueConstraint;
@@ -25,8 +27,8 @@ import org.hibernate.annotations.UuidGenerator;
 		@Index(name = "idx_communication_attachment_namespace", columnList = "namespace")
 	},
 	uniqueConstraints = {
-		@UniqueConstraint(name = "uq_communication_attachment_data_id", columnNames = {
-			"communication_attachment_data_id"
+		@UniqueConstraint(name = "uq_attachment_data_id", columnNames = {
+			"attachment_data_id"
 		})
 	})
 public class CommunicationAttachmentEntity {
@@ -54,11 +56,13 @@ public class CommunicationAttachmentEntity {
 	@Column(name = "file_size")
 	private Integer fileSize;
 
-	@OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-	@JoinColumn(name = "communication_attachment_data_id", nullable = false, foreignKey = @ForeignKey(name = "fk_communication_attachment_data_communication_attachment"))
-	private CommunicationAttachmentDataEntity attachmentData;
+	@ManyToOne(fetch = LAZY, cascade = {
+		PERSIST, MERGE, REFRESH
+	})
+	@JoinColumn(name = "attachment_data_id", nullable = false, foreignKey = @ForeignKey(name = "fk_communication_attachment_data_attachment"))
+	private AttachmentDataEntity attachmentData;
 
-	@ManyToOne(fetch = FetchType.LAZY)
+	@ManyToOne(fetch = LAZY)
 	@JoinColumn(name = "communication_id", nullable = false, foreignKey = @ForeignKey(name = "fk_communication_attachment_communication_id"))
 	private CommunicationEntity communicationEntity;
 
@@ -105,15 +109,15 @@ public class CommunicationAttachmentEntity {
 		return this;
 	}
 
-	public CommunicationAttachmentDataEntity getAttachmentData() {
+	public AttachmentDataEntity getAttachmentData() {
 		return attachmentData;
 	}
 
-	public void setAttachmentData(final CommunicationAttachmentDataEntity attachmentData) {
+	public void setAttachmentData(final AttachmentDataEntity attachmentData) {
 		this.attachmentData = attachmentData;
 	}
 
-	public CommunicationAttachmentEntity withAttachmentData(final CommunicationAttachmentDataEntity attachmentData) {
+	public CommunicationAttachmentEntity withAttachmentData(final AttachmentDataEntity attachmentData) {
 		this.attachmentData = attachmentData;
 		return this;
 	}

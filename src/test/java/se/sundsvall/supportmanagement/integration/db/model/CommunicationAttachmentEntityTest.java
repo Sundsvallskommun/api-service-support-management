@@ -30,7 +30,7 @@ class CommunicationAttachmentEntityTest {
 		final var id = "1";
 		final var content = "content";
 		final var file = new MariaDbBlob(content.getBytes());
-		final var attachmentData = CommunicationAttachmentDataEntity.create().withId(1L).withFile(file);
+		final var attachmentData = AttachmentDataEntity.create().withId(1).withFile(file);
 		final var name = "name";
 		final var contentType = "contentType";
 		final var communicationEntity = CommunicationEntity.create();

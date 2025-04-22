@@ -87,7 +87,7 @@ class WebMessageCollectorMapperTest {
 	}
 
 	@Test
-	void toCommunicationAttachmentDataEntity() throws SQLException {
+	void toAttachmentDataEntity() throws SQLException {
 
 		// Arrange
 		final var attachmentData = "attachmentData".getBytes();
@@ -95,7 +95,7 @@ class WebMessageCollectorMapperTest {
 		when(blobBuilder.createBlob(attachmentData)).thenReturn(blob);
 
 		// Act
-		final var result = webMessageCollectorMapper.toCommunicationAttachmentDataEntity(attachmentData);
+		final var result = webMessageCollectorMapper.toAttachmentDataEntity(attachmentData);
 
 		// Assert
 		assertThat(result).isNotNull();
