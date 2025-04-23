@@ -248,7 +248,7 @@ INSERT INTO communication_attachment(attachment_data_id, id,
 VALUES ('2', '896a44d8-724b-11ed-a840-0242ac110002', 'cc236cf1-c00f-4479-8341-ecf5dd90b5b9', 'text/plain',
         'attachment1',
         'NAMESPACE-1', '2281', 12),
-       ('1', '05b29c30-4512-46c0-9d82-d0f11cb04bae', '59328e70-4297-4bb5-ba69-cb17f2d15a17', 'image/png',
+       ('1', '05b29c30-4512-46c0-9d82-d0f11cb04bae', '59328e70-4297-4bb5-ba69-cb17f2d15a17', 'image/jpeg',
         'attachment2',
         'NAMESPACE-1', '2281', 5068);
 

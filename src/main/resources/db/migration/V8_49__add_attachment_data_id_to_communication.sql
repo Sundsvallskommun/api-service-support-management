@@ -6,11 +6,10 @@ alter table if exists communication_attachment
         foreign key if not exists (attachment_data_id)
             references attachment_data (id);
 
-alter table communication_attachment
-    modify communication_attachment_data_id bigint null;
+alter table if exists communication_attachment
+    modify if exists communication_attachment_data_id bigint null;
 
 start transaction;
-
 
 -- 1) temp map just holds the old PKs
 CREATE TEMPORARY TABLE map_comm_att
@@ -48,5 +47,5 @@ SET c.attachment_data_id = m.attachment_data_id;
 
 commit;
 
-alter table communication_attachment
-    modify attachment_data_id integer not null;
+alter table if exists communication_attachment
+    modify if exists attachment_data_id integer not null;
