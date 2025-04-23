@@ -43,8 +43,6 @@ integration:
     connect-timeout: 5
     read-timeout: 30
 logbook:
-  logs:
-    maxBodySizeToLog: 10000
   body-filters:
     jsonPath:
       - key: '$..base64EncodedString'
