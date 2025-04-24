@@ -425,6 +425,9 @@
     create index idx_errand_suspended_to 
        on errand (suspended_to);
 
+    create index idx_errand_channel 
+       on errand (channel);
+
     create index idx_errand_municipality_id_namespace_touched 
        on errand (municipality_id, namespace, touched);
 
