@@ -59,7 +59,7 @@ public class CommunicationAttachmentEntity {
 	@ManyToOne(fetch = LAZY, cascade = {
 		PERSIST, MERGE, REFRESH
 	})
-	@JoinColumn(name = "attachment_data_id", nullable = false, foreignKey = @ForeignKey(name = "fk_communication_attachment_data_attachment"))
+	@JoinColumn(name = "attachment_data_id", nullable = false, foreignKey = @ForeignKey(name = "fk_communication_attachment_attachment_data"))
 	private AttachmentDataEntity attachmentData;
 
 	@ManyToOne(fetch = LAZY)

@@ -520,7 +520,7 @@
        references errand (id);
 
     alter table if exists communication_attachment 
-       add constraint fk_communication_attachment_data_attachment 
+       add constraint fk_communication_attachment_attachment_data 
        foreign key (attachment_data_id) 
        references attachment_data (id);
 

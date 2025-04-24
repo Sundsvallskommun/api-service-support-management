@@ -2,7 +2,7 @@ alter table if exists communication_attachment
     add column if not exists attachment_data_id integer null;
 
 alter table if exists communication_attachment
-    add constraint fk_communication_attachment_data_attachment
+    add constraint fk_communication_attachment_attachment_data
         foreign key if not exists (attachment_data_id)
             references attachment_data (id);
 
