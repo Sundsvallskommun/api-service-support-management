@@ -42,6 +42,7 @@ import se.sundsvall.supportmanagement.integration.db.model.listener.ErrandListen
 		@Index(name = "idx_errand_errand_number", columnList = "errand_number"),
 		@Index(name = "idx_errand_municipality_id_namespace_created", columnList = "municipality_id,namespace,created"),
 		@Index(name = "idx_errand_suspended_to", columnList = "suspended_to"),
+		@Index(name = "idx_errand_channel", columnList = "channel"),
 		@Index(name = "idx_errand_municipality_id_namespace_touched", columnList = "municipality_id,namespace,touched")
 	},
 	uniqueConstraints = {
@@ -683,5 +684,4 @@ public class ErrandEntity {
 			", timeMeasures=" + timeMeasures +
 			'}';
 	}
-
 }

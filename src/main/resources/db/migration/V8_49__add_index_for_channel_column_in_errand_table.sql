@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS idx_errand_channel USING BTREE ON errand (channel);
