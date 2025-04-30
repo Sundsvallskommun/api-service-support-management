@@ -162,6 +162,7 @@ class ErrandAttachmentServiceTest {
 	}
 
 	@Test
+	@SuppressWarnings("resource")
 	void readErrandAttachment() throws IOException, SQLException, InterruptedException {
 
 		// Mock
