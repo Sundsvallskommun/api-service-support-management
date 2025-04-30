@@ -78,8 +78,7 @@ public class CommunicationMapper {
 				.withMunicipalityId(communicationEntity.getMunicipalityId())
 				.withMimeType(attachment.getContentType())
 				.withFileSize(attachment.getFileSize())
-				.withAttachmentData(new AttachmentDataEntity()
-					.withFile(attachment.getAttachmentData().getFile())))
+				.withAttachmentData(attachment.getAttachmentData()))
 			.toList();
 	}
 
