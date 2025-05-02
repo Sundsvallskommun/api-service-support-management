@@ -3,7 +3,7 @@ package se.sundsvall.supportmanagement.service.scheduler.notifications;
 import static java.time.OffsetDateTime.now;
 import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.springframework.util.StringUtils.hasText;
-import static se.sundsvall.supportmanagement.api.filter.ExecutingUserSupplier.UNKNOWN;
+import static se.sundsvall.supportmanagement.Constants.UNKNOWN;
 
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;

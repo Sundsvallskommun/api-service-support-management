@@ -18,10 +18,6 @@
 						{
 							"value": "${json-unit.any-string}",
 							"key": "CurrentRevision"
-						},
-						{
-							"value": "${json-unit.any-string}",
-							"key": "ExecutedBy"
 						}
 					],
 					"historyReference": "${json-unit.any-string}",

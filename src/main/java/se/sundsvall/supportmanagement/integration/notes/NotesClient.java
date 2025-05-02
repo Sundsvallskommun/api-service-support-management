@@ -1,7 +1,6 @@
 package se.sundsvall.supportmanagement.integration.notes;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
-import static se.sundsvall.supportmanagement.Constants.AD_USER_HEADER_KEY;
 import static se.sundsvall.supportmanagement.integration.notes.configuration.NotesConfiguration.CLIENT_ID;
 
 import generated.se.sundsvall.notes.CreateNoteRequest;
@@ -27,6 +26,8 @@ import se.sundsvall.supportmanagement.integration.notes.configuration.NotesConfi
 @FeignClient(name = CLIENT_ID, url = "${integration.notes.url}", configuration = NotesConfiguration.class)
 @CircuitBreaker(name = CLIENT_ID)
 public interface NotesClient {
+
+	public static final String AD_USER_HEADER_KEY = "sentbyuser";
 
 	/**
 	 * Find all notes, filtered by provided parameters.

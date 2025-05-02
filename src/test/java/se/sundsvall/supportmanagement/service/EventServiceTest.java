@@ -10,6 +10,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static se.sundsvall.dept44.support.Identifier.Type.AD_ACCOUNT;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationSubType.ERRAND;
 
 import generated.se.sundsvall.eventlog.Event;
@@ -18,6 +19,7 @@ import generated.se.sundsvall.eventlog.Metadata;
 import generated.se.sundsvall.eventlog.PageEvent;
 import generated.se.sundsvall.notes.Note;
 import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -26,7 +28,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Pageable;
-import se.sundsvall.supportmanagement.api.filter.ExecutingUserSupplier;
+import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.notification.Notification;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
@@ -50,9 +52,6 @@ class EventServiceTest {
 	@Mock
 	private Event eventMock;
 
-	@Mock
-	private ExecutingUserSupplier executingUserSupplierMock;
-
 	@InjectMocks
 	private EventService service;
 
@@ -61,6 +60,11 @@ class EventServiceTest {
 
 	@Captor
 	private ArgumentCaptor<Notification> notificationCaptor;
+
+	@BeforeEach
+	void beforeEach() {
+		Identifier.set(Identifier.create().withType(AD_ACCOUNT).withValue("executingUserId"));
+	}
 
 	@Test
 	void createErrandEventWithAllDataPresent() {
@@ -81,9 +85,6 @@ class EventServiceTest {
 		final var currentRevision = Revision.create().withId(currentRevisionId).withVersion(currentRevisionVersion);
 		final var previousRevision = Revision.create().withId(previousRevisionId).withVersion(previousRevisionVersion);
 		final var executingUserId = "executingUserId";
-
-		// Mock
-		when(executingUserSupplierMock.getAdUser()).thenReturn(executingUserId);
 
 		// Call
 		service.createErrandEvent(eventType, message, entity, currentRevision, previousRevision, ERRAND);
@@ -138,7 +139,7 @@ class EventServiceTest {
 		assertThat(event.getExpires()).isNull();
 		assertThat(event.getHistoryReference()).isNull();
 		assertThat(event.getMessage()).isEqualTo(message);
-		assertThat(event.getMetadata()).isEmpty();
+		assertThat(event.getMetadata()).isEqualTo(List.of(new Metadata().key("ExecutedBy").value("executingUserId")));
 		assertThat(event.getOwner()).isEqualTo(owner);
 		assertThat(event.getSourceType()).isEqualTo(sourceType);
 		assertThat(event.getType()).isEqualTo(eventType);
@@ -177,7 +178,8 @@ class EventServiceTest {
 				Metadata::getValue)
 			.containsExactlyInAnyOrder(
 				tuple("CurrentVersion", String.valueOf(currentRevisionVersion)),
-				tuple("CurrentRevision", currentRevisionId));
+				tuple("CurrentRevision", currentRevisionId),
+				tuple("ExecutedBy", "executingUserId"));
 		assertThat(event.getOwner()).isEqualTo(owner);
 		assertThat(event.getSourceType()).isEqualTo(sourceType);
 		assertThat(event.getType()).isEqualTo(eventType);
@@ -203,9 +205,6 @@ class EventServiceTest {
 		final var currentRevision = Revision.create().withId(currentRevisionId).withVersion(currentRevisionVersion);
 		final var previousRevision = Revision.create().withId(previousRevisionId).withVersion(previousRevisionVersion);
 		final var executingUserId = "executingUserId";
-
-		// Mock
-		when(executingUserSupplierMock.getAdUser()).thenReturn(executingUserId);
 
 		// Call
 		service.createErrandNoteEvent(eventType, message, logKey, errandEntity, noteId, currentRevision, previousRevision);
@@ -271,7 +270,8 @@ class EventServiceTest {
 				tuple("CaseId", caseId),
 				tuple("NoteId", noteId),
 				tuple("CurrentVersion", String.valueOf(currentRevisionVersion)),
-				tuple("CurrentRevision", currentRevisionId));
+				tuple("CurrentRevision", currentRevisionId),
+				tuple("ExecutedBy", "executingUserId"));
 		assertThat(event.getOwner()).isEqualTo(owner);
 		assertThat(event.getSourceType()).isEqualTo(sourceType);
 		assertThat(event.getType()).isEqualTo(eventType);

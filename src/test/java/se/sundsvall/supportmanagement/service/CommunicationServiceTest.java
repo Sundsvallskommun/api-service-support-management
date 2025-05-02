@@ -50,8 +50,8 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.zalando.problem.Problem;
 import org.zalando.problem.ThrowableProblem;
-import se.sundsvall.supportmanagement.api.filter.ExecutingUserSupplier;
-import se.sundsvall.supportmanagement.api.filter.SentByHeaderFilter;
+import se.sundsvall.dept44.support.Identifier;
+import se.sundsvall.dept44.support.Identifier.Type;
 import se.sundsvall.supportmanagement.api.model.communication.Communication;
 import se.sundsvall.supportmanagement.api.model.communication.EmailAttachment;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
@@ -124,9 +124,6 @@ class CommunicationServiceTest {
 	@Mock
 	private CommunicationAttachmentDataEntity communicationAttachmentDataEntityMock;
 
-	@Mock
-	private SentByHeaderFilter sentByHeaderFilterMock;
-
 	@Captor
 	private ArgumentCaptor<generated.se.sundsvall.messaging.EmailRequest> messagingEmailCaptor;
 
@@ -150,9 +147,6 @@ class CommunicationServiceTest {
 
 	@Mock
 	private AttachmentEntity attachmentEntityMock;
-
-	@Mock
-	private ExecutingUserSupplier executingUserSupplierMock;
 
 	@Mock
 	private EmployeeService employeeServiceMock;
@@ -494,6 +488,8 @@ class CommunicationServiceTest {
 		final var adUser = "adUser";
 		final var fullName = "fullname";
 
+		Identifier.set(Identifier.create().withType(Type.AD_ACCOUNT).withValue("adUser"));
+
 		// Mock
 		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
 		when(errandsRepositoryMock.findById(ERRAND_ID)).thenReturn(Optional.of(errandEntityMock));
@@ -503,7 +499,6 @@ class CommunicationServiceTest {
 		when(communicationEntityMock.withErrandAttachments(any())).thenReturn(communicationEntityMock);
 		when(communicationMapperMock.toAttachments(any())).thenReturn(List.of(attachmentEntityMock));
 		when(attachmentEntityMock.withErrandEntity(any())).thenReturn(attachmentEntityMock);
-		when(executingUserSupplierMock.getAdUser()).thenReturn(adUser);
 		when(employeeServiceMock.getEmployeeByLoginName(MUNICIPALITY_ID, adUser)).thenReturn(portalPersonDataMock);
 		when(portalPersonDataMock.getFullname()).thenReturn(fullName);
 
@@ -545,15 +540,13 @@ class CommunicationServiceTest {
 		final var request = createWebMessageRequest();
 		final var webMessageRequest = new generated.se.sundsvall.messaging.WebMessageRequest();
 
+		Identifier.set(Identifier.create().withType(Type.AD_ACCOUNT).withValue("Joh01Doe"));
+
 		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
 		when(errandsRepositoryMock.findById(ERRAND_ID)).thenReturn(Optional.of(errandEntityMock));
 		when(errandAttachmentServiceMock.findByNamespaceAndMunicipalityIdAndIdIn(any(), any(), any())).thenReturn(attachmentEntitiesMock);
-		when(sentByHeaderFilterMock.getSenderType()).thenReturn(null);
-		when(sentByHeaderFilterMock.getSenderId()).thenReturn(null);
-		when(executingUserSupplierMock.getAdUser()).thenReturn("Joh01Doe");
 		when(employeeServiceMock.getEmployeeByLoginName(any(), any())).thenReturn(portalPersonDataMock);
 		when(portalPersonDataMock.getFullname()).thenReturn("John Doe");
-
 		when(errandEntityMock.getErrandNumber()).thenReturn("123");
 		when(communicationMapperMock.toCommunicationEntity(any(), any(), any(), any(), any(), any())).thenReturn(communicationEntityMock);
 
@@ -588,13 +581,12 @@ class CommunicationServiceTest {
 		final var request = createWebMessageRequest();
 		request.setDispatch(false);
 
+		Identifier.set(Identifier.create().withType(Type.PARTY_ID).withValue("e82c8029-7676-467d-8ebb-8638d0abd2b4"));
+
 		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
 		when(errandsRepositoryMock.findById(ERRAND_ID)).thenReturn(Optional.of(errandEntityMock));
 		when(errandAttachmentServiceMock.findByNamespaceAndMunicipalityIdAndIdIn(any(), any(), any())).thenReturn(attachmentEntitiesMock);
-		when(sentByHeaderFilterMock.getSenderType()).thenReturn("partyId");
-		when(sentByHeaderFilterMock.getSenderId()).thenReturn("e82c8029-7676-467d-8ebb-8638d0abd2b4");
 		when(citizenIntegrationMock.getCitizenName(any(), any())).thenReturn("John Doe");
-
 		when(errandEntityMock.getErrandNumber()).thenReturn("123");
 		when(communicationMapperMock.toCommunicationEntity(any(), any(), any(), any(), any(), any())).thenReturn(communicationEntityMock);
 
@@ -619,11 +611,11 @@ class CommunicationServiceTest {
 		final var request = createWebMessageRequest();
 		request.setDispatch(false);
 
+		Identifier.set(Identifier.create().withType(Type.AD_ACCOUNT).withValue("jon01doe"));
+
 		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
 		when(errandsRepositoryMock.findById(ERRAND_ID)).thenReturn(Optional.of(errandEntityMock));
 		when(errandAttachmentServiceMock.findByNamespaceAndMunicipalityIdAndIdIn(any(), any(), any())).thenReturn(attachmentEntitiesMock);
-		when(sentByHeaderFilterMock.getSenderType()).thenReturn("adAccount");
-		when(sentByHeaderFilterMock.getSenderId()).thenReturn("jon01doe");
 		when(employeeServiceMock.getEmployeeByLoginName(MUNICIPALITY_ID, "jon01doe")).thenReturn(portalPersonDataMock);
 		when(portalPersonDataMock.getFullname()).thenReturn("John Doe");
 
@@ -679,11 +671,11 @@ class CommunicationServiceTest {
 	}
 
 	/**
-	 * Test scenario where adUser is UNKNOWN, employee should not be called.
+	 * Test scenario where adUser is null, employee should not be called.
 	 */
 	@Test
 	void getEmployeeName_1() {
-		final var adUser = "UNKNOWN";
+		final String adUser = null;
 
 		final var result = communicationService.getEmployeeName(MUNICIPALITY_ID, adUser);
 

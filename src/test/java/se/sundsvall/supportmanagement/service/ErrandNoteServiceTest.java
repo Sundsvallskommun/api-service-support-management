@@ -11,6 +11,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpHeaders.LOCATION;
 import static org.zalando.problem.Status.NOT_FOUND;
+import static se.sundsvall.dept44.support.Identifier.Type.AD_ACCOUNT;
 import static se.sundsvall.supportmanagement.Constants.EXTERNAL_TAG_KEY_CASE_ID;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper.toCreateNoteRequest;
 
@@ -27,7 +28,7 @@ import org.mockito.stubbing.Answer;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.zalando.problem.ThrowableProblem;
-import se.sundsvall.supportmanagement.api.filter.ExecutingUserSupplier;
+import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.note.CreateErrandNoteRequest;
 import se.sundsvall.supportmanagement.api.model.note.FindErrandNotesRequest;
 import se.sundsvall.supportmanagement.api.model.note.UpdateErrandNoteRequest;
@@ -91,9 +92,6 @@ class ErrandNoteServiceTest {
 	private ResponseEntity<Note> responseEntityWithNoteMock;
 
 	@Mock
-	private ExecutingUserSupplier executingUserSupplierMock;
-
-	@Mock
 	private EventService eventServiceMock;
 
 	@InjectMocks
@@ -124,10 +122,11 @@ class ErrandNoteServiceTest {
 		final var errandNote = buildCreateErrandNoteRequest();
 		final var createNoteRequest = toCreateNoteRequest(ERRAND_ID, APPLICATION_NAME, errandNote);
 
+		Identifier.set(Identifier.create().withType(AD_ACCOUNT).withValue(EXECUTING_USER));
+
 		// Mock
 		when(repositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
 		when(repositoryMock.getReferenceById(ERRAND_ID)).thenReturn(new ErrandEntity().withExternalTags(List.of(DbExternalTag.create().withKey(EXTERNAL_TAG_KEY_CASE_ID).withValue(CASE_ID))));
-		when(executingUserSupplierMock.getAdUser()).thenReturn(EXECUTING_USER);
 		when(notesClientMock.createNote(EXECUTING_USER, MUNICIPALITY_ID, createNoteRequest)).thenReturn(responseEntityWithVoidMock);
 		when(responseEntityWithVoidMock.getHeaders()).thenReturn(httpHeadersMock);
 		when(httpHeadersMock.get(anyString())).thenAnswer(
@@ -240,10 +239,11 @@ class ErrandNoteServiceTest {
 		final var errandNote = buildUpdateErrandNoteRequest();
 		final var updateNoteRequest = ErrandNoteMapper.toUpdateNoteRequest(errandNote);
 
+		Identifier.set(Identifier.create().withType(AD_ACCOUNT).withValue(EXECUTING_USER));
+
 		// Mock
 		when(repositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
 		when(repositoryMock.getReferenceById(ERRAND_ID)).thenReturn(new ErrandEntity().withExternalTags(List.of(DbExternalTag.create().withKey(EXTERNAL_TAG_KEY_CASE_ID).withValue(CASE_ID))));
-		when(executingUserSupplierMock.getAdUser()).thenReturn(EXECUTING_USER);
 		when(notesClientMock.updateNoteById(EXECUTING_USER, MUNICIPALITY_ID, NOTE_ID, updateNoteRequest)).thenReturn(responseEntityWithNoteMock);
 		when(responseEntityWithNoteMock.getHeaders()).thenReturn(httpHeadersMock);
 		when(responseEntityWithNoteMock.getBody()).thenReturn(new Note());
@@ -280,9 +280,10 @@ class ErrandNoteServiceTest {
 		final var errandNote = buildUpdateErrandNoteRequest();
 		final var updateNoteRequest = ErrandNoteMapper.toUpdateNoteRequest(errandNote);
 
+		Identifier.set(Identifier.create().withType(AD_ACCOUNT).withValue(EXECUTING_USER));
+
 		// Mock
 		when(repositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
-		when(executingUserSupplierMock.getAdUser()).thenReturn(EXECUTING_USER);
 		when(notesClientMock.updateNoteById(EXECUTING_USER, MUNICIPALITY_ID, NOTE_ID, updateNoteRequest)).thenReturn(responseEntityWithNoteMock);
 		when(responseEntityWithNoteMock.getHeaders()).thenReturn(httpHeadersMock);
 		when(responseEntityWithNoteMock.getBody()).thenReturn(new Note());
@@ -320,10 +321,11 @@ class ErrandNoteServiceTest {
 	@Test
 	void deleteErrandNote() {
 
+		Identifier.set(Identifier.create().withType(AD_ACCOUNT).withValue(EXECUTING_USER));
+
 		// Mock
 		when(repositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
 		when(repositoryMock.getReferenceById(ERRAND_ID)).thenReturn(new ErrandEntity().withExternalTags(List.of(DbExternalTag.create().withKey(EXTERNAL_TAG_KEY_CASE_ID).withValue(CASE_ID))));
-		when(executingUserSupplierMock.getAdUser()).thenReturn(EXECUTING_USER);
 		when(notesClientMock.deleteNoteById(EXECUTING_USER, MUNICIPALITY_ID, NOTE_ID)).thenReturn(responseEntityWithVoidMock);
 		when(responseEntityWithVoidMock.getHeaders()).thenReturn(httpHeadersMock);
 		when(httpHeadersMock.get(anyString())).thenAnswer(

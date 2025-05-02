@@ -2,12 +2,15 @@ package se.sundsvall.supportmanagement.service.util;
 
 import static java.util.UUID.fromString;
 import static org.springframework.util.MimeTypeUtils.APPLICATION_OCTET_STREAM_VALUE;
+import static se.sundsvall.dept44.support.Identifier.Type.AD_ACCOUNT;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.util.Optional;
 import org.apache.tika.Tika;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import se.sundsvall.dept44.support.Identifier;
 
 public class ServiceUtil {
 
@@ -42,5 +45,12 @@ public class ServiceUtil {
 			LOGGER.warn(String.format(MIME_ERROR_MSG, fileName), e);
 			return APPLICATION_OCTET_STREAM_VALUE; // Return mime type for arbitrary binary files
 		}
+	}
+
+	public static String getAdUser() {
+		return Optional.ofNullable(Identifier.get())
+			.filter(identifier -> AD_ACCOUNT.equals(identifier.getType()))
+			.map(Identifier::getValue)
+			.orElse(null);
 	}
 }

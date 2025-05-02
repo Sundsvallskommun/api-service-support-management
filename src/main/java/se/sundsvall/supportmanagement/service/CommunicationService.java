@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.service;
 
+import static java.util.Objects.isNull;
 import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.zalando.problem.Status.INSUFFICIENT_STORAGE;
@@ -24,8 +25,7 @@ import java.util.concurrent.TimeUnit;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StreamUtils;
 import org.zalando.problem.Problem;
-import se.sundsvall.supportmanagement.api.filter.ExecutingUserSupplier;
-import se.sundsvall.supportmanagement.api.filter.SentByHeaderFilter;
+import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.communication.Communication;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
 import se.sundsvall.supportmanagement.api.model.communication.SmsRequest;
@@ -49,7 +49,6 @@ public class CommunicationService {
 	private static final String ATTACHMENT_NOT_FOUND = "Communication attachment not found";
 	private static final String ATTACHMENT_WITH_ERRAND_NUMBER_NOT_FOUND = "Communication attachment not found for this errand";
 	private static final boolean ASYNCHRONOUSLY = false;
-	private static final String UNKNOWN_AD_USER = "UNKNOWN";
 
 	private final ErrandsRepository errandsRepository;
 	private final CommunicationRepository communicationRepository;
@@ -58,9 +57,7 @@ public class CommunicationService {
 	private final MessagingClient messagingClient;
 	private final CommunicationMapper communicationMapper;
 	private final Semaphore semaphore;
-	private final ExecutingUserSupplier executingUserSupplier;
 	private final EmployeeService employeeService;
-	private final SentByHeaderFilter sentByHeaderFilter;
 	private final CitizenIntegration citizenIntegration;
 
 	public CommunicationService(
@@ -71,9 +68,7 @@ public class CommunicationService {
 		final CommunicationMapper communicationMapper,
 		final ErrandAttachmentService errandAttachmentService,
 		final Semaphore semaphore,
-		final ExecutingUserSupplier executingUserSupplier,
 		final EmployeeService employeeService,
-		final SentByHeaderFilter sentByHeaderFilter,
 		final CitizenIntegration citizenIntegration) {
 
 		this.errandsRepository = errandsRepository;
@@ -83,9 +78,7 @@ public class CommunicationService {
 		this.communicationMapper = communicationMapper;
 		this.errandAttachmentService = errandAttachmentService;
 		this.semaphore = semaphore;
-		this.executingUserSupplier = executingUserSupplier;
 		this.employeeService = employeeService;
-		this.sentByHeaderFilter = sentByHeaderFilter;
 		this.citizenIntegration = citizenIntegration;
 	}
 
@@ -193,14 +186,15 @@ public class CommunicationService {
 
 		final var fullName = getFullName(municipalityId);
 
-		final var adUser = Optional.ofNullable(sentByHeaderFilter.getSenderId())
-			.orElse(executingUserSupplier.getAdUser());
+		final var identifier = Optional.ofNullable(Identifier.get())
+			.map(Identifier::getValue)
+			.orElse("UNKNOWN");
 
-		final var communicationEntity = communicationMapper.toCommunicationEntity(namespace, municipalityId, entity.getErrandNumber(), request, fullName, adUser)
+		final var communicationEntity = communicationMapper.toCommunicationEntity(namespace, municipalityId, entity.getErrandNumber(), request, fullName, identifier)
 			.withErrandAttachments(errandAttachments);
 
 		if (request.isDispatch()) {
-			messagingClient.sendWebMessage(municipalityId, ASYNCHRONOUSLY, toWebMessageRequest(entity, request, errandAttachments, adUser));
+			messagingClient.sendWebMessage(municipalityId, ASYNCHRONOUSLY, toWebMessageRequest(entity, request, errandAttachments, identifier));
 		}
 
 		saveCommunication(communicationEntity);
@@ -208,21 +202,24 @@ public class CommunicationService {
 	}
 
 	String getFullName(final String municipalityId) {
-		final var senderType = sentByHeaderFilter.getSenderType();
-		final var senderId = sentByHeaderFilter.getSenderId();
 
-		switch (senderType) {
+		final var identifier = Identifier.get();
+
+		if (isNull(identifier)) {
+			return null;
+		}
+
+		switch (identifier.getType()) {
 			case null -> {
-				// If senderType is null, use the sentbyuser header.
-				return getEmployeeName(municipalityId, executingUserSupplier.getAdUser());
+				return null;
 			}
-			case "adAccount" -> {
+			case AD_ACCOUNT -> {
 				// If senderType is adAccount, use the senderId to get the employee name
-				return getEmployeeName(municipalityId, senderId);
+				return getEmployeeName(municipalityId, identifier.getValue());
 			}
-			case "partyId" -> {
+			case PARTY_ID -> {
 				// If senderType is partyId, use the senderId to get the citizen name
-				return getCitizenName(municipalityId, senderId);
+				return getCitizenName(municipalityId, identifier.getValue());
 			}
 			default -> {
 				// This should be unreachable, but if it happens, return null
@@ -233,7 +230,6 @@ public class CommunicationService {
 
 	String getEmployeeName(final String municipalityId, final String adUser) {
 		return Optional.ofNullable(adUser)
-			.map(user -> UNKNOWN_AD_USER.equals(user) ? null : user)
 			.map(user -> employeeService.getEmployeeByLoginName(municipalityId, user))
 			.map(PortalPersonData::getFullname)
 			.orElse(null);
@@ -263,5 +259,4 @@ public class CommunicationService {
 	public void saveCommunication(final CommunicationEntity communicationEntity) {
 		communicationRepository.saveAndFlush(communicationEntity);
 	}
-
 }
