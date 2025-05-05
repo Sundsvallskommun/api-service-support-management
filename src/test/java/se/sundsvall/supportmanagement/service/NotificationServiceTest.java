@@ -12,12 +12,14 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.data.domain.Sort.unsorted;
+import static se.sundsvall.dept44.support.Identifier.Type.AD_ACCOUNT;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrandEntity;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.createNotificationEntity;
 
 import generated.se.sundsvall.employee.PortalPersonData;
 import java.util.List;
 import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -27,8 +29,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Sort;
 import org.zalando.problem.Problem;
+import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.TestObjectsBuilder;
-import se.sundsvall.supportmanagement.api.filter.ExecutingUserSupplier;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.NotificationRepository;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
@@ -38,9 +40,6 @@ class NotificationServiceTest {
 
 	@Mock
 	private ErrandsRepository errandsRepositoryMock;
-
-	@Mock
-	private ExecutingUserSupplier executingUserSupplierMock;
 
 	@Mock
 	private NotificationRepository notificationRepositoryMock;
@@ -56,6 +55,11 @@ class NotificationServiceTest {
 
 	@Captor
 	private ArgumentCaptor<List<NotificationEntity>> notificationEntityListArgumentCaptor;
+
+	@BeforeEach
+	void beforeEach() {
+		Identifier.set(Identifier.create().withType(AD_ACCOUNT).withValue("executingUserId"));
+	}
 
 	@Test
 	void getNotification() {
@@ -180,7 +184,6 @@ class NotificationServiceTest {
 		when(notificationRepositoryMock.save(any())).thenReturn(createNotificationEntity(n -> n.setId(id)));
 		when(employeeServiceMock.getEmployeeByLoginName(municipalityId, errandEntity.getAssignedUserId())).thenReturn(new PortalPersonData().loginName(errandEntity.getAssignedUserId()).fullname(ownerFullName));
 		when(employeeServiceMock.getEmployeeByLoginName(municipalityId, executingUserId)).thenReturn(new PortalPersonData().loginName(executingUserId).fullname(createdByFullName));
-		when(executingUserSupplierMock.getAdUser()).thenReturn(executingUserId);
 
 		// Act
 		final var result = notificationService.createNotification(municipalityId, namespace, errandEntity.getId(), notification);
@@ -211,7 +214,8 @@ class NotificationServiceTest {
 		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(notification.getErrandId(), namespace, municipalityId)).thenReturn(Optional.of(errandEntity));
 		when(notificationRepositoryMock.save(any())).thenReturn(createNotificationEntity(n -> n.setId(id)));
 		when(employeeServiceMock.getEmployeeByLoginName(municipalityId, executingUserId)).thenReturn(new PortalPersonData().loginName(executingUserId).fullname(fullName));
-		when(executingUserSupplierMock.getAdUser()).thenReturn(executingUserId);
+
+		Identifier.set(Identifier.create().withType(AD_ACCOUNT).withValue(executingUserId));
 
 		// Act
 		final var result = notificationService.createNotification(municipalityId, namespace, errandEntity.getId(), notification);

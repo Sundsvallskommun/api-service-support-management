@@ -4,7 +4,7 @@ import static java.util.Collections.emptyList;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static se.sundsvall.supportmanagement.api.filter.ExecutingUserSupplier.UNKNOWN;
+import static se.sundsvall.supportmanagement.Constants.UNKNOWN;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;

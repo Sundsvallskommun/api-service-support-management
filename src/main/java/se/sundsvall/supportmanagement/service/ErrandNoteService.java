@@ -12,12 +12,12 @@ import static se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper.toC
 import static se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper.toErrandNote;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper.toFindErrandNotesResponse;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper.toUpdateNoteRequest;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getAdUser;
 
 import java.util.Optional;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.zalando.problem.Problem;
-import se.sundsvall.supportmanagement.api.filter.ExecutingUserSupplier;
 import se.sundsvall.supportmanagement.api.model.note.CreateErrandNoteRequest;
 import se.sundsvall.supportmanagement.api.model.note.ErrandNote;
 import se.sundsvall.supportmanagement.api.model.note.FindErrandNotesRequest;
@@ -31,36 +31,26 @@ import se.sundsvall.supportmanagement.integration.notes.NotesClient;
 public class ErrandNoteService {
 
 	private static final String ERRAND_ENTITY_NOT_FOUND = "An errand with id '%s' could not be found in namespace '%s' for municipality with id '%s'";
-
 	private static final String EVENT_LOG_CREATE_ERRAND_NOTE = "Ärendenotering har skapats.";
-
 	private static final String EVENT_LOG_UPDATE_ERRAND_NOTE = "Ärendenotering har uppdaterats.";
-
 	private static final String EVENT_LOG_DELETE_ERRAND_NOTE = "Ärendenotering har raderats.";
-
 	private static final String CLIENT_ID = "support-management";
 
 	private final NotesClient notesClient;
-
 	private final ErrandsRepository errandsRepository;
-
 	private final EventService eventService;
 
-	private final ExecutingUserSupplier executingUserSupplier;
-
 	public ErrandNoteService(final NotesClient notesClient,
-		final ErrandsRepository errandsRepository, final EventService eventService,
-		final ExecutingUserSupplier executingUserSupplier) {
+		final ErrandsRepository errandsRepository, final EventService eventService) {
 		this.notesClient = notesClient;
 		this.errandsRepository = errandsRepository;
 		this.eventService = eventService;
-		this.executingUserSupplier = executingUserSupplier;
 	}
 
 	public String createErrandNote(final String namespace, final String municipalityId, final String id, final CreateErrandNoteRequest createErrandNoteRequest) {
 		verifyExistingErrand(id, namespace, municipalityId);
 
-		final var response = notesClient.createNote(executingUserSupplier.getAdUser(), municipalityId, toCreateNoteRequest(id, CLIENT_ID, createErrandNoteRequest));
+		final var response = notesClient.createNote(getAdUser(), municipalityId, toCreateNoteRequest(id, CLIENT_ID, createErrandNoteRequest));
 
 		// Create log event
 		final var currentRevision = extractRevisionInformationFromHeader(response, RevisionType.CURRENT);
@@ -92,7 +82,7 @@ public class ErrandNoteService {
 	public ErrandNote updateErrandNote(final String namespace, final String municipalityId, final String id, final String noteId, final UpdateErrandNoteRequest updateErrandNoteRequest) {
 		verifyExistingErrand(id, namespace, municipalityId);
 
-		final var response = notesClient.updateNoteById(executingUserSupplier.getAdUser(), municipalityId, noteId, toUpdateNoteRequest(updateErrandNoteRequest));
+		final var response = notesClient.updateNoteById(getAdUser(), municipalityId, noteId, toUpdateNoteRequest(updateErrandNoteRequest));
 
 		// Create log event if the update has modified the note (and thus has created a new revision)
 		final var currentRevision = extractRevisionInformationFromHeader(response, RevisionType.CURRENT);
@@ -107,7 +97,7 @@ public class ErrandNoteService {
 	public void deleteErrandNote(final String namespace, final String municipalityId, final String id, final String noteId) {
 		verifyExistingErrand(id, namespace, municipalityId);
 
-		final var response = notesClient.deleteNoteById(executingUserSupplier.getAdUser(), municipalityId, noteId);
+		final var response = notesClient.deleteNoteById(getAdUser(), municipalityId, noteId);
 
 		// Create log event
 		final var currentRevision = extractRevisionInformationFromHeader(response, RevisionType.CURRENT);
@@ -145,5 +135,4 @@ public class ErrandNoteService {
 			throw Problem.valueOf(NOT_FOUND, String.format(ERRAND_ENTITY_NOT_FOUND, id, namespace, municipalityId));
 		}
 	}
-
 }

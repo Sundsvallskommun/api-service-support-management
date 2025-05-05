@@ -6,6 +6,7 @@ import static org.springframework.util.StringUtils.hasText;
 import static org.zalando.problem.Status.NOT_FOUND;
 import static se.sundsvall.supportmanagement.service.mapper.NotificationMapper.toNotificationEntity;
 import static se.sundsvall.supportmanagement.service.mapper.NotificationMapper.updateEntity;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getAdUser;
 
 import generated.se.sundsvall.employee.PortalPersonData;
 import java.time.OffsetDateTime;
@@ -15,7 +16,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.zalando.problem.Problem;
-import se.sundsvall.supportmanagement.api.filter.ExecutingUserSupplier;
 import se.sundsvall.supportmanagement.api.model.notification.Notification;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.NotificationRepository;
@@ -29,14 +29,12 @@ public class NotificationService {
 	private static final String NOTIFICATION_ENTITY_NOT_FOUND = "Notification with id:'%s' not found in namespace:'%s' for municipality with id:'%s' and errand with id:'%s'";
 	private static final String ERRAND_ENTITY_NOT_FOUND = "Errand with id:'%s' not found in namespace:'%s' for municipality with id:'%s'";
 
-	private final ExecutingUserSupplier executingUserSupplier;
 	private final NotificationRepository notificationRepository;
 	private final ErrandsRepository errandsRepository;
 	private final EmployeeService employeeService;
 
-	public NotificationService(final NotificationRepository notificationRepository, final ExecutingUserSupplier executingUserSupplier, final ErrandsRepository errandsRepository, final EmployeeService employeeService) {
+	public NotificationService(final NotificationRepository notificationRepository, final ErrandsRepository errandsRepository, final EmployeeService employeeService) {
 		this.notificationRepository = notificationRepository;
-		this.executingUserSupplier = executingUserSupplier;
 		this.errandsRepository = errandsRepository;
 		this.employeeService = employeeService;
 	}
@@ -120,11 +118,11 @@ public class NotificationService {
 
 	private void applyBusinessLogicForCreate(final NotificationEntity notificationEntity) {
 
-		final var executingUser = executingUserSupplier.getAdUser();
+		final var executingUser = getAdUser();
 		final var municipalityId = notificationEntity.getMunicipalityId();
 
 		// If notification is created by the user that owns the notification (ownnerId) it should be acknowledged from start.
-		if (equalsIgnoreCase(notificationEntity.getOwnerId(), executingUserSupplier.getAdUser())) {
+		if (equalsIgnoreCase(notificationEntity.getOwnerId(), getAdUser())) {
 			notificationEntity.setAcknowledged(true);
 		}
 
