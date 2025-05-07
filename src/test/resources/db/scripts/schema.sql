@@ -187,6 +187,7 @@
     ) engine=InnoDB;
 
     create table namespace_config (
+        notification_ttl_in_days integer not null,
         created datetime(6),
         id bigint not null auto_increment,
         modified datetime(6),
