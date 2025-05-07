@@ -39,6 +39,7 @@ class NamespaceConfigTest {
 		final var municipalityId = "municipalityId";
 		final var displayName = "displayName";
 		final var shortCode = "shortCode";
+		final var notificationTTLInDays = 40;
 		final var created = OffsetDateTime.now();
 		final var modified = OffsetDateTime.now().plusDays(1);
 
@@ -47,6 +48,7 @@ class NamespaceConfigTest {
 			.withMunicipalityId(municipalityId)
 			.withDisplayName(displayName)
 			.withShortCode(shortCode)
+			.withNotificationTTLInDays(notificationTTLInDays)
 			.withCreated(created)
 			.withModified(modified);
 
@@ -54,6 +56,7 @@ class NamespaceConfigTest {
 		assertThat(bean.getMunicipalityId()).isEqualTo(municipalityId);
 		assertThat(bean.getDisplayName()).isEqualTo(displayName);
 		assertThat(bean.getShortCode()).isEqualTo(shortCode);
+		assertThat(bean.getNotificationTTLInDays()).isEqualTo(notificationTTLInDays);
 		assertThat(bean.getCreated()).isEqualTo(created);
 		assertThat(bean.getModified()).isEqualTo(modified);
 	}
