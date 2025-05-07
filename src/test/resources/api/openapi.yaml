@@ -5,7 +5,7 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "10.2"
+  version: "10.3"
 servers:
 - url: http://localhost:8080
   description: Generated server url
@@ -4567,9 +4567,9 @@ components:
             type: object
         status:
           $ref: "#/components/schemas/StatusType"
-        detail:
-          type: string
         title:
+          type: string
+        detail:
           type: string
     StatusType:
       type: object
@@ -4702,9 +4702,9 @@ components:
             type: object
         status:
           $ref: "#/components/schemas/StatusType"
-        detail:
-          type: string
         title:
+          type: string
+        detail:
           type: string
         suppressed:
           type: array
@@ -4770,6 +4770,11 @@ components:
           type: string
           description: Prefix for errand numbers in this namespace
           example: KC
+        notificationTTLInDays:
+          type: integer
+          description: Time to live (in days) for notifications created in this namespace
+          format: int32
+          example: 40
         created:
           type: string
           description: Timestamp when the configuration was created
@@ -5762,6 +5767,8 @@ components:
           format: int64
         sort:
           $ref: "#/components/schemas/SortObject"
+        unpaged:
+          type: boolean
         paged:
           type: boolean
         pageNumber:
@@ -5770,16 +5777,14 @@ components:
         pageSize:
           type: integer
           format: int32
-        unpaged:
-          type: boolean
     SortObject:
       type: object
       properties:
         empty:
           type: boolean
-        sorted:
-          type: boolean
         unsorted:
+          type: boolean
+        sorted:
           type: boolean
     Revision:
       type: object
