@@ -148,7 +148,7 @@ class EmailReaderWorkerTest {
 		verify(communicationServiceMock).saveCommunication(same(communicationEntity));
 		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Nytt meddelande"), same(errandEntity), isNull(), isNull(), eq(MESSAGE));
 		verify(emailReaderClientMock).getAttachment(MUNICIPALITY_ID, 2);
-		verify(emailReaderMapperMock).toCommunicationAttachmentDataEntity(bytes);
+		verify(emailReaderMapperMock).toAttachmentDataEntity(bytes);
 		verifyNoInteractions(errandServiceMock);
 		verifyNoMoreInteractions(emailReaderClientMock, errandRepositoryMock, emailReaderMapperMock, communicationServiceMock, emailWorkerConfigRepositoryMock, eventServiceMock, consumerMock);
 	}
