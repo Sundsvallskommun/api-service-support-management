@@ -27,6 +27,9 @@ public class NamespaceConfig {
 	@Schema(description = "Prefix for errand numbers in this namespace", example = "KC")
 	private String shortCode;
 
+	@Schema(description = "Time to live (in days) for notifications created in this namespace", example = "40")
+	private Integer notificationTTLInDays;
+
 	@Schema(description = "Timestamp when the configuration was created", example = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	private OffsetDateTime created;
 
@@ -89,6 +92,19 @@ public class NamespaceConfig {
 		return this;
 	}
 
+	public Integer getNotificationTTLInDays() {
+		return notificationTTLInDays;
+	}
+
+	public void setNotificationTTLInDays(Integer notificationTTLInDays) {
+		this.notificationTTLInDays = notificationTTLInDays;
+	}
+
+	public NamespaceConfig withNotificationTTLInDays(Integer notificationTTLInDays) {
+		this.notificationTTLInDays = notificationTTLInDays;
+		return this;
+	}
+
 	public OffsetDateTime getCreated() {
 		return created;
 	}
@@ -117,30 +133,28 @@ public class NamespaceConfig {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(created, displayName, modified, municipalityId, namespace, shortCode);
+		return Objects.hash(created, displayName, modified, municipalityId, namespace, notificationTTLInDays, shortCode);
 	}
 
 	@Override
-	public boolean equals(final Object obj) {
+	public boolean equals(Object obj) {
 		if (this == obj) {
 			return true;
 		}
-		if (!(obj instanceof final NamespaceConfig other)) {
+		if (obj == null) {
 			return false;
 		}
+		if (getClass() != obj.getClass()) {
+			return false;
+		}
+		NamespaceConfig other = (NamespaceConfig) obj;
 		return Objects.equals(created, other.created) && Objects.equals(displayName, other.displayName) && Objects.equals(modified, other.modified) && Objects.equals(municipalityId, other.municipalityId) && Objects.equals(namespace, other.namespace)
-			&& Objects.equals(shortCode, other.shortCode);
+			&& Objects.equals(notificationTTLInDays, other.notificationTTLInDays) && Objects.equals(shortCode, other.shortCode);
 	}
 
 	@Override
 	public String toString() {
-		return "NamespaceConfig{" +
-			"namespace='" + namespace + '\'' +
-			", municipalityId='" + municipalityId + '\'' +
-			", displayName='" + displayName + '\'' +
-			", shortCode='" + shortCode + '\'' +
-			", created=" + created +
-			", modified=" + modified +
-			'}';
+		return "NamespaceConfig [namespace=" + namespace + ", municipalityId=" + municipalityId + ", displayName=" + displayName + ", shortCode=" + shortCode + ", notificationTTLInDays=" + notificationTTLInDays + ", created=" + created + ", modified="
+			+ modified + "]";
 	}
 }
