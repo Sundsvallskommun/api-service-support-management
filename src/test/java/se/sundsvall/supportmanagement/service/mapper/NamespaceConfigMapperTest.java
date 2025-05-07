@@ -68,7 +68,7 @@ class NamespaceConfigMapperTest {
 		final var configs = mapper.toNamespaceConfigs(entities);
 
 		assertThat(configs).hasSize(1).satisfiesExactly(config -> {
-			assertThat(config).hasNoNullFieldsOrPropertiesExcept("notificationTTLInDays");
+			assertThat(config).hasNoNullFieldsOrProperties();
 			assertThat(config.getNamespace()).isEqualTo(namespace);
 			assertThat(config.getMunicipalityId()).isEqualTo(municipalityId);
 			assertThat(config.getDisplayName()).isEqualTo(displayName);
@@ -89,6 +89,7 @@ class NamespaceConfigMapperTest {
 			.withMunicipalityId(municipalityId)
 			.withDisplayName(displayName)
 			.withShortCode(shortCode)
+			.withNotificationTTLInDays(40)
 			.withCreated(created)
 			.withModified(modified);
 	}

@@ -48,11 +48,13 @@ class NamespaceConfigRepositoryTest {
 			assertThat(bean.getNamespace()).isEqualTo("namespace-1");
 			assertThat(bean.getDisplayName()).isEqualTo("display name 1");
 			assertThat(bean.getShortCode()).isEqualTo("short_code-1");
+			assertThat(bean.getNotificationTTLInDays()).isEqualTo(10);
 		}, bean -> {
 			assertThat(bean.getMunicipalityId()).isEqualTo(municipalityId);
 			assertThat(bean.getNamespace()).isEqualTo("namespace-3");
 			assertThat(bean.getDisplayName()).isEqualTo("display name 3");
 			assertThat(bean.getShortCode()).isEqualTo("short_code-3");
+			assertThat(bean.getNotificationTTLInDays()).isEqualTo(30);
 		});
 	}
 
@@ -65,16 +67,19 @@ class NamespaceConfigRepositoryTest {
 			assertThat(bean.getNamespace()).isEqualTo("namespace-1");
 			assertThat(bean.getDisplayName()).isEqualTo("display name 1");
 			assertThat(bean.getShortCode()).isEqualTo("short_code-1");
+			assertThat(bean.getNotificationTTLInDays()).isEqualTo(10);
 		}, bean -> {
 			assertThat(bean.getMunicipalityId()).isEqualTo("municipality_id-2");
 			assertThat(bean.getNamespace()).isEqualTo("namespace-2");
 			assertThat(bean.getDisplayName()).isEqualTo("display name 2");
 			assertThat(bean.getShortCode()).isEqualTo("short_code-2");
+			assertThat(bean.getNotificationTTLInDays()).isEqualTo(20);
 		}, bean -> {
 			assertThat(bean.getMunicipalityId()).isEqualTo("municipality_id-1");
 			assertThat(bean.getNamespace()).isEqualTo("namespace-3");
 			assertThat(bean.getDisplayName()).isEqualTo("display name 3");
 			assertThat(bean.getShortCode()).isEqualTo("short_code-3");
+			assertThat(bean.getNotificationTTLInDays()).isEqualTo(30);
 		});
 	}
 
@@ -85,12 +90,14 @@ class NamespaceConfigRepositoryTest {
 		final var namespace = "namespace";
 		final var displayName = "displayName";
 		final var shortCode = "shortCode";
+		final var notificationTTLInDays = 40;
 
 		final var entity = NamespaceConfigEntity.create()
 			.withMunicipalityId(municipalityId)
 			.withNamespace(namespace)
 			.withDisplayName(displayName)
-			.withShortCode(shortCode);
+			.withShortCode(shortCode)
+			.withNotificationTTLInDays(notificationTTLInDays);
 
 		assertThat(repository.existsByNamespaceAndMunicipalityId(namespace, municipalityId)).isFalse();
 
@@ -103,6 +110,7 @@ class NamespaceConfigRepositoryTest {
 			assertThat(bean.getNamespace()).isEqualTo(namespace);
 			assertThat(bean.getDisplayName()).isEqualTo(displayName);
 			assertThat(bean.getShortCode()).isEqualTo(shortCode);
+			assertThat(bean.getNotificationTTLInDays()).isEqualTo(notificationTTLInDays);
 			assertThat(bean.getCreated()).isCloseTo(OffsetDateTime.now(), within(2, SECONDS));
 			assertThat(bean.getModified()).isNull();
 		});

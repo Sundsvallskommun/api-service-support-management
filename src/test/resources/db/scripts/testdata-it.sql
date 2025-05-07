@@ -323,12 +323,12 @@ VALUES (1, true, '2281', 'NAMESPACE-1', 1, 'sender-1', 'template-1', 'STATUS-1',
 -- -----------------------------------
 -- Namespace config
 -- -----------------------------------
-INSERT INTO namespace_config (id, municipality_id, namespace, display_name, short_code, created, modified)
-VALUES (1, '2281', 'NAMESPACE-1', 'Namespace 1', 'NS1', '2021-12-31 23:59:59.999', '2022-12-31 23:59:59.999'),
-       (2, '2281', 'CONTACTCENTER', 'Kontaktcenter', 'KC', '2024-06-12 15:23:59.999', null),
-       (3, '2281', 'NAMESPACE-3', 'Namespace 3', 'NS3', '2021-12-31 23:59:59.999', '2022-12-31 23:59:59.999'),
-       (4, '2262', 'CONTACTCENTER', 'Kontaktcenter', 'KC', '2024-06-12 15:24:00.001', null);
-
+INSERT INTO namespace_config (id, municipality_id, namespace, display_name, short_code, notification_ttl_in_days, created, modified)
+VALUES (1, '2281', 'NAMESPACE-1', 'Namespace 1', 'NS1', 10, '2021-12-31 23:59:59.999', '2022-12-31 23:59:59.999'),
+       (2, '2281', 'CONTACTCENTER', 'Kontaktcenter', 'KC', 20, '2024-06-12 15:23:59.999', null),
+       (3, '2281', 'NAMESPACE-3', 'Namespace 3', 'NS3', 30, '2021-12-31 23:59:59.999', '2022-12-31 23:59:59.999'),
+       (4, '2262', 'CONTACTCENTER', 'Kontaktcenter', 'KC', 40, '2024-06-12 15:24:00.001', null);
+       
 -- -----------------------------------
 -- Time measurement
 -- -----------------------------------

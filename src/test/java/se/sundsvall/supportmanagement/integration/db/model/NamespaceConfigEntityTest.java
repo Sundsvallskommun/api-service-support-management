@@ -44,6 +44,7 @@ class NamespaceConfigEntityTest {
 		final var namespace = "namespace";
 		final var displayName = "displayName";
 		final var shortCode = "shortCode";
+		final var notificationTTLInDays = 1;
 
 		final var entity = NamespaceConfigEntity.create()
 			.withId(id)
@@ -52,7 +53,8 @@ class NamespaceConfigEntityTest {
 			.withModified(modified)
 			.withMunicipalityId(municipalityId)
 			.withNamespace(namespace)
-			.withShortCode(shortCode);
+			.withShortCode(shortCode)
+			.withNotificationTTLInDays(notificationTTLInDays);
 
 		assertThat(entity.getId()).isEqualTo(id);
 		assertThat(entity.getCreated()).isEqualTo(created);
@@ -61,6 +63,7 @@ class NamespaceConfigEntityTest {
 		assertThat(entity.getMunicipalityId()).isEqualTo(municipalityId);
 		assertThat(entity.getNamespace()).isEqualTo(namespace);
 		assertThat(entity.getShortCode()).isEqualTo(shortCode);
+		assertThat(entity.getNotificationTTLInDays()).isEqualTo(notificationTTLInDays);
 	}
 
 	@Test

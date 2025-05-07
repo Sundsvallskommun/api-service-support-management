@@ -4,5 +4,6 @@
 	"displayName": "Updated displayname",
 	"namespace": "NAMESPACE-1",
 	"modified": "${json-unit.any-string}",
-	"shortCode": "NS1-UPDATE"
+	"shortCode": "NS1-UPDATE",
+	"notificationTTLInDays": 30
 }
