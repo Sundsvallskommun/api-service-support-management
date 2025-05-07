@@ -47,6 +47,9 @@ public class NamespaceConfigEntity {
 	@Column(name = "short_code", nullable = false)
 	private String shortCode;
 
+	@Column(name = "notification_ttl_in_days", nullable = false)
+	private Integer notificationTTLInDays;
+
 	@Column(name = "created")
 	@TimeZoneStorage(NORMALIZE)
 	private OffsetDateTime created;
@@ -124,6 +127,19 @@ public class NamespaceConfigEntity {
 		return this;
 	}
 
+	public Integer getNotificationTTLInDays() {
+		return notificationTTLInDays;
+	}
+
+	public void setNotificationTTLInDays(Integer notificationTTLInDays) {
+		this.notificationTTLInDays = notificationTTLInDays;
+	}
+
+	public NamespaceConfigEntity withNotificationTTLInDays(Integer notificationTTLInDays) {
+		this.notificationTTLInDays = notificationTTLInDays;
+		return this;
+	}
+
 	public OffsetDateTime getCreated() {
 		return created;
 	}
@@ -162,31 +178,28 @@ public class NamespaceConfigEntity {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(created, displayName, id, modified, municipalityId, namespace, shortCode);
+		return Objects.hash(created, displayName, id, modified, municipalityId, namespace, notificationTTLInDays, shortCode);
 	}
 
 	@Override
-	public boolean equals(final Object obj) {
+	public boolean equals(Object obj) {
 		if (this == obj) {
 			return true;
 		}
-		if (!(obj instanceof final NamespaceConfigEntity other)) {
+		if (obj == null) {
 			return false;
 		}
-		return Objects.equals(created, other.created) && Objects.equals(displayName, other.displayName) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(municipalityId, other.municipalityId) && Objects
-			.equals(namespace, other.namespace) && Objects.equals(shortCode, other.shortCode);
+		if (getClass() != obj.getClass()) {
+			return false;
+		}
+		NamespaceConfigEntity other = (NamespaceConfigEntity) obj;
+		return Objects.equals(created, other.created) && Objects.equals(displayName, other.displayName) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(municipalityId, other.municipalityId) && Objects.equals(
+			namespace, other.namespace) && Objects.equals(notificationTTLInDays, other.notificationTTLInDays) && Objects.equals(shortCode, other.shortCode);
 	}
 
 	@Override
 	public String toString() {
-		return "NamespaceConfigEntity{" +
-			"id=" + id +
-			", municipalityId='" + municipalityId + '\'' +
-			", namespace='" + namespace + '\'' +
-			", displayName='" + displayName + '\'' +
-			", shortCode='" + shortCode + '\'' +
-			", created=" + created +
-			", modified=" + modified +
-			'}';
+		return "NamespaceConfigEntity [id=" + id + ", municipalityId=" + municipalityId + ", namespace=" + namespace + ", displayName=" + displayName + ", shortCode=" + shortCode + ", notificationTTLInDays=" + notificationTTLInDays + ", created=" + created
+			+ ", modified=" + modified + "]";
 	}
 }
