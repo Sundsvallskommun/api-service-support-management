@@ -30,7 +30,7 @@ public class ErrandNumberGeneratorService {
 	@Transactional(isolation = Isolation.SERIALIZABLE, propagation = REQUIRES_NEW)
 	public String generateErrandNumber(final String namespace, final String municipalityId) {
 
-		final var shortcode = namespaceConfigRepository.getByNamespaceAndMunicipalityId(namespace, municipalityId)
+		final var shortcode = namespaceConfigRepository.findByNamespaceAndMunicipalityId(namespace, municipalityId)
 			.map(NamespaceConfigEntity::getShortCode)
 			.orElseThrow(() -> Problem.valueOf(INTERNAL_SERVER_ERROR, String.format("Missing shortCode for namespace/municipalityId: '%s/%s'. Add via /namespaceConfig resource.", namespace, municipalityId)));
 
@@ -57,5 +57,4 @@ public class ErrandNumberGeneratorService {
 
 		return "%s-%s%s".formatted(shortcode, todayDate, String.format("%04d", sequence.getLastSequenceNumber()));
 	}
-
 }

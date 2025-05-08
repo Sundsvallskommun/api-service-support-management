@@ -98,16 +98,18 @@ class NotificationRepositoryTest {
 	}
 
 	@Test
-	void findByExpiresBefore() {
+	void deleteByExpiresBefore() {
 
 		// Arrange
 		final var timestamp = of(2024, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
 
+		assertThat(notificationRepository.findByExpiresBefore(timestamp)).hasSize(1);
+
 		// Act
-		final var notifications = notificationRepository.findByExpiresBefore(timestamp);
+		notificationRepository.deleteByExpiresBefore(timestamp);
 
 		// Assert
-		assertThat(notifications).hasSize(1);
+		assertThat(notificationRepository.findByExpiresBefore(timestamp)).isEmpty();
 	}
 
 	@Test

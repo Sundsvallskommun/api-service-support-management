@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zalando.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.notification.Notification;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.NotificationRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
@@ -27,14 +28,22 @@ import se.sundsvall.supportmanagement.service.mapper.NotificationMapper;
 public class NotificationService {
 
 	private static final String NOTIFICATION_ENTITY_NOT_FOUND = "Notification with id:'%s' not found in namespace:'%s' for municipality with id:'%s' and errand with id:'%s'";
+	private static final String NAMESPACE_ENTITY_NOT_FOUND = "Namespace with name:'%s' and municiplaityId '%s' not found!";
 	private static final String ERRAND_ENTITY_NOT_FOUND = "Errand with id:'%s' not found in namespace:'%s' for municipality with id:'%s'";
 
 	private final NotificationRepository notificationRepository;
+	private final NamespaceConfigRepository namespaceConfigRepository;
 	private final ErrandsRepository errandsRepository;
 	private final EmployeeService employeeService;
 
-	public NotificationService(final NotificationRepository notificationRepository, final ErrandsRepository errandsRepository, final EmployeeService employeeService) {
+	public NotificationService(
+		final NotificationRepository notificationRepository,
+		final NamespaceConfigRepository namespaceConfigRepository,
+		final ErrandsRepository errandsRepository,
+		final EmployeeService employeeService) {
+
 		this.notificationRepository = notificationRepository;
+		this.namespaceConfigRepository = namespaceConfigRepository;
 		this.errandsRepository = errandsRepository;
 		this.employeeService = employeeService;
 	}
@@ -42,7 +51,7 @@ public class NotificationService {
 	public Notification getNotification(final String municipalityId, final String namespace, final String errandId, final String notificationId) {
 		return notificationRepository.findByIdAndNamespaceAndMunicipalityIdAndErrandEntityId(notificationId, namespace, municipalityId, errandId)
 			.map(NotificationMapper::toNotification)
-			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, String.format(NOTIFICATION_ENTITY_NOT_FOUND, notificationId, namespace, municipalityId, errandId)));
+			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, NOTIFICATION_ENTITY_NOT_FOUND.formatted(notificationId, namespace, municipalityId, errandId)));
 	}
 
 	public List<Notification> getNotificationsByOwnerId(final String municipalityId, final String namespace, final String ownerId) {
@@ -64,10 +73,14 @@ public class NotificationService {
 	}
 
 	public String createNotification(final String municipalityId, final String namespace, final String errandId, final Notification notification) {
-		final var errandEntity = errandsRepository.findByIdAndNamespaceAndMunicipalityId(errandId, namespace, municipalityId)
-			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, String.format(ERRAND_ENTITY_NOT_FOUND, notification.getErrandId(), namespace, municipalityId)));
 
-		final var entity = toNotificationEntity(namespace, municipalityId, notification, errandEntity);
+		final var namespaceEntity = namespaceConfigRepository.findByNamespaceAndMunicipalityId(namespace, municipalityId)
+			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, NAMESPACE_ENTITY_NOT_FOUND.formatted(namespace, municipalityId)));
+
+		final var errandEntity = errandsRepository.findByIdAndNamespaceAndMunicipalityId(errandId, namespace, municipalityId)
+			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, ERRAND_ENTITY_NOT_FOUND.formatted(notification.getErrandId(), namespace, municipalityId)));
+
+		final var entity = toNotificationEntity(namespace, municipalityId, namespaceEntity.getNotificationTTLInDays(), notification, errandEntity);
 
 		applyBusinessLogicForCreate(entity);
 
@@ -100,7 +113,7 @@ public class NotificationService {
 
 	private void updateNotification(final String municipalityId, final String namespace, final String notificationId, final Notification notification) {
 		final var entity = notificationRepository.findByIdAndNamespaceAndMunicipalityIdAndErrandEntityId(notificationId, namespace, municipalityId, notification.getErrandId())
-			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, String.format(NOTIFICATION_ENTITY_NOT_FOUND, notificationId, namespace, municipalityId, notification.getErrandId())));
+			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, NOTIFICATION_ENTITY_NOT_FOUND.formatted(notificationId, namespace, municipalityId, notification.getErrandId())));
 
 		updateEntity(entity, notification);
 
@@ -111,7 +124,7 @@ public class NotificationService {
 
 	public void deleteNotification(final String municipalityId, final String namespace, final String errandId, final String notificationId) {
 		if (!notificationRepository.existsByIdAndNamespaceAndMunicipalityIdAndErrandEntityId(notificationId, namespace, municipalityId, errandId)) {
-			throw Problem.valueOf(NOT_FOUND, String.format(NOTIFICATION_ENTITY_NOT_FOUND, notificationId, namespace, municipalityId, errandId));
+			throw Problem.valueOf(NOT_FOUND, NOTIFICATION_ENTITY_NOT_FOUND.formatted(notificationId, namespace, municipalityId, errandId));
 		}
 		notificationRepository.deleteById(notificationId);
 	}

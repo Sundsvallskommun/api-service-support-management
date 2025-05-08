@@ -75,8 +75,8 @@ public class ErrandService {
 		final var persistedEntity = repository.save(errandEntity);
 		final var revision = revisionService.createErrandRevision(persistedEntity);
 
-		// Create log event
-		eventService.createErrandEvent(CREATE, EVENT_LOG_CREATE_ERRAND, persistedEntity, revision.latest(), null, ERRAND);
+		// Create log event, but don't create a notification.
+		eventService.createErrandEvent(CREATE, EVENT_LOG_CREATE_ERRAND, persistedEntity, revision.latest(), null, false, ERRAND);
 
 		return persistedEntity.getId();
 	}
@@ -138,7 +138,7 @@ public class ErrandService {
 		}
 
 		if (Boolean.FALSE.equals(exists.get())) {
-			throw Problem.valueOf(NOT_FOUND, String.format(ENTITY_NOT_FOUND, id, namespace, municipalityId));
+			throw Problem.valueOf(NOT_FOUND, ENTITY_NOT_FOUND.formatted(id, namespace, municipalityId));
 		}
 	}
 }

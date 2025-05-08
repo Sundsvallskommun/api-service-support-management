@@ -85,12 +85,12 @@ class NamespaceConfigServiceTest {
 		final var entity = NamespaceConfigEntity.create().withId(id).withCreated(created);
 		final var replacementEntity = NamespaceConfigEntity.create();
 
-		when(configRepositoryMock.getByNamespaceAndMunicipalityId(any(), any())).thenReturn(Optional.of(entity));
+		when(configRepositoryMock.findByNamespaceAndMunicipalityId(any(), any())).thenReturn(Optional.of(entity));
 		when(mapperMock.toEntity(any(), any(), any())).thenReturn(replacementEntity);
 
 		configService.replace(request, namespace, municipalityId);
 
-		verify(configRepositoryMock).getByNamespaceAndMunicipalityId(namespace, municipalityId);
+		verify(configRepositoryMock).findByNamespaceAndMunicipalityId(namespace, municipalityId);
 		verify(mapperMock).toEntity(same(request), eq(namespace), eq(municipalityId));
 		verify(configRepositoryMock).save(entityCaptor.capture());
 
@@ -105,14 +105,14 @@ class NamespaceConfigServiceTest {
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
 
-		when(configRepositoryMock.getByNamespaceAndMunicipalityId(any(), any())).thenReturn(Optional.empty());
+		when(configRepositoryMock.findByNamespaceAndMunicipalityId(any(), any())).thenReturn(Optional.empty());
 
 		assertThatThrownBy(() -> configService.replace(request, namespace, municipalityId))
 			.isInstanceOf(Problem.class)
 			.hasMessage("Not Found: No config found in namespace 'namespace' for municipality 'municipalityId'")
 			.extracting("status").isEqualTo(NOT_FOUND);
 
-		verify(configRepositoryMock).getByNamespaceAndMunicipalityId(namespace, municipalityId);
+		verify(configRepositoryMock).findByNamespaceAndMunicipalityId(namespace, municipalityId);
 	}
 
 	@Test
@@ -122,12 +122,12 @@ class NamespaceConfigServiceTest {
 		final var entity = NamespaceConfigEntity.create();
 		final var response = NamespaceConfig.create();
 
-		when(configRepositoryMock.getByNamespaceAndMunicipalityId(any(), any())).thenReturn(Optional.of(entity));
+		when(configRepositoryMock.findByNamespaceAndMunicipalityId(any(), any())).thenReturn(Optional.of(entity));
 		when(mapperMock.toNamespaceConfig(any())).thenReturn(response);
 
 		final var result = configService.get(namespace, municipalityId);
 
-		verify(configRepositoryMock).getByNamespaceAndMunicipalityId(namespace, municipalityId);
+		verify(configRepositoryMock).findByNamespaceAndMunicipalityId(namespace, municipalityId);
 		verify(mapperMock).toNamespaceConfig(same(entity));
 		assertThat(result).isSameAs(response);
 	}
@@ -137,14 +137,14 @@ class NamespaceConfigServiceTest {
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
 
-		when(configRepositoryMock.getByNamespaceAndMunicipalityId(any(), any())).thenReturn(Optional.empty());
+		when(configRepositoryMock.findByNamespaceAndMunicipalityId(any(), any())).thenReturn(Optional.empty());
 
 		assertThatThrownBy(() -> configService.get(namespace, municipalityId))
 			.isInstanceOf(Problem.class)
 			.hasMessage("Not Found: No config found in namespace 'namespace' for municipality 'municipalityId'")
 			.extracting("status").isEqualTo(NOT_FOUND);
 
-		verify(configRepositoryMock).getByNamespaceAndMunicipalityId(namespace, municipalityId);
+		verify(configRepositoryMock).findByNamespaceAndMunicipalityId(namespace, municipalityId);
 	}
 
 	@Test
@@ -185,11 +185,11 @@ class NamespaceConfigServiceTest {
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
 
-		when(configRepositoryMock.getByNamespaceAndMunicipalityId(any(), any())).thenReturn(Optional.of(NamespaceConfigEntity.create()));
+		when(configRepositoryMock.findByNamespaceAndMunicipalityId(any(), any())).thenReturn(Optional.of(NamespaceConfigEntity.create()));
 
 		configService.delete(namespace, municipalityId);
 
-		verify(configRepositoryMock).getByNamespaceAndMunicipalityId(namespace, municipalityId);
+		verify(configRepositoryMock).findByNamespaceAndMunicipalityId(namespace, municipalityId);
 		verify(configRepositoryMock).deleteByNamespaceAndMunicipalityId(namespace, municipalityId);
 	}
 
@@ -198,14 +198,14 @@ class NamespaceConfigServiceTest {
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
 
-		when(configRepositoryMock.getByNamespaceAndMunicipalityId(any(), any())).thenReturn(Optional.empty());
+		when(configRepositoryMock.findByNamespaceAndMunicipalityId(any(), any())).thenReturn(Optional.empty());
 
 		assertThatThrownBy(() -> configService.delete(namespace, municipalityId))
 			.isInstanceOf(Problem.class)
 			.hasMessage("Not Found: No config found in namespace 'namespace' for municipality 'municipalityId'")
 			.extracting("status").isEqualTo(NOT_FOUND);
 
-		verify(configRepositoryMock).getByNamespaceAndMunicipalityId(namespace, municipalityId);
+		verify(configRepositoryMock).findByNamespaceAndMunicipalityId(namespace, municipalityId);
 	}
 
 }

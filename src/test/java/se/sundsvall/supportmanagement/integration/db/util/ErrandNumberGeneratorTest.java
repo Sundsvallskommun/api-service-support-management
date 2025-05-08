@@ -40,7 +40,7 @@ class ErrandNumberGeneratorTest {
 	@Test
 	void generateErrandNumber_resetSequence() {
 
-		when(namespaceConfigRepositoryMock.getByNamespaceAndMunicipalityId(any(), any())).thenReturn(Optional.of(NamespaceConfigEntity.create().withShortCode(SHORT_CODE)));
+		when(namespaceConfigRepositoryMock.findByNamespaceAndMunicipalityId(any(), any())).thenReturn(Optional.of(NamespaceConfigEntity.create().withShortCode(SHORT_CODE)));
 		when(repositoryMock.findByNamespaceAndMunicipalityId(any(String.class), any(String.class))).thenReturn(Optional.of(new ErrandNumberSequenceEntity()
 			.withNamespace(NAMESPACE)
 			.withNamespace(MUNICIPALITY_ID)
@@ -55,7 +55,7 @@ class ErrandNumberGeneratorTest {
 	@Test
 	void generateErrandNumber_incrementSequence() {
 
-		when(namespaceConfigRepositoryMock.getByNamespaceAndMunicipalityId(any(), any())).thenReturn(Optional.of(NamespaceConfigEntity.create().withShortCode(SHORT_CODE)));
+		when(namespaceConfigRepositoryMock.findByNamespaceAndMunicipalityId(any(), any())).thenReturn(Optional.of(NamespaceConfigEntity.create().withShortCode(SHORT_CODE)));
 		when(repositoryMock.findByNamespaceAndMunicipalityId(any(String.class), any(String.class))).thenReturn(Optional.of(new ErrandNumberSequenceEntity()
 			.withNamespace(NAMESPACE)
 			.withNamespace(MUNICIPALITY_ID)
@@ -70,7 +70,7 @@ class ErrandNumberGeneratorTest {
 	@Test
 	void generateErrandNumber_noSequence() {
 
-		when(namespaceConfigRepositoryMock.getByNamespaceAndMunicipalityId(any(), any())).thenReturn(Optional.of(NamespaceConfigEntity.create().withShortCode(SHORT_CODE)));
+		when(namespaceConfigRepositoryMock.findByNamespaceAndMunicipalityId(any(), any())).thenReturn(Optional.of(NamespaceConfigEntity.create().withShortCode(SHORT_CODE)));
 		when(repositoryMock.findByNamespaceAndMunicipalityId(any(String.class), any(String.class))).thenReturn(Optional.empty());
 
 		final var result = stringGeneratorService.generateErrandNumber(NAMESPACE, MUNICIPALITY_ID);
@@ -81,21 +81,19 @@ class ErrandNumberGeneratorTest {
 	@Test
 	void generateErrandNumber_unknownNamespace() {
 
-		when(namespaceConfigRepositoryMock.getByNamespaceAndMunicipalityId(any(), any())).thenReturn(Optional.empty());
+		when(namespaceConfigRepositoryMock.findByNamespaceAndMunicipalityId(any(), any())).thenReturn(Optional.empty());
 		assertThatThrownBy(() -> stringGeneratorService.generateErrandNumber("OTHER_NAMESPACE", MUNICIPALITY_ID))
 			.isInstanceOf(Problem.class)
 			.hasMessage(String.format("Internal Server Error: Missing shortCode for namespace/municipalityId: 'OTHER_NAMESPACE/%s'. Add via /namespaceConfig resource.", MUNICIPALITY_ID));
-
 	}
 
 	@Test
 	void generateErrandNumber_unknownMunicipalityId() {
 
-		when(namespaceConfigRepositoryMock.getByNamespaceAndMunicipalityId(any(), any())).thenReturn(Optional.empty());
+		when(namespaceConfigRepositoryMock.findByNamespaceAndMunicipalityId(any(), any())).thenReturn(Optional.empty());
 		assertThatThrownBy(() -> stringGeneratorService.generateErrandNumber(NAMESPACE, "OTHER_MUNICIPALITY_ID"))
 			.isInstanceOf(Problem.class)
 			.hasMessage(String.format("Internal Server Error: Missing shortCode for namespace/municipalityId: '%s/OTHER_MUNICIPALITY_ID'. Add via /namespaceConfig resource.", NAMESPACE));
-
 	}
 
 	@Test
@@ -107,7 +105,7 @@ class ErrandNumberGeneratorTest {
 			.withResetYearMonth(dateFormatter.format(LocalDate.now().minusMonths(2)));
 		final var maxCount = 99999;
 
-		when(namespaceConfigRepositoryMock.getByNamespaceAndMunicipalityId(any(), any())).thenReturn(Optional.of(NamespaceConfigEntity.create().withShortCode(SHORT_CODE)));
+		when(namespaceConfigRepositoryMock.findByNamespaceAndMunicipalityId(any(), any())).thenReturn(Optional.of(NamespaceConfigEntity.create().withShortCode(SHORT_CODE)));
 		when(repositoryMock.findByNamespaceAndMunicipalityId(any(String.class), any(String.class))).thenReturn(Optional.of(entity));
 
 		final var result = IntStream.range(0, maxCount).mapToObj(i -> stringGeneratorService.generateErrandNumber(NAMESPACE, MUNICIPALITY_ID))
@@ -116,5 +114,4 @@ class ErrandNumberGeneratorTest {
 		assertThat(result).hasSize(maxCount).doesNotHaveDuplicates();
 		assertThat(result.getLast()).endsWith("99999");
 	}
-
 }
