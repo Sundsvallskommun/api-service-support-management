@@ -36,7 +36,7 @@ public class NamespaceConfigService {
 	})
 	public void create(NamespaceConfig request, String namespace, String municipalityId) {
 		if (configRepository.existsByNamespaceAndMunicipalityId(namespace, municipalityId)) {
-			throw Problem.valueOf(BAD_REQUEST, String.format(CONFIG_ENTITY_ALREADY_EXISTS, namespace, municipalityId));
+			throw Problem.valueOf(BAD_REQUEST, CONFIG_ENTITY_ALREADY_EXISTS.formatted(namespace, municipalityId));
 		}
 		configRepository.save(mapper.toEntity(request, namespace, municipalityId));
 	}
@@ -46,8 +46,8 @@ public class NamespaceConfigService {
 		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #municipalityId}")
 	})
 	public void replace(NamespaceConfig request, String namespace, String municipalityId) {
-		final var entity = configRepository.getByNamespaceAndMunicipalityId(namespace, municipalityId)
-			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, String.format(CONFIG_ENTITY_NOT_FOUND, namespace, municipalityId)));
+		final var entity = configRepository.findByNamespaceAndMunicipalityId(namespace, municipalityId)
+			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, CONFIG_ENTITY_NOT_FOUND.formatted(namespace, municipalityId)));
 
 		final var replacement = mapper.toEntity(request, namespace, municipalityId)
 			.withId(entity.getId())
@@ -58,8 +58,8 @@ public class NamespaceConfigService {
 
 	@Cacheable(value = CACHE_NAME, key = "{#root.methodName, #namespace, #municipalityId}")
 	public NamespaceConfig get(String namespace, String municipalityId) {
-		final var entity = configRepository.getByNamespaceAndMunicipalityId(namespace, municipalityId)
-			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, String.format(CONFIG_ENTITY_NOT_FOUND, namespace, municipalityId)));
+		final var entity = configRepository.findByNamespaceAndMunicipalityId(namespace, municipalityId)
+			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, CONFIG_ENTITY_NOT_FOUND.formatted(namespace, municipalityId)));
 		return mapper.toNamespaceConfig(entity);
 	}
 
@@ -74,8 +74,8 @@ public class NamespaceConfigService {
 		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #municipalityId}")
 	})
 	public void delete(String namespace, String municipalityId) {
-		if (configRepository.getByNamespaceAndMunicipalityId(namespace, municipalityId).isEmpty()) {
-			throw Problem.valueOf(NOT_FOUND, String.format(CONFIG_ENTITY_NOT_FOUND, namespace, municipalityId));
+		if (configRepository.findByNamespaceAndMunicipalityId(namespace, municipalityId).isEmpty()) {
+			throw Problem.valueOf(NOT_FOUND, CONFIG_ENTITY_NOT_FOUND.formatted(namespace, municipalityId));
 		}
 
 		configRepository.deleteByNamespaceAndMunicipalityId(namespace, municipalityId);

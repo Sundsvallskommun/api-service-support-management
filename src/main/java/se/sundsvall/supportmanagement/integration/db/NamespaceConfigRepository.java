@@ -10,7 +10,8 @@ import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity
 @Transactional
 @CircuitBreaker(name = "NamespaceConfigRepository")
 public interface NamespaceConfigRepository extends JpaRepository<NamespaceConfigEntity, Long> {
-	Optional<NamespaceConfigEntity> getByNamespaceAndMunicipalityId(String namespace, String municipalityId);
+
+	Optional<NamespaceConfigEntity> findByNamespaceAndMunicipalityId(String namespace, String municipalityId);
 
 	List<NamespaceConfigEntity> findAllByMunicipalityId(String municipalityId);
 

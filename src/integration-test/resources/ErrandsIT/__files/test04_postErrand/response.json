@@ -44,22 +44,7 @@
 	},
 	"resolution": "fixed",
 	"labels": [],
-	"activeNotifications": [
-		{
-			"acknowledged": true,
-			"created": "${json-unit.any-string}",
-			"createdBy": "joe01doe",
-			"description": "Ärendet har skapats.",
-			"errandId": "${json-unit.any-string}",
-			"errandNumber": "${json-unit.any-string}",
-			"expires": "${json-unit.any-string}",
-			"globalAcknowledged": false,
-			"id": "${json-unit.any-string}",
-			"ownerId": "joe01doe",
-			"type": "CREATE",
-			"subtype": "ERRAND"
-		}
-	],
+	"activeNotifications": [],
 	"assignedGroupId": "hardware support",
 	"contactReason": "reason1",
 	"id": "${json-unit.any-string}",

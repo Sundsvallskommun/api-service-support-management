@@ -27,8 +27,8 @@ class NamespaceConfigRepositoryTest {
 	private NamespaceConfigRepository repository;
 
 	@Test
-	void getByNamespaceAndMunicipalityId() {
-		final var result = repository.getByNamespaceAndMunicipalityId("namespace-1", "municipality_id-1");
+	void findByNamespaceAndMunicipalityId() {
+		final var result = repository.findByNamespaceAndMunicipalityId("namespace-1", "municipality_id-1");
 		assertThat(result).isPresent();
 	}
 
@@ -103,7 +103,7 @@ class NamespaceConfigRepositoryTest {
 
 		repository.saveAndFlush(entity);
 
-		final var result = repository.getByNamespaceAndMunicipalityId(namespace, municipalityId);
+		final var result = repository.findByNamespaceAndMunicipalityId(namespace, municipalityId);
 
 		assertThat(result).isPresent().get().satisfies(bean -> {
 			assertThat(bean.getMunicipalityId()).isEqualTo(municipalityId);
@@ -118,7 +118,7 @@ class NamespaceConfigRepositoryTest {
 
 	@Test
 	void update() {
-		final var entity = repository.getByNamespaceAndMunicipalityId("namespace-1", "municipality_id-1")
+		final var entity = repository.findByNamespaceAndMunicipalityId("namespace-1", "municipality_id-1")
 			.orElseThrow(() -> new RuntimeException("Missing data in /db/scripts/testdata-junit.sql"));
 
 		assertThat(entity.getDisplayName()).isEqualTo("display name 1");
@@ -128,7 +128,7 @@ class NamespaceConfigRepositoryTest {
 			.withDisplayName("new displayname")
 			.withShortCode("newCode"));
 
-		final var modifiedEntity = repository.getByNamespaceAndMunicipalityId("namespace-1", "municipality_id-1");
+		final var modifiedEntity = repository.findByNamespaceAndMunicipalityId("namespace-1", "municipality_id-1");
 		assertThat(modifiedEntity).isPresent().get().satisfies(bean -> {
 			assertThat(bean.getDisplayName()).isEqualTo("new displayname");
 			assertThat(bean.getShortCode()).isEqualTo("newCode");

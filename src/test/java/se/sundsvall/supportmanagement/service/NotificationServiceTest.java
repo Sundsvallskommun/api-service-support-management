@@ -1,10 +1,12 @@
 package se.sundsvall.supportmanagement.service;
 
 import static java.time.OffsetDateTime.now;
+import static java.time.temporal.ChronoUnit.SECONDS;
 import static java.util.Collections.emptyList;
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.within;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -32,7 +34,9 @@ import org.zalando.problem.Problem;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.TestObjectsBuilder;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.NotificationRepository;
+import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
 
 @ExtendWith(MockitoExtension.class)
@@ -43,6 +47,9 @@ class NotificationServiceTest {
 
 	@Mock
 	private NotificationRepository notificationRepositoryMock;
+
+	@Mock
+	private NamespaceConfigRepository namespaceConfigRepositoryMock;
 
 	@Mock
 	private EmployeeService employeeServiceMock;
@@ -171,15 +178,17 @@ class NotificationServiceTest {
 	void createNotification() {
 
 		// Arrange
+		final var notificationTTLInDays = 10;
 		final var municipalityId = "2281";
 		final var namespace = "namespace";
-		final var notification = TestObjectsBuilder.createNotification(n -> {});
+		final var notification = TestObjectsBuilder.createNotification(n -> n.withExpires(null));
 		final var errandEntity = TestObjectsBuilder.createNotificationEntity(n -> {}).getErrandEntity();
 		final var id = "SomeId";
 		final var executingUserId = "executingUserId";
 		final var createdByFullName = "createdByFullName";
 		final var ownerFullName = "ownerFullName";
 
+		when(namespaceConfigRepositoryMock.findByNamespaceAndMunicipalityId(namespace, municipalityId)).thenReturn(Optional.of(NamespaceConfigEntity.create().withNotificationTTLInDays(notificationTTLInDays)));
 		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(notification.getErrandId(), namespace, municipalityId)).thenReturn(Optional.of(errandEntity));
 		when(notificationRepositoryMock.save(any())).thenReturn(createNotificationEntity(n -> n.setId(id)));
 		when(employeeServiceMock.getEmployeeByLoginName(municipalityId, errandEntity.getAssignedUserId())).thenReturn(new PortalPersonData().loginName(errandEntity.getAssignedUserId()).fullname(ownerFullName));
@@ -194,6 +203,7 @@ class NotificationServiceTest {
 		verify(employeeServiceMock).getEmployeeByLoginName(municipalityId, errandEntity.getAssignedUserId());
 		verify(notificationRepositoryMock).save(notificationEntityArgumentCaptor.capture());
 		assertThat(notificationEntityArgumentCaptor.getValue().getOwnerFullName()).isEqualTo(ownerFullName);
+		assertThat(notificationEntityArgumentCaptor.getValue().getExpires()).isCloseTo(now().plusDays(notificationTTLInDays), within(2, SECONDS));
 		assertThat(notificationEntityArgumentCaptor.getValue().getCreatedByFullName()).isEqualTo(createdByFullName);
 		assertThat(notificationEntityArgumentCaptor.getValue().isGlobalAcknowledged()).isFalse();
 		assertThat(notificationEntityArgumentCaptor.getValue().isAcknowledged()).isFalse();
@@ -202,15 +212,17 @@ class NotificationServiceTest {
 	@Test
 	void createNotificationWhenExecutinUserIsTheSameAsOwnerId() {
 
-		// Arrange
+		// Arrange,
+		final var notificationTTLInDays = 10;
 		final var municipalityId = "2281";
 		final var namespace = "namespace";
-		final var notification = TestObjectsBuilder.createNotification(n -> {});
+		final var notification = TestObjectsBuilder.createNotification(n -> n.withExpires(null));
 		final var errandEntity = TestObjectsBuilder.createNotificationEntity(n -> {}).getErrandEntity();
 		final var id = "SomeId";
 		final var executingUserId = notification.getOwnerId();
 		final var fullName = "fullName";
 
+		when(namespaceConfigRepositoryMock.findByNamespaceAndMunicipalityId(namespace, municipalityId)).thenReturn(Optional.of(NamespaceConfigEntity.create().withNotificationTTLInDays(notificationTTLInDays)));
 		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(notification.getErrandId(), namespace, municipalityId)).thenReturn(Optional.of(errandEntity));
 		when(notificationRepositoryMock.save(any())).thenReturn(createNotificationEntity(n -> n.setId(id)));
 		when(employeeServiceMock.getEmployeeByLoginName(municipalityId, executingUserId)).thenReturn(new PortalPersonData().loginName(executingUserId).fullname(fullName));
@@ -225,6 +237,7 @@ class NotificationServiceTest {
 		verify(employeeServiceMock, times(2)).getEmployeeByLoginName(municipalityId, executingUserId);
 		verify(notificationRepositoryMock).save(notificationEntityArgumentCaptor.capture());
 		assertThat(notificationEntityArgumentCaptor.getValue().getOwnerFullName()).isEqualTo(fullName);
+		assertThat(notificationEntityArgumentCaptor.getValue().getExpires()).isCloseTo(now().plusDays(notificationTTLInDays), within(2, SECONDS));
 		assertThat(notificationEntityArgumentCaptor.getValue().getCreatedByFullName()).isEqualTo(fullName);
 		assertThat(notificationEntityArgumentCaptor.getValue().isGlobalAcknowledged()).isFalse();
 		assertThat(notificationEntityArgumentCaptor.getValue().isAcknowledged()).isTrue(); // Set to true when ownerId == executingUserId
@@ -338,7 +351,6 @@ class NotificationServiceTest {
 		final var notificationId = randomUUID().toString();
 		final var errandId = randomUUID().toString();
 
-		when(notificationRepositoryMock.existsByIdAndNamespaceAndMunicipalityIdAndErrandEntityId(notificationId, namespace, municipalityId, errandId)).thenReturn(true);
 		when(notificationRepositoryMock.existsByIdAndNamespaceAndMunicipalityIdAndErrandEntityId(notificationId, namespace, municipalityId, errandId)).thenReturn(true);
 
 		// Act

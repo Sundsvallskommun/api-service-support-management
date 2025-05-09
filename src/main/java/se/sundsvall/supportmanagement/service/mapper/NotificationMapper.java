@@ -12,13 +12,11 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.NotificationSub
 
 public final class NotificationMapper {
 
-	private static final int DEFAULT_EXPIRE_TIME_IN_DAYS = 30;
-
 	private NotificationMapper() {
 		// Intentionally empty
 	}
 
-	public static NotificationEntity toNotificationEntity(final String namespace, final String municipalityId, final Notification notification, final ErrandEntity errandEntity) {
+	public static NotificationEntity toNotificationEntity(final String namespace, final String municipalityId, final int notificationTTLInDays, final Notification notification, final ErrandEntity errandEntity) {
 		return NotificationEntity.create()
 			.withOwnerId(notification.getOwnerId())
 			.withCreatedBy(notification.getCreatedBy())
@@ -26,7 +24,7 @@ public final class NotificationMapper {
 			.withSubtype(notification.getSubtype())
 			.withDescription(notification.getDescription())
 			.withContent(notification.getContent())
-			.withExpires(Optional.ofNullable(notification.getExpires()).orElse(now().plusDays(DEFAULT_EXPIRE_TIME_IN_DAYS)))
+			.withExpires(Optional.ofNullable(notification.getExpires()).orElse(now().plusDays(notificationTTLInDays)))
 			.withAcknowledged(notification.isAcknowledged())
 			.withGlobalAcknowledged(notification.isGlobalAcknowledged())
 			.withErrandEntity(errandEntity)
