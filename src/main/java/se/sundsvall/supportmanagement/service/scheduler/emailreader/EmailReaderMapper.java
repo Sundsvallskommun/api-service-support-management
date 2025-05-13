@@ -74,7 +74,7 @@ public class EmailReaderMapper {
 			.map(attachment -> CommunicationAttachmentEntity.create()
 				.withMunicipalityId(errand.getMunicipalityId())
 				.withNamespace(errand.getNamespace())
-				.withName(attachment.getName())
+				.withFileName(attachment.getName())
 				.withForeignId(attachment.getId().toString())
 				.withContentType(attachment.getContentType()))
 			.toList();

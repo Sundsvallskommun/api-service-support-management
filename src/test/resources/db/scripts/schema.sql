@@ -53,10 +53,10 @@
         attachment_data_id integer not null,
         file_size integer,
         communication_id varchar(255) not null,
-        content_type varchar(255),
+        file_name varchar(255),
         id varchar(255) not null,
+        mime_type varchar(255),
         municipality_id varchar(255),
-        name varchar(255),
         namespace varchar(255),
         primary key (id)
     ) engine=InnoDB;

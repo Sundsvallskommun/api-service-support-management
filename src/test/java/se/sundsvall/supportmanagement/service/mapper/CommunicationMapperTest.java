@@ -96,7 +96,7 @@ class CommunicationMapperTest {
 		final var attachments = communicationMapper.toAttachments(entity);
 
 		assertThat(attachments).hasSize(1);
-		assertThat(attachments.getFirst().getFileName()).isEqualTo(entity.getAttachments().getFirst().getName());
+		assertThat(attachments.getFirst().getFileName()).isEqualTo(entity.getAttachments().getFirst().getFileName());
 		assertThat(attachments.getFirst().getMimeType()).isEqualTo("application/octet-stream");
 		assertThat(attachments.getFirst().getNamespace()).isEqualTo(NAMESPACE);
 		assertThat(attachments.getFirst().getMunicipalityId()).isEqualTo(MUNICIPALITY_ID);
@@ -144,8 +144,8 @@ class CommunicationMapperTest {
 		assertThat(communicationEntity.getSubject()).isEqualTo(emailRequest.getSubject());
 		assertThat(communicationEntity.getMessageBody()).isEqualTo(emailRequest.getMessage());
 		assertThat(communicationEntity.getAttachments()).hasSize(1);
-		assertThat(communicationEntity.getAttachments().getFirst().getName()).isEqualTo("name");
-		assertThat(communicationEntity.getAttachments().getFirst().getContentType()).isEqualTo("application/octet-stream");
+		assertThat(communicationEntity.getAttachments().getFirst().getFileName()).isEqualTo("name");
+		assertThat(communicationEntity.getAttachments().getFirst().getMimeType()).isEqualTo("application/octet-stream");
 		assertThat(communicationEntity.getAttachments().getFirst().getAttachmentData().getFile()).isSameAs(blobMock);
 		assertThat(communicationEntity.isInternal()).isTrue();
 
@@ -193,8 +193,8 @@ class CommunicationMapperTest {
 		assertThat(communicationEntity.getSenderUserId()).isEqualTo(adUser);
 		assertThat(communicationEntity.getMessageBody()).isEqualTo(webMessageRequest.getMessage());
 		assertThat(communicationEntity.getAttachments()).hasSize(1);
-		assertThat(communicationEntity.getAttachments().getFirst().getName()).isEqualTo("name");
-		assertThat(communicationEntity.getAttachments().getFirst().getContentType()).isEqualTo("application/octet-stream");
+		assertThat(communicationEntity.getAttachments().getFirst().getFileName()).isEqualTo("name");
+		assertThat(communicationEntity.getAttachments().getFirst().getMimeType()).isEqualTo("application/octet-stream");
 		assertThat(communicationEntity.getAttachments().getFirst().getAttachmentData().getFile()).isSameAs(blobMock);
 		assertThat(communicationEntity.isInternal()).isTrue();
 
@@ -229,7 +229,7 @@ class CommunicationMapperTest {
 	private CommunicationAttachmentEntity createCommunicationAttachmentEntity() {
 		return new CommunicationAttachmentEntity()
 			.withId("testId")
-			.withName("testName")
+			.withFileName("testName")
 			.withContentType("application/octet-stream")
 			.withAttachmentData(new AttachmentDataEntity().withFile(blobMock));
 	}
@@ -261,8 +261,8 @@ class CommunicationMapperTest {
 
 	private void assertAttachmentMatchesEntity(final CommunicationAttachment attachment, final CommunicationAttachmentEntity entity) {
 		assertThat(attachment.getId()).isEqualTo(entity.getId());
-		assertThat(attachment.getFileName()).isEqualTo(entity.getName());
-		assertThat(attachment.getMimeType()).isEqualTo(entity.getContentType());
+		assertThat(attachment.getFileName()).isEqualTo(entity.getFileName());
+		assertThat(attachment.getMimeType()).isEqualTo(entity.getMimeType());
 	}
 
 }

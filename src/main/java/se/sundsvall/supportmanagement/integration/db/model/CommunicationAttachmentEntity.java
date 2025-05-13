@@ -44,11 +44,11 @@ public class CommunicationAttachmentEntity {
 	@Column(name = "municipality_id")
 	private String municipalityId;
 
-	@Column(name = "name")
-	private String name;
+	@Column(name = "file_name")
+	private String fileName;
 
-	@Column(name = "content_type")
-	private String contentType;
+	@Column(name = "mime_type")
+	private String mimeType;
 
 	@Transient
 	private String foreignId;
@@ -135,29 +135,29 @@ public class CommunicationAttachmentEntity {
 		return this;
 	}
 
-	public String getName() {
-		return name;
+	public String getFileName() {
+		return fileName;
 	}
 
-	public void setName(final String name) {
-		this.name = name;
+	public void setFileName(final String fileName) {
+		this.fileName = fileName;
 	}
 
-	public CommunicationAttachmentEntity withName(final String name) {
-		this.name = name;
+	public CommunicationAttachmentEntity withFileName(final String fileName) {
+		this.fileName = fileName;
 		return this;
 	}
 
-	public String getContentType() {
-		return contentType;
+	public String getMimeType() {
+		return mimeType;
 	}
 
-	public void setContentType(final String contentType) {
-		this.contentType = contentType;
+	public void setMimeType(final String mimeType) {
+		this.mimeType = mimeType;
 	}
 
 	public CommunicationAttachmentEntity withContentType(final String contentType) {
-		this.contentType = contentType;
+		this.mimeType = contentType;
 		return this;
 	}
 
@@ -192,15 +192,15 @@ public class CommunicationAttachmentEntity {
 		if (o == null || getClass() != o.getClass())
 			return false;
 		final CommunicationAttachmentEntity that = (CommunicationAttachmentEntity) o;
-		return Objects.equals(id, that.id) && Objects.equals(namespace, that.namespace) && Objects.equals(municipalityId, that.municipalityId) && Objects.equals(name, that.name) && Objects.equals(contentType,
-			that.contentType) && Objects.equals(foreignId, that.foreignId) && Objects.equals(fileSize, that.fileSize) && Objects.equals(attachmentData, that.attachmentData) && Objects.equals(communicationEntity,
+		return Objects.equals(id, that.id) && Objects.equals(namespace, that.namespace) && Objects.equals(municipalityId, that.municipalityId) && Objects.equals(fileName, that.fileName) && Objects.equals(mimeType,
+			that.mimeType) && Objects.equals(foreignId, that.foreignId) && Objects.equals(fileSize, that.fileSize) && Objects.equals(attachmentData, that.attachmentData) && Objects.equals(communicationEntity,
 				that.communicationEntity);
 	}
 
 	@Override
 	public int hashCode() {
 		final var communicationId = Optional.ofNullable(communicationEntity).map(CommunicationEntity::getId).orElse(null);
-		return Objects.hash(id, namespace, municipalityId, name, contentType, foreignId, fileSize, attachmentData, communicationId);
+		return Objects.hash(id, namespace, municipalityId, fileName, mimeType, foreignId, fileSize, attachmentData, communicationId);
 	}
 
 	@Override
@@ -212,8 +212,8 @@ public class CommunicationAttachmentEntity {
 			", namespace='" + namespace + '\'' +
 			", municipalityId='" + municipalityId + '\'' +
 			", attachmentData=" + attachmentData +
-			", name='" + name + '\'' +
-			", contentType='" + contentType + '\'' +
+			", fileName='" + fileName + '\'' +
+			", mimeType='" + mimeType + '\'' +
 			", foreignId='" + foreignId + '\'' +
 			", fileSize=" + fileSize + '\'' +
 			'}';

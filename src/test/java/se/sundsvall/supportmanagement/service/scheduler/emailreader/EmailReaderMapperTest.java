@@ -69,8 +69,8 @@ class EmailReaderMapperTest {
 		assertThat(result.getMessageBody()).isEqualTo("someMessage");
 		assertThat(result.getSender()).isEqualTo("someSender");
 		assertThat(result.getAttachments()).isNotNull().hasSize(1);
-		assertThat(result.getAttachments().getFirst().getName()).isEqualTo("someName");
-		assertThat(result.getAttachments().getFirst().getContentType()).isEqualTo("text/plain");
+		assertThat(result.getAttachments().getFirst().getFileName()).isEqualTo("someName");
+		assertThat(result.getAttachments().getFirst().getMimeType()).isEqualTo("text/plain");
 		assertThat(result.getAttachments().getFirst().getAttachmentData()).isNull();
 		assertThat(result.getAttachments().getFirst().getForeignId()).isEqualTo("99");
 		assertThat(result.getEmailHeaders()).isNotNull().hasSize(1);

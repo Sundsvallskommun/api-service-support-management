@@ -26,16 +26,16 @@ class CommunicationAttachmentRepositoryTest {
 	void create() {
 		// Setup
 		final var communicationAttachmentEntity = CommunicationAttachmentEntity.create()
-			.withName("name")
+			.withFileName("name")
 			.withContentType("contentType");
 
 		// Execution
 		final var persistedEntity = communicationAttachmentRepository.save(communicationAttachmentEntity);
 
 		// Assertions
-		assertThat(persistedEntity).isNotNull().hasAllNullFieldsOrPropertiesExcept("id", "name", "contentType");
-		assertThat(persistedEntity.getName()).isEqualTo("name");
-		assertThat(persistedEntity.getContentType()).isEqualTo("contentType");
+		assertThat(persistedEntity).isNotNull().hasAllNullFieldsOrPropertiesExcept("id", "fileName", "mimeType");
+		assertThat(persistedEntity.getFileName()).isEqualTo("name");
+		assertThat(persistedEntity.getMimeType()).isEqualTo("contentType");
 	}
 
 	@Test

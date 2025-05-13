@@ -292,8 +292,8 @@ class CommunicationServiceTest {
 		when(errandsRepositoryMock.findById(ERRAND_ID)).thenReturn(Optional.of(errandEntityMock));
 		when(errandEntityMock.getErrandNumber()).thenReturn(errandNumber);
 		when(communicationAttachmentRepositoryMock.findByNamespaceAndMunicipalityIdAndCommunicationEntityIdAndId(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(communicationId), any())).thenReturn(Optional.of(communicationAttachmentEntityMock));
-		when(communicationAttachmentEntityMock.getContentType()).thenReturn(contentType);
-		when(communicationAttachmentEntityMock.getName()).thenReturn(fileName);
+		when(communicationAttachmentEntityMock.getMimeType()).thenReturn(contentType);
+		when(communicationAttachmentEntityMock.getFileName()).thenReturn(fileName);
 		when(communicationAttachmentEntityMock.getAttachmentData()).thenReturn(attachmentDataEntityMock);
 		when(attachmentDataEntityMock.getFile()).thenReturn(blobMock);
 		when(communicationAttachmentEntityMock.getCommunicationEntity()).thenReturn(communicationEntityMock);
@@ -331,8 +331,8 @@ class CommunicationServiceTest {
 		when(communicationAttachmentEntityMock.getAttachmentData()).thenReturn(attachmentDataEntityMock);
 		when(attachmentDataEntityMock.getFile()).thenReturn(blobMock);
 		when(blobMock.getBinaryStream()).thenReturn(inputStream);
-		when(communicationAttachmentEntityMock.getContentType()).thenReturn("application/pdf");
-		when(communicationAttachmentEntityMock.getName()).thenReturn("test.pdf");
+		when(communicationAttachmentEntityMock.getMimeType()).thenReturn("application/pdf");
+		when(communicationAttachmentEntityMock.getFileName()).thenReturn("test.pdf");
 		when(communicationAttachmentEntityMock.getFileSize()).thenReturn(fileContent.length);
 		when(semaphoreMock.tryAcquire(fileContent.length, 5, java.util.concurrent.TimeUnit.SECONDS)).thenReturn(true);
 

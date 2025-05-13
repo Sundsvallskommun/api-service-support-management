@@ -146,7 +146,7 @@ VALUES (1, 0,'Test Testorsson', 'userId', '2023-01-01 12:00:00.000', 'comm1', 'e
 -- Communication_attachment
 -------------------------------------
 INSERT INTO communication_attachment(attachment_data_id, id,
-                                     communication_id, content_type, name)
+                                     communication_id, mime_type, file_name)
 VALUES (1, 'attach1', 'comm1', 'text/plain', 'attachment1'),
        (2, 'attach2', 'comm2', 'image/png', 'attachment2');
 

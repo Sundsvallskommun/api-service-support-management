@@ -58,7 +58,7 @@ public class WebMessageCollectorMapper {
 			.withForeignId(attachment.getAttachmentId().toString())
 			.withCommunicationEntity(communicationEntity)
 			.withContentType(attachment.getMimeType())
-			.withName(attachment.getName());
+			.withFileName(attachment.getName());
 
 	}
 

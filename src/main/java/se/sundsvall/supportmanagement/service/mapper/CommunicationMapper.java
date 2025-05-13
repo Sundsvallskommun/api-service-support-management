@@ -73,10 +73,10 @@ public class CommunicationMapper {
 		return Optional.ofNullable(communicationEntity.getAttachments()).orElse(Collections.emptyList())
 			.stream()
 			.map(attachment -> AttachmentEntity.create()
-				.withFileName(attachment.getName())
+				.withFileName(attachment.getFileName())
 				.withNamespace(communicationEntity.getNamespace())
 				.withMunicipalityId(communicationEntity.getMunicipalityId())
-				.withMimeType(attachment.getContentType())
+				.withMimeType(attachment.getMimeType())
 				.withFileSize(attachment.getFileSize())
 				.withAttachmentData(attachment.getAttachmentData()))
 			.toList();
@@ -97,8 +97,8 @@ public class CommunicationMapper {
 	public CommunicationAttachment toAttachment(final CommunicationAttachmentEntity entity) {
 		return CommunicationAttachment.create()
 			.withAttachmentID(entity.getId())
-			.withFileName(entity.getName())
-			.withContentType(entity.getContentType());
+			.withFileName(entity.getFileName())
+			.withContentType(entity.getMimeType());
 	}
 
 	public CommunicationAttachment toAttachment(final AttachmentEntity entity) {
@@ -179,7 +179,7 @@ public class CommunicationMapper {
 		return CommunicationAttachmentEntity.create()
 			.withNamespace(namespace)
 			.withMunicipalityId(municipalityId)
-			.withName(attachment.getFileName())
+			.withFileName(attachment.getFileName())
 			.withFileSize(byteArray.length)
 			.withAttachmentData(toMessageAttachmentData(byteArray))
 			.withContentType(detectMimeType(attachment.getFileName(), byteArray));
