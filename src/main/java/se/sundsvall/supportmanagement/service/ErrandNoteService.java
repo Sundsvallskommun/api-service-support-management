@@ -12,7 +12,6 @@ import static se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper.toC
 import static se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper.toErrandNote;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper.toFindErrandNotesResponse;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper.toUpdateNoteRequest;
-import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getAdUser;
 
 import java.util.Optional;
 import org.springframework.http.ResponseEntity;
@@ -50,7 +49,7 @@ public class ErrandNoteService {
 	public String createErrandNote(final String namespace, final String municipalityId, final String id, final CreateErrandNoteRequest createErrandNoteRequest) {
 		verifyExistingErrand(id, namespace, municipalityId);
 
-		final var response = notesClient.createNote(getAdUser(), municipalityId, toCreateNoteRequest(id, CLIENT_ID, createErrandNoteRequest));
+		final var response = notesClient.createNote(municipalityId, toCreateNoteRequest(id, CLIENT_ID, createErrandNoteRequest));
 
 		// Create log event
 		final var currentRevision = extractRevisionInformationFromHeader(response, RevisionType.CURRENT);
@@ -82,7 +81,7 @@ public class ErrandNoteService {
 	public ErrandNote updateErrandNote(final String namespace, final String municipalityId, final String id, final String noteId, final UpdateErrandNoteRequest updateErrandNoteRequest) {
 		verifyExistingErrand(id, namespace, municipalityId);
 
-		final var response = notesClient.updateNoteById(getAdUser(), municipalityId, noteId, toUpdateNoteRequest(updateErrandNoteRequest));
+		final var response = notesClient.updateNoteById(municipalityId, noteId, toUpdateNoteRequest(updateErrandNoteRequest));
 
 		// Create log event if the update has modified the note (and thus has created a new revision)
 		final var currentRevision = extractRevisionInformationFromHeader(response, RevisionType.CURRENT);
@@ -97,7 +96,7 @@ public class ErrandNoteService {
 	public void deleteErrandNote(final String namespace, final String municipalityId, final String id, final String noteId) {
 		verifyExistingErrand(id, namespace, municipalityId);
 
-		final var response = notesClient.deleteNoteById(getAdUser(), municipalityId, noteId);
+		final var response = notesClient.deleteNoteById(municipalityId, noteId);
 
 		// Create log event
 		final var currentRevision = extractRevisionInformationFromHeader(response, RevisionType.CURRENT);

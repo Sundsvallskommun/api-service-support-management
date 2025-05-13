@@ -11,6 +11,7 @@ import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
 
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
@@ -62,7 +63,7 @@ class ErrandTimeMeasurementsIT extends AbstractAppTest {
 
 		// Create errand
 		setupCall()
-			.withHeader("sentbyuser", "joe01doe")
+			.withHeader(SENT_BY_HEADER, "joe01doe; type=adAccount")
 			.withServicePath(BASE_PATH.replace("NAMESPACE-1", "CONTACTCENTER"))
 			.withHttpMethod(POST)
 			.withRequest(REQUEST_FILE)
@@ -79,7 +80,6 @@ class ErrandTimeMeasurementsIT extends AbstractAppTest {
 		assertThat(result.getTimeMeasures().getFirst().getStartTime()).isCloseTo(OffsetDateTime.now(), within(10, ChronoUnit.SECONDS));
 		assertThat(result.getTimeMeasures().getFirst().getStatus()).isEqualTo("STATUS-2");
 		assertThat(result.getTimeMeasures().getFirst().getStopTime()).isNull();
-
 	}
 
 	@Test

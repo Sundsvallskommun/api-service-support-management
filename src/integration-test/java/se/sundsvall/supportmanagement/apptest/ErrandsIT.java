@@ -11,6 +11,7 @@ import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -81,7 +82,7 @@ class ErrandsIT extends AbstractAppTest {
 	@Test
 	void test04_postErrand() {
 		final var headers = setupCall()
-			.withHeader("sentbyuser", "joe01doe")
+			.withHeader(SENT_BY_HEADER, "joe01doe; type=adAccount")
 			.withServicePath(PATH.replace("NAMESPACE-1", "CONTACTCENTER"))
 			.withHttpMethod(POST)
 			.withRequest(REQUEST_FILE)
@@ -128,7 +129,7 @@ class ErrandsIT extends AbstractAppTest {
 		assertThat(errandsRepository.existsById(id)).isTrue();
 
 		setupCall()
-			.withHeader("sentbyuser", "smo02key")
+			.withHeader(SENT_BY_HEADER, "smo02key; type=adAccount")
 			.withServicePath(PATH + "/" + id)
 			.withHttpMethod(DELETE)
 			.withExpectedResponseStatus(NO_CONTENT)

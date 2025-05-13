@@ -19,7 +19,6 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import se.sundsvall.supportmanagement.integration.notes.configuration.NotesConfiguration;
 
@@ -27,15 +26,15 @@ import se.sundsvall.supportmanagement.integration.notes.configuration.NotesConfi
 @CircuitBreaker(name = CLIENT_ID)
 public interface NotesClient {
 
-	public static final String AD_USER_HEADER_KEY = "sentbyuser";
-
 	/**
 	 * Find all notes, filtered by provided parameters.
 	 *
 	 * @param  municipalityId the municipalityId of the note
 	 * @param  context        the context of the note
 	 * @param  role           the role of the note
+	 * @param  caseId         the caseId of the note
 	 * @param  clientId       the client id of the note
+	 * @param  partyId        the partyId of the user that owns the note
 	 * @param  page           the page number of the result
 	 * @param  limit          the number of results per page
 	 * @return                the notes
@@ -59,7 +58,9 @@ public interface NotesClient {
 	 * @return                the note
 	 */
 	@GetMapping(path = "/{municipalityId}/notes/{id}", produces = APPLICATION_JSON_VALUE)
-	Note findNoteById(@PathVariable(name = "municipalityId") String municipalityId, @PathVariable(name = "id") String id);
+	Note findNoteById(
+		@PathVariable(name = "municipalityId") String municipalityId,
+		@PathVariable(name = "id") String id);
 
 	/**
 	 * Delete note by id.
@@ -69,7 +70,6 @@ public interface NotesClient {
 	 */
 	@DeleteMapping(path = "/{municipalityId}/notes/{id}")
 	ResponseEntity<Void> deleteNoteById(
-		@RequestHeader(AD_USER_HEADER_KEY) String executingUser,
 		@PathVariable(name = "municipalityId") String municipalityId,
 		@PathVariable(name = "id") String id);
 
@@ -83,7 +83,6 @@ public interface NotesClient {
 	 */
 	@PatchMapping(path = "/{municipalityId}/notes/{id}", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
 	ResponseEntity<Note> updateNoteById(
-		@RequestHeader(AD_USER_HEADER_KEY) String executingUser,
 		@PathVariable(name = "municipalityId") String municipalityId,
 		@PathVariable(name = "id") String id,
 		@RequestBody UpdateNoteRequest updateNoteRequest);
@@ -96,7 +95,6 @@ public interface NotesClient {
 	 */
 	@PostMapping(path = "/{municipalityId}/notes", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
 	ResponseEntity<Void> createNote(
-		@RequestHeader(AD_USER_HEADER_KEY) String executingUser,
 		@PathVariable(name = "municipalityId") String municipalityId,
 		@RequestBody CreateNoteRequest createNoteRequest);
 
@@ -108,7 +106,9 @@ public interface NotesClient {
 	 * @return                a list of revisions connected to the note
 	 */
 	@GetMapping(path = "/{municipalityId}/notes/{id}/revisions", produces = APPLICATION_JSON_VALUE)
-	List<Revision> findAllNoteRevisions(@PathVariable(name = "municipalityId") String municipalityId, @PathVariable(name = "id") String id);
+	List<Revision> findAllNoteRevisions(
+		@PathVariable(name = "municipalityId") String municipalityId,
+		@PathVariable(name = "id") String id);
 
 	/**
 	 * Compare two revision versions of a note to each other.

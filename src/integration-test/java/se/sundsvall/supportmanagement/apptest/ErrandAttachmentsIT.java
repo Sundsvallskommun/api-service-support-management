@@ -13,9 +13,9 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.http.MediaType.IMAGE_JPEG_VALUE;
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
 import static org.springframework.http.MediaType.TEXT_PLAIN_VALUE;
+import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
 
 import java.util.List;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
@@ -76,7 +76,7 @@ class ErrandAttachmentsIT extends AbstractAppTest {
 			.containsExactly(0);
 
 		final var headers = setupCall()
-			.withHeader("sentbyuser", "cre03ate")
+			.withHeader(SENT_BY_HEADER, "cre03ate; type=adAccount")
 			.withServicePath(PATH + entityId + "/attachments")
 			.withHttpMethod(POST)
 			.withContentType(MULTIPART_FORM_DATA)
@@ -111,7 +111,7 @@ class ErrandAttachmentsIT extends AbstractAppTest {
 			.containsExactly(0);
 
 		setupCall()
-			.withHeader("sentbyuser", "del04ete")
+			.withHeader(SENT_BY_HEADER, "del04ete; type=adAccount")
 			.withServicePath(PATH + entityId + "/attachments/99fa4dd0-9308-4d45-bb8e-4bb881a9a536")
 			.withHttpMethod(DELETE)
 			.withExpectedResponseStatus(NO_CONTENT)
