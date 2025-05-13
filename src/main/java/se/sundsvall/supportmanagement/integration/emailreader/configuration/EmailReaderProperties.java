@@ -7,5 +7,4 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public record EmailReaderProperties(int connectTimeout, int readTimeout, String namespace,
 	String municipalityId, String errandClosedEmailTemplate,
 	String errandClosedEmailSender) {
-
 }

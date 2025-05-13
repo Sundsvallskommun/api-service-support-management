@@ -9,6 +9,7 @@ import static org.springframework.http.HttpMethod.PUT;
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
+import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -40,7 +41,7 @@ class NotificationIT extends AbstractAppTest {
 		final var location = setupCall()
 			.withServicePath(ERRAND_NOTIFICATIONS_PATH)
 			.withHttpMethod(POST)
-			.withHeader("sentbyuser", "jane02doe")
+			.withHeader(SENT_BY_HEADER, "jane02doe; type=adAccount")
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(CREATED)
 			.withExpectedResponseHeader(LOCATION, List.of("/" + MUNICIPALITY_2281 + "/" + NAMESPACE + "/errands/" + ERRAND_ID + "/notifications/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"))
