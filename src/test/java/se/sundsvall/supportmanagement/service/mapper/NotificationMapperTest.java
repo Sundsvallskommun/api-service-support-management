@@ -1,7 +1,9 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
 import static java.time.OffsetDateTime.now;
+import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationSubType.ERRAND;
 
@@ -115,13 +117,15 @@ class NotificationMapperTest {
 
 	@Test
 	void testToNotificationEntity() {
-		final var entity = NotificationMapper.toNotificationEntity(NAMESPACE, MUNICIPALITY_ID, createNotification(), ERRAND_ENTITY);
+		final var defaultNotificationTTLInDays = 30;
+		final var entity = NotificationMapper.toNotificationEntity(NAMESPACE, MUNICIPALITY_ID, defaultNotificationTTLInDays, createNotification(), ERRAND_ENTITY);
 
 		assertThat(entity).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "created", "modified", "expires", "ownerFullName", "createdByFullName");
 		assertThat(entity.getOwnerFullName()).isNull();
 		assertThat(entity.getOwnerId()).isEqualTo(OWNER_ID);
 		assertThat(entity.getCreatedBy()).isEqualTo(CREATED_BY);
 		assertThat(entity.getCreatedByFullName()).isNull();
+		assertThat(entity.getExpires()).isCloseTo(now().plusDays(defaultNotificationTTLInDays), within(2, SECONDS));
 		assertThat(entity.getType()).isEqualTo(TYPE);
 		assertThat(entity.getDescription()).isEqualTo(DESCRIPTION);
 		assertThat(entity.getContent()).isEqualTo(CONTENT);

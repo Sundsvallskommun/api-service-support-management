@@ -53,4 +53,6 @@ public interface NotificationRepository extends JpaRepository<NotificationEntity
 		final String ownerId);
 
 	List<NotificationEntity> findByExpiresBefore(final OffsetDateTime expires);
+
+	void deleteByExpiresBefore(final OffsetDateTime expires);
 }
