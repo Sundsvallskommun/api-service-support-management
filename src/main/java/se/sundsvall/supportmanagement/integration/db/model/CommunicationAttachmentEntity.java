@@ -1,8 +1,6 @@
 package se.sundsvall.supportmanagement.integration.db.model;
 
-import static jakarta.persistence.CascadeType.MERGE;
-import static jakarta.persistence.CascadeType.PERSIST;
-import static jakarta.persistence.CascadeType.REFRESH;
+import static jakarta.persistence.CascadeType.ALL;
 import static jakarta.persistence.FetchType.LAZY;
 
 import jakarta.persistence.Column;
@@ -56,9 +54,7 @@ public class CommunicationAttachmentEntity {
 	@Column(name = "file_size")
 	private Integer fileSize;
 
-	@ManyToOne(fetch = LAZY, cascade = {
-		PERSIST, MERGE, REFRESH
-	})
+	@ManyToOne(fetch = LAZY, cascade = ALL)
 	@JoinColumn(name = "attachment_data_id", nullable = false, foreignKey = @ForeignKey(name = "fk_communication_attachment_attachment_data"))
 	private AttachmentDataEntity attachmentData;
 

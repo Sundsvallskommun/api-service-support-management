@@ -1,8 +1,6 @@
 package se.sundsvall.supportmanagement.integration.db.model;
 
-import static jakarta.persistence.CascadeType.MERGE;
-import static jakarta.persistence.CascadeType.PERSIST;
-import static jakarta.persistence.CascadeType.REFRESH;
+import static jakarta.persistence.CascadeType.ALL;
 import static java.time.OffsetDateTime.now;
 import static java.time.temporal.ChronoUnit.MILLIS;
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
@@ -59,9 +57,7 @@ public class AttachmentEntity {
 	@Column(name = "file_size")
 	private Integer fileSize;
 
-	@ManyToOne(fetch = FetchType.LAZY, cascade = {
-		PERSIST, MERGE, REFRESH
-	})
+	@ManyToOne(fetch = FetchType.LAZY, cascade = ALL)
 	@JoinColumn(name = "attachment_data_id", nullable = false, foreignKey = @ForeignKey(name = "fk_attachment_data_attachment"))
 	private AttachmentDataEntity attachmentData;
 

@@ -17,6 +17,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
+import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
 import static org.zalando.problem.Status.NOT_FOUND;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildAttachmentEntity;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrandEntity;
@@ -314,6 +315,29 @@ class ErrandAttachmentServiceTest {
 
 		verify(errandsRepositoryMock).findWithLockingById(ERRAND_ID);
 		verify(errandsRepositoryMock, never()).save(any());
+		verifyNoInteractions(revisionServiceMock, eventServiceMock);
+	}
+
+	@Test
+	void deleteErrandAttachmentThrowException() {
+		// Mock
+		when(errandsRepositoryMock.findWithLockingById(ERRAND_ID)).thenReturn(of(errandMock));
+		when(errandMock.getMunicipalityId()).thenReturn(MUNICIPALITY_ID);
+		when(errandMock.getNamespace()).thenReturn(NAMESPACE);
+		when(errandMock.getAttachments()).thenReturn(new ArrayList<>(List.of(attachmentMock)));
+		when(attachmentMock.getId()).thenReturn(ATTACHMENT_ID);
+		when(errandsRepositoryMock.save(any(ErrandEntity.class))).thenThrow(new RuntimeException("Test exception"));
+
+		// Call
+		final var exception = assertThrows(ThrowableProblem.class, () -> service.deleteErrandAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ATTACHMENT_ID));
+
+		// Assertions and verifications
+		assertThat(exception.getStatus()).isEqualTo(INTERNAL_SERVER_ERROR);
+		assertThat(exception.getTitle()).isEqualTo(INTERNAL_SERVER_ERROR.getReasonPhrase());
+		assertThat(exception.getMessage()).isEqualTo("Internal Server Error: Failed to delete attachment with id 'attachmentId' from errand with id 'errandId'");
+
+		verify(errandsRepositoryMock).findWithLockingById(ERRAND_ID);
+		verify(errandsRepositoryMock).save(any());
 		verifyNoInteractions(revisionServiceMock, eventServiceMock);
 	}
 
