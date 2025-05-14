@@ -28,7 +28,7 @@ warning	[response-optional-property-removed] at https://raw.githubusercontent.co
 
 warning	[response-optional-property-removed] at https://raw.githubusercontent.com/Sundsvallskommun/api-service-support-management/refs/heads/uf-14181-attachment/src/test/resources/api/openapi.yaml	
 	in API GET /{municipalityId}/{namespace}/errands/{errandId}/communication
-		removed the optional property '/items/communicationAttachments/items/mimeType' from the response with the '200' status
+		removed the optional property '/items/communicationAttachments/items/contentType' from the response with the '200' status
 
 warning	[response-optional-property-removed] at https://raw.githubusercontent.com/Sundsvallskommun/api-service-support-management/refs/heads/uf-14181-attachment/src/test/resources/api/openapi.yaml	
 	in API GET /{municipalityId}/{namespace}/errands/{errandId}/communication
@@ -44,7 +44,7 @@ warning	[response-optional-property-removed] at https://raw.githubusercontent.co
 
 warning	[response-optional-property-removed] at https://raw.githubusercontent.com/Sundsvallskommun/api-service-support-management/refs/heads/uf-14181-attachment/src/test/resources/api/openapi.yaml	
 	in API GET /{municipalityId}/{namespace}/errands/{errandId}/communication/external
-		removed the optional property '/items/communicationAttachments/items/mimeType' from the response with the '200' status
+		removed the optional property '/items/communicationAttachments/items/contentType' from the response with the '200' status
 
 warning	[response-optional-property-removed] at https://raw.githubusercontent.com/Sundsvallskommun/api-service-support-management/refs/heads/uf-14181-attachment/src/test/resources/api/openapi.yaml	
 	in API GET /{municipalityId}/{namespace}/errands/{errandId}/communication/external
