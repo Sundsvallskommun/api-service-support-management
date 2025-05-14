@@ -189,7 +189,7 @@ public class EmailReaderWorker {
 
 	private void addAttachment(final CommunicationAttachmentEntity attachment) {
 		final var attachmentData = emailReaderClient.getAttachment(attachment.getMunicipalityId(), Integer.parseInt(attachment.getForeignId()));
-		attachment.withAttachmentData(emailReaderMapper.toCommunicationAttachmentDataEntity(attachmentData))
+		attachment.withAttachmentData(emailReaderMapper.toAttachmentDataEntity(attachmentData))
 			.withFileSize(attachmentData.length);
 	}
 }

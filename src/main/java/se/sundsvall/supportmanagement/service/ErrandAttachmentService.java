@@ -107,10 +107,16 @@ public class ErrandAttachmentService {
 			.findAny()
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, String.format(ATTACHMENT_ENTITY_NOT_FOUND, attachmentId, errandId)));
 
-		// Update errand after removal of attachment and create new revision
-		errandEntity.getAttachments().remove(attachmentEntity);
-		final var revisionResult = revisionService.createErrandRevision(errandsRepository.save(errandEntity));
+		final ErrandEntity entity;
+		try {
+			// Update errand after removal of attachment and create new revision
+			errandEntity.getAttachments().remove(attachmentEntity);
+			entity = errandsRepository.save(errandEntity);
 
+		} catch (final Exception e) {
+			throw Problem.valueOf(INTERNAL_SERVER_ERROR, String.format("Failed to delete attachment with id '%s' from errand with id '%s'", attachmentId, errandId));
+		}
+		final var revisionResult = revisionService.createErrandRevision(entity);
 		// Create log event
 		if (nonNull(revisionResult)) {
 			eventService.createErrandEvent(UPDATE, EVENT_LOG_REMOVE_ATTACHMENT, errandEntity, revisionResult.latest(), revisionResult.previous(), ATTACHMENT);

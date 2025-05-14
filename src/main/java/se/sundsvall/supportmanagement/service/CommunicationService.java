@@ -130,8 +130,8 @@ public class CommunicationService {
 			if (!semaphore.tryAcquire(fileLength, 5, TimeUnit.SECONDS)) {
 				throw Problem.valueOf(INSUFFICIENT_STORAGE, "Insufficient storage available to process the request.");
 			}
-			response.addHeader(CONTENT_TYPE, attachment.getContentType());
-			response.addHeader(CONTENT_DISPOSITION, "attachment; filename=\"" + attachment.getName() + "\"");
+			response.addHeader(CONTENT_TYPE, attachment.getMimeType());
+			response.addHeader(CONTENT_DISPOSITION, "attachment; filename=\"" + attachment.getFileName() + "\"");
 			response.setContentLength(fileLength);
 			StreamUtils.copy(attachment.getAttachmentData().getFile().getBinaryStream(), response.getOutputStream());
 		} catch (final IOException | SQLException e) {

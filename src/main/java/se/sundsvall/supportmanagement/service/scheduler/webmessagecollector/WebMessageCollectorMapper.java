@@ -11,7 +11,7 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.stereotype.Component;
-import se.sundsvall.supportmanagement.integration.db.model.CommunicationAttachmentDataEntity;
+import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationAttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
@@ -58,12 +58,12 @@ public class WebMessageCollectorMapper {
 			.withForeignId(attachment.getAttachmentId().toString())
 			.withCommunicationEntity(communicationEntity)
 			.withContentType(attachment.getMimeType())
-			.withName(attachment.getName());
+			.withFileName(attachment.getName());
 
 	}
 
-	CommunicationAttachmentDataEntity toCommunicationAttachmentDataEntity(final byte[] attachmentData) {
-		return CommunicationAttachmentDataEntity.create()
+	AttachmentDataEntity toAttachmentDataEntity(final byte[] attachmentData) {
+		return AttachmentDataEntity.create()
 			.withFile(blobBuilder.createBlob(attachmentData));
 
 	}

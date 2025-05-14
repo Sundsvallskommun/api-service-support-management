@@ -30,7 +30,7 @@ class CommunicationAttachmentEntityTest {
 		final var id = "1";
 		final var content = "content";
 		final var file = new MariaDbBlob(content.getBytes());
-		final var attachmentData = CommunicationAttachmentDataEntity.create().withId(1L).withFile(file);
+		final var attachmentData = AttachmentDataEntity.create().withId(1).withFile(file);
 		final var name = "name";
 		final var contentType = "contentType";
 		final var communicationEntity = CommunicationEntity.create();
@@ -43,7 +43,7 @@ class CommunicationAttachmentEntityTest {
 			.withId(id)
 			.withCommunicationEntity(communicationEntity)
 			.withAttachmentData(attachmentData)
-			.withName(name)
+			.withFileName(name)
 			.withContentType(contentType)
 			.withNamespace(namespace)
 			.withMunicipalityId(municipalityId)
@@ -54,8 +54,8 @@ class CommunicationAttachmentEntityTest {
 		assertThat(entity.getId()).isEqualTo(id);
 		assertThat(entity.getCommunicationEntity()).isEqualTo(communicationEntity);
 		assertThat(entity.getAttachmentData()).isEqualTo(attachmentData);
-		assertThat(entity.getName()).isEqualTo(name);
-		assertThat(entity.getContentType()).isEqualTo(contentType);
+		assertThat(entity.getFileName()).isEqualTo(name);
+		assertThat(entity.getMimeType()).isEqualTo(contentType);
 		assertThat(entity.getNamespace()).isEqualTo(namespace);
 		assertThat(entity.getMunicipalityId()).isEqualTo(municipalityId);
 		assertThat(entity.getForeignId()).isEqualTo(foreignId);

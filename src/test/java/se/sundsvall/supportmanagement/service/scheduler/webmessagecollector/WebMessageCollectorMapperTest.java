@@ -81,13 +81,13 @@ class WebMessageCollectorMapperTest {
 		assertThat(result.getSent()).isCloseTo(OffsetDateTime.now(), within(1, ChronoUnit.SECONDS));
 		assertThat(result.getAttachments()).hasSize(1);
 		assertThat(result.getAttachments().getFirst().getForeignId()).isEqualTo("1");
-		assertThat(result.getAttachments().getFirst().getContentType()).isEqualTo("text/plain");
-		assertThat(result.getAttachments().getFirst().getName()).isEqualTo("attachment.txt");
+		assertThat(result.getAttachments().getFirst().getMimeType()).isEqualTo("text/plain");
+		assertThat(result.getAttachments().getFirst().getFileName()).isEqualTo("attachment.txt");
 
 	}
 
 	@Test
-	void toCommunicationAttachmentDataEntity() throws SQLException {
+	void toAttachmentDataEntity() throws SQLException {
 
 		// Arrange
 		final var attachmentData = "attachmentData".getBytes();
@@ -95,7 +95,7 @@ class WebMessageCollectorMapperTest {
 		when(blobBuilder.createBlob(attachmentData)).thenReturn(blob);
 
 		// Act
-		final var result = webMessageCollectorMapper.toCommunicationAttachmentDataEntity(attachmentData);
+		final var result = webMessageCollectorMapper.toAttachmentDataEntity(attachmentData);
 
 		// Assert
 		assertThat(result).isNotNull();

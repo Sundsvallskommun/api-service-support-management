@@ -8,7 +8,7 @@ import static org.springframework.http.HttpMethod.PUT;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
-import static org.springframework.http.MediaType.IMAGE_PNG_VALUE;
+import static org.springframework.util.MimeTypeUtils.IMAGE_JPEG_VALUE;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -137,8 +137,8 @@ class ErrandCommunicationIT extends AbstractAppTest {
 			.withHttpMethod(GET)
 			.withServicePath(PATH + "/" + errandId + "/communication/" + communicationId + "/attachments/" + attachmentId)
 			.withExpectedResponseStatus(OK)
-			.withExpectedResponseHeader(CONTENT_TYPE, List.of(IMAGE_PNG_VALUE))
-			.withExpectedBinaryResponse("test_image.png")
+			.withExpectedResponseHeader(CONTENT_TYPE, List.of(IMAGE_JPEG_VALUE))
+			.withExpectedBinaryResponse("Test_image.jpg")
 			.sendRequestAndVerifyResponse();
 	}
 

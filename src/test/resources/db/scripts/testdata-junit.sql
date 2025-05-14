@@ -143,17 +143,10 @@ VALUES (1, 0,'Test Testorsson', 'userId', '2023-01-01 12:00:00.000', 'comm1', 'e
         'message body 2', '0987654321', 'subject2', 'OUTBOUND', 'EMAIL');
 
 -------------------------------------
--- Communication_attachment_data
--------------------------------------
-INSERT INTO communication_attachment_data(id, file)
-VALUES (1, UNHEX('48656C6C6F20576F726C6421')), -- 'Hello World!' in hexadecimal
-       (2, UNHEX('546573742046696C652032')); -- 'Test File 2' in hexadecimal
-
--------------------------------------
 -- Communication_attachment
 -------------------------------------
-INSERT INTO communication_attachment(communication_attachment_data_id, id,
-                                     communication_id, content_type, name)
+INSERT INTO communication_attachment(attachment_data_id, id,
+                                     communication_id, mime_type, file_name)
 VALUES (1, 'attach1', 'comm1', 'text/plain', 'attachment1'),
        (2, 'attach2', 'comm2', 'image/png', 'attachment2');
 

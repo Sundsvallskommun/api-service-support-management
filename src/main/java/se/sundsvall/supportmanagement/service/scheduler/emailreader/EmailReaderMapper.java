@@ -19,7 +19,7 @@ import se.sundsvall.supportmanagement.api.model.errand.ContactChannel;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.errand.Priority;
 import se.sundsvall.supportmanagement.api.model.errand.Stakeholder;
-import se.sundsvall.supportmanagement.integration.db.model.CommunicationAttachmentDataEntity;
+import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationAttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationEmailHeaderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.CommunicationEntity;
@@ -74,7 +74,7 @@ public class EmailReaderMapper {
 			.map(attachment -> CommunicationAttachmentEntity.create()
 				.withMunicipalityId(errand.getMunicipalityId())
 				.withNamespace(errand.getNamespace())
-				.withName(attachment.getName())
+				.withFileName(attachment.getName())
 				.withForeignId(attachment.getId().toString())
 				.withContentType(attachment.getContentType()))
 			.toList();
@@ -141,8 +141,8 @@ public class EmailReaderMapper {
 		return map;
 	}
 
-	public CommunicationAttachmentDataEntity toCommunicationAttachmentDataEntity(final byte[] attachmentData) {
-		return CommunicationAttachmentDataEntity.create()
+	public AttachmentDataEntity toAttachmentDataEntity(final byte[] attachmentData) {
+		return AttachmentDataEntity.create()
 			.withFile(blobBuilder.createBlob(attachmentData));
 
 	}

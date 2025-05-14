@@ -85,4 +85,3 @@ info	[response-optional-property-added] at https://raw.githubusercontent.com/Sun
 info	[endpoint-added] at https://raw.githubusercontent.com/Sundsvallskommun/api-service-support-management/refs/heads/uf-14181-attachment/src/test/resources/api/openapi.yaml	
 	in API GET /{municipalityId}/{namespace}/errands/{errandId}/communication/{communicationId}/attachments/{attachmentId}
 		endpoint added
-

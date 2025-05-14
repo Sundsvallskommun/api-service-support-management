@@ -1,15 +1,15 @@
 package se.sundsvall.supportmanagement.integration.db.model;
 
-import jakarta.persistence.CascadeType;
+import static jakarta.persistence.CascadeType.ALL;
+import static jakarta.persistence.FetchType.LAZY;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.ForeignKey;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import jakarta.persistence.UniqueConstraint;
@@ -25,8 +25,8 @@ import org.hibernate.annotations.UuidGenerator;
 		@Index(name = "idx_communication_attachment_namespace", columnList = "namespace")
 	},
 	uniqueConstraints = {
-		@UniqueConstraint(name = "uq_communication_attachment_data_id", columnNames = {
-			"communication_attachment_data_id"
+		@UniqueConstraint(name = "uq_attachment_data_id", columnNames = {
+			"attachment_data_id"
 		})
 	})
 public class CommunicationAttachmentEntity {
@@ -42,11 +42,11 @@ public class CommunicationAttachmentEntity {
 	@Column(name = "municipality_id")
 	private String municipalityId;
 
-	@Column(name = "name")
-	private String name;
+	@Column(name = "file_name")
+	private String fileName;
 
-	@Column(name = "content_type")
-	private String contentType;
+	@Column(name = "mime_type")
+	private String mimeType;
 
 	@Transient
 	private String foreignId;
@@ -54,11 +54,11 @@ public class CommunicationAttachmentEntity {
 	@Column(name = "file_size")
 	private Integer fileSize;
 
-	@OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-	@JoinColumn(name = "communication_attachment_data_id", nullable = false, foreignKey = @ForeignKey(name = "fk_communication_attachment_data_communication_attachment"))
-	private CommunicationAttachmentDataEntity attachmentData;
+	@ManyToOne(fetch = LAZY, cascade = ALL)
+	@JoinColumn(name = "attachment_data_id", nullable = false, foreignKey = @ForeignKey(name = "fk_communication_attachment_attachment_data"))
+	private AttachmentDataEntity attachmentData;
 
-	@ManyToOne(fetch = FetchType.LAZY)
+	@ManyToOne(fetch = LAZY)
 	@JoinColumn(name = "communication_id", nullable = false, foreignKey = @ForeignKey(name = "fk_communication_attachment_communication_id"))
 	private CommunicationEntity communicationEntity;
 
@@ -105,15 +105,15 @@ public class CommunicationAttachmentEntity {
 		return this;
 	}
 
-	public CommunicationAttachmentDataEntity getAttachmentData() {
+	public AttachmentDataEntity getAttachmentData() {
 		return attachmentData;
 	}
 
-	public void setAttachmentData(final CommunicationAttachmentDataEntity attachmentData) {
+	public void setAttachmentData(final AttachmentDataEntity attachmentData) {
 		this.attachmentData = attachmentData;
 	}
 
-	public CommunicationAttachmentEntity withAttachmentData(final CommunicationAttachmentDataEntity attachmentData) {
+	public CommunicationAttachmentEntity withAttachmentData(final AttachmentDataEntity attachmentData) {
 		this.attachmentData = attachmentData;
 		return this;
 	}
@@ -131,29 +131,29 @@ public class CommunicationAttachmentEntity {
 		return this;
 	}
 
-	public String getName() {
-		return name;
+	public String getFileName() {
+		return fileName;
 	}
 
-	public void setName(final String name) {
-		this.name = name;
+	public void setFileName(final String fileName) {
+		this.fileName = fileName;
 	}
 
-	public CommunicationAttachmentEntity withName(final String name) {
-		this.name = name;
+	public CommunicationAttachmentEntity withFileName(final String fileName) {
+		this.fileName = fileName;
 		return this;
 	}
 
-	public String getContentType() {
-		return contentType;
+	public String getMimeType() {
+		return mimeType;
 	}
 
-	public void setContentType(final String contentType) {
-		this.contentType = contentType;
+	public void setMimeType(final String mimeType) {
+		this.mimeType = mimeType;
 	}
 
 	public CommunicationAttachmentEntity withContentType(final String contentType) {
-		this.contentType = contentType;
+		this.mimeType = contentType;
 		return this;
 	}
 
@@ -188,15 +188,15 @@ public class CommunicationAttachmentEntity {
 		if (o == null || getClass() != o.getClass())
 			return false;
 		final CommunicationAttachmentEntity that = (CommunicationAttachmentEntity) o;
-		return Objects.equals(id, that.id) && Objects.equals(namespace, that.namespace) && Objects.equals(municipalityId, that.municipalityId) && Objects.equals(name, that.name) && Objects.equals(contentType,
-			that.contentType) && Objects.equals(foreignId, that.foreignId) && Objects.equals(fileSize, that.fileSize) && Objects.equals(attachmentData, that.attachmentData) && Objects.equals(communicationEntity,
+		return Objects.equals(id, that.id) && Objects.equals(namespace, that.namespace) && Objects.equals(municipalityId, that.municipalityId) && Objects.equals(fileName, that.fileName) && Objects.equals(mimeType,
+			that.mimeType) && Objects.equals(foreignId, that.foreignId) && Objects.equals(fileSize, that.fileSize) && Objects.equals(attachmentData, that.attachmentData) && Objects.equals(communicationEntity,
 				that.communicationEntity);
 	}
 
 	@Override
 	public int hashCode() {
 		final var communicationId = Optional.ofNullable(communicationEntity).map(CommunicationEntity::getId).orElse(null);
-		return Objects.hash(id, namespace, municipalityId, name, contentType, foreignId, fileSize, attachmentData, communicationId);
+		return Objects.hash(id, namespace, municipalityId, fileName, mimeType, foreignId, fileSize, attachmentData, communicationId);
 	}
 
 	@Override
@@ -208,8 +208,8 @@ public class CommunicationAttachmentEntity {
 			", namespace='" + namespace + '\'' +
 			", municipalityId='" + municipalityId + '\'' +
 			", attachmentData=" + attachmentData +
-			", name='" + name + '\'' +
-			", contentType='" + contentType + '\'' +
+			", fileName='" + fileName + '\'' +
+			", mimeType='" + mimeType + '\'' +
 			", foreignId='" + foreignId + '\'' +
 			", fileSize=" + fileSize + '\'' +
 			'}';
