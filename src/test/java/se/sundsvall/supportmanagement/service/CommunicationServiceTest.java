@@ -22,6 +22,8 @@ import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.util.MimeTypeUtils.IMAGE_PNG_VALUE;
 import static org.zalando.problem.Status.NOT_FOUND;
+import static se.sundsvall.dept44.support.Identifier.Type.AD_ACCOUNT;
+import static se.sundsvall.dept44.support.Identifier.Type.PARTY_ID;
 
 import generated.se.sundsvall.employee.PortalPersonData;
 import generated.se.sundsvall.messaging.ExternalReference;
@@ -51,7 +53,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.zalando.problem.Problem;
 import org.zalando.problem.ThrowableProblem;
 import se.sundsvall.dept44.support.Identifier;
-import se.sundsvall.dept44.support.Identifier.Type;
 import se.sundsvall.supportmanagement.api.model.communication.Communication;
 import se.sundsvall.supportmanagement.api.model.communication.EmailAttachment;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
@@ -488,7 +489,7 @@ class CommunicationServiceTest {
 		final var adUser = "adUser";
 		final var fullName = "fullname";
 
-		Identifier.set(Identifier.create().withType(Type.AD_ACCOUNT).withValue("adUser"));
+		Identifier.set(Identifier.create().withType(AD_ACCOUNT).withValue("adUser"));
 
 		// Mock
 		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
@@ -532,56 +533,15 @@ class CommunicationServiceTest {
 	}
 
 	/**
-	 * Test scenario where the X-Sent-By header is not used, instead using the sentbyuser. Dispatch is set to true and
-	 * messaging is therefore called.
-	 */
-	@Test
-	void sendWebMessage_2() {
-		final var request = createWebMessageRequest();
-		final var webMessageRequest = new generated.se.sundsvall.messaging.WebMessageRequest();
-
-		Identifier.set(Identifier.create().withType(Type.AD_ACCOUNT).withValue("Joh01Doe"));
-
-		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
-		when(errandsRepositoryMock.findById(ERRAND_ID)).thenReturn(Optional.of(errandEntityMock));
-		when(errandAttachmentServiceMock.findByNamespaceAndMunicipalityIdAndIdIn(any(), any(), any())).thenReturn(attachmentEntitiesMock);
-		when(employeeServiceMock.getEmployeeByLoginName(any(), any())).thenReturn(portalPersonDataMock);
-		when(portalPersonDataMock.getFullname()).thenReturn("John Doe");
-		when(errandEntityMock.getErrandNumber()).thenReturn("123");
-		when(communicationMapperMock.toCommunicationEntity(any(), any(), any(), any(), any(), any())).thenReturn(communicationEntityMock);
-
-		try (final MockedStatic<MessagingMapper> messagingMapper = Mockito.mockStatic(MessagingMapper.class)) {
-			// Mock static
-			messagingMapper.when(() -> MessagingMapper.toWebMessageRequest(any(), any(), any(), anyString())).thenReturn(webMessageRequest);
-
-			// Call
-			communicationService.sendWebMessage(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, request);
-
-			// Verify static
-			messagingMapper.verify(() -> MessagingMapper.toWebMessageRequest(same(errandEntityMock), same(request), same(attachmentEntitiesMock), eq("Joh01Doe")));
-			messagingMapper.verifyNoMoreInteractions();
-		}
-
-		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
-		verify(errandsRepositoryMock).findById(ERRAND_ID);
-		verify(errandAttachmentServiceMock).findByNamespaceAndMunicipalityIdAndIdIn(NAMESPACE, MUNICIPALITY_ID, List.of(ATTACHMENT_ID));
-		verify(communicationMapperMock).toCommunicationEntity(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq("123"), same(request), eq("John Doe"), eq("Joh01Doe"));
-		verify(communicationEntityMock).withErrandAttachments(same(attachmentEntitiesMock));
-		verify(messagingClientMock).sendWebMessage(eq(MUNICIPALITY_ID), eq(false), same(webMessageRequest));
-		verify(communicationRepositoryMock).saveAndFlush(any());
-		verify(communicationMapperMock).toAttachments(any());
-	}
-
-	/**
 	 * Test scenario where the X-Sent-By header is being used, the type is partyId. Dispatch is set to false and messaging
 	 * is therefore not called.
 	 */
 	@Test
-	void sendWebMessage_3() {
+	void sendWebMessage_2() {
 		final var request = createWebMessageRequest();
 		request.setDispatch(false);
 
-		Identifier.set(Identifier.create().withType(Type.PARTY_ID).withValue("e82c8029-7676-467d-8ebb-8638d0abd2b4"));
+		Identifier.set(Identifier.create().withType(PARTY_ID).withValue("e82c8029-7676-467d-8ebb-8638d0abd2b4"));
 
 		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
 		when(errandsRepositoryMock.findById(ERRAND_ID)).thenReturn(Optional.of(errandEntityMock));
@@ -607,11 +567,11 @@ class CommunicationServiceTest {
 	 * is therefore not called.
 	 */
 	@Test
-	void sendWebMessage_4() {
+	void sendWebMessage_3() {
 		final var request = createWebMessageRequest();
 		request.setDispatch(false);
 
-		Identifier.set(Identifier.create().withType(Type.AD_ACCOUNT).withValue("jon01doe"));
+		Identifier.set(Identifier.create().withType(AD_ACCOUNT).withValue("jon01doe"));
 
 		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
 		when(errandsRepositoryMock.findById(ERRAND_ID)).thenReturn(Optional.of(errandEntityMock));
@@ -724,5 +684,4 @@ class CommunicationServiceTest {
 		assertThat(result).isNotNull().isEqualTo("Johnny Doe");
 		verify(citizenIntegrationMock).getCitizenName(MUNICIPALITY_ID, partyId);
 	}
-
 }

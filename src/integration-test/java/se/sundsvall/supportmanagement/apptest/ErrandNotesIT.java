@@ -10,6 +10,7 @@ import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -61,7 +62,7 @@ class ErrandNotesIT extends AbstractAppTest {
 	@Test
 	void test03_createErrandNote() {
 		setupCall()
-			.withHeader("sentbyuser", "cre03ate")
+			.withHeader(SENT_BY_HEADER, "cre03ate; type=adAccount")
 			.withServicePath(PATH + ERRAND_ID + "/notes")
 			.withHttpMethod(POST)
 			.withRequest(REQUEST_FILE)
@@ -73,6 +74,7 @@ class ErrandNotesIT extends AbstractAppTest {
 	@Test
 	void test04_updateErrandNote() {
 		setupCall()
+			.withHeader(SENT_BY_HEADER, "upd04ate; type=adAccount")
 			.withServicePath(PATH + ERRAND_ID + "/notes/" + NOTE_ID)
 			.withHttpMethod(PATCH)
 			.withRequest(REQUEST_FILE)
@@ -97,11 +99,10 @@ class ErrandNotesIT extends AbstractAppTest {
 	@Test
 	void test06_deleteErrandNote() {
 		setupCall()
-			.withHeader("sentbyuser", "del06ete")
+			.withHeader(SENT_BY_HEADER, "del06ete; type=adAccount")
 			.withServicePath(PATH + ERRAND_ID + "/notes/" + NOTE_ID)
 			.withHttpMethod(DELETE)
 			.withExpectedResponseStatus(NO_CONTENT)
 			.sendRequestAndVerifyResponse();
 	}
-
 }
