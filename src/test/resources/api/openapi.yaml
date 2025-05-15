@@ -4555,6 +4555,8 @@ components:
     Problem:
       type: object
       properties:
+        status:
+          $ref: "#/components/schemas/StatusType"
         instance:
           type: string
           format: uri
@@ -4565,11 +4567,9 @@ components:
           type: object
           additionalProperties:
             type: object
-        status:
-          $ref: "#/components/schemas/StatusType"
-        title:
-          type: string
         detail:
+          type: string
+        title:
           type: string
     StatusType:
       type: object
@@ -4690,6 +4690,8 @@ components:
                 type: boolean
         message:
           type: string
+        status:
+          $ref: "#/components/schemas/StatusType"
         instance:
           type: string
           format: uri
@@ -4700,11 +4702,9 @@ components:
           type: object
           additionalProperties:
             type: object
-        status:
-          $ref: "#/components/schemas/StatusType"
-        title:
-          type: string
         detail:
+          type: string
+        title:
           type: string
         suppressed:
           type: array
@@ -4789,6 +4789,9 @@ components:
           example: 2000-10-31T01:30:00+02:00
       description: Namespace configuration model
     Label:
+      required:
+      - classification
+      - name
       type: object
       properties:
         classification:
@@ -4899,6 +4902,8 @@ components:
           example: 2000-10-31T01:30:00+02:00
       description: Email integration config model
     Status:
+      required:
+      - name
       type: object
       properties:
         name:
@@ -4920,6 +4925,8 @@ components:
           example: 2000-10-31T01:30:00+02:00
       description: Status model
     Role:
+      required:
+      - name
       type: object
       properties:
         name:
@@ -4946,6 +4953,8 @@ components:
           example: 2000-10-31T01:30:00+02:00
       description: Role model
     ExternalIdType:
+      required:
+      - name
       type: object
       properties:
         name:
@@ -4967,6 +4976,8 @@ components:
           example: 2000-10-31T01:30:00+02:00
       description: ExternalIdType model
     ContactReason:
+      required:
+      - reason
       type: object
       properties:
         id:
@@ -5023,6 +5034,8 @@ components:
           example: 2000-10-31T01:30:00+02:00
       description: Category model
     Type:
+      required:
+      - name
       type: object
       properties:
         name:
@@ -5198,6 +5211,9 @@ components:
           example: 2000-10-31T01:30:00+02:00
       description: Errand model
     ExternalTag:
+      required:
+      - key
+      - value
       type: object
       properties:
         key:
@@ -5293,6 +5309,8 @@ components:
       description: List of active notifications for the errand
       readOnly: true
     Parameter:
+      required:
+      - key
       type: object
       properties:
         key:
@@ -5736,6 +5754,10 @@ components:
         totalPages:
           type: integer
           format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
         size:
           type: integer
           format: int32
@@ -5748,15 +5770,11 @@ components:
           format: int32
         sort:
           $ref: "#/components/schemas/SortObject"
-        first:
-          type: boolean
-        last:
-          type: boolean
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
         numberOfElements:
           type: integer
           format: int32
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
         empty:
           type: boolean
     PageableObject:
@@ -5767,16 +5785,16 @@ components:
           format: int64
         sort:
           $ref: "#/components/schemas/SortObject"
+        pageSize:
+          type: integer
+          format: int32
+        pageNumber:
+          type: integer
+          format: int32
         unpaged:
           type: boolean
         paged:
           type: boolean
-        pageNumber:
-          type: integer
-          format: int32
-        pageSize:
-          type: integer
-          format: int32
     SortObject:
       type: object
       properties:
@@ -5981,6 +5999,10 @@ components:
         totalPages:
           type: integer
           format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
         size:
           type: integer
           format: int32
@@ -5993,15 +6015,11 @@ components:
           format: int32
         sort:
           $ref: "#/components/schemas/SortObject"
-        first:
-          type: boolean
-        last:
-          type: boolean
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
         numberOfElements:
           type: integer
           format: int32
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
         empty:
           type: boolean
     Communication:
