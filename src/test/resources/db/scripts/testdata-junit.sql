@@ -26,7 +26,7 @@ VALUES (100, now(), null, 'municipalityId-1', 'external-id-type-1', 'namespace-1
        (104, now(), null, 'municipalityId-1', 'external-id-type-1', 'namespace-2'),
        (105, now(), null, 'municipalityId-2', 'external-id-type-1', 'namespace-1'),
        (106, now(), null, 'municipalityId-2', 'external-id-type-2', 'namespace-1');
-
+ 
 -------------------------------------
 -- Status
 -------------------------------------
