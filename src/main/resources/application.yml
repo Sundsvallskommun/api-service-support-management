@@ -19,7 +19,6 @@ scheduler:
     cron: 0 */2 * * * *
     shedlock-lock-at-most-for: PT4M
     maximum-execution-time: PT2M
-
 integration:
   emailreader:
     connectTimeout: 5
@@ -75,7 +74,6 @@ spring:
     driver-class-name: org.mariadb.jdbc.Driver
   flyway:
     enabled: false
-    baseline-on-migrate: true
   jpa:
     properties:
       jakarta:
