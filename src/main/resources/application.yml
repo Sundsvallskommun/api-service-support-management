@@ -75,6 +75,7 @@ spring:
     driver-class-name: org.mariadb.jdbc.Driver
   flyway:
     enabled: false
+    baseline-on-migrate: true
   jpa:
     properties:
       jakarta:
