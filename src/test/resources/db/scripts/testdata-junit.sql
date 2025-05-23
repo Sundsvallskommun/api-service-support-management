@@ -194,3 +194,19 @@ VALUES (1, 'family_id-1'),
        (1, 'family_id-2'),
        (2, 'family_id-3'),
        (2, 'family_id-4');
+
+
+-------------------------------------
+-- Conversation
+-------------------------------------
+
+INSERT INTO conversation(id, message_exchange_id, errand_id, namespace, municipality_id, topic, type, latest_synced_sequence_number)
+VALUES ('1', 'message_exchange_id-1', 'errand_id-1', 'namespace-1', '2281', 'topic-1', 'type-1', 1),
+       ('2', 'message_exchange_id-2', 'errand_id-1', 'namespace-1', '2281', 'topic-2', 'type-2', 2),
+       ('3', 'message_exchange_id-3', 'errand_id-3', 'namespace-1', '2281', 'topic-3', 'type-3', 4);
+
+INSERT INTO conversation_relation_id(conversation_id, relation_id)
+VALUES ('1', 'relation_id-1-1'),
+       ('1', 'relation_id-1-2'),
+       ('2', 'relation_id-2-1'),
+       ('2', 'relation_id-2-2');
