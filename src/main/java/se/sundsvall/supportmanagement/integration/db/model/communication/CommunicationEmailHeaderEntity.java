@@ -1,4 +1,4 @@
-package se.sundsvall.supportmanagement.integration.db.model;
+package se.sundsvall.supportmanagement.integration.db.model.communication;
 
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;

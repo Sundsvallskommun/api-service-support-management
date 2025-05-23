@@ -96,6 +96,23 @@
         primary key (id)
     ) engine=InnoDB;
 
+    create table conversation (
+        latest_synced_sequence_number integer,
+        municipality_id varchar(4) not null,
+        namespace varchar(32) not null,
+        type varchar(32) not null,
+        errand_id varchar(36) not null,
+        id varchar(36) not null,
+        message_exchange_id varchar(36) not null,
+        topic varchar(255),
+        primary key (id)
+    ) engine=InnoDB;
+
+    create table conversation_relation_id (
+        conversation_id varchar(36) not null,
+        relation_id varchar(36)
+    ) engine=InnoDB;
+
     create table email_worker_config (
         add_sender_as_stakeholder bit,
         days_of_inactivity_before_reject integer,
@@ -345,215 +362,226 @@
         family_id varchar(255)
     ) engine=InnoDB;
 
-    create index idx_attachment_file_name 
+    create index idx_attachment_file_name
        on attachment (file_name);
 
-    create index idx_attachment_municipality_id 
+    create index idx_attachment_municipality_id
        on attachment (municipality_id);
 
-    create index idx_attachment_namespace 
+    create index idx_attachment_namespace
        on attachment (namespace);
 
-    alter table if exists attachment 
+    alter table if exists attachment
        add constraint uq_attachment_data_id unique (attachment_data_id);
 
-    create index idx_namespace_municipality_id 
+    create index idx_namespace_municipality_id
        on category (namespace, municipality_id);
 
-    alter table if exists category 
+    alter table if exists category
        add constraint uq_namespace_municipality_id_name unique (namespace, municipality_id, name);
 
-    create index idx_errand_number 
+    create index idx_errand_number
        on communication (errand_number);
 
-    create index idx_communication_namespace 
+    create index idx_communication_namespace
        on communication (namespace);
 
-    create index idx_communication_municipality_id 
+    create index idx_communication_municipality_id
        on communication (municipality_id);
 
-    create index idx_communication_attachment_municipality_id 
+    create index idx_communication_attachment_municipality_id
        on communication_attachment (municipality_id);
 
-    create index idx_communication_attachment_namespace 
+    create index idx_communication_attachment_namespace
        on communication_attachment (namespace);
 
-    alter table if exists communication_attachment 
+    alter table if exists communication_attachment
        add constraint uq_attachment_data_id unique (attachment_data_id);
 
-    create index idx_namespace_municipality_id 
+    create index idx_municipality_id_namespace_errand_id
+       on conversation (municipality_id, namespace, errand_id);
+
+    create index idx_message_exchange_id
+       on conversation (message_exchange_id);
+
+    create index idx_namespace_municipality_id
        on email_worker_config (namespace, municipality_id);
 
-    alter table if exists email_worker_config 
+    alter table if exists email_worker_config
        add constraint uq_namespace_municipality_id unique (namespace, municipality_id);
 
-    create index idx_errand_id 
+    create index idx_errand_id
        on errand (id);
 
-    create index idx_errand_namespace 
+    create index idx_errand_namespace
        on errand (namespace);
 
-    create index idx_errand_municipality_id 
+    create index idx_errand_municipality_id
        on errand (municipality_id);
 
-    create index idx_errand_municipality_id_namespace_status 
+    create index idx_errand_municipality_id_namespace_status
        on errand (municipality_id, namespace, status);
 
-    create index idx_errand_municipality_id_namespace_category 
+    create index idx_errand_municipality_id_namespace_category
        on errand (municipality_id, namespace, category);
 
-    create index idx_errand_municipality_id_namespace_type 
+    create index idx_errand_municipality_id_namespace_type
        on errand (municipality_id, namespace, type);
 
-    create index idx_errand_municipality_id_namespace_assigned_user_id 
+    create index idx_errand_municipality_id_namespace_assigned_user_id
        on errand (municipality_id, namespace, assigned_user_id);
 
-    create index idx_errand_municipality_id_namespace_reporter_user_id 
+    create index idx_errand_municipality_id_namespace_reporter_user_id
        on errand (municipality_id, namespace, reporter_user_id);
 
-    create index idx_errand_errand_number 
+    create index idx_errand_errand_number
        on errand (errand_number);
 
-    create index idx_errand_municipality_id_namespace_created 
+    create index idx_errand_municipality_id_namespace_created
        on errand (municipality_id, namespace, created);
 
-    create index idx_errand_suspended_to 
+    create index idx_errand_suspended_to
        on errand (suspended_to);
 
-    create index idx_errand_channel 
+    create index idx_errand_channel
        on errand (channel);
 
-    create index idx_errand_municipality_id_namespace_touched 
+    create index idx_errand_municipality_id_namespace_touched
        on errand (municipality_id, namespace, touched);
 
-    alter table if exists errand 
+    alter table if exists errand
        add constraint uq_errand_number unique (errand_number);
 
-    create index idx_errand_labels_errand_id_label 
+    create index idx_errand_labels_errand_id_label
        on errand_labels (errand_id, label);
 
-    create index idx_errand_number_sequence_namespace_municipality_id 
+    create index idx_errand_number_sequence_namespace_municipality_id
        on errand_number_sequence (namespace, municipality_id);
 
-    create index idx_namespace_municipality_id 
+    create index idx_namespace_municipality_id
        on external_id_type (namespace, municipality_id);
 
-    alter table if exists external_id_type 
+    alter table if exists external_id_type
        add constraint uq_namespace_municipality_id_name unique (namespace, municipality_id, name);
 
-    create index idx_external_tag_errand_id 
+    create index idx_external_tag_errand_id
        on external_tag (errand_id);
 
-    create index idx_external_tag_key 
+    create index idx_external_tag_key
        on external_tag (`key`);
 
-    alter table if exists external_tag 
+    alter table if exists external_tag
        add constraint uq_external_tag_errand_id_key unique (errand_id, `key`);
 
-    create index idx_namespace_municipality_id 
+    create index idx_namespace_municipality_id
        on label (namespace, municipality_id);
 
-    alter table if exists label 
+    alter table if exists label
        add constraint uq_namespace_municipality_id unique (namespace, municipality_id);
 
-    create index idx_namespace_municipality_id 
+    create index idx_namespace_municipality_id
        on namespace_config (namespace, municipality_id);
 
-    create index idx_municipality_id 
+    create index idx_municipality_id
        on namespace_config (municipality_id);
 
-    alter table if exists namespace_config 
+    alter table if exists namespace_config
        add constraint uq_namespace_municipality_id unique (namespace, municipality_id);
 
-    create index idx_namespace_municipality_id 
+    create index idx_namespace_municipality_id
        on notification (namespace, municipality_id);
 
-    create index idx_notification_municipality_id_namespace_owner_id 
+    create index idx_notification_municipality_id_namespace_owner_id
        on notification (municipality_id, namespace, owner_id);
 
-    create index revision_entity_id_index 
+    create index revision_entity_id_index
        on revision (entity_id);
 
-    create index revision_entity_type_index 
+    create index revision_entity_type_index
        on revision (entity_type);
 
-    create index revision_municipality_id_index 
+    create index revision_municipality_id_index
        on revision (municipality_id);
 
-    create index revision_namespace_index 
+    create index revision_namespace_index
        on revision (namespace);
 
-    alter table if exists revision 
+    alter table if exists revision
        add constraint uq_entity_id_version unique (entity_id, version);
 
-    create index idx_namespace_municipality_id 
+    create index idx_namespace_municipality_id
        on role (namespace, municipality_id);
 
-    alter table if exists role 
+    alter table if exists role
        add constraint uq_namespace_municipality_id_name unique (namespace, municipality_id, name);
 
-    create index idx_namespace_municipality_id 
+    create index idx_namespace_municipality_id
        on status (namespace, municipality_id);
 
-    alter table if exists status 
+    alter table if exists status
        add constraint uq_namespace_municipality_id_name unique (namespace, municipality_id, name);
 
-    alter table if exists `type` 
+    alter table if exists `type`
        add constraint uq_category_id_name unique (category_id, name);
 
-    create index idx_namespace_municipality_id_type 
+    create index idx_namespace_municipality_id_type
        on validation (namespace, municipality_id, type);
 
-    alter table if exists validation 
+    alter table if exists validation
        add constraint uq_namespace_municipality_id_type unique (namespace, municipality_id, type);
 
-    alter table if exists web_message_collect 
+    alter table if exists web_message_collect
        add constraint uq_namespace_municipality_id_instance_family_id unique (namespace, municipality_id, instance);
 
-    alter table if exists attachment 
-       add constraint fk_attachment_data_attachment 
-       foreign key (attachment_data_id) 
+    alter table if exists attachment
+       add constraint fk_attachment_data_attachment
+       foreign key (attachment_data_id)
        references attachment_data (id);
 
-    alter table if exists attachment 
-       add constraint fk_errand_attachment_errand_id 
-       foreign key (errand_id) 
+    alter table if exists attachment
+       add constraint fk_errand_attachment_errand_id
+       foreign key (errand_id)
        references errand (id);
 
-    alter table if exists communication_attachment 
-       add constraint fk_communication_attachment_attachment_data 
-       foreign key (attachment_data_id) 
+    alter table if exists communication_attachment
+       add constraint fk_communication_attachment_attachment_data
+       foreign key (attachment_data_id)
        references attachment_data (id);
 
-    alter table if exists communication_attachment 
-       add constraint fk_communication_attachment_communication_id 
-       foreign key (communication_id) 
+    alter table if exists communication_attachment
+       add constraint fk_communication_attachment_communication_id
+       foreign key (communication_id)
        references communication (id);
 
-    alter table if exists communication_email_header 
-       add constraint fk_email_header_email_id 
-       foreign key (communication_id) 
+    alter table if exists communication_email_header
+       add constraint fk_email_header_email_id
+       foreign key (communication_id)
        references communication (id);
 
-    alter table if exists communication_email_header_value 
-       add constraint fk_header_value_header_id 
-       foreign key (header_id) 
+    alter table if exists communication_email_header_value
+       add constraint fk_header_value_header_id
+       foreign key (header_id)
        references communication_email_header (id);
 
-    alter table if exists communication_errand_attachment 
-       add constraint FKhedy3oimyh7w729ih0ng5etop 
-       foreign key (errand_attachment_id) 
+    alter table if exists communication_errand_attachment
+       add constraint FKhedy3oimyh7w729ih0ng5etop
+       foreign key (errand_attachment_id)
        references attachment (id);
 
-    alter table if exists communication_errand_attachment 
-       add constraint FKl9pe6hofx8h94egfys403g7n8 
-       foreign key (communication_id) 
+    alter table if exists communication_errand_attachment
+       add constraint FKl9pe6hofx8h94egfys403g7n8
+       foreign key (communication_id)
        references communication (id);
 
-    alter table if exists contact_channel 
-       add constraint fk_stakeholder_contact_channel_stakeholder_id 
-       foreign key (stakeholder_id) 
+    alter table if exists contact_channel
+       add constraint fk_stakeholder_contact_channel_stakeholder_id
+       foreign key (stakeholder_id)
        references stakeholder (id);
+
+    alter table if exists conversation_relation_id
+       add constraint fk_conversation_relation_conversation_id
+       foreign key (conversation_id)
+       references conversation (id);
 
     alter table if exists errand 
        add constraint FKeudsxli8chjy568rft33oa79n 
