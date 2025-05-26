@@ -1,8 +1,6 @@
 package se.sundsvall.supportmanagement.api.model.communication;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
@@ -23,9 +21,7 @@ public class Communication {
 	@Schema(description = "The errand number", example = "PRH-2022-000001")
 	private String errandNumber;
 
-	@Enumerated(EnumType.STRING)
-	@Schema(description = "If the communication is inbound or outbound from the perspective of " +
-		"case-data/e-service.", example = "INBOUND")
+	@Schema(description = "If the communication is inbound or outbound from the perspective of case-data/e-service.", example = "INBOUND")
 	private Direction direction;
 
 	@Schema(description = "The message body", example = "Hello world")
@@ -231,8 +227,9 @@ public class Communication {
 
 	@Override
 	public boolean equals(final Object o) {
-		if (o == null || getClass() != o.getClass())
+		if (o == null || getClass() != o.getClass()) {
 			return false;
+		}
 		final Communication that = (Communication) o;
 		return viewed == that.viewed && Objects.equals(communicationID, that.communicationID) && Objects.equals(sender, that.sender) && Objects.equals(errandNumber, that.errandNumber) && direction == that.direction
 			&& Objects.equals(messageBody, that.messageBody) && Objects.equals(sent, that.sent) && Objects.equals(subject, that.subject) && communicationType == that.communicationType && Objects.equals(target,
