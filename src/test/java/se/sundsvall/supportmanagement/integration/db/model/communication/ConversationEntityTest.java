@@ -12,7 +12,7 @@ import static org.hamcrest.core.AllOf.allOf;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
-public class ConversationEntityTest {
+class ConversationEntityTest {
 
 	@Test
 	void testBean() {
@@ -35,7 +35,7 @@ public class ConversationEntityTest {
 		final var topic = "topic";
 		final var type = "type";
 		final var relationIds = List.of("relationId");
-		final var latestSyncedSequenceNumber = 123;
+		final var latestSyncedSequenceNumber = 123L;
 
 		final var entity = ConversationEntity.create()
 			.withId(id)

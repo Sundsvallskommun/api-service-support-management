@@ -34,7 +34,7 @@ class ConversationRepositoryTest {
 		final var topic = "topic";
 		final var type = "type";
 		final var relationIds = List.of("relationId");
-		final var latestSyncedSequenceNumber = 123;
+		final var latestSyncedSequenceNumber = 123L;
 
 		final var entity = ConversationEntity.create()
 			.withMessageExchangeId(messageExchangeId)

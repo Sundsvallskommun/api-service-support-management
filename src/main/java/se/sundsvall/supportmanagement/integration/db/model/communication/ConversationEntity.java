@@ -51,7 +51,7 @@ public class ConversationEntity {
 	private List<String> relationIds;
 
 	@Column(name = "latest_synced_sequence_number")
-	private Integer latestSyncedSequenceNumber;
+	private Long latestSyncedSequenceNumber;
 
 	public static ConversationEntity create() {
 		return new ConversationEntity();
@@ -161,15 +161,15 @@ public class ConversationEntity {
 		return this;
 	}
 
-	public Integer getLatestSyncedSequenceNumber() {
+	public Long getLatestSyncedSequenceNumber() {
 		return latestSyncedSequenceNumber;
 	}
 
-	public void setLatestSyncedSequenceNumber(Integer latestSyncedSequenceNumber) {
+	public void setLatestSyncedSequenceNumber(Long latestSyncedSequenceNumber) {
 		this.latestSyncedSequenceNumber = latestSyncedSequenceNumber;
 	}
 
-	public ConversationEntity withLatestSyncedSequenceNumber(Integer latestSyncedSequenceNumber) {
+	public ConversationEntity withLatestSyncedSequenceNumber(Long latestSyncedSequenceNumber) {
 		this.latestSyncedSequenceNumber = latestSyncedSequenceNumber;
 		return this;
 	}

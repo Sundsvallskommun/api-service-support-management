@@ -1,6 +1,6 @@
 create table if not exists conversation (
-    latest_synced_sequence_number integer,
     municipality_id varchar(4) not null,
+    latest_synced_sequence_number bigint,
     namespace varchar(32) not null,
     type varchar(32) not null,
     errand_id varchar(36) not null,
