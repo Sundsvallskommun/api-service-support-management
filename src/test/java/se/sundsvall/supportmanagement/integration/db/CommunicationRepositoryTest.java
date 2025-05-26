@@ -13,9 +13,9 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
-import se.sundsvall.supportmanagement.integration.db.model.CommunicationAttachmentEntity;
-import se.sundsvall.supportmanagement.integration.db.model.CommunicationEmailHeaderEntity;
-import se.sundsvall.supportmanagement.integration.db.model.CommunicationEntity;
+import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationAttachmentEntity;
+import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationEmailHeaderEntity;
+import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.Direction;
 

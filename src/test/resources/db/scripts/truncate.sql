@@ -29,4 +29,6 @@ TRUNCATE table namespace_config;
 TRUNCATE table time_measurement;
 TRUNCATE table communication_errand_attachment;
 TRUNCATE table errand_labels;
+TRUNCATE table conversation;
+TRUNCATE table conversation_relation_id;
 SET FOREIGN_KEY_CHECKS = 1;

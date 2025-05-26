@@ -24,9 +24,9 @@ import se.sundsvall.supportmanagement.api.model.communication.WebMessageAttachme
 import se.sundsvall.supportmanagement.api.model.communication.WebMessageRequest;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
-import se.sundsvall.supportmanagement.integration.db.model.CommunicationAttachmentEntity;
-import se.sundsvall.supportmanagement.integration.db.model.CommunicationEmailHeaderEntity;
-import se.sundsvall.supportmanagement.integration.db.model.CommunicationEntity;
+import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationAttachmentEntity;
+import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationEmailHeaderEntity;
+import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.Direction;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
