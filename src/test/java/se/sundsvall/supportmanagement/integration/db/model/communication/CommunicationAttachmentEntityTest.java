@@ -1,4 +1,4 @@
-package se.sundsvall.supportmanagement.integration.db.model;
+package se.sundsvall.supportmanagement.integration.db.model.communication;
 
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanEqualsExcluding;
@@ -11,6 +11,7 @@ import static org.hamcrest.core.AllOf.allOf;
 
 import org.junit.jupiter.api.Test;
 import org.mariadb.jdbc.MariaDbBlob;
+import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
 
 class CommunicationAttachmentEntityTest {
 
