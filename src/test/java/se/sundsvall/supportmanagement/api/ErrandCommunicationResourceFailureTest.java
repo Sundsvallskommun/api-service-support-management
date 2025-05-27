@@ -11,6 +11,8 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
+import static org.springframework.web.reactive.function.BodyInserters.fromMultipartData;
 import static org.zalando.problem.Status.BAD_REQUEST;
 import static org.zalando.problem.Status.TOO_MANY_REQUESTS;
 
@@ -22,6 +24,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
@@ -35,6 +38,9 @@ import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
 import se.sundsvall.supportmanagement.api.model.communication.SmsRequest;
 import se.sundsvall.supportmanagement.api.model.communication.WebMessageAttachment;
 import se.sundsvall.supportmanagement.api.model.communication.WebMessageRequest;
+import se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationRequest;
+import se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationType;
+import se.sundsvall.supportmanagement.api.model.communication.conversation.MessageRequest;
 import se.sundsvall.supportmanagement.service.CommunicationService;
 
 @SpringBootTest(classes = Application.class, webEnvironment = RANDOM_PORT)
@@ -45,6 +51,7 @@ class ErrandCommunicationResourceFailureTest {
 	private static final String MUNICIPALITY_ID = "2281";
 	private static final String ERRAND_ID = randomUUID().toString();
 	private static final String MESSAGE_ID = randomUUID().toString();
+	private static final String CONVERSATION_ID = randomUUID().toString();
 	private static final boolean IS_VIEWED = true;
 	private static final String INVALID = "#invalid#";
 	private static final String CONSTRAINT_VIOLATION = "Constraint Violation";
@@ -52,6 +59,7 @@ class ErrandCommunicationResourceFailureTest {
 	private static final String PATH_SMS = "/sms";
 	private static final String PATH_EMAIL = "/email";
 	private static final String PATH_WEB_MESSAGE = "/webmessage";
+	private static final String PATH_CONVERSATIONS = "/conversations";
 	private static final String PATH_ATTACHMENTS = "/{communicationId}/attachments/{attachmentId}";
 
 	@MockitoBean
@@ -686,5 +694,318 @@ class ErrandCommunicationResourceFailureTest {
 		// Assert
 		verify(serviceMock).getMessageAttachmentStreamed(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(communicationId), eq(attachmentId), any(HttpServletResponse.class));
 		verifyNoMoreInteractions(serviceMock);
+	}
+
+	@Test
+	void createConversationWithEmptyRequestBody() {
+
+		// Call
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH_PREFIX + PATH_CONVERSATIONS).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
+			.contentType(APPLICATION_JSON)
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(Problem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo(BAD_REQUEST.getReasonPhrase());
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getDetail()).isEqualTo(
+			"Required request body is missing: org.springframework.http.ResponseEntity<java.lang.Void> se.sundsvall.supportmanagement.api.ErrandCommunicationResource.createConversation(java.lang.String,java.lang.String,java.lang.String,se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationRequest)");
+
+		// Verification
+		// TODO: Add verification on service (conversationService??)
+		// verifyNoInteractions(serviceMock);
+	}
+
+	@Test
+	void createConversationWithNoType() {
+
+		// Arrange
+		final var request = ConversationRequest.create()
+			.withType(null)
+			.withTopic("The topic");
+
+		// Call
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH_PREFIX + PATH_CONVERSATIONS).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
+			.accept(APPLICATION_JSON)
+			.bodyValue(request)
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::getField, Violation::getMessage)
+			.containsExactly(tuple("type", "must not be null"));
+
+		// Verification
+		// TODO: Add verification on service (conversationService??)
+		// verifyNoInteractions(serviceMock);
+	}
+
+	@Test
+	void createConversationWithBlankTopic() {
+
+		// Arrange
+		final var request = ConversationRequest.create()
+			.withType(ConversationType.EXTERNAL)
+			.withTopic(" ");
+
+		// Call
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH_PREFIX + PATH_CONVERSATIONS).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
+			.accept(APPLICATION_JSON)
+			.bodyValue(request)
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::getField, Violation::getMessage)
+			.containsExactly(tuple("topic", "must not be blank"));
+
+		// Verification
+		// TODO: Add verification on service (conversationService??)
+		// verifyNoInteractions(serviceMock);
+	}
+
+	@Test
+	void getConversationsWithInvalidMunicipalityId() {
+
+		// Call
+		final var response = webTestClient.get()
+			.uri(builder -> builder.path(PATH_PREFIX + PATH_CONVERSATIONS).build(Map.of("namespace", NAMESPACE, "municipalityId", INVALID, "errandId", ERRAND_ID)))
+			.accept(APPLICATION_JSON)
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::getField, Violation::getMessage)
+			.containsExactly(tuple("getConversations.municipalityId", "not a valid municipality ID"));
+
+		// Verification
+		// TODO: Add verification on service (conversationService??)
+		// verifyNoInteractions(serviceMock);
+	}
+
+	@Test
+	void getConversationsWithInvalidNamespace() {
+
+		// Call
+		final var response = webTestClient.get()
+			.uri(builder -> builder.path(PATH_PREFIX + PATH_CONVERSATIONS).build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
+			.accept(APPLICATION_JSON)
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::getField, Violation::getMessage)
+			.containsExactly(tuple("getConversations.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
+
+		// Verification
+		// TODO: Add verification on service (conversationService??)
+		// verifyNoInteractions(serviceMock);
+	}
+
+	@Test
+	void getConversationByIdWithInvalidConversationId() {
+
+		// Call
+		final var response = webTestClient.get()
+			.uri(builder -> builder.path(PATH_PREFIX + PATH_CONVERSATIONS + "/{conversationId}")
+				.build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "conversationId", INVALID)))
+			.accept(APPLICATION_JSON)
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::getField, Violation::getMessage)
+			.containsExactly(tuple("getConversation.conversationId", "not a valid UUID"));
+
+		// Verification
+		// TODO: Add verification on service (conversationService??)
+		// verifyNoInteractions(serviceMock);
+	}
+
+	@Test
+	void updateConversationWithInvalidConversationId() {
+
+		// Arrange
+		final var request = ConversationRequest.create()
+			.withType(ConversationType.EXTERNAL)
+			.withTopic("The topic");
+
+		// Call
+		final var response = webTestClient.patch()
+			.uri(builder -> builder.path(PATH_PREFIX + PATH_CONVERSATIONS + "/{conversationId}")
+				.build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "conversationId", INVALID)))
+			.accept(APPLICATION_JSON)
+			.bodyValue(request)
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::getField, Violation::getMessage)
+			.containsExactly(tuple("updateConversation.conversationId", "not a valid UUID"));
+
+		// Verification
+		// TODO: Add verification on service (conversationService??)
+		// verifyNoInteractions(serviceMock);
+	}
+
+	@Test
+	void updateConversationWithInvalidBody() {
+
+		// Arrange
+		final var request = ConversationRequest.create();
+
+		// Call
+		final var response = webTestClient.patch()
+			.uri(builder -> builder.path(PATH_PREFIX + PATH_CONVERSATIONS + "/{conversationId}")
+				.build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "conversationId", CONVERSATION_ID)))
+			.accept(APPLICATION_JSON)
+			.bodyValue(request)
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::getField, Violation::getMessage)
+			.containsExactly(
+				tuple("topic", "must not be blank"),
+				tuple("type", "must not be null"));
+
+		// Verification
+		// TODO: Add verification on service (conversationService??)
+		// verifyNoInteractions(serviceMock);
+	}
+
+	@Test
+	void updateConversationsEmptyRequestBody() {
+
+		// Call
+		final var response = webTestClient.patch()
+			.uri(builder -> builder.path(PATH_PREFIX + PATH_CONVERSATIONS + "/{conversationId}")
+				.build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "conversationId", CONVERSATION_ID)))
+			.contentType(APPLICATION_JSON)
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(Problem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo(BAD_REQUEST.getReasonPhrase());
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getDetail()).isEqualTo(
+			"Required request body is missing: org.springframework.http.ResponseEntity<se.sundsvall.supportmanagement.api.model.communication.conversation.Conversation> se.sundsvall.supportmanagement.api.ErrandCommunicationResource.updateConversation(java.lang.String,java.lang.String,java.lang.String,java.lang.String,se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationRequest)");
+
+		// Verification
+		// TODO: Add verification on service (conversationService??)
+		// verifyNoInteractions(serviceMock);
+	}
+
+	@Test
+	void createConversationMessageEmptyRequestBody() {
+
+		// Call
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH_PREFIX + PATH_CONVERSATIONS + "/{conversationId}/messages")
+				.build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "conversationId", CONVERSATION_ID)))
+			.contentType(MULTIPART_FORM_DATA)
+			.bodyValue(new MultipartBodyBuilder().build())
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(Problem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo(BAD_REQUEST.getReasonPhrase());
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getDetail()).isEqualTo("Required part 'requestBody' is not present.");
+
+		// Verification
+		// TODO: Add verification on service (conversationService??)
+		// verifyNoInteractions(serviceMock);
+	}
+
+	@Test
+	void createConversationMessageInvalidMessageAttributes() {
+
+		// Arrange
+		final var messageRequest = MessageRequest.create()
+			.withContent(" ")
+			.withInReplyToMessageId("invalid");
+
+		final var multipartBodyBuilder = new MultipartBodyBuilder();
+		multipartBodyBuilder.part("requestBody", messageRequest).contentType(APPLICATION_JSON);
+
+		// Call
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH_PREFIX + PATH_CONVERSATIONS + "/{conversationId}/messages")
+				.build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "conversationId", CONVERSATION_ID)))
+			.contentType(MULTIPART_FORM_DATA)
+			.body(fromMultipartData(multipartBodyBuilder.build()))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::getField, Violation::getMessage)
+			.containsExactly(
+				tuple("content", "must not be blank"),
+				tuple("inReplyToMessageId", "not a valid UUID"));
+
+		// Verification
+		// TODO: Add verification on service (conversationService??)
+		// verifyNoInteractions(serviceMock);
 	}
 }
