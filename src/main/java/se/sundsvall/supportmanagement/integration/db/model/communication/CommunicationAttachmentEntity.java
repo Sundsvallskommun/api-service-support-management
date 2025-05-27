@@ -1,4 +1,4 @@
-package se.sundsvall.supportmanagement.integration.db.model;
+package se.sundsvall.supportmanagement.integration.db.model.communication;
 
 import static jakarta.persistence.CascadeType.ALL;
 import static jakarta.persistence.FetchType.LAZY;
@@ -16,6 +16,7 @@ import jakarta.persistence.UniqueConstraint;
 import java.util.Objects;
 import java.util.Optional;
 import org.hibernate.annotations.UuidGenerator;
+import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
 
 @Entity
 @Table(
