@@ -29,13 +29,13 @@ class IdentifierTest {
 		final var type = "type";
 		final var value = "value";
 
-		final var o = Identifier.create()
+		final var object = Identifier.create()
 			.withType(type)
 			.withValue(value);
 
-		assertThat(o).isNotNull().hasNoNullFieldsOrProperties();
-		assertThat(o.getType()).isEqualTo(type);
-		assertThat(o.getValue()).isEqualTo(value);
+		assertThat(object).isNotNull().hasNoNullFieldsOrProperties();
+		assertThat(object.getType()).isEqualTo(type);
+		assertThat(object.getValue()).isEqualTo(value);
 	}
 
 	@Test

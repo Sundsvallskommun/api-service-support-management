@@ -7,7 +7,7 @@ info:
     url: https://opensource.org/licenses/MIT
   version: "10.4"
 servers:
-- url: http://localhost:56347
+- url: http://localhost:56402
   description: Generated server url
 tags:
 - name: Errand attachments
@@ -1983,8 +1983,8 @@ paths:
     get:
       tags:
       - Errand communication
-      summary: Get conversation
-      description: Get existing conversation
+      summary: Get conversations
+      description: Get existing conversations
       operationId: getConversations
       parameters:
       - name: namespace
@@ -3583,8 +3583,8 @@ paths:
     patch:
       tags:
       - Errand communication
-      summary: Get conversation
-      description: Get existing conversation
+      summary: Update conversation
+      description: Update existing conversation
       operationId: updateConversation
       parameters:
       - name: namespace
@@ -4969,8 +4969,6 @@ components:
     Problem:
       type: object
       properties:
-        status:
-          $ref: "#/components/schemas/StatusType"
         instance:
           type: string
           format: uri
@@ -4981,18 +4979,20 @@ components:
           type: object
           additionalProperties:
             type: object
-        title:
-          type: string
+        status:
+          $ref: "#/components/schemas/StatusType"
         detail:
+          type: string
+        title:
           type: string
     StatusType:
       type: object
       properties:
-        reasonPhrase:
-          type: string
         statusCode:
           type: integer
           format: int32
+        reasonPhrase:
+          type: string
     ConstraintViolationProblem:
       type: object
       properties:
@@ -5104,8 +5104,6 @@ components:
                 type: boolean
         message:
           type: string
-        status:
-          $ref: "#/components/schemas/StatusType"
         instance:
           type: string
           format: uri
@@ -5116,9 +5114,11 @@ components:
           type: object
           additionalProperties:
             type: object
-        title:
-          type: string
+        status:
+          $ref: "#/components/schemas/StatusType"
         detail:
+          type: string
+        title:
           type: string
         suppressed:
           type: array
@@ -6069,8 +6069,8 @@ components:
       type: string
       description: ConversationType model
       enum:
-      - D2D
-      - D2C
+      - INTERNAL
+      - EXTERNAL
     Identifier:
       required:
       - value
@@ -6277,12 +6277,6 @@ components:
         totalPages:
           type: integer
           format: int32
-        first:
-          type: boolean
-        last:
-          type: boolean
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
         size:
           type: integer
           format: int32
@@ -6295,6 +6289,12 @@ components:
           format: int32
         sort:
           $ref: "#/components/schemas/SortObject"
+        first:
+          type: boolean
+        last:
+          type: boolean
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
         numberOfElements:
           type: integer
           format: int32
@@ -6303,12 +6303,6 @@ components:
     PageableObject:
       type: object
       properties:
-        pageSize:
-          type: integer
-          format: int32
-        pageNumber:
-          type: integer
-          format: int32
         offset:
           type: integer
           format: int64
@@ -6318,14 +6312,20 @@ components:
           type: boolean
         paged:
           type: boolean
+        pageSize:
+          type: integer
+          format: int32
+        pageNumber:
+          type: integer
+          format: int32
     SortObject:
       type: object
       properties:
         empty:
           type: boolean
-        unsorted:
-          type: boolean
         sorted:
+          type: boolean
+        unsorted:
           type: boolean
     Revision:
       type: object
@@ -6522,12 +6522,6 @@ components:
         totalPages:
           type: integer
           format: int32
-        first:
-          type: boolean
-        last:
-          type: boolean
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
         size:
           type: integer
           format: int32
@@ -6540,6 +6534,12 @@ components:
           format: int32
         sort:
           $ref: "#/components/schemas/SortObject"
+        first:
+          type: boolean
+        last:
+          type: boolean
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
         numberOfElements:
           type: integer
           format: int32

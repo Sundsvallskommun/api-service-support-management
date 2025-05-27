@@ -30,13 +30,13 @@ class KeyValuesTest {
 		final var key = "key";
 		final var values = List.of("value");
 
-		final var o = KeyValues.create()
+		final var object = KeyValues.create()
 			.withKey(key)
 			.withValues(values);
 
-		assertThat(o).isNotNull().hasNoNullFieldsOrProperties();
-		assertThat(o.getKey()).isEqualTo(key);
-		assertThat(o.getValues()).isEqualTo(values);
+		assertThat(object).isNotNull().hasNoNullFieldsOrProperties();
+		assertThat(object.getKey()).isEqualTo(key);
+		assertThat(object.getValues()).isEqualTo(values);
 	}
 
 	@Test

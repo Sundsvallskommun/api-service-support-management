@@ -107,7 +107,7 @@ class ErrandCommunicationResourceTest {
 				.withType("adAccount")
 				.withValue("joe01doe")))
 			.withTopic("The topic")
-			.withType(ConversationType.D2D);
+			.withType(ConversationType.INTERNAL);
 	}
 
 	@Test

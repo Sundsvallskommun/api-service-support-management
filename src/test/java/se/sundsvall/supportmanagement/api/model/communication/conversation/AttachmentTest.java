@@ -43,19 +43,19 @@ class AttachmentTest {
 		final var id = randomUUID().toString();
 		final var mimeType = "mimeType";
 
-		final var o = Attachment.create()
+		final var object = Attachment.create()
 			.withCreated(created)
 			.withFileName(fileName)
 			.withFileSize(fileSize)
 			.withId(id)
 			.withMimeType(mimeType);
 
-		assertThat(o).isNotNull().hasNoNullFieldsOrPropertiesExcept("fileSize");
-		assertThat(o.getCreated()).isEqualTo(created);
-		assertThat(o.getFileName()).isEqualTo(fileName);
-		assertThat(o.getFileSize()).isEqualTo(fileSize);
-		assertThat(o.getId()).isEqualTo(id);
-		assertThat(o.getMimeType()).isEqualTo(mimeType);
+		assertThat(object).isNotNull().hasNoNullFieldsOrPropertiesExcept("fileSize");
+		assertThat(object.getCreated()).isEqualTo(created);
+		assertThat(object.getFileName()).isEqualTo(fileName);
+		assertThat(object.getFileSize()).isEqualTo(fileSize);
+		assertThat(object.getId()).isEqualTo(id);
+		assertThat(object.getMimeType()).isEqualTo(mimeType);
 	}
 
 	@Test

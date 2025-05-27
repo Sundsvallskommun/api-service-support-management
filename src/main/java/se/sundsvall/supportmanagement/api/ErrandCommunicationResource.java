@@ -218,7 +218,7 @@ class ErrandCommunicationResource {
 	}
 
 	@GetMapping(path = "/conversations", produces = APPLICATION_JSON_VALUE)
-	@Operation(summary = "Get conversation", description = "Get existing conversation", responses = {
+	@Operation(summary = "Get conversations", description = "Get existing conversations", responses = {
 		@ApiResponse(responseCode = "200", description = "Successful Operation", useReturnTypeSchema = true),
 		@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	})
@@ -232,7 +232,7 @@ class ErrandCommunicationResource {
 	}
 
 	@PatchMapping(path = "/conversations/{conversationId}", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
-	@Operation(summary = "Get conversation", description = "Get existing conversation", responses = {
+	@Operation(summary = "Update conversation", description = "Update existing conversation", responses = {
 		@ApiResponse(responseCode = "200", description = "Successful Operation", useReturnTypeSchema = true),
 		@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	})

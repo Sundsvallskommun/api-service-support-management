@@ -756,7 +756,7 @@ class ErrandCommunicationResourceFailureTest {
 
 		// Arrange
 		final var request = ConversationRequest.create()
-			.withType(ConversationType.D2C)
+			.withType(ConversationType.EXTERNAL)
 			.withTopic(" ");
 
 		// Call
@@ -863,7 +863,7 @@ class ErrandCommunicationResourceFailureTest {
 
 		// Arrange
 		final var request = ConversationRequest.create()
-			.withType(ConversationType.D2C)
+			.withType(ConversationType.EXTERNAL)
 			.withTopic("The topic");
 
 		// Call

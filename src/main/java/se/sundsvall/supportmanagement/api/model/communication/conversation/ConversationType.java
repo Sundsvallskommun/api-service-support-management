@@ -5,6 +5,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @Schema(description = "ConversationType model", enumAsRef = true)
 public enum ConversationType {
 
-	D2D,	// Dragon to Dragon
-	D2C		// Dragon to citizen
+	INTERNAL,
+	EXTERNAL
 }

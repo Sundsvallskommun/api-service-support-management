@@ -39,13 +39,13 @@ class ReadByTest {
 		final var identifier = Identifier.create();
 		final var readAt = now();
 
-		final var o = ReadBy.create()
+		final var object = ReadBy.create()
 			.withIdentifier(identifier)
 			.withReadAt(readAt);
 
-		assertThat(o).isNotNull().hasNoNullFieldsOrProperties();
-		assertThat(o.getIdentifier()).isEqualTo(identifier);
-		assertThat(o.getReadAt()).isEqualTo(readAt);
+		assertThat(object).isNotNull().hasNoNullFieldsOrProperties();
+		assertThat(object.getIdentifier()).isEqualTo(identifier);
+		assertThat(object.getReadAt()).isEqualTo(readAt);
 	}
 
 	@Test
