@@ -42,6 +42,7 @@ import se.sundsvall.supportmanagement.api.model.communication.conversation.Conve
 import se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationType;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.MessageRequest;
 import se.sundsvall.supportmanagement.service.CommunicationService;
+import se.sundsvall.supportmanagement.service.ConversationService;
 
 @SpringBootTest(classes = Application.class, webEnvironment = RANDOM_PORT)
 @ActiveProfiles("junit")
@@ -63,7 +64,10 @@ class ErrandCommunicationResourceFailureTest {
 	private static final String PATH_ATTACHMENTS = "/{communicationId}/attachments/{attachmentId}";
 
 	@MockitoBean
-	private CommunicationService serviceMock;
+	private CommunicationService communicationServiceMock;
+
+	@MockitoBean
+	private ConversationService conversationServiceMock;
 
 	@Autowired
 	private WebTestClient webTestClient;
@@ -110,7 +114,7 @@ class ErrandCommunicationResourceFailureTest {
 			.containsExactly(tuple("getCommunications.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
 
 		// Verification
-		verifyNoInteractions(serviceMock);
+		verifyNoInteractions(communicationServiceMock, conversationServiceMock);
 	}
 
 	@Test
@@ -134,7 +138,7 @@ class ErrandCommunicationResourceFailureTest {
 			.containsExactly(tuple("getCommunications.municipalityId", "not a valid municipality ID"));
 
 		// Verification
-		verifyNoInteractions(serviceMock);
+		verifyNoInteractions(communicationServiceMock, conversationServiceMock);
 
 	}
 
@@ -159,7 +163,7 @@ class ErrandCommunicationResourceFailureTest {
 			.containsExactly(tuple("getCommunications.errandId", "not a valid UUID"));
 
 		// Verification
-		verifyNoInteractions(serviceMock);
+		verifyNoInteractions(communicationServiceMock, conversationServiceMock);
 	}
 
 	@Test
@@ -183,7 +187,7 @@ class ErrandCommunicationResourceFailureTest {
 			.containsExactly(tuple("updateViewedStatus.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
 
 		// Verification
-		verifyNoInteractions(serviceMock);
+		verifyNoInteractions(communicationServiceMock, conversationServiceMock);
 	}
 
 	@Test
@@ -207,7 +211,7 @@ class ErrandCommunicationResourceFailureTest {
 			.containsExactly(tuple("updateViewedStatus.municipalityId", "not a valid municipality ID"));
 
 		// Verification
-		verifyNoInteractions(serviceMock);
+		verifyNoInteractions(communicationServiceMock, conversationServiceMock);
 	}
 
 	@Test
@@ -231,7 +235,7 @@ class ErrandCommunicationResourceFailureTest {
 			.containsExactly(tuple("updateViewedStatus.errandId", "not a valid UUID"));
 
 		// Verification
-		verifyNoInteractions(serviceMock);
+		verifyNoInteractions(communicationServiceMock, conversationServiceMock);
 	}
 
 	@Test
@@ -255,7 +259,7 @@ class ErrandCommunicationResourceFailureTest {
 			.containsExactly(tuple("updateViewedStatus.communicationId", "not a valid UUID"));
 
 		// Verification
-		verifyNoInteractions(serviceMock);
+		verifyNoInteractions(communicationServiceMock, conversationServiceMock);
 	}
 
 	@Test
@@ -277,7 +281,7 @@ class ErrandCommunicationResourceFailureTest {
 		assertThat(response.getDetail()).isEqualTo("Method parameter 'isViewed': Failed to convert value of type 'java.lang.String' to required type 'boolean'; Invalid boolean value [" + INVALID + "]");
 
 		// Verification
-		verifyNoInteractions(serviceMock);
+		verifyNoInteractions(communicationServiceMock, conversationServiceMock);
 	}
 
 	@ParameterizedTest
@@ -312,7 +316,7 @@ class ErrandCommunicationResourceFailureTest {
 			.containsExactly(tuple(field, "can only contain A-Z, a-z, 0-9, - and _"));
 
 		// Verification
-		verifyNoInteractions(serviceMock);
+		verifyNoInteractions(communicationServiceMock, conversationServiceMock);
 	}
 
 	@ParameterizedTest
@@ -348,7 +352,7 @@ class ErrandCommunicationResourceFailureTest {
 			.containsExactly(tuple(field, "not a valid municipality ID"));
 
 		// Verification
-		verifyNoInteractions(serviceMock);
+		verifyNoInteractions(communicationServiceMock, conversationServiceMock);
 	}
 
 	@ParameterizedTest
@@ -384,7 +388,7 @@ class ErrandCommunicationResourceFailureTest {
 			.containsExactly(tuple(field, "not a valid UUID"));
 
 		// Verification
-		verifyNoInteractions(serviceMock);
+		verifyNoInteractions(communicationServiceMock, conversationServiceMock);
 	}
 
 	@Test
@@ -408,7 +412,7 @@ class ErrandCommunicationResourceFailureTest {
 			java.lang.String,se.sundsvall.supportmanagement.api.model.communication.SmsRequest)""");
 
 		// Verification
-		verifyNoInteractions(serviceMock);
+		verifyNoInteractions(communicationServiceMock, conversationServiceMock);
 	}
 
 	@Test
@@ -434,7 +438,7 @@ class ErrandCommunicationResourceFailureTest {
 			tuple("sender", "must not be null"));
 
 		// Verification
-		verifyNoInteractions(serviceMock);
+		verifyNoInteractions(communicationServiceMock, conversationServiceMock);
 	}
 
 	@Test
@@ -461,7 +465,7 @@ class ErrandCommunicationResourceFailureTest {
 			tuple("sender", "size must be between 1 and 11"));
 
 		// Verification
-		verifyNoInteractions(serviceMock);
+		verifyNoInteractions(communicationServiceMock, conversationServiceMock);
 	}
 
 	@Test
@@ -485,7 +489,7 @@ class ErrandCommunicationResourceFailureTest {
 			java.lang.String,se.sundsvall.supportmanagement.api.model.communication.EmailRequest)""");
 
 		// Verification
-		verifyNoInteractions(serviceMock);
+		verifyNoInteractions(communicationServiceMock, conversationServiceMock);
 	}
 
 	@Test
@@ -513,7 +517,7 @@ class ErrandCommunicationResourceFailureTest {
 			tuple("subject", "must not be blank"));
 
 		// Verification
-		verifyNoInteractions(serviceMock);
+		verifyNoInteractions(communicationServiceMock, conversationServiceMock);
 	}
 
 	@Test
@@ -540,7 +544,7 @@ class ErrandCommunicationResourceFailureTest {
 			tuple("sender", "must be a well-formed email address"));
 
 		// Verification
-		verifyNoInteractions(serviceMock);
+		verifyNoInteractions(communicationServiceMock, conversationServiceMock);
 	}
 
 	@Test
@@ -564,7 +568,7 @@ class ErrandCommunicationResourceFailureTest {
 			tuple("message", "must not be blank"));
 
 		// Verification
-		verifyNoInteractions(serviceMock);
+		verifyNoInteractions(communicationServiceMock, conversationServiceMock);
 	}
 
 	@Test
@@ -588,7 +592,7 @@ class ErrandCommunicationResourceFailureTest {
 			java.lang.String,se.sundsvall.supportmanagement.api.model.communication.WebMessageRequest)""");
 
 		// Verification
-		verifyNoInteractions(serviceMock);
+		verifyNoInteractions(communicationServiceMock, conversationServiceMock);
 	}
 
 	@ParameterizedTest
@@ -623,7 +627,7 @@ class ErrandCommunicationResourceFailureTest {
 			tuple("attachments[0].fileName", "must not be blank"));
 
 		// Verification
-		verifyNoInteractions(serviceMock);
+		verifyNoInteractions(communicationServiceMock, conversationServiceMock);
 	}
 
 	@ParameterizedTest
@@ -663,7 +667,7 @@ class ErrandCommunicationResourceFailureTest {
 			tuple("attachments[0].base64EncodedString", "not a valid BASE64-encoded string"));
 
 		// Verification
-		verifyNoInteractions(serviceMock);
+		verifyNoInteractions(communicationServiceMock, conversationServiceMock);
 	}
 
 	@Test
@@ -674,7 +678,7 @@ class ErrandCommunicationResourceFailureTest {
 		final var communicationId = randomUUID().toString();
 
 		doThrow(Problem.valueOf(TOO_MANY_REQUESTS, "Service is currently unavailable, please try again later."))
-			.when(serviceMock).getMessageAttachmentStreamed(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(communicationId), eq(attachmentId), any(HttpServletResponse.class));
+			.when(communicationServiceMock).getMessageAttachmentStreamed(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(communicationId), eq(attachmentId), any(HttpServletResponse.class));
 
 		// Act
 		final var response = webTestClient.get()
@@ -692,8 +696,8 @@ class ErrandCommunicationResourceFailureTest {
 		assertThat(response.getDetail()).isEqualTo("Service is currently unavailable, please try again later.");
 
 		// Assert
-		verify(serviceMock).getMessageAttachmentStreamed(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(communicationId), eq(attachmentId), any(HttpServletResponse.class));
-		verifyNoMoreInteractions(serviceMock);
+		verify(communicationServiceMock).getMessageAttachmentStreamed(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(communicationId), eq(attachmentId), any(HttpServletResponse.class));
+		verifyNoMoreInteractions(communicationServiceMock, conversationServiceMock);
 	}
 
 	@Test
@@ -716,8 +720,7 @@ class ErrandCommunicationResourceFailureTest {
 			"Required request body is missing: org.springframework.http.ResponseEntity<java.lang.Void> se.sundsvall.supportmanagement.api.ErrandCommunicationResource.createConversation(java.lang.String,java.lang.String,java.lang.String,se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationRequest)");
 
 		// Verification
-		// TODO: Add verification on service (conversationService??)
-		// verifyNoInteractions(serviceMock);
+		verifyNoInteractions(communicationServiceMock, conversationServiceMock);
 	}
 
 	@Test
@@ -747,8 +750,7 @@ class ErrandCommunicationResourceFailureTest {
 			.containsExactly(tuple("type", "must not be null"));
 
 		// Verification
-		// TODO: Add verification on service (conversationService??)
-		// verifyNoInteractions(serviceMock);
+		verifyNoInteractions(communicationServiceMock, conversationServiceMock);
 	}
 
 	@Test
@@ -778,8 +780,7 @@ class ErrandCommunicationResourceFailureTest {
 			.containsExactly(tuple("topic", "must not be blank"));
 
 		// Verification
-		// TODO: Add verification on service (conversationService??)
-		// verifyNoInteractions(serviceMock);
+		verifyNoInteractions(communicationServiceMock, conversationServiceMock);
 	}
 
 	@Test
@@ -803,8 +804,7 @@ class ErrandCommunicationResourceFailureTest {
 			.containsExactly(tuple("getConversations.municipalityId", "not a valid municipality ID"));
 
 		// Verification
-		// TODO: Add verification on service (conversationService??)
-		// verifyNoInteractions(serviceMock);
+		verifyNoInteractions(communicationServiceMock, conversationServiceMock);
 	}
 
 	@Test
@@ -828,8 +828,7 @@ class ErrandCommunicationResourceFailureTest {
 			.containsExactly(tuple("getConversations.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
 
 		// Verification
-		// TODO: Add verification on service (conversationService??)
-		// verifyNoInteractions(serviceMock);
+		verifyNoInteractions(communicationServiceMock, conversationServiceMock);
 	}
 
 	@Test
@@ -854,8 +853,7 @@ class ErrandCommunicationResourceFailureTest {
 			.containsExactly(tuple("getConversation.conversationId", "not a valid UUID"));
 
 		// Verification
-		// TODO: Add verification on service (conversationService??)
-		// verifyNoInteractions(serviceMock);
+		verifyNoInteractions(communicationServiceMock, conversationServiceMock);
 	}
 
 	@Test
@@ -886,8 +884,7 @@ class ErrandCommunicationResourceFailureTest {
 			.containsExactly(tuple("updateConversation.conversationId", "not a valid UUID"));
 
 		// Verification
-		// TODO: Add verification on service (conversationService??)
-		// verifyNoInteractions(serviceMock);
+		verifyNoInteractions(communicationServiceMock, conversationServiceMock);
 	}
 
 	@Test
@@ -918,8 +915,7 @@ class ErrandCommunicationResourceFailureTest {
 				tuple("type", "must not be null"));
 
 		// Verification
-		// TODO: Add verification on service (conversationService??)
-		// verifyNoInteractions(serviceMock);
+		verifyNoInteractions(communicationServiceMock, conversationServiceMock);
 	}
 
 	@Test
@@ -943,8 +939,7 @@ class ErrandCommunicationResourceFailureTest {
 			"Required request body is missing: org.springframework.http.ResponseEntity<se.sundsvall.supportmanagement.api.model.communication.conversation.Conversation> se.sundsvall.supportmanagement.api.ErrandCommunicationResource.updateConversation(java.lang.String,java.lang.String,java.lang.String,java.lang.String,se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationRequest)");
 
 		// Verification
-		// TODO: Add verification on service (conversationService??)
-		// verifyNoInteractions(serviceMock);
+		verifyNoInteractions(communicationServiceMock, conversationServiceMock);
 	}
 
 	@Test
@@ -968,8 +963,7 @@ class ErrandCommunicationResourceFailureTest {
 		assertThat(response.getDetail()).isEqualTo("Required part 'requestBody' is not present.");
 
 		// Verification
-		// TODO: Add verification on service (conversationService??)
-		// verifyNoInteractions(serviceMock);
+		verifyNoInteractions(communicationServiceMock, conversationServiceMock);
 	}
 
 	@Test
@@ -1005,7 +999,6 @@ class ErrandCommunicationResourceFailureTest {
 				tuple("inReplyToMessageId", "not a valid UUID"));
 
 		// Verification
-		// TODO: Add verification on service (conversationService??)
-		// verifyNoInteractions(serviceMock);
+		verifyNoInteractions(communicationServiceMock, conversationServiceMock);
 	}
 }

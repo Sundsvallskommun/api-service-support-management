@@ -32,6 +32,9 @@ integration:
   messaging:
     connectTimeout: 5
     readTimeout: 30
+  messageexchange:
+    connectTimeout: 5
+    readTimeout: 30
   notes:
     connectTimeout: 5
     readTimeout: 30
@@ -97,6 +100,9 @@ spring:
           messaging:
             authorization-grant-type: client_credentials
             provider: messaging
+          messageexchange:
+            authorization-grant-type: client_credentials
+            provider: messageexchange
           notes:
             authorization-grant-type: client_credentials
             provider: notes

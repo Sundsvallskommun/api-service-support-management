@@ -7,4 +7,5 @@ public enum ConversationType {
 
 	INTERNAL,
 	EXTERNAL
+
 }

@@ -58,6 +58,7 @@ import se.sundsvall.supportmanagement.api.model.communication.conversation.Conve
 import se.sundsvall.supportmanagement.api.model.communication.conversation.Message;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.MessageRequest;
 import se.sundsvall.supportmanagement.service.CommunicationService;
+import se.sundsvall.supportmanagement.service.ConversationService;
 
 @RestController
 @Validated
@@ -69,11 +70,13 @@ import se.sundsvall.supportmanagement.service.CommunicationService;
 @ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 class ErrandCommunicationResource {
 
-	private final CommunicationService service;
+	private final CommunicationService communicationService;
+	private final ConversationService conversationService;
 	private final ObjectMapper objectMapper;
 
-	ErrandCommunicationResource(final CommunicationService service, final ObjectMapper objectMapper) {
-		this.service = service;
+	ErrandCommunicationResource(final CommunicationService service, final ConversationService conversationService, final ObjectMapper objectMapper) {
+		this.communicationService = service;
+		this.conversationService = conversationService;
 		this.objectMapper = objectMapper;
 	}
 
@@ -86,7 +89,7 @@ class ErrandCommunicationResource {
 		@Parameter(name = "municipalityId", description = "Municipality ID", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "errandId", description = "Errand ID", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("errandId") final String errandId) {
 
-		return ok(service.readCommunications(namespace, municipalityId, errandId));
+		return ok(communicationService.readCommunications(namespace, municipalityId, errandId));
 	}
 
 	@GetMapping(path = "/external", produces = APPLICATION_JSON_VALUE)
@@ -98,7 +101,7 @@ class ErrandCommunicationResource {
 		@Parameter(name = "municipalityId", description = "Municipality ID", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "errandId", description = "Errand ID", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("errandId") final String errandId) {
 
-		return ok(service.readExternalCommunications(namespace, municipalityId, errandId));
+		return ok(communicationService.readExternalCommunications(namespace, municipalityId, errandId));
 	}
 
 	@PutMapping(path = "/{communicationId}/viewed/{isViewed}", produces = ALL_VALUE)
@@ -112,7 +115,7 @@ class ErrandCommunicationResource {
 		@Parameter(name = "communicationId", description = "communication ID", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("communicationId") final String communicationId,
 		@Parameter(name = "isViewed", description = "If a message is viewed", example = "true") @PathVariable final boolean isViewed) {
 
-		service.updateViewedStatus(namespace, municipalityId, errandId, communicationId, isViewed);
+		communicationService.updateViewedStatus(namespace, municipalityId, errandId, communicationId, isViewed);
 		return noContent()
 			.header(CONTENT_TYPE, ALL_VALUE)
 			.build();
@@ -128,7 +131,7 @@ class ErrandCommunicationResource {
 		@Parameter(name = "errandId", description = "Errand ID", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("errandId") final String errandId,
 		@Valid @NotNull @RequestBody final EmailRequest request) {
 
-		service.sendEmail(namespace, municipalityId, errandId, request);
+		communicationService.sendEmail(namespace, municipalityId, errandId, request);
 		return noContent()
 			.header(CONTENT_TYPE, ALL_VALUE)
 			.build();
@@ -144,7 +147,7 @@ class ErrandCommunicationResource {
 		@Parameter(name = "errandId", description = "Errand ID", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("errandId") final String errandId,
 		@Valid @NotNull @RequestBody final SmsRequest request) {
 
-		service.sendSms(namespace, municipalityId, errandId, request);
+		communicationService.sendSms(namespace, municipalityId, errandId, request);
 		return noContent()
 			.header(CONTENT_TYPE, ALL_VALUE)
 			.build();
@@ -160,7 +163,7 @@ class ErrandCommunicationResource {
 		@Parameter(name = "errandId", description = "Errand ID", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("errandId") final String errandId,
 		@Valid @NotNull @RequestBody final WebMessageRequest request) {
 
-		service.sendWebMessage(namespace, municipalityId, errandId, request);
+		communicationService.sendWebMessage(namespace, municipalityId, errandId, request);
 		return noContent()
 			.header(CONTENT_TYPE, ALL_VALUE)
 			.build();
@@ -180,7 +183,7 @@ class ErrandCommunicationResource {
 		@Parameter(name = "attachmentId", description = "Message attachment ID", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable final String attachmentId,
 		final HttpServletResponse response) {
 
-		service.getMessageAttachmentStreamed(namespace, municipalityId, errandId, communicationId, attachmentId, response);
+		communicationService.getMessageAttachmentStreamed(namespace, municipalityId, errandId, communicationId, attachmentId, response);
 	}
 
 	@PostMapping(path = "/conversations", consumes = APPLICATION_JSON_VALUE, produces = ALL_VALUE)
@@ -193,10 +196,10 @@ class ErrandCommunicationResource {
 		@Parameter(name = "errandId", description = "Errand ID", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("errandId") final String errandId,
 		@Valid @NotNull @RequestBody final ConversationRequest request) {
 
-		final var conversationId = 0; // TODO: call service layer
+		final var conversation = conversationService.createConversation(municipalityId, namespace, errandId, request);
 
 		return created(fromPath("/{municipalityId}/{namespace}/errands/{errandId}/communication/conversations/{conversationId}")
-			.buildAndExpand(municipalityId, namespace, errandId, conversationId).toUri())
+			.buildAndExpand(municipalityId, namespace, errandId, conversation.getId()).toUri())
 			.header(CONTENT_TYPE, ALL_VALUE)
 			.build();
 	}
@@ -212,9 +215,7 @@ class ErrandCommunicationResource {
 		@Parameter(name = "errandId", description = "Errand ID", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("errandId") final String errandId,
 		@Parameter(name = "conversationId", description = "Conversation ID", example = "1aefbbb8-de82-414b-b5d7-ba7c5bbe4506") @ValidUuid @PathVariable("conversationId") final String conversationId) {
 
-		// TODO: call service layer
-
-		return ok(Conversation.create());
+		return ok(conversationService.readConversationById(municipalityId, namespace, errandId, conversationId));
 	}
 
 	@GetMapping(path = "/conversations", produces = APPLICATION_JSON_VALUE)
@@ -227,8 +228,7 @@ class ErrandCommunicationResource {
 		@Parameter(name = "municipalityId", description = "Municipality ID", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "errandId", description = "Errand ID", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("errandId") final String errandId) {
 
-		// TODO: call service layer
-		return ok(List.of(Conversation.create()));
+		return ok(conversationService.readConversations(municipalityId, namespace, errandId));
 	}
 
 	@PatchMapping(path = "/conversations/{conversationId}", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
@@ -243,8 +243,7 @@ class ErrandCommunicationResource {
 		@Parameter(name = "conversationId", description = "Conversation ID", example = "1aefbbb8-de82-414b-b5d7-ba7c5bbe4506") @ValidUuid @PathVariable("conversationId") final String conversationId,
 		@Valid @NotNull @RequestBody final ConversationRequest request) {
 
-		// TODO: call service layer
-		return ok(Conversation.create());
+		return ok(conversationService.updateConversationById(municipalityId, namespace, errandId, conversationId, request));
 	}
 
 	@PostMapping(path = "/conversations/{conversationId}/messages", consumes = MULTIPART_FORM_DATA_VALUE, produces = ALL_VALUE)

@@ -41,6 +41,7 @@ import se.sundsvall.supportmanagement.api.model.communication.conversation.Ident
 import se.sundsvall.supportmanagement.api.model.communication.conversation.KeyValues;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.MessageRequest;
 import se.sundsvall.supportmanagement.service.CommunicationService;
+import se.sundsvall.supportmanagement.service.ConversationService;
 
 @SpringBootTest(classes = Application.class, webEnvironment = RANDOM_PORT)
 @ActiveProfiles("junit")
@@ -60,7 +61,10 @@ class ErrandCommunicationResourceTest {
 	private static final String PATH_CONVERSATIONS = "/conversations";
 
 	@MockitoBean
-	private CommunicationService serviceMock;
+	private CommunicationService communicationServiceMock;
+
+	@MockitoBean
+	private ConversationService conversationServiceMock;
 
 	@Autowired
 	private WebTestClient webTestClient;
@@ -97,9 +101,6 @@ class ErrandCommunicationResourceTest {
 
 	private static ConversationRequest conversationRequest() {
 		return ConversationRequest.create()
-			.withExternalReferences(List.of(KeyValues.create()
-				.withKey("theKey")
-				.withValues(List.of("externalReferenceValue"))))
 			.withMetadata(List.of(KeyValues.create()
 				.withKey("theMetadata")
 				.withValues(List.of("metadataValue"))))
@@ -114,7 +115,7 @@ class ErrandCommunicationResourceTest {
 	void getCommunicationsOnErrand() {
 
 		// Mock
-		when(serviceMock.readCommunications(anyString(), anyString(), anyString()))
+		when(communicationServiceMock.readCommunications(anyString(), anyString(), anyString()))
 			.thenReturn(List.of(Communication.create()));
 
 		// Call
@@ -131,8 +132,8 @@ class ErrandCommunicationResourceTest {
 		// Verification
 		assertThat(response).isNotNull();
 		assertThat(response.getResponseBody()).isNotNull().hasSize(1);
-		verify(serviceMock).readCommunications(anyString(), anyString(), anyString());
-		verifyNoMoreInteractions(serviceMock);
+		verify(communicationServiceMock).readCommunications(anyString(), anyString(), anyString());
+		verifyNoMoreInteractions(communicationServiceMock, conversationServiceMock);
 	}
 
 	@Test
@@ -151,8 +152,8 @@ class ErrandCommunicationResourceTest {
 			.expectBody().isEmpty();
 
 		// Verification
-		verify(serviceMock).updateViewedStatus(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, messageID, isViewed);
-		verifyNoMoreInteractions(serviceMock);
+		verify(communicationServiceMock).updateViewedStatus(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, messageID, isViewed);
+		verifyNoMoreInteractions(communicationServiceMock, conversationServiceMock);
 	}
 
 	@Test
@@ -172,8 +173,8 @@ class ErrandCommunicationResourceTest {
 			.expectBody().isEmpty();
 
 		// Verification
-		verify(serviceMock).sendSms(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, requestBody);
-		verifyNoMoreInteractions(serviceMock);
+		verify(communicationServiceMock).sendSms(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, requestBody);
+		verifyNoMoreInteractions(communicationServiceMock, conversationServiceMock);
 	}
 
 	@ParameterizedTest
@@ -195,8 +196,8 @@ class ErrandCommunicationResourceTest {
 			.expectBody().isEmpty();
 
 		// Verification
-		verify(serviceMock).sendEmail(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, requestBody);
-		verifyNoMoreInteractions(serviceMock);
+		verify(communicationServiceMock).sendEmail(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, requestBody);
+		verifyNoMoreInteractions(communicationServiceMock, conversationServiceMock);
 	}
 
 	@ParameterizedTest
@@ -218,14 +219,14 @@ class ErrandCommunicationResourceTest {
 			.expectBody().isEmpty();
 
 		// Verification
-		verify(serviceMock).sendWebMessage(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, requestBody);
-		verifyNoMoreInteractions(serviceMock);
+		verify(communicationServiceMock).sendWebMessage(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, requestBody);
+		verifyNoMoreInteractions(communicationServiceMock, conversationServiceMock);
 	}
 
 	@Test
 	void getMessageAttachment() {
 
-		// ACT
+		// Act
 		webTestClient.get()
 			.uri(uriBuilder -> uriBuilder.path(PATH_PREFIX + PATH_ATTACHMENTS)
 				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", ERRAND_ID, "communicationId", COMMUNICATION_ID, "attachmentId", ATTACHMENT_ID)))
@@ -235,19 +236,20 @@ class ErrandCommunicationResourceTest {
 			.returnResult();
 
 		// Assert
-		verify(serviceMock).getMessageAttachmentStreamed(any(String.class), any(String.class), any(String.class), any(String.class), any(String.class), any(HttpServletResponse.class));
-		verifyNoMoreInteractions(serviceMock);
+		verify(communicationServiceMock).getMessageAttachmentStreamed(any(String.class), any(String.class), any(String.class), any(String.class), any(String.class), any(HttpServletResponse.class));
+		verifyNoMoreInteractions(communicationServiceMock, conversationServiceMock);
 	}
 
 	@Test
 	void createConversation() {
 
+		// Arrange
+		final var id = randomUUID().toString();
 		final var request = conversationRequest();
 
-		// Mock
-		// TODO: Mock service.
+		when(conversationServiceMock.createConversation(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, request)).thenReturn(Conversation.create().withId(id));
 
-		// Call
+		// Act
 		webTestClient.post()
 			.uri(builder -> builder.path(PATH_PREFIX + PATH_CONVERSATIONS)
 				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", ERRAND_ID)))
@@ -256,31 +258,27 @@ class ErrandCommunicationResourceTest {
 			.exchange()
 			.expectStatus().isCreated()
 			.expectHeader().contentType(ALL)
-			.expectHeader().location("/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/errands/" + ERRAND_ID + "/communication/conversations/0")
+			.expectHeader().location("/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/errands/" + ERRAND_ID + "/communication/conversations/" + id)
 			.expectHeader().contentType(ALL_VALUE)
 			.expectBody().isEmpty();
 
-		// Verification
-
-		// TODO: Verification of service call.
-
-		verifyNoMoreInteractions(serviceMock);
+		// Assert
+		verify(conversationServiceMock).createConversation(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, request);
+		verifyNoMoreInteractions(communicationServiceMock, conversationServiceMock);
 	}
 
 	@Test
 	void updateConversation() {
 
 		// Arrange
-		final var conversationId = randomUUID().toString();
 		final var request = conversationRequest();
 
-		// Mock
-		// TODO: Mock service.
+		when(conversationServiceMock.updateConversationById(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID, request)).thenReturn(Conversation.create());
 
-		// Call
+		// Act
 		final var response = webTestClient.patch()
 			.uri(builder -> builder.path(PATH_PREFIX + PATH_CONVERSATIONS + "/{conversationId}")
-				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", ERRAND_ID, "conversationId", conversationId)))
+				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", ERRAND_ID, "conversationId", CONVERSATION_ID)))
 			.accept(APPLICATION_JSON)
 			.bodyValue(request)
 			.exchange()
@@ -289,21 +287,21 @@ class ErrandCommunicationResourceTest {
 			.expectBody(Conversation.class)
 			.returnResult();
 
-		// Verification
+		// Assert
 		assertThat(response).isNotNull();
 		assertThat(response.getResponseBody()).isNotNull();
-		// TODO: Verification of service call.
 
-		verifyNoMoreInteractions(serviceMock);
+		verify(conversationServiceMock).updateConversationById(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID, request);
+		verifyNoMoreInteractions(communicationServiceMock, conversationServiceMock);
 	}
 
 	@Test
 	void getConversations() {
 
-		// Mock
-		// TODO: Mock service.
+		// Arrange
+		when(conversationServiceMock.readConversations(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID)).thenReturn(List.of(Conversation.create()));
 
-		// Call
+		// Act
 		final var response = webTestClient.get()
 			.uri(builder -> builder.path(PATH_PREFIX + PATH_CONVERSATIONS)
 				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", ERRAND_ID)))
@@ -314,28 +312,24 @@ class ErrandCommunicationResourceTest {
 			.expectBodyList(Conversation.class)
 			.returnResult();
 
-		// Verification
+		// Assert
 		assertThat(response).isNotNull();
 		assertThat(response.getResponseBody()).isNotNull().hasSize(1);
 
-		// TODO: Verification of service call.
-
-		verifyNoMoreInteractions(serviceMock);
+		verify(conversationServiceMock).readConversations(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID);
+		verifyNoMoreInteractions(communicationServiceMock, conversationServiceMock);
 	}
 
 	@Test
 	void getConversationById() {
 
 		// Arrange
-		final var conversationId = randomUUID().toString();
+		when(conversationServiceMock.readConversationById(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID)).thenReturn(Conversation.create());
 
-		// Mock
-		// TODO: Mock service.
-
-		// Call
+		// Act
 		final var response = webTestClient.get()
 			.uri(builder -> builder.path(PATH_PREFIX + PATH_CONVERSATIONS + "/{conversationId}")
-				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", ERRAND_ID, "conversationId", conversationId)))
+				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", ERRAND_ID, "conversationId", CONVERSATION_ID)))
 			.accept(APPLICATION_JSON)
 			.exchange()
 			.expectStatus().isOk()
@@ -343,12 +337,11 @@ class ErrandCommunicationResourceTest {
 			.expectBody(Conversation.class)
 			.returnResult();
 
-		// Verification
+		// Assert
 		assertThat(response).isNotNull();
 
-		// TODO: Verification of service call.
-
-		verifyNoMoreInteractions(serviceMock);
+		verify(conversationServiceMock).readConversationById(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID);
+		verifyNoMoreInteractions(communicationServiceMock, conversationServiceMock);
 	}
 
 	@Test
@@ -381,7 +374,7 @@ class ErrandCommunicationResourceTest {
 
 		// TODO: Verification of service call.
 
-		verifyNoMoreInteractions(serviceMock);
+		verifyNoMoreInteractions(communicationServiceMock, conversationServiceMock);
 	}
 
 	@Test
@@ -407,6 +400,6 @@ class ErrandCommunicationResourceTest {
 
 		// TODO: Verification of service call.
 
-		verifyNoMoreInteractions(serviceMock);
+		verifyNoMoreInteractions(communicationServiceMock, conversationServiceMock);
 	}
 }

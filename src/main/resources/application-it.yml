@@ -7,6 +7,8 @@ integration:
     url: http://localhost:${wiremock.server.port:}/api-eventlog
   messaging:
     url: http://localhost:${wiremock.server.port:}/api-messaging
+  messageexchange:
+    url: http://localhost:${wiremock.server.port:}/api-messageexchange
   notes:
     url: http://localhost:${wiremock.server.port:}/api-notes
   web-message-collector:
@@ -25,7 +27,7 @@ spring:
     type: none
   datasource:
     driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
-    url: jdbc:tc:mariadb:10.6.14:///
+    url: jdbc:tc:mariadb:10.6.14:///ittest
   flyway:
     enabled: true
   jpa:
@@ -47,6 +49,8 @@ spring:
             token-uri: http://localhost:${wiremock.server.port:}/api-gateway/token
           messaging:
             token-uri: http://localhost:${wiremock.server.port:}/api-gateway/token
+          messageexchange:
+            token-uri: http://localhost:${wiremock.server.port:}/api-gateway/token
           notes:
             token-uri: http://localhost:${wiremock.server.port:}/api-gateway/token
           web-message-collector:
@@ -64,6 +68,9 @@ spring:
             client-id: the-client-id
             client-secret: the-client-secret
           messaging:
+            client-id: the-client-id
+            client-secret: the-client-secret
+          messageexchange:
             client-id: the-client-id
             client-secret: the-client-secret
           notes:
