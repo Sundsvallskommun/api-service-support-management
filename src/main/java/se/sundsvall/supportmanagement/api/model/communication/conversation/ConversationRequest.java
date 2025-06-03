@@ -26,9 +26,6 @@ public class ConversationRequest {
 	@ArraySchema(schema = @Schema(implementation = Identifier.class, description = "A list of participants in this conversation"))
 	private List<@Valid Identifier> participants;
 
-	@ArraySchema(schema = @Schema(implementation = KeyValues.class, description = "A list of external references related to this conversation"))
-	private List<@Valid KeyValues> externalReferences;
-
 	@ArraySchema(schema = @Schema(implementation = KeyValues.class, description = "A list of metadata objects associated with the conversation"))
 	private List<@Valid KeyValues> metadata;
 
@@ -88,19 +85,6 @@ public class ConversationRequest {
 		return this;
 	}
 
-	public List<KeyValues> getExternalReferences() {
-		return externalReferences;
-	}
-
-	public void setExternalReferences(List<KeyValues> externalReferences) {
-		this.externalReferences = externalReferences;
-	}
-
-	public ConversationRequest withExternalReferences(List<KeyValues> externalReferences) {
-		this.externalReferences = externalReferences;
-		return this;
-	}
-
 	public List<KeyValues> getMetadata() {
 		return metadata;
 	}
@@ -116,7 +100,7 @@ public class ConversationRequest {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(externalReferences, metadata, participants, relationIds, topic, type);
+		return Objects.hash(metadata, participants, relationIds, topic, type);
 	}
 
 	@Override
@@ -131,12 +115,12 @@ public class ConversationRequest {
 			return false;
 		}
 		ConversationRequest other = (ConversationRequest) obj;
-		return Objects.equals(externalReferences, other.externalReferences) && Objects.equals(metadata, other.metadata) && Objects.equals(participants, other.participants) && Objects.equals(relationIds, other.relationIds) && Objects.equals(topic,
-			other.topic) && type == other.type;
+		return Objects.equals(metadata, other.metadata) && Objects.equals(participants, other.participants) && Objects.equals(relationIds, other.relationIds) && Objects.equals(topic, other.topic) && type == other.type;
 	}
 
 	@Override
 	public String toString() {
-		return "ConversationRequest [topic=" + topic + ", type=" + type + ", relationIds=" + relationIds + ", participants=" + participants + ", externalReferences=" + externalReferences + ", metadata=" + metadata + "]";
+		return "ConversationRequest [topic=" + topic + ", type=" + type + ", relationIds=" + relationIds + ", participants=" + participants + ", metadata=" + metadata + "]";
 	}
+
 }

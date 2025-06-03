@@ -34,7 +34,6 @@ class ConversationTest {
 		final var topic = "topic";
 		final var type = ConversationType.INTERNAL;
 		final var metadata = List.of(KeyValues.create());
-		final var externalReferences = List.of(KeyValues.create());
 
 		final var object = Conversation.create()
 			.withId(id)
@@ -42,7 +41,6 @@ class ConversationTest {
 			.withRelationIds(relationIds)
 			.withTopic(topic)
 			.withType(type)
-			.withExternalReferences(externalReferences)
 			.withMetadata(metadata);
 
 		assertThat(object).isNotNull().hasNoNullFieldsOrProperties();
@@ -51,7 +49,6 @@ class ConversationTest {
 		assertThat(object.getRelationIds()).isEqualTo(relationIds);
 		assertThat(object.getTopic()).isEqualTo(topic);
 		assertThat(object.getType()).isEqualTo(type);
-		assertThat(object.getExternalReferences()).isEqualTo(externalReferences);
 		assertThat(object.getMetadata()).isEqualTo(metadata);
 	}
 

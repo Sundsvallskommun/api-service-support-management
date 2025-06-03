@@ -13,6 +13,8 @@ integration:
     url: http://eventlog.url
   messaging:
     url: http://messaging.url
+  messageexchange:
+    url: http://messageexchange.url
   notes:
     url: http://notes.url
   web-message-collector:
@@ -24,7 +26,7 @@ spring:
     type: none
   datasource:
     driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
-    url: jdbc:tc:mariadb:10.6.14:///
+    url: jdbc:tc:mariadb:10.6.14:///junitteest
   jpa:
     properties:
       hibernate:
@@ -54,6 +56,8 @@ spring:
             token-uri: http://token.url
           messaging:
             token-uri: http://token.url
+          messageexchange:
+            token-uri: http://token.url
           notes:
             token-uri: http://token.url
           web-message-collector:
@@ -71,6 +75,9 @@ spring:
             client-id: the-client-id
             client-secret: the-client-secret
           messaging:
+            client-id: the-client-id
+            client-secret: the-client-secret
+          messageexchange:
             client-id: the-client-id
             client-secret: the-client-secret
           notes:
