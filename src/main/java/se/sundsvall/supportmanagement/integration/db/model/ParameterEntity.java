@@ -42,7 +42,7 @@ public class ParameterEntity {
 		joinColumns = @JoinColumn(name = "parameter_id",
 			foreignKey = @ForeignKey(name = "fk_parameter_values_parameter_id")))
 	@OrderColumn(name = "value_order", nullable = false, columnDefinition = "integer default 0")
-	@Column(name = "value")
+	@Column(name = "value", length = 2000)
 	private List<String> values;
 
 	public static ParameterEntity create() {
