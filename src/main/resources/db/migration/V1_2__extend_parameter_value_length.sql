@@ -1,0 +1,2 @@
+ALTER TABLE parameter_values
+MODIFY COLUMN value VARCHAR(2000);
