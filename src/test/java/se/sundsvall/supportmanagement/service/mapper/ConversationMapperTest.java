@@ -1,8 +1,12 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
+import static java.time.OffsetDateTime.now;
+import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
 import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.RELATION_ID_KEY;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationRequest;
@@ -28,11 +32,24 @@ class ConversationMapperTest {
 	private static final List<String> VALUES_LIST = List.of("value1", "value2");
 	private static final List<String> RELATION_VALUES_LIST = List.of("rel1", "rel2");
 
+	private static final String ATTACHMENT_ID = "ATTACHMENT_ID";
+	private static final String ATTACHMENT_FILENAME = "filename.txt";
+	private static final String ATTACHMENT_MIMETYPE = "text/plain";
+	private static final Integer ATTACHMENT_FILESIZE = 666;
+	private static final OffsetDateTime ATTACHMENT_CREATED = now();
+
+	private static final String MESSAGE_ID = "MESSAGE_ID";
+	private static final String MESSAGE_IN_REPLY_TO_ID = "MESSAGE_IN_REPLY_TO_ID";
+	private static final String MESSAGE_CONTENT = "content";
+	private static final Long MESSAGE_SEQUENCE_NUMBER = 10L;
+	private static final OffsetDateTime MESSAGE_CREATED = now();
+	private static final OffsetDateTime MESSAGE_READ_AT = now();
+
 	@Test
 	void toConversationEntity() {
 
 		// Act
-		final var result = ConversationMapper.toConversationEntity(ERRAND_ID, CONVERSATION_TYPE, createMessageExchangeConversation());
+		final var result = ConversationMapper.toConversationEntity(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_TYPE, createMessageExchangeConversation());
 
 		// Assert
 		assertThat(result.getErrandId()).isEqualTo(ERRAND_ID);
@@ -50,7 +67,7 @@ class ConversationMapperTest {
 	void toConversationEntityWhenMessageExchangeConversationIsNull() {
 
 		// Act
-		final var result = ConversationMapper.toConversationEntity(ERRAND_ID, CONVERSATION_TYPE, null);
+		final var result = ConversationMapper.toConversationEntity(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_TYPE, null);
 
 		// Assert
 		assertThat(result).isNull();
@@ -177,6 +194,88 @@ class ConversationMapperTest {
 		assertThat(result.getNamespace()).isEqualTo(NAMESPACE);
 		assertThat(result.getRelationIds()).isEqualTo(newRelationIds);
 		assertThat(result.getTopic()).isEqualTo(newTopic);
+	}
+
+	@Test
+	void toMessagePage() {
+
+		// Arrange
+		final var message = createMessageExchangeMessage();
+		final var page = new org.springframework.data.domain.PageImpl<>(List.of(message));
+
+		// Act
+		final var result = ConversationMapper.toMessagePage(page);
+
+		// Assert
+		assertThat(result).isNotNull();
+		assertThat(result.getContent()).hasSize(1);
+
+		final var extractedMessage = result.getContent().getFirst();
+
+		assertThat(extractedMessage.getId()).isEqualTo(MESSAGE_ID);
+		assertThat(extractedMessage.getContent()).isEqualTo(MESSAGE_CONTENT);
+		assertThat(extractedMessage.getInReplyToMessageId()).isEqualTo(MESSAGE_IN_REPLY_TO_ID);
+		assertThat(extractedMessage.getCreated()).isEqualTo(MESSAGE_CREATED);
+		assertThat(extractedMessage.getCreatedBy()).isNotNull();
+		assertThat(extractedMessage.getCreatedBy().getType()).isEqualTo(IDENTIFIER_TYPE);
+		assertThat(extractedMessage.getCreatedBy().getValue()).isEqualTo(IDENTIFIER_VALUE);
+		assertThat(extractedMessage.getReadBy()).isNotNull();
+		assertThat(extractedMessage.getReadBy()).hasSize(1);
+		assertThat(extractedMessage.getReadBy().getFirst().getIdentifier().getType()).isEqualTo(IDENTIFIER_TYPE);
+		assertThat(extractedMessage.getReadBy().getFirst().getIdentifier().getValue()).isEqualTo(IDENTIFIER_VALUE);
+		assertThat(extractedMessage.getReadBy().getFirst().getReadAt()).isEqualTo(MESSAGE_READ_AT);
+		assertThat(extractedMessage.getAttachments()).isNotNull();
+		assertThat(extractedMessage.getAttachments()).hasSize(1);
+		assertThat(extractedMessage.getAttachments().getFirst().getCreated()).isEqualTo(ATTACHMENT_CREATED);
+		assertThat(extractedMessage.getAttachments().getFirst().getFileName()).isEqualTo(ATTACHMENT_FILENAME);
+		assertThat(extractedMessage.getAttachments().getFirst().getFileSize()).isEqualTo(ATTACHMENT_FILESIZE);
+		assertThat(extractedMessage.getAttachments().getFirst().getId()).isEqualTo(ATTACHMENT_ID);
+		assertThat(extractedMessage.getAttachments().getFirst().getMimeType()).isEqualTo(ATTACHMENT_MIMETYPE);
+		assertThat(extractedMessage.getAttachments().getFirst().getCreated()).isEqualTo(ATTACHMENT_CREATED);
+	}
+
+	@Test
+	void toReadBy() {
+
+		// Arrange
+		final var type = "adAccount";
+		final var value = "joe01doe";
+		final var readAt = OffsetDateTime.now().minusDays(7);
+		final var identifier = new generated.se.sundsvall.messageexchange.Identifier()
+			.type(type)
+			.value(value);
+		final var readByList = List.of(new generated.se.sundsvall.messageexchange.ReadBy()
+			.identifier(identifier)
+			.readAt(readAt));
+
+		// Act
+		final var result = ConversationMapper.toReadBy(readByList);
+
+		// Assert
+		assertThat(result).isNotNull().hasSize(1);
+		assertThat(result.getFirst().getIdentifier().getType()).isEqualTo(type);
+		assertThat(result.getFirst().getIdentifier().getValue()).isEqualTo(value);
+		assertThat(result.getFirst().getReadAt()).isCloseTo(readAt, within(5, SECONDS));
+	}
+
+	private generated.se.sundsvall.messageexchange.Message createMessageExchangeMessage() {
+		return new generated.se.sundsvall.messageexchange.Message()
+			.content(MESSAGE_CONTENT)
+			.created(MESSAGE_CREATED)
+			.createdBy(new generated.se.sundsvall.messageexchange.Identifier().type(IDENTIFIER_TYPE).value(IDENTIFIER_VALUE))
+			.id(MESSAGE_ID)
+			.inReplyToMessageId(MESSAGE_IN_REPLY_TO_ID)
+			.readBy(List.of(new generated.se.sundsvall.messageexchange.ReadBy()
+				.identifier(new generated.se.sundsvall.messageexchange.Identifier().type(IDENTIFIER_TYPE).value(IDENTIFIER_VALUE))
+				.readAt(MESSAGE_READ_AT)))
+			.sequenceNumber(MESSAGE_SEQUENCE_NUMBER)
+			.attachments(List.of(
+				new generated.se.sundsvall.messageexchange.Attachment()
+					.fileName(ATTACHMENT_FILENAME)
+					.fileSize(ATTACHMENT_FILESIZE)
+					.id(ATTACHMENT_ID)
+					.mimeType(ATTACHMENT_MIMETYPE)
+					.created(ATTACHMENT_CREATED)));
 	}
 
 	private generated.se.sundsvall.messageexchange.Conversation createMessageExchangeConversation() {

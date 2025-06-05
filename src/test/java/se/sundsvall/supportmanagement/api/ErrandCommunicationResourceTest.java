@@ -4,6 +4,7 @@ import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -21,12 +22,15 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.ArgumentMatchers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import org.springframework.web.multipart.MultipartFile;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.communication.Communication;
 import se.sundsvall.supportmanagement.api.model.communication.EmailAttachment;
@@ -39,6 +43,7 @@ import se.sundsvall.supportmanagement.api.model.communication.conversation.Conve
 import se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationType;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.Identifier;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.KeyValues;
+import se.sundsvall.supportmanagement.api.model.communication.conversation.Message;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.MessageRequest;
 import se.sundsvall.supportmanagement.service.CommunicationService;
 import se.sundsvall.supportmanagement.service.ConversationService;
@@ -348,15 +353,11 @@ class ErrandCommunicationResourceTest {
 	void createConversationMessage() {
 
 		// Arrange
-		final var messageRequest = MessageRequest.create()
-			.withContent("content");
-
+		final var messageRequest = MessageRequest.create().withContent("content");
 		final var multipartBodyBuilder = new MultipartBodyBuilder();
 		multipartBodyBuilder.part("attachments", "file-content").filename("test1.txt").contentType(TEXT_PLAIN);
-		multipartBodyBuilder.part("attachments", "file-content").filename("tesst2.txt").contentType(TEXT_PLAIN);
-		multipartBodyBuilder.part("requestBody", messageRequest);
-
-		// TODO: Mock service.
+		multipartBodyBuilder.part("attachments", "file-content").filename("test2.txt").contentType(TEXT_PLAIN);
+		multipartBodyBuilder.part("message", messageRequest);
 
 		// Act
 		final var response = webTestClient.post()
@@ -372,16 +373,18 @@ class ErrandCommunicationResourceTest {
 		// Assert
 		assertThat(response).isNotNull();
 
-		// TODO: Verification of service call.
-
+		verify(conversationServiceMock).createMessage(eq(MUNICIPALITY_ID), eq(NAMESPACE), eq(ERRAND_ID), eq(CONVERSATION_ID), eq(messageRequest), ArgumentMatchers.<List<MultipartFile>>any());
 		verifyNoMoreInteractions(communicationServiceMock, conversationServiceMock);
 	}
 
 	@Test
 	void getConversationMessages() {
 
-		// Mock
-		// TODO: Mock service.
+		// Arrange
+		final var message = Message.create();
+		final var page = new PageImpl<>(List.of(message));
+
+		when(conversationServiceMock.getMessages(eq(MUNICIPALITY_ID), eq(NAMESPACE), eq(ERRAND_ID), eq(CONVERSATION_ID), any())).thenReturn(page);
 
 		// Call
 		final var response = webTestClient.get()
@@ -398,8 +401,7 @@ class ErrandCommunicationResourceTest {
 		assertThat(response).isNotNull();
 		assertThat(response.getResponseBody()).isNotNull().hasSize(1);
 
-		// TODO: Verification of service call.
-
+		verify(conversationServiceMock).getMessages(eq(MUNICIPALITY_ID), eq(NAMESPACE), eq(ERRAND_ID), eq(CONVERSATION_ID), any());
 		verifyNoMoreInteractions(communicationServiceMock, conversationServiceMock);
 	}
 }

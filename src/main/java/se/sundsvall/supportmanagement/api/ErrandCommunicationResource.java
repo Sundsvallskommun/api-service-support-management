@@ -32,6 +32,7 @@ import jakarta.validation.constraints.Pattern;
 import java.util.List;
 import java.util.Set;
 import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -256,11 +257,13 @@ class ErrandCommunicationResource {
 		@Parameter(name = "municipalityId", description = "Municipality ID", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "errandId", description = "Errand ID", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("errandId") final String errandId,
 		@Parameter(name = "conversationId", description = "Conversation ID", example = "1aefbbb8-de82-414b-b5d7-ba7c5bbe4506") @ValidUuid @PathVariable("conversationId") final String conversationId,
-		@RequestPart("requestBody") @Schema(description = "Message body", implementation = MessageRequest.class) final String messageRequest,
+		@RequestPart("message") @Schema(description = "Message body", implementation = MessageRequest.class) final String messageRequest,
 		@RequestPart(value = "attachments", required = false) final List<MultipartFile> attachments) throws JsonProcessingException {
 
 		final var messageRequestObj = objectMapper.readValue(messageRequest, MessageRequest.class);
 		validate(messageRequestObj);
+
+		conversationService.createMessage(municipalityId, namespace, errandId, conversationId, messageRequestObj, attachments);
 
 		return noContent()
 			.header(CONTENT_TYPE, ALL_VALUE)
@@ -272,15 +275,14 @@ class ErrandCommunicationResource {
 		@ApiResponse(responseCode = "200", description = "Successful Operation", useReturnTypeSchema = true),
 		@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	})
-	ResponseEntity<List<Message>> getMessages(
+	ResponseEntity<Page<Message>> getMessages(
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality ID", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "errandId", description = "Errand ID", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("errandId") final String errandId,
 		@Parameter(name = "conversationId", description = "Conversation ID", example = "1aefbbb8-de82-414b-b5d7-ba7c5bbe4506") @ValidUuid @PathVariable("conversationId") final String conversationId,
 		@ParameterObject final Pageable pageable) {
 
-		// TODO: call service layer
-		return ok(List.of(Message.create()));
+		return ok(conversationService.getMessages(municipalityId, namespace, errandId, conversationId, pageable));
 	}
 
 	private <T> void validate(final T t) {

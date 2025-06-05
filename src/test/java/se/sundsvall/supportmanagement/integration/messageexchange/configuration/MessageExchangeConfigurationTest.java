@@ -1,14 +1,18 @@
 package se.sundsvall.supportmanagement.integration.messageexchange.configuration;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static se.sundsvall.supportmanagement.integration.messageexchange.configuration.MessageExchangeConfiguration.CLIENT_ID;
 
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -20,6 +24,7 @@ import org.springframework.security.oauth2.client.registration.ClientRegistratio
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import se.sundsvall.dept44.configuration.feign.FeignMultiCustomizer;
 import se.sundsvall.dept44.configuration.feign.decoder.ProblemErrorDecoder;
+import se.sundsvall.dept44.support.Identifier;
 
 @ExtendWith(MockitoExtension.class)
 class MessageExchangeConfigurationTest {
@@ -66,5 +71,28 @@ class MessageExchangeConfigurationTest {
 			assertThat(errorDecoderCaptor.getValue()).hasFieldOrPropertyWithValue("integrationName", CLIENT_ID);
 			assertThat(customizer).isSameAs(feignBuilderCustomizerMock);
 		}
+	}
+
+	@ParameterizedTest
+	@MethodSource("toValidUuidsStreamArguments")
+	void createSentByHeaderValue(Identifier identifier, String expectedHeaderValue) {
+
+		// Arrange
+		final var configuration = new MessageExchangeConfiguration();
+
+		// Act
+		final var result = configuration.createSentByHeaderValue(identifier);
+
+		// Assert
+		assertThat(result).isEqualTo(expectedHeaderValue);
+	}
+
+	private static Stream<Arguments> toValidUuidsStreamArguments() {
+		return Stream.of(
+			Arguments.of(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("joe01doe"), "joe01doe; type=adAccount"),
+			Arguments.of(Identifier.create().withType(Identifier.Type.PARTY_ID).withValue("98c7b451-a14a-4f9f-91da-8834ba01eb81"), "98c7b451-a14a-4f9f-91da-8834ba01eb81; type=partyId"),
+			Arguments.of(Identifier.create(), null),
+			Arguments.of(Identifier.create().withType(null).withValue("joe01doe"), null),
+			Arguments.of(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue(null), null));
 	}
 }
