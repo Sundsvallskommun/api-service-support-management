@@ -7,11 +7,16 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import se.sundsvall.supportmanagement.api.model.communication.conversation.Attachment;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.Conversation;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationRequest;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationType;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.Identifier;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.KeyValues;
+import se.sundsvall.supportmanagement.api.model.communication.conversation.Message;
+import se.sundsvall.supportmanagement.api.model.communication.conversation.MessageRequest;
+import se.sundsvall.supportmanagement.api.model.communication.conversation.ReadBy;
 import se.sundsvall.supportmanagement.integration.db.model.communication.ConversationEntity;
 
 public final class ConversationMapper {
@@ -32,14 +37,14 @@ public final class ConversationMapper {
 			.orElse(null);
 	}
 
-	public static ConversationEntity toConversationEntity(String errandId, ConversationType type, generated.se.sundsvall.messageexchange.Conversation conversation) {
+	public static ConversationEntity toConversationEntity(String municipalityId, String namespace, String errandId, ConversationType type, generated.se.sundsvall.messageexchange.Conversation conversation) {
 		return Optional.ofNullable(conversation)
 			.map(c -> ConversationEntity.create()
 				.withErrandId(errandId)
 				.withLatestSyncedSequenceNumber(c.getLatestSequenceNumber())
 				.withMessageExchangeId(c.getId())
-				.withMunicipalityId(c.getMunicipalityId())
-				.withNamespace(c.getNamespace())
+				.withMunicipalityId(municipalityId)
+				.withNamespace(namespace)
 				.withRelationIds(toStringList(toKeyValuesList(c.getExternalReferences()), RELATION_ID_KEY))
 				.withTopic(c.getTopic())
 				.withType(Optional.ofNullable(type).map(ConversationType::name).orElse(null)))
@@ -84,6 +89,42 @@ public final class ConversationMapper {
 		return conversationEntity;
 	}
 
+	public static Page<Message> toMessagePage(final Page<generated.se.sundsvall.messageexchange.Message> message) {
+		return message.map(m -> Message.create()
+			.withId(m.getId())
+			.withInReplyToMessageId(m.getInReplyToMessageId())
+			.withCreated(m.getCreated())
+			.withCreatedBy(Optional.ofNullable(m.getCreatedBy()).map(ConversationMapper::toIdentifier).orElse(null))
+			.withContent(m.getContent())
+			.withReadBy(toReadBy(m.getReadBy()))
+			.withAttachments(toAttachments(m.getAttachments())));
+	}
+
+	public static List<ReadBy> toReadBy(final List<generated.se.sundsvall.messageexchange.ReadBy> readByList) {
+		return Optional.ofNullable(readByList).orElse(emptyList()).stream()
+			.map(rb -> ReadBy.create()
+				.withIdentifier(toIdentifier(rb.getIdentifier()))
+				.withReadAt(rb.getReadAt()))
+			.toList();
+	}
+
+	private static List<Attachment> toAttachments(final List<generated.se.sundsvall.messageexchange.Attachment> attachmentList) {
+		return Optional.ofNullable(attachmentList).orElse(emptyList()).stream()
+			.map(attachment -> Attachment.create()
+				.withCreated(attachment.getCreated())
+				.withId(attachment.getId())
+				.withFileName(attachment.getFileName())
+				.withMimeType(attachment.getMimeType())
+				.withFileSize(Optional.ofNullable(attachment.getFileSize()).orElse(0)))
+			.toList();
+	}
+
+	public static generated.se.sundsvall.messageexchange.Message toMessageRequest(final MessageRequest messageRequest) {
+		return new generated.se.sundsvall.messageexchange.Message()
+			.inReplyToMessageId(messageRequest.getInReplyToMessageId())
+			.content(messageRequest.getContent());
+	}
+
 	private static List<KeyValues> toKeyValuesList(List<generated.se.sundsvall.messageexchange.KeyValues> keyValueList) {
 		return Optional.ofNullable(keyValueList).orElse(Collections.emptyList()).stream()
 			.map(kv -> KeyValues.create()
@@ -116,11 +157,11 @@ public final class ConversationMapper {
 
 	private static List<Identifier> toIdentifierList(List<generated.se.sundsvall.messageexchange.Identifier> identifierList) {
 		return Optional.ofNullable(identifierList).orElse(Collections.emptyList()).stream()
-			.map(ConversationMapper::todentifier)
+			.map(ConversationMapper::toIdentifier)
 			.toList();
 	}
 
-	private static Identifier todentifier(generated.se.sundsvall.messageexchange.Identifier identifier) {
+	private static Identifier toIdentifier(generated.se.sundsvall.messageexchange.Identifier identifier) {
 		return Optional.ofNullable(identifier)
 			.map(i -> Identifier.create()
 				.withType(i.getType())

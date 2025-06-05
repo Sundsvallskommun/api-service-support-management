@@ -960,7 +960,7 @@ class ErrandCommunicationResourceFailureTest {
 		assertThat(response).isNotNull();
 		assertThat(response.getTitle()).isEqualTo(BAD_REQUEST.getReasonPhrase());
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
-		assertThat(response.getDetail()).isEqualTo("Required part 'requestBody' is not present.");
+		assertThat(response.getDetail()).isEqualTo("Required part 'message' is not present.");
 
 		// Verification
 		verifyNoInteractions(communicationServiceMock, conversationServiceMock);
@@ -975,7 +975,7 @@ class ErrandCommunicationResourceFailureTest {
 			.withInReplyToMessageId("invalid");
 
 		final var multipartBodyBuilder = new MultipartBodyBuilder();
-		multipartBodyBuilder.part("requestBody", messageRequest).contentType(APPLICATION_JSON);
+		multipartBodyBuilder.part("message", messageRequest).contentType(APPLICATION_JSON);
 
 		// Call
 		final var response = webTestClient.post()
