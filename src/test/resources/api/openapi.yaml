@@ -7,7 +7,7 @@ info:
     url: https://opensource.org/licenses/MIT
   version: "10.5"
 servers:
-- url: http://localhost:61782
+- url: http://localhost:53077
   description: Generated server url
 tags:
 - name: Errand attachments
@@ -2100,8 +2100,8 @@ paths:
       tags:
       - Errand communication
       summary: Get message list
-      description: Get message list
-      operationId: getMessages
+      description: Get conversation message list
+      operationId: getConversationMessages
       parameters:
       - name: namespace
         in: path
@@ -2188,8 +2188,8 @@ paths:
       tags:
       - Errand communication
       summary: Create new message
-      description: Create new message
-      operationId: createMessage
+      description: Create new conversation message
+      operationId: createConversationMessage
       parameters:
       - name: namespace
         in: path
@@ -4666,8 +4666,8 @@ paths:
       tags:
       - Errand communication
       summary: Get a streamed communication attachment.
-      description: Fetches the communication attachment that matches the provided
-        id in a streamed manner
+      description: "Fetches the communication attachment that matches the provided\
+        \ ID, in a streamed manner"
       operationId: getMessageAttachment
       parameters:
       - name: namespace
@@ -4773,6 +4773,87 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Communication"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  ? /{municipalityId}/{namespace}/errands/{errandId}/communication/conversations/{conversationId}/messages/{messageId}/attachments/{attachmentId}
+  : get:
+      tags:
+      - Errand communication
+      summary: Get a streamed conversation message attachment.
+      description: "Fetches the conversation message attachment that matches the provided\
+        \ ID, in a streamed manner"
+      operationId: getConversationMessageAttachment
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          pattern: "[\\w|\\-]+"
+          type: string
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality ID
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand id
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: conversationId
+        in: path
+        description: Conversation ID
+        required: true
+        schema:
+          type: string
+        example: 1aefbbb8-de82-414b-b5d7-ba7c5bbe4506
+      - name: messageId
+        in: path
+        description: Message ID
+        required: true
+        schema:
+          type: string
+        example: be3a5c7b-0f39-4867-8065-6a286b36fcc3
+      - name: attachmentId
+        in: path
+        description: Conversation message attachment ID
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      responses:
+        "200":
+          description: Successful Operation
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "507":
+          description: Insufficient Storage
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -4967,6 +5048,8 @@ components:
     Problem:
       type: object
       properties:
+        status:
+          $ref: "#/components/schemas/StatusType"
         instance:
           type: string
           format: uri
@@ -4977,8 +5060,6 @@ components:
           type: object
           additionalProperties:
             type: object
-        status:
-          $ref: "#/components/schemas/StatusType"
         title:
           type: string
         detail:
@@ -5102,6 +5183,8 @@ components:
                 type: boolean
         message:
           type: string
+        status:
+          $ref: "#/components/schemas/StatusType"
         instance:
           type: string
           format: uri
@@ -5112,8 +5195,6 @@ components:
           type: object
           additionalProperties:
             type: object
-        status:
-          $ref: "#/components/schemas/StatusType"
         title:
           type: string
         detail:
@@ -6302,22 +6383,22 @@ components:
           format: int64
         sort:
           $ref: "#/components/schemas/SortObject"
-        unpaged:
-          type: boolean
-        paged:
-          type: boolean
-        pageNumber:
-          type: integer
-          format: int32
         pageSize:
           type: integer
           format: int32
+        pageNumber:
+          type: integer
+          format: int32
+        paged:
+          type: boolean
+        unpaged:
+          type: boolean
     SortObject:
       type: object
       properties:
-        empty:
-          type: boolean
         sorted:
+          type: boolean
+        empty:
           type: boolean
         unsorted:
           type: boolean

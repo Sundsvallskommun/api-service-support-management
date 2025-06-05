@@ -33,7 +33,7 @@ import se.sundsvall.supportmanagement.integration.messageexchange.MessageExchang
 public class ConversationService {
 
 	private static final String NO_CONVERSATION_ID_RETURNED = "ID of conversation was not returned in location header!";
-	private static final String NO_CONVERSATION_FOUND = "No conversation with id: '%s' and errandId: '%s' and municipalityId: '%s' and namespace: '%s' was found!";
+	private static final String NO_CONVERSATION_FOUND = "No conversation with id:'%s', errandId:'%s', municipalityId:'%s' and namespace:'%s' was found!";
 	private static final String NO_ERRAND_FOUND = "No errand with id: '%s' was found!";
 
 	private final MessageExchangeClient messageExchangeClient;
