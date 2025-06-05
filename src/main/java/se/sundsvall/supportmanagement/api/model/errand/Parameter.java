@@ -1,7 +1,9 @@
 package se.sundsvall.supportmanagement.api.model.errand;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import java.util.List;
 import java.util.Objects;
 
@@ -18,8 +20,9 @@ public class Parameter {
 	@Schema(description = "Parameter group name")
 	private String group;
 
-	@Schema(description = "Parameter values")
-	private List<String> values;
+	@Schema(description = "Parameter values. Each value can have a maximum length of 2000 characters")
+	@Valid
+	private List<@Size(max = 2000) String> values;
 
 	public static Parameter create() {
 		return new Parameter();
