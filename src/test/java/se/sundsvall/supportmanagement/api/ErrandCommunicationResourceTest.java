@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
@@ -15,6 +16,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
 import static org.springframework.http.MediaType.TEXT_PLAIN;
 import static org.springframework.web.reactive.function.BodyInserters.fromMultipartData;
+import static org.zalando.problem.Status.NOT_IMPLEMENTED;
 
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.List;
@@ -31,6 +33,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.web.multipart.MultipartFile;
+import org.zalando.problem.Problem;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.communication.Communication;
 import se.sundsvall.supportmanagement.api.model.communication.EmailAttachment;
@@ -58,6 +61,7 @@ class ErrandCommunicationResourceTest {
 	private static final String COMMUNICATION_ID = randomUUID().toString();
 	private static final String ATTACHMENT_ID = randomUUID().toString();
 	private static final String CONVERSATION_ID = randomUUID().toString();
+	private static final String MESSAGE_ID = randomUUID().toString();
 	private static final String PATH_PREFIX = "/{municipalityId}/{namespace}/errands/{errandId}/communication";
 	private static final String PATH_SMS = "/sms";
 	private static final String PATH_EMAIL = "/email";
@@ -403,5 +407,27 @@ class ErrandCommunicationResourceTest {
 
 		verify(conversationServiceMock).getMessages(eq(MUNICIPALITY_ID), eq(NAMESPACE), eq(ERRAND_ID), eq(CONVERSATION_ID), any());
 		verifyNoMoreInteractions(communicationServiceMock, conversationServiceMock);
+	}
+
+	@Test
+	void getConversationMessageAttachmentInvalidAttachmentId() {
+
+		// Act
+		final var response = webTestClient.get()
+			.uri(builder -> builder.path(PATH_PREFIX + PATH_CONVERSATIONS + "/{conversationId}/messages/{messageId}/attachments/{attachmentId}")
+				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", ERRAND_ID, "conversationId", CONVERSATION_ID, "messageId", MESSAGE_ID, "attachmentId", ATTACHMENT_ID)))
+			.exchange()
+			.expectStatus().is5xxServerError()
+			.expectBody(Problem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo(NOT_IMPLEMENTED.getReasonPhrase());
+		assertThat(response.getStatus()).isEqualTo(NOT_IMPLEMENTED);
+		assertThat(response.getDetail()).isEqualTo("Method not implemented!");
+
+		// Assert
+		verifyNoInteractions(communicationServiceMock, conversationServiceMock);
 	}
 }

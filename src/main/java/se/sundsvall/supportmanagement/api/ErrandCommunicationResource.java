@@ -11,6 +11,7 @@ import static org.springframework.http.ResponseEntity.created;
 import static org.springframework.http.ResponseEntity.noContent;
 import static org.springframework.http.ResponseEntity.ok;
 import static org.springframework.web.util.UriComponentsBuilder.fromPath;
+import static org.zalando.problem.Status.NOT_IMPLEMENTED;
 import static se.sundsvall.supportmanagement.Constants.NAMESPACE_REGEXP;
 import static se.sundsvall.supportmanagement.Constants.NAMESPACE_VALIDATION_MESSAGE;
 
@@ -171,7 +172,7 @@ class ErrandCommunicationResource {
 	}
 
 	@GetMapping(path = "/{communicationId}/attachments/{attachmentId}", produces = ALL_VALUE)
-	@Operation(summary = "Get a streamed communication attachment.", description = "Fetches the communication attachment that matches the provided id in a streamed manner", responses = {
+	@Operation(summary = "Get a streamed communication attachment.", description = "Fetches the communication attachment that matches the provided ID, in a streamed manner", responses = {
 		@ApiResponse(responseCode = "200", description = "Successful Operation", useReturnTypeSchema = true),
 		@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
 		@ApiResponse(responseCode = "507", description = "Insufficient Storage", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
@@ -248,11 +249,11 @@ class ErrandCommunicationResource {
 	}
 
 	@PostMapping(path = "/conversations/{conversationId}/messages", consumes = MULTIPART_FORM_DATA_VALUE, produces = ALL_VALUE)
-	@Operation(summary = "Create new message", description = "Create new message", responses = {
+	@Operation(summary = "Create new message", description = "Create new conversation message", responses = {
 		@ApiResponse(responseCode = "204", description = "Successful operation", useReturnTypeSchema = true),
 		@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	})
-	ResponseEntity<Void> createMessage(
+	ResponseEntity<Void> createConversationMessage(
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality ID", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "errandId", description = "Errand ID", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("errandId") final String errandId,
@@ -271,11 +272,11 @@ class ErrandCommunicationResource {
 	}
 
 	@GetMapping(path = "/conversations/{conversationId}/messages", produces = APPLICATION_JSON_VALUE)
-	@Operation(summary = "Get message list", description = "Get message list", responses = {
+	@Operation(summary = "Get message list", description = "Get conversation message list", responses = {
 		@ApiResponse(responseCode = "200", description = "Successful Operation", useReturnTypeSchema = true),
 		@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	})
-	ResponseEntity<Page<Message>> getMessages(
+	ResponseEntity<Page<Message>> getConversationMessages(
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality ID", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "errandId", description = "Errand ID", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("errandId") final String errandId,
@@ -283,6 +284,24 @@ class ErrandCommunicationResource {
 		@ParameterObject final Pageable pageable) {
 
 		return ok(conversationService.getMessages(municipalityId, namespace, errandId, conversationId, pageable));
+	}
+
+	@GetMapping(path = "/conversations/{conversationId}/messages/{messageId}/attachments/{attachmentId}", produces = ALL_VALUE)
+	@Operation(summary = "Get a streamed conversation message attachment.", description = "Fetches the conversation message attachment that matches the provided ID, in a streamed manner", responses = {
+		@ApiResponse(responseCode = "200", description = "Successful Operation", useReturnTypeSchema = true),
+		@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
+		@ApiResponse(responseCode = "507", description = "Insufficient Storage", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+	})
+	void getConversationMessageAttachment(
+		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
+		@Parameter(name = "municipalityId", description = "Municipality ID", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
+		@Parameter(name = "errandId", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("errandId") final String errandId,
+		@Parameter(name = "conversationId", description = "Conversation ID", example = "1aefbbb8-de82-414b-b5d7-ba7c5bbe4506") @ValidUuid @PathVariable("conversationId") final String conversationId,
+		@Parameter(name = "messageId", description = "Message ID", example = "be3a5c7b-0f39-4867-8065-6a286b36fcc3") @ValidUuid @PathVariable("messageId") final String messageId,
+		@Parameter(name = "attachmentId", description = "Conversation message attachment ID", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable final String attachmentId,
+		final HttpServletResponse response) {
+
+		throw Problem.valueOf(NOT_IMPLEMENTED, "Method not implemented!");
 	}
 
 	private <T> void validate(final T t) {

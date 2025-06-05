@@ -1001,4 +1001,31 @@ class ErrandCommunicationResourceFailureTest {
 		// Verification
 		verifyNoInteractions(communicationServiceMock, conversationServiceMock);
 	}
+
+	@Test
+	void getConversationMessageAttachmentInvalidAttachmentId() {
+
+		// Arrange
+		final var attachmentId = "invalid";
+
+		// Act
+		final var response = webTestClient.get()
+			.uri(builder -> builder.path(PATH_PREFIX + PATH_CONVERSATIONS + "/{conversationId}/messages/{messageId}/attachments/{attachmentId}")
+				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", ERRAND_ID, "conversationId", CONVERSATION_ID, "messageId", MESSAGE_ID, "attachmentId", attachmentId)))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::getField, Violation::getMessage)
+			.containsExactly(tuple("getConversationMessageAttachment.attachmentId", "not a valid UUID"));
+
+		// Assert
+		verifyNoMoreInteractions(communicationServiceMock, conversationServiceMock);
+	}
 }
