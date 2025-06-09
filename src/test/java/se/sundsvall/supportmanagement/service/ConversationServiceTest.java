@@ -1,6 +1,8 @@
 package se.sundsvall.supportmanagement.service;
 
+import static java.util.Optional.empty;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -24,6 +26,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockMultipartFile;
+import org.zalando.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationRequest;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationType;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.Identifier;
@@ -106,6 +109,25 @@ class ConversationServiceTest {
 	}
 
 	@Test
+	void createConversationNoConversationIdReturnedFromMessageExchange() {
+
+		// Arrange
+		final var conversationRequest = createConversationRequest();
+
+		when(messageExchangeClientMock.createConversation(eq(MUNICIPALITY_ID), eq(MESSAGE_EXCHANGE_NAMESPACE), any())).thenReturn(ResponseEntity.notFound().build());
+
+		// Act
+		assertThatThrownBy(() -> conversationService.createConversation(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, conversationRequest))
+			.isInstanceOf(Problem.class)
+			.hasMessageContaining("Internal Server Error: ID of conversation was not returned in location header!");
+
+		// Assert
+		verify(messageExchangeClientMock).createConversation(eq(MUNICIPALITY_ID), eq(MESSAGE_EXCHANGE_NAMESPACE), any());
+		verify(conversationRepositoryMock, never()).save(any());
+		verify(messageExchangeClientMock, never()).getConversationById(any(), any(), any());
+	}
+
+	@Test
 	void updateConversationById() {
 
 		// Arrange
@@ -115,7 +137,7 @@ class ConversationServiceTest {
 
 		when(conversationRepositoryMock.findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID)).thenReturn(Optional.of(conversationEntity));
 		when(conversationRepositoryMock.save(any())).thenReturn(conversationEntity);
-		when(messageExchangeClientMock.updateConversationById(eq(MUNICIPALITY_ID), eq(MESSAGE_EXCHANGE_NAMESPACE), eq(CONVERSATION_ID), any())).thenReturn(ResponseEntity.ok(messageExchangeConversation));
+		when(messageExchangeClientMock.updateConversationById(eq(MUNICIPALITY_ID), eq(MESSAGE_EXCHANGE_NAMESPACE), eq(MESSAGE_EXCHANGE_ID), any())).thenReturn(ResponseEntity.ok(messageExchangeConversation));
 
 		// Act
 		final var response = conversationService.updateConversationById(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID, conversationRequest);
@@ -125,7 +147,7 @@ class ConversationServiceTest {
 
 		verify(conversationRepositoryMock).findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID);
 		verify(conversationRepositoryMock).save(conversationEntityCaptor.capture());
-		verify(messageExchangeClientMock).updateConversationById(eq(MUNICIPALITY_ID), eq(MESSAGE_EXCHANGE_NAMESPACE), eq(CONVERSATION_ID), any());
+		verify(messageExchangeClientMock).updateConversationById(eq(MUNICIPALITY_ID), eq(MESSAGE_EXCHANGE_NAMESPACE), eq(MESSAGE_EXCHANGE_ID), any());
 
 		assertThat(conversationEntityCaptor.getValue().getMessageExchangeId()).isEqualTo(MESSAGE_EXCHANGE_ID);
 		assertThat(conversationEntityCaptor.getValue().getRelationIds()).isEqualTo(RELATION_VALUES_LIST);
@@ -174,6 +196,23 @@ class ConversationServiceTest {
 	}
 
 	@Test
+	void readConversationByIdConversationNotFoundInDB() {
+
+		// Arrange
+		when(conversationRepositoryMock.findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID)).thenReturn(empty());
+
+		// Act
+		assertThatThrownBy(() -> conversationService.readConversationById(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID))
+			.isInstanceOf(Problem.class)
+			.hasMessageContaining("Not Found: No conversation with id:'CONVERSATION_ID', errandId:'ERRAND_ID', municipalityId:'MUNICIPALITY_ID' and namespace:'NAMESPACE' was found!");
+
+		// Assert
+		verify(conversationRepositoryMock).findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID);
+		verify(conversationRepositoryMock, never()).save(any());
+		verify(messageExchangeClientMock, never()).getConversationById(any(), any(), any());
+	}
+
+	@Test
 	void createMessage() {
 
 		// Arrange
@@ -197,6 +236,29 @@ class ConversationServiceTest {
 		verify(errandRepositoryMock).findById(ERRAND_ID);
 		verify(messageExchangeClientMock).createMessage(eq(MUNICIPALITY_ID), eq(MESSAGE_EXCHANGE_NAMESPACE), eq(MESSAGE_EXCHANGE_ID), any(), eq(null));
 		verify(errandAttachmentServiceMock, never()).createErrandAttachment(any(), any(), any(), any());
+		verifyNoMoreInteractions(conversationRepositoryMock, messageExchangeClientMock, errandAttachmentServiceMock);
+	}
+
+	@Test
+	void createMessageErrandNotFoundInDB() {
+
+		// Arrange
+		final var conversationEntity = ConversationEntity.create().withId(CONVERSATION_ID).withMessageExchangeId(MESSAGE_EXCHANGE_ID).withErrandId(ERRAND_ID);
+		final var messageRequest = MessageRequest.create();
+
+		when(conversationRepositoryMock.findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID))
+			.thenReturn(Optional.ofNullable(conversationEntity));
+
+		when(errandRepositoryMock.findById(ERRAND_ID)).thenReturn(empty());
+
+		// Act
+		assertThatThrownBy(() -> conversationService.createMessage(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID, messageRequest, null))
+			.isInstanceOf(Problem.class)
+			.hasMessageContaining("Not Found: No errand with id: 'ERRAND_ID' was found!");
+
+		// Assert
+		verify(conversationRepositoryMock).findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID);
+		verify(errandRepositoryMock).findById(ERRAND_ID);
 		verifyNoMoreInteractions(conversationRepositoryMock, messageExchangeClientMock, errandAttachmentServiceMock);
 	}
 

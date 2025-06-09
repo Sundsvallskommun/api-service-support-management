@@ -98,13 +98,16 @@ public class ConversationService {
 	public Conversation updateConversationById(final String municipalityId, final String namespace, final String errandId, final String conversationId, final ConversationRequest conversationRequest) {
 
 		// Fetch conversation from DB.
-		final var conversationEntity = getConversationEntity(municipalityId, namespace, errandId, conversationId);
+		var conversationEntity = getConversationEntity(municipalityId, namespace, errandId, conversationId);
 
 		// Update in MessageExchange.
 		final var messageExchangeResponse = messageExchangeClient
-			.updateConversationById(municipalityId, messageExchangeNamespace, conversationId, toMessageExchangeConversation(municipalityId, namespace, conversationRequest)).getBody();
+			.updateConversationById(municipalityId, messageExchangeNamespace, conversationEntity.getMessageExchangeId(), toMessageExchangeConversation(municipalityId, messageExchangeNamespace, conversationRequest)).getBody();
 
-		return toConversation(conversationRepository.save(mergeIntoConversationEntity(conversationEntity, messageExchangeResponse)));
+		// Save updated conversation in DB.
+		conversationEntity = conversationRepository.save(mergeIntoConversationEntity(conversationEntity, messageExchangeResponse));
+
+		return toConversation(messageExchangeResponse, conversationEntity);
 	}
 
 	public Page<Message> getMessages(final String municipalityId, final String namespace, final String errandId, final String conversationId, final Pageable pageable) {

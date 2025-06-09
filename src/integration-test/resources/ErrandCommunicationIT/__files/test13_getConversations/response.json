@@ -1,0 +1,18 @@
+[
+	{
+		"id": "7a772d18-a588-41bc-91ec-13b7421c9bb8",
+		"topic": "The topic 2",
+		"type": "INTERNAL",
+		"relationIds": [
+			"RELATION-ID-2"
+		]
+	},
+	{
+		"id": "f4524497-a592-4618-a746-b59a60a76f13",
+		"topic": "The topic 1",
+		"type": "EXTERNAL",
+		"relationIds": [
+			"RELATION-ID-1"
+		]
+	}
+]

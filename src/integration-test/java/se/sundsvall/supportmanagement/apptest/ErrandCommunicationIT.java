@@ -2,14 +2,20 @@ package se.sundsvall.supportmanagement.apptest;
 
 import static java.util.UUID.randomUUID;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
+import static org.springframework.http.HttpHeaders.LOCATION;
 import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpMethod.PATCH;
 import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpMethod.PUT;
+import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
 import static org.springframework.util.MimeTypeUtils.IMAGE_JPEG_VALUE;
+import static se.sundsvall.dept44.support.Identifier.HEADER_NAME;
 
+import java.io.FileNotFoundException;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.annotation.DirtiesContext;
@@ -195,6 +201,83 @@ class ErrandCommunicationIT extends AbstractAppTest {
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	void test13_getConversations() {
+		setupCall()
+			.withHttpMethod(GET)
+			.withServicePath(PATH + "/ec677eb3-604c-4935-bff7-f8f0b500c8f4/communication/conversations")
+			.withHeader(HEADER_NAME, "type=adAccount; joe01doe")
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	void test14_getConversationById() {
+		setupCall()
+			.withHttpMethod(GET)
+			.withServicePath(PATH + "/ec677eb3-604c-4935-bff7-f8f0b500c8f4/communication/conversations/7a772d18-a588-41bc-91ec-13b7421c9bb8")
+			.withHeader(HEADER_NAME, "type=adAccount; joe01doe")
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	void test15_updateConversationById() {
+		setupCall()
+			.withHttpMethod(PATCH)
+			.withServicePath(PATH + "/ec677eb3-604c-4935-bff7-f8f0b500c8f4/communication/conversations/7a772d18-a588-41bc-91ec-13b7421c9bb8")
+			.withHeader(HEADER_NAME, "type=adAccount; joe01doe")
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	void test16_createConversation() {
+		final var location = setupCall()
+			.withHttpMethod(POST)
+			.withServicePath(PATH + "/ec677eb3-604c-4935-bff7-f8f0b500c8f4/communication/conversations")
+			.withHeader(HEADER_NAME, "type=adAccount; joe01doe")
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(CREATED)
+			.sendRequest()
+			.getResponseHeaders().get(LOCATION).getFirst();
+
+		setupCall()
+			.withServicePath(location)
+			.withHttpMethod(GET)
+			.withHeader(HEADER_NAME, "type=adAccount; joe01doe")
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	void test17_getConversationMessages() {
+		setupCall()
+			.withHttpMethod(GET)
+			.withServicePath(PATH + "/ec677eb3-604c-4935-bff7-f8f0b500c8f4/communication/conversations/f4524497-a592-4618-a746-b59a60a76f13/messages")
+			.withHeader(HEADER_NAME, "type=adAccount; joe01doe")
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	void test18_createConversationMessage() throws FileNotFoundException {
+		setupCall()
+			.withHttpMethod(POST)
+			.withServicePath(PATH + "/ec677eb3-604c-4935-bff7-f8f0b500c8f4/communication/conversations/f4524497-a592-4618-a746-b59a60a76f13/messages")
+			.withHeader(HEADER_NAME, "type=adAccount; joe01doe")
+			.withContentType(MULTIPART_FORM_DATA)
+			.withRequestFile("message", REQUEST_FILE)
+			.withExpectedResponseStatus(NO_CONTENT)
 			.sendRequestAndVerifyResponse();
 	}
 }

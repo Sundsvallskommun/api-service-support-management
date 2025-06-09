@@ -1,0 +1,46 @@
+{
+	"request": {
+		"method": "GET",
+		"url": "/api-messageexchange/2281/draken/conversations/8948f414-079d-4009-af3a-a1ff2a59528a",
+		"headers": {
+			"X-Sent-By": {
+				"equalTo": "joe01doe; type=adAccount"
+			}
+		}
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/json"
+		},
+		"jsonBody": {
+			"id": "8948f414-079d-4009-af3a-a1ff2a59528a",
+			"participants": [
+				{
+					"type": "adAccount",
+					"value": "joe01doe"
+				}
+			],
+			"municipalityId": "2281",
+			"namespace": "draken",
+			"externalReferences": [
+				{
+					"key": "external-key-1",
+					"values": [
+						"external-value-1"
+					]
+				}
+			],
+			"metadata": [
+				{
+					"key": "meta-key-1",
+					"values": [
+						"meta-value-1"
+					]
+				}
+			],
+			"topic": "Topic 2",
+			"latestSequenceNumber": 100
+		},
+		"status": 200
+	}
+}

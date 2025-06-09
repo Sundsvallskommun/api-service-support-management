@@ -1,0 +1,49 @@
+{
+	"request": {
+		"method": "PATCH",
+		"url": "/api-messageexchange/2281/draken/conversations/8948f414-079d-4009-af3a-a1ff2a59528a",
+		"headers": {
+			"X-Sent-By": {
+				"equalTo": "joe01doe; type=adAccount"
+			}
+		}
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/json"
+		},
+		"jsonBody": {
+			"participants": [
+				{
+					"type": "adAccount",
+					"value": "newUser1"
+				},
+				{
+					"type": "adAccount",
+					"value": "newUser2"
+				}
+			],
+			"municipalityId": "2281",
+			"namespace": "draken",
+			"externalReferences": [
+				{
+					"key": "external-key-1",
+					"values": [
+						"external-value-1"
+					]
+				}
+			],
+			"metadata": [
+				{
+					"key": "new-meta-key-1",
+					"values": [
+						"new-meta-value-1"
+					]
+				}
+			],
+			"topic": "Updated topic 2",
+			"latestSequenceNumber": 100
+		},
+		"status": 200
+	}
+}
