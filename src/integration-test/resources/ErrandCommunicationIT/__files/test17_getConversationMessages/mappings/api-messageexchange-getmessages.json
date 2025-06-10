@@ -1,0 +1,70 @@
+{
+	"request": {
+		"method": "GET",
+		"url": "/api-messageexchange/2281/draken/conversations/4c0167ae-18b2-459a-a5b3-52511d5979f9/messages?page=0&size=20",
+		"headers": {
+			"X-Sent-By": {
+				"equalTo": "joe01doe; type=adAccount"
+			}
+		}
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/json"
+		},
+		"jsonBody": {
+			"content": [
+				{
+					"id": "6947e1f5-b184-45cb-a862-720c3484c3de",
+					"sequenceNumber": 15,
+					"created": "2025-06-04T12:06:38.809Z",
+					"content": "Bifogar en fil",
+					"readBy": [
+						{
+							"identifier": {
+								"type": "AD_ACCOUNT",
+								"value": "joe01car"
+							},
+							"readAt": "2025-06-04T15:08:02.238488+02:00"
+						}
+					],
+					"attachments": [
+						{
+							"id": "68684a97-52c6-459c-b9fc-f6bdf0c5c84f",
+							"fileName": "approved.jpg",
+							"fileSize": 14481,
+							"mimeType": "image/jpeg",
+							"created": "2025-06-04T14:06:38.811+02:00"
+						}
+					]
+				},
+				{
+					"id": "bbd34585-8754-47a3-a068-012b13540e94",
+					"inReplyToMessageId": "6947e1f5-b184-45cb-a862-720c3484c3de",
+					"sequenceNumber": 16,
+					"created": "2025-06-05T13:48:06.657Z",
+					"content": "Hello, how can I help you?",
+					"readBy": []
+				}
+			],
+			"pageable": {
+				"pageNumber": 0,
+				"pageSize": 20,
+				"sort": [],
+				"offset": 0,
+				"paged": true,
+				"unpaged": false
+			},
+			"last": true,
+			"totalElements": 2,
+			"totalPages": 1,
+			"first": true,
+			"size": 20,
+			"number": 0,
+			"sort": [],
+			"numberOfElements": 2,
+			"empty": false
+		},
+		"status": 200
+	}
+}

@@ -1,0 +1,24 @@
+{
+	"id": "${json-unit.any-string}",
+	"topic": "New topic",
+	"type": "EXTERNAL",
+	"relationIds": [],
+	"participants": [
+		{
+			"type": "adAccount",
+			"value": "newUser1"
+		},
+		{
+			"type": "adAccount",
+			"value": "newUser2"
+		}
+	],
+	"metadata": [
+		{
+			"key": "new-meta-key-1",
+			"values": [
+				"new-meta-value-1"
+			]
+		}
+	]
+}

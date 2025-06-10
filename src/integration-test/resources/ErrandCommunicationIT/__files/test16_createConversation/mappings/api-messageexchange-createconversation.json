@@ -1,0 +1,18 @@
+{
+	"request": {
+		"method": "POST",
+		"url": "/api-messageexchange/2281/draken/conversations",
+		"headers": {
+			"X-Sent-By": {
+				"equalTo": "joe01doe; type=adAccount"
+			}
+		}
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/json",
+			"Location": "/messageexchange/2281/draken/conversations/dd7b9d5a-20c9-4d9e-be39-13ff70af3930"
+		},
+		"status": 201
+	}
+}
