@@ -204,7 +204,7 @@ class ConversationServiceTest {
 		// Act
 		assertThatThrownBy(() -> conversationService.readConversationById(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID))
 			.isInstanceOf(Problem.class)
-			.hasMessageContaining("Not Found: No conversation with id:'CONVERSATION_ID', errandId:'ERRAND_ID', municipalityId:'MUNICIPALITY_ID' and namespace:'NAMESPACE' was found!");
+			.hasMessageContaining("Not Found: No conversation with ID:'CONVERSATION_ID', errandId:'ERRAND_ID', municipalityId:'MUNICIPALITY_ID' and namespace:'NAMESPACE' was found!");
 
 		// Assert
 		verify(conversationRepositoryMock).findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID);
@@ -254,7 +254,7 @@ class ConversationServiceTest {
 		// Act
 		assertThatThrownBy(() -> conversationService.createMessage(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID, messageRequest, null))
 			.isInstanceOf(Problem.class)
-			.hasMessageContaining("Not Found: No errand with id: 'ERRAND_ID' was found!");
+			.hasMessageContaining("Not Found: No errand with ID: 'ERRAND_ID' was found!");
 
 		// Assert
 		verify(conversationRepositoryMock).findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID);

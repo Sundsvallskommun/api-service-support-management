@@ -33,8 +33,8 @@ import se.sundsvall.supportmanagement.integration.messageexchange.MessageExchang
 public class ConversationService {
 
 	private static final String NO_CONVERSATION_ID_RETURNED = "ID of conversation was not returned in location header!";
-	private static final String NO_CONVERSATION_FOUND = "No conversation with id:'%s', errandId:'%s', municipalityId:'%s' and namespace:'%s' was found!";
-	private static final String NO_ERRAND_FOUND = "No errand with id: '%s' was found!";
+	private static final String NO_CONVERSATION_FOUND = "No conversation with ID:'%s', errandId:'%s', municipalityId:'%s' and namespace:'%s' was found!";
+	private static final String NO_ERRAND_FOUND = "No errand with ID: '%s' was found!";
 
 	private final MessageExchangeClient messageExchangeClient;
 	private final ConversationRepository conversationRepository;
@@ -62,7 +62,7 @@ public class ConversationService {
 		final var createResponse = messageExchangeClient.createConversation(municipalityId, messageExchangeNamespace, toMessageExchangeConversation(municipalityId, messageExchangeNamespace, conversationRequest));
 
 		// Extract MessageExchange conversation ID.
-		var location = Optional.ofNullable(createResponse.getHeaders().getLocation())
+		final var location = Optional.ofNullable(createResponse.getHeaders().getLocation())
 			.orElseThrow(() -> Problem.valueOf(INTERNAL_SERVER_ERROR, NO_CONVERSATION_ID_RETURNED))
 			.getPath();
 		final var messageExchangeConversationid = location.substring(location.lastIndexOf('/') + 1);
@@ -73,7 +73,6 @@ public class ConversationService {
 		// Save conversation in DB.
 		final var conversationEntity = conversationRepository.save(toConversationEntity(municipalityId, namespace, errandId, conversationRequest.getType(), messageExchangeConversation));
 
-		// Return result
 		return toConversation(messageExchangeConversation, conversationEntity);
 	}
 
@@ -85,13 +84,10 @@ public class ConversationService {
 		// Fetch conversation from MessageExchange.
 		final var messageExchangeConversation = fetchConversationFromMessageExchange(municipalityId, conversationEntity.getMessageExchangeId());
 
-		// Return result
 		return toConversation(messageExchangeConversation, conversationRepository.save(mergeIntoConversationEntity(conversationEntity, messageExchangeConversation)));
 	}
 
 	public List<Conversation> readConversations(final String municipalityId, final String namespace, final String errandId) {
-
-		// Return result
 		return toConversationList(conversationRepository.findByMunicipalityIdAndNamespaceAndErrandId(municipalityId, namespace, errandId));
 	}
 
@@ -113,9 +109,9 @@ public class ConversationService {
 	public Page<Message> getMessages(final String municipalityId, final String namespace, final String errandId, final String conversationId, final Pageable pageable) {
 
 		final var conversationEntity = getConversationEntity(municipalityId, namespace, errandId, conversationId);
-		final var response = messageExchangeClient.getMessages(municipalityId, messageExchangeNamespace, conversationEntity.getMessageExchangeId(), pageable);
+		final var response = messageExchangeClient.getMessages(municipalityId, messageExchangeNamespace, conversationEntity.getMessageExchangeId(), pageable).getBody();
 
-		return toMessagePage(response.getBody());
+		return toMessagePage(response);
 	}
 
 	public void createMessage(final String municipalityId, final String namespace, final String errandId, final String conversationId, final MessageRequest messageRequest, final List<MultipartFile> attachments) {
