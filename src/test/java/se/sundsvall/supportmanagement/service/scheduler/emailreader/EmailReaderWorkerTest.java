@@ -154,6 +154,50 @@ class EmailReaderWorkerTest {
 	}
 
 	@Test
+	void shouldProcessEmailsWhenNullInAttachmentData() {
+		// ARRANGE
+		final var email = new Email();
+		email.setSubject("Ärende #PRH-2022-000002 Ansökan om bygglov för fastighet KATARINA 3");
+		email.setId("id");
+		final var emailConfig = EmailWorkerConfigEntity.create()
+			.withEnabled(true)
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withNamespace("namespace")
+			.withErrandClosedEmailSender("errandClosedEmailSender")
+			.withErrandClosedEmailTemplate("errandClosedEmailTemplate")
+			.withDaysOfInactivityBeforeReject(5)
+			.withStatusForNew("NEW")
+			.withTriggerStatusChangeOn("SOLVED")
+			.withStatusChangeTo("ONGOING")
+			.withInactiveStatus("SOLVED");
+
+		final var errandEntity = ErrandEntity.create().withId("id").withStatus("SOLVED").withCreated(OffsetDateTime.now().minusDays(1)).withModified(OffsetDateTime.now()).withTouched(OffsetDateTime.now());
+		final var communicationEntity = CommunicationEntity.create().withAttachments(List.of(CommunicationAttachmentEntity
+			.create().withForeignId("2").withMunicipalityId(MUNICIPALITY_ID)));
+
+		// MOCK
+		when(errandRepositoryMock.findByErrandNumber(anyString())).thenReturn(Optional.of(errandEntity));
+		when(emailReaderMapperMock.toCommunicationEntity(any(), any())).thenReturn(communicationEntity);
+		when(emailReaderClientMock.getAttachment(MUNICIPALITY_ID, 2)).thenReturn(null);
+
+		// ACT
+		emailReaderWorker.processEmail(email, emailConfig, consumerMock);
+
+		// VERIFY
+		verify(errandRepositoryMock).findByErrandNumber("PRH-2022-000002");
+		verify(errandRepositoryMock).save(same(errandEntity));
+		verify(emailReaderMapperMock).toCommunicationEntity(same(email), same(errandEntity));
+		verify(emailReaderClientMock).deleteEmail(MUNICIPALITY_ID, email.getId());
+		verify(communicationServiceMock).saveAttachment(same(communicationEntity), same(errandEntity));
+		verify(communicationServiceMock).saveCommunication(same(communicationEntity));
+		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Nytt meddelande"), same(errandEntity), isNull(), isNull(), eq(MESSAGE));
+		verify(emailReaderClientMock).getAttachment(MUNICIPALITY_ID, 2);
+		verify(emailReaderMapperMock).toAttachmentDataEntity(new byte[0]); // Handle null case by returning an empty byte array
+		verifyNoInteractions(errandServiceMock);
+		verifyNoMoreInteractions(emailReaderClientMock, errandRepositoryMock, emailReaderMapperMock, communicationServiceMock, emailWorkerConfigRepositoryMock, eventServiceMock, consumerMock);
+	}
+
+	@Test
 	void processEmailWithExpiredErrand() {
 
 		// ARRANGE
