@@ -152,4 +152,5 @@ public interface MessageExchangeClient {
 		@PathVariable("conversationId") String conversationId,
 		@PathVariable("messageId") String messageId,
 		@PathVariable("attachmentId") String attachmentId);
+
 }

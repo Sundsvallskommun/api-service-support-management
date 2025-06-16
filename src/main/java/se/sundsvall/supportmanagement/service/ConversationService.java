@@ -11,6 +11,8 @@ import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.t
 import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.toMessagePage;
 import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.toMessageRequest;
 
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Value;
@@ -56,7 +58,7 @@ public class ConversationService {
 		this.errandAttachmentService = errandAttachmentService;
 	}
 
-	public Conversation createConversation(final String municipalityId, final String namespace, final String errandId, ConversationRequest conversationRequest) {
+	public Conversation createConversation(final String municipalityId, final String namespace, final String errandId, final ConversationRequest conversationRequest) {
 
 		// Create conversation in MessageExchange
 		final var createResponse = messageExchangeClient.createConversation(municipalityId, messageExchangeNamespace, toMessageExchangeConversation(municipalityId, messageExchangeNamespace, conversationRequest));
@@ -139,5 +141,38 @@ public class ConversationService {
 	private ConversationEntity getConversationEntity(final String municipalityId, final String namespace, final String errandId, final String conversationId) {
 		return conversationRepository.findByMunicipalityIdAndNamespaceAndErrandIdAndId(municipalityId, namespace, errandId, conversationId)
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, NO_CONVERSATION_FOUND.formatted(conversationId, errandId, municipalityId, namespace)));
+	}
+
+	public void getConversationMessageAttachment(
+		final String municipalityId, final String namespace, final String errandId,
+		final String conversationId, final String messageId, final String attachmentId,
+		final HttpServletResponse response) throws IOException {
+
+		final var conversation = getConversationEntity(municipalityId, namespace, errandId, conversationId);
+		final var exchangeId = conversation.getMessageExchangeId();
+
+		if (exchangeId == null) {
+			throw Problem.valueOf(NOT_FOUND, "Conversation not found in local database");
+		}
+
+		final var attachmentResponse = messageExchangeClient.getMessageAttachment(
+			municipalityId, messageExchangeNamespace, exchangeId, messageId, attachmentId);
+
+		final var body = attachmentResponse.getBody();
+		final var contentType = attachmentResponse.getHeaders().getContentType();
+
+		if (!attachmentResponse.getStatusCode().is2xxSuccessful() || body == null || contentType == null) {
+			throw Problem.valueOf(NOT_FOUND, "Attachment not found or invalid in Message Exchange");
+		}
+
+		response.setContentType(contentType.toString());
+
+		response.setHeader("Content-Disposition", "attachment; filename=\"" + body.getFilename() + "\"");
+		response.setContentLengthLong(attachmentResponse.getHeaders().getContentLength());
+
+		try (final var in = body.getInputStream(); final var out = response.getOutputStream()) {
+			in.transferTo(out);
+			out.flush();
+		}
 	}
 }
