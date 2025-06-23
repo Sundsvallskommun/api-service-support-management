@@ -44,6 +44,9 @@ integration:
   citizen:
     connect-timeout: 5
     read-timeout: 30
+  relation:
+    connect-timeout: 5
+    read-timeout: 30
 logbook:
   body-filters:
     jsonPath:
@@ -112,6 +115,9 @@ spring:
           citizen:
             authorization-grant-type: client_credentials
             provider: citizen
+          relation:
+            authorization-grant-type: client_credentials
+            provider: relation
   servlet:
     multipart:
       max-file-size: 50MB
