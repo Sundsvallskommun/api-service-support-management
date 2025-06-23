@@ -1,6 +1,7 @@
 # SupportManagement
 
-_Provides features for managing cases related to support related functions. It includes functionalities such as creating, updating, and tracking errand statuses and progress._
+_Provides features for managing cases related to support related functions. It includes functionalities such as
+creating, updating, and tracking errand statuses and progress._
 
 ## Getting Started
 
@@ -29,7 +30,8 @@ _Provides features for managing cases related to support related functions. It i
 
 3. **Ensure dependent services are running:**
 
-   If this microservice depends on other services, make sure they are up and accessible. See [Dependencies](#dependencies) for more details.
+   If this microservice depends on other services, make sure they are up and accessible.
+   See [Dependencies](#dependencies) for more details.
 
 4. **Build and run the application:**
 
@@ -42,13 +44,15 @@ _Provides features for managing cases related to support related functions. It i
 This microservice depends on the following services:
 
 - **EmailReader**
-  - **Purpose:** Reads e-mails sent to mailboxes and provides them for processing by SupportManagement and other systems.
+  - **Purpose:** Reads e-mails sent to mailboxes and provides them for processing by SupportManagement and other
+    systems.
   - **Repository:** [Link to the repository](https://github.com/Sundsvallskommun/api-service-email-reader)
   - **Setup Instructions:** Refer to its documentation for installation and configuration steps.
 - **Employee**
   - **Purpose:** Used for reading employee information.
   - **Repository:** Not available at this moment.
-  - **Additional Notes:** Employee is a API serving data from [Metadatakatalogen](https://utveckling.sundsvall.se/digital-infrastruktur/metakatalogen).
+  - **Additional Notes:** Employee is a API serving data
+    from [Metadatakatalogen](https://utveckling.sundsvall.se/digital-infrastruktur/metakatalogen).
 - **Eventlog**
   - **Purpose:** Used for logging events
   - **Repository:** [Link to the repository](https://github.com/Sundsvallskommun/api-service-eventlog)
@@ -62,10 +66,14 @@ This microservice depends on the following services:
   - **Repository:** [Link to the repository](https://github.com/Sundsvallskommun/api-service-notes)
   - **Setup Instructions:** Refer to its documentation for installation and configuration steps.
 - **WebMessageCollector**
-  - **Purpose:** Reads web messages sent to open-E and provides them for processing by SupportManagement and other systems.
+  - **Purpose:** Reads web messages sent to open-E and provides them for processing by SupportManagement and other
+    systems.
   - **Repository:** [Link to the repository](https://github.com/Sundsvallskommun/api-service-web-message-collector)
   - **Setup Instructions:** Refer to its documentation for installation and configuration steps.
-  - 
+- **Relation**
+  - **Purpose:** Used to fetch relation data (linked errands)
+  - **Repository:** [Link to the repository](https://github.com/Sundsvallskommun/api-service-relations)
+  - **Setup Instructions:** Refer to its documentation for installation and configuration steps.
 
 Ensure that these services are running and properly configured before starting this microservice.
 
@@ -91,7 +99,8 @@ curl -X GET http://localhost:8080/api/2281/my.namespace/errands/b82bd8ac-1507-4d
 
 ## Configuration
 
-Configuration is crucial for the application to run successfully. Ensure all necessary settings are configured in `application.yml`.
+Configuration is crucial for the application to run successfully. Ensure all necessary settings are configured in
+`application.yml`.
 
 ### Key Configuration Parameters
 
@@ -158,7 +167,8 @@ Configuration is crucial for the application to run successfully. Ensure all nec
 
 ### Database Initialization
 
-The project is set up with [Flyway](https://github.com/flyway/flyway) for database migrations. Flyway is disabled by default so you will have to enable it to automatically populate the database schema upon application startup.
+The project is set up with [Flyway](https://github.com/flyway/flyway) for database migrations. Flyway is disabled by
+default so you will have to enable it to automatically populate the database schema upon application startup.
 
 ```yaml
 spring:
@@ -166,7 +176,8 @@ spring:
     enabled: true
 ```
 
-- **No additional setup is required** for database initialization, as long as the database connection settings are correctly configured.
+- **No additional setup is required** for database initialization, as long as the database connection settings are
+  correctly configured.
 
 ### Additional Notes
 
@@ -180,7 +191,8 @@ spring:
 
 ## Contributing
 
-Contributions are welcome! Please see [CONTRIBUTING.md](https://github.com/Sundsvallskommun/.github/blob/main/.github/CONTRIBUTING.md) for guidelines.
+Contributions are welcome! Please
+see [CONTRIBUTING.md](https://github.com/Sundsvallskommun/.github/blob/main/.github/CONTRIBUTING.md) for guidelines.
 
 ## License
 
