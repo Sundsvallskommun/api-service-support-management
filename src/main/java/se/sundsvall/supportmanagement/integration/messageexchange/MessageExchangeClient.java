@@ -60,7 +60,7 @@ public interface MessageExchangeClient {
 	 * @return                a PageConversation object.
 	 */
 	@GetMapping(path = "/{municipalityId}/{namespace}/conversations", produces = APPLICATION_JSON_VALUE)
-	ResponseEntity<PageConversation> getConversations(
+	ResponseEntity<Page<Conversation>> getConversations(
 		@RequestHeader(Identifier.HEADER_NAME) String identifier,
 		@PathVariable("municipalityId") String municipalityId,
 		@PathVariable("namespace") String namespace,

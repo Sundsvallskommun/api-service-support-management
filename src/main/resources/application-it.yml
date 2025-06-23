@@ -24,6 +24,8 @@ scheduler:
     cron: "-"
   notification:
     cron: "-"
+  messageexchange:
+    cron: "-"
 spring:
   cache:
     type: none
