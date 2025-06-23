@@ -1,0 +1,14 @@
+{
+	"request": {
+		"method": "GET",
+		"url": "/api-messageexchange/2281/draken/conversations/4c0167ae-18b2-459a-a5b3-52511d5979f9/messages/d82bd8ac-1507-4d9a-958d-369261eecc15/attachments/05b29c30-4512-46c0-9d82-d0f11cb04bae"
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "image/jpeg",
+			"Content-Disposition": "attachment; filename=\"Test_image.jpg\""
+		},
+		"bodyFileName": "test19_getConversationMessageAttachment/response/Test_image.jpg",
+		"status": 200
+	}
+}

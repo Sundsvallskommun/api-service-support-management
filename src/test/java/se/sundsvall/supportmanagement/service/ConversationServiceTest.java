@@ -7,10 +7,12 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.util.ReflectionTestUtils.setField;
 
+import java.io.IOException;
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
@@ -22,9 +24,12 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockMultipartFile;
 import org.zalando.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationRequest;
@@ -336,5 +341,171 @@ class ConversationServiceTest {
 			.withRelationIds(RELATION_VALUES_LIST)
 			.withTopic(TOPIC)
 			.withType(CONVERSATION_TYPE);
+	}
+
+	@Test
+	void getConversationMessageAttachment() throws IOException {
+		// Arrange
+		final var municipalityId = "municipalityId";
+		final var namespace = "namespace";
+		final var conversationId = "convId";
+		final var messageId = "msgId";
+		final var attachmentId = "attId";
+		final var messageExchangeId = "exchangeId";
+		final var filename = "file.txt";
+		final var contentType = org.springframework.http.MediaType.TEXT_PLAIN;
+		final var content = "test content".getBytes();
+
+		final var conversationEntity = ConversationEntity.create()
+			.withMessageExchangeId(messageExchangeId);
+
+		final var inputStream = new java.io.ByteArrayInputStream(content);
+		final var inputStreamResource = new InputStreamResource(inputStream) {
+			@Override
+			public String getFilename() {
+				return filename;
+			}
+		};
+
+		when(messageExchangeClientMock.getMessageAttachment(municipalityId, MESSAGE_EXCHANGE_NAMESPACE, messageExchangeId, messageId, attachmentId))
+			.thenReturn(ResponseEntity.ok()
+				.contentType(contentType)
+				.contentLength(content.length)
+				.body(inputStreamResource));
+
+		when(conversationRepositoryMock.findByMunicipalityIdAndNamespaceAndErrandIdAndId(municipalityId, namespace, ERRAND_ID, conversationId))
+			.thenReturn(Optional.of(conversationEntity));
+
+		final var response = new MockHttpServletResponse();
+
+		// Act
+		conversationService.getConversationMessageAttachment(municipalityId, namespace, ERRAND_ID, conversationId, messageId, attachmentId, response);
+
+		// Assert
+		assertThat(response.getStatus()).isEqualTo(200);
+		assertThat(response.getContentType()).isEqualTo(contentType.toString());
+		assertThat(response.getHeader("Content-Disposition")).contains(filename);
+		assertThat(response.getContentAsByteArray()).isEqualTo(content);
+
+		verify(conversationRepositoryMock).findByMunicipalityIdAndNamespaceAndErrandIdAndId(municipalityId, namespace, ERRAND_ID, conversationId);
+		verify(messageExchangeClientMock).getMessageAttachment(municipalityId, MESSAGE_EXCHANGE_NAMESPACE, messageExchangeId, messageId, attachmentId);
+	}
+
+	@Test
+	void getConversationMessageAttachmentMissingExchangeId() {
+		// Arrange
+		final var municipalityId = "municipalityId";
+		final var namespace = "namespace";
+		final var conversationId = "convId";
+		final var messageId = "msgId";
+		final var attachmentId = "attId";
+
+		final var conversationEntity = ConversationEntity.create().withMessageExchangeId(null);
+
+		when(conversationRepositoryMock.findByMunicipalityIdAndNamespaceAndErrandIdAndId(municipalityId, namespace, ERRAND_ID, conversationId))
+			.thenReturn(Optional.of(conversationEntity));
+
+		final var response = new MockHttpServletResponse();
+
+		// Act & Assert
+		assertThatThrownBy(() -> conversationService.getConversationMessageAttachment(municipalityId, namespace, ERRAND_ID, conversationId, messageId, attachmentId, response))
+			.isInstanceOf(RuntimeException.class)
+			.hasMessageContaining("Conversation not found in local database");
+
+		verify(conversationRepositoryMock).findByMunicipalityIdAndNamespaceAndErrandIdAndId(municipalityId, namespace, ERRAND_ID, conversationId);
+		verifyNoInteractions(messageExchangeClientMock);
+	}
+
+	@Test
+	void getConversationMessageAttachmentNon2xxResponse() {
+		// Arrange
+		final var municipalityId = "municipalityId";
+		final var namespace = "namespace";
+		final var conversationId = "convId";
+		final var messageId = "msgId";
+		final var attachmentId = "attId";
+		final var messageExchangeId = "exchangeId";
+
+		final var conversationEntity = ConversationEntity.create().withMessageExchangeId(messageExchangeId);
+
+		when(conversationRepositoryMock.findByMunicipalityIdAndNamespaceAndErrandIdAndId(municipalityId, namespace, ERRAND_ID, conversationId))
+			.thenReturn(Optional.of(conversationEntity));
+		when(messageExchangeClientMock.getMessageAttachment(municipalityId, MESSAGE_EXCHANGE_NAMESPACE, messageExchangeId, messageId, attachmentId))
+			.thenReturn(ResponseEntity.status(404).build());
+
+		final var response = new MockHttpServletResponse();
+
+		// Act & Assert
+		assertThatThrownBy(() -> conversationService.getConversationMessageAttachment(municipalityId, namespace, ERRAND_ID, conversationId, messageId, attachmentId, response))
+			.isInstanceOf(RuntimeException.class)
+			.hasMessageContaining("Attachment not found or invalid in Message Exchange");
+
+		verify(conversationRepositoryMock).findByMunicipalityIdAndNamespaceAndErrandIdAndId(municipalityId, namespace, ERRAND_ID, conversationId);
+		verify(messageExchangeClientMock).getMessageAttachment(municipalityId, MESSAGE_EXCHANGE_NAMESPACE, messageExchangeId, messageId, attachmentId);
+	}
+
+	@Test
+	void getConversationMessageAttachmentNullBody() {
+		// Arrange
+		final var municipalityId = "municipalityId";
+		final var namespace = "namespace";
+		final var conversationId = "convId";
+		final var messageId = "msgId";
+		final var attachmentId = "attId";
+		final var messageExchangeId = "exchangeId";
+
+		final var conversationEntity = ConversationEntity.create().withMessageExchangeId(messageExchangeId);
+
+		when(conversationRepositoryMock.findByMunicipalityIdAndNamespaceAndErrandIdAndId(municipalityId, namespace, ERRAND_ID, conversationId))
+			.thenReturn(Optional.of(conversationEntity));
+		when(messageExchangeClientMock.getMessageAttachment(municipalityId, MESSAGE_EXCHANGE_NAMESPACE, messageExchangeId, messageId, attachmentId))
+			.thenReturn(ResponseEntity.ok().contentType(MediaType.TEXT_PLAIN).body(null));
+
+		final var response = new MockHttpServletResponse();
+
+		// Act & Assert
+		assertThatThrownBy(() -> conversationService.getConversationMessageAttachment(municipalityId, namespace, ERRAND_ID, conversationId, messageId, attachmentId, response))
+			.isInstanceOf(RuntimeException.class)
+			.hasMessageContaining("Not Found: Attachment not found or invalid in Message Exchange");
+
+		verify(conversationRepositoryMock).findByMunicipalityIdAndNamespaceAndErrandIdAndId(municipalityId, namespace, ERRAND_ID, conversationId);
+		verify(messageExchangeClientMock).getMessageAttachment(municipalityId, MESSAGE_EXCHANGE_NAMESPACE, messageExchangeId, messageId, attachmentId);
+	}
+
+	@Test
+	void getConversationMessageAttachmentNullContentType() {
+		// Arrange
+		final var municipalityId = "municipalityId";
+		final var namespace = "namespace";
+		final var conversationId = "convId";
+		final var messageId = "msgId";
+		final var attachmentId = "attId";
+		final var messageExchangeId = "exchangeId";
+		final var filename = "file.txt";
+		final var content = "test content".getBytes();
+		final var inputStream = new java.io.ByteArrayInputStream(content);
+		final var inputStreamResource = new InputStreamResource(inputStream) {
+			@Override
+			public String getFilename() {
+				return filename;
+			}
+		};
+
+		final var conversationEntity = ConversationEntity.create().withMessageExchangeId(messageExchangeId);
+
+		when(conversationRepositoryMock.findByMunicipalityIdAndNamespaceAndErrandIdAndId(municipalityId, namespace, ERRAND_ID, conversationId))
+			.thenReturn(Optional.of(conversationEntity));
+		when(messageExchangeClientMock.getMessageAttachment(municipalityId, MESSAGE_EXCHANGE_NAMESPACE, messageExchangeId, messageId, attachmentId))
+			.thenReturn(ResponseEntity.ok().body(inputStreamResource));
+
+		final var response = new MockHttpServletResponse();
+
+		// Act & Assert
+		assertThatThrownBy(() -> conversationService.getConversationMessageAttachment(municipalityId, namespace, ERRAND_ID, conversationId, messageId, attachmentId, response))
+			.isInstanceOf(RuntimeException.class)
+			.hasMessageContaining("Not Found: Attachment not found or invalid in Message Exchange");
+
+		verify(conversationRepositoryMock).findByMunicipalityIdAndNamespaceAndErrandIdAndId(municipalityId, namespace, ERRAND_ID, conversationId);
+		verify(messageExchangeClientMock).getMessageAttachment(municipalityId, MESSAGE_EXCHANGE_NAMESPACE, messageExchangeId, messageId, attachmentId);
 	}
 }

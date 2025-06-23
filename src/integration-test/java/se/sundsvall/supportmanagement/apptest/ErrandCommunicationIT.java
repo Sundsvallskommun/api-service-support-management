@@ -16,6 +16,7 @@ import static org.springframework.util.MimeTypeUtils.IMAGE_JPEG_VALUE;
 import static se.sundsvall.dept44.support.Identifier.HEADER_NAME;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.annotation.DirtiesContext;
@@ -280,4 +281,17 @@ class ErrandCommunicationIT extends AbstractAppTest {
 			.withExpectedResponseStatus(NO_CONTENT)
 			.sendRequestAndVerifyResponse();
 	}
+
+	@Test
+	void test19_getConversationMessageAttachment() throws IOException {
+		setupCall()
+			.withServicePath(PATH + "/ec677eb3-604c-4935-bff7-f8f0b500c8f4/communication/conversations/f4524497-a592-4618-a746-b59a60a76f13/messages/d82bd8ac-1507-4d9a-958d-369261eecc15/attachments/05b29c30-4512-46c0-9d82-d0f11cb04bae")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponseHeader(CONTENT_TYPE, List.of(IMAGE_JPEG_VALUE))
+			.withExpectedBinaryResponse("Test_image.jpg")
+			.sendRequestAndVerifyResponse();
+
+	}
+
 }
