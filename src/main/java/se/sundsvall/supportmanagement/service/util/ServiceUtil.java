@@ -25,7 +25,20 @@ public class ServiceUtil {
 			return null;
 		}
 		// Replace newlines and carriage returns with spaces
-		return input.replaceAll("[\\r\\n]", " ");
+		String sanitized = input.replaceAll("[\\r\\n]", " ");
+		
+		// Remove non-printable ASCII characters
+		sanitized = sanitized.replaceAll("[^\\x20-\\x7E]", "");
+		
+		// Escape or remove other potentially harmful characters
+		sanitized = sanitized.replaceAll("[%\\\\]", "");
+		
+		// Limit the length of the sanitized string to 100 characters
+		if (sanitized.length() > 100) {
+			sanitized = sanitized.substring(0, 100) + "...";
+		}
+		
+		return sanitized;
 	}
 
 	public static boolean isValidUuid(String uuid) {
