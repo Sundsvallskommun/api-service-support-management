@@ -20,6 +20,14 @@ public class ServiceUtil {
 
 	private ServiceUtil() {}
 
+	private static String sanitizeForLogging(String input) {
+		if (input == null) {
+			return null;
+		}
+		// Replace newlines and carriage returns with spaces
+		return input.replaceAll("[\\r\\n]", " ");
+	}
+
 	public static boolean isValidUuid(String uuid) {
 		try {
 			fromString(uuid);
@@ -33,7 +41,7 @@ public class ServiceUtil {
 		try (InputStream stream = new ByteArrayInputStream(byteArray)) {
 			return detectMimeTypeFromStream(fileName, stream);
 		} catch (final Exception e) {
-			LOGGER.warn(String.format(MIME_ERROR_MSG, fileName), e);
+			LOGGER.warn(String.format(MIME_ERROR_MSG, sanitizeForLogging(fileName)), e);
 			return APPLICATION_OCTET_STREAM_VALUE; // Return mime type for arbitrary binary files
 		}
 	}
@@ -42,7 +50,7 @@ public class ServiceUtil {
 		try {
 			return DETECTOR.detect(stream, fileName);
 		} catch (final Exception e) {
-			LOGGER.warn(String.format(MIME_ERROR_MSG, fileName), e);
+			LOGGER.warn(String.format(MIME_ERROR_MSG, sanitizeForLogging(fileName)), e);
 			return APPLICATION_OCTET_STREAM_VALUE; // Return mime type for arbitrary binary files
 		}
 	}
