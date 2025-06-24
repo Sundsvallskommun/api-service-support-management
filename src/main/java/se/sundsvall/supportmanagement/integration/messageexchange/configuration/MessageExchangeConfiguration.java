@@ -1,9 +1,7 @@
 package se.sundsvall.supportmanagement.integration.messageexchange.configuration;
 
-import static com.google.common.base.CaseFormat.LOWER_CAMEL;
-import static com.google.common.base.CaseFormat.UPPER_UNDERSCORE;
 import static java.util.Optional.ofNullable;
-import static org.apache.commons.lang3.ObjectUtils.allNotNull;
+import static se.sundsvall.dept44.support.Identifier.HEADER_NAME;
 
 import org.springframework.cloud.openfeign.FeignBuilderCustomizer;
 import org.springframework.cloud.openfeign.support.JsonFormWriter;
@@ -24,7 +22,7 @@ public class MessageExchangeConfiguration {
 	FeignBuilderCustomizer feignBuilderCustomizer(MessageExchangeProperties messageExchangeProperties, ClientRegistrationRepository clientRegistrationRepository) {
 		return FeignMultiCustomizer.create()
 			.withErrorDecoder(new ProblemErrorDecoder(CLIENT_ID))
-			.withRequestInterceptor(builder -> builder.header(Identifier.HEADER_NAME, createSentByHeaderValue(Identifier.get())))
+			.withRequestInterceptor(builder -> builder.header(HEADER_NAME, createSentByHeaderValue(Identifier.get())))
 			.withRequestTimeoutsInSeconds(messageExchangeProperties.connectTimeout(), messageExchangeProperties.readTimeout())
 			.withRetryableOAuth2InterceptorForClientRegistration(clientRegistrationRepository.findByRegistrationId(CLIENT_ID))
 			.composeCustomizersToOne();
@@ -38,8 +36,7 @@ public class MessageExchangeConfiguration {
 
 	String createSentByHeaderValue(Identifier identifier) {
 		return ofNullable(identifier)
-			.filter(i -> allNotNull(i.getType(), i.getValue()))
-			.map(i -> "%s; type=%s".formatted(ofNullable(i.getValue()).orElse(""), ofNullable(i.getType()).map(t -> UPPER_UNDERSCORE.to(LOWER_CAMEL, i.getType().name())).orElse("")))
+			.map(Identifier::toHeaderValue)
 			.orElse(null);
 	}
 }
