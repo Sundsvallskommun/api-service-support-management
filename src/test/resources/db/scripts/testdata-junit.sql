@@ -210,3 +210,10 @@ VALUES ('1', 'relation_id-1-1'),
        ('1', 'relation_id-1-2'),
        ('2', 'relation_id-2-1'),
        ('2', 'relation_id-2-2');
+
+-------------------------------------
+-- MessageExchangeSync
+-------------------------------------
+INSERT INTO message_exchange_sync(id, municipality_id, namespace, active)
+VALUES ('1', '2281', 'namespace-1', true),
+       ('2', '2281', 'namespace-2', false);

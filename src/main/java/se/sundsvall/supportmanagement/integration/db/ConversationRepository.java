@@ -13,5 +13,5 @@ public interface ConversationRepository extends JpaRepository<ConversationEntity
 
 	Optional<ConversationEntity> findByMunicipalityIdAndNamespaceAndErrandIdAndId(String municipalityId, String namespace, String errandId, final String id);
 
-	Optional<ConversationEntity> findByMessageExchangeId(String messageExchangeId);
+	List<ConversationEntity> findByMessageExchangeId(String messageExchangeId);
 }

@@ -86,7 +86,12 @@ public class ConversationService {
 		// Fetch conversation from MessageExchange.
 		final var messageExchangeConversation = fetchConversationFromMessageExchange(municipalityId, conversationEntity.getMessageExchangeId());
 
-		return toConversation(messageExchangeConversation, conversationRepository.save(mergeIntoConversationEntity(conversationEntity, messageExchangeConversation)));
+		return toConversation(messageExchangeConversation, syncConversation(conversationEntity, messageExchangeConversation));
+	}
+
+	public ConversationEntity syncConversation(ConversationEntity conversationEntity, generated.se.sundsvall.messageexchange.Conversation conversation) {
+		// TODO: handle notifications
+		return conversationRepository.save(mergeIntoConversationEntity(conversationEntity, conversation));
 	}
 
 	public List<Conversation> readConversations(final String municipalityId, final String namespace, final String errandId) {

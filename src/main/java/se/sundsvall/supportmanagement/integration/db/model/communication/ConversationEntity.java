@@ -53,6 +53,9 @@ public class ConversationEntity {
 	@Column(name = "latest_synced_sequence_number")
 	private Long latestSyncedSequenceNumber;
 
+	@Column(name = "target_relation_id", length = 36)
+	private String targetRelationId;
+
 	public static ConversationEntity create() {
 		return new ConversationEntity();
 	}
@@ -174,19 +177,32 @@ public class ConversationEntity {
 		return this;
 	}
 
+	public String getTargetRelationId() {
+		return targetRelationId;
+	}
+
+	public void setTargetRelationId(String targetRelationId) {
+		this.targetRelationId = targetRelationId;
+	}
+
+	public ConversationEntity withTargetRelationId(String targetRelationId) {
+		this.targetRelationId = targetRelationId;
+		return this;
+	}
+
 	@Override
 	public boolean equals(Object o) {
 		if (o == null || getClass() != o.getClass())
 			return false;
 		ConversationEntity that = (ConversationEntity) o;
-		return Objects.equals(id, that.id) && Objects.equals(messageExchangeId, that.messageExchangeId) && Objects.equals(errandId, that.errandId) && Objects.equals(namespace, that.namespace)
-			&& Objects.equals(municipalityId, that.municipalityId) && Objects.equals(topic, that.topic) && Objects.equals(type, that.type) && Objects.equals(relationIds, that.relationIds) && Objects.equals(
-				latestSyncedSequenceNumber, that.latestSyncedSequenceNumber);
+		return Objects.equals(id, that.id) && Objects.equals(messageExchangeId, that.messageExchangeId) && Objects.equals(errandId, that.errandId) && Objects.equals(namespace, that.namespace) && Objects.equals(
+			municipalityId, that.municipalityId) && Objects.equals(topic, that.topic) && Objects.equals(type, that.type) && Objects.equals(relationIds, that.relationIds) && Objects.equals(latestSyncedSequenceNumber,
+				that.latestSyncedSequenceNumber) && Objects.equals(targetRelationId, that.targetRelationId);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, messageExchangeId, errandId, namespace, municipalityId, topic, type, relationIds, latestSyncedSequenceNumber);
+		return Objects.hash(id, messageExchangeId, errandId, namespace, municipalityId, topic, type, relationIds, latestSyncedSequenceNumber, targetRelationId);
 	}
 
 	@Override
@@ -201,6 +217,7 @@ public class ConversationEntity {
 			", type='" + type + '\'' +
 			", relationIds=" + relationIds +
 			", latestSyncedSequenceNumber=" + latestSyncedSequenceNumber +
+			", targetRelationId='" + targetRelationId + '\'' +
 			'}';
 	}
 }
