@@ -54,6 +54,7 @@ public class ServiceUtil {
 			.orElse(null);
 	}
 
+	// TODO: Replace with LogUtils.sanitizeForLogging() (available from Dept44 v.6.0.12)
 	private static String sanitizeForLogging(String input) {
 		if (input == null) {
 			return null;

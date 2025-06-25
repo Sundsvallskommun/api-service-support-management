@@ -1,11 +1,7 @@
 package se.sundsvall.supportmanagement.service.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.spy;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.UUID;
@@ -40,12 +36,15 @@ class ServiceUtilTest {
 	}
 
 	@Test
-	void detectMimeTypeThrowsException() throws IOException {
+	void detectMimeTypeWhenAllParametersAreNullThrowsException() throws IOException {
 		assertThat(ServiceUtil.detectMimeType(null, null)).isEqualTo("application/octet-stream");
+		assertThat(ServiceUtil.detectMimeTypeFromStream(null, null)).isEqualTo("application/octet-stream");
+	}
 
-		InputStream inputStream = spy(new ByteArrayInputStream("data".getBytes()));
-		doThrow(new IOException()).when(inputStream).read(any(byte[].class));
-		assertThat(ServiceUtil.detectMimeTypeFromStream(null, inputStream)).isEqualTo("application/octet-stream");
+	@Test
+	void detectMimeTypeWhenInputStreamIsNullThrowsException() throws IOException {
+		assertThat(ServiceUtil.detectMimeType("filename", null)).isEqualTo("application/octet-stream");
+		assertThat(ServiceUtil.detectMimeTypeFromStream("filename", null)).isEqualTo("application/octet-stream");
 	}
 
 	@Test

@@ -99,6 +99,7 @@ class MessageExchangeWorkerTest {
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
 	void processConversation() {
 		var conversation = new Conversation();
 		conversation.setExternalReferences(List.of(new KeyValues().key(RELATION_ID_KEY).addValuesItem("1").addValuesItem("2")));

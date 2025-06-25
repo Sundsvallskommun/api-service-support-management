@@ -47,6 +47,7 @@ class MessageExchangeSchedulerTest {
 	private MessageExchangeScheduler messageExchangeScheduler;
 
 	@Test
+	@SuppressWarnings("unchecked")
 	void syncConversation() {
 		when(messageExchangeWorkerMock.getActiveSyncEntities()).thenReturn(List.of(messageExchangeSyncEntityMock));
 		when(messageExchangeWorkerMock.getConversations(any(), any())).thenReturn(pageMock);
