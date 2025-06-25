@@ -33,7 +33,7 @@ public class ServiceUtil {
 		try (InputStream stream = new ByteArrayInputStream(byteArray)) {
 			return detectMimeTypeFromStream(fileName, stream);
 		} catch (final Exception e) {
-			LOGGER.warn(String.format(MIME_ERROR_MSG, fileName), e);
+			LOGGER.warn(MIME_ERROR_MSG.formatted(sanitizeForLogging(fileName)), e);
 			return APPLICATION_OCTET_STREAM_VALUE; // Return mime type for arbitrary binary files
 		}
 	}
@@ -42,7 +42,7 @@ public class ServiceUtil {
 		try {
 			return DETECTOR.detect(stream, fileName);
 		} catch (final Exception e) {
-			LOGGER.warn(String.format(MIME_ERROR_MSG, fileName), e);
+			LOGGER.warn(MIME_ERROR_MSG.formatted(sanitizeForLogging(fileName)), e);
 			return APPLICATION_OCTET_STREAM_VALUE; // Return mime type for arbitrary binary files
 		}
 	}
@@ -52,5 +52,27 @@ public class ServiceUtil {
 			.filter(identifier -> AD_ACCOUNT.equals(identifier.getType()))
 			.map(Identifier::getValue)
 			.orElse(null);
+	}
+
+	// TODO: Replace with LogUtils.sanitizeForLogging() (available from Dept44 v.6.0.12)
+	private static String sanitizeForLogging(String input) {
+		if (input == null) {
+			return null;
+		}
+		// Replace newlines and carriage returns with spaces
+		var sanitized = input.replaceAll("[\\r\\n]", " ");
+
+		// Remove non-printable ASCII characters
+		sanitized = sanitized.replaceAll("[^\\x20-\\x7E]", "");
+
+		// Escape or remove other potentially harmful characters
+		sanitized = sanitized.replaceAll("[%\\\\]", "");
+
+		// Limit the length of the sanitized string to 100 characters
+		if (sanitized.length() > 100) {
+			sanitized = sanitized.substring(0, 100) + "...";
+		}
+
+		return sanitized;
 	}
 }

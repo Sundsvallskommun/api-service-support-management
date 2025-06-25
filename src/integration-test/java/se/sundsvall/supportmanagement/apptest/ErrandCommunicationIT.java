@@ -291,7 +291,5 @@ class ErrandCommunicationIT extends AbstractAppTest {
 			.withExpectedResponseHeader(CONTENT_TYPE, List.of(IMAGE_JPEG_VALUE))
 			.withExpectedBinaryResponse("Test_image.jpg")
 			.sendRequestAndVerifyResponse();
-
 	}
-
 }

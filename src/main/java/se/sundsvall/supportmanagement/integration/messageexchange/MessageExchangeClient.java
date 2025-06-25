@@ -8,7 +8,6 @@ import static se.sundsvall.supportmanagement.integration.messageexchange.configu
 import feign.QueryMap;
 import generated.se.sundsvall.messageexchange.Conversation;
 import generated.se.sundsvall.messageexchange.Message;
-import generated.se.sundsvall.messageexchange.PageConversation;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import java.util.List;
 import org.springframework.cloud.openfeign.FeignClient;
