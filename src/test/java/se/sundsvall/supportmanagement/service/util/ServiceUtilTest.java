@@ -36,13 +36,13 @@ class ServiceUtilTest {
 	}
 
 	@Test
-	void detectMimeTypeWhenAllParametersAreNullThrowsException() throws IOException {
+	void detectMimeTypeWhenAllParametersAreNullThrowsException() {
 		assertThat(ServiceUtil.detectMimeType(null, null)).isEqualTo("application/octet-stream");
 		assertThat(ServiceUtil.detectMimeTypeFromStream(null, null)).isEqualTo("application/octet-stream");
 	}
 
 	@Test
-	void detectMimeTypeWhenInputStreamIsNullThrowsException() throws IOException {
+	void detectMimeTypeWhenInputStreamIsNullThrowsException() {
 		assertThat(ServiceUtil.detectMimeType("filename", null)).isEqualTo("application/octet-stream");
 		assertThat(ServiceUtil.detectMimeTypeFromStream("filename", null)).isEqualTo("application/octet-stream");
 	}
