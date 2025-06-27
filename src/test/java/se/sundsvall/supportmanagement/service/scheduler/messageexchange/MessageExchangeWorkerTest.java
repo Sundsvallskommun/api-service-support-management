@@ -39,6 +39,7 @@ import se.sundsvall.supportmanagement.integration.db.model.communication.Convers
 import se.sundsvall.supportmanagement.integration.messageexchange.MessageExchangeClient;
 import se.sundsvall.supportmanagement.integration.relation.RelationClient;
 import se.sundsvall.supportmanagement.service.ConversationService;
+import se.sundsvall.supportmanagement.service.MessageExchangeSyncService;
 
 @ExtendWith(MockitoExtension.class)
 class MessageExchangeWorkerTest {
@@ -55,6 +56,8 @@ class MessageExchangeWorkerTest {
 	private RelationClient relationClientMock;
 	@Mock
 	private ErrandsRepository errandsRepositoryMock;
+	@Mock
+	private MessageExchangeSyncService messageExchangeSyncServiceMock;
 
 	@Captor
 	private ArgumentCaptor<ConversationEntity> conversationEntityArgumentCaptor;
@@ -64,10 +67,10 @@ class MessageExchangeWorkerTest {
 
 	@Test
 	void getActiveSyncEntities() {
-		var entity = MessageExchangeSyncEntity.create();
+		final var entity = MessageExchangeSyncEntity.create();
 		when(messageExchangeSyncRepositoryMock.findByActive(any())).thenReturn(List.of(entity));
 
-		var list = messageExchangeWorker.getActiveSyncEntities();
+		final var list = messageExchangeWorker.getActiveSyncEntities();
 
 		verify(messageExchangeSyncRepositoryMock).findByActive(true);
 		assertThat(list).hasSize(1).first().isSameAs(entity);
@@ -75,7 +78,7 @@ class MessageExchangeWorkerTest {
 
 	@Test
 	void saveSyncEntity() {
-		var entity = MessageExchangeSyncEntity.create();
+		final var entity = MessageExchangeSyncEntity.create();
 
 		messageExchangeWorker.saveSyncEntity(entity);
 
@@ -84,15 +87,15 @@ class MessageExchangeWorkerTest {
 
 	@Test
 	void getConversation() {
-		var entity = MessageExchangeSyncEntity.create()
+		final var entity = MessageExchangeSyncEntity.create()
 			.withMunicipalityId("municipalityId")
 			.withNamespace("namespace")
 			.withLatestSyncedSequenceNumber(33L);
-		var pageableMock = Mockito.mock(Pageable.class);
-		var conversationPage = new PageImpl<>(List.of(new Conversation()));
+		final var pageableMock = Mockito.mock(Pageable.class);
+		final var conversationPage = new PageImpl<>(List.of(new Conversation()));
 		when(messageExchangeClientMock.getConversations(any(), any(), any(), any(), any())).thenReturn(ResponseEntity.ok(conversationPage));
 
-		var result = messageExchangeWorker.getConversations(entity, pageableMock);
+		final var result = messageExchangeWorker.getConversations(entity, pageableMock);
 
 		verify(messageExchangeClientMock).getConversations(isNull(), eq("municipalityId"), eq("namespace"), eq("messages.sequenceNumber.id > 33"), same(pageableMock));
 		assertThat(result).isSameAs(conversationPage);
@@ -101,11 +104,11 @@ class MessageExchangeWorkerTest {
 	@Test
 	@SuppressWarnings("unchecked")
 	void processConversation() {
-		var conversation = new Conversation();
+		final var conversation = new Conversation();
 		conversation.setExternalReferences(List.of(new KeyValues().key(RELATION_ID_KEY).addValuesItem("1").addValuesItem("2")));
 		conversation.setMunicipalityId("municipalityId");
 		conversation.setId("conversationId");
-		var conversationEntities = new ArrayList<ConversationEntity>();
+		final var conversationEntities = new ArrayList<ConversationEntity>();
 		conversationEntities.add(ConversationEntity.create()
 			.withMunicipalityId("municipalityId-existing")
 			.withNamespace("support-management-namespace-existing")
@@ -125,13 +128,13 @@ class MessageExchangeWorkerTest {
 		verify(relationClientMock).getRelation("municipalityId", "1");
 		verify(relationClientMock).getRelation("municipalityId", "2");
 		verify(errandsRepositoryMock, times(2)).findById("123");
-		verify(conversationServiceMock, times(2)).syncConversation(conversationEntityArgumentCaptor.capture(), same(conversation));
+		verify(messageExchangeSyncServiceMock, times(2)).syncConversation(conversationEntityArgumentCaptor.capture(), same(conversation));
 		assertThat(conversationEntityArgumentCaptor.getAllValues()).hasSize(2)
 			.extracting(ConversationEntity::getMunicipalityId, ConversationEntity::getNamespace, ConversationEntity::getId, ConversationEntity::getMessageExchangeId)
 			.containsExactly(
 				tuple("municipalityId-existing", "support-management-namespace-existing", "existingConversationEntityId", "existingMessageExchangeId"),
 				tuple("municipalityId", "support-management-namespace", null, "conversationId"));
 
-		verifyNoMoreInteractions(conversationRepositoryMock, relationClientMock, errandsRepositoryMock, conversationServiceMock, messageExchangeClientMock, messageExchangeSyncRepositoryMock);
+		verifyNoMoreInteractions(conversationRepositoryMock, messageExchangeSyncServiceMock, relationClientMock, errandsRepositoryMock, conversationServiceMock, messageExchangeClientMock, messageExchangeSyncRepositoryMock);
 	}
 }

@@ -6,12 +6,15 @@ import static se.sundsvall.supportmanagement.service.util.ServiceUtil.detectMime
 
 import jakarta.persistence.EntityManager;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import org.hibernate.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 import org.zalando.problem.Problem;
 import org.zalando.problem.Status;
@@ -45,6 +48,29 @@ public final class ErrandAttachmentMapper {
 			LOGGER.warn("Exception when reading file", e);
 			throw Problem.valueOf(Status.BAD_REQUEST, "Could not read input stream!");
 		}
+	}
+
+	public static AttachmentEntity toAttachmentEntity(final ErrandEntity errandEntity, final ResponseEntity<InputStreamResource> errandAttachment, final EntityManager entityManager) {
+		if (anyNull(errandEntity, errandAttachment, errandAttachment.getBody())) {
+			return null;
+		}
+
+		final InputStream content;
+		try {
+			content = errandAttachment.getBody().getInputStream();
+		} catch (final Exception e) {
+			throw Problem.valueOf(Status.BAD_REQUEST, "Could not read input stream!");
+		}
+
+		final Session session = entityManager.unwrap(Session.class);
+		return AttachmentEntity.create()
+			.withErrandEntity(errandEntity)
+			.withNamespace(errandEntity.getNamespace())
+			.withMunicipalityId(errandEntity.getMunicipalityId())
+			.withFileSize(Math.toIntExact(errandAttachment.getHeaders().getContentLength()))
+			.withAttachmentData(new AttachmentDataEntity().withFile(session.getLobHelper().createBlob(content, errandAttachment.getHeaders().getContentLength())))
+			.withFileName(errandAttachment.getHeaders().getContentDisposition().getFilename())
+			.withMimeType(detectMimeTypeFromStream(errandAttachment.getBody().getFilename(), content));
 	}
 
 	public static List<ErrandAttachment> toErrandAttachments(final List<AttachmentEntity> attachmentEntities) {
