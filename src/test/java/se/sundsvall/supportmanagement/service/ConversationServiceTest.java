@@ -75,6 +75,9 @@ class ConversationServiceTest {
 	@Mock
 	private ErrandAttachmentService errandAttachmentServiceMock;
 
+	@Mock
+	private CommunicationService communicationServiceMock;
+
 	@Captor
 	private ArgumentCaptor<ConversationEntity> conversationEntityCaptor;
 
@@ -241,7 +244,8 @@ class ConversationServiceTest {
 		verify(errandRepositoryMock).findById(ERRAND_ID);
 		verify(messageExchangeClientMock).createMessage(eq(MUNICIPALITY_ID), eq(MESSAGE_EXCHANGE_NAMESPACE), eq(MESSAGE_EXCHANGE_ID), any(), eq(null));
 		verify(errandAttachmentServiceMock, never()).createErrandAttachment(any(), any(), any(), any());
-		verifyNoMoreInteractions(conversationRepositoryMock, messageExchangeClientMock, errandAttachmentServiceMock);
+		verify(communicationServiceMock).sendMessageNotification(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID);
+		verifyNoMoreInteractions(conversationRepositoryMock, messageExchangeClientMock, errandAttachmentServiceMock, communicationServiceMock);
 	}
 
 	@Test

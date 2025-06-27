@@ -15,6 +15,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
+import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -34,6 +35,8 @@ import se.sundsvall.supportmanagement.integration.messageexchange.MessageExchang
 @Service
 public class ConversationService {
 
+	private static final Logger LOGGER = org.slf4j.LoggerFactory.getLogger(ConversationService.class);
+
 	private static final String NO_CONVERSATION_ID_RETURNED = "ID of conversation was not returned in location header!";
 	private static final String NO_CONVERSATION_FOUND = "No conversation with ID:'%s', errandId:'%s', municipalityId:'%s' and namespace:'%s' was found!";
 	private static final String NO_ERRAND_FOUND = "No errand with ID: '%s' was found!";
@@ -42,6 +45,7 @@ public class ConversationService {
 	private final ConversationRepository conversationRepository;
 	private final ErrandsRepository errandRepository;
 	private final ErrandAttachmentService errandAttachmentService;
+	private final CommunicationService communicationService;
 
 	@Value("${integration.messageexchange.namespace:draken}")
 	private String messageExchangeNamespace;
@@ -50,12 +54,13 @@ public class ConversationService {
 		final MessageExchangeClient messageExchangeClient,
 		final ConversationRepository conversationRepository,
 		final ErrandsRepository errandRepository,
-		final ErrandAttachmentService errandAttachmentService) {
+		final ErrandAttachmentService errandAttachmentService, final CommunicationService communicationService) {
 
 		this.messageExchangeClient = messageExchangeClient;
 		this.conversationRepository = conversationRepository;
 		this.errandRepository = errandRepository;
 		this.errandAttachmentService = errandAttachmentService;
+		this.communicationService = communicationService;
 	}
 
 	public Conversation createConversation(final String municipalityId, final String namespace, final String errandId, final ConversationRequest conversationRequest) {
@@ -89,7 +94,7 @@ public class ConversationService {
 		return toConversation(messageExchangeConversation, syncConversation(conversationEntity, messageExchangeConversation));
 	}
 
-	public ConversationEntity syncConversation(ConversationEntity conversationEntity, generated.se.sundsvall.messageexchange.Conversation conversation) {
+	public ConversationEntity syncConversation(final ConversationEntity conversationEntity, final generated.se.sundsvall.messageexchange.Conversation conversation) {
 		// TODO: handle notifications
 		return conversationRepository.save(mergeIntoConversationEntity(conversationEntity, conversation));
 	}
@@ -130,6 +135,12 @@ public class ConversationService {
 
 		Optional.ofNullable(attachments).orElse(emptyList())
 			.forEach(attachment -> saveAttachment(errandEntity, attachment));
+
+		try {
+			communicationService.sendMessageNotification(municipalityId, namespace, errandId);
+		} catch (final Exception e) {
+			LOGGER.error("Failed to send message notification", e);
+		}
 	}
 
 	private generated.se.sundsvall.messageexchange.Conversation fetchConversationFromMessageExchange(
