@@ -23,6 +23,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 
 @ExtendWith(MockitoExtension.class)
@@ -74,9 +76,35 @@ class ErrandAttachmentMapperTest {
 	}
 
 	@Test
+	void toAttachmentEntityFromResponseEntity() throws IOException {
+		final var errandEntity = buildErrandEntity().withAttachments(new ArrayList<>());
+
+		final var file = ResponseEntity.ok()
+			.header("Content-Type", "application/octet-stream")
+			.header("Content-Disposition", "attachment; filename=" + FILE_NAME) // Add this line to include the filename
+			.body(new InputStreamResource(new ByteArrayInputStream(new byte[0])));
+
+		when(entityManagerMock.unwrap(Session.class)).thenReturn(sessionMock);
+		when(sessionMock.getLobHelper()).thenReturn(lobHelperMock);
+		when(lobHelperMock.createBlob(any(), anyLong())).thenReturn(blobMock);
+
+		final var result = ErrandAttachmentMapper.toAttachmentEntity(errandEntity, file, entityManagerMock);
+
+		assertThat(result).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "created", "modified");
+		assertThat(result.getMunicipalityId()).isEqualTo(errandEntity.getMunicipalityId());
+		assertThat(result.getNamespace()).isEqualTo(errandEntity.getNamespace());
+		assertThat(result.getFileName()).isEqualTo(FILE_NAME);
+		assertThat(result.getAttachmentData().getFile()).isSameAs(blobMock);
+		assertThat(result.getMimeType()).isEqualTo("application/octet-stream"); // Update expected MIME type
+		assertThat(result.getErrandEntity()).isSameAs(errandEntity);
+	}
+
+	@Test
 	void toAttachmentEntityAllNulls() {
 
-		assertThat(ErrandAttachmentMapper.toAttachmentEntity(null, null, null)).isNull();
+		final var multipartFile = (MultipartFile) null;
+
+		assertThat(ErrandAttachmentMapper.toAttachmentEntity(null, multipartFile, null)).isNull();
 	}
 
 	@Test

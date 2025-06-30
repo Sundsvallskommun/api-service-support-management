@@ -125,7 +125,7 @@ class ErrandAttachmentServiceTest {
 
 		// Call
 		try (final MockedStatic<ErrandAttachmentMapper> mapper = Mockito.mockStatic(ErrandAttachmentMapper.class)) {
-			mapper.when(() -> ErrandAttachmentMapper.toAttachmentEntity(any(), any(), any())).thenReturn(attachmentMock);
+			mapper.when(() -> ErrandAttachmentMapper.toAttachmentEntity(any(), any(MultipartFile.class), any())).thenReturn(attachmentMock);
 
 			final var result = service.createErrandAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, multipartFileMock);
 
