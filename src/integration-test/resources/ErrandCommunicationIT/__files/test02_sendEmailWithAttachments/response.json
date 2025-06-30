@@ -22,7 +22,7 @@
 		"errandNumber": "KC-23020002",
 		"subject": "Attack of the Killer App",
 		"communicationID": "${json-unit.regex}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
-		"viewed": false,
+		"viewed": true,
 		"communicationType": "EMAIL",
 		"sent": "${json-unit.ignore}",
 		"direction": "OUTBOUND",

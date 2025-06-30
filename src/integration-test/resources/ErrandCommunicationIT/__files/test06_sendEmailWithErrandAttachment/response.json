@@ -24,7 +24,7 @@
 		"sender": "bender@rodriguez.com",
 		"subject": "Insane in the Mainframe",
 		"communicationID": "${json-unit.any-string}",
-		"viewed": false,
+		"viewed": true,
 		"communicationType": "EMAIL",
 		"sent": "${json-unit.any-string}",
 		"direction": "OUTBOUND",
