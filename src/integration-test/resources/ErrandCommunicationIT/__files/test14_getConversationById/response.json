@@ -2,7 +2,9 @@
 	"id": "7a772d18-a588-41bc-91ec-13b7421c9bb8",
 	"topic": "Topic 2",
 	"type": "INTERNAL",
-	"relationIds": [],
+	"relationIds": [
+		"RELATION-ID-2"
+	],
 	"participants": [
 		{
 			"type": "adAccount",

@@ -132,6 +132,7 @@ public interface MessageExchangeClient {
 		@PathVariable("municipalityId") String municipalityId,
 		@PathVariable("namespace") String namespace,
 		@PathVariable("conversationId") String conversationId,
+		@RequestParam("filter") String filter,
 		@QueryMap Pageable pageable);
 
 	/**

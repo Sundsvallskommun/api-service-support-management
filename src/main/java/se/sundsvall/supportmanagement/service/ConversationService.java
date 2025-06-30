@@ -16,11 +16,13 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.zalando.problem.Problem;
+import se.sundsvall.dept44.requestid.RequestId;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.Conversation;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationRequest;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.Message;
@@ -30,6 +32,7 @@ import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.ConversationEntity;
 import se.sundsvall.supportmanagement.integration.messageexchange.MessageExchangeClient;
+import se.sundsvall.supportmanagement.service.util.ConversationEvent;
 
 @Service
 public class ConversationService {
@@ -42,6 +45,8 @@ public class ConversationService {
 	private final ConversationRepository conversationRepository;
 	private final ErrandsRepository errandRepository;
 	private final ErrandAttachmentService errandAttachmentService;
+	private final MessageExchangeSyncService messageExchangeSyncService;
+	private final ApplicationEventPublisher applicationEventPublisher;
 
 	@Value("${integration.messageexchange.namespace:draken}")
 	private String messageExchangeNamespace;
@@ -50,12 +55,14 @@ public class ConversationService {
 		final MessageExchangeClient messageExchangeClient,
 		final ConversationRepository conversationRepository,
 		final ErrandsRepository errandRepository,
-		final ErrandAttachmentService errandAttachmentService) {
+		final ErrandAttachmentService errandAttachmentService, final MessageExchangeSyncService messageExchangeSyncService, final ApplicationEventPublisher applicationEventPublisher) {
 
 		this.messageExchangeClient = messageExchangeClient;
 		this.conversationRepository = conversationRepository;
 		this.errandRepository = errandRepository;
 		this.errandAttachmentService = errandAttachmentService;
+		this.messageExchangeSyncService = messageExchangeSyncService;
+		this.applicationEventPublisher = applicationEventPublisher;
 	}
 
 	public Conversation createConversation(final String municipalityId, final String namespace, final String errandId, final ConversationRequest conversationRequest) {
@@ -86,12 +93,7 @@ public class ConversationService {
 		// Fetch conversation from MessageExchange.
 		final var messageExchangeConversation = fetchConversationFromMessageExchange(municipalityId, conversationEntity.getMessageExchangeId());
 
-		return toConversation(messageExchangeConversation, syncConversation(conversationEntity, messageExchangeConversation));
-	}
-
-	public ConversationEntity syncConversation(ConversationEntity conversationEntity, generated.se.sundsvall.messageexchange.Conversation conversation) {
-		// TODO: handle notifications
-		return conversationRepository.save(mergeIntoConversationEntity(conversationEntity, conversation));
+		return messageExchangeSyncService.syncConversation(conversationEntity, messageExchangeConversation);
 	}
 
 	public List<Conversation> readConversations(final String municipalityId, final String namespace, final String errandId) {
@@ -116,9 +118,12 @@ public class ConversationService {
 	public Page<Message> getMessages(final String municipalityId, final String namespace, final String errandId, final String conversationId, final Pageable pageable) {
 
 		final var conversationEntity = getConversationEntity(municipalityId, namespace, errandId, conversationId);
-		final var response = messageExchangeClient.getMessages(municipalityId, messageExchangeNamespace, conversationEntity.getMessageExchangeId(), pageable).getBody();
-
-		return toMessagePage(response);
+		final var response = messageExchangeClient.getMessages(municipalityId, messageExchangeNamespace, conversationEntity.getMessageExchangeId(), null, pageable);
+		if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+			throw Problem.valueOf(INTERNAL_SERVER_ERROR, "Failed to retrieve messages from Message Exchange");
+		}
+		applicationEventPublisher.publishEvent(ConversationEvent.create().withConversationEntity(conversationEntity).withRequestId(RequestId.get()));
+		return toMessagePage(response.getBody());
 	}
 
 	public void createMessage(final String municipalityId, final String namespace, final String errandId, final String conversationId, final MessageRequest messageRequest, final List<MultipartFile> attachments) {
@@ -159,6 +164,7 @@ public class ConversationService {
 		if (exchangeId == null) {
 			throw Problem.valueOf(NOT_FOUND, "Conversation not found in local database");
 		}
+		applicationEventPublisher.publishEvent(ConversationEvent.create().withConversationEntity(conversation).withRequestId(RequestId.get()));
 
 		final var attachmentResponse = messageExchangeClient.getMessageAttachment(
 			municipalityId, messageExchangeNamespace, exchangeId, messageId, attachmentId);

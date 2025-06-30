@@ -61,7 +61,7 @@ class ErrandAttachmentsResourceTest {
 		final var attachmentId = "attachmentId";
 
 		// Mock
-		when(errandAttachmentServiceMock.createErrandAttachment(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), any())).thenReturn(attachmentId);
+		when(errandAttachmentServiceMock.createErrandAttachment(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), any(MultipartFile.class))).thenReturn(attachmentId);
 
 		// Call
 		webTestClient.post().uri(builder -> builder.path(PATH)
