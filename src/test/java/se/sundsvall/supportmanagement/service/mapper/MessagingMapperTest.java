@@ -11,6 +11,7 @@ import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
 import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toWebMessageRequest;
 
 import generated.se.sundsvall.messaging.ExternalReference;
+import generated.se.sundsvall.messagingsettings.SenderInfoResponse;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.sql.Blob;
@@ -33,6 +34,7 @@ import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
 
 class MessagingMapperTest {
@@ -54,6 +56,31 @@ class MessagingMapperTest {
 	private static final String CASE_ID_KEY = "caseId";
 	private static final String CASE_ID_VALUE = "caseIdValue";
 	private static final String FLOW_INSTANCE_ID_KEY = "flowInstanceId";
+
+	private static EmailRequest createEmailRequest(final boolean hasSenderName, final String htmlMessage) {
+		return EmailRequest.create()
+			.withAttachments(List.of(EmailAttachment.create()
+				.withBase64EncodedString(FILE_CONTENT)
+				.withFileName(FILE_NAME)))
+			.withHtmlMessage(htmlMessage)
+			.withMessage(MESSAGE)
+			.withRecipient(RECIPIENT)
+			.withSender(SENDER_EMAIL)
+			.withSenderName(hasSenderName ? SENDER_NAME : null)
+			.withEmailHeaders(createEmailHeaders())
+			.withSubject(SUBJECT);
+	}
+
+	private static ErrandEntity createErrandEntity() {
+		return ErrandEntity.create()
+			.withId(ERRAND_ID);
+	}
+
+	private static Map<EmailHeader, List<String>> createEmailHeaders() {
+		return Map.of(EmailHeader.MESSAGE_ID, List.of("this-is@message-id"),
+			EmailHeader.IN_REPLY_TO, List.of("another@message-id"),
+			EmailHeader.REFERENCES, List.of("valid@message-id", "also-valid@message-id"));
+	}
 
 	@Test
 	void toEmailRequestWithSenderName() {
@@ -145,7 +172,7 @@ class MessagingMapperTest {
 		CHANNEL_ESERVICE, CHANNEL_ESERVICE_INTERNAL
 	})
 	void testToWebMessageRequest(final String channel) throws SQLException {
-		generated.se.sundsvall.messaging.WebMessageRequest.OepInstanceEnum instance;
+		final generated.se.sundsvall.messaging.WebMessageRequest.OepInstanceEnum instance;
 		switch (channel) {
 			case CHANNEL_ESERVICE -> instance = generated.se.sundsvall.messaging.WebMessageRequest.OepInstanceEnum.EXTERNAL;
 			case CHANNEL_ESERVICE_INTERNAL -> instance = generated.se.sundsvall.messaging.WebMessageRequest.OepInstanceEnum.INTERNAL;
@@ -249,28 +276,48 @@ class MessagingMapperTest {
 			.withSender(SENDER_NAME);
 	}
 
-	private static EmailRequest createEmailRequest(boolean hasSenderName, String htmlMessage) {
-		return EmailRequest.create()
-			.withAttachments(List.of(EmailAttachment.create()
-				.withBase64EncodedString(FILE_CONTENT)
-				.withFileName(FILE_NAME)))
-			.withHtmlMessage(htmlMessage)
-			.withMessage(MESSAGE)
-			.withRecipient(RECIPIENT)
-			.withSender(SENDER_EMAIL)
-			.withSenderName(hasSenderName ? SENDER_NAME : null)
-			.withEmailHeaders(createEmailHeaders())
-			.withSubject(SUBJECT);
-	}
+	@Test
+	void toMessagingMessageRequest() {
 
-	private static ErrandEntity createErrandEntity() {
-		return ErrandEntity.create()
-			.withId(ERRAND_ID);
-	}
+		// Arrange
+		final var namespace = "my-namespace";
+		final var municipalityId = "2281";
+		final var title = "Title";
+		final var errandNumber = "123456789";
+		final var emailAddress = "test™@example.com";
+		final var phoneNumber = "123456789";
+		final var supportText = "Support text for %s with errand number %s. Contact us at %s";
+		final var smsSender = "TestSender";
+		final var url = "https://example.com/contact";
+		final var errandEntity = ErrandEntity.create()
+			.withNamespace(namespace)
+			.withMunicipalityId(municipalityId)
+			.withTitle(title)
+			.withErrandNumber(errandNumber)
+			.withStakeholders(List.of(StakeholderEntity.create()
+				.withExternalId("123e4567-e89b-12d3-a456-426614174000")
+				.withRole("PRIMARY")));
 
-	private static Map<EmailHeader, List<String>> createEmailHeaders() {
-		return Map.of(EmailHeader.MESSAGE_ID, List.of("this-is@message-id"),
-			EmailHeader.IN_REPLY_TO, List.of("another@message-id"),
-			EmailHeader.REFERENCES, List.of("valid@message-id", "also-valid@message-id"));
+		final var senderInfo = new SenderInfoResponse()
+			.supportText(supportText)
+			.contactInformationUrl(url)
+			.contactInformationPhoneNumber(phoneNumber)
+			.contactInformationEmail(emailAddress)
+			.smsSender(smsSender);
+
+		// Act
+		final var bean = MessagingMapper.toMessagingMessageRequest(errandEntity, senderInfo);
+
+		// Assert
+		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
+		assertThat(bean.getMessages()).hasSize(1);
+		assertThat(bean.getMessages().getFirst().getMessage())
+			.isEqualTo("Support text for " + title + " with errand number " + errandNumber + ". Contact us at " + url);
+		assertThat(bean.getMessages().getFirst().getSender()).isNotNull();
+		assertThat(bean.getMessages().getFirst().getSender().getEmail()).isNotNull();
+		assertThat(bean.getMessages().getFirst().getSender().getEmail().getAddress()).isEqualTo(emailAddress);
+		assertThat(bean.getMessages().getFirst().getSender().getSms()).isNotNull();
+		assertThat(bean.getMessages().getFirst().getSender().getSms().getName()).isEqualTo(smsSender);
+
 	}
 }

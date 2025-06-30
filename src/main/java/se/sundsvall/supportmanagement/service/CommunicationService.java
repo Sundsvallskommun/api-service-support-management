@@ -8,10 +8,12 @@ import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
 import static org.zalando.problem.Status.NOT_FOUND;
 import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toEmailAttachments;
 import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toEmailRequest;
+import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toMessagingMessageRequest;
 import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toSmsRequest;
 import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toWebMessageRequest;
 
 import generated.se.sundsvall.employee.PortalPersonData;
+import generated.se.sundsvall.messagingsettings.SenderInfoResponse;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.SQLException;
@@ -39,6 +41,7 @@ import se.sundsvall.supportmanagement.integration.db.model.communication.Communi
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
 import se.sundsvall.supportmanagement.integration.messaging.MessagingClient;
+import se.sundsvall.supportmanagement.integration.messagingsettings.MessagingSettingsClient;
 import se.sundsvall.supportmanagement.service.mapper.CommunicationMapper;
 
 @Service
@@ -59,6 +62,7 @@ public class CommunicationService {
 	private final Semaphore semaphore;
 	private final EmployeeService employeeService;
 	private final CitizenIntegration citizenIntegration;
+	private final MessagingSettingsClient messagingSettingsClient;
 
 	public CommunicationService(
 		final ErrandsRepository errandsRepository,
@@ -69,7 +73,7 @@ public class CommunicationService {
 		final ErrandAttachmentService errandAttachmentService,
 		final Semaphore semaphore,
 		final EmployeeService employeeService,
-		final CitizenIntegration citizenIntegration) {
+		final CitizenIntegration citizenIntegration, final MessagingSettingsClient messagingSettingsClient) {
 
 		this.errandsRepository = errandsRepository;
 		this.messagingClient = messagingClient;
@@ -80,6 +84,7 @@ public class CommunicationService {
 		this.semaphore = semaphore;
 		this.employeeService = employeeService;
 		this.citizenIntegration = citizenIntegration;
+		this.messagingSettingsClient = messagingSettingsClient;
 	}
 
 	public List<Communication> readCommunications(final String namespace, final String municipalityId, final String errandId) {
@@ -262,4 +267,36 @@ public class CommunicationService {
 	public void saveCommunication(final CommunicationEntity communicationEntity) {
 		communicationRepository.saveAndFlush(communicationEntity);
 	}
+
+	public void sendMessageNotification(final String municipalityId, final String namespace, final String errandId) {
+
+		final var errand = errandsRepository.findByIdAndNamespaceAndMunicipalityId(errandId, municipalityId, namespace)
+			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, ERRAND_ENTITY_NOT_FOUND.formatted(errandId, namespace, municipalityId)));
+
+		final var senderInfo = getSenderInfo(municipalityId, namespace);
+
+		sendMessageNotification(errand, senderInfo);
+	}
+
+	private SenderInfoResponse getSenderInfo(final String municipalityId, final String namespace) {
+		final var senderInfo = messagingSettingsClient.getSenderInfo(municipalityId, namespace);
+
+		if (senderInfo == null) {
+			throw Problem.valueOf(INTERNAL_SERVER_ERROR, "Failed to retrieve sender information for municipality '%s' and namespace '%s'".formatted(municipalityId, namespace));
+		}
+		return senderInfo;
+	}
+
+	public void sendMessageNotification(final ErrandEntity errandEntity, final SenderInfoResponse senderInfo) {
+
+		final var request = toMessagingMessageRequest(errandEntity, senderInfo);
+
+		final var message = messagingClient.sendMessage(errandEntity.getMunicipalityId(), request);
+
+		if (message == null) {
+			throw Problem.valueOf(INTERNAL_SERVER_ERROR, "Failed to create message notification");
+		}
+
+	}
+
 }

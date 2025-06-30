@@ -6,17 +6,23 @@ import static org.apache.commons.codec.binary.Base64.decodeBase64;
 import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.detectMimeType;
 
+import generated.se.sundsvall.messaging.Email;
 import generated.se.sundsvall.messaging.EmailAttachment;
 import generated.se.sundsvall.messaging.EmailRequest;
 import generated.se.sundsvall.messaging.EmailRequestParty;
 import generated.se.sundsvall.messaging.EmailSender;
 import generated.se.sundsvall.messaging.ExternalReference;
+import generated.se.sundsvall.messaging.MessageParty;
+import generated.se.sundsvall.messaging.MessageRequest;
+import generated.se.sundsvall.messaging.MessageSender;
+import generated.se.sundsvall.messaging.Sms;
 import generated.se.sundsvall.messaging.SmsRequest;
 import generated.se.sundsvall.messaging.SmsRequestParty;
 import generated.se.sundsvall.messaging.WebMessageAttachment;
 import generated.se.sundsvall.messaging.WebMessageParty;
 import generated.se.sundsvall.messaging.WebMessageRequest;
 import generated.se.sundsvall.messaging.WebMessageSender;
+import generated.se.sundsvall.messagingsettings.SenderInfoResponse;
 import io.netty.util.internal.StringUtil;
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,6 +34,7 @@ import java.util.Base64.Encoder;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.compress.utils.IOUtils;
@@ -37,6 +44,7 @@ import org.zalando.problem.Problem;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
 
 public class MessagingMapper {
@@ -52,7 +60,7 @@ public class MessagingMapper {
 
 	private MessagingMapper() {}
 
-	public static EmailRequest toEmailRequest(ErrandEntity errandEntity, se.sundsvall.supportmanagement.api.model.communication.EmailRequest emailRequest, List<EmailAttachment> attachments) {
+	public static EmailRequest toEmailRequest(final ErrandEntity errandEntity, final se.sundsvall.supportmanagement.api.model.communication.EmailRequest emailRequest, final List<EmailAttachment> attachments) {
 		return new EmailRequest()
 			.attachments(Stream.of(attachments, toAttachments(emailRequest.getAttachments()))
 				.flatMap(List::stream)
@@ -66,14 +74,14 @@ public class MessagingMapper {
 			.subject(emailRequest.getSubject());
 	}
 
-	public static Map<String, List<String>> toEmailHeaders(Map<EmailHeader, List<String>> emailHeaders) {
+	public static Map<String, List<String>> toEmailHeaders(final Map<EmailHeader, List<String>> emailHeaders) {
 		return ofNullable(emailHeaders).orElse(Map.of()).entrySet().stream()
 			.collect(Collectors.toMap(
 				e -> e.getKey().toString(),
 				Map.Entry::getValue));
 	}
 
-	public static SmsRequest toSmsRequest(ErrandEntity errandEntity, se.sundsvall.supportmanagement.api.model.communication.SmsRequest smsRequest) {
+	public static SmsRequest toSmsRequest(final ErrandEntity errandEntity, final se.sundsvall.supportmanagement.api.model.communication.SmsRequest smsRequest) {
 		return new SmsRequest()
 			.message(smsRequest.getMessage())
 			.mobileNumber(smsRequest.getRecipient())
@@ -87,7 +95,7 @@ public class MessagingMapper {
 			.toList();
 	}
 
-	public static WebMessageRequest toWebMessageRequest(ErrandEntity errandEntity, se.sundsvall.supportmanagement.api.model.communication.WebMessageRequest webMessageRequest,
+	public static WebMessageRequest toWebMessageRequest(final ErrandEntity errandEntity, final se.sundsvall.supportmanagement.api.model.communication.WebMessageRequest webMessageRequest,
 		final List<AttachmentEntity> attachments, final String senderUserId) {
 		return new WebMessageRequest()
 			.message(webMessageRequest.getMessage())
@@ -101,19 +109,19 @@ public class MessagingMapper {
 				.toList());
 	}
 
-	private static List<WebMessageAttachment> toWebMessageAttachmentsFromAttachmentEntity(List<AttachmentEntity> attachments) {
+	private static List<WebMessageAttachment> toWebMessageAttachmentsFromAttachmentEntity(final List<AttachmentEntity> attachments) {
 		return ofNullable(attachments).orElse(emptyList()).stream()
 			.map(MessagingMapper::toWebMessageAttachment)
 			.toList();
 	}
 
-	private static List<WebMessageAttachment> toWebMessageAttachmentsFromRequest(List<se.sundsvall.supportmanagement.api.model.communication.WebMessageAttachment> attachments) {
+	private static List<WebMessageAttachment> toWebMessageAttachmentsFromRequest(final List<se.sundsvall.supportmanagement.api.model.communication.WebMessageAttachment> attachments) {
 		return ofNullable(attachments).orElse(emptyList()).stream()
 			.map(MessagingMapper::toWebMessageAttachment)
 			.toList();
 	}
 
-	private static WebMessageRequest.OepInstanceEnum toOepInstance(String channel) {
+	private static WebMessageRequest.OepInstanceEnum toOepInstance(final String channel) {
 		return switch (channel) {
 			case CHANNEL_ESERVICE -> WebMessageRequest.OepInstanceEnum.EXTERNAL;
 			case CHANNEL_ESERVICE_INTERNAL -> WebMessageRequest.OepInstanceEnum.INTERNAL;
@@ -122,7 +130,7 @@ public class MessagingMapper {
 	}
 
 	static EmailAttachment toEmailAttachment(final AttachmentEntity attachment) {
-		try (InputStream attachmentInputStream = attachment.getAttachmentData().getFile().getBinaryStream()) {
+		try (final InputStream attachmentInputStream = attachment.getAttachmentData().getFile().getBinaryStream()) {
 			final byte[] bytes = IOUtils.toByteArray(attachmentInputStream);
 			final String encoded = Base64.getEncoder().encodeToString(bytes);
 
@@ -130,14 +138,14 @@ public class MessagingMapper {
 				.content(encoded)
 				.contentType(detectMimeType(attachment.getFileName(), bytes))
 				.name(attachment.getFileName());
-		} catch (SQLException | IOException e) {
+		} catch (final SQLException | IOException e) {
 			LOG.error("Attachment mapping error", e);
 			throw Problem.valueOf(INTERNAL_SERVER_ERROR, String.format("Failed to map attachment with id '%s'", attachment.getId()));
 		}
 	}
 
 	static WebMessageAttachment toWebMessageAttachment(final AttachmentEntity attachment) {
-		try (InputStream attachmentInputStream = attachment.getAttachmentData().getFile().getBinaryStream()) {
+		try (final InputStream attachmentInputStream = attachment.getAttachmentData().getFile().getBinaryStream()) {
 			final byte[] bytes = IOUtils.toByteArray(attachmentInputStream);
 			final String encoded = Base64.getEncoder().encodeToString(bytes);
 
@@ -145,19 +153,19 @@ public class MessagingMapper {
 				.base64Data(encoded)
 				.mimeType(detectMimeType(attachment.getFileName(), bytes))
 				.fileName(attachment.getFileName());
-		} catch (SQLException | IOException e) {
+		} catch (final SQLException | IOException e) {
 			LOG.error("Attachment mapping error", e);
 			throw Problem.valueOf(INTERNAL_SERVER_ERROR, String.format("Failed to map attachment with id '%s'", attachment.getId()));
 		}
 	}
 
-	private static List<EmailAttachment> toAttachments(List<se.sundsvall.supportmanagement.api.model.communication.EmailAttachment> attachments) {
+	private static List<EmailAttachment> toAttachments(final List<se.sundsvall.supportmanagement.api.model.communication.EmailAttachment> attachments) {
 		return ofNullable(attachments).orElse(emptyList()).stream()
 			.map(MessagingMapper::toAttachment)
 			.toList();
 	}
 
-	private static EmailAttachment toAttachment(se.sundsvall.supportmanagement.api.model.communication.EmailAttachment attachment) {
+	private static EmailAttachment toAttachment(final se.sundsvall.supportmanagement.api.model.communication.EmailAttachment attachment) {
 		final byte[] byteArray = decodeBase64(attachment.getBase64EncodedString());
 
 		return new EmailAttachment()
@@ -174,15 +182,15 @@ public class MessagingMapper {
 			.fileName(attachment.getFileName());
 	}
 
-	private static EmailRequestParty toEmailRequestParty(ErrandEntity errandEntity) {
+	private static EmailRequestParty toEmailRequestParty(final ErrandEntity errandEntity) {
 		return new EmailRequestParty().addExternalReferencesItem(toExternalReference(errandEntity.getId()));
 	}
 
-	private static SmsRequestParty toSmsRequestParty(ErrandEntity errandEntity) {
+	private static SmsRequestParty toSmsRequestParty(final ErrandEntity errandEntity) {
 		return new SmsRequestParty().addExternalReferencesItem(toExternalReference(errandEntity.getId()));
 	}
 
-	private static WebMessageParty toWebMessageRequestParty(ErrandEntity errandEntity) {
+	private static WebMessageParty toWebMessageRequestParty(final ErrandEntity errandEntity) {
 		return new WebMessageParty()
 			.addExternalReferencesItem(toExternalReference(errandEntity.getId()))
 			.addExternalReferencesItem(new ExternalReference()
@@ -194,25 +202,25 @@ public class MessagingMapper {
 					.orElseThrow(() -> Problem.valueOf(INTERNAL_SERVER_ERROR, String.format("Web message cannot be created without externalTag with key '%s'", CASE_ID_KEY)))));
 	}
 
-	private static WebMessageSender toWebMessageRequestSender(String senderUserId) {
+	private static WebMessageSender toWebMessageRequestSender(final String senderUserId) {
 		return Optional.ofNullable(senderUserId)
 			.map(id -> new WebMessageSender().userId(senderUserId))
 			.orElse(null);
 	}
 
-	private static ExternalReference toExternalReference(String id) {
+	private static ExternalReference toExternalReference(final String id) {
 		return new ExternalReference()
 			.key(ERRAND_ID)
 			.value(id);
 	}
 
-	private static EmailSender toEmailSender(se.sundsvall.supportmanagement.api.model.communication.EmailRequest emailRequest) {
+	private static EmailSender toEmailSender(final se.sundsvall.supportmanagement.api.model.communication.EmailRequest emailRequest) {
 		return new EmailSender()
 			.name(ofNullable(emailRequest.getSenderName()).orElse(emailRequest.getSender()))
 			.address(emailRequest.getSender());
 	}
 
-	private static String addBase64Encoding(String message) {
+	private static String addBase64Encoding(final String message) {
 
 		if (StringUtil.isNullOrEmpty(message)) {
 			return message;
@@ -223,5 +231,45 @@ public class MessagingMapper {
 		} catch (final Exception e) {
 			return BASE64_ENCODER.encodeToString(message.getBytes(StandardCharsets.UTF_8));
 		}
+	}
+
+	public static MessageRequest toMessagingMessageRequest(final ErrandEntity errandEntity, final SenderInfoResponse senderInfo) {
+
+		return new MessageRequest()
+			.messages(List.of(new generated.se.sundsvall.messaging.Message()
+				.subject("Nytt meddelande kopplat till ärendet" + errandEntity.getTitle() + errandEntity.getErrandNumber())
+				.message(createBody(errandEntity, senderInfo))
+				.party(new MessageParty().partyId(findErrandOwnerPartyId(errandEntity)))
+				.sender(new MessageSender()
+					.sms(new Sms()
+						.name(senderInfo.getSmsSender()))
+					.email(new Email()
+						.address(senderInfo.getContactInformationEmail())))));
+
+	}
+
+	static String createBody(final ErrandEntity errandEntity, final SenderInfoResponse senderInfo) {
+
+		return Optional.ofNullable(senderInfo.getSupportText())
+			.map(supportText -> supportText.formatted(
+				errandEntity.getTitle(),
+				errandEntity.getErrandNumber(),
+				senderInfo.getContactInformationUrl()))
+			.orElse(null);
+	}
+
+	static UUID findErrandOwnerPartyId(final ErrandEntity errandEntity) {
+
+		final var partyIdString = Optional.ofNullable(errandEntity.getStakeholders())
+			.orElse(emptyList())
+			.stream()
+			.filter(stakeholder -> stakeholder.getRole().contains("PRIMARY"))
+			.findFirst()
+			.map(StakeholderEntity::getExternalId).orElse(null);
+
+		if (partyIdString == null || partyIdString.isBlank()) {
+			return null;
+		}
+		return UUID.fromString(partyIdString);
 	}
 }
