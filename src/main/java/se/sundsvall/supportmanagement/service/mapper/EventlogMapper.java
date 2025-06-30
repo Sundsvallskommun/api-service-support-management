@@ -10,6 +10,7 @@ import static se.sundsvall.supportmanagement.Constants.EXTERNAL_TAG_KEY_CASE_ID;
 import static se.sundsvall.supportmanagement.Constants.EXTERNAL_TAG_KEY_CURRENT_REVISION;
 import static se.sundsvall.supportmanagement.Constants.EXTERNAL_TAG_KEY_CURRENT_VERSION;
 import static se.sundsvall.supportmanagement.Constants.EXTERNAL_TAG_KEY_EXECUTED_BY;
+import static se.sundsvall.supportmanagement.Constants.EXTERNAL_TAG_KEY_NAMESPACE;
 import static se.sundsvall.supportmanagement.Constants.EXTERNAL_TAG_KEY_NOTE_ID;
 import static se.sundsvall.supportmanagement.Constants.EXTERNAL_TAG_KEY_PREVIOUS_REVISION;
 import static se.sundsvall.supportmanagement.Constants.EXTERNAL_TAG_KEY_PREVIOUS_VERSION;
@@ -36,7 +37,7 @@ public class EventlogMapper {
 
 	private EventlogMapper() {}
 
-	public static Event toEvent(EventType eventType, String message, String revision, Class<?> sourceType, Map<String, String> metaData, String executedByUserId) {
+	public static Event toEvent(final EventType eventType, final String message, final String revision, final Class<?> sourceType, final Map<String, String> metaData, final String executedByUserId) {
 		return new Event()
 			.created(now(systemDefault()))
 			.historyReference(revision)
@@ -47,7 +48,7 @@ public class EventlogMapper {
 			.metadata(toMetadata(metaData, ofNullable(executedByUserId)));
 	}
 
-	private static List<Metadata> toMetadata(Map<String, String> metadata, Optional<String> executedByUserId) {
+	private static List<Metadata> toMetadata(final Map<String, String> metadata, final Optional<String> executedByUserId) {
 		final var metadataList = new ArrayList<Metadata>();
 		metadataList.addAll(toMetadatas(metadata));
 		executedByUserId.ifPresent(userId -> metadataList.add(toMetadata(entry(EXTERNAL_TAG_KEY_EXECUTED_BY, userId))));
@@ -55,18 +56,18 @@ public class EventlogMapper {
 		return metadataList;
 	}
 
-	private static List<Metadata> toMetadatas(Map<String, String> metadata) {
+	private static List<Metadata> toMetadatas(final Map<String, String> metadata) {
 		return ofNullable(metadata).orElse(emptyMap()).entrySet().stream()
 			.map(EventlogMapper::toMetadata)
 			.toList();
 	}
 
-	private static Metadata toMetadata(Entry<String, String> entry) {
+	private static Metadata toMetadata(final Entry<String, String> entry) {
 		return new Metadata().key(entry.getKey()).value(entry.getValue());
 	}
 
-	public static Map<String, String> toMetadataMap(ErrandEntity errandEntity, Revision currentRevision, Revision previousRevision) {
-		String caseId = ofNullable(errandEntity)
+	public static Map<String, String> toMetadataMap(final ErrandEntity errandEntity, final Revision currentRevision, final Revision previousRevision) {
+		final String caseId = ofNullable(errandEntity)
 			.map(ErrandEntity::getExternalTags)
 			.orElse(emptyList())
 			.stream()
@@ -75,10 +76,14 @@ public class EventlogMapper {
 			.findAny()
 			.orElse(null);
 
-		return toMetadataMap(caseId, null, currentRevision, previousRevision);
+		final var namespace = ofNullable(errandEntity)
+			.map(ErrandEntity::getNamespace)
+			.orElse(null);
+
+		return toMetadataMap(caseId, null, currentRevision, previousRevision, namespace);
 	}
 
-	public static Map<String, String> toMetadataMap(String caseId, String noteId, Revision currentRevision, Revision previousRevision) {
+	public static Map<String, String> toMetadataMap(final String caseId, final String noteId, final Revision currentRevision, final Revision previousRevision, final String namespace) {
 		final var metadata = new HashMap<String, String>();
 
 		// Add caseId to metadata if present
@@ -99,10 +104,12 @@ public class EventlogMapper {
 			metadata.put(EXTERNAL_TAG_KEY_PREVIOUS_VERSION, String.valueOf(rev.getVersion()));
 		});
 
+		ofNullable(namespace).ifPresent(value -> metadata.put(EXTERNAL_TAG_KEY_NAMESPACE, value));
+
 		return metadata;
 	}
 
-	public static se.sundsvall.supportmanagement.api.model.event.Event toEvent(Event event) {
+	public static se.sundsvall.supportmanagement.api.model.event.Event toEvent(final Event event) {
 		return se.sundsvall.supportmanagement.api.model.event.Event.create()
 			.withCreated(event.getCreated())
 			.withHistoryReference(event.getHistoryReference())
@@ -113,7 +120,7 @@ public class EventlogMapper {
 			.withType(toEventType(event.getType()));
 	}
 
-	private static se.sundsvall.supportmanagement.api.model.event.EventType toEventType(EventType eventType) {
+	private static se.sundsvall.supportmanagement.api.model.event.EventType toEventType(final EventType eventType) {
 		if (eventType == null) {
 			return se.sundsvall.supportmanagement.api.model.event.EventType.UNKNOWN;
 		}
@@ -126,13 +133,13 @@ public class EventlogMapper {
 		};
 	}
 
-	private static List<EventMetaData> toMetadatas(List<Metadata> metadatas) {
+	private static List<EventMetaData> toMetadatas(final List<Metadata> metadatas) {
 		return Optional.ofNullable(metadatas).orElse(Collections.emptyList()).stream()
 			.map(EventlogMapper::toMetadata)
 			.toList();
 	}
 
-	private static EventMetaData toMetadata(Metadata metadata) {
+	private static EventMetaData toMetadata(final Metadata metadata) {
 		return EventMetaData.create()
 			.withKey(metadata.getKey())
 			.withValue(metadata.getValue());

@@ -34,6 +34,10 @@
 						{
 							"value": "upd04ate",
 							"key": "ExecutedBy"
+						},
+						{
+							"key": "Namespace",
+							"value": "NAMESPACE-1"
 						}
 					],
 					"historyReference": "64c692d3-5384-434d-9cd5-ffb6806cc43d",

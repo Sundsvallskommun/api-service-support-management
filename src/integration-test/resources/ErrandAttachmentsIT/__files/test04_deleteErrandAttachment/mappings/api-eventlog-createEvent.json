@@ -30,6 +30,10 @@
 						{
 							"value": "del04ete",
 							"key": "ExecutedBy"
+						},
+						{
+							"key": "Namespace",
+							"value": "NAMESPACE-1"
 						}
 					],
 					"historyReference": "${json-unit.regex}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",

@@ -22,6 +22,10 @@
 						{
 							"value": "${json-unit.any-string}",
 							"key": "ExecutedBy"
+						},
+						{
+							"key": "Namespace",
+							"value": "NAMESPACE-1"
 						}
 					],
 					"historyReference": "${json-unit.any-string}",
