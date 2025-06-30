@@ -498,6 +498,7 @@ class CommunicationServiceTest {
 		when(errandEntityMock.getErrandNumber()).thenReturn(ERRAND_ID_KEY);
 		when(communicationMapperMock.toCommunicationEntity(anyString(), anyString(), anyString(), any(), anyString(), anyString())).thenReturn(communicationEntityMock);
 		when(communicationEntityMock.withErrandAttachments(any())).thenReturn(communicationEntityMock);
+		when(communicationEntityMock.withViewed(true)).thenReturn(communicationEntityMock);
 		when(communicationMapperMock.toAttachments(any())).thenReturn(List.of(attachmentEntityMock));
 		when(attachmentEntityMock.withErrandEntity(any())).thenReturn(attachmentEntityMock);
 		when(employeeServiceMock.getEmployeeByLoginName(MUNICIPALITY_ID, adUser)).thenReturn(portalPersonDataMock);
@@ -549,6 +550,7 @@ class CommunicationServiceTest {
 		when(citizenIntegrationMock.getCitizenName(any(), any())).thenReturn("John Doe");
 		when(errandEntityMock.getErrandNumber()).thenReturn("123");
 		when(communicationMapperMock.toCommunicationEntity(any(), any(), any(), any(), any(), any())).thenReturn(communicationEntityMock);
+		when(communicationEntityMock.withViewed(true)).thenReturn(communicationEntityMock);
 
 		communicationService.sendWebMessage(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, request);
 
@@ -581,6 +583,7 @@ class CommunicationServiceTest {
 
 		when(errandEntityMock.getErrandNumber()).thenReturn("123");
 		when(communicationMapperMock.toCommunicationEntity(any(), any(), any(), any(), any(), any())).thenReturn(communicationEntityMock);
+		when(communicationEntityMock.withViewed(true)).thenReturn(communicationEntityMock);
 
 		communicationService.sendWebMessage(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, request);
 
