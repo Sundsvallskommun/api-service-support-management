@@ -25,6 +25,8 @@ import java.util.Optional;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StreamUtils;
@@ -66,7 +68,19 @@ public class ErrandAttachmentService {
 
 	public String createErrandAttachment(final String namespace, final String municipalityId, final String errandId, final MultipartFile errandAttachment) {
 		final var errandEntity = getErrand(errandId, namespace, municipalityId, true);
-		var attachmentEntity = ofNullable(toAttachmentEntity(errandEntity, errandAttachment, entityManager))
+
+		return createErrandAttachmentInternal(errandEntity, () -> toAttachmentEntity(errandEntity, errandAttachment, entityManager));
+	}
+
+	public String createErrandAttachment(final String namespace, final String municipalityId, final String errandId, final ResponseEntity<InputStreamResource> file) {
+		final var errandEntity = getErrand(errandId, namespace, municipalityId, true);
+
+		return createErrandAttachmentInternal(errandEntity, () -> toAttachmentEntity(errandEntity, file, entityManager));
+	}
+
+	private String createErrandAttachmentInternal(final ErrandEntity errandEntity,
+		final Supplier<AttachmentEntity> attachmentEntitySupplier) {
+		var attachmentEntity = ofNullable(attachmentEntitySupplier.get())
 			.orElseThrow(() -> Problem.valueOf(BAD_GATEWAY, ATTACHMENT_ENTITY_NOT_CREATED));
 
 		// Save
