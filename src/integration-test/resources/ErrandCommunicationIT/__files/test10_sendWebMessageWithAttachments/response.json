@@ -17,7 +17,7 @@
 		"messageBody": "Sending data!",
 		"errandNumber": "KC-23020008",
 		"communicationID": "${json-unit.regex}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
-		"viewed": false,
+		"viewed": true,
 		"communicationType": "WEB_MESSAGE",
 		"sent": "${json-unit.ignore}",
 		"direction": "OUTBOUND",

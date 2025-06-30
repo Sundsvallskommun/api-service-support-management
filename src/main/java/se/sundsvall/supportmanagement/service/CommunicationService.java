@@ -166,6 +166,7 @@ public class CommunicationService {
 
 		final var communicationEntity = communicationMapper.toCommunicationEntity(namespace, municipalityId, request)
 			.withErrandAttachments(errandAttachments)
+			.withViewed(true)
 			.withErrandNumber(errandEntity.getErrandNumber());
 
 		saveCommunication(communicationEntity);
@@ -179,6 +180,7 @@ public class CommunicationService {
 		messagingClient.sendSms(municipalityId, ASYNCHRONOUSLY, toSmsRequest(entity, request));
 
 		final var communicationEntity = communicationMapper.toCommunicationEntity(namespace, municipalityId, request)
+			.withViewed(true)
 			.withErrandNumber(entity.getErrandNumber());
 
 		saveCommunication(communicationEntity);
@@ -196,6 +198,7 @@ public class CommunicationService {
 			.orElse("UNKNOWN");
 
 		final var communicationEntity = communicationMapper.toCommunicationEntity(namespace, municipalityId, entity.getErrandNumber(), request, fullName, identifier)
+			.withViewed(true)
 			.withErrandAttachments(errandAttachments);
 
 		if (request.isDispatch()) {
