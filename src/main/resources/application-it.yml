@@ -9,6 +9,8 @@ integration:
     url: http://localhost:${wiremock.server.port:}/api-messaging
   messageexchange:
     url: http://localhost:${wiremock.server.port:}/api-messageexchange
+  messaging-settings:
+    url: http://localhost:${wiremock.server.port:}/api-messaging-settings
   notes:
     url: http://localhost:${wiremock.server.port:}/api-notes
   web-message-collector:
@@ -55,6 +57,8 @@ spring:
             token-uri: http://localhost:${wiremock.server.port:}/api-gateway/token
           messageexchange:
             token-uri: http://localhost:${wiremock.server.port:}/api-gateway/token
+          messaging-settings:
+            token-uri: http://localhost:${wiremock.server.port:}/api-gateway/token
           notes:
             token-uri: http://localhost:${wiremock.server.port:}/api-gateway/token
           web-message-collector:
@@ -79,6 +83,9 @@ spring:
           messageexchange:
             client-id: the-client-id
             client-secret: the-client-secret
+          messaging-settings:
+            client-id: the-client-id
+            client-secret: the-client
           notes:
             client-id: the-client-id
             client-secret: the-client-secret

@@ -4,6 +4,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static se.sundsvall.supportmanagement.integration.messaging.configuration.MessagingConfiguration.CLIENT_ID;
 
 import generated.se.sundsvall.messaging.EmailRequest;
+import generated.se.sundsvall.messaging.MessageRequest;
 import generated.se.sundsvall.messaging.MessageResult;
 import generated.se.sundsvall.messaging.SmsRequest;
 import generated.se.sundsvall.messaging.WebMessageRequest;
@@ -52,4 +53,16 @@ public interface MessagingClient {
 		@PathVariable("municipalityId") final String municipalityId,
 		@RequestParam("async") final boolean sendAsynchronously,
 		@RequestBody final WebMessageRequest webMessageRequest);
+
+	/**
+	 * Send a single message
+	 *
+	 * @param  municipalityId the id of the municipality to send the email to
+	 * @param  messageRequest containing message information
+	 * @return                response containing id and delivery results for sent message
+	 */
+	@PostMapping(path = "/{municipalityId}/messages", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
+	MessageResult sendMessage(
+		@PathVariable("municipalityId") final String municipalityId,
+		@RequestBody final MessageRequest messageRequest);
 }

@@ -78,6 +78,9 @@ class ConversationServiceTest {
 	private ErrandAttachmentService errandAttachmentServiceMock;
 
 	@Mock
+	private CommunicationService communicationServiceMock;
+
+	@Mock
 	private MessageExchangeSyncService messageExchangeSyncServiceMock;
 
 	@Mock
@@ -249,7 +252,8 @@ class ConversationServiceTest {
 		verify(errandRepositoryMock).findById(ERRAND_ID);
 		verify(messageExchangeClientMock).createMessage(eq(MUNICIPALITY_ID), eq(MESSAGE_EXCHANGE_NAMESPACE), eq(MESSAGE_EXCHANGE_ID), any(), eq(null));
 		verify(errandAttachmentServiceMock, never()).createErrandAttachment(any(), any(), any(), any(MockMultipartFile.class));
-		verifyNoMoreInteractions(conversationRepositoryMock, messageExchangeClientMock, errandAttachmentServiceMock);
+		verify(communicationServiceMock).sendMessageNotification(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID);
+		verifyNoMoreInteractions(conversationRepositoryMock, messageExchangeClientMock, errandAttachmentServiceMock, communicationServiceMock);
 		verifyNoInteractions(applicationEventPublisherMock);
 	}
 
