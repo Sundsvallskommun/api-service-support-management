@@ -26,6 +26,10 @@
 						{
 							"value": "cre03ate",
 							"key": "ExecutedBy"
+						},
+						{
+							"key": "Namespace",
+							"value": "NAMESPACE-1"
 						}
 					],
 					"historyReference": "90572753-e8b0-48f8-b200-3623eaa76f9a",

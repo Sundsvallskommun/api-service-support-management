@@ -22,6 +22,10 @@
 						{
 							"value": "joe01doe",
 							"key": "ExecutedBy"
+						},
+						{
+							"key": "Namespace",
+							"value": "CONTACTCENTER"
 						}
 					],
 					"historyReference": "${json-unit.regex}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",

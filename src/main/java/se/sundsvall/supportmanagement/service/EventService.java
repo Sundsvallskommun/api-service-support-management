@@ -54,7 +54,7 @@ public class EventService {
 
 	public void createErrandNoteEvent(final EventType eventType, final String message, final String logKey, final ErrandEntity errandEntity, final String noteId, final Revision currentRevision, final Revision previousRevision) {
 		final var caseId = extractCaseId(errandEntity);
-		final var metadata = toMetadataMap(caseId, noteId, currentRevision, previousRevision);
+		final var metadata = toMetadataMap(caseId, noteId, currentRevision, previousRevision, errandEntity.getNamespace());
 		final var event = toEvent(eventType, message, extractId(currentRevision), Note.class, metadata, getAdUser());
 		eventLogClient.createEvent(errandEntity.getMunicipalityId(), logKey, event);
 		createNotification(errandEntity, event, NOTE);

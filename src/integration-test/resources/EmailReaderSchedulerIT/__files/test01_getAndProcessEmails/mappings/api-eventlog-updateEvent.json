@@ -10,7 +10,12 @@
 			{
 				"equalToJson": {
 					"owner": "SupportManagement",
-					"metadata": [],
+					"metadata": [
+						{
+							"key": "Namespace",
+							"value": "NAMESPACE-1"
+						}
+					],
 					"sourceType": "Errand",
 					"created": "${json-unit.any-string}",
 					"type": "UPDATE",
