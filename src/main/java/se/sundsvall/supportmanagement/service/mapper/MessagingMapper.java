@@ -250,11 +250,28 @@ public class MessagingMapper {
 
 	static String createBody(final ErrandEntity errandEntity, final SenderInfoResponse senderInfo) {
 
-		return Optional.ofNullable(senderInfo.getSupportText())
-			.map(supportText -> supportText.formatted(
-				errandEntity.getTitle(),
-				errandEntity.getErrandNumber(),
-				senderInfo.getContactInformationUrl()))
+		if (senderInfo.getSupportText() == null || senderInfo.getSupportText().isBlank()) {
+			return "";
+		}
+
+		return String.format(
+			senderInfo.getSupportText(),
+			findErrandOwnerFirstName(errandEntity),
+			errandEntity.getTitle(),
+			errandEntity.getErrandNumber(),
+			senderInfo.getContactInformationUrl(),
+			errandEntity.getId() // Replace with actual caseId if available
+		);
+	}
+
+	static String findErrandOwnerFirstName(final ErrandEntity errandEntity) {
+
+		return Optional.ofNullable(errandEntity.getStakeholders())
+			.orElse(emptyList())
+			.stream()
+			.filter(stakeholder -> stakeholder.getRole().contains("PRIMARY"))
+			.findFirst()
+			.map(StakeholderEntity::getFirstName)
 			.orElse(null);
 	}
 

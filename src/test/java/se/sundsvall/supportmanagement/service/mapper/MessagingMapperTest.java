@@ -286,15 +286,23 @@ class MessagingMapperTest {
 		final var errandNumber = "123456789";
 		final var emailAddress = "test™@example.com";
 		final var phoneNumber = "123456789";
-		final var supportText = "Support text for %s with errand number %s. Contact us at %s";
+		final var supportText = """
+			Hej %s,
+			Du har fått ett nytt meddelande kopplat till ditt ärende gällande %s, %s
+			Gå in på Mina Sidor via länken för att visa meddelandet: %s/privat/arenden/%s
+
+			Sundsvalls kommun
+			""";
 		final var smsSender = "TestSender";
 		final var url = "https://example.com/contact";
 		final var errandEntity = ErrandEntity.create()
+			.withId("123")
 			.withNamespace(namespace)
 			.withMunicipalityId(municipalityId)
 			.withTitle(title)
 			.withErrandNumber(errandNumber)
 			.withStakeholders(List.of(StakeholderEntity.create()
+				.withFirstName("Test")
 				.withExternalId("123e4567-e89b-12d3-a456-426614174000")
 				.withRole("PRIMARY")));
 
@@ -312,7 +320,13 @@ class MessagingMapperTest {
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(bean.getMessages()).hasSize(1);
 		assertThat(bean.getMessages().getFirst().getMessage())
-			.isEqualTo("Support text for " + title + " with errand number " + errandNumber + ". Contact us at " + url);
+			.isEqualTo("""
+				Hej Test,
+				Du har fått ett nytt meddelande kopplat till ditt ärende gällande Title, 123456789
+				Gå in på Mina Sidor via länken för att visa meddelandet: https://example.com/contact/privat/arenden/123
+
+				Sundsvalls kommun
+				""");
 		assertThat(bean.getMessages().getFirst().getSender()).isNotNull();
 		assertThat(bean.getMessages().getFirst().getSender().getEmail()).isNotNull();
 		assertThat(bean.getMessages().getFirst().getSender().getEmail().getAddress()).isEqualTo(emailAddress);
