@@ -121,4 +121,67 @@ class ErrandsReadResourceFailureTest {
 		// Verification
 		verifyNoInteractions(errandServiceMock);
 	}
+
+	@Test
+	void countErrandsWithInvalidFilterString() {
+		// Call
+		final var response = webTestClient.get()
+			.uri(builder -> builder.path(PATH + "/count").queryParam("filter", "categoryTag:'SUPPORT_CASE' and").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(Problem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Invalid Filter Content");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getDetail()).isEqualTo("mismatched input '<EOF>' expecting {PREFIX_OPERATOR, TRUE, FALSE, '(', '[', '`', ID, NUMBER, STRING}");
+
+		// Verification
+		verifyNoInteractions(errandServiceMock);
+	}
+
+	@Test
+	void countErrandsWithInvalidNamespace() {
+		// Call
+		final var response = webTestClient.get()
+			.uri(builder -> builder.path(PATH + "/count").build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID)))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::getField, Violation::getMessage)
+			.containsExactly(tuple("countErrands.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
+		// Verification
+		verifyNoInteractions(errandServiceMock);
+	}
+
+	@Test
+	void countErrandsWithInvalidMunicipalityId() {
+		// Call
+		final var response = webTestClient.get()
+			.uri(builder -> builder.path(PATH + "/count").build(Map.of("namespace", NAMESPACE, "municipalityId", INVALID)))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::getField, Violation::getMessage)
+			.containsExactly(tuple("countErrands.municipalityId", "not a valid municipality ID"));
+
+		// Verification
+		verifyNoInteractions(errandServiceMock);
+	}
 }

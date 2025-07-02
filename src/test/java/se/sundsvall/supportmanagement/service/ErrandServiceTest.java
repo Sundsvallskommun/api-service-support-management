@@ -302,6 +302,24 @@ class ErrandServiceTest {
 		verify(errandRepositoryMock).existsWithLockingByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 	}
 
+	@Test
+	void countErrands() {
+		// Setup
+		final Specification<ErrandEntity> filter = filterSpecificationConverterSpy.convert("id: 'uuid'");
+
+		// Mock
+		when(errandRepositoryMock.count(ArgumentMatchers.<Specification<ErrandEntity>>any())).thenReturn(42L);
+
+		// Call
+		final var count = service.countErrands(NAMESPACE, MUNICIPALITY_ID, filter);
+
+		// Assertions and verifications
+		assertThat(count).isEqualTo(42L);
+
+		verify(errandRepositoryMock).count(specificationCaptor.capture());
+		assertThat(specificationCaptor.getValue()).usingRecursiveComparison().isEqualTo(withNamespace(NAMESPACE).and(withMunicipalityId(MUNICIPALITY_ID)).and(filter));
+	}
+
 	@AfterEach
 	void verifyNoMoreInteractionsOnMocks() {
 		verifyNoMoreInteractions(errandRepositoryMock, revisionServiceMock, eventServiceMock);
