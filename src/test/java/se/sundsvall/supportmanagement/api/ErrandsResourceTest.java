@@ -32,11 +32,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.errand.Classification;
+import se.sundsvall.supportmanagement.api.model.errand.CountResponse;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
 import se.sundsvall.supportmanagement.api.model.errand.Priority;
@@ -387,6 +389,28 @@ class ErrandsResourceTest {
 			.expectBody().isEmpty();
 
 		verify(errandServiceMock).deleteErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
+	}
+
+	@Test
+	void countErrands() {
+		// Parameter values
+		final var count = 42L;
+		final var countResponse = new CountResponse(count);
+
+		// Mock
+		when(errandServiceMock.countErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), any(Specification.class))).thenReturn(count);
+
+		// Call
+		webTestClient.get()
+			.uri(builder -> builder.path(PATH + "/count").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+			.exchange()
+			.expectStatus().isOk()
+			.expectHeader().contentType(APPLICATION_JSON)
+			.expectBody(CountResponse.class)
+			.isEqualTo(countResponse);
+
+		// Verification
+		verify(errandServiceMock).countErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), any(Specification.class));
 	}
 
 	// Helper implementation of Page

@@ -41,6 +41,7 @@ import org.zalando.problem.Problem;
 import org.zalando.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.dept44.common.validators.annotation.ValidMunicipalityId;
 import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
+import se.sundsvall.supportmanagement.api.model.errand.CountResponse;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
 import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
@@ -152,5 +153,22 @@ class ErrandsResource {
 		return noContent()
 			.header(CONTENT_TYPE, ALL_VALUE)
 			.build();
+	}
+
+	@GetMapping(path = "/count", produces = APPLICATION_JSON_VALUE)
+	@Operation(summary = "Count errands", description = "Counts errands based on the provided filters", responses = {
+		@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true),
+		@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
+			Problem.class, ConstraintViolationProblem.class
+		}))),
+		@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+	})
+	ResponseEntity<CountResponse> countErrands(
+		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
+		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
+		@Parameter(description = "Syntax description: [spring-filter](https://github.com/turkraft/spring-filter/blob/85730f950a5f8623159cc0eb4d737555f9382bb7/README.md#syntax)",
+			example = "categoryTag:'SUPPORT-CASE' and stakeholder.externalId:'81471222-5798-11e9-ae24-57fa13b361e1' and externalTags.key:'caseId' and externalTags.value:'111' and created>'2022-09-08T12:00:00.000+02:00'",
+			schema = @Schema(implementation = String.class)) @Filter final Specification<ErrandEntity> filter) {
+		return ok(new CountResponse(service.countErrands(namespace, municipalityId, filter)));
 	}
 }

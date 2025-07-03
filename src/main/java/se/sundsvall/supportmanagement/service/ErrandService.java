@@ -141,4 +141,9 @@ public class ErrandService {
 			throw Problem.valueOf(NOT_FOUND, ENTITY_NOT_FOUND.formatted(id, namespace, municipalityId));
 		}
 	}
+
+	public Long countErrands(final String namespace, final String municipalityId, final Specification<ErrandEntity> filter) {
+		final var fullFilter = withNamespace(namespace).and(withMunicipalityId(municipalityId)).and(filter);
+		return repository.count(fullFilter);
+	}
 }
