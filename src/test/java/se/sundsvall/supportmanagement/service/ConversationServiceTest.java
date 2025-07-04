@@ -38,7 +38,6 @@ import se.sundsvall.supportmanagement.api.model.communication.conversation.Ident
 import se.sundsvall.supportmanagement.api.model.communication.conversation.KeyValues;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.MessageRequest;
 import se.sundsvall.supportmanagement.integration.db.ConversationRepository;
-import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.ConversationEntity;
 import se.sundsvall.supportmanagement.integration.messageexchange.MessageExchangeClient;
 import se.sundsvall.supportmanagement.service.mapper.ConversationMapper;
@@ -217,7 +216,6 @@ class ConversationServiceTest {
 
 		// Arrange
 		final var conversationEntity = ConversationEntity.create().withId(CONVERSATION_ID).withMessageExchangeId(MESSAGE_EXCHANGE_ID).withErrandId(ERRAND_ID);
-		final var errandEntity = ErrandEntity.create().withId(ERRAND_ID).withMunicipalityId(MUNICIPALITY_ID).withNamespace(NAMESPACE);
 		final var messageRequest = MessageRequest.create();
 
 		when(conversationRepositoryMock.findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID))
@@ -242,7 +240,6 @@ class ConversationServiceTest {
 
 		// Arrange
 		final var conversationEntity = ConversationEntity.create().withId(CONVERSATION_ID).withMessageExchangeId(MESSAGE_EXCHANGE_ID).withErrandId(ERRAND_ID);
-		final var errandEntity = ErrandEntity.create().withId(ERRAND_ID).withMunicipalityId(MUNICIPALITY_ID).withNamespace(NAMESPACE);
 		final var messageRequest = MessageRequest.create();
 		final var multipartFile = new MockMultipartFile("attachments", "attachment.txt".getBytes());
 

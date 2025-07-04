@@ -3,7 +3,6 @@ package se.sundsvall.supportmanagement.service.scheduler.messageexchange;
 import generated.se.sundsvall.messageexchange.Conversation;
 import java.util.Comparator;
 import org.slf4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
@@ -17,22 +16,21 @@ import se.sundsvall.supportmanagement.integration.db.model.MessageExchangeSyncEn
 @Service
 public class MessageExchangeScheduler {
 
-	@Autowired
-	@Lazy
-	private MessageExchangeScheduler self;
-
 	private static final Logger LOGGER = org.slf4j.LoggerFactory.getLogger(MessageExchangeScheduler.class);
 
 	@Value("${scheduler.messageexchange.enabled:true}")
 	private boolean isSchedulerEnabled;
 	private final MessageExchangeWorker messageExchangeWorker;
 	private final AsyncTaskExecutor asyncTaskExecutor;
+	private final MessageExchangeScheduler self;
 
 	public MessageExchangeScheduler(final MessageExchangeWorker messageExchangeWorker,
-		@Qualifier("taskScheduler") final AsyncTaskExecutor asyncTaskExecutor) {
+		@Qualifier("taskScheduler") final AsyncTaskExecutor asyncTaskExecutor,
+		@Lazy final MessageExchangeScheduler self) {
 
 		this.messageExchangeWorker = messageExchangeWorker;
 		this.asyncTaskExecutor = asyncTaskExecutor;
+		this.self = self;
 
 	}
 
