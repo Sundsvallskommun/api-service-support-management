@@ -110,6 +110,9 @@ class ConversationServiceTest {
 		assertThat(conversationEntityCaptor.getValue().getMessageExchangeId()).isEqualTo(MESSAGE_EXCHANGE_ID);
 		assertThat(conversationEntityCaptor.getValue().getRelationIds()).isEqualTo(RELATION_VALUES_LIST);
 		assertThat(conversationEntityCaptor.getValue().getLatestSyncedSequenceNumber()).isEqualTo(LATEST_SEQUENCE_NUMBER);
+
+		verifyNoInteractions(messageExchangeSchedulerMock, communicationServiceMock);
+		verifyNoMoreInteractions(conversationRepositoryMock, messageExchangeClientMock);
 	}
 
 	@Test
@@ -129,6 +132,9 @@ class ConversationServiceTest {
 		verify(messageExchangeClientMock).createConversation(eq(MUNICIPALITY_ID), eq(MESSAGE_EXCHANGE_NAMESPACE), any());
 		verify(conversationRepositoryMock, never()).save(any());
 		verify(messageExchangeClientMock, never()).getConversationById(any(), any(), any());
+
+		verifyNoInteractions(messageExchangeSchedulerMock, communicationServiceMock, conversationRepositoryMock);
+		verifyNoMoreInteractions(messageExchangeClientMock);
 	}
 
 	@Test
@@ -156,6 +162,9 @@ class ConversationServiceTest {
 		assertThat(conversationEntityCaptor.getValue().getMessageExchangeId()).isEqualTo(MESSAGE_EXCHANGE_ID);
 		assertThat(conversationEntityCaptor.getValue().getRelationIds()).isEqualTo(RELATION_VALUES_LIST);
 		assertThat(conversationEntityCaptor.getValue().getLatestSyncedSequenceNumber()).isEqualTo(LATEST_SEQUENCE_NUMBER);
+
+		verifyNoInteractions(messageExchangeSchedulerMock, communicationServiceMock);
+		verifyNoMoreInteractions(messageExchangeClientMock, conversationRepositoryMock);
 	}
 
 	@Test
@@ -171,6 +180,9 @@ class ConversationServiceTest {
 		assertThat(response).isNotNull().hasSize(1);
 
 		verify(conversationRepositoryMock).findByMunicipalityIdAndNamespaceAndErrandId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID);
+
+		verifyNoInteractions(messageExchangeSchedulerMock, communicationServiceMock, messageExchangeClientMock);
+		verifyNoMoreInteractions(conversationRepositoryMock);
 	}
 
 	@Test
@@ -192,6 +204,9 @@ class ConversationServiceTest {
 		verify(conversationRepositoryMock).findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID);
 		verify(messageExchangeSchedulerMock).triggerSyncConversationsAsync();
 		verify(messageExchangeClientMock).getConversationById(MUNICIPALITY_ID, MESSAGE_EXCHANGE_NAMESPACE, MESSAGE_EXCHANGE_ID);
+
+		verifyNoInteractions(communicationServiceMock);
+		verifyNoMoreInteractions(messageExchangeClientMock, conversationRepositoryMock, messageExchangeSchedulerMock);
 	}
 
 	@Test
@@ -208,7 +223,9 @@ class ConversationServiceTest {
 		// Assert
 		verify(conversationRepositoryMock).findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID);
 		verify(conversationRepositoryMock, never()).save(any());
-		verify(messageExchangeClientMock, never()).getConversationById(any(), any(), any());
+
+		verifyNoInteractions(messageExchangeClientMock, messageExchangeSchedulerMock, communicationServiceMock);
+		verifyNoMoreInteractions(conversationRepositoryMock);
 	}
 
 	@Test
@@ -231,6 +248,7 @@ class ConversationServiceTest {
 		verify(conversationRepositoryMock).findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID);
 		verify(messageExchangeClientMock).createMessage(eq(MUNICIPALITY_ID), eq(MESSAGE_EXCHANGE_NAMESPACE), eq(MESSAGE_EXCHANGE_ID), any(), eq(null));
 		verify(communicationServiceMock).sendMessageNotification(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID);
+
 		verifyNoMoreInteractions(conversationRepositoryMock, messageExchangeClientMock, communicationServiceMock);
 		verifyNoInteractions(messageExchangeSchedulerMock);
 	}
@@ -256,8 +274,9 @@ class ConversationServiceTest {
 		verify(conversationRepositoryMock).findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID);
 		verify(messageExchangeClientMock).createMessage(eq(MUNICIPALITY_ID), eq(MESSAGE_EXCHANGE_NAMESPACE), eq(MESSAGE_EXCHANGE_ID), any(), any());
 		verify(messageExchangeSchedulerMock).triggerSyncConversationsAsync();
+		verify(communicationServiceMock).sendMessageNotification(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID);
 
-		verifyNoMoreInteractions(conversationRepositoryMock, messageExchangeClientMock);
+		verifyNoMoreInteractions(conversationRepositoryMock, messageExchangeClientMock, messageExchangeSchedulerMock, communicationServiceMock);
 	}
 
 	@Test
@@ -281,7 +300,9 @@ class ConversationServiceTest {
 		verify(conversationRepositoryMock).findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID);
 		verify(messageExchangeClientMock).getMessages(MUNICIPALITY_ID, MESSAGE_EXCHANGE_NAMESPACE, MESSAGE_EXCHANGE_ID, null, pageable);
 		verify(messageExchangeSchedulerMock).triggerSyncConversationsAsync();
-		verifyNoMoreInteractions(conversationRepositoryMock, messageExchangeClientMock);
+
+		verifyNoMoreInteractions(conversationRepositoryMock, messageExchangeClientMock, messageExchangeSchedulerMock);
+		verifyNoInteractions(communicationServiceMock);
 	}
 
 	private generated.se.sundsvall.messageexchange.Conversation createMessageExchangeConversation() {
@@ -354,7 +375,9 @@ class ConversationServiceTest {
 
 		verify(conversationRepositoryMock).findByMunicipalityIdAndNamespaceAndErrandIdAndId(municipalityId, namespace, ERRAND_ID, conversationId);
 		verify(messageExchangeClientMock).getMessageAttachment(municipalityId, MESSAGE_EXCHANGE_NAMESPACE, messageExchangeId, messageId, attachmentId);
-		verifyNoMoreInteractions(messageExchangeSchedulerMock);
+
+		verifyNoMoreInteractions(conversationRepositoryMock, messageExchangeClientMock, messageExchangeSchedulerMock);
+		verifyNoInteractions(communicationServiceMock);
 	}
 
 	@Test
@@ -379,6 +402,9 @@ class ConversationServiceTest {
 			.hasMessageContaining("Conversation not found in local database");
 
 		verify(conversationRepositoryMock).findByMunicipalityIdAndNamespaceAndErrandIdAndId(municipalityId, namespace, ERRAND_ID, conversationId);
+
+		verifyNoMoreInteractions(conversationRepositoryMock);
+		verifyNoInteractions(communicationServiceMock, messageExchangeClientMock, messageExchangeSchedulerMock);
 	}
 
 	@Test
@@ -407,7 +433,9 @@ class ConversationServiceTest {
 
 		verify(conversationRepositoryMock).findByMunicipalityIdAndNamespaceAndErrandIdAndId(municipalityId, namespace, ERRAND_ID, conversationId);
 		verify(messageExchangeClientMock).getMessageAttachment(municipalityId, MESSAGE_EXCHANGE_NAMESPACE, messageExchangeId, messageId, attachmentId);
-		verifyNoMoreInteractions(messageExchangeClientMock, messageExchangeSchedulerMock);
+
+		verifyNoInteractions(communicationServiceMock);
+		verifyNoMoreInteractions(messageExchangeClientMock, messageExchangeSchedulerMock, conversationRepositoryMock);
 
 	}
 
@@ -437,7 +465,9 @@ class ConversationServiceTest {
 
 		verify(conversationRepositoryMock).findByMunicipalityIdAndNamespaceAndErrandIdAndId(municipalityId, namespace, ERRAND_ID, conversationId);
 		verify(messageExchangeClientMock).getMessageAttachment(municipalityId, MESSAGE_EXCHANGE_NAMESPACE, messageExchangeId, messageId, attachmentId);
-		verifyNoMoreInteractions(messageExchangeClientMock, messageExchangeSchedulerMock);
+
+		verifyNoInteractions(communicationServiceMock, messageExchangeSchedulerMock);
+		verifyNoMoreInteractions(messageExchangeClientMock, conversationRepositoryMock);
 	}
 
 	@Test
@@ -475,7 +505,8 @@ class ConversationServiceTest {
 
 		verify(conversationRepositoryMock).findByMunicipalityIdAndNamespaceAndErrandIdAndId(municipalityId, namespace, ERRAND_ID, conversationId);
 		verify(messageExchangeClientMock).getMessageAttachment(municipalityId, MESSAGE_EXCHANGE_NAMESPACE, messageExchangeId, messageId, attachmentId);
-		verifyNoMoreInteractions(messageExchangeClientMock, messageExchangeSchedulerMock);
 
+		verifyNoInteractions(communicationServiceMock, messageExchangeSchedulerMock);
+		verifyNoMoreInteractions(messageExchangeClientMock, conversationRepositoryMock);
 	}
 }
