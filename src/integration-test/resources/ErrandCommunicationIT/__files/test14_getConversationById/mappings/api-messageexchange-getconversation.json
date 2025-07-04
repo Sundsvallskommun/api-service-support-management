@@ -28,6 +28,13 @@
 					"values": [
 						"external-value-1"
 					]
+				},
+				{
+					"key": "relationIds",
+					"values": [
+						"RELATION-ID-2",
+						"RELATION-ID-NEW-NON-PERSISTED"
+					]
 				}
 			],
 			"metadata": [

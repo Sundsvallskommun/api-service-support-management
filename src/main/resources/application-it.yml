@@ -28,6 +28,7 @@ scheduler:
     cron: "-"
   messageexchange:
     cron: "-"
+    enabled: false
 spring:
   cache:
     type: none
