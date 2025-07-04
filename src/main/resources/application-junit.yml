@@ -103,3 +103,6 @@ spring:
           relation:
             client-id: the-client-id
             client-secret: the-client-secret
+scheduler:
+  messageexchange:
+    enabled: false

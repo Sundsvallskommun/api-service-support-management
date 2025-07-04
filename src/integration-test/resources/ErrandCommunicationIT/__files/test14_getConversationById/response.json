@@ -3,7 +3,8 @@
 	"topic": "Topic 2",
 	"type": "INTERNAL",
 	"relationIds": [
-		"RELATION-ID-2"
+		"RELATION-ID-2",
+		"RELATION-ID-NEW-NON-PERSISTED"
 	],
 	"participants": [
 		{

@@ -1,6 +1,5 @@
 package se.sundsvall.supportmanagement.service;
 
-import static java.util.Collections.emptyList;
 import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
 import static org.zalando.problem.Status.NOT_FOUND;
 import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.mergeIntoConversationEntity;
@@ -17,23 +16,19 @@ import java.util.List;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.zalando.problem.Problem;
-import se.sundsvall.dept44.requestid.RequestId;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.Conversation;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationRequest;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.Message;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.MessageRequest;
 import se.sundsvall.supportmanagement.integration.db.ConversationRepository;
-import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
-import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.ConversationEntity;
 import se.sundsvall.supportmanagement.integration.messageexchange.MessageExchangeClient;
-import se.sundsvall.supportmanagement.service.util.ConversationEvent;
+import se.sundsvall.supportmanagement.service.scheduler.messageexchange.MessageExchangeScheduler;
 
 @Service
 public class ConversationService {
@@ -42,14 +37,10 @@ public class ConversationService {
 
 	private static final String NO_CONVERSATION_ID_RETURNED = "ID of conversation was not returned in location header!";
 	private static final String NO_CONVERSATION_FOUND = "No conversation with ID:'%s', errandId:'%s', municipalityId:'%s' and namespace:'%s' was found!";
-	private static final String NO_ERRAND_FOUND = "No errand with ID: '%s' was found!";
 
 	private final MessageExchangeClient messageExchangeClient;
 	private final ConversationRepository conversationRepository;
-	private final ErrandsRepository errandRepository;
-	private final ErrandAttachmentService errandAttachmentService;
-	private final MessageExchangeSyncService messageExchangeSyncService;
-	private final ApplicationEventPublisher applicationEventPublisher;
+	private final MessageExchangeScheduler messageExchangeScheduler;
 	private final CommunicationService communicationService;
 
 	@Value("${integration.messageexchange.namespace:draken}")
@@ -58,15 +49,12 @@ public class ConversationService {
 	public ConversationService(
 		final MessageExchangeClient messageExchangeClient,
 		final ConversationRepository conversationRepository,
-		final ErrandsRepository errandRepository,
-		final ErrandAttachmentService errandAttachmentService, final MessageExchangeSyncService messageExchangeSyncService, final ApplicationEventPublisher applicationEventPublisher, final CommunicationService communicationService) {
+		final MessageExchangeScheduler messageExchangeScheduler,
+		final CommunicationService communicationService) {
 
 		this.messageExchangeClient = messageExchangeClient;
 		this.conversationRepository = conversationRepository;
-		this.errandRepository = errandRepository;
-		this.errandAttachmentService = errandAttachmentService;
-		this.messageExchangeSyncService = messageExchangeSyncService;
-		this.applicationEventPublisher = applicationEventPublisher;
+		this.messageExchangeScheduler = messageExchangeScheduler;
 		this.communicationService = communicationService;
 	}
 
@@ -79,10 +67,10 @@ public class ConversationService {
 		final var location = Optional.ofNullable(createResponse.getHeaders().getLocation())
 			.orElseThrow(() -> Problem.valueOf(INTERNAL_SERVER_ERROR, NO_CONVERSATION_ID_RETURNED))
 			.getPath();
-		final var messageExchangeConversationid = location.substring(location.lastIndexOf('/') + 1);
+		final var messageExchangeConversationId = location.substring(location.lastIndexOf('/') + 1);
 
 		// Fetch conversation from MessageExchange.
-		final var messageExchangeConversation = fetchConversationFromMessageExchange(municipalityId, messageExchangeConversationid);
+		final var messageExchangeConversation = fetchConversationFromMessageExchange(municipalityId, messageExchangeConversationId);
 
 		// Save conversation in DB.
 		final var conversationEntity = conversationRepository.save(toConversationEntity(municipalityId, namespace, errandId, conversationRequest.getType(), messageExchangeConversation));
@@ -98,7 +86,10 @@ public class ConversationService {
 		// Fetch conversation from MessageExchange.
 		final var messageExchangeConversation = fetchConversationFromMessageExchange(municipalityId, conversationEntity.getMessageExchangeId());
 
-		return messageExchangeSyncService.syncConversation(conversationEntity, messageExchangeConversation);
+		// Trigger extra schedule
+		messageExchangeScheduler.triggerSyncConversationsAsync();
+
+		return toConversation(messageExchangeConversation, mergeIntoConversationEntity(conversationEntity, messageExchangeConversation));
 	}
 
 	public List<Conversation> readConversations(final String municipalityId, final String namespace, final String errandId) {
@@ -127,19 +118,17 @@ public class ConversationService {
 		if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
 			throw Problem.valueOf(INTERNAL_SERVER_ERROR, "Failed to retrieve messages from Message Exchange");
 		}
-		applicationEventPublisher.publishEvent(ConversationEvent.create().withConversationEntity(conversationEntity).withRequestId(RequestId.get()));
+		messageExchangeScheduler.triggerSyncConversationsAsync();
 		return toMessagePage(response.getBody());
 	}
 
 	public void createMessage(final String municipalityId, final String namespace, final String errandId, final String conversationId, final MessageRequest messageRequest, final List<MultipartFile> attachments) {
 
 		final var conversationEntity = getConversationEntity(municipalityId, namespace, errandId, conversationId);
-		final var errandEntity = errandRepository.findById(errandId).orElseThrow(() -> Problem.valueOf(NOT_FOUND, NO_ERRAND_FOUND.formatted(errandId)));
 
 		messageExchangeClient.createMessage(municipalityId, messageExchangeNamespace, conversationEntity.getMessageExchangeId(), toMessageRequest(messageRequest), attachments);
 
-		Optional.ofNullable(attachments).orElse(emptyList())
-			.forEach(attachment -> saveAttachment(errandEntity, attachment));
+		Optional.ofNullable(attachments).ifPresent(attachment -> messageExchangeScheduler.triggerSyncConversationsAsync());
 
 		try {
 			communicationService.sendMessageNotification(municipalityId, namespace, errandId);
@@ -150,13 +139,9 @@ public class ConversationService {
 
 	private generated.se.sundsvall.messageexchange.Conversation fetchConversationFromMessageExchange(
 		final String municipalityId,
-		final String messageExchangeConversationid) {
+		final String messageExchangeConversationId) {
 
-		return messageExchangeClient.getConversationById(municipalityId, messageExchangeNamespace, messageExchangeConversationid).getBody();
-	}
-
-	private void saveAttachment(final ErrandEntity errandEntity, final MultipartFile attachment) {
-		errandAttachmentService.createErrandAttachment(errandEntity.getNamespace(), errandEntity.getMunicipalityId(), errandEntity.getId(), attachment);
+		return messageExchangeClient.getConversationById(municipalityId, messageExchangeNamespace, messageExchangeConversationId).getBody();
 	}
 
 	private ConversationEntity getConversationEntity(final String municipalityId, final String namespace, final String errandId, final String conversationId) {
@@ -175,7 +160,6 @@ public class ConversationService {
 		if (exchangeId == null) {
 			throw Problem.valueOf(NOT_FOUND, "Conversation not found in local database");
 		}
-		applicationEventPublisher.publishEvent(ConversationEvent.create().withConversationEntity(conversation).withRequestId(RequestId.get()));
 
 		final var attachmentResponse = messageExchangeClient.getMessageAttachment(
 			municipalityId, messageExchangeNamespace, exchangeId, messageId, attachmentId);
