@@ -17,6 +17,7 @@ import generated.se.sundsvall.messageexchange.Identifier;
 import generated.se.sundsvall.messageexchange.KeyValues;
 import java.io.ByteArrayInputStream;
 import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -28,6 +29,7 @@ import org.springframework.core.io.InputStreamResource;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.zalando.problem.Problem;
 import se.sundsvall.supportmanagement.integration.db.ConversationRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
@@ -53,6 +55,13 @@ class MessageExchangeSyncServiceTest {
 	private ArgumentCaptor<ConversationEntity> conversationEntityCaptor;
 	@InjectMocks
 	private MessageExchangeSyncService service;
+
+	private static final String MESSAGE_EXCHANGE_NS = "messageExchangeNamespace";
+
+	@BeforeEach
+	void setUp() {
+		ReflectionTestUtils.setField(service, "messageExchangeNamespace", MESSAGE_EXCHANGE_NS);
+	}
 
 	@Test
 	void syncConversationAndMessages() {
@@ -98,7 +107,7 @@ class MessageExchangeSyncServiceTest {
 
 		when(conversationRepositoryMock.save(entity)).thenReturn(entity);
 		when(errandsRepositoryMock.getReferenceById(any())).thenReturn(errandEntity);
-		when(messageExchangeClientMock.getMessages(eq(municipalityId), eq(namespace), any(), any(), any()))
+		when(messageExchangeClientMock.getMessages(eq(municipalityId), eq(MESSAGE_EXCHANGE_NS), any(), any(), any()))
 			.thenReturn(ResponseEntity.ok(new PageImpl<>(List.of(new generated.se.sundsvall.messageexchange.Message()))));
 
 		// Act
@@ -106,7 +115,7 @@ class MessageExchangeSyncServiceTest {
 
 		// Assert
 		verify(errandsRepositoryMock).getReferenceById(errandId);
-		verify(messageExchangeClientMock).getMessages(municipalityId, namespace, messageExchangeId, "sequenceNumber >123", Pageable.unpaged());
+		verify(messageExchangeClientMock).getMessages(municipalityId, MESSAGE_EXCHANGE_NS, messageExchangeId, "sequenceNumber >123", Pageable.unpaged());
 		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Ny händelse i konversation topic"), same(errandEntity), eq(null), eq(null), eq(true), eq(NotificationSubType.MESSAGE));
 		verify(conversationRepositoryMock).save(conversationEntityCaptor.capture());
 
@@ -137,7 +146,7 @@ class MessageExchangeSyncServiceTest {
 			.withMessageExchangeId(messageExchangeId)
 			.withLatestSyncedSequenceNumber(latestSyncedSequenceNumber);
 
-		when(messageExchangeClientMock.getMessages(eq(municipalityId), eq(namespace), any(), any(), any()))
+		when(messageExchangeClientMock.getMessages(eq(municipalityId), eq(MESSAGE_EXCHANGE_NS), any(), any(), any()))
 			.thenReturn(ResponseEntity.ok(new PageImpl<>(List.of(new generated.se.sundsvall.messageexchange.Message()))));
 
 		// Act
@@ -145,7 +154,7 @@ class MessageExchangeSyncServiceTest {
 
 		// Assert
 		assertThat(shouldNotify).isTrue();
-		verify(messageExchangeClientMock).getMessages(municipalityId, namespace, messageExchangeId, "sequenceNumber >99", Pageable.unpaged());
+		verify(messageExchangeClientMock).getMessages(municipalityId, MESSAGE_EXCHANGE_NS, messageExchangeId, "sequenceNumber >99", Pageable.unpaged());
 		verifyNoMoreInteractions(messageExchangeClientMock);
 		verifyNoInteractions(attachmentServiceMock, conversationRepositoryMock);
 	}
@@ -166,7 +175,7 @@ class MessageExchangeSyncServiceTest {
 			.withMessageExchangeId(messageExchangeId)
 			.withLatestSyncedSequenceNumber(latestSyncedSequenceNumber);
 
-		when(messageExchangeClientMock.getMessages(eq(municipalityId), eq(namespace), any(), any(), any()))
+		when(messageExchangeClientMock.getMessages(eq(municipalityId), eq(MESSAGE_EXCHANGE_NS), any(), any(), any()))
 			.thenReturn(ResponseEntity.ok(new PageImpl<>(List.of(new generated.se.sundsvall.messageexchange.Message().createdBy(new Identifier().value(user))))));
 
 		// Act
@@ -174,7 +183,7 @@ class MessageExchangeSyncServiceTest {
 
 		// Assert
 		assertThat(shouldNotify).isFalse();
-		verify(messageExchangeClientMock).getMessages(municipalityId, namespace, messageExchangeId, "sequenceNumber >99", Pageable.unpaged());
+		verify(messageExchangeClientMock).getMessages(municipalityId, MESSAGE_EXCHANGE_NS, messageExchangeId, "sequenceNumber >99", Pageable.unpaged());
 		verifyNoMoreInteractions(messageExchangeClientMock);
 		verifyNoInteractions(attachmentServiceMock, conversationRepositoryMock);
 	}
@@ -196,7 +205,7 @@ class MessageExchangeSyncServiceTest {
 			.withMessageExchangeId(messageExchangeId)
 			.withLatestSyncedSequenceNumber(latestSyncedSequenceNumber);
 
-		when(messageExchangeClientMock.getMessages(eq(municipalityId), eq(namespace), any(), any(), any()))
+		when(messageExchangeClientMock.getMessages(eq(municipalityId), eq(MESSAGE_EXCHANGE_NS), any(), any(), any()))
 			.thenReturn(ResponseEntity.ok(new PageImpl<>(List.of(
 				new generated.se.sundsvall.messageexchange.Message().createdBy(new Identifier().value(user)),
 				new generated.se.sundsvall.messageexchange.Message().createdBy(new Identifier().value(otherUser))))));
@@ -206,7 +215,7 @@ class MessageExchangeSyncServiceTest {
 
 		// Assert
 		assertThat(shouldNotify).isTrue();
-		verify(messageExchangeClientMock).getMessages(municipalityId, namespace, messageExchangeId, "sequenceNumber >99", Pageable.unpaged());
+		verify(messageExchangeClientMock).getMessages(municipalityId, MESSAGE_EXCHANGE_NS, messageExchangeId, "sequenceNumber >99", Pageable.unpaged());
 		verifyNoMoreInteractions(messageExchangeClientMock);
 		verifyNoInteractions(attachmentServiceMock, conversationRepositoryMock);
 	}
@@ -227,7 +236,7 @@ class MessageExchangeSyncServiceTest {
 			.withMessageExchangeId(messageExchangeId)
 			.withLatestSyncedSequenceNumber(latestSyncedSequenceNumber);
 
-		when(messageExchangeClientMock.getMessages(eq(municipalityId), eq(namespace), any(), any(), any()))
+		when(messageExchangeClientMock.getMessages(eq(municipalityId), eq(MESSAGE_EXCHANGE_NS), any(), any(), any()))
 			.thenReturn(ResponseEntity.ok(new PageImpl<>(List.of())));
 
 		// Act
@@ -235,7 +244,7 @@ class MessageExchangeSyncServiceTest {
 
 		// Assert
 		assertThat(shouldNotify).isFalse();
-		verify(messageExchangeClientMock).getMessages(municipalityId, namespace, messageExchangeId, "sequenceNumber >99", Pageable.unpaged());
+		verify(messageExchangeClientMock).getMessages(municipalityId, MESSAGE_EXCHANGE_NS, messageExchangeId, "sequenceNumber >99", Pageable.unpaged());
 		verifyNoMoreInteractions(messageExchangeClientMock);
 		verifyNoInteractions(attachmentServiceMock, conversationRepositoryMock);
 	}
@@ -256,7 +265,7 @@ class MessageExchangeSyncServiceTest {
 			.withMessageExchangeId(messageExchangeId)
 			.withLatestSyncedSequenceNumber(latestSyncedSequenceNumber);
 
-		when(messageExchangeClientMock.getMessages(eq(municipalityId), eq(namespace), any(), any(), any()))
+		when(messageExchangeClientMock.getMessages(eq(municipalityId), eq(MESSAGE_EXCHANGE_NS), any(), any(), any()))
 			.thenReturn(null);
 
 		// Act & Assert
@@ -264,7 +273,7 @@ class MessageExchangeSyncServiceTest {
 			.isInstanceOf(Problem.class)
 			.hasMessageContaining("Failed to retrieve messages from Message Exchange");
 
-		verify(messageExchangeClientMock).getMessages(municipalityId, namespace, messageExchangeId, "sequenceNumber >99", Pageable.unpaged());
+		verify(messageExchangeClientMock).getMessages(municipalityId, MESSAGE_EXCHANGE_NS, messageExchangeId, "sequenceNumber >99", Pageable.unpaged());
 		verifyNoMoreInteractions(messageExchangeClientMock);
 		verifyNoInteractions(attachmentServiceMock, conversationRepositoryMock);
 	}
