@@ -56,7 +56,7 @@ public class MessageExchangeSyncService {
 
 	boolean syncMessages(final ConversationEntity conversationEntity, String errandAssignedUserId) {
 
-		final var filter = "sequenceNumber >" + ofNullable(conversationEntity.getLatestSyncedSequenceNumber()).orElse(0L);
+		final var filter = "sequenceNumber.id >" + ofNullable(conversationEntity.getLatestSyncedSequenceNumber()).orElse(0L);
 
 		final var response = messageExchangeClient.getMessages(conversationEntity.getMunicipalityId(), messageExchangeNamespace, conversationEntity.getMessageExchangeId(), filter, Pageable.unpaged());
 
