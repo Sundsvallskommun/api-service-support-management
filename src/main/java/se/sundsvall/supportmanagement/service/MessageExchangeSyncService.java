@@ -44,7 +44,7 @@ public class MessageExchangeSyncService {
 	}
 
 	public void syncConversation(final ConversationEntity conversationEntity, final generated.se.sundsvall.messageexchange.Conversation conversation) {
-		if (conversationEntity.getLatestSyncedSequenceNumber() < ofNullable(conversation.getLatestSequenceNumber()).orElse(0L)) {
+		if (ofNullable(conversationEntity.getLatestSyncedSequenceNumber()).orElse(0L) < ofNullable(conversation.getLatestSequenceNumber()).orElse(0L)) {
 			final var errandEntity = errandsRepository.getReferenceById(conversationEntity.getErrandId());
 			final var shouldCreateNotification = syncMessages(conversationEntity, errandEntity.getAssignedUserId());
 			eventService.createErrandEvent(UPDATE, EVENT_LOG_CONVERSATION.formatted(conversation.getTopic()), errandEntity, null, null, shouldCreateNotification, MESSAGE);
