@@ -23,6 +23,8 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -84,8 +86,8 @@ class EmailReaderWorkerTest {
 	@Test
 	void getEnabledEmailConfigs() {
 		// ARRANGE
-		final EmailWorkerConfigEntity config1 = EmailWorkerConfigEntity.create().withEnabled(true);
-		final EmailWorkerConfigEntity config2 = EmailWorkerConfigEntity.create().withEnabled(false);
+		final var config1 = EmailWorkerConfigEntity.create().withEnabled(true);
+		final var config2 = EmailWorkerConfigEntity.create().withEnabled(false);
 		// MOCK
 		when(emailWorkerConfigRepositoryMock.findAll()).thenReturn(List.of(config1, config2));
 		// ACT & VERIFY
@@ -241,7 +243,55 @@ class EmailReaderWorkerTest {
 		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Nytt meddelande"), same(errandEntity), isNull(), isNull(), eq(MESSAGE));
 		verifyNoInteractions(errandServiceMock);
 		verifyNoMoreInteractions(emailReaderClientMock, errandRepositoryMock, emailReaderMapperMock, communicationServiceMock, emailWorkerConfigRepositoryMock, eventServiceMock);
+	}
 
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"invalid", "no-reply@domain.com", "noreply@domain.com", "NO-reply@otherdomain.com", "noREPLY@OTHERdomain.com"
+	})
+	void processEmailWithExpiredErrandAndInvalidSenderAddress(String sender) {
+
+		// ARRANGE
+		final var email = new Email();
+		email.setSubject("Ärende #PRH-2022-000002 Ansökan om bygglov för fastighet KATARINA 4");
+		email.setId("id");
+		email.setSender(sender);
+
+		final var emailConfig = EmailWorkerConfigEntity.create()
+			.withEnabled(true)
+			.withMunicipalityId("municipalityId")
+			.withNamespace("namespace")
+			.withErrandClosedEmailSender("errandClosedEmailSender")
+			.withErrandClosedEmailTemplate("errandClosedEmailTemplate")
+			.withDaysOfInactivityBeforeReject(5)
+			.withStatusForNew("NEW")
+			.withTriggerStatusChangeOn("SOLVED")
+			.withStatusChangeTo("ONGOING")
+			.withInactiveStatus("SOLVED");
+
+		final var errandEntity = ErrandEntity.create().withId("id").withStatus("SOLVED").withCreated(OffsetDateTime.now().minusDays(6)).withTouched(OffsetDateTime.now().minusDays(6));
+		final var communicationEntity = CommunicationEntity.create();
+		final var emailRequest = new EmailRequest();
+
+		// MOCK
+		when(errandRepositoryMock.findByErrandNumber(anyString())).thenReturn(Optional.of(errandEntity));
+		when(emailReaderMapperMock.toCommunicationEntity(any(), any())).thenReturn(communicationEntity);
+		when(emailReaderMapperMock.createEmailRequest(any(Email.class), any(String.class), any(String.class), any(String.class))).thenReturn(emailRequest);
+
+		// ACT
+		emailReaderWorker.processEmail(email, emailConfig, consumerMock);
+
+		// VERIFY
+		verify(errandRepositoryMock).findByErrandNumber("PRH-2022-000002");
+		verify(emailReaderMapperMock, never()).createEmailRequest(same(email), eq(emailConfig.getErrandClosedEmailSender()), eq(emailConfig.getErrandClosedEmailTemplate()), eq("Ärende #PRH-2022-000002 Ansökan om bygglov för fastighet KATARINA 4"));
+		verify(communicationServiceMock, never()).sendEmail(eq(emailConfig.getNamespace()), eq(emailConfig.getMunicipalityId()), eq(errandEntity.getId()), same(emailRequest));
+		verify(emailReaderMapperMock).toCommunicationEntity(same(email), same(errandEntity));
+		verify(communicationServiceMock).saveAttachment(same(communicationEntity), same(errandEntity));
+		verify(communicationServiceMock).saveCommunication(same(communicationEntity));
+		verify(emailReaderClientMock).deleteEmail("municipalityId", email.getId());
+		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Nytt meddelande"), same(errandEntity), isNull(), isNull(), eq(MESSAGE));
+		verifyNoInteractions(errandServiceMock);
+		verifyNoMoreInteractions(emailReaderClientMock, errandRepositoryMock, emailReaderMapperMock, communicationServiceMock, emailWorkerConfigRepositoryMock, eventServiceMock);
 	}
 
 	@Test
@@ -296,12 +346,15 @@ class EmailReaderWorkerTest {
 		verifyNoMoreInteractions(emailReaderClientMock, errandRepositoryMock, emailReaderMapperMock, communicationServiceMock, emailWorkerConfigRepositoryMock, eventServiceMock);
 	}
 
-	@Test
-	void processEmailWithNewErrandAndInvalidSenderAddress() {
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"invalid", "no-reply@domain.com", "noreply@domain.com", "NO-reply@otherdomain.com", "noREPLY@OTHERdomain.com"
+	})
+	void processEmailWithNewErrandAndInvalidSenderAddress(String sender) {
 
 		// ARRANGE
 		final var email = new Email();
-		email.setSender("invalid");
+		email.setSender(sender);
 		email.setSubject("Ansökan om bygglov för fastighet KATARINA 4");
 		email.setId("id");
 

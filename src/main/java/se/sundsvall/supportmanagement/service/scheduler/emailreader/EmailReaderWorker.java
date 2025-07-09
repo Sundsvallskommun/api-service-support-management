@@ -1,7 +1,9 @@
 package se.sundsvall.supportmanagement.service.scheduler.emailreader;
 
 import static java.util.Collections.emptyList;
-import static org.apache.commons.lang3.StringUtils.isEmpty;
+import static org.apache.commons.lang3.StringUtils.isAnyEmpty;
+import static org.apache.commons.lang3.StringUtils.lowerCase;
+import static org.apache.commons.lang3.StringUtils.startsWithAny;
 import static se.sundsvall.supportmanagement.service.scheduler.emailreader.ErrandNumberParser.parseSubject;
 
 import generated.se.sundsvall.emailreader.Email;
@@ -154,8 +156,9 @@ public class EmailReaderWorker {
 
 	private EmailRequest createEmailClosed(final Email email, final EmailWorkerConfigEntity config) {
 
-		if (isInvalidEmailAddress(email.getSender())) {
-			// Don't send to a bad email address.
+		if (isNonUsableEmailAddress(email.getSender())) {
+			// Don't send to a bad email address or to emails starting with no-reply or noreply.
+			LOG.info("No mail for closed errand will be sent as email address '{}' is either invalid or contains a no reply address", email.getSender());
 			return null;
 		}
 
@@ -164,13 +167,14 @@ public class EmailReaderWorker {
 
 	private EmailRequest createEmailNew(final ErrandEntity errand, final Email email, final EmailWorkerConfigEntity config) {
 
-		if (isEmpty(config.getErrandNewEmailSender()) || isEmpty(config.getErrandNewEmailTemplate())) {
-			// Is optional to send email on new errand
+		if (isAnyEmpty(config.getErrandNewEmailSender(), config.getErrandNewEmailTemplate())) {
+			// It's optional to send email on new errand
 			return null;
 		}
 
-		if (isInvalidEmailAddress(email.getSender())) {
-			// Don't send to a bad email address.
+		if (isNonUsableEmailAddress(email.getSender())) {
+			// Don't send to a bad email address or to emails starting with no-reply or noreply.
+			LOG.info("No mail for new errand will be sent as email address '{}' is either invalid or contains a no reply address", email.getSender());
 			return null;
 		}
 
@@ -179,8 +183,8 @@ public class EmailReaderWorker {
 		return emailReaderMapper.createEmailRequest(email, config.getErrandNewEmailSender(), config.getErrandNewEmailTemplate(), subject);
 	}
 
-	private boolean isInvalidEmailAddress(final String value) {
-		return !EmailValidator.getInstance().isValid(value);
+	private boolean isNonUsableEmailAddress(final String value) {
+		return !EmailValidator.getInstance().isValid(value) || startsWithAny(lowerCase(value), "no-reply", "noreply");
 	}
 
 	void addAttachments(final CommunicationEntity communicationEntity) {
