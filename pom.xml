@@ -18,7 +18,7 @@
 		<flipkart.zjsonpatch.version>0.4.16</flipkart.zjsonpatch.version>
 		<generated-sources-path>${project.build.directory}/generated-sources</generated-sources-path>
 		<generated-sources-java-path>src/main/java</generated-sources-java-path>
-		<commons-validator.version>1.9.0</commons-validator.version>
+		<commons-validator.version>1.10.0</commons-validator.version>
 	</properties>
 	<dependencies>
 		<dependency>
