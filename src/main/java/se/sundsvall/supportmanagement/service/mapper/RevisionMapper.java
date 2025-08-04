@@ -17,6 +17,7 @@ public class RevisionMapper {
 
 	private static final Gson GSON = new GsonBuilder()
 		.registerTypeAdapter(OffsetDateTime.class, OffsetDateTimeSerializer.create())
+		.registerTypeAdapterFactory(new HibernateProxyAdapterFactory())
 		.addSerializationExclusionStrategy(CircularReferenceExclusionStrategy.create())
 		.addSerializationExclusionStrategy(AttachmentExclusionStrategy.create())
 		.create();
