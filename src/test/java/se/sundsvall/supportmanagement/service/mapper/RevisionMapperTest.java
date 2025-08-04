@@ -5,14 +5,28 @@ import static java.util.Collections.singletonList;
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
+import static org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase.Replace.NONE;
 
 import java.time.OffsetDateTime;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.jdbc.Sql;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
+import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.RevisionEntity;
 
+@DataJpaTest
+@AutoConfigureTestDatabase(replace = NONE)
+@ActiveProfiles("junit")
+@Sql({
+	"/db/scripts/truncate.sql",
+	"/db/scripts/testdata-junit.sql"
+})
 class RevisionMapperTest {
 
 	private static final String ENTITY_UUID = randomUUID().toString();
@@ -22,6 +36,9 @@ class RevisionMapperTest {
 	private static final String SNAPSHOT = "snapshot";
 	private static final String ENTITY_TYPE = "entityType";
 	private static final OffsetDateTime CREATED = OffsetDateTime.now();
+
+	@Autowired
+	private ErrandsRepository errandsRepository;
 
 	@Test
 	void toRevisionEntity() {
@@ -40,6 +57,16 @@ class RevisionMapperTest {
 	void toSerializedSnapshot() {
 		final var serializedSnapshot = RevisionMapper.toSerializedSnapshot(createErrandEntity());
 		assertThat(serializedSnapshot).isEqualToIgnoringNewLines("{\"id\":\"" + ENTITY_UUID + "\",\"description\":\"" + DESCRIPTION_VALUE + "\"}");
+	}
+
+	@Test
+	void toSerializedSnapshotFromDB() {
+		var errand = errandsRepository.getReferenceById("ERRAND_ID-4");
+		final var serializedSnapshot = RevisionMapper.toSerializedSnapshot(errand);
+		assertThat(serializedSnapshot).isEqualToIgnoringNewLines(
+			"""
+				{"id":"ERRAND_ID-4","externalTags":[],"stakeholders":[{"id":3004,"externalId":"EXTERNAL_ID-3","externalIdType":"ENTERPRISE","contactChannels":[],"parameters":[]}],"municipalityId":"2305","namespace":"NAMESPACE.3","title":"TITLE-3","category":"CATEGORY-3","type":"TYPE-3","status":"STATUS-3","priority":"PRIORITY-3","reporterUserId":"REPORTER_USER_ID-3","assignedUserId":"ASSIGNED_USER_ID-3","assignedGroupId":"ASSIGNED_GROUP_ID-3","escalationEmail":"ESCALATION_EMAIL_4","parameters":[],"attachments":[],"notifications":[],"labels":[],"errandNumber":"KC-23020004","tempPreviousStatus":"STATUS-3","timeMeasures":[]}
+				""");
 	}
 
 	@Test
