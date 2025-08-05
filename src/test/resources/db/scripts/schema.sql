@@ -460,6 +460,9 @@
     create index idx_errand_municipality_id_namespace_touched
        on errand (municipality_id, namespace, touched);
 
+    create index idx_errand_municipality_id_namespace_modified
+           on errand (municipality_id, namespace, modified);
+
     alter table if exists errand
        add constraint uq_errand_number unique (errand_number);
 
@@ -480,6 +483,9 @@
 
     create index idx_external_tag_key
        on external_tag (`key`);
+
+    create index idx_external_tag_value
+           on external_tag (`value`);
 
     alter table if exists external_tag
        add constraint uq_external_tag_errand_id_key unique (errand_id, `key`);
