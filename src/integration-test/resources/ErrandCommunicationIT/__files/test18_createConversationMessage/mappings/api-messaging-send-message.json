@@ -1,0 +1,13 @@
+{
+	"request": {
+		"method": "POST",
+		"url": "/api-messaging/2281/messages"
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/json"
+		},
+		"bodyFileName": "test18_createConversationMessage/response/api-messaging-send-message.json",
+		"status": 200
+	}
+}
