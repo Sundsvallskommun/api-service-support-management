@@ -270,7 +270,7 @@ public class CommunicationService {
 
 	public void sendMessageNotification(final String municipalityId, final String namespace, final String errandId) {
 
-		final var errand = errandsRepository.findByIdAndNamespaceAndMunicipalityId(errandId, municipalityId, namespace)
+		final var errand = errandsRepository.findByIdAndNamespaceAndMunicipalityId(errandId, namespace, municipalityId)
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, ERRAND_ENTITY_NOT_FOUND.formatted(errandId, namespace, municipalityId)));
 
 		final var senderInfo = getSenderInfo(municipalityId, namespace);

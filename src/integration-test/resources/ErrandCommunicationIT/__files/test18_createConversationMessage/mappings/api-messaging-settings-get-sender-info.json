@@ -1,0 +1,13 @@
+{
+	"request": {
+		"method": "GET",
+		"url": "/api-messaging-settings/2281/NAMESPACE-1/sender-info"
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/json"
+		},
+		"bodyFileName": "test18_createConversationMessage/response/api-messaging-settings-get-sender-info-response.json",
+		"status": 200
+	}
+}

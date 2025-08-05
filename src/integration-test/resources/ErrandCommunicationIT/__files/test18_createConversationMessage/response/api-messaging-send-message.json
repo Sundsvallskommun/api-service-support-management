@@ -1,0 +1,15 @@
+{
+	"batchId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+	"messages": [
+		{
+			"messageId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+			"deliveries": [
+				{
+					"deliveryId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+					"messageType": "MESSAGE",
+					"status": "PENDING"
+				}
+			]
+		}
+	]
+}

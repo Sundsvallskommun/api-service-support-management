@@ -708,7 +708,7 @@ class CommunicationServiceTest {
 			.withMunicipalityId(MUNICIPALITY_ID)
 			.withNamespace(NAMESPACE);
 
-		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(errandId, MUNICIPALITY_ID, NAMESPACE)).thenReturn(Optional.of(errand));
+		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(errandId, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(errand));
 		when(messagingSettingsClientMock.getSenderInfo(MUNICIPALITY_ID, NAMESPACE)).thenReturn(new SenderInfoResponse());
 		when(messagingClientMock.sendMessage(eq(MUNICIPALITY_ID), any())).thenReturn(
 			new MessageResult().messageId(messageId));
@@ -716,7 +716,7 @@ class CommunicationServiceTest {
 		communicationService.sendMessageNotification(MUNICIPALITY_ID, NAMESPACE, errandId);
 
 		// Assert
-		verify(errandsRepositoryMock).findByIdAndNamespaceAndMunicipalityId(errandId, MUNICIPALITY_ID, NAMESPACE);
+		verify(errandsRepositoryMock).findByIdAndNamespaceAndMunicipalityId(errandId, NAMESPACE, MUNICIPALITY_ID);
 		verify(messagingClientMock).sendMessage(eq(MUNICIPALITY_ID), messageRequestCaptor.capture());
 		assertThat(messageRequestCaptor.getValue().getMessages()).hasSize(1);
 		verifyNoMoreInteractions(errandsRepositoryMock, communicationMapperMock);
@@ -731,7 +731,7 @@ class CommunicationServiceTest {
 			.withId(errandId)
 			.withMunicipalityId(MUNICIPALITY_ID)
 			.withNamespace(NAMESPACE);
-		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(errandId, MUNICIPALITY_ID, NAMESPACE)).thenReturn(Optional.of(errand));
+		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(errandId, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(errand));
 		when(messagingSettingsClientMock.getSenderInfo(MUNICIPALITY_ID, NAMESPACE)).thenReturn(null);
 
 		// Act & Assert
@@ -739,7 +739,7 @@ class CommunicationServiceTest {
 			.isInstanceOf(ThrowableProblem.class)
 			.hasFieldOrPropertyWithValue("status", Status.INTERNAL_SERVER_ERROR)
 			.hasFieldOrPropertyWithValue("message", "Internal Server Error: Failed to retrieve sender information for municipality '" + MUNICIPALITY_ID + "' and namespace '" + NAMESPACE + "'");
-		verify(errandsRepositoryMock).findByIdAndNamespaceAndMunicipalityId(errandId, MUNICIPALITY_ID, NAMESPACE);
+		verify(errandsRepositoryMock).findByIdAndNamespaceAndMunicipalityId(errandId, NAMESPACE, MUNICIPALITY_ID);
 		verify(messagingSettingsClientMock).getSenderInfo(MUNICIPALITY_ID, NAMESPACE);
 		verifyNoInteractions(messagingClientMock, communicationMapperMock);
 
@@ -749,7 +749,7 @@ class CommunicationServiceTest {
 	void sendMessageNotificationWithErrandNotFound() {
 		// Arrange
 		final var errandId = UUID.randomUUID().toString();
-		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(errandId, MUNICIPALITY_ID, NAMESPACE)).thenReturn(Optional.empty());
+		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(errandId, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.empty());
 
 		// Act & Assert
 		assertThatThrownBy(() -> communicationService.sendMessageNotification(MUNICIPALITY_ID, NAMESPACE, errandId))
@@ -757,7 +757,7 @@ class CommunicationServiceTest {
 			.hasFieldOrPropertyWithValue("status", Status.NOT_FOUND)
 			.hasFieldOrPropertyWithValue("message", "Not Found: An errand with id '" + errandId + "' could not be found in namespace '" + NAMESPACE + "' for municipality with id '" + MUNICIPALITY_ID + "'");
 
-		verify(errandsRepositoryMock).findByIdAndNamespaceAndMunicipalityId(errandId, MUNICIPALITY_ID, NAMESPACE);
+		verify(errandsRepositoryMock).findByIdAndNamespaceAndMunicipalityId(errandId, NAMESPACE, MUNICIPALITY_ID);
 		verifyNoInteractions(messagingSettingsClientMock, messagingClientMock, communicationMapperMock);
 
 	}
@@ -771,7 +771,7 @@ class CommunicationServiceTest {
 			.withMunicipalityId(MUNICIPALITY_ID)
 			.withNamespace(NAMESPACE);
 
-		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(errandId, MUNICIPALITY_ID, NAMESPACE)).thenReturn(Optional.of(errand));
+		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(errandId, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(errand));
 		when(messagingSettingsClientMock.getSenderInfo(MUNICIPALITY_ID, NAMESPACE)).thenReturn(new SenderInfoResponse());
 		when(messagingClientMock.sendMessage(eq(MUNICIPALITY_ID), any())).thenReturn(null);
 
