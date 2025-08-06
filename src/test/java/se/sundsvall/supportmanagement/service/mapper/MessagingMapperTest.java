@@ -329,6 +329,7 @@ class MessagingMapperTest {
 				""");
 		assertThat(bean.getMessages().getFirst().getSender()).isNotNull();
 		assertThat(bean.getMessages().getFirst().getSender().getEmail()).isNotNull();
+		assertThat(bean.getMessages().getFirst().getSender().getEmail().getName()).isEqualTo(emailAddress);
 		assertThat(bean.getMessages().getFirst().getSender().getEmail().getAddress()).isEqualTo(emailAddress);
 		assertThat(bean.getMessages().getFirst().getSender().getSms()).isNotNull();
 		assertThat(bean.getMessages().getFirst().getSender().getSms().getName()).isEqualTo(smsSender);
