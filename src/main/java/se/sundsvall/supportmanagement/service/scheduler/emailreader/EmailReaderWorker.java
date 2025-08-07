@@ -2,8 +2,6 @@ package se.sundsvall.supportmanagement.service.scheduler.emailreader;
 
 import static java.util.Collections.emptyList;
 import static org.apache.commons.lang3.StringUtils.isAnyEmpty;
-import static org.apache.commons.lang3.StringUtils.lowerCase;
-import static org.apache.commons.lang3.StringUtils.startsWithAny;
 import static se.sundsvall.supportmanagement.service.scheduler.emailreader.ErrandNumberParser.parseSubject;
 
 import generated.se.sundsvall.emailreader.Email;
@@ -14,6 +12,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.Strings;
 import org.apache.commons.validator.routines.EmailValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -184,7 +183,7 @@ public class EmailReaderWorker {
 	}
 
 	private boolean isNonUsableEmailAddress(final String value) {
-		return !EmailValidator.getInstance().isValid(value) || startsWithAny(lowerCase(value), "no-reply", "noreply");
+		return !EmailValidator.getInstance().isValid(value) || Strings.CI.startsWithAny(value, "no-reply", "noreply");
 	}
 
 	void addAttachments(final CommunicationEntity communicationEntity) {

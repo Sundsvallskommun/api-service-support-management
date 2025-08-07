@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.service.util;
 import static java.util.UUID.fromString;
 import static org.springframework.util.MimeTypeUtils.APPLICATION_OCTET_STREAM_VALUE;
 import static se.sundsvall.dept44.support.Identifier.Type.AD_ACCOUNT;
+import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -33,8 +34,7 @@ public class ServiceUtil {
 		try (InputStream stream = new ByteArrayInputStream(byteArray)) {
 			return detectMimeTypeFromStream(fileName, stream);
 		} catch (final Exception e) {
-			LOGGER.warn(MIME_ERROR_MSG.formatted(sanitizeForLogging(fileName)), e);
-			return APPLICATION_OCTET_STREAM_VALUE; // Return mime type for arbitrary binary files
+			return handleFault(fileName, e);
 		}
 	}
 
@@ -42,8 +42,7 @@ public class ServiceUtil {
 		try {
 			return DETECTOR.detect(stream, fileName);
 		} catch (final Exception e) {
-			LOGGER.warn(MIME_ERROR_MSG.formatted(sanitizeForLogging(fileName)), e);
-			return APPLICATION_OCTET_STREAM_VALUE; // Return mime type for arbitrary binary files
+			return handleFault(fileName, e);
 		}
 	}
 
@@ -54,25 +53,8 @@ public class ServiceUtil {
 			.orElse(null);
 	}
 
-	// TODO: Replace with LogUtils.sanitizeForLogging() (available from Dept44 v.6.0.12)
-	private static String sanitizeForLogging(String input) {
-		if (input == null) {
-			return null;
-		}
-		// Replace newlines and carriage returns with spaces
-		var sanitized = input.replaceAll("[\\r\\n]", " ");
-
-		// Remove non-printable ASCII characters
-		sanitized = sanitized.replaceAll("[^\\x20-\\x7E]", "");
-
-		// Escape or remove other potentially harmful characters
-		sanitized = sanitized.replaceAll("[%\\\\]", "");
-
-		// Limit the length of the sanitized string to 100 characters
-		if (sanitized.length() > 100) {
-			sanitized = sanitized.substring(0, 100) + "...";
-		}
-
-		return sanitized;
+	private static String handleFault(String fileName, Exception e) {
+		LOGGER.warn(MIME_ERROR_MSG.formatted(sanitizeForLogging(fileName)), e);
+		return APPLICATION_OCTET_STREAM_VALUE; // Return mime type for arbitrary binary files
 	}
 }

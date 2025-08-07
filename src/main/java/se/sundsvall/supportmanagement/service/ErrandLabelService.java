@@ -1,9 +1,10 @@
 package se.sundsvall.supportmanagement.service;
 
+import static org.zalando.problem.Status.NOT_FOUND;
+
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.zalando.problem.Problem;
-import org.zalando.problem.Status;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 
@@ -39,7 +40,6 @@ public class ErrandLabelService {
 
 	private ErrandEntity getErrandEntity(final String namespace, final String municipalityId, final String id) {
 		return errandsRepository.findByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)
-			.orElseThrow(() -> Problem.valueOf(Status.NOT_FOUND, "Could not find errand with id " + id));
+			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, "Could not find errand with id " + id));
 	}
-
 }

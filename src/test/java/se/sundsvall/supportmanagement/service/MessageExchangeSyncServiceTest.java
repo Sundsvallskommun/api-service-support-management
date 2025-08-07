@@ -21,6 +21,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -301,7 +302,7 @@ class MessageExchangeSyncServiceTest {
 
 		// Assert
 		verify(messageExchangeClientMock).getMessageAttachment(eq(municipalityId), any(), any(), any(), eq(attachment.getId()));
-		verify(attachmentServiceMock).createErrandAttachment(eq(namespace), eq(municipalityId), eq(errandId), any(ResponseEntity.class));
+		verify(attachmentServiceMock).createErrandAttachment(eq(namespace), eq(municipalityId), eq(errandId), ArgumentMatchers.<ResponseEntity<InputStreamResource>>any());
 		verifyNoMoreInteractions(attachmentServiceMock, messageExchangeClientMock);
 		verifyNoInteractions(conversationRepositoryMock);
 	}
@@ -320,7 +321,7 @@ class MessageExchangeSyncServiceTest {
 		service.saveAttachment(errandId, municipalityId, namespace, file);
 
 		// Assert
-		verify(attachmentServiceMock).createErrandAttachment(eq(namespace), eq(municipalityId), eq(errandId), any(ResponseEntity.class));
+		verify(attachmentServiceMock).createErrandAttachment(eq(namespace), eq(municipalityId), eq(errandId), ArgumentMatchers.<ResponseEntity<InputStreamResource>>any());
 		verifyNoMoreInteractions(attachmentServiceMock);
 		verifyNoInteractions(conversationRepositoryMock, messageExchangeClientMock);
 	}

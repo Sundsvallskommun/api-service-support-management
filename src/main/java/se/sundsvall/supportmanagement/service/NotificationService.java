@@ -1,6 +1,5 @@
 package se.sundsvall.supportmanagement.service;
 
-import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.springframework.data.domain.Sort.unsorted;
 import static org.springframework.util.StringUtils.hasText;
 import static org.zalando.problem.Status.NOT_FOUND;
@@ -12,6 +11,7 @@ import generated.se.sundsvall.employee.PortalPersonData;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
+import org.apache.commons.lang3.Strings;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -135,7 +135,7 @@ public class NotificationService {
 		final var municipalityId = notificationEntity.getMunicipalityId();
 
 		// If notification is created by the user that owns the notification (ownnerId) it should be acknowledged from start.
-		if (equalsIgnoreCase(notificationEntity.getOwnerId(), getAdUser())) {
+		if (Strings.CI.equals(notificationEntity.getOwnerId(), getAdUser())) {
 			notificationEntity.setAcknowledged(true);
 		}
 

@@ -76,7 +76,7 @@ class ErrandAttachmentMapperTest {
 	}
 
 	@Test
-	void toAttachmentEntityFromResponseEntity() throws IOException {
+	void toAttachmentEntityFromResponseEntity() {
 		final var errandEntity = buildErrandEntity().withAttachments(new ArrayList<>());
 
 		final var file = ResponseEntity.ok()
