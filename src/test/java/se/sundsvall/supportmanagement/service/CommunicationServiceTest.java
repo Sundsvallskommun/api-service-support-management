@@ -771,6 +771,8 @@ class CommunicationServiceTest {
 			.withMunicipalityId(MUNICIPALITY_ID)
 			.withNamespace(NAMESPACE);
 
+		Identifier.set(Identifier.create().withType(PARTY_ID).withValue("e82c8029-7676-467d-8ebb-8638d0abd2b4"));
+
 		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(errandId, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(errand));
 		when(messagingSettingsClientMock.getSenderInfo(MUNICIPALITY_ID, NAMESPACE)).thenReturn(new SenderInfoResponse());
 		when(messagingClientMock.sendMessage(eq(MUNICIPALITY_ID), any())).thenReturn(null);

@@ -13,6 +13,8 @@ import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toSm
 import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toWebMessageRequest;
 
 import generated.se.sundsvall.employee.PortalPersonData;
+import generated.se.sundsvall.messaging.Message;
+import generated.se.sundsvall.messaging.MessageParty;
 import generated.se.sundsvall.messagingsettings.SenderInfoResponse;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -291,10 +293,19 @@ public class CommunicationService {
 
 		final var request = toMessagingMessageRequest(errandEntity, senderInfo);
 
-		final var message = messagingClient.sendMessage(errandEntity.getMunicipalityId(), request);
+		final var partyId = Optional.ofNullable(request.getMessages())
+			.map(List::getFirst)
+			.map(Message::getParty)
+			.map(MessageParty::getPartyId)
+			.map(UUID::toString)
+			.orElse(null);
 
-		if (message == null) {
-			throw Problem.valueOf(INTERNAL_SERVER_ERROR, "Failed to create message notification");
+		if (Identifier.get() != null && !Identifier.get().getValue().equals(partyId)) {
+			final var message = messagingClient.sendMessage(errandEntity.getMunicipalityId(), request);
+
+			if (message == null) {
+				throw Problem.valueOf(INTERNAL_SERVER_ERROR, "Failed to create message notification");
+			}
 		}
 
 	}
