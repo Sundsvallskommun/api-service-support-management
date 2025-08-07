@@ -300,7 +300,7 @@ public class CommunicationService {
 			.map(UUID::toString)
 			.orElse(null);
 
-		if (Identifier.get() != null && !Identifier.get().getValue().equals(partyId)) {
+		if (Identifier.get() != null && !Identifier.get().getValue().equalsIgnoreCase(partyId)) {
 			final var message = messagingClient.sendMessage(errandEntity.getMunicipalityId(), request);
 
 			if (message == null) {
