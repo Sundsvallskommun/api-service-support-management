@@ -30,7 +30,7 @@ spring:
     type: none
   datasource:
     driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
-    url: jdbc:tc:mariadb:10.6.14:///junitteest
+    url: jdbc:tc:mariadb:10.6:///junitteest
   jpa:
     properties:
       hibernate:

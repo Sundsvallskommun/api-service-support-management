@@ -2,10 +2,10 @@ package se.sundsvall.supportmanagement.service.mapper;
 
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
-import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.commons.lang3.Strings;
 import org.springframework.data.domain.Page;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.Attachment;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.Conversation;
@@ -172,7 +172,7 @@ public final class ConversationMapper {
 
 	private static List<String> toStringList(List<KeyValues> keyValueList, String key) {
 		return new ArrayList<>(ofNullable(keyValueList).orElse(emptyList()).stream()
-			.filter(keyValues -> equalsIgnoreCase(keyValues.getKey(), key))
+			.filter(keyValues -> Strings.CI.equals(keyValues.getKey(), key))
 			.flatMap(keyValues -> keyValues.getValues().stream())
 			.toList());
 	}
