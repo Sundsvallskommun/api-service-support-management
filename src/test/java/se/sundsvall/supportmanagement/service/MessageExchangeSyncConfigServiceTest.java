@@ -40,7 +40,7 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.NotificationSub
 import se.sundsvall.supportmanagement.integration.messageexchange.MessageExchangeClient;
 
 @ExtendWith(MockitoExtension.class)
-class MessageExchangeSyncServiceTest {
+class MessageExchangeSyncConfigServiceTest {
 
 	@Mock
 	private MessageExchangeClient messageExchangeClientMock;
