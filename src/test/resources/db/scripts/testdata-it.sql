@@ -375,3 +375,7 @@ VALUES ('2281', 100, 'NAMESPACE-1', 'EXTERNAL', 'f4524497-a592-4618-a746-b59a60a
 INSERT INTO conversation_relation_id (conversation_id, relation_id)
 VALUES ('f4524497-a592-4618-a746-b59a60a76f13', 'RELATION-ID-1'),
        ('7a772d18-a588-41bc-91ec-13b7421c9bb8', 'RELATION-ID-2');
+
+INSERT INTO message_exchange_sync(id, municipality_id, namespace, active, latest_synced_sequence_number, updated)
+VALUES ('1', '2281', 'external-namespace-1', true, 11, '2025-08-11 23:59:59.999'),
+       ('2', '2281', 'external-namespace-2', false, 22, '2025-08-22 23:59:59.999');

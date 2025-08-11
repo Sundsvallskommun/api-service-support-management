@@ -7,7 +7,7 @@ info:
     url: https://opensource.org/licenses/MIT
   version: "10.7"
 servers:
-- url: http://localhost:49263
+- url: http://localhost:37637
   description: Generated server url
 tags:
 - name: Errand attachments
@@ -16,6 +16,8 @@ tags:
   description: Errand parameter operations
 - name: Configuration for namespace
   description: Namespace configuration operations
+- name: Configuration message-exchange sync
+  description: Configuration for message-exchange scheduled syncing job
 - name: Metadata for categories
   description: Category metadata operations
 - name: Revisions
@@ -944,6 +946,97 @@ paths:
         schema:
           type: string
         example: 2281
+      responses:
+        "204":
+          description: Successful operation
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/message-exchange-sync-config/{id}:
+    put:
+      tags:
+      - Configuration message-exchange sync
+      summary: Update message-exchange sync config
+      description: Update message-exchange sync config
+      operationId: updateMessageExchangeSyncConfig
+      parameters:
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: id
+        in: path
+        description: Config id
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MessageExchangeSync"
+        required: true
+      responses:
+        "204":
+          description: Successful operation
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    delete:
+      tags:
+      - Configuration message-exchange sync
+      summary: Delete message-exchange sync config
+      description: Deletes the message-exchange sync config
+      operationId: deleteMessageExchangeSyncConfig
+      parameters:
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: id
+        in: path
+        description: Config id
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 1
       responses:
         "204":
           description: Successful operation
@@ -2358,6 +2451,93 @@ paths:
                 errandAttachment:
                   type: string
                   format: binary
+        required: true
+      responses:
+        "201":
+          description: Successful operation
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/message-exchange-sync-config:
+    get:
+      tags:
+      - Configuration message-exchange sync
+      summary: Read message-exchange sync configs
+      description: Fetches message-exchange config for a municipality
+      operationId: getAllMessageExchangeByMunicipalityId
+      parameters:
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      responses:
+        "200":
+          description: Successful Operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MessageExchangeSync"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server Error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    post:
+      tags:
+      - Configuration message-exchange sync
+      summary: Create message-exchange sync config
+      description: Create message-exchange sync config that conversations from message-exchange
+        service
+      operationId: createMessageExchangeSyncConfig
+      parameters:
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MessageExchangeSync"
         required: true
       responses:
         "201":
@@ -5110,12 +5290,12 @@ components:
           type: object
           additionalProperties:
             type: object
+        status:
+          $ref: "#/components/schemas/StatusType"
         title:
           type: string
         detail:
           type: string
-        status:
-          $ref: "#/components/schemas/StatusType"
     StatusType:
       type: object
       properties:
@@ -5245,12 +5425,12 @@ components:
           type: object
           additionalProperties:
             type: object
+        status:
+          $ref: "#/components/schemas/StatusType"
         title:
           type: string
         detail:
           type: string
-        status:
-          $ref: "#/components/schemas/StatusType"
         suppressed:
           type: array
           items:
@@ -5446,6 +5626,38 @@ components:
           readOnly: true
           example: 2000-10-31T01:30:00+02:00
       description: Email integration config model
+    MessageExchangeSync:
+      required:
+      - active
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique id
+          format: int64
+          readOnly: true
+          example: 1
+        namespace:
+          type: string
+          description: Message exchange namespace to search in. Does not map to supporManagement
+            namespace.
+          example: support
+        latestSyncedSequenceNumber:
+          type: integer
+          description: Latest synced sequence number
+          format: int64
+          readOnly: true
+          example: 333
+        modified:
+          type: string
+          description: Timestamp when the configuration was last modified
+          format: date-time
+          readOnly: true
+          example: 2024-12-24T01:30:00+02:00
+        active:
+          type: boolean
+          description: If set to true conversations will be synced
+      description: Message-Exchange sync configuration
     Status:
       required:
       - name
@@ -6404,6 +6616,8 @@ components:
         totalPages:
           type: integer
           format: int32
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
         first:
           type: boolean
         last:
@@ -6423,19 +6637,12 @@ components:
         numberOfElements:
           type: integer
           format: int32
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
         empty:
           type: boolean
     PageableObject:
       type: object
       properties:
-        offset:
-          type: integer
-          format: int64
-        sort:
-          $ref: "#/components/schemas/SortObject"
-        unpaged:
+        paged:
           type: boolean
         pageNumber:
           type: integer
@@ -6443,16 +6650,21 @@ components:
         pageSize:
           type: integer
           format: int32
-        paged:
+        offset:
+          type: integer
+          format: int64
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        unpaged:
           type: boolean
     SortObject:
       type: object
       properties:
+        sorted:
+          type: boolean
         empty:
           type: boolean
         unsorted:
-          type: boolean
-        sorted:
           type: boolean
     Revision:
       type: object
@@ -6649,6 +6861,8 @@ components:
         totalPages:
           type: integer
           format: int32
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
         first:
           type: boolean
         last:
@@ -6668,8 +6882,6 @@ components:
         numberOfElements:
           type: integer
           format: int32
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
         empty:
           type: boolean
     Communication:
@@ -6840,6 +7052,8 @@ components:
         totalPages:
           type: integer
           format: int32
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
         first:
           type: boolean
         last:
@@ -6859,8 +7073,6 @@ components:
         numberOfElements:
           type: integer
           format: int32
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
         empty:
           type: boolean
     ReadBy:

@@ -1,0 +1,16 @@
+[
+	{
+		"id": 1,
+		"namespace": "external-namespace-1",
+		"latestSyncedSequenceNumber": 11,
+		"modified": "2025-08-11T23:59:59.999+02:00",
+		"active": true
+	},
+	{
+		"id": 2,
+		"namespace": "external-namespace-2",
+		"latestSyncedSequenceNumber": 22,
+		"modified": "2025-08-22T23:59:59.999+02:00",
+		"active": false
+	}
+]

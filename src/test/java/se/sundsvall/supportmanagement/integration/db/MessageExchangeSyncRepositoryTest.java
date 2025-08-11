@@ -28,4 +28,17 @@ class MessageExchangeSyncRepositoryTest {
 		assertThat(repository.findByActive(true)).hasSize(1).extracting(MessageExchangeSyncEntity::getId).containsExactly(1L);
 		assertThat(repository.findByActive(false)).hasSize(1).extracting(MessageExchangeSyncEntity::getId).containsExactly(2L);
 	}
+
+	@Test
+	void findByMunicipalityId() {
+		assertThat(repository.findByMunicipalityId("2281")).hasSize(2).extracting(MessageExchangeSyncEntity::getId).containsExactly(1L, 2L);
+		assertThat(repository.findByMunicipalityId("1234")).hasSize(0);
+	}
+
+	@Test
+	void findByIdAndMunicipalityId() {
+		assertThat(repository.findByIdAndMunicipalityId(1L, "2281")).isNotEmpty();
+		assertThat(repository.findByIdAndMunicipalityId(1L, "1234")).isEmpty();
+		assertThat(repository.findByIdAndMunicipalityId(3L, "2281")).isEmpty();
+	}
 }
