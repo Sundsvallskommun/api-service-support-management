@@ -49,6 +49,7 @@ import se.sundsvall.supportmanagement.api.model.metadata.ContactReason;
 import se.sundsvall.supportmanagement.api.model.metadata.Role;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
 import se.sundsvall.supportmanagement.api.model.metadata.Type;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.service.ErrandService;
 import se.sundsvall.supportmanagement.service.MetadataService;
 
@@ -398,7 +399,7 @@ class ErrandsResourceTest {
 		final var countResponse = new CountResponse(count);
 
 		// Mock
-		when(errandServiceMock.countErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), any(Specification.class))).thenReturn(count);
+		when(errandServiceMock.countErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), ArgumentMatchers.<Specification<ErrandEntity>>any())).thenReturn(count);
 
 		// Call
 		webTestClient.get()
@@ -410,7 +411,7 @@ class ErrandsResourceTest {
 			.isEqualTo(countResponse);
 
 		// Verification
-		verify(errandServiceMock).countErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), any(Specification.class));
+		verify(errandServiceMock).countErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), ArgumentMatchers.<Specification<ErrandEntity>>any());
 	}
 
 	// Helper implementation of Page

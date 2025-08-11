@@ -34,7 +34,7 @@ spring:
     type: none
   datasource:
     driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
-    url: jdbc:tc:mariadb:10.6.14:///ittest
+    url: jdbc:tc:mariadb:10.6:///ittest
   flyway:
     enabled: true
   jpa:

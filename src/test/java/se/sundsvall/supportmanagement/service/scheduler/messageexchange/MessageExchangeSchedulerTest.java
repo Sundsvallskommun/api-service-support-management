@@ -87,6 +87,7 @@ class MessageExchangeSchedulerTest {
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
 	void triggerSyncConversationAsync() {
 
 		// Mock
