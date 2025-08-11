@@ -32,7 +32,7 @@ class MessageExchangeSyncRepositoryTest {
 	@Test
 	void findByMunicipalityId() {
 		assertThat(repository.findByMunicipalityId("2281")).hasSize(2).extracting(MessageExchangeSyncEntity::getId).containsExactly(1L, 2L);
-		assertThat(repository.findByMunicipalityId("1234")).hasSize(0);
+		assertThat(repository.findByMunicipalityId("1234")).isEmpty();
 	}
 
 	@Test

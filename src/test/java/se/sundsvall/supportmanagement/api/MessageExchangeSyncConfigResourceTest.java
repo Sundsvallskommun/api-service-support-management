@@ -72,9 +72,7 @@ class MessageExchangeSyncConfigResourceTest {
 			.getResponseBody();
 
 		verify(serviceMock).getAllByMunicipalityId(MUNICIPALITY_ID);
-		assertThat(response).isNotNull();
-		assertThat(response).hasSize(1);
-		assertThat(response.getFirst()).isEqualTo(syncConfig);
+		assertThat(response).isNotNull().hasSize(1).first().isEqualTo(syncConfig);
 	}
 
 	@Test
