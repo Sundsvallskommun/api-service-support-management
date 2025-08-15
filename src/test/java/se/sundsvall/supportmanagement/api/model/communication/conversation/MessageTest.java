@@ -45,6 +45,7 @@ class MessageTest {
 		final var id = UUID.randomUUID().toString();
 		final var inReplyToMessageId = UUID.randomUUID().toString();
 		final var readBy = List.of(ReadBy.create());
+		final var type = MessageType.USER_CREATED;
 
 		final var o = Message.create()
 			.withAttachments(attachments)
@@ -53,7 +54,8 @@ class MessageTest {
 			.withCreatedBy(createdBy)
 			.withId(id)
 			.withInReplyToMessageId(inReplyToMessageId)
-			.withReadBy(readBy);
+			.withReadBy(readBy)
+			.withType(type);
 
 		assertThat(o).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(o.getAttachments()).isEqualTo(attachments);
@@ -63,6 +65,7 @@ class MessageTest {
 		assertThat(o.getId()).isEqualTo(id);
 		assertThat(o.getInReplyToMessageId()).isEqualTo(inReplyToMessageId);
 		assertThat(o.getReadBy()).isEqualTo(readBy);
+		assertThat(o.getType()).isEqualTo(type);
 	}
 
 	@Test

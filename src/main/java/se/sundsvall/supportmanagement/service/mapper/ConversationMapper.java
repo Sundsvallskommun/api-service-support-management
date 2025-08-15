@@ -15,6 +15,7 @@ import se.sundsvall.supportmanagement.api.model.communication.conversation.Ident
 import se.sundsvall.supportmanagement.api.model.communication.conversation.KeyValues;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.Message;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.MessageRequest;
+import se.sundsvall.supportmanagement.api.model.communication.conversation.MessageType;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.ReadBy;
 import se.sundsvall.supportmanagement.integration.db.model.communication.ConversationEntity;
 
@@ -98,7 +99,8 @@ public final class ConversationMapper {
 			.withCreatedBy(ofNullable(m.getCreatedBy()).map(ConversationMapper::toIdentifier).orElse(null))
 			.withContent(m.getContent())
 			.withReadBy(toReadBy(m.getReadBy()))
-			.withAttachments(toAttachments(m.getAttachments())));
+			.withAttachments(toAttachments(m.getAttachments()))
+			.withType(MessageType.valueOf(m.getType().toString())));
 	}
 
 	public static List<ReadBy> toReadBy(final List<generated.se.sundsvall.messageexchange.ReadBy> readByList) {
