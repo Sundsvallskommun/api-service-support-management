@@ -36,7 +36,8 @@
 							"mimeType": "image/jpeg",
 							"created": "2025-06-04T14:06:38.811+02:00"
 						}
-					]
+					],
+					"type": "USER_CREATED"
 				},
 				{
 					"id": "bbd34585-8754-47a3-a068-012b13540e94",
@@ -44,7 +45,8 @@
 					"sequenceNumber": 16,
 					"created": "2025-06-05T13:48:06.657Z",
 					"content": "Hello, how can I help you?",
-					"readBy": []
+					"readBy": [],
+					"type": "USER_CREATED"
 				}
 			],
 			"pageable": {

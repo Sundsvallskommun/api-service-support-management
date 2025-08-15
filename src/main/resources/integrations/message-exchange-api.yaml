@@ -5,7 +5,7 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "1.0"
+  version: "1.1"
 servers:
 - url: https://message-exchange-af-message-exchange.apps.ocp201.sundsvall.se
   description: Generated server url
@@ -40,7 +40,7 @@ paths:
       - name: filter
         in: query
         description: "Syntax description: [spring-filter](https://github.com/turkraft/spring-filter/blob/85730f950a5f8623159cc0eb4d737555f9382bb7/README.md#syntax)"
-        required: true
+        required: false
         schema:
           type: string
         example: topic:'My topic' and messages.createdBy.value:'joe01doe' and messages.created>'2023-01-01T00:00:00Z'
@@ -141,6 +141,15 @@ paths:
       description: "Get all messages for a conversation, paginated."
       operationId: getMessages
       parameters:
+      - name: X-Sent-By
+        in: header
+        description: "User ID of the request sender, used to log who read the message.\
+          \ The value must follow the format: type=TYPE; VALUE. Valid types are 'adAccount'\
+          \ and 'partyId'."
+        required: false
+        schema:
+          type: string
+        example: type=adAccount; joe01doe
       - name: municipalityId
         in: path
         description: Municipality ID
@@ -162,6 +171,13 @@ paths:
         schema:
           type: string
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: filter
+        in: query
+        description: "Syntax description: [spring-filter](https://github.com/turkraft/spring-filter/blob/85730f950a5f8623159cc0eb4d737555f9382bb7/README.md#syntax)"
+        required: false
+        schema:
+          type: string
+        example: content:'My content' and createdBy.value:'joe01doe' and created>'2023-01-01T00:00:00Z'
       - name: page
         in: query
         description: Zero-based page index (0..N)
@@ -220,6 +236,15 @@ paths:
       description: Post a message with attachment
       operationId: postMessage
       parameters:
+      - name: X-Sent-By
+        in: header
+        description: "User ID of the request sender, used to log who sent the message.\
+          \ The value must follow the format: type=TYPE; VALUE. Valid types are 'adAccount'\
+          \ and 'partyId'."
+        required: false
+        schema:
+          type: string
+        example: type=adAccount; joe01doe
       - name: municipalityId
         in: path
         description: Municipality ID
@@ -676,9 +701,9 @@ components:
             type: object
         status:
           $ref: "#/components/schemas/StatusType"
-        detail:
-          type: string
         title:
+          type: string
+        detail:
           type: string
     StatusType:
       type: object
@@ -811,9 +836,9 @@ components:
             type: object
         status:
           $ref: "#/components/schemas/StatusType"
-        detail:
-          type: string
         title:
+          type: string
+        detail:
           type: string
         suppressed:
           type: array
@@ -923,6 +948,13 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Attachment"
+        type:
+          type: string
+          description: Type of message (user or system created)
+          readOnly: true
+          enum:
+          - USER_CREATED
+          - SYSTEM_CREATED
       description: "Represents a message within a conversation, including metadata\
         \ and content."
     ReadBy:
@@ -939,12 +971,16 @@ components:
     PageConversation:
       type: object
       properties:
-        totalPages:
-          type: integer
-          format: int32
         totalElements:
           type: integer
           format: int64
+        totalPages:
+          type: integer
+          format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
         pageable:
           $ref: "#/components/schemas/PageableObject"
         size:
@@ -962,10 +998,6 @@ components:
         numberOfElements:
           type: integer
           format: int32
-        first:
-          type: boolean
-        last:
-          type: boolean
         empty:
           type: boolean
     PageableObject:
@@ -998,12 +1030,16 @@ components:
     PageMessage:
       type: object
       properties:
-        totalPages:
-          type: integer
-          format: int32
         totalElements:
           type: integer
           format: int64
+        totalPages:
+          type: integer
+          format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
         pageable:
           $ref: "#/components/schemas/PageableObject"
         size:
@@ -1021,10 +1057,6 @@ components:
         numberOfElements:
           type: integer
           format: int32
-        first:
-          type: boolean
-        last:
-          type: boolean
         empty:
           type: boolean
   securitySchemes: {}

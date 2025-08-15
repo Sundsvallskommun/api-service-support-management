@@ -12,6 +12,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.util.ReflectionTestUtils.setField;
 
+import generated.se.sundsvall.messageexchange.Message;
 import java.io.IOException;
 import java.net.URI;
 import java.util.List;
@@ -290,7 +291,7 @@ class ConversationServiceTest {
 			.thenReturn(Optional.ofNullable(conversationEntity));
 
 		when(messageExchangeClientMock.getMessages(eq(MUNICIPALITY_ID), eq(MESSAGE_EXCHANGE_NAMESPACE), eq(MESSAGE_EXCHANGE_ID), any(), any()))
-			.thenReturn(ResponseEntity.ok(new PageImpl<>(List.of(new generated.se.sundsvall.messageexchange.Message()))));
+			.thenReturn(ResponseEntity.ok(new PageImpl<>(List.of(new generated.se.sundsvall.messageexchange.Message().type(Message.TypeEnum.USER_CREATED)))));
 
 		// Act
 		final var result = conversationService.getMessages(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID, pageable);

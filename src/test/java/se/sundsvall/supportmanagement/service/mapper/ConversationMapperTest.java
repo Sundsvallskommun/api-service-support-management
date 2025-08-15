@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.RELATION_ID_KEY;
 
+import generated.se.sundsvall.messageexchange.Message;
 import java.time.OffsetDateTime;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -13,6 +14,7 @@ import se.sundsvall.supportmanagement.api.model.communication.conversation.Conve
 import se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationType;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.Identifier;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.KeyValues;
+import se.sundsvall.supportmanagement.api.model.communication.conversation.MessageType;
 import se.sundsvall.supportmanagement.integration.db.model.communication.ConversationEntity;
 
 class ConversationMapperTest {
@@ -44,6 +46,7 @@ class ConversationMapperTest {
 	private static final Long MESSAGE_SEQUENCE_NUMBER = 10L;
 	private static final OffsetDateTime MESSAGE_CREATED = now();
 	private static final OffsetDateTime MESSAGE_READ_AT = now();
+	private static final MessageType MESSAGE_TYPE = MessageType.USER_CREATED;
 
 	@Test
 	void toConversationEntity() {
@@ -232,6 +235,7 @@ class ConversationMapperTest {
 		assertThat(extractedMessage.getAttachments().getFirst().getId()).isEqualTo(ATTACHMENT_ID);
 		assertThat(extractedMessage.getAttachments().getFirst().getMimeType()).isEqualTo(ATTACHMENT_MIMETYPE);
 		assertThat(extractedMessage.getAttachments().getFirst().getCreated()).isEqualTo(ATTACHMENT_CREATED);
+		assertThat(extractedMessage.getType()).isEqualTo(MESSAGE_TYPE);
 	}
 
 	@Test
@@ -275,7 +279,8 @@ class ConversationMapperTest {
 					.fileSize(ATTACHMENT_FILESIZE)
 					.id(ATTACHMENT_ID)
 					.mimeType(ATTACHMENT_MIMETYPE)
-					.created(ATTACHMENT_CREATED)));
+					.created(ATTACHMENT_CREATED)))
+			.type(Message.TypeEnum.valueOf(MESSAGE_TYPE.name()));
 	}
 
 	private generated.se.sundsvall.messageexchange.Conversation createMessageExchangeConversation() {
