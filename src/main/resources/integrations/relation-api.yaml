@@ -1,11 +1,11 @@
 openapi: 3.0.1
 info:
   title: relations
-  contact: { }
+  contact: {}
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "1.0"
+  version: "1.1"
 tags:
   - name: Relation Type
     description: 'CRUD for relation types '
@@ -290,7 +290,7 @@ paths:
       tags:
         - Relation
       summary: Find matching relations
-      description: Query for relations with or withour filters.
+      description: Query for relations with or without filters.
       operationId: findRelations
       parameters:
         - name: municipalityId
@@ -303,7 +303,7 @@ paths:
         - name: filter
           in: query
           description: "Syntax description: [spring-filter](https://github.com/turkraft/spring-filter/blob/85730f950a5f8623159cc0eb4d737555f9382bb7/README.md#syntax)"
-          required: true
+          required: false
           schema:
             type: string
           example: sourceId:'SUPPORT-CASE-ID' or targetId:'SUPPORT-CASE-ID'
@@ -501,10 +501,6 @@ components:
     Problem:
       type: object
       properties:
-        title:
-          type: string
-        detail:
-          type: string
         instance:
           type: string
           format: uri
@@ -517,6 +513,10 @@ components:
             type: object
         status:
           $ref: "#/components/schemas/StatusType"
+        title:
+          type: string
+        detail:
+          type: string
     StatusType:
       type: object
       properties:
@@ -623,8 +623,6 @@ components:
           type: string
         message:
           type: string
-        detail:
-          type: string
         instance:
           type: string
           format: uri
@@ -632,6 +630,8 @@ components:
           type: object
           additionalProperties:
             type: object
+        detail:
+          type: string
         suppressed:
           type: array
           items:
@@ -694,10 +694,6 @@ components:
                 type: boolean
         message:
           type: string
-        title:
-          type: string
-        detail:
-          type: string
         instance:
           type: string
           format: uri
@@ -710,6 +706,10 @@ components:
             type: object
         status:
           $ref: "#/components/schemas/StatusType"
+        title:
+          type: string
+        detail:
+          type: string
         suppressed:
           type: array
           items:
@@ -836,4 +836,4 @@ components:
         _meta:
           $ref: "#/components/schemas/PagingAndSortingMetaData"
       description: Paged relation response
-  securitySchemes: { }
+  securitySchemes: {}

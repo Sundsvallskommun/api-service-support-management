@@ -1,19 +1,159 @@
 openapi: 3.0.1
 info:
-  title: api-web-message-collector
-  contact: { }
+  title: web-message-collector
+  contact: {}
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "4.0"
-servers:
-  - url: http://localhost:58519
-    description: Generated server url
+  version: "5.1"
 tags:
   - name: messages
     description: Messages
 paths:
-  /messages/{familyId}/{Instance}:
+  /{municipalityId}/messages/{instance}/flow-instances/{flowInstanceId}:
+    get:
+      tags:
+        - messages
+      summary: Get a list of messages related to a specific flow instance id
+      description: Returns a list of messages found for the specified flow instance
+        id
+      operationId: getMessagesByFlowInstanceId
+      parameters:
+        - name: municipalityId
+          in: path
+          description: Municipality Id
+          required: true
+          schema:
+            type: string
+          example: 2281
+        - name: instance
+          in: path
+          description: Instance to fetch messages for
+          required: true
+          schema:
+            type: string
+          example: INTERNAL
+        - name: flowInstanceId
+          in: path
+          description: Flow instance id to fetch messages for
+          required: true
+          schema:
+            type: string
+          example: 1234567890
+        - name: fromDateTime
+          in: query
+          description: The start date and time for filtering web messages (optional)
+          required: false
+          schema:
+            type: string
+            format: date-time
+          example: 2024-01-31T12:00:00
+        - name: toDateTime
+          in: query
+          description: The end date and time for filtering web messages (optional).
+          required: false
+          schema:
+            type: string
+            format: date-time
+          example: 2024-01-31T12:00:00
+      responses:
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/Problem"
+                  - $ref: "#/components/schemas/ConstraintViolationProblem"
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MessageDTO"
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MessageDTO"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MessageDTO"
+        "200":
+          description: Successful Operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MessageDTO"
+  /{municipalityId}/messages/{instance}/attachments/{attachmentId}:
+    get:
+      tags:
+        - messages
+      summary: Get an attachment by id
+      description: Returns an attachment as a stream for the specified attachmentId
+      operationId: getAttachmentById
+      parameters:
+        - name: municipalityId
+          in: path
+          description: Municipality Id
+          required: true
+          schema:
+            type: string
+          example: 2281
+        - name: instance
+          in: path
+          description: Instance to fetch messages for
+          required: true
+          schema:
+            type: string
+          example: INTERNAL
+        - name: attachmentId
+          in: path
+          description: Id of the requested attachment
+          required: true
+          schema:
+            type: integer
+            format: int32
+          example: 1234567890
+      responses:
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/Problem"
+                  - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "200":
+          description: Successful Operation
+  /{municipalityId}/messages/{familyId}/{Instance}:
     get:
       tags:
         - messages
@@ -21,6 +161,13 @@ paths:
       description: Returns a list of messages found for the specified familyId
       operationId: getMessages
       parameters:
+        - name: municipalityId
+          in: path
+          description: Municipality Id
+          required: true
+          schema:
+            type: string
+          example: 2281
         - name: familyId
           in: path
           description: FamilyId to fetch messages for
@@ -36,6 +183,14 @@ paths:
             type: string
           example: INTERNAL
       responses:
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/Problem"
+                  - $ref: "#/components/schemas/ConstraintViolationProblem"
         "404":
           description: Not found
           content:
@@ -48,14 +203,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        "400":
-          description: Bad request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                  - $ref: "#/components/schemas/Problem"
-                  - $ref: "#/components/schemas/ConstraintViolationProblem"
         "200":
           description: Successful Operation
           content:
@@ -64,7 +211,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/MessageDTO"
-  /messages/attachments/{attachmentId}:
+  /{municipalityId}/messages/attachments/{attachmentId}:
     get:
       tags:
         - messages
@@ -72,6 +219,13 @@ paths:
       description: Returns a messageAttachment as a stream for the specified attachmentId
       operationId: getAttachment
       parameters:
+        - name: municipalityId
+          in: path
+          description: Municipality Id
+          required: true
+          schema:
+            type: string
+          example: 2281
         - name: attachmentId
           in: path
           description: MessageId to fetch attachment for
@@ -81,6 +235,14 @@ paths:
             format: int32
           example: 123
       responses:
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/Problem"
+                  - $ref: "#/components/schemas/ConstraintViolationProblem"
         "404":
           description: Not found
           content:
@@ -93,14 +255,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        "400":
-          description: Bad request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                  - $ref: "#/components/schemas/Problem"
-                  - $ref: "#/components/schemas/ConstraintViolationProblem"
         "200":
           description: Successful Operation
     delete:
@@ -110,6 +264,13 @@ paths:
       description: Deletes a messageAttachment with the specified id
       operationId: deleteAttachment
       parameters:
+        - name: municipalityId
+          in: path
+          description: Municipality Id
+          required: true
+          schema:
+            type: string
+          example: 2281
         - name: attachmentId
           in: path
           description: Id of the attachment to delete
@@ -119,6 +280,14 @@ paths:
             format: int32
           example: 123
       responses:
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/Problem"
+                  - $ref: "#/components/schemas/ConstraintViolationProblem"
         "404":
           description: Not found
           content:
@@ -131,14 +300,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        "400":
-          description: Bad request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                  - $ref: "#/components/schemas/Problem"
-                  - $ref: "#/components/schemas/ConstraintViolationProblem"
         "204":
           description: No Content
   /api-docs:
@@ -157,13 +318,21 @@ paths:
       x-auth-type: None
       x-throttling-tier: Unlimited
       x-wso2-mutual-ssl: Optional
-  /messages:
+  /{municipalityId}/messages:
     delete:
       tags:
         - messages
       summary: Delete a list of messages
       description: Deletes a list of messages with the ids provided
       operationId: deleteMessages
+      parameters:
+        - name: municipalityId
+          in: path
+          description: Municipality Id
+          required: true
+          schema:
+            type: string
+          example: 2281
       requestBody:
         content:
           application/json:
@@ -174,6 +343,14 @@ paths:
                 format: int32
         required: true
       responses:
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/Problem"
+                  - $ref: "#/components/schemas/ConstraintViolationProblem"
         "404":
           description: Not found
           content:
@@ -186,14 +363,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        "400":
-          description: Bad request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                  - $ref: "#/components/schemas/Problem"
-                  - $ref: "#/components/schemas/ConstraintViolationProblem"
         "204":
           description: No Content
 components:
@@ -430,6 +599,10 @@ components:
           enum:
             - INBOUND
             - OUTBOUND
+        municipalityId:
+          type: string
+          description: The municipality id
+          example: "2281"
         familyId:
           type: string
           description: What E-service the message was found in
@@ -478,4 +651,4 @@ components:
           type: string
           description: The instance of the message
           example: external
-  securitySchemes: { }
+  securitySchemes: {}
