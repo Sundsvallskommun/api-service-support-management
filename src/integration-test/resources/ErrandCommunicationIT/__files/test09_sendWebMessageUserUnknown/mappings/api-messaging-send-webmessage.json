@@ -9,24 +9,25 @@
 		"bodyPatterns": [
 			{
 				"equalToJson": {
-					"attachments": [],
-					"oepInstance": "external",
+					"party": {
+						"externalReferences": [
+							{
+								"key": "errandId",
+								"value": "cad8ec4e-0b6b-473a-800d-feb063f59094"
+							},
+							{
+								"key": "flowInstanceId",
+								"value": "1000"
+							}
+						]
+					},
 					"message": "Order pizza for everyone!",
 					"sender": {
 						"userId": "UNKNOWN"
 					},
-					"party": {
-						"externalReferences": [
-							{
-								"value": "cad8ec4e-0b6b-473a-800d-feb063f59094",
-								"key": "errandId"
-							},
-							{
-								"value": "1000",
-								"key": "flowInstanceId"
-							}
-						]
-					}
+					"sendAsOwner": false,
+					"oepInstance": "EXTERNAL",
+					"attachments": []
 				}
 			}
 		],
