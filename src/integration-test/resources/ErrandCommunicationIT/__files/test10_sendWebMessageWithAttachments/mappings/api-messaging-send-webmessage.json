@@ -9,36 +9,35 @@
 		"bodyPatterns": [
 			{
 				"equalToJson": {
-					"party": {
-						"externalReferences": [
-							{
-								"key": "errandId",
-								"value": "b481b191-dd37-47ca-b417-ed3a56ba724c"
-							},
-							{
-								"key": "flowInstanceId",
-								"value": "1001"
-							}
-						]
-					},
+					"attachments": [
+						{
+							"fileName": "data.txt",
+							"base64Data": "ZGF0YQ==",
+							"mimeType": "text/plain"
+						},
+						{
+							"fileName": "data_stuff.txt",
+							"base64Data": "U28gbXVjaCBkYXRhIQo=",
+							"mimeType": "text/plain"
+						}
+					],
+					"oepInstance": "internal",
 					"message": "Sending data!",
 					"sender": {
 						"userId": "someUserId"
 					},
-					"sendAsOwner": false,
-					"oepInstance": "INTERNAL",
-					"attachments": [
-						{
-							"fileName": "data.txt",
-							"mimeType": "text/plain",
-							"base64Data": "ZGF0YQ=="
-						},
-						{
-							"fileName": "data_stuff.txt",
-							"mimeType": "text/plain",
-							"base64Data": "U28gbXVjaCBkYXRhIQo="
-						}
-					]
+					"party": {
+						"externalReferences": [
+							{
+								"value": "b481b191-dd37-47ca-b417-ed3a56ba724c",
+								"key": "errandId"
+							},
+							{
+								"value": "1001",
+								"key": "flowInstanceId"
+							}
+						]
+					}
 				}
 			}
 		],
