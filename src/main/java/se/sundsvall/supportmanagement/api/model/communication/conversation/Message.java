@@ -30,6 +30,9 @@ public class Message {
 	@ArraySchema(schema = @Schema(implementation = Attachment.class, description = "A list of attachments associated with the message."))
 	private List<Attachment> attachments;
 
+	@Schema(description = "Type of message (user or system created)", example = "USER_CREATED", accessMode = Schema.AccessMode.READ_ONLY)
+	private MessageType type;
+
 	public static Message create() {
 		return new Message();
 	}
@@ -125,9 +128,22 @@ public class Message {
 		return this;
 	}
 
+	public MessageType getType() {
+		return type;
+	}
+
+	public void setType(MessageType type) {
+		this.type = type;
+	}
+
+	public Message withType(MessageType type) {
+		this.type = type;
+		return this;
+	}
+
 	@Override
 	public int hashCode() {
-		return Objects.hash(attachments, content, created, createdBy, id, inReplyToMessageId, readBy);
+		return Objects.hash(attachments, content, created, createdBy, id, inReplyToMessageId, readBy, type);
 	}
 
 	@Override
@@ -143,11 +159,11 @@ public class Message {
 		}
 		Message other = (Message) obj;
 		return Objects.equals(attachments, other.attachments) && Objects.equals(content, other.content) && Objects.equals(created, other.created) && Objects.equals(createdBy, other.createdBy) && Objects.equals(id, other.id) && Objects.equals(
-			inReplyToMessageId, other.inReplyToMessageId) && Objects.equals(readBy, other.readBy);
+			inReplyToMessageId, other.inReplyToMessageId) && Objects.equals(readBy, other.readBy) && Objects.equals(type, other.type);
 	}
 
 	@Override
 	public String toString() {
-		return "Message [id=" + id + ", inReplyToMessageId=" + inReplyToMessageId + ", created=" + created + ", createdBy=" + createdBy + ", content=" + content + ", readBy=" + readBy + ", attachments=" + attachments + "]";
+		return "Message [id=" + id + ", inReplyToMessageId=" + inReplyToMessageId + ", created=" + created + ", createdBy=" + createdBy + ", content=" + content + ", readBy=" + readBy + ", attachments=" + attachments + ", type=" + type + "]";
 	}
 }

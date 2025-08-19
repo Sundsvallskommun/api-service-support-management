@@ -5,7 +5,7 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "10.7"
+  version: "10.8"
 servers:
 - url: http://localhost:37637
   description: Generated server url
@@ -7042,6 +7042,14 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Attachment"
+        type:
+          type: string
+          description: Type of message (user or system created)
+          readOnly: true
+          example: USER_CREATED
+          enum:
+          - USER_CREATED
+          - SYSTEM_CREATED
       description: Message model
     PageMessage:
       type: object
