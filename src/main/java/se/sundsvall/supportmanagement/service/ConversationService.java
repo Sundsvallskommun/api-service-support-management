@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.service;
 
 import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
 import static org.zalando.problem.Status.NOT_FOUND;
+import static se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationType.EXTERNAL;
 import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.mergeIntoConversationEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.toConversation;
 import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.toConversationEntity;
@@ -131,7 +132,9 @@ public class ConversationService {
 		Optional.ofNullable(attachments).ifPresent(attachment -> messageExchangeScheduler.triggerSyncConversationsAsync());
 
 		try {
-			communicationService.sendMessageNotification(municipalityId, namespace, errandId);
+			if (EXTERNAL.name().equals(conversationEntity.getType())) {
+				communicationService.sendMessageNotification(municipalityId, namespace, errandId);
+			}
 		} catch (final Exception e) {
 			LOGGER.error("Failed to send message notification", e);
 		}
