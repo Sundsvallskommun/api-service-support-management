@@ -11,6 +11,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.util.ReflectionTestUtils.setField;
+import static se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationType.EXTERNAL;
 
 import generated.se.sundsvall.messageexchange.Message;
 import java.io.IOException;
@@ -59,7 +60,7 @@ class ConversationServiceTest {
 	private static final String METADATA_KEY = "METADATA_KEY";
 	private static final String IDENTIFIER_TYPE = "IDENTIFIER_TYPE";
 	private static final String IDENTIFIER_VALUE = "IDENTIFIER_VALUE";
-	private static final ConversationType CONVERSATION_TYPE = ConversationType.EXTERNAL;
+	private static final ConversationType CONVERSATION_TYPE = EXTERNAL;
 	private static final List<String> VALUES_LIST = List.of("value1", "value2");
 	private static final List<String> RELATION_VALUES_LIST = List.of("rel1", "rel2");
 
@@ -233,7 +234,7 @@ class ConversationServiceTest {
 	void createMessage() {
 
 		// Arrange
-		final var conversationEntity = ConversationEntity.create().withId(CONVERSATION_ID).withMessageExchangeId(MESSAGE_EXCHANGE_ID).withErrandId(ERRAND_ID);
+		final var conversationEntity = ConversationEntity.create().withId(CONVERSATION_ID).withType(EXTERNAL.name()).withMessageExchangeId(MESSAGE_EXCHANGE_ID).withErrandId(ERRAND_ID);
 		final var messageRequest = MessageRequest.create();
 
 		when(conversationRepositoryMock.findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID))
@@ -258,7 +259,7 @@ class ConversationServiceTest {
 	void createMessageWithAttachment() {
 
 		// Arrange
-		final var conversationEntity = ConversationEntity.create().withId(CONVERSATION_ID).withMessageExchangeId(MESSAGE_EXCHANGE_ID).withErrandId(ERRAND_ID);
+		final var conversationEntity = ConversationEntity.create().withId(CONVERSATION_ID).withType(EXTERNAL.name()).withMessageExchangeId(MESSAGE_EXCHANGE_ID).withErrandId(ERRAND_ID);
 		final var messageRequest = MessageRequest.create();
 		final var multipartFile = new MockMultipartFile("attachments", "attachment.txt".getBytes());
 
