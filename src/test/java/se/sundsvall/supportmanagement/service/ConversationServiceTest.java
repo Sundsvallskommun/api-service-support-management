@@ -12,6 +12,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.util.ReflectionTestUtils.setField;
 import static se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationType.EXTERNAL;
+import static se.sundsvall.supportmanagement.service.ConversationService.CONVERSATION_DEPARTMENT_ID;
 
 import generated.se.sundsvall.messageexchange.Message;
 import java.io.IOException;
@@ -249,7 +250,7 @@ class ConversationServiceTest {
 		// Assert
 		verify(conversationRepositoryMock).findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID);
 		verify(messageExchangeClientMock).createMessage(eq(MUNICIPALITY_ID), eq(MESSAGE_EXCHANGE_NAMESPACE), eq(MESSAGE_EXCHANGE_ID), any(), eq(null));
-		verify(communicationServiceMock).sendMessageNotification(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID);
+		verify(communicationServiceMock).sendMessageNotification(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_DEPARTMENT_ID);
 
 		verifyNoMoreInteractions(conversationRepositoryMock, messageExchangeClientMock, communicationServiceMock);
 		verifyNoInteractions(messageExchangeSchedulerMock);
@@ -276,7 +277,7 @@ class ConversationServiceTest {
 		verify(conversationRepositoryMock).findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID);
 		verify(messageExchangeClientMock).createMessage(eq(MUNICIPALITY_ID), eq(MESSAGE_EXCHANGE_NAMESPACE), eq(MESSAGE_EXCHANGE_ID), any(), any());
 		verify(messageExchangeSchedulerMock).triggerSyncConversationsAsync();
-		verify(communicationServiceMock).sendMessageNotification(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID);
+		verify(communicationServiceMock).sendMessageNotification(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_DEPARTMENT_ID);
 
 		verifyNoMoreInteractions(conversationRepositoryMock, messageExchangeClientMock, messageExchangeSchedulerMock, communicationServiceMock);
 	}

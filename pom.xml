@@ -6,7 +6,7 @@
 		<artifactId>dept44-service-parent</artifactId>
 		<version>6.0.12</version>
 		<relativePath />
-		<!-- lookup parent from repository -->
+		<!-- lookup parent from the repository -->
 	</parent>
 	<groupId>se.sundsvall</groupId>
 	<artifactId>api-service-support-management</artifactId>

@@ -34,11 +34,10 @@ import se.sundsvall.supportmanagement.service.scheduler.messageexchange.MessageE
 @Service
 public class ConversationService {
 
+	static final String CONVERSATION_DEPARTMENT_ID = "CONVERSATION";
 	private static final Logger LOGGER = org.slf4j.LoggerFactory.getLogger(ConversationService.class);
-
 	private static final String NO_CONVERSATION_ID_RETURNED = "ID of conversation was not returned in location header!";
 	private static final String NO_CONVERSATION_FOUND = "No conversation with ID:'%s', errandId:'%s', municipalityId:'%s' and namespace:'%s' was found!";
-
 	private final MessageExchangeClient messageExchangeClient;
 	private final ConversationRepository conversationRepository;
 	private final MessageExchangeScheduler messageExchangeScheduler;
@@ -133,7 +132,7 @@ public class ConversationService {
 
 		try {
 			if (EXTERNAL.name().equals(conversationEntity.getType())) {
-				communicationService.sendMessageNotification(municipalityId, namespace, errandId);
+				communicationService.sendMessageNotification(municipalityId, namespace, errandId, CONVERSATION_DEPARTMENT_ID);
 			}
 		} catch (final Exception e) {
 			LOGGER.error("Failed to send message notification", e);
