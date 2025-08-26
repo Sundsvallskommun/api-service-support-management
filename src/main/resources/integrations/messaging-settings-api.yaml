@@ -1,15 +1,112 @@
 openapi: 3.0.1
 info:
-  title: api-service-messaging-settings
-  contact: {}
+  title: messaging-settings
+  contact: { }
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "1.0"
+  version: "1.1"
 servers:
-  - url: http://localhost:8080
+  - url: http://10.172.136.39:8080
     description: Generated server url
 paths:
+  /{municipalityId}/{namespace}/{departmentName}/sender-info:
+    get:
+      tags:
+        - Messaging Settings
+      operationId: getSenderInfoByNamespaceAndDepartmentName
+      parameters:
+        - name: municipalityId
+          in: path
+          description: Municipality ID
+          required: true
+          schema:
+            type: string
+          example: 2281
+        - name: namespace
+          in: path
+          description: Namespace
+          required: true
+          schema:
+            type: string
+          example: SKM
+        - name: departmentName
+          in: path
+          description: Department name
+          required: true
+          schema:
+            type: string
+          example: Sundsvalls kommun
+      responses:
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/Problem"
+                  - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server Error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/sender-infos:
+    get:
+      tags:
+        - Messaging Settings
+      summary: Get sender info
+      description: Get sender information for a given municipality and namespace.
+      operationId: getSenderInfoByNamespace
+      parameters:
+        - name: municipalityId
+          in: path
+          description: Municipality ID
+          required: true
+          schema:
+            type: string
+          example: 2281
+        - name: namespace
+          in: path
+          description: Namespace
+          required: true
+          schema:
+            type: string
+          example: SKM
+      responses:
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/Problem"
+                  - $ref: "#/components/schemas/ConstraintViolationProblem"
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SenderInfoResponse"
+        "500":
+          description: Internal Server Error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SenderInfoResponse"
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SenderInfoResponse"
   /{municipalityId}/{departmentId}/sender-info:
     get:
       tags:
@@ -63,7 +160,7 @@ paths:
     get:
       tags:
         - Messaging Settings
-      summary: Get sender info
+      summary: Get callback email
       description: Get callback e-mail for given department and municipality.
       operationId: getCallbackEmail
       parameters:
@@ -88,6 +185,48 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CallbackEmailResponse"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/Problem"
+                  - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server Error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/portal-settings:
+    get:
+      tags:
+        - Messaging Settings
+      summary: Get portal settings
+      description: Get portal settings for given department.
+      operationId: getPortalSettings
+      parameters:
+        - name: municipalityId
+          in: path
+          description: Municipality ID
+          required: true
+          schema:
+            type: string
+          example: 2281
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortalSettingsResponse"
         "404":
           description: Not Found
           content:
@@ -141,9 +280,9 @@ components:
             type: object
         status:
           $ref: "#/components/schemas/StatusType"
-        detail:
-          type: string
         title:
+          type: string
+        detail:
           type: string
     StatusType:
       type: object
@@ -276,9 +415,9 @@ components:
             type: object
         status:
           $ref: "#/components/schemas/StatusType"
-        detail:
-          type: string
         title:
+          type: string
+        detail:
           type: string
         suppressed:
           type: array
@@ -339,6 +478,10 @@ components:
           type: string
           description: Contact information e-mail address
           example: sundsvalls.kommun@sundsvall.se
+        contactInformationEmailName:
+          type: string
+          description: Name of contact information e-mail sender
+          example: Sundsvalls kommun
         smsSender:
           type: string
           description: Name of SMS sender
@@ -352,4 +495,25 @@ components:
           description: Callback e-mail address
           example: no-reply@domain.tld
       description: CallbackEmail response
-  securitySchemes: {}
+    PortalSettingsResponse:
+      type: object
+      properties:
+        municipalityId:
+          type: string
+          description: Municipality ID
+          example: "2281"
+        departmentName:
+          type: string
+          description: Department name
+          example: SKM
+        snailMailMethod:
+          type: string
+          description: Method of delivery
+          example: EMAIL
+          enum:
+            - EMAIL
+            - SC_ADMIN
+            - SC_ADMIN
+            - EMAIL
+      description: PortalSettings response
+  securitySchemes: { }

@@ -270,18 +270,18 @@ public class CommunicationService {
 		communicationRepository.saveAndFlush(communicationEntity);
 	}
 
-	public void sendMessageNotification(final String municipalityId, final String namespace, final String errandId) {
+	public void sendMessageNotification(final String municipalityId, final String namespace, final String errandId, final String departmentId) {
 
 		final var errand = errandsRepository.findByIdAndNamespaceAndMunicipalityId(errandId, namespace, municipalityId)
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, ERRAND_ENTITY_NOT_FOUND.formatted(errandId, namespace, municipalityId)));
 
-		final var senderInfo = getSenderInfo(municipalityId, namespace);
+		final var senderInfo = getSenderInfo(municipalityId, namespace, departmentId);
 
 		sendMessageNotification(errand, senderInfo);
 	}
 
-	private SenderInfoResponse getSenderInfo(final String municipalityId, final String namespace) {
-		final var senderInfo = messagingSettingsClient.getSenderInfo(municipalityId, namespace);
+	private SenderInfoResponse getSenderInfo(final String municipalityId, final String namespace, final String departmentId) {
+		final var senderInfo = messagingSettingsClient.getSenderInfo(municipalityId, namespace, departmentId);
 
 		if (senderInfo == null) {
 			throw Problem.valueOf(INTERNAL_SERVER_ERROR, "Failed to retrieve sender information for municipality '%s' and namespace '%s'".formatted(municipalityId, namespace));

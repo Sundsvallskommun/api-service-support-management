@@ -14,9 +14,10 @@ import se.sundsvall.supportmanagement.integration.messagingsettings.configuratio
 @CircuitBreaker(name = CLIENT_ID)
 public interface MessagingSettingsClient {
 
-	@GetMapping(path = "/{municipalityId}/{departmentId}/sender-info", produces = APPLICATION_JSON_VALUE)
+	@GetMapping(path = "/{municipalityId}/{namespace}/{departmentId}/sender-info", produces = APPLICATION_JSON_VALUE)
 	SenderInfoResponse getSenderInfo(
 		@PathVariable(name = "municipalityId") final String municipalityId,
+		@PathVariable(name = "namespace") final String namespace,
 		@PathVariable(name = "departmentId") final String departmentId);
 
 }

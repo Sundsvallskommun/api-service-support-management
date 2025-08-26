@@ -79,7 +79,7 @@ import se.sundsvall.supportmanagement.service.mapper.MessagingMapper;
 
 @ExtendWith(MockitoExtension.class)
 class CommunicationServiceTest {
-
+	private static final String DEPARTMENT_ID = "departmentId";
 	private static final Decoder BASE64_DECODER = Base64.getDecoder();
 	private static final String NAMESPACE = "namespace";
 	private static final String MUNICIPALITY_ID = "municipalityId";
@@ -709,11 +709,11 @@ class CommunicationServiceTest {
 			.withNamespace(NAMESPACE);
 
 		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(errandId, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(errand));
-		when(messagingSettingsClientMock.getSenderInfo(MUNICIPALITY_ID, NAMESPACE)).thenReturn(new SenderInfoResponse());
+		when(messagingSettingsClientMock.getSenderInfo(MUNICIPALITY_ID, NAMESPACE, DEPARTMENT_ID)).thenReturn(new SenderInfoResponse());
 		when(messagingClientMock.sendMessage(eq(MUNICIPALITY_ID), any())).thenReturn(
 			new MessageResult().messageId(messageId));
 		// Act
-		communicationService.sendMessageNotification(MUNICIPALITY_ID, NAMESPACE, errandId);
+		communicationService.sendMessageNotification(MUNICIPALITY_ID, NAMESPACE, errandId, DEPARTMENT_ID);
 
 		// Assert
 		verify(errandsRepositoryMock).findByIdAndNamespaceAndMunicipalityId(errandId, NAMESPACE, MUNICIPALITY_ID);
@@ -732,15 +732,15 @@ class CommunicationServiceTest {
 			.withMunicipalityId(MUNICIPALITY_ID)
 			.withNamespace(NAMESPACE);
 		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(errandId, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(errand));
-		when(messagingSettingsClientMock.getSenderInfo(MUNICIPALITY_ID, NAMESPACE)).thenReturn(null);
+		when(messagingSettingsClientMock.getSenderInfo(MUNICIPALITY_ID, NAMESPACE, DEPARTMENT_ID)).thenReturn(null);
 
 		// Act & Assert
-		assertThatThrownBy(() -> communicationService.sendMessageNotification(MUNICIPALITY_ID, NAMESPACE, errandId))
+		assertThatThrownBy(() -> communicationService.sendMessageNotification(MUNICIPALITY_ID, NAMESPACE, errandId, DEPARTMENT_ID))
 			.isInstanceOf(ThrowableProblem.class)
 			.hasFieldOrPropertyWithValue("status", Status.INTERNAL_SERVER_ERROR)
 			.hasFieldOrPropertyWithValue("message", "Internal Server Error: Failed to retrieve sender information for municipality '" + MUNICIPALITY_ID + "' and namespace '" + NAMESPACE + "'");
 		verify(errandsRepositoryMock).findByIdAndNamespaceAndMunicipalityId(errandId, NAMESPACE, MUNICIPALITY_ID);
-		verify(messagingSettingsClientMock).getSenderInfo(MUNICIPALITY_ID, NAMESPACE);
+		verify(messagingSettingsClientMock).getSenderInfo(MUNICIPALITY_ID, NAMESPACE, DEPARTMENT_ID);
 		verifyNoInteractions(messagingClientMock, communicationMapperMock);
 
 	}
@@ -752,7 +752,7 @@ class CommunicationServiceTest {
 		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(errandId, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.empty());
 
 		// Act & Assert
-		assertThatThrownBy(() -> communicationService.sendMessageNotification(MUNICIPALITY_ID, NAMESPACE, errandId))
+		assertThatThrownBy(() -> communicationService.sendMessageNotification(MUNICIPALITY_ID, NAMESPACE, errandId, DEPARTMENT_ID))
 			.isInstanceOf(ThrowableProblem.class)
 			.hasFieldOrPropertyWithValue("status", Status.NOT_FOUND)
 			.hasFieldOrPropertyWithValue("message", "Not Found: An errand with id '" + errandId + "' could not be found in namespace '" + NAMESPACE + "' for municipality with id '" + MUNICIPALITY_ID + "'");
@@ -774,11 +774,11 @@ class CommunicationServiceTest {
 		Identifier.set(Identifier.create().withType(PARTY_ID).withValue("e82c8029-7676-467d-8ebb-8638d0abd2b4"));
 
 		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(errandId, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(errand));
-		when(messagingSettingsClientMock.getSenderInfo(MUNICIPALITY_ID, NAMESPACE)).thenReturn(new SenderInfoResponse());
+		when(messagingSettingsClientMock.getSenderInfo(MUNICIPALITY_ID, NAMESPACE, DEPARTMENT_ID)).thenReturn(new SenderInfoResponse());
 		when(messagingClientMock.sendMessage(eq(MUNICIPALITY_ID), any())).thenReturn(null);
 
 		// Act & Assert
-		assertThatThrownBy(() -> communicationService.sendMessageNotification(MUNICIPALITY_ID, NAMESPACE, errandId))
+		assertThatThrownBy(() -> communicationService.sendMessageNotification(MUNICIPALITY_ID, NAMESPACE, errandId, DEPARTMENT_ID))
 			.isInstanceOf(ThrowableProblem.class)
 			.hasFieldOrPropertyWithValue("status", Status.INTERNAL_SERVER_ERROR)
 			.hasFieldOrPropertyWithValue("message", "Internal Server Error: Failed to create message notification");

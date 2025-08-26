@@ -1,7 +1,7 @@
 {
 	"request": {
 		"method": "GET",
-		"url": "/api-messaging-settings/2281/NAMESPACE-1/sender-info"
+		"url": "/api-messaging-settings/2281/NAMESPACE-1/CONVERSATION/sender-info"
 	},
 	"response": {
 		"headers": {
