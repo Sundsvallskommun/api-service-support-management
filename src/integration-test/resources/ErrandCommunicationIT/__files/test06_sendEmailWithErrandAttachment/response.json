@@ -29,6 +29,9 @@
 		"sent": "${json-unit.any-string}",
 		"direction": "OUTBOUND",
 		"target": "john.a@zoidberg.com",
+		"recipients": [
+			"john.a@zoidberg.com"
+		],
 		"internal": false
 	}
 ]

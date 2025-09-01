@@ -66,6 +66,7 @@ class CommunicationTest {
 			.withSubject(subject)
 			.withCommunicationType(messageType)
 			.withTarget(target)
+			.withRecipients(List.of(target))
 			.withViewed(viewed)
 			.withCommunicationAttachments(communicationAttachments)
 			.withEmailHeaders(emailHeaders)
@@ -81,6 +82,7 @@ class CommunicationTest {
 		assertThat(bean.getSubject()).isEqualTo(subject);
 		assertThat(bean.getCommunicationType()).isEqualTo(messageType);
 		assertThat(bean.getTarget()).isEqualTo(target);
+		assertThat(bean.getRecipients()).isEqualTo(List.of(target));
 		assertThat(bean.getViewed()).isEqualTo(viewed);
 		assertThat(bean.getCommunicationAttachments()).isEqualTo(communicationAttachments);
 		assertThat(bean.getEmailHeaders()).isEqualTo(emailHeaders);

@@ -185,7 +185,7 @@ class CommunicationMapperTest {
 
 		final var communicationEntity = communicationMapper.toCommunicationEntity(NAMESPACE, MUNICIPALITY_ID, ERRAND_NUMBER, webMessageRequest, fullName, adUser);
 
-		assertThat(communicationEntity).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "externalId", "sender", "target", "subject", "errandAttachments", "emailHeaders");
+		assertThat(communicationEntity).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "externalId", "sender", "target", "recipients", "subject", "errandAttachments", "emailHeaders");
 		assertThat(communicationEntity.getErrandNumber()).isEqualTo(ERRAND_NUMBER);
 		assertThat(communicationEntity.getDirection()).isEqualTo(Direction.OUTBOUND);
 		assertThat(communicationEntity.getType()).isEqualTo(CommunicationType.WEB_MESSAGE);
@@ -212,6 +212,7 @@ class CommunicationMapperTest {
 			.withSubject("testSubject")
 			.withType(CommunicationType.EMAIL)
 			.withTarget("target")
+			.withRecipients(List.of("target"))
 			.withViewed(true)
 			.withInternal(true)
 			.withEmailHeaders(Collections.singletonList(CommunicationEmailHeaderEntity.create().withHeader(EmailHeader.IN_REPLY_TO).withValues(Collections.singletonList("someValue"))))

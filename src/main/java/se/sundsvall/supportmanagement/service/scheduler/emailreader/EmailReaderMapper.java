@@ -54,6 +54,7 @@ public class EmailReaderMapper {
 			.withSent(email.getReceivedAt())
 			.withType(CommunicationType.EMAIL)
 			.withTarget(Optional.ofNullable(email.getRecipients()).orElse(emptyList()).stream().findFirst().orElse(null))
+			.withRecipients(Optional.ofNullable(email.getRecipients()).orElse(emptyList()))
 			.withEmailHeaders(toEmailHeaders(email))
 			.withAttachments(toMessageAttachments(email.getAttachments(), errand));
 	}

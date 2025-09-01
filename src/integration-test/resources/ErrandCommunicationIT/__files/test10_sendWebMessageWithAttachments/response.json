@@ -21,6 +21,7 @@
 		"communicationType": "WEB_MESSAGE",
 		"sent": "${json-unit.ignore}",
 		"direction": "OUTBOUND",
-		"internal": false
+		"internal": false,
+		"recipients": []
 	}
 ]

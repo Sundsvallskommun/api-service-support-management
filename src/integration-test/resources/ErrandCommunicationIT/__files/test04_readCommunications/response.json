@@ -1,26 +1,39 @@
 [
 	{
+		"communicationID": "59328e70-4297-4bb5-ba69-cb17f2d15a17",
+		"sender": "Test Testorsson",
+		"errandNumber": "KC-23020001",
+		"direction": "OUTBOUND",
+		"messageBody": "message body 2",
+		"sent": "2023-01-02T12:00:00+01:00",
+		"subject": "subject2",
+		"communicationType": "EMAIL",
+		"target": "0987654321",
+		"recipients": [],
+		"internal": true,
+		"viewed": true,
 		"emailHeaders": {},
 		"communicationAttachments": [
 			{
-				"fileName": "attachment2",
 				"id": "05b29c30-4512-46c0-9d82-d0f11cb04bae",
+				"fileName": "attachment2",
 				"mimeType": "image/jpeg"
 			}
-		],
-		"messageBody": "message body 2",
-		"sender": "Test Testorsson",
-		"errandNumber": "KC-23020001",
-		"subject": "subject2",
-		"communicationID": "59328e70-4297-4bb5-ba69-cb17f2d15a17",
-		"viewed": true,
-		"communicationType": "EMAIL",
-		"sent": "2023-01-02T12:00:00+01:00",
-		"direction": "OUTBOUND",
-		"target": "0987654321",
-		"internal": true
+		]
 	},
 	{
+		"communicationID": "cc236cf1-c00f-4479-8341-ecf5dd90b5b9",
+		"sender": "Test Testorsson",
+		"errandNumber": "KC-23020001",
+		"direction": "INBOUND",
+		"messageBody": "message body 1",
+		"sent": "2023-01-01T12:00:00+01:00",
+		"subject": "subject1",
+		"communicationType": "SMS",
+		"target": "1234567890",
+		"recipients": [],
+		"internal": false,
+		"viewed": false,
 		"emailHeaders": {
 			"REFERENCES": [
 				"someValue",
@@ -29,21 +42,10 @@
 		},
 		"communicationAttachments": [
 			{
-				"fileName": "attachment1",
 				"id": "896a44d8-724b-11ed-a840-0242ac110002",
+				"fileName": "attachment1",
 				"mimeType": "text/plain"
 			}
-		],
-		"messageBody": "message body 1",
-		"sender": "Test Testorsson",
-		"errandNumber": "KC-23020001",
-		"subject": "subject1",
-		"communicationID": "cc236cf1-c00f-4479-8341-ecf5dd90b5b9",
-		"viewed": false,
-		"communicationType": "SMS",
-		"sent": "2023-01-01T12:00:00+01:00",
-		"direction": "INBOUND",
-		"target": "1234567890",
-		"internal": false
+		]
 	}
 ]
