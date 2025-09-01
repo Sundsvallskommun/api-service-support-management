@@ -49,6 +49,7 @@ class CommunicationRepositoryTest {
 			.withSent(OffsetDateTime.now())
 			.withType(CommunicationType.EMAIL)
 			.withTarget("target")
+			.withRecipients(List.of("recipient"))
 			.withViewed(true)
 			.withInternal(true)
 			.withAttachments(List.of(CommunicationAttachmentEntity.create()));

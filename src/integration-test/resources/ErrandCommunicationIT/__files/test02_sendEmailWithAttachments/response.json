@@ -27,6 +27,9 @@
 		"sent": "${json-unit.ignore}",
 		"direction": "OUTBOUND",
 		"target": "turanga@leela.com",
+		"recipients": [
+			"turanga@leela.com"
+		],
 		"internal": false
 	}
 ]

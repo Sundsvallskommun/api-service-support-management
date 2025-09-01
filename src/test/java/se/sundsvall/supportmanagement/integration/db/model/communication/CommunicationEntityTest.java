@@ -78,6 +78,7 @@ class CommunicationEntityTest {
 			.withSent(sent)
 			.withType(type)
 			.withTarget(target)
+			.withRecipients(List.of(target))
 			.withViewed(viewed)
 			.withErrandAttachments(errandAttachments)
 			.withAttachments(attachments)
@@ -98,6 +99,7 @@ class CommunicationEntityTest {
 		assertThat(entity.getSent()).isEqualTo(sent);
 		assertThat(entity.getType()).isEqualTo(type);
 		assertThat(entity.getTarget()).isEqualTo(target);
+		assertThat(entity.getRecipients()).isEqualTo(List.of(target));
 		assertThat(entity.getErrandAttachments()).isEqualTo(errandAttachments);
 		assertThat(entity.isViewed()).isEqualTo(viewed);
 		assertThat(entity.getAttachments()).isEqualTo(attachments);

@@ -31,19 +31,22 @@ public class Communication {
 	@DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
 	private OffsetDateTime sent;
 
-	@Schema(description = "The email-subject of the message", example = "Hello world")
+	@Schema(description = "The email-subject of the communication", example = "Hello world")
 	private String subject;
 
-	@Schema(description = "The message was delivered by", example = "EMAIL")
+	@Schema(description = "The communication was delivered by", example = "EMAIL")
 	private CommunicationType communicationType;
 
 	@Schema(description = "The mobile number or email adress the communication was sent to", example = "+46701234567")
 	private String target;
 
-	@Schema(description = "Indicates if the message is internal", example = "false")
+	@Schema(description = "The recipients of the communication, if email", example = "[\"kalle.anka@ankeborg.se\"]")
+	private List<String> recipients;
+
+	@Schema(description = "Indicates if the communication is internal", example = "false")
 	private boolean internal;
 
-	@Schema(description = "Signal if the message has been viewed or not", example = "true")
+	@Schema(description = "Signal if the communication has been viewed or not", example = "true")
 	private Boolean viewed;
 
 	@Schema(description = "Headers for keeping track of email conversations", example = "{\"IN_REPLY_TO\": [\"reply-to@example.com\"], \"REFERENCES\": [\"reference1\", \"reference2\"], \"MESSAGE_ID\": [\"123456789\"]}")
@@ -186,6 +189,19 @@ public class Communication {
 		return this;
 	}
 
+	public List<String> getRecipients() {
+		return recipients;
+	}
+
+	public void setRecipients(final List<String> recipients) {
+		this.recipients = recipients;
+	}
+
+	public Communication withRecipients(final List<String> recipients) {
+		this.recipients = recipients;
+		return this;
+	}
+
 	public Boolean getViewed() {
 		return viewed;
 	}
@@ -227,18 +243,18 @@ public class Communication {
 
 	@Override
 	public boolean equals(final Object o) {
-		if (o == null || getClass() != o.getClass()) {
+		if (o == null || getClass() != o.getClass())
 			return false;
-		}
 		final Communication that = (Communication) o;
-		return viewed == that.viewed && Objects.equals(communicationID, that.communicationID) && Objects.equals(sender, that.sender) && Objects.equals(errandNumber, that.errandNumber) && direction == that.direction
+		return internal == that.internal && Objects.equals(communicationID, that.communicationID) && Objects.equals(sender, that.sender) && Objects.equals(errandNumber, that.errandNumber) && direction == that.direction
 			&& Objects.equals(messageBody, that.messageBody) && Objects.equals(sent, that.sent) && Objects.equals(subject, that.subject) && communicationType == that.communicationType && Objects.equals(target,
-				that.target) && Objects.equals(internal, that.internal) && Objects.equals(emailHeaders, that.emailHeaders) && Objects.equals(communicationAttachments, that.communicationAttachments);
+				that.target) && Objects.equals(recipients, that.recipients) && Objects.equals(viewed, that.viewed) && Objects.equals(emailHeaders, that.emailHeaders) && Objects.equals(communicationAttachments,
+					that.communicationAttachments);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(communicationID, sender, errandNumber, direction, messageBody, sent, subject, communicationType, target, internal, viewed, emailHeaders, communicationAttachments);
+		return Objects.hash(communicationID, sender, errandNumber, direction, messageBody, sent, subject, communicationType, target, recipients, internal, viewed, emailHeaders, communicationAttachments);
 	}
 
 	@Override
@@ -253,6 +269,7 @@ public class Communication {
 			", subject='" + subject + '\'' +
 			", communicationType=" + communicationType +
 			", target='" + target + '\'' +
+			", recipients=" + recipients +
 			", internal=" + internal +
 			", viewed=" + viewed +
 			", emailHeaders=" + emailHeaders +
