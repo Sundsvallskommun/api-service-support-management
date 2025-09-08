@@ -44,16 +44,22 @@ class MessageExchangeSyncConfigServiceTest {
 
 	@Mock
 	private MessageExchangeClient messageExchangeClientMock;
+
 	@Mock
 	private ErrandAttachmentService attachmentServiceMock;
+
 	@Mock
 	private ConversationRepository conversationRepositoryMock;
+
 	@Mock
 	private ErrandsRepository errandsRepositoryMock;
+
 	@Mock
 	private EventService eventServiceMock;
+
 	@Captor
 	private ArgumentCaptor<ConversationEntity> conversationEntityCaptor;
+
 	@InjectMocks
 	private MessageExchangeSyncService service;
 
@@ -117,7 +123,7 @@ class MessageExchangeSyncConfigServiceTest {
 		// Assert
 		verify(errandsRepositoryMock).getReferenceById(errandId);
 		verify(messageExchangeClientMock).getMessages(municipalityId, MESSAGE_EXCHANGE_NS, messageExchangeId, "sequenceNumber.id >123", Pageable.unpaged());
-		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Ny händelse i konversation topic"), same(errandEntity), eq(null), eq(null), eq(true), eq(NotificationSubType.MESSAGE));
+		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Ny händelse för topic"), same(errandEntity), eq(null), eq(null), eq(true), eq(NotificationSubType.MESSAGE));
 		verify(conversationRepositoryMock).save(conversationEntityCaptor.capture());
 
 		final var savedEntity = conversationEntityCaptor.getValue();
