@@ -21,7 +21,7 @@ import se.sundsvall.supportmanagement.integration.messageexchange.MessageExchang
 @Service
 public class MessageExchangeSyncService {
 
-	private static final String EVENT_LOG_CONVERSATION = "Ny händelse i konversation %s";
+	private static final String EVENT_LOG_CONVERSATION = "Ny händelse för %s";
 
 	private final MessageExchangeClient messageExchangeClient;
 	private final ErrandAttachmentService attachmentService;
