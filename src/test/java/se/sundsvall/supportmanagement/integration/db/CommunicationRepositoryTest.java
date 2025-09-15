@@ -35,7 +35,7 @@ class CommunicationRepositoryTest {
 	void create() {
 		// Setup
 		final var communicationEntity = CommunicationEntity.create()
-			.withMunicipalityId("municipalityId")
+			.withMunicipalityId("2281")
 			.withNamespace("namespace")
 			.withErrandAttachments(List.of(AttachmentEntity.create()))
 			.withEmailHeaders(List.of(CommunicationEmailHeaderEntity.create()))
@@ -74,7 +74,7 @@ class CommunicationRepositoryTest {
 		assertThat(persistedEntity.getEmailHeaders()).hasSize(1);
 		assertThat(persistedEntity.getErrandAttachments()).hasSize(1);
 		assertThat(persistedEntity.getNamespace()).isEqualTo("namespace");
-		assertThat(persistedEntity.getMunicipalityId()).isEqualTo("municipalityId");
+		assertThat(persistedEntity.getMunicipalityId()).isEqualTo("2281");
 		assertThat(persistedEntity.isInternal()).isTrue();
 	}
 
@@ -114,5 +114,4 @@ class CommunicationRepositoryTest {
 		final var communications = communicationRepository.findByErrandNumberAndInternal("errand1", true);
 		assertThat(communications).isNotEmpty().hasSize(1).allMatch(CommunicationEntity::isInternal);
 	}
-
 }

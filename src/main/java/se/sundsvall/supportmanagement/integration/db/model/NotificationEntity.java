@@ -82,10 +82,10 @@ public class NotificationEntity {
 	@JoinColumn(name = "errand_id", foreignKey = @ForeignKey(name = "fk_notification_errand_id"))
 	private ErrandEntity errandEntity;
 
-	@Column(name = "municipality_id", nullable = false)
+	@Column(name = "municipality_id", nullable = false, length = 8)
 	private String municipalityId;
 
-	@Column(name = "namespace", nullable = false)
+	@Column(name = "namespace", nullable = false, length = 32)
 	private String namespace;
 
 	public static NotificationEntity create() {

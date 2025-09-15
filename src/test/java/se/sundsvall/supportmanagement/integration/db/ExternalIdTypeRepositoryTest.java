@@ -37,7 +37,7 @@ class ExternalIdTypeRepositoryTest {
 	@Test
 	void create() {
 		// Setup
-		final var municipalityId = "municipalityId-1";
+		final var municipalityId = "2281";
 		final var name = "external-id-type-4";
 		final var namespace = "namespace-1";
 		final var entity = ExternalIdTypeEntity.create()
@@ -64,7 +64,7 @@ class ExternalIdTypeRepositoryTest {
 	@Test
 	void update() {
 		// Setup
-		final var municipalityId = "municipalityId-1";
+		final var municipalityId = "2281";
 		final var name = "external-id-type-1";
 		final var namespace = "namespace-1";
 		final var entity = ExternalIdTypeEntity.create()
@@ -93,7 +93,7 @@ class ExternalIdTypeRepositoryTest {
 	@Test
 	void getByNamespaceAndMunicipalityIdAndName() {
 		// Setup
-		final var municipalityId = "municipalityId-1";
+		final var municipalityId = "2281";
 		final var namespace = "namespace-1";
 		final var name = "external-id-type-3";
 
@@ -110,7 +110,7 @@ class ExternalIdTypeRepositoryTest {
 	@Test
 	void existsByNamespaceAndMunicipalityIdAndName() {
 		// Setup
-		final var municipalityId = "municipalityId-1";
+		final var municipalityId = "2281";
 		final var namespace = "namespace-1";
 		final var existing_external_id_type = "external-id-type-3";
 		final var nonexisting_external_id_type = "external-id-type-4";
@@ -123,7 +123,7 @@ class ExternalIdTypeRepositoryTest {
 	@Test
 	void findAllByNamespaceAndMunicipalityId() {
 		// Setup
-		final var municipalityId = "municipalityId-1";
+		final var municipalityId = "2281";
 		final var namespace = "namespace-1";
 
 		final var matches = externalIdTypeRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId);

@@ -37,10 +37,10 @@ public class CommunicationAttachmentEntity {
 	@Column(name = "id")
 	private String id;
 
-	@Column(name = "namespace")
+	@Column(name = "namespace", length = 32)
 	private String namespace;
 
-	@Column(name = "municipality_id")
+	@Column(name = "municipality_id", length = 8)
 	private String municipalityId;
 
 	@Column(name = "file_name")

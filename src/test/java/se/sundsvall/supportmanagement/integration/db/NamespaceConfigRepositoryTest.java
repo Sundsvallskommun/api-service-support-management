@@ -28,19 +28,19 @@ class NamespaceConfigRepositoryTest {
 
 	@Test
 	void findByNamespaceAndMunicipalityId() {
-		final var result = repository.findByNamespaceAndMunicipalityId("namespace-1", "municipality_id-1");
+		final var result = repository.findByNamespaceAndMunicipalityId("namespace-1", "2281");
 		assertThat(result).isPresent();
 	}
 
 	@Test
 	void existsByNamespaceAndMunicipalityId() {
-		assertThat(repository.existsByNamespaceAndMunicipalityId("NAMEspace-1", "municipality_id-1")).isTrue();
-		assertThat(repository.existsByNamespaceAndMunicipalityId("namespace-99", "municipality_id-99")).isFalse();
+		assertThat(repository.existsByNamespaceAndMunicipalityId("NAMEspace-1", "2281")).isTrue();
+		assertThat(repository.existsByNamespaceAndMunicipalityId("namespace-99", "2289")).isFalse();
 	}
 
 	@Test
 	void findAllByMunicipalityId() {
-		final var municipalityId = "municipality_id-1";
+		final var municipalityId = "2281";
 		final var result = repository.findAllByMunicipalityId(municipalityId);
 
 		assertThat(result).hasSize(2).satisfiesExactlyInAnyOrder(bean -> {
@@ -63,19 +63,19 @@ class NamespaceConfigRepositoryTest {
 		final var result = repository.findAll();
 
 		assertThat(result).hasSize(3).satisfiesExactlyInAnyOrder(bean -> {
-			assertThat(bean.getMunicipalityId()).isEqualTo("municipality_id-1");
+			assertThat(bean.getMunicipalityId()).isEqualTo("2281");
 			assertThat(bean.getNamespace()).isEqualTo("namespace-1");
 			assertThat(bean.getDisplayName()).isEqualTo("display name 1");
 			assertThat(bean.getShortCode()).isEqualTo("short_code-1");
 			assertThat(bean.getNotificationTTLInDays()).isEqualTo(10);
 		}, bean -> {
-			assertThat(bean.getMunicipalityId()).isEqualTo("municipality_id-2");
+			assertThat(bean.getMunicipalityId()).isEqualTo("2282");
 			assertThat(bean.getNamespace()).isEqualTo("namespace-2");
 			assertThat(bean.getDisplayName()).isEqualTo("display name 2");
 			assertThat(bean.getShortCode()).isEqualTo("short_code-2");
 			assertThat(bean.getNotificationTTLInDays()).isEqualTo(20);
 		}, bean -> {
-			assertThat(bean.getMunicipalityId()).isEqualTo("municipality_id-1");
+			assertThat(bean.getMunicipalityId()).isEqualTo("2281");
 			assertThat(bean.getNamespace()).isEqualTo("namespace-3");
 			assertThat(bean.getDisplayName()).isEqualTo("display name 3");
 			assertThat(bean.getShortCode()).isEqualTo("short_code-3");
@@ -86,7 +86,7 @@ class NamespaceConfigRepositoryTest {
 	@Test
 	void create() {
 
-		final var municipalityId = "municipalityId";
+		final var municipalityId = "2281";
 		final var namespace = "namespace";
 		final var displayName = "displayName";
 		final var shortCode = "shortCode";
@@ -118,7 +118,7 @@ class NamespaceConfigRepositoryTest {
 
 	@Test
 	void update() {
-		final var entity = repository.findByNamespaceAndMunicipalityId("namespace-1", "municipality_id-1")
+		final var entity = repository.findByNamespaceAndMunicipalityId("namespace-1", "2281")
 			.orElseThrow(() -> new RuntimeException("Missing data in /db/scripts/testdata-junit.sql"));
 
 		assertThat(entity.getDisplayName()).isEqualTo("display name 1");
@@ -128,7 +128,7 @@ class NamespaceConfigRepositoryTest {
 			.withDisplayName("new displayname")
 			.withShortCode("newCode"));
 
-		final var modifiedEntity = repository.findByNamespaceAndMunicipalityId("namespace-1", "municipality_id-1");
+		final var modifiedEntity = repository.findByNamespaceAndMunicipalityId("namespace-1", "2281");
 		assertThat(modifiedEntity).isPresent().get().satisfies(bean -> {
 			assertThat(bean.getDisplayName()).isEqualTo("new displayname");
 			assertThat(bean.getShortCode()).isEqualTo("newCode");
@@ -138,12 +138,12 @@ class NamespaceConfigRepositoryTest {
 
 	@Test
 	void delete() {
-		assertThat(repository.existsByNamespaceAndMunicipalityId("namespace-1", "municipality_id-1")).isTrue();
-		assertThat(repository.existsByNamespaceAndMunicipalityId("namespace-2", "municipality_id-2")).isTrue();
+		assertThat(repository.existsByNamespaceAndMunicipalityId("namespace-1", "2281")).isTrue();
+		assertThat(repository.existsByNamespaceAndMunicipalityId("namespace-2", "2282")).isTrue();
 
-		repository.deleteByNamespaceAndMunicipalityId("namespace-1", "municipality_id-1");
+		repository.deleteByNamespaceAndMunicipalityId("namespace-1", "2281");
 
-		assertThat(repository.existsByNamespaceAndMunicipalityId("namespace-1", "municipality_id-1")).isFalse();
-		assertThat(repository.existsByNamespaceAndMunicipalityId("namespace-2", "municipality_id-2")).isTrue();
+		assertThat(repository.existsByNamespaceAndMunicipalityId("namespace-1", "2281")).isFalse();
+		assertThat(repository.existsByNamespaceAndMunicipalityId("namespace-2", "2282")).isTrue();
 	}
 }
