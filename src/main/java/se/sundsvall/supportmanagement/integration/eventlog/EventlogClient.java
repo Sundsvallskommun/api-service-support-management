@@ -46,5 +46,4 @@ public interface EventlogClient {
 		@PathVariable("municipalityId") String municipalityId,
 		@PathVariable("logKey") String logKey,
 		@QueryMap Pageable pageable);
-
 }
