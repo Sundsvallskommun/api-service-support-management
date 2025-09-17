@@ -42,7 +42,7 @@ class CategoryRepositoryTest {
 	@Test
 	void create() {
 		// Setup
-		final var municipalityId = "municipalityId-1";
+		final var municipalityId = "2281";
 		final var name = "category-4";
 		final var namespace = "namespace-1";
 		final var displayName = "category-display-name-4";
@@ -86,7 +86,7 @@ class CategoryRepositoryTest {
 	@Test
 	void update() {
 		// Setup
-		final var municipalityId = "municipalityId-1";
+		final var municipalityId = "2281";
 		final var name = "category-1";
 		final var namespace = "namespace-1";
 		final var filter = CategoryEntity.create()
@@ -124,7 +124,7 @@ class CategoryRepositoryTest {
 	@Test
 	void findAllByNamespaceAndMunicipalityId() {
 		// Setup
-		final var municipalityId = "municipalityId-1";
+		final var municipalityId = "2281";
 		final var namespace = "namespace-1";
 
 		final var matches = categoryRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId);
@@ -158,7 +158,7 @@ class CategoryRepositoryTest {
 	@Test
 	void getCategoryByNamespaceAndMunicipalityIdAndName() {
 		// Setup
-		final var municipalityId = "municipalityId-1";
+		final var municipalityId = "2281";
 		final var namespace = "namespace-1";
 		final var category = "category-1";
 
@@ -175,7 +175,7 @@ class CategoryRepositoryTest {
 	@Test
 	void existsByNamespaceAndMunicipalityIdAndName() {
 		// Setup
-		final var municipalityId = "municipalityId-1";
+		final var municipalityId = "2281";
 		final var namespace = "namespace-1";
 		final var existing_categoryname = "category-3";
 		final var nonexisting_categoryname = "category-4";

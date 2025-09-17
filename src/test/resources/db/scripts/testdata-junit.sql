@@ -2,11 +2,11 @@
 -- Category and Type
 -------------------------------------
 INSERT INTO category(id, created, display_name, modified, municipality_id, name, namespace) 
-VALUES (100, now(), 'category-display-name-1', null, 'municipalityId-1', 'category-1', 'namespace-1'),
-       (101, now(), 'category-display-name-2', null, 'municipalityId-1', 'category-2', 'namespace-1'),
-       (102, now(), 'category-display-name-3', null, 'municipalityId-1', 'category-3', 'namespace-1'),
-       (104, now(), 'category-display-name-1', null, 'municipalityId-1', 'category-1', 'namespace-2'),
-       (105, now(), 'category-display-name-1', null, 'municipalityId-2', 'category-1', 'namespace-1');
+VALUES (100, now(), 'category-display-name-1', null, '2281', 'category-1', 'namespace-1'),
+       (101, now(), 'category-display-name-2', null, '2281', 'category-2', 'namespace-1'),
+       (102, now(), 'category-display-name-3', null, '2281', 'category-3', 'namespace-1'),
+       (104, now(), 'category-display-name-1', null, '2281', 'category-1', 'namespace-2'),
+       (105, now(), 'category-display-name-1', null, '2282', 'category-1', 'namespace-1');
 
 INSERT INTO type(id, created, display_name, escalation_email, modified, name, category_id) 
 VALUES (100, now(), 'type-display-name-1', 'escalation-email-1', null, 'type-1', 100),
@@ -20,43 +20,43 @@ VALUES (100, now(), 'type-display-name-1', 'escalation-email-1', null, 'type-1',
 -- ExternalIdType
 -------------------------------------
 INSERT INTO external_id_type(id, created, modified, municipality_id, name, namespace) 
-VALUES (100, now(), null, 'municipalityId-1', 'external-id-type-1', 'namespace-1'),
-       (101, now(), null, 'municipalityId-1', 'external-id-type-2', 'namespace-1'),
-       (102, now(), null, 'municipalityId-1', 'external-id-type-3', 'namespace-1'),
-       (104, now(), null, 'municipalityId-1', 'external-id-type-1', 'namespace-2'),
-       (105, now(), null, 'municipalityId-2', 'external-id-type-1', 'namespace-1'),
-       (106, now(), null, 'municipalityId-2', 'external-id-type-2', 'namespace-1');
+VALUES (100, now(), null, '2281', 'external-id-type-1', 'namespace-1'),
+       (101, now(), null, '2281', 'external-id-type-2', 'namespace-1'),
+       (102, now(), null, '2281', 'external-id-type-3', 'namespace-1'),
+       (104, now(), null, '2281', 'external-id-type-1', 'namespace-2'),
+       (105, now(), null, '2282', 'external-id-type-1', 'namespace-1'),
+       (106, now(), null, '2282', 'external-id-type-2', 'namespace-1');
  
 -------------------------------------
 -- Status
 -------------------------------------
 INSERT INTO status(id, created, modified, municipality_id, name, namespace) 
-VALUES (100, now(), null, 'municipalityId-1', 'status-1', 'namespace-1'),
-       (101, now(), null, 'municipalityId-1', 'status-2', 'namespace-1'),
-       (102, now(), null, 'municipalityId-1', 'status-3', 'namespace-1'),
-       (104, now(), null, 'municipalityId-1', 'status-1', 'namespace-2'),
-       (105, now(), null, 'municipalityId-2', 'status-1', 'namespace-1'),
-       (106, now(), null, 'municipalityId-2', 'status-2', 'namespace-1');
+VALUES (100, now(), null, '2281', 'status-1', 'namespace-1'),
+       (101, now(), null, '2281', 'status-2', 'namespace-1'),
+       (102, now(), null, '2281', 'status-3', 'namespace-1'),
+       (104, now(), null, '2281', 'status-1', 'namespace-2'),
+       (105, now(), null, '2282', 'status-1', 'namespace-1'),
+       (106, now(), null, '2282', 'status-2', 'namespace-1');
 
 -------------------------------------
 -- Role
 -------------------------------------
 INSERT INTO role(id, created, modified, municipality_id, name, namespace) 
-VALUES (100, now(), null, 'municipalityId-1', 'role-1', 'namespace-1'),
-       (101, now(), null, 'municipalityId-1', 'role-2', 'namespace-1'),
-       (102, now(), null, 'municipalityId-1', 'role-3', 'namespace-1'),
-       (104, now(), null, 'municipalityId-1', 'role-1', 'namespace-2'),
-       (105, now(), null, 'municipalityId-2', 'role-1', 'namespace-1'),
-       (106, now(), null, 'municipalityId-2', 'role-2', 'namespace-1');
+VALUES (100, now(), null, '2281', 'role-1', 'namespace-1'),
+       (101, now(), null, '2281', 'role-2', 'namespace-1'),
+       (102, now(), null, '2281', 'role-3', 'namespace-1'),
+       (104, now(), null, '2281', 'role-1', 'namespace-2'),
+       (105, now(), null, '2282', 'role-1', 'namespace-1'),
+       (106, now(), null, '2282', 'role-2', 'namespace-1');
        
 -------------------------------------
 -- Validation
 -------------------------------------
 INSERT INTO validation(id, municipality_id, namespace, `type`, created, modified, validated)
-VALUES (100, 'municipalityId-1', 'namespace-1', 'CATEGORY', now(), null, true),
-       (101, 'municipalityId-1', 'namespace-1', 'TYPE', now(), null, false),
-       (102, 'municipalityId-1', 'namespace-2', 'CATEGORY', now(), null, false),
-       (103, 'municipalityId-1', 'namespace-2', 'STATUS', now(), null, true);
+VALUES (100, '2281', 'namespace-1', 'CATEGORY', now(), null, true),
+       (101, '2281', 'namespace-1', 'TYPE', now(), null, false),
+       (102, '2281', 'namespace-2', 'CATEGORY', now(), null, false),
+       (103, '2281', 'namespace-2', 'STATUS', now(), null, true);
        
 -------------------------------------
 -- Errand
@@ -129,8 +129,8 @@ VALUES ('59328e70-4297-4bb5-ba69-cb17f2d15a17', '9791682e-4ba8-4f3a-857a-54e1483
 -- Label
 -------------------------------------
 INSERT INTO label(id, created, municipality_id, namespace, json_structure)
-VALUES (1, now(), 'municipalityId-1', 'namespace-1', '[{"key": "value"}]'),
-       (2, now(), 'municipalityId-2', 'namespace-1', '[{"key": "value"}]');
+VALUES (1, now(), '2281', 'namespace-1', '[{"key": "value"}]'),
+       (2, now(), '2282', 'namespace-1', '[{"key": "value"}]');
 
 -------------------------------------
 -- Communication
@@ -154,9 +154,9 @@ VALUES (1, 'attach1', 'comm1', 'text/plain', 'attachment1'),
 -- Notification
 -------------------------------------
 INSERT INTO notification(acknowledged, global_acknowledged, created, expires, modified, content, created_by, description, errand_id, id, municipality_id, namespace, owner_full_name, owner_id, type)
-VALUES	(0, 0, now(), '2023-12-31 23:59:59.999', now(), 'content-1', 'created_by-1', 'description-1', 'ERRAND_ID-1', '1', 'municipalityId-1', 'namespace-1', 'owner_full_name-1', 'owner_id-1', 'type-1'),
-		(0, 0, now(), '2024-12-31 23:59:59.999', now(), 'content-2', 'created_by-2', 'description-2', 'ERRAND_ID-2', '2', 'municipalityId-1', 'namespace-1', 'owner_full_name-2', 'owner_id-2', 'type-2'),
-		(1, 0, now(), '2024-12-31 23:59:59.999', now(), 'content-3', 'created_by-3', 'description-3', 'ERRAND_ID-3', '3', 'municipalityId-1', 'namespace-1', 'owner_full_name-3', 'owner_id-3', 'type-3');
+VALUES	(0, 0, now(), '2023-12-31 23:59:59.999', now(), 'content-1', 'created_by-1', 'description-1', 'ERRAND_ID-1', '1', '2281', 'namespace-1', 'owner_full_name-1', 'owner_id-1', 'type-1'),
+		(0, 0, now(), '2024-12-31 23:59:59.999', now(), 'content-2', 'created_by-2', 'description-2', 'ERRAND_ID-2', '2', '2281', 'namespace-1', 'owner_full_name-2', 'owner_id-2', 'type-2'),
+		(1, 0, now(), '2024-12-31 23:59:59.999', now(), 'content-3', 'created_by-3', 'description-3', 'ERRAND_ID-3', '3', '2281', 'namespace-1', 'owner_full_name-3', 'owner_id-3', 'type-3');
 
 -------------------------------------
 -- EmailWorkerConfig
@@ -167,27 +167,27 @@ INSERT INTO email_worker_config(days_of_inactivity_before_reject, enabled, creat
                                 add_sender_as_stakeholder, stakeholder_role, errand_channel)
 VALUES (1, true, '2020-10-10 10:10:59.999', 1, '2021-11-11 11:11:59.999',
         'sender-1', 'template-1', 'inactive_status-1',
-        'municipality_id-1', 'namespace-1', 'status_change_to-1', 'status_for_new-1', 'trigger_status_change_on-1', true, 'role-1', 'channel-1'),
+        '2281', 'namespace-1', 'status_change_to-1', 'status_for_new-1', 'trigger_status_change_on-1', true, 'role-1', 'channel-1'),
        (2, false, '2022-02-02 12:12:59.999', 2, '2023-03-03 13:13:59.999',
        'sender-2', 'template-2', 'inactive_status-2',
-       'municipality_id-2', 'namespace-2', 'status_change_to-2', 'status_for_new-2', 'trigger_status_change_on-2', true, 'role-2', 'channel-2');
+       '2282', 'namespace-2', 'status_change_to-2', 'status_for_new-2', 'trigger_status_change_on-2', true, 'role-2', 'channel-2');
 
 -------------------------------------
 -- NamespaceConfig
 -------------------------------------
 INSERT INTO namespace_config(id, municipality_id, namespace, display_name, short_code, notification_ttl_in_days, created, modified)
-values (1, 'municipality_id-1', 'namespace-1', 'display name 1', 'short_code-1', 10, '2021-01-01 11:11:59.999', '2022-01-01 11:11:59.999'),
-       (2, 'municipality_id-1', 'namespace-3', 'display name 3', 'short_code-3', 30, '2022-03-03 13:13:59.999', '2023-03-03 13:13:59.999'),
-       (3, 'municipality_id-2', 'namespace-2', 'display name 2', 'short_code-2', 20, '2022-02-02 12:12:59.999', '2023-02-02 12:12:59.999');
+values (1, '2281', 'namespace-1', 'display name 1', 'short_code-1', 10, '2021-01-01 11:11:59.999', '2022-01-01 11:11:59.999'),
+       (2, '2281', 'namespace-3', 'display name 3', 'short_code-3', 30, '2022-03-03 13:13:59.999', '2023-03-03 13:13:59.999'),
+       (3, '2282', 'namespace-2', 'display name 2', 'short_code-2', 20, '2022-02-02 12:12:59.999', '2023-02-02 12:12:59.999');
 
 -------------------------------------
 -- WebMessageCollect
 -------------------------------------
 
 INSERT INTO web_message_collect(id, municipality_id, namespace, instance)
-VALUES (1, 'municipality_id-1', 'namespace-1', 'instance-1'),
-       (2, 'municipality_id-1', 'namespace-1', 'instance-2'),
-       (3, 'municipality_id-1', 'namespace-2', 'instance-1');
+VALUES (1, '2281', 'namespace-1', 'instance-1'),
+       (2, '2281', 'namespace-1', 'instance-2'),
+       (3, '2281', 'namespace-2', 'instance-1');
 
 INSERT INTO web_message_collect_family_ids(web_message_collect_id, family_id)
 VALUES (1, 'family_id-1'),

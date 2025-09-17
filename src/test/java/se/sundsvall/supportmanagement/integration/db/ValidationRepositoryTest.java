@@ -38,7 +38,7 @@ class ValidationRepositoryTest {
 	@Test
 	void create() {
 		// Setup
-		final var municipalityId = "municipalityId-1";
+		final var municipalityId = "2281";
 		final var namespace = "namespace-1";
 		final var type = EntityType.EXTERNAL_ID_TYPE;
 		final var entity = ValidationEntity.create()
@@ -67,7 +67,7 @@ class ValidationRepositoryTest {
 	@Test
 	void update() {
 		// Setup
-		final var municipalityId = "municipalityId-1";
+		final var municipalityId = "2281";
 		final var namespace = "namespace-1";
 		final var type = EntityType.CATEGORY;
 
@@ -97,7 +97,7 @@ class ValidationRepositoryTest {
 	@Test
 	void findByNamespaceAndMunicipalityIdAndType() {
 		// Setup
-		final var municipalityId = "municipalityId-1";
+		final var municipalityId = "2281";
 		final var namespace = "namespace-2";
 		final var type = EntityType.STATUS;
 
@@ -114,7 +114,7 @@ class ValidationRepositoryTest {
 	@Test
 	void findAllByNamespaceAndMunicipalityId() {
 		// Setup
-		final var municipalityId = "municipalityId-1";
+		final var municipalityId = "2281";
 		final var namespace = "namespace-1";
 
 		final var matches = validationRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId);

@@ -28,7 +28,7 @@ public class MessageExchangeSyncEntity {
 	@Column(name = "namespace", length = 32, nullable = false)
 	private String namespace;
 
-	@Column(name = "municipality_id", length = 4, nullable = false)
+	@Column(name = "municipality_id", length = 8, nullable = false)
 	private String municipalityId;
 
 	@Column(name = "latest_synced_sequence_number", columnDefinition = "bigint default 0")

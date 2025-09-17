@@ -29,7 +29,7 @@ class EmailWorkerConfigRepositoryTest {
 	@Test
 	void create() {
 
-		final var municipalityId = "municipalityId";
+		final var municipalityId = "2281";
 		final var namespace = "namespace";
 		final var enabled = true;
 		final var errandClosedEmailSender = "noreply@email.se";
@@ -92,7 +92,7 @@ class EmailWorkerConfigRepositoryTest {
 
 	@Test
 	void update() {
-		final var optionalEntity = repository.getByNamespaceAndMunicipalityId("namespace-1", "municipality_id-1");
+		final var optionalEntity = repository.getByNamespaceAndMunicipalityId("namespace-1", "2281");
 
 		assertThat(optionalEntity).isPresent();
 		final var entity = optionalEntity.get();
@@ -101,7 +101,7 @@ class EmailWorkerConfigRepositoryTest {
 		entity.withEnabled(false);
 		repository.saveAndFlush(entity);
 
-		final var modifiedEntity = repository.getByNamespaceAndMunicipalityId("namespace-1", "municipality_id-1");
+		final var modifiedEntity = repository.getByNamespaceAndMunicipalityId("namespace-1", "2281");
 		assertThat(modifiedEntity).isPresent();
 		assertThat(modifiedEntity.get().getEnabled()).isFalse();
 		assertThat(modifiedEntity.get().getModified()).isCloseTo(OffsetDateTime.now(), within(2, SECONDS));
@@ -110,23 +110,23 @@ class EmailWorkerConfigRepositoryTest {
 
 	@Test
 	void getByNamespaceAndMunicipalityId() {
-		final var result = repository.getByNamespaceAndMunicipalityId("namespace-1", "municipality_id-1");
+		final var result = repository.getByNamespaceAndMunicipalityId("namespace-1", "2281");
 		assertThat(result).isPresent();
 	}
 
 	@Test
 	void existsByNamespaceAndMunicipalityId() {
-		assertThat(repository.existsByNamespaceAndMunicipalityId("namespace-1", "municipality_id-1")).isTrue();
+		assertThat(repository.existsByNamespaceAndMunicipalityId("namespace-1", "2281")).isTrue();
 	}
 
 	@Test
 	void delete() {
-		assertThat(repository.existsByNamespaceAndMunicipalityId("namespace-1", "municipality_id-1")).isTrue();
-		assertThat(repository.existsByNamespaceAndMunicipalityId("namespace-2", "municipality_id-2")).isTrue();
+		assertThat(repository.existsByNamespaceAndMunicipalityId("namespace-1", "2281")).isTrue();
+		assertThat(repository.existsByNamespaceAndMunicipalityId("namespace-2", "2282")).isTrue();
 
-		repository.deleteByNamespaceAndMunicipalityId("namespace-1", "municipality_id-1");
+		repository.deleteByNamespaceAndMunicipalityId("namespace-1", "2281");
 
-		assertThat(repository.existsByNamespaceAndMunicipalityId("namespace-1", "municipality_id-1")).isFalse();
-		assertThat(repository.existsByNamespaceAndMunicipalityId("namespace-2", "municipality_id-2")).isTrue();
+		assertThat(repository.existsByNamespaceAndMunicipalityId("namespace-1", "2281")).isFalse();
+		assertThat(repository.existsByNamespaceAndMunicipalityId("namespace-2", "2282")).isTrue();
 	}
 }

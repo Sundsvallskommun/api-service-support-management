@@ -86,10 +86,10 @@ public class ErrandEntity {
 	@Column(name = "business_related")
 	private Boolean businessRelated;
 
-	@Column(name = "municipality_id", nullable = false)
+	@Column(name = "municipality_id", nullable = false, length = 8)
 	private String municipalityId;
 
-	@Column(name = "namespace", nullable = false)
+	@Column(name = "namespace", nullable = false, length = 32)
 	private String namespace;
 
 	@Column(name = "title")
@@ -98,10 +98,10 @@ public class ErrandEntity {
 	@Column(name = "category")
 	private String category;
 
-	@Column(name = "type")
+	@Column(name = "type", length = 128)
 	private String type;
 
-	@Column(name = "status")
+	@Column(name = "status", length = 64)
 	private String status;
 
 	@Column(name = "resolution")

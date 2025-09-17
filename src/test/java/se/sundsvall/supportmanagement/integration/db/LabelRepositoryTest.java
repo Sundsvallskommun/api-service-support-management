@@ -38,7 +38,7 @@ class LabelRepositoryTest {
 	@Test
 	void create() {
 		// Setup
-		final var municipalityId = "municipalityId-99";
+		final var municipalityId = "2289";
 		final var namespace = "namespace-99";
 
 		final var entity = LabelEntity.create()
@@ -65,7 +65,7 @@ class LabelRepositoryTest {
 	@Test
 	void createWithDuplicateValues() {
 		// Setup
-		final var municipalityId = "municipalityId-1";
+		final var municipalityId = "2281";
 		final var namespace = "namespace-1";
 
 		final var entity = LabelEntity.create()
@@ -80,7 +80,7 @@ class LabelRepositoryTest {
 	@Test
 	void update() {
 		// Setup
-		final var municipalityId = "municipalityId-1";
+		final var municipalityId = "2281";
 		final var namespace = "namespace-1";
 		final var entity = LabelEntity.create()
 			.withMunicipalityId(municipalityId)
@@ -104,7 +104,7 @@ class LabelRepositoryTest {
 	@Test
 	void findOneByNamespaceAndMunicipalityId() {
 		// Setup
-		final var municipalityId = "municipalityId-1";
+		final var municipalityId = "2281";
 		final var namespace = "namespace-1";
 
 		// Act
@@ -120,7 +120,7 @@ class LabelRepositoryTest {
 	@Test
 	void delete() {
 		// Setup
-		final var municipalityId = "municipalityId-2";
+		final var municipalityId = "2282";
 		final var namespace = "namespace-1";
 
 		// Verify existing label
@@ -136,8 +136,8 @@ class LabelRepositoryTest {
 	@Test
 	void existsByNamespaceAndMunicipalityId() {
 		// Setup
-		final var municipalityIdWithLabels = "municipalityId-1";
-		final var municipalityIdWithoutLabels = "municipalityId-3";
+		final var municipalityIdWithLabels = "2281";
+		final var municipalityIdWithoutLabels = "2283";
 		final var namespaceWithLabels = "namespace-1";
 		final var namespaceWithoutLabels = "namespace-3";
 
