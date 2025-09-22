@@ -21,4 +21,16 @@ SET s.role = 'SUBJECT'
 WHERE s.role = 'PRIMARY'
   AND e.namespace = 'CONTACTSUNDSVALL';
 
+INSERT INTO stakeholder_parameter (stakeholder_id, display_name, parameters_key)
+SELECT s.id, 'Rättad kontaktperson', 'corrected'
+FROM stakeholder s
+WHERE s.role = 'SUBJECT';
+
+INSERT INTO stakeholder_parameter_values (stakeholder_parameter_id, value)
+SELECT sp.id, DATE_FORMAT(CURRENT_DATE, '%Y-%m-%d')
+FROM stakeholder_parameter sp
+WHERE sp.display_name = 'Rättad kontaktperson'
+  AND sp.parameters_key = 'corrected';
+
+
 COMMIT;
