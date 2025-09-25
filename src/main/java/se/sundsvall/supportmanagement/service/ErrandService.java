@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.zalando.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
+import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.ContactReasonRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
@@ -41,20 +42,25 @@ public class ErrandService {
 
 	private final ErrandsRepository repository;
 	private final ContactReasonRepository contactReasonRepository;
-
+	private final CommunicationService communicationService;
+	private final AttachmentRepository attachmentRepository;
 	private final RevisionService revisionService;
 	private final EventService eventService;
 	private final ErrandNumberGeneratorService errandNumberGeneratorService;
+	private final ErrandAttachmentService errandAttachmentService;
 
 	public ErrandService(final ErrandsRepository repository,
-		final ContactReasonRepository contactReasonRepository,
+		final ContactReasonRepository contactReasonRepository, final CommunicationService communicationService, final AttachmentRepository attachmentRepository,
 		final RevisionService revisionService, final EventService eventService,
-		final ErrandNumberGeneratorService errandNumberGeneratorService) {
+		final ErrandNumberGeneratorService errandNumberGeneratorService, final ErrandAttachmentService errandAttachmentService) {
 		this.repository = repository;
 		this.contactReasonRepository = contactReasonRepository;
+		this.communicationService = communicationService;
+		this.attachmentRepository = attachmentRepository;
 		this.revisionService = revisionService;
 		this.eventService = eventService;
 		this.errandNumberGeneratorService = errandNumberGeneratorService;
+		this.errandAttachmentService = errandAttachmentService;
 	}
 
 	public String createErrand(final String namespace, final String municipalityId, final Errand errand) {
@@ -108,7 +114,7 @@ public class ErrandService {
 
 		final var revisionResult = revisionService.createErrandRevision(entity);
 
-		// Create log event if the update has modified the errand (and thus has created a new revision)
+		// Create a log event if the update has modified the errand (and thus has created a new revision)
 		if (nonNull(revisionResult)) {
 			eventService.createErrandEvent(UPDATE, EVENT_LOG_UPDATE_ERRAND, entity, revisionResult.latest(), revisionResult.previous(), ERRAND);
 		}
@@ -120,10 +126,15 @@ public class ErrandService {
 		verifyExistingErrand(id, namespace, municipalityId, true);
 
 		final var entity = repository.getReferenceById(id);
+
+		communicationService.deleteAllCommunicationsByErrandNumber(entity.getErrandNumber());
+		errandAttachmentService.readErrandAttachments(namespace, municipalityId, id)
+			.forEach(attachment -> attachmentRepository.deleteById(attachment.getId()));
+
 		// Delete errand
 		repository.deleteById(id);
 
-		// Create log event
+		// Create a log event
 		final var latestRevision = revisionService.getLatestErrandRevision(namespace, municipalityId, id);
 		eventService.createErrandEvent(DELETE, EVENT_LOG_DELETE_ERRAND, entity, latestRevision, null, false, ERRAND);
 	}

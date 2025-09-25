@@ -784,4 +784,20 @@ class CommunicationServiceTest {
 			.hasFieldOrPropertyWithValue("message", "Internal Server Error: Failed to create message notification");
 
 	}
+
+	@Test
+	void deleteAllCommunicationsByErrandNumber() {
+		// Arrange
+		final var errandNumber = "KC-23090001";
+		when(communicationRepositoryMock.findByErrandNumber(errandNumber)).thenReturn(List.of(communicationEntityMock));
+
+		// Act
+		communicationService.deleteAllCommunicationsByErrandNumber(errandNumber);
+
+		// Assert
+		verify(communicationRepositoryMock).findByErrandNumber(errandNumber);
+		verify(communicationRepositoryMock).deleteAll(List.of(communicationEntityMock));
+		verifyNoMoreInteractions(communicationRepositoryMock);
+		verifyNoInteractions(errandsRepositoryMock, communicationAttachmentRepositoryMock, messagingClientMock, communicationMapperMock);
+	}
 }
