@@ -27,6 +27,7 @@ import java.util.UUID;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StreamUtils;
 import org.zalando.problem.Problem;
 import se.sundsvall.dept44.support.Identifier;
@@ -310,4 +311,9 @@ public class CommunicationService {
 
 	}
 
+	@Transactional
+	public void deleteAllCommunicationsByErrandNumber(final String errandNumber) {
+		final var list = communicationRepository.findByErrandNumber(errandNumber);
+		communicationRepository.deleteAll(list);
+	}
 }
