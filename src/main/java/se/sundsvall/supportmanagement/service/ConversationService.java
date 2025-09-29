@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.service;
 import static java.util.Collections.emptyList;
 import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
 import static org.zalando.problem.Status.NOT_FOUND;
+import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationType.EXTERNAL;
 import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.mergeIntoConversationEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.toConversation;
@@ -207,7 +208,7 @@ public class ConversationService {
 				try {
 					relationClient.deleteRelation(municipalityId, relationId);
 				} catch (final Exception e) {
-					LOGGER.warn("Failed to delete relation {} for municipality {}", relationId, municipalityId, e);
+					LOGGER.warn("Failed to delete relation {} for municipality {}", sanitizeForLogging(relationId), sanitizeForLogging(municipalityId), e);
 				}
 			});
 	}
@@ -248,7 +249,7 @@ public class ConversationService {
 				messageExchangeClient.updateConversationById(municipalityId, messageExchangeNamespace, messageExchangeId, meConversation);
 			}
 		} catch (final Exception e) {
-			LOGGER.warn("Failed to update/delete MessageExchange conversation {} for municipality {}", messageExchangeId, municipalityId, e);
+			LOGGER.warn("Failed to update/delete MessageExchange conversation {} for municipality {}", sanitizeForLogging(messageExchangeId), sanitizeForLogging(municipalityId), e);
 		}
 	}
 }
