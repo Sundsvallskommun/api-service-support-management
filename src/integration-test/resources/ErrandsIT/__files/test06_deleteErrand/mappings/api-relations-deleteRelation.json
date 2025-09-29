@@ -1,1 +1,18 @@
-{}
+{
+	"request": {
+		"headers": {
+			"Authorization": {
+				"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
+			}
+		},
+		"method": "DELETE",
+		"urlPath": "/api-relation/2281/relations/RELATION-ID-3"
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "*/*"
+		},
+		"status": 204
+	},
+	"name": "api-notes-deleteRelation"
+}

@@ -6,13 +6,14 @@
 			}
 		},
 		"method": "DELETE",
-		"urlPath": "/api-messageexchange/2281/draken/conversations/8948f414-079d-4009-af3a-a1ff2a59528b"
+		"urlPath": "/api-notes/2281/notes/d1f2c8d4-d234-4504-a483-b74570a7941d"
 	},
 	"response": {
 		"headers": {
 			"Content-Type": "*/*"
 		},
+		"bodyFileName": "test06_deleteErrand/responses/api-notes-getNotes.json",
 		"status": 204
 	},
-	"name": "api-notes-deleteConversation"
+	"name": "api-notes-findNotes"
 }

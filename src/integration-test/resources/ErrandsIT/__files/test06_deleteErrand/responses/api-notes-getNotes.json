@@ -11,20 +11,6 @@
 			"id": "d1f2c8d4-d234-4504-a483-b74570a7941d",
 			"partyId": "81471222-5798-11e9-ae24-57fa13b361e1",
 			"body": "This is a note"
-		},
-		{
-			"role": "FIRST_LINE_SUPPORT",
-			"clientId": "support-management",
-			"createdBy": "John Doe",
-			"subject": "XXX",
-			"created": "2022-12-20T12:44:53.26+01:00",
-			"caseId": "ec677eb3-604c-4935-bff7-f8f0b500c8f4",
-			"context": "SUPPORT",
-			"modified": "2022-12-21T13:43:51.913+01:00",
-			"modifiedBy": "ZZZ",
-			"id": "85912dc6-833a-4ad7-9dea-972fbc691495",
-			"partyId": "81471222-5798-11e9-ae24-57fa13b361e1",
-			"body": "YYY"
 		}
 	],
 	"_meta": {

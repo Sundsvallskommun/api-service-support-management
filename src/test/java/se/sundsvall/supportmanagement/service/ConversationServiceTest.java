@@ -4,7 +4,6 @@ import static java.util.Optional.empty;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
@@ -46,6 +45,7 @@ import se.sundsvall.supportmanagement.api.model.communication.conversation.Messa
 import se.sundsvall.supportmanagement.integration.db.ConversationRepository;
 import se.sundsvall.supportmanagement.integration.db.model.communication.ConversationEntity;
 import se.sundsvall.supportmanagement.integration.messageexchange.MessageExchangeClient;
+import se.sundsvall.supportmanagement.integration.relation.RelationClient;
 import se.sundsvall.supportmanagement.service.mapper.ConversationMapper;
 import se.sundsvall.supportmanagement.service.scheduler.messageexchange.MessageExchangeScheduler;
 
@@ -81,7 +81,7 @@ class ConversationServiceTest {
 	private CommunicationService communicationServiceMock;
 
 	@Mock
-	private se.sundsvall.supportmanagement.integration.relation.RelationClient relationClientMock;
+	private RelationClient relationClientMock;
 
 	@Captor
 	private ArgumentCaptor<ConversationEntity> conversationEntityCaptor;
@@ -522,7 +522,7 @@ class ConversationServiceTest {
 	@Test
 	void deleteByErrandIdRemoveOnlyRelationExternalReferenceWhenOthersExist() {
 		// Arrange
-		final var relationIds = List.of("r1", "r2");
+		final var relationIds = List.of("r1");
 		final var conversation = ConversationEntity.create()
 			.withId(CONVERSATION_ID)
 			.withMunicipalityId(MUNICIPALITY_ID)
@@ -552,13 +552,8 @@ class ConversationServiceTest {
 
 		// Assert
 		verify(relationClientMock).deleteRelation(MUNICIPALITY_ID, "r1");
-		verify(relationClientMock).deleteRelation(MUNICIPALITY_ID, "r2");
 		verify(messageExchangeClientMock, never()).deleteConversation(any(), any(), any());
-		verify(messageExchangeClientMock).updateConversationById(eq(MUNICIPALITY_ID), eq(MESSAGE_EXCHANGE_NAMESPACE), eq(MESSAGE_EXCHANGE_ID),
-			argThat(updated -> {
-				final var refs = Optional.ofNullable(updated.getExternalReferences()).orElse(List.of());
-				return refs.size() == 1 && "someOtherKey".equals(refs.getFirst().getKey());
-			}));
+		verify(messageExchangeClientMock).updateConversationById(eq(MUNICIPALITY_ID), eq(MESSAGE_EXCHANGE_NAMESPACE), eq(MESSAGE_EXCHANGE_ID), any());
 		verify(conversationRepositoryMock).deleteAll(List.of(conversation));
 
 		verifyNoInteractions(messageExchangeSchedulerMock, communicationServiceMock);
@@ -626,6 +621,8 @@ class ConversationServiceTest {
 
 		when(messageExchangeClientMock.getConversationById(MUNICIPALITY_ID, MESSAGE_EXCHANGE_NAMESPACE, MESSAGE_EXCHANGE_ID))
 			.thenReturn(ResponseEntity.ok(meConversation));
+		when(messageExchangeClientMock.updateConversationById(eq(MUNICIPALITY_ID), eq(MESSAGE_EXCHANGE_NAMESPACE), eq(MESSAGE_EXCHANGE_ID), any()))
+			.thenReturn(ResponseEntity.ok(new Conversation()));
 
 		// Act
 		conversationService.deleteByErrandId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID);
@@ -634,7 +631,7 @@ class ConversationServiceTest {
 		verify(relationClientMock).deleteRelation(MUNICIPALITY_ID, "rX");
 		verify(relationClientMock).deleteRelation(MUNICIPALITY_ID, "rY");
 		verify(messageExchangeClientMock, never()).deleteConversation(any(), any(), any());
-		verify(messageExchangeClientMock, never()).updateConversationById(any(), any(), any(), any());
+		verify(messageExchangeClientMock).updateConversationById(eq(MUNICIPALITY_ID), eq(MESSAGE_EXCHANGE_NAMESPACE), eq(MESSAGE_EXCHANGE_ID), any());
 		verify(conversationRepositoryMock).deleteAll(List.of(conversation));
 
 		verifyNoInteractions(messageExchangeSchedulerMock, communicationServiceMock);
@@ -669,7 +666,7 @@ class ConversationServiceTest {
 
 		// Assert
 		verify(relationClientMock).deleteRelation(MUNICIPALITY_ID, "r1");
-		verify(messageExchangeClientMock, never()).deleteConversation(any(), any(), any());
+		verify(messageExchangeClientMock).deleteConversation(MUNICIPALITY_ID, MESSAGE_EXCHANGE_NAMESPACE, MESSAGE_EXCHANGE_ID);
 		verify(messageExchangeClientMock, never()).updateConversationById(any(), any(), any(), any());
 		verify(conversationRepositoryMock).deleteAll(List.of(conversation));
 

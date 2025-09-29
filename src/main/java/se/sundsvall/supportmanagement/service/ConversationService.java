@@ -36,8 +36,8 @@ import se.sundsvall.supportmanagement.service.scheduler.messageexchange.MessageE
 
 @Service
 public class ConversationService {
-
 	static final String CONVERSATION_DEPARTMENT_ID = "CONVERSATION";
+	private static final String RELATION_IDS = "relationIds";
 	private static final Logger LOGGER = org.slf4j.LoggerFactory.getLogger(ConversationService.class);
 	private static final String NO_CONVERSATION_ID_RETURNED = "ID of conversation was not returned in location header!";
 	private static final String NO_CONVERSATION_FOUND = "No conversation with ID:'%s', errandId:'%s', municipalityId:'%s' and namespace:'%s' was found!";
@@ -225,31 +225,43 @@ public class ConversationService {
 
 		try {
 			final var meConversation = fetchConversationFromMessageExchange(municipalityId, messageExchangeId);
-			if (meConversation == null) {
+			if (meConversation == null)
 				return;
-			}
 
-			final var relationIds = Optional.ofNullable(conversationEntity.getRelationIds()).orElseGet(List::of);
-			final var existing = Optional.ofNullable(meConversation.getExternalReferences()).orElseGet(List::of);
+			final var relationIds = Optional.ofNullable(conversationEntity.getRelationIds()).orElse(List.of());
+			final var refs = Optional.ofNullable(meConversation.getExternalReferences()).orElse(List.of());
 
-			final var remaining = existing.stream()
-				.filter(ref -> !"relationIds".equals(ref.getKey())
-					|| ref.getValues() == null || ref.getValues().isEmpty()
-					|| ref.getValues().stream().noneMatch(relationIds::contains))
+			final var updatedRefs = refs.stream()
+				.map(ref -> {
+					if (!RELATION_IDS.equals(ref.getKey())) {
+						return ref;
+					}
+					final var kept = Optional.ofNullable(ref.getValues()).orElse(List.of())
+						.stream()
+						.filter(value -> !relationIds.contains(value))
+						.toList();
+					ref.setValues(kept);
+					return ref;
+				})
 				.toList();
 
-			if (remaining.size() == existing.size()) {
+			final var hasRelationIdsLeft = updatedRefs.stream()
+				.filter(ref -> RELATION_IDS.equals(ref.getKey()))
+				.anyMatch(ref -> ref.getValues() != null && !ref.getValues().isEmpty());
+
+			if (!hasRelationIdsLeft) {
+				messageExchangeClient.deleteConversation(municipalityId, messageExchangeNamespace, messageExchangeId);
 				return;
 			}
 
-			if (remaining.isEmpty()) {
-				messageExchangeClient.deleteConversation(municipalityId, messageExchangeNamespace, messageExchangeId);
-			} else {
-				meConversation.setExternalReferences(remaining);
-				messageExchangeClient.updateConversationById(municipalityId, messageExchangeNamespace, messageExchangeId, meConversation);
-			}
+			meConversation.setExternalReferences(updatedRefs);
+			messageExchangeClient.updateConversationById(municipalityId, messageExchangeNamespace, messageExchangeId, meConversation);
+
 		} catch (final Exception e) {
-			LOGGER.warn("Failed to update/delete MessageExchange conversation {} for municipality {}", sanitizeForLogging(messageExchangeId), sanitizeForLogging(municipalityId), e);
+			LOGGER.warn("Failed to update/delete MessageExchange conversation {} for municipality {}",
+				sanitizeForLogging(messageExchangeId),
+				sanitizeForLogging(municipalityId),
+				e);
 		}
 	}
 }
