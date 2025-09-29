@@ -1,0 +1,30 @@
+{
+	"request": {
+		"headers": {
+			"Authorization": {
+				"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
+			}
+		},
+		"method": "GET",
+		"queryParameters": {
+			"caseId": {
+				"equalTo": "1be673c0-6ba3-4fb0-af4a-43acf23389f6"
+			},
+			"limit": {
+				"equalTo": "1000"
+			},
+			"page": {
+				"equalTo": "1"
+			}
+		},
+		"urlPath": "/api-notes/2281/notes"
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/json"
+		},
+		"bodyFileName": "test06_deleteErrand/responses/api-notes-getNotes.json",
+		"status": 200
+	},
+	"name": "api-notes-findNotes"
+}

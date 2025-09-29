@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.service;
 
+import static java.util.Collections.emptyList;
 import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
 import static org.zalando.problem.Status.NOT_FOUND;
 import static se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationType.EXTERNAL;
@@ -29,6 +30,7 @@ import se.sundsvall.supportmanagement.api.model.communication.conversation.Messa
 import se.sundsvall.supportmanagement.integration.db.ConversationRepository;
 import se.sundsvall.supportmanagement.integration.db.model.communication.ConversationEntity;
 import se.sundsvall.supportmanagement.integration.messageexchange.MessageExchangeClient;
+import se.sundsvall.supportmanagement.integration.relation.RelationClient;
 import se.sundsvall.supportmanagement.service.scheduler.messageexchange.MessageExchangeScheduler;
 
 @Service
@@ -42,6 +44,7 @@ public class ConversationService {
 	private final ConversationRepository conversationRepository;
 	private final MessageExchangeScheduler messageExchangeScheduler;
 	private final CommunicationService communicationService;
+	private final RelationClient relationClient;
 
 	@Value("${integration.messageexchange.namespace:draken}")
 	private String messageExchangeNamespace;
@@ -50,12 +53,13 @@ public class ConversationService {
 		final MessageExchangeClient messageExchangeClient,
 		final ConversationRepository conversationRepository,
 		final MessageExchangeScheduler messageExchangeScheduler,
-		final CommunicationService communicationService) {
+		final CommunicationService communicationService, final RelationClient relationClient) {
 
 		this.messageExchangeClient = messageExchangeClient;
 		this.conversationRepository = conversationRepository;
 		this.messageExchangeScheduler = messageExchangeScheduler;
 		this.communicationService = communicationService;
+		this.relationClient = relationClient;
 	}
 
 	public Conversation createConversation(final String municipalityId, final String namespace, final String errandId, final ConversationRequest conversationRequest) {
@@ -181,6 +185,70 @@ public class ConversationService {
 		try (final var in = body.getInputStream(); final var out = response.getOutputStream()) {
 			in.transferTo(out);
 			out.flush();
+		}
+	}
+
+	public void deleteByErrandId(final String municipalityId, final String namespace, final String errandId) {
+		final var conversations = conversationRepository.findByMunicipalityIdAndNamespaceAndErrandId(municipalityId, namespace, errandId);
+
+		deleteRelations(municipalityId, conversations);
+		updateOrDeleteInMessageExchange(municipalityId, conversations);
+
+		// Remove local conversations
+		conversationRepository.deleteAll(conversations);
+	}
+
+	private void deleteRelations(final String municipalityId, final List<ConversationEntity> conversations) {
+		conversations.stream()
+			.map(ConversationEntity::getRelationIds)
+			.map(ids -> Optional.ofNullable(ids).orElseGet(List::of))
+			.flatMap(List::stream)
+			.forEach(relationId -> {
+				try {
+					relationClient.deleteRelation(municipalityId, relationId);
+				} catch (final Exception e) {
+					LOGGER.warn("Failed to delete relation {} for municipality {}", relationId, municipalityId, e);
+				}
+			});
+	}
+
+	private void updateOrDeleteInMessageExchange(final String municipalityId, final List<ConversationEntity> conversations) {
+		Optional.ofNullable(conversations)
+			.orElse(emptyList())
+			.forEach(conversation -> updateOrDeleteInMessageExchange(municipalityId, conversation));
+	}
+
+	private void updateOrDeleteInMessageExchange(final String municipalityId, final ConversationEntity conversationEntity) {
+
+		final var messageExchangeId = conversationEntity.getMessageExchangeId();
+
+		try {
+			final var meConversation = fetchConversationFromMessageExchange(municipalityId, messageExchangeId);
+			if (meConversation == null) {
+				return;
+			}
+
+			final var relationIds = Optional.ofNullable(conversationEntity.getRelationIds()).orElseGet(List::of);
+			final var existing = Optional.ofNullable(meConversation.getExternalReferences()).orElseGet(List::of);
+
+			final var remaining = existing.stream()
+				.filter(ref -> !"relationIds".equals(ref.getKey())
+					|| ref.getValues() == null || ref.getValues().isEmpty()
+					|| ref.getValues().stream().noneMatch(relationIds::contains))
+				.toList();
+
+			if (remaining.size() == existing.size()) {
+				return;
+			}
+
+			if (remaining.isEmpty()) {
+				messageExchangeClient.deleteConversation(municipalityId, messageExchangeNamespace, messageExchangeId);
+			} else {
+				meConversation.setExternalReferences(remaining);
+				messageExchangeClient.updateConversationById(municipalityId, messageExchangeNamespace, messageExchangeId, meConversation);
+			}
+		} catch (final Exception e) {
+			LOGGER.warn("Failed to update/delete MessageExchange conversation {} for municipality {}", messageExchangeId, municipalityId, e);
 		}
 	}
 }

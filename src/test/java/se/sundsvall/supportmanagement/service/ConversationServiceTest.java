@@ -4,7 +4,9 @@ import static java.util.Optional.empty;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -14,6 +16,7 @@ import static org.springframework.test.util.ReflectionTestUtils.setField;
 import static se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationType.EXTERNAL;
 import static se.sundsvall.supportmanagement.service.ConversationService.CONVERSATION_DEPARTMENT_ID;
 
+import generated.se.sundsvall.messageexchange.Conversation;
 import generated.se.sundsvall.messageexchange.Message;
 import java.io.IOException;
 import java.net.URI;
@@ -76,6 +79,9 @@ class ConversationServiceTest {
 
 	@Mock
 	private CommunicationService communicationServiceMock;
+
+	@Mock
+	private se.sundsvall.supportmanagement.integration.relation.RelationClient relationClientMock;
 
 	@Captor
 	private ArgumentCaptor<ConversationEntity> conversationEntityCaptor;
@@ -308,8 +314,8 @@ class ConversationServiceTest {
 		verifyNoInteractions(communicationServiceMock);
 	}
 
-	private generated.se.sundsvall.messageexchange.Conversation createMessageExchangeConversation() {
-		return new generated.se.sundsvall.messageexchange.Conversation()
+	private Conversation createMessageExchangeConversation() {
+		return new Conversation()
 			.externalReferences(List.of(
 				new generated.se.sundsvall.messageexchange.KeyValues().key(EXTERNAL_REFERENCE_KEY).values(VALUES_LIST),
 				new generated.se.sundsvall.messageexchange.KeyValues().key(ConversationMapper.RELATION_ID_KEY).values(RELATION_VALUES_LIST)))
@@ -512,4 +518,198 @@ class ConversationServiceTest {
 		verifyNoInteractions(communicationServiceMock, messageExchangeSchedulerMock);
 		verifyNoMoreInteractions(messageExchangeClientMock, conversationRepositoryMock);
 	}
+
+	@Test
+	void deleteByErrandIdRemoveOnlyRelationExternalReferenceWhenOthersExist() {
+		// Arrange
+		final var relationIds = List.of("r1", "r2");
+		final var conversation = ConversationEntity.create()
+			.withId(CONVERSATION_ID)
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withNamespace(NAMESPACE)
+			.withErrandId(ERRAND_ID)
+			.withMessageExchangeId(MESSAGE_EXCHANGE_ID)
+			.withRelationIds(relationIds);
+
+		when(conversationRepositoryMock.findByMunicipalityIdAndNamespaceAndErrandId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID))
+			.thenReturn(List.of(conversation));
+
+		final var meConversation = new Conversation()
+			.id(MESSAGE_EXCHANGE_ID)
+			.municipalityId(MUNICIPALITY_ID)
+			.namespace(MESSAGE_EXCHANGE_NAMESPACE)
+			.externalReferences(List.of(
+				new generated.se.sundsvall.messageexchange.KeyValues().key("someOtherKey").values(List.of("foo")),
+				new generated.se.sundsvall.messageexchange.KeyValues().key("relationIds").values(List.of("r1", "r2"))));
+
+		when(messageExchangeClientMock.getConversationById(MUNICIPALITY_ID, MESSAGE_EXCHANGE_NAMESPACE, MESSAGE_EXCHANGE_ID))
+			.thenReturn(ResponseEntity.ok(meConversation));
+		when(messageExchangeClientMock.updateConversationById(eq(MUNICIPALITY_ID), eq(MESSAGE_EXCHANGE_NAMESPACE), eq(MESSAGE_EXCHANGE_ID), any()))
+			.thenReturn(ResponseEntity.ok(new Conversation()));
+
+		// Act
+		conversationService.deleteByErrandId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID);
+
+		// Assert
+		verify(relationClientMock).deleteRelation(MUNICIPALITY_ID, "r1");
+		verify(relationClientMock).deleteRelation(MUNICIPALITY_ID, "r2");
+		verify(messageExchangeClientMock, never()).deleteConversation(any(), any(), any());
+		verify(messageExchangeClientMock).updateConversationById(eq(MUNICIPALITY_ID), eq(MESSAGE_EXCHANGE_NAMESPACE), eq(MESSAGE_EXCHANGE_ID),
+			argThat(updated -> {
+				final var refs = Optional.ofNullable(updated.getExternalReferences()).orElse(List.of());
+				return refs.size() == 1 && "someOtherKey".equals(refs.getFirst().getKey());
+			}));
+		verify(conversationRepositoryMock).deleteAll(List.of(conversation));
+
+		verifyNoInteractions(messageExchangeSchedulerMock, communicationServiceMock);
+		verifyNoMoreInteractions(conversationRepositoryMock, messageExchangeClientMock, relationClientMock);
+	}
+
+	@Test
+	void deleteByErrandIdDeleteMessageExchangeConversationWhenRelationIsOnlyExternalReference() {
+		// Arrange
+		final var conversation = ConversationEntity.create()
+			.withId(CONVERSATION_ID)
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withNamespace(NAMESPACE)
+			.withErrandId(ERRAND_ID)
+			.withMessageExchangeId(MESSAGE_EXCHANGE_ID)
+			.withRelationIds(List.of("r1"));
+
+		when(conversationRepositoryMock.findByMunicipalityIdAndNamespaceAndErrandId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID))
+			.thenReturn(List.of(conversation));
+
+		final var meConversation = new Conversation()
+			.id(MESSAGE_EXCHANGE_ID)
+			.municipalityId(MUNICIPALITY_ID)
+			.namespace(MESSAGE_EXCHANGE_NAMESPACE)
+			.externalReferences(List.of(
+				new generated.se.sundsvall.messageexchange.KeyValues().key("relationIds").values(List.of("r1"))));
+
+		when(messageExchangeClientMock.getConversationById(MUNICIPALITY_ID, MESSAGE_EXCHANGE_NAMESPACE, MESSAGE_EXCHANGE_ID))
+			.thenReturn(ResponseEntity.ok(meConversation));
+
+		// Act
+		conversationService.deleteByErrandId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID);
+
+		// Assert
+		verify(relationClientMock).deleteRelation(MUNICIPALITY_ID, "r1");
+		verify(messageExchangeClientMock).deleteConversation(MUNICIPALITY_ID, MESSAGE_EXCHANGE_NAMESPACE, MESSAGE_EXCHANGE_ID);
+		verify(messageExchangeClientMock, never()).updateConversationById(any(), any(), any(), any());
+		verify(conversationRepositoryMock).deleteAll(List.of(conversation));
+
+		verifyNoInteractions(messageExchangeSchedulerMock, communicationServiceMock);
+		verifyNoMoreInteractions(conversationRepositoryMock, messageExchangeClientMock, relationClientMock);
+	}
+
+	@Test
+	void deleteByErrandIdNoUpdateWhenNoExternalReferenceMatchesRelationIds() {
+		// Arrange
+		final var conversation = ConversationEntity.create()
+			.withId(CONVERSATION_ID)
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withNamespace(NAMESPACE)
+			.withErrandId(ERRAND_ID)
+			.withMessageExchangeId(MESSAGE_EXCHANGE_ID)
+			.withRelationIds(List.of("rX", "rY"));
+
+		when(conversationRepositoryMock.findByMunicipalityIdAndNamespaceAndErrandId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID))
+			.thenReturn(List.of(conversation));
+
+		final var meConversation = new Conversation()
+			.id(MESSAGE_EXCHANGE_ID)
+			.municipalityId(MUNICIPALITY_ID)
+			.namespace(MESSAGE_EXCHANGE_NAMESPACE)
+			.externalReferences(List.of(
+				new generated.se.sundsvall.messageexchange.KeyValues().key("relationIds").values(List.of("r1", "r2")),
+				new generated.se.sundsvall.messageexchange.KeyValues().key("other").values(List.of("a"))));
+
+		when(messageExchangeClientMock.getConversationById(MUNICIPALITY_ID, MESSAGE_EXCHANGE_NAMESPACE, MESSAGE_EXCHANGE_ID))
+			.thenReturn(ResponseEntity.ok(meConversation));
+
+		// Act
+		conversationService.deleteByErrandId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID);
+
+		// Assert
+		verify(relationClientMock).deleteRelation(MUNICIPALITY_ID, "rX");
+		verify(relationClientMock).deleteRelation(MUNICIPALITY_ID, "rY");
+		verify(messageExchangeClientMock, never()).deleteConversation(any(), any(), any());
+		verify(messageExchangeClientMock, never()).updateConversationById(any(), any(), any(), any());
+		verify(conversationRepositoryMock).deleteAll(List.of(conversation));
+
+		verifyNoInteractions(messageExchangeSchedulerMock, communicationServiceMock);
+		verifyNoMoreInteractions(conversationRepositoryMock, messageExchangeClientMock, relationClientMock);
+	}
+
+	@Test
+	void deleteByErrandIdWhenNullReferences() {
+		// Arrange
+		final var conversation = ConversationEntity.create()
+			.withId(CONVERSATION_ID)
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withNamespace(NAMESPACE)
+			.withErrandId(ERRAND_ID)
+			.withMessageExchangeId(MESSAGE_EXCHANGE_ID)
+			.withRelationIds(List.of("r1"));
+
+		when(conversationRepositoryMock.findByMunicipalityIdAndNamespaceAndErrandId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID))
+			.thenReturn(List.of(conversation));
+
+		final var meConversation = new Conversation()
+			.id(MESSAGE_EXCHANGE_ID)
+			.municipalityId(MUNICIPALITY_ID)
+			.namespace(MESSAGE_EXCHANGE_NAMESPACE)
+			.externalReferences(null);
+
+		when(messageExchangeClientMock.getConversationById(MUNICIPALITY_ID, MESSAGE_EXCHANGE_NAMESPACE, MESSAGE_EXCHANGE_ID))
+			.thenReturn(ResponseEntity.ok(meConversation));
+
+		// Act
+		conversationService.deleteByErrandId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID);
+
+		// Assert
+		verify(relationClientMock).deleteRelation(MUNICIPALITY_ID, "r1");
+		verify(messageExchangeClientMock, never()).deleteConversation(any(), any(), any());
+		verify(messageExchangeClientMock, never()).updateConversationById(any(), any(), any(), any());
+		verify(conversationRepositoryMock).deleteAll(List.of(conversation));
+
+		verifyNoInteractions(messageExchangeSchedulerMock, communicationServiceMock);
+		verifyNoMoreInteractions(conversationRepositoryMock, messageExchangeClientMock, relationClientMock);
+	}
+
+	@Test
+	void deleteByErrandIdExceptionThrown() {
+		// Arrange
+		final var conversation = ConversationEntity.create()
+			.withId(CONVERSATION_ID)
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withNamespace(NAMESPACE)
+			.withErrandId(ERRAND_ID)
+			.withMessageExchangeId(MESSAGE_EXCHANGE_ID)
+			.withRelationIds(List.of("r1"));
+
+		when(conversationRepositoryMock.findByMunicipalityIdAndNamespaceAndErrandId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID))
+			.thenReturn(List.of(conversation));
+
+		doThrow(new RuntimeException("boom")).when(relationClientMock).deleteRelation(MUNICIPALITY_ID, "r1");
+
+		final var meConversation = new Conversation()
+			.id(MESSAGE_EXCHANGE_ID)
+			.municipalityId(MUNICIPALITY_ID)
+			.namespace(MESSAGE_EXCHANGE_NAMESPACE)
+			.externalReferences(List.of(new generated.se.sundsvall.messageexchange.KeyValues().key("relationIds").values(List.of("r1"))));
+
+		when(messageExchangeClientMock.getConversationById(MUNICIPALITY_ID, MESSAGE_EXCHANGE_NAMESPACE, MESSAGE_EXCHANGE_ID))
+			.thenReturn(ResponseEntity.ok(meConversation));
+		doThrow(new RuntimeException("me-boom")).when(messageExchangeClientMock).deleteConversation(MUNICIPALITY_ID, MESSAGE_EXCHANGE_NAMESPACE, MESSAGE_EXCHANGE_ID);
+
+		// Act (should not throw)
+		conversationService.deleteByErrandId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID);
+
+		// Assert
+		verify(conversationRepositoryMock).deleteAll(List.of(conversation));
+		verifyNoInteractions(messageExchangeSchedulerMock, communicationServiceMock);
+		verifyNoMoreInteractions(conversationRepositoryMock, messageExchangeClientMock, relationClientMock);
+	}
+
 }

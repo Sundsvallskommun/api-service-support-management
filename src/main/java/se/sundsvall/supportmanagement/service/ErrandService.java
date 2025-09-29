@@ -29,6 +29,7 @@ import se.sundsvall.supportmanagement.integration.db.ContactReasonRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.util.ErrandNumberGeneratorService;
+import se.sundsvall.supportmanagement.integration.notes.NotesClient;
 
 @Service
 @Transactional
@@ -42,17 +43,20 @@ public class ErrandService {
 
 	private final ErrandsRepository repository;
 	private final ContactReasonRepository contactReasonRepository;
-	private final CommunicationService communicationService;
-	private final AttachmentRepository attachmentRepository;
 	private final RevisionService revisionService;
 	private final EventService eventService;
 	private final ErrandNumberGeneratorService errandNumberGeneratorService;
+
 	private final ErrandAttachmentService errandAttachmentService;
+	private final CommunicationService communicationService;
+	private final AttachmentRepository attachmentRepository;
+	private final ConversationService conversationService;
+	private final NotesClient notesClient;
 
 	public ErrandService(final ErrandsRepository repository,
 		final ContactReasonRepository contactReasonRepository, final CommunicationService communicationService, final AttachmentRepository attachmentRepository,
 		final RevisionService revisionService, final EventService eventService,
-		final ErrandNumberGeneratorService errandNumberGeneratorService, final ErrandAttachmentService errandAttachmentService) {
+		final ErrandNumberGeneratorService errandNumberGeneratorService, final ErrandAttachmentService errandAttachmentService, final ConversationService conversationService, final NotesClient notesClient) {
 		this.repository = repository;
 		this.contactReasonRepository = contactReasonRepository;
 		this.communicationService = communicationService;
@@ -61,6 +65,8 @@ public class ErrandService {
 		this.eventService = eventService;
 		this.errandNumberGeneratorService = errandNumberGeneratorService;
 		this.errandAttachmentService = errandAttachmentService;
+		this.conversationService = conversationService;
+		this.notesClient = notesClient;
 	}
 
 	public String createErrand(final String namespace, final String municipalityId, final Errand errand) {
@@ -81,7 +87,7 @@ public class ErrandService {
 		final var persistedEntity = repository.save(errandEntity);
 		final var revision = revisionService.createErrandRevision(persistedEntity);
 
-		// Create log event, but don't create a notification.
+		// Create a log event, but don't create a notification.
 		eventService.createErrandEvent(CREATE, EVENT_LOG_CREATE_ERRAND, persistedEntity, revision.latest(), null, false, ERRAND);
 
 		return persistedEntity.getId();
@@ -127,9 +133,14 @@ public class ErrandService {
 
 		final var entity = repository.getReferenceById(id);
 
+		conversationService.deleteByErrandId(municipalityId, namespace, id);
+
 		communicationService.deleteAllCommunicationsByErrandNumber(entity.getErrandNumber());
 		errandAttachmentService.readErrandAttachments(namespace, municipalityId, id)
 			.forEach(attachment -> attachmentRepository.deleteById(attachment.getId()));
+
+		final var notes = notesClient.findNotes(municipalityId, null, null, id, null, null, 1, 1000);
+		notes.getNotes().forEach(note -> notesClient.deleteNoteById(municipalityId, note.getId()));
 
 		// Delete errand
 		repository.deleteById(id);
