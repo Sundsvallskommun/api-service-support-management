@@ -15,6 +15,7 @@ import org.springframework.core.io.InputStreamResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -153,4 +154,9 @@ public interface MessageExchangeClient {
 		@PathVariable("messageId") String messageId,
 		@PathVariable("attachmentId") String attachmentId);
 
+	@DeleteMapping(path = "/{municipalityId}/{namespace}/conversations/{conversationId}", produces = ALL_VALUE)
+	void deleteConversation(
+		@PathVariable("municipalityId") String municipalityId,
+		@PathVariable("namespace") String namespace,
+		@PathVariable("conversationId") String conversationId);
 }
