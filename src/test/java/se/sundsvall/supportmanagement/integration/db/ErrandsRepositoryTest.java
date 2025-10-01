@@ -202,8 +202,8 @@ class ErrandsRepositoryTest {
 	}
 
 	@Test
-	void findByErrandNumber() {
-		final var errandEntities = errandsRepository.findByErrandNumber("KC-23020001");
+	void findByErrandNumberAndNamespace() {
+		final var errandEntities = errandsRepository.findByErrandNumberAndNamespace("KC-23020001", "NAMESPACE.1");
 		assertThat(errandEntities).isNotNull();
 		errandEntities.ifPresentOrElse(
 			errandEntity -> assertThat(errandEntity.getId()).isEqualTo("ERRAND_ID-1"),
@@ -211,8 +211,14 @@ class ErrandsRepositoryTest {
 	}
 
 	@Test
-	void findByErrandNumberNotFound() {
-		final var errandEntities = errandsRepository.findByErrandNumber("KC-22020002");
+	void findByErrandNumberAndNamespaceMissmatchOnNamespace() {
+		final var errandEntities = errandsRepository.findByErrandNumberAndNamespace("KC-23020001", "NAMESPACE.2");
+		assertThat(errandEntities).isEmpty();
+	}
+
+	@Test
+	void findByErrandNumberAndNamespaceNotFound() {
+		final var errandEntities = errandsRepository.findByErrandNumberAndNamespace("KC-22020002", "NAMESPACE.1");
 		assertThat(errandEntities).isEmpty();
 	}
 

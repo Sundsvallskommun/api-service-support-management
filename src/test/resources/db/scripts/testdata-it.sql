@@ -359,22 +359,28 @@ VALUES ('45d266a7-1ff2-4bf4-b6f3-0473b2b86fcd', 'value1', 0),
 INSERT INTO errand_labels(errand_id, label)
 VALUES ('147d355f-dc94-4fde-a4cb-9ddd16cb1946', 'label-1'),
        ('147d355f-dc94-4fde-a4cb-9ddd16cb1946', 'label-2');
-       
-       
+
+
 -- -----------------------------------
 -- conversations
 -- -----------------------------------
 
 -- Insert data into conversation table
-INSERT INTO conversation (municipality_id, latest_synced_sequence_number, namespace, type, id, errand_id, message_exchange_id, topic)
-VALUES ('2281', 100, 'NAMESPACE-1', 'EXTERNAL', 'f4524497-a592-4618-a746-b59a60a76f13', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', '4c0167ae-18b2-459a-a5b3-52511d5979f9', 'The topic 1'),
-       ('2281', 101, 'NAMESPACE-1', 'INTERNAL', '7a772d18-a588-41bc-91ec-13b7421c9bb8', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', '8948f414-079d-4009-af3a-a1ff2a59528a', 'The topic 2');
+INSERT INTO conversation (municipality_id, latest_synced_sequence_number, namespace, type, id, errand_id,
+                          message_exchange_id, topic)
+VALUES ('2281', 100, 'NAMESPACE-1', 'EXTERNAL', 'f4524497-a592-4618-a746-b59a60a76f13',
+        'ec677eb3-604c-4935-bff7-f8f0b500c8f4', '4c0167ae-18b2-459a-a5b3-52511d5979f9', 'The topic 1'),
+       ('2281', 101, 'NAMESPACE-1', 'INTERNAL', '7a772d18-a588-41bc-91ec-13b7421c9bb8',
+        'ec677eb3-604c-4935-bff7-f8f0b500c8f4', '8948f414-079d-4009-af3a-a1ff2a59528a', 'The topic 2'),
+       ('2281', 101, 'NAMESPACE-1', 'INTERNAL', '7a772d18-a588-41bc-91ec-13b7421c9bb9',
+        '1be673c0-6ba3-4fb0-af4a-43acf23389f6', '8948f414-079d-4009-af3a-a1ff2a59528b', 'The topic 3');
 
 
 -- Insert data into conversation_relation_id table
 INSERT INTO conversation_relation_id (conversation_id, relation_id)
 VALUES ('f4524497-a592-4618-a746-b59a60a76f13', 'RELATION-ID-1'),
-       ('7a772d18-a588-41bc-91ec-13b7421c9bb8', 'RELATION-ID-2');
+       ('7a772d18-a588-41bc-91ec-13b7421c9bb8', 'RELATION-ID-2'),
+       ('7a772d18-a588-41bc-91ec-13b7421c9bb9', 'RELATION-ID-3');
 
 INSERT INTO message_exchange_sync(id, municipality_id, namespace, active, latest_synced_sequence_number, updated)
 VALUES ('1', '2281', 'external-namespace-1', true, 11, '2025-08-11 23:59:59.999'),

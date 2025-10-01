@@ -22,6 +22,8 @@ import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.w
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withNamespace;
 
 import com.turkraft.springfilter.converter.FilterSpecificationConverter;
+import generated.se.sundsvall.notes.FindNotesResponse;
+import generated.se.sundsvall.notes.Note;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
@@ -41,13 +43,16 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.zalando.problem.ThrowableProblem;
+import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
+import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.ContactReasonRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.util.ErrandNumberGeneratorService;
+import se.sundsvall.supportmanagement.integration.notes.NotesClient;
 
 @ExtendWith(MockitoExtension.class)
 class ErrandServiceTest {
@@ -84,6 +89,21 @@ class ErrandServiceTest {
 
 	@Mock
 	private EventService eventServiceMock;
+
+	@Mock
+	private CommunicationService communicationServiceMock;
+
+	@Mock
+	private ErrandAttachmentService errandAttachmentServiceMock;
+
+	@Mock
+	private NotesClient notesClientMock;
+
+	@Mock
+	private ConversationService conversationServiceMock;
+
+	@Mock
+	private AttachmentRepository attachmentRepositoryMock;
 
 	@Spy
 	private FilterSpecificationConverter filterSpecificationConverterSpy;
@@ -274,18 +294,28 @@ class ErrandServiceTest {
 	void deleteExistingErrand() {
 		// Setup
 		final var entity = buildErrandEntity();
+		final var errandAttachment = ErrandAttachment.create().withId("id");
 
 		// Mock
 		when(errandRepositoryMock.existsWithLockingByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
 		when(errandRepositoryMock.getReferenceById(ERRAND_ID)).thenReturn(entity);
 		when(revisionServiceMock.getLatestErrandRevision(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID)).thenReturn(currentRevisionMock);
+		when(errandAttachmentServiceMock.readErrandAttachments(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID)).thenReturn(List.of(errandAttachment));
+		when(notesClientMock.findNotes(MUNICIPALITY_ID, null, null, ERRAND_ID, null, null, 1, 1000))
+			.thenReturn(new FindNotesResponse().notes(List.of(new Note().id("id"))));
 
 		// Call
 		service.deleteErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 
 		// Assertions and verifications
+		verify(conversationServiceMock).deleteByErrandId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID);
+		verify(notesClientMock).findNotes(MUNICIPALITY_ID, null, null, ERRAND_ID, null, null, 1, 1000);
+		verify(notesClientMock).deleteNoteById(MUNICIPALITY_ID, "id");
 		verify(errandRepositoryMock).existsWithLockingByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(errandRepositoryMock).deleteById(ERRAND_ID);
+		verify(communicationServiceMock).deleteAllCommunicationsByErrandNumber(entity.getErrandNumber());
+		verify(errandAttachmentServiceMock).readErrandAttachments(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
+		verify(attachmentRepositoryMock).deleteById(errandAttachment.getId());
 		verify(eventServiceMock).createErrandEvent(DELETE, EVENT_LOG_DELETE_ERRAND, entity, currentRevisionMock, null, false, ERRAND);
 	}
 

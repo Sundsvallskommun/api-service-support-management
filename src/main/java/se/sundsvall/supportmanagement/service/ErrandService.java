@@ -24,10 +24,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.zalando.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
+import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.ContactReasonRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.util.ErrandNumberGeneratorService;
+import se.sundsvall.supportmanagement.integration.notes.NotesClient;
 
 @Service
 @Transactional
@@ -41,20 +43,30 @@ public class ErrandService {
 
 	private final ErrandsRepository repository;
 	private final ContactReasonRepository contactReasonRepository;
-
 	private final RevisionService revisionService;
 	private final EventService eventService;
 	private final ErrandNumberGeneratorService errandNumberGeneratorService;
 
+	private final ErrandAttachmentService errandAttachmentService;
+	private final CommunicationService communicationService;
+	private final AttachmentRepository attachmentRepository;
+	private final ConversationService conversationService;
+	private final NotesClient notesClient;
+
 	public ErrandService(final ErrandsRepository repository,
-		final ContactReasonRepository contactReasonRepository,
+		final ContactReasonRepository contactReasonRepository, final CommunicationService communicationService, final AttachmentRepository attachmentRepository,
 		final RevisionService revisionService, final EventService eventService,
-		final ErrandNumberGeneratorService errandNumberGeneratorService) {
+		final ErrandNumberGeneratorService errandNumberGeneratorService, final ErrandAttachmentService errandAttachmentService, final ConversationService conversationService, final NotesClient notesClient) {
 		this.repository = repository;
 		this.contactReasonRepository = contactReasonRepository;
+		this.communicationService = communicationService;
+		this.attachmentRepository = attachmentRepository;
 		this.revisionService = revisionService;
 		this.eventService = eventService;
 		this.errandNumberGeneratorService = errandNumberGeneratorService;
+		this.errandAttachmentService = errandAttachmentService;
+		this.conversationService = conversationService;
+		this.notesClient = notesClient;
 	}
 
 	public String createErrand(final String namespace, final String municipalityId, final Errand errand) {
@@ -75,7 +87,7 @@ public class ErrandService {
 		final var persistedEntity = repository.save(errandEntity);
 		final var revision = revisionService.createErrandRevision(persistedEntity);
 
-		// Create log event, but don't create a notification.
+		// Create a log event, but don't create a notification.
 		eventService.createErrandEvent(CREATE, EVENT_LOG_CREATE_ERRAND, persistedEntity, revision.latest(), null, false, ERRAND);
 
 		return persistedEntity.getId();
@@ -108,7 +120,7 @@ public class ErrandService {
 
 		final var revisionResult = revisionService.createErrandRevision(entity);
 
-		// Create log event if the update has modified the errand (and thus has created a new revision)
+		// Create a log event if the update has modified the errand (and thus has created a new revision)
 		if (nonNull(revisionResult)) {
 			eventService.createErrandEvent(UPDATE, EVENT_LOG_UPDATE_ERRAND, entity, revisionResult.latest(), revisionResult.previous(), ERRAND);
 		}
@@ -120,10 +132,20 @@ public class ErrandService {
 		verifyExistingErrand(id, namespace, municipalityId, true);
 
 		final var entity = repository.getReferenceById(id);
+
+		conversationService.deleteByErrandId(municipalityId, namespace, id);
+
+		communicationService.deleteAllCommunicationsByErrandNumber(entity.getErrandNumber());
+		errandAttachmentService.readErrandAttachments(namespace, municipalityId, id)
+			.forEach(attachment -> attachmentRepository.deleteById(attachment.getId()));
+
+		final var notes = notesClient.findNotes(municipalityId, null, null, id, null, null, 1, 1000);
+		notes.getNotes().forEach(note -> notesClient.deleteNoteById(municipalityId, note.getId()));
+
 		// Delete errand
 		repository.deleteById(id);
 
-		// Create log event
+		// Create a log event
 		final var latestRevision = revisionService.getLatestErrandRevision(namespace, municipalityId, id);
 		eventService.createErrandEvent(DELETE, EVENT_LOG_DELETE_ERRAND, entity, latestRevision, null, false, ERRAND);
 	}
