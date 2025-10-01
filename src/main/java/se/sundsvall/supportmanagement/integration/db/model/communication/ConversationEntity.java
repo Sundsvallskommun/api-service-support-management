@@ -36,7 +36,7 @@ public class ConversationEntity {
 	@Column(name = "namespace", length = 32, nullable = false)
 	private String namespace;
 
-	@Column(name = "municipality_id", length = 4, nullable = false)
+	@Column(name = "municipality_id", length = 8, nullable = false)
 	private String municipalityId;
 
 	@Column(name = "topic")

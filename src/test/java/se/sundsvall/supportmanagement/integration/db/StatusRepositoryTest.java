@@ -37,7 +37,7 @@ class StatusRepositoryTest {
 	@Test
 	void create() {
 		// Setup
-		final var municipalityId = "municipalityId-1";
+		final var municipalityId = "2281";
 		final var name = "status-4";
 		final var namespace = "namespace-1";
 		final var entity = StatusEntity.create()
@@ -64,7 +64,7 @@ class StatusRepositoryTest {
 	@Test
 	void update() {
 		// Setup
-		final var municipalityId = "municipalityId-1";
+		final var municipalityId = "2281";
 		final var name = "status-1";
 		final var namespace = "namespace-1";
 		final var entity = StatusEntity.create()
@@ -93,7 +93,7 @@ class StatusRepositoryTest {
 	@Test
 	void getByNamespaceAndMunicipalityIdAndName() {
 		// Setup
-		final var municipalityId = "municipalityId-1";
+		final var municipalityId = "2281";
 		final var namespace = "namespace-1";
 		final var name = "status-3";
 
@@ -110,7 +110,7 @@ class StatusRepositoryTest {
 	@Test
 	void existsByNamespaceAndMunicipalityIdAndName() {
 		// Setup
-		final var municipalityId = "municipalityId-1";
+		final var municipalityId = "2281";
 		final var namespace = "namespace-1";
 		final var existing_statusname = "status-3";
 		final var nonexisting_statusname = "status-4";
@@ -123,7 +123,7 @@ class StatusRepositoryTest {
 	@Test
 	void findAllByNamespaceAndMunicipalityId() {
 		// Setup
-		final var municipalityId = "municipalityId-1";
+		final var municipalityId = "2281";
 		final var namespace = "namespace-1";
 
 		final var matches = statusRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId);

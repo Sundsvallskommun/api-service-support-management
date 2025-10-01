@@ -4,12 +4,12 @@
         file_size integer,
         created datetime(6),
         modified datetime(6),
+        municipality_id varchar(8),
+        namespace varchar(32),
         errand_id varchar(255) not null,
         file_name varchar(255),
         id varchar(255) not null,
         mime_type varchar(255),
-        municipality_id varchar(255),
-        namespace varchar(255),
         primary key (id)
     ) engine=InnoDB;
 
@@ -23,22 +23,22 @@
         created datetime(6),
         id bigint not null auto_increment,
         modified datetime(6),
+        municipality_id varchar(8) not null,
+        namespace varchar(32) not null,
         display_name varchar(255),
-        municipality_id varchar(255) not null,
         name varchar(255) not null,
-        namespace varchar(255) not null,
         primary key (id)
     ) engine=InnoDB;
 
     create table communication (
         internal bit,
         viewed bit,
+        municipality_id varchar(8),
         sent datetime(6),
+        namespace varchar(32),
         errand_number varchar(255),
         external_id varchar(255),
         id varchar(255) not null,
-        municipality_id varchar(255),
-        namespace varchar(255),
         sender varchar(255),
         sender_user_id varchar(255),
         subject varchar(255),
@@ -52,12 +52,12 @@
     create table communication_attachment (
         attachment_data_id integer not null,
         file_size integer,
+        municipality_id varchar(8),
+        namespace varchar(32),
         communication_id varchar(255) not null,
         file_name varchar(255),
         id varchar(255) not null,
         mime_type varchar(255),
-        municipality_id varchar(255),
-        namespace varchar(255),
         primary key (id)
     ) engine=InnoDB;
 
@@ -95,15 +95,15 @@
         created datetime(6),
         id bigint not null auto_increment,
         modified datetime(6),
-        municipality_id varchar(255) not null,
-        namespace varchar(255) not null,
+        municipality_id varchar(8) not null,
+        namespace varchar(32) not null,
         reason varchar(255),
         primary key (id)
     ) engine=InnoDB;
 
     create table conversation (
-        municipality_id varchar(4) not null,
         latest_synced_sequence_number bigint,
+        municipality_id varchar(8) not null,
         namespace varchar(32) not null,
         type varchar(32) not null,
         errand_id varchar(36) not null,
@@ -126,14 +126,14 @@
         created datetime(6),
         id bigint not null auto_increment,
         modified datetime(6),
+        municipality_id varchar(8) not null,
+        namespace varchar(32) not null,
         errand_closed_email_template varchar(5000),
         errand_new_email_template varchar(5000),
         errand_channel varchar(255),
         errand_closed_email_sender varchar(255),
         errand_new_email_sender varchar(255),
         inactive_status varchar(255),
-        municipality_id varchar(255) not null,
-        namespace varchar(255) not null,
         stakeholder_role varchar(255),
         status_change_to varchar(255),
         status_for_new varchar(255),
@@ -146,9 +146,13 @@
         contact_reason_id bigint,
         created datetime(6),
         modified datetime(6),
+        municipality_id varchar(8) not null,
         suspended_from datetime(6),
         suspended_to datetime(6),
         touched datetime(6),
+        namespace varchar(32) not null,
+        status varchar(64),
+        type varchar(128),
         contact_reason_description varchar(4096),
         assigned_group_id varchar(255),
         assigned_user_id varchar(255),
@@ -157,15 +161,11 @@
         errand_number varchar(255) not null,
         escalation_email varchar(255),
         id varchar(255) not null,
-        municipality_id varchar(255) not null,
-        namespace varchar(255) not null,
         previous_status varchar(255),
         priority varchar(255),
         reporter_user_id varchar(255),
         resolution varchar(255),
-        status varchar(255),
         title varchar(255),
-        type varchar(255),
         description longtext,
         primary key (id)
     ) engine=InnoDB;
@@ -178,8 +178,8 @@
     create table errand_number_sequence (
         last_sequence_number integer,
         reset_year_month varchar(6),
-        municipality_id varchar(255),
-        namespace varchar(255) not null,
+        municipality_id varchar(8),
+        namespace varchar(32) not null,
         primary key (namespace)
     ) engine=InnoDB;
 
@@ -187,9 +187,9 @@
         created datetime(6),
         id bigint not null auto_increment,
         modified datetime(6),
-        municipality_id varchar(255) not null,
+        municipality_id varchar(8) not null,
+        namespace varchar(32) not null,
         name varchar(255) not null,
-        namespace varchar(255) not null,
         primary key (id)
     ) engine=InnoDB;
 
@@ -203,17 +203,17 @@
         created datetime(6),
         id bigint not null auto_increment,
         modified datetime(6),
+        municipality_id varchar(8) not null,
+        namespace varchar(32) not null,
         json_structure json not null,
-        municipality_id varchar(255) not null,
-        namespace varchar(255) not null,
         primary key (id)
     ) engine=InnoDB;
 
     create table message_exchange_sync (
         active bit,
-        municipality_id varchar(4) not null,
         id bigint not null auto_increment,
         latest_synced_sequence_number bigint default 0,
+        municipality_id varchar(8) not null,
         updated datetime(6),
         namespace varchar(32) not null,
         primary key (id)
@@ -224,9 +224,9 @@
         created datetime(6),
         id bigint not null auto_increment,
         modified datetime(6),
+        municipality_id varchar(8) not null,
+        namespace varchar(32) not null,
         display_name varchar(255) not null,
-        municipality_id varchar(255) not null,
-        namespace varchar(255) not null,
         short_code varchar(255) not null,
         primary key (id)
     ) engine=InnoDB;
@@ -237,14 +237,14 @@
         created datetime(6),
         expires datetime(6),
         modified datetime(6),
+        municipality_id varchar(8) not null,
+        namespace varchar(32) not null,
         content varchar(255),
         created_by varchar(255),
         created_by_full_name varchar(255),
         description varchar(255),
         errand_id varchar(255),
         id varchar(255) not null,
-        municipality_id varchar(255) not null,
-        namespace varchar(255) not null,
         owner_full_name varchar(255),
         owner_id varchar(255),
         subtype varchar(255),
@@ -272,11 +272,11 @@
     create table revision (
         version integer,
         created datetime(6),
+        municipality_id varchar(8),
+        namespace varchar(32),
         entity_id varchar(255),
         entity_type varchar(255),
         id varchar(255) not null,
-        municipality_id varchar(255),
-        namespace varchar(255),
         serialized_snapshot longtext,
         primary key (id)
     ) engine=InnoDB;
@@ -285,10 +285,10 @@
         created datetime(6),
         id bigint not null auto_increment,
         modified datetime(6),
+        municipality_id varchar(8) not null,
+        namespace varchar(32) not null,
         display_name varchar(255),
-        municipality_id varchar(255) not null,
         name varchar(255) not null,
-        namespace varchar(255) not null,
         primary key (id)
     ) engine=InnoDB;
 
@@ -326,9 +326,9 @@
         created datetime(6),
         id bigint not null auto_increment,
         modified datetime(6),
-        municipality_id varchar(255) not null,
+        municipality_id varchar(8) not null,
+        namespace varchar(32) not null,
         name varchar(255) not null,
-        namespace varchar(255) not null,
         primary key (id)
     ) engine=InnoDB;
 
@@ -359,17 +359,17 @@
         created datetime(6),
         id bigint not null auto_increment,
         modified datetime(6),
-        municipality_id varchar(255) not null,
-        namespace varchar(255) not null,
+        municipality_id varchar(8) not null,
+        namespace varchar(32) not null,
         `type` varchar(255) not null,
         primary key (id)
     ) engine=InnoDB;
 
     create table web_message_collect (
         id bigint not null auto_increment,
+        municipality_id varchar(8) not null,
+        namespace varchar(32) not null,
         instance varchar(255) not null,
-        municipality_id varchar(255) not null,
-        namespace varchar(255) not null,
         primary key (id)
     ) engine=InnoDB;
 

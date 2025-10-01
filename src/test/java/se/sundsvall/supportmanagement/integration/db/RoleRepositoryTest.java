@@ -38,7 +38,7 @@ class RoleRepositoryTest {
 	@Test
 	void create() {
 		// Setup
-		final var municipalityId = "municipalityId-1";
+		final var municipalityId = "2281";
 		final var name = "role-4";
 		final var namespace = "namespace-1";
 		final var entity = RoleEntity.create()
@@ -65,7 +65,7 @@ class RoleRepositoryTest {
 	@Test
 	void update() {
 		// Setup
-		final var municipalityId = "municipalityId-1";
+		final var municipalityId = "2281";
 		final var name = "role-1";
 		final var namespace = "namespace-1";
 		final var entity = RoleEntity.create()
@@ -94,7 +94,7 @@ class RoleRepositoryTest {
 	@Test
 	void getByNamespaceAndMunicipalityIdAndName() {
 		// Setup
-		final var municipalityId = "municipalityId-1";
+		final var municipalityId = "2281";
 		final var namespace = "namespace-1";
 		final var name = "role-3";
 
@@ -111,7 +111,7 @@ class RoleRepositoryTest {
 	@Test
 	void existsByNamespaceAndMunicipalityIdAndName() {
 		// Setup
-		final var municipalityId = "municipalityId-1";
+		final var municipalityId = "2281";
 		final var namespace = "namespace-1";
 		final var existingRoleName = "role-3";
 		final var nonExistingRoleName = "role-4";
@@ -124,7 +124,7 @@ class RoleRepositoryTest {
 	@Test
 	void findAllByNamespaceAndMunicipalityId() {
 		// Setup
-		final var municipalityId = "municipalityId-1";
+		final var municipalityId = "2281";
 		final var namespace = "namespace-1";
 
 		final var matches = roleRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId);

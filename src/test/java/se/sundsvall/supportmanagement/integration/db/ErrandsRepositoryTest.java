@@ -60,7 +60,7 @@ class ErrandsRepositoryTest {
 		final var reporterUserId = "reporterUserId";
 		final var assignedUserId = "assignedUserId";
 		final var assignedGroupId = "assignedGroupId";
-		final var municipalityId = "municipalityId";
+		final var municipalityId = "2281";
 		final var escalationEmail = "escalation@email.com";
 		final var errandNumber = "errandNumber";
 

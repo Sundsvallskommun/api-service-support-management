@@ -41,10 +41,10 @@ public class RevisionEntity {
 	@Column(name = "entity_id")
 	private String entityId;
 
-	@Column(name = "namespace")
+	@Column(name = "namespace", length = 32)
 	private String namespace;
 
-	@Column(name = "municipality_id")
+	@Column(name = "municipality_id", length = 8)
 	private String municipalityId;
 
 	@Column(name = "entity_type")

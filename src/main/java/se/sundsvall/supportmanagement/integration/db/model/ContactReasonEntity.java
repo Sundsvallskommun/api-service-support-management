@@ -24,10 +24,10 @@ public class ContactReasonEntity {
 	@Column(name = "reason")
 	private String reason;
 
-	@Column(name = "municipality_id", nullable = false)
+	@Column(name = "municipality_id", nullable = false, length = 8)
 	private String municipalityId;
 
-	@Column(name = "namespace", nullable = false)
+	@Column(name = "namespace", nullable = false, length = 32)
 	private String namespace;
 
 	@Column(name = "created")
