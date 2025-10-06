@@ -37,7 +37,7 @@ public class Communication {
 	@Schema(description = "The communication was delivered by", example = "EMAIL")
 	private CommunicationType communicationType;
 
-	@Schema(description = "The mobile number or email adress the communication was sent to", example = "+46701234567")
+	@Schema(description = "The mobile number or email adress the communication was sent to", example = "+46701740605")
 	private String target;
 
 	@Schema(description = "The recipients of the communication, if email", example = "[\"kalle.anka@ankeborg.se\"]")

@@ -78,7 +78,7 @@ class ErrandCommunicationResourceTest {
 	private static SmsRequest smsRequest() {
 		return SmsRequest.create()
 			.withMessage("message")
-			.withRecipient("+46701234567")
+			.withRecipient("+46701740605")
 			.withSender("sender");
 	}
 
