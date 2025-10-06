@@ -1,0 +1,1 @@
+drop table if exists stakeholders_update_log;
