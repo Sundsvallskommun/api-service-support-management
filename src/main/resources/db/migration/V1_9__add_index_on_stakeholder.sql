@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS idx_stakeholder_external_id_role_errand_id USING BTREE ON stakeholder (external_id,`role`,errand_id);
