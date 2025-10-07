@@ -2,7 +2,6 @@
 -- Beskrivning:
 --
 -- Skapar tabellen metadata_label
--- Skapar tabellen metadata_label_authorization (id, metadata_label_id, authorization_id)
 -- Populera tabellen metadata_label baserat på vad som finns i tabellerna errand och errand_labels idag.
 -- Lägg till kolumnen errand_labels.metadata_label_id
 -- Uppdatera tabellen errand_labels så att rätt värde läggs på errand_labels.metadata_label_id
@@ -20,18 +19,6 @@ CREATE
             municipality_id VARCHAR(255) NOT NULL,
             namespace VARCHAR(255) NOT NULL,
             PRIMARY KEY(id)
-        ) ENGINE = InnoDB;
-
-CREATE
-    TABLE
-        metadata_label_authorization(
-            id BIGINT NOT NULL AUTO_INCREMENT,
-            metadata_label_id BIGINT NOT NULL,
-            authorization_id VARCHAR(255) NOT NULL,
-            PRIMARY KEY(id),
-            CONSTRAINT fk_metadata_label_authorization_metadata_label FOREIGN KEY(metadata_label_id) REFERENCES metadata_label(id) ON
-            DELETE
-                CASCADE
         ) ENGINE = InnoDB;
 
 ALTER TABLE
