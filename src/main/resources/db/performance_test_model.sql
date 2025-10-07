@@ -22,18 +22,6 @@ CREATE
             PRIMARY KEY(id)
         ) ENGINE = InnoDB;
 
-CREATE
-    TABLE
-        metadata_label_authorization(
-            id BIGINT NOT NULL AUTO_INCREMENT,
-            metadata_label_id BIGINT NOT NULL,
-            authorization_id VARCHAR(255) NOT NULL,
-            PRIMARY KEY(id),
-            CONSTRAINT fk_metadata_label_authorization_metadata_label FOREIGN KEY(metadata_label_id) REFERENCES metadata_label(id) ON
-            DELETE
-                CASCADE
-        ) ENGINE = InnoDB;
-
 ALTER TABLE
     errand_labels ADD COLUMN IF NOT EXISTS metadata_label_id BIGINT NULL;
 
