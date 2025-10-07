@@ -7,7 +7,6 @@
 -- Lägg till kolumnen errand_labels.metadata_label_id
 -- Uppdatera tabellen errand_labels så att rätt värde läggs på errand_labels.metadata_label_id
 --------------------------------------------------
---------------------------------------------------
 -- Skapa tabeller
 --------------------------------------------------
 CREATE
