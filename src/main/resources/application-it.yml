@@ -1,4 +1,6 @@
 integration:
+  accessmapper:
+    url: http://localhost:${wiremock.server.port:}/api-accessmapper
   emailreader:
     url: http://localhost:${wiremock.server.port:}/api-emailreader
   employee:
@@ -48,6 +50,8 @@ spring:
     oauth2:
       client:
         provider:
+          accessmapper:
+            token-uri: http://localhost:${wiremock.server.port:}/api-gateway/token
           emailreader:
             token-uri: http://localhost:${wiremock.server.port:}/api-gateway/token
           employee:
@@ -69,6 +73,9 @@ spring:
           relation:
             token-uri: http://localhost:${wiremock.server.port:}/api-gateway/token
         registration:
+          accessmapper:
+            client-id: the-client-id
+            client-secret: the-client-secret
           emailreader:
             client-id: the-client-id
             client-secret: the-client-secret
