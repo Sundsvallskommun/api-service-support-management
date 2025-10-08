@@ -18,7 +18,7 @@ public class SmsRequest {
 	private String sender;
 
 	@ValidMSISDN
-	@Schema(description = "Mobile number to recipient in format +467[02369]\\d{7}", example = "+46761234567", requiredMode = REQUIRED)
+	@Schema(description = "Mobile number to recipient in format +467[02369]\\d{7}", example = "+46701740605", requiredMode = REQUIRED)
 	private String recipient;
 
 	@NotBlank

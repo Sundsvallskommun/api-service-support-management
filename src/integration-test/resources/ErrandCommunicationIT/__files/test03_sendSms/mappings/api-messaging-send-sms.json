@@ -9,7 +9,7 @@
 		"bodyPatterns": [
 			{
 				"equalToJson": {
-					"sender": "0701234567",
+					"sender": "0701740605",
 					"mobileNumber": "+46707654321",
 					"message": "Have you heard the news that Bender is suffering from a terminal manufacturing defect, effectively rendering him mortal?",
 					"party": {

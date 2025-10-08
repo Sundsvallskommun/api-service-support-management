@@ -6278,7 +6278,7 @@ components:
         recipient:
           type: string
           description: "Mobile number to recipient in format +467[02369]\\d{7}"
-          example: "+46761234567"
+          example: "+46701740605"
         message:
           minLength: 1
           type: string
@@ -6935,7 +6935,7 @@ components:
           type: string
           description: The mobile number or email adress the communication was sent
             to
-          example: "+46701234567"
+          example: "+46701740605"
         recipients:
           type: array
           description: "The recipients of the communication, if email"
