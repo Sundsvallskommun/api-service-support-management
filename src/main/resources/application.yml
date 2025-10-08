@@ -25,6 +25,9 @@ scheduler:
     shedlock-lock-at-most-for: PT2M
     maximum-execution-time: PT1M
 integration:
+  accessmapper:
+    connectTimeout: 5
+    readTimeout: 30
   emailreader:
     connectTimeout: 5
     readTimeout: 30
@@ -101,6 +104,9 @@ spring:
     oauth2:
       client:
         registration:
+          accessmapper:
+            authorization-grant-type: client_credentials
+            provider: accessmapper
           emailreader:
             authorization-grant-type: client_credentials
             provider: emailreader
