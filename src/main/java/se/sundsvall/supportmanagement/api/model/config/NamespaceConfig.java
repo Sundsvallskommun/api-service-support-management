@@ -36,6 +36,9 @@ public class NamespaceConfig {
 	@Schema(description = "Timestamp when the configuration was last modified", example = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	private OffsetDateTime modified;
 
+	@Schema(description = "If set to true access control will be enabled", example = "true")
+	private boolean accessControl;
+
 	public static NamespaceConfig create() {
 		return new NamespaceConfig();
 	}
@@ -96,11 +99,11 @@ public class NamespaceConfig {
 		return notificationTTLInDays;
 	}
 
-	public void setNotificationTTLInDays(Integer notificationTTLInDays) {
+	public void setNotificationTTLInDays(final Integer notificationTTLInDays) {
 		this.notificationTTLInDays = notificationTTLInDays;
 	}
 
-	public NamespaceConfig withNotificationTTLInDays(Integer notificationTTLInDays) {
+	public NamespaceConfig withNotificationTTLInDays(final Integer notificationTTLInDays) {
 		this.notificationTTLInDays = notificationTTLInDays;
 		return this;
 	}
@@ -131,30 +134,44 @@ public class NamespaceConfig {
 		return this;
 	}
 
-	@Override
-	public int hashCode() {
-		return Objects.hash(created, displayName, modified, municipalityId, namespace, notificationTTLInDays, shortCode);
+	public boolean isAccessControl() {
+		return accessControl;
+	}
+
+	public void setAccessControl(final boolean accessControl) {
+		this.accessControl = accessControl;
+	}
+
+	public NamespaceConfig withAccessControl(final boolean accessControl) {
+		this.accessControl = accessControl;
+		return this;
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
-			return true;
-		}
-		if (obj == null) {
+	public boolean equals(final Object o) {
+		if (o == null || getClass() != o.getClass())
 			return false;
-		}
-		if (getClass() != obj.getClass()) {
-			return false;
-		}
-		NamespaceConfig other = (NamespaceConfig) obj;
-		return Objects.equals(created, other.created) && Objects.equals(displayName, other.displayName) && Objects.equals(modified, other.modified) && Objects.equals(municipalityId, other.municipalityId) && Objects.equals(namespace, other.namespace)
-			&& Objects.equals(notificationTTLInDays, other.notificationTTLInDays) && Objects.equals(shortCode, other.shortCode);
+		final NamespaceConfig that = (NamespaceConfig) o;
+		return accessControl == that.accessControl && Objects.equals(namespace, that.namespace) && Objects.equals(municipalityId, that.municipalityId) && Objects.equals(displayName, that.displayName) && Objects.equals(
+			shortCode, that.shortCode) && Objects.equals(notificationTTLInDays, that.notificationTTLInDays) && Objects.equals(created, that.created) && Objects.equals(modified, that.modified);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(namespace, municipalityId, displayName, shortCode, notificationTTLInDays, created, modified, accessControl);
 	}
 
 	@Override
 	public String toString() {
-		return "NamespaceConfig [namespace=" + namespace + ", municipalityId=" + municipalityId + ", displayName=" + displayName + ", shortCode=" + shortCode + ", notificationTTLInDays=" + notificationTTLInDays + ", created=" + created + ", modified="
-			+ modified + "]";
+		return "NamespaceConfig{" +
+			"namespace='" + namespace + '\'' +
+			", municipalityId='" + municipalityId + '\'' +
+			", displayName='" + displayName + '\'' +
+			", shortCode='" + shortCode + '\'' +
+			", notificationTTLInDays=" + notificationTTLInDays +
+			", created=" + created +
+			", modified=" + modified +
+			", accessControl=" + accessControl +
+			'}';
 	}
 }

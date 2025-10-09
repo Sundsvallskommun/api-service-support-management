@@ -6,7 +6,8 @@
 		"shortCode": "NS1",
 		"notificationTTLInDays": 10,
 		"created": "2021-12-31T23:59:59.999+01:00",
-		"modified": "2022-12-31T23:59:59.999+01:00"
+		"modified": "2022-12-31T23:59:59.999+01:00",
+		"accessControl": false
 	},
 	{
 		"namespace": "CONTACTCENTER",
@@ -14,7 +15,8 @@
 		"displayName": "Kontaktcenter",
 		"shortCode": "KC",
 		"notificationTTLInDays": 20,
-		"created": "2024-06-12T15:23:59.999+02:00"
+		"created": "2024-06-12T15:23:59.999+02:00",
+		"accessControl": false
 	},
 	{
 		"namespace": "NAMESPACE-3",
@@ -23,6 +25,7 @@
 		"shortCode": "NS3",
 		"notificationTTLInDays": 30,
 		"created": "2021-12-31T23:59:59.999+01:00",
-		"modified": "2022-12-31T23:59:59.999+01:00"
+		"modified": "2022-12-31T23:59:59.999+01:00",
+		"accessControl": false
 	}
 ]
