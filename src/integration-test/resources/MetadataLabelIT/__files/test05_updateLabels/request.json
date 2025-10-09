@@ -2,11 +2,13 @@
 	{
 		"displayName": "TOP 1",
 		"name": "LABEL-1",
+		"resourceName": "RES-1",
 		"classification": "TOP-LEVEL",
 		"labels": [
 			{
 				"displayName": "SUB 1.1",
 				"name": "SUB-1-1",
+				"resourceName": "RES-1-1",
 				"classification": "SUB-LEVEL"
 			}
 		]
