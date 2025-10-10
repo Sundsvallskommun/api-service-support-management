@@ -1,5 +1,6 @@
 {
 	"displayName": "Updated displayname",
 	"shortCode": "NS1-UPDATE",
-	"notificationTTLInDays": 30
+	"notificationTTLInDays": 30,
+	"accessControl": true
 }

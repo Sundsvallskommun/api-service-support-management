@@ -63,7 +63,9 @@ class NamespaceConfigTest {
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(NamespaceConfig.create()).hasAllNullFieldsOrProperties();
-		assertThat(new NamespaceConfig()).hasAllNullFieldsOrProperties();
+		assertThat(NamespaceConfig.create()).hasAllNullFieldsOrPropertiesExcept("accessControl")
+			.satisfies(namespaceConfig -> assertThat(namespaceConfig.isAccessControl()).isFalse());
+		assertThat(new NamespaceConfig()).hasAllNullFieldsOrPropertiesExcept("accessControl")
+			.satisfies(namespaceConfig -> assertThat(namespaceConfig.isAccessControl()).isFalse());
 	}
 }
