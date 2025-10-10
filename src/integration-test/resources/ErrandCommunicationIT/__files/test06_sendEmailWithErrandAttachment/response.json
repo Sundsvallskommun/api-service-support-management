@@ -20,6 +20,7 @@
 			}
 		],
 		"messageBody": "Some message about the HAL Institute for Criminally Insane Robots, where robots that murderously turns against its human crew are held",
+		"htmlMessageBody": "<html>Some message about the HAL Institute for <b>Criminally Insane Robots</b>, where robots that <i>murderously</i> turns against its human crew are held</html>",
 		"errandNumber": "KC-23020002",
 		"sender": "bender@rodriguez.com",
 		"subject": "Insane in the Mainframe",

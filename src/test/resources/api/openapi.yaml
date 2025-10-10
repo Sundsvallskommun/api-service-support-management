@@ -5,9 +5,9 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "10.9"
+  version: "10.10"
 servers:
-  - url: http://localhost:64288
+  - url: http://localhost:63391
     description: Generated server url
 tags:
   - name: Errand attachments
@@ -4967,7 +4967,8 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-  /{municipalityId}/{namespace}/errands/{errandId}/communication/conversations/{conversationId}/messages/{messageId}/attachments/{attachmentId}:
+  ? /{municipalityId}/{namespace}/errands/{errandId}/communication/conversations/{conversationId}/messages/{messageId}/attachments/{attachmentId}
+    :
     get:
       tags:
         - Errand communication
@@ -5280,9 +5281,9 @@ components:
     Problem:
       type: object
       properties:
-        detail:
-          type: string
         title:
+          type: string
+        detail:
           type: string
         status:
           $ref: "#/components/schemas/StatusType"
@@ -5299,11 +5300,11 @@ components:
     StatusType:
       type: object
       properties:
+        reasonPhrase:
+          type: string
         statusCode:
           type: integer
           format: int32
-        reasonPhrase:
-          type: string
     ConstraintViolationProblem:
       type: object
       properties:
@@ -5415,9 +5416,9 @@ components:
                 type: boolean
         message:
           type: string
-        detail:
-          type: string
         title:
+          type: string
+        detail:
           type: string
         status:
           $ref: "#/components/schemas/StatusType"
@@ -6622,13 +6623,15 @@ components:
           format: int64
         pageable:
           $ref: "#/components/schemas/PageableObject"
-        numberOfElements:
-          type: integer
-          format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
         first:
           type: boolean
         last:
           type: boolean
+        numberOfElements:
+          type: integer
+          format: int32
         size:
           type: integer
           format: int32
@@ -6639,15 +6642,11 @@ components:
         number:
           type: integer
           format: int32
-        sort:
-          $ref: "#/components/schemas/SortObject"
         empty:
           type: boolean
     PageableObject:
       type: object
       properties:
-        unpaged:
-          type: boolean
         paged:
           type: boolean
         pageNumber:
@@ -6656,17 +6655,19 @@ components:
         pageSize:
           type: integer
           format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        unpaged:
+          type: boolean
         offset:
           type: integer
           format: int64
-        sort:
-          $ref: "#/components/schemas/SortObject"
     SortObject:
       type: object
       properties:
-        unsorted:
-          type: boolean
         sorted:
+          type: boolean
+        unsorted:
           type: boolean
         empty:
           type: boolean
@@ -6867,13 +6868,15 @@ components:
           format: int64
         pageable:
           $ref: "#/components/schemas/PageableObject"
-        numberOfElements:
-          type: integer
-          format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
         first:
           type: boolean
         last:
           type: boolean
+        numberOfElements:
+          type: integer
+          format: int32
         size:
           type: integer
           format: int32
@@ -6884,8 +6887,6 @@ components:
         number:
           type: integer
           format: int32
-        sort:
-          $ref: "#/components/schemas/SortObject"
         empty:
           type: boolean
     Communication:
@@ -6915,6 +6916,10 @@ components:
           type: string
           description: The message body
           example: Hello world
+        htmlMessageBody:
+          type: string
+          description: The message body in HTML format
+          example: <p>Hello world</p>
         sent:
           type: string
           description: The time the communication was sent
@@ -7075,13 +7080,15 @@ components:
           format: int64
         pageable:
           $ref: "#/components/schemas/PageableObject"
-        numberOfElements:
-          type: integer
-          format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
         first:
           type: boolean
         last:
           type: boolean
+        numberOfElements:
+          type: integer
+          format: int32
         size:
           type: integer
           format: int32
@@ -7092,8 +7099,6 @@ components:
         number:
           type: integer
           format: int32
-        sort:
-          $ref: "#/components/schemas/SortObject"
         empty:
           type: boolean
     ReadBy:

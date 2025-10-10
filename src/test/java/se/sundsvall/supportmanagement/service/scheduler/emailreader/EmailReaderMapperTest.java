@@ -47,6 +47,7 @@ class EmailReaderMapperTest {
 			.recipients(List.of("someRecipient"))
 			.sender("someSender")
 			.message("someMessage")
+			.htmlMessage("someHtmlMessage")
 			.headers(Map.of(EmailHeader.MESSAGE_ID.toString(), List.of("someValue")))
 			.receivedAt(OffsetDateTime.now())
 			.attachments(List.of(new EmailAttachment()
@@ -67,6 +68,7 @@ class EmailReaderMapperTest {
 		assertThat(result.getType()).isEqualTo(CommunicationType.EMAIL);
 		assertThat(result.getTarget()).isEqualTo("someRecipient");
 		assertThat(result.getMessageBody()).isEqualTo("someMessage");
+		assertThat(result.getHtmlMessageBody()).isEqualTo("someHtmlMessage");
 		assertThat(result.getSender()).isEqualTo("someSender");
 		assertThat(result.getAttachments()).isNotNull().hasSize(1);
 		assertThat(result.getAttachments().getFirst().getFileName()).isEqualTo("someName");
@@ -93,6 +95,7 @@ class EmailReaderMapperTest {
 			.recipients(null)
 			.sender("someSender")
 			.message("someMessage")
+			.htmlMessage("someHtmlMessage")
 			.headers(Map.of(EmailHeader.MESSAGE_ID.toString(), List.of("someValue")))
 			.receivedAt(OffsetDateTime.now())
 			.attachments(List.of(new EmailAttachment()
@@ -109,6 +112,8 @@ class EmailReaderMapperTest {
 		assertThat(result.getErrandNumber()).isEqualTo("someErrandNumber");
 		assertThat(result.getAttachments()).isNotNull().hasSize(1);
 		assertThat(result.getAttachments().getFirst()).hasNoNullFieldsOrPropertiesExcept("id", "fileSize", "attachmentData");
+		assertThat(result.getHtmlMessageBody()).isEqualTo("someHtmlMessage");
+		assertThat(result.getMessageBody()).isEqualTo("someMessage");
 	}
 
 	@Test

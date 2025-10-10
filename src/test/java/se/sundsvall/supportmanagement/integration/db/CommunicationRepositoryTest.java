@@ -46,6 +46,7 @@ class CommunicationRepositoryTest {
 			.withExternalId("externalCaseID")
 			.withSubject("subject")
 			.withMessageBody("messageBody")
+			.withHtmlMessageBody("htmlMessageBody")
 			.withSent(OffsetDateTime.now())
 			.withType(CommunicationType.EMAIL)
 			.withTarget("target")
@@ -66,6 +67,7 @@ class CommunicationRepositoryTest {
 		assertThat(persistedEntity.getExternalId()).isEqualTo("externalCaseID");
 		assertThat(persistedEntity.getSubject()).isEqualTo("subject");
 		assertThat(persistedEntity.getMessageBody()).isEqualTo("messageBody");
+		assertThat(persistedEntity.getHtmlMessageBody()).isEqualTo("htmlMessageBody");
 		assertThat(persistedEntity.getSent()).isCloseTo(OffsetDateTime.now(), within(2, SECONDS));
 		assertThat(persistedEntity.getType()).isEqualTo(CommunicationType.EMAIL);
 		assertThat(persistedEntity.getTarget()).isEqualTo("target");

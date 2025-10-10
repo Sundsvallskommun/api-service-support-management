@@ -18,6 +18,7 @@
 			}
 		],
 		"messageBody": "Since when is the internet about robbing people of their privacy? Since August 6, 1991 when the World Wide Web project was announced.",
+		"htmlMessageBody": "PGh0bWw+U2luY2Ugd2hlbiBpcyB0aGUgaW50ZXJuZXQgYWJvdXQgcm9iYmluZyBwZW9wbGUgb2YgdGhlaXIgcHJpdmFjeT8gPGk+U2luY2UgQXVndXN0IDYsIDE5OTEgd2hlbiB0aGUgV29ybGQgV2lkZSBXZWIgcHJvamVjdCB3YXMgYW5ub3VuY2VkPC9pPi48L2h0bWw+",
 		"sender": "bender@rodriguez.com",
 		"errandNumber": "KC-23020002",
 		"subject": "Attack of the Killer App",
