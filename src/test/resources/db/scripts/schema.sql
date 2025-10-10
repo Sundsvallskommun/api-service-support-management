@@ -45,6 +45,7 @@
         target varchar(255),
         type varchar(255) not null,
         direction enum ('INBOUND','OUTBOUND'),
+        html_message_body longtext,
         message_body longtext,
         primary key (id)
     ) engine=InnoDB;

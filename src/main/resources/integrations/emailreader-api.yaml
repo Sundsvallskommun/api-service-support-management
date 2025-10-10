@@ -5,13 +5,15 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "4.0"
+  version: "4.2"
 servers:
-  - url: http://localhost:55654
+  - url: http://localhost:59700
     description: Generated server url
 tags:
   - name: Email
     description: Email
+  - name: Graph Credentials
+    description: Credentials for Microsoft Graph
   - name: Credentials
     description: Credentials
 paths:
@@ -45,6 +47,14 @@ paths:
       responses:
         "204":
           description: No content
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/Problem"
+                  - $ref: "#/components/schemas/ConstraintViolationProblem"
         "500":
           description: Internal Server Error
           content:
@@ -57,14 +67,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        "400":
-          description: Bad request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                  - $ref: "#/components/schemas/Problem"
-                  - $ref: "#/components/schemas/ConstraintViolationProblem"
     delete:
       tags:
         - Credentials
@@ -88,6 +90,14 @@ paths:
       responses:
         "204":
           description: No content
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/Problem"
+                  - $ref: "#/components/schemas/ConstraintViolationProblem"
         "500":
           description: Internal Server Error
           content:
@@ -100,6 +110,40 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+  /{municipalityId}/credentials/graph/{id}:
+    get:
+      tags:
+        - Graph Credentials
+      description: Get Graph credentials by id
+      operationId: getByMunicipalityIdAndId
+      parameters:
+        - name: municipalityId
+          in: path
+          description: Municipality id
+          required: true
+          schema:
+            type: string
+          example: 2281
+        - name: id
+          in: path
+          description: Email message ID
+          required: true
+          schema:
+            type: string
+          example: 81471222-5798-11e9-ae24-57fa13b361e1
+      responses:
+        "200":
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GraphCredentials"
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -108,6 +152,122 @@ paths:
                 oneOf:
                   - $ref: "#/components/schemas/Problem"
                   - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server Error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "502":
+          description: Bad Gateway
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    put:
+      tags:
+        - Graph Credentials
+      description: Update Graph credentials
+      operationId: update_1
+      parameters:
+        - name: municipalityId
+          in: path
+          description: Municipality id
+          required: true
+          schema:
+            type: string
+          example: 2281
+        - name: id
+          in: path
+          description: Email message ID
+          required: true
+          schema:
+            type: string
+          example: 81471222-5798-11e9-ae24-57fa13b361e1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GraphCredentials"
+        required: true
+      responses:
+        "204":
+          description: No content
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/Problem"
+                  - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server Error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "502":
+          description: Bad Gateway
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    delete:
+      tags:
+        - Graph Credentials
+      description: Delete Graph credentials by id
+      operationId: delete_1
+      parameters:
+        - name: municipalityId
+          in: path
+          description: Municipality id
+          required: true
+          schema:
+            type: string
+          example: 2281
+        - name: id
+          in: path
+          description: Email message ID
+          required: true
+          schema:
+            type: string
+          example: 81471222-5798-11e9-ae24-57fa13b361e1
+      responses:
+        "204":
+          description: No content
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/Problem"
+                  - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server Error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "502":
+          description: Bad Gateway
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
   /{municipalityId}/credentials:
     get:
       tags:
@@ -131,6 +291,14 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Credentials"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/Problem"
+                  - $ref: "#/components/schemas/ConstraintViolationProblem"
         "500":
           description: Internal Server Error
           content:
@@ -143,14 +311,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        "400":
-          description: Bad request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                  - $ref: "#/components/schemas/Problem"
-                  - $ref: "#/components/schemas/ConstraintViolationProblem"
     post:
       tags:
         - Credentials
@@ -173,6 +333,14 @@ paths:
       responses:
         "204":
           description: No content
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/Problem"
+                  - $ref: "#/components/schemas/ConstraintViolationProblem"
         "500":
           description: Internal Server Error
           content:
@@ -185,6 +353,29 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+  /{municipalityId}/credentials/graph:
+    get:
+      tags:
+        - Graph Credentials
+      description: Get a list of Graph credentials
+      operationId: getAllByMunicipalityId_1
+      parameters:
+        - name: municipalityId
+          in: path
+          description: Municipality id
+          required: true
+          schema:
+            type: string
+          example: 2281
+      responses:
+        "200":
+          description: Ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GraphCredentials"
         "400":
           description: Bad request
           content:
@@ -193,6 +384,65 @@ paths:
                 oneOf:
                   - $ref: "#/components/schemas/Problem"
                   - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server Error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "502":
+          description: Bad Gateway
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    post:
+      tags:
+        - Graph Credentials
+      description: Create Graph credentials
+      operationId: create_1
+      parameters:
+        - name: municipalityId
+          in: path
+          description: Municipality id
+          required: true
+          schema:
+            type: string
+          example: 2281
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GraphCredentials"
+        required: true
+      responses:
+        "201":
+          description: Successful operation
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/Problem"
+                  - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server Error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "502":
+          description: Bad Gateway
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
   /{municipalityId}/email/{namespace}:
     get:
       tags:
@@ -223,6 +473,14 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Email"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/Problem"
+                  - $ref: "#/components/schemas/ConstraintViolationProblem"
         "500":
           description: Internal Server Error
           content:
@@ -235,14 +493,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        "400":
-          description: Bad request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                  - $ref: "#/components/schemas/Problem"
-                  - $ref: "#/components/schemas/ConstraintViolationProblem"
   /{municipalityId}/email/attachments/{attachmentId}:
     get:
       tags:
@@ -267,6 +517,16 @@ paths:
             format: int32
           example: 123
       responses:
+        "200":
+          description: Successful Operation
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/Problem"
+                  - $ref: "#/components/schemas/ConstraintViolationProblem"
         "500":
           description: Internal Server Error
           content:
@@ -279,16 +539,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        "400":
-          description: Bad request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                  - $ref: "#/components/schemas/Problem"
-                  - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "200":
-          description: Successful Operation
   /api-docs:
     get:
       tags:
@@ -329,6 +579,14 @@ paths:
       responses:
         "204":
           description: No content
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/Problem"
+                  - $ref: "#/components/schemas/ConstraintViolationProblem"
         "500":
           description: Internal Server Error
           content:
@@ -341,14 +599,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        "400":
-          description: Bad request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                  - $ref: "#/components/schemas/Problem"
-                  - $ref: "#/components/schemas/ConstraintViolationProblem"
 components:
   schemas:
     Credentials:
@@ -367,15 +617,18 @@ components:
           readOnly: true
           example: 74531aac-ffea-42cc-8a0a-52715bb27850
         username:
+          minLength: 1
           type: string
           description: username to use for authentication against the email server
           example: joe01doe
         password:
+          minLength: 1
           type: string
           description: password to use for authentication against the email server
           writeOnly: true
           example: mySecretPassword
         emailAddress:
+          minItems: 1
           type: array
           description: List of email addresses to check for new emails. The provided
             user must have access to these email addresses.
@@ -385,10 +638,12 @@ components:
           items:
             type: string
         domain:
+          minLength: 1
           type: string
           description: domain for the email server
           example: https://mail.example.com/EWS/Exchange.asmx
         namespace:
+          minLength: 1
           type: string
           description: Namespace
           example: my.namespace
@@ -407,13 +662,23 @@ components:
             casetype: myCaseType
             key2: value2
         destinationFolder:
+          minLength: 1
           type: string
           description: The folder to move emails to after processing
           example: Processed
+        enabled:
+          type: boolean
+          description: If this configuration is active and should fetch emails
       description: Email credentials to use for authentication against the email server
     Problem:
       type: object
       properties:
+        title:
+          type: string
+        detail:
+          type: string
+        status:
+          $ref: "#/components/schemas/StatusType"
         instance:
           type: string
           format: uri
@@ -424,12 +689,6 @@ components:
           type: object
           additionalProperties:
             type: object
-        status:
-          $ref: "#/components/schemas/StatusType"
-        title:
-          type: string
-        detail:
-          type: string
     StatusType:
       type: object
       properties:
@@ -478,6 +737,8 @@ components:
           type: string
         message:
           type: string
+        detail:
+          type: string
         instance:
           type: string
           format: uri
@@ -485,8 +746,6 @@ components:
           type: object
           additionalProperties:
             type: object
-        detail:
-          type: string
         suppressed:
           type: array
           items:
@@ -549,6 +808,12 @@ components:
                 type: boolean
         message:
           type: string
+        title:
+          type: string
+        detail:
+          type: string
+        status:
+          $ref: "#/components/schemas/StatusType"
         instance:
           type: string
           format: uri
@@ -559,12 +824,6 @@ components:
           type: object
           additionalProperties:
             type: object
-        status:
-          $ref: "#/components/schemas/StatusType"
-        title:
-          type: string
-        detail:
-          type: string
         suppressed:
           type: array
           items:
@@ -605,6 +864,79 @@ components:
           type: string
         message:
           type: string
+    GraphCredentials:
+      required:
+        - clientId
+        - clientSecret
+        - destinationFolder
+        - emailAddress
+        - metadata
+        - namespace
+        - tenantId
+      type: object
+      properties:
+        id:
+          type: string
+          description: Credentials id
+          readOnly: true
+          example: 74531aac-ffea-42cc-8a0a-52715bb27850
+        clientSecret:
+          minLength: 1
+          type: string
+          description: Client secret to use for authentication against the Microsoft
+            Graph server. Do note it should be the secret value and not the Secret
+            ID.
+          writeOnly: true
+          example: mySecretClientSecret
+        tenantId:
+          minLength: 1
+          type: string
+          description: Tenant ID to use for authentication against the Microsoft Graph
+            server.
+          writeOnly: true
+          example: myTenantId
+        clientId:
+          minLength: 1
+          type: string
+          description: Client ID to use for authentication against the Microsoft Graph
+            server.
+          writeOnly: true
+          example: myClientId
+        emailAddress:
+          minItems: 1
+          type: array
+          description: List of email addresses to check for new emails. The provided
+            graph application must have access to these email addresses.
+          example:
+            - myothersupportemail@sundsvall.se
+            - mysupportemail@sundsvall.se
+          items:
+            type: string
+        namespace:
+          minLength: 1
+          type: string
+          description: Namespace
+          example: my.namespace
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+            description: Metadata to add to the email.
+            example: "{\"casetype\":\"myCaseType\",\"key2\":\"value2\"}"
+          description: Metadata to add to the email.
+          example:
+            casetype: myCaseType
+            key2: value2
+        destinationFolder:
+          minLength: 1
+          type: string
+          description: The folder to move emails to after processing.
+          example: Processed
+        enabled:
+          type: boolean
+          description: If this configuration is active and should fetch emails
+      description: Email credentials to use for authentication against a Microsoft
+        Graph server.
     Email:
       type: object
       properties:
@@ -628,6 +960,10 @@ components:
           type: string
           description: E-mail plain-text body
           example: E-mail body
+        htmlMessage:
+          type: string
+          description: E-mail HTML body
+          example: <p>E-mail body</p>
         id:
           type: string
           description: E-mail message id

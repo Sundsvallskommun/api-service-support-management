@@ -45,6 +45,7 @@ class CommunicationTest {
 		final var sender = "sender";
 		final var direction = Direction.INBOUND;
 		final var messageBody = "messageBody";
+		final var htmlMessageBody = "htmlMessageBody";
 		final var sent = OffsetDateTime.now();
 		final var errandNumber = "errandNumber";
 		final var subject = "subject";
@@ -61,6 +62,7 @@ class CommunicationTest {
 			.withSender(sender)
 			.withDirection(direction)
 			.withMessageBody(messageBody)
+			.withHtmlMessageBody(htmlMessageBody)
 			.withSent(sent)
 			.withErrandNumber(errandNumber)
 			.withSubject(subject)
@@ -77,6 +79,7 @@ class CommunicationTest {
 		assertThat(bean.getSender()).isEqualTo(sender);
 		assertThat(bean.getDirection()).isEqualTo(direction);
 		assertThat(bean.getMessageBody()).isEqualTo(messageBody);
+		assertThat(bean.getHtmlMessageBody()).isEqualTo(htmlMessageBody);
 		assertThat(bean.getSent()).isEqualTo(sent);
 		assertThat(bean.getErrandNumber()).isEqualTo(errandNumber);
 		assertThat(bean.getSubject()).isEqualTo(subject);

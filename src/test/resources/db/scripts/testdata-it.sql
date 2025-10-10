@@ -235,13 +235,15 @@ VALUES ('59328e70-4297-4bb5-ba69-cb17f2d15a17', '2022-01-01 12:00:00.000',
 -- Communication
 -- -----------------------------------
 INSERT INTO communication(internal, viewed, sender, sender_user_id, sent, id, errand_number, external_id,
-                          message_body, target, subject, direction, type, namespace, municipality_id)
+                          message_body, target, subject, direction, type, namespace, municipality_id, html_message_body)
 VALUES (0, 0, 'Test Testorsson', 'userId', '2023-01-01 12:00:00.000', 'cc236cf1-c00f-4479-8341-ecf5dd90b5b9',
         'KC-23020001', 'case1',
-        'message body 1', '1234567890', 'subject1', 'INBOUND', 'SMS', 'NAMESPACE-1', '2281'),
+        'message body 1', '1234567890', 'subject1', 'INBOUND', 'SMS', 'NAMESPACE-1', '2281',
+        '<p>html message body 1</p>'),
        (1, 1, 'Test Testorsson', 'userId', '2023-01-02 12:00:00.000', '59328e70-4297-4bb5-ba69-cb17f2d15a17',
         'KC-23020001', 'case2',
-        'message body 2', '0987654321', 'subject2', 'OUTBOUND', 'EMAIL', 'NAMESPACE-1', '2281');
+        'message body 2', '0987654321', 'subject2', 'OUTBOUND', 'EMAIL', 'NAMESPACE-1', '2281',
+        '<p>html message body 2</p>');
 -- -----------------------------------
 -- Communication_attachment
 -- -----------------------------------

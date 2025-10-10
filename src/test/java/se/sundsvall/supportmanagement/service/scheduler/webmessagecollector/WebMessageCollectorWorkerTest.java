@@ -160,7 +160,7 @@ class WebMessageCollectorWorkerTest {
 		assertThat(communicationEntityCaptor.getAllValues().getFirst()).isSameAs(communicationEntityCaptor.getAllValues().getLast());
 		assertThat(communicationEntityCaptor.getValue()).satisfies(
 			communication -> {
-				assertThat(communication).hasNoNullFieldsOrPropertiesExcept("id", "subject", "target", "recipients", "emailHeaders", "errandAttachments");
+				assertThat(communication).hasNoNullFieldsOrPropertiesExcept("id", "subject", "target", "recipients", "emailHeaders", "errandAttachments", "htmlMessageBody");
 				assertThat(communication.getDirection()).isEqualTo(INBOUND);
 				assertThat(communication.getExternalId()).isEqualTo(messagedto.getMessageId());
 				assertThat(communication.getMessageBody()).isEqualTo(messagedto.getMessage());

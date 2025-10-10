@@ -7,7 +7,7 @@ info:
     url: https://opensource.org/licenses/MIT
   version: "10.10"
 servers:
-  - url: http://localhost:54544
+  - url: http://localhost:51504
     description: Generated server url
 tags:
   - name: Errand attachments
@@ -5280,12 +5280,12 @@ components:
     Problem:
       type: object
       properties:
-        status:
-          $ref: "#/components/schemas/StatusType"
-        detail:
-          type: string
         title:
           type: string
+        detail:
+          type: string
+        status:
+          $ref: "#/components/schemas/StatusType"
         instance:
           type: string
           format: uri
@@ -5415,12 +5415,12 @@ components:
                 type: boolean
         message:
           type: string
-        status:
-          $ref: "#/components/schemas/StatusType"
-        detail:
-          type: string
         title:
           type: string
+        detail:
+          type: string
+        status:
+          $ref: "#/components/schemas/StatusType"
         instance:
           type: string
           format: uri
@@ -6618,21 +6618,23 @@ components:
     PageErrand:
       type: object
       properties:
-        totalElements:
-          type: integer
-          format: int64
         totalPages:
           type: integer
           format: int32
-        numberOfElements:
+        totalElements:
           type: integer
-          format: int32
+          format: int64
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
         first:
           type: boolean
         last:
           type: boolean
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
+        numberOfElements:
+          type: integer
+          format: int32
         size:
           type: integer
           format: int32
@@ -6643,13 +6645,13 @@ components:
         number:
           type: integer
           format: int32
-        sort:
-          $ref: "#/components/schemas/SortObject"
         empty:
           type: boolean
     PageableObject:
       type: object
       properties:
+        sort:
+          $ref: "#/components/schemas/SortObject"
         paged:
           type: boolean
         pageNumber:
@@ -6663,8 +6665,6 @@ components:
         offset:
           type: integer
           format: int64
-        sort:
-          $ref: "#/components/schemas/SortObject"
     SortObject:
       type: object
       properties:
@@ -6863,21 +6863,23 @@ components:
     PageEvent:
       type: object
       properties:
-        totalElements:
-          type: integer
-          format: int64
         totalPages:
           type: integer
           format: int32
-        numberOfElements:
+        totalElements:
           type: integer
-          format: int32
+          format: int64
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
         first:
           type: boolean
         last:
           type: boolean
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
+        numberOfElements:
+          type: integer
+          format: int32
         size:
           type: integer
           format: int32
@@ -6888,8 +6890,6 @@ components:
         number:
           type: integer
           format: int32
-        sort:
-          $ref: "#/components/schemas/SortObject"
         empty:
           type: boolean
     Communication:
@@ -6919,6 +6919,10 @@ components:
           type: string
           description: The message body
           example: Hello world
+        htmlMessageBody:
+          type: string
+          description: The message body in HTML format
+          example: <p>Hello world</p>
         sent:
           type: string
           description: The time the communication was sent
@@ -7071,21 +7075,23 @@ components:
     PageMessage:
       type: object
       properties:
-        totalElements:
-          type: integer
-          format: int64
         totalPages:
           type: integer
           format: int32
-        numberOfElements:
+        totalElements:
           type: integer
-          format: int32
+          format: int64
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
         first:
           type: boolean
         last:
           type: boolean
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
+        numberOfElements:
+          type: integer
+          format: int32
         size:
           type: integer
           format: int32
@@ -7096,8 +7102,6 @@ components:
         number:
           type: integer
           format: int32
-        sort:
-          $ref: "#/components/schemas/SortObject"
         empty:
           type: boolean
     ReadBy:

@@ -50,6 +50,7 @@ public class EmailReaderMapper {
 			.withExternalId("")
 			.withSubject(email.getSubject())
 			.withMessageBody(email.getMessage())
+			.withHtmlMessageBody(email.getHtmlMessage())
 			.withSender(email.getSender())
 			.withSent(email.getReceivedAt())
 			.withType(CommunicationType.EMAIL)

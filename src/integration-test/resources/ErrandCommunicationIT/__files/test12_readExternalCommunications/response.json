@@ -14,6 +14,7 @@
 			}
 		],
 		"messageBody": "message body 1",
+		"htmlMessageBody": "<p>html message body 1</p>",
 		"sender": "Test Testorsson",
 		"errandNumber": "KC-23020001",
 		"subject": "subject1",

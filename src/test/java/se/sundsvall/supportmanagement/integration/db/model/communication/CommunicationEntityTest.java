@@ -53,6 +53,7 @@ class CommunicationEntityTest {
 		final var externalCaseID = "externalCaseID";
 		final var subject = "subject";
 		final var messageBody = "messageBody";
+		final var htmlMessageBody = "htmlMessageBody";
 		final var sent = OffsetDateTime.now();
 		final var type = CommunicationType.EMAIL;
 		final var target = "target";
@@ -75,6 +76,7 @@ class CommunicationEntityTest {
 			.withExternalId(externalCaseID)
 			.withSubject(subject)
 			.withMessageBody(messageBody)
+			.withHtmlMessageBody(htmlMessageBody)
 			.withSent(sent)
 			.withType(type)
 			.withTarget(target)
@@ -96,6 +98,7 @@ class CommunicationEntityTest {
 		assertThat(entity.getExternalId()).isEqualTo(externalCaseID);
 		assertThat(entity.getSubject()).isEqualTo(subject);
 		assertThat(entity.getMessageBody()).isEqualTo(messageBody);
+		assertThat(entity.getHtmlMessageBody()).isEqualTo(htmlMessageBody);
 		assertThat(entity.getSent()).isEqualTo(sent);
 		assertThat(entity.getType()).isEqualTo(type);
 		assertThat(entity.getTarget()).isEqualTo(target);
