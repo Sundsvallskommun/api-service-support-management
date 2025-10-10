@@ -7,4 +7,7 @@
 - **Communication**
   - **Added Fields:**
     - htmlMessageBody: `string`
+- **NamespaceConfig**
+  - **Added Fields:**
+    - accessControl: `boolean`
 

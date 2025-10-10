@@ -12,16 +12,30 @@ class NamespaceConfigMapperTest {
 
 	private final NamespaceConfigMapper mapper = new NamespaceConfigMapper();
 
+	private static NamespaceConfigEntity createEntity(final String municipalityId, final String namespace, final String shortCode, final String displayName, final OffsetDateTime created, final OffsetDateTime modified, final boolean accessControl) {
+		return NamespaceConfigEntity.create()
+			.withNamespace(namespace)
+			.withMunicipalityId(municipalityId)
+			.withDisplayName(displayName)
+			.withShortCode(shortCode)
+			.withNotificationTTLInDays(40)
+			.withCreated(created)
+			.withModified(modified)
+			.withAccessControl(accessControl);
+	}
+
 	@Test
 	void toEntity() {
 		final var municipalityId = "municipalityId";
 		final var namespace = "namespace";
 		final var shortCode = "shortCode";
 		final var displayName = "displayName";
+		final var accessControl = true;
 
 		final var config = NamespaceConfig.create()
 			.withDisplayName(displayName)
-			.withShortCode(shortCode);
+			.withShortCode(shortCode)
+			.withAccessControl(accessControl);
 
 		final var entity = mapper.toEntity(config, namespace, municipalityId);
 
@@ -30,6 +44,7 @@ class NamespaceConfigMapperTest {
 		assertThat(entity.getMunicipalityId()).isEqualTo(municipalityId);
 		assertThat(entity.getDisplayName()).isEqualTo(displayName);
 		assertThat(entity.getShortCode()).isEqualTo(shortCode);
+		assertThat(entity.getAccessControl()).isEqualTo(accessControl);
 	}
 
 	@Test
@@ -40,8 +55,9 @@ class NamespaceConfigMapperTest {
 		final var displayName = "displayName";
 		final var created = OffsetDateTime.now().minusDays(1);
 		final var modified = OffsetDateTime.now();
+		final var accessControl = true;
 
-		final var entity = createEntity(municipalityId, namespace, shortCode, displayName, created, modified);
+		final var entity = createEntity(municipalityId, namespace, shortCode, displayName, created, modified, accessControl);
 
 		final var config = mapper.toNamespaceConfig(entity);
 
@@ -52,6 +68,7 @@ class NamespaceConfigMapperTest {
 		assertThat(config.getShortCode()).isEqualTo(shortCode);
 		assertThat(config.getCreated()).isEqualTo(created);
 		assertThat(config.getModified()).isEqualTo(modified);
+		assertThat(config.isAccessControl()).isEqualTo(accessControl);
 	}
 
 	@Test
@@ -62,8 +79,9 @@ class NamespaceConfigMapperTest {
 		final var displayName = "displayName";
 		final var created = OffsetDateTime.now().minusDays(1);
 		final var modified = OffsetDateTime.now();
+		final var accessControl = true;
 
-		final var entities = List.of(createEntity(municipalityId, namespace, shortCode, displayName, created, modified));
+		final var entities = List.of(createEntity(municipalityId, namespace, shortCode, displayName, created, modified, accessControl));
 
 		final var configs = mapper.toNamespaceConfigs(entities);
 
@@ -75,22 +93,12 @@ class NamespaceConfigMapperTest {
 			assertThat(config.getShortCode()).isEqualTo(shortCode);
 			assertThat(config.getCreated()).isEqualTo(created);
 			assertThat(config.getModified()).isEqualTo(modified);
+			assertThat(config.isAccessControl()).isEqualTo(accessControl);
 		});
 	}
 
 	@Test
 	void toNamespaceConfigsFromNull() {
 		assertThat(mapper.toNamespaceConfigs(null)).isEmpty();
-	}
-
-	private static NamespaceConfigEntity createEntity(final String municipalityId, final String namespace, final String shortCode, final String displayName, final OffsetDateTime created, final OffsetDateTime modified) {
-		return NamespaceConfigEntity.create()
-			.withNamespace(namespace)
-			.withMunicipalityId(municipalityId)
-			.withDisplayName(displayName)
-			.withShortCode(shortCode)
-			.withNotificationTTLInDays(40)
-			.withCreated(created)
-			.withModified(modified);
 	}
 }

@@ -221,6 +221,7 @@
     ) engine=InnoDB;
 
     create table namespace_config (
+        access_control bit,
         notification_ttl_in_days integer not null,
         created datetime(6),
         id bigint not null auto_increment,
