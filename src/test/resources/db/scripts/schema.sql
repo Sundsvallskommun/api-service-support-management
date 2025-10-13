@@ -220,6 +220,20 @@
         primary key (id)
     ) engine=InnoDB;
 
+    create table metadata_label (
+        created datetime(6),
+        modified datetime(6),
+        municipality_id varchar(8) not null,
+        namespace varchar(32) not null,
+        classification varchar(255),
+        display_name varchar(255),
+        id varchar(255) not null,
+        parent_id varchar(255),
+        resource_name varchar(255),
+        resource_path varchar(255),
+        primary key (id)
+    ) engine=InnoDB;
+
     create table namespace_config (
         access_control bit,
         notification_ttl_in_days integer not null,
@@ -504,6 +518,12 @@
        add constraint uq_namespace_municipality_id unique (namespace, municipality_id);
 
     create index idx_namespace_municipality_id 
+       on metadata_label (namespace, municipality_id);
+
+    alter table if exists metadata_label 
+       add constraint uq_namespace_municipality_id_resource_path unique (namespace, `municipality_id, resource_path`);
+
+    create index idx_namespace_municipality_id 
        on namespace_config (namespace, municipality_id);
 
     create index idx_municipality_id 
@@ -538,6 +558,9 @@
 
     alter table if exists role 
        add constraint uq_namespace_municipality_id_name unique (namespace, municipality_id, name);
+
+    create index idx_stakeholder_external_id_role_errand_id 
+       on stakeholder (external_id, `role`, errand_id);
 
     create index idx_namespace_municipality_id 
        on status (namespace, municipality_id);
@@ -626,6 +649,11 @@
        add constraint fk_errand_external_tag_errand_id 
        foreign key (errand_id) 
        references errand (id);
+
+    alter table if exists metadata_label 
+       add constraint fk_metadata_label_id 
+       foreign key (parent_id) 
+       references metadata_label (id);
 
     alter table if exists notification 
        add constraint fk_notification_errand_id 
