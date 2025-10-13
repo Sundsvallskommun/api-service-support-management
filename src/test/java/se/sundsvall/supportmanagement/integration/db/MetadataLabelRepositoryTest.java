@@ -61,9 +61,9 @@ class MetadataLabelRepositoryTest {
 	void createWithDuplicateValues() {
 
 		// Arrange
-		final var municipalityId = "2282";
+		final var municipalityId = "2281";
 		final var namespace = "namespace-1";
-		final var resourcePath = "parent/child/resource3";
+		final var resourcePath = "parent/child/resource2";
 
 		final var existingOptionalEntity = metadataLabelRepository.findByNamespaceAndMunicipalityIdAndResourcePath(namespace, municipalityId, resourcePath);
 		assertThat(existingOptionalEntity).isPresent();
