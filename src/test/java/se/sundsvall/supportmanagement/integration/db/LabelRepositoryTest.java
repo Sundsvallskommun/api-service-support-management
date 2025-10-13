@@ -18,7 +18,7 @@ import org.springframework.test.context.jdbc.Sql;
 import se.sundsvall.supportmanagement.integration.db.model.LabelEntity;
 
 /**
- * StatusRepository tests.
+ * LabelRepository tests.
  *
  * @see <a href="file:src/test/resources/db/testdata.sql">src/test/resources/db/testdata.sql</a> for data setup.
  */
