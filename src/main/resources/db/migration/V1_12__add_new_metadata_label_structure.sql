@@ -22,3 +22,4 @@
        add constraint fk_metadata_label_id 
        foreign key (parent_id) 
        references metadata_label (id);
+       

@@ -34,7 +34,7 @@ import org.hibernate.annotations.UuidGenerator;
 	},
 	uniqueConstraints = {
 		@UniqueConstraint(name = "uq_namespace_municipality_id_resource_path", columnNames = {
-			"namespace", "municipality_id, resource_path"
+			"namespace", "municipality_id", "resource_path"
 		})
 	})
 public class MetadataLabelEntity {
@@ -252,12 +252,15 @@ public class MetadataLabelEntity {
 
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj)
+		if (this == obj) {
 			return true;
-		if (obj == null)
+		}
+		if (obj == null) {
 			return false;
-		if (getClass() != obj.getClass())
+		}
+		if (getClass() != obj.getClass()) {
 			return false;
+		}
 		MetadataLabelEntity other = (MetadataLabelEntity) obj;
 		return Objects.equals(classification, other.classification) && Objects.equals(created, other.created) && Objects.equals(displayName, other.displayName) && Objects.equals(id, other.id) && Objects.equals(metadataLabels, other.metadataLabels)
 			&& Objects.equals(modified, other.modified) && Objects.equals(municipalityId, other.municipalityId) && Objects.equals(namespace, other.namespace) && Objects.equals(

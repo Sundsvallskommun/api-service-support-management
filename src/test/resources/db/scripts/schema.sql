@@ -521,7 +521,7 @@
        on metadata_label (namespace, municipality_id);
 
     alter table if exists metadata_label 
-       add constraint uq_namespace_municipality_id_resource_path unique (namespace, `municipality_id, resource_path`);
+       add constraint uq_namespace_municipality_id_resource_path unique (namespace, municipality_id, resource_path);
 
     create index idx_namespace_municipality_id 
        on namespace_config (namespace, municipality_id);

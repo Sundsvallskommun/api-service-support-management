@@ -5,10 +5,12 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase.Replace.NONE;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
@@ -20,7 +22,8 @@ import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
  * @see <a href="file:src/test/resources/db/testdata-junit.sql">src/test/resources/db/testdata-junit.sql</a> for data
  *      setup.
  */
-@SpringBootTest
+@DataJpaTest
+@AutoConfigureTestDatabase(replace = NONE)
 @ActiveProfiles("junit")
 @Sql({
 	"/db/scripts/truncate.sql",
@@ -58,8 +61,8 @@ class MetadataLabelRepositoryTest {
 	void createWithDuplicateValues() {
 
 		// Arrange
-		final var municipalityId = "2281";
 		final var namespace = "namespace-1";
+		final var municipalityId = "2281";
 		final var resourcePath = "parent/child/resource2";
 
 		final var existingOptionalEntity = metadataLabelRepository.findByNamespaceAndMunicipalityIdAndResourcePath(namespace, municipalityId, resourcePath);
@@ -71,7 +74,7 @@ class MetadataLabelRepositoryTest {
 			.withResourcePath(resourcePath);
 
 		// Act and assert that no duplicates of municipalityId, namespace and resourcePath can exist in table.
-		assertThrows(DataIntegrityViolationException.class, () -> metadataLabelRepository.save(entity));
+		assertThrows(DataIntegrityViolationException.class, () -> metadataLabelRepository.saveAndFlush(entity));
 	}
 
 	@Test
