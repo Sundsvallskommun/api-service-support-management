@@ -5,12 +5,10 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase.Replace.NONE;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
@@ -22,8 +20,7 @@ import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
  * @see <a href="file:src/test/resources/db/testdata-junit.sql">src/test/resources/db/testdata-junit.sql</a> for data
  *      setup.
  */
-@DataJpaTest
-@AutoConfigureTestDatabase(replace = NONE)
+@SpringBootTest
 @ActiveProfiles("junit")
 @Sql({
 	"/db/scripts/truncate.sql",
@@ -74,7 +71,7 @@ class MetadataLabelRepositoryTest {
 			.withResourcePath(resourcePath);
 
 		// Act and assert that no duplicates of municipalityId, namespace and resourcePath can exist in table.
-		assertThrows(DataIntegrityViolationException.class, () -> metadataLabelRepository.saveAndFlush(entity));
+		assertThrows(DataIntegrityViolationException.class, () -> metadataLabelRepository.save(entity));
 	}
 
 	@Test

@@ -35,4 +35,6 @@ TRUNCATE table errand_labels;
 TRUNCATE table conversation;
 TRUNCATE table conversation_relation_id;
 TRUNCATE table message_exchange_sync;
+TRUNCATE table web_message_collect;
+TRUNCATE table web_message_collect_family_ids;
 SET FOREIGN_KEY_CHECKS = 1;
