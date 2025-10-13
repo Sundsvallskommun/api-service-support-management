@@ -12,7 +12,6 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpStatus;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
@@ -36,11 +35,12 @@ class MetadataLabelResourceTest {
 	private WebTestClient webTestClient;
 
 	@Test
-	void createLabels() {
+	void create() {
+
 		// Arrange
 		final var labels = List.of(
-			Label.create().withClassification("classification").withName("name_1"),
-			Label.create().withClassification("classification").withName("name_2"));
+			Label.create().withClassification("classification").withResourceName("resource_1").withName("name_1"),
+			Label.create().withClassification("classification").withResourceName("resource_2").withName("name_2"));
 
 		// Act
 		webTestClient.post()
@@ -57,13 +57,17 @@ class MetadataLabelResourceTest {
 	}
 
 	@Test
-	void getLabels() {
+	void getList() {
+
 		// Arrange
-		final var labels = Labels.create().withLabelStructure(List.of(Label.create().withClassification("classification").withName("name")));
+		final var labels = Labels.create().withLabelStructure(List.of(
+			Label.create().withClassification("classification").withResourceName("resource").withName("name")));
+
 		when(metadataServiceMock.findLabels(NAMESPACE, MUNICIPALITY_ID)).thenReturn(labels);
 
 		// Act
-		final var response = webTestClient.get().uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+		final var response = webTestClient.get()
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
 			.exchange()
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)
@@ -77,11 +81,12 @@ class MetadataLabelResourceTest {
 	}
 
 	@Test
-	void UpdateLabels() {
+	void update() {
+
 		// Arrange
 		final var labels = List.of(
-			Label.create().withClassification("classification").withName("name_1"),
-			Label.create().withClassification("classification").withName("name_2"));
+			Label.create().withClassification("classification").withResourceName("resource_1").withName("name_1"),
+			Label.create().withClassification("classification").withResourceName("resource_2").withName("name_2"));
 
 		// Act
 		webTestClient.put()
@@ -98,11 +103,13 @@ class MetadataLabelResourceTest {
 	}
 
 	@Test
-	void deleteLabels() {
+	void delete() {
+
 		// Act
-		webTestClient.delete().uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+		webTestClient.delete()
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
 			.exchange()
-			.expectStatus().isEqualTo(HttpStatus.NO_CONTENT);
+			.expectStatus().isNoContent();
 
 		// Assert and verify
 		verify(metadataServiceMock).deleteLabels(NAMESPACE, MUNICIPALITY_ID);

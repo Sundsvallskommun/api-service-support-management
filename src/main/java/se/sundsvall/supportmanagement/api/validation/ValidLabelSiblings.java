@@ -17,7 +17,7 @@ import se.sundsvall.supportmanagement.api.validation.impl.ValidLabelSiblingsCons
 @Constraint(validatedBy = ValidLabelSiblingsConstraintValidator.class)
 public @interface ValidLabelSiblings {
 
-	String message() default "each entry must have unique name and same classification compared to its siblings";
+	String message() default "each entry must have unique name, resourceName and same classification compared to its siblings";
 
 	Class<?>[] groups() default {};
 
