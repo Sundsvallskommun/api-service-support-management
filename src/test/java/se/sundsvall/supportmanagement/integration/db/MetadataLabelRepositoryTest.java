@@ -103,7 +103,7 @@ class MetadataLabelRepositoryTest {
 	void delete() {
 
 		// Setup
-		final var id = "821033d0-f059-4f2b-90f2-cc0562ac0560"; // see testdata-junit.sql
+		final var id = "4bee7529-b904-4559-97ae-0437f74de935"; // see testdata-junit.sql
 
 		// Verify existing label
 		assertThat(metadataLabelRepository.existsById(id)).isTrue();
