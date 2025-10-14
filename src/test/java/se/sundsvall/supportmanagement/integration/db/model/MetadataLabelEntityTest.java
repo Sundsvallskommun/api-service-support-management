@@ -28,7 +28,7 @@ class MetadataLabelEntityTest {
 	}
 
 	@Test
-	void testBean() {
+	void bean() {
 		assertThat(MetadataLabelEntity.class, allOf(
 			hasValidBeanConstructor(),
 			hasValidGettersAndSetters(),
@@ -80,7 +80,7 @@ class MetadataLabelEntityTest {
 	}
 
 	@Test
-	void testOnCreate() {
+	void onCreate() {
 		final var entity = MetadataLabelEntity.create();
 		entity.onCreate();
 
@@ -89,7 +89,58 @@ class MetadataLabelEntityTest {
 	}
 
 	@Test
-	void testOnUpdate() {
+	void onCreateShouldBuildHierarchicalResourcePathsOnCreate() {
+
+		// Arrange
+		final var parent = MetadataLabelEntity.create()
+			.withResourceName("parent");
+
+		final var level1 = MetadataLabelEntity.create()
+			.withResourceName("level1")
+			.withParent(parent);
+
+		final var level2 = MetadataLabelEntity.create()
+			.withResourceName("level2")
+			.withParent(level1);
+
+		final var level3 = MetadataLabelEntity.create()
+			.withResourceName("level3")
+			.withParent(level2);
+
+		// Build relationships
+		parent.addChild(level1);
+		level1.addChild(level2);
+		level2.addChild(level3);
+
+		// Act — simulate JPA lifecycle (PrePersist)
+		parent.onCreate();
+		level1.onCreate();
+		level2.onCreate();
+		level3.onCreate();
+
+		// Assert — paths are correct
+		assertThat(parent.getResourcePath()).isEqualTo("parent");
+		assertThat(level1.getResourcePath()).isEqualTo("parent/level1");
+		assertThat(level2.getResourcePath()).isEqualTo("parent/level1/level2");
+		assertThat(level3.getResourcePath()).isEqualTo("parent/level1/level2/level3");
+	}
+
+	@Test
+	void onCreateShouldHandleMissingResourceNameGracefully() {
+
+		// Arrange
+		final var entity = MetadataLabelEntity.create()
+			.withResourceName(null);
+
+		// Act
+		entity.onCreate();
+
+		// Assert
+		assertThat(entity.getResourcePath()).isNull();
+	}
+
+	@Test
+	void onUpdate() {
 		final var entity = MetadataLabelEntity.create();
 		entity.onUpdate();
 
@@ -98,7 +149,36 @@ class MetadataLabelEntityTest {
 	}
 
 	@Test
-	void testNoDirtOnCreatedBean() {
+	void onUpdateShouldUpdateChildPathsRecursivelyWhenParentChanges() {
+
+		// Arrange
+		final var parent = MetadataLabelEntity.create()
+			.withResourceName("parent");
+
+		final var child = MetadataLabelEntity.create()
+			.withResourceName("child")
+			.withParent(parent);
+
+		parent.addChild(child);
+
+		// Initial persist
+		parent.onCreate();
+		child.onCreate();
+
+		assertThat(parent.getResourcePath()).isEqualTo("parent");
+		assertThat(child.getResourcePath()).isEqualTo("parent/child");
+
+		// Act — simulate rename + PreUpdate
+		parent.setResourceName("renamed");
+		parent.onUpdate();
+
+		// Assert — paths are updated recursively
+		assertThat(parent.getResourcePath()).isEqualTo("renamed");
+		assertThat(child.getResourcePath()).isEqualTo("renamed/child");
+	}
+
+	@Test
+	void noDirtOnCreatedBean() {
 		assertThat(MetadataLabelEntity.create()).hasAllNullFieldsOrPropertiesExcept("metadataLabels");
 		assertThat(new MetadataLabelEntity()).hasAllNullFieldsOrPropertiesExcept("metadataLabels");
 	}
