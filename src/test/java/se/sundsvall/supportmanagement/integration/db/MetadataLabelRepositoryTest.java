@@ -61,9 +61,9 @@ class MetadataLabelRepositoryTest {
 	void createWithDuplicateValues() {
 
 		// Arrange
-		final var namespace = "namespace-1";
-		final var municipalityId = "2281";
-		final var resourcePath = "parent/child/resource2";
+		final var namespace = "namespace-123";
+		final var municipalityId = "2285";
+		final var resourcePath = "parent";
 
 		final var existingOptionalEntity = metadataLabelRepository.findByNamespaceAndMunicipalityIdAndResourcePath(namespace, municipalityId, resourcePath);
 		assertThat(existingOptionalEntity).isPresent();
@@ -71,7 +71,7 @@ class MetadataLabelRepositoryTest {
 		final var entity = MetadataLabelEntity.create()
 			.withNamespace(namespace)
 			.withMunicipalityId(municipalityId)
-			.withResourcePath(resourcePath);
+			.withResourceName(resourcePath);
 
 		// Act and assert that no duplicates of municipalityId, namespace and resourcePath can exist in table.
 		assertThrows(DataIntegrityViolationException.class, () -> metadataLabelRepository.saveAndFlush(entity));
@@ -113,5 +113,174 @@ class MetadataLabelRepositoryTest {
 
 		// Assert
 		assertThat(metadataLabelRepository.existsById(id)).isFalse();
+	}
+
+	@Test
+	void createHierarchicalEntityStructureAndVerifyResourcePaths() {
+
+		// Arrange
+		final var municipalityId = "2289";
+		final var namespace = "namespace-hierarchy-1";
+
+		final var parent = MetadataLabelEntity.create()
+			.withMunicipalityId(municipalityId)
+			.withNamespace(namespace)
+			.withResourceName("parent");
+
+		final var level1 = MetadataLabelEntity.create()
+			.withMunicipalityId(municipalityId)
+			.withNamespace(namespace)
+			.withResourceName("level1")
+			.withParent(parent);
+
+		final var level2a = MetadataLabelEntity.create()
+			.withMunicipalityId(municipalityId)
+			.withNamespace(namespace)
+			.withResourceName("level2a")
+			.withParent(level1);
+
+		final var level2b = MetadataLabelEntity.create()
+			.withMunicipalityId(municipalityId)
+			.withNamespace(namespace)
+			.withResourceName("level2b")
+			.withParent(level1);
+
+		final var level3 = MetadataLabelEntity.create()
+			.withMunicipalityId(municipalityId)
+			.withNamespace(namespace)
+			.withResourceName("level3")
+			.withParent(level2a);
+
+		// Link hierarchy
+		parent.addChild(level1);
+		level1.addChild(level2a);
+		level1.addChild(level2b);
+		level2a.addChild(level3);
+
+		// Act
+		metadataLabelRepository.saveAndFlush(parent);
+
+		// Assert — check that all nodes have the correct resourcePath
+		final var allEntities = metadataLabelRepository.findAll().stream()
+			.filter(e -> namespace.equals(e.getNamespace()))
+			.toList();
+
+		assertThat(allEntities)
+			.hasSize(5)
+			.extracting(MetadataLabelEntity::getResourcePath)
+			.containsExactlyInAnyOrder(
+				"parent",
+				"parent/level1",
+				"parent/level1/level2a",
+				"parent/level1/level2b",
+				"parent/level1/level2a/level3");
+
+		// Act 2 — update the parents resourceName and save again
+		parent.setResourceName("parent-renamed");
+		metadataLabelRepository.saveAndFlush(parent);
+
+		// Assert 2 — check that children's resourcePath is also updated recursively
+		final var updatedEntities = metadataLabelRepository.findAll().stream()
+			.filter(e -> namespace.equals(e.getNamespace()))
+			.toList();
+
+		assertThat(updatedEntities)
+			.extracting(MetadataLabelEntity::getResourcePath)
+			.containsExactlyInAnyOrder(
+				"parent-renamed",
+				"parent-renamed/level1",
+				"parent-renamed/level1/level2a",
+				"parent-renamed/level1/level2b",
+				"parent-renamed/level1/level2a/level3");
+	}
+
+	@Test
+	void updateInTheMiddleOfTheHierarchicalEntityStructureAndVerifyResourcePaths() {
+
+		// Arrange
+		final var municipalityId = "2289";
+		final var namespace = "namespace-hierarchy-2";
+
+		final var parent = MetadataLabelEntity.create()
+			.withMunicipalityId(municipalityId)
+			.withNamespace(namespace)
+			.withResourceName("parent");
+
+		final var level1 = MetadataLabelEntity.create()
+			.withMunicipalityId(municipalityId)
+			.withNamespace(namespace)
+			.withResourceName("level1")
+			.withParent(parent);
+
+		final var level2a = MetadataLabelEntity.create()
+			.withMunicipalityId(municipalityId)
+			.withNamespace(namespace)
+			.withResourceName("level2a")
+			.withParent(level1);
+
+		final var level2b = MetadataLabelEntity.create()
+			.withMunicipalityId(municipalityId)
+			.withNamespace(namespace)
+			.withResourceName("level2b")
+			.withParent(level1);
+
+		final var level3a = MetadataLabelEntity.create()
+			.withMunicipalityId(municipalityId)
+			.withNamespace(namespace)
+			.withResourceName("level3a")
+			.withParent(level2a);
+
+		final var level3b = MetadataLabelEntity.create()
+			.withMunicipalityId(municipalityId)
+			.withNamespace(namespace)
+			.withResourceName("level3b")
+			.withParent(level2b);
+
+		// Link hierarchy
+		parent.addChild(level1);
+		level1.addChild(level2a);
+		level1.addChild(level2b);
+		level2a.addChild(level3a);
+		level2b.addChild(level3b);
+
+		// Act
+		metadataLabelRepository.saveAndFlush(parent);
+
+		// Assert — check that all nodes have the correct resourcePath
+		final var allEntities = metadataLabelRepository.findAll().stream()
+			.filter(e -> namespace.equals(e.getNamespace()))
+			.toList();
+
+		assertThat(allEntities)
+			.hasSize(6)
+			.extracting(MetadataLabelEntity::getResourcePath)
+			.containsExactlyInAnyOrder(
+				"parent",
+				"parent/level1",
+				"parent/level1/level2a",
+				"parent/level1/level2b",
+				"parent/level1/level2a/level3a",
+				"parent/level1/level2b/level3b");
+
+		// Act 2 — update the parents and middle node:s resourceName and save again. Save the middle node
+		final var level2aEntity = metadataLabelRepository.findByNamespaceAndMunicipalityIdAndResourcePath(namespace, municipalityId, "parent/level1/level2a").get();
+		level2aEntity.setResourceName("level2a-renamed");
+		parent.setResourceName("parent-renamed");
+		metadataLabelRepository.saveAndFlush(level2aEntity);
+
+		// Assert 2 — check that children's resourcePath is also updated recursively
+		final var updatedEntities = metadataLabelRepository.findAll().stream()
+			.filter(e -> namespace.equals(e.getNamespace()))
+			.toList();
+
+		assertThat(updatedEntities)
+			.extracting(MetadataLabelEntity::getResourcePath)
+			.containsExactlyInAnyOrder(
+				"parent-renamed",
+				"parent-renamed/level1",
+				"parent-renamed/level1/level2a-renamed",
+				"parent-renamed/level1/level2b",
+				"parent-renamed/level1/level2a-renamed/level3a",
+				"parent-renamed/level1/level2b/level3b");
 	}
 }

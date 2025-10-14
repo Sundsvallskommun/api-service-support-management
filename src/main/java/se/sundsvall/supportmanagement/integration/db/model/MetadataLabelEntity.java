@@ -2,9 +2,15 @@ package se.sundsvall.supportmanagement.integration.db.model;
 
 import static jakarta.persistence.CascadeType.ALL;
 import static jakarta.persistence.FetchType.LAZY;
+import static java.lang.String.join;
 import static java.time.OffsetDateTime.now;
+import static java.time.ZoneId.systemDefault;
 import static java.time.temporal.ChronoUnit.MILLIS;
+import static java.util.Collections.reverse;
+import static java.util.stream.Collectors.collectingAndThen;
+import static java.util.stream.Collectors.toList;
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
+import static org.springframework.util.StringUtils.hasText;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -19,13 +25,14 @@ import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.OffsetDateTime;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Stream;
 import org.hibernate.annotations.TimeZoneStorage;
 import org.hibernate.annotations.UuidGenerator;
+import org.springframework.util.StringUtils;
 
 @Entity
 @Table(name = "metadata_label",
@@ -38,6 +45,8 @@ import org.hibernate.annotations.UuidGenerator;
 		})
 	})
 public class MetadataLabelEntity {
+
+	private static final String RESOURCE_PATH_SEPARATOR = "/";
 
 	@Id
 	@UuidGenerator
@@ -221,28 +230,80 @@ public class MetadataLabelEntity {
 
 	public MetadataLabelEntity withMetadataLabels(List<MetadataLabelEntity> metadataLabels) {
 		this.metadataLabels = Optional.ofNullable(metadataLabels).orElseGet(ArrayList::new);
-		this.metadataLabels.forEach(children -> children.setParent(this));
+		this.metadataLabels.forEach(child -> child.setParent(this));
 		return this;
 	}
 
 	public void addChild(MetadataLabelEntity child) {
-		metadataLabels.add(child);
+		this.metadataLabels.add(child);
 		child.setParent(this);
 	}
 
 	public void removeChild(MetadataLabelEntity child) {
-		metadataLabels.remove(child);
+		this.metadataLabels.remove(child);
 		child.setParent(null);
 	}
 
 	@PrePersist
 	void onCreate() {
-		created = now(ZoneId.systemDefault()).truncatedTo(MILLIS);
+		updateResourcePath();
+
+		this.created = now(systemDefault()).truncatedTo(MILLIS);
 	}
 
 	@PreUpdate
 	void onUpdate() {
-		modified = now(ZoneId.systemDefault()).truncatedTo(MILLIS);
+		updateResourcePath();
+		updateChildrenPathsRecursively();
+
+		this.modified = now(systemDefault()).truncatedTo(MILLIS);
+	}
+
+	/**
+	 * Updates the {@link #resourcePath} based on the current node's {@link #resourceName}
+	 * and all ancestor nodes, forming a hierarchical path like "parent/child/grandchild".
+	 * If {@link #resourceName} is null or blank, {@link #resourcePath} will be set to null.
+	 */
+	private void updateResourcePath() {
+		if (!hasText(this.resourceName)) {
+			this.resourcePath = null;
+			return;
+		}
+
+		this.resourcePath = Stream.iterate(this, current -> current.parent)
+			.takeWhile(Objects::nonNull)
+			.map(MetadataLabelEntity::getResourceName)
+			.filter(StringUtils::hasText)
+			.collect(collectingAndThen(
+				toList(),
+				list -> {
+					reverse(list);								// root first
+					return join(RESOURCE_PATH_SEPARATOR, list);	// build path
+				}));
+	}
+
+	/**
+	 * Recursively updates the {@link #resourcePath} for all children in the
+	 * {@link #metadataLabels} list, including all levels down the hierarchy.
+	 *
+	 * This update is necessary when:
+	 * - the current node's {@link #resourceName} changes, or
+	 * - a parent node changes its {@link #resourceName}, so that the
+	 * children's {@link #resourcePath} reflects the new hierarchical path.
+	 *
+	 * The method is null-safe and does nothing if {@link #metadataLabels} is null
+	 * or empty.
+	 *
+	 * It is typically called in {@link jakarta.persistence.PrePersist} and
+	 * {@link jakarta.persistence.PreUpdate} callbacks to ensure that
+	 * {@link #resourcePath} is always correct before the entity is persisted.
+	 */
+	private void updateChildrenPathsRecursively() {
+		Optional.ofNullable(this.metadataLabels)
+			.ifPresent(children -> children.forEach(child -> {
+				child.updateResourcePath();
+				child.updateChildrenPathsRecursively();
+			}));
 	}
 
 	@Override
