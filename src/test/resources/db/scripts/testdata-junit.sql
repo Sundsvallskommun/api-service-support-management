@@ -133,6 +133,15 @@ VALUES (1, now(), '2281', 'namespace-1', '[{"key": "value"}]'),
        (2, now(), '2282', 'namespace-1', '[{"key": "value"}]');
 
 -------------------------------------
+-- MetadataLabel
+-------------------------------------
+INSERT INTO metadata_label(id, created, municipality_id, namespace, resource_path, resource_name)
+VALUES ('a0bb7b61-8d55-4857-b619-547572eed26f', now(), '2281', 'namespace-1', 'parent/child/resource1', 'resource1'),
+       ('86d459cd-4810-4b4a-b365-97aa0c2c0ff5', now(), '2281', 'namespace-1', 'parent/child/resource2', 'resource2'),
+       ('821033d0-f059-4f2b-90f2-cc0562ac0560', now(), '2282', 'namespace-1', 'parent/child/resource3', 'resource2'),
+       ('4bee7529-b904-4559-97ae-0437f74de935', now(), '2283', 'namespace-1', 'parent/child/resource4', 'resource3');
+       
+-------------------------------------
 -- Communication
 -------------------------------------
 INSERT INTO communication(internal,viewed, sender, sender_user_id, sent, id, errand_number, external_id,

@@ -11,6 +11,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.ForeignKey;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
@@ -19,7 +20,10 @@ import java.util.List;
 import java.util.Objects;
 
 @Entity
-@Table(name = "stakeholder")
+@Table(name = "stakeholder",
+	indexes = {
+		@Index(name = "idx_stakeholder_external_id_role_errand_id", columnList = "external_id, `role`, errand_id")
+	})
 public class StakeholderEntity {
 
 	@Id
