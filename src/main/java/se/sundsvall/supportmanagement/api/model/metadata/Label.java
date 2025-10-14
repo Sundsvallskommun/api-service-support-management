@@ -23,6 +23,9 @@ public class Label {
 	@Schema(description = "Display name for the label", example = "Nyckelkort")
 	private String displayName;
 
+	/**
+	 * @deprecated
+	 */
 	@Schema(description = "Name for the label", example = "keyCard")
 	@NotBlank
 	@Deprecated(since = "10.9", forRemoval = true)
@@ -140,12 +143,15 @@ public class Label {
 
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj)
+		if (this == obj) {
 			return true;
-		if (obj == null)
+		}
+		if (obj == null) {
 			return false;
-		if (getClass() != obj.getClass())
+		}
+		if (getClass() != obj.getClass()) {
 			return false;
+		}
 		Label other = (Label) obj;
 		return Objects.equals(classification, other.classification) && Objects.equals(displayName, other.displayName) && Objects.equals(id, other.id) && Objects.equals(labels, other.labels) && Objects.equals(name, other.name) && Objects.equals(
 			resourceName, other.resourceName) && Objects.equals(resourcePath, other.resourcePath);
