@@ -135,7 +135,7 @@ class EmailReaderMapperTest {
 			.subject("someSubject")
 			.recipients(List.of("someRecipient"))
 			.sender("someSender")
-			.message("someMessage")
+			.htmlMessage("someMessage")
 			.receivedAt(OffsetDateTime.now())
 			.metadata(Map.of("classification.category", "someCategory", "classification.type", "someType", "labels", "someLabel1;someLabel2"))
 			.attachments(null);
