@@ -87,7 +87,7 @@ public class EmailReaderMapper {
 
 		final var errand = Errand.create()
 			.withTitle(email.getSubject())
-			.withDescription(email.getMessage())
+			.withDescription(email.getHtmlMessage())
 			.withStatus(status)
 			.withPriority(Priority.MEDIUM)
 			.withChannel(errandChannel)

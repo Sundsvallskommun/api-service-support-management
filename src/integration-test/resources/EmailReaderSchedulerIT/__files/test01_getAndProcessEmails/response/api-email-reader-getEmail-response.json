@@ -24,6 +24,7 @@
 		"subject": "Test subject 1",
 		"id": "7854c6e3-a188-45cb-90bd-c6b135e665b7",
 		"message": "Should pass 1",
+		"htmlMessage": "Should pass 1",
 		"receivedAt": "2024-08-28T13:20:27+02:00"
 	},
 	{
@@ -44,6 +45,7 @@
 		"subject": "Error subject",
 		"id": "54ac95cb-6e96-4acd-961a-e29a01ded9b4",
 		"message": "Error 😊",
+		"htmlMessage": "Error 😊",
 		"receivedAt": "2024-08-28T13:47:36+02:00"
 	},
 	{
@@ -64,6 +66,7 @@
 		"subject": "Test subject 2",
 		"id": "3883348a-797e-4c8a-b58a-f1670f6b8b95",
 		"message": "Should pass 2",
+		"htmlMessage": "Should pass 2",
 		"receivedAt": "2024-07-28T13:20:27+02:00"
 	}
 ]
