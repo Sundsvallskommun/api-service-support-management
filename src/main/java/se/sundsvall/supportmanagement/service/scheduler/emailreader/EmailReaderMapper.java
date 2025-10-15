@@ -108,14 +108,15 @@ public class EmailReaderMapper {
 		return errand;
 	}
 
-	public EmailRequest createEmailRequest(final Email email, final String sender, final String messageTemplate, final String subject) {
+	public EmailRequest createEmailRequest(final Email email, final String sender, final String messageTemplate, final String htmlTemplate, final String subject) {
 		return EmailRequest.create()
 			.withSubject(subject)
 			.withRecipient(email.getSender()) // Because we are sending a return response
 			.withEmailHeaders(toEmailHeaderMap(email))
 			.withSender(sender)
 			.withSenderName(sender)
-			.withMessage(messageTemplate);
+			.withMessage(messageTemplate)
+			.withHtmlMessage(htmlTemplate);
 	}
 
 	private Map<EmailHeader, List<String>> toEmailHeaderMap(final Email email) {

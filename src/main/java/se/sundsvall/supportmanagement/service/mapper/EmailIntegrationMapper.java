@@ -7,15 +7,17 @@ import se.sundsvall.supportmanagement.integration.db.model.EmailWorkerConfigEnti
 @Component
 public class EmailIntegrationMapper {
 
-	public EmailWorkerConfigEntity toEntity(EmailIntegration config, String namespace, String municipalityId) {
+	public EmailWorkerConfigEntity toEntity(final EmailIntegration config, final String namespace, final String municipalityId) {
 		return EmailWorkerConfigEntity.create()
 			.withNamespace(namespace)
 			.withMunicipalityId(municipalityId)
 			.withEnabled(config.getEnabled())
 			.withErrandClosedEmailSender(config.getErrandClosedEmailSender())
 			.withErrandClosedEmailTemplate(config.getErrandClosedEmailTemplate())
+			.withErrandClosedEmailHTMLTemplate(config.getErrandClosedEmailHTMLTemplate())
 			.withErrandNewEmailSender(config.getErrandNewEmailSender())
 			.withErrandNewEmailTemplate(config.getErrandNewEmailTemplate())
+			.withErrandNewEmailHTMLTemplate(config.getErrandNewEmailHTMLTemplate())
 			.withDaysOfInactivityBeforeReject(config.getDaysOfInactivityBeforeReject())
 			.withStatusForNew(config.getStatusForNew())
 			.withTriggerStatusChangeOn(config.getTriggerStatusChangeOn())
@@ -26,13 +28,15 @@ public class EmailIntegrationMapper {
 			.withStakeholderRole(config.getStakeholderRole());
 	}
 
-	public EmailIntegration toEmailIntegration(EmailWorkerConfigEntity entity) {
+	public EmailIntegration toEmailIntegration(final EmailWorkerConfigEntity entity) {
 		return EmailIntegration.create()
 			.withEnabled(entity.getEnabled())
 			.withErrandClosedEmailSender(entity.getErrandClosedEmailSender())
 			.withErrandClosedEmailTemplate(entity.getErrandClosedEmailTemplate())
+			.withErrandClosedEmailHTMLTemplate(entity.getErrandClosedEmailHTMLTemplate())
 			.withErrandNewEmailSender(entity.getErrandNewEmailSender())
 			.withErrandNewEmailTemplate(entity.getErrandNewEmailTemplate())
+			.withErrandNewEmailHTMLTemplate(entity.getErrandNewEmailHTMLTemplate())
 			.withDaysOfInactivityBeforeReject(entity.getDaysOfInactivityBeforeReject())
 			.withStatusForNew(entity.getStatusForNew())
 			.withTriggerStatusChangeOn(entity.getTriggerStatusChangeOn())

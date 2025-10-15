@@ -46,6 +46,8 @@ class EmailWorkerConfigEntityTest {
 		final var errandClosedEmailTemplate = "This is an email";
 		final var errandNewEmailSender = "test@email.se";
 		final var errandNewEmailTemplate = "This is an email too";
+		final var errandClosedHtmlEmailTemplate = "<html><body>This is an email</body></html>";
+		final var errandNewHtmlEmailTemplate = "<html><body>This is an email too</body></html>";
 		final var daysOfInactivityBeforeReject = 3;
 		final var statusForNew = "NEW";
 		final var triggerStatusChangeOn = "SOLVED";
@@ -75,7 +77,9 @@ class EmailWorkerConfigEntityTest {
 			.withStakeholderRole(stakeholderRole)
 			.withErrandChannel(errandChannel)
 			.withCreated(created)
-			.withModified(modified);
+			.withModified(modified)
+			.withErrandClosedEmailHTMLTemplate(errandClosedHtmlEmailTemplate)
+			.withErrandNewEmailHTMLTemplate(errandNewHtmlEmailTemplate);
 
 		assertThat(entity).hasNoNullFieldsOrProperties();
 		assertThat(entity.getId()).isEqualTo(id);
@@ -96,6 +100,8 @@ class EmailWorkerConfigEntityTest {
 		assertThat(entity.getErrandChannel()).isEqualTo(errandChannel);
 		assertThat(entity.getCreated()).isEqualTo(created);
 		assertThat(entity.getModified()).isEqualTo(modified);
+		assertThat(entity.getErrandClosedEmailHTMLTemplate()).isEqualTo(errandClosedHtmlEmailTemplate);
+		assertThat(entity.getErrandNewEmailHTMLTemplate()).isEqualTo(errandNewHtmlEmailTemplate);
 	}
 
 	@Test
