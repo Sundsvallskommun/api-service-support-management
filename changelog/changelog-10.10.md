@@ -10,4 +10,8 @@
 - **NamespaceConfig**
   - **Added Fields:**
     - accessControl: `boolean`
+- **EmailIntegration**
+  - **Added Fields:**
+    - errandClosedEmailHTMLTemplate: `string`
+    - errandNewEmailHTMLTemplate: `string`
 

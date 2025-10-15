@@ -9,7 +9,7 @@ import se.sundsvall.supportmanagement.integration.db.model.EmailWorkerConfigEnti
 
 class EmailIntegrationMapperTest {
 
-	private EmailIntegrationMapper mapper = new EmailIntegrationMapper();
+	private final EmailIntegrationMapper mapper = new EmailIntegrationMapper();
 
 	@Test
 	void toEntity() {
@@ -19,8 +19,10 @@ class EmailIntegrationMapperTest {
 		final var enabled = true;
 		final var errandClosedEmailSender = "errandClosedEmailSender";
 		final var errandClosedEmailTemplate = "errandClosedEmailTemplate";
+		final var errandClosedEmailHTMLTemplate = "<html><body>errandClosedEmailTemplate</body></html>";
 		final var errandNewEmailSender = "errandNewEmailSender";
 		final var errandNewEmailTemplate = "errandNewEmailTemplate";
+		final var errandNewHtmlEmailTemplate = "<html><body>errandNewEmailTemplate</body></html>";
 		final var daysOfInactivityBeforeReject = 5;
 		final var statusForNew = "statusForNew";
 		final var triggerStatusChangeOn = "triggerStatusChangeOn";
@@ -36,8 +38,10 @@ class EmailIntegrationMapperTest {
 			.withEnabled(enabled)
 			.withErrandClosedEmailSender(errandClosedEmailSender)
 			.withErrandClosedEmailTemplate(errandClosedEmailTemplate)
+			.withErrandClosedEmailHTMLTemplate(errandClosedEmailHTMLTemplate)
 			.withErrandNewEmailSender(errandNewEmailSender)
 			.withErrandNewEmailTemplate(errandNewEmailTemplate)
+			.withErrandNewEmailHTMLTemplate(errandNewHtmlEmailTemplate)
 			.withDaysOfInactivityBeforeReject(daysOfInactivityBeforeReject)
 			.withStatusForNew(statusForNew)
 			.withTriggerStatusChangeOn(triggerStatusChangeOn)
@@ -49,7 +53,7 @@ class EmailIntegrationMapperTest {
 			.withCreated(created)
 			.withModified(modified);
 
-		var entity = mapper.toEntity(config, namespace, municipalityId);
+		final var entity = mapper.toEntity(config, namespace, municipalityId);
 
 		assertThat(config).hasNoNullFieldsOrPropertiesExcept("id", "created", "modified");
 		assertThat(entity.getMunicipalityId()).isEqualTo(municipalityId);
@@ -57,8 +61,10 @@ class EmailIntegrationMapperTest {
 		assertThat(entity.getEnabled()).isEqualTo(enabled);
 		assertThat(entity.getErrandClosedEmailSender()).isEqualTo(errandClosedEmailSender);
 		assertThat(entity.getErrandClosedEmailTemplate()).isEqualTo(errandClosedEmailTemplate);
+		assertThat(entity.getErrandClosedEmailHTMLTemplate()).isEqualTo(errandClosedEmailHTMLTemplate);
 		assertThat(entity.getErrandNewEmailSender()).isEqualTo(errandNewEmailSender);
 		assertThat(entity.getErrandNewEmailTemplate()).isEqualTo(errandNewEmailTemplate);
+		assertThat(entity.getErrandNewEmailHTMLTemplate()).isEqualTo(errandNewHtmlEmailTemplate);
 		assertThat(entity.getDaysOfInactivityBeforeReject()).isEqualTo(daysOfInactivityBeforeReject);
 		assertThat(entity.getStatusForNew()).isEqualTo(statusForNew);
 		assertThat(entity.getTriggerStatusChangeOn()).isEqualTo(triggerStatusChangeOn);
@@ -77,8 +83,10 @@ class EmailIntegrationMapperTest {
 		final var enabled = true;
 		final var errandClosedEmailSender = "noreply@email.se";
 		final var errandClosedEmailTemplate = "This is an email";
+		final var errandClosedEmailHTMLTemplate = "<html><body>This is an email</body></html>";
 		final var errandNewEmailSender = "test@email.se";
 		final var errandNewEmailTemplate = "This is an email too";
+		final var errandNewHtmlEmailTemplate = "<html><body>This is an email too</body></html>";
 		final var daysOfInactivityBeforeReject = 3;
 		final var statusForNew = "NEW";
 		final var triggerStatusChangeOn = "SOLVED";
@@ -97,8 +105,10 @@ class EmailIntegrationMapperTest {
 			.withEnabled(enabled)
 			.withErrandClosedEmailSender(errandClosedEmailSender)
 			.withErrandClosedEmailTemplate(errandClosedEmailTemplate)
+			.withErrandClosedEmailHTMLTemplate(errandClosedEmailHTMLTemplate)
 			.withErrandNewEmailSender(errandNewEmailSender)
 			.withErrandNewEmailTemplate(errandNewEmailTemplate)
+			.withErrandNewEmailHTMLTemplate(errandNewHtmlEmailTemplate)
 			.withDaysOfInactivityBeforeReject(daysOfInactivityBeforeReject)
 			.withStatusForNew(statusForNew)
 			.withTriggerStatusChangeOn(triggerStatusChangeOn)
@@ -110,7 +120,7 @@ class EmailIntegrationMapperTest {
 			.withCreated(created)
 			.withModified(modified);
 
-		var config = mapper.toEmailIntegration(entity);
+		final var config = mapper.toEmailIntegration(entity);
 
 		assertThat(config).hasNoNullFieldsOrProperties();
 		assertThat(config.getEnabled()).isEqualTo(enabled);

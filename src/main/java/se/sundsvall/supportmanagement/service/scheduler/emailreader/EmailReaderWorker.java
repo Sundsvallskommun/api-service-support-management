@@ -161,7 +161,7 @@ public class EmailReaderWorker {
 			return null;
 		}
 
-		return emailReaderMapper.createEmailRequest(email, config.getErrandClosedEmailSender(), config.getErrandClosedEmailTemplate(), email.getSubject());
+		return emailReaderMapper.createEmailRequest(email, config.getErrandClosedEmailSender(), config.getErrandClosedEmailTemplate(), config.getErrandClosedEmailHTMLTemplate(), email.getSubject());
 	}
 
 	private EmailRequest createEmailNew(final ErrandEntity errand, final Email email, final EmailWorkerConfigEntity config) {
@@ -179,7 +179,7 @@ public class EmailReaderWorker {
 
 		final var subject = EMAIL_NEW_SUBJECT_PREFIX + "#" + errand.getErrandNumber() + " " + email.getSubject();
 
-		return emailReaderMapper.createEmailRequest(email, config.getErrandNewEmailSender(), config.getErrandNewEmailTemplate(), subject);
+		return emailReaderMapper.createEmailRequest(email, config.getErrandNewEmailSender(), config.getErrandNewEmailTemplate(), config.getErrandNewEmailHTMLTemplate(), subject);
 	}
 
 	private boolean isNonUsableEmailAddress(final String value) {

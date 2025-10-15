@@ -51,11 +51,17 @@ public class EmailWorkerConfigEntity {
 	@Column(name = "errand_closed_email_template", length = 5000)
 	private String errandClosedEmailTemplate;
 
+	@Column(name = "errand_closed_email_html_template", columnDefinition = "TEXT")
+	private String errandClosedEmailHTMLTemplate;
+
 	@Column(name = "errand_new_email_sender")
 	private String errandNewEmailSender;
 
 	@Column(name = "errand_new_email_template", length = 5000)
 	private String errandNewEmailTemplate;
+
+	@Column(name = "errand_new_email_html_template", columnDefinition = "TEXT")
+	private String errandNewEmailHTMLTemplate;
 
 	@Column(name = "days_of_inactivity_before_reject")
 	private Integer daysOfInactivityBeforeReject;
@@ -171,6 +177,19 @@ public class EmailWorkerConfigEntity {
 		return this;
 	}
 
+	public String getErrandClosedEmailHTMLTemplate() {
+		return errandClosedEmailHTMLTemplate;
+	}
+
+	public void setErrandClosedEmailHTMLTemplate(final String errandClosedEmailHTMLTemplate) {
+		this.errandClosedEmailHTMLTemplate = errandClosedEmailHTMLTemplate;
+	}
+
+	public EmailWorkerConfigEntity withErrandClosedEmailHTMLTemplate(final String errandClosedEmailHTMLTemplate) {
+		setErrandClosedEmailHTMLTemplate(errandClosedEmailHTMLTemplate);
+		return this;
+	}
+
 	public String getErrandNewEmailSender() {
 		return errandNewEmailSender;
 	}
@@ -194,6 +213,19 @@ public class EmailWorkerConfigEntity {
 
 	public EmailWorkerConfigEntity withErrandNewEmailTemplate(final String errandNewEmailTemplate) {
 		setErrandNewEmailTemplate(errandNewEmailTemplate);
+		return this;
+	}
+
+	public String getErrandNewEmailHTMLTemplate() {
+		return errandNewEmailHTMLTemplate;
+	}
+
+	public void setErrandNewEmailHTMLTemplate(final String errandNewEmailHTMLTemplate) {
+		this.errandNewEmailHTMLTemplate = errandNewEmailHTMLTemplate;
+	}
+
+	public EmailWorkerConfigEntity withErrandNewEmailHTMLTemplate(final String errandNewEmailHTMLTemplate) {
+		setErrandNewEmailHTMLTemplate(errandNewEmailHTMLTemplate);
 		return this;
 	}
 
@@ -338,61 +370,47 @@ public class EmailWorkerConfigEntity {
 	}
 
 	@Override
-	public boolean equals(final Object object) {
-		if (this == object) {
-			return true;
-		}
-		if (object == null || getClass() != object.getClass()) {
+	public boolean equals(final Object o) {
+		if (o == null || getClass() != o.getClass())
 			return false;
-		}
-		final EmailWorkerConfigEntity that = (EmailWorkerConfigEntity) object;
-		return Objects.equals(id, that.id)
-			&& Objects.equals(municipalityId, that.municipalityId)
-			&& Objects.equals(namespace, that.namespace)
-			&& Objects.equals(enabled, that.enabled)
-			&& Objects.equals(errandClosedEmailSender, that.errandClosedEmailSender)
-			&& Objects.equals(errandClosedEmailTemplate, that.errandClosedEmailTemplate)
-			&& Objects.equals(errandNewEmailSender, that.errandNewEmailSender)
-			&& Objects.equals(errandNewEmailTemplate, that.errandNewEmailTemplate)
-			&& Objects.equals(daysOfInactivityBeforeReject, that.daysOfInactivityBeforeReject)
-			&& Objects.equals(statusForNew, that.statusForNew)
-			&& Objects.equals(triggerStatusChangeOn, that.triggerStatusChangeOn)
-			&& Objects.equals(statusChangeTo, that.statusChangeTo)
-			&& Objects.equals(inactiveStatus, that.inactiveStatus)
-			&& Objects.equals(addSenderAsStakeholder, that.addSenderAsStakeholder)
-			&& Objects.equals(stakeholderRole, that.stakeholderRole)
-			&& Objects.equals(errandChannel, that.errandChannel)
-			&& Objects.equals(created, that.created)
-			&& Objects.equals(modified, that.modified);
+		final EmailWorkerConfigEntity that = (EmailWorkerConfigEntity) o;
+		return enabled == that.enabled && addSenderAsStakeholder == that.addSenderAsStakeholder && Objects.equals(id, that.id) && Objects.equals(municipalityId, that.municipalityId) && Objects.equals(namespace, that.namespace)
+			&& Objects.equals(errandClosedEmailSender, that.errandClosedEmailSender) && Objects.equals(errandClosedEmailTemplate, that.errandClosedEmailTemplate) && Objects.equals(errandClosedEmailHTMLTemplate,
+				that.errandClosedEmailHTMLTemplate) && Objects.equals(errandNewEmailSender, that.errandNewEmailSender) && Objects.equals(errandNewEmailTemplate, that.errandNewEmailTemplate) && Objects.equals(
+					errandNewEmailHTMLTemplate, that.errandNewEmailHTMLTemplate) && Objects.equals(daysOfInactivityBeforeReject, that.daysOfInactivityBeforeReject) && Objects.equals(statusForNew, that.statusForNew) && Objects.equals(
+						triggerStatusChangeOn, that.triggerStatusChangeOn) && Objects.equals(statusChangeTo, that.statusChangeTo) && Objects.equals(inactiveStatus, that.inactiveStatus) && Objects.equals(stakeholderRole, that.stakeholderRole)
+			&& Objects.equals(errandChannel, that.errandChannel) && Objects.equals(created, that.created) && Objects.equals(modified, that.modified);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, municipalityId, namespace, enabled, errandClosedEmailSender, errandClosedEmailTemplate,
-			errandNewEmailSender, errandNewEmailTemplate, daysOfInactivityBeforeReject, statusForNew, triggerStatusChangeOn,
-			statusChangeTo, inactiveStatus, addSenderAsStakeholder, stakeholderRole, errandChannel, created, modified);
+		return Objects.hash(id, municipalityId, namespace, enabled, errandClosedEmailSender, errandClosedEmailTemplate, errandClosedEmailHTMLTemplate, errandNewEmailSender, errandNewEmailTemplate, errandNewEmailHTMLTemplate, daysOfInactivityBeforeReject,
+			statusForNew, triggerStatusChangeOn, statusChangeTo, inactiveStatus, addSenderAsStakeholder, stakeholderRole, errandChannel, created, modified);
 	}
 
 	@Override
 	public String toString() {
-		return "EmailWorkerConfigEntity{" + "id=" + id
-			+ ", municipalityId='" + municipalityId + '\''
-			+ ", namespace='" + namespace + '\''
-			+ ", enabled=" + enabled
-			+ ", errandClosedEmailSender='" + errandClosedEmailSender + '\''
-			+ ", errandClosedEmailTemplate='" + errandClosedEmailTemplate + '\''
-			+ ", errandNewEmailSender='" + errandNewEmailSender + '\''
-			+ ", errandNewEmailTemplate='" + errandNewEmailTemplate + '\''
-			+ ", daysOfInactivityBeforeReject=" + daysOfInactivityBeforeReject
-			+ ", statusForNew='" + statusForNew + '\''
-			+ ", triggerStatusChangeOn='" + triggerStatusChangeOn + '\''
-			+ ", statusChangeTo='" + statusChangeTo + '\''
-			+ ", inactiveStatus='" + inactiveStatus + '\''
-			+ ", addSenderAsStakeholder='" + addSenderAsStakeholder + '\''
-			+ ", stakeholderRole='" + stakeholderRole + '\''
-			+ ", errandChannel='" + errandChannel + '\''
-			+ ", created=" + created
-			+ ", modified=" + modified
-			+ '}';
+		return "EmailWorkerConfigEntity{" +
+			"id=" + id +
+			", municipalityId='" + municipalityId + '\'' +
+			", namespace='" + namespace + '\'' +
+			", enabled=" + enabled +
+			", errandClosedEmailSender='" + errandClosedEmailSender + '\'' +
+			", errandClosedEmailTemplate='" + errandClosedEmailTemplate + '\'' +
+			", errandClosedEmailHTMLTemplate='" + errandClosedEmailHTMLTemplate + '\'' +
+			", errandNewEmailSender='" + errandNewEmailSender + '\'' +
+			", errandNewEmailTemplate='" + errandNewEmailTemplate + '\'' +
+			", errandNewEmailHTMLTemplate='" + errandNewEmailHTMLTemplate + '\'' +
+			", daysOfInactivityBeforeReject=" + daysOfInactivityBeforeReject +
+			", statusForNew='" + statusForNew + '\'' +
+			", triggerStatusChangeOn='" + triggerStatusChangeOn + '\'' +
+			", statusChangeTo='" + statusChangeTo + '\'' +
+			", inactiveStatus='" + inactiveStatus + '\'' +
+			", addSenderAsStakeholder=" + addSenderAsStakeholder +
+			", stakeholderRole='" + stakeholderRole + '\'' +
+			", errandChannel='" + errandChannel + '\'' +
+			", created=" + created +
+			", modified=" + modified +
+			'}';
 	}
 }
