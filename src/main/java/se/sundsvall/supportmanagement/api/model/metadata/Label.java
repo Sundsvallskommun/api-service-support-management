@@ -28,7 +28,7 @@ public class Label {
 	 */
 	@Schema(description = "Name for the label", example = "keyCard")
 	@NotBlank
-	@Deprecated(since = "10.9", forRemoval = true)
+	@Deprecated(since = "11.0", forRemoval = true)
 	private String name;
 
 	@Schema(description = "Resource path", example = "/parent/child/xxx", accessMode = READ_ONLY)

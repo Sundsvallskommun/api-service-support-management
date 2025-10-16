@@ -72,6 +72,7 @@ openapi:
 springdoc:
   swagger-ui:
     operationsSorter: alpha
+    tagsSorter: alpha
 resilience4j:
   circuitbreaker:
     instances:

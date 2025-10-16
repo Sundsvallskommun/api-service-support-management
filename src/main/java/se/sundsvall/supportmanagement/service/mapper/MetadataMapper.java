@@ -9,9 +9,8 @@ import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
 import static org.apache.commons.lang3.ObjectUtils.anyNull;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
+import static org.apache.commons.lang3.StringUtils.trim;
 
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -30,16 +29,12 @@ import se.sundsvall.supportmanagement.api.model.metadata.Type;
 import se.sundsvall.supportmanagement.integration.db.model.CategoryEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ExternalIdTypeEntity;
-import se.sundsvall.supportmanagement.integration.db.model.LabelEntity;
+import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.RoleEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StatusEntity;
 import se.sundsvall.supportmanagement.integration.db.model.TypeEntity;
 
 public class MetadataMapper {
-
-	private static final Gson GSON = new Gson();
-	private static final java.lang.reflect.Type LABEL_LIST_TYPE = new TypeToken<List<Label>>() {
-	}.getType();
 
 	private MetadataMapper() {}
 
@@ -210,30 +205,75 @@ public class MetadataMapper {
 	// Label operations
 	// =================================================================
 
-	public static LabelEntity toLabelEntity(String namespace, String municipalityId, final List<Label> labels) {
-		if (anyNull(namespace, municipalityId, labels)) {
+	public static Labels toLabels(List<MetadataLabelEntity> metadataLabelEntityList) {
+		final var labelList = Optional.ofNullable(metadataLabelEntityList)
+			.orElse(emptyList())
+			.stream()
+			.map(MetadataMapper::toLabel)
+			.filter(Objects::nonNull)
+			.toList();
+
+		if (labelList.isEmpty()) {
 			return null;
 		}
 
-		return LabelEntity.create()
-			.withJsonStructure(GSON.toJson(labels, LABEL_LIST_TYPE))
-			.withMunicipalityId(municipalityId)
-			.withNamespace(namespace);
+		return Labels.create().withLabelStructure(labelList);
 	}
 
-	public static LabelEntity updateLabelEntity(LabelEntity entity, final List<Label> labels) {
-		return entity.withJsonStructure(GSON.toJson(labels, LABEL_LIST_TYPE));
-	}
+	private static Label toLabel(MetadataLabelEntity entity) {
 
-	public static Labels toLabels(LabelEntity entity) {
 		if (isNull(entity)) {
 			return null;
 		}
 
-		return Labels.create()
-			.withCreated(entity.getCreated())
-			.withModified(entity.getModified())
-			.withLabelStructure(GSON.fromJson(entity.getJsonStructure(), LABEL_LIST_TYPE));
+		var label = Label.create()
+			.withId(entity.getId())
+			.withClassification(entity.getClassification())
+			.withDisplayName(entity.getDisplayName())
+			.withResourceName(entity.getResourceName())
+			.withResourcePath(entity.getResourcePath())
+			.withName(entity.getName()); // Deprecated field, kept for backward compatibility
+
+		var children = Optional.ofNullable(entity.getMetadataLabels())
+			.orElse(emptyList())
+			.stream()
+			.map(MetadataMapper::toLabel)
+			.toList();
+
+		return label.withLabels(children);
+	}
+
+	public static List<MetadataLabelEntity> toMetadataLabelEntityList(String namespace, String municipalityId, List<Label> labels) {
+		return Optional.ofNullable(labels).orElse(emptyList()).stream()
+			.map(labelObj -> toMetadataLabelEntityFromLabel(namespace, municipalityId, labelObj))
+			.filter(Objects::nonNull)
+			.toList();
+	}
+
+	private static MetadataLabelEntity toMetadataLabelEntityFromLabel(String namespace, String municipalityId, Label label) {
+		if (isNull(label)) {
+			return null;
+		}
+
+		final var entity = MetadataLabelEntity.create()
+			.withId(label.getId())
+			.withMunicipalityId(municipalityId)
+			.withName(label.getName()) // Deprecated field, kept for backward compatibility
+			.withNamespace(namespace)
+			.withClassification(label.getClassification())
+			.withDisplayName(label.getDisplayName())
+			.withResourceName(trim(label.getResourceName()));
+
+		// Map children recursively
+		final var children = Optional.ofNullable(label.getLabels()).orElse(emptyList())
+			.stream()
+			.map(child -> toMetadataLabelEntityFromLabel(namespace, municipalityId, child))
+			.toList();
+
+		// Connect children (manages parent pointer)
+		entity.withMetadataLabels(children);
+
+		return entity;
 	}
 
 	// =================================================================

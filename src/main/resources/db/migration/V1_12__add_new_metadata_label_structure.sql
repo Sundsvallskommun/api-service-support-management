@@ -1,3 +1,4 @@
+
     create table if not exists metadata_label (
         created datetime(6),
         modified datetime(6),
@@ -6,6 +7,7 @@
         classification varchar(255),
         display_name varchar(255),
         id varchar(255) not null,
+        name varchar(255),
         parent_id varchar(255),
         resource_name varchar(255),
         resource_path varchar(255),
