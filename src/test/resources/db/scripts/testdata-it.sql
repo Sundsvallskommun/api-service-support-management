@@ -60,15 +60,26 @@ VALUES (100, '2023-01-01 12:00:00.000', null, '2281', 'ROLE-1', null, 'NAMESPACE
        (105, '2023-01-01 12:00:00.000', null, '2305', 'ROLE-1', null, 'NAMESPACE-1'),
        (106, '2023-01-01 12:00:00.000', null, '2305', 'ROLE-2', null, 'NAMESPACE-1');
 
--- -----------------------------------
--- Label
--- -----------------------------------
-INSERT INTO label(id, created, municipality_id, namespace, json_structure)
-VALUES (1, '2023-01-01 12:00:00.000', '2281', 'NAMESPACE-1',
-        '[{"classification":"CATEGORY","displayName":"CATEGORY-DISPLAY-NAME-1","name":"CATEGORY-1","labels":[{"classification":"TYPE","displayName":"TYPE-DISPLAY-NAME-1","name":"TYPE-1","labels":[{"classification":"SUBTYPE","displayName":"SUBTYPE-DISPLAY-NAME-1","name":"SUBTYPE-1"},{"classification":"SUBTYPE","displayName":"SUBTYPE-DISPLAY-NAME-2","name":"SUBTYPE-2"}]},{"classification":"TYPE","displayName":"TYPE-DISPLAY-NAME-2","name":"TYPE-2","labels":[{"classification":"SUBTYPE","displayName":"SUBTYPE-DISPLAY-NAME-1","name":"SUBTYPE-1"},{"classification":"SUBTYPE","displayName":"SUBTYPE-DISPLAY-NAME-3","name":"SUBTYPE-3","labels":[{"classification":"DEEPSUBTYPE","displayName":"DEEPSUBTYPE-DISPLAY-NAME-1","name":"DEEPSUBTYPE-1"},{"classification":"DEEPSUBTYPE","displayName":"DEEPSUBTYPE-DISPLAY-NAME-2","name":"DEEPSUBTYPE-2"}]}]}]}]'),
-       (2, '2023-01-01 12:00:00.000', '2305', 'NAMESPACE-1',
-        '[{"classification":"CATEGORY","displayName":"CATEGORY-DISPLAY-NAME-1","name":"CATEGORY-1","labels":[{"classification":"TYPE","displayName":"TYPE-DISPLAY-NAME-1","name":"TYPE-1","labels":[{"classification":"SUBTYPE","displayName":"SUBTYPE-DISPLAY-NAME-1","name":"SUBTYPE-1"}]},{"classification":"TYPE","displayName":"TYPE-DISPLAY-NAME-2","name":"TYPE-2","labels":[{"classification":"SUBTYPE","displayName":"SUBTYPE-DISPLAY-NAME-1","name":"SUBTYPE-1"}]}]}]');
-
+-------------------------------------
+-- MetadataLabel
+-------------------------------------
+INSERT INTO metadata_label (created, modified, municipality_id, namespace, classification, display_name, id, name, parent_id, resource_name, resource_path) VALUES
+    -- CATEGORY (root, parent_id = NULL)
+    ('2025-10-16 09:45:49.815000', NULL, '2281', 'NAMESPACE-1', 'CATEGORY', 'CATEGORY-DISPLAY-NAME-1', 'a8fe832f-77a7-4906-9a97-ac5cbd73dbe7', 'CATEGORY-1', NULL, 'CATEGORY-1', 'CATEGORY-1'),
+    -- TYPE-1 (child of CATEGORY)
+    ('2025-10-16 09:45:49.830000', NULL, '2281', 'NAMESPACE-1', 'TYPE', 'TYPE-DISPLAY-NAME-1', 'cd99569f-6b6d-4d7a-b04c-9ae528be8258', 'TYPE-1', 'a8fe832f-77a7-4906-9a97-ac5cbd73dbe7', 'TYPE-1', 'CATEGORY-1/TYPE-1'),
+    -- TYPE-2 (child of CATEGORY)
+    ('2025-10-16 09:45:49.831000', NULL, '2281', 'NAMESPACE-1', 'TYPE', 'TYPE-DISPLAY-NAME-2', '3273e374-855c-4525-b8fc-aeaa710b83c5', 'TYPE-2', 'a8fe832f-77a7-4906-9a97-ac5cbd73dbe7', 'TYPE-2', 'CATEGORY-1/TYPE-2'),
+    -- SUBTYPEs under TYPE-1
+    ('2025-10-16 09:45:49.830000', NULL, '2281', 'NAMESPACE-1', 'SUBTYPE', 'SUBTYPE-DISPLAY-NAME-1', '8d0ac81c-9c56-43b7-95cd-fa3c3592666d', 'SUBTYPE-1', 'cd99569f-6b6d-4d7a-b04c-9ae528be8258', 'SUBTYPE-1', 'CATEGORY-1/TYPE-1/SUBTYPE-1'),
+    ('2025-10-16 09:45:49.830000', NULL, '2281', 'NAMESPACE-1', 'SUBTYPE', 'SUBTYPE-DISPLAY-NAME-2', '6dd1f18b-3f45-4d5f-b38b-176bfb3329c8', 'SUBTYPE-2',  'cd99569f-6b6d-4d7a-b04c-9ae528be8258', 'SUBTYPE-2', 'CATEGORY-1/TYPE-1/SUBTYPE-2'),
+    -- SUBTYPEs under TYPE-2
+    ('2025-10-16 09:45:49.831000', NULL, '2281', 'NAMESPACE-1', 'SUBTYPE', 'SUBTYPE-DISPLAY-NAME-3', '926fd3f9-f488-4ba4-93f6-2789dee0c0c3', 'SUBTYPE-3', '3273e374-855c-4525-b8fc-aeaa710b83c5', 'SUBTYPE-3', 'CATEGORY-1/TYPE-2/SUBTYPE-3'),
+    ('2025-10-16 09:45:49.831000', NULL, '2281', 'NAMESPACE-1', 'SUBTYPE', 'SUBTYPE-DISPLAY-NAME-4', 'f4d6e210-633b-48a6-ad0a-7be839b28762', 'SUBTYPE-4',  '3273e374-855c-4525-b8fc-aeaa710b83c5', 'SUBTYPE-4', 'CATEGORY-1/TYPE-2/SUBTYPE-4'),
+    -- DEEPSUBTYPEs under SUBTYPE-3
+    ('2025-10-16 09:45:49.831000', NULL, '2281', 'NAMESPACE-1', 'DEEPSUBTYPE', 'DEEPSUBTYPE-DISPLAY-NAME-1', 'ffe5f120-6a3b-4404-ace8-8ea87b559907', 'DEEPSUBTYPE-1', 'f4d6e210-633b-48a6-ad0a-7be839b28762', 'DEEPSUBTYPE-1', 'CATEGORY-1/TYPE-2/SUBTYPE-4/DEEPSUBTYPE-1'),
+    ('2025-10-16 09:45:49.831000', NULL, '2281', 'NAMESPACE-1', 'DEEPSUBTYPE', 'DEEPSUBTYPE-DISPLAY-NAME-2', '0eb1f695-48b1-40fd-af8c-b277c37db2d4', 'DEEPSUBTYPE-2', 'f4d6e210-633b-48a6-ad0a-7be839b28762', 'DEEPSUBTYPE-2', 'CATEGORY-1/TYPE-2/SUBTYPE-4/DEEPSUBTYPE-2');	 
+	 
 -- -----------------------------------
 -- Validation
 -- -----------------------------------

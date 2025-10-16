@@ -15,7 +15,6 @@ TRUNCATE table validation;
 TRUNCATE table revision;
 TRUNCATE table attachment_data;
 TRUNCATE table errand_number_sequence;
-TRUNCATE table label;
 TRUNCATE table metadata_label;
 TRUNCATE table communication;
 TRUNCATE table communication_attachment;

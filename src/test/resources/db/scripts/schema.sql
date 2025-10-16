@@ -200,16 +200,6 @@
         `value` varchar(255)
     ) engine=InnoDB;
 
-    create table label (
-        created datetime(6),
-        id bigint not null auto_increment,
-        modified datetime(6),
-        municipality_id varchar(8) not null,
-        namespace varchar(32) not null,
-        json_structure json not null,
-        primary key (id)
-    ) engine=InnoDB;
-
     create table message_exchange_sync (
         active bit,
         id bigint not null auto_increment,
@@ -228,6 +218,7 @@
         classification varchar(255),
         display_name varchar(255),
         id varchar(255) not null,
+        name varchar(255),
         parent_id varchar(255),
         resource_name varchar(255),
         resource_path varchar(255),
@@ -510,12 +501,6 @@
 
     alter table if exists external_tag 
        add constraint uq_external_tag_errand_id_key unique (errand_id, `key`);
-
-    create index idx_namespace_municipality_id 
-       on label (namespace, municipality_id);
-
-    alter table if exists label 
-       add constraint uq_namespace_municipality_id unique (namespace, municipality_id);
 
     create index idx_namespace_municipality_id 
        on metadata_label (namespace, municipality_id);

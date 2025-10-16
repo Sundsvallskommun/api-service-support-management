@@ -13,10 +13,18 @@ import org.springframework.format.annotation.DateTimeFormat.ISO;
 @Schema(description = "Labels model", accessMode = READ_ONLY)
 public class Labels {
 
+	/**
+	 * @deprecated
+	 */
+	@Deprecated(since = "11.0", forRemoval = true)
 	@Schema(description = "Timestamp when the labels was created", example = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	@DateTimeFormat(iso = ISO.DATE_TIME)
 	private OffsetDateTime created;
 
+	/**
+	 * @deprecated
+	 */
+	@Deprecated(since = "11.0", forRemoval = true)
 	@Schema(description = "Timestamp when the labels was last modified", example = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	@DateTimeFormat(iso = ISO.DATE_TIME)
 	private OffsetDateTime modified;

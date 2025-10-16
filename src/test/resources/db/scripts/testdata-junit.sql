@@ -126,13 +126,6 @@ VALUES ('59328e70-4297-4bb5-ba69-cb17f2d15a17', '9791682e-4ba8-4f3a-857a-54e1483
        ('203c924b-dd67-4802-b99f-256ef6f2de69', '9791682e-4ba8-4f3a-857a-54e14836a53b', 'ErrandEntity', '{}', 5, '2022-02-05 12:14:32.234','namespace', '2281');
 
 -------------------------------------
--- Label
--------------------------------------
-INSERT INTO label(id, created, municipality_id, namespace, json_structure)
-VALUES (1, now(), '2281', 'namespace-1', '[{"key": "value"}]'),
-       (2, now(), '2282', 'namespace-1', '[{"key": "value"}]');
-
--------------------------------------
 -- MetadataLabel
 -------------------------------------
 INSERT INTO metadata_label(id, created, municipality_id, namespace, resource_path, resource_name)
