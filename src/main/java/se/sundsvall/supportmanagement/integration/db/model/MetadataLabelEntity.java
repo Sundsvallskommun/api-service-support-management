@@ -65,6 +65,9 @@ public class MetadataLabelEntity {
 	@Column(name = "display_name")
 	private String displayName;
 
+	/**
+	 * @deprecated
+	 */
 	@Deprecated(since = "11.0", forRemoval = true)
 	@Column(name = "name")
 	private String name;
