@@ -7,7 +7,7 @@ info:
     url: https://opensource.org/licenses/MIT
   version: "11.0"
 servers:
-- url: http://localhost:49187
+- url: http://localhost:55868
   description: Generated server url
 tags:
 - name: Errand attachments
@@ -5299,11 +5299,11 @@ components:
     StatusType:
       type: object
       properties:
-        reasonPhrase:
-          type: string
         statusCode:
           type: integer
           format: int32
+        reasonPhrase:
+          type: string
     ConstraintViolationProblem:
       type: object
       properties:
@@ -5577,6 +5577,12 @@ components:
           description: Message that will be sent when incoming mail is rejected
           nullable: true
           example: Errand is closed. Please open a new errand.
+        errandClosedEmailHTMLTemplate:
+          type: string
+          description: HTML template for email that will be sent when incoming mail
+            is rejected
+          nullable: true
+          example: <html><body>Errand is closed. Please open a new errand.</body></html>
         errandNewEmailSender:
           type: string
           description: Email sender if incoming mail results in new errand
@@ -5587,6 +5593,12 @@ components:
           description: Message that will be sent when new errand is created
           nullable: true
           example: New errand is created.
+        errandNewEmailHTMLTemplate:
+          type: string
+          description: HTML template for email that will be sent when incoming mail
+            results in new errand
+          nullable: true
+          example: <html><body>New errand is created.</body></html>
         daysOfInactivityBeforeReject:
           type: integer
           description: Number of days before incoming mail is rejected. Measured from
@@ -6656,11 +6668,11 @@ components:
           type: boolean
         last:
           type: boolean
-        sort:
-          $ref: "#/components/schemas/SortObject"
         numberOfElements:
           type: integer
           format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
         pageable:
           $ref: "#/components/schemas/PageableObject"
         empty:
@@ -6671,14 +6683,14 @@ components:
         offset:
           type: integer
           format: int64
-        pageSize:
-          type: integer
-          format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
         pageNumber:
           type: integer
           format: int32
-        sort:
-          $ref: "#/components/schemas/SortObject"
+        pageSize:
+          type: integer
+          format: int32
         paged:
           type: boolean
         unpaged:
@@ -6688,9 +6700,9 @@ components:
       properties:
         empty:
           type: boolean
-        unsorted:
-          type: boolean
         sorted:
+          type: boolean
+        unsorted:
           type: boolean
     Revision:
       type: object
@@ -6901,11 +6913,11 @@ components:
           type: boolean
         last:
           type: boolean
-        sort:
-          $ref: "#/components/schemas/SortObject"
         numberOfElements:
           type: integer
           format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
         pageable:
           $ref: "#/components/schemas/PageableObject"
         empty:
@@ -7113,11 +7125,11 @@ components:
           type: boolean
         last:
           type: boolean
-        sort:
-          $ref: "#/components/schemas/SortObject"
         numberOfElements:
           type: integer
           format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
         pageable:
           $ref: "#/components/schemas/PageableObject"
         empty:

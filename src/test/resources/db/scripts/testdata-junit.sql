@@ -134,7 +134,8 @@ VALUES ('a0bb7b61-8d55-4857-b619-547572eed26f', now(), '2281', 'namespace-1', 'p
        ('821033d0-f059-4f2b-90f2-cc0562ac0560', now(), '2282', 'namespace-1', 'parent/child/resource3', 'resource2'),
        ('4bee7529-b904-4559-97ae-0437f74de935', now(), '2283', 'namespace-1', 'parent/child/resource4', 'resource3'),
        ('8fa9beb8-944d-41c1-884a-c0f6db4f7bf6', now(), '2285', 'namespace-123', 'parent', 'parent');
-       
+
+-------------------------------------
 -- Communication
 -------------------------------------
 INSERT INTO communication(internal,viewed, sender, sender_user_id, sent, id, errand_number, external_id,
