@@ -1,7 +1,7 @@
 package se.sundsvall.supportmanagement.service;
 
+import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.groups.Tuple.tuple;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
@@ -16,7 +16,6 @@ import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -31,14 +30,14 @@ import se.sundsvall.supportmanagement.api.model.metadata.Type;
 import se.sundsvall.supportmanagement.integration.db.CategoryRepository;
 import se.sundsvall.supportmanagement.integration.db.ContactReasonRepository;
 import se.sundsvall.supportmanagement.integration.db.ExternalIdTypeRepository;
-import se.sundsvall.supportmanagement.integration.db.LabelRepository;
+import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
 import se.sundsvall.supportmanagement.integration.db.RoleRepository;
 import se.sundsvall.supportmanagement.integration.db.StatusRepository;
 import se.sundsvall.supportmanagement.integration.db.ValidationRepository;
 import se.sundsvall.supportmanagement.integration.db.model.CategoryEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ExternalIdTypeEntity;
-import se.sundsvall.supportmanagement.integration.db.model.LabelEntity;
+import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.RoleEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StatusEntity;
 import se.sundsvall.supportmanagement.integration.db.model.TypeEntity;
@@ -54,7 +53,7 @@ class MetadataServiceTest {
 	private ExternalIdTypeRepository externalIdTypeRepositoryMock;
 
 	@Mock
-	private LabelRepository labelRepositoryMock;
+	private MetadataLabelRepository metadataLabelRepositoryMock;
 
 	@Mock
 	private RoleRepository roleRepositoryMock;
@@ -92,7 +91,7 @@ class MetadataServiceTest {
 		// Verifications
 		verify(statusRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
 		verify(statusRepositoryMock).save(any());
-		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, labelRepositoryMock, validationRepositoryMock, roleRepositoryMock);
+		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, validationRepositoryMock, roleRepositoryMock);
 	}
 
 	@Test
@@ -114,7 +113,7 @@ class MetadataServiceTest {
 		assertThat(e.getMessage()).isEqualTo("Bad Request: Status 'name' already exists in namespace 'namespace' for municipalityId 'municipalityId'");
 		verify(statusRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
 		verifyNoMoreInteractions(statusRepositoryMock);
-		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, labelRepositoryMock, validationRepositoryMock, roleRepositoryMock);
+		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, validationRepositoryMock, roleRepositoryMock);
 	}
 
 	@Test
@@ -136,7 +135,7 @@ class MetadataServiceTest {
 		verify(statusRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
 		verify(statusRepositoryMock).getByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
 		verifyNoMoreInteractions(statusRepositoryMock);
-		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, labelRepositoryMock, validationRepositoryMock, roleRepositoryMock);
+		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, validationRepositoryMock, roleRepositoryMock);
 	}
 
 	@Test
@@ -154,7 +153,7 @@ class MetadataServiceTest {
 		assertThat(e.getMessage()).isEqualTo("Not Found: Status 'name' is not present in namespace 'namespace' for municipalityId 'municipalityId'");
 		verify(statusRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
 		verifyNoMoreInteractions(statusRepositoryMock);
-		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, labelRepositoryMock, validationRepositoryMock, roleRepositoryMock);
+		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, validationRepositoryMock, roleRepositoryMock);
 	}
 
 	@Test
@@ -176,7 +175,7 @@ class MetadataServiceTest {
 		// Verifications
 		assertThat(result).hasSize(3).extracting(Status::getName).containsExactly("STATUS_1", "STATUS_2", "STATUS_3");
 		verify(statusRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId);
-		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, labelRepositoryMock, validationRepositoryMock, roleRepositoryMock);
+		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, validationRepositoryMock, roleRepositoryMock);
 	}
 
 	@Test
@@ -195,7 +194,7 @@ class MetadataServiceTest {
 		// Verifications
 		verify(statusRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
 		verify(statusRepositoryMock).deleteByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
-		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, labelRepositoryMock, validationRepositoryMock, roleRepositoryMock);
+		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, validationRepositoryMock, roleRepositoryMock);
 	}
 
 	@Test
@@ -213,7 +212,7 @@ class MetadataServiceTest {
 		assertThat(e.getMessage()).isEqualTo("Not Found: Status 'name' is not present in namespace 'namespace' for municipalityId 'municipalityId'");
 		verify(statusRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
 		verifyNoMoreInteractions(statusRepositoryMock);
-		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, labelRepositoryMock, validationRepositoryMock, roleRepositoryMock);
+		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, validationRepositoryMock, roleRepositoryMock);
 	}
 
 	// =================================================================
@@ -237,7 +236,7 @@ class MetadataServiceTest {
 		// Verifications
 		verify(roleRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
 		verify(roleRepositoryMock).save(any());
-		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, labelRepositoryMock, validationRepositoryMock, statusRepositoryMock);
+		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, validationRepositoryMock, statusRepositoryMock);
 	}
 
 	@Test
@@ -259,7 +258,7 @@ class MetadataServiceTest {
 		assertThat(e.getMessage()).isEqualTo("Bad Request: Role 'name' already exists in namespace 'namespace' for municipalityId 'municipalityId'");
 		verify(roleRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
 		verifyNoMoreInteractions(roleRepositoryMock);
-		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, labelRepositoryMock, validationRepositoryMock, statusRepositoryMock);
+		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, validationRepositoryMock, statusRepositoryMock);
 	}
 
 	@Test
@@ -281,7 +280,7 @@ class MetadataServiceTest {
 		verify(roleRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
 		verify(roleRepositoryMock).getByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
 		verifyNoMoreInteractions(roleRepositoryMock);
-		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, labelRepositoryMock, validationRepositoryMock, statusRepositoryMock);
+		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, validationRepositoryMock, statusRepositoryMock);
 	}
 
 	@Test
@@ -299,7 +298,7 @@ class MetadataServiceTest {
 		assertThat(e.getMessage()).isEqualTo("Not Found: Role 'name' is not present in namespace 'namespace' for municipalityId 'municipalityId'");
 		verify(roleRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
 		verifyNoMoreInteractions(roleRepositoryMock);
-		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, labelRepositoryMock, validationRepositoryMock, statusRepositoryMock);
+		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, validationRepositoryMock, statusRepositoryMock);
 	}
 
 	@Test
@@ -321,7 +320,7 @@ class MetadataServiceTest {
 		// Verifications
 		assertThat(result).hasSize(3).extracting(Role::getName).containsExactly("ROLE_1", "ROLE_2", "ROLE_3");
 		verify(roleRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId);
-		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, labelRepositoryMock, validationRepositoryMock, statusRepositoryMock);
+		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, validationRepositoryMock, statusRepositoryMock);
 	}
 
 	@Test
@@ -340,7 +339,7 @@ class MetadataServiceTest {
 		// Verifications
 		verify(roleRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
 		verify(roleRepositoryMock).deleteByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
-		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, labelRepositoryMock, validationRepositoryMock, statusRepositoryMock);
+		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, validationRepositoryMock, statusRepositoryMock);
 	}
 
 	@Test
@@ -358,7 +357,7 @@ class MetadataServiceTest {
 		assertThat(e.getMessage()).isEqualTo("Not Found: Role 'name' is not present in namespace 'namespace' for municipalityId 'municipalityId'");
 		verify(roleRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
 		verifyNoMoreInteractions(roleRepositoryMock);
-		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, labelRepositoryMock, validationRepositoryMock, statusRepositoryMock);
+		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, validationRepositoryMock, statusRepositoryMock);
 	}
 
 	// =================================================================
@@ -382,7 +381,7 @@ class MetadataServiceTest {
 		// Verifications
 		verify(categoryRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
 		verify(categoryRepositoryMock).save(any());
-		verifyNoInteractions(statusRepositoryMock, externalIdTypeRepositoryMock, labelRepositoryMock, roleRepositoryMock, validationRepositoryMock);
+		verifyNoInteractions(statusRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, roleRepositoryMock, validationRepositoryMock);
 	}
 
 	@Test
@@ -405,7 +404,7 @@ class MetadataServiceTest {
 		assertThat(e.getMessage()).isEqualTo("Bad Request: Category 'name' already exists in namespace 'namespace' for municipalityId 'municipalityId'");
 		verify(categoryRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
 		verifyNoMoreInteractions(categoryRepositoryMock);
-		verifyNoInteractions(statusRepositoryMock, externalIdTypeRepositoryMock, labelRepositoryMock, roleRepositoryMock, validationRepositoryMock);
+		verifyNoInteractions(statusRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, roleRepositoryMock, validationRepositoryMock);
 
 	}
 
@@ -433,7 +432,7 @@ class MetadataServiceTest {
 		verify(categoryRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
 		verify(categoryRepositoryMock).getByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
 		verifyNoMoreInteractions(categoryRepositoryMock);
-		verifyNoInteractions(statusRepositoryMock, externalIdTypeRepositoryMock, labelRepositoryMock, roleRepositoryMock, validationRepositoryMock);
+		verifyNoInteractions(statusRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, roleRepositoryMock, validationRepositoryMock);
 	}
 
 	@Test
@@ -451,7 +450,7 @@ class MetadataServiceTest {
 		assertThat(e.getMessage()).isEqualTo("Not Found: Category 'name' is not present in namespace 'namespace' for municipalityId 'municipalityId'");
 		verify(categoryRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
 		verifyNoMoreInteractions(categoryRepositoryMock);
-		verifyNoInteractions(statusRepositoryMock, externalIdTypeRepositoryMock, labelRepositoryMock, roleRepositoryMock, validationRepositoryMock);
+		verifyNoInteractions(statusRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, roleRepositoryMock, validationRepositoryMock);
 	}
 
 	@Test
@@ -470,7 +469,7 @@ class MetadataServiceTest {
 		// Verifications
 		verify(categoryRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
 		verify(categoryRepositoryMock).deleteByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
-		verifyNoInteractions(statusRepositoryMock, externalIdTypeRepositoryMock, labelRepositoryMock, roleRepositoryMock, validationRepositoryMock);
+		verifyNoInteractions(statusRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, roleRepositoryMock, validationRepositoryMock);
 	}
 
 	@Test
@@ -489,7 +488,7 @@ class MetadataServiceTest {
 		assertThat(e.getMessage()).isEqualTo("Not Found: Category 'name' is not present in namespace 'namespace' for municipalityId 'municipalityId'");
 		verify(categoryRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
 		verifyNoMoreInteractions(categoryRepositoryMock);
-		verifyNoInteractions(statusRepositoryMock, externalIdTypeRepositoryMock, labelRepositoryMock, roleRepositoryMock, validationRepositoryMock);
+		verifyNoInteractions(statusRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, roleRepositoryMock, validationRepositoryMock);
 	}
 
 	@Test
@@ -526,7 +525,7 @@ class MetadataServiceTest {
 		verify(categoryRepositoryMock).getByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
 		verify(categoryRepositoryMock).save(entity);
 		verifyNoMoreInteractions(categoryRepositoryMock);
-		verifyNoInteractions(statusRepositoryMock, externalIdTypeRepositoryMock, labelRepositoryMock, roleRepositoryMock, validationRepositoryMock);
+		verifyNoInteractions(statusRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, roleRepositoryMock, validationRepositoryMock);
 	}
 
 	@Test
@@ -549,7 +548,7 @@ class MetadataServiceTest {
 		assertThat(exception.getMessage()).isEqualTo("Not Found: Category 'name' is not present in namespace 'namespace' for municipalityId 'municipalityId'");
 		verify(categoryRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
 		verifyNoMoreInteractions(categoryRepositoryMock);
-		verifyNoInteractions(statusRepositoryMock, externalIdTypeRepositoryMock, labelRepositoryMock, roleRepositoryMock, validationRepositoryMock);
+		verifyNoInteractions(statusRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, roleRepositoryMock, validationRepositoryMock);
 	}
 
 	@Test
@@ -572,7 +571,7 @@ class MetadataServiceTest {
 		// Verifications
 		assertThat(result).hasSize(4).extracting(Category::getName).containsExactly("CATEGORY_4", "CATEGORY_1", "CATEGORY_2", "CATEGORY_3");
 		verify(categoryRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId);
-		verifyNoInteractions(statusRepositoryMock, externalIdTypeRepositoryMock, labelRepositoryMock, roleRepositoryMock, validationRepositoryMock);
+		verifyNoInteractions(statusRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, roleRepositoryMock, validationRepositoryMock);
 	}
 
 	@Test
@@ -598,7 +597,7 @@ class MetadataServiceTest {
 		// Verifications
 		assertThat(result).hasSize(4).extracting(Type::getName).containsExactly("TYPE_6", "TYPE_3", "TYPE_4", "TYPE_5");
 		verify(categoryRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId);
-		verifyNoInteractions(statusRepositoryMock, externalIdTypeRepositoryMock, labelRepositoryMock, roleRepositoryMock, validationRepositoryMock);
+		verifyNoInteractions(statusRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, roleRepositoryMock, validationRepositoryMock);
 	}
 
 	// =================================================================
@@ -622,7 +621,7 @@ class MetadataServiceTest {
 		// Verifications
 		verify(externalIdTypeRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
 		verify(externalIdTypeRepositoryMock).save(any());
-		verifyNoInteractions(categoryRepositoryMock, statusRepositoryMock, validationRepositoryMock, labelRepositoryMock, roleRepositoryMock);
+		verifyNoInteractions(categoryRepositoryMock, statusRepositoryMock, validationRepositoryMock, metadataLabelRepositoryMock, roleRepositoryMock);
 	}
 
 	@Test
@@ -644,7 +643,7 @@ class MetadataServiceTest {
 		assertThat(e.getMessage()).isEqualTo("Bad Request: ExternalIdType 'name' already exists in namespace 'namespace' for municipalityId 'municipalityId'");
 		verify(externalIdTypeRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
 		verifyNoMoreInteractions(externalIdTypeRepositoryMock);
-		verifyNoInteractions(categoryRepositoryMock, statusRepositoryMock, validationRepositoryMock, labelRepositoryMock, roleRepositoryMock);
+		verifyNoInteractions(categoryRepositoryMock, statusRepositoryMock, validationRepositoryMock, metadataLabelRepositoryMock, roleRepositoryMock);
 	}
 
 	@Test
@@ -666,7 +665,7 @@ class MetadataServiceTest {
 		verify(externalIdTypeRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
 		verify(externalIdTypeRepositoryMock).getByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
 		verifyNoMoreInteractions(externalIdTypeRepositoryMock);
-		verifyNoInteractions(categoryRepositoryMock, statusRepositoryMock, validationRepositoryMock, labelRepositoryMock, roleRepositoryMock);
+		verifyNoInteractions(categoryRepositoryMock, statusRepositoryMock, validationRepositoryMock, metadataLabelRepositoryMock, roleRepositoryMock);
 	}
 
 	@Test
@@ -684,7 +683,7 @@ class MetadataServiceTest {
 		assertThat(e.getMessage()).isEqualTo("Not Found: ExternalIdType 'name' is not present in namespace 'namespace' for municipalityId 'municipalityId'");
 		verify(externalIdTypeRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
 		verifyNoMoreInteractions(externalIdTypeRepositoryMock);
-		verifyNoInteractions(categoryRepositoryMock, statusRepositoryMock, validationRepositoryMock, labelRepositoryMock, roleRepositoryMock);
+		verifyNoInteractions(categoryRepositoryMock, statusRepositoryMock, validationRepositoryMock, metadataLabelRepositoryMock, roleRepositoryMock);
 	}
 
 	@Test
@@ -706,7 +705,7 @@ class MetadataServiceTest {
 		// Verifications
 		assertThat(result).hasSize(3).extracting(ExternalIdType::getName).containsExactly("EXTERNALIDTYPE-1", "EXTERNALIDTYPE-2", "EXTERNALIDTYPE-3");
 		verify(externalIdTypeRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId);
-		verifyNoInteractions(statusRepositoryMock, categoryRepositoryMock, validationRepositoryMock, labelRepositoryMock, roleRepositoryMock);
+		verifyNoInteractions(statusRepositoryMock, categoryRepositoryMock, validationRepositoryMock, metadataLabelRepositoryMock, roleRepositoryMock);
 	}
 
 	@Test
@@ -725,7 +724,7 @@ class MetadataServiceTest {
 		// Verifications
 		verify(externalIdTypeRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
 		verify(externalIdTypeRepositoryMock).deleteByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
-		verifyNoInteractions(categoryRepositoryMock, statusRepositoryMock, validationRepositoryMock, labelRepositoryMock, roleRepositoryMock);
+		verifyNoInteractions(categoryRepositoryMock, statusRepositoryMock, validationRepositoryMock, metadataLabelRepositoryMock, roleRepositoryMock);
 	}
 
 	@Test
@@ -743,7 +742,7 @@ class MetadataServiceTest {
 		assertThat(e.getMessage()).isEqualTo("Not Found: ExternalIdType 'name' is not present in namespace 'namespace' for municipalityId 'municipalityId'");
 		verify(externalIdTypeRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
 		verifyNoMoreInteractions(externalIdTypeRepositoryMock);
-		verifyNoInteractions(categoryRepositoryMock, statusRepositoryMock, validationRepositoryMock, labelRepositoryMock, roleRepositoryMock);
+		verifyNoInteractions(categoryRepositoryMock, statusRepositoryMock, validationRepositoryMock, metadataLabelRepositoryMock, roleRepositoryMock);
 	}
 
 	// =================================================================
@@ -761,30 +760,7 @@ class MetadataServiceTest {
 		metadataService.createLabels(namespace, municipalityId, List.of(label));
 
 		// Verifications
-		verify(labelRepositoryMock).existsByNamespaceAndMunicipalityId(namespace, municipalityId);
-		verify(labelRepositoryMock).save(any());
-		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, roleRepositoryMock, validationRepositoryMock, statusRepositoryMock);
-	}
-
-	@Test
-	void createExistingLabels() {
-		// Setup
-		final var namespace = "namespace";
-		final var municipalityId = "municipalityId";
-		final var label = Label.create();
-		final var labels = List.of(label);
-
-		// Mock
-		when(labelRepositoryMock.existsByNamespaceAndMunicipalityId(namespace, municipalityId)).thenReturn(true);
-
-		// Call
-		final var e = assertThrows(ThrowableProblem.class, () -> metadataService.createLabels(namespace, municipalityId, labels));
-
-		// Verifications
-		assertThat(e.getStatus()).isEqualTo(BAD_REQUEST);
-		assertThat(e.getMessage()).isEqualTo("Bad Request: Labels already exists in namespace 'namespace' for municipalityId 'municipalityId'");
-		verify(labelRepositoryMock).existsByNamespaceAndMunicipalityId(namespace, municipalityId);
-		verifyNoMoreInteractions(labelRepositoryMock);
+		verify(metadataLabelRepositoryMock).saveAll(any());
 		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, roleRepositoryMock, validationRepositoryMock, statusRepositoryMock);
 	}
 
@@ -805,8 +781,7 @@ class MetadataServiceTest {
 		// Verifications
 		assertThat(e.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(e.getMessage()).isEqualTo("Bad Request: Label names must be unique. Duplication detected for 'name1'");
-		verify(labelRepositoryMock).existsByNamespaceAndMunicipalityId(namespace, municipalityId);
-		verifyNoMoreInteractions(labelRepositoryMock);
+		verifyNoMoreInteractions(metadataLabelRepositoryMock);
 		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, roleRepositoryMock, validationRepositoryMock, statusRepositoryMock);
 	}
 
@@ -815,20 +790,15 @@ class MetadataServiceTest {
 		// Setup
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
-		final var label = Label.create().withName("name");
-		final var labelEntity = LabelEntity.create();
+		final var label = Label.create().withResourceName("name");
+		final var metadataLabelEntity = MetadataLabelEntity.create();
 		// Mock
-		when(labelRepositoryMock.existsByNamespaceAndMunicipalityId(namespace, municipalityId)).thenReturn(true);
-		when(labelRepositoryMock.findOneByNamespaceAndMunicipalityId(any(), any())).thenReturn(labelEntity);
+		when(metadataLabelRepositoryMock.existsByNamespaceAndMunicipalityId(namespace, municipalityId)).thenReturn(true);
 		// Call
 		metadataService.updateLabels(namespace, municipalityId, List.of(label));
 		// Verifications
-		verify(labelRepositoryMock).existsByNamespaceAndMunicipalityId(namespace, municipalityId);
-		verify(labelRepositoryMock).findOneByNamespaceAndMunicipalityId(namespace, municipalityId);
-		ArgumentCaptor<LabelEntity> labelEntityCaptor = ArgumentCaptor.forClass(LabelEntity.class);
-		verify(labelRepositoryMock).save(labelEntityCaptor.capture());
-		assertThat(labelEntityCaptor.getValue()).isSameAs(labelEntity);
-		assertThat(labelEntityCaptor.getValue().getJsonStructure()).isEqualTo("[{\"name\":\"name\"}]");
+		verify(metadataLabelRepositoryMock).existsByNamespaceAndMunicipalityId(namespace, municipalityId);
+		verify(metadataLabelRepositoryMock).saveAll(List.of(metadataLabelEntity.withMunicipalityId(municipalityId).withNamespace(namespace).withResourceName("name")));
 		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, roleRepositoryMock, validationRepositoryMock, statusRepositoryMock);
 	}
 
@@ -844,14 +814,14 @@ class MetadataServiceTest {
 			Label.create().withName("name4")
 				.withLabels(List.of(Label.create().withName("name1"))));
 		// Mock
-		when(labelRepositoryMock.existsByNamespaceAndMunicipalityId(namespace, municipalityId)).thenReturn(true);
+		when(metadataLabelRepositoryMock.existsByNamespaceAndMunicipalityId(namespace, municipalityId)).thenReturn(true);
 		// Call
 		final var e = assertThrows(ThrowableProblem.class, () -> metadataService.updateLabels(namespace, municipalityId, labels));
 		// Verifications
 		assertThat(e.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(e.getMessage()).isEqualTo("Bad Request: Label names must be unique. Duplication detected for 'name1'");
-		verify(labelRepositoryMock).existsByNamespaceAndMunicipalityId(namespace, municipalityId);
-		verifyNoMoreInteractions(labelRepositoryMock);
+		verify(metadataLabelRepositoryMock).existsByNamespaceAndMunicipalityId(namespace, municipalityId);
+		verifyNoMoreInteractions(metadataLabelRepositoryMock);
 		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, roleRepositoryMock, validationRepositoryMock, statusRepositoryMock);
 	}
 
@@ -862,14 +832,14 @@ class MetadataServiceTest {
 		final var municipalityId = "municipalityId";
 		final var labels = List.of(Label.create().withName("name"));
 		// Mock
-		when(labelRepositoryMock.existsByNamespaceAndMunicipalityId(namespace, municipalityId)).thenReturn(false);
+		when(metadataLabelRepositoryMock.existsByNamespaceAndMunicipalityId(namespace, municipalityId)).thenReturn(false);
 		// Call
 		final var e = assertThrows(ThrowableProblem.class, () -> metadataService.updateLabels(namespace, municipalityId, labels));
 		// Verifications
 		assertThat(e.getStatus()).isEqualTo(NOT_FOUND);
-		assertThat(e.getMessage()).isEqualTo("Not Found: Labels dos not exists in namespace 'namespace' for municipalityId 'municipalityId'");
-		verify(labelRepositoryMock).existsByNamespaceAndMunicipalityId(namespace, municipalityId);
-		verifyNoMoreInteractions(labelRepositoryMock);
+		assertThat(e.getMessage()).isEqualTo("Not Found: Labels are not present in namespace 'namespace' for municipalityId 'municipalityId'");
+		verify(metadataLabelRepositoryMock).existsByNamespaceAndMunicipalityId(namespace, municipalityId);
+		verifyNoMoreInteractions(metadataLabelRepositoryMock);
 		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, roleRepositoryMock, validationRepositoryMock, statusRepositoryMock);
 	}
 
@@ -878,28 +848,18 @@ class MetadataServiceTest {
 		// Setup
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
-		final var json = "[{\"classification\":\"classification\",\"displayName\":\"displayName\",\"name\":\"name\"}]";
 
 		// Mock
-		when(labelRepositoryMock.findOneByNamespaceAndMunicipalityId(namespace, municipalityId)).thenReturn(LabelEntity.create().withJsonStructure(json));
+		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndParentIsNull(namespace, municipalityId)).thenReturn(List.of(MetadataLabelEntity.create()));
 
 		// Call
 		final var labels = metadataService.findLabels(namespace, municipalityId);
 
 		// Verifications
-		assertThat(labels.getLabelStructure()).hasSize(1).extracting(
-			Label::getClassification,
-			Label::getDisplayName,
-			Label::getName,
-			Label::getLabels)
-			.containsExactly(tuple(
-				"classification",
-				"displayName",
-				"name",
-				null));
+		assertThat(labels.getLabelStructure()).hasSize(1);
 
-		verify(labelRepositoryMock).findOneByNamespaceAndMunicipalityId(namespace, municipalityId);
-		verifyNoMoreInteractions(labelRepositoryMock);
+		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndParentIsNull(namespace, municipalityId);
+		verifyNoMoreInteractions(metadataLabelRepositoryMock);
 		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, roleRepositoryMock, validationRepositoryMock, statusRepositoryMock);
 	}
 
@@ -908,12 +868,17 @@ class MetadataServiceTest {
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
 
+		// Mock
+		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndParentIsNull(namespace, municipalityId)).thenReturn(emptyList());
+
 		// Call
-		assertThat(metadataService.findLabels(namespace, municipalityId)).isNull();
+		final var result = metadataService.findLabels(namespace, municipalityId);
 
 		// Verifications
-		verify(labelRepositoryMock).findOneByNamespaceAndMunicipalityId(namespace, municipalityId);
-		verifyNoMoreInteractions(roleRepositoryMock);
+		assertThat(result).isNull();
+
+		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndParentIsNull(namespace, municipalityId);
+		verifyNoMoreInteractions(metadataLabelRepositoryMock);
 		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, roleRepositoryMock, validationRepositoryMock, statusRepositoryMock);
 	}
 
@@ -924,14 +889,21 @@ class MetadataServiceTest {
 		final var municipalityId = "municipalityId";
 
 		// Mock
-		when(labelRepositoryMock.existsByNamespaceAndMunicipalityId(any(), any())).thenReturn(true);
+		when(metadataLabelRepositoryMock.existsByNamespaceAndMunicipalityId(namespace, municipalityId)).thenReturn(true);
+		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndParentIsNull(namespace, municipalityId)).thenReturn(List.of(
+			MetadataLabelEntity.create().withId("id-1"),
+			MetadataLabelEntity.create().withId("id-2"),
+			MetadataLabelEntity.create().withId("id-3")));
 
 		// Call
 		metadataService.deleteLabels(namespace, municipalityId);
 
 		// Verifications
-		verify(labelRepositoryMock).existsByNamespaceAndMunicipalityId(namespace, municipalityId);
-		verify(labelRepositoryMock).deleteByNamespaceAndMunicipalityId(namespace, municipalityId);
+		verify(metadataLabelRepositoryMock).existsByNamespaceAndMunicipalityId(namespace, municipalityId);
+		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndParentIsNull(namespace, municipalityId);
+		verify(metadataLabelRepositoryMock).deleteById("id-1");
+		verify(metadataLabelRepositoryMock).deleteById("id-2");
+		verify(metadataLabelRepositoryMock).deleteById("id-3");
 		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, roleRepositoryMock, validationRepositoryMock, statusRepositoryMock);
 	}
 
@@ -947,8 +919,8 @@ class MetadataServiceTest {
 		// Verifications
 		assertThat(e.getStatus()).isEqualTo(NOT_FOUND);
 		assertThat(e.getMessage()).isEqualTo("Not Found: Labels are not present in namespace 'namespace' for municipalityId 'municipalityId'");
-		verify(labelRepositoryMock).existsByNamespaceAndMunicipalityId(namespace, municipalityId);
-		verifyNoMoreInteractions(labelRepositoryMock);
+		verify(metadataLabelRepositoryMock).existsByNamespaceAndMunicipalityId(namespace, municipalityId);
+		verifyNoMoreInteractions(metadataLabelRepositoryMock);
 		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, roleRepositoryMock, validationRepositoryMock, statusRepositoryMock);
 	}
 
@@ -983,12 +955,12 @@ class MetadataServiceTest {
 		final var contactReasonEntityList = List.of(
 			ContactReasonEntity.create().withReason("CONTACTREASON-1"),
 			ContactReasonEntity.create().withReason("CONTACTREASON-2"));
-		final var labelEntity = LabelEntity.create().withJsonStructure("[{\"classification\":\"CLASSIFICATION-1\",\"name\":\"LABEL-1\"}]");
+		final var metadataLabelEntity = List.of(MetadataLabelEntity.create().withResourceName("LABEL-1"));
 
 		// Mock
 		when(categoryRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any())).thenReturn(categoryEntityList);
 		when(externalIdTypeRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any())).thenReturn(externalIdTypeEntityList);
-		when(labelRepositoryMock.findOneByNamespaceAndMunicipalityId(any(), any())).thenReturn(labelEntity);
+		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndParentIsNull(any(), any())).thenReturn(metadataLabelEntity);
 		when(statusRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any())).thenReturn(statusEntityList);
 		when(roleRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any())).thenReturn(roleEntityList);
 		when(contactReasonRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any())).thenReturn(contactReasonEntityList);
@@ -1001,14 +973,14 @@ class MetadataServiceTest {
 		assertThat(result.getCategories()).hasSize(3).extracting(Category::getName).containsExactlyInAnyOrder("CATEGORY-1", "CATEGORY-2", "CATEGORY-3");
 		result.getCategories().forEach(category -> assertThat(category.getTypes()).hasSize(3).extracting(Type::getName).containsExactlyInAnyOrder("TYPE-1", "TYPE-2", "TYPE-3"));
 		assertThat(result.getExternalIdTypes()).hasSize(2).extracting(ExternalIdType::getName).containsExactlyInAnyOrder("EXTERNALIDTYPE-1", "EXTERNALIDTYPE-2");
-		assertThat(result.getLabels().getLabelStructure()).hasSize(1).extracting(Label::getName).containsExactly("LABEL-1");
+		assertThat(result.getLabels().getLabelStructure()).hasSize(1).extracting(Label::getResourceName).containsExactly("LABEL-1");
 		assertThat(result.getRoles()).hasSize(3).extracting(Role::getName).containsExactlyInAnyOrder("ROLE-1", "ROLE-2", "ROLE-3");
 		assertThat(result.getStatuses()).hasSize(3).extracting(Status::getName).containsExactlyInAnyOrder("STATUS-1", "STATUS-2", "STATUS-3");
 		assertThat(result.getContactReasons()).hasSize(2).extracting(ContactReason::getReason).containsExactlyInAnyOrder("CONTACTREASON-1", "CONTACTREASON-2");
 
 		verify(categoryRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId);
 		verify(externalIdTypeRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId);
-		verify(labelRepositoryMock).findOneByNamespaceAndMunicipalityId(namespace, municipalityId);
+		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndParentIsNull(namespace, municipalityId);
 		verify(roleRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId);
 		verify(statusRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId);
 		verifyNoInteractions(validationRepositoryMock);
@@ -1063,5 +1035,4 @@ class MetadataServiceTest {
 		verify(validationRepositoryMock).findByNamespaceAndMunicipalityIdAndType(namespace, municipalityId, type);
 		verifyNoInteractions(statusRepositoryMock, categoryRepositoryMock, externalIdTypeRepositoryMock, roleRepositoryMock);
 	}
-
 }

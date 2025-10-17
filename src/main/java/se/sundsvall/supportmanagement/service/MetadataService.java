@@ -12,15 +12,14 @@ import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toCon
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toContactReasonEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toExternalIdType;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toExternalIdTypeEntity;
-import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toLabelEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toLabels;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toMetadataLabelEntityList;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toRole;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toRoleEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toStatus;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toStatusEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateContactReason;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateEntity;
-import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateLabelEntity;
 
 import java.util.HashSet;
 import java.util.List;
@@ -44,10 +43,11 @@ import se.sundsvall.supportmanagement.api.model.metadata.Type;
 import se.sundsvall.supportmanagement.integration.db.CategoryRepository;
 import se.sundsvall.supportmanagement.integration.db.ContactReasonRepository;
 import se.sundsvall.supportmanagement.integration.db.ExternalIdTypeRepository;
-import se.sundsvall.supportmanagement.integration.db.LabelRepository;
+import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
 import se.sundsvall.supportmanagement.integration.db.RoleRepository;
 import se.sundsvall.supportmanagement.integration.db.StatusRepository;
 import se.sundsvall.supportmanagement.integration.db.ValidationRepository;
+import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ValidationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EntityType;
 import se.sundsvall.supportmanagement.service.mapper.MetadataMapper;
@@ -67,7 +67,7 @@ public class MetadataService {
 
 	private final CategoryRepository categoryRepository;
 	private final ExternalIdTypeRepository externalIdTypeRepository;
-	private final LabelRepository labelRepository;
+	private final MetadataLabelRepository metadataLabelRepository;
 	private final RoleRepository roleRepository;
 	private final StatusRepository statusRepository;
 	private final ValidationRepository validationRepository;
@@ -75,12 +75,12 @@ public class MetadataService {
 
 	public MetadataService(final CategoryRepository categoryRepository,
 		final ExternalIdTypeRepository externalIdTypeRepository,
-		final LabelRepository labelRepository, final RoleRepository roleRepository,
+		final MetadataLabelRepository metadataLabelRepository, final RoleRepository roleRepository,
 		final StatusRepository statusRepository, final ValidationRepository validationRepository,
 		final ContactReasonRepository contactReasonRepository) {
 		this.categoryRepository = categoryRepository;
 		this.externalIdTypeRepository = externalIdTypeRepository;
-		this.labelRepository = labelRepository;
+		this.metadataLabelRepository = metadataLabelRepository;
 		this.roleRepository = roleRepository;
 		this.statusRepository = statusRepository;
 		this.validationRepository = validationRepository;
@@ -256,11 +256,8 @@ public class MetadataService {
 		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}")
 	})
 	public void createLabels(final String namespace, final String municipalityId, final List<Label> labels) {
-		if (labelRepository.existsByNamespaceAndMunicipalityId(namespace, municipalityId)) {
-			throw Problem.valueOf(BAD_REQUEST, "Labels already exists in namespace '%s' for municipalityId '%s'".formatted(namespace, municipalityId));
-		}
 		verifyUniqueNames(labels, new HashSet<>());
-		labelRepository.save(toLabelEntity(namespace, municipalityId, labels));
+		metadataLabelRepository.saveAll(toMetadataLabelEntityList(namespace, municipalityId, labels));
 	}
 
 	@Caching(evict = {
@@ -268,30 +265,16 @@ public class MetadataService {
 		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}")
 	})
 	public void updateLabels(final String namespace, final String municipalityId, final List<Label> labels) {
-		if (!labelRepository.existsByNamespaceAndMunicipalityId(namespace, municipalityId)) {
-			throw Problem.valueOf(NOT_FOUND, "Labels dos not exists in namespace '%s' for municipalityId '%s'".formatted(namespace, municipalityId));
+		if (!metadataLabelRepository.existsByNamespaceAndMunicipalityId(namespace, municipalityId)) {
+			throw Problem.valueOf(NOT_FOUND, "Labels are not present in namespace '%s' for municipalityId '%s'".formatted(namespace, municipalityId));
 		}
 		verifyUniqueNames(labels, new HashSet<>());
-		final var entity = labelRepository.findOneByNamespaceAndMunicipalityId(namespace, municipalityId);
-		labelRepository.save(updateLabelEntity(entity, labels));
-	}
-
-	private void verifyUniqueNames(final List<Label> labels, final Set<String> names) {
-		if (labels == null) {
-			return;
-		}
-		for (final Label label : labels) {
-			if (names.contains(label.getName())) {
-				throw Problem.valueOf(BAD_REQUEST, "Label names must be unique. Duplication detected for '%s'".formatted(label.getName()));
-			}
-			names.add(label.getName());
-			verifyUniqueNames(label.getLabels(), names);
-		}
+		metadataLabelRepository.saveAll(toMetadataLabelEntityList(namespace, municipalityId, labels));
 	}
 
 	@Cacheable(value = CACHE_NAME, key = "{#root.methodName, #namespace, #municipalityId}")
 	public Labels findLabels(final String namespace, final String municipalityId) {
-		return toLabels(labelRepository.findOneByNamespaceAndMunicipalityId(namespace, municipalityId));
+		return toLabels(metadataLabelRepository.findByNamespaceAndMunicipalityIdAndParentIsNull(namespace, municipalityId));
 	}
 
 	@Caching(evict = {
@@ -299,10 +282,13 @@ public class MetadataService {
 		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}")
 	})
 	public void deleteLabels(final String namespace, final String municipalityId) {
-		if (!labelRepository.existsByNamespaceAndMunicipalityId(namespace, municipalityId)) {
+		if (!metadataLabelRepository.existsByNamespaceAndMunicipalityId(namespace, municipalityId)) {
 			throw Problem.valueOf(NOT_FOUND, "Labels are not present in namespace '%s' for municipalityId '%s'".formatted(namespace, municipalityId));
 		}
-		labelRepository.deleteByNamespaceAndMunicipalityId(namespace, municipalityId);
+
+		metadataLabelRepository.findByNamespaceAndMunicipalityIdAndParentIsNull(namespace, municipalityId).stream()
+			.map(MetadataLabelEntity::getId)
+			.forEach(metadataLabelRepository::deleteById);
 	}
 
 	// =================================================================
@@ -434,5 +420,18 @@ public class MetadataService {
 			throw Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(CONTACT_REASON, contactReasonId, namespace, municipalityId));
 		}
 		contactReasonRepository.deleteByIdAndNamespaceAndMunicipalityId(contactReasonId, namespace, municipalityId);
+	}
+
+	private void verifyUniqueNames(final List<Label> labels, final Set<String> names) {
+		if (labels == null) {
+			return;
+		}
+		for (final Label label : labels) {
+			if (names.contains(label.getName())) {
+				throw Problem.valueOf(BAD_REQUEST, "Label names must be unique. Duplication detected for '%s'".formatted(label.getName()));
+			}
+			names.add(label.getName());
+			verifyUniqueNames(label.getLabels(), names);
+		}
 	}
 }

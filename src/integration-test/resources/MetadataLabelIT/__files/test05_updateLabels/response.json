@@ -1,18 +1,69 @@
 {
-	"created": "2023-01-01T12:00:00+01:00",
-	"modified": "${json-unit.any-string}",
 	"labelStructure": [
 		{
-			"classification": "TOP-LEVEL",
-			"displayName": "TOP 1",
-			"name": "LABEL-1",
-			"resourceName": "RES-1",
+			"id": "a8fe832f-77a7-4906-9a97-ac5cbd73dbe7",
+			"classification": "CATEGORY",
+			"displayName": "CATEGORY-DISPLAY-NAME-1",
+			"name": "CATEGORY-1",
+			"resourcePath": "CATEGORY-1",
+			"resourceName": "CATEGORY-1",
 			"labels": [
 				{
-					"classification": "SUB-LEVEL",
-					"displayName": "SUB 1.1",
-					"name": "SUB-1-1",
-					"resourceName": "RES-1-1"
+					"id": "3273e374-855c-4525-b8fc-aeaa710b83c5",
+					"classification": "TYPE",
+					"displayName": "TYPE-DISPLAY-NAME-2",
+					"name": "TYPE-2",
+					"resourcePath": "CATEGORY-1/TYPE-2",
+					"resourceName": "TYPE-2",
+					"labels": [
+						{
+							"id": "926fd3f9-f488-4ba4-93f6-2789dee0c0c3",
+							"classification": "SUBTYPE",
+							"displayName": "SUBTYPE-DISPLAY-NAME-1",
+							"name": "SUBTYPE-1b",
+							"resourcePath": "CATEGORY-1/TYPE-2/SUBTYPE-1",
+							"resourceName": "SUBTYPE-1",
+							"labels": [
+								{
+									"id": "${json-unit.any-string}",
+									"classification": "DEEPSUBTYPE",
+									"displayName": "DEEPSUBTYPE-DISPLAY-NAME-3",
+									"name": "DEEPSUBTYPE-3",
+									"resourcePath": "CATEGORY-1/TYPE-2/SUBTYPE-1/DEEPSUBTYPE-3",
+									"resourceName": "DEEPSUBTYPE-3",
+									"labels": []
+								}
+							]
+						},
+						{
+							"id": "f4d6e210-633b-48a6-ad0a-7be839b28762",
+							"classification": "SUBTYPE",
+							"displayName": "SUBTYPE-DISPLAY-NAME-3",
+							"name": "SUBTYPE-3",
+							"resourcePath": "CATEGORY-1/TYPE-2/RENAMED-SUBTYPE-3",
+							"resourceName": "RENAMED-SUBTYPE-3",
+							"labels": [
+								{
+									"id": "0eb1f695-48b1-40fd-af8c-b277c37db2d4",
+									"classification": "DEEPSUBTYPE",
+									"displayName": "DEEPSUBTYPE-DISPLAY-NAME-2",
+									"name": "DEEPSUBTYPE-2",
+									"resourcePath": "CATEGORY-1/TYPE-2/RENAMED-SUBTYPE-3/DEEPSUBTYPE-2",
+									"resourceName": "DEEPSUBTYPE-2",
+									"labels": []
+								},
+								{
+									"id": "ffe5f120-6a3b-4404-ace8-8ea87b559907",
+									"classification": "DEEPSUBTYPE",
+									"displayName": "DEEPSUBTYPE-DISPLAY-NAME-1",
+									"name": "DEEPSUBTYPE-1",
+									"resourcePath": "CATEGORY-1/TYPE-2/RENAMED-SUBTYPE-3/DEEPSUBTYPE-1",
+									"resourceName": "DEEPSUBTYPE-1",
+									"labels": []
+								}
+							]
+						}
+					]
 				}
 			]
 		}

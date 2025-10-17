@@ -61,9 +61,9 @@ class MetadataLabelResource {
 	ResponseEntity<Void> createLabels(
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
-		@Valid @ValidLabelSiblings @NotNull @RequestBody final List<Label> body) {
+		@Valid @ValidLabelSiblings @NotNull @RequestBody final List<Label> labels) {
 
-		metadataService.createLabels(namespace, municipalityId, body);
+		metadataService.createLabels(namespace, municipalityId, labels);
 		return accepted()
 			.header(CONTENT_TYPE, ALL_VALUE)
 			.build();
@@ -96,9 +96,9 @@ class MetadataLabelResource {
 	ResponseEntity<Void> updateLabels(
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
-		@Valid @ValidLabelSiblings @NotNull @RequestBody final List<Label> body) {
+		@Valid @ValidLabelSiblings @NotNull @RequestBody final List<Label> labels) {
 
-		metadataService.updateLabels(namespace, municipalityId, body);
+		metadataService.updateLabels(namespace, municipalityId, labels);
 		return noContent()
 			.header(CONTENT_TYPE, ALL_VALUE)
 			.build();

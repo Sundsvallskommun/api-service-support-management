@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 
 import java.time.OffsetDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
@@ -20,7 +21,7 @@ import se.sundsvall.supportmanagement.api.model.metadata.Status;
 import se.sundsvall.supportmanagement.api.model.metadata.Type;
 import se.sundsvall.supportmanagement.integration.db.model.CategoryEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ExternalIdTypeEntity;
-import se.sundsvall.supportmanagement.integration.db.model.LabelEntity;
+import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.RoleEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StatusEntity;
 import se.sundsvall.supportmanagement.integration.db.model.TypeEntity;
@@ -271,57 +272,172 @@ class MetadataMapperTest {
 
 	@Test
 	void toLabels() {
-		final var created = OffsetDateTime.now().minusDays(1);
-		final var modified = OffsetDateTime.now();
-		final var json = "[{\"classification\":\"classification\",\"displayName\":\"displayName\",\"name\":\"name\"}]";
 
-		final var entity = LabelEntity.create()
-			.withCreated(created)
-			.withModified(modified)
-			.withJsonStructure(json);
+		// Arrange
+		final var municipalityId = "2289";
+		final var namespace = "namespace-hierarchy-1";
 
-		final var bean = MetadataMapper.toLabels(entity);
+		final var parent = MetadataLabelEntity.create()
+			.withMunicipalityId(municipalityId)
+			.withNamespace(namespace)
+			.withResourceName("parent");
 
-		assertThat(bean.getCreated()).isEqualTo(created);
-		assertThat(bean.getModified()).isEqualTo(modified);
-		assertThat(bean.getLabelStructure()).hasSize(1)
-			.extracting(
-				Label::getClassification,
-				Label::getDisplayName,
-				Label::getName,
-				Label::getLabels)
-			.containsExactly(tuple(
-				"classification",
-				"displayName",
-				"name",
-				null));
+		final var level1 = MetadataLabelEntity.create()
+			.withMunicipalityId(municipalityId)
+			.withNamespace(namespace)
+			.withResourceName("level1")
+			.withParent(parent);
+
+		final var level2a = MetadataLabelEntity.create()
+			.withMunicipalityId(municipalityId)
+			.withNamespace(namespace)
+			.withResourceName("level2a")
+			.withParent(level1);
+
+		final var level2b = MetadataLabelEntity.create()
+			.withMunicipalityId(municipalityId)
+			.withNamespace(namespace)
+			.withResourceName("level2b")
+			.withParent(level1);
+
+		final var level3 = MetadataLabelEntity.create()
+			.withMunicipalityId(municipalityId)
+			.withNamespace(namespace)
+			.withResourceName("level3")
+			.withParent(level2a);
+
+		// Link hierarchy
+		parent.addChild(level1);
+		level1.addChild(level2a);
+		level1.addChild(level2b);
+		level2a.addChild(level3);
+
+		final var labels = MetadataMapper.toLabels(List.of(parent));
+
+		// Assert
+		assertThat(labels.getLabelStructure()).hasSize(1);
+		final var root = labels.getLabelStructure().getFirst();
+
+		assertThat(root.getResourceName()).isEqualTo("parent");
+		assertThat(root.getLabels()).hasSize(1);
+
+		final var l1 = root.getLabels().getFirst();
+		assertThat(l1.getResourceName()).isEqualTo("level1");
+		assertThat(l1.getLabels()).hasSize(2);
+
+		// Sort the children so test is stable regardless of order
+		final var children = l1.getLabels().stream()
+			.sorted(Comparator.comparing(Label::getResourceName))
+			.toList();
+
+		final var l2a = children.get(0);
+		final var l2b = children.get(1);
+
+		assertThat(l2a.getResourceName()).isEqualTo("level2a");
+		assertThat(l2b.getResourceName()).isEqualTo("level2b");
+
+		assertThat(l2a.getLabels()).hasSize(1);
+		assertThat(l2b.getLabels()).isEmpty();
+
+		final var l3 = l2a.getLabels().getFirst();
+		assertThat(l3.getResourceName()).isEqualTo("level3");
+		assertThat(l3.getLabels()).isEmpty();
 	}
 
 	@Test
-	void toLabelsForEmptyEntity() {
-		assertThat(MetadataMapper.toLabels(LabelEntity.create())).hasAllNullFieldsOrProperties();
+	void toLabelsForEmptyEntityList() {
+
+		final var result = MetadataMapper.toLabels(emptyList());
+
+		assertThat(result).isNull();
 	}
 
 	@Test
 	void toLabelsForNull() {
-		assertThat(MetadataMapper.toLabels(null)).isNull();
+
+		final var result = MetadataMapper.toLabels(null);
+
+		assertThat(result).isNull();
 	}
 
-	@ParameterizedTest
-	@MethodSource(value = "toLabelEntityArguments")
-	void toLabelEntity(final String namespace, final String municipalityId, final List<Label> labels, final LabelEntity expectedResult) {
-		assertThat(MetadataMapper.toLabelEntity(namespace, municipalityId, labels)).isEqualTo(expectedResult);
+	@Test
+	void toMetadataLabelEntityList() {
+
+		// Arrange
+		final var municipalityId = "2289";
+		final var namespace = "namespace-hierarchy-1";
+
+		final var level3 = new Label()
+			.withId("level3-id")
+			.withResourceName("level3");
+
+		final var level2a = new Label()
+			.withId("level2a-id")
+			.withResourceName("level2a")
+			.withLabels(List.of(level3));
+
+		final var level2b = new Label()
+			.withId("level2b-id")
+			.withResourceName("level2b");
+
+		final var level1 = new Label()
+			.withId("level1-id")
+			.withResourceName("level1")
+			.withLabels(List.of(level2a, level2b));
+
+		final var parent = new Label()
+			.withId("parent-id")
+			.withResourceName("parent")
+			.withLabels(List.of(level1));
+
+		// Act
+		final var result = MetadataMapper.toMetadataLabelEntityList(namespace, municipalityId, List.of(parent));
+
+		// Assert
+		assertThat(result)
+			.hasSize(1)
+			.first()
+			.satisfies(parentEntity -> {
+				assertThat(parentEntity.getResourceName()).isEqualTo("parent");
+				assertThat(parentEntity.getMunicipalityId()).isEqualTo(municipalityId);
+				assertThat(parentEntity.getNamespace()).isEqualTo(namespace);
+				assertThat(parentEntity.getMetadataLabels()).hasSize(1);
+
+				final var level1Entity = parentEntity.getMetadataLabels().getFirst();
+				assertThat(level1Entity.getResourceName()).isEqualTo("level1");
+				assertThat(level1Entity.getParent()).isEqualTo(parentEntity);
+				assertThat(level1Entity.getMetadataLabels()).hasSize(2);
+
+				final var level2aEntity = level1Entity.getMetadataLabels().get(0);
+				final var level2bEntity = level1Entity.getMetadataLabels().get(1);
+
+				assertThat(level2aEntity.getResourceName()).isEqualTo("level2a");
+				assertThat(level2aEntity.getParent()).isEqualTo(level1Entity);
+				assertThat(level2aEntity.getMetadataLabels()).hasSize(1);
+
+				final var level3Entity = level2aEntity.getMetadataLabels().getFirst();
+				assertThat(level3Entity.getResourceName()).isEqualTo("level3");
+				assertThat(level3Entity.getParent()).isEqualTo(level2aEntity);
+
+				assertThat(level2bEntity.getResourceName()).isEqualTo("level2b");
+				assertThat(level2bEntity.getParent()).isEqualTo(level1Entity);
+				assertThat(level2bEntity.getMetadataLabels()).isEmpty();
+			});
 	}
 
-	private static Stream<Arguments> toLabelEntityArguments() {
-		final var json = "[{\"classification\":\"classification\",\"displayName\":\"displayName\",\"name\":\"name\"}]";
+	@Test
+	void toMetadataLabelEntityListForEmptyLabelsList() {
 
-		return Stream.of(
-			Arguments.of("namespace", "municipalityId", null, null),
-			Arguments.of("namespace", null, List.of(Label.create().withName("name")), null),
-			Arguments.of(null, "municipalityId", List.of(Label.create().withName("name")), null),
-			Arguments.of("namespace", "municipalityId", List.of(Label.create().withName("name").withClassification("classification").withDisplayName("displayName")),
-				LabelEntity.create().withNamespace("namespace").withMunicipalityId("municipalityId").withJsonStructure(json)));
+		final var result = MetadataMapper.toMetadataLabelEntityList("any", "any", emptyList());
+
+		assertThat(result).isEmpty();
 	}
 
+	@Test
+	void toMetadataLabelEntityListForEmptyNullLabelsList() {
+
+		final var result = MetadataMapper.toMetadataLabelEntityList("any", "any", null);
+
+		assertThat(result).isEmpty();
+	}
 }
