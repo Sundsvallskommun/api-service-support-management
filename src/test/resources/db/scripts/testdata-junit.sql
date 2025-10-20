@@ -128,13 +128,24 @@ VALUES ('59328e70-4297-4bb5-ba69-cb17f2d15a17', '9791682e-4ba8-4f3a-857a-54e1483
 -------------------------------------
 -- MetadataLabel
 -------------------------------------
-INSERT INTO metadata_label(id, created, municipality_id, namespace, resource_path, resource_name)
-VALUES ('a0bb7b61-8d55-4857-b619-547572eed26f', now(), '2281', 'namespace-1', 'parent/child/resource1', 'resource1'),
-       ('86d459cd-4810-4b4a-b365-97aa0c2c0ff5', now(), '2281', 'namespace-1', 'parent/child/resource2', 'resource2'),
-       ('821033d0-f059-4f2b-90f2-cc0562ac0560', now(), '2282', 'namespace-1', 'parent/child/resource3', 'resource2'),
-       ('4bee7529-b904-4559-97ae-0437f74de935', now(), '2283', 'namespace-1', 'parent/child/resource4', 'resource3'),
-       ('8fa9beb8-944d-41c1-884a-c0f6db4f7bf6', now(), '2285', 'namespace-123', 'parent', 'parent');
-
+INSERT INTO metadata_label (id, created, municipality_id, namespace, resource_path, resource_name, parent_id)
+VALUES 
+  -- 2281 / namespace-1
+  ('9b2a5a7d-3e8f-4a7c-8f9b-2f7d3c1a0b11', now(), '2281', 'namespace-1', 'parent', 'parent', NULL),
+  ('f3a1c6d9-7b2e-4d5a-9c1f-8e2b2c3d4e5f', now(), '2281', 'namespace-1', 'parent/child', 'child', '9b2a5a7d-3e8f-4a7c-8f9b-2f7d3c1a0b11'),
+  ('a0bb7b61-8d55-4857-b619-547572eed26f', now(), '2281', 'namespace-1', 'parent/child/resource1', 'resource1', 'f3a1c6d9-7b2e-4d5a-9c1f-8e2b2c3d4e5f'),
+  ('86d459cd-4810-4b4a-b365-97aa0c2c0ff5', now(), '2281', 'namespace-1', 'parent/child/resource2', 'resource2', 'f3a1c6d9-7b2e-4d5a-9c1f-8e2b2c3d4e5f'),
+  -- 2282 / namespace-1
+  ('0c5d8a12-6b74-4e39-9f0a-1b2c3d4e5f60', now(), '2282', 'namespace-1', 'parent', 'parent', NULL),
+  ('1a2b3c4d-5e6f-7081-92a3-b4c5d6e7f801', now(), '2282', 'namespace-1', 'parent/child', 'child', '0c5d8a12-6b74-4e39-9f0a-1b2c3d4e5f60'),
+  ('821033d0-f059-4f2b-90f2-cc0562ac0560', now(), '2282', 'namespace-1', 'parent/child/resource3', 'resource3', '1a2b3c4d-5e6f-7081-92a3-b4c5d6e7f801'),
+  -- 2283 / namespace-1
+  ('2b4c6d8e-0f12-4a3b-9c5d-6e7f8012a3b4', now(), '2283', 'namespace-1', 'parent', 'parent', NULL),
+  ('3c5d7e9f-1021-4b3c-8d6e-7f8012a3b4c5', now(), '2283', 'namespace-1', 'parent/child', 'child', '2b4c6d8e-0f12-4a3b-9c5d-6e7f8012a3b4'),
+  ('4bee7529-b904-4559-97ae-0437f74de935', now(), '2283', 'namespace-1', 'parent/child/resource4', 'resource4', '3c5d7e9f-1021-4b3c-8d6e-7f8012a3b4c5'),
+  -- 2285 / namespace-123 (egen rot)
+  ('8fa9beb8-944d-41c1-884a-c0f6db4f7bf6', now(), '2285', 'namespace-123', 'parent', 'parent', NULL);
+  
 -------------------------------------
 -- Communication
 -------------------------------------
