@@ -202,16 +202,6 @@
         `value` varchar(255)
     ) engine=InnoDB;
 
-    create table label (
-        created datetime(6),
-        id bigint not null auto_increment,
-        modified datetime(6),
-        municipality_id varchar(8) not null,
-        namespace varchar(32) not null,
-        json_structure json not null,
-        primary key (id)
-    ) engine=InnoDB;
-
     create table message_exchange_sync (
         active bit,
         id bigint not null auto_increment,
@@ -219,6 +209,21 @@
         municipality_id varchar(8) not null,
         updated datetime(6),
         namespace varchar(32) not null,
+        primary key (id)
+    ) engine=InnoDB;
+
+    create table metadata_label (
+        created datetime(6),
+        modified datetime(6),
+        municipality_id varchar(8) not null,
+        namespace varchar(32) not null,
+        classification varchar(255),
+        display_name varchar(255),
+        id varchar(255) not null,
+        name varchar(255),
+        parent_id varchar(255),
+        resource_name varchar(255),
+        resource_path varchar(255),
         primary key (id)
     ) engine=InnoDB;
 
@@ -500,10 +505,10 @@
        add constraint uq_external_tag_errand_id_key unique (errand_id, `key`);
 
     create index idx_namespace_municipality_id 
-       on label (namespace, municipality_id);
+       on metadata_label (namespace, municipality_id);
 
-    alter table if exists label 
-       add constraint uq_namespace_municipality_id unique (namespace, municipality_id);
+    alter table if exists metadata_label 
+       add constraint uq_namespace_municipality_id_resource_path unique (namespace, municipality_id, resource_path);
 
     create index idx_namespace_municipality_id 
        on namespace_config (namespace, municipality_id);
@@ -540,6 +545,9 @@
 
     alter table if exists role 
        add constraint uq_namespace_municipality_id_name unique (namespace, municipality_id, name);
+
+    create index idx_stakeholder_external_id_role_errand_id 
+       on stakeholder (external_id, `role`, errand_id);
 
     create index idx_namespace_municipality_id 
        on status (namespace, municipality_id);
@@ -628,6 +636,11 @@
        add constraint fk_errand_external_tag_errand_id 
        foreign key (errand_id) 
        references errand (id);
+
+    alter table if exists metadata_label 
+       add constraint fk_metadata_label_id 
+       foreign key (parent_id) 
+       references metadata_label (id);
 
     alter table if exists notification 
        add constraint fk_notification_errand_id 
