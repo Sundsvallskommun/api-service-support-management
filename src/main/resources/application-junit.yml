@@ -1,4 +1,6 @@
 integration:
+  accessmapper:
+    url: https//accessmapper.url
   emailreader:
     url: http://emailreader.url
     municipality-id: 1234
@@ -52,6 +54,8 @@ spring:
     oauth2:
       client:
         provider:
+          accessmapper:
+            token-uri: http://token.url
           emailreader:
             token-uri: http://token.url
           employee:
@@ -73,6 +77,9 @@ spring:
           relation:
             token-uri: http://token.url
         registration:
+          accessmapper:
+            client-id: the-client-id
+            client-secret: the-client-secret
           emailreader:
             client-id: the-client-id
             client-secret: the-client-secret
