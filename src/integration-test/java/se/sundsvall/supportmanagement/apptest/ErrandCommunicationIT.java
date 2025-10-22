@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.jdbc.Sql;
 import se.sundsvall.dept44.test.AbstractAppTest;
 import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
@@ -34,7 +33,6 @@ import se.sundsvall.supportmanagement.Application;
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql"
 })
-@DirtiesContext
 class ErrandCommunicationIT extends AbstractAppTest {
 
 	private static final String PATH = "/2281/NAMESPACE-1/errands";
