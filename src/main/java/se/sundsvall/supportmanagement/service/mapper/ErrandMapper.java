@@ -13,6 +13,7 @@ import static se.sundsvall.supportmanagement.service.mapper.StakeholderParameter
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
 import se.sundsvall.supportmanagement.api.model.errand.Classification;
 import se.sundsvall.supportmanagement.api.model.errand.ContactChannel;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
@@ -65,7 +66,9 @@ public final class ErrandMapper {
 	}
 
 	public static ErrandEntity updateEntity(final ErrandEntity entity, final Errand errand) {
-		if (isNull(errand)) { return entity; }
+		if (isNull(errand)) {
+			return entity;
+		}
 
 		ofNullable(errand.getAssignedGroupId()).ifPresent(value -> entity.setAssignedGroupId(isEmpty(value) ? null : value));
 		ofNullable(errand.getAssignedUserId()).ifPresent(value -> entity.setAssignedUserId(isEmpty(value) ? null : value));
@@ -122,6 +125,13 @@ public final class ErrandMapper {
 			.toList();
 	}
 
+	public static List<Errand> toErrandsWithAccessControl(final List<ErrandEntity> entities, Predicate<ErrandEntity> mapLimited) {
+		return ofNullable(entities).orElse(emptyList())
+			.stream()
+			.map(errandEntity -> mapLimited.test(errandEntity) ? toLimitedErrand(errandEntity) : toErrand(errandEntity))
+			.toList();
+	}
+
 	public static Errand toErrand(final ErrandEntity entity) {
 		return Optional.ofNullable(entity)
 			.map(e -> Errand.create()
@@ -150,6 +160,21 @@ public final class ErrandMapper {
 				.withEscalationEmail(e.getEscalationEmail())
 				.withLabels(e.getLabels())
 				.withActiveNotifications(toActiveNotifications(e.getNotifications())))
+			.orElse(null);
+	}
+
+	public static Errand toLimitedErrand(final ErrandEntity entity) {
+		return Optional.ofNullable(entity)
+			.map(e -> Errand.create()
+				.withId(e.getId())
+				.withCreated(e.getCreated())
+				.withErrandNumber(e.getErrandNumber())
+				.withModified(e.getModified())
+				.withStatus(e.getStatus())
+				.withTitle(e.getTitle())
+				.withTouched(e.getTouched())
+				.withResolution(e.getResolution())
+				.withChannel(e.getChannel()))
 			.orElse(null);
 	}
 
