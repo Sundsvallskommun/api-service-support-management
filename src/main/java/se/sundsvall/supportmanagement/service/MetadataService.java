@@ -21,10 +21,8 @@ import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toSta
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateContactReason;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateEntity;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
@@ -256,7 +254,6 @@ public class MetadataService {
 		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}")
 	})
 	public void createLabels(final String namespace, final String municipalityId, final List<Label> labels) {
-		verifyUniqueNames(labels, new HashSet<>());
 		metadataLabelRepository.saveAll(toMetadataLabelEntityList(namespace, municipalityId, labels));
 	}
 
@@ -268,7 +265,6 @@ public class MetadataService {
 		if (!metadataLabelRepository.existsByNamespaceAndMunicipalityId(namespace, municipalityId)) {
 			throw Problem.valueOf(NOT_FOUND, "Labels are not present in namespace '%s' for municipalityId '%s'".formatted(namespace, municipalityId));
 		}
-		verifyUniqueNames(labels, new HashSet<>());
 		metadataLabelRepository.saveAll(toMetadataLabelEntityList(namespace, municipalityId, labels));
 	}
 
@@ -420,18 +416,5 @@ public class MetadataService {
 			throw Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(CONTACT_REASON, contactReasonId, namespace, municipalityId));
 		}
 		contactReasonRepository.deleteByIdAndNamespaceAndMunicipalityId(contactReasonId, namespace, municipalityId);
-	}
-
-	private void verifyUniqueNames(final List<Label> labels, final Set<String> names) {
-		if (labels == null) {
-			return;
-		}
-		for (final Label label : labels) {
-			if (names.contains(label.getName())) {
-				throw Problem.valueOf(BAD_REQUEST, "Label names must be unique. Duplication detected for '%s'".formatted(label.getName()));
-			}
-			names.add(label.getName());
-			verifyUniqueNames(label.getLabels(), names);
-		}
 	}
 }

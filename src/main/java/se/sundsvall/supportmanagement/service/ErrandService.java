@@ -3,7 +3,11 @@ package se.sundsvall.supportmanagement.service;
 import static generated.se.sundsvall.eventlog.EventType.CREATE;
 import static generated.se.sundsvall.eventlog.EventType.DELETE;
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
+import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toCollection;
+import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 import static org.zalando.problem.Status.BAD_REQUEST;
 import static org.zalando.problem.Status.NOT_FOUND;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationSubType.ERRAND;
@@ -14,6 +18,7 @@ import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.updateE
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withMunicipalityId;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withNamespace;
 
+import java.util.ArrayList;
 import java.util.Optional;
 import java.util.function.Supplier;
 import org.springframework.data.domain.Page;
@@ -27,7 +32,9 @@ import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.ContactReasonRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.util.ErrandNumberGeneratorService;
 import se.sundsvall.supportmanagement.integration.notes.NotesClient;
 
@@ -36,6 +43,7 @@ import se.sundsvall.supportmanagement.integration.notes.NotesClient;
 public class ErrandService {
 
 	private static final String ENTITY_NOT_FOUND = "An errand with id '%s' could not be found in namespace '%s' for municipality with id '%s'";
+	private static final String LABELS_NOT_FOUND = "The provided label-ID:s '%s' could not be found in namespace '%s' for municipality with id '%s'";
 	private static final String BAD_CONTACT_REASON = "'%s' is not a valid contact reason for namespace '%s' and municipality with id '%s'";
 	private static final String EVENT_LOG_CREATE_ERRAND = "Ärendet har skapats.";
 	private static final String EVENT_LOG_UPDATE_ERRAND = "Ärendet har uppdaterats.";
@@ -43,22 +51,32 @@ public class ErrandService {
 
 	private final ErrandsRepository repository;
 	private final ContactReasonRepository contactReasonRepository;
+	private final MetadataLabelRepository metadataLabelRepository;
 	private final RevisionService revisionService;
 	private final EventService eventService;
 	private final ErrandNumberGeneratorService errandNumberGeneratorService;
-
 	private final ErrandAttachmentService errandAttachmentService;
 	private final CommunicationService communicationService;
 	private final AttachmentRepository attachmentRepository;
 	private final ConversationService conversationService;
 	private final NotesClient notesClient;
 
-	public ErrandService(final ErrandsRepository repository,
-		final ContactReasonRepository contactReasonRepository, final CommunicationService communicationService, final AttachmentRepository attachmentRepository,
-		final RevisionService revisionService, final EventService eventService,
-		final ErrandNumberGeneratorService errandNumberGeneratorService, final ErrandAttachmentService errandAttachmentService, final ConversationService conversationService, final NotesClient notesClient) {
+	public ErrandService(
+		final ErrandsRepository repository,
+		final ContactReasonRepository contactReasonRepository,
+		final CommunicationService communicationService,
+		final AttachmentRepository attachmentRepository,
+		final RevisionService revisionService,
+		final EventService eventService,
+		final ErrandNumberGeneratorService errandNumberGeneratorService,
+		final ErrandAttachmentService errandAttachmentService,
+		final ConversationService conversationService,
+		final NotesClient notesClient,
+		final MetadataLabelRepository metadataLabelRepository) {
+
 		this.repository = repository;
 		this.contactReasonRepository = contactReasonRepository;
+		this.metadataLabelRepository = metadataLabelRepository;
 		this.communicationService = communicationService;
 		this.attachmentRepository = attachmentRepository;
 		this.revisionService = revisionService;
@@ -83,6 +101,8 @@ public class ErrandService {
 				.withContactReason(contactReason)
 				.withContactReasonDescription(errand.getContactReasonDescription());
 		});
+
+		validateMissingMetadataLabels(errandEntity);
 
 		final var persistedEntity = repository.save(errandEntity);
 		final var revision = revisionService.createErrandRevision(persistedEntity);
@@ -109,12 +129,16 @@ public class ErrandService {
 		verifyExistingErrand(id, namespace, municipalityId, true);
 
 		final var errandEntity = updateEntity(repository.getReferenceById(id), errand);
+
+		// Add contactReason
 		Optional.ofNullable(errand.getContactReason()).ifPresent(reason -> {
 			final var contactReason = contactReasonRepository.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId(reason, namespace, municipalityId)
 				.orElseThrow(() -> Problem.valueOf(BAD_REQUEST, BAD_CONTACT_REASON.formatted(reason, namespace, municipalityId)));
 
 			errandEntity.withContactReason(contactReason);
 		});
+
+		validateMissingMetadataLabels(errandEntity);
 
 		final var entity = repository.save(errandEntity);
 
@@ -150,6 +174,11 @@ public class ErrandService {
 		eventService.createErrandEvent(DELETE, EVENT_LOG_DELETE_ERRAND, entity, latestRevision, null, false, ERRAND);
 	}
 
+	public Long countErrands(final String namespace, final String municipalityId, final Specification<ErrandEntity> filter) {
+		final var fullFilter = withNamespace(namespace).and(withMunicipalityId(municipalityId)).and(filter);
+		return repository.count(fullFilter);
+	}
+
 	private void verifyExistingErrand(final String id, final String namespace, final String municipalityId, final boolean lock) {
 
 		final Supplier<Boolean> exists;
@@ -164,8 +193,18 @@ public class ErrandService {
 		}
 	}
 
-	public Long countErrands(final String namespace, final String municipalityId, final Specification<ErrandEntity> filter) {
-		final var fullFilter = withNamespace(namespace).and(withMunicipalityId(municipalityId)).and(filter);
-		return repository.count(fullFilter);
+	// TODO: Remove when UF-17592 is implemented.
+	private void validateMissingMetadataLabels(ErrandEntity errandEntity) {
+		final var namespace = errandEntity.getNamespace();
+		final var municipalityId = errandEntity.getMunicipalityId();
+
+		final var missingIds = Optional.ofNullable(errandEntity.getLabels()).orElse(emptyList()).stream()
+			.filter(errandLabelEmbeddable -> !metadataLabelRepository.existsByNamespaceAndMunicipalityIdAndId(namespace, municipalityId, errandLabelEmbeddable.getMetadataLabelId()))
+			.map(ErrandLabelEmbeddable::getMetadataLabelId)
+			.collect(toCollection(ArrayList::new));
+
+		if (isNotEmpty(missingIds)) {
+			throw Problem.valueOf(NOT_FOUND, LABELS_NOT_FOUND.formatted(missingIds.stream().collect(joining(", ")), namespace, municipalityId));
+		}
 	}
 }

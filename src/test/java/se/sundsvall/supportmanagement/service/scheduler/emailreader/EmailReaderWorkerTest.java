@@ -2,7 +2,6 @@ package se.sundsvall.supportmanagement.service.scheduler.emailreader;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -45,7 +44,6 @@ import se.sundsvall.supportmanagement.service.EventService;
 class EmailReaderWorkerTest {
 
 	private static final String MUNICIPALITY_ID = "municipalityId";
-
 	private static final String NAMESPACE = "namespace";
 
 	@Mock
@@ -330,7 +328,7 @@ class EmailReaderWorkerTest {
 		when(errandRepositoryMock.findById(anyString())).thenReturn(Optional.of(errandEntity));
 		when(errandNumberGeneratorServiceMock.generateErrandNumber(anyString(), anyString())).thenReturn("errandNumber");
 		when(errandServiceMock.createErrand(anyString(), anyString(), any())).thenReturn(errandEntity.getId());
-		when(emailReaderMapperMock.toErrand(any(), any(), anyBoolean(), any(), any())).thenReturn(new Errand());
+		when(emailReaderMapperMock.toErrand(any(), any())).thenReturn(new Errand());
 		when(emailReaderMapperMock.toCommunicationEntity(any(), any())).thenReturn(communicationEntity);
 		when(emailReaderMapperMock.createEmailRequest(any(Email.class), any(String.class), any(String.class), any(String.class), any(String.class))).thenReturn(emailRequest);
 
@@ -341,7 +339,7 @@ class EmailReaderWorkerTest {
 		verify(errandRepositoryMock).findById(errandEntity.getId());
 		verify(emailReaderMapperMock).createEmailRequest(email.subject("Bekräftelse ärende #errandNumber Ansökan om bygglov för fastighet KATARINA 4"), emailConfig.getErrandNewEmailSender(), emailConfig.getErrandNewEmailTemplate(),
 			emailConfig.getErrandNewEmailHTMLTemplate(), "Bekräftelse ärende #errandNumber Ansökan om bygglov för fastighet KATARINA 4");
-		verify(emailReaderMapperMock).toErrand(same(email), eq(emailConfig.getStatusForNew()), eq(emailConfig.isAddSenderAsStakeholder()), eq(emailConfig.getStakeholderRole()), eq(emailConfig.getErrandChannel()));
+		verify(emailReaderMapperMock).toErrand(same(email), eq(emailConfig));
 		verify(communicationServiceMock).sendEmail(eq(emailConfig.getNamespace()), eq(emailConfig.getMunicipalityId()), eq(errandEntity.getId()), same(emailRequest));
 		verify(emailReaderMapperMock).toCommunicationEntity(same(email), same(errandEntity));
 		verify(communicationServiceMock).saveAttachment(same(communicationEntity), same(errandEntity));
@@ -385,7 +383,7 @@ class EmailReaderWorkerTest {
 		when(errandRepositoryMock.findById(anyString())).thenReturn(Optional.of(errandEntity));
 		when(errandNumberGeneratorServiceMock.generateErrandNumber(anyString(), anyString())).thenReturn("errandNumber");
 		when(errandServiceMock.createErrand(anyString(), anyString(), any())).thenReturn(errandEntity.getId());
-		when(emailReaderMapperMock.toErrand(any(), any(), anyBoolean(), any(), any())).thenReturn(new Errand());
+		when(emailReaderMapperMock.toErrand(any(), any())).thenReturn(new Errand());
 		when(emailReaderMapperMock.toCommunicationEntity(any(), any())).thenReturn(communicationEntity);
 		when(emailReaderMapperMock.createEmailRequest(any(Email.class), any(String.class), any(String.class), any(String.class), any(String.class))).thenReturn(emailRequest);
 
@@ -395,7 +393,7 @@ class EmailReaderWorkerTest {
 		// VERIFY
 		verify(errandRepositoryMock).findById(errandEntity.getId());
 		verify(emailReaderMapperMock, never()).createEmailRequest(any(), any(), any(), any(), any());
-		verify(emailReaderMapperMock).toErrand(same(email), eq(emailConfig.getStatusForNew()), eq(emailConfig.isAddSenderAsStakeholder()), eq(emailConfig.getStakeholderRole()), eq(emailConfig.getErrandChannel()));
+		verify(emailReaderMapperMock).toErrand(same(email), eq(emailConfig));
 		verify(communicationServiceMock, never()).sendEmail(any(), any(), any(), any());
 		verify(emailReaderMapperMock).toCommunicationEntity(same(email), same(errandEntity));
 		verify(communicationServiceMock).saveAttachment(same(communicationEntity), same(errandEntity));
@@ -431,7 +429,7 @@ class EmailReaderWorkerTest {
 		when(errandRepositoryMock.findById(anyString())).thenReturn(Optional.of(errandEntity));
 		when(errandNumberGeneratorServiceMock.generateErrandNumber(anyString(), anyString())).thenReturn("errandNumber");
 		when(errandServiceMock.createErrand(anyString(), anyString(), any())).thenReturn(errandEntity.getId());
-		when(emailReaderMapperMock.toErrand(any(), any(), anyBoolean(), any(), any())).thenReturn(new Errand());
+		when(emailReaderMapperMock.toErrand(any(), any())).thenReturn(new Errand());
 		when(emailReaderMapperMock.toCommunicationEntity(any(), any())).thenReturn(communicationEntity);
 
 		// ACT
@@ -443,7 +441,7 @@ class EmailReaderWorkerTest {
 		verify(communicationServiceMock).saveCommunication(same(communicationEntity));
 		verify(emailReaderClientMock).deleteEmail(MUNICIPALITY_ID, email.getId());
 		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Nytt meddelande"), same(errandEntity), isNull(), isNull(), eq(MESSAGE));
-		verify(emailReaderMapperMock).toErrand(same(email), eq(emailConfig.getStatusForNew()), eq(emailConfig.isAddSenderAsStakeholder()), eq(emailConfig.getStakeholderRole()), eq(emailConfig.getErrandChannel()));
+		verify(emailReaderMapperMock).toErrand(same(email), eq(emailConfig));
 		verify(emailReaderMapperMock).toCommunicationEntity(same(email), same(errandEntity));
 		verifyNoMoreInteractions(emailReaderClientMock, errandRepositoryMock, emailReaderMapperMock, communicationServiceMock, emailWorkerConfigRepositoryMock, eventServiceMock);
 
@@ -480,14 +478,14 @@ class EmailReaderWorkerTest {
 		when(errandServiceMock.createErrand(anyString(), anyString(), any())).thenReturn(errandEntity.getId());
 		when(errandRepositoryMock.findById(anyString())).thenReturn(Optional.of(errandEntity));
 		when(emailReaderMapperMock.toCommunicationEntity(any(), any())).thenReturn(communicationEntity);
-		when(emailReaderMapperMock.toErrand(any(), any(), anyBoolean(), any(), any())).thenReturn(errand);
+		when(emailReaderMapperMock.toErrand(any(), any())).thenReturn(errand);
 
 		// ACT
 		emailReaderWorker.processEmail(email, emailConfig, consumerMock);
 
 		// VERIFY
 		verify(errandRepositoryMock).findById(errandEntity.getId());
-		verify(emailReaderMapperMock).toErrand(same(email), eq(emailConfig.getStatusForNew()), eq(emailConfig.isAddSenderAsStakeholder()), eq(emailConfig.getStakeholderRole()), eq(emailConfig.getErrandChannel()));
+		verify(emailReaderMapperMock).toErrand(same(email), eq(emailConfig));
 		verify(errandServiceMock).createErrand(eq(emailConfig.getNamespace()), eq(emailConfig.getMunicipalityId()), same(errand));
 		verify(emailReaderMapperMock).toCommunicationEntity(same(email), same(errandEntity));
 		verify(emailReaderClientMock).deleteEmail(MUNICIPALITY_ID, email.getId());
@@ -530,7 +528,7 @@ class EmailReaderWorkerTest {
 		when(errandServiceMock.createErrand(anyString(), anyString(), any())).thenReturn(errandEntity.getId());
 		when(errandRepositoryMock.findById(anyString())).thenReturn(Optional.of(errandEntity));
 		when(emailReaderMapperMock.toCommunicationEntity(any(), any())).thenReturn(communicationEntity);
-		when(emailReaderMapperMock.toErrand(any(), any(), anyBoolean(), any(), any())).thenReturn(errand);
+		when(emailReaderMapperMock.toErrand(any(), any())).thenReturn(errand);
 
 		// ACT
 		emailReaderWorker.processEmail(email, emailConfig, consumerMock);
@@ -538,7 +536,7 @@ class EmailReaderWorkerTest {
 		// VERIFY
 		verify(errandRepositoryMock).findByErrandNumberAndNamespace("Ansökan", NAMESPACE);
 		verify(errandRepositoryMock).findById(errandEntity.getId());
-		verify(emailReaderMapperMock).toErrand(same(email), eq(emailConfig.getStatusForNew()), eq(emailConfig.isAddSenderAsStakeholder()), eq(emailConfig.getStakeholderRole()), eq(emailConfig.getErrandChannel()));
+		verify(emailReaderMapperMock).toErrand(same(email), eq(emailConfig));
 		verify(errandServiceMock).createErrand(eq(emailConfig.getNamespace()), eq(emailConfig.getMunicipalityId()), same(errand));
 		verify(emailReaderMapperMock).toCommunicationEntity(same(email), same(errandEntity));
 		verify(emailReaderClientMock).deleteEmail(MUNICIPALITY_ID, email.getId());
@@ -546,7 +544,5 @@ class EmailReaderWorkerTest {
 		verify(communicationServiceMock).saveCommunication(same(communicationEntity));
 		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Nytt meddelande"), same(errandEntity), isNull(), isNull(), eq(MESSAGE));
 		verifyNoMoreInteractions(emailWorkerConfigRepositoryMock, emailReaderClientMock, errandServiceMock, errandRepositoryMock, emailReaderMapperMock, communicationServiceMock, eventServiceMock);
-
 	}
-
 }

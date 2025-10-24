@@ -39,8 +39,8 @@ class MetadataLabelResourceTest {
 
 		// Arrange
 		final var labels = List.of(
-			Label.create().withClassification("classification").withResourceName("resource_1").withName("name_1"),
-			Label.create().withClassification("classification").withResourceName("resource_2").withName("name_2"));
+			Label.create().withClassification("classification").withResourceName("resource_1"),
+			Label.create().withClassification("classification").withResourceName("resource_2"));
 
 		// Act
 		webTestClient.post()
@@ -61,7 +61,7 @@ class MetadataLabelResourceTest {
 
 		// Arrange
 		final var labels = Labels.create().withLabelStructure(List.of(
-			Label.create().withClassification("classification").withResourceName("resource").withName("name")));
+			Label.create().withClassification("classification").withResourceName("resource")));
 
 		when(metadataServiceMock.findLabels(NAMESPACE, MUNICIPALITY_ID)).thenReturn(labels);
 
@@ -85,8 +85,8 @@ class MetadataLabelResourceTest {
 
 		// Arrange
 		final var labels = List.of(
-			Label.create().withClassification("classification").withResourceName("resource_1").withName("name_1"),
-			Label.create().withClassification("classification").withResourceName("resource_2").withName("name_2"));
+			Label.create().withClassification("classification").withResourceName("resource_1"),
+			Label.create().withClassification("classification").withResourceName("resource_2"));
 
 		// Act
 		webTestClient.put()

@@ -108,8 +108,20 @@
 			"suspension": {},
 			"businessRelated": false,
 			"labels": [
-				"label-1",
-				"label-2"
+				{
+					"id": "ffe5f120-6a3b-4404-ace8-8ea87b559907",
+					"classification": "DEEPSUBTYPE",
+					"displayName": "DEEPSUBTYPE-DISPLAY-NAME-1",
+					"resourcePath": "CATEGORY-1/TYPE-2/SUBTYPE-4/DEEPSUBTYPE-1",
+					"resourceName": "DEEPSUBTYPE-1"
+				},
+				{
+					"id": "0eb1f695-48b1-40fd-af8c-b277c37db2d4",
+					"classification": "DEEPSUBTYPE",
+					"displayName": "DEEPSUBTYPE-DISPLAY-NAME-2",
+					"resourcePath": "CATEGORY-1/TYPE-2/SUBTYPE-4/DEEPSUBTYPE-2",
+					"resourceName": "DEEPSUBTYPE-2"
+				}
 			],
 			"activeNotifications": [],
 			"created": "2023-04-26T15:48:17.124+02:00",
@@ -221,7 +233,22 @@
 			"assignedGroupId": "ASSIGNED_GROUP_ID-3",
 			"suspension": {},
 			"businessRelated": false,
-			"labels": [],
+			"labels": [
+				{
+					"id": "926fd3f9-f488-4ba4-93f6-2789dee0c0c3",
+					"classification": "SUBTYPE",
+					"displayName": "SUBTYPE-DISPLAY-NAME-3",
+					"resourcePath": "CATEGORY-1/TYPE-2/SUBTYPE-3",
+					"resourceName": "SUBTYPE-3"
+				},
+				{
+					"id": "f4d6e210-633b-48a6-ad0a-7be839b28762",
+					"classification": "SUBTYPE",
+					"displayName": "SUBTYPE-DISPLAY-NAME-4",
+					"resourcePath": "CATEGORY-1/TYPE-2/SUBTYPE-4",
+					"resourceName": "SUBTYPE-4"
+				}
+			],
 			"activeNotifications": [
 				{
 					"id": "5f3c4196-8b2f-4ccd-8939-6f53a715563c",
@@ -451,8 +478,10 @@
 	"last": true,
 	"totalElements": 6,
 	"totalPages": 1,
+	"first": true,
 	"size": 20,
 	"number": 0,
+	"numberOfElements": 6,
 	"sort": [
 		{
 			"direction": "DESC",
@@ -463,7 +492,5 @@
 			"ascending": false
 		}
 	],
-	"first": true,
-	"numberOfElements": 6,
 	"empty": false
 }

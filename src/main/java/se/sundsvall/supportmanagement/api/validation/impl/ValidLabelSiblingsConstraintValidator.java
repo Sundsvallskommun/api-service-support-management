@@ -14,36 +14,7 @@ public class ValidLabelSiblingsConstraintValidator implements ConstraintValidato
 
 	@Override
 	public boolean isValid(final Collection<Label> value, final ConstraintValidatorContext context) {
-		return hasUniqueSiblingNames(value) && hasUniqueSiblingResourceNames(value) && hasSameClassification(value);
-	}
-
-	/**
-	 * Recursive method to validate that each level of labels contains no entries with same name
-	 * 
-	 * @param  value collection of labels to verify
-	 * @return       true if collection (and its sub collections) only contains entries with unique names,
-	 *               false otherwise
-	 */
-	private boolean hasUniqueSiblingNames(final Collection<Label> value) {
-		final var childrenAreValid = ofNullable(value).orElse(emptyList())
-			.stream()
-			.map(Label::getLabels)
-			.allMatch(this::hasUniqueSiblingNames);
-
-		if (childrenAreValid) {
-			Collection<String> names = ofNullable(value).orElse(emptyList())
-				.stream()
-				.filter(Objects::nonNull)
-				.map(Label::getName)
-				.filter(Objects::nonNull)
-				.toList();
-
-			return names.stream()
-				.distinct()
-				.count() == names.size();
-		}
-
-		return false;
+		return hasUniqueSiblingResourceNames(value) && hasSameClassification(value);
 	}
 
 	/**

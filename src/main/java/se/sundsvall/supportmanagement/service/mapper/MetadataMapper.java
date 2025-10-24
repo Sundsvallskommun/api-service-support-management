@@ -231,8 +231,7 @@ public class MetadataMapper {
 			.withClassification(entity.getClassification())
 			.withDisplayName(entity.getDisplayName())
 			.withResourceName(entity.getResourceName())
-			.withResourcePath(entity.getResourcePath())
-			.withName(entity.getName()); // Deprecated field, kept for backward compatibility
+			.withResourcePath(entity.getResourcePath());
 
 		var children = Optional.ofNullable(entity.getMetadataLabels())
 			.orElse(emptyList())
@@ -258,7 +257,6 @@ public class MetadataMapper {
 		final var entity = MetadataLabelEntity.create()
 			.withId(label.getId())
 			.withMunicipalityId(municipalityId)
-			.withName(label.getName()) // Deprecated field, kept for backward compatibility
 			.withNamespace(namespace)
 			.withClassification(label.getClassification())
 			.withDisplayName(label.getDisplayName())

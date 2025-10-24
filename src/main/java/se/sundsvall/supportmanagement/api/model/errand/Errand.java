@@ -112,8 +112,8 @@ public class Errand {
 	@Schema(description = "Flag to indicate if the errand is business related", example = "true")
 	private Boolean businessRelated;
 
-	@Schema(description = "List of labels for the errand", example = "[\"label1\",\"label2\"]")
-	private List<String> labels;
+	@Schema(description = "List of labels for the errand")
+	private List<ErrandLabel> labels;
 
 	@Schema(description = "List of active notifications for the errand", accessMode = READ_ONLY)
 	@Null(groups = {
@@ -432,15 +432,15 @@ public class Errand {
 		return this;
 	}
 
-	public List<String> getLabels() {
+	public List<ErrandLabel> getLabels() {
 		return labels;
 	}
 
-	public void setLabels(final List<String> labels) {
+	public void setLabels(final List<ErrandLabel> labels) {
 		this.labels = labels;
 	}
 
-	public Errand withLabels(final List<String> labels) {
+	public Errand withLabels(final List<ErrandLabel> labels) {
 		this.labels = labels;
 		return this;
 	}
@@ -525,5 +525,4 @@ public class Errand {
 			", touched=" + touched +
 			'}';
 	}
-
 }

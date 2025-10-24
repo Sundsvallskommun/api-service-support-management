@@ -23,18 +23,10 @@ public class Label {
 	@Schema(description = "Display name for the label", example = "Nyckelkort")
 	private String displayName;
 
-	/**
-	 * @deprecated
-	 */
-	@Schema(description = "Name for the label", example = "keyCard")
-	@NotBlank
-	@Deprecated(since = "11.0", forRemoval = true)
-	private String name;
-
-	@Schema(description = "Resource path", example = "/parent/child/xxx", accessMode = READ_ONLY)
+	@Schema(description = "Resource path", example = "/parent/child/keycard", accessMode = READ_ONLY)
 	private String resourcePath;
 
-	@Schema(description = "Resource name", example = "xxx")
+	@Schema(description = "Resource name", example = "keycard")
 	@NotBlank
 	private String resourceName;
 
@@ -84,19 +76,6 @@ public class Label {
 		return this;
 	}
 
-	public String getName() {
-		return name;
-	}
-
-	public void setName(final String name) {
-		this.name = name;
-	}
-
-	public Label withName(final String name) {
-		setName(name);
-		return this;
-	}
-
 	public String getResourcePath() {
 		return resourcePath;
 	}
@@ -138,7 +117,7 @@ public class Label {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(classification, displayName, id, labels, name, resourceName, resourcePath);
+		return Objects.hash(classification, displayName, id, labels, resourceName, resourcePath);
 	}
 
 	@Override
@@ -153,12 +132,12 @@ public class Label {
 			return false;
 		}
 		Label other = (Label) obj;
-		return Objects.equals(classification, other.classification) && Objects.equals(displayName, other.displayName) && Objects.equals(id, other.id) && Objects.equals(labels, other.labels) && Objects.equals(name, other.name) && Objects.equals(
+		return Objects.equals(classification, other.classification) && Objects.equals(displayName, other.displayName) && Objects.equals(id, other.id) && Objects.equals(labels, other.labels) && Objects.equals(
 			resourceName, other.resourceName) && Objects.equals(resourcePath, other.resourcePath);
 	}
 
 	@Override
 	public String toString() {
-		return "Label [id=" + id + ", classification=" + classification + ", displayName=" + displayName + ", name=" + name + ", resourcePath=" + resourcePath + ", resourceName=" + resourceName + ", labels=" + labels + "]";
+		return "Label [id=" + id + ", classification=" + classification + ", displayName=" + displayName + ", resourcePath=" + resourcePath + ", resourceName=" + resourceName + ", labels=" + labels + "]";
 	}
 }

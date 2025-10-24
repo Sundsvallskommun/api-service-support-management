@@ -64,6 +64,8 @@ VALUES (100, '2023-01-01 12:00:00.000', null, '2281', 'ROLE-1', null, 'NAMESPACE
 -- MetadataLabel
 -------------------------------------
 INSERT INTO metadata_label (created, modified, municipality_id, namespace, classification, display_name, id, name, parent_id, resource_name, resource_path) VALUES
+    ('2025-10-16 09:45:49.815000', NULL, '2281', 'NAMESPACE-1', 'CATEGORY', 'SOME_CATEGORY_1', '5940c8c8-d84a-4144-b650-313356ad1333', 'CATEGORY-1', NULL, 'CATEGORY-1', 'LABEL-1'),
+    ('2025-10-16 09:45:49.815000', NULL, '2281', 'NAMESPACE-1', 'CATEGORY', 'SOME_CATEGORY_2', '13a6abf3-b5ed-4edc-b582-6cf58fa667e3', 'CATEGORY-2', NULL, 'CATEGORY-2', 'LABEL-2'),
     -- CATEGORY (root, parent_id = NULL)
     ('2025-10-16 09:45:49.815000', NULL, '2281', 'NAMESPACE-1', 'CATEGORY', 'CATEGORY-DISPLAY-NAME-1', 'a8fe832f-77a7-4906-9a97-ac5cbd73dbe7', 'CATEGORY-1', NULL, 'CATEGORY-1', 'CATEGORY-1'),
     -- TYPE-1 (child of CATEGORY)
@@ -79,7 +81,6 @@ INSERT INTO metadata_label (created, modified, municipality_id, namespace, class
     -- DEEPSUBTYPEs under SUBTYPE-3
     ('2025-10-16 09:45:49.831000', NULL, '2281', 'NAMESPACE-1', 'DEEPSUBTYPE', 'DEEPSUBTYPE-DISPLAY-NAME-1', 'ffe5f120-6a3b-4404-ace8-8ea87b559907', 'DEEPSUBTYPE-1', 'f4d6e210-633b-48a6-ad0a-7be839b28762', 'DEEPSUBTYPE-1', 'CATEGORY-1/TYPE-2/SUBTYPE-4/DEEPSUBTYPE-1'),
     ('2025-10-16 09:45:49.831000', NULL, '2281', 'NAMESPACE-1', 'DEEPSUBTYPE', 'DEEPSUBTYPE-DISPLAY-NAME-2', '0eb1f695-48b1-40fd-af8c-b277c37db2d4', 'DEEPSUBTYPE-2', 'f4d6e210-633b-48a6-ad0a-7be839b28762', 'DEEPSUBTYPE-2', 'CATEGORY-1/TYPE-2/SUBTYPE-4/DEEPSUBTYPE-2');	 
-	 
 -- -----------------------------------
 -- Validation
 -- -----------------------------------
@@ -371,10 +372,11 @@ VALUES ('45d266a7-1ff2-4bf4-b6f3-0473b2b86fcd', 'value1', 0),
 -- -----------------------------------
 -- errandLabel
 -- -----------------------------------
-INSERT INTO errand_labels(errand_id, label)
-VALUES ('147d355f-dc94-4fde-a4cb-9ddd16cb1946', 'label-1'),
-       ('147d355f-dc94-4fde-a4cb-9ddd16cb1946', 'label-2');
-
+INSERT INTO errand_labels(errand_id, metadata_label_id)
+VALUES ('147d355f-dc94-4fde-a4cb-9ddd16cb1946', 'ffe5f120-6a3b-4404-ace8-8ea87b559907'),
+       ('147d355f-dc94-4fde-a4cb-9ddd16cb1946', '0eb1f695-48b1-40fd-af8c-b277c37db2d4'),
+       ('1be673c0-6ba3-4fb0-af4a-43acf23389f6', '926fd3f9-f488-4ba4-93f6-2789dee0c0c3'),
+       ('1be673c0-6ba3-4fb0-af4a-43acf23389f6', 'f4d6e210-633b-48a6-ad0a-7be839b28762');
 
 -- -----------------------------------
 -- conversations

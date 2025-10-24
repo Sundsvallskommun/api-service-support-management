@@ -5,9 +5,9 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "11.0"
+  version: "12.0"
 servers:
-- url: http://localhost:55868
+- url: http://localhost:61536
   description: Generated server url
 tags:
 - name: Errand attachments
@@ -40,8 +40,6 @@ tags:
   description: Role metadata operations
 - name: Time measures
   description: Time measure operations
-- name: Errand labels
-  description: Errand labels operations
 - name: Metadata for statuses
   description: Status metadata operations
 - name: Errand communication
@@ -478,239 +476,6 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-  /{municipalityId}/{namespace}/errands/{errandId}/labels:
-    get:
-      tags:
-      - Errand labels
-      summary: Get errand labels
-      description: Get errand labels
-      operationId: getErrandLabels
-      parameters:
-      - name: namespace
-        in: path
-        description: Namespace
-        required: true
-        schema:
-          pattern: "[\\w|\\-]+"
-          type: string
-        example: MY_NAMESPACE
-      - name: municipalityId
-        in: path
-        description: Municipality id
-        required: true
-        schema:
-          type: string
-        example: 2281
-      - name: errandId
-        in: path
-        description: Errand id
-        required: true
-        schema:
-          type: string
-        example: b82bd8ac-1507-4d9a-958d-369261eecc15
-      responses:
-        "200":
-          description: Successful Operation
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: string
-        "400":
-          description: Bad request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "404":
-          description: Not Found
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-    put:
-      tags:
-      - Errand labels
-      summary: Replace errand labels
-      description: Replace all labels of an errand
-      operationId: updateErrandLabels
-      parameters:
-      - name: namespace
-        in: path
-        description: Namespace
-        required: true
-        schema:
-          pattern: "[\\w|\\-]+"
-          type: string
-        example: MY_NAMESPACE
-      - name: municipalityId
-        in: path
-        description: Municipality id
-        required: true
-        schema:
-          type: string
-        example: 2281
-      - name: errandId
-        in: path
-        description: Errand id
-        required: true
-        schema:
-          type: string
-        example: b82bd8ac-1507-4d9a-958d-369261eecc15
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: array
-              items:
-                type: string
-        required: true
-      responses:
-        "204":
-          description: No content
-        "400":
-          description: Bad request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "404":
-          description: Not Found
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-    post:
-      tags:
-      - Errand labels
-      summary: Add errand labels
-      description: Add errand labels to an errand
-      operationId: addErrandLabels
-      parameters:
-      - name: namespace
-        in: path
-        description: Namespace
-        required: true
-        schema:
-          pattern: "[\\w|\\-]+"
-          type: string
-        example: MY_NAMESPACE
-      - name: municipalityId
-        in: path
-        description: Municipality id
-        required: true
-        schema:
-          type: string
-        example: 2281
-      - name: errandId
-        in: path
-        description: Errand id
-        required: true
-        schema:
-          type: string
-        example: b82bd8ac-1507-4d9a-958d-369261eecc15
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: array
-              items:
-                type: string
-        required: true
-      responses:
-        "201":
-          description: Created
-          content:
-            application/json: {}
-        "400":
-          description: Bad request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "404":
-          description: Not Found
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-    delete:
-      tags:
-      - Errand labels
-      summary: Remove errand labels
-      description: Remove all labels of an errand
-      operationId: removeErrandLabel
-      parameters:
-      - name: namespace
-        in: path
-        description: Namespace
-        required: true
-        schema:
-          pattern: "[\\w|\\-]+"
-          type: string
-        example: MY_NAMESPACE
-      - name: municipalityId
-        in: path
-        description: Municipality id
-        required: true
-        schema:
-          type: string
-        example: 2281
-      - name: errandId
-        in: path
-        description: Errand errandId
-        required: true
-        schema:
-          type: string
-        example: b82bd8ac-1507-4d9a-958d-369261eecc15
-      responses:
-        "204":
-          description: No content
-        "400":
-          description: Bad request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "404":
-          description: Not Found
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
         "500":
           description: Internal Server error
           content:
@@ -5290,10 +5055,10 @@ components:
           type: object
           additionalProperties:
             type: object
-        status:
-          $ref: "#/components/schemas/StatusType"
         title:
           type: string
+        status:
+          $ref: "#/components/schemas/StatusType"
         detail:
           type: string
     StatusType:
@@ -5425,10 +5190,10 @@ components:
           type: object
           additionalProperties:
             type: object
-        status:
-          $ref: "#/components/schemas/StatusType"
         title:
           type: string
+        status:
+          $ref: "#/components/schemas/StatusType"
         detail:
           type: string
         suppressed:
@@ -5520,7 +5285,6 @@ components:
     Label:
       required:
       - classification
-      - name
       - resourceName
       type: object
       properties:
@@ -5537,22 +5301,16 @@ components:
           type: string
           description: Display name for the label
           example: Nyckelkort
-        name:
-          minLength: 1
-          type: string
-          description: Name for the label
-          example: keyCard
-          deprecated: true
         resourcePath:
           type: string
           description: Resource path
           readOnly: true
-          example: /parent/child/xxx
+          example: /parent/child/keycard
         resourceName:
           minLength: 1
           type: string
           description: Resource name
-          example: xxx
+          example: keycard
         labels:
           type: array
           items:
@@ -5969,13 +5727,8 @@ components:
         labels:
           type: array
           description: List of labels for the errand
-          example:
-          - label1
-          - label2
           items:
-            type: string
-            description: List of labels for the errand
-            example: "[\"label1\",\"label2\"]"
+            $ref: "#/components/schemas/ErrandLabel"
         activeNotifications:
           type: array
           description: List of active notifications for the errand
@@ -6001,6 +5754,34 @@ components:
           readOnly: true
           example: 2000-10-31T01:30:00+02:00
       description: Errand model
+    ErrandLabel:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Label ID
+          example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+        classification:
+          type: string
+          description: Label classification
+          readOnly: true
+          example: subtype
+        displayName:
+          type: string
+          description: Display name for the label
+          readOnly: true
+          example: Nyckelkort
+        resourcePath:
+          type: string
+          description: Resource path
+          readOnly: true
+          example: /parent/child/xxx
+        resourceName:
+          type: string
+          description: Resource name
+          readOnly: true
+          example: keycard
+      description: Errand label model
     ExternalTag:
       required:
       - key
@@ -6599,20 +6380,6 @@ components:
     Labels:
       type: object
       properties:
-        created:
-          type: string
-          description: Timestamp when the labels was created
-          format: date-time
-          readOnly: true
-          example: 2000-10-31T01:30:00+02:00
-          deprecated: true
-        modified:
-          type: string
-          description: Timestamp when the labels was last modified
-          format: date-time
-          readOnly: true
-          example: 2000-10-31T01:30:00+02:00
-          deprecated: true
         labelStructure:
           type: array
           items:
@@ -6683,26 +6450,26 @@ components:
         offset:
           type: integer
           format: int64
+        unpaged:
+          type: boolean
         sort:
           $ref: "#/components/schemas/SortObject"
-        pageNumber:
-          type: integer
-          format: int32
+        paged:
+          type: boolean
         pageSize:
           type: integer
           format: int32
-        paged:
-          type: boolean
-        unpaged:
-          type: boolean
+        pageNumber:
+          type: integer
+          format: int32
     SortObject:
       type: object
       properties:
         empty:
           type: boolean
-        sorted:
-          type: boolean
         unsorted:
+          type: boolean
+        sorted:
           type: boolean
     Revision:
       type: object

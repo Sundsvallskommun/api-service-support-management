@@ -47,7 +47,6 @@ class MetadataLabelEntityTest {
 		final var modified = now();
 		final var metadataLabels = List.of(MetadataLabelEntity.create());
 		final var municipalityId = "municipalityId";
-		final var name = "name";
 		final var namespace = "namespace";
 		final var parent = MetadataLabelEntity.create();
 		final var resourceName = "resourceName";
@@ -61,7 +60,6 @@ class MetadataLabelEntityTest {
 			.withModified(modified)
 			.withMetadataLabels(metadataLabels)
 			.withMunicipalityId(municipalityId)
-			.withName(name)
 			.withNamespace(namespace)
 			.withParent(parent)
 			.withResourceName(resourceName)
@@ -75,7 +73,6 @@ class MetadataLabelEntityTest {
 		assertThat(entity.getModified()).isEqualTo(modified);
 		assertThat(entity.getMetadataLabels()).isEqualTo(metadataLabels);
 		assertThat(entity.getMunicipalityId()).isEqualTo(municipalityId);
-		assertThat(entity.getName()).isEqualTo(name);
 		assertThat(entity.getNamespace()).isEqualTo(namespace);
 		assertThat(entity.getParent()).isEqualTo(parent);
 		assertThat(entity.getResourceName()).isEqualTo(resourceName);
