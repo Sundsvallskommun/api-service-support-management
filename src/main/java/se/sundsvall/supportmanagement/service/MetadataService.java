@@ -23,11 +23,15 @@ import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updat
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.AntPathMatcher;
 import org.zalando.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.metadata.Category;
 import se.sundsvall.supportmanagement.api.model.metadata.ContactReason;
@@ -54,6 +58,7 @@ import se.sundsvall.supportmanagement.service.mapper.MetadataMapper;
 public class MetadataService {
 
 	private static final String CACHE_NAME = "metadataCache";
+	private static final String PATTERN_CACHE_NAME = "metadataLabelsByPatternCache";
 	private static final String ITEM_ALREADY_EXISTS_IN_NAMESPACE_FOR_MUNICIPALITY_ID = "%s '%s' already exists in namespace '%s' for municipalityId '%s'";
 	private static final String ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID = "%s '%s' is not present in namespace '%s' for municipalityId '%s'";
 
@@ -70,6 +75,7 @@ public class MetadataService {
 	private final StatusRepository statusRepository;
 	private final ValidationRepository validationRepository;
 	private final ContactReasonRepository contactReasonRepository;
+	private final AntPathMatcher pathMatcher;
 
 	public MetadataService(final CategoryRepository categoryRepository,
 		final ExternalIdTypeRepository externalIdTypeRepository,
@@ -83,6 +89,8 @@ public class MetadataService {
 		this.statusRepository = statusRepository;
 		this.validationRepository = validationRepository;
 		this.contactReasonRepository = contactReasonRepository;
+		this.pathMatcher = new AntPathMatcher();
+		this.pathMatcher.setCaseSensitive(false);
 	}
 
 	// =================================================================
@@ -251,7 +259,8 @@ public class MetadataService {
 
 	@Caching(evict = {
 		@CacheEvict(value = CACHE_NAME, key = "{'findLabels', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}")
+		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}"),
+		@CacheEvict(value = PATTERN_CACHE_NAME, allEntries = true)
 	})
 	public void createLabels(final String namespace, final String municipalityId, final List<Label> labels) {
 		metadataLabelRepository.saveAll(toMetadataLabelEntityList(namespace, municipalityId, labels));
@@ -259,7 +268,8 @@ public class MetadataService {
 
 	@Caching(evict = {
 		@CacheEvict(value = CACHE_NAME, key = "{'findLabels', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}")
+		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}"),
+		@CacheEvict(value = PATTERN_CACHE_NAME, allEntries = true)
 	})
 	public void updateLabels(final String namespace, final String municipalityId, final List<Label> labels) {
 		if (!metadataLabelRepository.existsByNamespaceAndMunicipalityId(namespace, municipalityId)) {
@@ -275,7 +285,8 @@ public class MetadataService {
 
 	@Caching(evict = {
 		@CacheEvict(value = CACHE_NAME, key = "{'findLabels', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}")
+		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}"),
+		@CacheEvict(value = PATTERN_CACHE_NAME, allEntries = true)
 	})
 	public void deleteLabels(final String namespace, final String municipalityId) {
 		if (!metadataLabelRepository.existsByNamespaceAndMunicipalityId(namespace, municipalityId)) {
@@ -285,6 +296,34 @@ public class MetadataService {
 		metadataLabelRepository.findByNamespaceAndMunicipalityIdAndParentIsNull(namespace, municipalityId).stream()
 			.map(MetadataLabelEntity::getId)
 			.forEach(metadataLabelRepository::deleteById);
+	}
+
+	@Cacheable(value = PATTERN_CACHE_NAME,
+		key = "{#root.methodName, #namespace, #municipalityId, #root.targetClass.createCacheKey(#resourcePathPatterns)}")
+	@Transactional(readOnly = true)
+	public Set<MetadataLabelEntity> patternToLabels(
+		final String namespace,
+		final String municipalityId,
+		final List<String> resourcePathPatterns) {
+
+		if (resourcePathPatterns == null || resourcePathPatterns.isEmpty()) {
+			return Set.of();
+		}
+
+		List<MetadataLabelEntity> potentialMatches = metadataLabelRepository.findByNamespaceAndMunicipalityId(namespace, municipalityId);
+
+		return potentialMatches.stream()
+			.filter(entity -> entity.getResourcePath() != null)
+			.filter(entity -> resourcePathPatterns.stream()
+				.anyMatch(pattern -> pathMatcher.match(pattern, entity.getResourcePath())))
+			.collect(Collectors.toSet());
+	}
+
+	public static String createCacheKey(List<String> patterns) {
+		if (patterns == null || patterns.isEmpty()) {
+			return "EMPTY";
+		}
+		return String.join("|", new TreeSet<>(patterns)).toLowerCase();
 	}
 
 	// =================================================================

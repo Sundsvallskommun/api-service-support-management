@@ -16,9 +16,9 @@ import static org.springframework.http.MediaType.TEXT_PLAIN_VALUE;
 import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
 
 import java.util.List;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.jdbc.Sql;
 import se.sundsvall.dept44.test.AbstractAppTest;
 import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
@@ -34,7 +34,6 @@ import se.sundsvall.supportmanagement.integration.db.model.RevisionEntity;
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql"
 })
-@DirtiesContext
 class ErrandAttachmentsIT extends AbstractAppTest {
 
 	private static final String NAMESPACE = "NAMESPACE-1";

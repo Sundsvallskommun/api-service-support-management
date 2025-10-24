@@ -9,7 +9,6 @@ import static org.springframework.http.HttpStatus.OK;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.jdbc.Sql;
 import se.sundsvall.dept44.test.AbstractAppTest;
 import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
@@ -24,7 +23,6 @@ import se.sundsvall.supportmanagement.integration.db.ParameterRepository;
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql"
 })
-@DirtiesContext
 class ErrandParametersIT extends AbstractAppTest {
 
 	private static final String PATH = "/2281/NAMESPACE-1/errands/";

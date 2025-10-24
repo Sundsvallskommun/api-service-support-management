@@ -880,6 +880,32 @@ class MetadataServiceTest {
 		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, roleRepositoryMock, validationRepositoryMock, statusRepositoryMock);
 	}
 
+	@Test
+	void patternToLabelsReturnsMatches() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var patterns = List.of("path/TO/resource/**", "path/other/**");
+
+		final var entity1 = MetadataLabelEntity.create().withResourcePath("path/to/resource/file1");
+		final var entity2 = MetadataLabelEntity.create().withResourcePath("path/to/resource");
+		final var entity3 = MetadataLabelEntity.create().withResourcePath("path/other/resource/fileX");
+		final var entity4 = MetadataLabelEntity.create().withResourcePath("path/some/resource/fileX");
+		final var dbResults = List.of(entity1, entity2, entity3, entity4);
+
+		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityId(namespace, municipalityId))
+			.thenReturn(dbResults);
+
+		// Call
+		final var result = metadataService.patternToLabels(namespace, municipalityId, patterns);
+
+		// Verifications
+		assertThat(result).hasSize(3).containsExactlyInAnyOrder(entity1, entity2, entity3);
+		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityId(namespace, municipalityId);
+		verifyNoMoreInteractions(metadataLabelRepositoryMock);
+		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, roleRepositoryMock, validationRepositoryMock, statusRepositoryMock);
+	}
+
 	// =================================================================
 	// Common tests
 	// ================================================================

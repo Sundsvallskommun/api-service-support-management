@@ -74,6 +74,10 @@ This microservice depends on the following services:
   - **Purpose:** Used to fetch relation data (linked errands)
   - **Repository:** [Link to the repository](https://github.com/Sundsvallskommun/api-service-relations)
   - **Setup Instructions:** Refer to its documentation for installation and configuration steps.
+- **AccessMapper**
+  - **Purpose:** Provides functionality for fetching access restrictions per user (optional setting per namespace).
+  - **Repository:** [Link to the repository](https://github.com/Sundsvallskommun/api-service-access-mapper)
+  - **Setup Instructions:** Refer to its documentation for installation and configuration steps.
 
 Ensure that these services are running and properly configured before starting this microservice.
 

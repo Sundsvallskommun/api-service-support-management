@@ -390,4 +390,17 @@ class MetadataLabelRepositoryTest {
 				tuple("parent/level1/level2a/level3a", "level3a"),
 				tuple("parent/level1/level2b/level3b", "level3b"));
 	}
+
+	@Test
+	void findByNamespaceAndMunicipalityId() {
+
+		assertThat(metadataLabelRepository.findByNamespaceAndMunicipalityId("namespace-1", "2281"))
+			.extracting(MetadataLabelEntity::getId)
+			// see testdata-junit.sql
+			.containsExactlyInAnyOrder(
+				"9b2a5a7d-3e8f-4a7c-8f9b-2f7d3c1a0b11",
+				"f3a1c6d9-7b2e-4d5a-9c1f-8e2b2c3d4e5f",
+				"a0bb7b61-8d55-4857-b619-547572eed26f",
+				"86d459cd-4810-4b4a-b365-97aa0c2c0ff5");
+	}
 }

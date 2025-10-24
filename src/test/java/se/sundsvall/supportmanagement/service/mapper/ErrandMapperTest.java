@@ -12,11 +12,14 @@ import static se.sundsvall.supportmanagement.api.model.errand.Priority.HIGH;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrand;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrands;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandsWithAccessControl;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toLimitedErrand;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.updateEntity;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -227,6 +230,28 @@ class ErrandMapperTest {
 	}
 
 	@Test
+	void testToLimitedErrand() {
+		final var errand = toLimitedErrand(createEntity());
+
+		assertThat(errand).hasAllNullFieldsOrPropertiesExcept("id", "created", "errandNumber", "modified", "status", "title", "touched", "resolution", "channel");
+
+		assertThat(errand.getId()).isEqualTo(ID);
+		assertThat(errand.getCreated()).isCloseTo(CREATED, within(2, SECONDS));
+		assertThat(errand.getErrandNumber()).isEqualTo(ERRAND_NUMBER);
+		assertThat(errand.getModified()).isCloseTo(MODIFIED, within(2, SECONDS));
+		assertThat(errand.getStatus()).isEqualTo(STATUS);
+		assertThat(errand.getTitle()).isEqualTo(TITLE);
+		assertThat(errand.getTouched()).isEqualTo(TOUCHED);
+		assertThat(errand.getResolution()).isEqualTo(RESOLUTION);
+		assertThat(errand.getChannel()).isEqualTo(CHANNEL);
+	}
+
+	@Test
+	void testToLimitedErrandFromNull() {
+		assertThat(toLimitedErrand(null)).isNull();
+	}
+
+	@Test
 	void testToErrands() {
 		final var errands = toErrands(List.of(createEntity()));
 
@@ -287,8 +312,35 @@ class ErrandMapperTest {
 	}
 
 	@Test
+	void testToErrandsWithAccessControl() {
+		Predicate<ErrandEntity> mapLimited = ErrandEntity::getBusinessRelated;
+		var errandLimited = createEntity().withErrandNumber("limited");
+		var errandNotLimited = createEntity().withErrandNumber("full").withBusinessRelated(false);
+
+		var result = toErrandsWithAccessControl(List.of(errandLimited, errandNotLimited), mapLimited);
+
+		assertThat(result).hasSize(2);
+
+		result.forEach(errand -> {
+			if (errand.getErrandNumber().equals("limited")) {
+				assertThat(errand).hasAllNullFieldsOrPropertiesExcept("id", "created", "errandNumber", "modified", "status", "title", "touched", "resolution", "channel");
+				assertThat(errand.getErrandNumber()).isEqualTo("limited");
+			} else {
+				assertThat(errand).hasNoNullFieldsOrPropertiesExcept("notifications");
+				assertThat(errand.getErrandNumber()).isEqualTo("full");
+				assertThat(errand.getBusinessRelated()).isFalse();
+			}
+		});
+	}
+
+	@Test
 	void testToErrandsFromNull() {
 		assertThat(toErrands(null)).isEmpty();
+	}
+
+	@Test
+	void testToErrandsWithAccessControlFromNull() {
+		assertThat(toErrandsWithAccessControl(null, ErrandEntity::getBusinessRelated)).isEmpty();
 	}
 
 	@Test
