@@ -39,6 +39,7 @@ class ErrandLabelTest {
 			.withResourceName(resourceName)
 			.withResourcePath(resourcePath);
 
+		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(bean.getClassification()).isEqualTo(classification);
 		assertThat(bean.getDisplayName()).isEqualTo(displayName);
 		assertThat(bean.getId()).isEqualTo(id);
