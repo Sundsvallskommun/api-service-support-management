@@ -10,7 +10,7 @@ import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 public class ErrandLabel {
 
 	@Schema(description = "Label ID", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7")
-	@ValidUuid(nullable = true)
+	@ValidUuid
 	private String id;
 
 	@Schema(description = "Label classification", example = "subtype", accessMode = READ_ONLY)
