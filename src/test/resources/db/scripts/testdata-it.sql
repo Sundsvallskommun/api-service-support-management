@@ -81,6 +81,7 @@ INSERT INTO metadata_label (created, modified, municipality_id, namespace, class
     -- DEEPSUBTYPEs under SUBTYPE-3
     ('2025-10-16 09:45:49.831000', NULL, '2281', 'NAMESPACE-1', 'DEEPSUBTYPE', 'DEEPSUBTYPE-DISPLAY-NAME-1', 'ffe5f120-6a3b-4404-ace8-8ea87b559907', 'DEEPSUBTYPE-1', 'f4d6e210-633b-48a6-ad0a-7be839b28762', 'DEEPSUBTYPE-1', 'CATEGORY-1/TYPE-2/SUBTYPE-4/DEEPSUBTYPE-1'),
     ('2025-10-16 09:45:49.831000', NULL, '2281', 'NAMESPACE-1', 'DEEPSUBTYPE', 'DEEPSUBTYPE-DISPLAY-NAME-2', '0eb1f695-48b1-40fd-af8c-b277c37db2d4', 'DEEPSUBTYPE-2', 'f4d6e210-633b-48a6-ad0a-7be839b28762', 'DEEPSUBTYPE-2', 'CATEGORY-1/TYPE-2/SUBTYPE-4/DEEPSUBTYPE-2');	 
+
 -- -----------------------------------
 -- Validation
 -- -----------------------------------
@@ -171,7 +172,6 @@ VALUES (201, 'value-x2');
 -- -----------------------------------
 -- ContactChannel
 -- ----------------------------------
-
 INSERT INTO contact_channel(stakeholder_id, type, value)
 VALUES ('3001', 'TYPE-1', 'VALUE-1');
 
@@ -256,6 +256,7 @@ VALUES (0, 0, 'Test Testorsson', 'userId', '2023-01-01 12:00:00.000', 'cc236cf1-
         'KC-23020001', 'case2',
         'message body 2', '0987654321', 'subject2', 'OUTBOUND', 'EMAIL', 'NAMESPACE-1', '2281',
         '<p>html message body 2</p>');
+
 -- -----------------------------------
 -- Communication_attachment
 -- -----------------------------------
@@ -352,7 +353,6 @@ VALUES ('1', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', '2023-12-31 23:59:59.999', 
 -- -----------------------------------
 -- Parameters
 -- -----------------------------------
-
 INSERT INTO parameter(errand_id, id, parameters_key, display_name, parameter_group, parameter_order)
 VALUES ('ec677eb3-604c-4935-bff7-f8f0b500c8f4', '45d266a7-1ff2-4bf4-b6f3-0473b2b86fcd', 'key1', 'Displayname 1', 'A',
         0),
@@ -391,7 +391,6 @@ VALUES ('2281', 100, 'NAMESPACE-1', 'EXTERNAL', 'f4524497-a592-4618-a746-b59a60a
         'ec677eb3-604c-4935-bff7-f8f0b500c8f4', '8948f414-079d-4009-af3a-a1ff2a59528a', 'The topic 2'),
        ('2281', 101, 'NAMESPACE-1', 'INTERNAL', '7a772d18-a588-41bc-91ec-13b7421c9bb9',
         '1be673c0-6ba3-4fb0-af4a-43acf23389f6', '8948f414-079d-4009-af3a-a1ff2a59528b', 'The topic 3');
-
 
 -- Insert data into conversation_relation_id table
 INSERT INTO conversation_relation_id (conversation_id, relation_id)
