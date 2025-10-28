@@ -142,7 +142,7 @@ class ErrandsIT extends AbstractAppTest {
 	@Test
 	void test07_getErrandsByLabelFilter() {
 		setupCall()
-			.withServicePath(PATH + "?filter=labels:'LABEL-1'")
+			.withServicePath(PATH + "?filter=labels.metadataLabel.resourcePath:'CATEGORY-1/TYPE-2/SUBTYPE-4/DEEPSUBTYPE-1'")
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))

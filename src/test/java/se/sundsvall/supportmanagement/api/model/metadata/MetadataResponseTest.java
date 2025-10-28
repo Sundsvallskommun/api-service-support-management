@@ -29,7 +29,7 @@ class MetadataResponseTest {
 
 		final var categories = List.of(Category.create().withName("CATEGORY").withTypes(List.of(Type.create().withName("TYPE"))));
 		final var externalIdTypes = List.of(ExternalIdType.create().withName("EXTERNAL_ID_TYPE"));
-		final var labels = Labels.create().withLabelStructure(List.of(Label.create().withClassification("CLASSIFICATION").withName("NAME")));
+		final var labels = Labels.create().withLabelStructure(List.of(Label.create().withClassification("CLASSIFICATION")));
 		final var roles = List.of(Role.create().withName("ROLE"));
 		final var statuses = List.of(Status.create().withName("STATUS"));
 

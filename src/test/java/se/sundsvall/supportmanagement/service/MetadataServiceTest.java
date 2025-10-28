@@ -754,34 +754,13 @@ class MetadataServiceTest {
 		// Setup
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
-		final var label = Label.create().withName("name");
+		final var label = Label.create().withResourceName("name");
 
 		// Call
 		metadataService.createLabels(namespace, municipalityId, List.of(label));
 
 		// Verifications
 		verify(metadataLabelRepositoryMock).saveAll(any());
-		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, roleRepositoryMock, validationRepositoryMock, statusRepositoryMock);
-	}
-
-	@Test
-	void createLabelsNonUniqueNames() {
-		// Setup
-		final var namespace = "namespace";
-		final var municipalityId = "municipalityId";
-		final var labels = List.of(
-			Label.create().withName("name1")
-				.withLabels(List.of(Label.create().withName("name2"))),
-			Label.create().withName("name3"),
-			Label.create().withName("name4")
-				.withLabels(List.of(Label.create().withName("name1"))));
-
-		// Call
-		final var e = assertThrows(ThrowableProblem.class, () -> metadataService.createLabels(namespace, municipalityId, labels));
-		// Verifications
-		assertThat(e.getStatus()).isEqualTo(BAD_REQUEST);
-		assertThat(e.getMessage()).isEqualTo("Bad Request: Label names must be unique. Duplication detected for 'name1'");
-		verifyNoMoreInteractions(metadataLabelRepositoryMock);
 		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, roleRepositoryMock, validationRepositoryMock, statusRepositoryMock);
 	}
 
@@ -803,34 +782,11 @@ class MetadataServiceTest {
 	}
 
 	@Test
-	void updateLabelsNonUniqueNames() {
-		// Setup
-		final var namespace = "namespace";
-		final var municipalityId = "municipalityId";
-		final var labels = List.of(
-			Label.create().withName("name1")
-				.withLabels(List.of(Label.create().withName("name2"))),
-			Label.create().withName("name3"),
-			Label.create().withName("name4")
-				.withLabels(List.of(Label.create().withName("name1"))));
-		// Mock
-		when(metadataLabelRepositoryMock.existsByNamespaceAndMunicipalityId(namespace, municipalityId)).thenReturn(true);
-		// Call
-		final var e = assertThrows(ThrowableProblem.class, () -> metadataService.updateLabels(namespace, municipalityId, labels));
-		// Verifications
-		assertThat(e.getStatus()).isEqualTo(BAD_REQUEST);
-		assertThat(e.getMessage()).isEqualTo("Bad Request: Label names must be unique. Duplication detected for 'name1'");
-		verify(metadataLabelRepositoryMock).existsByNamespaceAndMunicipalityId(namespace, municipalityId);
-		verifyNoMoreInteractions(metadataLabelRepositoryMock);
-		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, roleRepositoryMock, validationRepositoryMock, statusRepositoryMock);
-	}
-
-	@Test
 	void updateLabelsNoExistingLabels() {
 		// Setup
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
-		final var labels = List.of(Label.create().withName("name"));
+		final var labels = List.of(Label.create().withResourceName("name"));
 		// Mock
 		when(metadataLabelRepositoryMock.existsByNamespaceAndMunicipalityId(namespace, municipalityId)).thenReturn(false);
 		// Call

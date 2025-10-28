@@ -63,7 +63,7 @@ class ErrandTest {
 		final var businessRelated = true;
 		final var contactReason = "reason";
 		final var contactReasonDescription = "contactReasonDescription";
-		final var labels = List.of("label");
+		final var labels = List.of(ErrandLabel.create());
 		final var activeNotifications = List.of(Notification.create());
 
 		final var bean = Errand.create()
@@ -127,5 +127,4 @@ class ErrandTest {
 		assertThat(Errand.create()).hasAllNullFieldsOrProperties();
 		assertThat(new Errand()).hasAllNullFieldsOrProperties();
 	}
-
 }

@@ -148,15 +148,13 @@ public class ErrandEntity {
 	private OffsetDateTime suspendedFrom;
 
 	@ElementCollection
-	@CollectionTable(
-		name = "errand_labels",
+	@CollectionTable(name = "errand_labels",
 		indexes = {
-			@Index(name = "idx_errand_labels_errand_id_label", columnList = "errand_id,label")
+			@Index(name = "idx_errand_id", columnList = "errand_id"),
+			@Index(name = "idx_metadata_label_id", columnList = "metadata_label_id")
 		},
-		joinColumns = @JoinColumn(name = "errand_id"),
-		foreignKey = @ForeignKey(name = "fk_errand_labels_errand_id"))
-	@Column(name = "label")
-	private List<String> labels;
+		joinColumns = @JoinColumn(name = "errand_id", referencedColumnName = "id", foreignKey = @ForeignKey(name = "fk_errand_labels_errand_id")))
+	private List<ErrandLabelEmbeddable> labels;
 
 	@Column(name = "created")
 	@TimeZoneStorage(NORMALIZE)
@@ -447,15 +445,15 @@ public class ErrandEntity {
 		return this;
 	}
 
-	public List<String> getLabels() {
+	public List<ErrandLabelEmbeddable> getLabels() {
 		return labels;
 	}
 
-	public void setLabels(final List<String> labels) {
+	public void setLabels(final List<ErrandLabelEmbeddable> labels) {
 		this.labels = labels;
 	}
 
-	public ErrandEntity withLabels(final List<String> labels) {
+	public ErrandEntity withLabels(final List<ErrandLabelEmbeddable> labels) {
 		this.labels = labels;
 		return this;
 	}

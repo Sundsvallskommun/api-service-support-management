@@ -1,6 +1,9 @@
 package se.sundsvall.supportmanagement.service.scheduler.emailreader;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.Direction.INBOUND;
 
@@ -10,6 +13,7 @@ import java.sql.SQLException;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import javax.sql.rowset.serial.SerialBlob;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,7 +22,11 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import se.sundsvall.supportmanagement.api.model.errand.ErrandLabel;
+import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
+import se.sundsvall.supportmanagement.integration.db.model.EmailWorkerConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
 import se.sundsvall.supportmanagement.service.util.BlobBuilder;
@@ -28,6 +36,9 @@ class EmailReaderMapperTest {
 
 	@Mock
 	private BlobBuilder blobBuilderMock;
+
+	@Mock
+	private MetadataLabelRepository metadataLabelRepositoryMock;
 
 	@InjectMocks
 	private EmailReaderMapper emailReaderMapper;
@@ -124,6 +135,7 @@ class EmailReaderMapperTest {
 		assertThat(result).isNull();
 	}
 
+	@SuppressWarnings("unchecked")
 	@ParameterizedTest
 	@CsvSource({
 		"true,role", "false,role", "true,null"
@@ -139,19 +151,38 @@ class EmailReaderMapperTest {
 			.receivedAt(OffsetDateTime.now())
 			.metadata(Map.of("classification.category", "someCategory", "classification.type", "someType", "labels", "someLabel1;someLabel2"))
 			.attachments(null);
-		final var status = "NEW";
 
-		final var result = emailReaderMapper.toErrand(email, status, addSenderAsStakeholder, stakeholderRole, "errandChannel");
+		final var emailConfig = EmailWorkerConfigEntity.create()
+			.withEnabled(true)
+			.withMunicipalityId("municipalityId")
+			.withNamespace("namespace")
+			.withErrandClosedEmailSender("errandClosedEmailSender")
+			.withErrandClosedEmailTemplate("errandClosedEmailTemplate")
+			.withDaysOfInactivityBeforeReject(5)
+			.withStatusForNew("NEW")
+			.withTriggerStatusChangeOn("SOLVED")
+			.withStatusChangeTo("ONGOING")
+			.withInactiveStatus("SOLVED")
+			.withAddSenderAsStakeholder(addSenderAsStakeholder)
+			.withStakeholderRole(stakeholderRole)
+			.withErrandChannel("errandChannel");
+
+		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePath(any(), any(), any()))
+			.thenReturn(Optional.of(MetadataLabelEntity.create().withId("id1")), Optional.of(MetadataLabelEntity.create().withId("id2")));
+
+		final var result = emailReaderMapper.toErrand(email, emailConfig);
 
 		assertThat(result).isNotNull();
 		assertThat(result.getTitle()).isEqualTo("someSubject");
 		assertThat(result.getDescription()).isEqualTo("someMessage");
-		assertThat(result.getStatus()).isEqualTo(status);
+		assertThat(result.getStatus()).isEqualTo("NEW");
 		assertThat(result.getClassification()).isNotNull();
 		assertThat(result.getClassification().getCategory()).isEqualTo("someCategory");
 		assertThat(result.getClassification().getType()).isEqualTo("someType");
 		assertThat(result.getChannel()).isEqualTo("errandChannel");
-		assertThat(result.getLabels()).containsExactly("someLabel1", "someLabel2");
+		assertThat(result.getLabels()).containsExactly(
+			ErrandLabel.create().withId("id1"),
+			ErrandLabel.create().withId("id2"));
 
 		if (addSenderAsStakeholder) {
 			assertThat(result.getStakeholders()).isNotNull().hasSize(1);
@@ -161,6 +192,10 @@ class EmailReaderMapperTest {
 		} else {
 			assertThat(result.getStakeholders()).isNull();
 		}
+
+		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePath("namespace", "municipalityId", "someLabel1");
+		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePath("namespace", "municipalityId", "someLabel2");
+		verifyNoMoreInteractions(metadataLabelRepositoryMock);
 	}
 
 	@Test

@@ -175,7 +175,7 @@
 
     create table errand_labels (
         errand_id varchar(255) not null,
-        label varchar(255)
+        metadata_label_id varchar(255)
     ) engine=InnoDB;
 
     create table errand_number_sequence (
@@ -220,7 +220,6 @@
         classification varchar(255),
         display_name varchar(255),
         id varchar(255) not null,
-        name varchar(255),
         parent_id varchar(255),
         resource_name varchar(255),
         resource_path varchar(255),
@@ -480,8 +479,11 @@
     alter table if exists errand 
        add constraint uq_errand_number unique (errand_number);
 
-    create index idx_errand_labels_errand_id_label 
-       on errand_labels (errand_id, label);
+    create index idx_errand_id 
+       on errand_labels (errand_id);
+
+    create index idx_metadata_label_id 
+       on errand_labels (metadata_label_id);
 
     create index idx_errand_number_sequence_namespace_municipality_id 
        on errand_number_sequence (namespace, municipality_id);
