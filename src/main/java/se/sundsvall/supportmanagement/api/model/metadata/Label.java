@@ -30,7 +30,7 @@ public class Label {
 	@NotBlank
 	private String resourceName;
 
-	@ArraySchema(schema = @Schema(implementation = Label.class, $anchor = "Label"))
+	@ArraySchema(arraySchema = @Schema(ref = "#/components/schemas/Label"))
 	private List<Label> labels;
 
 	public static Label create() {
