@@ -87,7 +87,7 @@ spring:
   application:
     name: support-management
   cache:
-    cache-names: metadataCache, namespaceConfigCache
+    cache-names: metadataCache, metadataLabelsByPatternCache, namespaceConfigCache
     caffeine:
       spec: maximumSize=200, expireAfterWrite=600s
   datasource:
