@@ -10,7 +10,8 @@
 			{
 				"equalToJson": {
 					"attachments": [],
-					"oepInstance": "external",
+					"sendAsOwner": false,
+					"oepInstance": "EXTERNAL",
 					"message": "Order pizza for everyone!",
 					"sender": {
 						"userId": "someUserId"

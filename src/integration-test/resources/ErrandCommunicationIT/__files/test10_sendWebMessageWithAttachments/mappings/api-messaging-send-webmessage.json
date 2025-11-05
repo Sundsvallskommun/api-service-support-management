@@ -21,7 +21,8 @@
 							"mimeType": "text/plain"
 						}
 					],
-					"oepInstance": "internal",
+					"sendAsOwner": false,
+					"oepInstance": "INTERNAL",
 					"message": "Sending data!",
 					"sender": {
 						"userId": "someUserId"
