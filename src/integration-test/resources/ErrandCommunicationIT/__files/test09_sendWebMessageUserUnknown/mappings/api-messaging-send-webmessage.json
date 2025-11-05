@@ -9,8 +9,9 @@
 		"bodyPatterns": [
 			{
 				"equalToJson": {
+					"sendAsOwner": false,
 					"attachments": [],
-					"oepInstance": "external",
+					"oepInstance": "EXTERNAL",
 					"message": "Order pizza for everyone!",
 					"sender": {
 						"userId": "UNKNOWN"
