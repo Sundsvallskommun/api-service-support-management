@@ -1,0 +1,19 @@
+{
+	"request": {
+		"method": "GET",
+		"urlPath": "/api-accessmapper/2506/NAMESPACE-2506/ad/joe01doe",
+		"queryParameters": {
+			"type": {
+				"equalTo": "label"
+			}
+		}
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/json"
+		},
+		"bodyFileName": "test10_getErrandsWithAccessControlFull/responses/api-accessmapper-getAccess-response.json",
+		"status": 200
+	},
+	"name": "api-accessmapper"
+}

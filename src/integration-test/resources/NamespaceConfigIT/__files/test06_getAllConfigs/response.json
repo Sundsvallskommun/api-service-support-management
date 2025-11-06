@@ -36,5 +36,14 @@
 		"notificationTTLInDays": 40,
 		"created": "2024-06-12T15:24:00.001+02:00",
 		"accessControl": false
+	},
+	{
+		"namespace": "NAMESPACE-2506",
+		"municipalityId": "2506",
+		"displayName": "Namespace 2506",
+		"shortCode": "AP",
+		"notificationTTLInDays": 40,
+		"created": "2024-06-12T15:24:00.001+02:00",
+		"accessControl": true
 	}
 ]
