@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.service.mapper;
 import com.google.gson.ExclusionStrategy;
 import com.google.gson.FieldAttributes;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
+import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
@@ -23,6 +24,7 @@ public class CircularReferenceExclusionStrategy implements ExclusionStrategy {
 			((f.getDeclaringClass() == StakeholderEntity.class) && ERRAND_ENTITY.equals(f.getName())) ||
 			((f.getDeclaringClass() == StakeholderParameterEntity.class) && STAKEHOLDER_ENTITY.equals(f.getName())) ||
 			((f.getDeclaringClass() == ParameterEntity.class) && ERRAND_ENTITY.equals(f.getName())) ||
+			((f.getDeclaringClass() == MetadataLabelEntity.class) && "parent".equals(f.getName())) ||
 			((f.getDeclaringClass() == NotificationEntity.class) && ERRAND_ENTITY.equals(f.getName()));
 	}
 

@@ -51,7 +51,7 @@ class MetadataResourceTest {
 		final var metadataResponse = MetadataResponse.create()
 			.withCategories(List.of(Category.create().withName("Category-1").withTypes(List.of(Type.create().withName("Type-1")))))
 			.withExternalIdTypes(List.of(ExternalIdType.create().withName("ExternalIdType-1")))
-			.withLabels(Labels.create().withLabelStructure(List.of(Label.create().withClassification("Classification-1").withName("Name-1"))))
+			.withLabels(Labels.create().withLabelStructure(List.of(Label.create().withClassification("Classification-1"))))
 			.withRoles(List.of(Role.create().withName("Role-1")))
 			.withStatuses(List.of(Status.create().withName("Status-1")));
 

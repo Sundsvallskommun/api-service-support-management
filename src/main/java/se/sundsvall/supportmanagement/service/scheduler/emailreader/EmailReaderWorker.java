@@ -110,10 +110,7 @@ public class EmailReaderWorker {
 					config.getMunicipalityId(),
 					emailReaderMapper.toErrand(
 						email,
-						config.getStatusForNew(),
-						config.isAddSenderAsStakeholder(),
-						config.getStakeholderRole(),
-						config.getErrandChannel()))));
+						config))));
 	}
 
 	private EmailRequest processErrand(final ErrandEntity errand, final Email email, final EmailWorkerConfigEntity config) {

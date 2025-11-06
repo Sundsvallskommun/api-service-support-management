@@ -57,8 +57,20 @@
 			},
 			"resolution": "FIXED",
 			"labels": [
-				"label-1",
-				"label-2"
+				{
+					"id": "ffe5f120-6a3b-4404-ace8-8ea87b559907",
+					"classification": "DEEPSUBTYPE",
+					"displayName": "DEEPSUBTYPE-DISPLAY-NAME-1",
+					"resourcePath": "CATEGORY-1/TYPE-2/SUBTYPE-4/DEEPSUBTYPE-1",
+					"resourceName": "DEEPSUBTYPE-1"
+				},
+				{
+					"id": "0eb1f695-48b1-40fd-af8c-b277c37db2d4",
+					"classification": "DEEPSUBTYPE",
+					"displayName": "DEEPSUBTYPE-DISPLAY-NAME-2",
+					"resourcePath": "CATEGORY-1/TYPE-2/SUBTYPE-4/DEEPSUBTYPE-2",
+					"resourceName": "DEEPSUBTYPE-2"
+				}
 			],
 			"activeNotifications": [],
 			"assignedGroupId": "hardware support",

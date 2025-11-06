@@ -3,6 +3,9 @@ package se.sundsvall.supportmanagement.service.scheduler.emailreader;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.toMap;
+import static org.springframework.util.StringUtils.hasText;
+import static org.zalando.problem.Status.NOT_FOUND;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandLabels;
 
 import generated.se.sundsvall.emailreader.Email;
 import generated.se.sundsvall.emailreader.EmailAttachment;
@@ -12,15 +15,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
+import org.zalando.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
 import se.sundsvall.supportmanagement.api.model.errand.Classification;
 import se.sundsvall.supportmanagement.api.model.errand.ContactChannel;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.errand.Priority;
 import se.sundsvall.supportmanagement.api.model.errand.Stakeholder;
+import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
+import se.sundsvall.supportmanagement.integration.db.model.EmailWorkerConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationAttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationEmailHeaderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationEntity;
@@ -33,9 +39,11 @@ import se.sundsvall.supportmanagement.service.util.BlobBuilder;
 public class EmailReaderMapper {
 
 	private final BlobBuilder blobBuilder;
+	private final MetadataLabelRepository metadataLabelRepository;
 
-	public EmailReaderMapper(final BlobBuilder blobBuilder) {
+	public EmailReaderMapper(final BlobBuilder blobBuilder, final MetadataLabelRepository metadataLabelRepository) {
 		this.blobBuilder = blobBuilder;
+		this.metadataLabelRepository = metadataLabelRepository;
 	}
 
 	CommunicationEntity toCommunicationEntity(final Email email, final ErrandEntity errand) {
@@ -82,25 +90,34 @@ public class EmailReaderMapper {
 			.toList();
 	}
 
-	public Errand toErrand(final Email email, final String status, final boolean addSenderAsStakeholder,
-		final String stakeholderRole, final String errandChannel) {
+	public Errand toErrand(final Email email, EmailWorkerConfigEntity config) {
 
 		final var errand = Errand.create()
 			.withTitle(email.getSubject())
 			.withDescription(email.getHtmlMessage())
-			.withStatus(status)
+			.withStatus(config.getStatusForNew())
 			.withPriority(Priority.MEDIUM)
-			.withChannel(errandChannel)
+			.withChannel(config.getErrandChannel())
 			.withClassification(Classification.create().withCategory(email.getMetadata().get("classification.category")).withType(email.getMetadata().get("classification.type")));
 
-		if (StringUtils.hasText(email.getMetadata().get("labels"))) {
-			errand.setLabels(Arrays.stream(email.getMetadata().get("labels").split(";")).toList());
+		if (hasText(email.getMetadata().get("labels"))) {
+
+			final var labelList = Arrays.stream(email.getMetadata().get("labels").split(";")).toList();
+			final var errandLabelEmbeddableList = labelList.stream()
+				.map(resourcePath -> metadataLabelRepository
+					.findByNamespaceAndMunicipalityIdAndResourcePath(config.getNamespace(), config.getMunicipalityId(), resourcePath)
+					.orElseThrow(() -> Problem.valueOf(NOT_FOUND, "MetadataLabel with resourcePath '%s' not found for namespace '%s' and municipality '%s'"
+						.formatted(resourcePath, config.getNamespace(), config.getMunicipalityId()))))
+				.map(entity -> ErrandLabelEmbeddable.create().withMetadataLabelId(entity.getId()))
+				.toList();
+
+			errand.setLabels(toErrandLabels(errandLabelEmbeddableList));
 		}
 
-		if (addSenderAsStakeholder) {
+		if (config.isAddSenderAsStakeholder()) {
 			errand.withStakeholders(List.of(
 				Stakeholder.create()
-					.withRole(stakeholderRole)
+					.withRole(config.getStakeholderRole())
 					.withContactChannels(List.of(
 						ContactChannel.create().withType("EMAIL").withValue(email.getSender())))));
 		}
@@ -145,8 +162,6 @@ public class EmailReaderMapper {
 	}
 
 	public AttachmentDataEntity toAttachmentDataEntity(final byte[] attachmentData) {
-		return AttachmentDataEntity.create()
-			.withFile(blobBuilder.createBlob(attachmentData));
-
+		return AttachmentDataEntity.create().withFile(blobBuilder.createBlob(attachmentData));
 	}
 }

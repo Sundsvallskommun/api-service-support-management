@@ -67,7 +67,7 @@ class ErrandEntityTest {
 		final var previousStatus = "previousStatus";
 		final var timeMeasure = List.of(TimeMeasurementEntity.create().withStartTime(now).withStopTime(now).withDescription("description").withAdministrator("administrator"));
 		final var tempPreviousStatus = "tempPreviousStatus";
-		final var labels = List.of("label1", "label2");
+		final var labels = List.of(ErrandLabelEmbeddable.create());
 		final var notifications = List.of(NotificationEntity.create());
 
 		final var errandEntity = ErrandEntity.create()
@@ -144,5 +144,4 @@ class ErrandEntityTest {
 		assertThat(ErrandEntity.create()).hasAllNullFieldsOrPropertiesExcept("timeMeasures");
 		assertThat(new ErrandEntity()).hasAllNullFieldsOrPropertiesExcept("timeMeasures");
 	}
-
 }

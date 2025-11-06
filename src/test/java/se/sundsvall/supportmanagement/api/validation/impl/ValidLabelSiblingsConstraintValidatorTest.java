@@ -12,24 +12,10 @@ class ValidLabelSiblingsConstraintValidatorTest {
 	private ValidLabelSiblingsConstraintValidator validator = new ValidLabelSiblingsConstraintValidator();
 
 	@Test
-	void oneLevelWithSameClassificationAndUniqueName() {
-		assertThat(validator.isValid(List.of(
-			Label.create().withClassification("classification_1").withName("name_1"),
-			Label.create().withClassification("classification_1").withName("name_2")), null)).isTrue();
-	}
-
-	@Test
 	void oneLevelWithSameClassificationAndUniqueResourceName() {
 		assertThat(validator.isValid(List.of(
 			Label.create().withClassification("classification_1").withResourceName("resourceName_1"),
 			Label.create().withClassification("classification_1").withResourceName("resourceName_2")), null)).isTrue();
-	}
-
-	@Test
-	void oneLevelWithDifferentClassificationAndUniqueName() {
-		assertThat(validator.isValid(List.of(
-			Label.create().withClassification("classification_1").withName("name_1"),
-			Label.create().withClassification("classification_2").withName("name_2")), null)).isFalse();
 	}
 
 	@Test
@@ -40,13 +26,6 @@ class ValidLabelSiblingsConstraintValidatorTest {
 	}
 
 	@Test
-	void oneLevelWithSameClassificationAndSameName() {
-		assertThat(validator.isValid(List.of(
-			Label.create().withClassification("classification_1").withName("name_1"),
-			Label.create().withClassification("classification_1").withName("name_1")), null)).isFalse();
-	}
-
-	@Test
 	void oneLevelWithSameClassificationAndSameResourceName() {
 		assertThat(validator.isValid(List.of(
 			Label.create().withClassification("classification_1").withResourceName("resourceName_1"),
@@ -54,22 +33,9 @@ class ValidLabelSiblingsConstraintValidatorTest {
 	}
 
 	@Test
-	void subListWithSameClassificationAndUniqueName() {
-		final var root = Label.create()
-			.withClassification("root_classification")
-			.withName("root_name")
-			.withLabels(List.of(
-				Label.create().withClassification("classification_1").withName("name_1"),
-				Label.create().withClassification("classification_1").withName("name_2")));
-
-		assertThat(validator.isValid(List.of(root), null)).isTrue();
-	}
-
-	@Test
 	void subListWithSameClassificationAndUniqueResourceName() {
 		final var root = Label.create()
 			.withClassification("root_classification")
-			.withName("root_name")
 			.withLabels(List.of(
 				Label.create().withClassification("classification_1").withResourceName("resourceName_1"),
 				Label.create().withClassification("classification_1").withResourceName("resourceName_2")));
@@ -78,22 +44,9 @@ class ValidLabelSiblingsConstraintValidatorTest {
 	}
 
 	@Test
-	void subListWithDifferentClassificationAndUniqueName() {
-		final var root = Label.create()
-			.withClassification("root_classification")
-			.withName("root_name")
-			.withLabels(List.of(
-				Label.create().withClassification("classification_1").withName("name_1"),
-				Label.create().withClassification("classification_2").withName("name_2")));
-
-		assertThat(validator.isValid(List.of(root), null)).isFalse();
-	}
-
-	@Test
 	void subListWithDifferentClassificationAndUniqueResourceName() {
 		final var root = Label.create()
 			.withClassification("root_classification")
-			.withName("root_name")
 			.withLabels(List.of(
 				Label.create().withClassification("classification_1").withResourceName("resourceName_1"),
 				Label.create().withClassification("classification_2").withResourceName("resourceName_2")));
@@ -102,22 +55,9 @@ class ValidLabelSiblingsConstraintValidatorTest {
 	}
 
 	@Test
-	void subListWithSameClassificationAndSameName() {
-		final var root = Label.create()
-			.withClassification("root_classification")
-			.withName("root_name")
-			.withLabels(List.of(
-				Label.create().withClassification("classification_1").withName("name_1"),
-				Label.create().withClassification("classification_1").withName("name_1")));
-
-		assertThat(validator.isValid(List.of(root), null)).isFalse();
-	}
-
-	@Test
 	void subListWithSameClassificationAndSameResourceName() {
 		final var root = Label.create()
 			.withClassification("root_classification")
-			.withName("root_name")
 			.withLabels(List.of(
 				Label.create().withClassification("classification_1").withResourceName("resourceName_1"),
 				Label.create().withClassification("classification_1").withResourceName("resourceName_1")));

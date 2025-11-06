@@ -62,7 +62,14 @@
 		"type": "TYPE-3"
 	},
 	"resolution": "RESOLUTION",
-	"labels": [],
+	"labels": [
+		{
+			"id": "0eb1f695-48b1-40fd-af8c-b277c37db2d4"
+		},
+		{
+			"id": "ffe5f120-6a3b-4404-ace8-8ea87b559907"
+		}
+	],
 	"activeNotifications": [
 		{
 			"id": "5f3c4196-8b2f-4ccd-8939-6f53a715563c",

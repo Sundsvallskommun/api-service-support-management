@@ -88,26 +88,24 @@ class MetadataLabelResourceFailureTest {
 
 	private static Stream<Arguments> labelsArguments(String method) {
 		return Stream.of(
-			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabel("class", "resourceName_1", "name"), createLabel("class", "resourceName_2", "name")),
+			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabel("class", "resourceName_1"), createLabel("class", "resourceName_1")),
 				tuple(method + ".labels", "each entry must have unique name, resourceName and same classification compared to its siblings")),
-			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabel("class", "resourceName", "name_1"), createLabel("class", "resourceName", "name_2")),
+			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabel("class", "resourceName"), createLabel("class", "resourceName")),
 				tuple(method + ".labels", "each entry must have unique name, resourceName and same classification compared to its siblings")),
-			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabel("class_1", "resourceName_1", "name_1"), createLabel("class_2", "resourceName_2", "name_2")),
+			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabel("class_1", "resourceName_1"), createLabel("class_2", "resourceName_2")),
 				tuple(method + ".labels", "each entry must have unique name, resourceName and same classification compared to its siblings")),
-			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabel("classification", "resourceName", null)),
-				tuple(method + ".labels[0].name", "must not be blank")),
-			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabel(null, "resourceName", "name")),
+			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabel(null, "resourceName")),
 				tuple(method + ".labels[0].classification", "must not be blank")),
-			Arguments.of("MY_NAMESPACE", "666", List.of(createLabel("classification", "resourceName", "name")),
+			Arguments.of("MY_NAMESPACE", "666", List.of(createLabel("classification", "resourceName")),
 				tuple(method + ".municipalityId", "not a valid municipality ID")),
-			Arguments.of("invalid,namespace", "2281", List.of(createLabel("classification", "resourceName", "name")),
+			Arguments.of("invalid,namespace", "2281", List.of(createLabel("classification", "resourceName")),
 				tuple(method + ".namespace", "can only contain A-Z, a-z, 0-9, - and _")),
-			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabel("classification", null, "name")),
+			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabel("classification", null)),
 				tuple(method + ".labels[0].resourceName", "must not be blank")));
 	}
 
-	private static Label createLabel(String classification, String resourceName, String name) {
-		return Label.create().withClassification(classification).withResourceName(resourceName).withName(name);
+	private static Label createLabel(String classification, String resourceName) {
+		return Label.create().withClassification(classification).withResourceName(resourceName);
 	}
 
 	@ParameterizedTest

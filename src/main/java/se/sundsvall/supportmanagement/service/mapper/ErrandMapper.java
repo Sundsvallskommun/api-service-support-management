@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.service.mapper;
 
 import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static org.apache.commons.lang3.ObjectUtils.anyNull;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
@@ -13,9 +14,11 @@ import static se.sundsvall.supportmanagement.service.mapper.StakeholderParameter
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
 import se.sundsvall.supportmanagement.api.model.errand.Classification;
 import se.sundsvall.supportmanagement.api.model.errand.ContactChannel;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
+import se.sundsvall.supportmanagement.api.model.errand.ErrandLabel;
 import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
 import se.sundsvall.supportmanagement.api.model.errand.Parameter;
 import se.sundsvall.supportmanagement.api.model.errand.Priority;
@@ -26,6 +29,7 @@ import se.sundsvall.supportmanagement.integration.db.model.ContactChannelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 
@@ -61,11 +65,13 @@ public final class ErrandMapper {
 			.withSuspendedTo(Optional.ofNullable(errand.getSuspension()).map(Suspension::getSuspendedTo).orElse(null))
 			.withBusinessRelated(errand.getBusinessRelated())
 			.withParameters(toErrandParameterEntityList(errand.getParameters(), errandEntity))
-			.withLabels(errand.getLabels());
+			.withLabels(toErrandLabelEmbeddables(errand.getLabels()));
 	}
 
 	public static ErrandEntity updateEntity(final ErrandEntity entity, final Errand errand) {
-		if (isNull(errand)) { return entity; }
+		if (isNull(errand)) {
+			return entity;
+		}
 
 		ofNullable(errand.getAssignedGroupId()).ifPresent(value -> entity.setAssignedGroupId(isEmpty(value) ? null : value));
 		ofNullable(errand.getAssignedUserId()).ifPresent(value -> entity.setAssignedUserId(isEmpty(value) ? null : value));
@@ -89,8 +95,15 @@ public final class ErrandMapper {
 		ofNullable(errand.getEscalationEmail()).ifPresent(value -> entity.setEscalationEmail(isEmpty(value) ? null : value));
 		ofNullable(errand.getBusinessRelated()).ifPresent(value -> entity.setBusinessRelated(errand.getBusinessRelated()));
 		ofNullable(errand.getParameters()).ifPresent(value -> updateParameters(entity, value));
-		ofNullable(errand.getLabels()).ifPresent(entity::setLabels);
+		ofNullable(errand.getLabels()).ifPresent(value -> entity.setLabels(toErrandLabelEmbeddables(value)));
 		return entity;
+	}
+
+	public static List<ErrandLabelEmbeddable> toErrandLabelEmbeddables(final List<ErrandLabel> errandLabels) {
+		return new ArrayList<>(ofNullable(errandLabels).orElse(emptyList()).stream()
+			.map(errandLabel -> ErrandLabelEmbeddable.create().withMetadataLabelId(errandLabel.getId()))
+			.distinct()
+			.toList());
 	}
 
 	private static void updateParameters(final ErrandEntity entity, final List<Parameter> parameters) {
@@ -122,6 +135,13 @@ public final class ErrandMapper {
 			.toList();
 	}
 
+	public static List<Errand> toErrandsWithAccessControl(final List<ErrandEntity> entities, Predicate<ErrandEntity> mapLimited) {
+		return ofNullable(entities).orElse(emptyList())
+			.stream()
+			.map(errandEntity -> mapLimited.test(errandEntity) ? toLimitedErrand(errandEntity) : toErrand(errandEntity))
+			.toList();
+	}
+
 	public static Errand toErrand(final ErrandEntity entity) {
 		return Optional.ofNullable(entity)
 			.map(e -> Errand.create()
@@ -148,8 +168,35 @@ public final class ErrandMapper {
 				.withContactReason(Optional.ofNullable(e.getContactReason()).map(ContactReasonEntity::getReason).orElse(null))
 				.withContactReasonDescription(e.getContactReasonDescription())
 				.withEscalationEmail(e.getEscalationEmail())
-				.withLabels(e.getLabels())
+				.withLabels(toErrandLabels(e.getLabels()))
 				.withActiveNotifications(toActiveNotifications(e.getNotifications())))
+			.orElse(null);
+	}
+
+	public static List<ErrandLabel> toErrandLabels(final List<ErrandLabelEmbeddable> errandLabelEmbeddables) {
+		return ofNullable(errandLabelEmbeddables).orElse(emptyList())
+			.stream()
+			.map(errandLabelEmbeddable -> ErrandLabel.create()
+				.withClassification(nonNull(errandLabelEmbeddable.getMetadataLabel()) ? errandLabelEmbeddable.getMetadataLabel().getClassification() : null)
+				.withDisplayName(nonNull(errandLabelEmbeddable.getMetadataLabel()) ? errandLabelEmbeddable.getMetadataLabel().getDisplayName() : null)
+				.withId(errandLabelEmbeddable.getMetadataLabelId())
+				.withResourceName(nonNull(errandLabelEmbeddable.getMetadataLabel()) ? errandLabelEmbeddable.getMetadataLabel().getResourceName() : null)
+				.withResourcePath(nonNull(errandLabelEmbeddable.getMetadataLabel()) ? errandLabelEmbeddable.getMetadataLabel().getResourcePath() : null))
+			.toList();
+	}
+
+	public static Errand toLimitedErrand(final ErrandEntity entity) {
+		return Optional.ofNullable(entity)
+			.map(e -> Errand.create()
+				.withId(e.getId())
+				.withCreated(e.getCreated())
+				.withErrandNumber(e.getErrandNumber())
+				.withModified(e.getModified())
+				.withStatus(e.getStatus())
+				.withTitle(e.getTitle())
+				.withTouched(e.getTouched())
+				.withResolution(e.getResolution())
+				.withChannel(e.getChannel()))
 			.orElse(null);
 	}
 

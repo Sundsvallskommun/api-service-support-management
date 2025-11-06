@@ -12,15 +12,21 @@ import static se.sundsvall.supportmanagement.api.model.errand.Priority.HIGH;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrand;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrands;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandsWithAccessControl;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toLimitedErrand;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.updateEntity;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 import se.sundsvall.supportmanagement.api.model.errand.Classification;
 import se.sundsvall.supportmanagement.api.model.errand.ContactChannel;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
+import se.sundsvall.supportmanagement.api.model.errand.ErrandLabel;
 import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
 import se.sundsvall.supportmanagement.api.model.errand.Parameter;
 import se.sundsvall.supportmanagement.api.model.errand.Priority;
@@ -31,6 +37,8 @@ import se.sundsvall.supportmanagement.integration.db.model.ContactChannelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
+import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderParameterEntity;
@@ -38,88 +46,56 @@ import se.sundsvall.supportmanagement.integration.db.model.StakeholderParameterE
 class ErrandMapperTest {
 
 	private static final String NAMESPACE = "namespace";
-
 	private static final String MUNICIPALITY_ID = "municipalityId";
-
 	private static final String ASSIGNED_GROUP_ID = "assignedGroupId";
-
 	private static final String ASSIGNED_USER_ID = "assignedUserId";
-
 	private static final String CATEGORY = "category";
-
 	private static final String CLIENT_ID_TAG = "clientIdTag";
-
 	private static final OffsetDateTime CREATED = now().minusWeeks(1);
-
 	private static final String EXTERNAL_ID = "externalId";
-
 	private static final String EXTERNAL_ID_TYPE_TAG = "PRIVATE";
-
 	private static final String TAG_KEY = "tagKey";
-
 	private static final String TAG_VALUE = "tagValue";
-
 	private static final String ID = "id";
-
 	private static final OffsetDateTime MODIFIED = now();
-
 	private static final String PRIORITY = HIGH.name();
-
 	private static final String REPORTER_USER_ID = "reporterUserId";
-
 	private static final String STATUS = "status";
-
 	private static final String TITLE = "title";
-
 	private static final OffsetDateTime TOUCHED = now().plusWeeks(1);
-
 	private static final String TYPE = "type";
-
 	private static final String DESCRIPTION = "description";
-
 	private static final String CHANNEL = "channel";
-
 	private static final String RESOLUTION = "resolution";
-
 	private static final String FIRST_NAME = "firstName";
-
 	private static final String LAST_NAME = "lastName";
-
 	private static final String ADDRESS = "address";
-
 	private static final String CARE_OF = "careOf";
-
 	private static final String ZIP_CODE = "zipCode";
-
 	private static final String COUNTRY = "country";
-
 	private static final String CONTACT_CHANNEL_TYPE = "contactChannelType";
-
 	private static final String CONTACT_CHANNEL_VALUE = "contactChannelValue";
-
 	private static final String ESCALATION_EMAIL = "escalation@email.com";
-
 	private static final String STAKEHOLDER_ROLE = "role";
-
 	private static final String PARAMETER_VALUE = "parameterValue";
-
 	private static final String PARAMETER_NAME = "parameterName";
-
 	private static final OffsetDateTime SUSPENDED_FROM = now().plusDays(1);
-
 	private static final OffsetDateTime SUSPENDED_TO = now().plusDays(2);
-
 	private static final String CONTACT_REASON = "contactReason";
-
 	private static final String CONTACT_REASON_DESCRIPTION = "contactReasonDescription";
-
 	private static final String ERRAND_NUMBER = "errandNumber";
-
 	private static final Boolean BUSINESS_RELATED = true;
 
-	private static final String LABEL_1 = "label1";
+	private static final ErrandLabel LABEL_1 = ErrandLabel.create().withId("id1");
+	private static final ErrandLabel LABEL_2 = ErrandLabel.create().withId("id2");
+	private static final ErrandLabelEmbeddable LABEL_EMBEDDABLE_1 = ErrandLabelEmbeddable.create().withMetadataLabelId("id1");
+	private static final ErrandLabelEmbeddable LABEL_EMBEDDABLE_2 = ErrandLabelEmbeddable.create().withMetadataLabelId("id2");
 
-	private static final String LABEL_2 = "label2";
+	@BeforeAll
+	static void setup() {
+		ReflectionTestUtils.setField(LABEL_EMBEDDABLE_1, "metadataLabel", MetadataLabelEntity.create().withId("id1"));
+		ReflectionTestUtils.setField(LABEL_EMBEDDABLE_2, "metadataLabel", MetadataLabelEntity.create().withId("id2"));
+	}
 
 	private static Errand createErrand() {
 		return Errand.create()
@@ -192,7 +168,7 @@ class ErrandMapperTest {
 			.withSuspendedTo(SUSPENDED_TO)
 			.withErrandNumber(ERRAND_NUMBER)
 			.withBusinessRelated(BUSINESS_RELATED)
-			.withLabels(List.of(LABEL_1, LABEL_2))
+			.withLabels(List.of(LABEL_EMBEDDABLE_1, LABEL_EMBEDDABLE_2))
 			.withNotifications(List.of(createNotificationEntity(null)));
 
 	}
@@ -251,6 +227,28 @@ class ErrandMapperTest {
 	@Test
 	void testToErrandFromNull() {
 		assertThat(toErrand(null)).isNull();
+	}
+
+	@Test
+	void testToLimitedErrand() {
+		final var errand = toLimitedErrand(createEntity());
+
+		assertThat(errand).hasAllNullFieldsOrPropertiesExcept("id", "created", "errandNumber", "modified", "status", "title", "touched", "resolution", "channel");
+
+		assertThat(errand.getId()).isEqualTo(ID);
+		assertThat(errand.getCreated()).isCloseTo(CREATED, within(2, SECONDS));
+		assertThat(errand.getErrandNumber()).isEqualTo(ERRAND_NUMBER);
+		assertThat(errand.getModified()).isCloseTo(MODIFIED, within(2, SECONDS));
+		assertThat(errand.getStatus()).isEqualTo(STATUS);
+		assertThat(errand.getTitle()).isEqualTo(TITLE);
+		assertThat(errand.getTouched()).isEqualTo(TOUCHED);
+		assertThat(errand.getResolution()).isEqualTo(RESOLUTION);
+		assertThat(errand.getChannel()).isEqualTo(CHANNEL);
+	}
+
+	@Test
+	void testToLimitedErrandFromNull() {
+		assertThat(toLimitedErrand(null)).isNull();
 	}
 
 	@Test
@@ -314,8 +312,35 @@ class ErrandMapperTest {
 	}
 
 	@Test
+	void testToErrandsWithAccessControl() {
+		Predicate<ErrandEntity> mapLimited = ErrandEntity::getBusinessRelated;
+		var errandLimited = createEntity().withErrandNumber("limited");
+		var errandNotLimited = createEntity().withErrandNumber("full").withBusinessRelated(false);
+
+		var result = toErrandsWithAccessControl(List.of(errandLimited, errandNotLimited), mapLimited);
+
+		assertThat(result).hasSize(2);
+
+		result.forEach(errand -> {
+			if (errand.getErrandNumber().equals("limited")) {
+				assertThat(errand).hasAllNullFieldsOrPropertiesExcept("id", "created", "errandNumber", "modified", "status", "title", "touched", "resolution", "channel");
+				assertThat(errand.getErrandNumber()).isEqualTo("limited");
+			} else {
+				assertThat(errand).hasNoNullFieldsOrPropertiesExcept("notifications");
+				assertThat(errand.getErrandNumber()).isEqualTo("full");
+				assertThat(errand.getBusinessRelated()).isFalse();
+			}
+		});
+	}
+
+	@Test
 	void testToErrandsFromNull() {
 		assertThat(toErrands(null)).isEmpty();
+	}
+
+	@Test
+	void testToErrandsWithAccessControlFromNull() {
+		assertThat(toErrandsWithAccessControl(null, ErrandEntity::getBusinessRelated)).isEmpty();
 	}
 
 	@Test
@@ -363,7 +388,7 @@ class ErrandMapperTest {
 				BUSINESS_RELATED,
 				ERRAND_NUMBER,
 				List.of(ParameterEntity.create().withKey(PARAMETER_NAME).withValues(List.of(PARAMETER_VALUE)).withErrandEntity(entity)),
-				List.of(LABEL_1, LABEL_2));
+				List.of(LABEL_EMBEDDABLE_1, LABEL_EMBEDDABLE_2));
 
 		assertThat(entity.getStakeholders()).hasSize(1).extracting(
 			StakeholderEntity::getAddress,
