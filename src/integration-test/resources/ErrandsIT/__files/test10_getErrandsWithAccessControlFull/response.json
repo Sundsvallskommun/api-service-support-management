@@ -1,0 +1,135 @@
+{
+	"content": [
+		{
+			"id": "c9efe03d-deff-4828-a043-541fa78ffdeb",
+			"errandNumber": "AP-23020002",
+			"title": "E-service",
+			"priority": "LOW",
+			"stakeholders": [],
+			"externalTags": [],
+			"parameters": [],
+			"classification": {
+				"type": "TYPE-2506"
+			},
+			"status": "STATUS-2506",
+			"channel": "ESERVICE_INTERNAL",
+			"reporterUserId": "REPORTER_USER_ID-X",
+			"assignedUserId": "ASSIGNED_USER_ID-X",
+			"assignedGroupId": "ASSIGNED_GROUP_ID-X",
+			"escalationEmail": "ESCALATION_EMAIL_1",
+			"suspension": {},
+			"businessRelated": false,
+			"labels": [
+				{
+					"id": "8f1c6101-8c32-4c77-b72c-3348f23394f1",
+					"classification": "CLASS",
+					"displayName": "LEVELTWO-1-DISPLAY-NAME",
+					"resourcePath": "ROOT/LEVELONE-1/LEVELTWO-1",
+					"resourceName": "LEVELTWO-1"
+				}
+			],
+			"activeNotifications": [],
+			"created": "2024-01-01T12:00:00+01:00",
+			"touched": "2024-01-01T12:00:00+01:00"
+		},
+		{
+			"id": "7c57b4c3-9ef6-472d-8f03-5c15e9458ad6",
+			"errandNumber": "AP-23020001",
+			"title": "E-service",
+			"priority": "LOW",
+			"stakeholders": [],
+			"externalTags": [],
+			"parameters": [],
+			"classification": {
+				"type": "TYPE-2506"
+			},
+			"status": "STATUS-2506",
+			"channel": "ESERVICE_INTERNAL",
+			"reporterUserId": "REPORTER_USER_ID-X",
+			"assignedUserId": "ASSIGNED_USER_ID-X",
+			"assignedGroupId": "ASSIGNED_GROUP_ID-X",
+			"escalationEmail": "ESCALATION_EMAIL_1",
+			"suspension": {},
+			"businessRelated": false,
+			"labels": [
+				{
+					"id": "2f3d54e5-075a-4e21-ae30-b8fa69d24eeb",
+					"classification": "CLASS",
+					"displayName": "ROOT-DISPLAY-NAME",
+					"resourcePath": "ROOT",
+					"resourceName": "ROOT"
+				}
+			],
+			"activeNotifications": [],
+			"created": "2024-01-01T12:00:00+01:00",
+			"touched": "2024-01-01T12:00:00+01:00"
+		},
+		{
+			"id": "58c41b44-0b9f-413d-bd46-406d24bf5ca8",
+			"errandNumber": "AP-23020003",
+			"title": "E-service",
+			"priority": "LOW",
+			"stakeholders": [],
+			"externalTags": [],
+			"parameters": [],
+			"classification": {
+				"type": "TYPE-2506"
+			},
+			"status": "STATUS-2506",
+			"channel": "ESERVICE_INTERNAL",
+			"reporterUserId": "REPORTER_USER_ID-X",
+			"assignedUserId": "ASSIGNED_USER_ID-X",
+			"assignedGroupId": "ASSIGNED_GROUP_ID-X",
+			"escalationEmail": "ESCALATION_EMAIL_1",
+			"suspension": {},
+			"businessRelated": false,
+			"labels": [
+				{
+					"id": "7ac8f12e-7c9b-47dc-ac7f-92a1f62ca53f",
+					"classification": "CLASS",
+					"displayName": "LEVELTWO-2-DISPLAY-NAME",
+					"resourcePath": "ROOT/LEVELONE-1/LEVELTWO-2",
+					"resourceName": "LEVELTWO-2"
+				}
+			],
+			"activeNotifications": [],
+			"created": "2024-01-01T12:00:00+01:00",
+			"touched": "2024-01-01T12:00:00+01:00"
+		}
+	],
+	"pageable": {
+		"pageNumber": 0,
+		"pageSize": 20,
+		"sort": [
+			{
+				"direction": "DESC",
+				"property": "created",
+				"ignoreCase": false,
+				"nullHandling": "NATIVE",
+				"descending": true,
+				"ascending": false
+			}
+		],
+		"offset": 0,
+		"paged": true,
+		"unpaged": false
+	},
+	"last": true,
+	"totalElements": 3,
+	"totalPages": 1,
+	"first": true,
+	"size": 20,
+	"number": 0,
+	"sort": [
+		{
+			"direction": "DESC",
+			"property": "created",
+			"ignoreCase": false,
+			"nullHandling": "NATIVE",
+			"descending": true,
+			"ascending": false
+		}
+	],
+	"numberOfElements": 3,
+	"empty": false
+}

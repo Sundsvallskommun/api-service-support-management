@@ -14,6 +14,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
 
 import java.util.List;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.jdbc.Sql;
@@ -165,6 +166,42 @@ class ErrandsIT extends AbstractAppTest {
 	void test09_countErrands() {
 		setupCall()
 			.withServicePath(PATH + "/count?filter=category:'CATEGORY-1' and concat(stakeholders.firstName, ' ', stakeholders.lastName) ~ '%FIRST_NAME-1 LAST_NAME-1%'")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	void test10_getErrandsWithAccessControlFull() {
+		setupCall()
+			.withServicePath("/2506/NAMESPACE-2506/errands?sort=created,desc")
+			.withHeader(SENT_BY_HEADER, "joe01doe; type=adAccount")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	void test11_getErrandsWithAccessControlPartial() {
+		setupCall()
+			.withServicePath("/2506/NAMESPACE-2506/errands?sort=created,desc")
+			.withHeader(SENT_BY_HEADER, "joe01doe; type=adAccount")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	void test12_getErrandsWithAccessControlNone() {
+		setupCall()
+			.withServicePath("/2506/NAMESPACE-2506/errands?sort=created,desc")
+			.withHeader(SENT_BY_HEADER, "joe01doe; type=adAccount")
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))

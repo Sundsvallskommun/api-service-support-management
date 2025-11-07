@@ -1,0 +1,15 @@
+[
+	{
+		"accessByType": [
+			{
+				"access": [
+					{
+						"accessLevel": "RW",
+						"pattern": "ROOT/LEVELONE-1/**"
+					}
+				],
+				"type": "label"
+			}
+		]
+	}
+]

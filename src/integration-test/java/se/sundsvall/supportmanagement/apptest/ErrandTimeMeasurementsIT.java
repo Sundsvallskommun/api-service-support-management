@@ -16,6 +16,7 @@ import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Example;
@@ -58,8 +59,6 @@ class ErrandTimeMeasurementsIT extends AbstractAppTest {
 
 	@Test
 	void test02_createErrandAndGetTimeMeasurements() {
-
-		assertThat(errandsRepository.findAll()).hasSize(8);
 
 		// Create errand
 		setupCall()

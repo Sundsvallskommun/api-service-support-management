@@ -10,14 +10,17 @@ import static java.util.stream.Collectors.toCollection;
 import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 import static org.zalando.problem.Status.BAD_REQUEST;
 import static org.zalando.problem.Status.NOT_FOUND;
+import static org.zalando.problem.Status.UNAUTHORIZED;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationSubType.ERRAND;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrand;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrands;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.updateEntity;
+import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withId;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withMunicipalityId;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withNamespace;
 
+import generated.se.sundsvall.accessmapper.Access;
 import java.util.ArrayList;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -28,6 +31,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.zalando.problem.Problem;
+import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.ContactReasonRepository;
@@ -43,6 +47,7 @@ import se.sundsvall.supportmanagement.integration.notes.NotesClient;
 public class ErrandService {
 
 	private static final String ENTITY_NOT_FOUND = "An errand with id '%s' could not be found in namespace '%s' for municipality with id '%s'";
+	private static final String ENTITY_NOT_ACCESSIBLE = "Errand not accessible by user '%s'";
 	private static final String LABELS_NOT_FOUND = "The provided label-ID:s '%s' could not be found in namespace '%s' for municipality with id '%s'";
 	private static final String BAD_CONTACT_REASON = "'%s' is not a valid contact reason for namespace '%s' and municipality with id '%s'";
 	private static final String EVENT_LOG_CREATE_ERRAND = "Ärendet har skapats.";
@@ -60,6 +65,7 @@ public class ErrandService {
 	private final AttachmentRepository attachmentRepository;
 	private final ConversationService conversationService;
 	private final NotesClient notesClient;
+	private final AccessControlService accessControlService;
 
 	public ErrandService(
 		final ErrandsRepository repository,
@@ -72,7 +78,8 @@ public class ErrandService {
 		final ErrandAttachmentService errandAttachmentService,
 		final ConversationService conversationService,
 		final NotesClient notesClient,
-		final MetadataLabelRepository metadataLabelRepository) {
+		final MetadataLabelRepository metadataLabelRepository,
+		final AccessControlService accessControlService) {
 
 		this.repository = repository;
 		this.contactReasonRepository = contactReasonRepository;
@@ -85,6 +92,7 @@ public class ErrandService {
 		this.errandAttachmentService = errandAttachmentService;
 		this.conversationService = conversationService;
 		this.notesClient = notesClient;
+		this.accessControlService = accessControlService;
 	}
 
 	public String createErrand(final String namespace, final String municipalityId, final Errand errand) {
@@ -114,7 +122,7 @@ public class ErrandService {
 	}
 
 	public Page<Errand> findErrands(final String namespace, final String municipalityId, final Specification<ErrandEntity> filter, final Pageable pageable) {
-		final var fullFilter = withNamespace(namespace).and(withMunicipalityId(municipalityId)).and(filter);
+		final var fullFilter = withNamespace(namespace).and(withMunicipalityId(municipalityId)).and(accessControlService.withAccessControl(namespace, municipalityId, Identifier.get())).and(filter);
 		final var matches = repository.findAll(fullFilter, pageable);
 
 		return new PageImpl<>(toErrands(matches.getContent()), pageable, matches.getTotalElements());
@@ -122,13 +130,21 @@ public class ErrandService {
 
 	public Errand readErrand(final String namespace, final String municipalityId, final String id) {
 		verifyExistingErrand(id, namespace, municipalityId, false);
-		return toErrand(repository.getReferenceById(id));
+		return toErrand(repository
+			.findOne(withId(id).and(accessControlService.withAccessControl(namespace, municipalityId, Identifier.get())))
+			.orElseThrow(() -> Problem.valueOf(UNAUTHORIZED, ENTITY_NOT_ACCESSIBLE.formatted(Optional.ofNullable(Identifier.get())
+				.map(Identifier::getValue)
+				.orElse(null)))));
 	}
 
 	public Errand updateErrand(final String namespace, final String municipalityId, final String id, final Errand errand) {
 		verifyExistingErrand(id, namespace, municipalityId, true);
-
-		final var errandEntity = updateEntity(repository.getReferenceById(id), errand);
+		final var errandEntityToUpdate = repository
+			.findOne(withId(id).and(accessControlService.withAccessControl(namespace, municipalityId, Identifier.get(), Access.AccessLevelEnum.RW)))
+			.orElseThrow(() -> Problem.valueOf(UNAUTHORIZED, ENTITY_NOT_ACCESSIBLE.formatted(Optional.ofNullable(Identifier.get())
+				.map(Identifier::getValue)
+				.orElse(null))));
+		final var errandEntity = updateEntity(errandEntityToUpdate, errand);
 
 		// Add contactReason
 		Optional.ofNullable(errand.getContactReason()).ifPresent(reason -> {
@@ -155,7 +171,11 @@ public class ErrandService {
 	public void deleteErrand(final String namespace, final String municipalityId, final String id) {
 		verifyExistingErrand(id, namespace, municipalityId, true);
 
-		final var entity = repository.getReferenceById(id);
+		final var entity = repository
+			.findOne(withId(id).and(accessControlService.withAccessControl(namespace, municipalityId, Identifier.get(), Access.AccessLevelEnum.RW)))
+			.orElseThrow(() -> Problem.valueOf(UNAUTHORIZED, ENTITY_NOT_ACCESSIBLE.formatted(Optional.ofNullable(Identifier.get())
+				.map(Identifier::getValue)
+				.orElse(null))));
 
 		conversationService.deleteByErrandId(municipalityId, namespace, id);
 

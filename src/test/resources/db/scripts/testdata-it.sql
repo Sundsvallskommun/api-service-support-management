@@ -80,7 +80,13 @@ INSERT INTO metadata_label (created, modified, municipality_id, namespace, class
     ('2025-10-16 09:45:49.831000', NULL, '2281', 'NAMESPACE-1', 'SUBTYPE', 'SUBTYPE-DISPLAY-NAME-4', 'f4d6e210-633b-48a6-ad0a-7be839b28762', 'SUBTYPE-4',  '3273e374-855c-4525-b8fc-aeaa710b83c5', 'SUBTYPE-4', 'CATEGORY-1/TYPE-2/SUBTYPE-4'),
     -- DEEPSUBTYPEs under SUBTYPE-3
     ('2025-10-16 09:45:49.831000', NULL, '2281', 'NAMESPACE-1', 'DEEPSUBTYPE', 'DEEPSUBTYPE-DISPLAY-NAME-1', 'ffe5f120-6a3b-4404-ace8-8ea87b559907', 'DEEPSUBTYPE-1', 'f4d6e210-633b-48a6-ad0a-7be839b28762', 'DEEPSUBTYPE-1', 'CATEGORY-1/TYPE-2/SUBTYPE-4/DEEPSUBTYPE-1'),
-    ('2025-10-16 09:45:49.831000', NULL, '2281', 'NAMESPACE-1', 'DEEPSUBTYPE', 'DEEPSUBTYPE-DISPLAY-NAME-2', '0eb1f695-48b1-40fd-af8c-b277c37db2d4', 'DEEPSUBTYPE-2', 'f4d6e210-633b-48a6-ad0a-7be839b28762', 'DEEPSUBTYPE-2', 'CATEGORY-1/TYPE-2/SUBTYPE-4/DEEPSUBTYPE-2');	 
+    ('2025-10-16 09:45:49.831000', NULL, '2281', 'NAMESPACE-1', 'DEEPSUBTYPE', 'DEEPSUBTYPE-DISPLAY-NAME-2', '0eb1f695-48b1-40fd-af8c-b277c37db2d4', 'DEEPSUBTYPE-2', 'f4d6e210-633b-48a6-ad0a-7be839b28762', 'DEEPSUBTYPE-2', 'CATEGORY-1/TYPE-2/SUBTYPE-4/DEEPSUBTYPE-2'),
+    -- 2506 labels
+    ('2025-11-05 09:45:49.831000', NULL, '2506', 'NAMESPACE-2506', 'CLASS', 'ROOT-DISPLAY-NAME', '2f3d54e5-075a-4e21-ae30-b8fa69d24eeb', 'ROOT', null, 'ROOT', 'ROOT'),
+    ('2025-11-05 09:45:49.831000', NULL, '2506', 'NAMESPACE-2506', 'CLASS', 'LEVELONE-1-DISPLAY-NAME', '8f78a6ae-b1f6-4a63-87f0-30314c038e02', 'LEVELONE-1', '2f3d54e5-075a-4e21-ae30-b8fa69d24eeb', 'LEVELONE-1', 'ROOT/LEVELONE-1'),
+    ('2025-11-05 09:45:49.831000', NULL, '2506', 'NAMESPACE-2506', 'CLASS', 'LEVELTWO-1-DISPLAY-NAME', '8f1c6101-8c32-4c77-b72c-3348f23394f1', 'LEVELTWO-1', '8f78a6ae-b1f6-4a63-87f0-30314c038e02', 'LEVELTWO-1', 'ROOT/LEVELONE-1/LEVELTWO-1'),
+    ('2025-11-05 09:45:49.831000', NULL, '2506', 'NAMESPACE-2506', 'CLASS', 'LEVELTWO-2-DISPLAY-NAME', '7ac8f12e-7c9b-47dc-ac7f-92a1f62ca53f', 'LEVELTWO-2', '8f78a6ae-b1f6-4a63-87f0-30314c038e02', 'LEVELTWO-2', 'ROOT/LEVELONE-1/LEVELTWO-2'),
+    ('2025-11-05 09:45:49.831000', NULL, '2506', 'NAMESPACE-2506', 'CLASS', 'LEVELONE-2-DISPLAY-NAME', 'b1e63167-4bba-4f78-825b-e6ca9ce85903', 'LEVELONE-2', '2f3d54e5-075a-4e21-ae30-b8fa69d24eeb', 'LEVELONE-2', 'ROOT/LEVELONE-2');
 
 -- -----------------------------------
 -- Validation
@@ -128,6 +134,18 @@ VALUES ('2281', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', 'ASSIGNED_GROUP_ID-1', '
        ('2281', 'b481b191-dd37-47ca-b417-ed3a56ba724c', 'ASSIGNED_GROUP_ID-X', 'ASSIGNED_USER_ID-X',
         'CATEGORY-1', 'NAMESPACE-1', 'LOW', 'REPORTER_USER_ID-X', 'STATUS-1', 'E-service', 'TYPE-1',
         '2024-01-01 12:00:00.000', null, null, null, "ESCALATION_EMAIL_1", 'KC-23020008', false, 'STATUS-2',
+        'ESERVICE_INTERNAL', '2024-01-01 12:00:00.000'),
+       ('2506', '7c57b4c3-9ef6-472d-8f03-5c15e9458ad6', 'ASSIGNED_GROUP_ID-X', 'ASSIGNED_USER_ID-X',
+        null, 'NAMESPACE-2506', 'LOW', 'REPORTER_USER_ID-X', 'STATUS-2506', 'E-service', 'TYPE-2506',
+        '2024-01-01 12:00:00.000', null, null, null, "ESCALATION_EMAIL_1", 'AP-23020001', false, 'STATUS-2',
+        'ESERVICE_INTERNAL', '2024-01-01 12:00:00.000'),
+       ('2506', 'c9efe03d-deff-4828-a043-541fa78ffdeb', 'ASSIGNED_GROUP_ID-X', 'ASSIGNED_USER_ID-X',
+        null, 'NAMESPACE-2506', 'LOW', 'REPORTER_USER_ID-X', 'STATUS-2506', 'E-service', 'TYPE-2506',
+        '2024-01-01 12:00:00.000', null, null, null, "ESCALATION_EMAIL_1", 'AP-23020002', false, 'STATUS-2',
+        'ESERVICE_INTERNAL', '2024-01-01 12:00:00.000'),
+       ('2506', '58c41b44-0b9f-413d-bd46-406d24bf5ca8', 'ASSIGNED_GROUP_ID-X', 'ASSIGNED_USER_ID-X',
+        null, 'NAMESPACE-2506', 'LOW', 'REPORTER_USER_ID-X', 'STATUS-2506', 'E-service', 'TYPE-2506',
+        '2024-01-01 12:00:00.000', null, null, null, "ESCALATION_EMAIL_1", 'AP-23020003', false, 'STATUS-2',
         'ESERVICE_INTERNAL', '2024-01-01 12:00:00.000');
 -- -----------------------------------
 -- Stakeholder
@@ -340,7 +358,8 @@ VALUES (1, '2281', 'NAMESPACE-1', 'Namespace 1', 'NS1', 10, '2021-12-31 23:59:59
        (2, '2281', 'CONTACTCENTER', 'Kontaktcenter', 'KC', 20, '2024-06-12 15:23:59.999', null, false),
        (3, '2281', 'NAMESPACE-3', 'Namespace 3', 'NS3', 30, '2021-12-31 23:59:59.999', '2022-12-31 23:59:59.999',
         false),
-       (4, '2262', 'CONTACTCENTER', 'Kontaktcenter', 'KC', 40, '2024-06-12 15:24:00.001', null, false);
+       (4, '2262', 'CONTACTCENTER', 'Kontaktcenter', 'KC', 40, '2024-06-12 15:24:00.001', null, false),
+       (5, '2506', 'NAMESPACE-2506', 'Namespace 2506', 'AP', 40, '2024-06-12 15:24:00.001', null, true);
 
 -- -----------------------------------
 -- Time measurement
@@ -376,7 +395,11 @@ INSERT INTO errand_labels(errand_id, metadata_label_id)
 VALUES ('147d355f-dc94-4fde-a4cb-9ddd16cb1946', 'ffe5f120-6a3b-4404-ace8-8ea87b559907'),
        ('147d355f-dc94-4fde-a4cb-9ddd16cb1946', '0eb1f695-48b1-40fd-af8c-b277c37db2d4'),
        ('1be673c0-6ba3-4fb0-af4a-43acf23389f6', '926fd3f9-f488-4ba4-93f6-2789dee0c0c3'),
-       ('1be673c0-6ba3-4fb0-af4a-43acf23389f6', 'f4d6e210-633b-48a6-ad0a-7be839b28762');
+       ('1be673c0-6ba3-4fb0-af4a-43acf23389f6', 'f4d6e210-633b-48a6-ad0a-7be839b28762'),
+       -- 2506
+       ('7c57b4c3-9ef6-472d-8f03-5c15e9458ad6', '2f3d54e5-075a-4e21-ae30-b8fa69d24eeb'),
+       ('c9efe03d-deff-4828-a043-541fa78ffdeb', '8f1c6101-8c32-4c77-b72c-3348f23394f1'),
+       ('58c41b44-0b9f-413d-bd46-406d24bf5ca8', '7ac8f12e-7c9b-47dc-ac7f-92a1f62ca53f');
 
 -- -----------------------------------
 -- conversations
