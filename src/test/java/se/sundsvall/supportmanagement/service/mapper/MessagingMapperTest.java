@@ -20,7 +20,6 @@ import java.util.Base64;
 import java.util.Base64.Decoder;
 import java.util.List;
 import java.util.Map;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -260,7 +259,7 @@ class MessagingMapperTest {
 			.containsExactly(
 				tuple(ERRAND_ID_KEY, ERRAND_ID),
 				tuple(FLOW_INSTANCE_ID_KEY, CASE_ID_VALUE));
-		Assertions.assertNotNull(result.getSender());
+		assertThat(result.getSender()).isNotNull();
 		assertThat(result.getSender().getUserId()).isEqualTo(senderUserId);
 		assertThat(result.getAttachments()).isNull();
 	}
