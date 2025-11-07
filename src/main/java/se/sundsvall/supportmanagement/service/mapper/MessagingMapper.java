@@ -106,7 +106,9 @@ public class MessagingMapper {
 				toWebMessageAttachmentsFromAttachmentEntity(attachments),
 				toWebMessageAttachmentsFromRequest(webMessageRequest.getAttachments()))
 				.flatMap(List::stream)
-				.toList());
+				.collect(Collectors.collectingAndThen(
+					Collectors.toList(),
+					list -> list.isEmpty() ? null : list)));
 	}
 
 	private static List<WebMessageAttachment> toWebMessageAttachmentsFromAttachmentEntity(final List<AttachmentEntity> attachments) {

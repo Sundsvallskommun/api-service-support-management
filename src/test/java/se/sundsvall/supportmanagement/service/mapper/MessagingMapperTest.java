@@ -20,6 +20,7 @@ import java.util.Base64;
 import java.util.Base64.Decoder;
 import java.util.List;
 import java.util.Map;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -224,6 +225,44 @@ class MessagingMapperTest {
 				tuple("test.txt", "text/plain", Base64.getEncoder().encodeToString(originalContent.getBytes())),
 				tuple(FILE_NAME, IMAGE_PNG_VALUE, FILE_CONTENT));
 
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {
+		CHANNEL_ESERVICE, CHANNEL_ESERVICE_INTERNAL
+	})
+	void testToWebMessageRequestNoAttachments(final String channel) {
+
+		final generated.se.sundsvall.messaging.WebMessageRequest.OepInstanceEnum instance;
+		switch (channel) {
+			case CHANNEL_ESERVICE -> instance = generated.se.sundsvall.messaging.WebMessageRequest.OepInstanceEnum.EXTERNAL;
+			case CHANNEL_ESERVICE_INTERNAL -> instance = generated.se.sundsvall.messaging.WebMessageRequest.OepInstanceEnum.INTERNAL;
+			default -> throw new IllegalArgumentException("channel not supported my mapper");
+		}
+		final var errandEntity = createErrandEntity()
+			.withChannel(channel)
+			.withExternalTags(List.of(DbExternalTag.create()
+				.withKey(CASE_ID_KEY)
+				.withValue(CASE_ID_VALUE)));
+
+		final var senderUserId = "senderUserId";
+
+		final var webMessageRequest = WebMessageRequest.create()
+			.withMessage(MESSAGE);
+
+		final var result = toWebMessageRequest(errandEntity, webMessageRequest, List.of(), senderUserId);
+
+		assertThat(result).isNotNull();
+		assertThat(result.getMessage()).isEqualTo(MESSAGE);
+		assertThat(result.getOepInstance()).isEqualTo(instance);
+		assertThat(result.getParty().getExternalReferences())
+			.extracting(ExternalReference::getKey, ExternalReference::getValue)
+			.containsExactly(
+				tuple(ERRAND_ID_KEY, ERRAND_ID),
+				tuple(FLOW_INSTANCE_ID_KEY, CASE_ID_VALUE));
+		Assertions.assertNotNull(result.getSender());
+		assertThat(result.getSender().getUserId()).isEqualTo(senderUserId);
+		assertThat(result.getAttachments()).isNull();
 	}
 
 	@Test
