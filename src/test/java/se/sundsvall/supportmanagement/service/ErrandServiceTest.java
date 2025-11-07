@@ -251,7 +251,6 @@ class ErrandServiceTest {
 	@Test
 	void readUnauthorized() {
 		// Setup
-		final var entity = buildErrandEntity();
 		final Specification<ErrandEntity> specification = (root, query, criteriaBuilder) -> criteriaBuilder.conjunction();
 		final var user = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user");
 		Identifier.set(user);

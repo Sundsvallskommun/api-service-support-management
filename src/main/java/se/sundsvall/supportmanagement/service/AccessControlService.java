@@ -42,7 +42,7 @@ public class AccessControlService {
 
 	public Specification<ErrandEntity> withAccessControl(String namespace, String municipalityId, Identifier user, Access.AccessLevelEnum... accessLevelEnums) {
 
-		var accessControlActive = namespaceConfigRepository.findByNamespaceAndMunicipalityId(namespace, municipalityId)
+		boolean accessControlActive = namespaceConfigRepository.findByNamespaceAndMunicipalityId(namespace, municipalityId)
 			.map(NamespaceConfigEntity::getAccessControl)
 			.orElse(false);
 
