@@ -16,6 +16,9 @@ import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 public class SpecificationBuilder<T> {
 
 	private static final SpecificationBuilder<ErrandEntity> ERRAND_ENTITY_BUILDER = new SpecificationBuilder<>();
+	private static final String LABELS_ATTRIBUTE = "labels";
+	private static final String ID_ATTRIBUTE = "id";
+	private static final String METADATA_LABEL_ID_ATTRIBUTE = "metadataLabelId";
 
 	public static Specification<ErrandEntity> withNamespace(String namespace) {
 		return ERRAND_ENTITY_BUILDER.buildEqualFilter("namespace", namespace);
@@ -43,20 +46,20 @@ public class SpecificationBuilder<T> {
 			// Subquery 1: Count total labels for this errand
 			Subquery<Long> totalLabelsSubquery = query.subquery(Long.class);
 			Root<ErrandEntity> totalRoot = totalLabelsSubquery.from(ErrandEntity.class);
-			Join<ErrandEntity, ErrandLabelEmbeddable> totalLabelJoin = totalRoot.join("labels", JoinType.LEFT);
+			Join<ErrandEntity, ErrandLabelEmbeddable> totalLabelJoin = totalRoot.join(LABELS_ATTRIBUTE, JoinType.LEFT);
 
 			totalLabelsSubquery.select(criteriaBuilder.count(totalLabelJoin))
-				.where(criteriaBuilder.equal(totalRoot.get("id"), root.get("id")));
+				.where(criteriaBuilder.equal(totalRoot.get(ID_ATTRIBUTE), root.get(ID_ATTRIBUTE)));
 
 			// Subquery 2: Count labels that are in the allowed list
 			Subquery<Long> allowedLabelsSubquery = query.subquery(Long.class);
 			Root<ErrandEntity> allowedRoot = allowedLabelsSubquery.from(ErrandEntity.class);
-			Join<ErrandEntity, ErrandLabelEmbeddable> allowedLabelJoin = allowedRoot.join("labels", JoinType.LEFT);
+			Join<ErrandEntity, ErrandLabelEmbeddable> allowedLabelJoin = allowedRoot.join(LABELS_ATTRIBUTE, JoinType.LEFT);
 
 			allowedLabelsSubquery.select(criteriaBuilder.count(allowedLabelJoin))
 				.where(
-					criteriaBuilder.equal(allowedRoot.get("id"), root.get("id")),
-					allowedLabelJoin.get("metadataLabelId").in(allowedLabelIds));
+					criteriaBuilder.equal(allowedRoot.get(ID_ATTRIBUTE), root.get(ID_ATTRIBUTE)),
+					allowedLabelJoin.get(METADATA_LABEL_ID_ATTRIBUTE).in(allowedLabelIds));
 
 			// Check if counts are equal
 			// For errands with no labels: 0 == 0 → TRUE → accessible to everyone
