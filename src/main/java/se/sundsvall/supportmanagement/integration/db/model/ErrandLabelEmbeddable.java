@@ -1,7 +1,5 @@
 package se.sundsvall.supportmanagement.integration.db.model;
 
-import static jakarta.persistence.ConstraintMode.NO_CONSTRAINT;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import jakarta.persistence.ForeignKey;
@@ -15,12 +13,11 @@ public class ErrandLabelEmbeddable {
 	@Column(name = "metadata_label_id", nullable = false)
 	private String metadataLabelId;
 
-	// TODO: Remove the NO_CONSTRAINT when migration is performed
 	@ManyToOne
 	@JoinColumn(name = "metadata_label_id",
 		insertable = false,
 		updatable = false,
-		foreignKey = @ForeignKey(name = "fk_metadata_label_id", value = NO_CONSTRAINT))
+		foreignKey = @ForeignKey(name = "fk_errand_labels_metadata_label_id"))
 	private MetadataLabelEntity metadataLabel;
 
 	public static ErrandLabelEmbeddable create() {

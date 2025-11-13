@@ -630,6 +630,11 @@
        references contact_reason (id);
 
     alter table if exists errand_labels 
+       add constraint fk_errand_labels_metadata_label_id 
+       foreign key (metadata_label_id) 
+       references metadata_label (id);
+
+    alter table if exists errand_labels 
        add constraint fk_errand_labels_errand_id 
        foreign key (errand_id) 
        references errand (id);
