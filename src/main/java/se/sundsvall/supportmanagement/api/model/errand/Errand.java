@@ -17,7 +17,8 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.format.annotation.DateTimeFormat.ISO;
 import se.sundsvall.supportmanagement.api.model.notification.Notification;
 import se.sundsvall.supportmanagement.api.validation.UniqueExternalTagKeys;
-import se.sundsvall.supportmanagement.api.validation.ValidClassification;
+import se.sundsvall.supportmanagement.api.validation.ValidClassificationCreate;
+import se.sundsvall.supportmanagement.api.validation.ValidClassificationUpdate;
 import se.sundsvall.supportmanagement.api.validation.ValidContactReason;
 import se.sundsvall.supportmanagement.api.validation.ValidStatus;
 import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
@@ -60,14 +61,18 @@ public class Errand {
 	private List<Parameter> parameters;
 
 	@Schema(implementation = Classification.class)
-	@NotNull(groups = OnCreate.class)
 	@Valid
-	@ValidClassification
+	@ValidClassificationCreate(groups = OnCreate.class)
+	@ValidClassificationUpdate(groups = {
+		OnUpdate.class
+	})
 	private Classification classification;
 
 	@Schema(description = "Status for the errand", example = "NEW_CASE")
 	@NotBlank(groups = OnCreate.class)
-	@ValidStatus
+	@ValidStatus(groups = {
+		OnCreate.class, OnUpdate.class
+	})
 	private String status;
 
 	@Schema(description = "Resolution status for closed errands. Value can be set to anything", example = "FIXED")
@@ -77,7 +82,9 @@ public class Errand {
 	private String description;
 
 	@Schema(description = "The channel from which the errand originated", maxLength = 255, example = "THE_CHANNEL")
-	@Size(max = 255)
+	@Size(max = 255, groups = {
+		OnCreate.class, OnUpdate.class
+	})
 	private String channel;
 
 	@Schema(description = "User id for the person which has created the errand", example = "joe01doe")
@@ -91,8 +98,10 @@ public class Errand {
 	@Schema(description = "Id for the group which is currently assigned to the errand if a group is assigned", example = "hardware support")
 	private String assignedGroupId;
 
-	@Schema(description = "Email address used for escalation of errand", example = "joe.doe@email.com")
-	@Email
+	@Schema(description = "Email address used for escalation of errand", example = "joe.doe@email.com", format = "email")
+	@Email(groups = {
+		OnCreate.class, OnUpdate.class
+	})
 	private String escalationEmail;
 
 	@Schema(description = "Contact reason for the errand", example = "The printer is not working")
@@ -102,7 +111,9 @@ public class Errand {
 	private String contactReason;
 
 	@Schema(description = "Contact reason description for the errand", maxLength = 4096, example = "The printer is not working since the power cord is missing")
-	@Size(max = 4096)
+	@Size(max = 4096, groups = {
+		OnCreate.class, OnUpdate.class
+	})
 	private String contactReasonDescription;
 
 	@Schema(description = "Suspension information")

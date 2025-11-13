@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 import static org.flywaydb.core.internal.util.StringUtils.rightPad;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -206,6 +205,7 @@ class ErrandsCreateResourceFailureTest {
 	@Test
 	void createErrandWithEmptyErrandInstance() {
 		// Call
+		when(metadataServiceMock.isValidated(any(), any(), any())).thenReturn(false);
 		final var response = webTestClient.post()
 			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
 			.contentType(APPLICATION_JSON)
@@ -220,7 +220,6 @@ class ErrandsCreateResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
-			tuple("createErrand.errand.classification", "must not be null"),
 			tuple("createErrand.errand.reporterUserId", "must not be blank"),
 			tuple("createErrand.errand.priority", "must not be null"),
 			tuple("createErrand.errand.status", "must not be blank"),
@@ -233,6 +232,7 @@ class ErrandsCreateResourceFailureTest {
 
 	@Test
 	void createErrandWithBlankErrandInstance() {
+		when(metadataServiceMock.isValidated(any(), any(), any())).thenReturn(false);
 		// Call
 		final var response = webTestClient.post()
 			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
@@ -260,7 +260,6 @@ class ErrandsCreateResourceFailureTest {
 		// Verification
 		verify(metadataServiceMock).findCategories(any(), any());
 		verify(metadataServiceMock).findStatuses(any(), any());
-		verify(metadataServiceMock).findTypes(any(), any(), any());
 		verifyNoInteractions(errandServiceMock);
 	}
 
@@ -283,10 +282,15 @@ class ErrandsCreateResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
-			tuple("externalTags[0].key", "must not be blank"),
-			tuple("externalTags[0].value", "must not be blank"),
-			tuple("externalTags[1].key", "must not be blank"),
-			tuple("externalTags[1].value", "must not be blank"));
+			tuple("createErrand.errand.externalTags[0].key", "must not be blank"),
+			tuple("createErrand.errand.externalTags[0].value", "must not be blank"),
+			tuple("createErrand.errand.externalTags[1].key", "must not be blank"),
+			tuple("createErrand.errand.externalTags[1].value", "must not be blank"),
+			tuple("createErrand.errand.classification", "not a valid category or type"),
+			tuple("createErrand.errand.priority", "must not be null"),
+			tuple("createErrand.errand.reporterUserId", "must not be blank"),
+			tuple("createErrand.errand.status", "must not be blank"),
+			tuple("createErrand.errand.title", "must not be blank"));
 
 		// Verification
 		verify(metadataServiceMock).findStatuses(any(), any());
@@ -341,8 +345,8 @@ class ErrandsCreateResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
-			tuple("classification", "value 'invalid_category' doesn't match any of [CATEGORY_1, CATEGORY_2]"),
-			tuple("status", "value 'invalid_status' doesn't match any of [STATUS_1, STATUS_2]"));
+			tuple("createErrand.errand.classification", "value 'invalid_category' doesn't match any of [CATEGORY_1, CATEGORY_2]"),
+			tuple("createErrand.errand.status", "value 'invalid_status' doesn't match any of [STATUS_1, STATUS_2]"));
 
 		// Verification
 		verify(metadataServiceMock).findCategories(any(), any());
@@ -368,7 +372,7 @@ class ErrandsCreateResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
-			tuple("classification", "value 'invalid_type' doesn't match any of [TYPE_1, TYPE_2]"));
+			tuple("createErrand.errand.classification", "value 'invalid_type' doesn't match any of [TYPE_1, TYPE_2]"));
 
 		// Verification
 		verify(metadataServiceMock).findCategories(any(), any());
@@ -396,7 +400,7 @@ class ErrandsCreateResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactly(tuple("escalationEmail", "must be a well-formed email address"));
+			.containsExactly(tuple("createErrand.errand.escalationEmail", "must be a well-formed email address"));
 
 		// Verification
 		verify(metadataServiceMock).findStatuses(any(), any());
@@ -422,7 +426,7 @@ class ErrandsCreateResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactly(tuple("channel", "size must be between 0 and 255"));
+			.containsExactly(tuple("createErrand.errand.channel", "size must be between 0 and 255"));
 
 		// Verification
 		verify(metadataServiceMock).findStatuses(any(), any());
@@ -448,7 +452,7 @@ class ErrandsCreateResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactly(tuple("contactReasonDescription", "size must be between 0 and 4096"));
+			.containsExactly(tuple("createErrand.errand.contactReasonDescription", "size must be between 0 and 4096"));
 
 		// Verification
 		verify(metadataServiceMock).findStatuses(NAMESPACE, MUNICIPALITY_ID);
@@ -478,10 +482,7 @@ class ErrandsCreateResourceFailureTest {
 			.containsExactly(tuple("parameters[0].key", "must not be blank"));
 
 		// Verification
-		verify(metadataServiceMock, times(3)).isValidated(any(), any(), any());
-		verify(metadataServiceMock).findCategories(NAMESPACE, MUNICIPALITY_ID);
-		verify(metadataServiceMock).findStatuses(NAMESPACE, MUNICIPALITY_ID);
-		verify(metadataServiceMock).findTypes(eq(NAMESPACE), eq(MUNICIPALITY_ID), any());
+		verify(metadataServiceMock, times(1)).isValidated(any(), any(), any());
 		verify(metadataServiceMock).findRoles(NAMESPACE, MUNICIPALITY_ID);
 		verifyNoInteractions(errandServiceMock);
 	}
@@ -507,10 +508,7 @@ class ErrandsCreateResourceFailureTest {
 			.containsExactly(tuple("stakeholders[0].role", "value 'INVALID' doesn't match any of [ROLE_1]"));
 
 		// Verification
-		verify(metadataServiceMock, times(3)).isValidated(any(), any(), any());
-		verify(metadataServiceMock).findCategories(NAMESPACE, MUNICIPALITY_ID);
-		verify(metadataServiceMock).findStatuses(NAMESPACE, MUNICIPALITY_ID);
-		verify(metadataServiceMock).findTypes(eq(NAMESPACE), eq(MUNICIPALITY_ID), any());
+		verify(metadataServiceMock, times(1)).isValidated(any(), any(), any());
 		verify(metadataServiceMock).findRoles(NAMESPACE, MUNICIPALITY_ID);
 		verifyNoInteractions(errandServiceMock);
 	}
@@ -539,10 +537,7 @@ class ErrandsCreateResourceFailureTest {
 			.containsExactly(tuple("stakeholders[0].parameters[0].key", "must not be blank"));
 
 		// Verification
-		verify(metadataServiceMock, times(3)).isValidated(any(), any(), any());
-		verify(metadataServiceMock).findCategories(NAMESPACE, MUNICIPALITY_ID);
-		verify(metadataServiceMock).findStatuses(NAMESPACE, MUNICIPALITY_ID);
-		verify(metadataServiceMock).findTypes(eq(NAMESPACE), eq(MUNICIPALITY_ID), any());
+		verify(metadataServiceMock, times(1)).isValidated(any(), any(), any());
 		verify(metadataServiceMock).findRoles(NAMESPACE, MUNICIPALITY_ID);
 		verifyNoInteractions(errandServiceMock);
 	}

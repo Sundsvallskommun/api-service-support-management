@@ -3,16 +3,22 @@ package se.sundsvall.supportmanagement.api.model.errand;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import java.util.Objects;
+import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
+import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
 
 @Schema(description = "External tag model")
 public class ExternalTag {
 
 	@Schema(description = "Key for external tag", example = "caseId")
-	@NotBlank
+	@NotBlank(groups = {
+		OnCreate.class, OnUpdate.class
+	})
 	private String key;
 
 	@Schema(description = "Value for external tag", example = "8849-2848")
-	@NotBlank
+	@NotBlank(groups = {
+		OnCreate.class, OnUpdate.class
+	})
 	private String value;
 
 	public static ExternalTag create() {
