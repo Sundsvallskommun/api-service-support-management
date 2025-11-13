@@ -31,9 +31,11 @@ class MetadataLabelIT extends AbstractAppTest {
 	private static final String REQUEST_FILE = "request.json";
 	private static final String RESPONSE_FILE = "response.json";
 	private static final String NAMESPACE = "NAMESPACE-1";
+	private static final String NAMESPACE_2584 = "NAMESPACE-2584";
 	private static final String MUNICIPALITY_2281 = "2281";
 	private static final String MUNICIPALITY_2282 = "2282";
 	private static final String MUNICIPALITY_2309 = "2309";
+	private static final String MUNICIPALITY_2584 = "2584";
 
 	@Test
 	void test01_createLabels() {
@@ -81,15 +83,23 @@ class MetadataLabelIT extends AbstractAppTest {
 	@Test
 	void test04_deleteLabels() {
 
+		final var path = "/" + MUNICIPALITY_2584 + "/" + NAMESPACE_2584 + "/metadata/labels";
+
 		setupCall()
-			.withServicePath("/" + MUNICIPALITY_2281 + "/" + NAMESPACE + "/metadata/labels")
+			.withServicePath(path)
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.sendRequestAndVerifyResponse();
+
+		setupCall()
+			.withServicePath(path)
 			.withHttpMethod(DELETE)
 			.withExpectedResponseStatus(NO_CONTENT)
 			.withExpectedResponseBodyIsNull()
 			.sendRequestAndVerifyResponse();
 
 		setupCall()
-			.withServicePath("/" + MUNICIPALITY_2281 + "/" + NAMESPACE + "/metadata/labels")
+			.withServicePath(path)
 			.withHttpMethod(DELETE)
 			.withExpectedResponseStatus(NOT_FOUND)
 			.sendRequestAndVerifyResponse();

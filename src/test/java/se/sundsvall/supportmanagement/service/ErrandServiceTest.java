@@ -5,7 +5,6 @@ import static generated.se.sundsvall.eventlog.EventType.DELETE;
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -30,7 +29,6 @@ import generated.se.sundsvall.notes.FindNotesResponse;
 import generated.se.sundsvall.notes.Note;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -47,17 +45,14 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
-import org.zalando.problem.Problem;
 import org.zalando.problem.ThrowableProblem;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
-import se.sundsvall.supportmanagement.api.model.errand.ErrandLabel;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.ContactReasonRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
-import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.util.ErrandNumberGeneratorService;
@@ -108,9 +103,6 @@ class ErrandServiceTest {
 
 	@Mock
 	private AttachmentRepository attachmentRepositoryMock;
-
-	@Mock
-	private MetadataLabelRepository metadataLabelRepositoryMock;
 
 	@Mock
 	private AccessControlService accessControlServiceMock;
@@ -304,38 +296,6 @@ class ErrandServiceTest {
 		verify(errandRepositoryMock).save(entity);
 		verify(revisionServiceMock).createErrandRevision(entity);
 		verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_UPDATE_ERRAND, entity, currentRevisionMock, previousRevisionMock, ERRAND);
-	}
-
-	@Test
-	void updateExistingErrandWithNonExistingMetadataLabelIds() {
-
-		// Arrange
-		final var entity = buildErrandEntity();
-		final var missingMetadataLabelId = UUID.randomUUID().toString();
-		final var patchErrand = buildErrand().withLabels(List.of(ErrandLabel.create().withId(missingMetadataLabelId)));
-		final Specification<ErrandEntity> specification = (root, query, criteriaBuilder) -> criteriaBuilder.conjunction();
-		final var user = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user");
-		Identifier.set(user);
-
-		when(errandRepositoryMock.existsWithLockingByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
-		when(accessControlServiceMock.withAccessControl(any(), any(), any(), any())).thenReturn(specification);
-		when(errandRepositoryMock.findOne(ArgumentMatchers.<Specification<ErrandEntity>>any())).thenReturn(Optional.of(entity));
-		when(contactReasonRepositoryMock.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId("reason", NAMESPACE, MUNICIPALITY_ID))
-			.thenReturn(Optional.ofNullable(ContactReasonEntity.create().withReason("reason")));
-
-		// Act
-		assertThatThrownBy(() -> service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, patchErrand))
-			.isInstanceOf(Problem.class)
-			.hasMessage("Not Found: The provided label-ID:s '%s' could not be found in namespace '%s' for municipality with id '%s'".formatted(missingMetadataLabelId, entity.getNamespace(), entity.getMunicipalityId()));
-
-		// Assert
-		verify(errandRepositoryMock).existsWithLockingByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
-		verify(accessControlServiceMock).withAccessControl(NAMESPACE, MUNICIPALITY_ID, user, Access.AccessLevelEnum.RW);
-		verify(errandRepositoryMock).findOne(specificationCaptor.capture());
-		assertThat(specificationCaptor.getValue()).usingRecursiveComparison().isEqualTo(withId(ERRAND_ID).and(specification));
-		verify(errandRepositoryMock, never()).save(any());
-		verify(revisionServiceMock, never()).createErrandRevision(any());
-		verify(eventServiceMock, never()).createErrandEvent(any(), any(), any(), any(), any(), any());
 	}
 
 	@Test
