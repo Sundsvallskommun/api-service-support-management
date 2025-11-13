@@ -227,6 +227,7 @@ class ErrandsUpdateResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
+			tuple("updateErrand.errand.classification", "value ' ' doesn't match any of [CATEGORY_1, CATEGORY_2]"),
 			tuple("updateErrand.errand.classification.category", "must not be blank"),
 			tuple("updateErrand.errand.classification.type", "must not be blank"),
 			tuple("updateErrand.errand.reporterUserId", "must be null"));
@@ -234,7 +235,6 @@ class ErrandsUpdateResourceFailureTest {
 		// Verification
 		verify(metadataServiceMock).findCategories(any(), any());
 		verify(metadataServiceMock).findStatuses(any(), any());
-		verify(metadataServiceMock).findTypes(any(), any(), any());
 		verifyNoInteractions(errandServiceMock);
 	}
 
@@ -258,10 +258,10 @@ class ErrandsUpdateResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
-			tuple("externalTags[0].key", "must not be blank"),
-			tuple("externalTags[0].value", "must not be blank"),
-			tuple("externalTags[1].key", "must not be blank"),
-			tuple("externalTags[1].value", "must not be blank"));
+			tuple("updateErrand.errand.externalTags[0].key", "must not be blank"),
+			tuple("updateErrand.errand.externalTags[0].value", "must not be blank"),
+			tuple("updateErrand.errand.externalTags[1].key", "must not be blank"),
+			tuple("updateErrand.errand.externalTags[1].value", "must not be blank"));
 
 		// Verification
 		verify(metadataServiceMock).findStatuses(any(), any());
@@ -287,7 +287,7 @@ class ErrandsUpdateResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
 			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactlyInAnyOrder(tuple("contactReasonDescription", "size must be between 0 and 4096"));
+			.containsExactlyInAnyOrder(tuple("updateErrand.errand.contactReasonDescription", "size must be between 0 and 4096"));
 
 		// Verification
 		verify(metadataServiceMock).findStatuses(any(), any());
@@ -312,8 +312,8 @@ class ErrandsUpdateResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
-			tuple("classification", "value 'invalid_category' doesn't match any of [CATEGORY_1, CATEGORY_2]"),
-			tuple("status", "value 'invalid_status' doesn't match any of [STATUS_1, STATUS_2]"));
+			tuple("updateErrand.errand.classification", "value 'invalid_category' doesn't match any of [CATEGORY_1, CATEGORY_2]"),
+			tuple("updateErrand.errand.status", "value 'invalid_status' doesn't match any of [STATUS_1, STATUS_2]"));
 
 		// Verification
 		verify(metadataServiceMock).findCategories(any(), any());
@@ -376,6 +376,6 @@ class ErrandsUpdateResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
-			tuple("channel", "size must be between 0 and 255"));
+			tuple("updateErrand.errand.channel", "size must be between 0 and 255"));
 	}
 }
