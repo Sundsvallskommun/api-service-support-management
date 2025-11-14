@@ -37,7 +37,8 @@ import org.springframework.util.StringUtils;
 @Entity
 @Table(name = "metadata_label",
 	indexes = {
-		@Index(name = "idx_namespace_municipality_id", columnList = "namespace, municipality_id")
+		@Index(name = "idx_namespace_municipality_id", columnList = "namespace, municipality_id"),
+		@Index(name = "idx_resource_path", columnList = "resource_path")
 	},
 	uniqueConstraints = {
 		@UniqueConstraint(name = "uq_namespace_municipality_id_resource_path", columnNames = {
