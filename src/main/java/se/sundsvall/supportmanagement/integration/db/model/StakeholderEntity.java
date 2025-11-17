@@ -69,7 +69,19 @@ public class StakeholderEntity {
 	private String country;
 
 	@ElementCollection(fetch = FetchType.EAGER)
-	@CollectionTable(name = "contact_channel", joinColumns = @JoinColumn(name = "stakeholder_id", referencedColumnName = "id", foreignKey = @ForeignKey(name = "fk_stakeholder_contact_channel_stakeholder_id")))
+	@CollectionTable(
+		name = "contact_channel",
+		joinColumns = @JoinColumn(name = "stakeholder_id",
+			referencedColumnName = "id",
+			foreignKey = @ForeignKey(name = "fk_stakeholder_contact_channel_stakeholder_id")),
+		indexes = {
+			@Index(
+				name = "idx_contact_channel_type_value",
+				columnList = "type, value"),
+			@Index(
+				name = "idx_contact_channel_value",
+				columnList = "value")
+		})
 	private List<ContactChannelEntity> contactChannels;
 
 	@OneToMany(mappedBy = "stakeholderEntity", cascade = CascadeType.ALL, orphanRemoval = true)

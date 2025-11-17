@@ -422,6 +422,12 @@
     alter table if exists communication_attachment 
        add constraint uq_attachment_data_id unique (attachment_data_id);
 
+    create index idx_contact_channel_type_value 
+       on contact_channel (type, value);
+
+    create index idx_contact_channel_value 
+       on contact_channel (value);
+
     create index idx_municipality_id_namespace_errand_id 
        on conversation (municipality_id, namespace, errand_id);
 
@@ -479,6 +485,9 @@
     alter table if exists errand 
        add constraint uq_errand_number unique (errand_number);
 
+    create index idx_errand_id_metadata_label_id 
+       on errand_labels (errand_id, metadata_label_id);
+
     create index idx_errand_id 
        on errand_labels (errand_id);
 
@@ -508,6 +517,9 @@
 
     create index idx_namespace_municipality_id 
        on metadata_label (namespace, municipality_id);
+
+    create index idx_resource_path 
+       on metadata_label (resource_path);
 
     alter table if exists metadata_label 
        add constraint uq_namespace_municipality_id_resource_path unique (namespace, municipality_id, resource_path);

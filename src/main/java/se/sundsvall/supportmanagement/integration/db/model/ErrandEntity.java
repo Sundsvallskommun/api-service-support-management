@@ -150,6 +150,7 @@ public class ErrandEntity {
 	@ElementCollection
 	@CollectionTable(name = "errand_labels",
 		indexes = {
+			@Index(name = "idx_errand_id_metadata_label_id", columnList = "errand_id, metadata_label_id"),
 			@Index(name = "idx_errand_id", columnList = "errand_id"),
 			@Index(name = "idx_metadata_label_id", columnList = "metadata_label_id")
 		},
