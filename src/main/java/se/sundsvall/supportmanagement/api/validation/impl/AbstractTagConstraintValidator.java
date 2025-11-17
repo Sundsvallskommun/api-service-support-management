@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.api.validation.impl;
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
 import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.springframework.web.context.request.RequestAttributes.SCOPE_REQUEST;
 import static org.springframework.web.servlet.HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE;
 
@@ -24,7 +25,7 @@ abstract class AbstractTagConstraintValidator {
 
 	/**
 	 * Getting value for path variable name from current request
-	 * 
+	 *
 	 * @param  variableName path parameter to receive value for
 	 * @return              value of path parameter that matches sent in variable name
 	 */
@@ -44,6 +45,16 @@ abstract class AbstractTagConstraintValidator {
 
 	boolean isValid(String value, List<String> validTags, ConstraintValidatorContext context) {
 		var valid = isBlank(value) || ofNullable(validTags).orElse(emptyList()).stream().anyMatch(value::equalsIgnoreCase);
+
+		if (!valid) {
+			useCustomMessageForValidation(value, validTags, context);
+		}
+
+		return valid;
+	}
+
+	boolean isValidAndNotBlank(String value, List<String> validTags, ConstraintValidatorContext context) {
+		var valid = isNotBlank(value) && ofNullable(validTags).orElse(emptyList()).stream().anyMatch(value::equalsIgnoreCase);
 
 		if (!valid) {
 			useCustomMessageForValidation(value, validTags, context);
