@@ -16,7 +16,7 @@ public abstract class ValidClassificationConstraintValidator extends AbstractTag
 	private final MetadataService metadataService;
 	private boolean nullableIfActive;
 
-	public ValidClassificationConstraintValidator(final MetadataService metadataService) {
+	protected ValidClassificationConstraintValidator(final MetadataService metadataService) {
 		this.metadataService = metadataService;
 	}
 
