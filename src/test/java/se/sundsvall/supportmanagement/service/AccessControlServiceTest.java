@@ -8,11 +8,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.hasAllowedMetadataLabels;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,11 +22,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.test.util.ReflectionTestUtils;
 import se.sundsvall.dept44.support.Identifier;
-import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
+import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
-import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity;
+import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 
 @ExtendWith(MockitoExtension.class)
 class AccessControlServiceTest {
@@ -38,13 +38,13 @@ class AccessControlServiceTest {
 	private AccessMapperService accessMapperService;
 
 	@Mock
-	private NamespaceConfigRepository namespaceConfigRepositoryMock;
+	private NamespaceConfigService namespaceConfigServiceMock;
 
 	@InjectMocks
 	private AccessControlService accessControlService;
 
 	@Test
-	void limitedMappingPredicateByLabelShouldReturnTrue() {
+	void limitedMappingPredicateByLabelShouldReturnTrueIfActive() {
 
 		// Setup
 		var user = Identifier.create();
@@ -58,19 +58,22 @@ class AccessControlServiceTest {
 		ReflectionTestUtils.setField(errandLabel2, "metadataLabel", label2);
 		var errand = ErrandEntity.create().withLabels(List.of(errandLabel1, errandLabel2));
 		// Mock
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create().withAccessControl(true));
 		when(accessMapperService.getAccessibleLabels(any(), any(), any(), any())).thenReturn(Set.of());
 
 		// Act
-		var result = accessControlService.limitedMappingPredicateByLabel(MUNICIPALITY_ID, NAMESPACE, user)
+		var result = accessControlService.limitedMappingPredicateByLabel(NAMESPACE, MUNICIPALITY_ID, user)
 			.test(errand);
 
 		// Verify
 		assertThat(result).isTrue();
+		verify(namespaceConfigServiceMock).get(NAMESPACE, MUNICIPALITY_ID);
 		verify(accessMapperService).getAccessibleLabels(eq(MUNICIPALITY_ID), eq(NAMESPACE), same(user), eq(List.of(R, RW)));
+
 	}
 
 	@Test
-	void limitedMappingPredicateByLabelShouldReturnFalse() {
+	void limitedMappingPredicateByLabelShouldReturnFalseIfActive() {
 
 		// Setup
 		var user = Identifier.create();
@@ -85,44 +88,66 @@ class AccessControlServiceTest {
 		var errand = ErrandEntity.create().withLabels(List.of(errandLabel1, errandLabel2));
 
 		// Mock
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create().withAccessControl(true));
 		when(accessMapperService.getAccessibleLabels(any(), any(), any(), any())).thenReturn(Set.of(label1, label2));
 
 		// Act
-		var result = accessControlService.limitedMappingPredicateByLabel(MUNICIPALITY_ID, NAMESPACE, user)
+		var result = accessControlService.limitedMappingPredicateByLabel(NAMESPACE, MUNICIPALITY_ID, user)
 			.test(errand);
 
 		// Verify
 		assertThat(result).isFalse();
+		verify(namespaceConfigServiceMock).get(NAMESPACE, MUNICIPALITY_ID);
 		verify(accessMapperService).getAccessibleLabels(eq(MUNICIPALITY_ID), eq(NAMESPACE), same(user), eq(List.of(R, RW)));
+	}
+
+	@Test
+	void limitedMappingPredicateByLabelShouldReturnFalseIfInactive() {
+		// Setup
+		var user = Identifier.create();
+		var errand = ErrandEntity.create();
+
+		// Mock
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create().withAccessControl(false));
+
+		// Act
+		var result = accessControlService.limitedMappingPredicateByLabel(NAMESPACE, MUNICIPALITY_ID, user)
+			.test(errand);
+
+		// Verify
+		assertThat(result).isFalse();
+		verify(namespaceConfigServiceMock).get(NAMESPACE, MUNICIPALITY_ID);
+		verifyNoInteractions(accessMapperService);
+
 	}
 
 	@Test
 	void withAccessControlOff() {
 		// Setup
-		var config = NamespaceConfigEntity.create().withAccessControl(false);
+		var config = NamespaceConfig.create().withAccessControl(false);
 		var user = Identifier.create();
 
 		// Mock
-		when(namespaceConfigRepositoryMock.findByNamespaceAndMunicipalityId(any(), any())).thenReturn(Optional.of(config));
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(config);
 
 		// Act
 		var specification = accessControlService.withAccessControl(NAMESPACE, MUNICIPALITY_ID, user);
 
 		// Verify
 		assertThat(specification).usingRecursiveComparison().isEqualTo((Specification<ErrandEntity>) (root, query, criteriaBuilder) -> criteriaBuilder.conjunction());
-		verify(namespaceConfigRepositoryMock).findByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID);
+		verify(namespaceConfigServiceMock).get(NAMESPACE, MUNICIPALITY_ID);
 
 	}
 
 	@Test
 	void withAccessControlEnabled() {
 		// Setup
-		var config = NamespaceConfigEntity.create().withAccessControl(true);
+		var config = NamespaceConfig.create().withAccessControl(true);
 		var user = Identifier.create();
 		var allowedLabels = Set.of(MetadataLabelEntity.create());
 
 		// Mock
-		when(namespaceConfigRepositoryMock.findByNamespaceAndMunicipalityId(any(), any())).thenReturn(Optional.of(config));
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(config);
 		when(accessMapperService.getAccessibleLabels(any(), any(), any(), any())).thenReturn(allowedLabels);
 
 		// Act
@@ -130,7 +155,7 @@ class AccessControlServiceTest {
 
 		// Verify
 		assertThat(specification).usingRecursiveComparison().isEqualTo(hasAllowedMetadataLabels(allowedLabels));
-		verify(namespaceConfigRepositoryMock).findByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID);
+		verify(namespaceConfigServiceMock).get(NAMESPACE, MUNICIPALITY_ID);
 		verify(accessMapperService).getAccessibleLabels(MUNICIPALITY_ID, NAMESPACE, user, List.of(LR, R, RW));
 	}
 }

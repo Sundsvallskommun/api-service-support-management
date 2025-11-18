@@ -11,7 +11,8 @@ import static org.zalando.problem.Status.UNAUTHORIZED;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationSubType.ERRAND;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrand;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandEntity;
-import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrands;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandWithAccessControl;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandsWithAccessControl;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.updateEntity;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withId;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withMunicipalityId;
@@ -112,26 +113,20 @@ public class ErrandService {
 	public Page<Errand> findErrands(final String namespace, final String municipalityId, final Specification<ErrandEntity> filter, final Pageable pageable) {
 		final var fullFilter = withNamespace(namespace).and(withMunicipalityId(municipalityId)).and(accessControlService.withAccessControl(namespace, municipalityId, Identifier.get())).and(filter);
 		final var matches = repository.findAll(fullFilter, pageable);
+		final var limitedMapping = accessControlService.limitedMappingPredicateByLabel(namespace, municipalityId, Identifier.get());
 
-		return new PageImpl<>(toErrands(matches.getContent()), pageable, matches.getTotalElements());
+		return new PageImpl<>(toErrandsWithAccessControl(matches.getContent(), limitedMapping), pageable, matches.getTotalElements());
 	}
 
 	public Errand readErrand(final String namespace, final String municipalityId, final String id) {
 		verifyExistingErrand(id, namespace, municipalityId, false);
-		return toErrand(repository
-			.findOne(withId(id).and(accessControlService.withAccessControl(namespace, municipalityId, Identifier.get())))
-			.orElseThrow(() -> Problem.valueOf(UNAUTHORIZED, ENTITY_NOT_ACCESSIBLE.formatted(Optional.ofNullable(Identifier.get())
-				.map(Identifier::getValue)
-				.orElse(null)))));
+		final var limitedMapping = accessControlService.limitedMappingPredicateByLabel(namespace, municipalityId, Identifier.get());
+		return toErrandWithAccessControl(getErrand(namespace, municipalityId, id), limitedMapping);
 	}
 
 	public Errand updateErrand(final String namespace, final String municipalityId, final String id, final Errand errand) {
 		verifyExistingErrand(id, namespace, municipalityId, true);
-		final var errandEntityToUpdate = repository
-			.findOne(withId(id).and(accessControlService.withAccessControl(namespace, municipalityId, Identifier.get(), Access.AccessLevelEnum.RW)))
-			.orElseThrow(() -> Problem.valueOf(UNAUTHORIZED, ENTITY_NOT_ACCESSIBLE.formatted(Optional.ofNullable(Identifier.get())
-				.map(Identifier::getValue)
-				.orElse(null))));
+		final var errandEntityToUpdate = getErrand(namespace, municipalityId, id, Access.AccessLevelEnum.RW);
 		final var errandEntity = updateEntity(errandEntityToUpdate, errand);
 
 		// Add contactReason
@@ -157,11 +152,7 @@ public class ErrandService {
 	public void deleteErrand(final String namespace, final String municipalityId, final String id) {
 		verifyExistingErrand(id, namespace, municipalityId, true);
 
-		final var entity = repository
-			.findOne(withId(id).and(accessControlService.withAccessControl(namespace, municipalityId, Identifier.get(), Access.AccessLevelEnum.RW)))
-			.orElseThrow(() -> Problem.valueOf(UNAUTHORIZED, ENTITY_NOT_ACCESSIBLE.formatted(Optional.ofNullable(Identifier.get())
-				.map(Identifier::getValue)
-				.orElse(null))));
+		final var entity = getErrand(namespace, municipalityId, id, Access.AccessLevelEnum.RW);
 
 		conversationService.deleteByErrandId(municipalityId, namespace, id);
 
@@ -180,8 +171,26 @@ public class ErrandService {
 		eventService.createErrandEvent(DELETE, EVENT_LOG_DELETE_ERRAND, entity, latestRevision, null, false, ERRAND);
 	}
 
+	/**
+	 * Fetches ErrandEntity and checks user access, if enabled in namespace.
+	 *
+	 * @param  namespace              namespace
+	 * @param  municipalityId         municipality id
+	 * @param  id                     errand id
+	 * @param  accessLevelEnumsFilter filters errands base on user access level for specific errand. If empty, no filtering
+	 *                                occurs (fetches errand if any level exists)
+	 * @return                        errand entity
+	 */
+	public ErrandEntity getErrand(final String namespace, final String municipalityId, final String id, Access.AccessLevelEnum... accessLevelEnumsFilter) {
+		return repository
+			.findOne(withId(id).and(accessControlService.withAccessControl(namespace, municipalityId, Identifier.get(), accessLevelEnumsFilter)))
+			.orElseThrow(() -> Problem.valueOf(UNAUTHORIZED, ENTITY_NOT_ACCESSIBLE.formatted(Optional.ofNullable(Identifier.get())
+				.map(Identifier::getValue)
+				.orElse(null))));
+	}
+
 	public Long countErrands(final String namespace, final String municipalityId, final Specification<ErrandEntity> filter) {
-		final var fullFilter = withNamespace(namespace).and(withMunicipalityId(municipalityId)).and(filter);
+		final var fullFilter = withNamespace(namespace).and(withMunicipalityId(municipalityId)).and(accessControlService.withAccessControl(namespace, municipalityId, Identifier.get())).and(filter);
 		return repository.count(fullFilter);
 	}
 

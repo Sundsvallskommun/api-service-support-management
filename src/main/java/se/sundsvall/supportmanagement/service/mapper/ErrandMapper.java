@@ -135,11 +135,15 @@ public final class ErrandMapper {
 			.toList();
 	}
 
-	public static List<Errand> toErrandsWithAccessControl(final List<ErrandEntity> entities, Predicate<ErrandEntity> mapLimited) {
+	public static List<Errand> toErrandsWithAccessControl(final List<ErrandEntity> entities, final Predicate<ErrandEntity> mapLimited) {
 		return ofNullable(entities).orElse(emptyList())
 			.stream()
-			.map(errandEntity -> mapLimited.test(errandEntity) ? toLimitedErrand(errandEntity) : toErrand(errandEntity))
+			.map(errandEntity -> toErrandWithAccessControl(errandEntity, mapLimited))
 			.toList();
+	}
+
+	public static Errand toErrandWithAccessControl(final ErrandEntity entity, final Predicate<ErrandEntity> mapLimited) {
+		return mapLimited.test(entity) ? toLimitedErrand(entity) : toErrand(entity);
 	}
 
 	public static Errand toErrand(final ErrandEntity entity) {
