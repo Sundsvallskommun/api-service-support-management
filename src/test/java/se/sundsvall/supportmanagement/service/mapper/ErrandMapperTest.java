@@ -431,6 +431,21 @@ class ErrandMapperTest {
 	}
 
 	@Test
+	void testToErrandEntityWithNullClassification() {
+		final var errand = createErrand().withClassification(null);
+		final var entity = toErrandEntity(NAMESPACE, MUNICIPALITY_ID, errand);
+
+		assertThat(entity)
+			.isNotNull()
+			.extracting(
+				ErrandEntity::getCategory,
+				ErrandEntity::getType)
+			.containsExactly(
+				null,
+				null);
+	}
+
+	@Test
 	void testToErrandEntityFromNull() {
 		assertThat(toErrandEntity(null, null, null)).isNull();
 		assertThat(toErrandEntity(null, null, Errand.create())).isNull();
