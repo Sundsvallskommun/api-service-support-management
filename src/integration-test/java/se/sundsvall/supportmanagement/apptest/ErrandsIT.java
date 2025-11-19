@@ -208,4 +208,16 @@ class ErrandsIT extends AbstractAppTest {
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 	}
+
+	@Test
+	void test13_getErrandsWithAccessControlPartialWithSplitLimitedMapping() {
+		setupCall()
+			.withServicePath("/2506/NAMESPACE-2506/errands?sort=created,desc")
+			.withHeader(SENT_BY_HEADER, "joe01doe; type=adAccount")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
 }

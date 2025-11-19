@@ -24,6 +24,7 @@ public class AccessMapperService {
 		this.metadataService = metadataService;
 	}
 
+	// Add cache
 	public Set<MetadataLabelEntity> getAccessibleLabels(String municipalityId, String namespace, Identifier user, List<Access.AccessLevelEnum> filter) {
 		return Optional.ofNullable(user)
 			.filter(identifier -> Identifier.Type.AD_ACCOUNT.equals(identifier.getType()))

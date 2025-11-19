@@ -33,6 +33,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Captor;
@@ -49,6 +51,7 @@ import org.zalando.problem.ThrowableProblem;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
+import se.sundsvall.supportmanagement.api.model.errand.Priority;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.ContactReasonRepository;
@@ -137,8 +140,11 @@ class ErrandServiceTest {
 		verify(eventServiceMock).createErrandEvent(eq(CREATE), eq(EVENT_LOG_CREATE_ERRAND), any(ErrandEntity.class), eq(currentRevisionMock), eq(null), eq(false), eq(ERRAND));
 	}
 
-	@Test
-	void findErrandWithMatches() {
+	@ParameterizedTest
+	@ValueSource(booleans = {
+		true, false
+	})
+	void findErrandWithMatches(boolean limited) {
 		// Setup
 		final Specification<ErrandEntity> filter = filterSpecificationConverterSpy.convert("id: 'uuid'");
 		final var sort = Sort.by(DESC, "attribute.1", "attribute.2");
@@ -150,12 +156,13 @@ class ErrandServiceTest {
 		// Mock
 		when(errandRepositoryMock.findAll(ArgumentMatchers.<Specification<ErrandEntity>>any(), eq(pageable))).thenReturn(new PageImpl<>(List.of(buildErrandEntity(), buildErrandEntity()), pageable, 2L));
 		when(accessControlServiceMock.withAccessControl(any(), any(), any())).thenReturn(specification);
+		when(accessControlServiceMock.limitedMappingPredicateByLabel(any(), any(), any())).thenReturn(errand -> limited);
 
 		// Call
 		final var matches = service.findErrands(NAMESPACE, MUNICIPALITY_ID, filter, pageable);
 
 		// Assertions and verifications
-		assertThat(matches.getContent()).isNotEmpty().hasSize(2);
+		assertThat(matches.getContent()).isNotEmpty().hasSize(2).extracting("priority").containsOnly(limited ? null : Priority.HIGH);
 		assertThat(matches.getNumberOfElements()).isEqualTo(2);
 		assertThat(matches.getTotalElements()).isEqualTo(4);
 		assertThat(matches.getTotalPages()).isEqualTo(2);
@@ -163,9 +170,8 @@ class ErrandServiceTest {
 		assertThat(matches.getSort()).usingRecursiveComparison().isEqualTo(sort);
 
 		verify(accessControlServiceMock).withAccessControl(NAMESPACE, MUNICIPALITY_ID, user);
+		verify(accessControlServiceMock).limitedMappingPredicateByLabel(NAMESPACE, MUNICIPALITY_ID, user);
 		verify(errandRepositoryMock).findAll(specificationCaptor.capture(), eq(pageable));
-		assertThat(specificationCaptor.getValue()).usingRecursiveComparison().isEqualTo(withNamespace(NAMESPACE).and(withMunicipalityId(MUNICIPALITY_ID)).and(specification).and(filter));
-
 		assertThat(specificationCaptor.getValue()).usingRecursiveComparison().isEqualTo(withNamespace(NAMESPACE).and(withMunicipalityId(MUNICIPALITY_ID)).and(specification).and(filter));
 	}
 
@@ -201,8 +207,11 @@ class ErrandServiceTest {
 		assertThat(specificationCaptor.getValue()).usingRecursiveComparison().isEqualTo(withNamespace(NAMESPACE).and(withMunicipalityId(MUNICIPALITY_ID)).and(specification).and(filter));
 	}
 
-	@Test
-	void readExistingErrand() {
+	@ParameterizedTest
+	@ValueSource(booleans = {
+		true, false
+	})
+	void readExistingErrand(boolean limited) {
 		// Setup
 		final var entity = buildErrandEntity();
 		final Specification<ErrandEntity> specification = (root, query, criteriaBuilder) -> criteriaBuilder.conjunction();
@@ -213,16 +222,18 @@ class ErrandServiceTest {
 		when(errandRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
 		when(errandRepositoryMock.findOne(ArgumentMatchers.<Specification<ErrandEntity>>any())).thenReturn(Optional.of(entity));
 		when(accessControlServiceMock.withAccessControl(any(), any(), any())).thenReturn(specification);
+		when(accessControlServiceMock.limitedMappingPredicateByLabel(any(), any(), any())).thenReturn(errand -> limited);
 
 		// Call
 		final var response = service.readErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 
 		// Assertions and verifications
 		assertThat(response.getId()).isEqualTo(ERRAND_ID);
-		assertThat(response.getActiveNotifications()).hasSize(1);
+		assertThat(response.getPriority()).isEqualTo(limited ? null : Priority.HIGH);
 
 		verify(errandRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(accessControlServiceMock).withAccessControl(NAMESPACE, MUNICIPALITY_ID, user);
+		verify(accessControlServiceMock).limitedMappingPredicateByLabel(NAMESPACE, MUNICIPALITY_ID, user);
 		verify(errandRepositoryMock).findOne(specificationCaptor.capture());
 		assertThat(specificationCaptor.getValue()).usingRecursiveComparison().isEqualTo(withId(ERRAND_ID).and(specification));
 	}
@@ -449,9 +460,13 @@ class ErrandServiceTest {
 	@Test
 	void countErrands() {
 		// Setup
+		final var user = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user");
+		Identifier.set(user);
 		final Specification<ErrandEntity> filter = filterSpecificationConverterSpy.convert("id: 'uuid'");
+		final Specification<ErrandEntity> specification = (root, query, criteriaBuilder) -> criteriaBuilder.conjunction();
 
 		// Mock
+		when(accessControlServiceMock.withAccessControl(any(), any(), any())).thenReturn(specification);
 		when(errandRepositoryMock.count(ArgumentMatchers.<Specification<ErrandEntity>>any())).thenReturn(42L);
 
 		// Call
@@ -460,8 +475,9 @@ class ErrandServiceTest {
 		// Assertions and verifications
 		assertThat(count).isEqualTo(42L);
 
+		verify(accessControlServiceMock).withAccessControl(NAMESPACE, MUNICIPALITY_ID, user);
 		verify(errandRepositoryMock).count(specificationCaptor.capture());
-		assertThat(specificationCaptor.getValue()).usingRecursiveComparison().isEqualTo(withNamespace(NAMESPACE).and(withMunicipalityId(MUNICIPALITY_ID)).and(filter));
+		assertThat(specificationCaptor.getValue()).usingRecursiveComparison().isEqualTo(withNamespace(NAMESPACE).and(withMunicipalityId(MUNICIPALITY_ID)).and(specification).and(filter));
 	}
 
 	@AfterEach

@@ -1,0 +1,80 @@
+{
+	"content": [
+		{
+			"id": "58c41b44-0b9f-413d-bd46-406d24bf5ca8",
+			"errandNumber": "AP-23020003",
+			"title": "E-service",
+			"status": "STATUS-2506",
+			"channel": "ESERVICE_INTERNAL",
+			"created": "2024-01-01T12:00:00+01:00",
+			"touched": "2024-01-01T12:00:00+01:00"
+		},
+		{
+			"id": "c9efe03d-deff-4828-a043-541fa78ffdeb",
+			"errandNumber": "AP-23020002",
+			"title": "E-service",
+			"priority": "LOW",
+			"stakeholders": [],
+			"externalTags": [],
+			"parameters": [],
+			"classification": {
+				"type": "TYPE-2506"
+			},
+			"status": "STATUS-2506",
+			"channel": "ESERVICE_INTERNAL",
+			"reporterUserId": "REPORTER_USER_ID-X",
+			"assignedUserId": "ASSIGNED_USER_ID-X",
+			"assignedGroupId": "ASSIGNED_GROUP_ID-X",
+			"escalationEmail": "ESCALATION_EMAIL_1",
+			"suspension": {},
+			"businessRelated": false,
+			"labels": [
+				{
+					"id": "8f1c6101-8c32-4c77-b72c-3348f23394f1",
+					"classification": "CLASS",
+					"displayName": "LEVELTWO-1-DISPLAY-NAME",
+					"resourcePath": "ROOT/LEVELONE-1/LEVELTWO-1",
+					"resourceName": "LEVELTWO-1"
+				}
+			],
+			"activeNotifications": [],
+			"created": "2024-01-01T12:00:00+01:00",
+			"touched": "2024-01-01T12:00:00+01:00"
+		}
+	],
+	"pageable": {
+		"pageNumber": 0,
+		"pageSize": 20,
+		"sort": [
+			{
+				"direction": "DESC",
+				"property": "created",
+				"ignoreCase": false,
+				"nullHandling": "NATIVE",
+				"descending": true,
+				"ascending": false
+			}
+		],
+		"offset": 0,
+		"paged": true,
+		"unpaged": false
+	},
+	"last": true,
+	"totalElements": 2,
+	"totalPages": 1,
+	"first": true,
+	"size": 20,
+	"number": 0,
+	"sort": [
+		{
+			"direction": "DESC",
+			"property": "created",
+			"ignoreCase": false,
+			"nullHandling": "NATIVE",
+			"descending": true,
+			"ascending": false
+		}
+	],
+	"numberOfElements": 2,
+	"empty": false
+}
