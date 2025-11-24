@@ -3,24 +3,19 @@ package se.sundsvall.supportmanagement.service;
 import static generated.se.sundsvall.eventlog.EventType.CREATE;
 import static generated.se.sundsvall.eventlog.EventType.DELETE;
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
-import static java.lang.Boolean.FALSE;
 import static java.util.Objects.nonNull;
 import static org.zalando.problem.Status.BAD_REQUEST;
-import static org.zalando.problem.Status.NOT_FOUND;
-import static org.zalando.problem.Status.UNAUTHORIZED;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationSubType.ERRAND;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrand;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandWithAccessControl;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandsWithAccessControl;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.updateEntity;
-import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withId;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withMunicipalityId;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withNamespace;
 
 import generated.se.sundsvall.accessmapper.Access;
 import java.util.Optional;
-import java.util.function.Supplier;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -41,8 +36,6 @@ import se.sundsvall.supportmanagement.integration.notes.NotesClient;
 @Transactional
 public class ErrandService {
 
-	private static final String ENTITY_NOT_FOUND = "An errand with id '%s' could not be found in namespace '%s' for municipality with id '%s'";
-	private static final String ENTITY_NOT_ACCESSIBLE = "Errand not accessible by user '%s'";
 	private static final String BAD_CONTACT_REASON = "'%s' is not a valid contact reason for namespace '%s' and municipality with id '%s'";
 	private static final String EVENT_LOG_CREATE_ERRAND = "Ärendet har skapats.";
 	private static final String EVENT_LOG_UPDATE_ERRAND = "Ärendet har uppdaterats.";
@@ -119,14 +112,13 @@ public class ErrandService {
 	}
 
 	public Errand readErrand(final String namespace, final String municipalityId, final String id) {
-		verifyExistingErrand(id, namespace, municipalityId, false);
+		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, id, false);
 		final var limitedMapping = accessControlService.limitedMappingPredicateByLabel(namespace, municipalityId, Identifier.get());
-		return toErrandWithAccessControl(getErrand(namespace, municipalityId, id), limitedMapping);
+		return toErrandWithAccessControl(errandEntity, limitedMapping);
 	}
 
 	public Errand updateErrand(final String namespace, final String municipalityId, final String id, final Errand errand) {
-		verifyExistingErrand(id, namespace, municipalityId, true);
-		final var errandEntityToUpdate = getErrand(namespace, municipalityId, id, Access.AccessLevelEnum.RW);
+		final var errandEntityToUpdate = accessControlService.getErrand(namespace, municipalityId, id, true, Access.AccessLevelEnum.RW);
 		final var errandEntity = updateEntity(errandEntityToUpdate, errand);
 
 		// Add contactReason
@@ -150,9 +142,7 @@ public class ErrandService {
 	}
 
 	public void deleteErrand(final String namespace, final String municipalityId, final String id) {
-		verifyExistingErrand(id, namespace, municipalityId, true);
-
-		final var entity = getErrand(namespace, municipalityId, id, Access.AccessLevelEnum.RW);
+		final var entity = accessControlService.getErrand(namespace, municipalityId, id, true, Access.AccessLevelEnum.RW);
 
 		conversationService.deleteByErrandId(municipalityId, namespace, id);
 
@@ -171,40 +161,9 @@ public class ErrandService {
 		eventService.createErrandEvent(DELETE, EVENT_LOG_DELETE_ERRAND, entity, latestRevision, null, false, ERRAND);
 	}
 
-	/**
-	 * Fetches ErrandEntity and checks user access, if enabled in namespace.
-	 *
-	 * @param  namespace              namespace
-	 * @param  municipalityId         municipality id
-	 * @param  id                     errand id
-	 * @param  accessLevelEnumsFilter filters errands base on user access level for specific errand. If empty, no filtering
-	 *                                occurs (fetches errand if any level exists)
-	 * @return                        errand entity
-	 */
-	public ErrandEntity getErrand(final String namespace, final String municipalityId, final String id, Access.AccessLevelEnum... accessLevelEnumsFilter) {
-		return repository
-			.findOne(withId(id).and(accessControlService.withAccessControl(namespace, municipalityId, Identifier.get(), accessLevelEnumsFilter)))
-			.orElseThrow(() -> Problem.valueOf(UNAUTHORIZED, ENTITY_NOT_ACCESSIBLE.formatted(Optional.ofNullable(Identifier.get())
-				.map(Identifier::getValue)
-				.orElse(null))));
-	}
-
 	public Long countErrands(final String namespace, final String municipalityId, final Specification<ErrandEntity> filter) {
 		final var fullFilter = withNamespace(namespace).and(withMunicipalityId(municipalityId)).and(accessControlService.withAccessControl(namespace, municipalityId, Identifier.get())).and(filter);
 		return repository.count(fullFilter);
 	}
 
-	private void verifyExistingErrand(final String id, final String namespace, final String municipalityId, final boolean lock) {
-
-		final Supplier<Boolean> exists;
-		if (lock) {
-			exists = () -> repository.existsWithLockingByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
-		} else {
-			exists = () -> repository.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
-		}
-
-		if (FALSE.equals(exists.get())) {
-			throw Problem.valueOf(NOT_FOUND, ENTITY_NOT_FOUND.formatted(id, namespace, municipalityId));
-		}
-	}
 }

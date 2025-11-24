@@ -1,17 +1,18 @@
 package se.sundsvall.supportmanagement.service;
 
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.*;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.UUID.randomUUID;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.groups.Tuple.tuple;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -21,7 +22,6 @@ import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.util.MimeTypeUtils.IMAGE_PNG_VALUE;
-import static org.zalando.problem.Status.NOT_FOUND;
 import static se.sundsvall.dept44.support.Identifier.Type.AD_ACCOUNT;
 import static se.sundsvall.dept44.support.Identifier.Type.PARTY_ID;
 
@@ -66,7 +66,6 @@ import se.sundsvall.supportmanagement.integration.citizen.CitizenIntegration;
 import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.CommunicationAttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.CommunicationRepository;
-import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
@@ -100,7 +99,7 @@ class CommunicationServiceTest {
 	private Semaphore semaphoreMock;
 
 	@Mock
-	private ErrandsRepository errandsRepositoryMock;
+	private AccessControlService accessControlServiceMock;
 
 	@Mock
 	private CommunicationRepository communicationRepositoryMock;
@@ -204,9 +203,7 @@ class CommunicationServiceTest {
 		final var errandNumber = "errandNumber";
 
 		// Mock
-		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(any(String.class), any(String.class), any(String.class)))
-			.thenReturn(true);
-		when(errandsRepositoryMock.findById(any(String.class))).thenReturn(Optional.of(errandEntityMock));
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean())).thenReturn(errandEntityMock);
 		when(errandEntityMock.getErrandNumber()).thenReturn(errandNumber);
 		when(communicationRepositoryMock.findByErrandNumber(any(String.class))).thenReturn(List.of(CommunicationEntity.create()));
 		when(communicationMapperMock.toCommunications(anyList())).thenReturn(List.of(Communication.create()));
@@ -217,12 +214,11 @@ class CommunicationServiceTest {
 		// Verification
 		assertThat(response).isNotNull().hasSize(1);
 
-		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(any(String.class), any(String.class), any(String.class));
-		verify(errandsRepositoryMock).findById(any(String.class));
+		verify(accessControlServiceMock).getErrand(namespace, municipalityId, id, false);
 		verify(communicationRepositoryMock).findByErrandNumber(any(String.class));
 		verify(communicationMapperMock).toCommunications(anyList());
 
-		verifyNoMoreInteractions(errandsRepositoryMock, communicationMapperMock, communicationRepositoryMock);
+		verifyNoMoreInteractions(accessControlServiceMock, communicationMapperMock, communicationRepositoryMock);
 		verifyNoInteractions(communicationAttachmentRepositoryMock, messagingClientMock);
 	}
 
@@ -236,8 +232,7 @@ class CommunicationServiceTest {
 		final var errandNumber = "errandNumber";
 
 		// Mock
-		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(true);
-		when(errandsRepositoryMock.findById(id)).thenReturn(Optional.of(errandEntityMock));
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean())).thenReturn(errandEntityMock);
 		when(errandEntityMock.getErrandNumber()).thenReturn(errandNumber);
 		when(communicationRepositoryMock.findByErrandNumberAndInternal(errandNumber, false)).thenReturn(List.of(CommunicationEntity.create().withInternal(true)));
 		when(communicationMapperMock.toCommunications(anyList())).thenReturn(List.of(Communication.create()));
@@ -249,12 +244,11 @@ class CommunicationServiceTest {
 		assertThat(response).isNotNull().hasSize(1);
 		assertThat(response.getFirst().getViewed()).isNull();
 
-		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
-		verify(errandsRepositoryMock).findById(id);
+		verify(accessControlServiceMock).getErrand(namespace, municipalityId, id, false);
 		verify(communicationRepositoryMock).findByErrandNumberAndInternal(errandNumber, false);
 		verify(communicationMapperMock).toCommunications(anyList());
 
-		verifyNoMoreInteractions(errandsRepositoryMock, communicationMapperMock, communicationRepositoryMock);
+		verifyNoMoreInteractions(accessControlServiceMock, communicationMapperMock, communicationRepositoryMock);
 		verifyNoInteractions(communicationAttachmentRepositoryMock, messagingClientMock);
 	}
 
@@ -269,21 +263,18 @@ class CommunicationServiceTest {
 		final var isViewed = true;
 
 		// Mock
-		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(any(String.class), any(String.class), any(String.class)))
-			.thenReturn(true);
-		when(errandsRepositoryMock.findById(any(String.class))).thenReturn(Optional.of(errandEntityMock));
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(errandEntityMock);
 		when(communicationRepositoryMock.findById(any(String.class))).thenReturn(Optional.of(CommunicationEntity.create()));
 
 		// Call
 		communicationService.updateViewedStatus(namespace, municipalityId, id, messageID, isViewed);
 
 		// Verification
-		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(any(String.class), any(String.class), any(String.class));
-		verify(errandsRepositoryMock).findById(any(String.class));
+		verify(accessControlServiceMock).getErrand(namespace, municipalityId, id, false, RW);
 		verify(communicationRepositoryMock).findById(any(String.class));
 		verify(communicationRepositoryMock).save(any(CommunicationEntity.class));
 
-		verifyNoMoreInteractions(errandsRepositoryMock, communicationRepositoryMock);
+		verifyNoMoreInteractions(accessControlServiceMock, communicationRepositoryMock);
 		verifyNoInteractions(communicationMapperMock, communicationAttachmentRepositoryMock, messagingClientMock);
 	}
 
@@ -299,8 +290,7 @@ class CommunicationServiceTest {
 		final var inputStream = IOUtils.toInputStream(content, UTF_8);
 
 		// Mock
-		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
-		when(errandsRepositoryMock.findById(ERRAND_ID)).thenReturn(Optional.of(errandEntityMock));
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean())).thenReturn(errandEntityMock);
 		when(errandEntityMock.getErrandNumber()).thenReturn(errandNumber);
 		when(communicationAttachmentRepositoryMock.findByNamespaceAndMunicipalityIdAndCommunicationEntityIdAndId(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(communicationId), any())).thenReturn(Optional.of(communicationAttachmentEntityMock));
 		when(communicationAttachmentEntityMock.getMimeType()).thenReturn(contentType);
@@ -318,8 +308,7 @@ class CommunicationServiceTest {
 		communicationService.getMessageAttachmentStreamed(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, communicationId, attachmentId, servletResponseMock);
 
 		// Verification
-		verify(errandsRepositoryMock).findById(ERRAND_ID);
-		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false);
 		verify(communicationAttachmentRepositoryMock).findByNamespaceAndMunicipalityIdAndCommunicationEntityIdAndId(NAMESPACE, MUNICIPALITY_ID, communicationId, attachmentId);
 		verify(communicationAttachmentEntityMock).getAttachmentData();
 		verify(attachmentDataEntityMock).getFile();
@@ -414,8 +403,7 @@ class CommunicationServiceTest {
 		final var request = createEmailRequest();
 
 		// Mock
-		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
-		when(errandsRepositoryMock.findById(ERRAND_ID)).thenReturn(Optional.of(errandEntityMock));
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(errandEntityMock);
 		when(errandEntityMock.getId()).thenReturn(ERRAND_ID);
 		when(communicationMapperMock.toCommunicationEntity(NAMESPACE, MUNICIPALITY_ID, request)).thenReturn(CommunicationEntity.create());
 		when(communicationMapperMock.toAttachments(any(CommunicationEntity.class))).thenReturn(List.of(AttachmentEntity.create()));
@@ -424,8 +412,7 @@ class CommunicationServiceTest {
 		communicationService.sendEmail(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, request);
 
 		// Verifications and assertions
-		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
-		verify(errandsRepositoryMock).findById(ERRAND_ID);
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, RW);
 		verify(messagingClientMock).sendEmail(eq(MUNICIPALITY_ID), eq(false), messagingEmailCaptor.capture());
 		verify(communicationMapperMock).toCommunicationEntity(NAMESPACE, MUNICIPALITY_ID, request);
 		verify(communicationRepositoryMock).saveAndFlush(any(CommunicationEntity.class));
@@ -450,7 +437,7 @@ class CommunicationServiceTest {
 		assertThat(arguments.getHeaders().get(MESSAGE_ID)).isNotNull().hasSize(1).extracting(String::toString).allMatch(s -> s.startsWith("<") && s.contains("@") && s.contains(NAMESPACE) && s.endsWith(">"));
 
 		// Verification
-		verifyNoMoreInteractions(errandsRepositoryMock, messagingClientMock, communicationMapperMock, communicationRepositoryMock);
+		verifyNoMoreInteractions(accessControlServiceMock, messagingClientMock, communicationMapperMock, communicationRepositoryMock);
 		verifyNoInteractions(communicationAttachmentRepositoryMock);
 
 	}
@@ -461,8 +448,7 @@ class CommunicationServiceTest {
 		final var request = createSmsRequest();
 
 		// Mock
-		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
-		when(errandsRepositoryMock.findById(ERRAND_ID)).thenReturn(Optional.of(errandEntityMock));
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(errandEntityMock);
 		when(errandEntityMock.getId()).thenReturn(ERRAND_ID);
 		when(communicationMapperMock.toCommunicationEntity(NAMESPACE, MUNICIPALITY_ID, request)).thenReturn(CommunicationEntity.create());
 		when(communicationMapperMock.toAttachments(any(CommunicationEntity.class))).thenReturn(List.of(AttachmentEntity.create()));
@@ -471,8 +457,7 @@ class CommunicationServiceTest {
 		communicationService.sendSms(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, request);
 
 		// Verifications and assertions
-		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
-		verify(errandsRepositoryMock).findById(ERRAND_ID);
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, RW);
 		verify(messagingClientMock).sendSms(eq(MUNICIPALITY_ID), eq(false), messagingSmsCaptor.capture());
 		verify(communicationMapperMock).toCommunicationEntity(NAMESPACE, MUNICIPALITY_ID, request);
 		verify(communicationRepositoryMock).saveAndFlush(any(CommunicationEntity.class));
@@ -487,7 +472,7 @@ class CommunicationServiceTest {
 			ExternalReference::getValue).containsExactly(tuple(ERRAND_ID_KEY, ERRAND_ID));
 		assertThat(arguments.getSender()).isEqualTo(SENDER_NAME);
 
-		verifyNoMoreInteractions(communicationRepositoryMock, errandsRepositoryMock, messagingClientMock, communicationMapperMock);
+		verifyNoMoreInteractions(communicationRepositoryMock, accessControlServiceMock, messagingClientMock, communicationMapperMock);
 		verifyNoInteractions(communicationAttachmentRepositoryMock);
 	}
 
@@ -502,8 +487,7 @@ class CommunicationServiceTest {
 		Identifier.set(Identifier.create().withType(AD_ACCOUNT).withValue("adUser"));
 
 		// Mock
-		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
-		when(errandsRepositoryMock.findById(ERRAND_ID)).thenReturn(Optional.of(errandEntityMock));
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(errandEntityMock);
 		when(errandAttachmentServiceMock.findByNamespaceAndMunicipalityIdAndIdIn(any(), any(), any())).thenReturn(attachmentEntitiesMock);
 		when(errandEntityMock.getErrandNumber()).thenReturn(ERRAND_ID_KEY);
 		when(communicationMapperMock.toCommunicationEntity(anyString(), anyString(), anyString(), any(), anyString(), anyString())).thenReturn(communicationEntityMock);
@@ -527,8 +511,7 @@ class CommunicationServiceTest {
 		}
 
 		// Verifications
-		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
-		verify(errandsRepositoryMock).findById(ERRAND_ID);
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, RW);
 		verify(errandAttachmentServiceMock).findByNamespaceAndMunicipalityIdAndIdIn(NAMESPACE, MUNICIPALITY_ID, List.of(ATTACHMENT_ID));
 		verify(communicationMapperMock).toCommunicationEntity(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID_KEY), same(request), eq(fullName), eq(adUser));
 		verify(communicationEntityMock).withErrandAttachments(same(attachmentEntitiesMock));
@@ -538,7 +521,7 @@ class CommunicationServiceTest {
 		verify(attachmentEntityMock).withErrandEntity(same(errandEntityMock));
 		verify(errandAttachmentServiceMock).createErrandAttachment(same(attachmentEntityMock), same(errandEntityMock));
 
-		verifyNoMoreInteractions(errandsRepositoryMock, messagingClientMock, communicationMapperMock, communicationRepositoryMock, attachmentEntityMock, communicationEntityMock, errandAttachmentServiceMock,
+		verifyNoMoreInteractions(accessControlServiceMock, messagingClientMock, communicationMapperMock, communicationRepositoryMock, attachmentEntityMock, communicationEntityMock, errandAttachmentServiceMock,
 			attachmentEntitiesMock, portalPersonDataMock, employeeServiceMock);
 		verifyNoInteractions(communicationAttachmentRepositoryMock);
 	}
@@ -554,8 +537,7 @@ class CommunicationServiceTest {
 
 		Identifier.set(Identifier.create().withType(PARTY_ID).withValue("e82c8029-7676-467d-8ebb-8638d0abd2b4"));
 
-		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
-		when(errandsRepositoryMock.findById(ERRAND_ID)).thenReturn(Optional.of(errandEntityMock));
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(errandEntityMock);
 		when(errandAttachmentServiceMock.findByNamespaceAndMunicipalityIdAndIdIn(any(), any(), any())).thenReturn(attachmentEntitiesMock);
 		when(citizenIntegrationMock.getCitizenName(any(), any())).thenReturn("John Doe");
 		when(errandEntityMock.getErrandNumber()).thenReturn("123");
@@ -564,8 +546,7 @@ class CommunicationServiceTest {
 
 		communicationService.sendWebMessage(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, request);
 
-		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
-		verify(errandsRepositoryMock).findById(ERRAND_ID);
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, RW);
 		verify(errandAttachmentServiceMock).findByNamespaceAndMunicipalityIdAndIdIn(NAMESPACE, MUNICIPALITY_ID, List.of(ATTACHMENT_ID));
 		verify(communicationMapperMock).toCommunicationEntity(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq("123"), same(request), eq("John Doe"), eq("e82c8029-7676-467d-8ebb-8638d0abd2b4"));
 		verify(communicationEntityMock).withErrandAttachments(same(attachmentEntitiesMock));
@@ -585,8 +566,7 @@ class CommunicationServiceTest {
 
 		Identifier.set(Identifier.create().withType(AD_ACCOUNT).withValue("jon01doe"));
 
-		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
-		when(errandsRepositoryMock.findById(ERRAND_ID)).thenReturn(Optional.of(errandEntityMock));
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(errandEntityMock);
 		when(errandAttachmentServiceMock.findByNamespaceAndMunicipalityIdAndIdIn(any(), any(), any())).thenReturn(attachmentEntitiesMock);
 		when(employeeServiceMock.getEmployeeByLoginName(MUNICIPALITY_ID, "jon01doe")).thenReturn(portalPersonDataMock);
 		when(portalPersonDataMock.getFullname()).thenReturn("John Doe");
@@ -597,33 +577,13 @@ class CommunicationServiceTest {
 
 		communicationService.sendWebMessage(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, request);
 
-		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
-		verify(errandsRepositoryMock).findById(ERRAND_ID);
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, RW);
 		verify(errandAttachmentServiceMock).findByNamespaceAndMunicipalityIdAndIdIn(NAMESPACE, MUNICIPALITY_ID, List.of(ATTACHMENT_ID));
 		verify(communicationMapperMock).toCommunicationEntity(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq("123"), same(request), eq("John Doe"), eq("jon01doe"));
 		verify(communicationMapperMock).toAttachments(any());
 		verify(communicationEntityMock).withErrandAttachments(same(attachmentEntitiesMock));
 		verify(communicationRepositoryMock).saveAndFlush(any());
 		verify(messagingClientMock, never()).sendWebMessage(any(), anyBoolean(), any());
-	}
-
-	@Test
-	void errandNotFound() {
-		// Setup
-		final var request = createSmsRequest();
-
-		// Call
-		final var exception = assertThrows(ThrowableProblem.class, () -> communicationService.sendSms(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, request));
-
-		// Verifications and assertions
-		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
-		verifyNoMoreInteractions(errandsRepositoryMock);
-		verifyNoInteractions(communicationRepositoryMock, communicationAttachmentRepositoryMock, messagingClientMock, communicationMapperMock);
-
-		assertThat(exception.getStatus()).isEqualTo(NOT_FOUND);
-		assertThat(exception.getTitle()).isEqualTo(NOT_FOUND.getReasonPhrase());
-		assertThat(exception.getMessage()).isEqualTo("Not Found: An errand with id '" + ERRAND_ID + "' could not be found in namespace '" +
-			NAMESPACE + "' for municipality with id '" + MUNICIPALITY_ID + "'");
 	}
 
 	private SmsRequest createSmsRequest() {
@@ -640,7 +600,7 @@ class CommunicationServiceTest {
 
 		verify(communicationRepositoryMock).saveAndFlush(any(CommunicationEntity.class));
 		verifyNoMoreInteractions(communicationRepositoryMock);
-		verifyNoInteractions(errandsRepositoryMock, communicationAttachmentRepositoryMock, messagingClientMock, communicationMapperMock);
+		verifyNoInteractions(accessControlServiceMock, communicationAttachmentRepositoryMock, messagingClientMock, communicationMapperMock);
 	}
 
 	/**
@@ -701,6 +661,7 @@ class CommunicationServiceTest {
 	@Test
 	void sendMessageNotification() {
 		// Arrange
+		Identifier.set(Identifier.create().withType(PARTY_ID).withValue("xx"));
 		final var errandId = UUID.randomUUID().toString();
 		final var messageId = UUID.randomUUID();
 		final var errand = ErrandEntity.create()
@@ -708,7 +669,7 @@ class CommunicationServiceTest {
 			.withMunicipalityId(MUNICIPALITY_ID)
 			.withNamespace(NAMESPACE);
 
-		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(errandId, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(errand));
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(errand);
 		when(messagingSettingsClientMock.getSenderInfo(MUNICIPALITY_ID, NAMESPACE, DEPARTMENT_NAME)).thenReturn(List.of(new SenderInfoResponse()));
 		when(messagingClientMock.sendMessage(eq(MUNICIPALITY_ID), any())).thenReturn(
 			new MessageResult().messageId(messageId));
@@ -716,10 +677,10 @@ class CommunicationServiceTest {
 		communicationService.sendMessageNotification(MUNICIPALITY_ID, NAMESPACE, errandId, DEPARTMENT_NAME);
 
 		// Assert
-		verify(errandsRepositoryMock).findByIdAndNamespaceAndMunicipalityId(errandId, NAMESPACE, MUNICIPALITY_ID);
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, errandId, false, RW);
 		verify(messagingClientMock).sendMessage(eq(MUNICIPALITY_ID), messageRequestCaptor.capture());
 		assertThat(messageRequestCaptor.getValue().getMessages()).hasSize(1);
-		verifyNoMoreInteractions(errandsRepositoryMock, communicationMapperMock);
+		verifyNoMoreInteractions(accessControlServiceMock, communicationMapperMock);
 
 	}
 
@@ -731,7 +692,7 @@ class CommunicationServiceTest {
 			.withId(errandId)
 			.withMunicipalityId(MUNICIPALITY_ID)
 			.withNamespace(NAMESPACE);
-		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(errandId, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(errand));
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(errand);
 		when(messagingSettingsClientMock.getSenderInfo(MUNICIPALITY_ID, NAMESPACE, DEPARTMENT_NAME)).thenReturn(null);
 
 		// Act & Assert
@@ -739,26 +700,9 @@ class CommunicationServiceTest {
 			.isInstanceOf(ThrowableProblem.class)
 			.hasFieldOrPropertyWithValue("status", Status.INTERNAL_SERVER_ERROR)
 			.hasFieldOrPropertyWithValue("message", "Internal Server Error: Failed to retrieve sender information for municipality '" + MUNICIPALITY_ID + "' and namespace '" + NAMESPACE + "'");
-		verify(errandsRepositoryMock).findByIdAndNamespaceAndMunicipalityId(errandId, NAMESPACE, MUNICIPALITY_ID);
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, errandId, false, RW);
 		verify(messagingSettingsClientMock).getSenderInfo(MUNICIPALITY_ID, NAMESPACE, DEPARTMENT_NAME);
 		verifyNoInteractions(messagingClientMock, communicationMapperMock);
-
-	}
-
-	@Test
-	void sendMessageNotificationWithErrandNotFound() {
-		// Arrange
-		final var errandId = UUID.randomUUID().toString();
-		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(errandId, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.empty());
-
-		// Act & Assert
-		assertThatThrownBy(() -> communicationService.sendMessageNotification(MUNICIPALITY_ID, NAMESPACE, errandId, DEPARTMENT_NAME))
-			.isInstanceOf(ThrowableProblem.class)
-			.hasFieldOrPropertyWithValue("status", Status.NOT_FOUND)
-			.hasFieldOrPropertyWithValue("message", "Not Found: An errand with id '" + errandId + "' could not be found in namespace '" + NAMESPACE + "' for municipality with id '" + MUNICIPALITY_ID + "'");
-
-		verify(errandsRepositoryMock).findByIdAndNamespaceAndMunicipalityId(errandId, NAMESPACE, MUNICIPALITY_ID);
-		verifyNoInteractions(messagingSettingsClientMock, messagingClientMock, communicationMapperMock);
 
 	}
 
@@ -773,7 +717,7 @@ class CommunicationServiceTest {
 
 		Identifier.set(Identifier.create().withType(PARTY_ID).withValue("e82c8029-7676-467d-8ebb-8638d0abd2b4"));
 
-		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(errandId, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(errand));
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(errand);
 		when(messagingSettingsClientMock.getSenderInfo(MUNICIPALITY_ID, NAMESPACE, DEPARTMENT_NAME)).thenReturn(List.of(new SenderInfoResponse()));
 		when(messagingClientMock.sendMessage(eq(MUNICIPALITY_ID), any())).thenReturn(null);
 
@@ -798,6 +742,6 @@ class CommunicationServiceTest {
 		verify(communicationRepositoryMock).findByErrandNumber(errandNumber);
 		verify(communicationRepositoryMock).deleteAll(List.of(communicationEntityMock));
 		verifyNoMoreInteractions(communicationRepositoryMock);
-		verifyNoInteractions(errandsRepositoryMock, communicationAttachmentRepositoryMock, messagingClientMock, communicationMapperMock);
+		verifyNoInteractions(accessControlServiceMock, communicationAttachmentRepositoryMock, messagingClientMock, communicationMapperMock);
 	}
 }

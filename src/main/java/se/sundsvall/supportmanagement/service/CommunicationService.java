@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.service;
 
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
 import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
@@ -39,7 +40,6 @@ import se.sundsvall.supportmanagement.api.model.communication.WebMessageRequest;
 import se.sundsvall.supportmanagement.integration.citizen.CitizenIntegration;
 import se.sundsvall.supportmanagement.integration.db.CommunicationAttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.CommunicationRepository;
-import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationAttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationEntity;
@@ -57,7 +57,7 @@ public class CommunicationService {
 	private static final String ATTACHMENT_WITH_ERRAND_NUMBER_NOT_FOUND = "Communication attachment not found for this errand";
 	private static final boolean ASYNCHRONOUSLY = false;
 
-	private final ErrandsRepository errandsRepository;
+	private final AccessControlService accessControlService;
 	private final CommunicationRepository communicationRepository;
 	private final CommunicationAttachmentRepository communicationAttachmentRepository;
 	private final ErrandAttachmentService errandAttachmentService;
@@ -69,7 +69,7 @@ public class CommunicationService {
 	private final MessagingSettingsClient messagingSettingsClient;
 
 	public CommunicationService(
-		final ErrandsRepository errandsRepository,
+		final AccessControlService accessControlService,
 		final MessagingClient messagingClient,
 		final CommunicationRepository communicationRepository,
 		final CommunicationAttachmentRepository communicationAttachmentRepository,
@@ -79,7 +79,7 @@ public class CommunicationService {
 		final EmployeeService employeeService,
 		final CitizenIntegration citizenIntegration, final MessagingSettingsClient messagingSettingsClient) {
 
-		this.errandsRepository = errandsRepository;
+		this.accessControlService = accessControlService;
 		this.messagingClient = messagingClient;
 		this.communicationRepository = communicationRepository;
 		this.communicationAttachmentRepository = communicationAttachmentRepository;
@@ -92,20 +92,20 @@ public class CommunicationService {
 	}
 
 	public List<Communication> readCommunications(final String namespace, final String municipalityId, final String errandId) {
-		final var errand = fetchErrand(errandId, namespace, municipalityId);
+		final var errand = accessControlService.getErrand(namespace, municipalityId, errandId, false);
 
 		return communicationMapper.toCommunications(communicationRepository.findByErrandNumber(errand.getErrandNumber()));
 	}
 
 	public List<Communication> readExternalCommunications(final String namespace, final String municipalityId, final String errandId) {
-		final var errand = fetchErrand(errandId, namespace, municipalityId);
+		final var errand = accessControlService.getErrand(namespace, municipalityId, errandId, false);
 		final var communications = communicationMapper.toCommunications(communicationRepository.findByErrandNumberAndInternal(errand.getErrandNumber(), false));
 		communications.forEach(communication -> communication.setViewed(null));
 		return communications;
 	}
 
 	public void updateViewedStatus(final String namespace, final String municipalityId, final String id, final String communicationId, final boolean isViewed) {
-		fetchErrand(id, namespace, municipalityId);
+		accessControlService.getErrand(namespace, municipalityId, id, false, RW);
 
 		final var message = communicationRepository
 			.findById(communicationId)
@@ -116,7 +116,7 @@ public class CommunicationService {
 	}
 
 	public void getMessageAttachmentStreamed(final String namespace, final String municipalityId, final String errandId, final String communicationId, final String attachmentId, final HttpServletResponse response) {
-		final var errand = fetchErrand(errandId, namespace, municipalityId);
+		final var errand = accessControlService.getErrand(namespace, municipalityId, errandId, false);
 		final var communicationAttachment = communicationAttachmentRepository.findByNamespaceAndMunicipalityIdAndCommunicationEntityIdAndId(namespace, municipalityId, communicationId, attachmentId)
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, ATTACHMENT_NOT_FOUND));
 
@@ -154,7 +154,7 @@ public class CommunicationService {
 
 	public void sendEmail(final String namespace, final String municipalityId, final String id, final EmailRequest request) {
 
-		final var errandEntity = fetchErrand(id, namespace, municipalityId);
+		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, id, false, RW);
 
 		Optional.ofNullable(request.getEmailHeaders()).ifPresentOrElse(headers -> {
 			if (!headers.containsKey(EmailHeader.MESSAGE_ID)) {
@@ -180,7 +180,7 @@ public class CommunicationService {
 
 	public void sendSms(final String namespace, final String municipalityId, final String id, final SmsRequest request) {
 
-		final var entity = fetchErrand(id, namespace, municipalityId);
+		final var entity = accessControlService.getErrand(namespace, municipalityId, id, false, RW);
 		messagingClient.sendSms(municipalityId, ASYNCHRONOUSLY, toSmsRequest(entity, request));
 
 		final var communicationEntity = communicationMapper.toCommunicationEntity(namespace, municipalityId, request)
@@ -192,7 +192,7 @@ public class CommunicationService {
 	}
 
 	public void sendWebMessage(final String namespace, final String municipalityId, final String id, final WebMessageRequest request) {
-		final var entity = fetchErrand(id, namespace, municipalityId);
+		final var entity = accessControlService.getErrand(namespace, municipalityId, id, false, RW);
 		final var errandAttachments = errandAttachmentService.findByNamespaceAndMunicipalityIdAndIdIn(namespace, municipalityId, request.getAttachmentIds());
 
 		final var fullName = getFullName(municipalityId);
@@ -253,13 +253,6 @@ public class CommunicationService {
 			.orElse(null);
 	}
 
-	ErrandEntity fetchErrand(final String id, final String namespace, final String municipalityId) {
-		if (!errandsRepository.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)) {
-			throw Problem.valueOf(NOT_FOUND, String.format(ERRAND_ENTITY_NOT_FOUND, id, namespace, municipalityId));
-		}
-		return errandsRepository.findById(id).orElseThrow(() -> Problem.valueOf(NOT_FOUND, String.format(ERRAND_ENTITY_NOT_FOUND, id, namespace, municipalityId)));
-	}
-
 	public void saveAttachment(final CommunicationEntity communicationEntity, final ErrandEntity entity) {
 		communicationMapper.toAttachments(communicationEntity)
 			.forEach(attachmentEntity -> {
@@ -274,8 +267,7 @@ public class CommunicationService {
 
 	public void sendMessageNotification(final String municipalityId, final String namespace, final String errandId, final String departmentName) {
 
-		final var errand = errandsRepository.findByIdAndNamespaceAndMunicipalityId(errandId, namespace, municipalityId)
-			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, ERRAND_ENTITY_NOT_FOUND.formatted(errandId, namespace, municipalityId)));
+		final var errand = accessControlService.getErrand(namespace, municipalityId, errandId, false, RW);
 
 		final var senderInfo = getSenderInfo(municipalityId, namespace, departmentName);
 

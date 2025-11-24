@@ -5,21 +5,19 @@ import static generated.se.sundsvall.eventlog.EventType.DELETE;
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.data.domain.Sort.Direction.DESC;
-import static org.zalando.problem.Status.NOT_FOUND;
-import static org.zalando.problem.Status.UNAUTHORIZED;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrand;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrandEntity;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationSubType.ERRAND;
-import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withId;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withMunicipalityId;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withNamespace;
 
@@ -47,10 +45,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
-import org.zalando.problem.ThrowableProblem;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
-import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.errand.Priority;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
@@ -214,14 +210,11 @@ class ErrandServiceTest {
 	void readExistingErrand(boolean limited) {
 		// Setup
 		final var entity = buildErrandEntity();
-		final Specification<ErrandEntity> specification = (root, query, criteriaBuilder) -> criteriaBuilder.conjunction();
 		final var user = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user");
 		Identifier.set(user);
 
 		// Mock
-		when(errandRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
-		when(errandRepositoryMock.findOne(ArgumentMatchers.<Specification<ErrandEntity>>any())).thenReturn(Optional.of(entity));
-		when(accessControlServiceMock.withAccessControl(any(), any(), any())).thenReturn(specification);
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean())).thenReturn(entity);
 		when(accessControlServiceMock.limitedMappingPredicateByLabel(any(), any(), any())).thenReturn(errand -> limited);
 
 		// Call
@@ -231,63 +224,20 @@ class ErrandServiceTest {
 		assertThat(response.getId()).isEqualTo(ERRAND_ID);
 		assertThat(response.getPriority()).isEqualTo(limited ? null : Priority.HIGH);
 
-		verify(errandRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
-		verify(accessControlServiceMock).withAccessControl(NAMESPACE, MUNICIPALITY_ID, user);
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false);
 		verify(accessControlServiceMock).limitedMappingPredicateByLabel(NAMESPACE, MUNICIPALITY_ID, user);
-		verify(errandRepositoryMock).findOne(specificationCaptor.capture());
-		assertThat(specificationCaptor.getValue()).usingRecursiveComparison().isEqualTo(withId(ERRAND_ID).and(specification));
-	}
-
-	@Test
-	void readNonExistingErrand() {
-		// Call
-		final var exception = assertThrows(ThrowableProblem.class, () -> service.readErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID));
-
-		// Assertions and verifications
-		assertThat(exception.getStatus()).isEqualTo(NOT_FOUND);
-		assertThat(exception.getTitle()).isEqualTo(NOT_FOUND.getReasonPhrase());
-		assertThat(exception.getMessage()).isEqualTo("Not Found: An errand with id 'errandId' could not be found in namespace 'namespace' for municipality with id 'municipalityId'");
-
-		verify(errandRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
-	}
-
-	@Test
-	void readUnauthorized() {
-		// Setup
-		final Specification<ErrandEntity> specification = (root, query, criteriaBuilder) -> criteriaBuilder.conjunction();
-		final var user = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user");
-		Identifier.set(user);
-
-		// Mock
-		when(errandRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
-		when(errandRepositoryMock.findOne(ArgumentMatchers.<Specification<ErrandEntity>>any())).thenReturn(Optional.empty());
-		when(accessControlServiceMock.withAccessControl(any(), any(), any())).thenReturn(specification);
-
-		// Call
-		final var exception = assertThrows(ThrowableProblem.class, () -> service.readErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID));
-
-		// Assertions and verifications
-		assertThat(exception.getStatus()).isEqualTo(UNAUTHORIZED);
-		assertThat(exception.getTitle()).isEqualTo(UNAUTHORIZED.getReasonPhrase());
-		assertThat(exception.getMessage()).isEqualTo("Unauthorized: Errand not accessible by user 'user'");
-		verify(errandRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
-		verify(accessControlServiceMock).withAccessControl(NAMESPACE, MUNICIPALITY_ID, user);
-		verify(errandRepositoryMock).findOne(specificationCaptor.capture());
-		assertThat(specificationCaptor.getValue()).usingRecursiveComparison().isEqualTo(withId(ERRAND_ID).and(specification));
+		verifyNoInteractions(errandRepositoryMock);
 	}
 
 	@Test
 	void updateExistingErrand() {
 		// Setup
 		final var entity = buildErrandEntity();
-		final Specification<ErrandEntity> specification = (root, query, criteriaBuilder) -> criteriaBuilder.conjunction();
 		final var user = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user");
 		Identifier.set(user);
 
 		// Mock
-		when(errandRepositoryMock.existsWithLockingByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
-		when(accessControlServiceMock.withAccessControl(any(), any(), any(), any())).thenReturn(specification);
-		when(errandRepositoryMock.findOne(ArgumentMatchers.<Specification<ErrandEntity>>any())).thenReturn(Optional.of(entity));
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(entity);
 		when(errandRepositoryMock.save(entity)).thenReturn(entity);
 		when(revisionServiceMock.createErrandRevision(any())).thenReturn(new RevisionResult(previousRevisionMock, currentRevisionMock));
 		when(contactReasonRepositoryMock.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId("reason", NAMESPACE, MUNICIPALITY_ID))
@@ -300,10 +250,7 @@ class ErrandServiceTest {
 		assertThat(response.getId()).isEqualTo(ERRAND_ID);
 		assertThat(response.getSuspension()).extracting("suspendedFrom", "suspendedTo").containsExactlyInAnyOrder(entity.getSuspendedFrom(), entity.getSuspendedTo());
 
-		verify(errandRepositoryMock).existsWithLockingByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
-		verify(accessControlServiceMock).withAccessControl(NAMESPACE, MUNICIPALITY_ID, user, Access.AccessLevelEnum.RW);
-		verify(errandRepositoryMock).findOne(specificationCaptor.capture());
-		assertThat(specificationCaptor.getValue()).usingRecursiveComparison().isEqualTo(withId(ERRAND_ID).and(specification));
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, Access.AccessLevelEnum.RW);
 		verify(errandRepositoryMock).save(entity);
 		verify(revisionServiceMock).createErrandRevision(entity);
 		verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_UPDATE_ERRAND, entity, currentRevisionMock, previousRevisionMock, ERRAND);
@@ -314,14 +261,11 @@ class ErrandServiceTest {
 	void updateExistingErrandWhenCreateRevisionReturnsNull() {
 		// Setup
 		final var entity = buildErrandEntity();
-		final Specification<ErrandEntity> specification = (root, query, criteriaBuilder) -> criteriaBuilder.conjunction();
 		final var user = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user");
 		Identifier.set(user);
 
 		// Mock
-		when(errandRepositoryMock.existsWithLockingByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
-		when(accessControlServiceMock.withAccessControl(any(), any(), any(), any())).thenReturn(specification);
-		when(errandRepositoryMock.findOne(ArgumentMatchers.<Specification<ErrandEntity>>any())).thenReturn(Optional.of(entity));
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(entity);
 		when(errandRepositoryMock.save(entity)).thenReturn(entity);
 		when(contactReasonRepositoryMock.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId("reason", NAMESPACE, MUNICIPALITY_ID))
 			.thenReturn(Optional.ofNullable(ContactReasonEntity.create().withReason("reason")));
@@ -332,10 +276,7 @@ class ErrandServiceTest {
 		// Assertions and verifications
 		assertThat(response.getId()).isEqualTo(ERRAND_ID);
 
-		verify(errandRepositoryMock).existsWithLockingByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
-		verify(accessControlServiceMock).withAccessControl(NAMESPACE, MUNICIPALITY_ID, user, Access.AccessLevelEnum.RW);
-		verify(errandRepositoryMock).findOne(specificationCaptor.capture());
-		assertThat(specificationCaptor.getValue()).usingRecursiveComparison().isEqualTo(withId(ERRAND_ID).and(specification));
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, Access.AccessLevelEnum.RW);
 		verify(errandRepositoryMock).save(entity);
 		verify(revisionServiceMock).createErrandRevision(entity);
 		verify(revisionServiceMock, never()).getErrandRevisionByVersion(any(), any(), any(), anyInt());
@@ -343,57 +284,15 @@ class ErrandServiceTest {
 	}
 
 	@Test
-	void updateNonExistingErrand() {
-		// Call
-		final var errand = Errand.create();
-		final var exception = assertThrows(ThrowableProblem.class, () -> service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, errand));
-
-		// Assertions and verifications
-		assertThat(exception.getStatus()).isEqualTo(NOT_FOUND);
-		assertThat(exception.getTitle()).isEqualTo(NOT_FOUND.getReasonPhrase());
-		assertThat(exception.getMessage()).isEqualTo("Not Found: An errand with id 'errandId' could not be found in namespace 'namespace' for municipality with id 'municipalityId'");
-
-		verify(errandRepositoryMock).existsWithLockingByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
-	}
-
-	@Test
-	void updateExistingErrandUnauthorized() {
-		// Setup
-		final var errand = Errand.create();
-		final Specification<ErrandEntity> specification = (root, query, criteriaBuilder) -> criteriaBuilder.conjunction();
-		final var user = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user");
-		Identifier.set(user);
-
-		// Mock
-		when(errandRepositoryMock.existsWithLockingByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
-		when(accessControlServiceMock.withAccessControl(any(), any(), any(), any())).thenReturn(specification);
-		when(errandRepositoryMock.findOne(ArgumentMatchers.<Specification<ErrandEntity>>any())).thenReturn(Optional.empty());
-
-		// Call
-		final var exception = assertThrows(ThrowableProblem.class, () -> service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, errand));
-
-		assertThat(exception.getStatus()).isEqualTo(UNAUTHORIZED);
-		assertThat(exception.getTitle()).isEqualTo(UNAUTHORIZED.getReasonPhrase());
-		assertThat(exception.getMessage()).isEqualTo("Unauthorized: Errand not accessible by user 'user'");
-		verify(errandRepositoryMock).existsWithLockingByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
-		verify(accessControlServiceMock).withAccessControl(NAMESPACE, MUNICIPALITY_ID, user, Access.AccessLevelEnum.RW);
-		verify(errandRepositoryMock).findOne(specificationCaptor.capture());
-		assertThat(specificationCaptor.getValue()).usingRecursiveComparison().isEqualTo(withId(ERRAND_ID).and(specification));
-	}
-
-	@Test
 	void deleteExistingErrand() {
 		// Setup
 		final var entity = buildErrandEntity();
 		final var errandAttachment = ErrandAttachment.create().withId("id");
-		final Specification<ErrandEntity> specification = (root, query, criteriaBuilder) -> criteriaBuilder.conjunction();
 		final var user = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user");
 		Identifier.set(user);
 
 		// Mock
-		when(errandRepositoryMock.existsWithLockingByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
-		when(accessControlServiceMock.withAccessControl(any(), any(), any(), any())).thenReturn(specification);
-		when(errandRepositoryMock.findOne(ArgumentMatchers.<Specification<ErrandEntity>>any())).thenReturn(Optional.of(entity));
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(entity);
 		when(revisionServiceMock.getLatestErrandRevision(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID)).thenReturn(currentRevisionMock);
 		when(errandAttachmentServiceMock.readErrandAttachments(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID)).thenReturn(List.of(errandAttachment));
 		when(notesClientMock.findNotes(MUNICIPALITY_ID, null, null, ERRAND_ID, null, null, 1, 1000))
@@ -403,58 +302,15 @@ class ErrandServiceTest {
 		service.deleteErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 
 		// Assertions and verifications
-		verify(errandRepositoryMock).existsWithLockingByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
-		verify(accessControlServiceMock).withAccessControl(NAMESPACE, MUNICIPALITY_ID, user, Access.AccessLevelEnum.RW);
-		verify(errandRepositoryMock).findOne(specificationCaptor.capture());
-		assertThat(specificationCaptor.getValue()).usingRecursiveComparison().isEqualTo(withId(ERRAND_ID).and(specification));
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, Access.AccessLevelEnum.RW);
 		verify(conversationServiceMock).deleteByErrandId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID);
 		verify(notesClientMock).findNotes(MUNICIPALITY_ID, null, null, ERRAND_ID, null, null, 1, 1000);
 		verify(notesClientMock).deleteNoteById(MUNICIPALITY_ID, "id");
-		verify(errandRepositoryMock).existsWithLockingByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(errandRepositoryMock).deleteById(ERRAND_ID);
 		verify(communicationServiceMock).deleteAllCommunicationsByErrandNumber(entity.getErrandNumber());
 		verify(errandAttachmentServiceMock).readErrandAttachments(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 		verify(attachmentRepositoryMock).deleteById(errandAttachment.getId());
 		verify(eventServiceMock).createErrandEvent(DELETE, EVENT_LOG_DELETE_ERRAND, entity, currentRevisionMock, null, false, ERRAND);
-	}
-
-	@Test
-	void deleteNonExistingErrand() {
-		// Call
-		final var exception = assertThrows(ThrowableProblem.class, () -> service.deleteErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID));
-
-		// Assertions and verifications
-		assertThat(exception.getStatus()).isEqualTo(NOT_FOUND);
-		assertThat(exception.getTitle()).isEqualTo(NOT_FOUND.getReasonPhrase());
-		assertThat(exception.getMessage()).isEqualTo("Not Found: An errand with id 'errandId' could not be found in namespace 'namespace' for municipality with id 'municipalityId'");
-
-		verify(errandRepositoryMock).existsWithLockingByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
-	}
-
-	@Test
-	void deleteExistingErrandUnauthorized() {
-		// Setup
-		final Specification<ErrandEntity> specification = (root, query, criteriaBuilder) -> criteriaBuilder.conjunction();
-		final var user = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user");
-		Identifier.set(user);
-
-		// Mock
-		when(errandRepositoryMock.existsWithLockingByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
-		when(accessControlServiceMock.withAccessControl(any(), any(), any(), any())).thenReturn(specification);
-		when(errandRepositoryMock.findOne(ArgumentMatchers.<Specification<ErrandEntity>>any())).thenReturn(Optional.empty());
-
-		// Call
-		final var exception = assertThrows(ThrowableProblem.class, () -> service.deleteErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID));
-
-		// Assertions and verifications
-		assertThat(exception.getStatus()).isEqualTo(UNAUTHORIZED);
-		assertThat(exception.getTitle()).isEqualTo(UNAUTHORIZED.getReasonPhrase());
-		assertThat(exception.getMessage()).isEqualTo("Unauthorized: Errand not accessible by user 'user'");
-		verify(errandRepositoryMock).existsWithLockingByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
-		verify(accessControlServiceMock).withAccessControl(NAMESPACE, MUNICIPALITY_ID, user, Access.AccessLevelEnum.RW);
-		verify(errandRepositoryMock).findOne(specificationCaptor.capture());
-		assertThat(specificationCaptor.getValue()).usingRecursiveComparison().isEqualTo(withId(ERRAND_ID).and(specification));
-
 	}
 
 	@Test

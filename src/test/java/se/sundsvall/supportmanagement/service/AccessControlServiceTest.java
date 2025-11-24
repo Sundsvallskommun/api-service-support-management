@@ -4,25 +4,35 @@ import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.zalando.problem.Status.NOT_FOUND;
+import static org.zalando.problem.Status.UNAUTHORIZED;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.hasAllowedMetadataLabels;
+import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withId;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatchers;
+import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.zalando.problem.ThrowableProblem;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
+import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
@@ -33,12 +43,19 @@ class AccessControlServiceTest {
 
 	private static final String NAMESPACE = "namespace";
 	private static final String MUNICIPALITY_ID = "municipalityId";
+	private static final String ERRAND_ID = "errandId";
 
 	@Mock
 	private AccessMapperService accessMapperService;
 
 	@Mock
 	private NamespaceConfigService namespaceConfigServiceMock;
+
+	@Mock
+	private ErrandsRepository errandsRepositoryMock;
+
+	@Captor
+	private ArgumentCaptor<Specification<ErrandEntity>> specificationCaptor;
 
 	@InjectMocks
 	private AccessControlService accessControlService;
@@ -47,22 +64,22 @@ class AccessControlServiceTest {
 	void limitedMappingPredicateByLabelShouldReturnTrueIfActive() {
 
 		// Setup
-		var user = Identifier.create();
-		var label1ResourcePath = "label/1";
-		var label2ResourcePath = "label/2";
-		var label1 = MetadataLabelEntity.create().withResourcePath(label1ResourcePath);
-		var label2 = MetadataLabelEntity.create().withResourcePath(label2ResourcePath);
-		var errandLabel1 = ErrandLabelEmbeddable.create();
-		var errandLabel2 = ErrandLabelEmbeddable.create();
+		final var user = Identifier.create();
+		final var label1ResourcePath = "label/1";
+		final var label2ResourcePath = "label/2";
+		final var label1 = MetadataLabelEntity.create().withResourcePath(label1ResourcePath);
+		final var label2 = MetadataLabelEntity.create().withResourcePath(label2ResourcePath);
+		final var errandLabel1 = ErrandLabelEmbeddable.create();
+		final var errandLabel2 = ErrandLabelEmbeddable.create();
 		ReflectionTestUtils.setField(errandLabel1, "metadataLabel", label1);
 		ReflectionTestUtils.setField(errandLabel2, "metadataLabel", label2);
-		var errand = ErrandEntity.create().withLabels(List.of(errandLabel1, errandLabel2));
+		final var errand = ErrandEntity.create().withLabels(List.of(errandLabel1, errandLabel2));
 		// Mock
 		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create().withAccessControl(true));
 		when(accessMapperService.getAccessibleLabels(any(), any(), any(), any())).thenReturn(Set.of());
 
 		// Act
-		var result = accessControlService.limitedMappingPredicateByLabel(NAMESPACE, MUNICIPALITY_ID, user)
+		final var result = accessControlService.limitedMappingPredicateByLabel(NAMESPACE, MUNICIPALITY_ID, user)
 			.test(errand);
 
 		// Verify
@@ -76,23 +93,23 @@ class AccessControlServiceTest {
 	void limitedMappingPredicateByLabelShouldReturnFalseIfActive() {
 
 		// Setup
-		var user = Identifier.create();
-		var label1ResourcePath = "label/1";
-		var label2ResourcePath = "label/2";
-		var label1 = MetadataLabelEntity.create().withResourcePath(label1ResourcePath);
-		var label2 = MetadataLabelEntity.create().withResourcePath(label2ResourcePath);
-		var errandLabel1 = ErrandLabelEmbeddable.create();
-		var errandLabel2 = ErrandLabelEmbeddable.create();
+		final var user = Identifier.create();
+		final var label1ResourcePath = "label/1";
+		final var label2ResourcePath = "label/2";
+		final var label1 = MetadataLabelEntity.create().withResourcePath(label1ResourcePath);
+		final var label2 = MetadataLabelEntity.create().withResourcePath(label2ResourcePath);
+		final var errandLabel1 = ErrandLabelEmbeddable.create();
+		final var errandLabel2 = ErrandLabelEmbeddable.create();
 		ReflectionTestUtils.setField(errandLabel1, "metadataLabel", label1);
 		ReflectionTestUtils.setField(errandLabel2, "metadataLabel", label2);
-		var errand = ErrandEntity.create().withLabels(List.of(errandLabel1, errandLabel2));
+		final var errand = ErrandEntity.create().withLabels(List.of(errandLabel1, errandLabel2));
 
 		// Mock
 		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create().withAccessControl(true));
 		when(accessMapperService.getAccessibleLabels(any(), any(), any(), any())).thenReturn(Set.of(label1, label2));
 
 		// Act
-		var result = accessControlService.limitedMappingPredicateByLabel(NAMESPACE, MUNICIPALITY_ID, user)
+		final var result = accessControlService.limitedMappingPredicateByLabel(NAMESPACE, MUNICIPALITY_ID, user)
 			.test(errand);
 
 		// Verify
@@ -104,14 +121,14 @@ class AccessControlServiceTest {
 	@Test
 	void limitedMappingPredicateByLabelShouldReturnFalseIfInactive() {
 		// Setup
-		var user = Identifier.create();
-		var errand = ErrandEntity.create();
+		final var user = Identifier.create();
+		final var errand = ErrandEntity.create();
 
 		// Mock
 		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create().withAccessControl(false));
 
 		// Act
-		var result = accessControlService.limitedMappingPredicateByLabel(NAMESPACE, MUNICIPALITY_ID, user)
+		final var result = accessControlService.limitedMappingPredicateByLabel(NAMESPACE, MUNICIPALITY_ID, user)
 			.test(errand);
 
 		// Verify
@@ -124,14 +141,14 @@ class AccessControlServiceTest {
 	@Test
 	void withAccessControlOff() {
 		// Setup
-		var config = NamespaceConfig.create().withAccessControl(false);
-		var user = Identifier.create();
+		final var config = NamespaceConfig.create().withAccessControl(false);
+		final var user = Identifier.create();
 
 		// Mock
 		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(config);
 
 		// Act
-		var specification = accessControlService.withAccessControl(NAMESPACE, MUNICIPALITY_ID, user);
+		final var specification = accessControlService.withAccessControl(NAMESPACE, MUNICIPALITY_ID, user);
 
 		// Verify
 		assertThat(specification).usingRecursiveComparison().isEqualTo((Specification<ErrandEntity>) (root, query, criteriaBuilder) -> criteriaBuilder.conjunction());
@@ -142,20 +159,119 @@ class AccessControlServiceTest {
 	@Test
 	void withAccessControlEnabled() {
 		// Setup
-		var config = NamespaceConfig.create().withAccessControl(true);
-		var user = Identifier.create();
-		var allowedLabels = Set.of(MetadataLabelEntity.create());
+		final var config = NamespaceConfig.create().withAccessControl(true);
+		final var user = Identifier.create();
+		final var allowedLabels = Set.of(MetadataLabelEntity.create());
 
 		// Mock
 		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(config);
 		when(accessMapperService.getAccessibleLabels(any(), any(), any(), any())).thenReturn(allowedLabels);
 
 		// Act
-		var specification = accessControlService.withAccessControl(NAMESPACE, MUNICIPALITY_ID, user);
+		final var specification = accessControlService.withAccessControl(NAMESPACE, MUNICIPALITY_ID, user);
 
 		// Verify
 		assertThat(specification).usingRecursiveComparison().isEqualTo(hasAllowedMetadataLabels(allowedLabels));
 		verify(namespaceConfigServiceMock).get(NAMESPACE, MUNICIPALITY_ID);
 		verify(accessMapperService).getAccessibleLabels(MUNICIPALITY_ID, NAMESPACE, user, List.of(LR, R, RW));
+	}
+
+	@Test
+	void getErrand() {
+		// Setup
+		final var entity = ErrandEntity.create();
+		final var user = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user");
+		Identifier.set(user);
+		final var config = NamespaceConfig.create().withAccessControl(true);
+		final var allowedLabels = Set.of(MetadataLabelEntity.create());
+
+		// Mock
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(config);
+		when(accessMapperService.getAccessibleLabels(any(), any(), any(), any())).thenReturn(allowedLabels);
+		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(true);
+		when(errandsRepositoryMock.findOne(ArgumentMatchers.<Specification<ErrandEntity>>any())).thenReturn(Optional.of(entity));
+
+		// Act
+		final var result = accessControlService.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false);
+
+		// Verify
+		assertThat(result).isSameAs(entity);
+		verify(namespaceConfigServiceMock).get(NAMESPACE, MUNICIPALITY_ID);
+		verify(accessMapperService).getAccessibleLabels(MUNICIPALITY_ID, NAMESPACE, user, List.of(LR, R, RW));
+		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
+		verify(errandsRepositoryMock).findOne(specificationCaptor.capture());
+		assertThat(specificationCaptor.getValue()).usingRecursiveComparison().isEqualTo(withId(ERRAND_ID).and(hasAllowedMetadataLabels(allowedLabels)));
+	}
+
+	@Test
+	void getErrandWithLock() {
+		// Setup
+		final var entity = ErrandEntity.create();
+		final var user = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user");
+		Identifier.set(user);
+		final var config = NamespaceConfig.create().withAccessControl(true);
+		final var allowedLabels = Set.of(MetadataLabelEntity.create());
+
+		// Mock
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(config);
+		when(accessMapperService.getAccessibleLabels(any(), any(), any(), any())).thenReturn(allowedLabels);
+		when(errandsRepositoryMock.existsWithLockingByIdAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(true);
+		when(errandsRepositoryMock.findOne(ArgumentMatchers.<Specification<ErrandEntity>>any())).thenReturn(Optional.of(entity));
+
+		// Act
+		final var result = accessControlService.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true);
+
+		// Verify
+		assertThat(result).isSameAs(entity);
+		verify(namespaceConfigServiceMock).get(NAMESPACE, MUNICIPALITY_ID);
+		verify(accessMapperService).getAccessibleLabels(MUNICIPALITY_ID, NAMESPACE, user, List.of(LR, R, RW));
+		verify(errandsRepositoryMock).existsWithLockingByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
+		verify(errandsRepositoryMock).findOne(specificationCaptor.capture());
+		assertThat(specificationCaptor.getValue()).usingRecursiveComparison().isEqualTo(withId(ERRAND_ID).and(hasAllowedMetadataLabels(allowedLabels)));
+	}
+
+	@Test
+	void getErrandNotFound() {
+		// Mock
+		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(false);
+
+		// Act
+		final var exception = assertThrows(ThrowableProblem.class, () -> accessControlService.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false));
+
+		// Verify
+		assertThat(exception.getStatus()).isEqualTo(NOT_FOUND);
+		assertThat(exception.getTitle()).isEqualTo(NOT_FOUND.getReasonPhrase());
+		assertThat(exception.getMessage()).isEqualTo("Not Found: An errand with id 'errandId' could not be found in namespace 'namespace' for municipality with id 'municipalityId'");
+
+		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
+		verifyNoInteractions(namespaceConfigServiceMock, accessMapperService);
+	}
+
+	@Test
+	void getErrandUnauthorized() {
+		// Setup
+		final var user = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user");
+		Identifier.set(user);
+		final var config = NamespaceConfig.create().withAccessControl(true);
+		final var allowedLabels = Set.of(MetadataLabelEntity.create());
+
+		// Mock
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(config);
+		when(accessMapperService.getAccessibleLabels(any(), any(), any(), any())).thenReturn(allowedLabels);
+		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(true);
+		when(errandsRepositoryMock.findOne(ArgumentMatchers.<Specification<ErrandEntity>>any())).thenReturn(Optional.empty());
+
+		// Act
+		final var exception = assertThrows(ThrowableProblem.class, () -> accessControlService.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false));
+
+		// Verify
+		assertThat(exception.getStatus()).isEqualTo(UNAUTHORIZED);
+		assertThat(exception.getTitle()).isEqualTo(UNAUTHORIZED.getReasonPhrase());
+		assertThat(exception.getMessage()).isEqualTo("Unauthorized: Errand not accessible by user 'user'");
+		verify(namespaceConfigServiceMock).get(NAMESPACE, MUNICIPALITY_ID);
+		verify(accessMapperService).getAccessibleLabels(MUNICIPALITY_ID, NAMESPACE, user, List.of(LR, R, RW));
+		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
+		verify(errandsRepositoryMock).findOne(specificationCaptor.capture());
+		assertThat(specificationCaptor.getValue()).usingRecursiveComparison().isEqualTo(withId(ERRAND_ID).and(hasAllowedMetadataLabels(allowedLabels)));
 	}
 }
