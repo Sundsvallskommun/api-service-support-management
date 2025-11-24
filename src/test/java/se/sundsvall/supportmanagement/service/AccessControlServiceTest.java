@@ -274,4 +274,74 @@ class AccessControlServiceTest {
 		verify(errandsRepositoryMock).findOne(specificationCaptor.capture());
 		assertThat(specificationCaptor.getValue()).usingRecursiveComparison().isEqualTo(withId(ERRAND_ID).and(hasAllowedMetadataLabels(allowedLabels)));
 	}
+
+	@Test
+	void verifyExistingErrandAndAuthorization() {
+		// Setup
+		final var user = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user");
+		Identifier.set(user);
+		final var config = NamespaceConfig.create().withAccessControl(true);
+		final var allowedLabels = Set.of(MetadataLabelEntity.create());
+
+		// Mock
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(config);
+		when(accessMapperService.getAccessibleLabels(any(), any(), any(), any())).thenReturn(allowedLabels);
+		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(true);
+		when(errandsRepositoryMock.exists(ArgumentMatchers.<Specification<ErrandEntity>>any())).thenReturn(true);
+
+		// Act
+		accessControlService.verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
+
+		// Verify
+		verify(namespaceConfigServiceMock).get(NAMESPACE, MUNICIPALITY_ID);
+		verify(accessMapperService).getAccessibleLabels(MUNICIPALITY_ID, NAMESPACE, user, List.of(LR, R, RW));
+		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
+		verify(errandsRepositoryMock).exists(specificationCaptor.capture());
+		assertThat(specificationCaptor.getValue()).usingRecursiveComparison().isEqualTo(withId(ERRAND_ID).and(hasAllowedMetadataLabels(allowedLabels)));
+	}
+
+	@Test
+	void verifyExistingErrandAndAuthorizationNotFound() {
+		// Mock
+		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(false);
+
+		// Act
+		final var exception = assertThrows(ThrowableProblem.class, () -> accessControlService.verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID));
+
+		// Verify
+		assertThat(exception.getStatus()).isEqualTo(NOT_FOUND);
+		assertThat(exception.getTitle()).isEqualTo(NOT_FOUND.getReasonPhrase());
+		assertThat(exception.getMessage()).isEqualTo("Not Found: An errand with id 'errandId' could not be found in namespace 'namespace' for municipality with id 'municipalityId'");
+
+		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
+		verifyNoInteractions(namespaceConfigServiceMock, accessMapperService);
+	}
+
+	@Test
+	void verifyExistingErrandAndAuthorizationNotAuthorized() {
+		// Setup
+		final var user = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user");
+		Identifier.set(user);
+		final var config = NamespaceConfig.create().withAccessControl(true);
+		final var allowedLabels = Set.of(MetadataLabelEntity.create());
+
+		// Mock
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(config);
+		when(accessMapperService.getAccessibleLabels(any(), any(), any(), any())).thenReturn(allowedLabels);
+		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(true);
+		when(errandsRepositoryMock.exists(ArgumentMatchers.<Specification<ErrandEntity>>any())).thenReturn(false);
+
+		// Act
+		final var exception = assertThrows(ThrowableProblem.class, () -> accessControlService.verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID));
+
+		// Verify
+		assertThat(exception.getStatus()).isEqualTo(UNAUTHORIZED);
+		assertThat(exception.getTitle()).isEqualTo(UNAUTHORIZED.getReasonPhrase());
+		assertThat(exception.getMessage()).isEqualTo("Unauthorized: Errand not accessible by user 'user'");
+		verify(namespaceConfigServiceMock).get(NAMESPACE, MUNICIPALITY_ID);
+		verify(accessMapperService).getAccessibleLabels(MUNICIPALITY_ID, NAMESPACE, user, List.of(LR, R, RW));
+		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
+		verify(errandsRepositoryMock).exists(specificationCaptor.capture());
+		assertThat(specificationCaptor.getValue()).usingRecursiveComparison().isEqualTo(withId(ERRAND_ID).and(hasAllowedMetadataLabels(allowedLabels)));
+	}
 }

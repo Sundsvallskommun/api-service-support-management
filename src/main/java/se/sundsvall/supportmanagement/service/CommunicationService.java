@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.service;
 
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
@@ -51,7 +52,6 @@ import se.sundsvall.supportmanagement.service.mapper.CommunicationMapper;
 @Service
 public class CommunicationService {
 
-	private static final String ERRAND_ENTITY_NOT_FOUND = "An errand with id '%s' could not be found in namespace '%s' for municipality with id '%s'";
 	private static final String COMMUNICATION_NOT_FOUND = "Communication with id %s not found";
 	private static final String ATTACHMENT_NOT_FOUND = "Communication attachment not found";
 	private static final String ATTACHMENT_WITH_ERRAND_NUMBER_NOT_FOUND = "Communication attachment not found for this errand";
@@ -92,20 +92,20 @@ public class CommunicationService {
 	}
 
 	public List<Communication> readCommunications(final String namespace, final String municipalityId, final String errandId) {
-		final var errand = accessControlService.getErrand(namespace, municipalityId, errandId, false);
+		final var errand = accessControlService.getErrand(namespace, municipalityId, errandId, false, R, RW);
 
 		return communicationMapper.toCommunications(communicationRepository.findByErrandNumber(errand.getErrandNumber()));
 	}
 
 	public List<Communication> readExternalCommunications(final String namespace, final String municipalityId, final String errandId) {
-		final var errand = accessControlService.getErrand(namespace, municipalityId, errandId, false);
+		final var errand = accessControlService.getErrand(namespace, municipalityId, errandId, false, R, RW);
 		final var communications = communicationMapper.toCommunications(communicationRepository.findByErrandNumberAndInternal(errand.getErrandNumber(), false));
 		communications.forEach(communication -> communication.setViewed(null));
 		return communications;
 	}
 
 	public void updateViewedStatus(final String namespace, final String municipalityId, final String id, final String communicationId, final boolean isViewed) {
-		accessControlService.getErrand(namespace, municipalityId, id, false, RW);
+		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, id, RW);
 
 		final var message = communicationRepository
 			.findById(communicationId)
@@ -116,7 +116,7 @@ public class CommunicationService {
 	}
 
 	public void getMessageAttachmentStreamed(final String namespace, final String municipalityId, final String errandId, final String communicationId, final String attachmentId, final HttpServletResponse response) {
-		final var errand = accessControlService.getErrand(namespace, municipalityId, errandId, false);
+		final var errand = accessControlService.getErrand(namespace, municipalityId, errandId, false, R, RW);
 		final var communicationAttachment = communicationAttachmentRepository.findByNamespaceAndMunicipalityIdAndCommunicationEntityIdAndId(namespace, municipalityId, communicationId, attachmentId)
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, ATTACHMENT_NOT_FOUND));
 

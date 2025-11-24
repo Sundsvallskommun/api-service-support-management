@@ -3,7 +3,6 @@ package se.sundsvall.supportmanagement.service;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
-import static java.lang.Boolean.FALSE;
 import static org.zalando.problem.Status.NOT_FOUND;
 import static org.zalando.problem.Status.UNAUTHORIZED;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.hasAllowedMetadataLabels;
@@ -14,7 +13,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
@@ -105,16 +103,37 @@ public class AccessControlService {
 				.orElse(null))));
 	}
 
+	/**
+	 * Verify existence of errand and that user has access to it if access control is enabled in namespace. Throws Problem
+	 * 404 if errand does not exist. Throws 401 if user does not have access.
+	 *
+	 * @param namespace              namespace
+	 * @param municipalityId         municipality id
+	 * @param id                     errand id
+	 * @param accessLevelEnumsFilter filters errands base on user access level for specific errand. If empty, no filtering
+	 *                               occurs (fetches errand if any level exists)
+	 */
+	public void verifyExistingErrandAndAuthorization(final String namespace, final String municipalityId, final String id, Access.AccessLevelEnum... accessLevelEnumsFilter) {
+		verifyExistingErrand(id, namespace, municipalityId, false);
+		var authorized = errandsRepository.exists(withId(id).and(withAccessControl(namespace, municipalityId, Identifier.get(), accessLevelEnumsFilter)));
+
+		if (!authorized) {
+			throw Problem.valueOf(UNAUTHORIZED, ENTITY_NOT_ACCESSIBLE.formatted(Optional.ofNullable(Identifier.get())
+				.map(Identifier::getValue)
+				.orElse(null)));
+		}
+	}
+
 	private void verifyExistingErrand(final String id, final String namespace, final String municipalityId, final boolean lock) {
 
-		final Supplier<Boolean> exists;
+		final boolean exists;
 		if (lock) {
-			exists = () -> errandsRepository.existsWithLockingByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+			exists = errandsRepository.existsWithLockingByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
 		} else {
-			exists = () -> errandsRepository.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+			exists = errandsRepository.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
 		}
 
-		if (FALSE.equals(exists.get())) {
+		if (!exists) {
 			throw Problem.valueOf(NOT_FOUND, ENTITY_NOT_FOUND.formatted(id, namespace, municipalityId));
 		}
 	}

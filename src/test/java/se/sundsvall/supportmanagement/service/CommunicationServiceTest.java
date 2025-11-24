@@ -203,7 +203,7 @@ class CommunicationServiceTest {
 		final var errandNumber = "errandNumber";
 
 		// Mock
-		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean())).thenReturn(errandEntityMock);
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(errandEntityMock);
 		when(errandEntityMock.getErrandNumber()).thenReturn(errandNumber);
 		when(communicationRepositoryMock.findByErrandNumber(any(String.class))).thenReturn(List.of(CommunicationEntity.create()));
 		when(communicationMapperMock.toCommunications(anyList())).thenReturn(List.of(Communication.create()));
@@ -214,7 +214,7 @@ class CommunicationServiceTest {
 		// Verification
 		assertThat(response).isNotNull().hasSize(1);
 
-		verify(accessControlServiceMock).getErrand(namespace, municipalityId, id, false);
+		verify(accessControlServiceMock).getErrand(namespace, municipalityId, id, false, R, RW);
 		verify(communicationRepositoryMock).findByErrandNumber(any(String.class));
 		verify(communicationMapperMock).toCommunications(anyList());
 
@@ -232,7 +232,7 @@ class CommunicationServiceTest {
 		final var errandNumber = "errandNumber";
 
 		// Mock
-		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean())).thenReturn(errandEntityMock);
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(errandEntityMock);
 		when(errandEntityMock.getErrandNumber()).thenReturn(errandNumber);
 		when(communicationRepositoryMock.findByErrandNumberAndInternal(errandNumber, false)).thenReturn(List.of(CommunicationEntity.create().withInternal(true)));
 		when(communicationMapperMock.toCommunications(anyList())).thenReturn(List.of(Communication.create()));
@@ -244,7 +244,7 @@ class CommunicationServiceTest {
 		assertThat(response).isNotNull().hasSize(1);
 		assertThat(response.getFirst().getViewed()).isNull();
 
-		verify(accessControlServiceMock).getErrand(namespace, municipalityId, id, false);
+		verify(accessControlServiceMock).getErrand(namespace, municipalityId, id, false, R, RW);
 		verify(communicationRepositoryMock).findByErrandNumberAndInternal(errandNumber, false);
 		verify(communicationMapperMock).toCommunications(anyList());
 
@@ -263,14 +263,13 @@ class CommunicationServiceTest {
 		final var isViewed = true;
 
 		// Mock
-		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(errandEntityMock);
 		when(communicationRepositoryMock.findById(any(String.class))).thenReturn(Optional.of(CommunicationEntity.create()));
 
 		// Call
 		communicationService.updateViewedStatus(namespace, municipalityId, id, messageID, isViewed);
 
 		// Verification
-		verify(accessControlServiceMock).getErrand(namespace, municipalityId, id, false, RW);
+		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(namespace, municipalityId, id, RW);
 		verify(communicationRepositoryMock).findById(any(String.class));
 		verify(communicationRepositoryMock).save(any(CommunicationEntity.class));
 
@@ -290,7 +289,7 @@ class CommunicationServiceTest {
 		final var inputStream = IOUtils.toInputStream(content, UTF_8);
 
 		// Mock
-		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean())).thenReturn(errandEntityMock);
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(errandEntityMock);
 		when(errandEntityMock.getErrandNumber()).thenReturn(errandNumber);
 		when(communicationAttachmentRepositoryMock.findByNamespaceAndMunicipalityIdAndCommunicationEntityIdAndId(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(communicationId), any())).thenReturn(Optional.of(communicationAttachmentEntityMock));
 		when(communicationAttachmentEntityMock.getMimeType()).thenReturn(contentType);
@@ -308,7 +307,7 @@ class CommunicationServiceTest {
 		communicationService.getMessageAttachmentStreamed(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, communicationId, attachmentId, servletResponseMock);
 
 		// Verification
-		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false);
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, R, RW);
 		verify(communicationAttachmentRepositoryMock).findByNamespaceAndMunicipalityIdAndCommunicationEntityIdAndId(NAMESPACE, MUNICIPALITY_ID, communicationId, attachmentId);
 		verify(communicationAttachmentEntityMock).getAttachmentData();
 		verify(attachmentDataEntityMock).getFile();
