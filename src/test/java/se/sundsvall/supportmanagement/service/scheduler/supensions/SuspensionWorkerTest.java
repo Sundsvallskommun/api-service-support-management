@@ -76,7 +76,7 @@ class SuspensionWorkerTest {
 		verify(errandsRepositoryMock).findAllBySuspendedToBefore(any(OffsetDateTime.class));
 		verify(notificationServiceMock).doesNotificationWithSpecificDescriptionExistForOwnerAndErrandAndNotificationIsCreatedAfter(municipalityId, namespace, errandEntity.getAssignedUserId(), errandEntity, "Parkering av ärendet har upphört",
 			errandEntity.getSuspendedFrom());
-		verify(notificationServiceMock).createNotification(eq(municipalityId), eq(namespace), eq(errandEntity.getId()), notificationCaptor.capture());
+		verify(notificationServiceMock).createNotification(eq(municipalityId), eq(namespace), eq(errandEntity), notificationCaptor.capture());
 
 		final var notification = notificationCaptor.getValue();
 		assertThat(notification).isNotNull();
@@ -117,7 +117,7 @@ class SuspensionWorkerTest {
 		verify(errandsRepositoryMock).findAllBySuspendedToBefore(any(OffsetDateTime.class));
 		verify(notificationServiceMock).doesNotificationWithSpecificDescriptionExistForOwnerAndErrandAndNotificationIsCreatedAfter(municipalityId, namespace, errandEntity.getAssignedUserId(), errandEntity, "Parkering av ärendet har upphört",
 			errandEntity.getSuspendedFrom());
-		verify(notificationServiceMock).createNotification(eq(municipalityId), eq(namespace), eq(errandEntity.getId()), notificationCaptor.capture());
+		verify(notificationServiceMock).createNotification(eq(municipalityId), eq(namespace), eq(errandEntity), notificationCaptor.capture());
 
 		final var notification = notificationCaptor.getValue();
 		assertThat(notification).isNotNull();
@@ -201,7 +201,7 @@ class SuspensionWorkerTest {
 		verify(errandsRepositoryMock).findAllBySuspendedToBefore(any(OffsetDateTime.class));
 		verify(notificationServiceMock).doesNotificationWithSpecificDescriptionExistForOwnerAndErrandAndNotificationIsCreatedAfter(municipalityId, namespace, errandEntity.getAssignedUserId(), errandEntity, "Parkering av ärendet har upphört",
 			errandEntity.getSuspendedFrom());
-		verify(notificationServiceMock).createNotification(eq(municipalityId), eq(namespace), eq(errandEntity.getId()), notificationCaptor.capture());
+		verify(notificationServiceMock).createNotification(eq(municipalityId), eq(namespace), eq(errandEntity), notificationCaptor.capture());
 		verify(employeeServiceMock).getEmployeeByLoginName(municipalityId, errandEntity.getAssignedUserId());
 
 		final var notification = notificationCaptor.getValue();
