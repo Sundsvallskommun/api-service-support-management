@@ -310,7 +310,7 @@ class MessageExchangeSyncConfigServiceTest {
 		// Assert
 		verify(messageExchangeClientMock).getMessageAttachment(eq(municipalityId), any(), any(), any(), eq(attachment.getId()));
 		verify(errandsRepositoryMock).getReferenceById("123L");
-		verify(attachmentServiceMock).createErrandAttachment(eq(namespace), eq(municipalityId), same(errandEntity), ArgumentMatchers.<ResponseEntity<InputStreamResource>>any());
+		verify(attachmentServiceMock).createErrandAttachment(same(errandEntity), ArgumentMatchers.<ResponseEntity<InputStreamResource>>any());
 		verifyNoMoreInteractions(attachmentServiceMock, messageExchangeClientMock);
 		verifyNoInteractions(conversationRepositoryMock);
 	}
@@ -319,17 +319,15 @@ class MessageExchangeSyncConfigServiceTest {
 	void saveAttachment() {
 		// Arrange
 		final var errandEntity = ErrandEntity.create();
-		final var municipalityId = "municipalityId";
-		final var namespace = "namespace";
 		final var file = ResponseEntity.ok()
 			.header("Content-Type", "application/octet-stream")
 			.body(new InputStreamResource(new ByteArrayInputStream(new byte[0])));
 
 		// Act
-		service.saveAttachment(errandEntity, municipalityId, namespace, file);
+		service.saveAttachment(errandEntity, file);
 
 		// Assert
-		verify(attachmentServiceMock).createErrandAttachment(eq(namespace), eq(municipalityId), same(errandEntity), ArgumentMatchers.<ResponseEntity<InputStreamResource>>any());
+		verify(attachmentServiceMock).createErrandAttachment(same(errandEntity), ArgumentMatchers.<ResponseEntity<InputStreamResource>>any());
 		verifyNoMoreInteractions(attachmentServiceMock);
 		verifyNoInteractions(conversationRepositoryMock, messageExchangeClientMock);
 	}
@@ -338,14 +336,12 @@ class MessageExchangeSyncConfigServiceTest {
 	void saveAttachmentNullFile() {
 		// Arrange
 		final var errandEntity = ErrandEntity.create();
-		final var municipalityId = "municipalityId";
-		final var namespace = "namespace";
 		final ResponseEntity<InputStreamResource> file = ResponseEntity.ok()
 			.header("Content-Type", "application/octet-stream")
 			.build();
 
 		// Act & Assert
-		assertThatThrownBy(() -> service.saveAttachment(errandEntity, municipalityId, namespace, file))
+		assertThatThrownBy(() -> service.saveAttachment(errandEntity, file))
 			.isInstanceOf(Problem.class)
 			.hasMessageContaining("Failed to retrieve attachment from Message Exchange");
 
@@ -356,13 +352,11 @@ class MessageExchangeSyncConfigServiceTest {
 	void saveAttachmentNoContentType() {
 		// Arrange
 		final var errandEntity = ErrandEntity.create();
-		final var municipalityId = "municipalityId";
-		final var namespace = "namespace";
 		final ResponseEntity<InputStreamResource> file = ResponseEntity.ok()
 			.body(new InputStreamResource(new ByteArrayInputStream(new byte[0])));
 
 		// Act & Assert
-		assertThatThrownBy(() -> service.saveAttachment(errandEntity, municipalityId, namespace, file))
+		assertThatThrownBy(() -> service.saveAttachment(errandEntity, file))
 			.isInstanceOf(Problem.class)
 			.hasMessageContaining("Failed to retrieve attachment from Message Exchange");
 

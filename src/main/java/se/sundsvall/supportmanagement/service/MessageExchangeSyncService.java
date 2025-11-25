@@ -73,14 +73,14 @@ public class MessageExchangeSyncService {
 	void syncAttachment(final ConversationEntity conversationEntity, final Message message, final generated.se.sundsvall.messageexchange.Attachment attachment) {
 		final var file = messageExchangeClient.getMessageAttachment(conversationEntity.getMunicipalityId(), messageExchangeNamespace, conversationEntity.getMessageExchangeId(), message.getId(), attachment.getId());
 		final var errandEntity = errandsRepository.getReferenceById(conversationEntity.getErrandId());
-		saveAttachment(errandEntity, conversationEntity.getMunicipalityId(), conversationEntity.getNamespace(), file);
+		saveAttachment(errandEntity, file);
 	}
 
-	void saveAttachment(final ErrandEntity errandEntity, final String municipalityId, final String namespace, final ResponseEntity<InputStreamResource> file) {
+	void saveAttachment(final ErrandEntity errandEntity, final ResponseEntity<InputStreamResource> file) {
 		if (file.getBody() == null || file.getHeaders().getContentType() == null) {
 			throw Problem.valueOf(INTERNAL_SERVER_ERROR, "Failed to retrieve attachment from Message Exchange");
 		}
 
-		attachmentService.createErrandAttachment(namespace, municipalityId, errandEntity, file);
+		attachmentService.createErrandAttachment(errandEntity, file);
 	}
 }

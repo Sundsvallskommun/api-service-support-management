@@ -75,7 +75,7 @@ public class ErrandAttachmentService {
 		return createErrandAttachmentInternal(errandEntity, () -> toAttachmentEntity(errandEntity, errandAttachment, entityManager));
 	}
 
-	public String createErrandAttachment(final String namespace, final String municipalityId, final ErrandEntity errandEntity, final ResponseEntity<InputStreamResource> file) {
+	public String createErrandAttachment(final ErrandEntity errandEntity, final ResponseEntity<InputStreamResource> file) {
 		return createErrandAttachmentInternal(errandEntity, () -> toAttachmentEntity(errandEntity, file, entityManager));
 	}
 
