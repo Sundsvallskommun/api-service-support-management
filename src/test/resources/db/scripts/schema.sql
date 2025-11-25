@@ -467,8 +467,8 @@
     create index idx_errand_errand_number 
        on errand (errand_number);
 
-    create index idx_errand_municipality_id_namespace_created 
-       on errand (municipality_id, namespace, created);
+    create index idx_errand_municipality_id_namespace_status_created
+       on errand (municipality_id, namespace, status, created);
 
     create index idx_errand_suspended_to 
        on errand (suspended_to);
@@ -476,11 +476,11 @@
     create index idx_errand_channel 
        on errand (channel);
 
-    create index idx_errand_municipality_id_namespace_touched 
-       on errand (municipality_id, namespace, touched);
+    create index idx_errand_municipality_id_namespace_status_touched
+       on errand (municipality_id, namespace, status, touched);
 
-    create index idx_errand_municipality_id_namespace_modified 
-       on errand (municipality_id, namespace, modified);
+    create index idx_errand_municipality_id_namespace_status_modified
+       on errand (municipality_id, namespace, status, modified);
 
     alter table if exists errand 
        add constraint uq_errand_number unique (errand_number);
