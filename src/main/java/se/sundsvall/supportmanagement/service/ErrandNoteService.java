@@ -25,6 +25,7 @@ import se.sundsvall.supportmanagement.api.model.note.UpdateErrandNoteRequest;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.notes.NotesClient;
+import se.sundsvall.supportmanagement.service.model.RevisionType;
 
 @Service
 public class ErrandNoteService {

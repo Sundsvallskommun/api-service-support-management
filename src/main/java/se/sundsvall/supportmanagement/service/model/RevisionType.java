@@ -1,4 +1,4 @@
-package se.sundsvall.supportmanagement.service;
+package se.sundsvall.supportmanagement.service.model;
 
 public enum RevisionType {
 	CURRENT("current"),

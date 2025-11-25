@@ -52,6 +52,7 @@ import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapper;
+import se.sundsvall.supportmanagement.service.model.RevisionResult;
 
 @ExtendWith(MockitoExtension.class)
 class ErrandAttachmentServiceTest {

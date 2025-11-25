@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.service;
 
-import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.*;
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.UUID.randomUUID;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -12,7 +13,6 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -22,13 +22,14 @@ import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.util.MimeTypeUtils.IMAGE_PNG_VALUE;
+import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
 import static se.sundsvall.dept44.support.Identifier.Type.AD_ACCOUNT;
 import static se.sundsvall.dept44.support.Identifier.Type.PARTY_ID;
 
 import generated.se.sundsvall.employee.PortalPersonData;
 import generated.se.sundsvall.messaging.ExternalReference;
+import generated.se.sundsvall.messaging.MessageRequest;
 import generated.se.sundsvall.messaging.MessageResult;
-import generated.se.sundsvall.messagingsettings.SenderInfoResponse;
 import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.ByteArrayInputStream;
@@ -72,9 +73,10 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationAttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationEntity;
 import se.sundsvall.supportmanagement.integration.messaging.MessagingClient;
-import se.sundsvall.supportmanagement.integration.messagingsettings.MessagingSettingsClient;
+import se.sundsvall.supportmanagement.integration.messagingsettings.MessagingSettingsIntegration;
 import se.sundsvall.supportmanagement.service.mapper.CommunicationMapper;
 import se.sundsvall.supportmanagement.service.mapper.MessagingMapper;
+import se.sundsvall.supportmanagement.service.model.MessagingSettings;
 
 @ExtendWith(MockitoExtension.class)
 class CommunicationServiceTest {
@@ -162,7 +164,7 @@ class CommunicationServiceTest {
 	private CitizenIntegration citizenIntegrationMock;
 
 	@Mock
-	private MessagingSettingsClient messagingSettingsClientMock;
+	private MessagingSettingsIntegration messagingSettingsIntegrationMock;
 
 	@Captor
 	private ArgumentCaptor<generated.se.sundsvall.messaging.MessageRequest> messageRequestCaptor;
@@ -323,8 +325,8 @@ class CommunicationServiceTest {
 
 	@Test
 	void streamAttachmentDataSuccess() throws IOException, SQLException, InterruptedException {
-		final byte[] fileContent = "file content".getBytes();
-		final ByteArrayInputStream inputStream = new ByteArrayInputStream(fileContent);
+		final var fileContent = "file content".getBytes();
+		final var inputStream = new ByteArrayInputStream(fileContent);
 
 		when(servletResponseMock.getOutputStream()).thenReturn(servletOutputStreamMock);
 		when(communicationAttachmentEntityMock.getAttachmentData()).thenReturn(attachmentDataEntityMock);
@@ -345,7 +347,7 @@ class CommunicationServiceTest {
 
 	@Test
 	void streamAttachmentDataThrowsSQLException() throws SQLException, InterruptedException {
-		final byte[] fileContent = "file content".getBytes();
+		final var fileContent = "file content".getBytes();
 		when(communicationAttachmentEntityMock.getAttachmentData()).thenReturn(attachmentDataEntityMock);
 		when(attachmentDataEntityMock.getFile()).thenReturn(blobMock);
 		when(blobMock.getBinaryStream()).thenThrow(new SQLException("Test SQLException"));
@@ -386,7 +388,7 @@ class CommunicationServiceTest {
 	@Test
 	void streamAttachmentDataBusy() throws InterruptedException {
 		// Arrange
-		final byte[] fileContent = "file content".getBytes();
+		final var fileContent = "file content".getBytes();
 		when(communicationAttachmentEntityMock.getFileSize()).thenReturn(fileContent.length);
 		when(semaphoreMock.tryAcquire(fileContent.length, 5, SECONDS)).thenReturn(false);
 
@@ -669,7 +671,7 @@ class CommunicationServiceTest {
 			.withNamespace(NAMESPACE);
 
 		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(errand);
-		when(messagingSettingsClientMock.getSenderInfo(MUNICIPALITY_ID, NAMESPACE, DEPARTMENT_NAME)).thenReturn(List.of(new SenderInfoResponse()));
+		when(messagingSettingsIntegrationMock.getMessagingsettings(MUNICIPALITY_ID, NAMESPACE, DEPARTMENT_NAME)).thenReturn(new MessagingSettings(null, null, null, null, null));
 		when(messagingClientMock.sendMessage(eq(MUNICIPALITY_ID), any())).thenReturn(
 			new MessageResult().messageId(messageId));
 		// Act
@@ -686,21 +688,21 @@ class CommunicationServiceTest {
 	@Test
 	void sendMessageNotificationWithNullSenderInfo() {
 		// Arrange
+		final var exception = Problem.valueOf(INTERNAL_SERVER_ERROR, "No messagingsettings found");
 		final var errandId = UUID.randomUUID().toString();
 		final var errand = ErrandEntity.create()
 			.withId(errandId)
 			.withMunicipalityId(MUNICIPALITY_ID)
 			.withNamespace(NAMESPACE);
 		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(errand);
-		when(messagingSettingsClientMock.getSenderInfo(MUNICIPALITY_ID, NAMESPACE, DEPARTMENT_NAME)).thenReturn(null);
+		when(messagingSettingsIntegrationMock.getMessagingsettings(MUNICIPALITY_ID, NAMESPACE, DEPARTMENT_NAME)).thenThrow(exception);
 
 		// Act & Assert
 		assertThatThrownBy(() -> communicationService.sendMessageNotification(MUNICIPALITY_ID, NAMESPACE, errandId, DEPARTMENT_NAME))
 			.isInstanceOf(ThrowableProblem.class)
-			.hasFieldOrPropertyWithValue("status", Status.INTERNAL_SERVER_ERROR)
-			.hasFieldOrPropertyWithValue("message", "Internal Server Error: Failed to retrieve sender information for municipality '" + MUNICIPALITY_ID + "' and namespace '" + NAMESPACE + "'");
+			.isSameAs(exception);
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, errandId, false, RW);
-		verify(messagingSettingsClientMock).getSenderInfo(MUNICIPALITY_ID, NAMESPACE, DEPARTMENT_NAME);
+		verify(messagingSettingsIntegrationMock).getMessagingsettings(MUNICIPALITY_ID, NAMESPACE, DEPARTMENT_NAME);
 		verifyNoInteractions(messagingClientMock, communicationMapperMock);
 
 	}
@@ -717,7 +719,7 @@ class CommunicationServiceTest {
 		Identifier.set(Identifier.create().withType(PARTY_ID).withValue("e82c8029-7676-467d-8ebb-8638d0abd2b4"));
 
 		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(errand);
-		when(messagingSettingsClientMock.getSenderInfo(MUNICIPALITY_ID, NAMESPACE, DEPARTMENT_NAME)).thenReturn(List.of(new SenderInfoResponse()));
+		when(messagingSettingsIntegrationMock.getMessagingsettings(MUNICIPALITY_ID, NAMESPACE, DEPARTMENT_NAME)).thenReturn(new MessagingSettings(null, null, null, null, null));
 		when(messagingClientMock.sendMessage(eq(MUNICIPALITY_ID), any())).thenReturn(null);
 
 		// Act & Assert
@@ -726,6 +728,9 @@ class CommunicationServiceTest {
 			.hasFieldOrPropertyWithValue("status", Status.INTERNAL_SERVER_ERROR)
 			.hasFieldOrPropertyWithValue("message", "Internal Server Error: Failed to create message notification");
 
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, errandId, false, RW);
+		verify(messagingSettingsIntegrationMock).getMessagingsettings(MUNICIPALITY_ID, NAMESPACE, DEPARTMENT_NAME);
+		verify(messagingClientMock).sendMessage(eq(MUNICIPALITY_ID), any(MessageRequest.class));
 	}
 
 	@Test
