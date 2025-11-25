@@ -1,5 +1,7 @@
 package se.sundsvall.supportmanagement.service;
 
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
@@ -20,8 +22,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
@@ -42,23 +42,26 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 @Transactional
 public class ErrandAttachmentService {
 
-	private static final String ERRAND_ENTITY_NOT_FOUND = "An errand with id '%s' could not be found in namespace '%s' for municipality with id '%s'";
 	private static final String ATTACHMENT_ENTITY_NOT_FOUND = "An attachment with id '%s' could not be found on errand with id '%s'";
 	private static final String ATTACHMENT_ENTITY_NOT_CREATED = "Attachment could not be created";
 	private static final String EVENT_LOG_ADD_ATTACHMENT = "En bilaga har lagts till i ärendet.";
 	private static final String EVENT_LOG_REMOVE_ATTACHMENT = "En bilaga har tagits bort från ärendet.";
 
 	private final ErrandsRepository errandsRepository;
+	private final AccessControlService accessControlService;
 	private final AttachmentRepository attachmentRepository;
 	private final RevisionService revisionService;
 	private final EventService eventService;
 	private final EntityManager entityManager;
 	private final Semaphore semaphore;
 
-	public ErrandAttachmentService(final ErrandsRepository errandsRepository,
+	public ErrandAttachmentService(
+		final ErrandsRepository errandsRepository,
+		final AccessControlService accessControlService,
 		final RevisionService revisionService, final EventService eventService,
 		final AttachmentRepository attachmentRepository, final EntityManager entityManager, final Semaphore semaphore) {
 		this.errandsRepository = errandsRepository;
+		this.accessControlService = accessControlService;
 		this.revisionService = revisionService;
 		this.eventService = eventService;
 		this.attachmentRepository = attachmentRepository;
@@ -67,14 +70,12 @@ public class ErrandAttachmentService {
 	}
 
 	public String createErrandAttachment(final String namespace, final String municipalityId, final String errandId, final MultipartFile errandAttachment) {
-		final var errandEntity = getErrand(errandId, namespace, municipalityId, true);
+		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, RW);
 
 		return createErrandAttachmentInternal(errandEntity, () -> toAttachmentEntity(errandEntity, errandAttachment, entityManager));
 	}
 
-	public String createErrandAttachment(final String namespace, final String municipalityId, final String errandId, final ResponseEntity<InputStreamResource> file) {
-		final var errandEntity = getErrand(errandId, namespace, municipalityId, true);
-
+	public String createErrandAttachment(final ErrandEntity errandEntity, final ResponseEntity<InputStreamResource> file) {
 		return createErrandAttachmentInternal(errandEntity, () -> toAttachmentEntity(errandEntity, file, entityManager));
 	}
 
@@ -98,9 +99,7 @@ public class ErrandAttachmentService {
 
 	public void readErrandAttachment(final String namespace, final String municipalityId, final String errandId, final String attachmentId, final HttpServletResponse response) {
 
-		if (!errandsRepository.existsByIdAndNamespaceAndMunicipalityId(errandId, namespace, municipalityId)) {
-			throw Problem.valueOf(NOT_FOUND, String.format(ERRAND_ENTITY_NOT_FOUND, errandId, namespace, municipalityId));
-		}
+		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, R, RW);
 
 		final var attachmentEntity = attachmentRepository
 			.findById(attachmentId)
@@ -110,12 +109,12 @@ public class ErrandAttachmentService {
 	}
 
 	public List<ErrandAttachment> readErrandAttachments(final String namespace, final String municipalityId, final String errandId) {
-		final var errandEntity = getErrand(errandId, namespace, municipalityId, false);
+		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, false, R, RW);
 		return toErrandAttachments(errandEntity.getAttachments());
 	}
 
 	public void deleteErrandAttachment(final String namespace, final String municipalityId, final String errandId, final String attachmentId) {
-		final var errandEntity = getErrand(errandId, namespace, municipalityId, true);
+		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, RW);
 		final var attachmentEntity = ofNullable(errandEntity.getAttachments()).orElse(emptyList()).stream()
 			.filter(attachment -> attachment.getId().equalsIgnoreCase(attachmentId))
 			.findAny()
@@ -135,20 +134,6 @@ public class ErrandAttachmentService {
 		if (nonNull(revisionResult)) {
 			eventService.createErrandEvent(UPDATE, EVENT_LOG_REMOVE_ATTACHMENT, errandEntity, revisionResult.latest(), revisionResult.previous(), ATTACHMENT);
 		}
-	}
-
-	private ErrandEntity getErrand(final String errandId, final String namespace, final String municipalityId, final boolean lock) {
-
-		final Supplier<Optional<ErrandEntity>> optionalErrand;
-		if (lock) {
-			optionalErrand = () -> errandsRepository.findWithLockingById(errandId);
-		} else {
-			optionalErrand = () -> errandsRepository.findById(errandId);
-		}
-
-		return optionalErrand.get().filter(entity -> Objects.equals(namespace, entity.getNamespace()))
-			.filter(entity -> Objects.equals(municipalityId, entity.getMunicipalityId()))
-			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, String.format(ERRAND_ENTITY_NOT_FOUND, errandId, namespace, municipalityId)));
 	}
 
 	public void createErrandAttachment(final AttachmentEntity attachmentEntity, final ErrandEntity errandEntity) {

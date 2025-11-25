@@ -1,5 +1,7 @@
 package se.sundsvall.supportmanagement.service;
 
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
 import static java.util.Optional.of;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -7,6 +9,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
@@ -73,6 +76,9 @@ class ErrandAttachmentServiceTest {
 	private ErrandsRepository errandsRepositoryMock;
 
 	@Mock
+	private AccessControlService accessControlServiceMock;
+
+	@Mock
 	private ErrandEntity errandMock;
 
 	@Mock
@@ -117,9 +123,7 @@ class ErrandAttachmentServiceTest {
 	@Test
 	void createErrandAttachment() {
 		// Mock
-		when(errandsRepositoryMock.findWithLockingById(ERRAND_ID)).thenReturn(of(errandMock));
-		when(errandMock.getMunicipalityId()).thenReturn(MUNICIPALITY_ID);
-		when(errandMock.getNamespace()).thenReturn(NAMESPACE);
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(errandMock);
 		when(revisionServiceMock.createErrandRevision(errandMock)).thenReturn(new RevisionResult(previousRevisionMock, currentRevisionMock));
 		when(attachmentRepositoryMock.save(any())).thenReturn(attachmentMock);
 		when(attachmentMock.getId()).thenReturn(ATTACHMENT_ID);
@@ -134,7 +138,7 @@ class ErrandAttachmentServiceTest {
 			assertThat(result).isNotNull().isEqualTo(ATTACHMENT_ID);
 
 			mapper.verify(() -> ErrandAttachmentMapper.toAttachmentEntity(same(errandMock), same(multipartFileMock), same(entityManagerMock)));
-			verify(errandsRepositoryMock).findWithLockingById(ERRAND_ID);
+			verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, RW);
 			verify(attachmentRepositoryMock).save(attachmentMock);
 			verify(revisionServiceMock).createErrandRevision(errandMock);
 			verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_ADD_ATTACHMENT, errandMock, currentRevisionMock, previousRevisionMock, ATTACHMENT);
@@ -143,32 +147,9 @@ class ErrandAttachmentServiceTest {
 	}
 
 	@Test
-	void createErrandAttachmentForEntityNotBelongingToMunicipality() {
-
-		// Setup
-		final var errandEntity = buildErrandEntity();
-
-		// Mock
-		when(errandsRepositoryMock.findWithLockingById(ERRAND_ID)).thenReturn(of(errandEntity));
-
-		// Call
-		final var exception = assertThrows(ThrowableProblem.class, () -> service.createErrandAttachment(NAMESPACE, "other_" + MUNICIPALITY_ID, ERRAND_ID, multipartFileMock));
-
-		assertThat(exception.getStatus()).isEqualTo(NOT_FOUND);
-		assertThat(exception.getTitle()).isEqualTo(NOT_FOUND.getReasonPhrase());
-		assertThat(exception.getMessage()).isEqualTo("Not Found: An errand with id 'errandId' could not be found in namespace 'namespace' for municipality with id 'other_municipalityId'");
-
-		verify(errandsRepositoryMock).findWithLockingById(ERRAND_ID);
-		verify(errandsRepositoryMock, never()).save(any());
-		verifyNoInteractions(revisionServiceMock, eventServiceMock);
-	}
-
-	@Test
-	@SuppressWarnings("resource")
 	void readErrandAttachment() throws IOException, SQLException, InterruptedException {
 
 		// Mock
-		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
 		when(attachmentRepositoryMock.findById(ATTACHMENT_ID)).thenReturn(of(attachmentMock));
 		when(attachmentMock.getAttachmentData()).thenReturn(attachmentDataEntityMock);
 		when(attachmentDataEntityMock.getFile()).thenReturn(blobMock);
@@ -192,7 +173,7 @@ class ErrandAttachmentServiceTest {
 			verify(httpServletResponseMock).setContentLength(123);
 			streamMock.verify(() -> StreamUtils.copy(same(inputStreamMock), same(outputStreamMock)));
 
-			verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
+			verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, R, RW);
 			verifyNoInteractions(revisionServiceMock, eventServiceMock);
 		}
 	}
@@ -201,9 +182,7 @@ class ErrandAttachmentServiceTest {
 	void readErrandAttachments() {
 
 		// Mock
-		when(errandsRepositoryMock.findById(ERRAND_ID)).thenReturn(of(errandMock));
-		when(errandMock.getMunicipalityId()).thenReturn(MUNICIPALITY_ID);
-		when(errandMock.getNamespace()).thenReturn(NAMESPACE);
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(errandMock);
 		when(errandMock.getAttachments()).thenReturn(List.of(buildAttachmentEntity(buildErrandEntity())));
 
 		// Call
@@ -215,15 +194,12 @@ class ErrandAttachmentServiceTest {
 		assertThat(result.getFirst().getFileName()).isEqualTo(FILE_NAME);
 		assertThat(result.getFirst().getMimeType()).isEqualTo(MIME_TYPE);
 
-		verify(errandsRepositoryMock).findById(ERRAND_ID);
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, R, RW);
 		verifyNoInteractions(revisionServiceMock);
 	}
 
 	@Test
 	void readErrandAttachmentNotFoundOnErrand() {
-
-		// Mock
-		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
 
 		// Call
 		final var exception = assertThrows(ThrowableProblem.class, () -> service.readErrandAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ATTACHMENT_ID, httpServletResponseMock));
@@ -233,25 +209,7 @@ class ErrandAttachmentServiceTest {
 		assertThat(exception.getTitle()).isEqualTo(NOT_FOUND.getReasonPhrase());
 		assertThat(exception.getMessage()).isEqualTo("Not Found: An attachment with id 'attachmentId' could not be found on errand with id 'errandId'");
 
-		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
-		verifyNoInteractions(revisionServiceMock, eventServiceMock);
-	}
-
-	@Test
-	void readErrandAttachmentsErrandNotFound() {
-
-		// Mock
-		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(false);
-
-		// Call
-		final var exception = assertThrows(ThrowableProblem.class, () -> service.readErrandAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ATTACHMENT_ID, httpServletResponseMock));
-
-		// Assertions and verifications
-		assertThat(exception.getStatus()).isEqualTo(NOT_FOUND);
-		assertThat(exception.getTitle()).isEqualTo(NOT_FOUND.getReasonPhrase());
-		assertThat(exception.getMessage()).isEqualTo("Not Found: An errand with id 'errandId' could not be found in namespace 'namespace' for municipality with id 'municipalityId'");
-
-		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
+		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, R, RW);
 		verifyNoInteractions(revisionServiceMock, eventServiceMock);
 	}
 
@@ -259,9 +217,7 @@ class ErrandAttachmentServiceTest {
 	void deleteErrandAttachment() {
 
 		// Mock
-		when(errandsRepositoryMock.findWithLockingById(ERRAND_ID)).thenReturn(of(errandMock));
-		when(errandMock.getMunicipalityId()).thenReturn(MUNICIPALITY_ID);
-		when(errandMock.getNamespace()).thenReturn(NAMESPACE);
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(errandMock);
 		when(errandMock.getAttachments()).thenReturn(new ArrayList<>(List.of(attachmentMock)));
 		when(attachmentMock.getId()).thenReturn(ATTACHMENT_ID);
 		when(errandsRepositoryMock.save(any(ErrandEntity.class))).thenReturn(errandMock);
@@ -273,7 +229,7 @@ class ErrandAttachmentServiceTest {
 		// Assertions and verifications
 		assertThat(errandMock.getAttachments()).isEmpty();
 
-		verify(errandsRepositoryMock).findWithLockingById(ERRAND_ID);
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, RW);
 		verify(errandsRepositoryMock).save(any(ErrandEntity.class));
 		verify(revisionServiceMock).createErrandRevision(errandMock);
 
@@ -281,28 +237,10 @@ class ErrandAttachmentServiceTest {
 	}
 
 	@Test
-	void deleteErrandAttachmentErrandNotFound() {
-
-		// Call
-		final var exception = assertThrows(ThrowableProblem.class, () -> service.deleteErrandAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ATTACHMENT_ID));
-
-		// Assertions and verifications
-		assertThat(exception.getStatus()).isEqualTo(NOT_FOUND);
-		assertThat(exception.getTitle()).isEqualTo(NOT_FOUND.getReasonPhrase());
-		assertThat(exception.getMessage()).isEqualTo("Not Found: An errand with id 'errandId' could not be found in namespace 'namespace' for municipality with id 'municipalityId'");
-
-		verify(errandsRepositoryMock).findWithLockingById(ERRAND_ID);
-		verify(errandsRepositoryMock, never()).save(any());
-		verifyNoInteractions(revisionServiceMock, eventServiceMock);
-	}
-
-	@Test
 	void deleteErrandAttachmentAttachmentIdNotFound() {
 
 		// Mock
-		when(errandsRepositoryMock.findWithLockingById(ERRAND_ID)).thenReturn(of(errandMock));
-		when(errandMock.getMunicipalityId()).thenReturn(MUNICIPALITY_ID);
-		when(errandMock.getNamespace()).thenReturn(NAMESPACE);
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(errandMock);
 		when(errandMock.getAttachments()).thenReturn(new ArrayList<>(List.of(attachmentMock)));
 		when(attachmentMock.getId()).thenReturn("other-id");
 
@@ -314,7 +252,7 @@ class ErrandAttachmentServiceTest {
 		assertThat(exception.getTitle()).isEqualTo(NOT_FOUND.getReasonPhrase());
 		assertThat(exception.getMessage()).isEqualTo("Not Found: An attachment with id 'attachmentId' could not be found on errand with id 'errandId'");
 
-		verify(errandsRepositoryMock).findWithLockingById(ERRAND_ID);
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, RW);
 		verify(errandsRepositoryMock, never()).save(any());
 		verifyNoInteractions(revisionServiceMock, eventServiceMock);
 	}
@@ -322,9 +260,7 @@ class ErrandAttachmentServiceTest {
 	@Test
 	void deleteErrandAttachmentThrowException() {
 		// Mock
-		when(errandsRepositoryMock.findWithLockingById(ERRAND_ID)).thenReturn(of(errandMock));
-		when(errandMock.getMunicipalityId()).thenReturn(MUNICIPALITY_ID);
-		when(errandMock.getNamespace()).thenReturn(NAMESPACE);
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(errandMock);
 		when(errandMock.getAttachments()).thenReturn(new ArrayList<>(List.of(attachmentMock)));
 		when(attachmentMock.getId()).thenReturn(ATTACHMENT_ID);
 		when(errandsRepositoryMock.save(any(ErrandEntity.class))).thenThrow(new RuntimeException("Test exception"));
@@ -337,7 +273,7 @@ class ErrandAttachmentServiceTest {
 		assertThat(exception.getTitle()).isEqualTo(INTERNAL_SERVER_ERROR.getReasonPhrase());
 		assertThat(exception.getMessage()).isEqualTo("Internal Server Error: Failed to delete attachment with id 'attachmentId' from errand with id 'errandId'");
 
-		verify(errandsRepositoryMock).findWithLockingById(ERRAND_ID);
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, RW);
 		verify(errandsRepositoryMock).save(any());
 		verifyNoInteractions(revisionServiceMock, eventServiceMock);
 	}
@@ -438,7 +374,6 @@ class ErrandAttachmentServiceTest {
 	void readErrandAttachmentBusy() throws InterruptedException {
 		// Arrange
 		final byte[] fileContent = "file content".getBytes();
-		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
 		when(attachmentRepositoryMock.findById(ATTACHMENT_ID)).thenReturn(of(attachmentMock));
 		when(attachmentMock.getFileSize()).thenReturn(fileContent.length);
 		when(semaphoreMock.tryAcquire(fileContent.length, 5, SECONDS)).thenReturn(false);
@@ -447,5 +382,6 @@ class ErrandAttachmentServiceTest {
 		assertThatThrownBy(() -> service.readErrandAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ATTACHMENT_ID, httpServletResponseMock))
 			.isInstanceOf(Problem.class)
 			.hasMessageContaining("Insufficient Storage: Insufficient storage available to process the request.");
+		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, R, RW);
 	}
 }

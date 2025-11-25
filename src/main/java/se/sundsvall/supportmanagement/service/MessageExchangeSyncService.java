@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.zalando.problem.Problem;
 import se.sundsvall.supportmanagement.integration.db.ConversationRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.ConversationEntity;
 import se.sundsvall.supportmanagement.integration.messageexchange.MessageExchangeClient;
 
@@ -71,14 +72,15 @@ public class MessageExchangeSyncService {
 
 	void syncAttachment(final ConversationEntity conversationEntity, final Message message, final generated.se.sundsvall.messageexchange.Attachment attachment) {
 		final var file = messageExchangeClient.getMessageAttachment(conversationEntity.getMunicipalityId(), messageExchangeNamespace, conversationEntity.getMessageExchangeId(), message.getId(), attachment.getId());
-		saveAttachment(conversationEntity.getErrandId(), conversationEntity.getMunicipalityId(), conversationEntity.getNamespace(), file);
+		final var errandEntity = errandsRepository.getReferenceById(conversationEntity.getErrandId());
+		saveAttachment(errandEntity, file);
 	}
 
-	void saveAttachment(final String errandId, final String municipalityId, final String namespace, final ResponseEntity<InputStreamResource> file) {
+	void saveAttachment(final ErrandEntity errandEntity, final ResponseEntity<InputStreamResource> file) {
 		if (file.getBody() == null || file.getHeaders().getContentType() == null) {
 			throw Problem.valueOf(INTERNAL_SERVER_ERROR, "Failed to retrieve attachment from Message Exchange");
 		}
 
-		attachmentService.createErrandAttachment(namespace, municipalityId, errandId, file);
+		attachmentService.createErrandAttachment(errandEntity, file);
 	}
 }
