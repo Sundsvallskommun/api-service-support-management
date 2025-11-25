@@ -152,8 +152,11 @@ public class CommunicationService {
 	}
 
 	public void sendEmail(final String namespace, final String municipalityId, final String id, final EmailRequest request) {
-
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, id, false, RW);
+		sendEmail(namespace, municipalityId, errandEntity, request);
+	}
+
+	public void sendEmail(final String namespace, final String municipalityId, final ErrandEntity errandEntity, final EmailRequest request) {
 
 		Optional.ofNullable(request.getEmailHeaders()).ifPresentOrElse(headers -> {
 			if (!headers.containsKey(EmailHeader.MESSAGE_ID)) {

@@ -96,7 +96,7 @@ public class EmailReaderWorker {
 
 	private void sendEmail(final EmailWorkerConfigEntity config, final ErrandEntity errand, final EmailRequest emailRequest) {
 		if (emailRequest != null) {
-			communicationService.sendEmail(config.getNamespace(), config.getMunicipalityId(), errand.getId(), emailRequest);
+			communicationService.sendEmail(config.getNamespace(), config.getMunicipalityId(), errand, emailRequest);
 		}
 	}
 
