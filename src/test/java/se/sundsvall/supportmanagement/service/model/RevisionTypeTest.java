@@ -1,8 +1,8 @@
-package se.sundsvall.supportmanagement.service;
+package se.sundsvall.supportmanagement.service.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static se.sundsvall.supportmanagement.service.RevisionType.CURRENT;
-import static se.sundsvall.supportmanagement.service.RevisionType.PREVIOUS;
+import static se.sundsvall.supportmanagement.service.model.RevisionType.CURRENT;
+import static se.sundsvall.supportmanagement.service.model.RevisionType.PREVIOUS;
 
 import org.junit.jupiter.api.Test;
 

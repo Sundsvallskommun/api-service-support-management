@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
 import static java.util.Collections.emptyList;
+import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static org.apache.commons.codec.binary.Base64.decodeBase64;
 import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
@@ -22,10 +23,8 @@ import generated.se.sundsvall.messaging.WebMessageAttachment;
 import generated.se.sundsvall.messaging.WebMessageParty;
 import generated.se.sundsvall.messaging.WebMessageRequest;
 import generated.se.sundsvall.messaging.WebMessageSender;
-import generated.se.sundsvall.messagingsettings.SenderInfoResponse;
 import io.netty.util.internal.StringUtil;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.util.Base64;
@@ -33,11 +32,11 @@ import java.util.Base64.Decoder;
 import java.util.Base64.Encoder;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.compress.utils.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zalando.problem.Problem;
@@ -46,6 +45,7 @@ import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
+import se.sundsvall.supportmanagement.service.model.MessagingSettings;
 
 public class MessagingMapper {
 
@@ -77,7 +77,7 @@ public class MessagingMapper {
 	public static Map<String, List<String>> toEmailHeaders(final Map<EmailHeader, List<String>> emailHeaders) {
 		return ofNullable(emailHeaders).orElse(Map.of()).entrySet().stream()
 			.collect(Collectors.toMap(
-				e -> e.getKey().toString(),
+				entry -> entry.getKey().toString(),
 				Map.Entry::getValue));
 	}
 
@@ -132,9 +132,9 @@ public class MessagingMapper {
 	}
 
 	static EmailAttachment toEmailAttachment(final AttachmentEntity attachment) {
-		try (final InputStream attachmentInputStream = attachment.getAttachmentData().getFile().getBinaryStream()) {
-			final byte[] bytes = IOUtils.toByteArray(attachmentInputStream);
-			final String encoded = Base64.getEncoder().encodeToString(bytes);
+		try (final var attachmentInputStream = attachment.getAttachmentData().getFile().getBinaryStream()) {
+			final var bytes = IOUtils.toByteArray(attachmentInputStream);
+			final var encoded = Base64.getEncoder().encodeToString(bytes);
 
 			return new EmailAttachment()
 				.content(encoded)
@@ -147,9 +147,9 @@ public class MessagingMapper {
 	}
 
 	static WebMessageAttachment toWebMessageAttachment(final AttachmentEntity attachment) {
-		try (final InputStream attachmentInputStream = attachment.getAttachmentData().getFile().getBinaryStream()) {
-			final byte[] bytes = IOUtils.toByteArray(attachmentInputStream);
-			final String encoded = Base64.getEncoder().encodeToString(bytes);
+		try (final var attachmentInputStream = attachment.getAttachmentData().getFile().getBinaryStream()) {
+			final var bytes = IOUtils.toByteArray(attachmentInputStream);
+			final var encoded = Base64.getEncoder().encodeToString(bytes);
 
 			return new WebMessageAttachment()
 				.base64Data(encoded)
@@ -168,7 +168,7 @@ public class MessagingMapper {
 	}
 
 	private static EmailAttachment toAttachment(final se.sundsvall.supportmanagement.api.model.communication.EmailAttachment attachment) {
-		final byte[] byteArray = decodeBase64(attachment.getBase64EncodedString());
+		final var byteArray = decodeBase64(attachment.getBase64EncodedString());
 
 		return new EmailAttachment()
 			.content(attachment.getBase64EncodedString())
@@ -177,7 +177,6 @@ public class MessagingMapper {
 	}
 
 	private static WebMessageAttachment toWebMessageAttachment(final se.sundsvall.supportmanagement.api.model.communication.WebMessageAttachment attachment) {
-
 		return new WebMessageAttachment()
 			.base64Data(attachment.getBase64EncodedString())
 			.mimeType(detectMimeType(attachment.getFileName(), decodeBase64(attachment.getBase64EncodedString())))
@@ -205,7 +204,7 @@ public class MessagingMapper {
 	}
 
 	private static WebMessageSender toWebMessageRequestSender(final String senderUserId) {
-		return Optional.ofNullable(senderUserId)
+		return ofNullable(senderUserId)
 			.map(id -> new WebMessageSender().userId(senderUserId))
 			.orElse(null);
 	}
@@ -223,10 +222,10 @@ public class MessagingMapper {
 	}
 
 	private static String addBase64Encoding(final String message) {
-
 		if (StringUtil.isNullOrEmpty(message)) {
 			return message;
 		}
+
 		try {
 			BASE64_DECODER.decode(message.getBytes(StandardCharsets.UTF_8));
 			return message; // If decoding passes, the message is already in base64 format
@@ -235,43 +234,39 @@ public class MessagingMapper {
 		}
 	}
 
-	public static MessageRequest toMessagingMessageRequest(final ErrandEntity errandEntity, final SenderInfoResponse senderInfo) {
-
+	public static MessageRequest toMessagingMessageRequest(final ErrandEntity errandEntity, final MessagingSettings messagingSettings) {
 		return new MessageRequest()
 			.messages(List.of(new generated.se.sundsvall.messaging.Message()
 				.subject("Nytt meddelande kopplat till ärendet" + errandEntity.getTitle() + errandEntity.getErrandNumber())
-				.message(createBody(errandEntity, senderInfo))
+				.message(createBody(errandEntity, messagingSettings))
 				.party(new MessageParty().partyId(findErrandOwnerPartyId(errandEntity)))
 				.sender(new MessageSender()
 					.sms(new Sms()
-						.name(senderInfo.getSmsSender()))
+						.name(messagingSettings.smsSender()))
 					.email(new Email()
-						.name(senderInfo.getContactInformationEmail())
-						.address(senderInfo.getContactInformationEmail())))));
+						.name(messagingSettings.contactInformationEmail())
+						.address(messagingSettings.contactInformationEmail())))));
 
 	}
 
-	static String createBody(final ErrandEntity errandEntity, final SenderInfoResponse senderInfo) {
-
-		if (senderInfo.getSupportText() == null || senderInfo.getSupportText().isBlank()) {
-			return "";
-		}
-
-		return String.format(
-			senderInfo.getSupportText(),
-			findErrandOwnerFirstName(errandEntity),
-			errandEntity.getTitle(),
-			errandEntity.getErrandNumber(),
-			senderInfo.getContactInformationUrl(),
-			errandEntity.getId() // Replace with actual caseId if available
-		);
+	static String createBody(final ErrandEntity errandEntity, final MessagingSettings messagingSettings) {
+		return ofNullable(messagingSettings.supportText())
+			.filter(StringUtils::isNotBlank)
+			.map(supportText -> String.format(
+				supportText,
+				findErrandOwnerFirstName(errandEntity),
+				errandEntity.getTitle(),
+				errandEntity.getErrandNumber(),
+				messagingSettings.contactInformationUrl(),
+				errandEntity.getId()) // Replace with actual caseId if available
+			).orElse("");
 	}
 
 	static String findErrandOwnerFirstName(final ErrandEntity errandEntity) {
-
-		return Optional.ofNullable(errandEntity.getStakeholders())
+		return ofNullable(errandEntity.getStakeholders())
 			.orElse(emptyList())
 			.stream()
+			.filter(stakeholder -> nonNull(stakeholder.getRole()))
 			.filter(stakeholder -> stakeholder.getRole().contains("PRIMARY"))
 			.findFirst()
 			.map(StakeholderEntity::getFirstName)
@@ -279,17 +274,15 @@ public class MessagingMapper {
 	}
 
 	static UUID findErrandOwnerPartyId(final ErrandEntity errandEntity) {
-
-		final var partyIdString = Optional.ofNullable(errandEntity.getStakeholders())
+		return ofNullable(errandEntity.getStakeholders())
 			.orElse(emptyList())
 			.stream()
+			.filter(stakeholder -> nonNull(stakeholder.getRole()))
 			.filter(stakeholder -> stakeholder.getRole().contains("PRIMARY"))
 			.findFirst()
-			.map(StakeholderEntity::getExternalId).orElse(null);
-
-		if (partyIdString == null || partyIdString.isBlank()) {
-			return null;
-		}
-		return UUID.fromString(partyIdString);
+			.map(StakeholderEntity::getExternalId)
+			.filter(StringUtils::isNotBlank)
+			.map(UUID::fromString)
+			.orElse(null);
 	}
 }

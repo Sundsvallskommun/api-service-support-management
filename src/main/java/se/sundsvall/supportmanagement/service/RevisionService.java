@@ -35,6 +35,7 @@ import se.sundsvall.supportmanagement.integration.db.model.RevisionEntity;
 import se.sundsvall.supportmanagement.integration.notes.NotesClient;
 import se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper;
 import se.sundsvall.supportmanagement.service.mapper.RevisionMapper;
+import se.sundsvall.supportmanagement.service.model.RevisionResult;
 
 @Service
 @Transactional

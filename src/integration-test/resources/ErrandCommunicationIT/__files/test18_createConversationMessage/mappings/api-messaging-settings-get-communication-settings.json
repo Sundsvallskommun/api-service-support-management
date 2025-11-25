@@ -1,0 +1,18 @@
+{
+	"request": {
+		"method": "GET",
+		"urlPath": "/api-messaging-settings/2281",
+		"queryParameters": {
+			"filter": {
+				"equalTo": "exists(values.key: 'namespace' and values.value: 'NAMESPACE-1') and exists(values.key: 'department_name' and values.value: 'CONVERSATION')"
+			}
+		}
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/json"
+		},
+		"bodyFileName": "test18_createConversationMessage/response/api-messaging-settings-get-communication-settings-response.json",
+		"status": 200
+	}
+}

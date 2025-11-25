@@ -2,7 +2,6 @@ package se.sundsvall.supportmanagement.service;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
-import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
 import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
@@ -18,7 +17,6 @@ import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toWe
 import generated.se.sundsvall.employee.PortalPersonData;
 import generated.se.sundsvall.messaging.Message;
 import generated.se.sundsvall.messaging.MessageParty;
-import generated.se.sundsvall.messagingsettings.SenderInfoResponse;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.SQLException;
@@ -46,8 +44,9 @@ import se.sundsvall.supportmanagement.integration.db.model.communication.Communi
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
 import se.sundsvall.supportmanagement.integration.messaging.MessagingClient;
-import se.sundsvall.supportmanagement.integration.messagingsettings.MessagingSettingsClient;
+import se.sundsvall.supportmanagement.integration.messagingsettings.MessagingSettingsIntegration;
 import se.sundsvall.supportmanagement.service.mapper.CommunicationMapper;
+import se.sundsvall.supportmanagement.service.model.MessagingSettings;
 
 @Service
 public class CommunicationService {
@@ -66,7 +65,7 @@ public class CommunicationService {
 	private final Semaphore semaphore;
 	private final EmployeeService employeeService;
 	private final CitizenIntegration citizenIntegration;
-	private final MessagingSettingsClient messagingSettingsClient;
+	private final MessagingSettingsIntegration messagingSettingsIntegration;
 
 	public CommunicationService(
 		final AccessControlService accessControlService,
@@ -77,7 +76,7 @@ public class CommunicationService {
 		final ErrandAttachmentService errandAttachmentService,
 		final Semaphore semaphore,
 		final EmployeeService employeeService,
-		final CitizenIntegration citizenIntegration, final MessagingSettingsClient messagingSettingsClient) {
+		final CitizenIntegration citizenIntegration, final MessagingSettingsIntegration messagingSettingsIntegration) {
 
 		this.accessControlService = accessControlService;
 		this.messagingClient = messagingClient;
@@ -88,7 +87,7 @@ public class CommunicationService {
 		this.semaphore = semaphore;
 		this.employeeService = employeeService;
 		this.citizenIntegration = citizenIntegration;
-		this.messagingSettingsClient = messagingSettingsClient;
+		this.messagingSettingsIntegration = messagingSettingsIntegration;
 	}
 
 	public List<Communication> readCommunications(final String namespace, final String municipalityId, final String errandId) {
@@ -221,23 +220,12 @@ public class CommunicationService {
 			return null;
 		}
 
-		switch (identifier.getType()) {
-			case null -> {
-				return null;
-			}
-			case AD_ACCOUNT -> {
-				// If senderType is adAccount, use the senderId to get the employee name
-				return getEmployeeName(municipalityId, identifier.getValue());
-			}
-			case PARTY_ID -> {
-				// If senderType is partyId, use the senderId to get the citizen name
-				return getCitizenName(municipalityId, identifier.getValue());
-			}
-			default -> {
-				// This should be unreachable, but if it happens, return null
-				return null;
-			}
-		}
+		return switch (identifier.getType()) {
+			case null -> null;
+			case AD_ACCOUNT -> getEmployeeName(municipalityId, identifier.getValue()); // If senderType is adAccount, use the senderId to get the employee name
+			case PARTY_ID -> getCitizenName(municipalityId, identifier.getValue()); // If senderType is partyId, use the senderId to get the citizen name
+			default -> null; // This should be unreachable, but if it happens, return null
+		};
 	}
 
 	String getEmployeeName(final String municipalityId, final String adUser) {
@@ -269,23 +257,14 @@ public class CommunicationService {
 
 		final var errand = accessControlService.getErrand(namespace, municipalityId, errandId, false, RW);
 
-		final var senderInfo = getSenderInfo(municipalityId, namespace, departmentName);
+		final var messagingSettings = messagingSettingsIntegration.getMessagingsettings(municipalityId, namespace, departmentName);
 
-		sendMessageNotification(errand, senderInfo);
+		sendMessageNotification(errand, messagingSettings);
 	}
 
-	private SenderInfoResponse getSenderInfo(final String municipalityId, final String namespace, final String departmentName) {
-		final var senderInfo = Optional.ofNullable(messagingSettingsClient.getSenderInfo(municipalityId, namespace, departmentName)).orElse(emptyList());
+	public void sendMessageNotification(final ErrandEntity errandEntity, final MessagingSettings messagingSettings) {
 
-		if (senderInfo.isEmpty()) {
-			throw Problem.valueOf(INTERNAL_SERVER_ERROR, "Failed to retrieve sender information for municipality '%s' and namespace '%s'".formatted(municipalityId, namespace));
-		}
-		return senderInfo.getFirst();
-	}
-
-	public void sendMessageNotification(final ErrandEntity errandEntity, final SenderInfoResponse senderInfo) {
-
-		final var request = toMessagingMessageRequest(errandEntity, senderInfo);
+		final var request = toMessagingMessageRequest(errandEntity, messagingSettings);
 
 		final var partyId = Optional.ofNullable(request.getMessages())
 			.map(List::getFirst)
