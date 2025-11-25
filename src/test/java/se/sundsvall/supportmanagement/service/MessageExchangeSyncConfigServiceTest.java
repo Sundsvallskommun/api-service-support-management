@@ -288,16 +288,17 @@ class MessageExchangeSyncConfigServiceTest {
 	@Test
 	void syncAttachment() {
 		// Arrange
-		final var errandId = "123L";
+		final var errandEntity = ErrandEntity.create().withId("123L");
 		final var municipalityId = "municipalityId";
 		final var namespace = "namespace";
 		final var conversationEntity = ConversationEntity.create()
-			.withErrandId(errandId)
+			.withErrandId(errandEntity.getId())
 			.withMunicipalityId(municipalityId)
 			.withNamespace(namespace);
 		final var message = new generated.se.sundsvall.messageexchange.Message();
 		final var attachment = new generated.se.sundsvall.messageexchange.Attachment().id("attachmentId");
 
+		when(errandsRepositoryMock.getReferenceById(any())).thenReturn(errandEntity);
 		when(messageExchangeClientMock.getMessageAttachment(eq(municipalityId), any(), any(), any(), eq(attachment.getId())))
 			.thenReturn(ResponseEntity.ok()
 				.header("Content-Type", "application/octet-stream")
@@ -308,7 +309,8 @@ class MessageExchangeSyncConfigServiceTest {
 
 		// Assert
 		verify(messageExchangeClientMock).getMessageAttachment(eq(municipalityId), any(), any(), any(), eq(attachment.getId()));
-		verify(attachmentServiceMock).createErrandAttachment(eq(namespace), eq(municipalityId), eq(errandId), ArgumentMatchers.<ResponseEntity<InputStreamResource>>any());
+		verify(errandsRepositoryMock).getReferenceById("123L");
+		verify(attachmentServiceMock).createErrandAttachment(eq(namespace), eq(municipalityId), same(errandEntity), ArgumentMatchers.<ResponseEntity<InputStreamResource>>any());
 		verifyNoMoreInteractions(attachmentServiceMock, messageExchangeClientMock);
 		verifyNoInteractions(conversationRepositoryMock);
 	}
@@ -316,7 +318,7 @@ class MessageExchangeSyncConfigServiceTest {
 	@Test
 	void saveAttachment() {
 		// Arrange
-		final var errandId = "123L";
+		final var errandEntity = ErrandEntity.create();
 		final var municipalityId = "municipalityId";
 		final var namespace = "namespace";
 		final var file = ResponseEntity.ok()
@@ -324,10 +326,10 @@ class MessageExchangeSyncConfigServiceTest {
 			.body(new InputStreamResource(new ByteArrayInputStream(new byte[0])));
 
 		// Act
-		service.saveAttachment(errandId, municipalityId, namespace, file);
+		service.saveAttachment(errandEntity, municipalityId, namespace, file);
 
 		// Assert
-		verify(attachmentServiceMock).createErrandAttachment(eq(namespace), eq(municipalityId), eq(errandId), ArgumentMatchers.<ResponseEntity<InputStreamResource>>any());
+		verify(attachmentServiceMock).createErrandAttachment(eq(namespace), eq(municipalityId), same(errandEntity), ArgumentMatchers.<ResponseEntity<InputStreamResource>>any());
 		verifyNoMoreInteractions(attachmentServiceMock);
 		verifyNoInteractions(conversationRepositoryMock, messageExchangeClientMock);
 	}
@@ -335,7 +337,7 @@ class MessageExchangeSyncConfigServiceTest {
 	@Test
 	void saveAttachmentNullFile() {
 		// Arrange
-		final var errandId = "123L";
+		final var errandEntity = ErrandEntity.create();
 		final var municipalityId = "municipalityId";
 		final var namespace = "namespace";
 		final ResponseEntity<InputStreamResource> file = ResponseEntity.ok()
@@ -343,7 +345,7 @@ class MessageExchangeSyncConfigServiceTest {
 			.build();
 
 		// Act & Assert
-		assertThatThrownBy(() -> service.saveAttachment(errandId, municipalityId, namespace, file))
+		assertThatThrownBy(() -> service.saveAttachment(errandEntity, municipalityId, namespace, file))
 			.isInstanceOf(Problem.class)
 			.hasMessageContaining("Failed to retrieve attachment from Message Exchange");
 
@@ -353,14 +355,14 @@ class MessageExchangeSyncConfigServiceTest {
 	@Test
 	void saveAttachmentNoContentType() {
 		// Arrange
-		final var errandId = "123L";
+		final var errandEntity = ErrandEntity.create();
 		final var municipalityId = "municipalityId";
 		final var namespace = "namespace";
 		final ResponseEntity<InputStreamResource> file = ResponseEntity.ok()
 			.body(new InputStreamResource(new ByteArrayInputStream(new byte[0])));
 
 		// Act & Assert
-		assertThatThrownBy(() -> service.saveAttachment(errandId, municipalityId, namespace, file))
+		assertThatThrownBy(() -> service.saveAttachment(errandEntity, municipalityId, namespace, file))
 			.isInstanceOf(Problem.class)
 			.hasMessageContaining("Failed to retrieve attachment from Message Exchange");
 
