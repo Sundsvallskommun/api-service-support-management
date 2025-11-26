@@ -11,6 +11,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import se.sundsvall.supportmanagement.integration.relation.configuration.RelationConfiguration;
 
 @FeignClient(
@@ -25,6 +27,18 @@ public interface RelationClient {
 	ResponseEntity<Relation> getRelation(
 		@PathVariable("municipalityId") final String municipalityId,
 		@PathVariable("id") final String id);
+
+	/**
+	 * Create a relation
+	 *
+	 * @param  municipalityId the municipalityId of the relation
+	 * @param  relation       the relation to create
+	 * @return                the response containing the Location header for the created relation
+	 */
+	@PostMapping(path = "/{municipalityId}/relations", consumes = APPLICATION_JSON_VALUE, produces = ALL_VALUE)
+	ResponseEntity<Void> createRelation(
+		@PathVariable("municipalityId") final String municipalityId,
+		@RequestBody final Relation relation);
 
 	/**
 	 * Delete a relation by id
