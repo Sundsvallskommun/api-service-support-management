@@ -153,24 +153,24 @@ public class CommunicationService {
 
 	public void sendEmail(final String namespace, final String municipalityId, final String id, final EmailRequest request) {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, id, false, RW);
-		sendEmail(namespace, municipalityId, errandEntity, request);
+		sendEmail(errandEntity, request);
 	}
 
-	public void sendEmail(final String namespace, final String municipalityId, final ErrandEntity errandEntity, final EmailRequest request) {
+	public void sendEmail(final ErrandEntity errandEntity, final EmailRequest request) {
 
 		Optional.ofNullable(request.getEmailHeaders()).ifPresentOrElse(headers -> {
 			if (!headers.containsKey(EmailHeader.MESSAGE_ID)) {
-				headers.put(EmailHeader.MESSAGE_ID, List.of("<" + UUID.randomUUID() + "@" + namespace + ">"));
+				headers.put(EmailHeader.MESSAGE_ID, List.of("<" + UUID.randomUUID() + "@" + errandEntity.getNamespace() + ">"));
 			}
-		}, () -> request.setEmailHeaders(Map.of(EmailHeader.MESSAGE_ID, List.of("<" + UUID.randomUUID() + "@" + namespace + ">"))));
+		}, () -> request.setEmailHeaders(Map.of(EmailHeader.MESSAGE_ID, List.of("<" + UUID.randomUUID() + "@" + errandEntity.getNamespace() + ">"))));
 
-		final var errandAttachments = errandAttachmentService.findByNamespaceAndMunicipalityIdAndIdIn(namespace, municipalityId, request.getAttachmentIds());
+		final var errandAttachments = errandAttachmentService.findByNamespaceAndMunicipalityIdAndIdIn(errandEntity.getNamespace(), errandEntity.getMunicipalityId(), request.getAttachmentIds());
 
 		final var emailRequest = toEmailRequest(errandEntity, request, toEmailAttachments(errandAttachments));
 
-		messagingClient.sendEmail(municipalityId, ASYNCHRONOUSLY, emailRequest);
+		messagingClient.sendEmail(errandEntity.getMunicipalityId(), ASYNCHRONOUSLY, emailRequest);
 
-		final var communicationEntity = communicationMapper.toCommunicationEntity(namespace, municipalityId, request)
+		final var communicationEntity = communicationMapper.toCommunicationEntity(errandEntity.getNamespace(), errandEntity.getMunicipalityId(), request)
 			.withErrandAttachments(errandAttachments)
 			.withViewed(true)
 			.withErrandNumber(errandEntity.getErrandNumber());

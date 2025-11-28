@@ -188,6 +188,8 @@ class NotificationServiceTest {
 		final var namespace = "namespace";
 		final var notification = TestObjectsBuilder.createNotification(n -> n.withExpires(null));
 		final var errandEntity = TestObjectsBuilder.createNotificationEntity(n -> {}).getErrandEntity();
+		errandEntity.setNamespace(namespace);
+		errandEntity.setMunicipalityId(municipalityId);
 		final var id = "SomeId";
 		final var executingUserId = "executingUserId";
 		final var createdByFullName = "createdByFullName";

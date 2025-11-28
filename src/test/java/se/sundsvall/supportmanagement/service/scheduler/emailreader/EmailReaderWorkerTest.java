@@ -235,7 +235,7 @@ class EmailReaderWorkerTest {
 		verify(errandRepositoryMock).findByErrandNumberAndNamespace("PRH-2022-000002", NAMESPACE);
 		verify(emailReaderMapperMock).createEmailRequest(same(email), eq(emailConfig.getErrandClosedEmailSender()), eq(emailConfig.getErrandClosedEmailTemplate()), eq(emailConfig.getErrandClosedEmailHTMLTemplate()),
 			eq("Ärende #PRH-2022-000002 Ansökan om bygglov för fastighet KATARINA 4"));
-		verify(communicationServiceMock).sendEmail(eq(emailConfig.getNamespace()), eq(emailConfig.getMunicipalityId()), eq(errandEntity), same(emailRequest));
+		verify(communicationServiceMock).sendEmail(eq(errandEntity), same(emailRequest));
 		verify(emailReaderMapperMock).toCommunicationEntity(same(email), same(errandEntity));
 		verify(communicationServiceMock).saveAttachment(same(communicationEntity), same(errandEntity));
 		verify(communicationServiceMock).saveCommunication(same(communicationEntity));
@@ -340,7 +340,7 @@ class EmailReaderWorkerTest {
 		verify(emailReaderMapperMock).createEmailRequest(email.subject("Bekräftelse ärende #errandNumber Ansökan om bygglov för fastighet KATARINA 4"), emailConfig.getErrandNewEmailSender(), emailConfig.getErrandNewEmailTemplate(),
 			emailConfig.getErrandNewEmailHTMLTemplate(), "Bekräftelse ärende #errandNumber Ansökan om bygglov för fastighet KATARINA 4");
 		verify(emailReaderMapperMock).toErrand(same(email), eq(emailConfig));
-		verify(communicationServiceMock).sendEmail(eq(emailConfig.getNamespace()), eq(emailConfig.getMunicipalityId()), eq(errandEntity), same(emailRequest));
+		verify(communicationServiceMock).sendEmail(eq(errandEntity), same(emailRequest));
 		verify(emailReaderMapperMock).toCommunicationEntity(same(email), same(errandEntity));
 		verify(communicationServiceMock).saveAttachment(same(communicationEntity), same(errandEntity));
 		verify(communicationServiceMock).saveCommunication(same(communicationEntity));
@@ -394,7 +394,7 @@ class EmailReaderWorkerTest {
 		verify(errandRepositoryMock).findById(errandEntity.getId());
 		verify(emailReaderMapperMock, never()).createEmailRequest(any(), any(), any(), any(), any());
 		verify(emailReaderMapperMock).toErrand(same(email), same(emailConfig));
-		verify(communicationServiceMock, never()).sendEmail(any(), any(), any(ErrandEntity.class), any());
+		verify(communicationServiceMock, never()).sendEmail(any(ErrandEntity.class), any());
 		verify(emailReaderMapperMock).toCommunicationEntity(same(email), same(errandEntity));
 		verify(communicationServiceMock).saveAttachment(same(communicationEntity), same(errandEntity));
 		verify(communicationServiceMock).saveCommunication(same(communicationEntity));

@@ -44,7 +44,7 @@ public class SuspensionWorker {
 					entity.getSuspendedFrom())) {
 
 					notificationService
-						.createNotification(entity.getMunicipalityId(), entity.getNamespace(), entity, createNotification(entity));
+						.createNotification(entity, createNotification(entity));
 				}
 			});
 	}
