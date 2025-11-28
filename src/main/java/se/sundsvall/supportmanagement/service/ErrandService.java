@@ -15,6 +15,8 @@ import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.w
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withNamespace;
 
 import generated.se.sundsvall.accessmapper.Access;
+import generated.se.sundsvall.relation.Relation;
+import generated.se.sundsvall.relation.ResourceIdentifier;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -31,6 +33,7 @@ import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.util.ErrandNumberGeneratorService;
 import se.sundsvall.supportmanagement.integration.notes.NotesClient;
+import se.sundsvall.supportmanagement.integration.relation.RelationClient;
 
 @Service
 @Transactional
@@ -40,6 +43,10 @@ public class ErrandService {
 	private static final String EVENT_LOG_CREATE_ERRAND = "Ärendet har skapats.";
 	private static final String EVENT_LOG_UPDATE_ERRAND = "Ärendet har uppdaterats.";
 	private static final String EVENT_LOG_DELETE_ERRAND = "Ärendet har raderats.";
+
+	private static final String REFERRED_FROM_RELATION_TYPE = "REFERRED_FROM";
+	private static final String REFERRED_FROM_RESOURCE_IDENTIFIER_TYPE = "case";
+	private static final String REFERRED_FROM_RESOURCE_IDENTIFIER_SERVICE = "support-management";
 
 	private final ErrandsRepository repository;
 	private final ContactReasonRepository contactReasonRepository;
@@ -52,6 +59,7 @@ public class ErrandService {
 	private final ConversationService conversationService;
 	private final NotesClient notesClient;
 	private final AccessControlService accessControlService;
+	private final RelationClient relationClient;
 
 	public ErrandService(
 		final ErrandsRepository repository,
@@ -64,7 +72,8 @@ public class ErrandService {
 		final ErrandAttachmentService errandAttachmentService,
 		final ConversationService conversationService,
 		final NotesClient notesClient,
-		final AccessControlService accessControlService) {
+		final AccessControlService accessControlService,
+		final RelationClient relationClient) {
 
 		this.repository = repository;
 		this.contactReasonRepository = contactReasonRepository;
@@ -77,9 +86,14 @@ public class ErrandService {
 		this.conversationService = conversationService;
 		this.notesClient = notesClient;
 		this.accessControlService = accessControlService;
+		this.relationClient = relationClient;
 	}
 
-	public String createErrand(final String namespace, final String municipalityId, final Errand errand) {
+	public String createErrand(String namespace, String municipalityId, Errand errand) {
+		return createErrand(namespace, municipalityId, errand, null);
+	}
+
+	public String createErrand(final String namespace, final String municipalityId, final Errand errand, final String referredFrom) {
 		// Generate unique errand number
 		errand.withErrandNumber(errandNumberGeneratorService.generateErrandNumber(namespace, municipalityId));
 
@@ -99,6 +113,23 @@ public class ErrandService {
 
 		// Create a log event, but don't create a notification.
 		eventService.createErrandEvent(CREATE, EVENT_LOG_CREATE_ERRAND, persistedEntity, revision.latest(), null, false, ERRAND);
+
+		if (referredFrom != null && !referredFrom.isBlank()) {
+			final var relation = new Relation()
+				.type(REFERRED_FROM_RELATION_TYPE)
+				.source(new ResourceIdentifier()
+					.resourceId(referredFrom)
+					.type(REFERRED_FROM_RESOURCE_IDENTIFIER_TYPE)
+					.service(REFERRED_FROM_RESOURCE_IDENTIFIER_SERVICE)
+					.namespace(namespace))
+				.target(new ResourceIdentifier()
+					.resourceId(persistedEntity.getId())
+					.type(REFERRED_FROM_RESOURCE_IDENTIFIER_TYPE)
+					.service(REFERRED_FROM_RESOURCE_IDENTIFIER_SERVICE)
+					.namespace(namespace));
+
+			relationClient.createRelation(municipalityId, relation);
+		}
 
 		return persistedEntity.getId();
 	}

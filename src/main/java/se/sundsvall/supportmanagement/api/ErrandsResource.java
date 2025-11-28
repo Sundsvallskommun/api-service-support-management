@@ -37,6 +37,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.zalando.problem.Problem;
 import org.zalando.problem.violations.ConstraintViolationProblem;
@@ -73,10 +74,11 @@ class ErrandsResource {
 	ResponseEntity<Void> createErrand(
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE, groups = OnCreate.class) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId(groups = OnCreate.class) @PathVariable final String municipalityId,
+		@Parameter(name = "referred_from", description = "Reference of origin", example = "portal") @RequestParam(name = "referred_from", required = false) final String referredFrom,
 		@Valid @NotNull @RequestBody final Errand errand) {
 
 		return created(fromPath("/{municipalityId}/{namespace}/errands/{errandId}")
-			.buildAndExpand(municipalityId, namespace, service.createErrand(namespace, municipalityId, errand)).toUri())
+			.buildAndExpand(municipalityId, namespace, service.createErrand(namespace, municipalityId, errand, referredFrom)).toUri())
 			.header(CONTENT_TYPE, ALL_VALUE)
 			.build();
 	}
