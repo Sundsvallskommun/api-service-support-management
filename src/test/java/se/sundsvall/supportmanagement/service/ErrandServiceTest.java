@@ -181,7 +181,7 @@ class ErrandServiceTest {
 		verify(revisionServiceMock).createErrandRevision(any(ErrandEntity.class));
 		verify(eventServiceMock).createErrandEvent(eq(CREATE), eq(EVENT_LOG_CREATE_ERRAND), any(ErrandEntity.class),
 			eq(currentRevisionMock), eq(null), eq(false), eq(ERRAND));
-		verify(relationClientMock).createRelation(eq(MUNICIPALITY_ID), eq(relation));
+		verify(relationClientMock).createRelation(MUNICIPALITY_ID, relation);
 	}
 
 	@ParameterizedTest
