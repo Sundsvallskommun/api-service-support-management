@@ -73,15 +73,15 @@ public class NotificationService {
 
 	public String createNotification(final String municipalityId, final String namespace, final String errandId, final Notification notification) {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, false, RW);
-		return createNotification(municipalityId, namespace, errandEntity, notification);
+		return createNotification(errandEntity, notification);
 	}
 
-	public String createNotification(final String municipalityId, final String namespace, final ErrandEntity errandEntity, final Notification notification) {
+	public String createNotification(final ErrandEntity errandEntity, final Notification notification) {
 
-		final var namespaceEntity = namespaceConfigRepository.findByNamespaceAndMunicipalityId(namespace, municipalityId)
-			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, NAMESPACE_ENTITY_NOT_FOUND.formatted(namespace, municipalityId)));
+		final var namespaceEntity = namespaceConfigRepository.findByNamespaceAndMunicipalityId(errandEntity.getNamespace(), errandEntity.getMunicipalityId())
+			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, NAMESPACE_ENTITY_NOT_FOUND.formatted(errandEntity.getNamespace(), errandEntity.getMunicipalityId())));
 
-		final var entity = toNotificationEntity(namespace, municipalityId, namespaceEntity.getNotificationTTLInDays(), notification, errandEntity);
+		final var entity = toNotificationEntity(errandEntity.getNamespace(), errandEntity.getMunicipalityId(), namespaceEntity.getNotificationTTLInDays(), notification, errandEntity);
 
 		applyBusinessLogicForCreate(entity);
 
