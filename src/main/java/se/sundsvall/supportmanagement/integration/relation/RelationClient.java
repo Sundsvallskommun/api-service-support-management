@@ -23,10 +23,17 @@ import se.sundsvall.supportmanagement.integration.relation.configuration.Relatio
 @CircuitBreaker(name = CLIENT_ID)
 public interface RelationClient {
 
+	/**
+	 * Get a relation
+	 *
+	 * @param  municipalityId the municipalityId of the relation
+	 * @param  id             the id of the relation to get
+	 * @return                the Relation
+	 */
 	@GetMapping(path = "/{municipalityId}/relations/{id}", produces = APPLICATION_JSON_VALUE)
 	ResponseEntity<Relation> getRelation(
-		@PathVariable("municipalityId") final String municipalityId,
-		@PathVariable("id") final String id);
+		@PathVariable final String municipalityId,
+		@PathVariable final String id);
 
 	/**
 	 * Create a relation
@@ -37,7 +44,7 @@ public interface RelationClient {
 	 */
 	@PostMapping(path = "/{municipalityId}/relations", consumes = APPLICATION_JSON_VALUE, produces = ALL_VALUE)
 	ResponseEntity<Void> createRelation(
-		@PathVariable("municipalityId") final String municipalityId,
+		@PathVariable final String municipalityId,
 		@RequestBody final Relation relation);
 
 	/**
@@ -49,7 +56,7 @@ public interface RelationClient {
 	 */
 	@DeleteMapping(path = "/{municipalityId}/relations/{id}", produces = ALL_VALUE)
 	ResponseEntity<Void> deleteRelation(
-		@PathVariable("municipalityId") final String municipalityId,
-		@PathVariable("id") final String id);
+		@PathVariable final String municipalityId,
+		@PathVariable final String id);
 
 }
