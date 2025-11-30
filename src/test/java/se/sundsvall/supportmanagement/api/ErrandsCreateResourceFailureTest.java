@@ -161,7 +161,7 @@ class ErrandsCreateResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getDetail()).isEqualTo("""
 			Required request body is missing: org.springframework.http.ResponseEntity<java.lang.Void> \
-			se.sundsvall.supportmanagement.api.ErrandsResource.createErrand(java.lang.String,java.lang.String,se.sundsvall.supportmanagement.api.model.errand.Errand)""");
+			se.sundsvall.supportmanagement.api.ErrandsResource.createErrand(java.lang.String,java.lang.String,java.lang.String,se.sundsvall.supportmanagement.api.model.errand.Errand)""");
 
 		// Verification
 		verifyNoInteractions(metadataServiceMock, errandServiceMock);

@@ -11,6 +11,8 @@ import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMappe
 import static se.sundsvall.supportmanagement.service.mapper.StakeholderParameterMapper.toParameterList;
 import static se.sundsvall.supportmanagement.service.mapper.StakeholderParameterMapper.toStakeholderParameterEntityList;
 
+import generated.se.sundsvall.relation.Relation;
+import generated.se.sundsvall.relation.ResourceIdentifier;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -34,6 +36,10 @@ import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 
 public final class ErrandMapper {
+
+	private static final String REFERRED_FROM_RELATION_TYPE = "REFERRED_FROM";
+	private static final String REFERRED_FROM_RESOURCE_IDENTIFIER_TYPE = "case";
+	private static final String REFERRED_FROM_RESOURCE_IDENTIFIER_SERVICE = "support-management";
 
 	private ErrandMapper() {}
 
@@ -290,5 +296,20 @@ public final class ErrandMapper {
 			.filter(notification -> !notification.isGlobalAcknowledged() || !notification.isAcknowledged())
 			.map(NotificationMapper::toNotification)
 			.toList();
+	}
+
+	public static Relation toReferredFromRelation(final String namespace, final String referredFromErrandId, final String newErrandId) {
+		return new Relation()
+			.type(REFERRED_FROM_RELATION_TYPE)
+			.source(new ResourceIdentifier()
+				.resourceId(referredFromErrandId)
+				.type(REFERRED_FROM_RESOURCE_IDENTIFIER_TYPE)
+				.service(REFERRED_FROM_RESOURCE_IDENTIFIER_SERVICE)
+				.namespace(namespace))
+			.target(new ResourceIdentifier()
+				.resourceId(newErrandId)
+				.type(REFERRED_FROM_RESOURCE_IDENTIFIER_TYPE)
+				.service(REFERRED_FROM_RESOURCE_IDENTIFIER_SERVICE)
+				.namespace(namespace));
 	}
 }

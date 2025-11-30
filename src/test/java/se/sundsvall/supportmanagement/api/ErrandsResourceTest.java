@@ -109,7 +109,7 @@ class ErrandsResourceTest {
 		final var errandInstance = createErrandInstance("reporterUserId", true);
 
 		// Mock
-		when(errandServiceMock.createErrand(NAMESPACE, MUNICIPALITY_ID, errandInstance)).thenReturn(ERRAND_ID);
+		when(errandServiceMock.createErrand(NAMESPACE, MUNICIPALITY_ID, errandInstance, null)).thenReturn(ERRAND_ID);
 
 		// Call
 		webTestClient.post()
@@ -127,7 +127,7 @@ class ErrandsResourceTest {
 		verify(metadataServiceMock).findStatuses(any(), any());
 		verify(metadataServiceMock).findTypes(any(), any(), any());
 		verify(metadataServiceMock).findRoles(NAMESPACE, MUNICIPALITY_ID);
-		verify(errandServiceMock).createErrand(NAMESPACE, MUNICIPALITY_ID, errandInstance);
+		verify(errandServiceMock).createErrand(NAMESPACE, MUNICIPALITY_ID, errandInstance, null);
 	}
 
 	@Test
@@ -138,7 +138,7 @@ class ErrandsResourceTest {
 		final var errandInstance = createErrandInstance("reporterUserId", true);
 
 		// Mock
-		when(errandServiceMock.createErrand(NAMESPACE, MUNICIPALITY_ID, errandInstance)).thenReturn(ERRAND_ID);
+		when(errandServiceMock.createErrand(NAMESPACE, MUNICIPALITY_ID, errandInstance, null)).thenReturn(ERRAND_ID);
 
 		// Call
 		webTestClient.post()
@@ -153,7 +153,7 @@ class ErrandsResourceTest {
 
 		// Verification
 		verify(metadataServiceMock).findStatuses(any(), any());
-		verify(errandServiceMock).createErrand(NAMESPACE, MUNICIPALITY_ID, errandInstance);
+		verify(errandServiceMock).createErrand(NAMESPACE, MUNICIPALITY_ID, errandInstance, null);
 	}
 
 	@Test
@@ -162,7 +162,7 @@ class ErrandsResourceTest {
 		final var errandInstance = createErrandInstance("reporterUserId", false);
 
 		// Mock
-		when(errandServiceMock.createErrand(NAMESPACE, MUNICIPALITY_ID, errandInstance)).thenReturn(ERRAND_ID);
+		when(errandServiceMock.createErrand(NAMESPACE, MUNICIPALITY_ID, errandInstance, null)).thenReturn(ERRAND_ID);
 
 		// Call
 		webTestClient.post()
@@ -179,7 +179,7 @@ class ErrandsResourceTest {
 		verify(metadataServiceMock).findCategories(any(), any());
 		verify(metadataServiceMock).findStatuses(any(), any());
 		verify(metadataServiceMock).findTypes(any(), any(), any());
-		verify(errandServiceMock).createErrand(NAMESPACE, MUNICIPALITY_ID, errandInstance);
+		verify(errandServiceMock).createErrand(NAMESPACE, MUNICIPALITY_ID, errandInstance, null);
 	}
 
 	@Test
