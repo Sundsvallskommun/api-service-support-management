@@ -74,7 +74,7 @@ class ErrandsResource {
 	ResponseEntity<Void> createErrand(
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE, groups = OnCreate.class) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId(groups = OnCreate.class) @PathVariable final String municipalityId,
-		@Parameter(name = "referred_from", description = "Reference of origin", example = "portal") @RequestParam(name = "referred_from", required = false) final String referredFrom,
+		@Parameter(name = "referred_from", description = "Referenced from errand", example = "ABC-123456") @RequestParam(name = "referred_from", required = false) final String referredFrom,
 		@Valid @NotNull @RequestBody final Errand errand) {
 
 		return created(fromPath("/{municipalityId}/{namespace}/errands/{errandId}")

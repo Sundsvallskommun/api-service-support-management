@@ -14,8 +14,10 @@ import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErran
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrands;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandsWithAccessControl;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toLimitedErrand;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toReferredFromRelation;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.updateEntity;
 
+import generated.se.sundsvall.relation.ResourceIdentifier;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -573,5 +575,40 @@ class ErrandMapperTest {
 	@Test
 	void testUpdateEntityWithNull() {
 		assertThat(updateEntity(createEntity(), null)).usingRecursiveComparison().isEqualTo(createEntity());
+	}
+
+	@Test
+	void testToReferredFromRelation() {
+		final var referredFromErrandId = "foo-bar-123456";
+		final var newErrandId = "someRandomId";
+
+		final var relation = toReferredFromRelation(NAMESPACE, referredFromErrandId, newErrandId);
+
+		assertThat(relation).isNotNull();
+		assertThat(relation.getType()).isEqualTo("REFERRED_FROM");
+
+		assertThat(relation.getSource())
+			.extracting(
+				ResourceIdentifier::getResourceId,
+				ResourceIdentifier::getType,
+				ResourceIdentifier::getService,
+				ResourceIdentifier::getNamespace)
+			.containsExactly(
+				referredFromErrandId,
+				"case",
+				"support-management",
+				NAMESPACE);
+
+		assertThat(relation.getTarget())
+			.extracting(
+				ResourceIdentifier::getResourceId,
+				ResourceIdentifier::getType,
+				ResourceIdentifier::getService,
+				ResourceIdentifier::getNamespace)
+			.containsExactly(
+				newErrandId,
+				"case",
+				"support-management",
+				NAMESPACE);
 	}
 }
