@@ -25,7 +25,7 @@ public class CacheOverrideConfig {
 	 * @param cacheManager  current cache manager
 	 * @param caffeineCache settings that should override the default cache
 	 */
-	private void replaceCaffeineCache(CaffeineCacheManager cacheManager, CacheOverrideConfigProperties.CaffeineCache caffeineCache) {
+	static void replaceCaffeineCache(CaffeineCacheManager cacheManager, CacheOverrideConfigProperties.CaffeineCache caffeineCache) {
 		cacheManager.removeCache(caffeineCache.getCacheName());
 		final Cache<Object, Object> cache = Caffeine.from(caffeineCache.getSpec()).build();
 		cacheManager.registerCustomCache(caffeineCache.getCacheName(), cache);
