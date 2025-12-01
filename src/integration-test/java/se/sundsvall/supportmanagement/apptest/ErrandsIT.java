@@ -220,4 +220,24 @@ class ErrandsIT extends AbstractAppTest {
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 	}
+
+	@Test
+	void test14_postErrandWithReferredFrom() {
+		final var headers = setupCall()
+			.withHeader(SENT_BY_HEADER, "joe01doe; type=adAccount")
+			.withServicePath("/2281/CONTACTCENTER/errands?referred_from=originalErrandId")
+			.withHttpMethod(POST)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(CREATED)
+			.withExpectedResponseHeader(LOCATION, List.of("/2281/CONTACTCENTER/errands/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"))
+			.sendRequest()
+			.getResponseHeaders();
+
+		setupCall()
+			.withServicePath(headers.get(LOCATION).stream().findFirst().get())
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
 }

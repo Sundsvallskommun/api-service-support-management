@@ -31,6 +31,8 @@ import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.util.ErrandNumberGeneratorService;
 import se.sundsvall.supportmanagement.integration.notes.NotesClient;
+import se.sundsvall.supportmanagement.integration.relation.RelationClient;
+import se.sundsvall.supportmanagement.service.mapper.ErrandMapper;
 
 @Service
 @Transactional
@@ -52,6 +54,7 @@ public class ErrandService {
 	private final ConversationService conversationService;
 	private final NotesClient notesClient;
 	private final AccessControlService accessControlService;
+	private final RelationClient relationClient;
 
 	public ErrandService(
 		final ErrandsRepository repository,
@@ -64,7 +67,8 @@ public class ErrandService {
 		final ErrandAttachmentService errandAttachmentService,
 		final ConversationService conversationService,
 		final NotesClient notesClient,
-		final AccessControlService accessControlService) {
+		final AccessControlService accessControlService,
+		final RelationClient relationClient) {
 
 		this.repository = repository;
 		this.contactReasonRepository = contactReasonRepository;
@@ -77,9 +81,14 @@ public class ErrandService {
 		this.conversationService = conversationService;
 		this.notesClient = notesClient;
 		this.accessControlService = accessControlService;
+		this.relationClient = relationClient;
 	}
 
-	public String createErrand(final String namespace, final String municipalityId, final Errand errand) {
+	public String createErrand(String namespace, String municipalityId, Errand errand) {
+		return createErrand(namespace, municipalityId, errand, null);
+	}
+
+	public String createErrand(final String namespace, final String municipalityId, final Errand errand, final String referredFrom) {
 		// Generate unique errand number
 		errand.withErrandNumber(errandNumberGeneratorService.generateErrandNumber(namespace, municipalityId));
 
@@ -99,6 +108,11 @@ public class ErrandService {
 
 		// Create a log event, but don't create a notification.
 		eventService.createErrandEvent(CREATE, EVENT_LOG_CREATE_ERRAND, persistedEntity, revision.latest(), null, false, ERRAND);
+
+		if (referredFrom != null && !referredFrom.isBlank()) {
+			final var relation = ErrandMapper.toReferredFromRelation(namespace, referredFrom, persistedEntity.getId());
+			relationClient.createRelation(municipalityId, relation);
+		}
 
 		return persistedEntity.getId();
 	}
