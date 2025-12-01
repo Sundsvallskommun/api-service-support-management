@@ -482,11 +482,20 @@
     create index idx_errand_municipality_id_namespace_status_modified
        on errand (municipality_id, namespace, status, modified);
 
+    create index idx_errand_municipality_id_namespace_created
+       on errand (municipality_id, namespace, created);
+
+    create index idx_errand_municipality_id_namespace_touched
+       on errand (municipality_id, namespace, touched);
+
     alter table if exists errand 
        add constraint uq_errand_number unique (errand_number);
 
     create index idx_errand_id_metadata_label_id 
        on errand_labels (errand_id, metadata_label_id);
+
+    create index idx_metadata_label_id_errand_id
+       on errand_labels (metadata_label_id, errand_id);
 
     create index idx_errand_id 
        on errand_labels (errand_id);
