@@ -158,7 +158,7 @@ public class ErrandService {
 	public void deleteErrand(final String namespace, final String municipalityId, final String id) {
 		final var entity = accessControlService.getErrand(namespace, municipalityId, id, true, Access.AccessLevelEnum.RW);
 
-		conversationService.deleteByErrandId(municipalityId, namespace, id);
+		conversationService.deleteByErrandId(entity);
 
 		communicationService.deleteAllCommunicationsByErrandNumber(entity.getErrandNumber());
 		errandAttachmentService.readErrandAttachments(namespace, municipalityId, id)

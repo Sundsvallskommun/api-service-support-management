@@ -9,6 +9,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -351,7 +352,7 @@ class ErrandServiceTest {
 
 		// Assertions and verifications
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, Access.AccessLevelEnum.RW);
-		verify(conversationServiceMock).deleteByErrandId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID);
+		verify(conversationServiceMock).deleteByErrandId(same(entity));
 		verify(notesClientMock).findNotes(MUNICIPALITY_ID, null, null, ERRAND_ID, null, null, 1, 1000);
 		verify(notesClientMock).deleteNoteById(MUNICIPALITY_ID, "id");
 		verify(errandRepositoryMock).deleteById(ERRAND_ID);
