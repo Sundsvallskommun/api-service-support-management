@@ -1,15 +1,16 @@
 package se.sundsvall.supportmanagement.service.util;
 
+import static java.util.Optional.ofNullable;
 import static java.util.UUID.fromString;
 import static org.springframework.util.MimeTypeUtils.APPLICATION_OCTET_STREAM_VALUE;
 import static se.sundsvall.dept44.support.Identifier.Type.AD_ACCOUNT;
+import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 
 import generated.se.sundsvall.accessmapper.Access;
 import generated.se.sundsvall.accessmapper.Access.AccessLevelEnum;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.List;
-import java.util.Optional;
 import org.apache.tika.Tika;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,14 +61,15 @@ public class ServiceUtil {
 	}
 
 	public static String getAdUser() {
-		return Optional.ofNullable(Identifier.get())
+		return ofNullable(Identifier.get())
 			.filter(identifier -> AD_ACCOUNT.equals(identifier.getType()))
 			.map(Identifier::getValue)
 			.orElse(null);
 	}
 
 	private static String handleFault(String filename, Exception e) {
-		LOGGER.warn(MIME_ERROR_MSG, filename, e);
+		final var logFilename = sanitizeForLogging(filename);
+		LOGGER.warn(MIME_ERROR_MSG, logFilename, e);
 		return APPLICATION_OCTET_STREAM_VALUE; // Return mime type for arbitrary binary files
 	}
 }
