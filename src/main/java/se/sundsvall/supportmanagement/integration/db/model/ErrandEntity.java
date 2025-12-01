@@ -44,7 +44,9 @@ import se.sundsvall.supportmanagement.integration.db.model.listener.ErrandListen
 		@Index(name = "idx_errand_suspended_to", columnList = "suspended_to"),
 		@Index(name = "idx_errand_channel", columnList = "channel"),
 		@Index(name = "idx_errand_municipality_id_namespace_status_touched", columnList = "municipality_id,namespace,status,touched"),
-		@Index(name = "idx_errand_municipality_id_namespace_status_modified", columnList = "municipality_id,namespace,status,modified")
+		@Index(name = "idx_errand_municipality_id_namespace_status_modified", columnList = "municipality_id,namespace,status,modified"),
+		@Index(name = "idx_errand_municipality_id_namespace_created", columnList = "municipality_id,namespace,created"),
+		@Index(name = "idx_errand_municipality_id_namespace_touched", columnList = "municipality_id,namespace,touched")
 	},
 	uniqueConstraints = {
 		@UniqueConstraint(name = "uq_errand_number", columnNames = {
@@ -151,6 +153,7 @@ public class ErrandEntity {
 	@CollectionTable(name = "errand_labels",
 		indexes = {
 			@Index(name = "idx_errand_id_metadata_label_id", columnList = "errand_id, metadata_label_id"),
+			@Index(name = "idx_metadata_label_id_errand_id", columnList = "metadata_label_id, errand_id"),
 			@Index(name = "idx_errand_id", columnList = "errand_id"),
 			@Index(name = "idx_metadata_label_id", columnList = "metadata_label_id")
 		},
