@@ -85,7 +85,7 @@ public class EmailReaderWorker {
 			emailReaderClient.deleteEmail(config.getMunicipalityId(), email.getId());
 
 			try {
-				sendEmail(config, errand, emailRequest);
+				sendEmail(errand, emailRequest);
 			} catch (final Exception e) {
 				LOG.error("Failed to send confirmation email. Error: {}", e.getMessage());
 				setUnHealthyConsumer.accept("Failed to send confirmation email");
@@ -94,9 +94,9 @@ public class EmailReaderWorker {
 
 	}
 
-	private void sendEmail(final EmailWorkerConfigEntity config, final ErrandEntity errand, final EmailRequest emailRequest) {
+	private void sendEmail(final ErrandEntity errand, final EmailRequest emailRequest) {
 		if (emailRequest != null) {
-			communicationService.sendEmail(config.getNamespace(), config.getMunicipalityId(), errand.getId(), emailRequest);
+			communicationService.sendEmail(errand, emailRequest);
 		}
 	}
 
