@@ -1,8 +1,11 @@
 package se.sundsvall.supportmanagement.service;
 
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -11,7 +14,6 @@ import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrandEntit
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -39,6 +41,9 @@ class ErrandParameterServiceTest {
 	@Mock
 	private ErrandsRepository errandsRepositoryMock;
 
+	@Mock
+	private AccessControlService accessControlServiceMock;
+
 	@Captor
 	private ArgumentCaptor<ErrandEntity> errandEntityArgumentCaptor;
 
@@ -50,13 +55,14 @@ class ErrandParameterServiceTest {
 
 		// Arrange
 		final var parameters = List.of(Parameter.create().withKey(PARAMETER_KEY).withValues(List.of(PARAMETER_VALUE)));
-		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(ErrandEntity.create().withParameters(new ArrayList<>())));
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(ErrandEntity.create().withParameters(new ArrayList<>()));
 		when(errandsRepositoryMock.save(any(ErrandEntity.class))).thenReturn(ErrandEntity.create());
 
 		// Act
 		errandParameterService.updateErrandParameters(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, parameters);
 
 		// Assert
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, RW);
 		verify(errandsRepositoryMock).save(errandEntityArgumentCaptor.capture());
 		final var errandEntity = errandEntityArgumentCaptor.getValue();
 
@@ -72,14 +78,15 @@ class ErrandParameterServiceTest {
 		// Arrange
 		final var spy = Mockito.spy(errandParameterService);
 		final var errand = buildErrandEntity();
-		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(errand));
+
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(errand);
 
 		// Act
 		final var result = spy.readErrandParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PARAMETER_KEY);
 
 		// Assert
 		assertThat(result).hasSize(1).containsExactly(PARAMETER_VALUE);
-		verify(spy).findExistingErrand(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, R, RW);
 		verify(spy).findParameterEntityOrElseThrow(errand, PARAMETER_KEY);
 	}
 
@@ -89,7 +96,7 @@ class ErrandParameterServiceTest {
 		// Arrange
 		final var spy = Mockito.spy(errandParameterService);
 		final var errand = buildErrandEntity();
-		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(errand));
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(errand);
 
 		// Act
 		final var result = spy.findErrandParameters(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
@@ -97,8 +104,7 @@ class ErrandParameterServiceTest {
 		// Assert
 		assertThat(result).hasSize(1).isEqualTo(List.of(Parameter.create().withKey(PARAMETER_KEY).withValues(List.of(PARAMETER_VALUE))));
 		verify(spy).findErrandParameters(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
-		verify(spy).findExistingErrand(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
-		verify(errandsRepositoryMock).findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, R, RW);
 		verifyNoMoreInteractions(errandsRepositoryMock, spy);
 	}
 
@@ -110,7 +116,7 @@ class ErrandParameterServiceTest {
 		final var errand = buildErrandEntity();
 		final var errandParameterValues = List.of("anotherValue");
 
-		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(errand));
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(errand);
 		when(errandsRepositoryMock.save(errand)).thenReturn(errand);
 
 		// Act
@@ -119,7 +125,7 @@ class ErrandParameterServiceTest {
 		// Assert
 		assertThat(result).isNotNull();
 		assertThat(result.getValues()).isEqualTo(List.of("anotherValue"));
-		verify(spy).findExistingErrand(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, RW);
 		verify(spy).updateErrandParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PARAMETER_KEY, errandParameterValues);
 		verifyNoMoreInteractions(errandsRepositoryMock, spy);
 	}
@@ -129,30 +135,15 @@ class ErrandParameterServiceTest {
 		// Arrange
 		final var spy = Mockito.spy(errandParameterService);
 		final var errand = buildErrandEntity().withParameters(new ArrayList<>(List.of(ParameterEntity.create().withKey(PARAMETER_KEY).withValues(List.of(PARAMETER_VALUE)))));
-		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(errand));
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(errand);
 
 		// Act
 		spy.deleteErrandParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PARAMETER_KEY);
 
 		// Assert
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, RW);
 		verify(errandsRepositoryMock).save(errandEntityArgumentCaptor.capture());
 		assertThat(errandEntityArgumentCaptor.getValue().getParameters()).isEmpty();
-		verifyNoMoreInteractions(errandsRepositoryMock);
-	}
-
-	@Test
-	void findExistingErrand() {
-
-		// Arrange
-		final var errand = buildErrandEntity();
-		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(errand));
-
-		// Act
-		final var result = errandParameterService.findExistingErrand(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
-
-		// Assert
-		assertThat(result).isEqualTo(errand);
-		verify(errandsRepositoryMock).findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 		verifyNoMoreInteractions(errandsRepositoryMock);
 	}
 
