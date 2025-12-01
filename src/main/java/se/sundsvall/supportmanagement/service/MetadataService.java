@@ -4,6 +4,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Comparator.comparing;
 import static java.util.Comparator.naturalOrder;
 import static java.util.Comparator.nullsFirst;
+import static org.springframework.util.CollectionUtils.isEmpty;
 import static org.zalando.problem.Status.BAD_REQUEST;
 import static org.zalando.problem.Status.NOT_FOUND;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toCategory;
@@ -306,11 +307,11 @@ public class MetadataService {
 		final String municipalityId,
 		final List<String> resourcePathPatterns) {
 
-		if (resourcePathPatterns == null || resourcePathPatterns.isEmpty()) {
+		if (isEmpty(resourcePathPatterns)) {
 			return Set.of();
 		}
 
-		List<MetadataLabelEntity> potentialMatches = metadataLabelRepository.findByNamespaceAndMunicipalityId(namespace, municipalityId);
+		final var potentialMatches = metadataLabelRepository.findByNamespaceAndMunicipalityId(namespace, municipalityId);
 
 		return potentialMatches.stream()
 			.filter(entity -> entity.getResourcePath() != null)

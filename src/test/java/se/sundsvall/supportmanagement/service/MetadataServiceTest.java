@@ -19,6 +19,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.zalando.problem.ThrowableProblem;
 import se.sundsvall.supportmanagement.api.model.metadata.Category;
 import se.sundsvall.supportmanagement.api.model.metadata.ContactReason;
@@ -42,6 +44,7 @@ import se.sundsvall.supportmanagement.integration.db.model.RoleEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StatusEntity;
 import se.sundsvall.supportmanagement.integration.db.model.TypeEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ValidationEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.EntityType;
 
 @ExtendWith(MockitoExtension.class)
 class MetadataServiceTest {
@@ -69,6 +72,176 @@ class MetadataServiceTest {
 
 	@InjectMocks
 	private MetadataService metadataService;
+
+	@Test
+	void verifyCacheAnnotations() throws NoSuchMethodException {
+		assertThat(MetadataService.class.getMethod("findAll", String.class, String.class).getAnnotation(Cacheable.class).value()).containsExactly("metadataCache");
+		assertThat(MetadataService.class.getMethod("isValidated", String.class, String.class, EntityType.class).getAnnotation(Cacheable.class).value()).containsExactly("metadataCache");
+		assertThat(MetadataService.class.getMethod("findExternalIdTypes", String.class, String.class).getAnnotation(Cacheable.class).value()).containsExactly("metadataCache");
+		assertThat(MetadataService.class.getMethod("findStatuses", String.class, String.class).getAnnotation(Cacheable.class).value()).containsExactly("metadataCache");
+		assertThat(MetadataService.class.getMethod("findRoles", String.class, String.class).getAnnotation(Cacheable.class).value()).containsExactly("metadataCache");
+		assertThat(MetadataService.class.getMethod("findLabels", String.class, String.class).getAnnotation(Cacheable.class).value()).containsExactly("metadataCache");
+		assertThat(MetadataService.class.getMethod("patternToLabels", String.class, String.class, List.class).getAnnotation(Cacheable.class).value()).containsExactly("metadataLabelsByPatternCache");
+		assertThat(MetadataService.class.getMethod("findCategories", String.class, String.class).getAnnotation(Cacheable.class).value()).containsExactly("metadataCache");
+		assertThat(MetadataService.class.getMethod("findTypes", String.class, String.class, String.class).getAnnotation(Cacheable.class).value()).containsExactly("metadataCache");
+		assertThat(MetadataService.class.getMethod("findContactReasons", String.class, String.class).getAnnotation(Cacheable.class).value()).containsExactly("metadataCache");
+	}
+
+	@Test
+	void verifyCacheEvictAnnotationsOnExternalIdType() throws NoSuchMethodException {
+		assertThat(MetadataService.class.getMethod("createExternalIdType", String.class, String.class, ExternalIdType.class).getAnnotation(Caching.class).evict()).satisfiesExactlyInAnyOrder(evictAnnotation -> {
+			assertThat(evictAnnotation.value()).containsExactly("metadataCache");
+			assertThat(evictAnnotation.key()).isEqualTo("{'findExternalIdTypes', #namespace, #municipalityId}");
+		}, evictAnnotation -> {
+			assertThat(evictAnnotation.value()).containsExactly("metadataCache");
+			assertThat(evictAnnotation.key()).isEqualTo("{'findAll', #namespace, #municipalityId}");
+		});
+
+		assertThat(MetadataService.class.getMethod("deleteExternalIdType", String.class, String.class, String.class).getAnnotation(Caching.class).evict()).satisfiesExactlyInAnyOrder(evictAnnotation -> {
+			assertThat(evictAnnotation.value()).containsExactly("metadataCache");
+			assertThat(evictAnnotation.key()).isEqualTo("{'findExternalIdTypes', #namespace, #municipalityId}");
+		}, evictAnnotation -> {
+			assertThat(evictAnnotation.value()).containsExactly("metadataCache");
+			assertThat(evictAnnotation.key()).isEqualTo("{'findAll', #namespace, #municipalityId}");
+		});
+	}
+
+	@Test
+	void verifyCacheEvictAnnotationsOnStatus() throws NoSuchMethodException {
+		assertThat(MetadataService.class.getMethod("createStatus", String.class, String.class, Status.class).getAnnotation(Caching.class).evict()).satisfiesExactlyInAnyOrder(evictAnnotation -> {
+			assertThat(evictAnnotation.value()).containsExactly("metadataCache");
+			assertThat(evictAnnotation.key()).isEqualTo("{'findStatuses', #namespace, #municipalityId}");
+		}, evictAnnotation -> {
+			assertThat(evictAnnotation.value()).containsExactly("metadataCache");
+			assertThat(evictAnnotation.key()).isEqualTo("{'findAll', #namespace, #municipalityId}");
+		});
+
+		assertThat(MetadataService.class.getMethod("deleteStatus", String.class, String.class, String.class).getAnnotation(Caching.class).evict()).satisfiesExactlyInAnyOrder(evictAnnotation -> {
+			assertThat(evictAnnotation.value()).containsExactly("metadataCache");
+			assertThat(evictAnnotation.key()).isEqualTo("{'findStatuses', #namespace, #municipalityId}");
+		}, evictAnnotation -> {
+			assertThat(evictAnnotation.value()).containsExactly("metadataCache");
+			assertThat(evictAnnotation.key()).isEqualTo("{'findAll', #namespace, #municipalityId}");
+		});
+	}
+
+	@Test
+	void verifyCacheEvictAnnotationsOnRole() throws NoSuchMethodException {
+		assertThat(MetadataService.class.getMethod("createRole", String.class, String.class, Role.class).getAnnotation(Caching.class).evict()).satisfiesExactlyInAnyOrder(evictAnnotation -> {
+			assertThat(evictAnnotation.value()).containsExactly("metadataCache");
+			assertThat(evictAnnotation.key()).isEqualTo("{'findRoles', #namespace, #municipalityId}");
+		}, evictAnnotation -> {
+			assertThat(evictAnnotation.value()).containsExactly("metadataCache");
+			assertThat(evictAnnotation.key()).isEqualTo("{'findAll', #namespace, #municipalityId}");
+		});
+
+		assertThat(MetadataService.class.getMethod("deleteRole", String.class, String.class, String.class).getAnnotation(Caching.class).evict()).satisfiesExactlyInAnyOrder(evictAnnotation -> {
+			assertThat(evictAnnotation.value()).containsExactly("metadataCache");
+			assertThat(evictAnnotation.key()).isEqualTo("{'findRoles', #namespace, #municipalityId}");
+		}, evictAnnotation -> {
+			assertThat(evictAnnotation.value()).containsExactly("metadataCache");
+			assertThat(evictAnnotation.key()).isEqualTo("{'findAll', #namespace, #municipalityId}");
+		});
+	}
+
+	@Test
+	void verifyCacheEvictAnnotationsOnLabel() throws NoSuchMethodException {
+		assertThat(MetadataService.class.getMethod("createLabels", String.class, String.class, List.class).getAnnotation(Caching.class).evict()).satisfiesExactlyInAnyOrder(evictAnnotation -> {
+			assertThat(evictAnnotation.value()).containsExactly("metadataCache");
+			assertThat(evictAnnotation.key()).isEqualTo("{'findLabels', #namespace, #municipalityId}");
+		}, evictAnnotation -> {
+			assertThat(evictAnnotation.value()).containsExactly("metadataCache");
+			assertThat(evictAnnotation.key()).isEqualTo("{'findAll', #namespace, #municipalityId}");
+		}, evictAnnotation -> {
+			assertThat(evictAnnotation.value()).containsExactly("metadataLabelsByPatternCache");
+			assertThat(evictAnnotation.allEntries()).isTrue();
+		});
+
+		assertThat(MetadataService.class.getMethod("updateLabels", String.class, String.class, List.class).getAnnotation(Caching.class).evict()).satisfiesExactlyInAnyOrder(evictAnnotation -> {
+			assertThat(evictAnnotation.value()).containsExactly("metadataCache");
+			assertThat(evictAnnotation.key()).isEqualTo("{'findLabels', #namespace, #municipalityId}");
+		}, evictAnnotation -> {
+			assertThat(evictAnnotation.value()).containsExactly("metadataCache");
+			assertThat(evictAnnotation.key()).isEqualTo("{'findAll', #namespace, #municipalityId}");
+		}, evictAnnotation -> {
+			assertThat(evictAnnotation.value()).containsExactly("metadataLabelsByPatternCache");
+			assertThat(evictAnnotation.allEntries()).isTrue();
+		});
+
+		assertThat(MetadataService.class.getMethod("deleteLabels", String.class, String.class).getAnnotation(Caching.class).evict()).satisfiesExactlyInAnyOrder(evictAnnotation -> {
+			assertThat(evictAnnotation.value()).containsExactly("metadataCache");
+			assertThat(evictAnnotation.key()).isEqualTo("{'findLabels', #namespace, #municipalityId}");
+		}, evictAnnotation -> {
+			assertThat(evictAnnotation.value()).containsExactly("metadataCache");
+			assertThat(evictAnnotation.key()).isEqualTo("{'findAll', #namespace, #municipalityId}");
+		}, evictAnnotation -> {
+			assertThat(evictAnnotation.value()).containsExactly("metadataLabelsByPatternCache");
+			assertThat(evictAnnotation.allEntries()).isTrue();
+		});
+	}
+
+	@Test
+	void verifyCacheEvictAnnotationsOnCategory() throws NoSuchMethodException {
+		assertThat(MetadataService.class.getMethod("createCategory", String.class, String.class, Category.class).getAnnotation(Caching.class).evict()).satisfiesExactlyInAnyOrder(evictAnnotation -> {
+			assertThat(evictAnnotation.value()).containsExactly("metadataCache");
+			assertThat(evictAnnotation.key()).isEqualTo("{'findCategories', #namespace, #municipalityId}");
+		}, evictAnnotation -> {
+			assertThat(evictAnnotation.value()).containsExactly("metadataCache");
+			assertThat(evictAnnotation.key()).isEqualTo("{'findTypes', #namespace, #municipalityId}");
+		}, evictAnnotation -> {
+			assertThat(evictAnnotation.value()).containsExactly("metadataCache");
+			assertThat(evictAnnotation.key()).isEqualTo("{'findAll', #namespace, #municipalityId}");
+		});
+
+		assertThat(MetadataService.class.getMethod("updateCategory", String.class, String.class, String.class, Category.class).getAnnotation(Caching.class).evict()).satisfiesExactlyInAnyOrder(evictAnnotation -> {
+			assertThat(evictAnnotation.value()).containsExactly("metadataCache");
+			assertThat(evictAnnotation.key()).isEqualTo("{'findCategories', #namespace, #municipalityId}");
+		}, evictAnnotation -> {
+			assertThat(evictAnnotation.value()).containsExactly("metadataCache");
+			assertThat(evictAnnotation.key()).isEqualTo("{'findTypes', #namespace, #municipalityId}");
+		}, evictAnnotation -> {
+			assertThat(evictAnnotation.value()).containsExactly("metadataCache");
+			assertThat(evictAnnotation.key()).isEqualTo("{'findAll', #namespace, #municipalityId}");
+		});
+
+		assertThat(MetadataService.class.getMethod("deleteCategory", String.class, String.class, String.class).getAnnotation(Caching.class).evict()).satisfiesExactlyInAnyOrder(evictAnnotation -> {
+			assertThat(evictAnnotation.value()).containsExactly("metadataCache");
+			assertThat(evictAnnotation.key()).isEqualTo("{'findCategories', #namespace, #municipalityId}");
+		}, evictAnnotation -> {
+			assertThat(evictAnnotation.value()).containsExactly("metadataCache");
+			assertThat(evictAnnotation.key()).isEqualTo("{'findTypes', #namespace, #municipalityId}");
+		}, evictAnnotation -> {
+			assertThat(evictAnnotation.value()).containsExactly("metadataCache");
+			assertThat(evictAnnotation.key()).isEqualTo("{'findAll', #namespace, #municipalityId}");
+		});
+	}
+
+	@Test
+	void verifyCacheEvictAnnotationsOnContactReason() throws NoSuchMethodException {
+		assertThat(MetadataService.class.getMethod("createContactReason", String.class, String.class, ContactReason.class).getAnnotation(Caching.class).evict()).satisfiesExactlyInAnyOrder(evictAnnotation -> {
+			assertThat(evictAnnotation.value()).containsExactly("metadataCache");
+			assertThat(evictAnnotation.key()).isEqualTo("{'findContactReasons', #namespace, #municipalityId}");
+		}, evictAnnotation -> {
+			assertThat(evictAnnotation.value()).containsExactly("metadataCache");
+			assertThat(evictAnnotation.key()).isEqualTo("{'findAll', #namespace, #municipalityId}");
+		});
+
+		assertThat(MetadataService.class.getMethod("patchContactReason", Long.class, String.class, String.class, ContactReason.class).getAnnotation(Caching.class).evict()).satisfiesExactlyInAnyOrder(evictAnnotation -> {
+			assertThat(evictAnnotation.value()).containsExactly("metadataCache");
+			assertThat(evictAnnotation.key()).isEqualTo("{'findContactReasons', #namespace, #municipalityId}");
+		}, evictAnnotation -> {
+			assertThat(evictAnnotation.value()).containsExactly("metadataCache");
+			assertThat(evictAnnotation.key()).isEqualTo("{'findAll', #namespace, #municipalityId}");
+		});
+
+		assertThat(MetadataService.class.getMethod("deleteContactReason", Long.class, String.class, String.class).getAnnotation(Caching.class).evict()).satisfiesExactlyInAnyOrder(evictAnnotation -> {
+			assertThat(evictAnnotation.value()).containsExactly("metadataCache");
+			assertThat(evictAnnotation.key()).isEqualTo("{'findContactReasons', #namespace, #municipalityId}");
+		}, evictAnnotation -> {
+			assertThat(evictAnnotation.value()).containsExactly("metadataCache");
+			assertThat(evictAnnotation.key()).isEqualTo("{'findAll', #namespace, #municipalityId}");
+		});
+	}
 
 	// =================================================================
 	// Status tests
