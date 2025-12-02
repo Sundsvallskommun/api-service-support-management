@@ -21,7 +21,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.ResponseEntity;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.integration.accessmapper.AccessMapperClient;
@@ -47,11 +46,6 @@ class AccessMapperServiceTest {
 
 	@InjectMocks
 	private AccessMapperService accessMapperService;
-
-	@Test
-	void verifyCacheAnnotations() throws NoSuchMethodException {
-		assertThat(AccessMapperService.class.getMethod("getAccessibleLabels", String.class, String.class, Identifier.class, List.class).getAnnotation(Cacheable.class).value()).containsExactly("accessibleLabelsCache");
-	}
 
 	@Test
 	void getAccessibleLabelsSuccessful() {

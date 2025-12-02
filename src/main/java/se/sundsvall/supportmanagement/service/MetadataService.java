@@ -334,7 +334,7 @@ public class MetadataService {
 	@Caching(evict = {
 		@CacheEvict(value = CACHE_NAME, key = "{'findCategories', #namespace, #municipalityId}"),
 		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'findTypes', #namespace, #municipalityId}")
+		@CacheEvict(value = CACHE_NAME, key = "{'findTypes', #namespace, #municipalityId, #category.name}")
 	})
 	public String createCategory(final String namespace, final String municipalityId, final Category category) {
 		if (categoryRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, category.getName())) {
@@ -355,7 +355,7 @@ public class MetadataService {
 	@Caching(evict = {
 		@CacheEvict(value = CACHE_NAME, key = "{'findCategories', #namespace, #municipalityId}"),
 		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'findTypes', #namespace, #municipalityId}")
+		@CacheEvict(value = CACHE_NAME, key = "{'findTypes', #namespace, #municipalityId, #name}")
 	})
 	public Category updateCategory(final String namespace, final String municipalityId, final String name, final Category category) {
 		if (!categoryRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)) {
@@ -391,7 +391,7 @@ public class MetadataService {
 	@Caching(evict = {
 		@CacheEvict(value = CACHE_NAME, key = "{'findCategories', #namespace, #municipalityId}"),
 		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'findTypes', #namespace, #municipalityId}")
+		@CacheEvict(value = CACHE_NAME, key = "{'findTypes', #namespace, #municipalityId, #name}")
 	})
 	public void deleteCategory(final String namespace, final String municipalityId, final String name) {
 		if (!categoryRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)) {
