@@ -406,6 +406,8 @@ class CommunicationServiceTest {
 		// Mock
 		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(errandEntityMock);
 		when(errandEntityMock.getId()).thenReturn(ERRAND_ID);
+		when(errandEntityMock.getNamespace()).thenReturn(NAMESPACE);
+		when(errandEntityMock.getMunicipalityId()).thenReturn(MUNICIPALITY_ID);
 		when(communicationMapperMock.toCommunicationEntity(NAMESPACE, MUNICIPALITY_ID, request)).thenReturn(CommunicationEntity.create());
 		when(communicationMapperMock.toAttachments(any(CommunicationEntity.class))).thenReturn(List.of(AttachmentEntity.create()));
 

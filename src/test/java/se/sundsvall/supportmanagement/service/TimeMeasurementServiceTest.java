@@ -1,20 +1,20 @@
 package se.sundsvall.supportmanagement.service;
 
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.OffsetDateTime;
 import java.util.List;
-import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.zalando.problem.Problem;
-import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.TimeMeasurementEntity;
 
@@ -22,7 +22,7 @@ import se.sundsvall.supportmanagement.integration.db.model.TimeMeasurementEntity
 class TimeMeasurementServiceTest {
 
 	@Mock
-	private ErrandsRepository repository;
+	private AccessControlService accessControlServiceMock;
 
 	@InjectMocks
 	private TimeMeasurementService timeMeasurementService;
@@ -48,13 +48,13 @@ class TimeMeasurementServiceTest {
 			.withAdministrator(administrator)
 			.withStatus(status));
 
-		when(repository.findByIdAndNamespaceAndMunicipalityId(errandId, namespace, municipalityId)).thenReturn(Optional.of(new ErrandEntity().withTimeMeasures(timeMeasurements)));
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(ErrandEntity.create().withTimeMeasures(timeMeasurements));
 
 		// Act
 		final var result = timeMeasurementService.getErrandTimeMeasurements(namespace, municipalityId, errandId);
 
 		// Assert
-		verify(repository).findByIdAndNamespaceAndMunicipalityId(errandId, namespace, municipalityId);
+		verify(accessControlServiceMock).getErrand(namespace, municipalityId, errandId, false, R, RW);
 		assertThat(result).hasSize(1);
 		assertThat(result.getFirst().getStartTime()).isEqualTo(startTime);
 		assertThat(result.getFirst().getStopTime()).isEqualTo(stopTime);
@@ -64,35 +64,19 @@ class TimeMeasurementServiceTest {
 	}
 
 	@Test
-	void getErrandTimeMeasurementsErrandNotFound() {
-
-		// Arrange
-		final var namespace = "namespace";
-		final var municipalityId = "municipalityId";
-		final var errandId = "errandId";
-
-		when(repository.findByIdAndNamespaceAndMunicipalityId(errandId, namespace, municipalityId)).thenReturn(Optional.empty());
-
-		// Act & Assert
-		assertThatThrownBy(() -> timeMeasurementService.getErrandTimeMeasurements(namespace, municipalityId, errandId))
-			.isInstanceOf(Problem.class)
-			.hasMessage("Not Found: An errand with id '" + errandId + "' could not be found in namespace '" + namespace + "' for municipality with id '" + municipalityId + "'");
-	}
-
-	@Test
 	void getErrandTimeMeasurementsEmptyList() {
 		// Arrange
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
 		final var errandId = "errandId";
 
-		when(repository.findByIdAndNamespaceAndMunicipalityId(errandId, namespace, municipalityId)).thenReturn(Optional.of(new ErrandEntity()));
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(ErrandEntity.create());
 
 		// Act
 		final var result = timeMeasurementService.getErrandTimeMeasurements(namespace, municipalityId, errandId);
 
 		// Assert
-		verify(repository).findByIdAndNamespaceAndMunicipalityId(errandId, namespace, municipalityId);
+		verify(accessControlServiceMock).getErrand(namespace, municipalityId, errandId, false, R, RW);
 		assertThat(result).isEmpty();
 	}
 }

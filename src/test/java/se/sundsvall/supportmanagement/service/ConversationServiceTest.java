@@ -1,5 +1,7 @@
 package se.sundsvall.supportmanagement.service;
 
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static java.util.Optional.empty;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -43,6 +45,7 @@ import se.sundsvall.supportmanagement.api.model.communication.conversation.Ident
 import se.sundsvall.supportmanagement.api.model.communication.conversation.KeyValues;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.MessageRequest;
 import se.sundsvall.supportmanagement.integration.db.ConversationRepository;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.ConversationEntity;
 import se.sundsvall.supportmanagement.integration.messageexchange.MessageExchangeClient;
 import se.sundsvall.supportmanagement.integration.relation.RelationClient;
@@ -83,6 +86,9 @@ class ConversationServiceTest {
 	@Mock
 	private RelationClient relationClientMock;
 
+	@Mock
+	private AccessControlService accessControlServiceMock;
+
 	@Captor
 	private ArgumentCaptor<ConversationEntity> conversationEntityCaptor;
 
@@ -112,6 +118,7 @@ class ConversationServiceTest {
 		// Assert
 		assertThat(response).isNotNull();
 
+		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, RW);
 		verify(conversationRepositoryMock).save(conversationEntityCaptor.capture());
 		verify(messageExchangeClientMock).createConversation(eq(MUNICIPALITY_ID), eq(MESSAGE_EXCHANGE_NAMESPACE), any());
 		verify(messageExchangeClientMock).getConversationById(MUNICIPALITY_ID, MESSAGE_EXCHANGE_NAMESPACE, CONVERSATION_ID);
@@ -138,6 +145,7 @@ class ConversationServiceTest {
 			.hasMessageContaining("Internal Server Error: ID of conversation was not returned in location header!");
 
 		// Assert
+		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, RW);
 		verify(messageExchangeClientMock).createConversation(eq(MUNICIPALITY_ID), eq(MESSAGE_EXCHANGE_NAMESPACE), any());
 		verify(conversationRepositoryMock, never()).save(any());
 		verify(messageExchangeClientMock, never()).getConversationById(any(), any(), any());
@@ -164,6 +172,7 @@ class ConversationServiceTest {
 		// Assert
 		assertThat(response).isNotNull();
 
+		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, RW);
 		verify(conversationRepositoryMock).findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID);
 		verify(conversationRepositoryMock).save(conversationEntityCaptor.capture());
 		verify(messageExchangeClientMock).updateConversationById(eq(MUNICIPALITY_ID), eq(MESSAGE_EXCHANGE_NAMESPACE), eq(MESSAGE_EXCHANGE_ID), any());
@@ -188,6 +197,7 @@ class ConversationServiceTest {
 		// Assert
 		assertThat(response).isNotNull().hasSize(1);
 
+		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, R, RW);
 		verify(conversationRepositoryMock).findByMunicipalityIdAndNamespaceAndErrandId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID);
 
 		verifyNoInteractions(messageExchangeSchedulerMock, communicationServiceMock, messageExchangeClientMock);
@@ -210,6 +220,7 @@ class ConversationServiceTest {
 		assertThat(response).isNotNull();
 		assertThat(response.getTopic()).isEqualTo(TOPIC);
 
+		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, R, RW);
 		verify(conversationRepositoryMock).findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID);
 		verify(messageExchangeSchedulerMock).triggerSyncConversationsAsync();
 		verify(messageExchangeClientMock).getConversationById(MUNICIPALITY_ID, MESSAGE_EXCHANGE_NAMESPACE, MESSAGE_EXCHANGE_ID);
@@ -230,6 +241,7 @@ class ConversationServiceTest {
 			.hasMessageContaining("Not Found: No conversation with ID:'CONVERSATION_ID', errandId:'ERRAND_ID', municipalityId:'MUNICIPALITY_ID' and namespace:'NAMESPACE' was found!");
 
 		// Assert
+		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, R, RW);
 		verify(conversationRepositoryMock).findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID);
 		verify(conversationRepositoryMock, never()).save(any());
 
@@ -254,6 +266,7 @@ class ConversationServiceTest {
 		conversationService.createMessage(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID, messageRequest, null);
 
 		// Assert
+		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, RW);
 		verify(conversationRepositoryMock).findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID);
 		verify(messageExchangeClientMock).createMessage(eq(MUNICIPALITY_ID), eq(MESSAGE_EXCHANGE_NAMESPACE), eq(MESSAGE_EXCHANGE_ID), any(), eq(null));
 		verify(communicationServiceMock).sendMessageNotification(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_DEPARTMENT_NAME);
@@ -280,6 +293,7 @@ class ConversationServiceTest {
 		conversationService.createMessage(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID, messageRequest, List.of(multipartFile));
 
 		// Assert
+		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, RW);
 		verify(conversationRepositoryMock).findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID);
 		verify(messageExchangeClientMock).createMessage(eq(MUNICIPALITY_ID), eq(MESSAGE_EXCHANGE_NAMESPACE), eq(MESSAGE_EXCHANGE_ID), any(), any());
 		verify(messageExchangeSchedulerMock).triggerSyncConversationsAsync();
@@ -306,6 +320,7 @@ class ConversationServiceTest {
 
 		// Assert
 		assertThat(result).isNotNull().hasSize(1);
+		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, R, RW);
 		verify(conversationRepositoryMock).findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID);
 		verify(messageExchangeClientMock).getMessages(MUNICIPALITY_ID, MESSAGE_EXCHANGE_NAMESPACE, MESSAGE_EXCHANGE_ID, null, pageable);
 		verify(messageExchangeSchedulerMock).triggerSyncConversationsAsync();
@@ -341,8 +356,6 @@ class ConversationServiceTest {
 	@Test
 	void getConversationMessageAttachment() throws IOException {
 		// Arrange
-		final var municipalityId = "municipalityId";
-		final var namespace = "namespace";
 		final var conversationId = "convId";
 		final var messageId = "msgId";
 		final var attachmentId = "attId";
@@ -362,19 +375,19 @@ class ConversationServiceTest {
 			}
 		};
 
-		when(messageExchangeClientMock.getMessageAttachment(municipalityId, MESSAGE_EXCHANGE_NAMESPACE, messageExchangeId, messageId, attachmentId))
+		when(messageExchangeClientMock.getMessageAttachment(MUNICIPALITY_ID, MESSAGE_EXCHANGE_NAMESPACE, messageExchangeId, messageId, attachmentId))
 			.thenReturn(ResponseEntity.ok()
 				.contentType(contentType)
 				.contentLength(content.length)
 				.body(inputStreamResource));
 
-		when(conversationRepositoryMock.findByMunicipalityIdAndNamespaceAndErrandIdAndId(municipalityId, namespace, ERRAND_ID, conversationId))
+		when(conversationRepositoryMock.findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, conversationId))
 			.thenReturn(Optional.of(conversationEntity));
 
 		final var response = new MockHttpServletResponse();
 
 		// Act
-		conversationService.getConversationMessageAttachment(municipalityId, namespace, ERRAND_ID, conversationId, messageId, attachmentId, response);
+		conversationService.getConversationMessageAttachment(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, conversationId, messageId, attachmentId, response);
 
 		// Assert
 		assertThat(response.getStatus()).isEqualTo(200);
@@ -382,8 +395,9 @@ class ConversationServiceTest {
 		assertThat(response.getHeader("Content-Disposition")).contains(filename);
 		assertThat(response.getContentAsByteArray()).isEqualTo(content);
 
-		verify(conversationRepositoryMock).findByMunicipalityIdAndNamespaceAndErrandIdAndId(municipalityId, namespace, ERRAND_ID, conversationId);
-		verify(messageExchangeClientMock).getMessageAttachment(municipalityId, MESSAGE_EXCHANGE_NAMESPACE, messageExchangeId, messageId, attachmentId);
+		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, R, RW);
+		verify(conversationRepositoryMock).findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, conversationId);
+		verify(messageExchangeClientMock).getMessageAttachment(MUNICIPALITY_ID, MESSAGE_EXCHANGE_NAMESPACE, messageExchangeId, messageId, attachmentId);
 
 		verifyNoMoreInteractions(conversationRepositoryMock, messageExchangeClientMock, messageExchangeSchedulerMock);
 		verifyNoInteractions(communicationServiceMock);
@@ -392,25 +406,24 @@ class ConversationServiceTest {
 	@Test
 	void getConversationMessageAttachmentMissingExchangeId() {
 		// Arrange
-		final var municipalityId = "municipalityId";
-		final var namespace = "namespace";
 		final var conversationId = "convId";
 		final var messageId = "msgId";
 		final var attachmentId = "attId";
 
 		final var conversationEntity = ConversationEntity.create().withMessageExchangeId(null);
 
-		when(conversationRepositoryMock.findByMunicipalityIdAndNamespaceAndErrandIdAndId(municipalityId, namespace, ERRAND_ID, conversationId))
+		when(conversationRepositoryMock.findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, conversationId))
 			.thenReturn(Optional.of(conversationEntity));
 
 		final var response = new MockHttpServletResponse();
 
 		// Act & Assert
-		assertThatThrownBy(() -> conversationService.getConversationMessageAttachment(municipalityId, namespace, ERRAND_ID, conversationId, messageId, attachmentId, response))
+		assertThatThrownBy(() -> conversationService.getConversationMessageAttachment(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, conversationId, messageId, attachmentId, response))
 			.isInstanceOf(RuntimeException.class)
 			.hasMessageContaining("Conversation not found in local database");
 
-		verify(conversationRepositoryMock).findByMunicipalityIdAndNamespaceAndErrandIdAndId(municipalityId, namespace, ERRAND_ID, conversationId);
+		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, R, RW);
+		verify(conversationRepositoryMock).findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, conversationId);
 
 		verifyNoMoreInteractions(conversationRepositoryMock);
 		verifyNoInteractions(communicationServiceMock, messageExchangeClientMock, messageExchangeSchedulerMock);
@@ -419,8 +432,6 @@ class ConversationServiceTest {
 	@Test
 	void getConversationMessageAttachmentNon2xxResponse() {
 		// Arrange
-		final var municipalityId = "municipalityId";
-		final var namespace = "namespace";
 		final var conversationId = "convId";
 		final var messageId = "msgId";
 		final var attachmentId = "attId";
@@ -428,20 +439,21 @@ class ConversationServiceTest {
 
 		final var conversationEntity = ConversationEntity.create().withMessageExchangeId(messageExchangeId);
 
-		when(conversationRepositoryMock.findByMunicipalityIdAndNamespaceAndErrandIdAndId(municipalityId, namespace, ERRAND_ID, conversationId))
+		when(conversationRepositoryMock.findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, conversationId))
 			.thenReturn(Optional.of(conversationEntity));
-		when(messageExchangeClientMock.getMessageAttachment(municipalityId, MESSAGE_EXCHANGE_NAMESPACE, messageExchangeId, messageId, attachmentId))
+		when(messageExchangeClientMock.getMessageAttachment(MUNICIPALITY_ID, MESSAGE_EXCHANGE_NAMESPACE, messageExchangeId, messageId, attachmentId))
 			.thenReturn(ResponseEntity.status(404).build());
 
 		final var response = new MockHttpServletResponse();
 
 		// Act & Assert
-		assertThatThrownBy(() -> conversationService.getConversationMessageAttachment(municipalityId, namespace, ERRAND_ID, conversationId, messageId, attachmentId, response))
+		assertThatThrownBy(() -> conversationService.getConversationMessageAttachment(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, conversationId, messageId, attachmentId, response))
 			.isInstanceOf(RuntimeException.class)
 			.hasMessageContaining("Attachment not found or invalid in Message Exchange");
 
-		verify(conversationRepositoryMock).findByMunicipalityIdAndNamespaceAndErrandIdAndId(municipalityId, namespace, ERRAND_ID, conversationId);
-		verify(messageExchangeClientMock).getMessageAttachment(municipalityId, MESSAGE_EXCHANGE_NAMESPACE, messageExchangeId, messageId, attachmentId);
+		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, R, RW);
+		verify(conversationRepositoryMock).findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, conversationId);
+		verify(messageExchangeClientMock).getMessageAttachment(MUNICIPALITY_ID, MESSAGE_EXCHANGE_NAMESPACE, messageExchangeId, messageId, attachmentId);
 
 		verifyNoInteractions(communicationServiceMock);
 		verifyNoMoreInteractions(messageExchangeClientMock, messageExchangeSchedulerMock, conversationRepositoryMock);
@@ -451,8 +463,6 @@ class ConversationServiceTest {
 	@Test
 	void getConversationMessageAttachmentNullBody() {
 		// Arrange
-		final var municipalityId = "municipalityId";
-		final var namespace = "namespace";
 		final var conversationId = "convId";
 		final var messageId = "msgId";
 		final var attachmentId = "attId";
@@ -460,20 +470,21 @@ class ConversationServiceTest {
 
 		final var conversationEntity = ConversationEntity.create().withMessageExchangeId(messageExchangeId);
 
-		when(conversationRepositoryMock.findByMunicipalityIdAndNamespaceAndErrandIdAndId(municipalityId, namespace, ERRAND_ID, conversationId))
+		when(conversationRepositoryMock.findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, conversationId))
 			.thenReturn(Optional.of(conversationEntity));
-		when(messageExchangeClientMock.getMessageAttachment(municipalityId, MESSAGE_EXCHANGE_NAMESPACE, messageExchangeId, messageId, attachmentId))
+		when(messageExchangeClientMock.getMessageAttachment(MUNICIPALITY_ID, MESSAGE_EXCHANGE_NAMESPACE, messageExchangeId, messageId, attachmentId))
 			.thenReturn(ResponseEntity.ok().contentType(MediaType.TEXT_PLAIN).body(null));
 
 		final var response = new MockHttpServletResponse();
 
 		// Act & Assert
-		assertThatThrownBy(() -> conversationService.getConversationMessageAttachment(municipalityId, namespace, ERRAND_ID, conversationId, messageId, attachmentId, response))
+		assertThatThrownBy(() -> conversationService.getConversationMessageAttachment(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, conversationId, messageId, attachmentId, response))
 			.isInstanceOf(RuntimeException.class)
 			.hasMessageContaining("Not Found: Attachment not found or invalid in Message Exchange");
 
-		verify(conversationRepositoryMock).findByMunicipalityIdAndNamespaceAndErrandIdAndId(municipalityId, namespace, ERRAND_ID, conversationId);
-		verify(messageExchangeClientMock).getMessageAttachment(municipalityId, MESSAGE_EXCHANGE_NAMESPACE, messageExchangeId, messageId, attachmentId);
+		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, R, RW);
+		verify(conversationRepositoryMock).findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, conversationId);
+		verify(messageExchangeClientMock).getMessageAttachment(MUNICIPALITY_ID, MESSAGE_EXCHANGE_NAMESPACE, messageExchangeId, messageId, attachmentId);
 
 		verifyNoInteractions(communicationServiceMock, messageExchangeSchedulerMock);
 		verifyNoMoreInteractions(messageExchangeClientMock, conversationRepositoryMock);
@@ -482,8 +493,6 @@ class ConversationServiceTest {
 	@Test
 	void getConversationMessageAttachmentNullContentType() {
 		// Arrange
-		final var municipalityId = "municipalityId";
-		final var namespace = "namespace";
 		final var conversationId = "convId";
 		final var messageId = "msgId";
 		final var attachmentId = "attId";
@@ -500,20 +509,21 @@ class ConversationServiceTest {
 
 		final var conversationEntity = ConversationEntity.create().withMessageExchangeId(messageExchangeId);
 
-		when(conversationRepositoryMock.findByMunicipalityIdAndNamespaceAndErrandIdAndId(municipalityId, namespace, ERRAND_ID, conversationId))
+		when(conversationRepositoryMock.findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, conversationId))
 			.thenReturn(Optional.of(conversationEntity));
-		when(messageExchangeClientMock.getMessageAttachment(municipalityId, MESSAGE_EXCHANGE_NAMESPACE, messageExchangeId, messageId, attachmentId))
+		when(messageExchangeClientMock.getMessageAttachment(MUNICIPALITY_ID, MESSAGE_EXCHANGE_NAMESPACE, messageExchangeId, messageId, attachmentId))
 			.thenReturn(ResponseEntity.ok().body(inputStreamResource));
 
 		final var response = new MockHttpServletResponse();
 
 		// Act & Assert
-		assertThatThrownBy(() -> conversationService.getConversationMessageAttachment(municipalityId, namespace, ERRAND_ID, conversationId, messageId, attachmentId, response))
+		assertThatThrownBy(() -> conversationService.getConversationMessageAttachment(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, conversationId, messageId, attachmentId, response))
 			.isInstanceOf(RuntimeException.class)
 			.hasMessageContaining("Not Found: Attachment not found or invalid in Message Exchange");
 
-		verify(conversationRepositoryMock).findByMunicipalityIdAndNamespaceAndErrandIdAndId(municipalityId, namespace, ERRAND_ID, conversationId);
-		verify(messageExchangeClientMock).getMessageAttachment(municipalityId, MESSAGE_EXCHANGE_NAMESPACE, messageExchangeId, messageId, attachmentId);
+		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, R, RW);
+		verify(conversationRepositoryMock).findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, conversationId);
+		verify(messageExchangeClientMock).getMessageAttachment(MUNICIPALITY_ID, MESSAGE_EXCHANGE_NAMESPACE, messageExchangeId, messageId, attachmentId);
 
 		verifyNoInteractions(communicationServiceMock, messageExchangeSchedulerMock);
 		verifyNoMoreInteractions(messageExchangeClientMock, conversationRepositoryMock);
@@ -522,6 +532,10 @@ class ConversationServiceTest {
 	@Test
 	void deleteByErrandIdRemoveOnlyRelationExternalReferenceWhenOthersExist() {
 		// Arrange
+		final var errandEntity = ErrandEntity.create()
+			.withId(ERRAND_ID)
+			.withNamespace(NAMESPACE)
+			.withMunicipalityId(MUNICIPALITY_ID);
 		final var relationIds = List.of("r1");
 		final var conversation = ConversationEntity.create()
 			.withId(CONVERSATION_ID)
@@ -548,7 +562,7 @@ class ConversationServiceTest {
 			.thenReturn(ResponseEntity.ok(new Conversation()));
 
 		// Act
-		conversationService.deleteByErrandId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID);
+		conversationService.deleteByErrandId(errandEntity);
 
 		// Assert
 		verify(relationClientMock).deleteRelation(MUNICIPALITY_ID, "r1");
@@ -563,6 +577,10 @@ class ConversationServiceTest {
 	@Test
 	void deleteByErrandIdDeleteMessageExchangeConversationWhenRelationIsOnlyExternalReference() {
 		// Arrange
+		final var errandEntity = ErrandEntity.create()
+			.withId(ERRAND_ID)
+			.withNamespace(NAMESPACE)
+			.withMunicipalityId(MUNICIPALITY_ID);
 		final var conversation = ConversationEntity.create()
 			.withId(CONVERSATION_ID)
 			.withMunicipalityId(MUNICIPALITY_ID)
@@ -585,7 +603,7 @@ class ConversationServiceTest {
 			.thenReturn(ResponseEntity.ok(meConversation));
 
 		// Act
-		conversationService.deleteByErrandId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID);
+		conversationService.deleteByErrandId(errandEntity);
 
 		// Assert
 		verify(relationClientMock).deleteRelation(MUNICIPALITY_ID, "r1");
@@ -600,6 +618,10 @@ class ConversationServiceTest {
 	@Test
 	void deleteByErrandIdNoUpdateWhenNoExternalReferenceMatchesRelationIds() {
 		// Arrange
+		final var errandEntity = ErrandEntity.create()
+			.withId(ERRAND_ID)
+			.withNamespace(NAMESPACE)
+			.withMunicipalityId(MUNICIPALITY_ID);
 		final var conversation = ConversationEntity.create()
 			.withId(CONVERSATION_ID)
 			.withMunicipalityId(MUNICIPALITY_ID)
@@ -625,7 +647,7 @@ class ConversationServiceTest {
 			.thenReturn(ResponseEntity.ok(new Conversation()));
 
 		// Act
-		conversationService.deleteByErrandId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID);
+		conversationService.deleteByErrandId(errandEntity);
 
 		// Assert
 		verify(relationClientMock).deleteRelation(MUNICIPALITY_ID, "rX");
@@ -641,6 +663,10 @@ class ConversationServiceTest {
 	@Test
 	void deleteByErrandIdWhenNullReferences() {
 		// Arrange
+		final var errandEntity = ErrandEntity.create()
+			.withId(ERRAND_ID)
+			.withNamespace(NAMESPACE)
+			.withMunicipalityId(MUNICIPALITY_ID);
 		final var conversation = ConversationEntity.create()
 			.withId(CONVERSATION_ID)
 			.withMunicipalityId(MUNICIPALITY_ID)
@@ -662,7 +688,7 @@ class ConversationServiceTest {
 			.thenReturn(ResponseEntity.ok(meConversation));
 
 		// Act
-		conversationService.deleteByErrandId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID);
+		conversationService.deleteByErrandId(errandEntity);
 
 		// Assert
 		verify(relationClientMock).deleteRelation(MUNICIPALITY_ID, "r1");
@@ -677,6 +703,10 @@ class ConversationServiceTest {
 	@Test
 	void deleteByErrandIdExceptionThrown() {
 		// Arrange
+		final var errandEntity = ErrandEntity.create()
+			.withId(ERRAND_ID)
+			.withNamespace(NAMESPACE)
+			.withMunicipalityId(MUNICIPALITY_ID);
 		final var conversation = ConversationEntity.create()
 			.withId(CONVERSATION_ID)
 			.withMunicipalityId(MUNICIPALITY_ID)
@@ -701,7 +731,7 @@ class ConversationServiceTest {
 		doThrow(new RuntimeException("me-boom")).when(messageExchangeClientMock).deleteConversation(MUNICIPALITY_ID, MESSAGE_EXCHANGE_NAMESPACE, MESSAGE_EXCHANGE_ID);
 
 		// Act (should not throw)
-		conversationService.deleteByErrandId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID);
+		conversationService.deleteByErrandId(errandEntity);
 
 		// Assert
 		verify(conversationRepositoryMock).deleteAll(List.of(conversation));

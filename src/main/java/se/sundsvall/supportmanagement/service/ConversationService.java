@@ -1,5 +1,7 @@
 package se.sundsvall.supportmanagement.service;
 
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static java.util.Collections.emptyList;
 import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
 import static org.zalando.problem.Status.NOT_FOUND;
@@ -29,6 +31,7 @@ import se.sundsvall.supportmanagement.api.model.communication.conversation.Conve
 import se.sundsvall.supportmanagement.api.model.communication.conversation.Message;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.MessageRequest;
 import se.sundsvall.supportmanagement.integration.db.ConversationRepository;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.ConversationEntity;
 import se.sundsvall.supportmanagement.integration.messageexchange.MessageExchangeClient;
 import se.sundsvall.supportmanagement.integration.relation.RelationClient;
@@ -46,6 +49,7 @@ public class ConversationService {
 	private final MessageExchangeScheduler messageExchangeScheduler;
 	private final CommunicationService communicationService;
 	private final RelationClient relationClient;
+	private final AccessControlService accessControlService;
 
 	@Value("${integration.messageexchange.namespace:draken}")
 	private String messageExchangeNamespace;
@@ -54,17 +58,20 @@ public class ConversationService {
 		final MessageExchangeClient messageExchangeClient,
 		final ConversationRepository conversationRepository,
 		final MessageExchangeScheduler messageExchangeScheduler,
-		final CommunicationService communicationService, final RelationClient relationClient) {
+		final CommunicationService communicationService,
+		final RelationClient relationClient,
+		final AccessControlService accessControlService) {
 
 		this.messageExchangeClient = messageExchangeClient;
 		this.conversationRepository = conversationRepository;
 		this.messageExchangeScheduler = messageExchangeScheduler;
 		this.communicationService = communicationService;
 		this.relationClient = relationClient;
+		this.accessControlService = accessControlService;
 	}
 
 	public Conversation createConversation(final String municipalityId, final String namespace, final String errandId, final ConversationRequest conversationRequest) {
-
+		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, RW);
 		// Create conversation in MessageExchange
 		final var createResponse = messageExchangeClient.createConversation(municipalityId, messageExchangeNamespace, toMessageExchangeConversation(municipalityId, messageExchangeNamespace, conversationRequest));
 
@@ -84,7 +91,7 @@ public class ConversationService {
 	}
 
 	public Conversation readConversationById(final String municipalityId, final String namespace, final String errandId, final String conversationId) {
-
+		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, R, RW);
 		// Fetch conversation from DB.
 		final var conversationEntity = getConversationEntity(municipalityId, namespace, errandId, conversationId);
 
@@ -98,11 +105,12 @@ public class ConversationService {
 	}
 
 	public List<Conversation> readConversations(final String municipalityId, final String namespace, final String errandId) {
+		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, R, RW);
 		return toConversationList(conversationRepository.findByMunicipalityIdAndNamespaceAndErrandId(municipalityId, namespace, errandId));
 	}
 
 	public Conversation updateConversationById(final String municipalityId, final String namespace, final String errandId, final String conversationId, final ConversationRequest conversationRequest) {
-
+		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, RW);
 		// Fetch conversation from DB.
 		var conversationEntity = getConversationEntity(municipalityId, namespace, errandId, conversationId);
 
@@ -117,6 +125,7 @@ public class ConversationService {
 	}
 
 	public Page<Message> getMessages(final String municipalityId, final String namespace, final String errandId, final String conversationId, final Pageable pageable) {
+		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, R, RW);
 
 		final var conversationEntity = getConversationEntity(municipalityId, namespace, errandId, conversationId);
 		final var response = messageExchangeClient.getMessages(municipalityId, messageExchangeNamespace, conversationEntity.getMessageExchangeId(), null, pageable);
@@ -128,7 +137,7 @@ public class ConversationService {
 	}
 
 	public void createMessage(final String municipalityId, final String namespace, final String errandId, final String conversationId, final MessageRequest messageRequest, final List<MultipartFile> attachments) {
-
+		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, RW);
 		final var conversationEntity = getConversationEntity(municipalityId, namespace, errandId, conversationId);
 
 		messageExchangeClient.createMessage(municipalityId, messageExchangeNamespace, conversationEntity.getMessageExchangeId(), toMessageRequest(messageRequest), attachments);
@@ -161,6 +170,8 @@ public class ConversationService {
 		final String conversationId, final String messageId, final String attachmentId,
 		final HttpServletResponse response) throws IOException {
 
+		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, R, RW);
+
 		final var conversation = getConversationEntity(municipalityId, namespace, errandId, conversationId);
 		final var exchangeId = conversation.getMessageExchangeId();
 
@@ -189,11 +200,11 @@ public class ConversationService {
 		}
 	}
 
-	public void deleteByErrandId(final String municipalityId, final String namespace, final String errandId) {
-		final var conversations = conversationRepository.findByMunicipalityIdAndNamespaceAndErrandId(municipalityId, namespace, errandId);
+	public void deleteByErrandId(final ErrandEntity errandEntity) {
+		final var conversations = conversationRepository.findByMunicipalityIdAndNamespaceAndErrandId(errandEntity.getMunicipalityId(), errandEntity.getNamespace(), errandEntity.getId());
 
-		deleteRelations(municipalityId, conversations);
-		updateOrDeleteInMessageExchange(municipalityId, conversations);
+		deleteRelations(errandEntity.getMunicipalityId(), conversations);
+		updateOrDeleteInMessageExchange(errandEntity.getMunicipalityId(), conversations);
 
 		// Remove local conversations
 		conversationRepository.deleteAll(conversations);
