@@ -68,7 +68,7 @@ class MetadataServiceCacheEvictionOnUpdateTest {
 		"category", "label"
 	})
 	void testCacheEvictionForAll(String type) {
-		// First calls should trigger logic in wrapped service class
+		// First call should trigger logic in wrapped service class
 		metadataService.findAll(NAMESPACE, MUNICIPALITY_ID);
 
 		switch (type) {
@@ -77,7 +77,7 @@ class MetadataServiceCacheEvictionOnUpdateTest {
 			default -> throw new IllegalArgumentException("Unexpected value: " + type);
 		}
 
-		// Second calls should trigger logic service class again and not use cache
+		// Second call should trigger logic service class again and not use cache
 		metadataService.findAll(NAMESPACE, MUNICIPALITY_ID);
 
 		verify(mock, times(2)).findAll(NAMESPACE, MUNICIPALITY_ID);
@@ -88,13 +88,13 @@ class MetadataServiceCacheEvictionOnUpdateTest {
 		final var categoryName = "categoryName";
 		final var category = Category.create();
 
-		// First calls should trigger logic in wrapped service class
+		// First call should trigger logic in wrapped service class
 		metadataService.findCategories(NAMESPACE, MUNICIPALITY_ID);
 
-		// Call to create new object should remove key from cache
+		// Call to update object should remove key from cache
 		metadataService.updateCategory(NAMESPACE, MUNICIPALITY_ID, categoryName, category);
 
-		// Second calls should trigger logic service class again and not use cache
+		// Second call should trigger logic service class again and not use cache
 		metadataService.findCategories(NAMESPACE, MUNICIPALITY_ID);
 
 		verify(mock, times(2)).findCategories(NAMESPACE, MUNICIPALITY_ID);
@@ -107,13 +107,13 @@ class MetadataServiceCacheEvictionOnUpdateTest {
 		final var categoryName = "categoryName";
 		final var category = Category.create();
 
-		// First calls should trigger logic in wrapped service class
+		// First call should trigger logic in wrapped service class
 		metadataService.findTypes(NAMESPACE, MUNICIPALITY_ID, categoryName);
 
-		// Call to create new object should remove key from cache
+		// Call to update object should remove key from cache
 		metadataService.updateCategory(NAMESPACE, MUNICIPALITY_ID, categoryName, category);
 
-		// Second calls should trigger logic service class again and not use cache
+		// Second call should trigger logic service class again and not use cache
 		metadataService.findTypes(NAMESPACE, MUNICIPALITY_ID, categoryName);
 
 		verify(mock, times(2)).findTypes(NAMESPACE, MUNICIPALITY_ID, categoryName);
@@ -125,13 +125,13 @@ class MetadataServiceCacheEvictionOnUpdateTest {
 	void testCacheEvictionForLabel() {
 		final var labels = List.of(Label.create());
 
-		// First calls should trigger logic in wrapped service class
+		// First call should trigger logic in wrapped service class
 		metadataService.findLabels(NAMESPACE, MUNICIPALITY_ID);
 
-		// Call to create new object should remove key from cache
+		// Call to update object should remove key from cache
 		metadataService.updateLabels(NAMESPACE, MUNICIPALITY_ID, labels);
 
-		// Second calls should trigger logic service class again and not use cache
+		// Second call should trigger logic service class again and not use cache
 		metadataService.findLabels(NAMESPACE, MUNICIPALITY_ID);
 
 		verify(mock, times(2)).findLabels(NAMESPACE, MUNICIPALITY_ID);
@@ -143,13 +143,13 @@ class MetadataServiceCacheEvictionOnUpdateTest {
 	void testCacheEvictionForPatternToLabel() {
 		final var labels = List.of(Label.create());
 
-		// First calls should trigger logic in wrapped service class
+		// First call should trigger logic in wrapped service class
 		metadataService.patternToLabels(NAMESPACE, MUNICIPALITY_ID, null);
 
-		// Call to create new object should remove key from cache
+		// Call to update object should remove key from cache
 		metadataService.updateLabels(NAMESPACE, MUNICIPALITY_ID, labels);
 
-		// Second calls should trigger logic service class again and not use cache
+		// Second call should trigger logic service class again and not use cache
 		metadataService.patternToLabels(NAMESPACE, MUNICIPALITY_ID, null);
 
 		verify(mock, times(2)).patternToLabels(NAMESPACE, MUNICIPALITY_ID, null);

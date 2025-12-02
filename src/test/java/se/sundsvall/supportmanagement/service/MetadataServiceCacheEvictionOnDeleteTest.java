@@ -66,7 +66,7 @@ class MetadataServiceCacheEvictionOnDeleteTest {
 		"category", "contactReason", "externalIdType", "label", "role", "status"
 	})
 	void testCacheEvictionForAll(String type) {
-		// First calls should trigger logic in wrapped service class
+		// First call should trigger logic in wrapped service class
 		metadataService.findAll(NAMESPACE, MUNICIPALITY_ID);
 
 		switch (type) {
@@ -79,7 +79,7 @@ class MetadataServiceCacheEvictionOnDeleteTest {
 			default -> throw new IllegalArgumentException("Unexpected value: " + type);
 		}
 
-		// Second calls should trigger logic service class again and not use cache
+		// Second call should trigger logic service class again and not use cache
 		metadataService.findAll(NAMESPACE, MUNICIPALITY_ID);
 
 		verify(mock, times(2)).findAll(NAMESPACE, MUNICIPALITY_ID);
@@ -87,13 +87,13 @@ class MetadataServiceCacheEvictionOnDeleteTest {
 
 	@Test
 	void testCacheEvictionForCategory() {
-		// First calls should trigger logic in wrapped service class
+		// First call should trigger logic in wrapped service class
 		metadataService.findCategories(NAMESPACE, MUNICIPALITY_ID);
 
-		// Call to create new object should remove key from cache
+		// Call to delete object should remove key from cache
 		metadataService.deleteCategory(NAMESPACE, MUNICIPALITY_ID, null);
 
-		// Second calls should trigger logic service class again and not use cache
+		// Second call should trigger logic service class again and not use cache
 		metadataService.findCategories(NAMESPACE, MUNICIPALITY_ID);
 
 		verify(mock, times(2)).findCategories(NAMESPACE, MUNICIPALITY_ID);
@@ -106,13 +106,13 @@ class MetadataServiceCacheEvictionOnDeleteTest {
 		final var categoryName = "categoryName";
 		Category.create();
 
-		// First calls should trigger logic in wrapped service class
+		// First call should trigger logic in wrapped service class
 		metadataService.findTypes(NAMESPACE, MUNICIPALITY_ID, categoryName);
 
-		// Call to create new object should remove key from cache
+		// Call to delete object should remove key from cache
 		metadataService.deleteCategory(NAMESPACE, MUNICIPALITY_ID, categoryName);
 
-		// Second calls should trigger logic service class again and not use cache
+		// Second call should trigger logic service class again and not use cache
 		metadataService.findTypes(NAMESPACE, MUNICIPALITY_ID, categoryName);
 
 		verify(mock, times(2)).findTypes(NAMESPACE, MUNICIPALITY_ID, categoryName);
@@ -122,13 +122,13 @@ class MetadataServiceCacheEvictionOnDeleteTest {
 
 	@Test
 	void testCacheEvictionForContactReason() {
-		// First calls should trigger logic in wrapped service class
+		// First call should trigger logic in wrapped service class
 		metadataService.findContactReasons(NAMESPACE, MUNICIPALITY_ID);
 
-		// Call to create new object should remove key from cache
+		// Call to delete object should remove key from cache
 		metadataService.deleteContactReason(1L, NAMESPACE, MUNICIPALITY_ID);
 
-		// Second calls should trigger logic service class again and not use cache
+		// Second call should trigger logic service class again and not use cache
 		metadataService.findContactReasons(NAMESPACE, MUNICIPALITY_ID);
 
 		verify(mock, times(2)).findContactReasons(NAMESPACE, MUNICIPALITY_ID);
@@ -138,13 +138,13 @@ class MetadataServiceCacheEvictionOnDeleteTest {
 
 	@Test
 	void testCacheEvictionForExternalIdType() {
-		// First calls should trigger logic in wrapped service class
+		// First call should trigger logic in wrapped service class
 		metadataService.findExternalIdTypes(NAMESPACE, MUNICIPALITY_ID);
 
-		// Call to create new object should remove key from cache
+		// Call to delete object should remove key from cache
 		metadataService.deleteExternalIdType(NAMESPACE, MUNICIPALITY_ID, null);
 
-		// Second calls should trigger logic service class again and not use cache
+		// Second call should trigger logic service class again and not use cache
 		metadataService.findExternalIdTypes(NAMESPACE, MUNICIPALITY_ID);
 
 		verify(mock, times(2)).findExternalIdTypes(NAMESPACE, MUNICIPALITY_ID);
@@ -154,13 +154,13 @@ class MetadataServiceCacheEvictionOnDeleteTest {
 
 	@Test
 	void testCacheEvictionForLabel() {
-		// First calls should trigger logic in wrapped service class
+		// First call should trigger logic in wrapped service class
 		metadataService.findLabels(NAMESPACE, MUNICIPALITY_ID);
 
-		// Call to create new object should remove key from cache
+		// Call to delete object should remove key from cache
 		metadataService.deleteLabels(NAMESPACE, MUNICIPALITY_ID);
 
-		// Second calls should trigger logic service class again and not use cache
+		// Second call should trigger logic service class again and not use cache
 		metadataService.findLabels(NAMESPACE, MUNICIPALITY_ID);
 
 		verify(mock, times(2)).findLabels(NAMESPACE, MUNICIPALITY_ID);
@@ -170,13 +170,13 @@ class MetadataServiceCacheEvictionOnDeleteTest {
 
 	@Test
 	void testCacheEvictionForPatternToLabel() {
-		// First calls should trigger logic in wrapped service class
+		// First call should trigger logic in wrapped service class
 		metadataService.patternToLabels(NAMESPACE, MUNICIPALITY_ID, null);
 
 		// Call to create new object should remove key from cache
 		metadataService.deleteLabels(NAMESPACE, MUNICIPALITY_ID);
 
-		// Second calls should trigger logic service class again and not use cache
+		// Second call should trigger logic service class again and not use cache
 		metadataService.patternToLabels(NAMESPACE, MUNICIPALITY_ID, null);
 
 		verify(mock, times(2)).patternToLabels(NAMESPACE, MUNICIPALITY_ID, null);
@@ -186,13 +186,13 @@ class MetadataServiceCacheEvictionOnDeleteTest {
 
 	@Test
 	void testCacheEvictionForRole() {
-		// First calls should trigger logic in wrapped service class
+		// First call should trigger logic in wrapped service class
 		metadataService.findRoles(NAMESPACE, MUNICIPALITY_ID);
 
-		// Call to create new object should remove key from cache
+		// Call to delete object should remove key from cache
 		metadataService.deleteRole(NAMESPACE, MUNICIPALITY_ID, null);
 
-		// Second calls should trigger logic service class again and not use cache
+		// Second call should trigger logic service class again and not use cache
 		metadataService.findRoles(NAMESPACE, MUNICIPALITY_ID);
 
 		verify(mock, times(2)).findRoles(NAMESPACE, MUNICIPALITY_ID);
@@ -202,13 +202,13 @@ class MetadataServiceCacheEvictionOnDeleteTest {
 
 	@Test
 	void testCacheEvictionForStatus() {
-		// First calls should trigger logic in wrapped service class
+		// First call should trigger logic in wrapped service class
 		metadataService.findStatuses(NAMESPACE, MUNICIPALITY_ID);
 
-		// Call to create new object should remove key from cache
+		// Call to delete object should remove key from cache
 		metadataService.deleteStatus(NAMESPACE, MUNICIPALITY_ID, null);
 
-		// Second calls should trigger logic service class again and not use cache
+		// Second call should trigger logic service class again and not use cache
 		metadataService.findStatuses(NAMESPACE, MUNICIPALITY_ID);
 
 		verify(mock, times(2)).findStatuses(NAMESPACE, MUNICIPALITY_ID);
