@@ -158,7 +158,7 @@ public class ErrandService {
 	public void deleteErrand(final String namespace, final String municipalityId, final String id) {
 		final var entity = accessControlService.getErrand(namespace, municipalityId, id, true, Access.AccessLevelEnum.RW);
 
-		conversationService.deleteByErrandId(municipalityId, namespace, id);
+		conversationService.deleteByErrandId(entity);
 
 		communicationService.deleteAllCommunicationsByErrandNumber(entity.getErrandNumber());
 		errandAttachmentService.readErrandAttachments(namespace, municipalityId, id)
@@ -171,7 +171,7 @@ public class ErrandService {
 		repository.deleteById(id);
 
 		// Create a log event
-		final var latestRevision = revisionService.getLatestErrandRevision(namespace, municipalityId, id);
+		final var latestRevision = revisionService.getLatestErrandRevision(entity);
 		eventService.createErrandEvent(DELETE, EVENT_LOG_DELETE_ERRAND, entity, latestRevision, null, false, ERRAND);
 	}
 

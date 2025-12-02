@@ -1,16 +1,16 @@
 package se.sundsvall.supportmanagement.service;
 
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpHeaders.LOCATION;
-import static org.zalando.problem.Status.NOT_FOUND;
 import static se.sundsvall.dept44.support.Identifier.Type.AD_ACCOUNT;
 import static se.sundsvall.supportmanagement.Constants.EXTERNAL_TAG_KEY_CASE_ID;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper.toCreateNoteRequest;
@@ -27,13 +27,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.stubbing.Answer;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
-import org.zalando.problem.ThrowableProblem;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.note.CreateErrandNoteRequest;
 import se.sundsvall.supportmanagement.api.model.note.FindErrandNotesRequest;
 import se.sundsvall.supportmanagement.api.model.note.UpdateErrandNoteRequest;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
-import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.notes.NotesClient;
@@ -61,7 +59,7 @@ class ErrandNoteServiceTest {
 	private static final String EXECUTING_USER = "executingUser";
 
 	@Mock
-	private ErrandsRepository repositoryMock;
+	private AccessControlService accessControlServiceMock;
 
 	@Mock
 	private NotesClient notesClientMock;
@@ -109,8 +107,7 @@ class ErrandNoteServiceTest {
 		Identifier.set(Identifier.create().withType(AD_ACCOUNT).withValue(EXECUTING_USER));
 
 		// Mock
-		when(repositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
-		when(repositoryMock.getReferenceById(ERRAND_ID)).thenReturn(new ErrandEntity().withExternalTags(List.of(DbExternalTag.create().withKey(EXTERNAL_TAG_KEY_CASE_ID).withValue(CASE_ID))));
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(ERRAND_ENTITY);
 		when(notesClientMock.createNote(MUNICIPALITY_ID, createNoteRequest)).thenReturn(responseEntityWithVoidMock);
 		when(responseEntityWithVoidMock.getHeaders()).thenReturn(httpHeadersMock);
 		when(httpHeadersMock.get(anyString())).thenAnswer(
@@ -130,8 +127,7 @@ class ErrandNoteServiceTest {
 		// Assertions and verifications
 		assertThat(result).isEqualTo(NOTE_ID);
 
-		verify(repositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
-		verify(repositoryMock).getReferenceById(ERRAND_ID);
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, RW);
 		verify(notesClientMock).createNote(MUNICIPALITY_ID, createNoteRequest);
 		verify(eventServiceMock).createErrandNoteEvent(EventType.CREATE, "Ärendenotering har skapats.", ERRAND_ID, ERRAND_ENTITY, NOTE_ID, Revision.create().withId("currentRevision").withVersion(0), null);
 	}
@@ -140,7 +136,6 @@ class ErrandNoteServiceTest {
 	void readErrandNote() {
 
 		// Mock
-		when(repositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
 		when(notesClientMock.findNoteById(MUNICIPALITY_ID, NOTE_ID)).thenReturn(new Note());
 
 		// Call
@@ -149,23 +144,8 @@ class ErrandNoteServiceTest {
 		// Assertions and verifications
 		assertThat(result).isNotNull();
 
-		verify(repositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
+		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, R, RW);
 		verify(notesClientMock).findNoteById(MUNICIPALITY_ID, NOTE_ID);
-	}
-
-	@Test
-	void readErrandNoteErrandNotFound() {
-
-		// Call
-		final var exception = assertThrows(ThrowableProblem.class, () -> service.readErrandNote(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, NOTE_ID));
-
-		// Assertions and verifications
-		assertThat(exception.getStatus()).isEqualTo(NOT_FOUND);
-		assertThat(exception.getTitle()).isEqualTo(NOT_FOUND.getReasonPhrase());
-		assertThat(exception.getMessage()).isEqualTo("Not Found: An errand with id 'errandId' could not be found in namespace 'namespace' for municipality with id 'municipalityId'");
-
-		verify(repositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
-		verifyNoInteractions(notesClientMock);
 	}
 
 	@Test
@@ -180,7 +160,6 @@ class ErrandNoteServiceTest {
 			.withRole(ROLE);
 
 		// Mock
-		when(repositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
 		when(notesClientMock.findNotes(anyString(), anyString(), anyString(), anyString(), anyString(), anyString(), anyInt(), anyInt()))
 			.thenReturn(new FindNotesResponse().notes(List.of(new Note())));
 
@@ -189,31 +168,8 @@ class ErrandNoteServiceTest {
 
 		// Assertions and verifications
 		assertThat(result).isNotNull();
-		verify(repositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
+		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, R, RW);
 		verify(notesClientMock).findNotes(MUNICIPALITY_ID, CONTEXT, ROLE, ERRAND_ID, APPLICATION_NAME, PARTY_ID, PAGE, LIMIT);
-	}
-
-	@Test
-	void findErrandNotesErrandNotFound() {
-
-		// Setup
-		final var findErrandNotesRequest = FindErrandNotesRequest.create()
-			.withContext(CONTEXT)
-			.withLimit(LIMIT)
-			.withPage(PAGE)
-			.withPartyId(PARTY_ID)
-			.withRole(ROLE);
-
-		// Call
-		final var exception = assertThrows(ThrowableProblem.class, () -> service.findErrandNotes(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, findErrandNotesRequest));
-
-		// Assertions and verifications
-		assertThat(exception.getStatus()).isEqualTo(NOT_FOUND);
-		assertThat(exception.getTitle()).isEqualTo(NOT_FOUND.getReasonPhrase());
-		assertThat(exception.getMessage()).isEqualTo("Not Found: An errand with id 'errandId' could not be found in namespace 'namespace' for municipality with id 'municipalityId'");
-
-		verify(repositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
-		verifyNoInteractions(notesClientMock);
 	}
 
 	@Test
@@ -226,8 +182,7 @@ class ErrandNoteServiceTest {
 		Identifier.set(Identifier.create().withType(AD_ACCOUNT).withValue(EXECUTING_USER));
 
 		// Mock
-		when(repositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
-		when(repositoryMock.getReferenceById(ERRAND_ID)).thenReturn(new ErrandEntity().withExternalTags(List.of(DbExternalTag.create().withKey(EXTERNAL_TAG_KEY_CASE_ID).withValue(CASE_ID))));
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(ERRAND_ENTITY);
 		when(notesClientMock.updateNoteById(MUNICIPALITY_ID, NOTE_ID, updateNoteRequest)).thenReturn(responseEntityWithNoteMock);
 		when(responseEntityWithNoteMock.getHeaders()).thenReturn(httpHeadersMock);
 		when(responseEntityWithNoteMock.getBody()).thenReturn(new Note());
@@ -250,8 +205,7 @@ class ErrandNoteServiceTest {
 		// Assertions and verifications
 		assertThat(result).isNotNull();
 
-		verify(repositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
-		verify(repositoryMock).getReferenceById(ERRAND_ID);
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, RW);
 		verify(notesClientMock).updateNoteById(MUNICIPALITY_ID, NOTE_ID, updateNoteRequest);
 		verify(eventServiceMock).createErrandNoteEvent(EventType.UPDATE, "Ärendenotering har uppdaterats.", ERRAND_ID, ERRAND_ENTITY, NOTE_ID, Revision.create().withId("currentRevision").withVersion(1), Revision.create().withId("previousRevision")
 			.withVersion(0));
@@ -267,7 +221,6 @@ class ErrandNoteServiceTest {
 		Identifier.set(Identifier.create().withType(AD_ACCOUNT).withValue(EXECUTING_USER));
 
 		// Mock
-		when(repositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
 		when(notesClientMock.updateNoteById(MUNICIPALITY_ID, NOTE_ID, updateNoteRequest)).thenReturn(responseEntityWithNoteMock);
 		when(responseEntityWithNoteMock.getHeaders()).thenReturn(httpHeadersMock);
 		when(responseEntityWithNoteMock.getBody()).thenReturn(new Note());
@@ -278,28 +231,9 @@ class ErrandNoteServiceTest {
 		// Assertions and verifications
 		assertThat(result).isNotNull();
 
-		verify(repositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, RW);
 		verify(notesClientMock).updateNoteById(MUNICIPALITY_ID, NOTE_ID, updateNoteRequest);
-		verify(repositoryMock, never()).getReferenceById(ERRAND_ID);
 		verify(eventServiceMock, never()).createErrandNoteEvent(any(), any(), any(), any(), any(), any(), any());
-	}
-
-	@Test
-	void updateErrandNoteErrandNotFound() {
-
-		// Setup
-		final var errandNote = buildUpdateErrandNoteRequest();
-
-		// Call
-		final var exception = assertThrows(ThrowableProblem.class, () -> service.updateErrandNote(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, NOTE_ID, errandNote));
-
-		// Assertions and verifications
-		assertThat(exception.getStatus()).isEqualTo(NOT_FOUND);
-		assertThat(exception.getTitle()).isEqualTo(NOT_FOUND.getReasonPhrase());
-		assertThat(exception.getMessage()).isEqualTo("Not Found: An errand with id 'errandId' could not be found in namespace 'namespace' for municipality with id 'municipalityId'");
-
-		verify(repositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
-		verifyNoInteractions(notesClientMock);
 	}
 
 	@Test
@@ -308,8 +242,7 @@ class ErrandNoteServiceTest {
 		Identifier.set(Identifier.create().withType(AD_ACCOUNT).withValue(EXECUTING_USER));
 
 		// Mock
-		when(repositoryMock.existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
-		when(repositoryMock.getReferenceById(ERRAND_ID)).thenReturn(new ErrandEntity().withExternalTags(List.of(DbExternalTag.create().withKey(EXTERNAL_TAG_KEY_CASE_ID).withValue(CASE_ID))));
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(ERRAND_ENTITY);
 		when(notesClientMock.deleteNoteById(MUNICIPALITY_ID, NOTE_ID)).thenReturn(responseEntityWithVoidMock);
 		when(responseEntityWithVoidMock.getHeaders()).thenReturn(httpHeadersMock);
 		when(httpHeadersMock.get(anyString())).thenAnswer(
@@ -326,24 +259,8 @@ class ErrandNoteServiceTest {
 		service.deleteErrandNote(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, NOTE_ID);
 
 		// Assertions and verifications
-		verify(repositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
-		verify(repositoryMock).getReferenceById(ERRAND_ID);
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, RW);
 		verify(notesClientMock).deleteNoteById(MUNICIPALITY_ID, NOTE_ID);
 		verify(eventServiceMock).createErrandNoteEvent(EventType.DELETE, "Ärendenotering har raderats.", ERRAND_ID, ERRAND_ENTITY, NOTE_ID, Revision.create().withId("currentRevision").withVersion(1), null);
-	}
-
-	@Test
-	void deleteErrandNoteErrandNotFound() {
-
-		// Call
-		final var exception = assertThrows(ThrowableProblem.class, () -> service.deleteErrandNote(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, NOTE_ID));
-
-		// Assertions and verifications
-		assertThat(exception.getStatus()).isEqualTo(NOT_FOUND);
-		assertThat(exception.getTitle()).isEqualTo(NOT_FOUND.getReasonPhrase());
-		assertThat(exception.getMessage()).isEqualTo("Not Found: An errand with id 'errandId' could not be found in namespace 'namespace' for municipality with id 'municipalityId'");
-
-		verify(repositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
-		verifyNoInteractions(notesClientMock);
 	}
 }
