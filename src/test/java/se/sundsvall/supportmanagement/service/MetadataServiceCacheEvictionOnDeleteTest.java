@@ -26,8 +26,8 @@ import se.sundsvall.supportmanagement.api.model.metadata.Category;
 @ContextConfiguration
 @ExtendWith(SpringExtension.class)
 class MetadataServiceCacheEvictionOnDeleteTest {
-	private final static String MUNICIPALITY_ID = "municipalityId";
-	private final static String NAMESPACE = "namespace";
+	private static final String MUNICIPALITY_ID = "municipalityId";
+	private static final String NAMESPACE = "namespace";
 
 	private MetadataService mock;
 

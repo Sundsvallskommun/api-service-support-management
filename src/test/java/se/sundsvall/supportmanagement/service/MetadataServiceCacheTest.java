@@ -36,10 +36,10 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.EntityType;
 @ContextConfiguration
 @ExtendWith(SpringExtension.class)
 class MetadataServiceCacheTest {
-	private final static String MUNICIPALITY_ID = "municipalityId";
-	private final static String NAMESPACE = "namespace";
-	private final static RuntimeException NOT_CACHED_EXCEPTION = new RuntimeException("Result should be cached");
 
+	private static final String MUNICIPALITY_ID = "municipalityId";
+	private static final String NAMESPACE = "namespace";
+	private static final RuntimeException NOT_CACHED_EXCEPTION = new RuntimeException("Result should be cached");
 	private static final List<Category> CATEGORIES = List.of(Category.create());
 	private static final List<ContactReason> CONTACT_REASONS = List.of(ContactReason.create());
 	private static final List<ExternalIdType> EXTERNAL_ID_TYPES = List.of(ExternalIdType.create());
