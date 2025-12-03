@@ -1,15 +1,21 @@
 package se.sundsvall.supportmanagement.service.util;
 
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import generated.se.sundsvall.accessmapper.Access;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.springframework.core.io.ClassPathResource;
 
 class ServiceUtilTest {
@@ -77,5 +83,18 @@ class ServiceUtilTest {
 
 	private InputStream getStream(String path) throws IOException {
 		return new ClassPathResource(path).getInputStream();
+	}
+
+	@ParameterizedTest
+	@NullAndEmptySource
+	void createCacheKeyFromNullOrEmpty(List<Access.AccessLevelEnum> filter) {
+		assertThat(ServiceUtil.createCacheKey(filter)).isEqualTo("EMPTY");
+	}
+
+	@Test
+	void createCacheKey() {
+		assertThat(ServiceUtil.createCacheKey(List.of(RW))).isEqualTo("RW");
+		assertThat(ServiceUtil.createCacheKey(List.of(RW, LR))).isEqualTo("RW|LR");
+		assertThat(ServiceUtil.createCacheKey(List.of(LR, RW, R))).isEqualTo("LR|RW|R");
 	}
 }

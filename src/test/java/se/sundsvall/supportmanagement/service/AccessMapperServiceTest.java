@@ -54,7 +54,7 @@ class AccessMapperServiceTest {
 		when(metadataServiceMock.patternToLabels(any(), any(), any())).thenReturn(Set.of(METADATA_LABEL_ENTITY));
 
 		// Act
-		var labels = accessMapperService.getAccessibleLabels(MUNICIPALITY_ID, NAMESPACE, IDENTIFIER, List.of(RW, R, LR));
+		final var labels = accessMapperService.getAccessibleLabels(MUNICIPALITY_ID, NAMESPACE, IDENTIFIER, List.of(RW, R, LR));
 
 		// Verify
 		assertThat(labels).containsExactly(METADATA_LABEL_ENTITY);
@@ -69,7 +69,7 @@ class AccessMapperServiceTest {
 		when(metadataServiceMock.patternToLabels(any(), any(), any())).thenReturn(Set.of(METADATA_LABEL_ENTITY));
 
 		// Act
-		var labels = accessMapperService.getAccessibleLabels(MUNICIPALITY_ID, NAMESPACE, IDENTIFIER, List.of(R));
+		final var labels = accessMapperService.getAccessibleLabels(MUNICIPALITY_ID, NAMESPACE, IDENTIFIER, List.of(R));
 
 		// Verify
 		assertThat(labels).containsExactly(METADATA_LABEL_ENTITY);
@@ -83,7 +83,7 @@ class AccessMapperServiceTest {
 		when(accessMapperClientMock.getAccessDetails(any(), any(), any(), any())).thenReturn(ResponseEntity.badRequest().build());
 
 		// Act
-		var labels = accessMapperService.getAccessibleLabels(MUNICIPALITY_ID, NAMESPACE, IDENTIFIER, List.of(RW, R, LR));
+		final var labels = accessMapperService.getAccessibleLabels(MUNICIPALITY_ID, NAMESPACE, IDENTIFIER, List.of(RW, R, LR));
 
 		// Verify
 		assertThat(labels).isEmpty();
@@ -92,10 +92,10 @@ class AccessMapperServiceTest {
 	}
 
 	private List<AccessGroup> createAccessGroup() {
-		var accessRead = new Access().accessLevel(R).pattern(ACCESS_PATTERN_R);
-		var accessReadWrite = new Access().accessLevel(RW).pattern(ACCESS_PATTERN_RW);
-		var accessLimitedRead = new Access().accessLevel(LR).pattern(ACCESS_PATTERN_LR);
-		var accessType = new AccessType().access(List.of(accessRead, accessReadWrite, accessLimitedRead));
+		final var accessRead = new Access().accessLevel(R).pattern(ACCESS_PATTERN_R);
+		final var accessReadWrite = new Access().accessLevel(RW).pattern(ACCESS_PATTERN_RW);
+		final var accessLimitedRead = new Access().accessLevel(LR).pattern(ACCESS_PATTERN_LR);
+		final var accessType = new AccessType().access(List.of(accessRead, accessReadWrite, accessLimitedRead));
 		return List.of(new AccessGroup().accessByType(List.of(accessType)));
 	}
 }

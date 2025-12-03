@@ -28,11 +28,11 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 
 /**
- * Tag repository tests.
+ * Errands repository tests.
  *
  * @see <a href="file:src/test/resources/db/testdata.sql">src/test/resources/db/testdata.sql</a> for data setup.
  */
-@SpringBootTest
+@SpringBootTest // Needs to be a SpringBootTest as turkraft components are used in test
 @ActiveProfiles("junit")
 @Sql(scripts = {
 	"/db/scripts/truncate.sql",
