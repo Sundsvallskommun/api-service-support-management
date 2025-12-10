@@ -51,14 +51,13 @@ public class AccessControlService {
 	public Predicate<ErrandEntity> limitedMappingPredicateByLabel(String namespace, String municipalityId, Identifier user) {
 		if (hasAccessControlActive(namespace, municipalityId)) {
 			// Filter out all labels that is read or read/write. R/RW has precedence over LR.
-			var fullReadMetadataLabels = accessMapperService.getAccessibleLabels(municipalityId, namespace, user, List.of(R, RW));
+			final var fullReadMetadataLabels = accessMapperService.getAccessibleLabels(municipalityId, namespace, user, List.of(R, RW));
 
 			// If ALL errand labels is a subset of R/RW fullReadMetadataLabels the errand should not be mapped as limited
 			return errandEntity -> !fullReadMetadataLabels.containsAll(errandEntity.getLabels().stream()
 				.map(ErrandLabelEmbeddable::getMetadataLabel).collect(Collectors.toSet()));
-		} else {
-			return errandEntity -> false;
 		}
+		return errandEntity -> false;
 	}
 
 	/**
@@ -72,11 +71,10 @@ public class AccessControlService {
 	 */
 	public Specification<ErrandEntity> withAccessControl(String namespace, String municipalityId, Identifier user, Access.AccessLevelEnum... accessLevelEnums) {
 		if (hasAccessControlActive(namespace, municipalityId)) {
-			var filter = accessLevelEnums.length == 0 ? List.of(LR, R, RW) : Arrays.stream(accessLevelEnums).toList();
+			final var filter = accessLevelEnums.length == 0 ? List.of(LR, R, RW) : Arrays.stream(accessLevelEnums).toList();
 			return hasAllowedMetadataLabels(accessMapperService.getAccessibleLabels(municipalityId, namespace, user, filter));
-		} else {
-			return (root, query, criteriaBuilder) -> criteriaBuilder.conjunction();
 		}
+		return (root, query, criteriaBuilder) -> criteriaBuilder.conjunction();
 	}
 
 	private boolean hasAccessControlActive(String namespace, String municipalityId) {
@@ -115,7 +113,7 @@ public class AccessControlService {
 	 */
 	public void verifyExistingErrandAndAuthorization(final String namespace, final String municipalityId, final String id, Access.AccessLevelEnum... accessLevelEnumsFilter) {
 		verifyExistingErrand(id, namespace, municipalityId, false);
-		var authorized = errandsRepository.exists(withId(id).and(withAccessControl(namespace, municipalityId, Identifier.get(), accessLevelEnumsFilter)));
+		final var authorized = errandsRepository.exists(withId(id).and(withAccessControl(namespace, municipalityId, Identifier.get(), accessLevelEnumsFilter)));
 
 		if (!authorized) {
 			throw Problem.valueOf(UNAUTHORIZED, ENTITY_NOT_ACCESSIBLE.formatted(Optional.ofNullable(Identifier.get())

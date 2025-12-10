@@ -3,25 +3,26 @@ package se.sundsvall.supportmanagement.integration.db;
 import static java.time.OffsetDateTime.now;
 import static java.time.OffsetDateTime.of;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase.Replace.NONE;
 
 import java.time.ZoneOffset;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.data.domain.Sort;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
-import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
 
-@SpringBootTest
+@DataJpaTest
+@AutoConfigureTestDatabase(replace = NONE)
 @ActiveProfiles("junit")
-@Sql(scripts = {
+@Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-junit.sql"
 })
-@Transactional
 class NotificationRepositoryTest {
 
 	@Autowired
@@ -131,7 +132,7 @@ class NotificationRepositoryTest {
 	void existsByIdAndNamespaceAndMunicipalityIdAndErrandEntityId() {
 
 		// Act
-		final boolean exists = notificationRepository.existsByIdAndNamespaceAndMunicipalityIdAndErrandEntityId("1", "namespace-1", "2281", "ERRAND_ID-1");
+		final var exists = notificationRepository.existsByIdAndNamespaceAndMunicipalityIdAndErrandEntityId("1", "namespace-1", "2281", "ERRAND_ID-1");
 
 		// Assert
 		assertThat(exists).isTrue();
@@ -146,7 +147,7 @@ class NotificationRepositoryTest {
 			.withErrandNumber("KC-23020001");
 
 		// Act
-		final boolean exists = notificationRepository.existsByNamespaceAndMunicipalityIdAndOwnerIdAndErrandEntityAndDescriptionAndCreatedIsAfter("namespace-1", "2281", "owner_id-1", errandEntity, "description-1", now().minusHours(6));
+		final var exists = notificationRepository.existsByNamespaceAndMunicipalityIdAndOwnerIdAndErrandEntityAndDescriptionAndCreatedIsAfter("namespace-1", "2281", "owner_id-1", errandEntity, "description-1", now().minusHours(6));
 
 		// Assert
 		assertThat(exists).isTrue();

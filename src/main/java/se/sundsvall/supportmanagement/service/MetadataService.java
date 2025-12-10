@@ -4,6 +4,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Comparator.comparing;
 import static java.util.Comparator.naturalOrder;
 import static java.util.Comparator.nullsFirst;
+import static org.springframework.util.CollectionUtils.isEmpty;
 import static org.zalando.problem.Status.BAD_REQUEST;
 import static org.zalando.problem.Status.NOT_FOUND;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toCategory;
@@ -306,11 +307,11 @@ public class MetadataService {
 		final String municipalityId,
 		final List<String> resourcePathPatterns) {
 
-		if (resourcePathPatterns == null || resourcePathPatterns.isEmpty()) {
+		if (isEmpty(resourcePathPatterns)) {
 			return Set.of();
 		}
 
-		List<MetadataLabelEntity> potentialMatches = metadataLabelRepository.findByNamespaceAndMunicipalityId(namespace, municipalityId);
+		final var potentialMatches = metadataLabelRepository.findByNamespaceAndMunicipalityId(namespace, municipalityId);
 
 		return potentialMatches.stream()
 			.filter(entity -> entity.getResourcePath() != null)
@@ -333,7 +334,7 @@ public class MetadataService {
 	@Caching(evict = {
 		@CacheEvict(value = CACHE_NAME, key = "{'findCategories', #namespace, #municipalityId}"),
 		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'findTypes', #namespace, #municipalityId}")
+		@CacheEvict(value = CACHE_NAME, key = "{'findTypes', #namespace, #municipalityId, #category.name}")
 	})
 	public String createCategory(final String namespace, final String municipalityId, final Category category) {
 		if (categoryRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, category.getName())) {
@@ -354,7 +355,7 @@ public class MetadataService {
 	@Caching(evict = {
 		@CacheEvict(value = CACHE_NAME, key = "{'findCategories', #namespace, #municipalityId}"),
 		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'findTypes', #namespace, #municipalityId}")
+		@CacheEvict(value = CACHE_NAME, key = "{'findTypes', #namespace, #municipalityId, #name}")
 	})
 	public Category updateCategory(final String namespace, final String municipalityId, final String name, final Category category) {
 		if (!categoryRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)) {
@@ -390,7 +391,7 @@ public class MetadataService {
 	@Caching(evict = {
 		@CacheEvict(value = CACHE_NAME, key = "{'findCategories', #namespace, #municipalityId}"),
 		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'findTypes', #namespace, #municipalityId}")
+		@CacheEvict(value = CACHE_NAME, key = "{'findTypes', #namespace, #municipalityId, #name}")
 	})
 	public void deleteCategory(final String namespace, final String municipalityId, final String name) {
 		if (!categoryRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)) {

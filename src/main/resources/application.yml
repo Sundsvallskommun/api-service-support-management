@@ -87,9 +87,14 @@ spring:
   application:
     name: support-management
   cache:
-    cache-names: metadataCache, metadataLabelsByPatternCache, namespaceConfigCache
+    cache-names: metadataCache, metadataLabelsByPatternCache, namespaceConfigCache, accessibleLabelsCache
     caffeine:
-      spec: maximumSize=200, expireAfterWrite=600s
+      # default setting used if no override has been defined
+      spec: maximumSize=200, expireAfterWrite=10m
+      # overriding of default setting for specific caches
+      spec-overrides: 
+        - cache-name: accessibleLabelsCache
+          spec: maximumSize=500, expireAfterWrite=60m
   datasource:
     driver-class-name: org.mariadb.jdbc.Driver
   flyway:

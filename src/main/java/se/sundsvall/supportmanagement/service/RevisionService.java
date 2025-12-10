@@ -5,6 +5,8 @@ import static com.flipkart.zjsonpatch.DiffFlags.OMIT_COPY_OPERATION;
 import static com.flipkart.zjsonpatch.DiffFlags.OMIT_MOVE_OPERATION;
 import static com.jayway.jsonpath.Configuration.defaultConfiguration;
 import static com.jayway.jsonpath.Option.SUPPRESS_EXCEPTIONS;
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static org.apache.commons.lang3.ObjectUtils.anyNull;
 import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
 import static org.zalando.problem.Status.NOT_FOUND;
@@ -28,13 +30,13 @@ import org.zalando.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.revision.DifferenceResponse;
 import se.sundsvall.supportmanagement.api.model.revision.Operation;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
-import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.RevisionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.RevisionEntity;
 import se.sundsvall.supportmanagement.integration.notes.NotesClient;
 import se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper;
 import se.sundsvall.supportmanagement.service.mapper.RevisionMapper;
+import se.sundsvall.supportmanagement.service.model.RevisionResult;
 
 @Service
 @Transactional
@@ -54,9 +56,7 @@ public class RevisionService {
 
 	private static final String VERSION_DOES_NOT_EXIST = "The version requested for the %s revision does not exist";
 
-	private static final String ERRAND_NOT_FOUND = "An errand with id '%s' could not be found";
-
-	private final ErrandsRepository errandsRepository;
+	private final AccessControlService accessControlService;
 
 	private final RevisionRepository revisionRepository;
 
@@ -64,10 +64,10 @@ public class RevisionService {
 
 	private final NotesClient notesClient;
 
-	public RevisionService(final ErrandsRepository errandsRepository,
+	public RevisionService(final AccessControlService accessControlService,
 		final RevisionRepository revisionRepository, final ObjectMapper objectMapper,
 		final NotesClient notesClient) {
-		this.errandsRepository = errandsRepository;
+		this.accessControlService = accessControlService;
 		this.revisionRepository = revisionRepository;
 		this.objectMapper = objectMapper;
 		this.notesClient = notesClient;
@@ -128,7 +128,7 @@ public class RevisionService {
 	 * @return          a list of Revision objects containing information on every revision of the errand.
 	 */
 	public List<Revision> getErrandRevisions(final String namespace, final String municipalityId, final String errandId) {
-		verifyExistingErrand(errandId, namespace, municipalityId);
+		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, R, RW);
 
 		return RevisionMapper.toRevisions(revisionRepository.findAllByNamespaceAndMunicipalityIdAndEntityIdOrderByVersion(namespace, municipalityId, errandId));
 	}
@@ -136,13 +136,11 @@ public class RevisionService {
 	/**
 	 * Returns the latest (current) revision of the errand
 	 *
-	 * @param  namespace      namespace of the errand owning the note to compare.
-	 * @param  municipalityId id of the municipality owning the errand.
-	 * @param  errandId       id of the errand to fetch latest revision for.
-	 * @return                the latest revision for the errand or null if errand does not exist.
+	 * @param  entity Errand entity.
+	 * @return        the latest revision for the errand or null if errand does not exist.
 	 */
-	public Revision getLatestErrandRevision(final String namespace, final String municipalityId, final String errandId) {
-		return revisionRepository.findFirstByNamespaceAndMunicipalityIdAndEntityIdOrderByVersionDesc(namespace, municipalityId, errandId)
+	public Revision getLatestErrandRevision(final ErrandEntity entity) {
+		return revisionRepository.findFirstByNamespaceAndMunicipalityIdAndEntityIdOrderByVersionDesc(entity.getNamespace(), entity.getMunicipalityId(), entity.getId())
 			.map(RevisionMapper::toRevision)
 			.orElse(null);
 	}
@@ -171,7 +169,7 @@ public class RevisionService {
 	 * @return                response containing the difference between the source version and the target version.
 	 */
 	public DifferenceResponse compareErrandRevisionVersions(final String namespace, final String municipalityId, final String errandId, final int sourceVersion, final int targetVersion) {
-		verifyExistingErrand(errandId, namespace, municipalityId);
+		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, R, RW);
 
 		final var sourceRevision = revisionRepository.findByNamespaceAndMunicipalityIdAndEntityIdAndVersion(namespace, municipalityId, errandId, sourceVersion)
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, String.format(VERSION_DOES_NOT_EXIST, "source")));
@@ -205,7 +203,7 @@ public class RevisionService {
 	 * @return                a list of Revision objects containing information on every revision of the note.
 	 */
 	public List<Revision> getNoteRevisions(final String namespace, final String municipalityId, final String errandId, final String noteId) {
-		verifyExistingErrand(errandId, namespace, municipalityId);
+		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, R, RW);
 
 		return ErrandNoteMapper.toRevisions(notesClient.findAllNoteRevisions(municipalityId, noteId));
 	}
@@ -222,15 +220,9 @@ public class RevisionService {
 	 * @return                response containing the difference between the source version and the target version.
 	 */
 	public DifferenceResponse compareNoteRevisionVersions(final String namespace, final String municipalityId, final String errandId, final String noteId, final int sourceVersion, final int targetVersion) {
-		verifyExistingErrand(errandId, namespace, municipalityId);
+		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, R, RW);
 
 		return ErrandNoteMapper.toDifferenceResponse(notesClient.compareNoteRevisions(municipalityId, noteId, sourceVersion, targetVersion));
-	}
-
-	private void verifyExistingErrand(final String errandId, final String namespace, final String municipalityId) {
-		if (!errandsRepository.existsByIdAndNamespaceAndMunicipalityId(errandId, namespace, municipalityId)) {
-			throw Problem.valueOf(NOT_FOUND, String.format(ERRAND_NOT_FOUND, errandId));
-		}
 	}
 
 	private JsonNode toJsonNode(final String value) {

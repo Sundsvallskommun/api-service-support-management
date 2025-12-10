@@ -1406,6 +1406,13 @@ paths:
         schema:
           type: string
         example: 2281
+      - name: referred_from
+        in: query
+        description: Referenced from errand
+        required: false
+        schema:
+          type: string
+        example: ABC-123456
       requestBody:
         content:
           application/json:

@@ -1,0 +1,12 @@
+{
+	"request": {
+		"method": "POST",
+		"urlPathPattern": "/api-relation/2281/relations"
+	},
+	"response": {
+		"status": 201,
+		"headers": {
+			"Location": "/api-relation/2281/relations/RELATION-ID-123"
+		}
+	}
+}

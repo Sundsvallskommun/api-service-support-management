@@ -1,11 +1,16 @@
 package se.sundsvall.supportmanagement.service;
 
+import static java.util.Optional.ofNullable;
+import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
+
 import generated.se.sundsvall.accessmapper.Access;
 import generated.se.sundsvall.accessmapper.AccessGroup;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import se.sundsvall.dept44.support.Identifier;
@@ -16,6 +21,9 @@ import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 public class AccessMapperService {
 
 	private static final String LABEL_TYPE = "label";
+	private static final String ACCESSIBLE_LABELS_CACHE_NAME = "accessibleLabelsCache";
+	private static final Logger LOG = LoggerFactory.getLogger(AccessMapperService.class);
+
 	private final AccessMapperClient accessMapperClient;
 	private final MetadataService metadataService;
 
@@ -24,9 +32,14 @@ public class AccessMapperService {
 		this.metadataService = metadataService;
 	}
 
-	// Add cache
+	@Cacheable(value = ACCESSIBLE_LABELS_CACHE_NAME,
+		key = "{#root.methodName, #municipalityId, #namespace, #user, T(se.sundsvall.supportmanagement.service.util.ServiceUtil).createCacheKey(#filter)}")
 	public Set<MetadataLabelEntity> getAccessibleLabels(String municipalityId, String namespace, Identifier user, List<Access.AccessLevelEnum> filter) {
-		return Optional.ofNullable(user)
+		final var logNamespace = sanitizeForLogging(namespace);
+		final var logMunicipalityId = sanitizeForLogging(municipalityId);
+		LOG.info("Renewing accessible labels of requested access to {} for user {} within namespace {} and municipality {}", filter, user, logNamespace, logMunicipalityId);
+
+		return ofNullable(user)
 			.filter(identifier -> Identifier.Type.AD_ACCOUNT.equals(identifier.getType()))
 			.map(ad -> accessMapperClient.getAccessDetails(municipalityId, namespace, ad.getValue(), LABEL_TYPE))
 			.filter(response -> response.getStatusCode().is2xxSuccessful())

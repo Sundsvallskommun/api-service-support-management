@@ -9,6 +9,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -25,6 +26,8 @@ import com.turkraft.springfilter.converter.FilterSpecificationConverter;
 import generated.se.sundsvall.accessmapper.Access;
 import generated.se.sundsvall.notes.FindNotesResponse;
 import generated.se.sundsvall.notes.Note;
+import generated.se.sundsvall.relation.Relation;
+import generated.se.sundsvall.relation.ResourceIdentifier;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
@@ -56,6 +59,8 @@ import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.util.ErrandNumberGeneratorService;
 import se.sundsvall.supportmanagement.integration.notes.NotesClient;
+import se.sundsvall.supportmanagement.integration.relation.RelationClient;
+import se.sundsvall.supportmanagement.service.model.RevisionResult;
 
 @ExtendWith(MockitoExtension.class)
 class ErrandServiceTest {
@@ -66,6 +71,9 @@ class ErrandServiceTest {
 	private static final String EVENT_LOG_CREATE_ERRAND = "Ärendet har skapats.";
 	private static final String EVENT_LOG_UPDATE_ERRAND = "Ärendet har uppdaterats.";
 	private static final String EVENT_LOG_DELETE_ERRAND = "Ärendet har raderats.";
+	private static final String REFERRED_FROM_RELATION_TYPE = "REFERRED_FROM";
+	private static final String REFERRED_FROM_RESOURCE_IDENTIFIER_TYPE = "case";
+	private static final String REFERRED_FROM_RESOURCE_IDENTIFIER_SERVICE = "support-management";
 
 	@Mock
 	private ErrandNumberGeneratorService stringGeneratorServiceMock;
@@ -106,6 +114,9 @@ class ErrandServiceTest {
 	@Mock
 	private AccessControlService accessControlServiceMock;
 
+	@Mock
+	private RelationClient relationClientMock;
+
 	@Spy
 	private FilterSpecificationConverter filterSpecificationConverterSpy;
 
@@ -134,6 +145,44 @@ class ErrandServiceTest {
 		verify(errandRepositoryMock).save(any(ErrandEntity.class));
 		verify(revisionServiceMock).createErrandRevision(any(ErrandEntity.class));
 		verify(eventServiceMock).createErrandEvent(eq(CREATE), eq(EVENT_LOG_CREATE_ERRAND), any(ErrandEntity.class), eq(currentRevisionMock), eq(null), eq(false), eq(ERRAND));
+		verifyNoInteractions(relationClientMock);
+	}
+
+	@Test
+	void createErrandWithReferredFrom() {
+		// Setup
+		final var errand = buildErrand();
+		final var referredFrom = "originalErrandId";
+		final var relation = new Relation()
+			.type(REFERRED_FROM_RELATION_TYPE)
+			.source(new ResourceIdentifier()
+				.resourceId(referredFrom)
+				.type(REFERRED_FROM_RESOURCE_IDENTIFIER_TYPE)
+				.service(REFERRED_FROM_RESOURCE_IDENTIFIER_SERVICE)
+				.namespace(NAMESPACE))
+			.target(new ResourceIdentifier()
+				.resourceId(ERRAND_ID)
+				.type(REFERRED_FROM_RESOURCE_IDENTIFIER_TYPE)
+				.service(REFERRED_FROM_RESOURCE_IDENTIFIER_SERVICE)
+				.namespace(NAMESPACE));
+
+		// Mock
+		when(errandRepositoryMock.save(any(ErrandEntity.class))).thenReturn(ErrandEntity.create().withId(ERRAND_ID));
+		when(revisionServiceMock.createErrandRevision(any())).thenReturn(new RevisionResult(null, currentRevisionMock));
+		when(stringGeneratorServiceMock.generateErrandNumber(any(String.class), any(String.class))).thenReturn("KC-23090001");
+		when(contactReasonRepositoryMock.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId(any(), any(), any()))
+			.thenReturn(Optional.of(ContactReasonEntity.create().withReason("reason")));
+
+		final var result = service.createErrand(NAMESPACE, MUNICIPALITY_ID, errand, referredFrom);
+
+		// Assertions and verifications
+		assertThat(result).isEqualTo(ERRAND_ID);
+
+		verify(errandRepositoryMock).save(any(ErrandEntity.class));
+		verify(revisionServiceMock).createErrandRevision(any(ErrandEntity.class));
+		verify(eventServiceMock).createErrandEvent(eq(CREATE), eq(EVENT_LOG_CREATE_ERRAND), any(ErrandEntity.class),
+			eq(currentRevisionMock), eq(null), eq(false), eq(ERRAND));
+		verify(relationClientMock).createRelation(MUNICIPALITY_ID, relation);
 	}
 
 	@ParameterizedTest
@@ -293,7 +342,7 @@ class ErrandServiceTest {
 
 		// Mock
 		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(entity);
-		when(revisionServiceMock.getLatestErrandRevision(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID)).thenReturn(currentRevisionMock);
+		when(revisionServiceMock.getLatestErrandRevision(any())).thenReturn(currentRevisionMock);
 		when(errandAttachmentServiceMock.readErrandAttachments(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID)).thenReturn(List.of(errandAttachment));
 		when(notesClientMock.findNotes(MUNICIPALITY_ID, null, null, ERRAND_ID, null, null, 1, 1000))
 			.thenReturn(new FindNotesResponse().notes(List.of(new Note().id("id"))));
@@ -303,13 +352,14 @@ class ErrandServiceTest {
 
 		// Assertions and verifications
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, Access.AccessLevelEnum.RW);
-		verify(conversationServiceMock).deleteByErrandId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID);
+		verify(conversationServiceMock).deleteByErrandId(same(entity));
 		verify(notesClientMock).findNotes(MUNICIPALITY_ID, null, null, ERRAND_ID, null, null, 1, 1000);
 		verify(notesClientMock).deleteNoteById(MUNICIPALITY_ID, "id");
 		verify(errandRepositoryMock).deleteById(ERRAND_ID);
 		verify(communicationServiceMock).deleteAllCommunicationsByErrandNumber(entity.getErrandNumber());
 		verify(errandAttachmentServiceMock).readErrandAttachments(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 		verify(attachmentRepositoryMock).deleteById(errandAttachment.getId());
+		verify(revisionServiceMock).getLatestErrandRevision(same(entity));
 		verify(eventServiceMock).createErrandEvent(DELETE, EVENT_LOG_DELETE_ERRAND, entity, currentRevisionMock, null, false, ERRAND);
 	}
 

@@ -11,7 +11,6 @@ import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
 import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toWebMessageRequest;
 
 import generated.se.sundsvall.messaging.ExternalReference;
-import generated.se.sundsvall.messagingsettings.SenderInfoResponse;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.sql.Blob;
@@ -36,6 +35,7 @@ import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
+import se.sundsvall.supportmanagement.service.model.MessagingSettings;
 
 class MessagingMapperTest {
 
@@ -148,7 +148,7 @@ class MessagingMapperTest {
 		final var inputStream = new ByteArrayInputStream(contentBytes);
 		final var mockAttachment = Mockito.mock(AttachmentEntity.class);
 		final var mockAttachmentData = Mockito.mock(AttachmentDataEntity.class);
-		final Blob mockFile = Mockito.mock(Blob.class);
+		final var mockFile = Mockito.mock(Blob.class);
 
 		when(mockAttachment.getAttachmentData()).thenReturn(mockAttachmentData);
 		when(mockAttachmentData.getFile()).thenReturn(mockFile);
@@ -198,7 +198,7 @@ class MessagingMapperTest {
 		final var inputStream = new ByteArrayInputStream(contentBytes);
 		final var mockAttachment = Mockito.mock(AttachmentEntity.class);
 		final var mockAttachmentData = Mockito.mock(AttachmentDataEntity.class);
-		final Blob mockFile = Mockito.mock(Blob.class);
+		final var mockFile = Mockito.mock(Blob.class);
 
 		when(mockAttachment.getAttachmentData()).thenReturn(mockAttachmentData);
 		when(mockAttachmentData.getFile()).thenReturn(mockFile);
@@ -323,7 +323,6 @@ class MessagingMapperTest {
 		final var title = "Title";
 		final var errandNumber = "123456789";
 		final var emailAddress = "test™@example.com";
-		final var phoneNumber = "123456789";
 		final var supportText = """
 			Hej %s,
 			Du har fått ett nytt meddelande kopplat till ditt ärende gällande %s, %s
@@ -344,12 +343,8 @@ class MessagingMapperTest {
 				.withExternalId("123e4567-e89b-12d3-a456-426614174000")
 				.withRole("PRIMARY")));
 
-		final var senderInfo = new SenderInfoResponse()
-			.supportText(supportText)
-			.contactInformationUrl(url)
-			.contactInformationPhoneNumber(phoneNumber)
-			.contactInformationEmail(emailAddress)
-			.smsSender(smsSender);
+		final var senderInfo = new MessagingSettings(
+			supportText, url, smsSender, emailAddress, null);
 
 		// Act
 		final var bean = MessagingMapper.toMessagingMessageRequest(errandEntity, senderInfo);
