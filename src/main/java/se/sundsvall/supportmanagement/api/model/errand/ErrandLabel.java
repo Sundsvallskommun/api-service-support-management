@@ -9,20 +9,20 @@ import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 @Schema(description = "Errand label model")
 public class ErrandLabel {
 
-	@Schema(description = "Label ID", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7")
+	@Schema(description = "Label ID", examples = "5f79a808-0ef3-4985-99b9-b12f23e202a7")
 	@ValidUuid
 	private String id;
 
-	@Schema(description = "Label classification", example = "subtype", accessMode = READ_ONLY)
+	@Schema(description = "Label classification", examples = "subtype", accessMode = READ_ONLY)
 	private String classification;
 
-	@Schema(description = "Display name for the label", example = "Nyckelkort", accessMode = READ_ONLY)
+	@Schema(description = "Display name for the label", examples = "Nyckelkort", accessMode = READ_ONLY)
 	private String displayName;
 
-	@Schema(description = "Resource path", example = "/parent/child/xxx", accessMode = READ_ONLY)
+	@Schema(description = "Resource path", examples = "/parent/child/xxx", accessMode = READ_ONLY)
 	private String resourcePath;
 
-	@Schema(description = "Resource name", example = "keycard", accessMode = READ_ONLY)
+	@Schema(description = "Resource name", examples = "keycard", accessMode = READ_ONLY)
 	private String resourceName;
 
 	public static ErrandLabel create() {

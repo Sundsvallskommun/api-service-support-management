@@ -13,16 +13,16 @@ import org.springframework.format.annotation.DateTimeFormat.ISO;
 @Schema(description = "Status model")
 public class Status {
 
-	@Schema(description = "Name for the status", example = "statusName")
+	@Schema(description = "Name for the status", examples = "statusName")
 	@NotBlank
 	private String name;
 
-	@Schema(description = "Timestamp when the status was created", example = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
+	@Schema(description = "Timestamp when the status was created", examples = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	@DateTimeFormat(iso = ISO.DATE_TIME)
 	@Null
 	private OffsetDateTime created;
 
-	@Schema(description = "Timestamp when the status was last modified", example = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
+	@Schema(description = "Timestamp when the status was last modified", examples = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	@DateTimeFormat(iso = ISO.DATE_TIME)
 	@Null
 	private OffsetDateTime modified;

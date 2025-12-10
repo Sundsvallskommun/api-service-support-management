@@ -7,17 +7,17 @@ public class CommunicationAttachment {
 
 	@Schema(
 		description = "The attachment ID",
-		example = "aGVsbG8gd29ybGQK"
+		examples = "aGVsbG8gd29ybGQK"
 
 	)
 	private String id;
 
 	@Schema(
 		description = "The attachment file name",
-		example = "test.txt")
+		examples = "test.txt")
 	private String fileName;
 
-	@Schema(description = "The attachment MIME type", example = "text/plain")
+	@Schema(description = "The attachment MIME type", examples = "text/plain")
 	private String mimeType;
 
 	public static CommunicationAttachment create() {

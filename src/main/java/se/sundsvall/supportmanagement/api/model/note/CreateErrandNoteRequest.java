@@ -12,31 +12,31 @@ import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 @Schema(description = "CreateErrandNoteRequest model")
 public class CreateErrandNoteRequest {
 
-	@Schema(description = "Context for note", example = "SUPPORT", minLength = 1, maxLength = 255, requiredMode = REQUIRED)
+	@Schema(description = "Context for note", examples = "SUPPORT", minLength = 1, maxLength = 255, requiredMode = REQUIRED)
 	@NotBlank
 	@Size(min = 1, max = 255)
 	private String context;
 
-	@Schema(description = "Role of note creator", example = "FIRST_LINE_SUPPORT", minLength = 1, maxLength = 255, requiredMode = REQUIRED)
+	@Schema(description = "Role of note creator", examples = "FIRST_LINE_SUPPORT", minLength = 1, maxLength = 255, requiredMode = REQUIRED)
 	@NotBlank
 	@Size(min = 1, max = 255)
 	private String role;
 
-	@Schema(description = "Party id (e.g. a personId or an organizationId)", example = "81471222-5798-11e9-ae24-57fa13b361e1", requiredMode = NOT_REQUIRED)
+	@Schema(description = "Party id (e.g. a personId or an organizationId)", examples = "81471222-5798-11e9-ae24-57fa13b361e1", requiredMode = NOT_REQUIRED)
 	@ValidUuid(nullable = true)
 	private String partyId;
 
-	@Schema(description = "The note subject", example = "This is a subject", minLength = 1, maxLength = 255, requiredMode = REQUIRED)
+	@Schema(description = "The note subject", examples = "This is a subject", minLength = 1, maxLength = 255, requiredMode = REQUIRED)
 	@NotBlank
 	@Size(min = 1, max = 255)
 	private String subject;
 
-	@Schema(description = "The note body", example = "This is a note", minLength = 1, maxLength = 2048, requiredMode = REQUIRED)
+	@Schema(description = "The note body", examples = "This is a note", minLength = 1, maxLength = 2048, requiredMode = REQUIRED)
 	@NotBlank
 	@Size(min = 1, max = 2048)
 	private String body;
 
-	@Schema(description = "Created by", example = "John Doe", requiredMode = REQUIRED)
+	@Schema(description = "Created by", examples = "John Doe", requiredMode = REQUIRED)
 	@NotBlank
 	private String createdBy;
 

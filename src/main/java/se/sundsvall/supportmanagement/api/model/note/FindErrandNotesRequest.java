@@ -13,18 +13,18 @@ public class FindErrandNotesRequest {
 
 	private static final String DEFAULT_PAGE = "1";
 	private static final String DEFAULT_LIMIT = "100";
-	@Schema(description = "Page number", example = DEFAULT_PAGE, minimum = "1", defaultValue = DEFAULT_PAGE)
+	@Schema(description = "Page number", examples = DEFAULT_PAGE, minimum = "1", defaultValue = DEFAULT_PAGE)
 	@Min(1)
 	protected int page = parseInt(DEFAULT_PAGE);
-	@Schema(description = "Result size per page", example = DEFAULT_LIMIT, minimum = "1", maximum = "1000", defaultValue = DEFAULT_LIMIT)
+	@Schema(description = "Result size per page", examples = DEFAULT_LIMIT, minimum = "1", maximum = "1000", defaultValue = DEFAULT_LIMIT)
 	@Min(1)
 	@Max(1000)
 	protected int limit = parseInt(DEFAULT_LIMIT);
-	@Schema(description = "Context for note", example = "SUPPORT")
+	@Schema(description = "Context for note", examples = "SUPPORT")
 	private String context;
-	@Schema(description = "Role of note creator", example = "FIRST_LINE_SUPPORT")
+	@Schema(description = "Role of note creator", examples = "FIRST_LINE_SUPPORT")
 	private String role;
-	@Schema(description = "Party id (e.g. a personId or an organizationId)", example = "81471222-5798-11e9-ae24-57fa13b361e1")
+	@Schema(description = "Party id (e.g. a personId or an organizationId)", examples = "81471222-5798-11e9-ae24-57fa13b361e1")
 	@ValidUuid(nullable = true)
 	private String partyId;
 

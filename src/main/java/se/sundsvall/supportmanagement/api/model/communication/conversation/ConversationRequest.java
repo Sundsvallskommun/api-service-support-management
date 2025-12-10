@@ -13,7 +13,7 @@ import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 public class ConversationRequest {
 
 	@NotBlank
-	@Schema(description = "The message-exchange topic", example = "The conversation topic")
+	@Schema(description = "The message-exchange topic", examples = "The conversation topic")
 	private String topic;
 
 	@NotNull

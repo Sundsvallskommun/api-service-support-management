@@ -19,33 +19,33 @@ public class EmailRequest {
 
 	@NotNull
 	@Email
-	@Schema(description = "Email address for sender", example = "sender@sender.se", requiredMode = REQUIRED)
+	@Schema(description = "Email address for sender", examples = "sender@sender.se", requiredMode = REQUIRED)
 	private String sender;
 
-	@Schema(description = "Optional display name of sender on email. If left out, email will be displayed as sender name.", example = "Firstname Lastname", requiredMode = NOT_REQUIRED)
+	@Schema(description = "Optional display name of sender on email. If left out, email will be displayed as sender name.", examples = "Firstname Lastname", requiredMode = NOT_REQUIRED)
 	private String senderName;
 
 	@NotNull
 	@Email
-	@Schema(description = "Email address for recipient", example = "recipient@recipient.se", requiredMode = REQUIRED)
+	@Schema(description = "Email address for recipient", examples = "recipient@recipient.se", requiredMode = REQUIRED)
 	private String recipient;
 
 	@NotBlank
-	@Schema(description = "Subject", example = "Subject", requiredMode = REQUIRED)
+	@Schema(description = "Subject", examples = "Subject", requiredMode = REQUIRED)
 	private String subject;
 
 	@NotBlank
-	@Schema(description = "Message in html (optionally in BASE64 encoded format)", example = "<html>HTML-formatted message</html>", requiredMode = REQUIRED)
+	@Schema(description = "Message in html (optionally in BASE64 encoded format)", examples = "<html>HTML-formatted message</html>", requiredMode = REQUIRED)
 	private String htmlMessage;
 
 	@NotBlank
-	@Schema(description = "Message in plain text", example = "Message in plain text", requiredMode = REQUIRED)
+	@Schema(description = "Message in plain text", examples = "Message in plain text", requiredMode = REQUIRED)
 	private String message;
 
-	@Schema(description = "Indicates if the message is internal", example = "false")
+	@Schema(description = "Indicates if the message is internal", examples = "false")
 	private boolean internal;
 
-	@Schema(description = "Headers for keeping track of email conversations", example = "{\"IN_REPLY_TO\": [\"reply-to@example.com\"], \"REFERENCES\": [\"reference1\", \"reference2\"], \"MESSAGE_ID\": [\"123456789\"]}")
+	@Schema(description = "Headers for keeping track of email conversations", examples = "{\"IN_REPLY_TO\": [\"reply-to@example.com\"], \"REFERENCES\": [\"reference1\", \"reference2\"], \"MESSAGE_ID\": [\"123456789\"]}")
 	private Map<EmailHeader, List<String>> emailHeaders;
 
 	@ArraySchema(schema = @Schema(description = "List with Base64 encoded email attachments"))

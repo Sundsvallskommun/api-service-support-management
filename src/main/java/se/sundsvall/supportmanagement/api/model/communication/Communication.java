@@ -12,47 +12,47 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
 
 public class Communication {
 
-	@Schema(description = "The communication ID", example = "12")
+	@Schema(description = "The communication ID", examples = "12")
 	private String communicationID;
 
-	@Schema(description = "Sender of the communication.", example = "Test Testsson")
+	@Schema(description = "Sender of the communication.", examples = "Test Testsson")
 	private String sender;
 
-	@Schema(description = "The errand number", example = "PRH-2022-000001")
+	@Schema(description = "The errand number", examples = "PRH-2022-000001")
 	private String errandNumber;
 
-	@Schema(description = "If the communication is inbound or outbound from the perspective of case-data/e-service.", example = "INBOUND")
+	@Schema(description = "If the communication is inbound or outbound from the perspective of case-data/e-service.", examples = "INBOUND")
 	private Direction direction;
 
-	@Schema(description = "The message body", example = "Hello world")
+	@Schema(description = "The message body", examples = "Hello world")
 	private String messageBody;
 
-	@Schema(description = "The message body in HTML format", example = "<p>Hello world</p>")
+	@Schema(description = "The message body in HTML format", examples = "<p>Hello world</p>")
 	private String htmlMessageBody;
 
-	@Schema(description = "The time the communication was sent", example = "2020-01-01 12:00:00")
+	@Schema(description = "The time the communication was sent", examples = "2020-01-01 12:00:00")
 	@DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
 	private OffsetDateTime sent;
 
-	@Schema(description = "The email-subject of the communication", example = "Hello world")
+	@Schema(description = "The email-subject of the communication", examples = "Hello world")
 	private String subject;
 
-	@Schema(description = "The communication was delivered by", example = "EMAIL")
+	@Schema(description = "The communication was delivered by", examples = "EMAIL")
 	private CommunicationType communicationType;
 
-	@Schema(description = "The mobile number or email adress the communication was sent to", example = "+46701740605")
+	@Schema(description = "The mobile number or email adress the communication was sent to", examples = "+46701740605")
 	private String target;
 
-	@Schema(description = "The recipients of the communication, if email", example = "[\"kalle.anka@ankeborg.se\"]")
+	@Schema(description = "The recipients of the communication, if email", examples = "[\"kalle.anka@ankeborg.se\"]")
 	private List<String> recipients;
 
-	@Schema(description = "Indicates if the communication is internal", example = "false")
+	@Schema(description = "Indicates if the communication is internal", examples = "false")
 	private boolean internal;
 
-	@Schema(description = "Signal if the communication has been viewed or not", example = "true")
+	@Schema(description = "Signal if the communication has been viewed or not", examples = "true")
 	private Boolean viewed;
 
-	@Schema(description = "Headers for keeping track of email conversations", example = "{\"IN_REPLY_TO\": [\"reply-to@example.com\"], \"REFERENCES\": [\"reference1\", \"reference2\"], \"MESSAGE_ID\": [\"123456789\"]}")
+	@Schema(description = "Headers for keeping track of email conversations", examples = "{\"IN_REPLY_TO\": [\"reply-to@example.com\"], \"REFERENCES\": [\"reference1\", \"reference2\"], \"MESSAGE_ID\": [\"123456789\"]}")
 	private Map<EmailHeader, List<String>> emailHeaders;
 
 	@Schema(description = "List of communicationAttachments on the message")

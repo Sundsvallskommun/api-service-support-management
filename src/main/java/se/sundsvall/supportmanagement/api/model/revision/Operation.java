@@ -10,17 +10,17 @@ import se.sundsvall.supportmanagement.api.model.revision.deserializer.RawDataDes
 @Schema(description = "Operation model", accessMode = READ_ONLY)
 public class Operation {
 
-	@Schema(description = "Type of operation", example = "replace")
+	@Schema(description = "Type of operation", examples = "replace")
 	private String op;
 
-	@Schema(description = "Path to attribute", example = "/name/firstName")
+	@Schema(description = "Path to attribute", examples = "/name/firstName")
 	private String path;
 
-	@Schema(description = "Value of attribute", example = "Jane")
+	@Schema(description = "Value of attribute", examples = "Jane")
 	@JsonDeserialize(using = RawDataDeserializer.class)
 	private String value;
 
-	@Schema(description = "Previous value of attribute", example = "John")
+	@Schema(description = "Previous value of attribute", examples = "John")
 	private String fromValue;
 
 	public static Operation create() {

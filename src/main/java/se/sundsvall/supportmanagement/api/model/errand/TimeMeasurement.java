@@ -7,19 +7,19 @@ import java.util.Objects;
 @Schema(description = "Time measure model", accessMode = Schema.AccessMode.READ_ONLY)
 public class TimeMeasurement {
 
-	@Schema(description = "Status for the time measurement period", example = "Started")
+	@Schema(description = "Status for the time measurement period", examples = "Started")
 	private String status;
 
-	@Schema(description = "Start time for the time measurement period", example = "2021-09-01T12:00:00Z")
+	@Schema(description = "Start time for the time measurement period", examples = "2021-09-01T12:00:00Z")
 	private OffsetDateTime startTime;
 
-	@Schema(description = "Stop time for the time measurement period", example = "2021-09-01T13:00:00Z")
+	@Schema(description = "Stop time for the time measurement period", examples = "2021-09-01T13:00:00Z")
 	private OffsetDateTime stopTime;
 
-	@Schema(description = "Description of the time measurement period", example = "Suspected while waiting for answer from customer")
+	@Schema(description = "Description of the time measurement period", examples = "Suspected while waiting for answer from customer")
 	private String description;
 
-	@Schema(description = "Administrator for the time measurement period", example = "JO12DOE")
+	@Schema(description = "Administrator for the time measurement period", examples = "JO12DOE")
 	private String administrator;
 
 	public static TimeMeasurement create() {

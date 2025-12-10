@@ -12,10 +12,10 @@ import se.sundsvall.supportmanagement.api.validation.ValidFileSize;
 public class EmailAttachment implements RequestAttachment {
 
 	@NotBlank
-	@Schema(description = "The attachment file name", example = "test.txt", requiredMode = REQUIRED)
+	@Schema(description = "The attachment file name", examples = "test.txt", requiredMode = REQUIRED)
 	private String fileName;
 
-	@Schema(description = "The attachment (file) content as a BASE64-encoded string, max size 50 MB", format = "base64", example = "aGVsbG8gd29ybGQK", requiredMode = REQUIRED)
+	@Schema(description = "The attachment (file) content as a BASE64-encoded string, max size 50 MB", format = "base64", examples = "aGVsbG8gd29ybGQK", requiredMode = REQUIRED)
 	@ValidBase64
 	@ValidFileSize
 	private String base64EncodedString;

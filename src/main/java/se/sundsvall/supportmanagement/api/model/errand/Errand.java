@@ -27,19 +27,19 @@ import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
 @Schema(description = "Errand model")
 public class Errand {
 
-	@Schema(description = "Unique id for the errand", example = "f0882f1d-06bc-47fd-b017-1d8307f5ce95", accessMode = READ_ONLY)
+	@Schema(description = "Unique id for the errand", examples = "f0882f1d-06bc-47fd-b017-1d8307f5ce95", accessMode = READ_ONLY)
 	@Null(groups = {
 		OnCreate.class, OnUpdate.class
 	})
 	private String id;
 
-	@Schema(description = "Unique number for the errand", example = "KC-23010001", accessMode = READ_ONLY)
+	@Schema(description = "Unique number for the errand", examples = "KC-23010001", accessMode = READ_ONLY)
 	@Null(groups = {
 		OnCreate.class, OnUpdate.class
 	})
 	private String errandNumber;
 
-	@Schema(description = "Title for the errand", example = "Title for the errand")
+	@Schema(description = "Title for the errand", examples = "Title for the errand")
 	@NotBlank(groups = OnCreate.class)
 	private String title;
 
@@ -68,49 +68,49 @@ public class Errand {
 	})
 	private Classification classification;
 
-	@Schema(description = "Status for the errand", example = "NEW_CASE")
+	@Schema(description = "Status for the errand", examples = "NEW_CASE")
 	@NotBlank(groups = OnCreate.class)
 	@ValidStatus(groups = {
 		OnCreate.class, OnUpdate.class
 	})
 	private String status;
 
-	@Schema(description = "Resolution status for closed errands. Value can be set to anything", example = "FIXED")
+	@Schema(description = "Resolution status for closed errands. Value can be set to anything", examples = "FIXED")
 	private String resolution;
 
-	@Schema(description = "Errand description text", example = "Order cake for everyone")
+	@Schema(description = "Errand description text", examples = "Order cake for everyone")
 	private String description;
 
-	@Schema(description = "The channel from which the errand originated", maxLength = 255, example = "THE_CHANNEL")
+	@Schema(description = "The channel from which the errand originated", maxLength = 255, examples = "THE_CHANNEL")
 	@Size(max = 255, groups = {
 		OnCreate.class, OnUpdate.class
 	})
 	private String channel;
 
-	@Schema(description = "User id for the person which has created the errand", example = "joe01doe")
+	@Schema(description = "User id for the person which has created the errand", examples = "joe01doe")
 	@NotBlank(groups = OnCreate.class)
 	@Null(groups = OnUpdate.class)
 	private String reporterUserId;
 
-	@Schema(description = "Id for the user which currently is assigned to the errand if a user is assigned", example = "joe01doe")
+	@Schema(description = "Id for the user which currently is assigned to the errand if a user is assigned", examples = "joe01doe")
 	private String assignedUserId;
 
-	@Schema(description = "Id for the group which is currently assigned to the errand if a group is assigned", example = "hardware support")
+	@Schema(description = "Id for the group which is currently assigned to the errand if a group is assigned", examples = "hardware support")
 	private String assignedGroupId;
 
-	@Schema(description = "Email address used for escalation of errand", example = "joe.doe@email.com", format = "email")
+	@Schema(description = "Email address used for escalation of errand", examples = "joe.doe@email.com", format = "email")
 	@Email(groups = {
 		OnCreate.class, OnUpdate.class
 	})
 	private String escalationEmail;
 
-	@Schema(description = "Contact reason for the errand", example = "The printer is not working")
+	@Schema(description = "Contact reason for the errand", examples = "The printer is not working")
 	@ValidContactReason(groups = {
 		OnCreate.class, OnUpdate.class
 	}, nullable = true)
 	private String contactReason;
 
-	@Schema(description = "Contact reason description for the errand", maxLength = 4096, example = "The printer is not working since the power cord is missing")
+	@Schema(description = "Contact reason description for the errand", maxLength = 4096, examples = "The printer is not working since the power cord is missing")
 	@Size(max = 4096, groups = {
 		OnCreate.class, OnUpdate.class
 	})
@@ -120,7 +120,7 @@ public class Errand {
 	@Valid
 	private Suspension suspension;
 
-	@Schema(description = "Flag to indicate if the errand is business related", example = "true")
+	@Schema(description = "Flag to indicate if the errand is business related", examples = "true")
 	private Boolean businessRelated;
 
 	@Schema(description = "List of labels for the errand")
@@ -132,21 +132,21 @@ public class Errand {
 	})
 	private List<Notification> activeNotifications;
 
-	@Schema(description = "Timestamp when errand was created", example = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
+	@Schema(description = "Timestamp when errand was created", examples = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	@DateTimeFormat(iso = ISO.DATE_TIME)
 	@Null(groups = {
 		OnCreate.class, OnUpdate.class
 	})
 	private OffsetDateTime created;
 
-	@Schema(description = "Timestamp when errand was last modified", example = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
+	@Schema(description = "Timestamp when errand was last modified", examples = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	@DateTimeFormat(iso = ISO.DATE_TIME)
 	@Null(groups = {
 		OnCreate.class, OnUpdate.class
 	})
 	private OffsetDateTime modified;
 
-	@Schema(description = "Timestamp when errand was last touched (created or modified)", example = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
+	@Schema(description = "Timestamp when errand was last touched (created or modified)", examples = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	@DateTimeFormat(iso = ISO.DATE_TIME)
 	@Null(groups = {
 		OnCreate.class, OnUpdate.class

@@ -10,3 +10,5 @@ permissions:
 jobs:
   shared-workflows:
     uses: Sundsvallskommun/.github/.github/workflows/build-and-push.yml@main
+    with:
+      java: "25"

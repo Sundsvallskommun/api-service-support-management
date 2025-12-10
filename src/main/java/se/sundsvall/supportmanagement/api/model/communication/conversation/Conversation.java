@@ -10,13 +10,13 @@ import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 @Schema(description = "Conversation model")
 public class Conversation {
 
-	@Schema(description = "Conversation ID", example = "1aefbbb8-de82-414b-b5d7-ba7c5bbe4506")
+	@Schema(description = "Conversation ID", examples = "1aefbbb8-de82-414b-b5d7-ba7c5bbe4506")
 	private String id;
 
-	@Schema(description = "The message-exchange topic", example = "The conversation topic")
+	@Schema(description = "The message-exchange topic", examples = "The conversation topic")
 	private String topic;
 
-	@Schema(description = "The conversation type", example = "D2D")
+	@Schema(description = "The conversation type", examples = "D2D")
 	private ConversationType type;
 
 	@ArraySchema(schema = @Schema(implementation = String.class, description = "List with relation ID:s"))

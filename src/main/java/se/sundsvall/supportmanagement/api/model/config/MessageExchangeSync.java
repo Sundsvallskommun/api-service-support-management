@@ -10,16 +10,16 @@ import java.util.Objects;
 @Schema(description = "Message-Exchange sync configuration")
 public class MessageExchangeSync {
 
-	@Schema(description = "Unique id", accessMode = READ_ONLY, example = "1")
+	@Schema(description = "Unique id", accessMode = READ_ONLY, examples = "1")
 	private Long id;
 
-	@Schema(description = "Message exchange namespace to search in. Does not map to supporManagement namespace.", example = "support")
+	@Schema(description = "Message exchange namespace to search in. Does not map to supporManagement namespace.", examples = "support")
 	private String namespace;
 
-	@Schema(description = "Latest synced sequence number", accessMode = READ_ONLY, example = "333")
+	@Schema(description = "Latest synced sequence number", accessMode = READ_ONLY, examples = "333")
 	private Long latestSyncedSequenceNumber;
 
-	@Schema(description = "Timestamp when the configuration was last modified", example = "2024-12-24T01:30:00.000+02:00", accessMode = READ_ONLY)
+	@Schema(description = "Timestamp when the configuration was last modified", examples = "2024-12-24T01:30:00.000+02:00", accessMode = READ_ONLY)
 	private OffsetDateTime modified;
 
 	@Schema(description = "If set to true conversations will be synced")

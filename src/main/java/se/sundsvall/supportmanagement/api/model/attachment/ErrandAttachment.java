@@ -12,18 +12,18 @@ import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
 @Schema(description = "ErrandAttachment model")
 public class ErrandAttachment {
 
-	@Schema(description = "Unique identifier for the attachment", example = "cb20c51f-fcf3-42c0-b613-de563634a8ec", accessMode = READ_ONLY)
+	@Schema(description = "Unique identifier for the attachment", examples = "cb20c51f-fcf3-42c0-b613-de563634a8ec", accessMode = READ_ONLY)
 	@Null(groups = OnCreate.class)
 	protected String id;
 
-	@Schema(description = "Name of the file", example = "my-file.txt")
+	@Schema(description = "Name of the file", examples = "my-file.txt")
 	@NotBlank(groups = OnCreate.class)
 	protected String fileName;
 
 	@Schema(description = "Mime type of the file", accessMode = Schema.AccessMode.READ_ONLY)
 	private String mimeType;
 
-	@Schema(description = "The attachment created date", example = "2023-01-01T00:00:00Z")
+	@Schema(description = "The attachment created date", examples = "2023-01-01T00:00:00Z")
 	private OffsetDateTime created;
 
 	public static ErrandAttachment create() {

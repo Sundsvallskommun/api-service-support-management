@@ -8,7 +8,7 @@ import java.util.Objects;
 @Schema(description = "KeyValues model")
 public class KeyValues {
 
-	@Schema(description = "The key", example = "key1")
+	@Schema(description = "The key", examples = "key1")
 	private String key;
 
 	@ArraySchema(schema = @Schema(implementation = String.class))

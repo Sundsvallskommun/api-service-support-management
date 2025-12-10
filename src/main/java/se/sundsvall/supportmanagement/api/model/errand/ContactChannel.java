@@ -6,10 +6,10 @@ import java.util.Objects;
 @Schema(description = "Contact channel model")
 public class ContactChannel {
 
-	@Schema(description = "Type of channel. Defines how value is interpreted", example = "Email")
+	@Schema(description = "Type of channel. Defines how value is interpreted", examples = "Email")
 	private String type;
 
-	@Schema(description = "Value for Contact channel", example = "arthur.dent@earth.com")
+	@Schema(description = "Value for Contact channel", examples = "arthur.dent@earth.com")
 	private String value;
 
 	public static ContactChannel create() {

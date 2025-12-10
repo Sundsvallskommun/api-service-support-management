@@ -6,10 +6,10 @@ import java.util.Objects;
 @Schema(description = "Event Metadata model")
 public class EventMetaData {
 
-	@Schema(description = "The key", example = "userId")
+	@Schema(description = "The key", examples = "userId")
 	private String key;
 
-	@Schema(description = "The value", example = "john123")
+	@Schema(description = "The value", examples = "john123")
 	private String value;
 
 	public static EventMetaData create() {

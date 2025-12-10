@@ -11,19 +11,19 @@ import org.springframework.format.annotation.DateTimeFormat.ISO;
 @Schema(description = "Revision model", accessMode = READ_ONLY)
 public class Revision {
 
-	@Schema(description = "Unique id for the revision", example = "391e97b7-2e78-42e2-9a60-fe49fbfa94f1")
+	@Schema(description = "Unique id for the revision", examples = "391e97b7-2e78-42e2-9a60-fe49fbfa94f1")
 	private String id;
 
-	@Schema(description = "Unique id for the entity connected to the revision", example = "3af4844d-a75f-4e25-a2a0-355eb642dd2d")
+	@Schema(description = "Unique id for the entity connected to the revision", examples = "3af4844d-a75f-4e25-a2a0-355eb642dd2d")
 	private String entityId;
 
-	@Schema(description = "Type of entity for the revision", example = "ErrandEntity")
+	@Schema(description = "Type of entity for the revision", examples = "ErrandEntity")
 	private String entityType;
 
-	@Schema(description = "Version of the revision", example = "1")
+	@Schema(description = "Version of the revision", examples = "1")
 	private Integer version;
 
-	@Schema(description = "Timestamp when the revision was created", example = "2000-10-31T01:30:00.000+02:00")
+	@Schema(description = "Timestamp when the revision was created", examples = "2000-10-31T01:30:00.000+02:00")
 	@DateTimeFormat(iso = ISO.DATE_TIME)
 	private OffsetDateTime created;
 
