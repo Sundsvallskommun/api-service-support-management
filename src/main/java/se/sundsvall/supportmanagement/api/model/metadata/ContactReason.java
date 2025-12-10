@@ -10,17 +10,17 @@ import java.util.Objects;
 @Schema(description = "Contact reason model")
 public class ContactReason {
 
-	@Schema(description = "ID", example = "123", accessMode = READ_ONLY)
+	@Schema(description = "ID", examples = "123", accessMode = READ_ONLY)
 	private Long id;
 
-	@Schema(description = "Reason for contact", example = "Segt internet")
+	@Schema(description = "Reason for contact", examples = "Segt internet")
 	@NotBlank
 	private String reason;
 
-	@Schema(description = "Timestamp when the contact reason was created", example = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
+	@Schema(description = "Timestamp when the contact reason was created", examples = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	private OffsetDateTime created;
 
-	@Schema(description = "Timestamp when the contact reason was last modified", example = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
+	@Schema(description = "Timestamp when the contact reason was last modified", examples = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	private OffsetDateTime modified;
 
 	public static ContactReason create() {

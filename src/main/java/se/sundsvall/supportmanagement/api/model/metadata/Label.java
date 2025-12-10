@@ -12,21 +12,21 @@ import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 @Schema(description = "Label model")
 public class Label {
 
-	@Schema(description = "Label ID", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7")
+	@Schema(description = "Label ID", examples = "5f79a808-0ef3-4985-99b9-b12f23e202a7")
 	@ValidUuid(nullable = true)
 	private String id;
 
-	@Schema(description = "Label classification", example = "subtype")
+	@Schema(description = "Label classification", examples = "subtype")
 	@NotBlank
 	private String classification;
 
-	@Schema(description = "Display name for the label", example = "Nyckelkort")
+	@Schema(description = "Display name for the label", examples = "Nyckelkort")
 	private String displayName;
 
-	@Schema(description = "Resource path", example = "/parent/child/keycard", accessMode = READ_ONLY)
+	@Schema(description = "Resource path", examples = "/parent/child/keycard", accessMode = READ_ONLY)
 	private String resourcePath;
 
-	@Schema(description = "Resource name", example = "keycard")
+	@Schema(description = "Resource name", examples = "keycard")
 	@NotBlank
 	private String resourceName;
 

@@ -14,18 +14,18 @@ public class SmsRequest {
 
 	@NotNull
 	@Size(min = 1, max = 11)
-	@Schema(description = "The sender of the SMS", minLength = 1, maxLength = 11, example = "sender", requiredMode = REQUIRED)
+	@Schema(description = "The sender of the SMS", minLength = 1, maxLength = 11, examples = "sender", requiredMode = REQUIRED)
 	private String sender;
 
 	@ValidMSISDN
-	@Schema(description = "Mobile number to recipient in format +467[02369]\\d{7}", example = "+46701740605", requiredMode = REQUIRED)
+	@Schema(description = "Mobile number to recipient in format +467[02369]\\d{7}", examples = "+46701740605", requiredMode = REQUIRED)
 	private String recipient;
 
 	@NotBlank
 	@Schema(description = "Message", requiredMode = REQUIRED)
 	private String message;
 
-	@Schema(description = "Indicates if the message is internal", example = "false")
+	@Schema(description = "Indicates if the message is internal", examples = "false")
 	private boolean internal;
 
 	public static SmsRequest create() {

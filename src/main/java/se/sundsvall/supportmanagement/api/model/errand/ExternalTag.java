@@ -9,13 +9,13 @@ import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
 @Schema(description = "External tag model")
 public class ExternalTag {
 
-	@Schema(description = "Key for external tag", example = "caseId")
+	@Schema(description = "Key for external tag", examples = "caseId")
 	@NotBlank(groups = {
 		OnCreate.class, OnUpdate.class
 	})
 	private String key;
 
-	@Schema(description = "Value for external tag", example = "8849-2848")
+	@Schema(description = "Value for external tag", examples = "8849-2848")
 	@NotBlank(groups = {
 		OnCreate.class, OnUpdate.class
 	})

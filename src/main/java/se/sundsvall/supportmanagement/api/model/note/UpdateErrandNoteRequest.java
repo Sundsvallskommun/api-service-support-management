@@ -10,17 +10,17 @@ import java.util.Objects;
 @Schema(description = "UpdateErrandNoteRequest model")
 public class UpdateErrandNoteRequest {
 
-	@Schema(description = "The note subject", example = "This is a subject", maxLength = 255, requiredMode = REQUIRED)
+	@Schema(description = "The note subject", examples = "This is a subject", maxLength = 255, requiredMode = REQUIRED)
 	@NotBlank
 	@Size(min = 1, max = 255)
 	private String subject;
 
-	@Schema(description = "The note body", example = "This is a note", maxLength = 2048, requiredMode = REQUIRED)
+	@Schema(description = "The note body", examples = "This is a note", maxLength = 2048, requiredMode = REQUIRED)
 	@NotBlank
 	@Size(min = 1, max = 2048)
 	private String body;
 
-	@Schema(description = "Modified by", example = "John Doe", requiredMode = REQUIRED)
+	@Schema(description = "Modified by", examples = "John Doe", requiredMode = REQUIRED)
 	@NotBlank
 	private String modifiedBy;
 

@@ -9,34 +9,34 @@ import java.util.Objects;
 @Schema(description = "ErrandNote model")
 public class ErrandNote {
 
-	@Schema(description = "Note ID", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7")
+	@Schema(description = "Note ID", examples = "5f79a808-0ef3-4985-99b9-b12f23e202a7")
 	private String id;
 
-	@Schema(description = "Context for note", example = "SUPPORT")
+	@Schema(description = "Context for note", examples = "SUPPORT")
 	private String context;
 
-	@Schema(description = "Role of note creator", example = "FIRST_LINE_SUPPORT")
+	@Schema(description = "Role of note creator", examples = "FIRST_LINE_SUPPORT")
 	private String role;
 
-	@Schema(description = "Id of the client who is the owner of the note", example = "SUPPORT_MGMT")
+	@Schema(description = "Id of the client who is the owner of the note", examples = "SUPPORT_MGMT")
 	private String clientId;
 
-	@Schema(description = "Party ID (e.g. a personId or an organizationId)", example = "81471222-5798-11e9-ae24-57fa13b361e1")
+	@Schema(description = "Party ID (e.g. a personId or an organizationId)", examples = "81471222-5798-11e9-ae24-57fa13b361e1")
 	private String partyId;
 
-	@Schema(description = "The note subject", example = "This is a subject")
+	@Schema(description = "The note subject", examples = "This is a subject")
 	private String subject;
 
-	@Schema(description = "The note body", example = "This is a note")
+	@Schema(description = "The note body", examples = "This is a note")
 	private String body;
 
-	@Schema(description = "Id for the case", example = "b82bd8ac-1507-4d9a-958d-369261eecc15")
+	@Schema(description = "Id for the case", examples = "b82bd8ac-1507-4d9a-958d-369261eecc15")
 	private String caseId;
 
-	@Schema(description = "Created by", example = "John Doe")
+	@Schema(description = "Created by", examples = "John Doe")
 	private String createdBy;
 
-	@Schema(description = "Modified by", example = "John Doe")
+	@Schema(description = "Modified by", examples = "John Doe")
 	private String modifiedBy;
 
 	@Schema(description = "Created timestamp")

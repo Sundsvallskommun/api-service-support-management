@@ -15,20 +15,20 @@ public class Event {
 	@Schema(implementation = EventType.class)
 	private EventType type;
 
-	@Schema(description = "Event description", example = "Errand has been created")
+	@Schema(description = "Event description", examples = "Errand has been created")
 	private String message;
 
-	@Schema(description = "Service that created event", example = "SupportManagement")
+	@Schema(description = "Service that created event", examples = "SupportManagement")
 	private String owner;
 
-	@Schema(description = "Timestamp when the event was created", example = "2000-10-31T01:30:00.000+02:00")
+	@Schema(description = "Timestamp when the event was created", examples = "2000-10-31T01:30:00.000+02:00")
 	@DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
 	private OffsetDateTime created;
 
-	@Schema(description = "Reference to the snapshot of data at the time when the event was created", example = "fbe2fb67-005c-4f26-990f-1c95b5f6933e")
+	@Schema(description = "Reference to the snapshot of data at the time when the event was created", examples = "fbe2fb67-005c-4f26-990f-1c95b5f6933e")
 	private String historyReference;
 
-	@Schema(description = "Source which the event refers to", example = "errand")
+	@Schema(description = "Source which the event refers to", examples = "errand")
 	private String sourceType;
 
 	@ArraySchema(schema = @Schema(implementation = EventMetaData.class))

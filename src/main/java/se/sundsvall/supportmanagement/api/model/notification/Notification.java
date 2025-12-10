@@ -21,58 +21,58 @@ public class Notification {
 	@ValidUuid(groups = {
 		OnUpdate.class
 	})
-	@Schema(description = "Unique identifier for the notification", example = "123e4567-e89b-12d3-a456-426614174000")
+	@Schema(description = "Unique identifier for the notification", examples = "123e4567-e89b-12d3-a456-426614174000")
 	private String id;
 
 	@DateTimeFormat(iso = DATE_TIME)
-	@Schema(description = "Timestamp when the notification was created", example = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
+	@Schema(description = "Timestamp when the notification was created", examples = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	private OffsetDateTime created;
 
 	@DateTimeFormat(iso = DATE_TIME)
-	@Schema(description = "Timestamp when the notification was last modified", example = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
+	@Schema(description = "Timestamp when the notification was last modified", examples = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	private OffsetDateTime modified;
 
-	@Schema(description = "Name of the owner of the notification", example = "Test Testorsson", accessMode = READ_ONLY)
+	@Schema(description = "Name of the owner of the notification", examples = "Test Testorsson", accessMode = READ_ONLY)
 	private String ownerFullName;
 
 	@NotBlank(groups = {
 		OnCreate.class
 	})
-	@Schema(description = "Owner id of the notification", example = "AD01")
+	@Schema(description = "Owner id of the notification", examples = "AD01")
 	private String ownerId;
 
-	@Schema(description = "User who created the notification", example = "TestUser", accessMode = READ_ONLY)
+	@Schema(description = "User who created the notification", examples = "TestUser", accessMode = READ_ONLY)
 	private String createdBy;
 
-	@Schema(description = "Full name of the user who created the notification", example = "Test Testorsson", accessMode = READ_ONLY)
+	@Schema(description = "Full name of the user who created the notification", examples = "Test Testorsson", accessMode = READ_ONLY)
 	private String createdByFullName;
 
 	@NotBlank(groups = {
 		OnCreate.class
 	})
-	@Schema(description = "Type of the notification", example = "CREATE")
+	@Schema(description = "Type of the notification", examples = "CREATE")
 	private String type;
 
-	@Schema(description = "Subtype of the notification", example = "ATTACHMENT")
+	@Schema(description = "Subtype of the notification", examples = "ATTACHMENT")
 	private String subtype;
 
 	@NotBlank(groups = {
 		OnCreate.class
 	})
-	@Schema(description = "Description of the notification", example = "Some description of the notification")
+	@Schema(description = "Description of the notification", examples = "Some description of the notification")
 	private String description;
 
-	@Schema(description = "Content of the notification", example = "Some content of the notification")
+	@Schema(description = "Content of the notification", examples = "Some content of the notification")
 	private String content;
 
 	@DateTimeFormat(iso = DATE_TIME)
-	@Schema(description = "Timestamp when the notification expires", example = "2000-10-31T01:30:00.000+02:00")
+	@Schema(description = "Timestamp when the notification expires", examples = "2000-10-31T01:30:00.000+02:00")
 	private OffsetDateTime expires;
 
-	@Schema(description = "Acknowledged status of the notification (global level). I.e. this notification is acknowledged by anyone.", example = "true")
+	@Schema(description = "Acknowledged status of the notification (global level). I.e. this notification is acknowledged by anyone.", examples = "true")
 	private boolean globalAcknowledged;
 
-	@Schema(description = "Acknowledged status of the notification (owner level). I.e. this notification is acknowledged by the owner of this notification.", example = "true")
+	@Schema(description = "Acknowledged status of the notification (owner level). I.e. this notification is acknowledged by the owner of this notification.", examples = "true")
 	private boolean acknowledged;
 
 	@Null(groups = {
@@ -81,10 +81,10 @@ public class Notification {
 	@ValidUuid(groups = {
 		OnUpdate.class
 	})
-	@Schema(description = "Errand id of the notification", example = "f0882f1d-06bc-47fd-b017-1d8307f5ce95", accessMode = READ_ONLY)
+	@Schema(description = "Errand id of the notification", examples = "f0882f1d-06bc-47fd-b017-1d8307f5ce95", accessMode = READ_ONLY)
 	private String errandId;
 
-	@Schema(description = "Errand number of the notification", example = "PRH-2022-000001", accessMode = READ_ONLY)
+	@Schema(description = "Errand number of the notification", examples = "PRH-2022-000001", accessMode = READ_ONLY)
 	private String errandNumber;
 
 	public static Notification create() {

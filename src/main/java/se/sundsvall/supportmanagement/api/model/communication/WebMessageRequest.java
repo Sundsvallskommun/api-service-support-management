@@ -12,14 +12,14 @@ import java.util.Objects;
 @Schema(description = "WebMessageRequest model")
 public class WebMessageRequest {
 
-	@Schema(description = "Indicates if the message is internal", example = "false")
+	@Schema(description = "Indicates if the message is internal", examples = "false")
 	private boolean internal;
 
-	@Schema(description = "Indicates if the message should be dispatched with messaging or not", example = "true", defaultValue = "true")
+	@Schema(description = "Indicates if the message should be dispatched with messaging or not", examples = "true", defaultValue = "true")
 	private boolean dispatch = true;
 
 	@NotBlank
-	@Schema(description = "Message in plain text", example = "Message in plain text", requiredMode = REQUIRED)
+	@Schema(description = "Message in plain text", examples = "Message in plain text", requiredMode = REQUIRED)
 	private String message;
 
 	@ArraySchema(schema = @Schema(description = "List with Base64 encoded web message attachments"))

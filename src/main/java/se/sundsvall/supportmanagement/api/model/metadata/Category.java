@@ -17,23 +17,23 @@ import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
 @Schema(description = "Category model")
 public class Category {
 
-	@Schema(description = "Name for the category", example = "Category name")
+	@Schema(description = "Name for the category", examples = "Category name")
 	@NotBlank(groups = OnCreate.class)
 	private String name;
 
-	@Schema(description = "Display name for the category", example = "Displayed name")
+	@Schema(description = "Display name for the category", examples = "Displayed name")
 	private String displayName;
 
 	@ArraySchema(schema = @Schema(implementation = Type.class), uniqueItems = true)
 	@Valid
 	private List<Type> types;
 
-	@Schema(description = "Timestamp when the category was created", example = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
+	@Schema(description = "Timestamp when the category was created", examples = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	@DateTimeFormat(iso = ISO.DATE_TIME)
 	@Null
 	private OffsetDateTime created;
 
-	@Schema(description = "Timestamp when the category was last modified", example = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
+	@Schema(description = "Timestamp when the category was last modified", examples = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	@DateTimeFormat(iso = ISO.DATE_TIME)
 	@Null
 	private OffsetDateTime modified;

@@ -10,38 +10,38 @@ import se.sundsvall.supportmanagement.api.validation.ValidRole;
 @Schema(description = "Stakeholder model")
 public class Stakeholder {
 
-	@Schema(description = "Unique identifier for the stakeholder", example = "cb20c51f-fcf3-42c0-b613-de563634a8ec")
+	@Schema(description = "Unique identifier for the stakeholder", examples = "cb20c51f-fcf3-42c0-b613-de563634a8ec")
 	private String externalId;
 
-	@Schema(description = "Type of external id", example = "PRIVATE")
+	@Schema(description = "Type of external id", examples = "PRIVATE")
 	private String externalIdType;
 
-	@Schema(description = "Role of stakeholder", example = "ADMINISTRATOR")
+	@Schema(description = "Role of stakeholder", examples = "ADMINISTRATOR")
 	@ValidRole
 	private String role;
 
-	@Schema(description = "City", example = "Cottington")
+	@Schema(description = "City", examples = "Cottington")
 	private String city;
 
-	@Schema(description = "Organization name", example = "Vogon Constructor Fleet")
+	@Schema(description = "Organization name", examples = "Vogon Constructor Fleet")
 	private String organizationName;
 
-	@Schema(description = "First name", example = "Aurthur")
+	@Schema(description = "First name", examples = "Aurthur")
 	private String firstName;
 
-	@Schema(description = "Last name", example = "Dent")
+	@Schema(description = "Last name", examples = "Dent")
 	private String lastName;
 
-	@Schema(description = "Address", example = "155 Country Lane, Cottington")
+	@Schema(description = "Address", examples = "155 Country Lane, Cottington")
 	private String address;
 
-	@Schema(description = "Care of", example = "Ford Prefect")
+	@Schema(description = "Care of", examples = "Ford Prefect")
 	private String careOf;
 
-	@Schema(description = "Zip code", example = "12345")
+	@Schema(description = "Zip code", examples = "12345")
 	private String zipCode;
 
-	@Schema(description = "Country", example = "United Kingdom")
+	@Schema(description = "Country", examples = "United Kingdom")
 	private String country;
 
 	@ArraySchema(schema = @Schema(implementation = ContactChannel.class))

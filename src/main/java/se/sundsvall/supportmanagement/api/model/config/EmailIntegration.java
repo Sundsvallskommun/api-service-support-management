@@ -15,60 +15,86 @@ public class EmailIntegration {
 	@NotNull
 	private Boolean enabled;
 
-	@Schema(description = "Email sender if incoming mail is rejected", example = "noreply@sundsvall.se", nullable = true)
+	@Schema(description = "Email sender if incoming mail is rejected", examples = "noreply@sundsvall.se", types = {
+		"string", "null"
+	})
 	private String errandClosedEmailSender;
 
-	@Schema(description = "Message that will be sent when incoming mail is rejected", example = "Errand is closed. Please open a new errand.", nullable = true)
+	@Schema(description = "Message that will be sent when incoming mail is rejected", examples = "Errand is closed. Please open a new errand.", types = {
+		"string", "null"
+	})
 	private String errandClosedEmailTemplate;
 
-	@Schema(description = "HTML template for email that will be sent when incoming mail is rejected", example = "<html><body>Errand is closed. Please open a new errand.</body></html>", nullable = true)
+	@Schema(description = "HTML template for email that will be sent when incoming mail is rejected", examples = "<html><body>Errand is closed. Please open a new errand.</body></html>", types = {
+		"string", "null"
+	})
 	private String errandClosedEmailHTMLTemplate;
 
-	@Schema(description = "Email sender if incoming mail results in new errand", example = "test@sundsvall.se", nullable = true)
+	@Schema(description = "Email sender if incoming mail results in new errand", examples = "test@sundsvall.se", types = {
+		"string", "null"
+	})
 	private String errandNewEmailSender;
 
-	@Schema(description = "Message that will be sent when new errand is created", example = "New errand is created.", nullable = true)
+	@Schema(description = "Message that will be sent when new errand is created", examples = "New errand is created.", types = {
+		"string", "null"
+	})
 	private String errandNewEmailTemplate;
 
-	@Schema(description = "HTML template for email that will be sent when incoming mail results in new errand", example = "<html><body>New errand is created.</body></html>", nullable = true)
+	@Schema(description = "HTML template for email that will be sent when incoming mail results in new errand", examples = "<html><body>New errand is created.</body></html>", types = {
+		"string", "null"
+	})
 	private String errandNewEmailHTMLTemplate;
 
 	@Schema(description = "Number of days before incoming mail is rejected. Measured from when the errand was last touched. " +
-		"Rejection can only occur if status on errand equals 'inactiveStatus'.", example = "5", nullable = true)
+		"Rejection can only occur if status on errand equals 'inactiveStatus'.", examples = "5", types = {
+			"string", "null"
+	})
 	private Integer daysOfInactivityBeforeReject;
 
-	@Schema(description = "Status set on errand when email results in a new errand", example = "NEW")
+	@Schema(description = "Status set on errand when email results in a new errand", examples = "NEW")
 	@NotNull
 	@ValidStatus
 	private String statusForNew;
 
-	@Schema(description = "Status on errand that will trigger a status change when email refers to an existing errand", example = "SOLVED", nullable = true)
+	@Schema(description = "Status on errand that will trigger a status change when email refers to an existing errand", examples = "SOLVED", types = {
+		"string", "null"
+	})
 	@ValidStatus
 	private String triggerStatusChangeOn;
 
-	@Schema(description = "Status that will be set on errand if status change is triggered. Can only be null if 'triggerStatusChangeOn' is null.", example = "OPEN", nullable = true)
+	@Schema(description = "Status that will be set on errand if status change is triggered. Can only be null if 'triggerStatusChangeOn' is null.", examples = "OPEN", types = {
+		"string", "null"
+	})
 	@ValidStatus
 	private String statusChangeTo;
 
 	@Schema(description = "Status of an inactive errand. This value relates to property 'daysOfInactivityBeforeReject'. " +
-		"If set to null, no rejection mail will be sent", example = "SOLVED", nullable = true)
+		"If set to null, no rejection mail will be sent", examples = "SOLVED", types = {
+			"string", "null"
+	})
 	@ValidStatus
 	private String inactiveStatus;
 
-	@Schema(description = "If true sender is added as stakeholder", example = "false", nullable = true)
+	@Schema(description = "If true sender is added as stakeholder", examples = "false", types = {
+		"string", "null"
+	})
 	private Boolean addSenderAsStakeholder;
 
-	@Schema(description = "Role set on stakeholder.", example = "APPLICANT", nullable = true)
+	@Schema(description = "Role set on stakeholder.", examples = "APPLICANT", types = {
+		"string", "null"
+	})
 	@ValidRole
 	private String stakeholderRole;
 
-	@Schema(description = "Channel set on created errands", example = "EMAIL", nullable = true)
+	@Schema(description = "Channel set on created errands", examples = "EMAIL", types = {
+		"string", "null"
+	})
 	private String errandChannel;
 
-	@Schema(description = "Timestamp when the configuration was created", example = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
+	@Schema(description = "Timestamp when the configuration was created", examples = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	private OffsetDateTime created;
 
-	@Schema(description = "Timestamp when the configuration was last modified", example = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
+	@Schema(description = "Timestamp when the configuration was last modified", examples = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	private OffsetDateTime modified;
 
 	public static EmailIntegration create() {

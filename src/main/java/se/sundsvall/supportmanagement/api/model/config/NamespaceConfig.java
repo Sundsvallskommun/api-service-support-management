@@ -12,31 +12,31 @@ import java.util.Objects;
 public class NamespaceConfig {
 
 	@Null
-	@Schema(description = "Namespace", accessMode = READ_ONLY, example = "CONTACTCENTER")
+	@Schema(description = "Namespace", accessMode = READ_ONLY, examples = "CONTACTCENTER")
 	private String namespace;
 
 	@Null
-	@Schema(description = "Municipality connected to the namespace", accessMode = READ_ONLY, example = "2281")
+	@Schema(description = "Municipality connected to the namespace", accessMode = READ_ONLY, examples = "2281")
 	private String municipalityId;
 
 	@NotNull
-	@Schema(description = "Display name for the namespace", example = "Kontaktcenter")
+	@Schema(description = "Display name for the namespace", examples = "Kontaktcenter")
 	private String displayName;
 
 	@NotNull
-	@Schema(description = "Prefix for errand numbers in this namespace", example = "KC")
+	@Schema(description = "Prefix for errand numbers in this namespace", examples = "KC")
 	private String shortCode;
 
-	@Schema(description = "Time to live (in days) for notifications created in this namespace", example = "40")
+	@Schema(description = "Time to live (in days) for notifications created in this namespace", examples = "40")
 	private Integer notificationTTLInDays;
 
-	@Schema(description = "Timestamp when the configuration was created", example = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
+	@Schema(description = "Timestamp when the configuration was created", examples = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	private OffsetDateTime created;
 
-	@Schema(description = "Timestamp when the configuration was last modified", example = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
+	@Schema(description = "Timestamp when the configuration was last modified", examples = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	private OffsetDateTime modified;
 
-	@Schema(description = "If set to true access control will be enabled", example = "true")
+	@Schema(description = "If set to true access control will be enabled", examples = "true")
 	private boolean accessControl;
 
 	public static NamespaceConfig create() {

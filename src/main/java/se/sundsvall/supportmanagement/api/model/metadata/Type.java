@@ -14,23 +14,23 @@ import org.springframework.format.annotation.DateTimeFormat.ISO;
 @Schema(description = "Type model")
 public class Type {
 
-	@Schema(description = "Name for the type", example = "typename")
+	@Schema(description = "Name for the type", examples = "typename")
 	@NotBlank
 	private String name;
 
-	@Schema(description = "Display name for the type", example = "Displayed name")
+	@Schema(description = "Display name for the type", examples = "Displayed name")
 	private String displayName;
 
-	@Schema(description = "Email for where to escalate the errand if needed", example = "escalationgroup@sesamestreet.com")
+	@Schema(description = "Email for where to escalate the errand if needed", examples = "escalationgroup@sesamestreet.com")
 	@Email
 	private String escalationEmail;
 
-	@Schema(description = "Timestamp when type was created", example = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
+	@Schema(description = "Timestamp when type was created", examples = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	@DateTimeFormat(iso = ISO.DATE_TIME)
 	@Null
 	private OffsetDateTime created;
 
-	@Schema(description = "Timestamp when type was last modified", example = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
+	@Schema(description = "Timestamp when type was last modified", examples = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	@DateTimeFormat(iso = ISO.DATE_TIME)
 	@Null
 	private OffsetDateTime modified;

@@ -9,11 +9,11 @@ import java.util.Objects;
 public class Identifier {
 
 	@Pattern(regexp = "^(adAccount|partyId)$", message = "Type must be 'adAccount' or 'partyId'")
-	@Schema(description = "The conversation identifier type", example = "adAccount")
+	@Schema(description = "The conversation identifier type", examples = "adAccount")
 	private String type;
 
 	@NotBlank
-	@Schema(description = "The conversation identifier value", example = "joe01doe")
+	@Schema(description = "The conversation identifier value", examples = "joe01doe")
 	private String value;
 
 	public static Identifier create() {
