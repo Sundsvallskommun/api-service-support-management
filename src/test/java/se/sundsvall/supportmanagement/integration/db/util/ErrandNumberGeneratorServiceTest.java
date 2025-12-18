@@ -4,6 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.ValueType.STRING;
+import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_SHORT_CODE;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -19,9 +21,10 @@ import se.sundsvall.supportmanagement.integration.db.ErrandNumberSequenceReposit
 import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandNumberSequenceEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity;
+import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigValueEmbeddable;
 
 @ExtendWith(MockitoExtension.class)
-class ErrandNumberGeneratorTest {
+class ErrandNumberGeneratorServiceTest {
 
 	private static final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyMM");
 	private static final String MUNICIPALITY_ID = "2281";
@@ -40,7 +43,8 @@ class ErrandNumberGeneratorTest {
 	@Test
 	void generateErrandNumber_resetSequence() {
 
-		when(namespaceConfigRepositoryMock.findByNamespaceAndMunicipalityId(any(), any())).thenReturn(Optional.of(NamespaceConfigEntity.create().withShortCode(SHORT_CODE)));
+		when(namespaceConfigRepositoryMock.findByNamespaceAndMunicipalityId(any(), any())).thenReturn(Optional.of(NamespaceConfigEntity.create().withValue(
+			NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_SHORT_CODE).withType(STRING).withValue(SHORT_CODE))));
 		when(repositoryMock.findByNamespaceAndMunicipalityId(any(String.class), any(String.class))).thenReturn(Optional.of(new ErrandNumberSequenceEntity()
 			.withNamespace(NAMESPACE)
 			.withNamespace(MUNICIPALITY_ID)
@@ -55,7 +59,8 @@ class ErrandNumberGeneratorTest {
 	@Test
 	void generateErrandNumber_incrementSequence() {
 
-		when(namespaceConfigRepositoryMock.findByNamespaceAndMunicipalityId(any(), any())).thenReturn(Optional.of(NamespaceConfigEntity.create().withShortCode(SHORT_CODE)));
+		when(namespaceConfigRepositoryMock.findByNamespaceAndMunicipalityId(any(), any())).thenReturn(Optional.of(NamespaceConfigEntity.create().withValue(
+			NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_SHORT_CODE).withType(STRING).withValue(SHORT_CODE))));
 		when(repositoryMock.findByNamespaceAndMunicipalityId(any(String.class), any(String.class))).thenReturn(Optional.of(new ErrandNumberSequenceEntity()
 			.withNamespace(NAMESPACE)
 			.withNamespace(MUNICIPALITY_ID)
@@ -70,7 +75,8 @@ class ErrandNumberGeneratorTest {
 	@Test
 	void generateErrandNumber_noSequence() {
 
-		when(namespaceConfigRepositoryMock.findByNamespaceAndMunicipalityId(any(), any())).thenReturn(Optional.of(NamespaceConfigEntity.create().withShortCode(SHORT_CODE)));
+		when(namespaceConfigRepositoryMock.findByNamespaceAndMunicipalityId(any(), any())).thenReturn(Optional.of(NamespaceConfigEntity.create().withValue(
+			NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_SHORT_CODE).withType(STRING).withValue(SHORT_CODE))));
 		when(repositoryMock.findByNamespaceAndMunicipalityId(any(String.class), any(String.class))).thenReturn(Optional.empty());
 
 		final var result = stringGeneratorService.generateErrandNumber(NAMESPACE, MUNICIPALITY_ID);
@@ -105,7 +111,8 @@ class ErrandNumberGeneratorTest {
 			.withResetYearMonth(dateFormatter.format(LocalDate.now().minusMonths(2)));
 		final var maxCount = 99999;
 
-		when(namespaceConfigRepositoryMock.findByNamespaceAndMunicipalityId(any(), any())).thenReturn(Optional.of(NamespaceConfigEntity.create().withShortCode(SHORT_CODE)));
+		when(namespaceConfigRepositoryMock.findByNamespaceAndMunicipalityId(any(), any())).thenReturn(Optional.of(NamespaceConfigEntity.create().withValue(
+			NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_SHORT_CODE).withType(STRING).withValue(SHORT_CODE))));
 		when(repositoryMock.findByNamespaceAndMunicipalityId(any(String.class), any(String.class))).thenReturn(Optional.of(entity));
 
 		final var result = IntStream.range(0, maxCount).mapToObj(i -> stringGeneratorService.generateErrandNumber(NAMESPACE, MUNICIPALITY_ID))

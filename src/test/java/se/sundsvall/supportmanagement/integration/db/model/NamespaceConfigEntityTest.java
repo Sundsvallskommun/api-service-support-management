@@ -14,6 +14,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.AllOf.allOf;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Random;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -42,31 +43,49 @@ class NamespaceConfigEntityTest {
 		final var modified = OffsetDateTime.now();
 		final var municipalityId = "municipalityId";
 		final var namespace = "namespace";
-		final var displayName = "displayName";
-		final var shortCode = "shortCode";
-		final var notificationTTLInDays = 1;
-		final var accessControl = true;
-
+		final var value1 = NamespaceConfigValueEmbeddable.create();
+		final var value2 = NamespaceConfigValueEmbeddable.create();
 		final var entity = NamespaceConfigEntity.create()
 			.withId(id)
 			.withCreated(created)
-			.withDisplayName(displayName)
 			.withModified(modified)
 			.withMunicipalityId(municipalityId)
 			.withNamespace(namespace)
-			.withShortCode(shortCode)
-			.withNotificationTTLInDays(notificationTTLInDays)
-			.withAccessControl(accessControl);
+			.withValue(value1)
+			.withValue(value2);
 
+		assertThat(entity).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(entity.getId()).isEqualTo(id);
 		assertThat(entity.getCreated()).isEqualTo(created);
-		assertThat(entity.getDisplayName()).isEqualTo(displayName);
 		assertThat(entity.getModified()).isEqualTo(modified);
 		assertThat(entity.getMunicipalityId()).isEqualTo(municipalityId);
 		assertThat(entity.getNamespace()).isEqualTo(namespace);
-		assertThat(entity.getShortCode()).isEqualTo(shortCode);
-		assertThat(entity.getNotificationTTLInDays()).isEqualTo(notificationTTLInDays);
-		assertThat(entity.getAccessControl()).isEqualTo(accessControl);
+		assertThat(entity.getValues()).isEqualTo(List.of(value1, value2));
+	}
+
+	@Test
+	void hasValidBuilderMethodsWithList() {
+		final var id = 1L;
+		final var created = OffsetDateTime.now().minusDays(1);
+		final var modified = OffsetDateTime.now();
+		final var municipalityId = "municipalityId";
+		final var namespace = "namespace";
+		final var values = List.of(NamespaceConfigValueEmbeddable.create());
+		final var entity = NamespaceConfigEntity.create()
+			.withId(id)
+			.withCreated(created)
+			.withModified(modified)
+			.withMunicipalityId(municipalityId)
+			.withNamespace(namespace)
+			.withValues(values);
+
+		assertThat(entity).isNotNull().hasNoNullFieldsOrProperties();
+		assertThat(entity.getId()).isEqualTo(id);
+		assertThat(entity.getCreated()).isEqualTo(created);
+		assertThat(entity.getModified()).isEqualTo(modified);
+		assertThat(entity.getMunicipalityId()).isEqualTo(municipalityId);
+		assertThat(entity.getNamespace()).isEqualTo(namespace);
+		assertThat(entity.getValues()).isEqualTo(values);
 	}
 
 	@Test
@@ -75,9 +94,7 @@ class NamespaceConfigEntityTest {
 		entity.onCreate();
 
 		assertThat(entity.getCreated()).isCloseTo(now(), within(1, SECONDS));
-		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("accessControl", "created")
-			.satisfies(namespaceConfigEntity -> assertThat(namespaceConfigEntity.getAccessControl()).isFalse());
-
+		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("created", "values").satisfies(e -> assertThat(e.getValues()).isEmpty());
 	}
 
 	@Test
@@ -86,16 +103,12 @@ class NamespaceConfigEntityTest {
 		entity.onUpdate();
 
 		assertThat(entity.getModified()).isCloseTo(now(), within(1, SECONDS));
-		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("accessControl", "modified")
-			.satisfies(namespaceConfigEntity -> assertThat(namespaceConfigEntity.getAccessControl()).isFalse());
-
+		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("modified", "values").satisfies(e -> assertThat(e.getValues()).isEmpty());
 	}
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(NamespaceConfigEntity.create()).hasAllNullFieldsOrPropertiesExcept("accessControl")
-			.satisfies(namespaceConfigEntity -> assertThat(namespaceConfigEntity.getAccessControl()).isFalse());
-		assertThat(new NamespaceConfigEntity()).hasAllNullFieldsOrPropertiesExcept("accessControl")
-			.satisfies(namespaceConfigEntity -> assertThat(namespaceConfigEntity.getAccessControl()).isFalse());
+		assertThat(NamespaceConfigEntity.create()).hasAllNullFieldsOrPropertiesExcept("values").satisfies(e -> assertThat(e.getValues()).isEmpty());
+		assertThat(new NamespaceConfigEntity()).hasAllNullFieldsOrPropertiesExcept("values").satisfies(e -> assertThat(e.getValues()).isEmpty());
 	}
 }

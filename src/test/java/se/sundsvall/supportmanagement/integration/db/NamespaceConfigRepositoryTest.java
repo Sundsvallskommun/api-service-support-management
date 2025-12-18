@@ -4,8 +4,17 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase.Replace.NONE;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.ValueType.BOOLEAN;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.ValueType.INTEGER;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.ValueType.STRING;
+import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_ACCESS_CONTROL;
+import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_DISPLAY_NAME;
+import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_NOTIFICATION_TTL_IN_DAYS;
+import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_SHORT_CODE;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
@@ -13,6 +22,8 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity;
+import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigValueEmbeddable;
+import se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = NONE)
@@ -46,15 +57,17 @@ class NamespaceConfigRepositoryTest {
 		assertThat(result).hasSize(2).satisfiesExactlyInAnyOrder(bean -> {
 			assertThat(bean.getMunicipalityId()).isEqualTo(municipalityId);
 			assertThat(bean.getNamespace()).isEqualTo("namespace-1");
-			assertThat(bean.getDisplayName()).isEqualTo("display name 1");
-			assertThat(bean.getShortCode()).isEqualTo("short_code-1");
-			assertThat(bean.getNotificationTTLInDays()).isEqualTo(10);
+			assertThat((String) ConfigPropertyExtractor.getRequiredValue(bean, PROPERTY_DISPLAY_NAME)).isEqualTo("display name 1");
+			assertThat((String) ConfigPropertyExtractor.getRequiredValue(bean, PROPERTY_SHORT_CODE)).isEqualTo("short_code-1");
+			assertThat((Integer) ConfigPropertyExtractor.getRequiredValue(bean, PROPERTY_NOTIFICATION_TTL_IN_DAYS)).isEqualTo(10);
+			assertThat((Boolean) ConfigPropertyExtractor.getRequiredValue(bean, PROPERTY_ACCESS_CONTROL)).isFalse();
 		}, bean -> {
 			assertThat(bean.getMunicipalityId()).isEqualTo(municipalityId);
 			assertThat(bean.getNamespace()).isEqualTo("namespace-3");
-			assertThat(bean.getDisplayName()).isEqualTo("display name 3");
-			assertThat(bean.getShortCode()).isEqualTo("short_code-3");
-			assertThat(bean.getNotificationTTLInDays()).isEqualTo(30);
+			assertThat((String) ConfigPropertyExtractor.getRequiredValue(bean, PROPERTY_DISPLAY_NAME)).isEqualTo("display name 3");
+			assertThat((String) ConfigPropertyExtractor.getRequiredValue(bean, PROPERTY_SHORT_CODE)).isEqualTo("short_code-3");
+			assertThat((Integer) ConfigPropertyExtractor.getRequiredValue(bean, PROPERTY_NOTIFICATION_TTL_IN_DAYS)).isEqualTo(30);
+			assertThat((Boolean) ConfigPropertyExtractor.getRequiredValue(bean, PROPERTY_ACCESS_CONTROL)).isTrue();
 		});
 	}
 
@@ -65,21 +78,24 @@ class NamespaceConfigRepositoryTest {
 		assertThat(result).hasSize(3).satisfiesExactlyInAnyOrder(bean -> {
 			assertThat(bean.getMunicipalityId()).isEqualTo("2281");
 			assertThat(bean.getNamespace()).isEqualTo("namespace-1");
-			assertThat(bean.getDisplayName()).isEqualTo("display name 1");
-			assertThat(bean.getShortCode()).isEqualTo("short_code-1");
-			assertThat(bean.getNotificationTTLInDays()).isEqualTo(10);
+			assertThat((String) ConfigPropertyExtractor.getRequiredValue(bean, PROPERTY_DISPLAY_NAME)).isEqualTo("display name 1");
+			assertThat((String) ConfigPropertyExtractor.getRequiredValue(bean, PROPERTY_SHORT_CODE)).isEqualTo("short_code-1");
+			assertThat((Integer) ConfigPropertyExtractor.getRequiredValue(bean, PROPERTY_NOTIFICATION_TTL_IN_DAYS)).isEqualTo(10);
+			assertThat((Boolean) ConfigPropertyExtractor.getRequiredValue(bean, PROPERTY_ACCESS_CONTROL)).isFalse();
 		}, bean -> {
 			assertThat(bean.getMunicipalityId()).isEqualTo("2282");
 			assertThat(bean.getNamespace()).isEqualTo("namespace-2");
-			assertThat(bean.getDisplayName()).isEqualTo("display name 2");
-			assertThat(bean.getShortCode()).isEqualTo("short_code-2");
-			assertThat(bean.getNotificationTTLInDays()).isEqualTo(20);
+			assertThat((String) ConfigPropertyExtractor.getRequiredValue(bean, PROPERTY_DISPLAY_NAME)).isEqualTo("display name 2");
+			assertThat((String) ConfigPropertyExtractor.getRequiredValue(bean, PROPERTY_SHORT_CODE)).isEqualTo("short_code-2");
+			assertThat((Integer) ConfigPropertyExtractor.getRequiredValue(bean, PROPERTY_NOTIFICATION_TTL_IN_DAYS)).isEqualTo(20);
+			assertThat((Boolean) ConfigPropertyExtractor.getRequiredValue(bean, PROPERTY_ACCESS_CONTROL)).isFalse();
 		}, bean -> {
 			assertThat(bean.getMunicipalityId()).isEqualTo("2281");
 			assertThat(bean.getNamespace()).isEqualTo("namespace-3");
-			assertThat(bean.getDisplayName()).isEqualTo("display name 3");
-			assertThat(bean.getShortCode()).isEqualTo("short_code-3");
-			assertThat(bean.getNotificationTTLInDays()).isEqualTo(30);
+			assertThat((String) ConfigPropertyExtractor.getRequiredValue(bean, PROPERTY_DISPLAY_NAME)).isEqualTo("display name 3");
+			assertThat((String) ConfigPropertyExtractor.getRequiredValue(bean, PROPERTY_SHORT_CODE)).isEqualTo("short_code-3");
+			assertThat((Integer) ConfigPropertyExtractor.getRequiredValue(bean, PROPERTY_NOTIFICATION_TTL_IN_DAYS)).isEqualTo(30);
+			assertThat((Boolean) ConfigPropertyExtractor.getRequiredValue(bean, PROPERTY_ACCESS_CONTROL)).isTrue();
 		});
 	}
 
@@ -91,13 +107,28 @@ class NamespaceConfigRepositoryTest {
 		final var displayName = "displayName";
 		final var shortCode = "shortCode";
 		final var notificationTTLInDays = 40;
+		final var accessControl = true;
 
 		final var entity = NamespaceConfigEntity.create()
 			.withMunicipalityId(municipalityId)
 			.withNamespace(namespace)
-			.withDisplayName(displayName)
-			.withShortCode(shortCode)
-			.withNotificationTTLInDays(notificationTTLInDays);
+			.withValues(List.of(
+				NamespaceConfigValueEmbeddable.create()
+					.withKey(PROPERTY_DISPLAY_NAME)
+					.withType(STRING)
+					.withValue(displayName),
+				NamespaceConfigValueEmbeddable.create()
+					.withKey(PROPERTY_SHORT_CODE)
+					.withType(STRING)
+					.withValue(shortCode),
+				NamespaceConfigValueEmbeddable.create()
+					.withKey(PROPERTY_NOTIFICATION_TTL_IN_DAYS)
+					.withType(INTEGER)
+					.withValue(String.valueOf(notificationTTLInDays)),
+				NamespaceConfigValueEmbeddable.create()
+					.withKey(PROPERTY_ACCESS_CONTROL)
+					.withType(BOOLEAN)
+					.withValue(String.valueOf(accessControl))));
 
 		assertThat(repository.existsByNamespaceAndMunicipalityId(namespace, municipalityId)).isFalse();
 
@@ -108,9 +139,10 @@ class NamespaceConfigRepositoryTest {
 		assertThat(result).isPresent().get().satisfies(bean -> {
 			assertThat(bean.getMunicipalityId()).isEqualTo(municipalityId);
 			assertThat(bean.getNamespace()).isEqualTo(namespace);
-			assertThat(bean.getDisplayName()).isEqualTo(displayName);
-			assertThat(bean.getShortCode()).isEqualTo(shortCode);
-			assertThat(bean.getNotificationTTLInDays()).isEqualTo(notificationTTLInDays);
+			assertThat((String) ConfigPropertyExtractor.getRequiredValue(bean, PROPERTY_DISPLAY_NAME)).isEqualTo(displayName);
+			assertThat((String) ConfigPropertyExtractor.getRequiredValue(bean, PROPERTY_SHORT_CODE)).isEqualTo(shortCode);
+			assertThat((Integer) ConfigPropertyExtractor.getRequiredValue(bean, PROPERTY_NOTIFICATION_TTL_IN_DAYS)).isEqualTo(notificationTTLInDays);
+			assertThat((Boolean) ConfigPropertyExtractor.getRequiredValue(bean, PROPERTY_ACCESS_CONTROL)).isEqualTo(accessControl);
 			assertThat(bean.getCreated()).isCloseTo(OffsetDateTime.now(), within(2, SECONDS));
 			assertThat(bean.getModified()).isNull();
 		});
@@ -121,17 +153,24 @@ class NamespaceConfigRepositoryTest {
 		final var entity = repository.findByNamespaceAndMunicipalityId("namespace-1", "2281")
 			.orElseThrow(() -> new RuntimeException("Missing data in /db/scripts/testdata-junit.sql"));
 
-		assertThat(entity.getDisplayName()).isEqualTo("display name 1");
-		assertThat(entity.getShortCode()).isEqualTo("short_code-1");
+		assertThat((String) ConfigPropertyExtractor.getRequiredValue(entity, PROPERTY_DISPLAY_NAME)).isEqualTo("display name 1");
+		assertThat((String) ConfigPropertyExtractor.getRequiredValue(entity, PROPERTY_SHORT_CODE)).isEqualTo("short_code-1");
 
 		repository.saveAndFlush(entity
-			.withDisplayName("new displayname")
-			.withShortCode("newCode"));
+			.withValues(new ArrayList<>(List.of(
+				NamespaceConfigValueEmbeddable.create()
+					.withKey(PROPERTY_DISPLAY_NAME)
+					.withType(STRING)
+					.withValue("new displayname"),
+				NamespaceConfigValueEmbeddable.create()
+					.withKey(PROPERTY_SHORT_CODE)
+					.withType(STRING)
+					.withValue("newCode")))));
 
 		final var modifiedEntity = repository.findByNamespaceAndMunicipalityId("namespace-1", "2281");
 		assertThat(modifiedEntity).isPresent().get().satisfies(bean -> {
-			assertThat(bean.getDisplayName()).isEqualTo("new displayname");
-			assertThat(bean.getShortCode()).isEqualTo("newCode");
+			assertThat((String) ConfigPropertyExtractor.getRequiredValue(bean, PROPERTY_DISPLAY_NAME)).isEqualTo("new displayname");
+			assertThat((String) ConfigPropertyExtractor.getRequiredValue(bean, PROPERTY_SHORT_CODE)).isEqualTo("newCode");
 			assertThat(bean.getModified()).isCloseTo(OffsetDateTime.now(), within(2, SECONDS));
 		});
 	}
