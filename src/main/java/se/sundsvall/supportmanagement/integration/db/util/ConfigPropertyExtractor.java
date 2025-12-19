@@ -16,6 +16,7 @@ public class ConfigPropertyExtractor {
 	public static final String PROPERTY_SHORT_CODE = "SHORT_CODE";
 	public static final String PROPERTY_NOTIFICATION_TTL_IN_DAYS = "NOTIFICATION_TTL_IN_DAYS";
 	public static final String PROPERTY_ACCESS_CONTROL = "ACCESS_CONTROL";
+	public static final String PROPERTY_NOTIFY_REPORTER = "NOTIFY_REPORTER";
 
 	/**
 	 * Get the value for provided key as the type that is defined for the key/value-pair or null if no property matching

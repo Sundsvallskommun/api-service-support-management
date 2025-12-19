@@ -6,5 +6,6 @@
 	"modified": "${json-unit.any-string}",
 	"shortCode": "NS1-UPDATE",
 	"notificationTTLInDays": 30,
-	"accessControl": true
+	"accessControl": true,
+	"notifyReporter": true
 }

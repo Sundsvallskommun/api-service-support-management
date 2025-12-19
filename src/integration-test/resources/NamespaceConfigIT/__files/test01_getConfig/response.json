@@ -6,5 +6,6 @@
 	"modified": "2022-12-31T23:59:59.999+01:00",
 	"shortCode": "NS1",
 	"notificationTTLInDays": 10,
-	"accessControl": false
+	"accessControl": false,
+	"notifyReporter": false
 }

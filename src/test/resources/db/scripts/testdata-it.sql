@@ -366,22 +366,27 @@ VALUES (1, 'DISPLAY_NAME', 'Namespace 1', 'STRING'),
        (1, 'SHORT_CODE', 'NS1', 'STRING'),
        (1, 'NOTIFICATION_TTL_IN_DAYS', '10', 'INTEGER'),
        (1, 'ACCESS_CONTROL', 'false', 'BOOLEAN'),
+       (1, 'NOTIFY_REPORTER', 'false', 'BOOLEAN'),
        (2, 'DISPLAY_NAME', 'Kontaktcenter', 'STRING'),
        (2, 'SHORT_CODE', 'KC', 'STRING'),
        (2, 'NOTIFICATION_TTL_IN_DAYS', '20', 'INTEGER'),
        (2, 'ACCESS_CONTROL', 'false', 'BOOLEAN'),
+       (2, 'NOTIFY_REPORTER', 'false', 'BOOLEAN'),
        (3, 'DISPLAY_NAME', 'Namespace 3', 'STRING'),
        (3, 'SHORT_CODE', 'NS3', 'STRING'),
        (3, 'NOTIFICATION_TTL_IN_DAYS', '30', 'INTEGER'),
        (3, 'ACCESS_CONTROL', 'false', 'BOOLEAN'),
+       (3, 'NOTIFY_REPORTER', 'false', 'BOOLEAN'),
        (4, 'DISPLAY_NAME', 'Kontaktcenter', 'STRING'),
        (4, 'SHORT_CODE', 'KC', 'STRING'),
        (4, 'NOTIFICATION_TTL_IN_DAYS', '40', 'INTEGER'),
        (4, 'ACCESS_CONTROL', 'false', 'BOOLEAN'),
+       (4, 'NOTIFY_REPORTER', 'false', 'BOOLEAN'),
        (5, 'DISPLAY_NAME', 'Namespace 2506', 'STRING'),
        (5, 'SHORT_CODE', 'AP', 'STRING'),
        (5, 'NOTIFICATION_TTL_IN_DAYS', '40', 'INTEGER'),
-       (5, 'ACCESS_CONTROL', 'true', 'BOOLEAN');
+       (5, 'ACCESS_CONTROL', 'true', 'BOOLEAN'),
+       (5, 'NOTIFY_REPORTER', 'true', 'BOOLEAN');
        
 -- -----------------------------------
 -- Time measurement
