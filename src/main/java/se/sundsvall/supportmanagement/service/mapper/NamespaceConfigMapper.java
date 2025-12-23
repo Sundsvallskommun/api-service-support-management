@@ -10,7 +10,7 @@ import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyE
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_NOTIFICATION_TTL_IN_DAYS;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_NOTIFY_REPORTER;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_SHORT_CODE;
-import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.getRequiredValue;
+import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.getValue;
 
 import java.util.List;
 import org.springframework.stereotype.Component;
@@ -55,10 +55,10 @@ public class NamespaceConfigMapper {
 			.withMunicipalityId(entity.getMunicipalityId())
 			.withCreated(entity.getCreated())
 			.withModified(entity.getModified())
-			.withDisplayName(getRequiredValue(entity, PROPERTY_DISPLAY_NAME))
-			.withShortCode(getRequiredValue(entity, PROPERTY_SHORT_CODE))
-			.withAccessControl(getRequiredValue(entity, PROPERTY_ACCESS_CONTROL))
-			.withNotifyReporter(getRequiredValue(entity, PROPERTY_NOTIFY_REPORTER))
-			.withNotificationTTLInDays(getRequiredValue(entity, PROPERTY_NOTIFICATION_TTL_IN_DAYS));
+			.withDisplayName(getValue(entity, PROPERTY_DISPLAY_NAME))
+			.withShortCode(getValue(entity, PROPERTY_SHORT_CODE))
+			.withAccessControl(getValue(entity, PROPERTY_ACCESS_CONTROL))
+			.withNotifyReporter(getValue(entity, PROPERTY_NOTIFY_REPORTER))
+			.withNotificationTTLInDays(getValue(entity, PROPERTY_NOTIFICATION_TTL_IN_DAYS));
 	}
 }

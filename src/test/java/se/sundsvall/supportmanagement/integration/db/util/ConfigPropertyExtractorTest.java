@@ -29,11 +29,10 @@ class ConfigPropertyExtractorTest {
 			.withValues(List.of(
 				NamespaceConfigValueEmbeddable.create().withKey("access_control").withValue(String.valueOf(value)).withType(BOOLEAN)));
 
-		final var result = ConfigPropertyExtractor.getOptionalValue(namespaceConfig, PROPERTY_ACCESS_CONTROL);
+		final var result = ConfigPropertyExtractor.getNullableValue(namespaceConfig, PROPERTY_ACCESS_CONTROL);
 
 		assertThat(result)
-			.isEqualTo(value)
-			.isInstanceOf(Boolean.class);
+			.isEqualTo(value);
 	}
 
 	@Test
@@ -43,11 +42,10 @@ class ConfigPropertyExtractorTest {
 			.withValues(List.of(
 				NamespaceConfigValueEmbeddable.create().withKey("short_code").withValue(String.valueOf(value)).withType(STRING)));
 
-		final var result = ConfigPropertyExtractor.getOptionalValue(namespaceConfig, PROPERTY_SHORT_CODE);
+		final var result = ConfigPropertyExtractor.getNullableValue(namespaceConfig, PROPERTY_SHORT_CODE);
 
 		assertThat(result)
-			.isEqualTo(value)
-			.isInstanceOf(String.class);
+			.isEqualTo(value);
 	}
 
 	@Test
@@ -57,16 +55,15 @@ class ConfigPropertyExtractorTest {
 			.withValues(List.of(
 				NamespaceConfigValueEmbeddable.create().withKey("notification_ttl_in_days").withValue(String.valueOf(value)).withType(INTEGER)));
 
-		final var result = ConfigPropertyExtractor.getOptionalValue(namespaceConfig, PROPERTY_NOTIFICATION_TTL_IN_DAYS);
+		final var result = ConfigPropertyExtractor.getNullableValue(namespaceConfig, PROPERTY_NOTIFICATION_TTL_IN_DAYS);
 
 		assertThat(result)
-			.isEqualTo(value)
-			.isInstanceOf(Integer.class);
+			.isEqualTo(value);
 	}
 
 	@Test
 	void testExtractOptionalWithNoMatch() {
-		final var result = ConfigPropertyExtractor.getOptionalValue(NamespaceConfigEntity.create(), PROPERTY_SHORT_CODE);
+		final var result = ConfigPropertyExtractor.getNullableValue(NamespaceConfigEntity.create(), PROPERTY_SHORT_CODE);
 
 		assertThat(result).isNull();
 	}
@@ -79,7 +76,7 @@ class ConfigPropertyExtractorTest {
 			.withMunicipalityId(municipalityId)
 			.withNamespace(namespace);
 
-		final var e = assertThrows(ThrowableProblem.class, () -> ConfigPropertyExtractor.getRequiredValue(namespaceConfig, PROPERTY_SHORT_CODE));
+		final var e = assertThrows(ThrowableProblem.class, () -> ConfigPropertyExtractor.getValue(namespaceConfig, PROPERTY_SHORT_CODE));
 
 		assertThat(e.getStatus()).isEqualTo(NOT_FOUND);
 		assertThat(e.getDetail()).isEqualTo("No configurationproperty matching key 'SHORT_CODE' found in configuration for municipality 'municipalityId' and namespace 'namespace'");
@@ -87,7 +84,7 @@ class ConfigPropertyExtractorTest {
 
 	@Test
 	void testExtractRequiredWhenConfigMissing() {
-		final var e = assertThrows(ThrowableProblem.class, () -> ConfigPropertyExtractor.getRequiredValue(null, PROPERTY_SHORT_CODE));
+		final var e = assertThrows(ThrowableProblem.class, () -> ConfigPropertyExtractor.getValue(null, PROPERTY_SHORT_CODE));
 
 		assertThat(e.getStatus()).isEqualTo(NOT_FOUND);
 		assertThat(e.getDetail()).isEqualTo("No configuration present");

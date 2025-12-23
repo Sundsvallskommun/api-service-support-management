@@ -7,7 +7,7 @@ import static org.zalando.problem.Status.NOT_FOUND;
 import org.apache.commons.lang3.Strings;
 import org.zalando.problem.Problem;
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity;
-import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigValueEmbeddable;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ValueType;
 
 public class ConfigPropertyExtractor {
 	private ConfigPropertyExtractor() {}
@@ -28,11 +28,11 @@ public class ConfigPropertyExtractor {
 	 *                                       found
 	 */
 	@SuppressWarnings("unchecked")
-	public static <T extends Object> T getOptionalValue(NamespaceConfigEntity nullableNamespaceConfigEntity, String key) {
+	public static <T extends Object> T getNullableValue(NamespaceConfigEntity nullableNamespaceConfigEntity, String key) {
 		return (T) ofNullable(nullableNamespaceConfigEntity).orElse(NamespaceConfigEntity.create())
 			.getValues().stream()
 			.filter(configValue -> Strings.CI.equals(key, configValue.getKey()))
-			.map(ConfigPropertyExtractor::getAsTypedClass)
+			.map(ValueType::getAsTypedClass)
 			.findFirst()
 			.orElse(null);
 	}
@@ -46,21 +46,13 @@ public class ConfigPropertyExtractor {
 	 * @return                       value for property whos key is matching sent in key
 	 */
 	@SuppressWarnings("unchecked")
-	public static <T extends Object> T getRequiredValue(NamespaceConfigEntity namespaceConfigEntity, String key) {
+	public static <T extends Object> T getValue(NamespaceConfigEntity namespaceConfigEntity, String key) {
 		if (isNull(namespaceConfigEntity)) {
 			throw Problem.valueOf(NOT_FOUND, "No configuration present");
 		}
 
-		return (T) ofNullable(getOptionalValue(namespaceConfigEntity, key))
+		return (T) ofNullable(getNullableValue(namespaceConfigEntity, key))
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, "No configurationproperty matching key '%s' found in configuration for municipality '%s' and namespace '%s'"
 				.formatted(key, namespaceConfigEntity.getMunicipalityId(), namespaceConfigEntity.getNamespace())));
-	}
-
-	private static Object getAsTypedClass(NamespaceConfigValueEmbeddable configValue) {
-		return switch (configValue.getType()) {
-			case BOOLEAN -> Boolean.valueOf(configValue.getValue());
-			case INTEGER -> Integer.valueOf(configValue.getValue());
-			case STRING -> String.valueOf(configValue.getValue());
-		};
 	}
 }

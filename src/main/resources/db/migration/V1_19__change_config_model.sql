@@ -2,8 +2,8 @@
 create table namespace_config_value (
     namespace_config_id bigint not null,
     `key` varchar(255) not null,
-    `value` text not null,
-    `type` enum ('BOOLEAN','INTEGER','STRING') not null
+    `type` varchar(255) not null,
+    `value` text not null
 ) engine=InnoDB;
 
 create index idx_namespace_config_value_namespace_config_id_key 

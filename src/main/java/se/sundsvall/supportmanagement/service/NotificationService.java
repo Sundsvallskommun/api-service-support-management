@@ -82,7 +82,7 @@ public class NotificationService {
 		final var namespaceConfig = namespaceConfigRepository.findByNamespaceAndMunicipalityId(errandEntity.getNamespace(), errandEntity.getMunicipalityId())
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, NAMESPACE_ENTITY_NOT_FOUND.formatted(errandEntity.getNamespace(), errandEntity.getMunicipalityId())));
 
-		final var entity = toNotificationEntity(errandEntity.getNamespace(), errandEntity.getMunicipalityId(), ConfigPropertyExtractor.getRequiredValue(namespaceConfig, PROPERTY_NOTIFICATION_TTL_IN_DAYS), notification, errandEntity);
+		final var entity = toNotificationEntity(errandEntity.getNamespace(), errandEntity.getMunicipalityId(), ConfigPropertyExtractor.getValue(namespaceConfig, PROPERTY_NOTIFICATION_TTL_IN_DAYS), notification, errandEntity);
 
 		applyBusinessLogicForCreate(entity);
 

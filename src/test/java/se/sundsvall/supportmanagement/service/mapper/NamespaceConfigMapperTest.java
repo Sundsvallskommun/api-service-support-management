@@ -65,11 +65,11 @@ class NamespaceConfigMapperTest {
 		assertThat(entity.getNamespace()).isEqualTo(namespace);
 		assertThat(entity.getMunicipalityId()).isEqualTo(municipalityId);
 
-		assertThat((String) ConfigPropertyExtractor.getRequiredValue(entity, PROPERTY_DISPLAY_NAME)).isEqualTo(displayName);
-		assertThat((String) ConfigPropertyExtractor.getRequiredValue(entity, PROPERTY_SHORT_CODE)).isEqualTo(shortCode);
-		assertThat((Integer) ConfigPropertyExtractor.getRequiredValue(entity, PROPERTY_NOTIFICATION_TTL_IN_DAYS)).isEqualTo(notificationTTLInDays);
-		assertThat((Boolean) ConfigPropertyExtractor.getRequiredValue(entity, PROPERTY_ACCESS_CONTROL)).isEqualTo(toggleValue);
-		assertThat((Boolean) ConfigPropertyExtractor.getRequiredValue(entity, PROPERTY_NOTIFY_REPORTER)).isEqualTo(!toggleValue);
+		assertThat((String) ConfigPropertyExtractor.getValue(entity, PROPERTY_DISPLAY_NAME)).isEqualTo(displayName);
+		assertThat((String) ConfigPropertyExtractor.getValue(entity, PROPERTY_SHORT_CODE)).isEqualTo(shortCode);
+		assertThat((Integer) ConfigPropertyExtractor.getValue(entity, PROPERTY_NOTIFICATION_TTL_IN_DAYS)).isEqualTo(notificationTTLInDays);
+		assertThat((Boolean) ConfigPropertyExtractor.getValue(entity, PROPERTY_ACCESS_CONTROL)).isEqualTo(toggleValue);
+		assertThat((Boolean) ConfigPropertyExtractor.getValue(entity, PROPERTY_NOTIFY_REPORTER)).isEqualTo(!toggleValue);
 	}
 
 	@Test
@@ -94,11 +94,11 @@ class NamespaceConfigMapperTest {
 		assertThat(entity.getNamespace()).isEqualTo(namespace);
 		assertThat(entity.getMunicipalityId()).isEqualTo(municipalityId);
 
-		assertThat((String) ConfigPropertyExtractor.getRequiredValue(entity, PROPERTY_DISPLAY_NAME)).isEqualTo(displayName);
-		assertThat((String) ConfigPropertyExtractor.getRequiredValue(entity, PROPERTY_SHORT_CODE)).isEqualTo(shortCode);
-		assertThat((Integer) ConfigPropertyExtractor.getRequiredValue(entity, PROPERTY_NOTIFICATION_TTL_IN_DAYS)).isEqualTo(40);
-		assertThat((Boolean) ConfigPropertyExtractor.getRequiredValue(entity, PROPERTY_ACCESS_CONTROL)).isEqualTo(accessControl);
-		assertThat((Boolean) ConfigPropertyExtractor.getRequiredValue(entity, PROPERTY_NOTIFY_REPORTER)).isEqualTo(notifyReporter);
+		assertThat((String) ConfigPropertyExtractor.getValue(entity, PROPERTY_DISPLAY_NAME)).isEqualTo(displayName);
+		assertThat((String) ConfigPropertyExtractor.getValue(entity, PROPERTY_SHORT_CODE)).isEqualTo(shortCode);
+		assertThat((Integer) ConfigPropertyExtractor.getValue(entity, PROPERTY_NOTIFICATION_TTL_IN_DAYS)).isEqualTo(40);
+		assertThat((Boolean) ConfigPropertyExtractor.getValue(entity, PROPERTY_ACCESS_CONTROL)).isEqualTo(accessControl);
+		assertThat((Boolean) ConfigPropertyExtractor.getValue(entity, PROPERTY_NOTIFY_REPORTER)).isEqualTo(notifyReporter);
 	}
 
 	@Test

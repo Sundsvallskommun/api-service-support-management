@@ -1,10 +1,11 @@
 package se.sundsvall.supportmanagement.integration.db.model;
 
+import static java.sql.Types.LONGVARCHAR;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import java.util.Objects;
+import org.hibernate.annotations.JdbcTypeCode;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ValueType;
 
 @Embeddable
@@ -13,10 +14,10 @@ public class NamespaceConfigValueEmbeddable {
 	@Column(name = "`key`", nullable = false)
 	private String key;
 
-	@Column(name = "`value`", columnDefinition = "text", nullable = false)
+	@Column(name = "`value`", nullable = false)
+	@JdbcTypeCode(LONGVARCHAR)
 	private String value;
 
-	@Enumerated(EnumType.STRING)
 	@Column(name = "`type`", nullable = false)
 	private ValueType type;
 

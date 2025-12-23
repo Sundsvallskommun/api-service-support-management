@@ -31,7 +31,7 @@ public class ErrandNumberGeneratorService {
 	public String generateErrandNumber(final String namespace, final String municipalityId) {
 
 		final var shortcode = namespaceConfigRepository.findByNamespaceAndMunicipalityId(namespace, municipalityId)
-			.map(namespaceConfigEntity -> ConfigPropertyExtractor.getOptionalValue(namespaceConfigEntity, PROPERTY_SHORT_CODE))
+			.map(namespaceConfigEntity -> ConfigPropertyExtractor.getNullableValue(namespaceConfigEntity, PROPERTY_SHORT_CODE))
 			.orElseThrow(() -> Problem.valueOf(INTERNAL_SERVER_ERROR, String.format("Missing shortCode for namespace/municipalityId: '%s/%s'. Add via /namespaceConfig resource.", namespace, municipalityId)));
 
 		final var todayDate = dateFormatter.format(LocalDate.now());
