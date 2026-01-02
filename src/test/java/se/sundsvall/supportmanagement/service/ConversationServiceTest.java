@@ -15,6 +15,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.util.ReflectionTestUtils.setField;
 import static se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationType.EXTERNAL;
+import static se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationType.INTERNAL;
 import static se.sundsvall.supportmanagement.service.ConversationService.CONVERSATION_DEPARTMENT_NAME;
 
 import generated.se.sundsvall.messageexchange.Conversation;
@@ -30,6 +31,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.data.domain.PageImpl;
@@ -44,11 +46,13 @@ import se.sundsvall.supportmanagement.api.model.communication.conversation.Conve
 import se.sundsvall.supportmanagement.api.model.communication.conversation.Identifier;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.KeyValues;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.MessageRequest;
+import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
 import se.sundsvall.supportmanagement.integration.db.ConversationRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.ConversationEntity;
 import se.sundsvall.supportmanagement.integration.messageexchange.MessageExchangeClient;
 import se.sundsvall.supportmanagement.integration.relation.RelationClient;
+import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 import se.sundsvall.supportmanagement.service.mapper.ConversationMapper;
 import se.sundsvall.supportmanagement.service.scheduler.messageexchange.MessageExchangeScheduler;
 
@@ -89,6 +93,9 @@ class ConversationServiceTest {
 	@Mock
 	private AccessControlService accessControlServiceMock;
 
+	@Mock
+	private NamespaceConfigService namespaceConfigServiceMock;
+
 	@Captor
 	private ArgumentCaptor<ConversationEntity> conversationEntityCaptor;
 
@@ -103,7 +110,6 @@ class ConversationServiceTest {
 
 	@Test
 	void createConversation() {
-
 		// Arrange
 		final var conversationRequest = createConversationRequest();
 		final var conversationEntity = ConversationEntity.create().withId(CONVERSATION_ID);
@@ -133,7 +139,6 @@ class ConversationServiceTest {
 
 	@Test
 	void createConversationNoConversationIdReturnedFromMessageExchange() {
-
 		// Arrange
 		final var conversationRequest = createConversationRequest();
 
@@ -156,7 +161,6 @@ class ConversationServiceTest {
 
 	@Test
 	void updateConversationById() {
-
 		// Arrange
 		final var conversationRequest = createConversationRequest();
 		final var messageExchangeConversation = createMessageExchangeConversation();
@@ -187,7 +191,6 @@ class ConversationServiceTest {
 
 	@Test
 	void readConversations() {
-
 		// Arrange
 		when(conversationRepositoryMock.findByMunicipalityIdAndNamespaceAndErrandId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID)).thenReturn(List.of(ConversationEntity.create()));
 
@@ -206,7 +209,6 @@ class ConversationServiceTest {
 
 	@Test
 	void readConversationById() {
-
 		// Arrange
 		final var conversationEntity = ConversationEntity.create().withMessageExchangeId(MESSAGE_EXCHANGE_ID).withId(CONVERSATION_ID);
 
@@ -231,7 +233,6 @@ class ConversationServiceTest {
 
 	@Test
 	void readConversationByIdConversationNotFoundInDB() {
-
 		// Arrange
 		when(conversationRepositoryMock.findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID)).thenReturn(empty());
 
@@ -250,8 +251,7 @@ class ConversationServiceTest {
 	}
 
 	@Test
-	void createMessage() {
-
+	void createExternalMessage() {
 		// Arrange
 		final var conversationEntity = ConversationEntity.create().withId(CONVERSATION_ID).withType(EXTERNAL.name()).withMessageExchangeId(MESSAGE_EXCHANGE_ID).withErrandId(ERRAND_ID);
 		final var messageRequest = MessageRequest.create();
@@ -276,8 +276,7 @@ class ConversationServiceTest {
 	}
 
 	@Test
-	void createMessageWithAttachment() {
-
+	void createExternalMessageWithAttachment() {
 		// Arrange
 		final var conversationEntity = ConversationEntity.create().withId(CONVERSATION_ID).withType(EXTERNAL.name()).withMessageExchangeId(MESSAGE_EXCHANGE_ID).withErrandId(ERRAND_ID);
 		final var messageRequest = MessageRequest.create();
@@ -303,8 +302,59 @@ class ConversationServiceTest {
 	}
 
 	@Test
-	void getMessages() {
+	void createInternalMessageWhenNotifyReporterIsActivated() {
+		// Arrange
+		final var conversationEntity = ConversationEntity.create().withId(CONVERSATION_ID).withType(INTERNAL.name()).withMessageExchangeId(MESSAGE_EXCHANGE_ID).withErrandId(ERRAND_ID);
+		final var messageRequest = MessageRequest.create();
+		final var namespaceConfigMock = Mockito.mock(NamespaceConfig.class);
 
+		when(conversationRepositoryMock.findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID)).thenReturn(Optional.ofNullable(conversationEntity));
+		when(messageExchangeClientMock.createMessage(eq(MUNICIPALITY_ID), eq(MESSAGE_EXCHANGE_NAMESPACE), eq(MESSAGE_EXCHANGE_ID), any(), eq(null))).thenReturn(ResponseEntity.ok().build());
+		when(namespaceConfigServiceMock.get(NAMESPACE, MUNICIPALITY_ID)).thenReturn(namespaceConfigMock);
+		when(namespaceConfigMock.isNotifyReporter()).thenReturn(true);
+
+		// Act
+		conversationService.createMessage(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID, messageRequest, null);
+
+		// Assert
+		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, RW);
+		verify(conversationRepositoryMock).findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID);
+		verify(messageExchangeClientMock).createMessage(eq(MUNICIPALITY_ID), eq(MESSAGE_EXCHANGE_NAMESPACE), eq(MESSAGE_EXCHANGE_ID), any(), eq(null));
+		verify(namespaceConfigServiceMock).get(NAMESPACE, MUNICIPALITY_ID);
+		verify(namespaceConfigMock).isNotifyReporter();
+		verify(communicationServiceMock).sendEmailNotificationToReporter(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_DEPARTMENT_NAME);
+
+		verifyNoMoreInteractions(conversationRepositoryMock, messageExchangeClientMock, communicationServiceMock, namespaceConfigServiceMock, namespaceConfigMock);
+		verifyNoInteractions(messageExchangeSchedulerMock);
+	}
+
+	@Test
+	void createInternalMessageWhenNotifyReporterIsNotActivated() {
+		// Arrange
+		final var conversationEntity = ConversationEntity.create().withId(CONVERSATION_ID).withType(INTERNAL.name()).withMessageExchangeId(MESSAGE_EXCHANGE_ID).withErrandId(ERRAND_ID);
+		final var messageRequest = MessageRequest.create();
+		final var namespaceConfigMock = Mockito.mock(NamespaceConfig.class);
+
+		when(conversationRepositoryMock.findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID)).thenReturn(Optional.ofNullable(conversationEntity));
+		when(messageExchangeClientMock.createMessage(eq(MUNICIPALITY_ID), eq(MESSAGE_EXCHANGE_NAMESPACE), eq(MESSAGE_EXCHANGE_ID), any(), eq(null))).thenReturn(ResponseEntity.ok().build());
+		when(namespaceConfigServiceMock.get(NAMESPACE, MUNICIPALITY_ID)).thenReturn(namespaceConfigMock);
+
+		// Act
+		conversationService.createMessage(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID, messageRequest, null);
+
+		// Assert
+		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, RW);
+		verify(conversationRepositoryMock).findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID);
+		verify(messageExchangeClientMock).createMessage(eq(MUNICIPALITY_ID), eq(MESSAGE_EXCHANGE_NAMESPACE), eq(MESSAGE_EXCHANGE_ID), any(), eq(null));
+		verify(namespaceConfigServiceMock).get(NAMESPACE, MUNICIPALITY_ID);
+		verify(namespaceConfigMock).isNotifyReporter();
+
+		verifyNoMoreInteractions(conversationRepositoryMock, messageExchangeClientMock, namespaceConfigServiceMock, namespaceConfigMock);
+		verifyNoInteractions(communicationServiceMock, messageExchangeSchedulerMock);
+	}
+
+	@Test
+	void getMessages() {
 		// Arrange
 		final var pageable = PageRequest.of(0, 10);
 		final var conversationEntity = ConversationEntity.create().withId(CONVERSATION_ID).withMessageExchangeId(MESSAGE_EXCHANGE_ID).withErrandId(ERRAND_ID);
@@ -738,5 +788,4 @@ class ConversationServiceTest {
 		verifyNoInteractions(messageExchangeSchedulerMock, communicationServiceMock);
 		verifyNoMoreInteractions(conversationRepositoryMock, messageExchangeClientMock, relationClientMock);
 	}
-
 }

@@ -35,6 +35,7 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.ConversationEntity;
 import se.sundsvall.supportmanagement.integration.messageexchange.MessageExchangeClient;
 import se.sundsvall.supportmanagement.integration.relation.RelationClient;
+import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 import se.sundsvall.supportmanagement.service.scheduler.messageexchange.MessageExchangeScheduler;
 
 @Service
@@ -50,6 +51,7 @@ public class ConversationService {
 	private final CommunicationService communicationService;
 	private final RelationClient relationClient;
 	private final AccessControlService accessControlService;
+	private final NamespaceConfigService namespaceConfigService;
 
 	@Value("${integration.messageexchange.namespace:draken}")
 	private String messageExchangeNamespace;
@@ -60,7 +62,8 @@ public class ConversationService {
 		final MessageExchangeScheduler messageExchangeScheduler,
 		final CommunicationService communicationService,
 		final RelationClient relationClient,
-		final AccessControlService accessControlService) {
+		final AccessControlService accessControlService,
+		final NamespaceConfigService namespaceConfigService) {
 
 		this.messageExchangeClient = messageExchangeClient;
 		this.conversationRepository = conversationRepository;
@@ -68,6 +71,7 @@ public class ConversationService {
 		this.communicationService = communicationService;
 		this.relationClient = relationClient;
 		this.accessControlService = accessControlService;
+		this.namespaceConfigService = namespaceConfigService;
 	}
 
 	public Conversation createConversation(final String municipalityId, final String namespace, final String errandId, final ConversationRequest conversationRequest) {
@@ -147,10 +151,18 @@ public class ConversationService {
 		try {
 			if (EXTERNAL.name().equals(conversationEntity.getType())) {
 				communicationService.sendMessageNotification(municipalityId, namespace, errandId, CONVERSATION_DEPARTMENT_NAME);
+				// If not EXTERNAL then presume INTERNAL and handle logic to possibly send notification email to reporter if namespace
+				// has enabled the feature
+			} else if (hasNotifyReporterActive(namespace, municipalityId)) {
+				communicationService.sendEmailNotificationToReporter(municipalityId, namespace, errandId, CONVERSATION_DEPARTMENT_NAME);
 			}
 		} catch (final Exception e) {
 			LOGGER.error("Failed to send message notification", e);
 		}
+	}
+
+	private boolean hasNotifyReporterActive(String namespace, String municipalityId) {
+		return namespaceConfigService.get(namespace, municipalityId).isNotifyReporter();
 	}
 
 	private generated.se.sundsvall.messageexchange.Conversation fetchConversationFromMessageExchange(
@@ -236,8 +248,9 @@ public class ConversationService {
 
 		try {
 			final var meConversation = fetchConversationFromMessageExchange(municipalityId, messageExchangeId);
-			if (meConversation == null)
+			if (meConversation == null) {
 				return;
+			}
 
 			final var relationIds = Optional.ofNullable(conversationEntity.getRelationIds()).orElse(List.of());
 			final var refs = Optional.ofNullable(meConversation.getExternalReferences()).orElse(List.of());

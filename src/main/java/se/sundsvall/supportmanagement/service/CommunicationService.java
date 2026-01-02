@@ -2,7 +2,10 @@ package se.sundsvall.supportmanagement.service;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
+import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
+import static java.util.Optional.ofNullable;
+import static org.apache.commons.lang3.ObjectUtils.notEqual;
 import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.zalando.problem.Status.INSUFFICIENT_STORAGE;
@@ -13,6 +16,8 @@ import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toEm
 import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toMessagingMessageRequest;
 import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toSmsRequest;
 import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toWebMessageRequest;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getStakeholderMatchingRole;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.retrieveUsername;
 
 import generated.se.sundsvall.employee.PortalPersonData;
 import generated.se.sundsvall.messaging.Message;
@@ -27,11 +32,15 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import org.apache.commons.lang3.Strings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StreamUtils;
 import org.zalando.problem.Problem;
 import se.sundsvall.dept44.support.Identifier;
+import se.sundsvall.dept44.support.Identifier.Type;
 import se.sundsvall.supportmanagement.api.model.communication.Communication;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
 import se.sundsvall.supportmanagement.api.model.communication.SmsRequest;
@@ -39,7 +48,9 @@ import se.sundsvall.supportmanagement.api.model.communication.WebMessageRequest;
 import se.sundsvall.supportmanagement.integration.citizen.CitizenIntegration;
 import se.sundsvall.supportmanagement.integration.db.CommunicationAttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.CommunicationRepository;
+import se.sundsvall.supportmanagement.integration.db.model.ContactChannelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationAttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
@@ -50,12 +61,12 @@ import se.sundsvall.supportmanagement.service.model.MessagingSettings;
 
 @Service
 public class CommunicationService {
-
+	private static final Logger LOGGER = LoggerFactory.getLogger(CommunicationService.class);
 	private static final String COMMUNICATION_NOT_FOUND = "Communication with id %s not found";
 	private static final String ATTACHMENT_NOT_FOUND = "Communication attachment not found";
 	private static final String ATTACHMENT_WITH_ERRAND_NUMBER_NOT_FOUND = "Communication attachment not found for this errand";
 	private static final boolean ASYNCHRONOUSLY = false;
-
+	private static final String MESSAGE_ID_TEMPLATE = "<%s@%s>";
 	private final AccessControlService accessControlService;
 	private final CommunicationRepository communicationRepository;
 	private final CommunicationAttachmentRepository communicationAttachmentRepository;
@@ -127,7 +138,6 @@ public class CommunicationService {
 	}
 
 	void streamCommunicationAttachmentData(final CommunicationAttachmentEntity attachment, final HttpServletResponse response) {
-
 		final var fileLength = attachment.getFileSize();
 
 		if (fileLength == null || fileLength == 0) {
@@ -157,12 +167,11 @@ public class CommunicationService {
 	}
 
 	public void sendEmail(final ErrandEntity errandEntity, final EmailRequest request) {
-
 		Optional.ofNullable(request.getEmailHeaders()).ifPresentOrElse(headers -> {
 			if (!headers.containsKey(EmailHeader.MESSAGE_ID)) {
-				headers.put(EmailHeader.MESSAGE_ID, List.of("<" + UUID.randomUUID() + "@" + errandEntity.getNamespace() + ">"));
+				headers.put(EmailHeader.MESSAGE_ID, List.of(MESSAGE_ID_TEMPLATE.formatted(UUID.randomUUID(), errandEntity.getNamespace())));
 			}
-		}, () -> request.setEmailHeaders(Map.of(EmailHeader.MESSAGE_ID, List.of("<" + UUID.randomUUID() + "@" + errandEntity.getNamespace() + ">"))));
+		}, () -> request.setEmailHeaders(Map.of(EmailHeader.MESSAGE_ID, List.of(MESSAGE_ID_TEMPLATE.formatted(UUID.randomUUID(), errandEntity.getNamespace())))));
 
 		final var errandAttachments = errandAttachmentService.findByNamespaceAndMunicipalityIdAndIdIn(errandEntity.getNamespace(), errandEntity.getMunicipalityId(), request.getAttachmentIds());
 
@@ -181,7 +190,6 @@ public class CommunicationService {
 	}
 
 	public void sendSms(final String namespace, final String municipalityId, final String id, final SmsRequest request) {
-
 		final var entity = accessControlService.getErrand(namespace, municipalityId, id, false, RW);
 		messagingClient.sendSms(municipalityId, ASYNCHRONOUSLY, toSmsRequest(entity, request));
 
@@ -216,7 +224,6 @@ public class CommunicationService {
 	}
 
 	String getFullName(final String municipalityId) {
-
 		final var identifier = Identifier.get();
 
 		if (isNull(identifier)) {
@@ -256,17 +263,68 @@ public class CommunicationService {
 		communicationRepository.saveAndFlush(communicationEntity);
 	}
 
+	/**
+	 * Method for sending notification message to external applicant stakeholder by partyId (called from
+	 * ConversationService.createMessage).
+	 *
+	 * @param municipalityId of the errand that the message belongs to
+	 * @param namespace      of the errand that the message belongs to
+	 * @param errandId       of the errand that the message belongs to
+	 * @param departmentName the department name to use when retreiving which messaging settings to use
+	 */
 	public void sendMessageNotification(final String municipalityId, final String namespace, final String errandId, final String departmentName) {
-
 		final var errand = accessControlService.getErrand(namespace, municipalityId, errandId, false, RW);
-
 		final var messagingSettings = messagingSettingsIntegration.getMessagingsettings(municipalityId, namespace, departmentName);
 
 		sendMessageNotification(errand, messagingSettings);
 	}
 
-	public void sendMessageNotification(final ErrandEntity errandEntity, final MessagingSettings messagingSettings) {
+	/**
+	 * Method for sending email notification to reporter stakeholder (used by ConversationService.createMessage).
+	 *
+	 * @param municipalityId of the errand that the message belongs to
+	 * @param namespace      of the errand that the message belongs to
+	 * @param errandId       of the errand that the message belongs to
+	 * @param departmentName the department name to use when retreiving which messaging settings to use
+	 */
+	public void sendEmailNotificationToReporter(final String municipalityId, final String namespace, final String errandId, final String departmentName) {
+		LOGGER.info("Processing logic to send email notification to stakeholder with reporter role.");
+		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, false, RW);
+		final var stakeholder = getStakeholderMatchingRole(errandEntity, "REPORTER");
 
+		// Create a notification and send email if logic determins that mail should be sent
+		if (isStakeholderEligibleForEmailNotification(stakeholder)) {
+			ofNullable(stakeholder.getContactChannels()).orElse(emptyList()).stream()
+				.filter(contactChannel -> Strings.CI.equals("EMAIL", contactChannel.getType()))
+				.map(ContactChannelEntity::getValue)
+				.findFirst()
+				.ifPresent(emailDestination -> {
+					LOGGER.info("Stakeholder with reporter role found on errrand number {}, sending email notification to {}.", errandEntity.getErrandNumber(), emailDestination);
+					final var messagingSettings = messagingSettingsIntegration.getMessagingsettings(municipalityId, namespace, departmentName);
+					sendEmail(errandEntity, toEmailRequest(errandEntity, stakeholder, emailDestination, messagingSettings));
+				});
+		}
+	}
+
+	/**
+	 * Method used for determining if email notification is to be sent or not. If no identifier is present or if identifier
+	 * is present and identifier is of any other type than ad account, or if type is ad account and value of stakeholder
+	 * username is not equal to identifier value (i.e. a user that is not same as the stakeholder is creating the message)
+	 * an email should be sent.
+	 *
+	 * @param  stakeholderEntity the stakehlolder to evaluate against
+	 * @return                   true if email notification is to be sent, false otherwise
+	 */
+	boolean isStakeholderEligibleForEmailNotification(final StakeholderEntity stakeholderEntity) {
+		return ofNullable(Identifier.get())
+			.map(identifier -> notEqual(identifier.getType(), Type.AD_ACCOUNT) ||
+				!Strings.CI.equals(
+					identifier.getValue(),
+					retrieveUsername(stakeholderEntity).orElse(identifier.getValue()))) // If no username can be retrived then mail should not be sent, hence we use identifier value to compare to in that case
+			.orElse(true);
+	}
+
+	public void sendMessageNotification(final ErrandEntity errandEntity, final MessagingSettings messagingSettings) {
 		final var request = toMessagingMessageRequest(errandEntity, messagingSettings);
 
 		final var partyId = Optional.ofNullable(request.getMessages())

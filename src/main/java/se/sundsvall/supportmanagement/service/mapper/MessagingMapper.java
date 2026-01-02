@@ -5,6 +5,7 @@ import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static org.apache.commons.codec.binary.Base64.decodeBase64;
 import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
+import static se.sundsvall.supportmanagement.Constants.SUBJECT_TEMPLATE;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.detectMimeType;
 
 import generated.se.sundsvall.messaging.Email;
@@ -72,6 +73,24 @@ public class MessagingMapper {
 			.sender(toEmailSender(emailRequest))
 			.headers(toEmailHeaders(emailRequest.getEmailHeaders()))
 			.subject(emailRequest.getSubject());
+	}
+
+	public static se.sundsvall.supportmanagement.api.model.communication.EmailRequest toEmailRequest(final ErrandEntity errandEntity, final StakeholderEntity stakeholder, String emailDestination, final MessagingSettings messagingSettings) {
+		return se.sundsvall.supportmanagement.api.model.communication.EmailRequest.create()
+			.withRecipient(emailDestination)
+			.withMessage(ofNullable(messagingSettings.reporterSupportText())
+				// If present, supporttext is presumed to be something like "Hi [firstname], you have received a new message in errand
+				// [title], [errandnr]. Click [url prefix]/suffix/[errandId] to read."
+				.map(message -> message.formatted(
+					stakeholder.getFirstName(),
+					errandEntity.getTitle(),
+					errandEntity.getErrandNumber(),
+					messagingSettings.katlaUrl(),
+					errandEntity.getId()))
+				.orElse(""))
+			.withSubject(SUBJECT_TEMPLATE.formatted(errandEntity.getTitle(), errandEntity.getErrandNumber()))
+			.withSender(messagingSettings.contactInformationEmail())
+			.withSenderName(messagingSettings.contactInformationEmailName());
 	}
 
 	public static Map<String, List<String>> toEmailHeaders(final Map<EmailHeader, List<String>> emailHeaders) {
@@ -237,7 +256,7 @@ public class MessagingMapper {
 	public static MessageRequest toMessagingMessageRequest(final ErrandEntity errandEntity, final MessagingSettings messagingSettings) {
 		return new MessageRequest()
 			.messages(List.of(new generated.se.sundsvall.messaging.Message()
-				.subject("Nytt meddelande kopplat till ärendet" + errandEntity.getTitle() + errandEntity.getErrandNumber())
+				.subject(SUBJECT_TEMPLATE.formatted(errandEntity.getTitle(), errandEntity.getErrandNumber()))
 				.message(createBody(errandEntity, messagingSettings))
 				.party(new MessageParty().partyId(findErrandOwnerPartyId(errandEntity)))
 				.sender(new MessageSender()
