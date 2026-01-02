@@ -5,6 +5,7 @@ import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static org.springframework.data.domain.Sort.unsorted;
 import static org.springframework.util.StringUtils.hasText;
 import static org.zalando.problem.Status.NOT_FOUND;
+import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_NOTIFICATION_TTL_IN_DAYS;
 import static se.sundsvall.supportmanagement.service.mapper.NotificationMapper.toNotificationEntity;
 import static se.sundsvall.supportmanagement.service.mapper.NotificationMapper.updateEntity;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getAdUser;
@@ -23,6 +24,7 @@ import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.NotificationRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
+import se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor;
 import se.sundsvall.supportmanagement.service.mapper.NotificationMapper;
 
 @Service
@@ -30,7 +32,6 @@ public class NotificationService {
 
 	private static final String NOTIFICATION_ENTITY_NOT_FOUND = "Notification with id:'%s' not found in namespace:'%s' for municipality with id:'%s' and errand with id:'%s'";
 	private static final String NAMESPACE_ENTITY_NOT_FOUND = "Namespace with name:'%s' and municiplaityId '%s' not found!";
-	private static final String ERRAND_ENTITY_NOT_FOUND = "Errand with id:'%s' not found in namespace:'%s' for municipality with id:'%s'";
 
 	private final NotificationRepository notificationRepository;
 	private final NamespaceConfigRepository namespaceConfigRepository;
@@ -78,10 +79,10 @@ public class NotificationService {
 
 	public String createNotification(final ErrandEntity errandEntity, final Notification notification) {
 
-		final var namespaceEntity = namespaceConfigRepository.findByNamespaceAndMunicipalityId(errandEntity.getNamespace(), errandEntity.getMunicipalityId())
+		final var namespaceConfig = namespaceConfigRepository.findByNamespaceAndMunicipalityId(errandEntity.getNamespace(), errandEntity.getMunicipalityId())
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, NAMESPACE_ENTITY_NOT_FOUND.formatted(errandEntity.getNamespace(), errandEntity.getMunicipalityId())));
 
-		final var entity = toNotificationEntity(errandEntity.getNamespace(), errandEntity.getMunicipalityId(), namespaceEntity.getNotificationTTLInDays(), notification, errandEntity);
+		final var entity = toNotificationEntity(errandEntity.getNamespace(), errandEntity.getMunicipalityId(), ConfigPropertyExtractor.getValue(namespaceConfig, PROPERTY_NOTIFICATION_TTL_IN_DAYS), notification, errandEntity);
 
 		applyBusinessLogicForCreate(entity);
 

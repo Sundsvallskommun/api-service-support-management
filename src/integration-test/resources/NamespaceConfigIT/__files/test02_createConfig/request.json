@@ -1,5 +1,6 @@
 {
 	"displayName": "Namespace 1",
 	"shortCode": "NS1",
-	"accessControl": true
+	"accessControl": true,
+	"notifyReporter": true
 }

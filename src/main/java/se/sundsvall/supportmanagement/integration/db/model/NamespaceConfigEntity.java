@@ -1,21 +1,29 @@
 package se.sundsvall.supportmanagement.integration.db.model;
 
+import static jakarta.persistence.FetchType.EAGER;
 import static jakarta.persistence.GenerationType.IDENTITY;
 import static java.time.OffsetDateTime.now;
 import static java.time.ZoneId.systemDefault;
 import static java.time.temporal.ChronoUnit.MILLIS;
+import static java.util.Objects.isNull;
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
+import jakarta.persistence.ForeignKey;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import org.hibernate.annotations.TimeZoneStorage;
 
@@ -41,14 +49,15 @@ public class NamespaceConfigEntity {
 	@Column(name = "namespace", nullable = false, length = 32)
 	private String namespace;
 
-	@Column(name = "display_name", nullable = false)
-	private String displayName;
-
-	@Column(name = "short_code", nullable = false)
-	private String shortCode;
-
-	@Column(name = "notification_ttl_in_days", nullable = false)
-	private Integer notificationTTLInDays;
+	@ElementCollection(fetch = EAGER)
+	@CollectionTable(name = "namespace_config_value", indexes = {
+		@Index(name = "idx_namespace_config_value_namespace_config_id_key", columnList = "namespace_config_id, `key`")
+	}, uniqueConstraints = {
+		@UniqueConstraint(name = "uk_namespace_config_id_key_value", columnNames = {
+			"namespace_config_id", "`key`", "`value`"
+		})
+	}, joinColumns = @JoinColumn(name = "namespace_config_id", referencedColumnName = "id", foreignKey = @ForeignKey(name = "fk_namespace_config_value_namespace_config")))
+	private List<NamespaceConfigValueEmbeddable> values = new ArrayList<>();
 
 	@Column(name = "created")
 	@TimeZoneStorage(NORMALIZE)
@@ -57,9 +66,6 @@ public class NamespaceConfigEntity {
 	@Column(name = "modified")
 	@TimeZoneStorage(NORMALIZE)
 	private OffsetDateTime modified;
-
-	@Column(name = "access_control")
-	private boolean accessControl;
 
 	public static NamespaceConfigEntity create() {
 		return new NamespaceConfigEntity();
@@ -104,45 +110,6 @@ public class NamespaceConfigEntity {
 		return this;
 	}
 
-	public String getDisplayName() {
-		return displayName;
-	}
-
-	public void setDisplayName(final String displayName) {
-		this.displayName = displayName;
-	}
-
-	public NamespaceConfigEntity withDisplayName(final String displayName) {
-		this.displayName = displayName;
-		return this;
-	}
-
-	public String getShortCode() {
-		return shortCode;
-	}
-
-	public void setShortCode(final String shortCode) {
-		this.shortCode = shortCode;
-	}
-
-	public NamespaceConfigEntity withShortCode(final String shortCode) {
-		this.shortCode = shortCode;
-		return this;
-	}
-
-	public Integer getNotificationTTLInDays() {
-		return notificationTTLInDays;
-	}
-
-	public void setNotificationTTLInDays(final Integer notificationTTLInDays) {
-		this.notificationTTLInDays = notificationTTLInDays;
-	}
-
-	public NamespaceConfigEntity withNotificationTTLInDays(final Integer notificationTTLInDays) {
-		this.notificationTTLInDays = notificationTTLInDays;
-		return this;
-	}
-
 	public OffsetDateTime getCreated() {
 		return created;
 	}
@@ -169,16 +136,25 @@ public class NamespaceConfigEntity {
 		return this;
 	}
 
-	public boolean getAccessControl() {
-		return accessControl;
+	public List<NamespaceConfigValueEmbeddable> getValues() {
+		return values;
 	}
 
-	public void setAccessControl(final boolean accessControl) {
-		this.accessControl = accessControl;
+	public void setValues(List<NamespaceConfigValueEmbeddable> values) {
+		this.values = values;
 	}
 
-	public NamespaceConfigEntity withAccessControl(final boolean accessControl) {
-		this.accessControl = accessControl;
+	public NamespaceConfigEntity withValues(List<NamespaceConfigValueEmbeddable> values) {
+		this.values = values;
+		return this;
+	}
+
+	public NamespaceConfigEntity withValue(NamespaceConfigValueEmbeddable value) {
+		if (isNull(this.values)) {
+			this.values = new ArrayList<>();
+		}
+
+		this.values.add(value);
 		return this;
 	}
 
@@ -193,32 +169,23 @@ public class NamespaceConfigEntity {
 	}
 
 	@Override
-	public boolean equals(final Object o) {
-		if (o == null || getClass() != o.getClass())
-			return false;
-		final NamespaceConfigEntity that = (NamespaceConfigEntity) o;
-		return Objects.equals(id, that.id) && Objects.equals(municipalityId, that.municipalityId) && Objects.equals(namespace, that.namespace) && Objects.equals(displayName, that.displayName) && Objects.equals(
-			shortCode, that.shortCode) && Objects.equals(notificationTTLInDays, that.notificationTTLInDays) && Objects.equals(created, that.created) && Objects.equals(modified, that.modified) && Objects.equals(
-				accessControl, that.accessControl);
+	public int hashCode() {
+		return Objects.hash(created, id, modified, municipalityId, namespace, values);
 	}
 
 	@Override
-	public int hashCode() {
-		return Objects.hash(id, municipalityId, namespace, displayName, shortCode, notificationTTLInDays, created, modified, accessControl);
+	public boolean equals(Object obj) {
+		if (this == obj) { return true; }
+		if (!(obj instanceof final NamespaceConfigEntity other)) { return false; }
+		return Objects.equals(created, other.created) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(municipalityId, other.municipalityId) && Objects.equals(namespace, other.namespace) && Objects.equals(
+			values, other.values);
 	}
 
 	@Override
 	public String toString() {
-		return "NamespaceConfigEntity{" +
-			"id=" + id +
-			", municipalityId='" + municipalityId + '\'' +
-			", namespace='" + namespace + '\'' +
-			", displayName='" + displayName + '\'' +
-			", shortCode='" + shortCode + '\'' +
-			", notificationTTLInDays=" + notificationTTLInDays +
-			", created=" + created +
-			", modified=" + modified +
-			", accessControl='" + accessControl + '\'' +
-			'}';
+		final var builder = new StringBuilder();
+		builder.append("NamespaceConfigEntity [id=").append(id).append(", municipalityId=").append(municipalityId).append(", namespace=").append(namespace).append(", values=").append(values).append(", created=").append(created).append(", modified=")
+			.append(modified).append("]");
+		return builder.toString();
 	}
 }

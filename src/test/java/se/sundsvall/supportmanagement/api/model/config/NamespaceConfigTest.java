@@ -42,6 +42,8 @@ class NamespaceConfigTest {
 		final var notificationTTLInDays = 40;
 		final var created = OffsetDateTime.now();
 		final var modified = OffsetDateTime.now().plusDays(1);
+		final var accessControl = true;
+		final var notifyReporter = true;
 
 		final var bean = NamespaceConfig.create()
 			.withNamespace(namespace)
@@ -49,23 +51,33 @@ class NamespaceConfigTest {
 			.withDisplayName(displayName)
 			.withShortCode(shortCode)
 			.withNotificationTTLInDays(notificationTTLInDays)
+			.withAccessControl(accessControl)
+			.withNotifyReporter(notifyReporter)
 			.withCreated(created)
 			.withModified(modified);
 
+		assertThat(bean).hasNoNullFieldsOrProperties();
 		assertThat(bean.getNamespace()).isEqualTo(namespace);
 		assertThat(bean.getMunicipalityId()).isEqualTo(municipalityId);
 		assertThat(bean.getDisplayName()).isEqualTo(displayName);
 		assertThat(bean.getShortCode()).isEqualTo(shortCode);
 		assertThat(bean.getNotificationTTLInDays()).isEqualTo(notificationTTLInDays);
+		assertThat(bean.isAccessControl()).isEqualTo(accessControl);
+		assertThat(bean.isNotifyReporter()).isEqualTo(notifyReporter);
 		assertThat(bean.getCreated()).isEqualTo(created);
 		assertThat(bean.getModified()).isEqualTo(modified);
 	}
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(NamespaceConfig.create()).hasAllNullFieldsOrPropertiesExcept("accessControl")
-			.satisfies(namespaceConfig -> assertThat(namespaceConfig.isAccessControl()).isFalse());
-		assertThat(new NamespaceConfig()).hasAllNullFieldsOrPropertiesExcept("accessControl")
-			.satisfies(namespaceConfig -> assertThat(namespaceConfig.isAccessControl()).isFalse());
+		assertThat(NamespaceConfig.create()).hasAllNullFieldsOrPropertiesExcept("accessControl", "notifyReporter").satisfies(namespaceConfig -> {
+			assertThat(namespaceConfig.isAccessControl()).isFalse();
+			assertThat(namespaceConfig.isNotifyReporter()).isFalse();
+		});
+		assertThat(new NamespaceConfig()).hasAllNullFieldsOrPropertiesExcept("accessControl", "notifyReporter").satisfies(namespaceConfig -> {
+			assertThat(namespaceConfig.isAccessControl()).isFalse();
+			assertThat(namespaceConfig.isNotifyReporter()).isFalse();
+
+		});
 	}
 }

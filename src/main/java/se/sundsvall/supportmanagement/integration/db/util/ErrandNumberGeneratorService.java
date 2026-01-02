@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.integration.db.util;
 
 import static org.springframework.transaction.annotation.Propagation.REQUIRES_NEW;
 import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
+import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_SHORT_CODE;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -12,7 +13,6 @@ import org.zalando.problem.Problem;
 import se.sundsvall.supportmanagement.integration.db.ErrandNumberSequenceRepository;
 import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandNumberSequenceEntity;
-import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity;
 
 @Component
 public class ErrandNumberGeneratorService {
@@ -31,7 +31,7 @@ public class ErrandNumberGeneratorService {
 	public String generateErrandNumber(final String namespace, final String municipalityId) {
 
 		final var shortcode = namespaceConfigRepository.findByNamespaceAndMunicipalityId(namespace, municipalityId)
-			.map(NamespaceConfigEntity::getShortCode)
+			.map(namespaceConfigEntity -> ConfigPropertyExtractor.getNullableValue(namespaceConfigEntity, PROPERTY_SHORT_CODE))
 			.orElseThrow(() -> Problem.valueOf(INTERNAL_SERVER_ERROR, String.format("Missing shortCode for namespace/municipalityId: '%s/%s'. Add via /namespaceConfig resource.", namespace, municipalityId)));
 
 		final var todayDate = dateFormatter.format(LocalDate.now());

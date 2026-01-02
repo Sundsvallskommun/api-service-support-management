@@ -189,10 +189,28 @@ VALUES (1, true, '2020-10-10 10:10:59.999', 1, '2021-11-11 11:11:59.999',
 -------------------------------------
 -- NamespaceConfig
 -------------------------------------
-INSERT INTO namespace_config(id, municipality_id, namespace, display_name, short_code, notification_ttl_in_days, created, modified, access_control)
-values (1, '2281', 'namespace-1', 'display name 1', 'short_code-1', 10, '2021-01-01 11:11:59.999', '2022-01-01 11:11:59.999',false),
-       (2, '2281', 'namespace-3', 'display name 3', 'short_code-3', 30, '2022-03-03 13:13:59.999', '2023-03-03 13:13:59.999',false),
-       (3, '2282', 'namespace-2', 'display name 2', 'short_code-2', 20, '2022-02-02 12:12:59.999', '2023-02-02 12:12:59.999',false);
+
+INSERT INTO namespace_config(id, municipality_id, namespace, created, modified)
+VALUES (1, '2281', 'namespace-1', '2021-01-01 11:11:59.999', '2022-01-01 11:11:59.999'),
+       (2, '2281', 'namespace-3', '2022-03-03 13:13:59.999', '2023-03-03 13:13:59.999'),
+       (3, '2282', 'namespace-2', '2022-02-02 12:12:59.999', '2023-02-02 12:12:59.999');
+
+INSERT INTO namespace_config_value(namespace_config_id, `key`, `value`, `type`)
+VALUES (1, 'DISPLAY_NAME', 'display name 1', 'STRING'),
+       (1, 'SHORT_CODE', 'short_code-1', 'STRING'),
+       (1, 'NOTIFICATION_TTL_IN_DAYS', '10', 'INTEGER'),
+       (1, 'ACCESS_CONTROL', 'false', 'BOOLEAN'),
+       (1, 'NOTIFY_REPORTER', 'false', 'BOOLEAN'),
+       (2, 'DISPLAY_NAME', 'display name 3', 'STRING'),
+       (2, 'SHORT_CODE', 'short_code-3', 'STRING'),
+       (2, 'NOTIFICATION_TTL_IN_DAYS', '30', 'INTEGER'),
+       (2, 'ACCESS_CONTROL', 'true', 'BOOLEAN'),
+       (2, 'NOTIFY_REPORTER', 'true', 'BOOLEAN'),
+       (3, 'DISPLAY_NAME', 'display name 2', 'STRING'),
+       (3, 'SHORT_CODE', 'short_code-2', 'STRING'),
+       (3, 'NOTIFICATION_TTL_IN_DAYS', '20', 'INTEGER'),
+       (3, 'ACCESS_CONTROL', 'false', 'BOOLEAN'),
+       (3, 'NOTIFY_REPORTER', 'false', 'BOOLEAN');
 
 -------------------------------------
 -- WebMessageCollect

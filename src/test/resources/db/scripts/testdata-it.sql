@@ -354,16 +354,40 @@ VALUES (1, true, '2281', 'NAMESPACE-1', 1, 'sender-1', 'template-1', 'STATUS-1',
 -- -----------------------------------
 -- Namespace config
 -- -----------------------------------
-INSERT INTO namespace_config (id, municipality_id, namespace, display_name, short_code, notification_ttl_in_days,
-                              created, modified, access_control)
-VALUES (1, '2281', 'NAMESPACE-1', 'Namespace 1', 'NS1', 10, '2021-12-31 23:59:59.999', '2022-12-31 23:59:59.999',
-        false),
-       (2, '2281', 'CONTACTCENTER', 'Kontaktcenter', 'KC', 20, '2024-06-12 15:23:59.999', null, false),
-       (3, '2281', 'NAMESPACE-3', 'Namespace 3', 'NS3', 30, '2021-12-31 23:59:59.999', '2022-12-31 23:59:59.999',
-        false),
-       (4, '2262', 'CONTACTCENTER', 'Kontaktcenter', 'KC', 40, '2024-06-12 15:24:00.001', null, false),
-       (5, '2506', 'NAMESPACE-2506', 'Namespace 2506', 'AP', 40, '2024-06-12 15:24:00.001', null, true);
+INSERT INTO namespace_config(id, municipality_id, namespace, created, modified)
+VALUES (1, '2281', 'NAMESPACE-1', '2021-12-31 23:59:59.999', '2022-12-31 23:59:59.999'),
+       (2, '2281', 'CONTACTCENTER', '2024-06-12 15:23:59.999', null),
+       (3, '2281', 'NAMESPACE-3', '2021-12-31 23:59:59.999', '2022-12-31 23:59:59.999'),
+       (4, '2262', 'CONTACTCENTER', '2024-06-12 15:24:00.001', null),
+       (5, '2506', 'NAMESPACE-2506', '2024-06-12 15:24:00.001', null);
 
+INSERT INTO namespace_config_value(namespace_config_id, `key`, `value`, `type`)
+VALUES (1, 'DISPLAY_NAME', 'Namespace 1', 'STRING'),
+       (1, 'SHORT_CODE', 'NS1', 'STRING'),
+       (1, 'NOTIFICATION_TTL_IN_DAYS', '10', 'INTEGER'),
+       (1, 'ACCESS_CONTROL', 'false', 'BOOLEAN'),
+       (1, 'NOTIFY_REPORTER', 'false', 'BOOLEAN'),
+       (2, 'DISPLAY_NAME', 'Kontaktcenter', 'STRING'),
+       (2, 'SHORT_CODE', 'KC', 'STRING'),
+       (2, 'NOTIFICATION_TTL_IN_DAYS', '20', 'INTEGER'),
+       (2, 'ACCESS_CONTROL', 'false', 'BOOLEAN'),
+       (2, 'NOTIFY_REPORTER', 'false', 'BOOLEAN'),
+       (3, 'DISPLAY_NAME', 'Namespace 3', 'STRING'),
+       (3, 'SHORT_CODE', 'NS3', 'STRING'),
+       (3, 'NOTIFICATION_TTL_IN_DAYS', '30', 'INTEGER'),
+       (3, 'ACCESS_CONTROL', 'false', 'BOOLEAN'),
+       (3, 'NOTIFY_REPORTER', 'false', 'BOOLEAN'),
+       (4, 'DISPLAY_NAME', 'Kontaktcenter', 'STRING'),
+       (4, 'SHORT_CODE', 'KC', 'STRING'),
+       (4, 'NOTIFICATION_TTL_IN_DAYS', '40', 'INTEGER'),
+       (4, 'ACCESS_CONTROL', 'false', 'BOOLEAN'),
+       (4, 'NOTIFY_REPORTER', 'false', 'BOOLEAN'),
+       (5, 'DISPLAY_NAME', 'Namespace 2506', 'STRING'),
+       (5, 'SHORT_CODE', 'AP', 'STRING'),
+       (5, 'NOTIFICATION_TTL_IN_DAYS', '40', 'INTEGER'),
+       (5, 'ACCESS_CONTROL', 'true', 'BOOLEAN'),
+       (5, 'NOTIFY_REPORTER', 'true', 'BOOLEAN');
+       
 -- -----------------------------------
 -- Time measurement
 -- -----------------------------------

@@ -227,16 +227,19 @@
     ) engine=InnoDB;
 
     create table namespace_config (
-        access_control bit,
-        notification_ttl_in_days integer not null,
         created datetime(6),
         id bigint not null auto_increment,
         modified datetime(6),
         municipality_id varchar(8) not null,
         namespace varchar(32) not null,
-        display_name varchar(255) not null,
-        short_code varchar(255) not null,
         primary key (id)
+    ) engine=InnoDB;
+
+    create table namespace_config_value (
+        namespace_config_id bigint not null,
+        `key` varchar(255) not null,
+        `type` varchar(255) not null,
+        `value` text not null
     ) engine=InnoDB;
 
     create table notification (
@@ -467,7 +470,7 @@
     create index idx_errand_errand_number 
        on errand (errand_number);
 
-    create index idx_errand_municipality_id_namespace_status_created
+    create index idx_errand_municipality_id_namespace_status_created 
        on errand (municipality_id, namespace, status, created);
 
     create index idx_errand_suspended_to 
@@ -476,16 +479,16 @@
     create index idx_errand_channel 
        on errand (channel);
 
-    create index idx_errand_municipality_id_namespace_status_touched
+    create index idx_errand_municipality_id_namespace_status_touched 
        on errand (municipality_id, namespace, status, touched);
 
-    create index idx_errand_municipality_id_namespace_status_modified
+    create index idx_errand_municipality_id_namespace_status_modified 
        on errand (municipality_id, namespace, status, modified);
 
-    create index idx_errand_municipality_id_namespace_created
+    create index idx_errand_municipality_id_namespace_created 
        on errand (municipality_id, namespace, created);
 
-    create index idx_errand_municipality_id_namespace_touched
+    create index idx_errand_municipality_id_namespace_touched 
        on errand (municipality_id, namespace, touched);
 
     alter table if exists errand 
@@ -494,7 +497,7 @@
     create index idx_errand_id_metadata_label_id 
        on errand_labels (errand_id, metadata_label_id);
 
-    create index idx_metadata_label_id_errand_id
+    create index idx_metadata_label_id_errand_id 
        on errand_labels (metadata_label_id, errand_id);
 
     create index idx_errand_id 
@@ -541,6 +544,12 @@
 
     alter table if exists namespace_config 
        add constraint uq_namespace_municipality_id unique (namespace, municipality_id);
+
+    create index idx_namespace_config_value_namespace_config_id_key 
+       on namespace_config_value (namespace_config_id, `key`);
+
+    alter table if exists namespace_config_value 
+       add constraint uk_namespace_config_id_key_value unique (namespace_config_id, `key`, `value`);
 
     create index idx_namespace_municipality_id 
        on notification (namespace, municipality_id);
@@ -669,6 +678,11 @@
        add constraint fk_metadata_label_id 
        foreign key (parent_id) 
        references metadata_label (id);
+
+    alter table if exists namespace_config_value 
+       add constraint fk_namespace_config_value_namespace_config 
+       foreign key (namespace_config_id) 
+       references namespace_config (id);
 
     alter table if exists notification 
        add constraint fk_notification_errand_id 

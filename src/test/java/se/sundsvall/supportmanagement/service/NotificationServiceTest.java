@@ -19,6 +19,8 @@ import static org.springframework.data.domain.Sort.unsorted;
 import static se.sundsvall.dept44.support.Identifier.Type.AD_ACCOUNT;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrandEntity;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.createNotificationEntity;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.ValueType.INTEGER;
+import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_NOTIFICATION_TTL_IN_DAYS;
 
 import generated.se.sundsvall.employee.PortalPersonData;
 import java.util.List;
@@ -38,6 +40,7 @@ import se.sundsvall.supportmanagement.TestObjectsBuilder;
 import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.NotificationRepository;
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity;
+import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigValueEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
 
 @ExtendWith(MockitoExtension.class)
@@ -195,7 +198,8 @@ class NotificationServiceTest {
 		final var createdByFullName = "createdByFullName";
 		final var ownerFullName = "ownerFullName";
 
-		when(namespaceConfigRepositoryMock.findByNamespaceAndMunicipalityId(namespace, municipalityId)).thenReturn(Optional.of(NamespaceConfigEntity.create().withNotificationTTLInDays(notificationTTLInDays)));
+		when(namespaceConfigRepositoryMock.findByNamespaceAndMunicipalityId(namespace, municipalityId)).thenReturn(Optional.of(NamespaceConfigEntity.create().withValue(
+			NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_NOTIFICATION_TTL_IN_DAYS).withType(INTEGER).withValue(String.valueOf(notificationTTLInDays)))));
 		when(accessControlServiceMock.getErrand(namespace, municipalityId, errandEntity.getId(), false, RW)).thenReturn(errandEntity);
 		when(notificationRepositoryMock.save(any())).thenReturn(createNotificationEntity(n -> n.setId(id)));
 		when(employeeServiceMock.getEmployeeByLoginName(municipalityId, errandEntity.getAssignedUserId())).thenReturn(new PortalPersonData().loginName(errandEntity.getAssignedUserId()).fullname(ownerFullName));
@@ -230,7 +234,8 @@ class NotificationServiceTest {
 		final var executingUserId = notification.getOwnerId();
 		final var fullName = "fullName";
 
-		when(namespaceConfigRepositoryMock.findByNamespaceAndMunicipalityId(namespace, municipalityId)).thenReturn(Optional.of(NamespaceConfigEntity.create().withNotificationTTLInDays(notificationTTLInDays)));
+		when(namespaceConfigRepositoryMock.findByNamespaceAndMunicipalityId(namespace, municipalityId)).thenReturn(Optional.of(NamespaceConfigEntity.create().withValue(
+			NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_NOTIFICATION_TTL_IN_DAYS).withType(INTEGER).withValue(String.valueOf(notificationTTLInDays)))));
 		when(accessControlServiceMock.getErrand(namespace, municipalityId, errandEntity.getId(), false, RW)).thenReturn(errandEntity);
 		when(notificationRepositoryMock.save(any())).thenReturn(createNotificationEntity(n -> n.setId(id)));
 		when(employeeServiceMock.getEmployeeByLoginName(municipalityId, executingUserId)).thenReturn(new PortalPersonData().loginName(executingUserId).fullname(fullName));

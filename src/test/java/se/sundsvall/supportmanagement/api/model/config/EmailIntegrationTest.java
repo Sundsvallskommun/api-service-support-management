@@ -39,8 +39,10 @@ class EmailIntegrationTest {
 		final var enabled = true;
 		final var errandClosedEmailSender = "errandClosedEmailSender";
 		final var errandClosedEmailTemplate = "errandClosedEmailTemplate";
+		final var errandClosedEmailHTMLTemplate = "errandClosedEmailHTMLTemplate";
 		final var errandNewEmailSender = "errandNewEmailSender";
 		final var errandNewEmailTemplate = "errandNewEmailTemplate";
+		final var errandNewEmailHTMLTemplate = "errandNewEmailHTMLTemplate";
 		final var daysOfInactivityBeforeReject = 5;
 		final var statusForNew = "statusForNew";
 		final var triggerStatusChangeOn = "triggerStatusChangeOn";
@@ -54,8 +56,10 @@ class EmailIntegrationTest {
 
 		final var bean = EmailIntegration.create()
 			.withEnabled(enabled)
+			.withErrandClosedEmailHTMLTemplate(errandClosedEmailHTMLTemplate)
 			.withErrandClosedEmailSender(errandClosedEmailSender)
 			.withErrandClosedEmailTemplate(errandClosedEmailTemplate)
+			.withErrandNewEmailHTMLTemplate(errandNewEmailHTMLTemplate)
 			.withErrandNewEmailSender(errandNewEmailSender)
 			.withErrandNewEmailTemplate(errandNewEmailTemplate)
 			.withDaysOfInactivityBeforeReject(daysOfInactivityBeforeReject)
@@ -69,9 +73,12 @@ class EmailIntegrationTest {
 			.withCreated(created)
 			.withModified(modified);
 
+		assertThat(bean).hasNoNullFieldsOrProperties();
 		assertThat(bean.getEnabled()).isTrue();
+		assertThat(bean.getErrandClosedEmailHTMLTemplate()).isEqualTo(errandClosedEmailHTMLTemplate);
 		assertThat(bean.getErrandClosedEmailSender()).isEqualTo(errandClosedEmailSender);
 		assertThat(bean.getErrandClosedEmailTemplate()).isEqualTo(errandClosedEmailTemplate);
+		assertThat(bean.getErrandNewEmailHTMLTemplate()).isEqualTo(errandNewEmailHTMLTemplate);
 		assertThat(bean.getErrandNewEmailSender()).isEqualTo(errandNewEmailSender);
 		assertThat(bean.getErrandNewEmailTemplate()).isEqualTo(errandNewEmailTemplate);
 		assertThat(bean.getDaysOfInactivityBeforeReject()).isEqualTo(daysOfInactivityBeforeReject);

@@ -7,7 +7,8 @@
 		"notificationTTLInDays": 10,
 		"created": "2021-12-31T23:59:59.999+01:00",
 		"modified": "2022-12-31T23:59:59.999+01:00",
-		"accessControl": false
+		"accessControl": false,
+		"notifyReporter": false
 	},
 	{
 		"namespace": "CONTACTCENTER",
@@ -16,7 +17,8 @@
 		"shortCode": "KC",
 		"notificationTTLInDays": 20,
 		"created": "2024-06-12T15:23:59.999+02:00",
-		"accessControl": false
+		"accessControl": false,
+		"notifyReporter": false
 	},
 	{
 		"namespace": "NAMESPACE-3",
@@ -26,7 +28,8 @@
 		"notificationTTLInDays": 30,
 		"created": "2021-12-31T23:59:59.999+01:00",
 		"modified": "2022-12-31T23:59:59.999+01:00",
-		"accessControl": false
+		"accessControl": false,
+		"notifyReporter": false
 	},
 	{
 		"namespace": "CONTACTCENTER",
@@ -35,7 +38,8 @@
 		"shortCode": "KC",
 		"notificationTTLInDays": 40,
 		"created": "2024-06-12T15:24:00.001+02:00",
-		"accessControl": false
+		"accessControl": false,
+		"notifyReporter": false
 	},
 	{
 		"namespace": "NAMESPACE-2506",
@@ -44,6 +48,7 @@
 		"shortCode": "AP",
 		"notificationTTLInDays": 40,
 		"created": "2024-06-12T15:24:00.001+02:00",
-		"accessControl": true
+		"accessControl": true,
+		"notifyReporter": true
 	}
 ]
