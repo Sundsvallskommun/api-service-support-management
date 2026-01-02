@@ -3,6 +3,9 @@ package se.sundsvall.supportmanagement.service;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Collections.emptyList;
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static java.util.UUID.randomUUID;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -43,9 +46,14 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.Semaphore;
+import java.util.stream.Stream;
 import org.apache.commons.io.IOUtils;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
@@ -69,7 +77,10 @@ import se.sundsvall.supportmanagement.integration.db.CommunicationAttachmentRepo
 import se.sundsvall.supportmanagement.integration.db.CommunicationRepository;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ContactChannelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
+import se.sundsvall.supportmanagement.integration.db.model.StakeholderParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationAttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationEntity;
 import se.sundsvall.supportmanagement.integration.messaging.MessagingClient;
@@ -169,6 +180,9 @@ class CommunicationServiceTest {
 	@Captor
 	private ArgumentCaptor<generated.se.sundsvall.messaging.MessageRequest> messageRequestCaptor;
 
+	@Captor
+	private ArgumentCaptor<generated.se.sundsvall.messaging.EmailRequest> emailRequestCaptor;
+
 	@InjectMocks
 	private CommunicationService communicationService;
 
@@ -193,6 +207,11 @@ class CommunicationServiceTest {
 				.withFileName(FILE_NAME)))
 			.withAttachmentIds(List.of(ATTACHMENT_ID))
 			.withDispatch(true);
+	}
+
+	@BeforeEach
+	void setup() {
+		Identifier.remove();
 	}
 
 	@Test
@@ -673,7 +692,7 @@ class CommunicationServiceTest {
 			.withNamespace(NAMESPACE);
 
 		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(errand);
-		when(messagingSettingsIntegrationMock.getMessagingsettings(MUNICIPALITY_ID, NAMESPACE, DEPARTMENT_NAME)).thenReturn(new MessagingSettings(null, null, null, null, null));
+		when(messagingSettingsIntegrationMock.getMessagingsettings(MUNICIPALITY_ID, NAMESPACE, DEPARTMENT_NAME)).thenReturn(new MessagingSettings(null, null, null, null, null, null, null));
 		when(messagingClientMock.sendMessage(eq(MUNICIPALITY_ID), any())).thenReturn(
 			new MessageResult().messageId(messageId));
 		// Act
@@ -721,7 +740,7 @@ class CommunicationServiceTest {
 		Identifier.set(Identifier.create().withType(PARTY_ID).withValue("e82c8029-7676-467d-8ebb-8638d0abd2b4"));
 
 		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(errand);
-		when(messagingSettingsIntegrationMock.getMessagingsettings(MUNICIPALITY_ID, NAMESPACE, DEPARTMENT_NAME)).thenReturn(new MessagingSettings(null, null, null, null, null));
+		when(messagingSettingsIntegrationMock.getMessagingsettings(MUNICIPALITY_ID, NAMESPACE, DEPARTMENT_NAME)).thenReturn(new MessagingSettings(null, null, null, null, null, null, null));
 		when(messagingClientMock.sendMessage(eq(MUNICIPALITY_ID), any())).thenReturn(null);
 
 		// Act & Assert
@@ -733,6 +752,146 @@ class CommunicationServiceTest {
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, errandId, false, RW);
 		verify(messagingSettingsIntegrationMock).getMessagingsettings(MUNICIPALITY_ID, NAMESPACE, DEPARTMENT_NAME);
 		verify(messagingClientMock).sendMessage(eq(MUNICIPALITY_ID), any(MessageRequest.class));
+	}
+
+	@Test
+	void sendEmailNotification() {
+		Identifier.set(Identifier.parse("bcd234; type=adAccount"));
+
+		final var title = "title";
+		final var errandNumber = "errandNumber";
+		final var reporterSupportText = "reporterSupportText";
+		final var katlaUrl = "katlaUrl";
+		final var contactInformationEmail = "contactInformationEmail";
+		final var contactInformationName = "contactInformationEmailName";
+		final var recieverEmail = "abc123@noreply.com";
+		final var messagingsettings = new MessagingSettings(null, reporterSupportText, null, katlaUrl, null, contactInformationEmail, contactInformationName);
+
+		when(accessControlServiceMock.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, RW)).thenReturn(errandEntityMock);
+		when(errandEntityMock.getMunicipalityId()).thenReturn(MUNICIPALITY_ID);
+		when(errandEntityMock.getNamespace()).thenReturn(NAMESPACE);
+		when(errandEntityMock.getTitle()).thenReturn(title);
+		when(errandEntityMock.getErrandNumber()).thenReturn(errandNumber);
+		when(errandEntityMock.getStakeholders()).thenReturn(List.of(StakeholderEntity.create()
+			.withRole("REPORTER")
+			.withContactChannels(List.of(ContactChannelEntity.create()
+				.withType("email")
+				.withValue(recieverEmail)))
+			.withParameters(List.of(StakeholderParameterEntity.create()
+				.withKey("username")
+				.withValues(List.of("abc123"))))));
+		when(messagingSettingsIntegrationMock.getMessagingsettings(MUNICIPALITY_ID, NAMESPACE, DEPARTMENT_NAME)).thenReturn(messagingsettings);
+		when(errandAttachmentServiceMock.findByNamespaceAndMunicipalityIdAndIdIn(any(), any(), any())).thenReturn(attachmentEntitiesMock);
+		when(communicationMapperMock.toCommunicationEntity(eq(NAMESPACE), eq(MUNICIPALITY_ID), any(EmailRequest.class))).thenReturn(CommunicationEntity.create());
+
+		communicationService.sendEmailNotificationToReporter(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, DEPARTMENT_NAME);
+
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, RW);
+		verify(errandEntityMock).getStakeholders();
+		verify(messagingSettingsIntegrationMock).getMessagingsettings(MUNICIPALITY_ID, NAMESPACE, DEPARTMENT_NAME);
+		verify(errandAttachmentServiceMock).findByNamespaceAndMunicipalityIdAndIdIn(eq(NAMESPACE), eq(MUNICIPALITY_ID), any());
+		verify(communicationMapperMock).toCommunicationEntity(eq(NAMESPACE), eq(MUNICIPALITY_ID), any(EmailRequest.class));
+		verify(messagingClientMock).sendEmail(eq(MUNICIPALITY_ID), eq(false), emailRequestCaptor.capture());
+		verifyNoMoreInteractions(accessControlServiceMock, messagingSettingsIntegrationMock, messagingClientMock);
+
+		assertThat(emailRequestCaptor.getValue()).satisfies(emailRequest -> {
+			assertThat(emailRequest.getSubject()).isEqualTo("Nytt meddelande kopplat till ärendet %s %s".formatted(title, errandNumber));
+			assertThat(emailRequest.getMessage()).isEqualToNormalizingUnicode(reporterSupportText);
+			assertThat(emailRequest.getEmailAddress()).isEqualTo(recieverEmail);
+			assertThat(emailRequest.getHtmlMessage()).isNull();
+			assertThat(emailRequest.getSender().getAddress()).isEqualTo(contactInformationEmail);
+			assertThat(emailRequest.getSender().getName()).isEqualTo(contactInformationName);
+		});
+	}
+
+	@Test
+	void sendEmailNotificationWhenNoReporterStakeholder() {
+		Identifier.set(Identifier.parse("bcd234; type=adAccount"));
+
+		when(accessControlServiceMock.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, RW)).thenReturn(errandEntityMock);
+		when(errandEntityMock.getStakeholders()).thenReturn(List.of(StakeholderEntity.create()
+			.withRole("APPLICANT")));
+
+		communicationService.sendEmailNotificationToReporter(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, DEPARTMENT_NAME);
+
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, RW);
+		verify(errandEntityMock).getStakeholders();
+		verifyNoMoreInteractions(accessControlServiceMock, errandEntityMock);
+		verifyNoInteractions(messagingSettingsIntegrationMock, messagingClientMock);
+	}
+
+	@ParameterizedTest(name = "{0}")
+	@MethodSource("stakeholderEligibleForEmailNotificationArgumentProvider")
+	void sendEmailNotificationWhenStakeholderNotEligibleForEmailNotification(String description, String identifierValue, StakeholderEntity stakeholderEntity, boolean eligible) {
+		if (nonNull(identifierValue)) {
+			Identifier.set(Identifier.parse(identifierValue));
+		}
+
+		when(accessControlServiceMock.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, RW)).thenReturn(errandEntityMock);
+		when(errandEntityMock.getStakeholders()).thenReturn(isNull(stakeholderEntity) ? null : List.of(stakeholderEntity));
+		System.err.println(eligible);
+		communicationService.sendEmailNotificationToReporter(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, DEPARTMENT_NAME);
+
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, RW);
+		verify(errandEntityMock).getStakeholders();
+		verifyNoMoreInteractions(accessControlServiceMock, errandEntityMock);
+		verifyNoInteractions(messagingSettingsIntegrationMock, messagingClientMock);
+	}
+
+	@ParameterizedTest(name = "{0}")
+	@MethodSource("stakeholderWithNoEmailProvider")
+	void sendEmailNotificationWhenStakeholderHasNoEmail(String description, List<ContactChannelEntity> channels) {
+		Identifier.set(Identifier.parse("bcd234; type=adAccount"));
+
+		when(accessControlServiceMock.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, RW)).thenReturn(errandEntityMock);
+		when(errandEntityMock.getStakeholders()).thenReturn(List.of(StakeholderEntity.create()
+			.withRole("REPORTER")
+			.withParameters(List.of(StakeholderParameterEntity.create()
+				.withKey("username")
+				.withValues(List.of("abc123"))))
+			.withContactChannels(channels)));
+
+		communicationService.sendEmailNotificationToReporter(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, DEPARTMENT_NAME);
+
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, RW);
+		verify(errandEntityMock).getStakeholders();
+		verifyNoMoreInteractions(accessControlServiceMock, errandEntityMock);
+		verifyNoInteractions(messagingSettingsIntegrationMock, messagingClientMock);
+	}
+
+	private static Stream<Arguments> stakeholderWithNoEmailProvider() {
+		return Stream.of(
+			Arguments.of("Stakeholder with contact channels equal to null", null),
+			Arguments.of("Stakeholder with contact channels equal to empty list", emptyList()),
+			Arguments.of("Stakeholder has contact channels but no entry matching email", List.of(ContactChannelEntity.create().withType("notEmail").withValue("not-email-value"))));
+	}
+
+	@ParameterizedTest(name = "{0}")
+	@MethodSource("stakeholderEligibleForEmailNotificationArgumentProvider")
+	void isStakeholderEligibleForEmailNotification(String description, String identifierValue, StakeholderEntity stakeholderEntity, boolean expectedOutcome) {
+		if (nonNull(identifierValue)) {
+			Identifier.set(Identifier.parse(identifierValue));
+		}
+
+		assertThat(communicationService.isStakeholderEligibleForEmailNotification(stakeholderEntity)).isEqualTo(expectedOutcome);
+	}
+
+	private static Stream<Arguments> stakeholderEligibleForEmailNotificationArgumentProvider() {
+		final var stakeholder = StakeholderEntity.create()
+			.withRole("REPORTER")
+			.withParameters(List.of(StakeholderParameterEntity.create()
+				.withKey("username")
+				.withValues(List.of("abc123"))));
+
+		return Stream.of(
+			Arguments.of("Identifier is null", null, stakeholder, true),
+			Arguments.of("Identifier with custom type", "any_identifier; type=custom", stakeholder, true),
+			Arguments.of("Identifier with party id type", "054c2673-af4e-461b-9afa-c5c813303bc7; type=partyId", stakeholder, true),
+			Arguments.of("Identifier with ad account type but different value as provided stakeholders ad account", "bcd234; type=adAccount", stakeholder, true),
+			Arguments.of("Identifier with ad account and stakeholder is null", "abc123; type=adAccount", null, false),
+			Arguments.of("Identifier with ad account and stakeholder without parameters", "ABC123; type=adAccount", StakeholderEntity.create(), false),
+			Arguments.of("Identifier with ad account and stakeholder empty parameters", "abc123; type=adAccount", StakeholderEntity.create().withParameters(emptyList()), false),
+			Arguments.of("Identifier with ad account type and same value as provided stakeholders ad account", "abc123; type=adAccount", stakeholder, false));
 	}
 
 	@Test

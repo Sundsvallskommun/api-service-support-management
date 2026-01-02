@@ -178,8 +178,11 @@ VALUES ('3008', '155 Country Lane, Cottington', 'Ford Prefect', 'United Kingdom'
         '147d355f-dc94-4fde-a4cb-9ddd16cb1946', 'CAKE-BAKER'),
        ('3009', 'Northern skies', NULL, 'Norway', 'Slartibartfast', 'Magrathea',
         'cb20c51f-fcf3-42c0-b613-de563634a8ec', 'PRIVATE', '23456',
-        '147d355f-dc94-4fde-a4cb-9ddd16cb1946', 'CAKE-EATER');
-
+        '147d355f-dc94-4fde-a4cb-9ddd16cb1946', 'CAKE-EATER'),
+       ('3010', NULL, NULL, NULL, 'Reporter', 'Robert',
+        NULL, 'EMPLOYEE', NULL,
+        '58c41b44-0b9f-413d-bd46-406d24bf5ca8', 'REPORTER');
+        
 -- -----------------------------------
 -- StakeholderParameter
 -- ----------------------------------
@@ -190,11 +193,17 @@ VALUES (201, 'value-x1');
 INSERT INTO stakeholder_parameter_values(stakeholder_parameter_id, `value`)
 VALUES (201, 'value-x2');
 
+INSERT INTO stakeholder_parameter(id, stakeholder_id, display_name, parameters_key)
+VALUES (202, 3010, 'Användarnamn', 'USERNAME');
+INSERT INTO stakeholder_parameter_values(stakeholder_parameter_id, `value`)
+VALUES (202, 'ROB01REP');
+
 -- -----------------------------------
 -- ContactChannel
 -- ----------------------------------
 INSERT INTO contact_channel(stakeholder_id, type, value)
-VALUES ('3001', 'TYPE-1', 'VALUE-1');
+VALUES ('3001', 'TYPE-1', 'VALUE-1'),
+       ('3010', 'EMAIL', 'robert.reporter@testdomain.local');
 
 -- ----------------------------------
 -- ExternalTag
@@ -440,7 +449,9 @@ VALUES ('2281', 100, 'NAMESPACE-1', 'EXTERNAL', 'f4524497-a592-4618-a746-b59a60a
        ('2281', 101, 'NAMESPACE-1', 'INTERNAL', '7a772d18-a588-41bc-91ec-13b7421c9bb8',
         'ec677eb3-604c-4935-bff7-f8f0b500c8f4', '8948f414-079d-4009-af3a-a1ff2a59528a', 'The topic 2'),
        ('2281', 101, 'NAMESPACE-1', 'INTERNAL', '7a772d18-a588-41bc-91ec-13b7421c9bb9',
-        '1be673c0-6ba3-4fb0-af4a-43acf23389f6', '8948f414-079d-4009-af3a-a1ff2a59528b', 'The topic 3');
+        '1be673c0-6ba3-4fb0-af4a-43acf23389f6', '8948f414-079d-4009-af3a-a1ff2a59528b', 'The topic 3'),
+       ('2506', 102, 'NAMESPACE-2506', 'INTERNAL', '09ea77cc-8c6e-4904-8d2d-efe8a8d66827',
+        '58c41b44-0b9f-413d-bd46-406d24bf5ca8', 'a18df997-310c-4fb1-96af-d29a4a99a41d', 'The topic 4')        ;
 
 -- Insert data into conversation_relation_id table
 INSERT INTO conversation_relation_id (conversation_id, relation_id)

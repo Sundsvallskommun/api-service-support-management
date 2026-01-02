@@ -1,0 +1,47 @@
+{
+	"request": {
+		"method": "POST",
+		"urlPath": "/api-messaging/2506/email",
+		"queryParameters": {
+			"async": {
+				"equalTo": "false"
+			}
+		},
+		"bodyPatterns": [
+			{
+				"equalToJson": {
+					"party": {
+						"externalReferences": [
+							{
+								"key": "errandId",
+								"value": "58c41b44-0b9f-413d-bd46-406d24bf5ca8"
+							}
+						]
+					},
+					"emailAddress": "robert.reporter@testdomain.local",
+					"subject": "Nytt meddelande kopplat till ärendet E-service AP-23020003",
+					"message": "Som rapportör kan du kontakta oss via e-post eller telefon",
+					"sender": {
+						"name": "no-reply@localhost.local",
+						"address": "no-reply@localhost.local"
+					},
+					"attachments": [],
+					"headers": {
+						"MESSAGE_ID": [
+							"${json-unit.regex}^<.{8}-.{4}-.{4}-.{4}-.{12}@NAMESPACE-2506>$"
+						]
+					}
+				},
+				"ignoreArrayOrder": true
+			}
+		]
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/json"
+		},
+		"bodyFileName": "test20_createInternalConversationMessageToReporter/response/api-messaging-send-email-response.json",
+		"status": 200
+	},
+	"name": "api-messaging-send-email"
+}

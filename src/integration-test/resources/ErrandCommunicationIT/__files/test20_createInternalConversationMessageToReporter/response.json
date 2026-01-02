@@ -1,0 +1,51 @@
+{
+	"content": [
+		{
+			"id": "6947e1f5-b184-45cb-a862-720c3484c3de",
+			"created": "2025-06-04T12:06:38.809Z",
+			"content": "Bifogar en fil",
+			"readBy": [
+				{
+					"identifier": {
+						"type": "AD_ACCOUNT",
+						"value": "joe01car"
+					},
+					"readAt": "2025-06-04T15:08:02.238488+02:00"
+				}
+			],
+			"attachments": [
+				{
+					"id": "68684a97-52c6-459c-b9fc-f6bdf0c5c84f",
+					"fileName": "approved.jpg",
+					"fileSize": 14481,
+					"mimeType": "image/jpeg",
+					"created": "2025-06-04T14:06:38.811+02:00"
+				}
+			]
+		},
+		{
+			"id": "bbd34585-8754-47a3-a068-012b13540e94",
+			"created": "2025-06-05T13:48:06.657Z",
+			"content": "Hello, how can I help you?",
+			"readBy": [],
+			"attachments": []
+		}
+	],
+	"pageable": {
+		"pageNumber": 0,
+		"pageSize": 20,
+		"sort": [],
+		"offset": 0,
+		"paged": true,
+		"unpaged": false
+	},
+	"totalPages": 1,
+	"totalElements": 2,
+	"last": true,
+	"size": 20,
+	"number": 0,
+	"sort": [],
+	"first": true,
+	"numberOfElements": 2,
+	"empty": false
+}
