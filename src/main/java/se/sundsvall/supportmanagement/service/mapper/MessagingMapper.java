@@ -75,22 +75,29 @@ public class MessagingMapper {
 			.subject(emailRequest.getSubject());
 	}
 
-	public static se.sundsvall.supportmanagement.api.model.communication.EmailRequest toEmailRequest(final ErrandEntity errandEntity, final StakeholderEntity stakeholder, String emailDestination, final MessagingSettings messagingSettings) {
+	private static se.sundsvall.supportmanagement.api.model.communication.EmailRequest toEmailRequest(final String subject, final String message, String emailDestination, final MessagingSettings messagingSettings) {
 		return se.sundsvall.supportmanagement.api.model.communication.EmailRequest.create()
+			.withMessage(ofNullable(message).orElse(""))
 			.withRecipient(emailDestination)
-			.withMessage(ofNullable(messagingSettings.reporterSupportText())
-				// If present, supporttext is presumed to be something like "Hi [firstname], you have received a new message in errand
-				// [title], [errandnr]. Click [url prefix]/suffix/[errandId] to read."
-				.map(message -> message.formatted(
-					stakeholder.getFirstName(),
-					errandEntity.getTitle(),
-					errandEntity.getErrandNumber(),
-					messagingSettings.katlaUrl(),
-					errandEntity.getId()))
-				.orElse(""))
-			.withSubject(SUBJECT_TEMPLATE.formatted(errandEntity.getTitle(), errandEntity.getErrandNumber()))
 			.withSender(messagingSettings.contactInformationEmail())
-			.withSenderName(messagingSettings.contactInformationEmailName());
+			.withSenderName(messagingSettings.contactInformationEmailName())
+			.withSubject(ofNullable(subject).orElse(""));
+	}
+
+	public static se.sundsvall.supportmanagement.api.model.communication.EmailRequest createReporterEmailRequest(final ErrandEntity errandEntity, final StakeholderEntity stakeholder, String emailDestination, final MessagingSettings messagingSettings) {
+		final var subject = SUBJECT_TEMPLATE.formatted(errandEntity.getTitle(), errandEntity.getErrandNumber());
+		final var message = ofNullable(messagingSettings.reporterSupportText())
+			// If present, supporttext is presumed to be something like "Hi [firstname], you have received a new message in errand
+			// [title], [errandnr]. Click [url prefix]/suffix/[errandId] to read."
+			.map(reporterSupportText -> reporterSupportText.formatted(
+				stakeholder.getFirstName(),
+				errandEntity.getTitle(),
+				errandEntity.getErrandNumber(),
+				messagingSettings.katlaUrl(),
+				errandEntity.getId()))
+			.orElse("");
+
+		return toEmailRequest(subject, message, emailDestination, messagingSettings);
 	}
 
 	public static Map<String, List<String>> toEmailHeaders(final Map<EmailHeader, List<String>> emailHeaders) {

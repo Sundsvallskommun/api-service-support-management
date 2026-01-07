@@ -131,7 +131,7 @@ class MessagingMapperTest {
 	}
 
 	@Test
-	void toEmailRequest() {
+	void createReporterEmailRequest() {
 		final var errandNumber = "errandNumber";
 		final var title = "title";
 		final var firstName = "firstName";
@@ -151,7 +151,7 @@ class MessagingMapperTest {
 		when(messagingsettingsMock.contactInformationEmail()).thenReturn(SENDER_EMAIL);
 		when(messagingsettingsMock.contactInformationEmailName()).thenReturn(SENDER_NAME);
 
-		final var result = MessagingMapper.toEmailRequest(errandEntityMock, stakeholderMock, RECIPIENT, messagingsettingsMock);
+		final var result = MessagingMapper.createReporterEmailRequest(errandEntityMock, stakeholderMock, RECIPIENT, messagingsettingsMock);
 
 		verify(errandEntityMock).getId();
 		verify(errandEntityMock, times(2)).getErrandNumber();

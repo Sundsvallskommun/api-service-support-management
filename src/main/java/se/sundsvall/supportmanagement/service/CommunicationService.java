@@ -11,6 +11,7 @@ import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.zalando.problem.Status.INSUFFICIENT_STORAGE;
 import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
 import static org.zalando.problem.Status.NOT_FOUND;
+import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.createReporterEmailRequest;
 import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toEmailAttachments;
 import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toEmailRequest;
 import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toMessagingMessageRequest;
@@ -301,7 +302,7 @@ public class CommunicationService {
 				.ifPresent(emailDestination -> {
 					LOGGER.info("Stakeholder with reporter role found on errrand number {}, sending email notification to {}.", errandEntity.getErrandNumber(), emailDestination);
 					final var messagingSettings = messagingSettingsIntegration.getMessagingsettings(municipalityId, namespace, departmentName);
-					sendEmail(errandEntity, toEmailRequest(errandEntity, stakeholder, emailDestination, messagingSettings));
+					sendEmail(errandEntity, createReporterEmailRequest(errandEntity, stakeholder, emailDestination, messagingSettings));
 				});
 		}
 	}
