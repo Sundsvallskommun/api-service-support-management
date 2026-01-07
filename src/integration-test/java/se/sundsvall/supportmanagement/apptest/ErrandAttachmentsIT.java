@@ -20,6 +20,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.jdbc.Sql;
+
 import se.sundsvall.dept44.test.AbstractAppTest;
 import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.supportmanagement.Application;
@@ -85,9 +86,6 @@ class ErrandAttachmentsIT extends AbstractAppTest {
 			.sendRequest()
 			.getResponseHeaders();
 
-		final var test = revisionRepository.findAll();
-
-		test.forEach(System.out::println);
 		assertThat(revisionRepository.findAllByNamespaceAndMunicipalityIdAndEntityIdOrderByVersion(NAMESPACE, MUNICIPALITY_ID, entityId)).hasSize(2)
 			.extracting(RevisionEntity::getVersion)
 			.containsExactlyInAnyOrder(0, 1);

@@ -304,7 +304,6 @@ class ErrandsCreateResourceFailureTest {
 			ExternalTag.create().withKey("key").withValue("value"),
 			ExternalTag.create().withKey("key").withValue("other value")));
 
-		System.out.println(errand.getId());
 		// Call
 		final var response = webTestClient.post()
 			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))

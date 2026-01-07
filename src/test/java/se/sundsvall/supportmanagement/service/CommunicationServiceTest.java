@@ -829,7 +829,7 @@ class CommunicationServiceTest {
 
 		when(accessControlServiceMock.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, RW)).thenReturn(errandEntityMock);
 		when(errandEntityMock.getStakeholders()).thenReturn(isNull(stakeholderEntity) ? null : List.of(stakeholderEntity));
-		System.err.println(eligible);
+
 		communicationService.sendEmailNotificationToReporter(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, DEPARTMENT_NAME);
 
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, RW);
