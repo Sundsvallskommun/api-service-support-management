@@ -1,0 +1,18 @@
+{
+	"request": {
+		"method": "POST",
+		"url": "/api-messageexchange/2506/draken/conversations/a18df997-310c-4fb1-96af-d29a4a99a41d/messages",
+		"headers": {
+			"X-Sent-By": {
+				"equalTo": "adm01adm; type=adAccount"
+			}
+		}
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "*/*"
+		},
+		"status": 201
+	},
+	"name": "api-messageexchange-create-message"
+}

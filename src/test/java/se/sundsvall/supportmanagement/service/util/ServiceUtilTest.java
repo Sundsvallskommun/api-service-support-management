@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.service.util;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
+import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import generated.se.sundsvall.accessmapper.Access;
@@ -16,7 +17,12 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.core.io.ClassPathResource;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
+import se.sundsvall.supportmanagement.integration.db.model.StakeholderParameterEntity;
 
 class ServiceUtilTest {
 
@@ -96,5 +102,61 @@ class ServiceUtilTest {
 		assertThat(ServiceUtil.createCacheKey(List.of(RW))).isEqualTo("RW");
 		assertThat(ServiceUtil.createCacheKey(List.of(RW, LR))).isEqualTo("RW|LR");
 		assertThat(ServiceUtil.createCacheKey(List.of(LR, RW, R))).isEqualTo("LR|RW|R");
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"reporter", "REPORTER", "rEpOrTeR"
+	})
+	void getStakeholderMatchingRole(String role) {
+		final var reporterStakeholder = StakeholderEntity.create().withRole("REPORTER");
+		final var errandEntity = ErrandEntity.create().withStakeholders(List.of(reporterStakeholder));
+
+		final var result = ServiceUtil.getStakeholderMatchingRole(errandEntity, role);
+
+		assertThat(result).isSameAs(reporterStakeholder);
+	}
+
+	@ParameterizedTest
+	@NullAndEmptySource
+	void getStakeholderMatchingRoleWhenNoStakeholders(List<StakeholderEntity> stakeholders) {
+		final var errandEntity = ErrandEntity.create().withStakeholders(stakeholders);
+
+		assertThat(ServiceUtil.getStakeholderMatchingRole(errandEntity, "REPORTER")).isNull();
+
+	}
+
+	@ParameterizedTest
+	@NullSource
+	@ValueSource(strings = {
+		"non-matching-role"
+	})
+	void getStakeholderMatchingRoleWhenNoMatch(String role) {
+		final var reporterStakeholder = StakeholderEntity.create().withRole("REPORTER");
+		final var errandEntity = ErrandEntity.create().withStakeholders(List.of(reporterStakeholder));
+
+		assertThat(ServiceUtil.getStakeholderMatchingRole(errandEntity, role)).isNull();
+	}
+
+	@Test
+	void retrieveUsername() {
+		final var usernameValue = "usernameValue";
+		assertThat(ServiceUtil.retrieveUsername(StakeholderEntity.create().withParameters(List.of(StakeholderParameterEntity.create()
+			.withKey("username")
+			.withValues(List.of(" ", "", usernameValue))))))
+			.isPresent().hasValue(usernameValue);
+
+	}
+
+	@Test
+	void retrieveUsernameFromNullOrEmpty() {
+		assertThat(ServiceUtil.retrieveUsername(null)).isEmpty();
+		assertThat(ServiceUtil.retrieveUsername(StakeholderEntity.create())).isEmpty();
+		assertThat(ServiceUtil.retrieveUsername(StakeholderEntity.create().withParameters(emptyList()))).isEmpty();
+		assertThat(ServiceUtil.retrieveUsername(StakeholderEntity.create().withParameters(List.of(StakeholderParameterEntity.create().withKey("not-username"))))).isEmpty();
+		assertThat(ServiceUtil.retrieveUsername(StakeholderEntity.create().withParameters(List.of(StakeholderParameterEntity.create().withKey("username"))))).isEmpty();
+		assertThat(ServiceUtil.retrieveUsername(StakeholderEntity.create().withParameters(List.of(StakeholderParameterEntity.create().withKey("username").withValues(emptyList()))))).isEmpty();
+		assertThat(ServiceUtil.retrieveUsername(StakeholderEntity.create().withParameters(List.of(StakeholderParameterEntity.create().withKey("username").withValues(List.of("")))))).isEmpty();
+		assertThat(ServiceUtil.retrieveUsername(StakeholderEntity.create().withParameters(List.of(StakeholderParameterEntity.create().withKey("username").withValues(List.of(" ")))))).isEmpty();
 	}
 }

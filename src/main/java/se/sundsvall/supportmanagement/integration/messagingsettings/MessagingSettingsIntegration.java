@@ -24,6 +24,8 @@ public class MessagingSettingsIntegration {
 	private static final String KEY_CONTACT_INFORMATION_URL = "contact_information_url";
 	private static final String KEY_SMS_SENDER = "sms_sender";
 	private static final String KEY_SUPPORT_TEXT = "support_text";
+	private static final String KEY_KATLA_URL = "katla_url";
+	private static final String KEY_REPORTER_SUPPORT_TEXT = "reporter_support_text";
 	private static final Logger LOG = LoggerFactory.getLogger(MessagingSettingsIntegration.class);
 
 	private final MessagingSettingsClient messagingSettingsClient;
@@ -43,7 +45,9 @@ public class MessagingSettingsIntegration {
 		try {
 			return new MessagingSettings(
 				retrieveOptionalValue(KEY_SUPPORT_TEXT, messagingSettings).orElse(null), // This is not a mandatory setting
+				retrieveOptionalValue(KEY_REPORTER_SUPPORT_TEXT, messagingSettings).orElse(null), // This is not a mandatory setting
 				retrieveValue(KEY_CONTACT_INFORMATION_URL, messagingSettings),
+				retrieveOptionalValue(KEY_KATLA_URL, messagingSettings).orElse("<Add katla_url configuration to namespace in messaging settings>"),
 				retrieveValue(KEY_SMS_SENDER, messagingSettings),
 				retrieveValue(KEY_CONTACT_INFORMATION_EMAIL, messagingSettings),
 				retrieveOptionalValue(KEY_CONTACT_INFORMATION_EMAIL_NAME, messagingSettings).orElse(retrieveValue(KEY_CONTACT_INFORMATION_EMAIL, messagingSettings)));

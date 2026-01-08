@@ -36,6 +36,8 @@ class MessagingSettingsIntegrationTest {
 	private static final String KEY_URL = "contact_information_url";
 	private static final String KEY_SMS_SENDER = "sms_sender";
 	private static final String KEY_SUPPORT_TEXT = "support_text";
+	private static final String KEY_REPORTER_SUPPORT_TEXT = "reporter_support_text";
+	private static final String KEY_KATLA_URL = "katla_url";
 
 	@Mock
 	private MessagingSettingsClient clientMock;
@@ -53,10 +55,14 @@ class MessagingSettingsIntegrationTest {
 		final var urlValue = "url";
 		final var smsSenderValue = "smsSender";
 		final var supportTextValue = "supportText";
+		final var reporterSupportTextValue = "reporterSupportText";
+		final var katlaUrlValue = "katlaUrl";
 
 		when(clientMock.getMessagingsettings(eq(MUNICIPALITY_ID), anyString())).thenReturn(List.of(new MessagingSettings().values(List.of(
 			new MessagingSettingValue().key(KEY_EMAIL).value(emailValue),
 			new MessagingSettingValue().key(KEY_EMAIL_NAME).value(emailNameValue),
+			new MessagingSettingValue().key(KEY_KATLA_URL).value(katlaUrlValue),
+			new MessagingSettingValue().key(KEY_REPORTER_SUPPORT_TEXT).value(reporterSupportTextValue),
 			new MessagingSettingValue().key(KEY_URL).value(urlValue),
 			new MessagingSettingValue().key(KEY_SMS_SENDER).value(smsSenderValue),
 			new MessagingSettingValue().key(KEY_SUPPORT_TEXT).value(supportTextValue)))));
@@ -68,6 +74,8 @@ class MessagingSettingsIntegrationTest {
 		assertThat(result.contactInformationUrl()).isEqualTo(urlValue);
 		assertThat(result.smsSender()).isEqualTo(smsSenderValue);
 		assertThat(result.supportText()).isEqualTo(supportTextValue);
+		assertThat(result.katlaUrl()).isEqualTo(katlaUrlValue);
+		assertThat(result.reporterSupportText()).isEqualTo(reporterSupportTextValue);
 	}
 
 	@Test

@@ -1,11 +1,33 @@
 {
 	"content": [
 		{
-			"id": "c9efe03d-deff-4828-a043-541fa78ffdeb",
-			"errandNumber": "AP-23020002",
+			"id": "58c41b44-0b9f-413d-bd46-406d24bf5ca8",
+			"errandNumber": "AP-23020003",
 			"title": "E-service",
 			"priority": "LOW",
-			"stakeholders": [],
+			"stakeholders": [
+				{
+					"externalIdType": "EMPLOYEE",
+					"role": "REPORTER",
+					"firstName": "Reporter",
+					"lastName": "Robert",
+					"contactChannels": [
+						{
+							"type": "EMAIL",
+							"value": "robert.reporter@testdomain.local"
+						}
+					],
+					"parameters": [
+						{
+							"key": "USERNAME",
+							"displayName": "Användarnamn",
+							"values": [
+								"ROB01REP"
+							]
+						}
+					]
+				}
+			],
 			"externalTags": [],
 			"parameters": [],
 			"classification": {
@@ -21,11 +43,11 @@
 			"businessRelated": false,
 			"labels": [
 				{
-					"id": "8f1c6101-8c32-4c77-b72c-3348f23394f1",
+					"id": "7ac8f12e-7c9b-47dc-ac7f-92a1f62ca53f",
 					"classification": "CLASS",
-					"displayName": "LEVELTWO-1-DISPLAY-NAME",
-					"resourcePath": "ROOT/LEVELONE-1/LEVELTWO-1",
-					"resourceName": "LEVELTWO-1"
+					"displayName": "LEVELTWO-2-DISPLAY-NAME",
+					"resourcePath": "ROOT/LEVELONE-1/LEVELTWO-2",
+					"resourceName": "LEVELTWO-2"
 				}
 			],
 			"activeNotifications": [],
@@ -65,8 +87,8 @@
 			"touched": "2024-01-01T12:00:00+01:00"
 		},
 		{
-			"id": "58c41b44-0b9f-413d-bd46-406d24bf5ca8",
-			"errandNumber": "AP-23020003",
+			"id": "c9efe03d-deff-4828-a043-541fa78ffdeb",
+			"errandNumber": "AP-23020002",
 			"title": "E-service",
 			"priority": "LOW",
 			"stakeholders": [],
@@ -85,11 +107,11 @@
 			"businessRelated": false,
 			"labels": [
 				{
-					"id": "7ac8f12e-7c9b-47dc-ac7f-92a1f62ca53f",
+					"id": "8f1c6101-8c32-4c77-b72c-3348f23394f1",
 					"classification": "CLASS",
-					"displayName": "LEVELTWO-2-DISPLAY-NAME",
-					"resourcePath": "ROOT/LEVELONE-1/LEVELTWO-2",
-					"resourceName": "LEVELTWO-2"
+					"displayName": "LEVELTWO-1-DISPLAY-NAME",
+					"resourcePath": "ROOT/LEVELONE-1/LEVELTWO-1",
+					"resourceName": "LEVELTWO-1"
 				}
 			],
 			"activeNotifications": [],
@@ -114,12 +136,12 @@
 		"paged": true,
 		"unpaged": false
 	},
-	"last": true,
 	"totalElements": 3,
 	"totalPages": 1,
-	"first": true,
+	"last": true,
 	"size": 20,
 	"number": 0,
+	"numberOfElements": 3,
 	"sort": [
 		{
 			"direction": "DESC",
@@ -130,6 +152,6 @@
 			"ascending": false
 		}
 	],
-	"numberOfElements": 3,
+	"first": true,
 	"empty": false
 }

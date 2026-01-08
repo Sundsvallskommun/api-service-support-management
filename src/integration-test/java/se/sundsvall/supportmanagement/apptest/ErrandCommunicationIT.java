@@ -21,6 +21,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.test.context.jdbc.Sql;
+
 import se.sundsvall.dept44.test.AbstractAppTest;
 import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.supportmanagement.Application;
@@ -289,6 +290,38 @@ class ErrandCommunicationIT extends AbstractAppTest {
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponseHeader(CONTENT_TYPE, List.of(IMAGE_JPEG_VALUE))
 			.withExpectedBinaryResponse("Test_image.jpg")
+			.sendRequestAndVerifyResponse();
+	}
+
+	/**
+	 * Test to verify email is sent to reporter when administrator creates a message in an internal conversation for an
+	 * errand where stakeholder with reporter role is present.
+	 */
+	@Test
+	void test20_createInternalConversationMessageToReporter() throws FileNotFoundException {
+		setupCall()
+			.withHttpMethod(POST)
+			.withServicePath("/2506/NAMESPACE-2506/errands/58c41b44-0b9f-413d-bd46-406d24bf5ca8/communication/conversations/09ea77cc-8c6e-4904-8d2d-efe8a8d66827/messages")
+			.withHeader(HEADER_NAME, "type=adAccount; adm01adm")
+			.withContentType(MULTIPART_FORM_DATA)
+			.withRequestFile("message", REQUEST_FILE)
+			.withExpectedResponseStatus(NO_CONTENT)
+			.sendRequestAndVerifyResponse();
+	}
+
+	/**
+	 * Test to verify email is NOT sent to reporter when reporter creates a message in an internal conversation for an
+	 * errand where stakeholder with reporter role is present.
+	 */
+	@Test
+	void test21_createInternalConversationMessageToAdministrator() throws FileNotFoundException {
+		setupCall()
+			.withHttpMethod(POST)
+			.withServicePath("/2506/NAMESPACE-2506/errands/58c41b44-0b9f-413d-bd46-406d24bf5ca8/communication/conversations/09ea77cc-8c6e-4904-8d2d-efe8a8d66827/messages")
+			.withHeader(HEADER_NAME, "type=adAccount; rob01rep")
+			.withContentType(MULTIPART_FORM_DATA)
+			.withRequestFile("message", REQUEST_FILE)
+			.withExpectedResponseStatus(NO_CONTENT)
 			.sendRequestAndVerifyResponse();
 	}
 }

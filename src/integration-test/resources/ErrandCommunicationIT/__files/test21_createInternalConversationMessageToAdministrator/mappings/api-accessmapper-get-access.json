@@ -1,0 +1,19 @@
+{
+	"request": {
+		"method": "GET",
+		"urlPath": "/api-accessmapper/2506/NAMESPACE-2506/ad/rob01rep",
+		"queryParameters": {
+			"type": {
+				"equalTo": "label"
+			}
+		}
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/json"
+		},
+		"bodyFileName": "test21_createInternalConversationMessageToAdministrator/response/api-accessmapper-get-access-response.json",
+		"status": 200
+	},
+	"name": "api-accessmapper-get-access"
+}
