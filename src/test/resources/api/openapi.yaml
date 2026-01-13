@@ -5,7 +5,7 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "12.2"
+  version: "12.3"
 servers:
 - url: http://localhost:8080
   description: Generated server url
@@ -5334,6 +5334,7 @@ components:
           examples:
           - keycard
           minLength: 1
+          pattern: "[A-Z0-9_]+"
         labels:
           type: array
           items:

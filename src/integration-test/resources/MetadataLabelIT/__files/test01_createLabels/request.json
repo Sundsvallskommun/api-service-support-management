@@ -2,25 +2,25 @@
 	{
 		"displayName": "Nivå 1",
 		"name": "LABEL-1",
-		"resourceName": "RES-1",
+		"resourceName": "RES_1",
 		"classification": "TOP-LEVEL",
 		"labels": [
 			{
 				"displayName": "Nivå 1.1",
 				"name": "LEVEL-1-1",
-				"resourceName": "RES-1-1",
+				"resourceName": "RES_1_1",
 				"classification": "MIDDLE-LEVEL",
 				"labels": [
 					{
 						"displayName": "Nivå 1.1.1",
 						"name": "LEVEL-1-1-1",
-						"resourceName": "RES-1-1-1",
+						"resourceName": "RES_1_1_1",
 						"classification": "LOWEST-LEVEL"
 					},
 					{
 						"displayName": "Nivå 1.1.2",
 						"name": "LEVEL-1-1-2",
-						"resourceName": "RES-1-1-2",
+						"resourceName": "RES_1_1_2",
 						"classification": "LOWEST-LEVEL"
 					}
 				]

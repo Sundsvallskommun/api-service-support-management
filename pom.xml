@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>se.sundsvall</groupId>
 	<artifactId>api-service-support-management</artifactId>
-	<version>12.2</version>
+	<version>12.3</version>
 	<name>api-service-support-management</name>
 	<properties>
 		<spring-filter.version>3.2.5</spring-filter.version>

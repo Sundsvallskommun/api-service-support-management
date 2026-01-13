@@ -4,27 +4,27 @@
 		"classification": "CATEGORY",
 		"displayName": "CATEGORY-DISPLAY-NAME-1",
 		"name": "CATEGORY-1",
-		"resourceName": "CATEGORY-1",
+		"resourceName": "CATEGORY_1",
 		"labels": [
 			{
 				"id": "3273e374-855c-4525-b8fc-aeaa710b83c5",
 				"classification": "TYPE",
 				"displayName": "TYPE-DISPLAY-NAME-2",
 				"name": "TYPE-2",
-				"resourceName": "TYPE-2",
+				"resourceName": "TYPE_2",
 				"labels": [
 					{
 						"id": "926fd3f9-f488-4ba4-93f6-2789dee0c0c3",
 						"classification": "SUBTYPE",
 						"displayName": "SUBTYPE-DISPLAY-NAME-1",
 						"name": "SUBTYPE-1b",
-						"resourceName": "SUBTYPE-1",
+						"resourceName": "SUBTYPE_1",
 						"labels": [
 							{
 								"classification": "DEEPSUBTYPE",
 								"displayName": "DEEPSUBTYPE-DISPLAY-NAME-3",
 								"name": "DEEPSUBTYPE-3",
-								"resourceName": "DEEPSUBTYPE-3",
+								"resourceName": "DEEPSUBTYPE_3",
 								"labels": []
 							}
 						]
@@ -35,14 +35,14 @@
 						"displayName": "SUBTYPE-DISPLAY-NAME-3",
 						"name": "SUBTYPE-3",
 						"resourcePath": "CATEGORY-1/TYPE-2/SUBTYPE-3",
-						"resourceName": "RENAMED-SUBTYPE-3",
+						"resourceName": "RENAMED_SUBTYPE_3",
 						"labels": [
 							{
 								"id": "0eb1f695-48b1-40fd-af8c-b277c37db2d4",
 								"classification": "DEEPSUBTYPE",
 								"displayName": "DEEPSUBTYPE-DISPLAY-NAME-2",
 								"name": "DEEPSUBTYPE-2",
-								"resourceName": "DEEPSUBTYPE-2",
+								"resourceName": "DEEPSUBTYPE_2",
 								"labels": []
 							},
 							{
@@ -50,7 +50,7 @@
 								"classification": "DEEPSUBTYPE",
 								"displayName": "DEEPSUBTYPE-DISPLAY-NAME-1",
 								"name": "DEEPSUBTYPE-1",
-								"resourceName": "DEEPSUBTYPE-1",
+								"resourceName": "DEEPSUBTYPE_1",
 								"labels": []
 							}
 						]

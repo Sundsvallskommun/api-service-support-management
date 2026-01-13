@@ -39,8 +39,8 @@ class MetadataLabelResourceTest {
 
 		// Arrange
 		final var labels = List.of(
-			Label.create().withClassification("classification").withResourceName("resource_1"),
-			Label.create().withClassification("classification").withResourceName("resource_2"));
+			Label.create().withClassification("classification").withResourceName("RESOURCE_1"),
+			Label.create().withClassification("classification").withResourceName("RESOURCE_2"));
 
 		// Act
 		webTestClient.post()
@@ -85,8 +85,8 @@ class MetadataLabelResourceTest {
 
 		// Arrange
 		final var labels = List.of(
-			Label.create().withClassification("classification").withResourceName("resource_1"),
-			Label.create().withClassification("classification").withResourceName("resource_2"));
+			Label.create().withClassification("classification").withResourceName("RESOURCE_1"),
+			Label.create().withClassification("classification").withResourceName("RESOURCE_2"));
 
 		// Act
 		webTestClient.put()

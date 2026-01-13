@@ -5,6 +5,7 @@ import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import java.util.List;
 import java.util.Objects;
 import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
@@ -28,6 +29,7 @@ public class Label {
 
 	@Schema(description = "Resource name", examples = "keycard")
 	@NotBlank
+	@Pattern(regexp = "[A-Z0-9_]+", message = "can only contain A-Z, 0-9 and _")
 	private String resourceName;
 
 	@ArraySchema(arraySchema = @Schema(ref = "#/components/schemas/Label"))

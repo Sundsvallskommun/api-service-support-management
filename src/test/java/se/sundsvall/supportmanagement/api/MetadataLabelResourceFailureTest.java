@@ -38,7 +38,7 @@ class MetadataLabelResourceFailureTest {
 
 	@ParameterizedTest
 	@MethodSource("createLabelsArguments")
-	void createWithInvalidArguments(final String namespace, final String municipalityId, List<Label> labels, final Tuple expectedResponse) {
+	void createWithInvalidArguments(final String namespace, final String municipalityId, List<Label> labels, final Tuple... expectedResponse) {
 
 		final var response = webTestClient.post()
 			.uri(builder -> builder.path(PATH).build(Map.of("namespace", namespace, "municipalityId", municipalityId)))
@@ -59,7 +59,7 @@ class MetadataLabelResourceFailureTest {
 
 	@ParameterizedTest
 	@MethodSource("updateLabelsArguments")
-	void updateWithInvalidArguments(final String namespace, final String municipalityId, List<Label> labels, final Tuple expectedResponse) {
+	void updateWithInvalidArguments(final String namespace, final String municipalityId, List<Label> labels, final Tuple... expectedResponse) {
 
 		final var response = webTestClient.put()
 			.uri(builder -> builder.path(PATH).build(Map.of("namespace", namespace, "municipalityId", municipalityId)))
@@ -88,20 +88,42 @@ class MetadataLabelResourceFailureTest {
 
 	private static Stream<Arguments> labelsArguments(String method) {
 		return Stream.of(
-			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabel("class", "resourceName_1"), createLabel("class", "resourceName_1")),
-				tuple(method + ".labels", "each entry must have unique name, resourceName and same classification compared to its siblings")),
-			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabel("class", "resourceName"), createLabel("class", "resourceName")),
-				tuple(method + ".labels", "each entry must have unique name, resourceName and same classification compared to its siblings")),
-			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabel("class_1", "resourceName_1"), createLabel("class_2", "resourceName_2")),
-				tuple(method + ".labels", "each entry must have unique name, resourceName and same classification compared to its siblings")),
-			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabel(null, "resourceName")),
-				tuple(method + ".labels[0].classification", "must not be blank")),
-			Arguments.of("MY_NAMESPACE", "666", List.of(createLabel("classification", "resourceName")),
-				tuple(method + ".municipalityId", "not a valid municipality ID")),
-			Arguments.of("invalid,namespace", "2281", List.of(createLabel("classification", "resourceName")),
-				tuple(method + ".namespace", "can only contain A-Z, a-z, 0-9, - and _")),
+			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabel("class", "RESOURCE_NAME_1"), createLabel("class", "RESOURCE_NAME_1")),
+				tuples(
+					tuple(method + ".labels", "each entry must have unique name, resourceName and same classification compared to its siblings"))),
+			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabel("class", "RESOURCE_NAME"), createLabel("class", "RESOURCE_NAME")),
+				tuples(
+					tuple(method + ".labels", "each entry must have unique name, resourceName and same classification compared to its siblings"))),
+			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabel("class_1", "RESOURCE_NAME_1"), createLabel("class_2", "RESOURCE_NAME_2")),
+				tuples(
+					tuple(method + ".labels", "each entry must have unique name, resourceName and same classification compared to its siblings"))),
+			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabel(null, "RESOURCE_NAME")),
+				tuples(
+					tuple(method + ".labels[0].classification", "must not be blank"))),
+			Arguments.of("MY_NAMESPACE", "666", List.of(createLabel("classification", "RESOURCE_NAME")),
+				tuples(
+					tuple(method + ".municipalityId", "not a valid municipality ID"))),
+			Arguments.of("invalid,namespace", "2281", List.of(createLabel("classification", "RESOURCE_NAME")),
+				tuples(
+					tuple(method + ".namespace", "can only contain A-Z, a-z, 0-9, - and _"))),
 			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabel("classification", null)),
-				tuple(method + ".labels[0].resourceName", "must not be blank")));
+				tuples(
+					tuple(method + ".labels[0].resourceName", "must not be blank"))),
+			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabel("classification", "")),
+				tuples(
+					tuple(method + ".labels[0].resourceName", "can only contain A-Z, 0-9 and _"),
+					tuple(method + ".labels[0].resourceName", "must not be blank"))),
+			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabel("classification", "RESOURCE-NAME")),
+				tuples(
+					tuple(method + ".labels[0].resourceName", "can only contain A-Z, 0-9 and _"))),
+			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabel("classification", "RESOURCE_NAME/RESOURCE_1")),
+				tuples(
+					tuple(method + ".labels[0].resourceName", "can only contain A-Z, 0-9 and _"))),
+
+			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabel("classification", "resourceName")),
+				tuples(
+					tuple(method + ".labels[0].resourceName", "can only contain A-Z, 0-9 and _"))));
+
 	}
 
 	private static Label createLabel(String classification, String resourceName) {
@@ -158,5 +180,9 @@ class MetadataLabelResourceFailureTest {
 		return Stream.of(
 			Arguments.of("MY_NAMESPACE", "666", tuple("deleteLabels.municipalityId", "not a valid municipality ID")),
 			Arguments.of("invalid,namespace", "2281", tuple("deleteLabels.namespace", "can only contain A-Z, a-z, 0-9, - and _")));
+	}
+
+	private static Tuple[] tuples(Tuple... tuples) {
+		return tuples;
 	}
 }
