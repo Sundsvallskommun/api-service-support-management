@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
@@ -26,7 +27,6 @@ import generated.se.sundsvall.messaging.WebMessageRequest;
 import generated.se.sundsvall.messaging.WebMessageSender;
 import io.netty.util.internal.StringUtil;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.util.Base64;
 import java.util.Base64.Decoder;
@@ -231,7 +231,7 @@ public class MessagingMapper {
 
 	private static WebMessageSender toWebMessageRequestSender(final String senderUserId) {
 		return ofNullable(senderUserId)
-			.map(id -> new WebMessageSender().userId(senderUserId))
+			.map(id -> new WebMessageSender().userId(id))
 			.orElse(null);
 	}
 
@@ -253,10 +253,10 @@ public class MessagingMapper {
 		}
 
 		try {
-			BASE64_DECODER.decode(message.getBytes(StandardCharsets.UTF_8));
+			BASE64_DECODER.decode(message.getBytes(UTF_8));
 			return message; // If decoding passes, the message is already in base64 format
-		} catch (final Exception e) {
-			return BASE64_ENCODER.encodeToString(message.getBytes(StandardCharsets.UTF_8));
+		} catch (final Exception _) {
+			return BASE64_ENCODER.encodeToString(message.getBytes(UTF_8));
 		}
 	}
 

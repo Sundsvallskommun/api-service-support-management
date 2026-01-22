@@ -81,7 +81,7 @@ class NotificationServiceTest {
 		final var notificationId = randomUUID().toString();
 		final var errandId = randomUUID().toString();
 
-		when(notificationRepositoryMock.findByIdAndNamespaceAndMunicipalityIdAndErrandEntityId(notificationId, namespace, municipalityId, errandId)).thenReturn(Optional.ofNullable(createNotificationEntity(n -> {})));
+		when(notificationRepositoryMock.findByIdAndNamespaceAndMunicipalityIdAndErrandEntityId(notificationId, namespace, municipalityId, errandId)).thenReturn(Optional.ofNullable(createNotificationEntity(_ -> {})));
 
 		// Act
 		final var result = notificationService.getNotification(municipalityId, namespace, errandId, notificationId);
@@ -119,7 +119,7 @@ class NotificationServiceTest {
 		final var namespace = "namespace";
 		final var ownerId = randomUUID().toString();
 
-		when(notificationRepositoryMock.findAllByNamespaceAndMunicipalityIdAndOwnerId(namespace, municipalityId, ownerId)).thenReturn(List.of(createNotificationEntity(n -> {})));
+		when(notificationRepositoryMock.findAllByNamespaceAndMunicipalityIdAndOwnerId(namespace, municipalityId, ownerId)).thenReturn(List.of(createNotificationEntity(_ -> {})));
 
 		// Act
 		final var result = notificationService.getNotificationsByOwnerId(municipalityId, namespace, ownerId);
@@ -154,7 +154,7 @@ class NotificationServiceTest {
 		final var errandId = randomUUID().toString();
 		final var sort = Sort.by("modified");
 
-		when(notificationRepositoryMock.findAllByNamespaceAndMunicipalityIdAndErrandEntityId(namespace, municipalityId, errandId, sort)).thenReturn(List.of(createNotificationEntity(n -> {})));
+		when(notificationRepositoryMock.findAllByNamespaceAndMunicipalityIdAndErrandEntityId(namespace, municipalityId, errandId, sort)).thenReturn(List.of(createNotificationEntity(_ -> {})));
 
 		// Act
 		final var result = notificationService.getNotificationsByErrandId(municipalityId, namespace, errandId, sort);
@@ -190,7 +190,7 @@ class NotificationServiceTest {
 		final var municipalityId = "2281";
 		final var namespace = "namespace";
 		final var notification = TestObjectsBuilder.createNotification(n -> n.withExpires(null));
-		final var errandEntity = TestObjectsBuilder.createNotificationEntity(n -> {}).getErrandEntity();
+		final var errandEntity = TestObjectsBuilder.createNotificationEntity(_ -> {}).getErrandEntity();
 		errandEntity.setNamespace(namespace);
 		errandEntity.setMunicipalityId(municipalityId);
 		final var id = "SomeId";
@@ -229,7 +229,7 @@ class NotificationServiceTest {
 		final var municipalityId = "2281";
 		final var namespace = "namespace";
 		final var notification = TestObjectsBuilder.createNotification(n -> n.withExpires(null));
-		final var errandEntity = TestObjectsBuilder.createNotificationEntity(n -> {}).getErrandEntity();
+		final var errandEntity = TestObjectsBuilder.createNotificationEntity(_ -> {}).getErrandEntity();
 		final var id = "SomeId";
 		final var executingUserId = notification.getOwnerId();
 		final var fullName = "fullName";

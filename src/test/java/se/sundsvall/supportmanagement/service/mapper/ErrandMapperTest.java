@@ -223,7 +223,7 @@ class ErrandMapperTest {
 		assertThat(errand.getContactReason()).isEqualTo(CONTACT_REASON);
 		assertThat(errand.getContactReasonDescription()).isEqualTo(CONTACT_REASON_DESCRIPTION);
 		assertThat(errand.getLabels()).containsExactly(LABEL_1, LABEL_2);
-		assertThat(errand).hasNoNullFieldsOrPropertiesExcept("notifications");
+		assertThat(errand).hasNoNullFieldsOrPropertiesExcept("notifications", "jsonParameters");
 	}
 
 	@Test
@@ -310,7 +310,7 @@ class ErrandMapperTest {
 					notification.setErrandId("cb20c51f-fcf3-42c0-b613-de563634a8ec");
 				}))));
 
-		assertThat(errands.getFirst()).hasNoNullFieldsOrPropertiesExcept("notifications");
+		assertThat(errands.getFirst()).hasNoNullFieldsOrPropertiesExcept("notifications", "jsonParameters");
 	}
 
 	@Test
@@ -328,7 +328,7 @@ class ErrandMapperTest {
 				assertThat(errand).hasAllNullFieldsOrPropertiesExcept("id", "created", "errandNumber", "modified", "status", "title", "touched", "resolution", "channel");
 				assertThat(errand.getErrandNumber()).isEqualTo("limited");
 			} else {
-				assertThat(errand).hasNoNullFieldsOrPropertiesExcept("notifications");
+				assertThat(errand).hasNoNullFieldsOrPropertiesExcept("notifications", "jsonParameters");
 				assertThat(errand.getErrandNumber()).isEqualTo("full");
 				assertThat(errand.getBusinessRelated()).isFalse();
 			}

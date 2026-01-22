@@ -60,6 +60,10 @@ public class Errand {
 	@Valid
 	private List<Parameter> parameters;
 
+	@Schema(description = "JSON parameters for the errand")
+	@Valid
+	private List<JsonParameter> jsonParameters;
+
 	@Schema(implementation = Classification.class)
 	@Valid
 	@ValidClassificationCreate(groups = OnCreate.class)
@@ -180,6 +184,19 @@ public class Errand {
 
 	public Errand withParameters(final List<Parameter> parameters) {
 		this.parameters = parameters;
+		return this;
+	}
+
+	public List<JsonParameter> getJsonParameters() {
+		return jsonParameters;
+	}
+
+	public void setJsonParameters(final List<JsonParameter> jsonParameters) {
+		this.jsonParameters = jsonParameters;
+	}
+
+	public Errand withJsonParameters(final List<JsonParameter> jsonParameters) {
+		this.jsonParameters = jsonParameters;
 		return this;
 	}
 
@@ -484,7 +501,8 @@ public class Errand {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(assignedGroupId, assignedUserId, businessRelated, channel, classification, contactReason, contactReasonDescription, created, description, errandNumber, escalationEmail, externalTags, id, labels, activeNotifications, modified,
+		return Objects.hash(assignedGroupId, assignedUserId, businessRelated, channel, classification, contactReason, contactReasonDescription, created, description, errandNumber, escalationEmail, externalTags, id, jsonParameters, labels,
+			activeNotifications, modified,
 			parameters, priority, reporterUserId, resolution, stakeholders, status, suspension, title, touched);
 	}
 
@@ -498,12 +516,13 @@ public class Errand {
 		}
 		return Objects.equals(assignedGroupId, other.assignedGroupId) && Objects.equals(assignedUserId, other.assignedUserId) && Objects.equals(businessRelated, other.businessRelated) && Objects.equals(channel, other.channel) && Objects.equals(
 			classification, other.classification) && Objects.equals(contactReason, other.contactReason) && Objects.equals(contactReasonDescription, other.contactReasonDescription) && Objects.equals(created, other.created) && Objects.equals(description,
-				other.description) && Objects.equals(errandNumber, other.errandNumber) && Objects.equals(escalationEmail, other.escalationEmail) && Objects.equals(externalTags, other.externalTags) && Objects.equals(id, other.id) && Objects.equals(labels,
-					other.labels) && Objects.equals(activeNotifications, other.activeNotifications) && Objects.equals(modified, other.modified) && Objects.equals(parameters, other.parameters) && (priority == other.priority) && Objects.equals(
-						reporterUserId,
-						other.reporterUserId) && Objects.equals(resolution, other.resolution) && Objects.equals(stakeholders, other.stakeholders) && Objects.equals(status, other.status) && Objects.equals(suspension, other.suspension) && Objects.equals(
-							title, other.title)
-			&& Objects.equals(touched, other.touched);
+				other.description) && Objects.equals(errandNumber, other.errandNumber) && Objects.equals(escalationEmail, other.escalationEmail) && Objects.equals(externalTags, other.externalTags) && Objects.equals(id, other.id) && Objects.equals(
+					jsonParameters,
+					other.jsonParameters) && Objects.equals(labels, other.labels) && Objects.equals(activeNotifications, other.activeNotifications) && Objects.equals(modified, other.modified) && Objects.equals(parameters, other.parameters)
+			&& Objects.equals(priority, other.priority) && Objects.equals(
+				reporterUserId, other.reporterUserId) && Objects.equals(resolution, other.resolution) && Objects.equals(stakeholders, other.stakeholders) && Objects.equals(status, other.status) && Objects.equals(suspension, other.suspension) && Objects
+					.equals(
+						title, other.title) && Objects.equals(touched, other.touched);
 	}
 
 	@Override
@@ -516,6 +535,7 @@ public class Errand {
 			", stakeholders=" + stakeholders +
 			", externalTags=" + externalTags +
 			", parameters=" + parameters +
+			", jsonParameters=" + jsonParameters +
 			", classification=" + classification +
 			", status='" + status + '\'' +
 			", resolution='" + resolution + '\'' +
