@@ -27,6 +27,8 @@ integration:
     url: http://citizen.url
   relation:
     url: http://relation.url
+  json-schema:
+    url: http://json-schema.url
 spring:
   cache:
     type: none
@@ -76,6 +78,8 @@ spring:
             token-uri: http://token.url
           relation:
             token-uri: http://token.url
+          json-schema:
+            token-uri: http://token.url
         registration:
           accessmapper:
             client-id: the-client-id
@@ -108,6 +112,9 @@ spring:
             client-id: the-client-id
             client-secret: the-client-secret
           relation:
+            client-id: the-client-id
+            client-secret: the-client-secret
+          json-schema:
             client-id: the-client-id
             client-secret: the-client-secret
 scheduler:
