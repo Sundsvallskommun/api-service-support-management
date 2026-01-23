@@ -65,7 +65,7 @@ class RevisionMapperTest {
 		final var serializedSnapshot = RevisionMapper.toSerializedSnapshot(errand);
 		assertThat(serializedSnapshot).isEqualToIgnoringNewLines(
 			"""
-				{"id":"ERRAND_ID-4","externalTags":[],"stakeholders":[{"id":3004,"externalId":"EXTERNAL_ID-3","externalIdType":"ENTERPRISE","contactChannels":[],"parameters":[]}],"municipalityId":"2305","namespace":"NAMESPACE.3","title":"TITLE-3","category":"CATEGORY-3","type":"TYPE-3","status":"STATUS-3","priority":"PRIORITY-3","reporterUserId":"REPORTER_USER_ID-3","assignedUserId":"ASSIGNED_USER_ID-3","assignedGroupId":"ASSIGNED_GROUP_ID-3","escalationEmail":"ESCALATION_EMAIL_4","parameters":[],"attachments":[],"notifications":[],"labels":[],"errandNumber":"KC-23020004","tempPreviousStatus":"STATUS-3","timeMeasures":[]}
+				{"id":"ERRAND_ID-4","externalTags":[],"stakeholders":[{"id":3004,"externalId":"EXTERNAL_ID-3","externalIdType":"ENTERPRISE","contactChannels":[],"parameters":[]}],"municipalityId":"2305","namespace":"NAMESPACE.3","title":"TITLE-3","category":"CATEGORY-3","type":"TYPE-3","status":"STATUS-3","priority":"PRIORITY-3","reporterUserId":"REPORTER_USER_ID-3","assignedUserId":"ASSIGNED_USER_ID-3","assignedGroupId":"ASSIGNED_GROUP_ID-3","escalationEmail":"ESCALATION_EMAIL_4","parameters":[],"jsonParameters":[],"attachments":[],"notifications":[],"labels":[],"errandNumber":"KC-23020004","tempPreviousStatus":"STATUS-3","timeMeasures":[]}
 				""");
 	}
 

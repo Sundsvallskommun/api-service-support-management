@@ -30,6 +30,7 @@
 			],
 			"externalTags": [],
 			"parameters": [],
+			"jsonParameters": [],
 			"classification": {
 				"type": "TYPE-2506"
 			},
@@ -62,6 +63,7 @@
 			"stakeholders": [],
 			"externalTags": [],
 			"parameters": [],
+			"jsonParameters": [],
 			"classification": {
 				"type": "TYPE-2506"
 			},

@@ -17,6 +17,7 @@ import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toLimit
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toReferredFromRelation;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.updateEntity;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import generated.se.sundsvall.relation.ResourceIdentifier;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -30,6 +31,7 @@ import se.sundsvall.supportmanagement.api.model.errand.ContactChannel;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.errand.ErrandLabel;
 import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
+import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
 import se.sundsvall.supportmanagement.api.model.errand.Parameter;
 import se.sundsvall.supportmanagement.api.model.errand.Priority;
 import se.sundsvall.supportmanagement.api.model.errand.Stakeholder;
@@ -40,6 +42,7 @@ import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
+import se.sundsvall.supportmanagement.integration.db.model.JsonParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
@@ -87,6 +90,10 @@ class ErrandMapperTest {
 	private static final String CONTACT_REASON_DESCRIPTION = "contactReasonDescription";
 	private static final String ERRAND_NUMBER = "errandNumber";
 	private static final Boolean BUSINESS_RELATED = true;
+	private static final String JSON_PARAMETER_KEY = "jsonKey";
+	private static final String JSON_PARAMETER_SCHEMA_ID = "schemaId";
+	private static final String JSON_PARAMETER_VALUE_STRING = "{\"field\":\"value\"}";
+	private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
 	private static final ErrandLabel LABEL_1 = ErrandLabel.create().withId("id1");
 	private static final ErrandLabel LABEL_2 = ErrandLabel.create().withId("id2");
@@ -108,6 +115,7 @@ class ErrandMapperTest {
 			.withStakeholders(List.of(createStakeHolder()))
 			.withExternalTags(List.of(ExternalTag.create().withKey(TAG_KEY).withValue(TAG_VALUE)))
 			.withParameters(List.of(Parameter.create().withKey(PARAMETER_NAME).withValues(List.of(PARAMETER_VALUE))))
+			.withJsonParameters(List.of(createJsonParameter()))
 			.withId(ID)
 			.withModified(MODIFIED)
 			.withPriority(Priority.valueOf(PRIORITY))
@@ -152,6 +160,7 @@ class ErrandMapperTest {
 			.withStakeholders(List.of(createStakeHolderEntity()))
 			.withExternalTags(List.of(DbExternalTag.create().withKey(TAG_KEY).withValue(TAG_VALUE)))
 			.withParameters(List.of(ParameterEntity.create().withKey(PARAMETER_NAME).withValues(List.of(PARAMETER_VALUE))))
+			.withJsonParameters(List.of(createJsonParameterEntity()))
 			.withMunicipalityId(MUNICIPALITY_ID)
 			.withPriority(PRIORITY)
 			.withReporterUserId(REPORTER_USER_ID)
@@ -190,6 +199,24 @@ class ErrandMapperTest {
 			.withRole(STAKEHOLDER_ROLE);
 	}
 
+	private static JsonParameter createJsonParameter() {
+		try {
+			return JsonParameter.create()
+				.withKey(JSON_PARAMETER_KEY)
+				.withSchemaId(JSON_PARAMETER_SCHEMA_ID)
+				.withValue(OBJECT_MAPPER.readTree(JSON_PARAMETER_VALUE_STRING));
+		} catch (final Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	private static JsonParameterEntity createJsonParameterEntity() {
+		return JsonParameterEntity.create()
+			.withKey(JSON_PARAMETER_KEY)
+			.withSchemaId(JSON_PARAMETER_SCHEMA_ID)
+			.withValue(JSON_PARAMETER_VALUE_STRING);
+	}
+
 	@Test
 	void testToErrand() {
 		final var errand = toErrand(createEntity());
@@ -219,11 +246,14 @@ class ErrandMapperTest {
 		assertThat(errand.getEscalationEmail()).isEqualTo(ESCALATION_EMAIL);
 		assertThat(errand.getErrandNumber()).isEqualTo(ERRAND_NUMBER);
 		assertThat(errand.getParameters()).hasSize(1).isEqualTo(List.of(Parameter.create().withKey(PARAMETER_NAME).withValues(List.of(PARAMETER_VALUE))));
+		assertThat(errand.getJsonParameters()).hasSize(1);
+		assertThat(errand.getJsonParameters().getFirst().getKey()).isEqualTo(JSON_PARAMETER_KEY);
+		assertThat(errand.getJsonParameters().getFirst().getSchemaId()).isEqualTo(JSON_PARAMETER_SCHEMA_ID);
 		assertThat(errand.getBusinessRelated()).isEqualTo(BUSINESS_RELATED);
 		assertThat(errand.getContactReason()).isEqualTo(CONTACT_REASON);
 		assertThat(errand.getContactReasonDescription()).isEqualTo(CONTACT_REASON_DESCRIPTION);
 		assertThat(errand.getLabels()).containsExactly(LABEL_1, LABEL_2);
-		assertThat(errand).hasNoNullFieldsOrPropertiesExcept("notifications", "jsonParameters");
+		assertThat(errand).hasNoNullFieldsOrPropertiesExcept("notifications");
 	}
 
 	@Test
@@ -310,7 +340,7 @@ class ErrandMapperTest {
 					notification.setErrandId("cb20c51f-fcf3-42c0-b613-de563634a8ec");
 				}))));
 
-		assertThat(errands.getFirst()).hasNoNullFieldsOrPropertiesExcept("notifications", "jsonParameters");
+		assertThat(errands.getFirst()).hasNoNullFieldsOrPropertiesExcept("notifications");
 	}
 
 	@Test
@@ -328,7 +358,7 @@ class ErrandMapperTest {
 				assertThat(errand).hasAllNullFieldsOrPropertiesExcept("id", "created", "errandNumber", "modified", "status", "title", "touched", "resolution", "channel");
 				assertThat(errand.getErrandNumber()).isEqualTo("limited");
 			} else {
-				assertThat(errand).hasNoNullFieldsOrPropertiesExcept("notifications", "jsonParameters");
+				assertThat(errand).hasNoNullFieldsOrPropertiesExcept("notifications");
 				assertThat(errand.getErrandNumber()).isEqualTo("full");
 				assertThat(errand.getBusinessRelated()).isFalse();
 			}
@@ -425,6 +455,15 @@ class ErrandMapperTest {
 			.containsExactly(tuple(
 				PARAMETER_NAME,
 				List.of(PARAMETER_VALUE)));
+
+		assertThat(entity.getJsonParameters()).hasSize(1).extracting(
+			JsonParameterEntity::getKey,
+			JsonParameterEntity::getSchemaId,
+			JsonParameterEntity::getValue)
+			.containsExactly(tuple(
+				JSON_PARAMETER_KEY,
+				JSON_PARAMETER_SCHEMA_ID,
+				JSON_PARAMETER_VALUE_STRING));
 
 		assertThat(entity.getCreated()).isNull();
 		assertThat(entity.getId()).isNull();

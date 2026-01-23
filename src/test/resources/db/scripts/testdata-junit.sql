@@ -90,6 +90,12 @@ INSERT INTO stakeholder_parameter_values(stakeholder_parameter_id, `value`) VALU
 INSERT INTO stakeholder_parameter_values(stakeholder_parameter_id, `value`) VALUES(201, 'value-x2');
 
 -------------------------------------
+-- JsonParameter
+-------------------------------------
+INSERT INTO json_parameter(id, json_parameter_order, errand_id, parameters_key, schema_id, value)
+VALUES ('json-param-1', 0, 'ERRAND_ID-1', 'formData', '2281_schema_1.0', '{"field1": "value1", "field2": 123}');
+
+-------------------------------------
 -- ExternalTag
 -------------------------------------
 INSERT INTO external_tag(errand_id, `key`, `value`) VALUES ('ERRAND_ID-1', 'KEY-1', 'VALUE-1');
