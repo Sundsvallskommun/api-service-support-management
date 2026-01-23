@@ -78,6 +78,10 @@ This microservice depends on the following services:
   - **Purpose:** Provides functionality for fetching access restrictions per user (optional setting per namespace).
   - **Repository:** [Link to the repository](https://github.com/Sundsvallskommun/api-service-access-mapper)
   - **Setup Instructions:** Refer to its documentation for installation and configuration steps.
+- **JsonSchema**
+  - **Purpose:** Provides functionality for validating JSON data against predefined schemas.
+  - **Repository:** [Link to the repository](https://github.com/Sundsvallskommun/api-service-json-schema)
+  - **Setup Instructions:** Refer to its documentation for installation and configuration steps.
 
 Ensure that these services are running and properly configured before starting this microservice.
 
@@ -139,6 +143,8 @@ Configuration is crucial for the application to run successfully. Ensure all nec
       url: http://dependency_service_url
     web-message-collector:
       url: http://dependency_service_url
+    json-schema:
+      url: http://dependency_service_url
 
   spring:
     security:
@@ -157,6 +163,8 @@ Configuration is crucial for the application to run successfully. Ensure all nec
               token-uri: http://dependecy_service_token_url
             web-message-collector:
               token-uri: http://dependecy_service_token_url
+            json-schema:
+              token-uri: http://dependecy_service_token_url
           registration:
             emailreader:
               client-id: the-client-id
@@ -165,6 +173,9 @@ Configuration is crucial for the application to run successfully. Ensure all nec
               client-id: the-client-id
               client-secret: the-client-secret
             eventlog:
+              client-id: the-client-id
+              client-secret: the-client-secret
+            json-schema:
               client-id: the-client-id
               client-secret: the-client-secret
   ```
