@@ -45,13 +45,12 @@ public class Errand {
 
 	@Schema(implementation = Priority.class)
 	@NotNull(groups = OnCreate.class)
-	@ArraySchema(schema = @Schema(implementation = Stakeholder.class), uniqueItems = true)
 	private Priority priority;
 
 	@Valid
 	private List<Stakeholder> stakeholders;
 
-	@ArraySchema(schema = @Schema(implementation = ExternalTag.class), uniqueItems = true)
+	@ArraySchema(uniqueItems = true)
 	@UniqueExternalTagKeys(groups = OnCreate.class)
 	@Valid
 	private List<ExternalTag> externalTags;
