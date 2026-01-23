@@ -50,7 +50,7 @@ public class Errand {
 	@Valid
 	private List<Stakeholder> stakeholders;
 
-	@ArraySchema(schema = @Schema(implementation = ExternalTag.class), uniqueItems = true)
+	@ArraySchema(uniqueItems = true)
 	@UniqueExternalTagKeys(groups = OnCreate.class)
 	@Valid
 	private List<ExternalTag> externalTags;

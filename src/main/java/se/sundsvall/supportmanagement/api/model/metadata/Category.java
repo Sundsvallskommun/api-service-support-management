@@ -24,7 +24,7 @@ public class Category {
 	@Schema(description = "Display name for the category", examples = "Displayed name")
 	private String displayName;
 
-	@ArraySchema(schema = @Schema(implementation = Type.class), uniqueItems = true)
+	@ArraySchema(uniqueItems = true)
 	@Valid
 	private List<Type> types;
 
