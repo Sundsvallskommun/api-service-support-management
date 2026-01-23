@@ -304,7 +304,7 @@ public class MetadataMapper {
 			return entity;
 		}
 
-		Optional.ofNullable(contactReason.getReason()).ifPresent(value -> entity.setReason(contactReason.getReason()));
+		Optional.ofNullable(contactReason.getReason()).ifPresent(entity::setReason);
 
 		return entity;
 	}

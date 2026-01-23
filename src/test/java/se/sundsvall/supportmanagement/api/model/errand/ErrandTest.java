@@ -12,6 +12,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Random;
@@ -20,6 +21,8 @@ import org.junit.jupiter.api.Test;
 import se.sundsvall.supportmanagement.api.model.notification.Notification;
 
 class ErrandTest {
+
+	private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
 	@BeforeAll
 	static void setup() {
@@ -46,6 +49,7 @@ class ErrandTest {
 		final var stakeholder = Stakeholder.create().withExternalId("id").withExternalIdType("type");
 		final var externalTags = List.of(ExternalTag.create().withKey("externalTagkey").withValue("externalTagValue"));
 		final var parameters = List.of(Parameter.create().withKey("key").withValues(List.of("value")));
+		final var jsonParameters = List.of(JsonParameter.create().withKey("formData").withValue(OBJECT_MAPPER.createObjectNode().put("field", "value")).withSchemaId("schema-123"));
 		final var id = randomUUID().toString();
 		final var modified = OffsetDateTime.now().plusDays(1);
 		final var priority = Priority.MEDIUM;
@@ -74,6 +78,7 @@ class ErrandTest {
 			.withStakeholders(List.of(stakeholder))
 			.withExternalTags(externalTags)
 			.withParameters(parameters)
+			.withJsonParameters(jsonParameters)
 			.withId(id)
 			.withModified(modified)
 			.withPriority(priority)
@@ -102,6 +107,7 @@ class ErrandTest {
 		assertThat(bean.getStakeholders()).containsExactly(stakeholder);
 		assertThat(bean.getExternalTags()).isEqualTo(externalTags);
 		assertThat(bean.getParameters()).isEqualTo(parameters);
+		assertThat(bean.getJsonParameters()).isEqualTo(jsonParameters);
 		assertThat(bean.getId()).isEqualTo(id);
 		assertThat(bean.getModified()).isEqualTo(modified);
 		assertThat(bean.getPriority()).isEqualTo(priority);

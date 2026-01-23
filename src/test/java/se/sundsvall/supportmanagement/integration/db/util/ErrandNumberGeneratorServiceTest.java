@@ -115,7 +115,7 @@ class ErrandNumberGeneratorServiceTest {
 			NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_SHORT_CODE).withType(STRING).withValue(SHORT_CODE))));
 		when(repositoryMock.findByNamespaceAndMunicipalityId(any(String.class), any(String.class))).thenReturn(Optional.of(entity));
 
-		final var result = IntStream.range(0, maxCount).mapToObj(i -> stringGeneratorService.generateErrandNumber(NAMESPACE, MUNICIPALITY_ID))
+		final var result = IntStream.range(0, maxCount).mapToObj(_ -> stringGeneratorService.generateErrandNumber(NAMESPACE, MUNICIPALITY_ID))
 			.toList();
 
 		assertThat(result).hasSize(maxCount).doesNotHaveDuplicates();

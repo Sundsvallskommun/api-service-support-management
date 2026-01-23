@@ -201,7 +201,7 @@ class ErrandServiceTest {
 		// Mock
 		when(errandRepositoryMock.findAll(ArgumentMatchers.<Specification<ErrandEntity>>any(), eq(pageable))).thenReturn(new PageImpl<>(List.of(buildErrandEntity(), buildErrandEntity()), pageable, 2L));
 		when(accessControlServiceMock.withAccessControl(any(), any(), any())).thenReturn(specification);
-		when(accessControlServiceMock.limitedMappingPredicateByLabel(any(), any(), any())).thenReturn(errand -> limited);
+		when(accessControlServiceMock.limitedMappingPredicateByLabel(any(), any(), any())).thenReturn(_ -> limited);
 
 		// Call
 		final var matches = service.findErrands(NAMESPACE, MUNICIPALITY_ID, filter, pageable);
@@ -264,7 +264,7 @@ class ErrandServiceTest {
 
 		// Mock
 		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean())).thenReturn(entity);
-		when(accessControlServiceMock.limitedMappingPredicateByLabel(any(), any(), any())).thenReturn(errand -> limited);
+		when(accessControlServiceMock.limitedMappingPredicateByLabel(any(), any(), any())).thenReturn(_ -> limited);
 
 		// Call
 		final var response = service.readErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);

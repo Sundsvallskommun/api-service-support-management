@@ -45,8 +45,8 @@ class NotificationsUpdateResourceFailureTest {
 
 	private static Stream<Arguments> provideBadRequests() {
 		return Stream.of(
-			Arguments.of(List.of(TestObjectsBuilder.createNotification(n -> {}).withId(null)), "updateNotifications.notifications[0].id", "not a valid UUID"),
-			Arguments.of(List.of(TestObjectsBuilder.createNotification(n -> {}).withId(randomUUID().toString()).withErrandId(null)), "updateNotifications.notifications[0].errandId", "not a valid UUID"),
+			Arguments.of(List.of(TestObjectsBuilder.createNotification(_ -> {}).withId(null)), "updateNotifications.notifications[0].id", "not a valid UUID"),
+			Arguments.of(List.of(TestObjectsBuilder.createNotification(_ -> {}).withId(randomUUID().toString()).withErrandId(null)), "updateNotifications.notifications[0].errandId", "not a valid UUID"),
 			Arguments.arguments(List.of(), "updateNotifications.notifications", "must not be empty"));
 	}
 
@@ -78,7 +78,7 @@ class NotificationsUpdateResourceFailureTest {
 	@Test
 	void updateNotificationsWithInvalidNamespace() {
 		// Parameter values
-		final var requestBody = List.of(TestObjectsBuilder.createNotification(n -> {}));
+		final var requestBody = List.of(TestObjectsBuilder.createNotification(_ -> {}));
 
 		// Call
 		final var response = webTestClient.patch()
@@ -100,7 +100,7 @@ class NotificationsUpdateResourceFailureTest {
 	@Test
 	void updateNotificationsWithInvalidMunicipalityId() {
 		// Parameter values
-		final var requestBody = List.of(TestObjectsBuilder.createNotification(n -> {}));
+		final var requestBody = List.of(TestObjectsBuilder.createNotification(_ -> {}));
 
 		// Call
 		final var response = webTestClient.patch()

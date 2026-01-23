@@ -99,7 +99,7 @@ public final class ErrandMapper {
 		ofNullable(errand.getChannel()).ifPresent(value -> entity.setChannel(isEmpty(value) ? null : value));
 		ofNullable(errand.getContactReasonDescription()).ifPresent(value -> entity.setContactReasonDescription(isEmpty(value) ? null : value));
 		ofNullable(errand.getEscalationEmail()).ifPresent(value -> entity.setEscalationEmail(isEmpty(value) ? null : value));
-		ofNullable(errand.getBusinessRelated()).ifPresent(value -> entity.setBusinessRelated(errand.getBusinessRelated()));
+		ofNullable(errand.getBusinessRelated()).ifPresent(value -> entity.setBusinessRelated(value));
 		ofNullable(errand.getParameters()).ifPresent(value -> updateParameters(entity, value));
 		ofNullable(errand.getLabels()).ifPresent(value -> entity.setLabels(toErrandLabelEmbeddables(value)));
 		return entity;

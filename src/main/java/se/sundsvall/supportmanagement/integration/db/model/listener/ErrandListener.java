@@ -60,7 +60,7 @@ public class ErrandListener {
 	@PreRemove
 	void onDelete(final ErrandEntity errandEntity) {
 		Optional.ofNullable(errandEntity.getTimeMeasures())
-			.ifPresent(tm -> findTimeMeasureEntityWithoutStopTime(errandEntity, now()));
+			.ifPresent(_ -> findTimeMeasureEntityWithoutStopTime(errandEntity, now()));
 	}
 
 	private TimeMeasurementEntity startTimeEntry(final ErrandEntity errandEntity, final OffsetDateTime now) {
