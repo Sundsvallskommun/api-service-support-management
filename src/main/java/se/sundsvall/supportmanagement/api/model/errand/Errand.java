@@ -45,7 +45,6 @@ public class Errand {
 
 	@Schema(implementation = Priority.class)
 	@NotNull(groups = OnCreate.class)
-	@ArraySchema(schema = @Schema(implementation = Stakeholder.class), uniqueItems = true)
 	private Priority priority;
 
 	@Valid

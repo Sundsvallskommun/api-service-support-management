@@ -7,7 +7,7 @@ info:
     url: https://opensource.org/licenses/MIT
   version: "12.4"
 servers:
-- url: http://localhost:52689
+- url: http://localhost:56631
   description: Generated server url
 tags:
 - name: Errand attachments
@@ -5062,20 +5062,20 @@ components:
         parameters:
           type: object
           additionalProperties: {}
+        detail:
+          type: string
         status:
           $ref: "#/components/schemas/StatusType"
         title:
           type: string
-        detail:
-          type: string
     StatusType:
       type: object
       properties:
-        reasonPhrase:
-          type: string
         statusCode:
           type: integer
           format: int32
+        reasonPhrase:
+          type: string
     ConstraintViolationProblem:
       type: object
       properties:
@@ -5194,11 +5194,11 @@ components:
         parameters:
           type: object
           additionalProperties: {}
+        detail:
+          type: string
         status:
           $ref: "#/components/schemas/StatusType"
         title:
-          type: string
-        detail:
           type: string
         suppressed:
           type: array
@@ -5749,10 +5749,6 @@ components:
           - Title for the errand
         priority:
           $ref: "#/components/schemas/Priority"
-          items:
-            $ref: "#/components/schemas/Stakeholder"
-            uniqueItems: true
-          uniqueItems: true
         stakeholders:
           type: array
           items:
@@ -6621,12 +6617,12 @@ components:
     PageErrand:
       type: object
       properties:
-        totalPages:
-          type: integer
-          format: int32
         totalElements:
           type: integer
           format: int64
+        totalPages:
+          type: integer
+          format: int32
         size:
           type: integer
           format: int32
@@ -6637,6 +6633,10 @@ components:
         number:
           type: integer
           format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
         sort:
           $ref: "#/components/schemas/SortObject"
         numberOfElements:
@@ -6644,10 +6644,6 @@ components:
           format: int32
         pageable:
           $ref: "#/components/schemas/PageableObject"
-        first:
-          type: boolean
-        last:
-          type: boolean
         empty:
           type: boolean
     PageableObject:
@@ -6892,12 +6888,12 @@ components:
     PageEvent:
       type: object
       properties:
-        totalPages:
-          type: integer
-          format: int32
         totalElements:
           type: integer
           format: int64
+        totalPages:
+          type: integer
+          format: int32
         size:
           type: integer
           format: int32
@@ -6908,6 +6904,10 @@ components:
         number:
           type: integer
           format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
         sort:
           $ref: "#/components/schemas/SortObject"
         numberOfElements:
@@ -6915,10 +6915,6 @@ components:
           format: int32
         pageable:
           $ref: "#/components/schemas/PageableObject"
-        first:
-          type: boolean
-        last:
-          type: boolean
         empty:
           type: boolean
     Communication:
@@ -7113,12 +7109,12 @@ components:
     PageMessage:
       type: object
       properties:
-        totalPages:
-          type: integer
-          format: int32
         totalElements:
           type: integer
           format: int64
+        totalPages:
+          type: integer
+          format: int32
         size:
           type: integer
           format: int32
@@ -7129,6 +7125,10 @@ components:
         number:
           type: integer
           format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
         sort:
           $ref: "#/components/schemas/SortObject"
         numberOfElements:
@@ -7136,10 +7136,6 @@ components:
           format: int32
         pageable:
           $ref: "#/components/schemas/PageableObject"
-        first:
-          type: boolean
-        last:
-          type: boolean
         empty:
           type: boolean
     ReadBy:
