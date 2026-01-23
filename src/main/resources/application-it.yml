@@ -21,6 +21,8 @@ integration:
     url: http://localhost:${wiremock.server.port:}/api-citizen
   relation:
     url: http://localhost:${wiremock.server.port:}/api-relation
+  json-schema:
+    url: http://localhost:${wiremock.server.port:}/api-json-schema
 scheduler:
   emailreader:
     cron: "-"
@@ -72,6 +74,8 @@ spring:
             token-uri: http://localhost:${wiremock.server.port:}/api-gateway/token
           relation:
             token-uri: http://localhost:${wiremock.server.port:}/api-gateway/token
+          json-schema:
+            token-uri: http://localhost:${wiremock.server.port:}/api-gateway/token
         registration:
           accessmapper:
             client-id: the-client-id
@@ -104,5 +108,8 @@ spring:
             client-id: the-client-id
             client-secret: the-client-secret
           relation:
+            client-id: the-client-id
+            client-secret: the-client-secret
+          json-schema:
             client-id: the-client-id
             client-secret: the-client-secret

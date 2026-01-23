@@ -58,6 +58,9 @@ integration:
   relation:
     connect-timeout: 5
     read-timeout: 30
+  json-schema:
+    connectTimeout: 5
+    readTimeout: 30
 logbook:
   body-filters:
     jsonPath:
@@ -82,6 +85,8 @@ resilience4j:
       messaging:
         ignoreExceptions: se.sundsvall.dept44.exception.ClientProblem
       relation:
+        ignoreExceptions: se.sundsvall.dept44.exception.ClientProblem
+      json-schema:
         ignoreExceptions: se.sundsvall.dept44.exception.ClientProblem
 spring:
   application:
@@ -143,6 +148,9 @@ spring:
           relation:
             authorization-grant-type: client_credentials
             provider: relation
+          json-schema:
+            authorization-grant-type: client_credentials
+            provider: json-schema
   servlet:
     multipart:
       max-file-size: 50MB
