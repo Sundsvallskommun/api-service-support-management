@@ -1,15 +1,15 @@
 package se.sundsvall.supportmanagement.integration.db.model;
 
+import static jakarta.persistence.CascadeType.ALL;
+import static jakarta.persistence.FetchType.EAGER;
 import static org.hibernate.Length.LONG32;
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.ForeignKey;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
@@ -74,7 +74,7 @@ public class ErrandEntity {
 		}))
 	private List<DbExternalTag> externalTags;
 
-	@OneToMany(mappedBy = "errandEntity", cascade = CascadeType.ALL, orphanRemoval = true)
+	@OneToMany(mappedBy = "errandEntity", cascade = ALL, orphanRemoval = true)
 	@OrderBy("externalId")
 	private List<StakeholderEntity> stakeholders;
 
@@ -130,15 +130,19 @@ public class ErrandEntity {
 	@Column(name = "escalation_email")
 	private String escalationEmail;
 
-	@OneToMany(mappedBy = "errandEntity", cascade = CascadeType.ALL, orphanRemoval = true)
+	@OneToMany(mappedBy = "errandEntity", cascade = ALL, orphanRemoval = true)
 	@OrderColumn(name = "parameter_order", nullable = false, columnDefinition = "integer default 0")
 	private List<ParameterEntity> parameters;
 
-	@OneToMany(mappedBy = "errandEntity", cascade = CascadeType.ALL, orphanRemoval = true)
+	@OneToMany(mappedBy = "errandEntity", cascade = ALL, orphanRemoval = true)
+	@OrderColumn(name = "json_parameter_order", nullable = false, columnDefinition = "integer default 0")
+	private List<JsonParameterEntity> jsonParameters;
+
+	@OneToMany(mappedBy = "errandEntity", cascade = ALL, orphanRemoval = true)
 	@OrderBy("fileName")
 	private List<AttachmentEntity> attachments;
 
-	@OneToMany(mappedBy = "errandEntity", cascade = CascadeType.ALL, orphanRemoval = true)
+	@OneToMany(mappedBy = "errandEntity", cascade = ALL, orphanRemoval = true)
 	private List<NotificationEntity> notifications;
 
 	@Column(name = "suspended_to")
@@ -181,7 +185,7 @@ public class ErrandEntity {
 	@Column(name = "previous_status")
 	private String previousStatus;
 
-	@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+	@OneToMany(cascade = ALL, orphanRemoval = true, fetch = EAGER)
 	@JoinColumn(name = "errand_id", referencedColumnName = "id", foreignKey = @ForeignKey(name = "fk_errand_time_measure_errand_id"))
 	private List<TimeMeasurementEntity> timeMeasures;
 
@@ -212,6 +216,19 @@ public class ErrandEntity {
 
 	public ErrandEntity withParameters(final List<ParameterEntity> parameters) {
 		this.parameters = parameters;
+		return this;
+	}
+
+	public List<JsonParameterEntity> getJsonParameters() {
+		return jsonParameters;
+	}
+
+	public void setJsonParameters(final List<JsonParameterEntity> jsonParameters) {
+		this.jsonParameters = jsonParameters;
+	}
+
+	public ErrandEntity withJsonParameters(final List<JsonParameterEntity> jsonParameters) {
+		this.jsonParameters = jsonParameters;
 		return this;
 	}
 
@@ -638,15 +655,16 @@ public class ErrandEntity {
 			that.contactReasonDescription) && Objects.equals(businessRelated, that.businessRelated) && Objects.equals(municipalityId, that.municipalityId) && Objects.equals(namespace, that.namespace) && Objects.equals(title, that.title) && Objects.equals(
 				category, that.category) && Objects.equals(type, that.type) && Objects.equals(status, that.status) && Objects.equals(resolution, that.resolution) && Objects.equals(description, that.description) && Objects.equals(channel, that.channel)
 			&& Objects.equals(priority, that.priority) && Objects.equals(reporterUserId, that.reporterUserId) && Objects.equals(assignedUserId, that.assignedUserId) && Objects.equals(assignedGroupId, that.assignedGroupId) && Objects.equals(escalationEmail,
-				that.escalationEmail) && Objects.equals(parameters, that.parameters) && Objects.equals(attachments, that.attachments) && Objects.equals(notifications, that.notifications) && Objects.equals(suspendedTo, that.suspendedTo) && Objects.equals(
-					suspendedFrom, that.suspendedFrom) && Objects.equals(labels, that.labels) && Objects.equals(created, that.created) && Objects.equals(modified, that.modified) && Objects.equals(touched, that.touched) && Objects.equals(errandNumber,
-						that.errandNumber) && Objects.equals(tempPreviousStatus, that.tempPreviousStatus) && Objects.equals(previousStatus, that.previousStatus) && Objects.equals(timeMeasures, that.timeMeasures);
+				that.escalationEmail) && Objects.equals(parameters, that.parameters) && Objects.equals(jsonParameters, that.jsonParameters) && Objects.equals(attachments, that.attachments) && Objects.equals(notifications, that.notifications) && Objects
+					.equals(suspendedTo, that.suspendedTo) && Objects.equals(
+						suspendedFrom, that.suspendedFrom) && Objects.equals(labels, that.labels) && Objects.equals(created, that.created) && Objects.equals(modified, that.modified) && Objects.equals(touched, that.touched) && Objects.equals(errandNumber,
+							that.errandNumber) && Objects.equals(tempPreviousStatus, that.tempPreviousStatus) && Objects.equals(previousStatus, that.previousStatus) && Objects.equals(timeMeasures, that.timeMeasures);
 	}
 
 	@Override
 	public int hashCode() {
 		return Objects.hash(id, externalTags, stakeholders, contactReasonEntity, contactReasonDescription, businessRelated, municipalityId, namespace, title, category, type, status, resolution, description, channel, priority, reporterUserId,
-			assignedUserId, assignedGroupId, escalationEmail, parameters, attachments, notifications, suspendedTo, suspendedFrom, labels, created, modified, touched, errandNumber, tempPreviousStatus, previousStatus, timeMeasures);
+			assignedUserId, assignedGroupId, escalationEmail, parameters, jsonParameters, attachments, notifications, suspendedTo, suspendedFrom, labels, created, modified, touched, errandNumber, tempPreviousStatus, previousStatus, timeMeasures);
 	}
 
 	@Override
@@ -674,6 +692,7 @@ public class ErrandEntity {
 			", assignedGroupId='" + assignedGroupId + '\'' +
 			", escalationEmail='" + escalationEmail + '\'' +
 			", parameters=" + parameters +
+			", jsonParameters=" + jsonParameters +
 			", attachments=" + attachments +
 			", notifications=" + notifications +
 			", suspendedTo=" + suspendedTo +

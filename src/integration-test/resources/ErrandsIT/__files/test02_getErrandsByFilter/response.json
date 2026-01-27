@@ -74,6 +74,7 @@
 					"values": []
 				}
 			],
+			"jsonParameters": [],
 			"classification": {
 				"category": "CATEGORY-1",
 				"type": "TYPE-1"

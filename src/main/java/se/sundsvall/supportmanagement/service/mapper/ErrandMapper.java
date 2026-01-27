@@ -4,6 +4,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toCollection;
 import static org.apache.commons.lang3.ObjectUtils.anyNull;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.toErrandParameterEntityList;
@@ -11,17 +12,23 @@ import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMappe
 import static se.sundsvall.supportmanagement.service.mapper.StakeholderParameterMapper.toParameterList;
 import static se.sundsvall.supportmanagement.service.mapper.StakeholderParameterMapper.toStakeholderParameterEntityList;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import generated.se.sundsvall.relation.Relation;
 import generated.se.sundsvall.relation.ResourceIdentifier;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import se.sundsvall.supportmanagement.api.model.errand.Classification;
 import se.sundsvall.supportmanagement.api.model.errand.ContactChannel;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.errand.ErrandLabel;
 import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
+import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
 import se.sundsvall.supportmanagement.api.model.errand.Parameter;
 import se.sundsvall.supportmanagement.api.model.errand.Priority;
 import se.sundsvall.supportmanagement.api.model.errand.Stakeholder;
@@ -32,11 +39,14 @@ import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
+import se.sundsvall.supportmanagement.integration.db.model.JsonParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 
 public final class ErrandMapper {
 
+	private static final Logger LOG = LoggerFactory.getLogger(ErrandMapper.class);
+	private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 	private static final String REFERRED_FROM_RELATION_TYPE = "REFERRED_FROM";
 	private static final String REFERRED_FROM_RESOURCE_IDENTIFIER_TYPE = "case";
 	private static final String REFERRED_FROM_RESOURCE_IDENTIFIER_SERVICE = "support-management";
@@ -71,6 +81,7 @@ public final class ErrandMapper {
 			.withSuspendedTo(Optional.ofNullable(errand.getSuspension()).map(Suspension::getSuspendedTo).orElse(null))
 			.withBusinessRelated(errand.getBusinessRelated())
 			.withParameters(toErrandParameterEntityList(errand.getParameters(), errandEntity))
+			.withJsonParameters(toJsonParameterEntities(errand.getJsonParameters(), errandEntity))
 			.withLabels(toErrandLabelEmbeddables(errand.getLabels()));
 	}
 
@@ -101,20 +112,27 @@ public final class ErrandMapper {
 		ofNullable(errand.getEscalationEmail()).ifPresent(value -> entity.setEscalationEmail(isEmpty(value) ? null : value));
 		ofNullable(errand.getBusinessRelated()).ifPresent(value -> entity.setBusinessRelated(value));
 		ofNullable(errand.getParameters()).ifPresent(value -> updateParameters(entity, value));
+		ofNullable(errand.getJsonParameters()).ifPresent(value -> updateJsonParameters(entity, value));
 		ofNullable(errand.getLabels()).ifPresent(value -> entity.setLabels(toErrandLabelEmbeddables(value)));
 		return entity;
 	}
 
 	public static List<ErrandLabelEmbeddable> toErrandLabelEmbeddables(final List<ErrandLabel> errandLabels) {
-		return new ArrayList<>(ofNullable(errandLabels).orElse(emptyList()).stream()
-			.map(errandLabel -> ErrandLabelEmbeddable.create().withMetadataLabelId(errandLabel.getId()))
+		return ofNullable(errandLabels).orElse(emptyList()).stream()
+			.map(errandLabel -> ErrandLabelEmbeddable.create()
+				.withMetadataLabelId(errandLabel.getId()))
 			.distinct()
-			.toList());
+			.collect(toCollection(ArrayList::new));
 	}
 
 	private static void updateParameters(final ErrandEntity entity, final List<Parameter> parameters) {
 		ofNullable(entity.getParameters()).ifPresentOrElse(List::clear, () -> entity.setParameters(new ArrayList<>()));
 		entity.getParameters().addAll(toErrandParameterEntityList(parameters, entity));
+	}
+
+	private static void updateJsonParameters(final ErrandEntity entity, final List<JsonParameter> jsonParameters) {
+		ofNullable(entity.getJsonParameters()).ifPresentOrElse(List::clear, () -> entity.setJsonParameters(new ArrayList<>()));
+		entity.getJsonParameters().addAll(toJsonParameterEntities(jsonParameters, entity));
 	}
 
 	private static void updateStakeholders(final ErrandEntity entity, final List<Stakeholder> stakeholders) {
@@ -123,9 +141,9 @@ public final class ErrandMapper {
 	}
 
 	private static List<DbExternalTag> toExternalTag(final List<ExternalTag> tags) {
-		return new ArrayList<>(ofNullable(tags).orElse(emptyList()).stream()
+		return ofNullable(tags).orElse(emptyList()).stream()
 			.map(ErrandMapper::toExternalTagEntity)
-			.toList());
+			.collect(toCollection(ArrayList::new));
 	}
 
 	private static DbExternalTag toExternalTagEntity(final ExternalTag tag) {
@@ -153,7 +171,7 @@ public final class ErrandMapper {
 	}
 
 	public static Errand toErrand(final ErrandEntity entity) {
-		return Optional.ofNullable(entity)
+		return ofNullable(entity)
 			.map(e -> Errand.create()
 				.withAssignedGroupId(e.getAssignedGroupId())
 				.withAssignedUserId(e.getAssignedUserId())
@@ -175,7 +193,8 @@ public final class ErrandMapper {
 				.withSuspension(Suspension.create().withSuspendedFrom(e.getSuspendedFrom()).withSuspendedTo(e.getSuspendedTo()))
 				.withBusinessRelated(e.getBusinessRelated())
 				.withParameters(toParameterList(e.getParameters()))
-				.withContactReason(Optional.ofNullable(e.getContactReason()).map(ContactReasonEntity::getReason).orElse(null))
+				.withJsonParameters(toJsonParameters(e.getJsonParameters()))
+				.withContactReason(ofNullable(e.getContactReason()).map(ContactReasonEntity::getReason).orElse(null))
 				.withContactReasonDescription(e.getContactReasonDescription())
 				.withEscalationEmail(e.getEscalationEmail())
 				.withLabels(toErrandLabels(e.getLabels()))
@@ -196,7 +215,7 @@ public final class ErrandMapper {
 	}
 
 	public static Errand toLimitedErrand(final ErrandEntity entity) {
-		return Optional.ofNullable(entity)
+		return ofNullable(entity)
 			.map(e -> Errand.create()
 				.withId(e.getId())
 				.withCreated(e.getCreated())
@@ -211,7 +230,7 @@ public final class ErrandMapper {
 	}
 
 	private static List<Stakeholder> toStakeholders(final List<StakeholderEntity> stakeholderEntities) {
-		return Optional.ofNullable(stakeholderEntities)
+		return ofNullable(stakeholderEntities)
 			.map(s -> s.stream()
 				.map(stakeholderEntity -> Stakeholder.create()
 					.withExternalId(stakeholderEntity.getExternalId())
@@ -232,7 +251,7 @@ public final class ErrandMapper {
 	}
 
 	private static List<StakeholderEntity> toStakeholderEntities(final ErrandEntity errandEntity, final List<Stakeholder> stakeholders) {
-		return new ArrayList<>(Optional.ofNullable(stakeholders)
+		return new ArrayList<>(ofNullable(stakeholders)
 			.map(s -> s.stream()
 				.map(stakeholder -> {
 					final var stakeholderEntity = StakeholderEntity.create()
@@ -258,17 +277,15 @@ public final class ErrandMapper {
 	}
 
 	private static List<ContactChannelEntity> toContactChannelEntities(final List<ContactChannel> contactChannels) {
-		return new ArrayList<>(Optional.ofNullable(contactChannels)
-			.map(ch -> ch.stream()
-				.map(contactChannel -> ContactChannelEntity.create()
-					.withType(contactChannel.getType())
-					.withValue(contactChannel.getValue()))
-				.toList())
-			.orElse(emptyList()));
+		return ofNullable(contactChannels).orElse(emptyList()).stream()
+			.map(contactChannel -> ContactChannelEntity.create()
+				.withType(contactChannel.getType())
+				.withValue(contactChannel.getValue()))
+			.collect(toCollection(ArrayList::new));
 	}
 
 	private static List<ContactChannel> toContactChannels(final List<ContactChannelEntity> contactChannelEntities) {
-		return Optional.ofNullable(contactChannelEntities)
+		return ofNullable(contactChannelEntities)
 			.map(ch -> ch.stream()
 				.map(contactChannelEntity -> ContactChannel.create()
 					.withType(contactChannelEntity.getType())
@@ -291,7 +308,7 @@ public final class ErrandMapper {
 	}
 
 	private static List<Notification> toActiveNotifications(final List<NotificationEntity> entities) {
-		return Optional.ofNullable(entities).orElse(emptyList())
+		return ofNullable(entities).orElse(emptyList())
 			.stream()
 			.filter(notification -> !notification.isGlobalAcknowledged() || !notification.isAcknowledged())
 			.map(NotificationMapper::toNotification)
@@ -311,5 +328,48 @@ public final class ErrandMapper {
 				.type(REFERRED_FROM_RESOURCE_IDENTIFIER_TYPE)
 				.service(REFERRED_FROM_RESOURCE_IDENTIFIER_SERVICE)
 				.namespace(namespace));
+	}
+
+	private static List<JsonParameterEntity> toJsonParameterEntities(final List<JsonParameter> jsonParameters, final ErrandEntity errandEntity) {
+		return ofNullable(jsonParameters).orElse(emptyList()).stream()
+			.map(param -> JsonParameterEntity.create()
+				.withErrandEntity(errandEntity)
+				.withKey(param.getKey())
+				.withSchemaId(param.getSchemaId())
+				.withValue(toJsonString(param.getValue())))
+			.collect(toCollection(ArrayList::new));
+	}
+
+	private static List<JsonParameter> toJsonParameters(final List<JsonParameterEntity> entities) {
+		return ofNullable(entities).orElse(emptyList()).stream()
+			.map(entity -> JsonParameter.create()
+				.withKey(entity.getKey())
+				.withSchemaId(entity.getSchemaId())
+				.withValue(toJsonNode(entity.getValue())))
+			.toList();
+	}
+
+	private static String toJsonString(final JsonNode jsonNode) {
+		if (isNull(jsonNode)) {
+			return null;
+		}
+		try {
+			return OBJECT_MAPPER.writeValueAsString(jsonNode);
+		} catch (final JsonProcessingException e) {
+			LOG.warn("Failed to convert JsonNode to String", e);
+			return null;
+		}
+	}
+
+	private static JsonNode toJsonNode(final String jsonString) {
+		if (isNull(jsonString)) {
+			return null;
+		}
+		try {
+			return OBJECT_MAPPER.readTree(jsonString);
+		} catch (final JsonProcessingException e) {
+			LOG.warn("Failed to convert String to JsonNode", e);
+			return null;
+		}
 	}
 }

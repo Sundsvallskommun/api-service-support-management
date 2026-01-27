@@ -13,6 +13,7 @@
 				}
 			],
 			"parameters": [],
+			"jsonParameters": [],
 			"classification": {
 				"category": "CATEGORY-1",
 				"type": "TYPE-1"
@@ -43,6 +44,7 @@
 				}
 			],
 			"parameters": [],
+			"jsonParameters": [],
 			"classification": {
 				"category": "CATEGORY-1",
 				"type": "TYPE-1"
@@ -94,6 +96,7 @@
 			],
 			"externalTags": [],
 			"parameters": [],
+			"jsonParameters": [],
 			"classification": {
 				"category": "CATEGORY-1",
 				"type": "TYPE-1"
@@ -148,6 +151,7 @@
 				}
 			],
 			"parameters": [],
+			"jsonParameters": [],
 			"classification": {
 				"category": "CATEGORY-1",
 				"type": "TYPE-1"
@@ -221,6 +225,7 @@
 					]
 				}
 			],
+			"jsonParameters": [],
 			"classification": {
 				"category": "CATEGORY-3",
 				"type": "TYPE-3"
@@ -376,6 +381,7 @@
 					"values": []
 				}
 			],
+			"jsonParameters": [],
 			"classification": {
 				"category": "CATEGORY-1",
 				"type": "TYPE-1"

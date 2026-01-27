@@ -79,6 +79,7 @@
 			"businessRelated": false,
 			"reporterUserId": "joe01doe",
 			"parameters": [],
+			"jsonParameters": [],
 			"assignedUserId": "jane11dane",
 			"suspension": {},
 			"status": "STATUS-1"

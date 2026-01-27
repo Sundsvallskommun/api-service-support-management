@@ -61,6 +61,7 @@ class ErrandEntityTest {
 		final var escalationEmail = "escalation@email.com";
 		final var errandNumber = "errandNumber";
 		final var parameters = List.of(ParameterEntity.create());
+		final var jsonParameters = List.of(JsonParameterEntity.create());
 		final var businessRelated = true;
 		final var contactReason = ContactReasonEntity.create().withReason("reason");
 		final var contactReasonDescription = "contactReasonDescription";
@@ -89,6 +90,7 @@ class ErrandEntityTest {
 			.withTitle(title)
 			.withType(type)
 			.withParameters(parameters)
+			.withJsonParameters(jsonParameters)
 			.withEscalationEmail(escalationEmail)
 			.withBusinessRelated(businessRelated)
 			.withContactReason(contactReason)
@@ -124,6 +126,7 @@ class ErrandEntityTest {
 		assertThat(errandEntity.getTitle()).isEqualTo(title);
 		assertThat(errandEntity.getType()).isEqualTo(type);
 		assertThat(errandEntity.getParameters()).isEqualTo(parameters);
+		assertThat(errandEntity.getJsonParameters()).isEqualTo(jsonParameters);
 		assertThat(errandEntity.getEscalationEmail()).isEqualTo(escalationEmail);
 		assertThat(errandEntity.getErrandNumber()).isEqualTo(errandNumber);
 		assertThat(errandEntity.getBusinessRelated()).isEqualTo(businessRelated);

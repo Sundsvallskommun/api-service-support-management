@@ -25,6 +25,7 @@ TRUNCATE table communication_recipients;
 TRUNCATE table notification;
 TRUNCATE table parameter_values;
 TRUNCATE table parameter;
+TRUNCATE table json_parameter;
 TRUNCATE table contact_reason;
 TRUNCATE table email_worker_config;
 TRUNCATE table namespace_config;
