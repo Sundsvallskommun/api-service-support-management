@@ -92,7 +92,7 @@ INSERT INTO stakeholder_parameter_values(stakeholder_parameter_id, `value`) VALU
 -------------------------------------
 -- JsonParameter
 -------------------------------------
-INSERT INTO json_parameter(id, json_parameter_order, errand_id, parameters_key, schema_id, value)
+INSERT INTO json_parameter(id, json_parameter_order, errand_id, parameter_key, schema_id, value)
 VALUES ('json-param-1', 0, 'ERRAND_ID-1', 'formData', '2281_schema_1.0', '{"field1": "value1", "field2": 123}');
 
 -------------------------------------

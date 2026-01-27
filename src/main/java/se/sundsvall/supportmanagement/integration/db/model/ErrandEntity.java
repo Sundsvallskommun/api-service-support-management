@@ -1,15 +1,15 @@
 package se.sundsvall.supportmanagement.integration.db.model;
 
+import static jakarta.persistence.CascadeType.ALL;
+import static jakarta.persistence.FetchType.EAGER;
 import static org.hibernate.Length.LONG32;
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.ForeignKey;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
@@ -74,7 +74,7 @@ public class ErrandEntity {
 		}))
 	private List<DbExternalTag> externalTags;
 
-	@OneToMany(mappedBy = "errandEntity", cascade = CascadeType.ALL, orphanRemoval = true)
+	@OneToMany(mappedBy = "errandEntity", cascade = ALL, orphanRemoval = true)
 	@OrderBy("externalId")
 	private List<StakeholderEntity> stakeholders;
 
@@ -130,19 +130,19 @@ public class ErrandEntity {
 	@Column(name = "escalation_email")
 	private String escalationEmail;
 
-	@OneToMany(mappedBy = "errandEntity", cascade = CascadeType.ALL, orphanRemoval = true)
+	@OneToMany(mappedBy = "errandEntity", cascade = ALL, orphanRemoval = true)
 	@OrderColumn(name = "parameter_order", nullable = false, columnDefinition = "integer default 0")
 	private List<ParameterEntity> parameters;
 
-	@OneToMany(mappedBy = "errandEntity", cascade = CascadeType.ALL, orphanRemoval = true)
+	@OneToMany(mappedBy = "errandEntity", cascade = ALL, orphanRemoval = true)
 	@OrderColumn(name = "json_parameter_order", nullable = false, columnDefinition = "integer default 0")
 	private List<JsonParameterEntity> jsonParameters;
 
-	@OneToMany(mappedBy = "errandEntity", cascade = CascadeType.ALL, orphanRemoval = true)
+	@OneToMany(mappedBy = "errandEntity", cascade = ALL, orphanRemoval = true)
 	@OrderBy("fileName")
 	private List<AttachmentEntity> attachments;
 
-	@OneToMany(mappedBy = "errandEntity", cascade = CascadeType.ALL, orphanRemoval = true)
+	@OneToMany(mappedBy = "errandEntity", cascade = ALL, orphanRemoval = true)
 	private List<NotificationEntity> notifications;
 
 	@Column(name = "suspended_to")
@@ -185,7 +185,7 @@ public class ErrandEntity {
 	@Column(name = "previous_status")
 	private String previousStatus;
 
-	@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+	@OneToMany(cascade = ALL, orphanRemoval = true, fetch = EAGER)
 	@JoinColumn(name = "errand_id", referencedColumnName = "id", foreignKey = @ForeignKey(name = "fk_errand_time_measure_errand_id"))
 	private List<TimeMeasurementEntity> timeMeasures;
 

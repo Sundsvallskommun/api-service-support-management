@@ -19,7 +19,7 @@ import org.hibernate.annotations.UuidGenerator;
 @Table(name = "json_parameter",
 	indexes = {
 		@Index(name = "idx_json_parameter_errand_id", columnList = "errand_id"),
-		@Index(name = "idx_json_parameter_key", columnList = "parameters_key")
+		@Index(name = "idx_json_parameter_key", columnList = "parameter_key")
 	})
 public class JsonParameterEntity {
 
@@ -31,7 +31,7 @@ public class JsonParameterEntity {
 	@JoinColumn(name = "errand_id", nullable = false, foreignKey = @ForeignKey(name = "fk_json_parameter_errand_id"))
 	private ErrandEntity errandEntity;
 
-	@Column(name = "parameters_key")
+	@Column(name = "parameter_key")
 	private String key;
 
 	@Column(name = "schema_id")
