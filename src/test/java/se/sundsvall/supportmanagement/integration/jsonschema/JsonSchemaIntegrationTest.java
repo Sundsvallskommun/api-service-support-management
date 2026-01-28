@@ -37,13 +37,13 @@ class JsonSchemaIntegrationTest {
 		// Arrange
 		final var schemaId = "testSchema";
 		final var jsonValue = createJsonNode();
-		final var jsonParameter = JsonParameter.create()
+		final var jsonParameters = List.of(JsonParameter.create()
 			.withKey("testKey")
 			.withSchemaId(schemaId)
-			.withValue(jsonValue);
+			.withValue(jsonValue));
 
 		// Act
-		jsonSchemaIntegration.validateJsonParameters(MUNICIPALITY_ID, List.of(jsonParameter));
+		jsonSchemaIntegration.validateJsonParameters(MUNICIPALITY_ID, jsonParameters);
 
 		// Assert
 		verify(jsonSchemaClientMock).validateJson(MUNICIPALITY_ID, schemaId, jsonValue);
@@ -74,19 +74,18 @@ class JsonSchemaIntegrationTest {
 		final var schemaId2 = "schema2";
 		final var jsonValue1 = createJsonNode();
 		final var jsonValue2 = createJsonNode();
-
-		final var jsonParameter1 = JsonParameter.create()
-			.withKey("key1")
-			.withSchemaId(schemaId1)
-			.withValue(jsonValue1);
-
-		final var jsonParameter2 = JsonParameter.create()
-			.withKey("key2")
-			.withSchemaId(schemaId2)
-			.withValue(jsonValue2);
+		final var jsonParameters = List.of(
+			JsonParameter.create()
+				.withKey("key1")
+				.withSchemaId(schemaId1)
+				.withValue(jsonValue1),
+			JsonParameter.create()
+				.withKey("key2")
+				.withSchemaId(schemaId2)
+				.withValue(jsonValue2));
 
 		// Act
-		jsonSchemaIntegration.validateJsonParameters(MUNICIPALITY_ID, List.of(jsonParameter1, jsonParameter2));
+		jsonSchemaIntegration.validateJsonParameters(MUNICIPALITY_ID, jsonParameters);
 
 		// Assert
 		verify(jsonSchemaClientMock).validateJson(MUNICIPALITY_ID, schemaId1, jsonValue1);
@@ -98,10 +97,10 @@ class JsonSchemaIntegrationTest {
 		// Arrange
 		final var schemaId = "testSchema";
 		final var jsonValue = createJsonNode();
-		final var jsonParameter = JsonParameter.create()
+		final var jsonParameters = List.of(JsonParameter.create()
 			.withKey("testKey")
 			.withSchemaId(schemaId)
-			.withValue(jsonValue);
+			.withValue(jsonValue));
 
 		final var request = Request.create(Request.HttpMethod.POST, "url", Map.of(), null, new RequestTemplate());
 		final var feignException = new FeignException.BadRequest("Validation failed", request, null, null);
@@ -110,7 +109,7 @@ class JsonSchemaIntegrationTest {
 			.when(jsonSchemaClientMock).validateJson(MUNICIPALITY_ID, schemaId, jsonValue);
 
 		// Act and assert
-		assertThatThrownBy(() -> jsonSchemaIntegration.validateJsonParameters(MUNICIPALITY_ID, List.of(jsonParameter)))
+		assertThatThrownBy(() -> jsonSchemaIntegration.validateJsonParameters(MUNICIPALITY_ID, jsonParameters))
 			.isInstanceOf(FeignException.class)
 			.hasMessageContaining("Validation failed");
 	}
