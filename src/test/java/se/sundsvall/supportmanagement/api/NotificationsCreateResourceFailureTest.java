@@ -84,7 +84,7 @@ class NotificationsCreateResourceFailureTest {
 	@Test
 	void createNotificationWithInvalidNamespace() {
 		// Parameter values
-		final var requestBody = TestObjectsBuilder.createNotification(n -> {});
+		final var requestBody = TestObjectsBuilder.createNotification(_ -> {});
 
 		// Call
 		final var response = webTestClient.post()
@@ -106,7 +106,7 @@ class NotificationsCreateResourceFailureTest {
 	@Test
 	void createNotificationWithInvalidMunicipalityId() {
 		// Parameter values
-		final var requestBody = TestObjectsBuilder.createNotification(n -> {});
+		final var requestBody = TestObjectsBuilder.createNotification(_ -> {});
 
 		// Call
 		final var response = webTestClient.post()
@@ -128,7 +128,7 @@ class NotificationsCreateResourceFailureTest {
 	@Test
 	void createNotificationWithInvalidErrandId() {
 		// Parameter values
-		final var requestBody = TestObjectsBuilder.createNotification(n -> {});
+		final var requestBody = TestObjectsBuilder.createNotification(_ -> {});
 
 		// Call
 		final var response = webTestClient.post()

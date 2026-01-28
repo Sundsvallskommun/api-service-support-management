@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 import static org.flywaydb.core.internal.util.StringUtils.rightPad;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -12,7 +13,11 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.zalando.problem.Status.BAD_REQUEST;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import feign.FeignException;
+import feign.Request;
+import feign.RequestTemplate;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +42,7 @@ import se.sundsvall.supportmanagement.api.model.errand.Suspension;
 import se.sundsvall.supportmanagement.api.model.metadata.Category;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
 import se.sundsvall.supportmanagement.api.model.metadata.Type;
+import se.sundsvall.supportmanagement.integration.jsonschema.JsonSchemaClient;
 import se.sundsvall.supportmanagement.service.ErrandService;
 import se.sundsvall.supportmanagement.service.MetadataService;
 
@@ -58,6 +64,9 @@ class ErrandsUpdateResourceFailureTest {
 
 	@MockitoBean
 	private MetadataService metadataServiceMock;
+
+	@MockitoBean
+	private JsonSchemaClient jsonSchemaClientMock;
 
 	private static Errand createErrandInstance() {
 		return Errand.create()
@@ -494,5 +503,43 @@ class ErrandsUpdateResourceFailureTest {
 
 		// Verification
 		verifyNoInteractions(metadataServiceMock, errandServiceMock);
+	}
+
+	@Test
+	void updateErrandWithInvalidJsonParameterSchema() {
+		// Setup
+		final var schemaId = "testSchema";
+		final var jsonValue = new ObjectMapper().createObjectNode().put("field", "value");
+		final var request = Request.create(Request.HttpMethod.POST, "url", Map.of(), null, new RequestTemplate());
+		final var feignException = new FeignException.BadRequest("Schema validation failed: missing required field", request, "Schema validation failed: missing required field".getBytes(), null);
+
+		doThrow(feignException).when(jsonSchemaClientMock).validateJson(any(), any(), any(JsonNode.class));
+
+		// Call
+		final var response = webTestClient.patch()
+			.uri(builder -> builder.path(PATH + "/{errandId}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(Errand.create()
+				.withJsonParameters(List.of(
+					JsonParameter.create()
+						.withKey("formData")
+						.withValue(jsonValue)
+						.withSchemaId(schemaId))))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::getField, Violation::getMessage)
+			.containsExactly(tuple("updateErrand.errand.jsonParameters[0]", "Schema validation failed: missing required field"));
+
+		// Verification
+		verify(jsonSchemaClientMock).validateJson(MUNICIPALITY_ID, schemaId, jsonValue);
+		verifyNoInteractions(errandServiceMock);
 	}
 }
