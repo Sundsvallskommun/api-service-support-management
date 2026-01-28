@@ -115,8 +115,6 @@ class JsonSchemaIntegrationTest {
 	}
 
 	private ObjectNode createJsonNode() {
-		return OBJECT_MAPPER
-			.createObjectNode()
-			.put("testField", "testValue");
+		return OBJECT_MAPPER.createObjectNode().put("testField", "testValue");
 	}
 }
