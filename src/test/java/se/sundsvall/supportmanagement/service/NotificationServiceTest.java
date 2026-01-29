@@ -299,8 +299,10 @@ class NotificationServiceTest {
 		final var notificationId = randomUUID().toString();
 
 		final var notification = TestObjectsBuilder.createNotification(n -> n.setId(notificationId));
+		final var notifications = List.of(notification);
+
 		// Act
-		assertThatThrownBy(() -> notificationService.updateNotifications(municipalityId, namespace, List.of(notification)))
+		assertThatThrownBy(() -> notificationService.updateNotifications(municipalityId, namespace, notifications))
 			.isInstanceOf(Problem.class)
 			.hasMessage(String.format("Not Found: Notification with id:'%s' not found in namespace:'%s' for municipality with id:'%s' and errand with id:'%s'", notificationId, namespace, municipalityId, notification.getErrandId()));
 

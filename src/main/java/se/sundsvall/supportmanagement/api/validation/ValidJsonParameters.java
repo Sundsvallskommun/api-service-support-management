@@ -7,20 +7,19 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import se.sundsvall.supportmanagement.api.validation.impl.ValidMessageIdConstraintValidator;
+import se.sundsvall.supportmanagement.api.validation.impl.ValidJsonParametersConstraintValidator;
 
 @Documented
 @Target({
-	ElementType.TYPE_USE
+	ElementType.FIELD, ElementType.CONSTRUCTOR, ElementType.PARAMETER, ElementType.TYPE_USE
 })
 @Retention(RetentionPolicy.RUNTIME)
-@Constraint(validatedBy = ValidMessageIdConstraintValidator.class)
-public @interface ValidMessageId {
+@Constraint(validatedBy = ValidJsonParametersConstraintValidator.class)
+public @interface ValidJsonParameters {
 
-	String message() default "text is not valid message id format";
+	String message() default "invalid json parameters";
 
 	Class<?>[] groups() default {};
 
 	Class<? extends Payload>[] payload() default {};
-
 }

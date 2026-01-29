@@ -7,6 +7,7 @@ import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.jupiter.api.Test;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.JsonParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 
@@ -33,6 +34,7 @@ class CircularReferenceExclusionStrategyTest {
 	@Test
 	void shouldNotSkipFieldForNonDeclaredFieldInDeclaredClass() {
 		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(AttachmentEntity.class, "id", true)))).isFalse();
+		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(JsonParameterEntity.class, "id", true)))).isFalse();
 		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(StakeholderEntity.class, "id", true)))).isFalse();
 		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(ParameterEntity.class, "id", true)))).isFalse();
 	}
@@ -40,6 +42,7 @@ class CircularReferenceExclusionStrategyTest {
 	@Test
 	void shouldSkipFieldForDeclaredFieldInDeclaredClass() {
 		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(AttachmentEntity.class, "errandEntity", true)))).isTrue();
+		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(JsonParameterEntity.class, "errandEntity", true)))).isTrue();
 		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(StakeholderEntity.class, "errandEntity", true)))).isTrue();
 		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(ParameterEntity.class, "errandEntity", true)))).isTrue();
 	}

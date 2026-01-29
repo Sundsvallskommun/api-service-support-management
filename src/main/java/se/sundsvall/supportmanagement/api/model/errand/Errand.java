@@ -20,6 +20,7 @@ import se.sundsvall.supportmanagement.api.validation.UniqueExternalTagKeys;
 import se.sundsvall.supportmanagement.api.validation.ValidClassificationCreate;
 import se.sundsvall.supportmanagement.api.validation.ValidClassificationUpdate;
 import se.sundsvall.supportmanagement.api.validation.ValidContactReason;
+import se.sundsvall.supportmanagement.api.validation.ValidJsonParameters;
 import se.sundsvall.supportmanagement.api.validation.ValidStatus;
 import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
 import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
@@ -61,6 +62,9 @@ public class Errand {
 
 	@Schema(description = "JSON parameters for the errand")
 	@Valid
+	@ValidJsonParameters(groups = {
+		OnCreate.class, OnUpdate.class
+	})
 	private List<JsonParameter> jsonParameters;
 
 	@Schema(implementation = Classification.class)
