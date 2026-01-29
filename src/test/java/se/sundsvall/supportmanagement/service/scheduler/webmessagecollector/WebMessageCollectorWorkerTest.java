@@ -33,7 +33,6 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.jpa.domain.Specification;
-import se.sundsvall.supportmanagement.Constants;
 import se.sundsvall.supportmanagement.integration.db.CommunicationRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
@@ -92,6 +91,7 @@ class WebMessageCollectorWorkerTest {
 		// Arrange
 		final var id = 1;
 		final var caseId = "caseId";
+		final var status = "SOLVED";
 		final var familyId = "familyId";
 		final var messageId = "messageId";
 		final var errandNumber = "errandNumber";
@@ -119,7 +119,7 @@ class WebMessageCollectorWorkerTest {
 			.withMunicipalityId(MUNICIPALITY_ID)
 			.withNamespace("namespace")
 			.withErrandNumber(errandNumber)
-			.withStatus(Constants.ERRAND_STATUS_SOLVED)
+			.withStatus(status)
 			.withTouched(now().minusDays(2));
 
 		// Mock

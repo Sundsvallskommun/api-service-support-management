@@ -133,6 +133,7 @@ public class ErrandService {
 
 	public Errand updateErrand(final String namespace, final String municipalityId, final String id, final Errand errand) {
 		final var errandEntityToUpdate = accessControlService.getErrand(namespace, municipalityId, id, true, Access.AccessLevelEnum.RW);
+
 		final var errandEntity = updateEntity(errandEntityToUpdate, errand);
 
 		// Add contactReason

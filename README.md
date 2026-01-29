@@ -78,9 +78,21 @@ This microservice depends on the following services:
   - **Purpose:** Provides functionality for fetching access restrictions per user (optional setting per namespace).
   - **Repository:** [Link to the repository](https://github.com/Sundsvallskommun/api-service-access-mapper)
   - **Setup Instructions:** Refer to its documentation for installation and configuration steps.
+- **Citizen**
+  - **Purpose:** Used for reading citizen information.
+  - **Repository:** [Link to the repository](https://github.com/Sundsvallskommun/api-service-citizen)
+  - **Setup Instructions:** Refer to its documentation for installation and configuration steps.
 - **JsonSchema**
   - **Purpose:** Provides functionality for validating JSON data against predefined schemas.
   - **Repository:** [Link to the repository](https://github.com/Sundsvallskommun/api-service-json-schema)
+  - **Setup Instructions:** Refer to its documentation for installation and configuration steps.
+- **MessageExchange**
+  - **Purpose:** Provides functionality for handling message conversations and messages.
+  - **Repository:** [Link to the repository](https://github.com/Sundsvallskommun/api-service-message-exchange)
+  - **Setup Instructions:** Refer to its documentation for installation and configuration steps.
+- **MessagingSettings**
+  - **Purpose:** Used for fetching messaging settings per municipality.
+  - **Repository:** [Link to the repository](https://github.com/Sundsvallskommun/api-service-messaging-settings)
   - **Setup Instructions:** Refer to its documentation for installation and configuration steps.
 
 Ensure that these services are running and properly configured before starting this microservice.
@@ -131,19 +143,29 @@ Configuration is crucial for the application to run successfully. Ensure all nec
 
   ```yaml
   integration:
+    accessmapper:
+      url: http://dependency_service_url
+    citizen:
+      url: http://dependency_service_url
     emailreader:
       url: http://dependency_service_url
     employee:
       url: http://dependency_service_url
     eventlog:
       url: http://dependency_service_url
+    json-schema:
+      url: http://dependency_service_url
+    messageexchange:
+      url: http://dependency_service_url
     messaging:
+      url: http://dependency_service_url
+    messaging-settings:
       url: http://dependency_service_url
     notes:
       url: http://dependency_service_url
-    web-message-collector:
+    relation:
       url: http://dependency_service_url
-    json-schema:
+    web-message-collector:
       url: http://dependency_service_url
 
   spring:
@@ -151,21 +173,37 @@ Configuration is crucial for the application to run successfully. Ensure all nec
       oauth2:
         client:
           provider:
+            accessmapper:
+              token-uri: http://dependency_service_token_url
+            citizen:
+              token-uri: http://dependency_service_token_url
             emailreader:
-              token-uri: http://dependecy_service_token_url
+              token-uri: http://dependency_service_token_url
             employee:
-              token-uri: http://dependecy_service_token_url
+              token-uri: http://dependency_service_token_url
             eventlog:
-              token-uri: http://dependecy_service_token_url
+              token-uri: http://dependency_service_token_url
+            json-schema:
+              token-uri: http://dependency_service_token_url
+            messageexchange:
+              token-uri: http://dependency_service_token_url
             messaging:
-              token-uri: http://dependecy_service_token_url
+              token-uri: http://dependency_service_token_url
+            messaging-settings:
+              token-uri: http://dependency_service_token_url
             notes:
-              token-uri: http://dependecy_service_token_url
+              token-uri: http://dependency_service_token_url
+            relation:
+              token-uri: http://dependency_service_token_url
             web-message-collector:
-              token-uri: http://dependecy_service_token_url
-            json-schema:
-              token-uri: http://dependecy_service_token_url
+              token-uri: http://dependency_service_token_url
           registration:
+            accessmapper:
+              client-id: the-client-id
+              client-secret: the-client-secret
+            citizen:
+              client-id: the-client-id
+              client-secret: the-client-secret
             emailreader:
               client-id: the-client-id
               client-secret: the-client-secret
@@ -176,6 +214,24 @@ Configuration is crucial for the application to run successfully. Ensure all nec
               client-id: the-client-id
               client-secret: the-client-secret
             json-schema:
+              client-id: the-client-id
+              client-secret: the-client-secret
+            messageexchange:
+              client-id: the-client-id
+              client-secret: the-client-secret
+            messaging:
+              client-id: the-client-id
+              client-secret: the-client-secret
+            messaging-settings:
+              client-id: the-client-id
+              client-secret: the-client-secret
+            notes:
+              client-id: the-client-id
+              client-secret: the-client-secret
+            relation:
+              client-id: the-client-id
+              client-secret: the-client-secret
+            web-message-collector:
               client-id: the-client-id
               client-secret: the-client-secret
   ```
@@ -224,4 +280,4 @@ This project is licensed under the [MIT License](LICENSE).
 
 ---
 
-Copyright (c) 2023 Sundsvalls kommun
+Copyright (c) 2026 Sundsvalls kommun
