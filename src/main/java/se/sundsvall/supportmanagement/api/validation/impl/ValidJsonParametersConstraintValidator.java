@@ -9,7 +9,6 @@ import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import org.zalando.problem.ThrowableProblem;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
 import se.sundsvall.supportmanagement.api.validation.ValidJsonParameters;
@@ -32,8 +31,8 @@ public class ValidJsonParametersConstraintValidator extends AbstractTagConstrain
 		final var municipalityId = getPathVariable(PATHVARIABLE_MUNICIPALITY_ID);
 		var hasErrors = false;
 
-		final Set<String> seenKeys = new HashSet<>();
-		final Set<String> duplicateKeys = new HashSet<>();
+		final var seenKeys = new HashSet<>();
+		final var duplicateKeys = new HashSet<>();
 
 		// First pass: identify duplicate keys
 		for (final var param : value) {
