@@ -169,7 +169,8 @@ public class ConversationService {
 		final String municipalityId,
 		final String messageExchangeConversationId) {
 
-		return messageExchangeClient.getConversationById(municipalityId, messageExchangeNamespace, messageExchangeConversationId).getBody();
+		return Optional.ofNullable(messageExchangeClient.getConversationById(municipalityId, messageExchangeNamespace, messageExchangeConversationId).getBody())
+			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, "Conversation with id '%s' not found in Message Exchange".formatted(messageExchangeConversationId)));
 	}
 
 	private ConversationEntity getConversationEntity(final String municipalityId, final String namespace, final String errandId, final String conversationId) {

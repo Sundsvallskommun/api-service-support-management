@@ -1,0 +1,13 @@
+{
+	"title": "Updated title with invalid json parameters",
+	"jsonParameters": [
+		{
+			"key": "invalidFormData",
+			"schemaId": "test-schema-1.0",
+			"value": {
+				"email": "invalid-email-format",
+				"age": -5
+			}
+		}
+	]
+}

@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.service;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static java.util.Collections.emptyList;
+import static java.util.Optional.ofNullable;
 import static org.zalando.problem.Status.NOT_FOUND;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.toErrandParameterEntityList;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.toParameter;
@@ -35,11 +36,12 @@ public class ErrandParameterService {
 	public List<Parameter> updateErrandParameters(final String namespace, final String municipalityId, final String errandId, final List<Parameter> parameters) {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, RW);
 
-		if (errandEntity.getParameters() != null) {
-			errandEntity.getParameters().clear();
-		}
-
-		errandEntity.getParameters().addAll(toErrandParameterEntityList(parameters, errandEntity));
+		ofNullable(errandEntity.getParameters()).ifPresentOrElse(
+			existingParams -> {
+				existingParams.clear();
+				existingParams.addAll(toErrandParameterEntityList(parameters, errandEntity));
+			},
+			() -> errandEntity.setParameters(toErrandParameterEntityList(parameters, errandEntity)));
 
 		return toParameterList(errandsRepository.save(errandEntity).getParameters());
 	}

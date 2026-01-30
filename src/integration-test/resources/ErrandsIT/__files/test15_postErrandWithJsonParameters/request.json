@@ -1,0 +1,56 @@
+{
+	"externalTags": [
+		{
+			"value": "1234-5678",
+			"key": "caseid"
+		}
+	],
+	"contactReasonDescription": "Contact reason description for json params test",
+	"channel": "Web",
+	"description": "Errand with JSON parameters",
+	"stakeholders": [
+		{
+			"externalId": "cb20c51f-fcf3-42c0-b613-de563634a8ec",
+			"parameters": [],
+			"contactChannels": [],
+			"externalIdType": "PRIVATE"
+		}
+	],
+	"title": "test15_postErrandWithJsonParameters",
+	"priority": "MEDIUM",
+	"classification": {
+		"category": "CATEGORY-2",
+		"type": "TYPE-2"
+	},
+	"resolution": "pending",
+	"assignedGroupId": "support group",
+	"contactReason": "reason1",
+	"businessRelated": "false",
+	"reporterUserId": "joe01doe",
+	"parameters": [],
+	"jsonParameters": [
+		{
+			"key": "formData",
+			"schemaId": "test-schema-1.0",
+			"value": {
+				"firstName": "John",
+				"lastName": "Doe",
+				"email": "john.doe@example.com",
+				"age": 30
+			}
+		},
+		{
+			"key": "additionalInfo",
+			"schemaId": "test-schema-2.0",
+			"value": {
+				"notes": "Some notes here",
+				"tags": [
+					"urgent",
+					"customer-request"
+				]
+			}
+		}
+	],
+	"assignedUserId": "joe01doe",
+	"status": "STATUS-2"
+}

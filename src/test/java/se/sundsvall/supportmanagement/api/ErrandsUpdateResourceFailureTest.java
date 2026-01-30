@@ -15,9 +15,6 @@ import static org.zalando.problem.Status.BAD_REQUEST;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import feign.FeignException;
-import feign.Request;
-import feign.RequestTemplate;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +28,7 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import org.zalando.problem.Problem;
 import org.zalando.problem.violations.ConstraintViolationProblem;
 import org.zalando.problem.violations.Violation;
+import se.sundsvall.dept44.exception.ClientProblem;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.errand.Classification;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
@@ -510,10 +508,9 @@ class ErrandsUpdateResourceFailureTest {
 		// Setup
 		final var schemaId = "testSchema";
 		final var jsonValue = new ObjectMapper().createObjectNode().put("field", "value");
-		final var request = Request.create(Request.HttpMethod.POST, "url", Map.of(), null, new RequestTemplate());
-		final var feignException = new FeignException.BadRequest("Schema validation failed: missing required field", request, "Schema validation failed: missing required field".getBytes(), null);
+		final var clientProblem = new ClientProblem(BAD_REQUEST, "Schema validation failed: missing required field");
 
-		doThrow(feignException).when(jsonSchemaClientMock).validateJson(any(), any(), any(JsonNode.class));
+		doThrow(clientProblem).when(jsonSchemaClientMock).validateJson(any(), any(), any(JsonNode.class));
 
 		// Call
 		final var response = webTestClient.patch()
