@@ -1,5 +1,7 @@
 package se.sundsvall.supportmanagement.service.scheduler.messageexchange;
 
+import static java.util.Collections.emptyList;
+import static java.util.Optional.ofNullable;
 import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
 import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.RELATION_ID_KEY;
 
@@ -76,7 +78,7 @@ public class MessageExchangeWorker {
 	 * @return                      conversationEntities with possible added conversations
 	 */
 	private List<ConversationEntity> addNewUnsyncedConversationsToList(final Conversation conversation, final List<ConversationEntity> conversationEntities) {
-		conversation.getExternalReferences().stream()
+		ofNullable(conversation.getExternalReferences()).orElse(emptyList()).stream()
 			.filter(keyValues -> keyValues.getKey() != null && keyValues.getKey().equals(RELATION_ID_KEY))
 			.flatMap(keyValues -> keyValues.getValues().stream())
 			.filter(isNotPresentInConversationRelations(conversationEntities))

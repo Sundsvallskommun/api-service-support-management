@@ -1,0 +1,11 @@
+{
+	"type": "https://zalando.github.io/problem/constraint-violation",
+	"status": 400,
+	"violations": [
+		{
+			"field": "updateErrand.errand.jsonParameters[0]",
+			"message": "json-schema error: {detail=/email: string found, does not match email format, /age: integer must be greater than or equal to 0, status=400 Bad Request, title=Constraint Violation}"
+		}
+	],
+	"title": "Constraint Violation"
+}

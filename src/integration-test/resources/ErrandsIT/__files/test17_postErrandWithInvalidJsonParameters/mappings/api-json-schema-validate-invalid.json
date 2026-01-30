@@ -1,0 +1,37 @@
+{
+	"request": {
+		"headers": {
+			"Authorization": {
+				"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
+			}
+		},
+		"method": "POST",
+		"urlPath": "/api-json-schema/2281/schemas/test-schema-1.0/validation",
+		"bodyPatterns": [
+			{
+				"equalToJson": {
+					"firstName": "John",
+					"age": "not-a-number"
+				}
+			}
+		]
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/problem+json"
+		},
+		"status": 400,
+		"jsonBody": {
+			"type": "https://zalando.github.io/problem/constraint-violation",
+			"status": 400,
+			"violations": [
+				{
+					"field": "/age",
+					"message": "string found, integer expected"
+				}
+			],
+			"title": "Constraint Violation"
+		}
+	},
+	"name": "api-json-schema-validate-invalid"
+}

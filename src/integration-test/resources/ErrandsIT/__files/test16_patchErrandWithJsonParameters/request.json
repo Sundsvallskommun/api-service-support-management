@@ -1,0 +1,15 @@
+{
+	"title": "Updated title with json parameters",
+	"jsonParameters": [
+		{
+			"key": "updatedFormData",
+			"schemaId": "test-schema-1.0",
+			"value": {
+				"firstName": "Jane",
+				"lastName": "Smith",
+				"email": "jane.smith@example.com",
+				"age": 25
+			}
+		}
+	]
+}
