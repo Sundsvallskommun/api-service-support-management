@@ -1,0 +1,134 @@
+{
+	"id": "1be673c0-6ba3-4fb0-af4a-43acf23389f6",
+	"errandNumber": "KC-23020003",
+	"title": "Updated title with json parameters",
+	"priority": "HIGH",
+	"stakeholders": [
+		{
+			"externalId": "7fba994b-e99e-4beb-8ab5-63cc74483b66",
+			"externalIdType": "ENTERPRISE",
+			"contactChannels": [],
+			"parameters": []
+		}
+	],
+	"externalTags": [
+		{
+			"key": "KEY-4",
+			"value": "VALUE-4"
+		},
+		{
+			"key": "KEY-5",
+			"value": "VALUE-5"
+		}
+	],
+	"parameters": [
+		{
+			"key": "keyA",
+			"displayName": "Displayname A",
+			"values": [
+				"valueA1",
+				"valueA2"
+			]
+		},
+		{
+			"key": "keyB",
+			"displayName": "Displayname B",
+			"values": [
+				"valueB1"
+			]
+		}
+	],
+	"jsonParameters": [
+		{
+			"key": "updatedFormData",
+			"schemaId": "test-schema-1.0",
+			"value": {
+				"firstName": "Jane",
+				"lastName": "Smith",
+				"email": "jane.smith@example.com",
+				"age": 25
+			}
+		}
+	],
+	"classification": {
+		"category": "CATEGORY-3",
+		"type": "TYPE-3"
+	},
+	"status": "STATUS-3",
+	"resolution": "RESOLUTION",
+	"description": "DESCRIPTION",
+	"reporterUserId": "REPORTER_USER_ID-3",
+	"assignedUserId": "ASSIGNED_USER_ID-3",
+	"assignedGroupId": "ASSIGNED_GROUP_ID-3",
+	"suspension": {},
+	"businessRelated": false,
+	"labels": [
+		{
+			"id": "926fd3f9-f488-4ba4-93f6-2789dee0c0c3",
+			"classification": "SUBTYPE",
+			"displayName": "SUBTYPE-DISPLAY-NAME-3",
+			"resourcePath": "CATEGORY-1/TYPE-2/SUBTYPE-3",
+			"resourceName": "SUBTYPE-3"
+		},
+		{
+			"id": "f4d6e210-633b-48a6-ad0a-7be839b28762",
+			"classification": "SUBTYPE",
+			"displayName": "SUBTYPE-DISPLAY-NAME-4",
+			"resourcePath": "CATEGORY-1/TYPE-2/SUBTYPE-4",
+			"resourceName": "SUBTYPE-4"
+		}
+	],
+	"activeNotifications": [
+		{
+			"id": "5f3c4196-8b2f-4ccd-8939-6f53a715563c",
+			"created": "2023-12-31T23:59:59.999+01:00",
+			"modified": "2023-12-31T23:59:59.999+01:00",
+			"ownerFullName": "owner_full_name-3",
+			"ownerId": "owner_id-3",
+			"createdBy": "created_by-3",
+			"type": "type-3",
+			"description": "description-1-a",
+			"content": "content-1-a",
+			"expires": "2024-12-31T23:59:59.999Z",
+			"globalAcknowledged": false,
+			"acknowledged": true,
+			"errandId": "1be673c0-6ba3-4fb0-af4a-43acf23389f6",
+			"errandNumber": "KC-23020003"
+		},
+		{
+			"id": "a9c2f59e-3b7d-4d8f-b3e7-9b35cd9eb3a4",
+			"created": "2023-12-31T23:59:59.999+01:00",
+			"modified": "2023-12-31T23:59:59.999+01:00",
+			"ownerFullName": "owner_full_name-3",
+			"ownerId": "owner_id-3",
+			"createdBy": "created_by-3",
+			"type": "type-3",
+			"description": "description-1-a",
+			"content": "content-1-a",
+			"expires": "2024-12-31T23:59:59.999Z",
+			"globalAcknowledged": true,
+			"acknowledged": false,
+			"errandId": "1be673c0-6ba3-4fb0-af4a-43acf23389f6",
+			"errandNumber": "KC-23020003"
+		},
+		{
+			"id": "c0c31e30-98cc-4f27-ba5a-5c9eef0db6c7",
+			"created": "2023-12-31T23:59:59.999+01:00",
+			"modified": "2023-12-31T23:59:59.999+01:00",
+			"ownerFullName": "owner_full_name-3",
+			"ownerId": "owner_id-3",
+			"createdBy": "created_by-3",
+			"type": "type-3",
+			"description": "description-1-a",
+			"content": "content-1-a",
+			"expires": "2024-12-31T23:59:59.999Z",
+			"globalAcknowledged": false,
+			"acknowledged": false,
+			"errandId": "1be673c0-6ba3-4fb0-af4a-43acf23389f6",
+			"errandNumber": "KC-23020003"
+		}
+	],
+	"created": "2022-03-01T12:00:00+01:00",
+	"touched": "${json-unit.any-string}",
+	"modified": "${json-unit.any-string}"
+}

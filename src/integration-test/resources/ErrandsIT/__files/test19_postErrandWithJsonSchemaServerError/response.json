@@ -1,0 +1,5 @@
+{
+	"status": 500,
+	"title": "Internal Server Error",
+	"detail": "HV000028: Unexpected exception during isValid call."
+}

@@ -4,12 +4,12 @@ import static java.util.Optional.ofNullable;
 import static org.hibernate.validator.internal.engine.messageinterpolation.util.InterpolationHelper.escapeMessageParameter;
 import static org.springframework.util.CollectionUtils.isEmpty;
 
-import feign.FeignException;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import java.util.HashSet;
 import java.util.List;
 import org.zalando.problem.ThrowableProblem;
+import se.sundsvall.dept44.exception.ServerProblem;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
 import se.sundsvall.supportmanagement.api.validation.ValidJsonParameters;
 import se.sundsvall.supportmanagement.integration.jsonschema.JsonSchemaClient;
@@ -53,11 +53,10 @@ public class ValidJsonParametersConstraintValidator extends AbstractTagConstrain
 
 			try {
 				jsonSchemaClient.validateJson(municipalityId, param.getSchemaId(), param.getValue());
-			} catch (final FeignException e) {
-				useCustomMessageForValidation(extractErrorMessage(e, param), i, context);
-				hasErrors = true;
+			} catch (final ServerProblem e) {
+				throw e;
 			} catch (final ThrowableProblem e) {
-				useCustomMessageForValidation(ofNullable(e.getDetail()).orElse(e.getMessage()), i, context);
+				useCustomMessageForValidation(extractErrorMessage(e, param), i, context);
 				hasErrors = true;
 			}
 		}
@@ -65,9 +64,9 @@ public class ValidJsonParametersConstraintValidator extends AbstractTagConstrain
 		return !hasErrors;
 	}
 
-	private String extractErrorMessage(final FeignException e, final JsonParameter param) {
-		return ofNullable(e.contentUTF8())
-			.filter(content -> !content.isBlank())
+	private String extractErrorMessage(final ThrowableProblem e, final JsonParameter param) {
+		return ofNullable(e.getDetail())
+			.filter(detail -> !detail.isBlank())
 			.orElse("validation failed for schema '%s'".formatted(param.getSchemaId()));
 	}
 
