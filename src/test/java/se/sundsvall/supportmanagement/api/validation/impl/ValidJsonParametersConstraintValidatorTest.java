@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.api.validation.impl;
 
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
@@ -18,8 +19,12 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.validation.ConstraintValidatorContext;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Answers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -83,8 +88,16 @@ class ValidJsonParametersConstraintValidatorTest {
 		}
 	}
 
-	@Test
-	void invalidJsonParametersClientProblem() {
+	private static Stream<Arguments> clientProblemTestCases() {
+		return Stream.of(
+			Arguments.of("error details", "error details"),
+			Arguments.of(null, "validation failed for schema 'testSchema'"),
+			Arguments.of("Schema validation error", "Schema validation error"));
+	}
+
+	@ParameterizedTest
+	@MethodSource("clientProblemTestCases")
+	void invalidJsonParametersClientProblem(final String problemDetail, final String expectedMessage) {
 		final var attributes = Map.of(PATHVARIABLE_MUNICIPALITY_ID, MUNICIPALITY_ID);
 		final var schemaId = "testSchema";
 		final var jsonValue = createJsonNode();
@@ -93,7 +106,7 @@ class ValidJsonParametersConstraintValidatorTest {
 			.withSchemaId(schemaId)
 			.withValue(jsonValue);
 
-		final var clientProblem = new ClientProblem(Status.BAD_REQUEST, "error details");
+		final var clientProblem = new ClientProblem(Status.BAD_REQUEST, problemDetail);
 
 		try (MockedStatic<RequestContextHolder> requestContextHolderMock = Mockito.mockStatic(RequestContextHolder.class)) {
 			requestContextHolderMock.when(RequestContextHolder::getRequestAttributes).thenReturn(requestAttributesMock);
@@ -103,60 +116,12 @@ class ValidJsonParametersConstraintValidatorTest {
 			assertThat(validator.isValid(List.of(jsonParameter), constraintValidatorContextMock)).isFalse();
 			verify(jsonSchemaClientMock).validateJson(MUNICIPALITY_ID, schemaId, jsonValue);
 			verify(constraintValidatorContextMock).disableDefaultConstraintViolation();
-			verify(constraintValidatorContextMock).buildConstraintViolationWithTemplate("error details");
+			verify(constraintValidatorContextMock).buildConstraintViolationWithTemplate(expectedMessage);
 		}
 	}
 
 	@Test
-	void invalidJsonParametersClientProblemWithoutDetail() {
-		final var attributes = Map.of(PATHVARIABLE_MUNICIPALITY_ID, MUNICIPALITY_ID);
-		final var schemaId = "testSchema";
-		final var jsonValue = createJsonNode();
-		final var jsonParameter = JsonParameter.create()
-			.withKey("testKey")
-			.withSchemaId(schemaId)
-			.withValue(jsonValue);
-
-		final var clientProblem = new ClientProblem(Status.BAD_REQUEST, null);
-
-		try (MockedStatic<RequestContextHolder> requestContextHolderMock = Mockito.mockStatic(RequestContextHolder.class)) {
-			requestContextHolderMock.when(RequestContextHolder::getRequestAttributes).thenReturn(requestAttributesMock);
-			when(requestAttributesMock.getAttribute(URI_TEMPLATE_VARIABLES_ATTRIBUTE, SCOPE_REQUEST)).thenReturn(attributes);
-			doThrow(clientProblem).when(jsonSchemaClientMock).validateJson(MUNICIPALITY_ID, schemaId, jsonValue);
-
-			assertThat(validator.isValid(List.of(jsonParameter), constraintValidatorContextMock)).isFalse();
-			verify(jsonSchemaClientMock).validateJson(MUNICIPALITY_ID, schemaId, jsonValue);
-			verify(constraintValidatorContextMock).disableDefaultConstraintViolation();
-			verify(constraintValidatorContextMock).buildConstraintViolationWithTemplate("validation failed for schema 'testSchema'");
-		}
-	}
-
-	@Test
-	void invalidJsonParametersThrowableProblem() {
-		final var attributes = Map.of(PATHVARIABLE_MUNICIPALITY_ID, MUNICIPALITY_ID);
-		final var schemaId = "testSchema";
-		final var jsonValue = createJsonNode();
-		final var jsonParameter = JsonParameter.create()
-			.withKey("testKey")
-			.withSchemaId(schemaId)
-			.withValue(jsonValue);
-
-		final var clientProblem = new ClientProblem(Status.BAD_REQUEST, "Schema validation error");
-
-		try (MockedStatic<RequestContextHolder> requestContextHolderMock = Mockito.mockStatic(RequestContextHolder.class)) {
-			requestContextHolderMock.when(RequestContextHolder::getRequestAttributes).thenReturn(requestAttributesMock);
-			when(requestAttributesMock.getAttribute(URI_TEMPLATE_VARIABLES_ATTRIBUTE, SCOPE_REQUEST)).thenReturn(attributes);
-			doThrow(clientProblem).when(jsonSchemaClientMock).validateJson(MUNICIPALITY_ID, schemaId, jsonValue);
-
-			assertThat(validator.isValid(List.of(jsonParameter), constraintValidatorContextMock)).isFalse();
-			verify(jsonSchemaClientMock).validateJson(MUNICIPALITY_ID, schemaId, jsonValue);
-			verify(constraintValidatorContextMock).disableDefaultConstraintViolation();
-			verify(constraintValidatorContextMock).buildConstraintViolationWithTemplate("Schema validation error");
-		}
-	}
-
-	@Test
-	void serverProblemIsHandledAsValidationError() {
+	void serverProblemIsRethrown() {
 		final var attributes = Map.of(PATHVARIABLE_MUNICIPALITY_ID, MUNICIPALITY_ID);
 		final var schemaId = "testSchema";
 		final var jsonValue = createJsonNode();
@@ -172,10 +137,11 @@ class ValidJsonParametersConstraintValidatorTest {
 			when(requestAttributesMock.getAttribute(URI_TEMPLATE_VARIABLES_ATTRIBUTE, SCOPE_REQUEST)).thenReturn(attributes);
 			doThrow(serverProblem).when(jsonSchemaClientMock).validateJson(MUNICIPALITY_ID, schemaId, jsonValue);
 
-			assertThat(validator.isValid(List.of(jsonParameter), constraintValidatorContextMock)).isFalse();
+			assertThatThrownBy(() -> validator.isValid(List.of(jsonParameter), constraintValidatorContextMock))
+				.isSameAs(serverProblem);
+
 			verify(jsonSchemaClientMock).validateJson(MUNICIPALITY_ID, schemaId, jsonValue);
-			verify(constraintValidatorContextMock).disableDefaultConstraintViolation();
-			verify(constraintValidatorContextMock).buildConstraintViolationWithTemplate("validation could not be performed for schema 'testSchema', the JsonSchema service may be experiencing issues");
+			verifyNoInteractions(constraintValidatorContextMock);
 		}
 	}
 

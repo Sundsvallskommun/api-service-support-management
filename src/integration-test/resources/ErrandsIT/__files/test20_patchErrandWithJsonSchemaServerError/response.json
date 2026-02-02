@@ -1,11 +1,5 @@
 {
-	"type": "https://zalando.github.io/problem/constraint-violation",
-	"status": 400,
-	"violations": [
-		{
-			"field": "updateErrand.errand.jsonParameters[0]",
-			"message": "validation could not be performed for schema 'unavailable-schema-1.0', the JsonSchema service may be experiencing issues"
-		}
-	],
-	"title": "Constraint Violation"
+	"status": 500,
+	"title": "Internal Server Error",
+	"detail": "HV000028: Unexpected exception during isValid call."
 }

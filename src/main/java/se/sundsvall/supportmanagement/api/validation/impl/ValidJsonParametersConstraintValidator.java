@@ -53,12 +53,10 @@ public class ValidJsonParametersConstraintValidator extends AbstractTagConstrain
 
 			try {
 				jsonSchemaClient.validateJson(municipalityId, param.getSchemaId(), param.getValue());
+			} catch (final ServerProblem e) {
+				throw e;
 			} catch (final ThrowableProblem e) {
-				if (e instanceof ServerProblem) {
-					useCustomMessageForValidation(extractServerErrorMessage(e, param), i, context);
-				} else {
-					useCustomMessageForValidation(extractErrorMessage(e, param), i, context);
-				}
+				useCustomMessageForValidation(extractErrorMessage(e, param), i, context);
 				hasErrors = true;
 			}
 		}
@@ -70,10 +68,6 @@ public class ValidJsonParametersConstraintValidator extends AbstractTagConstrain
 		return ofNullable(e.getDetail())
 			.filter(detail -> !detail.isBlank())
 			.orElse("validation failed for schema '%s'".formatted(param.getSchemaId()));
-	}
-
-	private String extractServerErrorMessage(final ThrowableProblem e, final JsonParameter param) {
-		return "validation could not be performed for schema '%s', the JsonSchema service may be experiencing issues".formatted(param.getSchemaId());
 	}
 
 	private void useCustomMessageForValidation(final String message, final int index, final ConstraintValidatorContext constraintContext) {

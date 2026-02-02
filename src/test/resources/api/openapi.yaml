@@ -7,7 +7,7 @@ info:
     url: https://opensource.org/licenses/MIT
   version: "12.4"
 servers:
-- url: http://localhost:56654
+- url: http://localhost:55833
   description: Generated server url
 tags:
 - name: Errand attachments
@@ -5062,20 +5062,20 @@ components:
         parameters:
           type: object
           additionalProperties: {}
-        title:
-          type: string
         status:
           $ref: "#/components/schemas/StatusType"
+        title:
+          type: string
         detail:
           type: string
     StatusType:
       type: object
       properties:
+        reasonPhrase:
+          type: string
         statusCode:
           type: integer
           format: int32
-        reasonPhrase:
-          type: string
     ConstraintViolationProblem:
       type: object
       properties:
@@ -5194,10 +5194,10 @@ components:
         parameters:
           type: object
           additionalProperties: {}
-        title:
-          type: string
         status:
           $ref: "#/components/schemas/StatusType"
+        title:
+          type: string
         detail:
           type: string
         suppressed:
@@ -5925,6 +5925,9 @@ components:
         value:
           $ref: "#/components/schemas/JsonNode"
           description: JSON structure value
+          example:
+            firstName: Joe
+            lastName: Doe
         schemaId:
           type: string
           description: ID referencing a schema in the json-schema service
@@ -6637,11 +6640,11 @@ components:
           type: boolean
         sort:
           $ref: "#/components/schemas/SortObject"
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
         numberOfElements:
           type: integer
           format: int32
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
         empty:
           type: boolean
     PageableObject:
@@ -6652,14 +6655,14 @@ components:
           format: int64
         sort:
           $ref: "#/components/schemas/SortObject"
-        pageNumber:
-          type: integer
-          format: int32
+        unpaged:
+          type: boolean
         pageSize:
           type: integer
           format: int32
-        unpaged:
-          type: boolean
+        pageNumber:
+          type: integer
+          format: int32
         paged:
           type: boolean
     SortObject:
@@ -6908,11 +6911,11 @@ components:
           type: boolean
         sort:
           $ref: "#/components/schemas/SortObject"
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
         numberOfElements:
           type: integer
           format: int32
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
         empty:
           type: boolean
     Communication:
@@ -7129,11 +7132,11 @@ components:
           type: boolean
         sort:
           $ref: "#/components/schemas/SortObject"
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
         numberOfElements:
           type: integer
           format: int32
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
         empty:
           type: boolean
     ReadBy:
