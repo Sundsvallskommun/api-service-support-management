@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>se.sundsvall</groupId>
 	<artifactId>api-service-support-management</artifactId>
-	<version>12.4</version>
+	<version>12.5</version>
 	<name>api-service-support-management</name>
 	<properties>
 		<spring-filter.version>3.2.5</spring-filter.version>
@@ -121,6 +121,8 @@
 				<configuration>
 					<excludes>
 						<exclude>**/se/sundsvall/supportmanagement/Application*</exclude>
+						<!-- TODO: Remove when new resources are implemented fully -->
+						<exclude>**/se/sundsvall/supportmanagement/api/NamespaceConfigResource*</exclude>
 						<exclude>**/generated/se/sundsvall/**/*</exclude>
 					</excludes>
 				</configuration>
