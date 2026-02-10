@@ -11,15 +11,15 @@ import java.util.Objects;
 @Schema(description = "Errand action config model")
 public class Config {
 
-	@Schema(description = "Unique id for action config", example = "a337d0de-5a6d-4952-9f39-74800b254c21", accessMode = READ_ONLY)
+	@Schema(description = "Unique id for action config", examples = "a337d0de-5a6d-4952-9f39-74800b254c21", accessMode = READ_ONLY)
 	private String id;
 
-	@Schema(description = "Name of the type of action. Must match an existing action definition", example = "ADD_LABEL")
+	@Schema(description = "Name of the type of action. Must match an existing action definition", examples = "ADD_LABEL")
 	@NotBlank
 	private String name;
 
-	@Schema(description = "If set to true, action will be active", defaultValue = "false", example = "true")
-	private Boolean active;
+	@Schema(description = "If set to true, action will be active", defaultValue = "false", examples = "true")
+	private boolean active = false;
 
 	@Schema(description = "Conditions for when the action should be added to errand. Parameters must match action definition.")
 	@NotEmpty
@@ -29,7 +29,7 @@ public class Config {
 	@NotEmpty
 	private List<Parameter> parameters;
 
-	@Schema(description = "Display value for this action. Will be mapped to each action on errands", example = "Classification change will occur")
+	@Schema(description = "Display value for this action. Will be mapped to each action on errands", examples = "Classification change will occur")
 	private String displayValue;
 
 	public static Config create() {
@@ -62,15 +62,15 @@ public class Config {
 		return this;
 	}
 
-	public Boolean getActive() {
+	public boolean getActive() {
 		return active;
 	}
 
-	public void setActive(Boolean active) {
+	public void setActive(boolean active) {
 		this.active = active;
 	}
 
-	public Config withActive(final Boolean active) {
+	public Config withActive(final boolean active) {
 		this.active = active;
 		return this;
 	}
