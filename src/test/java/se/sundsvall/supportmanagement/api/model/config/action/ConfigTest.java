@@ -25,6 +25,11 @@ class ConfigTest {
 	}
 
 	@Test
+	void testActiveDefaultValue() {
+		assertThat(new Config().getActive()).isFalse();
+	}
+
+	@Test
 	void testBuilderMethods() {
 		final var id = "id";
 		final var name = "name";
@@ -52,7 +57,7 @@ class ConfigTest {
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(Config.create()).hasAllNullFieldsOrProperties();
-		assertThat(new Config()).hasAllNullFieldsOrProperties();
+		assertThat(Config.create()).hasAllNullFieldsOrPropertiesExcept("active");
+		assertThat(new Config()).hasAllNullFieldsOrPropertiesExcept("active");
 	}
 }
