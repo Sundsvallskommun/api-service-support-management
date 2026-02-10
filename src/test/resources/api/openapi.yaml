@@ -5,7 +5,7 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "12.4"
+  version: "12.5"
 servers:
 - url: http://localhost:55833
   description: Generated server url
@@ -235,6 +235,205 @@ paths:
                 $ref: "#/components/schemas/Problem"
         "500":
           description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/namespace-config/action-config/{id}:
+    put:
+      tags:
+      - Configuration for namespace
+      summary: Update action configuration
+      description: Update action config for a municipality/namespace
+      operationId: updateActionConfig
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: id
+        in: path
+        description: Action config id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Config"
+        required: true
+      responses:
+        "204":
+          description: Successful operation
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server Error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    delete:
+      tags:
+      - Configuration for namespace
+      summary: Delete action configuration
+      description: Delete action config for a municipality/namespace
+      operationId: deleteActionConfig
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: id
+        in: path
+        description: Action config id
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: Successful operation
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server Error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/namespace-config/action-config:
+    get:
+      tags:
+      - Configuration for namespace
+      summary: Read all action configurations
+      description: Fetches action config for a municipality/namespace
+      operationId: getActionConfig
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      responses:
+        "200":
+          description: Successful Operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Config"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server Error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    post:
+      tags:
+      - Configuration for namespace
+      summary: Create action configuration
+      description: Create action config for a municipality/namespace
+      operationId: createActionConfig
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Config"
+        required: true
+      responses:
+        "201":
+          description: Successful operation
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server Error
           content:
             application/problem+json:
               schema:
@@ -5697,6 +5896,69 @@ components:
           readOnly: true
       required:
       - name
+    Config:
+      type: object
+      description: Errand action config model
+      properties:
+        id:
+          type: string
+          description: Unique id for action config
+          examples:
+          - a337d0de-5a6d-4952-9f39-74800b254c21
+          readOnly: true
+        name:
+          type: string
+          description: Name of the type of action. Must match an existing action definition
+          examples:
+          - ADD_LABEL
+          minLength: 1
+        active:
+          type: boolean
+          default: false
+          description: "If set to true, action will be active"
+          examples:
+          - "true"
+        conditions:
+          type: array
+          description: Conditions for when the action should be added to errand. Parameters
+            must match action definition.
+          items:
+            $ref: "#/components/schemas/ActionParameter"
+          minItems: 1
+        parameters:
+          type: array
+          description: Parameters for action. Must match action definition.
+          items:
+            $ref: "#/components/schemas/ActionParameter"
+          minItems: 1
+        displayValue:
+          type: string
+          description: Display value for this action. Will be mapped to each action
+            on errands
+          examples:
+          - Classification change will occur
+      required:
+      - conditions
+      - name
+      - parameters
+    ActionParameter:
+      type: object
+      description: Errand action parameter model
+      properties:
+        key:
+          type: string
+          description: Parameter key
+          minLength: 1
+        values:
+          type: array
+          description: Parameter values. Each value can have a maximum length of 2000
+            characters
+          items:
+            type: string
+            maxLength: 2000
+            minLength: 0
+      required:
+      - key
     Classification:
       type: object
       description: Classification model
