@@ -1,4 +1,44 @@
 
+    create table action_config (
+        active bit not null,
+        created datetime(6),
+        modified datetime(6),
+        municipality_id varchar(8) not null,
+        namespace varchar(32) not null,
+        display_value varchar(255),
+        id varchar(255) not null,
+        name varchar(255) not null,
+        primary key (id)
+    ) engine=InnoDB;
+
+    create table action_config_condition (
+        action_config_id varchar(255) not null,
+        condition_key varchar(255),
+        id varchar(255) not null,
+        primary key (id)
+    ) engine=InnoDB;
+
+    create table action_config_condition_values (
+        value_order integer default 0 not null,
+        value varchar(2000),
+        action_config_condition_id varchar(255) not null,
+        primary key (value_order, action_config_condition_id)
+    ) engine=InnoDB;
+
+    create table action_config_parameter (
+        action_config_id varchar(255) not null,
+        id varchar(255) not null,
+        parameter_key varchar(255),
+        primary key (id)
+    ) engine=InnoDB;
+
+    create table action_config_parameter_values (
+        value_order integer default 0 not null,
+        value varchar(2000),
+        action_config_parameter_id varchar(255) not null,
+        primary key (value_order, action_config_parameter_id)
+    ) engine=InnoDB;
+
     create table attachment (
         attachment_data_id integer not null,
         file_size integer,
@@ -399,6 +439,9 @@
         family_id varchar(255)
     ) engine=InnoDB;
 
+    create index idx_action_config_municipality_id_namespace 
+       on action_config (municipality_id, namespace);
+
     create index idx_attachment_file_name 
        on attachment (file_name);
 
@@ -614,6 +657,26 @@
 
     alter table if exists web_message_collect 
        add constraint uq_namespace_municipality_id_instance_family_id unique (namespace, municipality_id, instance);
+
+    alter table if exists action_config_condition 
+       add constraint fk_action_config_condition_action_config_id 
+       foreign key (action_config_id) 
+       references action_config (id);
+
+    alter table if exists action_config_condition_values 
+       add constraint fk_action_config_condition_values_condition_id 
+       foreign key (action_config_condition_id) 
+       references action_config_condition (id);
+
+    alter table if exists action_config_parameter 
+       add constraint fk_action_config_parameter_action_config_id 
+       foreign key (action_config_id) 
+       references action_config (id);
+
+    alter table if exists action_config_parameter_values 
+       add constraint fk_action_config_parameter_values_parameter_id 
+       foreign key (action_config_parameter_id) 
+       references action_config_parameter (id);
 
     alter table if exists attachment 
        add constraint fk_attachment_data_attachment 
