@@ -255,3 +255,26 @@ VALUES ('1', 'relation_id-1-1'),
 INSERT INTO message_exchange_sync(id, municipality_id, namespace, active)
 VALUES ('1', '2281', 'namespace-1', true),
        ('2', '2281', 'namespace-2', false);
+
+-------------------------------------
+-- ActionConfig
+-------------------------------------
+INSERT INTO action_config(id, municipality_id, namespace, name, active, display_value, created)
+VALUES ('action-config-id-1', '2281', 'namespace-1', 'ADD_LABEL', 1, 'Label will be added', now()),
+       ('action-config-id-2', '2281', 'namespace-1', 'SEND_EMAIL', 0, null, now()),
+       ('action-config-id-3', '2282', 'namespace-2', 'ADD_LABEL', 1, 'Label action', now());
+
+INSERT INTO action_config_condition(id, action_config_id, condition_key)
+VALUES ('cond-1', 'action-config-id-1', 'status'),
+       ('cond-2', 'action-config-id-1', 'category');
+
+INSERT INTO action_config_condition_values(action_config_condition_id, value, value_order)
+VALUES ('cond-1', 'OPEN', 0),
+       ('cond-1', 'IN_PROGRESS', 1),
+       ('cond-2', 'SUPPORT', 0);
+
+INSERT INTO action_config_parameter(id, action_config_id, parameter_key)
+VALUES ('param-1', 'action-config-id-1', 'label');
+
+INSERT INTO action_config_parameter_values(action_config_parameter_id, value, value_order)
+VALUES ('param-1', 'priority-high', 0);
