@@ -12,13 +12,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.zalando.problem.ThrowableProblem;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.model.AccessLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 
@@ -65,15 +64,9 @@ class AccessControlServiceTest {
 
 		// Setup
 		final var user = Identifier.create();
-		final var label1ResourcePath = "label/1";
-		final var label2ResourcePath = "label/2";
-		final var label1 = MetadataLabelEntity.create().withResourcePath(label1ResourcePath);
-		final var label2 = MetadataLabelEntity.create().withResourcePath(label2ResourcePath);
-		final var errandLabel1 = ErrandLabelEmbeddable.create();
-		final var errandLabel2 = ErrandLabelEmbeddable.create();
-		ReflectionTestUtils.setField(errandLabel1, "metadataLabel", label1);
-		ReflectionTestUtils.setField(errandLabel2, "metadataLabel", label2);
-		final var errand = ErrandEntity.create().withLabels(List.of(errandLabel1, errandLabel2));
+		final var accessLabel1 = AccessLabelEmbeddable.create().withMetadataLabelId("label-id-1");
+		final var accessLabel2 = AccessLabelEmbeddable.create().withMetadataLabelId("label-id-2");
+		final var errand = ErrandEntity.create().withAccessLabels(List.of(accessLabel1, accessLabel2));
 		// Mock
 		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create().withAccessControl(true));
 		when(accessMapperService.getAccessibleLabels(any(), any(), any(), any())).thenReturn(Set.of());
@@ -94,15 +87,11 @@ class AccessControlServiceTest {
 
 		// Setup
 		final var user = Identifier.create();
-		final var label1ResourcePath = "label/1";
-		final var label2ResourcePath = "label/2";
-		final var label1 = MetadataLabelEntity.create().withResourcePath(label1ResourcePath);
-		final var label2 = MetadataLabelEntity.create().withResourcePath(label2ResourcePath);
-		final var errandLabel1 = ErrandLabelEmbeddable.create();
-		final var errandLabel2 = ErrandLabelEmbeddable.create();
-		ReflectionTestUtils.setField(errandLabel1, "metadataLabel", label1);
-		ReflectionTestUtils.setField(errandLabel2, "metadataLabel", label2);
-		final var errand = ErrandEntity.create().withLabels(List.of(errandLabel1, errandLabel2));
+		final var label1 = MetadataLabelEntity.create().withId("label-id-1");
+		final var label2 = MetadataLabelEntity.create().withId("label-id-2");
+		final var accessLabel1 = AccessLabelEmbeddable.create().withMetadataLabelId("label-id-1");
+		final var accessLabel2 = AccessLabelEmbeddable.create().withMetadataLabelId("label-id-2");
+		final var errand = ErrandEntity.create().withAccessLabels(List.of(accessLabel1, accessLabel2));
 
 		// Mock
 		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create().withAccessControl(true));
