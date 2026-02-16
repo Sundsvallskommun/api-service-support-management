@@ -1,5 +1,15 @@
 package se.sundsvall.supportmanagement.service;
 
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
+import static java.util.Collections.emptyList;
+import static java.util.Optional.ofNullable;
+import static org.zalando.problem.Status.NOT_FOUND;
+import static org.zalando.problem.Status.UNAUTHORIZED;
+import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.hasAllowedMetadataLabels;
+import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withId;
+
 import generated.se.sundsvall.accessmapper.Access;
 import java.util.Arrays;
 import java.util.List;
@@ -11,17 +21,10 @@ import org.springframework.stereotype.Component;
 import org.zalando.problem.Problem;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.model.AccessLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
+import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
-
-import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
-import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
-import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
-import static org.zalando.problem.Status.NOT_FOUND;
-import static org.zalando.problem.Status.UNAUTHORIZED;
-import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.hasAllowedMetadataLabels;
-import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withId;
 
 @Component
 public class AccessControlService {
@@ -53,9 +56,15 @@ public class AccessControlService {
 			// Filter out all labels that is read or read/write. R/RW has precedence over LR.
 			final var fullReadMetadataLabels = accessMapperService.getAccessibleLabels(municipalityId, namespace, user, List.of(R, RW));
 
-			// If ALL errand labels is a subset of R/RW fullReadMetadataLabels the errand should not be mapped as limited
-			return errandEntity -> !fullReadMetadataLabels.containsAll(errandEntity.getLabels().stream()
-				.map(ErrandLabelEmbeddable::getMetadataLabel).collect(Collectors.toSet()));
+			final var fullReadLabelIds = fullReadMetadataLabels.stream()
+				.map(MetadataLabelEntity::getId)
+				.collect(Collectors.toSet());
+
+			// If ALL errand access labels is a subset of R/RW fullReadLabelIds the errand should not be mapped as limited
+			return errandEntity -> !fullReadLabelIds.containsAll(
+				ofNullable(errandEntity.getAccessLabels()).orElse(emptyList()).stream()
+					.map(AccessLabelEmbeddable::getMetadataLabelId)
+					.collect(Collectors.toSet()));
 		}
 		return errandEntity -> false;
 	}

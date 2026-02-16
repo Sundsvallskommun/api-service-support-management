@@ -164,6 +164,17 @@ public class ErrandEntity {
 		joinColumns = @JoinColumn(name = "errand_id", referencedColumnName = "id", foreignKey = @ForeignKey(name = "fk_errand_labels_errand_id")))
 	private List<ErrandLabelEmbeddable> labels;
 
+	@ElementCollection
+	@CollectionTable(name = "errand_access_labels",
+		indexes = {
+			@Index(name = "idx_errand_access_labels_errand_id_metadata_label_id", columnList = "errand_id, metadata_label_id"),
+			@Index(name = "idx_errand_access_labels_metadata_label_id_errand_id", columnList = "metadata_label_id, errand_id"),
+			@Index(name = "idx_errand_access_labels_errand_id", columnList = "errand_id"),
+			@Index(name = "idx_errand_access_labels_metadata_label_id", columnList = "metadata_label_id")
+		},
+		joinColumns = @JoinColumn(name = "errand_id", referencedColumnName = "id", foreignKey = @ForeignKey(name = "fk_errand_access_labels_errand_id")))
+	private List<AccessLabelEmbeddable> accessLabels;
+
 	@Column(name = "created")
 	@TimeZoneStorage(NORMALIZE)
 	private OffsetDateTime created;
@@ -479,6 +490,19 @@ public class ErrandEntity {
 		return this;
 	}
 
+	public List<AccessLabelEmbeddable> getAccessLabels() {
+		return accessLabels;
+	}
+
+	public void setAccessLabels(final List<AccessLabelEmbeddable> accessLabels) {
+		this.accessLabels = accessLabels;
+	}
+
+	public ErrandEntity withAccessLabels(final List<AccessLabelEmbeddable> accessLabels) {
+		this.accessLabels = accessLabels;
+		return this;
+	}
+
 	public OffsetDateTime getCreated() {
 		return created;
 	}
@@ -657,14 +681,16 @@ public class ErrandEntity {
 			&& Objects.equals(priority, that.priority) && Objects.equals(reporterUserId, that.reporterUserId) && Objects.equals(assignedUserId, that.assignedUserId) && Objects.equals(assignedGroupId, that.assignedGroupId) && Objects.equals(escalationEmail,
 				that.escalationEmail) && Objects.equals(parameters, that.parameters) && Objects.equals(jsonParameters, that.jsonParameters) && Objects.equals(attachments, that.attachments) && Objects.equals(notifications, that.notifications) && Objects
 					.equals(suspendedTo, that.suspendedTo) && Objects.equals(
-						suspendedFrom, that.suspendedFrom) && Objects.equals(labels, that.labels) && Objects.equals(created, that.created) && Objects.equals(modified, that.modified) && Objects.equals(touched, that.touched) && Objects.equals(errandNumber,
-							that.errandNumber) && Objects.equals(tempPreviousStatus, that.tempPreviousStatus) && Objects.equals(previousStatus, that.previousStatus) && Objects.equals(timeMeasures, that.timeMeasures);
+						suspendedFrom, that.suspendedFrom) && Objects.equals(labels, that.labels) && Objects.equals(accessLabels, that.accessLabels) && Objects.equals(created, that.created) && Objects.equals(modified, that.modified) && Objects.equals(
+							touched, that.touched) && Objects.equals(errandNumber,
+								that.errandNumber) && Objects.equals(tempPreviousStatus, that.tempPreviousStatus) && Objects.equals(previousStatus, that.previousStatus) && Objects.equals(timeMeasures, that.timeMeasures);
 	}
 
 	@Override
 	public int hashCode() {
 		return Objects.hash(id, externalTags, stakeholders, contactReasonEntity, contactReasonDescription, businessRelated, municipalityId, namespace, title, category, type, status, resolution, description, channel, priority, reporterUserId,
-			assignedUserId, assignedGroupId, escalationEmail, parameters, jsonParameters, attachments, notifications, suspendedTo, suspendedFrom, labels, created, modified, touched, errandNumber, tempPreviousStatus, previousStatus, timeMeasures);
+			assignedUserId, assignedGroupId, escalationEmail, parameters, jsonParameters, attachments, notifications, suspendedTo, suspendedFrom, labels, accessLabels, created, modified, touched, errandNumber, tempPreviousStatus, previousStatus,
+			timeMeasures);
 	}
 
 	@Override
@@ -698,6 +724,7 @@ public class ErrandEntity {
 			", suspendedTo=" + suspendedTo +
 			", suspendedFrom=" + suspendedFrom +
 			", labels=" + labels +
+			", accessLabels=" + accessLabels +
 			", created=" + created +
 			", modified=" + modified +
 			", touched=" + touched +
