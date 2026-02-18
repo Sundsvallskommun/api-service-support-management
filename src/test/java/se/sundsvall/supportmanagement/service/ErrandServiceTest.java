@@ -406,7 +406,7 @@ class ErrandServiceTest {
 				.asInstanceOf(InstanceOfAssertFactories.type(ThrowableProblem.class))
 				.satisfies(thrownProblem -> {
 					assertThat(thrownProblem.getStatus()).isEqualTo(BAD_REQUEST);
-					assertThat(thrownProblem.getMessage()).endsWith("Referred from should be three comma-separated parts: <service>,<namespace>,<identifier>");
+					assertThat(thrownProblem.getMessage()).endsWith("Referred from should be three non-blank comma-separated parts: <service>,<namespace>,<identifier>");
 				});
 		}
 	}
@@ -417,6 +417,8 @@ class ErrandServiceTest {
 			argumentSet("blank input", "", false),
 			argumentSet("too few parts", "someService,someNamespace", false),
 			argumentSet("too many parts", "someService,someNamespace,someIdentifier,somethingElse", false),
+			argumentSet("some blank part", "someService,someNamespace,", false),
+			argumentSet("all blank parts", ",,", false),
 			argumentSet("valid input", "someService,someNamespace,someIdentifier", true));
 	}
 
