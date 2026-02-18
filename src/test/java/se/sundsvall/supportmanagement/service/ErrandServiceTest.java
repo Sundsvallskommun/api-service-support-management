@@ -7,7 +7,6 @@ import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatException;
 import static org.assertj.core.api.Assertions.assertThatNoException;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatExceptionOfType;
 import static org.junit.jupiter.params.provider.Arguments.argumentSet;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -57,7 +56,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
-import org.zalando.problem.Status;
 import org.zalando.problem.ThrowableProblem;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
@@ -411,7 +409,7 @@ class ErrandServiceTest {
 				.asInstanceOf(InstanceOfAssertFactories.type(ThrowableProblem.class))
 				.satisfies(thrownProblem -> {
 					assertThat(thrownProblem.getStatus()).isEqualTo(BAD_REQUEST);
-					assertThat(thrownProblem.getMessage()).endsWith("Referred from should be three comma-separated parts: <service>,<namespace>,<identifier>");
+					assertThat(thrownProblem.getMessage()).endsWith("Referred from should be three non-blank comma-separated parts: <service>,<namespace>,<identifier>");
 				});
 		}
 	}
@@ -422,6 +420,8 @@ class ErrandServiceTest {
 			argumentSet("blank input", "", false),
 			argumentSet("too few parts", "someService,someNamespace", false),
 			argumentSet("too many parts", "someService,someNamespace,someIdentifier,somethingElse", false),
+			argumentSet("some blank part", "someService,someNamespace,", false),
+			argumentSet("all blank parts", ",,", false),
 			argumentSet("valid input", "someService,someNamespace,someIdentifier", true));
 	}
 

@@ -16,6 +16,7 @@ import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.w
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withNamespace;
 
 import generated.se.sundsvall.accessmapper.Access;
+import java.util.Arrays;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -187,11 +188,11 @@ public class ErrandService {
 	ReferredFrom expandReferredFrom(final String referredFromAsString) {
 		if (isNotBlank(referredFromAsString)) {
 			var parts = referredFromAsString.split(",");
-			if (parts.length == 3) {
+			if (parts.length == 3 && Arrays.stream(parts).map(String::trim).noneMatch(String::isBlank)) {
 				return new ReferredFrom(parts[0].trim(), parts[1].trim(), parts[2].trim());
 			}
 		}
 
-		throw Problem.valueOf(BAD_REQUEST, "Referred from should be three comma-separated parts: <service>,<namespace>,<identifier>");
+		throw Problem.valueOf(BAD_REQUEST, "Referred from should be three non-blank comma-separated parts: <service>,<namespace>,<identifier>");
 	}
 }
