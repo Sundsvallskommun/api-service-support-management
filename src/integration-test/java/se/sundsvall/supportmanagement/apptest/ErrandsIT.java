@@ -228,7 +228,7 @@ class ErrandsIT extends AbstractAppTest {
 	void test14_postErrandWithReferredFrom() {
 		final var headers = setupCall()
 			.withHeader(SENT_BY_HEADER, "joe01doe; type=adAccount")
-			.withServicePath("/2281/CONTACTCENTER/errands?referred_from=originalErrandId")
+			.withServicePath("/2281/CONTACTCENTER/errands?referred_from=someService,someNamespace,originalErrandId")
 			.withHttpMethod(POST)
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(CREATED)
