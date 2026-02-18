@@ -42,6 +42,7 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable
 import se.sundsvall.supportmanagement.integration.db.model.JsonParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
+import se.sundsvall.supportmanagement.service.model.ReferredFrom;
 
 public final class ErrandMapper {
 
@@ -315,14 +316,14 @@ public final class ErrandMapper {
 			.toList();
 	}
 
-	public static Relation toReferredFromRelation(final String namespace, final String referredFromErrandId, final String newErrandId) {
+	public static Relation toReferredFromRelation(final String namespace, final ReferredFrom referredFrom, final String newErrandId) {
 		return new Relation()
 			.type(REFERRED_FROM_RELATION_TYPE)
 			.source(new ResourceIdentifier()
-				.resourceId(referredFromErrandId)
+				.resourceId(referredFrom.identifier())
 				.type(REFERRED_FROM_RESOURCE_IDENTIFIER_TYPE)
-				.service(REFERRED_FROM_RESOURCE_IDENTIFIER_SERVICE)
-				.namespace(namespace))
+				.service(referredFrom.service())
+				.namespace(referredFrom.namespace()))
 			.target(new ResourceIdentifier()
 				.resourceId(newErrandId)
 				.type(REFERRED_FROM_RESOURCE_IDENTIFIER_TYPE)

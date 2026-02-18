@@ -5,6 +5,10 @@ import static generated.se.sundsvall.eventlog.EventType.DELETE;
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatException;
+import static org.assertj.core.api.Assertions.assertThatNoException;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatExceptionOfType;
+import static org.junit.jupiter.params.provider.Arguments.argumentSet;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -16,6 +20,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.data.domain.Sort.Direction.DESC;
+import static org.zalando.problem.Status.BAD_REQUEST;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrand;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrandEntity;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationSubType.ERRAND;
@@ -30,11 +35,15 @@ import generated.se.sundsvall.relation.Relation;
 import generated.se.sundsvall.relation.ResourceIdentifier;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
+import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
@@ -48,6 +57,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.zalando.problem.Status;
+import org.zalando.problem.ThrowableProblem;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
 import se.sundsvall.supportmanagement.api.model.errand.Priority;
@@ -152,14 +163,17 @@ class ErrandServiceTest {
 	void createErrandWithReferredFrom() {
 		// Setup
 		final var errand = buildErrand();
-		final var referredFrom = "originalErrandId";
+		final var referredFromService = "referredFromService";
+		final var referredFromNamespace = "referredFromNamespace";
+		final var referredFromIdentifier = "referredFromIdentifier";
+		final var referredFrom = referredFromService + "," + referredFromNamespace + "," + referredFromIdentifier;
 		final var relation = new Relation()
 			.type(REFERRED_FROM_RELATION_TYPE)
 			.source(new ResourceIdentifier()
-				.resourceId(referredFrom)
+				.resourceId(referredFromIdentifier)
 				.type(REFERRED_FROM_RESOURCE_IDENTIFIER_TYPE)
-				.service(REFERRED_FROM_RESOURCE_IDENTIFIER_SERVICE)
-				.namespace(NAMESPACE))
+				.service(referredFromService)
+				.namespace(referredFromNamespace))
 			.target(new ResourceIdentifier()
 				.resourceId(ERRAND_ID)
 				.type(REFERRED_FROM_RESOURCE_IDENTIFIER_TYPE)
@@ -384,6 +398,31 @@ class ErrandServiceTest {
 		verify(accessControlServiceMock).withAccessControl(NAMESPACE, MUNICIPALITY_ID, user);
 		verify(errandRepositoryMock).count(specificationCaptor.capture());
 		assertThat(specificationCaptor.getValue()).usingRecursiveComparison().isEqualTo(withNamespace(NAMESPACE).and(withMunicipalityId(MUNICIPALITY_ID)).and(specification).and(filter));
+	}
+
+	@ParameterizedTest
+	@MethodSource("argumentsForExpandReferredFrom")
+	void expandReferredFrom(final String input, final boolean expectSuccess) {
+		if (expectSuccess) {
+			assertThatNoException().isThrownBy(() -> service.expandReferredFrom(input));
+		} else {
+			assertThatException()
+				.isThrownBy(() -> service.expandReferredFrom(input))
+				.asInstanceOf(InstanceOfAssertFactories.type(ThrowableProblem.class))
+				.satisfies(thrownProblem -> {
+					assertThat(thrownProblem.getStatus()).isEqualTo(BAD_REQUEST);
+					assertThat(thrownProblem.getMessage()).endsWith("Referred from should be three comma-separated parts: <service>,<namespace>,<identifier>");
+				});
+		}
+	}
+
+	static Stream<Arguments> argumentsForExpandReferredFrom() {
+		return Stream.of(
+			argumentSet("null input", null, false),
+			argumentSet("blank input", "", false),
+			argumentSet("too few parts", "someService,someNamespace", false),
+			argumentSet("too many parts", "someService,someNamespace,someIdentifier,somethingElse", false),
+			argumentSet("valid input", "someService,someNamespace,someIdentifier", true));
 	}
 
 	@AfterEach
