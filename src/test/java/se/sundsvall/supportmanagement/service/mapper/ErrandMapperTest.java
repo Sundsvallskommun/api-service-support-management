@@ -47,6 +47,7 @@ import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderParameterEntity;
+import se.sundsvall.supportmanagement.service.model.ReferredFrom;
 
 class ErrandMapperTest {
 
@@ -618,10 +619,13 @@ class ErrandMapperTest {
 
 	@Test
 	void testToReferredFromRelation() {
+		final var referredFromService = "someService";
+		final var referredFromNamespace = "someNamespace";
 		final var referredFromErrandId = "foo-bar-123456";
+		final var referredFrom = new ReferredFrom(referredFromService, referredFromNamespace, referredFromErrandId);
 		final var newErrandId = "someRandomId";
 
-		final var relation = toReferredFromRelation(NAMESPACE, referredFromErrandId, newErrandId);
+		final var relation = toReferredFromRelation(NAMESPACE, referredFrom, newErrandId);
 
 		assertThat(relation).isNotNull();
 		assertThat(relation.getType()).isEqualTo("REFERRED_FROM");
@@ -635,8 +639,8 @@ class ErrandMapperTest {
 			.containsExactly(
 				referredFromErrandId,
 				"case",
-				"support-management",
-				NAMESPACE);
+				referredFromService,
+				referredFromNamespace);
 
 		assertThat(relation.getTarget())
 			.extracting(

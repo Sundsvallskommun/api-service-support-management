@@ -6,8 +6,8 @@ import static generated.se.sundsvall.eventlog.EventType.UPDATE;
 import static java.util.Optional.of;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -37,6 +37,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Semaphore;
+import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -201,14 +202,17 @@ class ErrandAttachmentServiceTest {
 	@Test
 	void readErrandAttachmentNotFoundOnErrand() {
 
-		// Call
-		final var exception = assertThrows(ThrowableProblem.class, () -> service.readErrandAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ATTACHMENT_ID, httpServletResponseMock));
+		// Act/assert
+		assertThatException()
+			.isThrownBy(() -> service.readErrandAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ATTACHMENT_ID, httpServletResponseMock))
+			.asInstanceOf(InstanceOfAssertFactories.type(ThrowableProblem.class))
+			.satisfies(thrownProblem -> {
+				assertThat(thrownProblem.getStatus()).isEqualTo(NOT_FOUND);
+				assertThat(thrownProblem.getTitle()).isEqualTo(NOT_FOUND.getReasonPhrase());
+				assertThat(thrownProblem.getMessage()).isEqualTo("Not Found: An attachment with id 'attachmentId' could not be found on errand with id 'errandId'");
+			});
 
-		// Assertions and verifications
-		assertThat(exception.getStatus()).isEqualTo(NOT_FOUND);
-		assertThat(exception.getTitle()).isEqualTo(NOT_FOUND.getReasonPhrase());
-		assertThat(exception.getMessage()).isEqualTo("Not Found: An attachment with id 'attachmentId' could not be found on errand with id 'errandId'");
-
+		// Verifications
 		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, R, RW);
 		verifyNoInteractions(revisionServiceMock, eventServiceMock);
 	}
@@ -244,14 +248,17 @@ class ErrandAttachmentServiceTest {
 		when(errandMock.getAttachments()).thenReturn(new ArrayList<>(List.of(attachmentMock)));
 		when(attachmentMock.getId()).thenReturn("other-id");
 
-		// Call
-		final var exception = assertThrows(ThrowableProblem.class, () -> service.deleteErrandAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ATTACHMENT_ID));
+		// Act/assert
+		assertThatException()
+			.isThrownBy(() -> service.deleteErrandAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ATTACHMENT_ID))
+			.asInstanceOf(InstanceOfAssertFactories.type(ThrowableProblem.class))
+			.satisfies(thrownProblem -> {
+				assertThat(thrownProblem.getStatus()).isEqualTo(NOT_FOUND);
+				assertThat(thrownProblem.getTitle()).isEqualTo(NOT_FOUND.getReasonPhrase());
+				assertThat(thrownProblem.getMessage()).isEqualTo("Not Found: An attachment with id 'attachmentId' could not be found on errand with id 'errandId'");
+			});
 
-		// Assertions and verifications
-		assertThat(exception.getStatus()).isEqualTo(NOT_FOUND);
-		assertThat(exception.getTitle()).isEqualTo(NOT_FOUND.getReasonPhrase());
-		assertThat(exception.getMessage()).isEqualTo("Not Found: An attachment with id 'attachmentId' could not be found on errand with id 'errandId'");
-
+		// Verifications
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, RW);
 		verify(errandsRepositoryMock, never()).save(any());
 		verifyNoInteractions(revisionServiceMock, eventServiceMock);
@@ -265,14 +272,17 @@ class ErrandAttachmentServiceTest {
 		when(attachmentMock.getId()).thenReturn(ATTACHMENT_ID);
 		when(errandsRepositoryMock.save(any(ErrandEntity.class))).thenThrow(new RuntimeException("Test exception"));
 
-		// Call
-		final var exception = assertThrows(ThrowableProblem.class, () -> service.deleteErrandAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ATTACHMENT_ID));
+		// Act/assert
+		assertThatException()
+			.isThrownBy(() -> service.deleteErrandAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ATTACHMENT_ID))
+			.asInstanceOf(InstanceOfAssertFactories.type(ThrowableProblem.class))
+			.satisfies(thrownProblem -> {
+				assertThat(thrownProblem.getStatus()).isEqualTo(INTERNAL_SERVER_ERROR);
+				assertThat(thrownProblem.getTitle()).isEqualTo(INTERNAL_SERVER_ERROR.getReasonPhrase());
+				assertThat(thrownProblem.getMessage()).isEqualTo("Internal Server Error: Failed to delete attachment with id 'attachmentId' from errand with id 'errandId'");
+			});
 
-		// Assertions and verifications
-		assertThat(exception.getStatus()).isEqualTo(INTERNAL_SERVER_ERROR);
-		assertThat(exception.getTitle()).isEqualTo(INTERNAL_SERVER_ERROR.getReasonPhrase());
-		assertThat(exception.getMessage()).isEqualTo("Internal Server Error: Failed to delete attachment with id 'attachmentId' from errand with id 'errandId'");
-
+		// Verifications
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, RW);
 		verify(errandsRepositoryMock).save(any());
 		verifyNoInteractions(revisionServiceMock, eventServiceMock);
