@@ -1,14 +1,14 @@
 package se.sundsvall.supportmanagement.api.validation.impl;
 
-import static java.util.Collections.emptyList;
-import static java.util.Optional.ofNullable;
-
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import java.util.Collection;
 import java.util.Objects;
 import se.sundsvall.supportmanagement.api.model.metadata.Label;
 import se.sundsvall.supportmanagement.api.validation.ValidLabelSiblings;
+
+import static java.util.Collections.emptyList;
+import static java.util.Optional.ofNullable;
 
 public class ValidLabelSiblingsConstraintValidator implements ConstraintValidator<ValidLabelSiblings, Collection<Label>> {
 

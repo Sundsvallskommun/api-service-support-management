@@ -1,13 +1,13 @@
 package se.sundsvall.supportmanagement.integration.db.util;
 
-import static java.util.Objects.isNull;
-import static java.util.Optional.ofNullable;
-import static org.zalando.problem.Status.NOT_FOUND;
-
 import org.apache.commons.lang3.Strings;
 import org.zalando.problem.Problem;
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ValueType;
+
+import static java.util.Objects.isNull;
+import static java.util.Optional.ofNullable;
+import static org.zalando.problem.Status.NOT_FOUND;
 
 public class ConfigPropertyExtractor {
 	private ConfigPropertyExtractor() {}

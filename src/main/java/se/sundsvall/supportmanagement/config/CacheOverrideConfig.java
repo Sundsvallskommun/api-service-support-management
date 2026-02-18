@@ -1,7 +1,5 @@
 package se.sundsvall.supportmanagement.config;
 
-import static java.util.Optional.ofNullable;
-
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import java.util.Collections;
@@ -9,6 +7,8 @@ import org.springframework.boot.autoconfigure.cache.CacheManagerCustomizer;
 import org.springframework.cache.caffeine.CaffeineCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import static java.util.Optional.ofNullable;
 
 @Configuration
 public class CacheOverrideConfig {

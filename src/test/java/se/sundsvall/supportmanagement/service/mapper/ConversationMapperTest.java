@@ -1,11 +1,5 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
-import static java.time.OffsetDateTime.now;
-import static java.time.temporal.ChronoUnit.SECONDS;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.within;
-import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.RELATION_ID_KEY;
-
 import generated.se.sundsvall.messageexchange.Message;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -16,6 +10,12 @@ import se.sundsvall.supportmanagement.api.model.communication.conversation.Ident
 import se.sundsvall.supportmanagement.api.model.communication.conversation.KeyValues;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.MessageType;
 import se.sundsvall.supportmanagement.integration.db.model.communication.ConversationEntity;
+
+import static java.time.OffsetDateTime.now;
+import static java.time.temporal.ChronoUnit.SECONDS;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
+import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.RELATION_ID_KEY;
 
 class ConversationMapperTest {
 

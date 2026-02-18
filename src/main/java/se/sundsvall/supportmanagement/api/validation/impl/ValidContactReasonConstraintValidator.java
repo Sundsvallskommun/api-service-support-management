@@ -1,16 +1,16 @@
 package se.sundsvall.supportmanagement.api.validation.impl;
 
-import static java.util.Collections.emptyList;
-import static java.util.Objects.isNull;
-import static java.util.Optional.ofNullable;
-import static org.apache.commons.lang3.StringUtils.upperCase;
-
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import java.util.List;
 import se.sundsvall.supportmanagement.api.model.metadata.ContactReason;
 import se.sundsvall.supportmanagement.api.validation.ValidContactReason;
 import se.sundsvall.supportmanagement.service.MetadataService;
+
+import static java.util.Collections.emptyList;
+import static java.util.Objects.isNull;
+import static java.util.Optional.ofNullable;
+import static org.apache.commons.lang3.StringUtils.upperCase;
 
 public class ValidContactReasonConstraintValidator extends AbstractTagConstraintValidator implements ConstraintValidator<ValidContactReason, String> {
 

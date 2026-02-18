@@ -1,14 +1,5 @@
 package se.sundsvall.supportmanagement.service;
 
-import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
-import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
-import static java.util.Collections.emptyList;
-import static java.util.Optional.ofNullable;
-import static org.zalando.problem.Status.NOT_FOUND;
-import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.toErrandParameterEntityList;
-import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.toParameter;
-import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.toParameterList;
-
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -18,6 +9,15 @@ import org.zalando.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.errand.Parameter;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
+import static java.util.Collections.emptyList;
+import static java.util.Optional.ofNullable;
+import static org.zalando.problem.Status.NOT_FOUND;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.toErrandParameterEntityList;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.toParameter;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.toParameterList;
 
 @Service
 @Transactional

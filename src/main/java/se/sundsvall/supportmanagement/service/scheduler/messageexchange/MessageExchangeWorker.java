@@ -1,10 +1,5 @@
 package se.sundsvall.supportmanagement.service.scheduler.messageexchange;
 
-import static java.util.Collections.emptyList;
-import static java.util.Optional.ofNullable;
-import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
-import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.RELATION_ID_KEY;
-
 import generated.se.sundsvall.messageexchange.Conversation;
 import generated.se.sundsvall.relation.Relation;
 import generated.se.sundsvall.relation.ResourceIdentifier;
@@ -26,6 +21,11 @@ import se.sundsvall.supportmanagement.integration.db.model.communication.Convers
 import se.sundsvall.supportmanagement.integration.messageexchange.MessageExchangeClient;
 import se.sundsvall.supportmanagement.integration.relation.RelationClient;
 import se.sundsvall.supportmanagement.service.MessageExchangeSyncService;
+
+import static java.util.Collections.emptyList;
+import static java.util.Optional.ofNullable;
+import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
+import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.RELATION_ID_KEY;
 
 @Component
 public class MessageExchangeWorker {

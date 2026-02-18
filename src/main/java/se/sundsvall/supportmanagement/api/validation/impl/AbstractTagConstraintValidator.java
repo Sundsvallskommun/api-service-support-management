@@ -1,12 +1,5 @@
 package se.sundsvall.supportmanagement.api.validation.impl;
 
-import static java.util.Collections.emptyList;
-import static java.util.Optional.ofNullable;
-import static org.apache.commons.lang3.StringUtils.isBlank;
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static org.springframework.web.context.request.RequestAttributes.SCOPE_REQUEST;
-import static org.springframework.web.servlet.HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE;
-
 import jakarta.validation.ConstraintValidatorContext;
 import java.util.List;
 import java.util.Map;
@@ -16,6 +9,13 @@ import org.hibernate.validator.internal.engine.messageinterpolation.util.Interpo
 import org.springframework.web.context.request.RequestContextHolder;
 import org.zalando.problem.Problem;
 import org.zalando.problem.Status;
+
+import static java.util.Collections.emptyList;
+import static java.util.Optional.ofNullable;
+import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.springframework.web.context.request.RequestAttributes.SCOPE_REQUEST;
+import static org.springframework.web.servlet.HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE;
 
 abstract class AbstractTagConstraintValidator {
 	private static final String CUSTOM_ERROR_MESSAGE_TEMPLATE = "value '%s' doesn't match any of %s";

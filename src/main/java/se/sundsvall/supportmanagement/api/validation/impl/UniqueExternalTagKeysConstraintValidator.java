@@ -1,8 +1,5 @@
 package se.sundsvall.supportmanagement.api.validation.impl;
 
-import static java.util.Collections.emptyList;
-import static java.util.Optional.ofNullable;
-
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import java.util.Collection;
@@ -10,6 +7,9 @@ import java.util.Objects;
 import org.apache.commons.lang3.StringUtils;
 import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
 import se.sundsvall.supportmanagement.api.validation.UniqueExternalTagKeys;
+
+import static java.util.Collections.emptyList;
+import static java.util.Optional.ofNullable;
 
 public class UniqueExternalTagKeysConstraintValidator implements ConstraintValidator<UniqueExternalTagKeys, Collection<ExternalTag>> {
 

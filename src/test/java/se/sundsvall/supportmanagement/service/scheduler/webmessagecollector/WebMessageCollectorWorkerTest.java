@@ -1,21 +1,5 @@
 package se.sundsvall.supportmanagement.service.scheduler.webmessagecollector;
 
-import static java.time.OffsetDateTime.now;
-import static java.time.temporal.ChronoUnit.SECONDS;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.tuple;
-import static org.assertj.core.api.Assertions.within;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.ArgumentMatchers.same;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.Direction.INBOUND;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationSubType.MESSAGE;
-
 import generated.se.sundsvall.eventlog.EventType;
 import generated.se.sundsvall.webmessagecollector.MessageAttachment;
 import generated.se.sundsvall.webmessagecollector.MessageDTO;
@@ -44,6 +28,22 @@ import se.sundsvall.supportmanagement.integration.webmessagecollector.WebMessage
 import se.sundsvall.supportmanagement.integration.webmessagecollector.configuration.WebMessageCollectorProperties;
 import se.sundsvall.supportmanagement.service.CommunicationService;
 import se.sundsvall.supportmanagement.service.EventService;
+
+import static java.time.OffsetDateTime.now;
+import static java.time.temporal.ChronoUnit.SECONDS;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
+import static org.assertj.core.api.Assertions.within;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.ArgumentMatchers.same;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.Direction.INBOUND;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationSubType.MESSAGE;
 
 @ExtendWith(MockitoExtension.class)
 class WebMessageCollectorWorkerTest {

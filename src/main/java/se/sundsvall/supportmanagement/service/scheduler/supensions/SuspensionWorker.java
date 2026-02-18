@@ -1,16 +1,16 @@
 package se.sundsvall.supportmanagement.service.scheduler.supensions;
 
-import static java.time.OffsetDateTime.now;
-import static java.util.Objects.nonNull;
-import static org.apache.commons.lang3.StringUtils.isBlank;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationSubType.SUSPENSION;
-
 import org.springframework.stereotype.Component;
 import se.sundsvall.supportmanagement.api.model.notification.Notification;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.service.EmployeeService;
 import se.sundsvall.supportmanagement.service.NotificationService;
+
+import static java.time.OffsetDateTime.now;
+import static java.util.Objects.nonNull;
+import static org.apache.commons.lang3.StringUtils.isBlank;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationSubType.SUSPENSION;
 
 @Component
 public class SuspensionWorker {

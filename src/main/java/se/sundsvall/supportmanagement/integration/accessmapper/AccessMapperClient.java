@@ -1,8 +1,5 @@
 package se.sundsvall.supportmanagement.integration.accessmapper;
 
-import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
-import static se.sundsvall.supportmanagement.integration.accessmapper.configuration.AccessMapperConfiguration.CLIENT_ID;
-
 import generated.se.sundsvall.accessmapper.AccessGroup;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import java.util.List;
@@ -12,6 +9,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import se.sundsvall.supportmanagement.integration.accessmapper.configuration.AccessMapperConfiguration;
+
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import static se.sundsvall.supportmanagement.integration.accessmapper.configuration.AccessMapperConfiguration.CLIENT_ID;
 
 @FeignClient(name = CLIENT_ID, url = "${integration.accessmapper.url}", configuration = AccessMapperConfiguration.class)
 @CircuitBreaker(name = CLIENT_ID)

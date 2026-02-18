@@ -1,9 +1,5 @@
 package se.sundsvall.supportmanagement.integration.db.util;
 
-import static org.springframework.transaction.annotation.Propagation.REQUIRES_NEW;
-import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
-import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_SHORT_CODE;
-
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import org.springframework.stereotype.Component;
@@ -13,6 +9,10 @@ import org.zalando.problem.Problem;
 import se.sundsvall.supportmanagement.integration.db.ErrandNumberSequenceRepository;
 import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandNumberSequenceEntity;
+
+import static org.springframework.transaction.annotation.Propagation.REQUIRES_NEW;
+import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
+import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_SHORT_CODE;
 
 @Component
 public class ErrandNumberGeneratorService {

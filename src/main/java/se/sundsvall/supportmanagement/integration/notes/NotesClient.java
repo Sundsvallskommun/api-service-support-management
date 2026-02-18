@@ -1,8 +1,5 @@
 package se.sundsvall.supportmanagement.integration.notes;
 
-import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
-import static se.sundsvall.supportmanagement.integration.notes.configuration.NotesConfiguration.CLIENT_ID;
-
 import generated.se.sundsvall.notes.CreateNoteRequest;
 import generated.se.sundsvall.notes.DifferenceResponse;
 import generated.se.sundsvall.notes.FindNotesResponse;
@@ -21,6 +18,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import se.sundsvall.supportmanagement.integration.notes.configuration.NotesConfiguration;
+
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import static se.sundsvall.supportmanagement.integration.notes.configuration.NotesConfiguration.CLIENT_ID;
 
 @FeignClient(name = CLIENT_ID, url = "${integration.notes.url}", configuration = NotesConfiguration.class)
 @CircuitBreaker(name = CLIENT_ID)

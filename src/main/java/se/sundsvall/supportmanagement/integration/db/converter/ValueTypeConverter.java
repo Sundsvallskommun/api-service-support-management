@@ -1,10 +1,10 @@
 package se.sundsvall.supportmanagement.integration.db.converter;
 
-import static java.util.Optional.ofNullable;
-
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ValueType;
+
+import static java.util.Optional.ofNullable;
 
 @Converter(autoApply = true)
 public class ValueTypeConverter implements AttributeConverter<ValueType, String> {

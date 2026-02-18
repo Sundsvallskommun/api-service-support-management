@@ -1,8 +1,5 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
-import static java.util.Collections.emptyList;
-import static java.util.Optional.ofNullable;
-
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.lang3.Strings;
@@ -18,6 +15,9 @@ import se.sundsvall.supportmanagement.api.model.communication.conversation.Messa
 import se.sundsvall.supportmanagement.api.model.communication.conversation.MessageType;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.ReadBy;
 import se.sundsvall.supportmanagement.integration.db.model.communication.ConversationEntity;
+
+import static java.util.Collections.emptyList;
+import static java.util.Optional.ofNullable;
 
 public final class ConversationMapper {
 

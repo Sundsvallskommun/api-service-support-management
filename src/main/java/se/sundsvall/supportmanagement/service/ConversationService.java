@@ -1,20 +1,5 @@
 package se.sundsvall.supportmanagement.service;
 
-import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
-import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
-import static java.util.Collections.emptyList;
-import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
-import static org.zalando.problem.Status.NOT_FOUND;
-import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
-import static se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationType.EXTERNAL;
-import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.mergeIntoConversationEntity;
-import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.toConversation;
-import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.toConversationEntity;
-import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.toConversationList;
-import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.toMessageExchangeConversation;
-import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.toMessagePage;
-import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.toMessageRequest;
-
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
@@ -37,6 +22,21 @@ import se.sundsvall.supportmanagement.integration.messageexchange.MessageExchang
 import se.sundsvall.supportmanagement.integration.relation.RelationClient;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 import se.sundsvall.supportmanagement.service.scheduler.messageexchange.MessageExchangeScheduler;
+
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
+import static java.util.Collections.emptyList;
+import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
+import static org.zalando.problem.Status.NOT_FOUND;
+import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
+import static se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationType.EXTERNAL;
+import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.mergeIntoConversationEntity;
+import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.toConversation;
+import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.toConversationEntity;
+import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.toConversationList;
+import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.toMessageExchangeConversation;
+import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.toMessagePage;
+import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.toMessageRequest;
 
 @Service
 public class ConversationService {

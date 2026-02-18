@@ -1,8 +1,5 @@
 package se.sundsvall.supportmanagement.integration.db.model;
 
-import static jakarta.persistence.FetchType.LAZY;
-import static org.hibernate.type.SqlTypes.LONG32VARCHAR;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.ForeignKey;
@@ -14,6 +11,9 @@ import jakarta.persistence.Table;
 import java.util.Objects;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UuidGenerator;
+
+import static jakarta.persistence.FetchType.LAZY;
+import static org.hibernate.type.SqlTypes.LONG32VARCHAR;
 
 @Entity
 @Table(name = "json_parameter",

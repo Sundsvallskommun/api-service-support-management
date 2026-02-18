@@ -1,10 +1,10 @@
 package se.sundsvall.supportmanagement.service.scheduler.notifications;
 
-import static java.time.OffsetDateTime.now;
-
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.supportmanagement.integration.db.NotificationRepository;
+
+import static java.time.OffsetDateTime.now;
 
 @Component
 public class NotificationWorker {

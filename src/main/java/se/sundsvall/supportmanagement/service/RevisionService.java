@@ -1,19 +1,5 @@
 package se.sundsvall.supportmanagement.service;
 
-import static com.flipkart.zjsonpatch.DiffFlags.ADD_ORIGINAL_VALUE_ON_REPLACE;
-import static com.flipkart.zjsonpatch.DiffFlags.OMIT_COPY_OPERATION;
-import static com.flipkart.zjsonpatch.DiffFlags.OMIT_MOVE_OPERATION;
-import static com.jayway.jsonpath.Configuration.defaultConfiguration;
-import static com.jayway.jsonpath.Option.SUPPRESS_EXCEPTIONS;
-import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
-import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
-import static org.apache.commons.lang3.ObjectUtils.anyNull;
-import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
-import static org.zalando.problem.Status.NOT_FOUND;
-import static se.sundsvall.supportmanagement.service.mapper.RevisionMapper.toRevision;
-import static se.sundsvall.supportmanagement.service.mapper.RevisionMapper.toRevisionEntity;
-import static se.sundsvall.supportmanagement.service.mapper.RevisionMapper.toSerializedSnapshot;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.flipkart.zjsonpatch.DiffFlags;
@@ -37,6 +23,20 @@ import se.sundsvall.supportmanagement.integration.notes.NotesClient;
 import se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper;
 import se.sundsvall.supportmanagement.service.mapper.RevisionMapper;
 import se.sundsvall.supportmanagement.service.model.RevisionResult;
+
+import static com.flipkart.zjsonpatch.DiffFlags.ADD_ORIGINAL_VALUE_ON_REPLACE;
+import static com.flipkart.zjsonpatch.DiffFlags.OMIT_COPY_OPERATION;
+import static com.flipkart.zjsonpatch.DiffFlags.OMIT_MOVE_OPERATION;
+import static com.jayway.jsonpath.Configuration.defaultConfiguration;
+import static com.jayway.jsonpath.Option.SUPPRESS_EXCEPTIONS;
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
+import static org.apache.commons.lang3.ObjectUtils.anyNull;
+import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
+import static org.zalando.problem.Status.NOT_FOUND;
+import static se.sundsvall.supportmanagement.service.mapper.RevisionMapper.toRevision;
+import static se.sundsvall.supportmanagement.service.mapper.RevisionMapper.toRevisionEntity;
+import static se.sundsvall.supportmanagement.service.mapper.RevisionMapper.toSerializedSnapshot;
 
 @Service
 @Transactional

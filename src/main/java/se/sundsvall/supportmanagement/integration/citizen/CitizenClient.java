@@ -1,14 +1,14 @@
 package se.sundsvall.supportmanagement.integration.citizen;
 
-import static org.springframework.http.MediaType.ALL_VALUE;
-import static se.sundsvall.supportmanagement.integration.citizen.configuration.CitizenConfiguration.CLIENT_ID;
-
 import generated.se.sundsvall.citizen.CitizenExtended;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import se.sundsvall.supportmanagement.integration.citizen.configuration.CitizenConfiguration;
+
+import static org.springframework.http.MediaType.ALL_VALUE;
+import static se.sundsvall.supportmanagement.integration.citizen.configuration.CitizenConfiguration.CLIENT_ID;
 
 @FeignClient(
 	name = CLIENT_ID,

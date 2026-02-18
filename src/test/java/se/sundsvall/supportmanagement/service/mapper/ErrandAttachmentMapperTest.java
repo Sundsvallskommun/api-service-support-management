@@ -1,15 +1,5 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
-import static java.time.OffsetDateTime.now;
-import static java.time.temporal.ChronoUnit.SECONDS;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.within;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.when;
-import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildAttachmentEntity;
-import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrandEntity;
-
 import jakarta.persistence.EntityManager;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -26,6 +16,16 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
+
+import static java.time.OffsetDateTime.now;
+import static java.time.temporal.ChronoUnit.SECONDS;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.when;
+import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildAttachmentEntity;
+import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrandEntity;
 
 @ExtendWith(MockitoExtension.class)
 class ErrandAttachmentMapperTest {
