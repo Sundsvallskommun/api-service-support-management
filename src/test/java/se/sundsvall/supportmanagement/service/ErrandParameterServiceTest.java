@@ -3,7 +3,7 @@ package se.sundsvall.supportmanagement.service;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertThrows;
+import static org.assertj.core.api.Assertions.assertThatException;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.verify;
@@ -15,6 +15,7 @@ import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrandEntit
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -173,14 +174,14 @@ class ErrandParameterServiceTest {
 			.withId("errandId")
 			.withParameters(List.of());
 
-		// Act
-		final var exception = assertThrows(ThrowableProblem.class, () -> errandParameterService.findParameterEntityOrElseThrow(errand, "parameterId"));
-
-		// Assert
-		assertThat(exception.getStatus()).isEqualTo(NOT_FOUND);
-		assertThat(exception.getTitle()).isEqualTo(NOT_FOUND.getReasonPhrase());
-		assertThat(exception.getMessage()).isEqualTo("Not Found: A parameter with key 'parameterId' could not be found in errand with id 'errandId'");
-
+		// Act/assert
+		assertThatException()
+			.isThrownBy(() -> errandParameterService.findParameterEntityOrElseThrow(errand, "parameterId"))
+			.asInstanceOf(InstanceOfAssertFactories.type(ThrowableProblem.class))
+			.satisfies(thrownProblem -> {
+				assertThat(thrownProblem.getStatus()).isEqualTo(NOT_FOUND);
+				assertThat(thrownProblem.getTitle()).isEqualTo(NOT_FOUND.getReasonPhrase());
+				assertThat(thrownProblem.getMessage()).isEqualTo("Not Found: A parameter with key 'parameterId' could not be found in errand with id 'errandId'");
+			});
 	}
-
 }
