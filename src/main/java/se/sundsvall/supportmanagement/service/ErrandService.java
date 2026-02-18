@@ -1,21 +1,5 @@
 package se.sundsvall.supportmanagement.service;
 
-import static generated.se.sundsvall.eventlog.EventType.CREATE;
-import static generated.se.sundsvall.eventlog.EventType.DELETE;
-import static generated.se.sundsvall.eventlog.EventType.UPDATE;
-import static java.util.Collections.emptyList;
-import static java.util.Objects.nonNull;
-import static java.util.Optional.ofNullable;
-import static org.zalando.problem.Status.BAD_REQUEST;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationSubType.ERRAND;
-import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrand;
-import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandEntity;
-import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandWithAccessControl;
-import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandsWithAccessControl;
-import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.updateEntity;
-import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withMunicipalityId;
-import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withNamespace;
-
 import generated.se.sundsvall.accessmapper.Access;
 import java.util.ArrayList;
 import java.util.Map;
@@ -42,6 +26,22 @@ import se.sundsvall.supportmanagement.integration.db.util.ErrandNumberGeneratorS
 import se.sundsvall.supportmanagement.integration.notes.NotesClient;
 import se.sundsvall.supportmanagement.integration.relation.RelationClient;
 import se.sundsvall.supportmanagement.service.mapper.ErrandMapper;
+
+import static generated.se.sundsvall.eventlog.EventType.CREATE;
+import static generated.se.sundsvall.eventlog.EventType.DELETE;
+import static generated.se.sundsvall.eventlog.EventType.UPDATE;
+import static java.util.Collections.emptyList;
+import static java.util.Objects.nonNull;
+import static java.util.Optional.ofNullable;
+import static org.zalando.problem.Status.BAD_REQUEST;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationSubType.ERRAND;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrand;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandEntity;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandWithAccessControl;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandsWithAccessControl;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.updateEntity;
+import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withMunicipalityId;
+import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withNamespace;
 
 @Service
 @Transactional
