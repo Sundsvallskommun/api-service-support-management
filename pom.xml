@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>se.sundsvall.dept44</groupId>
 		<artifactId>dept44-service-parent</artifactId>
-		<version>7.0.0</version>
+		<version>7.0.1</version>
 		<relativePath />
 		<!-- lookup parent from the repository -->
 	</parent>
@@ -83,7 +83,7 @@
 		<!-- Test -->
 		<dependency>
 			<groupId>org.testcontainers</groupId>
-			<artifactId>mariadb</artifactId>
+			<artifactId>testcontainers-mariadb</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<dependency>

@@ -1,10 +1,5 @@
 package se.sundsvall.supportmanagement.integration.messageexchange;
 
-import static org.springframework.http.MediaType.ALL_VALUE;
-import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
-import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
-import static se.sundsvall.supportmanagement.integration.messageexchange.configuration.MessageExchangeConfiguration.CLIENT_ID;
-
 import feign.QueryMap;
 import generated.se.sundsvall.messageexchange.Conversation;
 import generated.se.sundsvall.messageexchange.Message;
@@ -27,6 +22,11 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.integration.messageexchange.configuration.MessageExchangeConfiguration;
+
+import static org.springframework.http.MediaType.ALL_VALUE;
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
+import static se.sundsvall.supportmanagement.integration.messageexchange.configuration.MessageExchangeConfiguration.CLIENT_ID;
 
 @FeignClient(name = CLIENT_ID, url = "${integration.messageexchange.url}", configuration = MessageExchangeConfiguration.class)
 @CircuitBreaker(name = CLIENT_ID)

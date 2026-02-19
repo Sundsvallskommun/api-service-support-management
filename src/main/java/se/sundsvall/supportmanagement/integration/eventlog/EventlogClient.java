@@ -1,8 +1,5 @@
 package se.sundsvall.supportmanagement.integration.eventlog;
 
-import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
-import static se.sundsvall.supportmanagement.integration.eventlog.configuration.EventlogConfiguration.CLIENT_ID;
-
 import feign.QueryMap;
 import generated.se.sundsvall.eventlog.Event;
 import generated.se.sundsvall.eventlog.PageEvent;
@@ -15,6 +12,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import se.sundsvall.supportmanagement.integration.eventlog.configuration.EventlogConfiguration;
+
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import static se.sundsvall.supportmanagement.integration.eventlog.configuration.EventlogConfiguration.CLIENT_ID;
 
 @FeignClient(name = CLIENT_ID, url = "${integration.eventlog.url}", configuration = EventlogConfiguration.class)
 @CircuitBreaker(name = CLIENT_ID)

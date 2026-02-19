@@ -1,9 +1,5 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
-import static java.util.Collections.emptyList;
-import static org.apache.commons.lang3.ObjectUtils.anyNull;
-import static se.sundsvall.supportmanagement.service.util.ServiceUtil.detectMimeTypeFromStream;
-
 import jakarta.persistence.EntityManager;
 import java.io.IOException;
 import java.io.InputStream;
@@ -22,6 +18,10 @@ import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+
+import static java.util.Collections.emptyList;
+import static org.apache.commons.lang3.ObjectUtils.anyNull;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.detectMimeTypeFromStream;
 
 public final class ErrandAttachmentMapper {
 

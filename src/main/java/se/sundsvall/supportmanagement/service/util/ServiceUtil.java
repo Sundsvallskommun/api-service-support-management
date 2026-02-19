@@ -1,13 +1,5 @@
 package se.sundsvall.supportmanagement.service.util;
 
-import static java.util.Collections.emptyList;
-import static java.util.Optional.ofNullable;
-import static java.util.UUID.fromString;
-import static org.apache.commons.lang3.Strings.CI;
-import static org.springframework.util.MimeTypeUtils.APPLICATION_OCTET_STREAM_VALUE;
-import static se.sundsvall.dept44.support.Identifier.Type.AD_ACCOUNT;
-import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
-
 import generated.se.sundsvall.accessmapper.Access;
 import generated.se.sundsvall.accessmapper.Access.AccessLevelEnum;
 import java.io.ByteArrayInputStream;
@@ -26,6 +18,14 @@ import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderParameterEntity;
+
+import static java.util.Collections.emptyList;
+import static java.util.Optional.ofNullable;
+import static java.util.UUID.fromString;
+import static org.apache.commons.lang3.Strings.CI;
+import static org.springframework.util.MimeTypeUtils.APPLICATION_OCTET_STREAM_VALUE;
+import static se.sundsvall.dept44.support.Identifier.Type.AD_ACCOUNT;
+import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 
 public class ServiceUtil {
 

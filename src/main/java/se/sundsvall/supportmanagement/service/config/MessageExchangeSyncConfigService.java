@@ -1,13 +1,13 @@
 package se.sundsvall.supportmanagement.service.config;
 
-import static org.zalando.problem.Status.NOT_FOUND;
-
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.zalando.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.config.MessageExchangeSync;
 import se.sundsvall.supportmanagement.integration.db.MessageExchangeSyncRepository;
 import se.sundsvall.supportmanagement.service.mapper.MessageExchangeSyncMapper;
+
+import static org.zalando.problem.Status.NOT_FOUND;
 
 @Service
 public class MessageExchangeSyncConfigService {

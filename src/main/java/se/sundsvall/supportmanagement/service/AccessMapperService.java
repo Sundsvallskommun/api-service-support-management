@@ -1,8 +1,5 @@
 package se.sundsvall.supportmanagement.service;
 
-import static java.util.Optional.ofNullable;
-import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
-
 import generated.se.sundsvall.accessmapper.Access;
 import generated.se.sundsvall.accessmapper.AccessGroup;
 import java.util.Collections;
@@ -16,6 +13,9 @@ import org.springframework.stereotype.Component;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.integration.accessmapper.AccessMapperClient;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
+
+import static java.util.Optional.ofNullable;
+import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 
 @Component
 public class AccessMapperService {

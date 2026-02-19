@@ -1,15 +1,5 @@
 package se.sundsvall.supportmanagement.service;
 
-import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
-import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
-import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
-import static se.sundsvall.dept44.support.Identifier.Type.AD_ACCOUNT;
-
 import generated.se.sundsvall.accessmapper.Access;
 import generated.se.sundsvall.accessmapper.AccessGroup;
 import generated.se.sundsvall.accessmapper.AccessType;
@@ -25,6 +15,16 @@ import org.springframework.http.ResponseEntity;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.integration.accessmapper.AccessMapperClient;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
+
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
+import static se.sundsvall.dept44.support.Identifier.Type.AD_ACCOUNT;
 
 @ExtendWith(MockitoExtension.class)
 class AccessMapperServiceTest {

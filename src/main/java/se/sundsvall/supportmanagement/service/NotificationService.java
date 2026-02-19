@@ -1,15 +1,5 @@
 package se.sundsvall.supportmanagement.service;
 
-import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
-import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
-import static org.springframework.data.domain.Sort.unsorted;
-import static org.springframework.util.StringUtils.hasText;
-import static org.zalando.problem.Status.NOT_FOUND;
-import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_NOTIFICATION_TTL_IN_DAYS;
-import static se.sundsvall.supportmanagement.service.mapper.NotificationMapper.toNotificationEntity;
-import static se.sundsvall.supportmanagement.service.mapper.NotificationMapper.updateEntity;
-import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getAdUser;
-
 import generated.se.sundsvall.employee.PortalPersonData;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -26,6 +16,16 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
 import se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor;
 import se.sundsvall.supportmanagement.service.mapper.NotificationMapper;
+
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
+import static org.springframework.data.domain.Sort.unsorted;
+import static org.springframework.util.StringUtils.hasText;
+import static org.zalando.problem.Status.NOT_FOUND;
+import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_NOTIFICATION_TTL_IN_DAYS;
+import static se.sundsvall.supportmanagement.service.mapper.NotificationMapper.toNotificationEntity;
+import static se.sundsvall.supportmanagement.service.mapper.NotificationMapper.updateEntity;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getAdUser;
 
 @Service
 public class NotificationService {

@@ -1,8 +1,5 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
-import static java.util.Collections.emptyList;
-import static java.util.stream.Collectors.groupingBy;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -10,6 +7,9 @@ import java.util.Optional;
 import se.sundsvall.supportmanagement.api.model.errand.Parameter;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderParameterEntity;
+
+import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.groupingBy;
 
 public final class StakeholderParameterMapper {
 

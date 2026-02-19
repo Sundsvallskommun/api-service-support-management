@@ -1,9 +1,5 @@
 package se.sundsvall.supportmanagement.service.scheduler.webmessagecollector;
 
-import static java.time.OffsetTime.now;
-import static java.time.ZoneId.systemDefault;
-import static java.util.Collections.emptyList;
-
 import generated.se.sundsvall.webmessagecollector.MessageAttachment;
 import generated.se.sundsvall.webmessagecollector.MessageDTO;
 import java.time.LocalDateTime;
@@ -18,6 +14,10 @@ import se.sundsvall.supportmanagement.integration.db.model.communication.Communi
 import se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.Direction;
 import se.sundsvall.supportmanagement.service.util.BlobBuilder;
+
+import static java.time.OffsetTime.now;
+import static java.time.ZoneId.systemDefault;
+import static java.util.Collections.emptyList;
 
 @Component
 public class WebMessageCollectorMapper {

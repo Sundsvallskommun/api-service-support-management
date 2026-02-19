@@ -1,21 +1,5 @@
 package se.sundsvall.supportmanagement.service;
 
-import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
-import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
-import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.same;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
-import static org.zalando.problem.Status.NOT_FOUND;
-import static org.zalando.problem.Status.UNAUTHORIZED;
-import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.hasAllowedMetadataLabels;
-import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withId;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -37,6 +21,22 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
+
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.same;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
+import static org.zalando.problem.Status.NOT_FOUND;
+import static org.zalando.problem.Status.UNAUTHORIZED;
+import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.hasAllowedMetadataLabels;
+import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withId;
 
 @ExtendWith(MockitoExtension.class)
 class AccessControlServiceTest {

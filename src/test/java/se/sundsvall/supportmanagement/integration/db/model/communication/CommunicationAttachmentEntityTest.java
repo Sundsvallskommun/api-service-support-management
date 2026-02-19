@@ -1,5 +1,9 @@
 package se.sundsvall.supportmanagement.integration.db.model.communication;
 
+import org.junit.jupiter.api.Test;
+import org.mariadb.jdbc.MariaDbBlob;
+import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
+
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanEqualsExcluding;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanHashCodeExcluding;
@@ -8,10 +12,6 @@ import static com.google.code.beanmatchers.BeanMatchers.hasValidGettersAndSetter
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.AllOf.allOf;
-
-import org.junit.jupiter.api.Test;
-import org.mariadb.jdbc.MariaDbBlob;
-import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
 
 class CommunicationAttachmentEntityTest {
 

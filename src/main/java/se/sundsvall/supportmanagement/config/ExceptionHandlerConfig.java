@@ -1,9 +1,5 @@
 package se.sundsvall.supportmanagement.config;
 
-import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON;
-import static org.springframework.http.ResponseEntity.badRequest;
-import static org.zalando.problem.Status.BAD_REQUEST;
-
 import com.turkraft.springfilter.parser.InvalidSyntaxException;
 import java.util.Optional;
 import org.slf4j.Logger;
@@ -14,6 +10,10 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.zalando.problem.Problem;
+
+import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON;
+import static org.springframework.http.ResponseEntity.badRequest;
+import static org.zalando.problem.Status.BAD_REQUEST;
 
 @Configuration
 public class ExceptionHandlerConfig {

@@ -1,15 +1,5 @@
 package se.sundsvall.supportmanagement.service;
 
-import static java.util.Collections.emptyList;
-import static java.util.Objects.nonNull;
-import static java.util.Optional.ofNullable;
-import static se.sundsvall.supportmanagement.Constants.EXTERNAL_TAG_KEY_CASE_ID;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationSubType.NOTE;
-import static se.sundsvall.supportmanagement.service.mapper.EventlogMapper.toEvent;
-import static se.sundsvall.supportmanagement.service.mapper.EventlogMapper.toMetadataMap;
-import static se.sundsvall.supportmanagement.service.mapper.NotificationMapper.toNotification;
-import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getAdUser;
-
 import generated.se.sundsvall.eventlog.EventType;
 import generated.se.sundsvall.notes.Note;
 import java.util.Objects;
@@ -26,6 +16,16 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.NotificationSubType;
 import se.sundsvall.supportmanagement.integration.eventlog.EventlogClient;
 import se.sundsvall.supportmanagement.service.mapper.EventlogMapper;
+
+import static java.util.Collections.emptyList;
+import static java.util.Objects.nonNull;
+import static java.util.Optional.ofNullable;
+import static se.sundsvall.supportmanagement.Constants.EXTERNAL_TAG_KEY_CASE_ID;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationSubType.NOTE;
+import static se.sundsvall.supportmanagement.service.mapper.EventlogMapper.toEvent;
+import static se.sundsvall.supportmanagement.service.mapper.EventlogMapper.toMetadataMap;
+import static se.sundsvall.supportmanagement.service.mapper.NotificationMapper.toNotification;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getAdUser;
 
 @Service
 public class EventService {

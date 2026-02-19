@@ -1,9 +1,5 @@
 package se.sundsvall.supportmanagement.api.validation.impl;
 
-import static java.util.Optional.ofNullable;
-import static org.hibernate.validator.internal.engine.messageinterpolation.util.InterpolationHelper.escapeMessageParameter;
-import static org.springframework.util.CollectionUtils.isEmpty;
-
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import java.util.HashSet;
@@ -13,6 +9,10 @@ import se.sundsvall.dept44.exception.ServerProblem;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
 import se.sundsvall.supportmanagement.api.validation.ValidJsonParameters;
 import se.sundsvall.supportmanagement.integration.jsonschema.JsonSchemaClient;
+
+import static java.util.Optional.ofNullable;
+import static org.hibernate.validator.internal.engine.messageinterpolation.util.InterpolationHelper.escapeMessageParameter;
+import static org.springframework.util.CollectionUtils.isEmpty;
 
 public class ValidJsonParametersConstraintValidator extends AbstractTagConstraintValidator implements ConstraintValidator<ValidJsonParameters, List<JsonParameter>> {
 

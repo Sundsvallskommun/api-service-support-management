@@ -1,18 +1,5 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
-import static java.util.Map.entry;
-import static java.util.UUID.randomUUID;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.assertj.core.groups.Tuple.tuple;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
-import static org.springframework.util.MimeTypeUtils.IMAGE_PNG_VALUE;
-import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
-import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toWebMessageRequest;
-
 import generated.se.sundsvall.messaging.ExternalReference;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
@@ -39,6 +26,19 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
 import se.sundsvall.supportmanagement.service.model.MessagingSettings;
+
+import static java.util.Map.entry;
+import static java.util.UUID.randomUUID;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.groups.Tuple.tuple;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
+import static org.springframework.util.MimeTypeUtils.IMAGE_PNG_VALUE;
+import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
+import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toWebMessageRequest;
 
 class MessagingMapperTest {
 

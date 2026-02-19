@@ -1,12 +1,5 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
-import static java.time.OffsetDateTime.now;
-import static java.time.temporal.ChronoUnit.SECONDS;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.within;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationSubType.ERRAND;
-
 import generated.se.sundsvall.eventlog.Event;
 import generated.se.sundsvall.eventlog.EventType;
 import java.time.OffsetDateTime;
@@ -15,6 +8,13 @@ import se.sundsvall.supportmanagement.api.model.notification.Notification;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.NotificationSubType;
+
+import static java.time.OffsetDateTime.now;
+import static java.time.temporal.ChronoUnit.SECONDS;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationSubType.ERRAND;
 
 class NotificationMapperTest {
 

@@ -1,14 +1,5 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.Collections.emptyList;
-import static java.util.Objects.nonNull;
-import static java.util.Optional.ofNullable;
-import static org.apache.commons.codec.binary.Base64.decodeBase64;
-import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
-import static se.sundsvall.supportmanagement.Constants.SUBJECT_TEMPLATE;
-import static se.sundsvall.supportmanagement.service.util.ServiceUtil.detectMimeType;
-
 import generated.se.sundsvall.messaging.Email;
 import generated.se.sundsvall.messaging.EmailAttachment;
 import generated.se.sundsvall.messaging.EmailRequest;
@@ -47,6 +38,15 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
 import se.sundsvall.supportmanagement.service.model.MessagingSettings;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Collections.emptyList;
+import static java.util.Objects.nonNull;
+import static java.util.Optional.ofNullable;
+import static org.apache.commons.codec.binary.Base64.decodeBase64;
+import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
+import static se.sundsvall.supportmanagement.Constants.SUBJECT_TEMPLATE;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.detectMimeType;
 
 public class MessagingMapper {
 

@@ -1,10 +1,5 @@
 package se.sundsvall.supportmanagement.service.scheduler.webmessagecollector;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.within;
-import static org.mockito.Mockito.when;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationType.WEB_MESSAGE;
-
 import generated.se.sundsvall.webmessagecollector.MessageAttachment;
 import generated.se.sundsvall.webmessagecollector.MessageDTO;
 import java.sql.SQLException;
@@ -20,6 +15,11 @@ import org.mockito.Mock;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.Direction;
 import se.sundsvall.supportmanagement.service.util.BlobBuilder;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
+import static org.mockito.Mockito.when;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationType.WEB_MESSAGE;
 
 @ExtendWith(org.mockito.junit.jupiter.MockitoExtension.class)
 class WebMessageCollectorMapperTest {

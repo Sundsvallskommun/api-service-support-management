@@ -1,11 +1,11 @@
 package se.sundsvall.supportmanagement.api.model.revision;
 
-import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
-
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
 import se.sundsvall.supportmanagement.api.model.revision.deserializer.RawDataDeserializer;
+
+import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 
 @Schema(description = "Operation model", accessMode = READ_ONLY)
 public class Operation {

@@ -1,12 +1,5 @@
 package se.sundsvall.supportmanagement.service.scheduler.emailreader;
 
-import static java.util.Collections.emptyList;
-import static java.util.Objects.isNull;
-import static java.util.stream.Collectors.toMap;
-import static org.springframework.util.StringUtils.hasText;
-import static org.zalando.problem.Status.NOT_FOUND;
-import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandLabels;
-
 import generated.se.sundsvall.emailreader.Email;
 import generated.se.sundsvall.emailreader.EmailAttachment;
 import java.util.Arrays;
@@ -34,6 +27,13 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationTy
 import se.sundsvall.supportmanagement.integration.db.model.enums.Direction;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
 import se.sundsvall.supportmanagement.service.util.BlobBuilder;
+
+import static java.util.Collections.emptyList;
+import static java.util.Objects.isNull;
+import static java.util.stream.Collectors.toMap;
+import static org.springframework.util.StringUtils.hasText;
+import static org.zalando.problem.Status.NOT_FOUND;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandLabels;
 
 @Component
 public class EmailReaderMapper {

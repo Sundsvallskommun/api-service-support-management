@@ -1,8 +1,5 @@
 package se.sundsvall.supportmanagement.api.model.communication;
 
-import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.NOT_REQUIRED;
-import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
-
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
@@ -13,6 +10,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
+
+import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.NOT_REQUIRED;
+import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 
 @Schema(description = "EmailRequest model")
 public class EmailRequest {

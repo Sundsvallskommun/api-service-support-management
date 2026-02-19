@@ -1,7 +1,5 @@
 package se.sundsvall.supportmanagement.api.model.note;
 
-import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -9,6 +7,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.Objects;
 import se.sundsvall.supportmanagement.api.model.MetaData;
+
+import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(description = "FindErrandNotesResponse model", accessMode = READ_ONLY)

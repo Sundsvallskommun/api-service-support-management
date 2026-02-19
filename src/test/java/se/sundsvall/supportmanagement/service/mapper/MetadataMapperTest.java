@@ -1,10 +1,5 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
-import static java.time.OffsetDateTime.now;
-import static java.util.Collections.emptyList;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.groups.Tuple.tuple;
-
 import java.time.OffsetDateTime;
 import java.util.Comparator;
 import java.util.List;
@@ -25,6 +20,11 @@ import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.RoleEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StatusEntity;
 import se.sundsvall.supportmanagement.integration.db.model.TypeEntity;
+
+import static java.time.OffsetDateTime.now;
+import static java.util.Collections.emptyList;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.groups.Tuple.tuple;
 
 class MetadataMapperTest {
 

@@ -1,5 +1,26 @@
 package se.sundsvall.supportmanagement.service;
 
+import generated.se.sundsvall.employee.PortalPersonData;
+import java.util.List;
+import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Sort;
+import org.zalando.problem.Problem;
+import se.sundsvall.dept44.support.Identifier;
+import se.sundsvall.supportmanagement.TestObjectsBuilder;
+import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
+import se.sundsvall.supportmanagement.integration.db.NotificationRepository;
+import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity;
+import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigValueEmbeddable;
+import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
+
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static java.time.OffsetDateTime.now;
@@ -21,27 +42,6 @@ import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrandEntit
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.createNotificationEntity;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ValueType.INTEGER;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_NOTIFICATION_TTL_IN_DAYS;
-
-import generated.se.sundsvall.employee.PortalPersonData;
-import java.util.List;
-import java.util.Optional;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Sort;
-import org.zalando.problem.Problem;
-import se.sundsvall.dept44.support.Identifier;
-import se.sundsvall.supportmanagement.TestObjectsBuilder;
-import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
-import se.sundsvall.supportmanagement.integration.db.NotificationRepository;
-import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity;
-import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigValueEmbeddable;
-import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
 
 @ExtendWith(MockitoExtension.class)
 class NotificationServiceTest {

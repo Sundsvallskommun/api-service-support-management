@@ -1,27 +1,5 @@
 package se.sundsvall.supportmanagement.service;
 
-import static generated.se.sundsvall.eventlog.EventType.CREATE;
-import static generated.se.sundsvall.eventlog.EventType.DELETE;
-import static generated.se.sundsvall.eventlog.EventType.UPDATE;
-import static java.util.Collections.emptyList;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.same;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
-import static org.springframework.data.domain.Sort.Direction.DESC;
-import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrand;
-import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrandEntity;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationSubType.ERRAND;
-import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withMunicipalityId;
-import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withNamespace;
-
 import com.turkraft.springfilter.converter.FilterSpecificationConverter;
 import generated.se.sundsvall.accessmapper.Access;
 import generated.se.sundsvall.notes.FindNotesResponse;
@@ -61,6 +39,28 @@ import se.sundsvall.supportmanagement.integration.db.util.ErrandNumberGeneratorS
 import se.sundsvall.supportmanagement.integration.notes.NotesClient;
 import se.sundsvall.supportmanagement.integration.relation.RelationClient;
 import se.sundsvall.supportmanagement.service.model.RevisionResult;
+
+import static generated.se.sundsvall.eventlog.EventType.CREATE;
+import static generated.se.sundsvall.eventlog.EventType.DELETE;
+import static generated.se.sundsvall.eventlog.EventType.UPDATE;
+import static java.util.Collections.emptyList;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.same;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
+import static org.springframework.data.domain.Sort.Direction.DESC;
+import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrand;
+import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrandEntity;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationSubType.ERRAND;
+import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withMunicipalityId;
+import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withNamespace;
 
 @ExtendWith(MockitoExtension.class)
 class ErrandServiceTest {

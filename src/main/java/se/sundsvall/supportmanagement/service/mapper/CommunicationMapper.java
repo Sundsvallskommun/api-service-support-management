@@ -1,8 +1,5 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
-import static org.apache.commons.codec.binary.Base64.decodeBase64;
-import static se.sundsvall.supportmanagement.service.util.ServiceUtil.detectMimeType;
-
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -27,6 +24,9 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationTy
 import se.sundsvall.supportmanagement.integration.db.model.enums.Direction;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
 import se.sundsvall.supportmanagement.service.util.BlobBuilder;
+
+import static org.apache.commons.codec.binary.Base64.decodeBase64;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.detectMimeType;
 
 @Component
 public class CommunicationMapper {

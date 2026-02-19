@@ -1,8 +1,5 @@
 package se.sundsvall.supportmanagement;
 
-import static java.time.OffsetDateTime.now;
-import static se.sundsvall.supportmanagement.api.model.errand.Priority.HIGH;
-
 import generated.se.sundsvall.citizen.CitizenExtended;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -21,6 +18,9 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
+
+import static java.time.OffsetDateTime.now;
+import static se.sundsvall.supportmanagement.api.model.errand.Priority.HIGH;
 
 public class TestObjectsBuilder {
 

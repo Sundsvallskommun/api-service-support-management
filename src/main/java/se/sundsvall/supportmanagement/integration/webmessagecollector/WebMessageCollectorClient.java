@@ -1,7 +1,5 @@
 package se.sundsvall.supportmanagement.integration.webmessagecollector;
 
-import static se.sundsvall.supportmanagement.integration.webmessagecollector.configuration.WebMessageCollectorConfiguration.CLIENT_ID;
-
 import generated.se.sundsvall.webmessagecollector.MessageDTO;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import java.util.List;
@@ -10,6 +8,8 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import se.sundsvall.supportmanagement.integration.webmessagecollector.configuration.WebMessageCollectorConfiguration;
+
+import static se.sundsvall.supportmanagement.integration.webmessagecollector.configuration.WebMessageCollectorConfiguration.CLIENT_ID;
 
 @FeignClient(
 	name = CLIENT_ID,

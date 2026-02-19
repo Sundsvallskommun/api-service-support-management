@@ -1,9 +1,9 @@
 package se.sundsvall.supportmanagement.integration.db.model.enums;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import org.junit.jupiter.api.Test;
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigValueEmbeddable;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 class ValueTypeTest {
 

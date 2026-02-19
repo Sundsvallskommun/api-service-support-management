@@ -1,14 +1,14 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
-import static java.time.OffsetDateTime.now;
-import static org.apache.commons.lang3.ObjectUtils.anyNull;
-
 import generated.se.sundsvall.eventlog.Event;
 import java.util.Optional;
 import se.sundsvall.supportmanagement.api.model.notification.Notification;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.NotificationSubType;
+
+import static java.time.OffsetDateTime.now;
+import static org.apache.commons.lang3.ObjectUtils.anyNull;
 
 public final class NotificationMapper {
 

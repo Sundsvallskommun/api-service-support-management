@@ -1,11 +1,11 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import java.time.OffsetDateTime;
 import org.junit.jupiter.api.Test;
 import se.sundsvall.supportmanagement.api.model.config.EmailIntegration;
 import se.sundsvall.supportmanagement.integration.db.model.EmailWorkerConfigEntity;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 class EmailIntegrationMapperTest {
 

@@ -1,9 +1,5 @@
 package se.sundsvall.supportmanagement.service.scheduler.emailreader;
 
-import static java.util.Collections.emptyList;
-import static org.apache.commons.lang3.StringUtils.isAnyEmpty;
-import static se.sundsvall.supportmanagement.service.scheduler.emailreader.ErrandNumberParser.parseSubject;
-
 import generated.se.sundsvall.emailreader.Email;
 import generated.se.sundsvall.eventlog.EventType;
 import java.time.OffsetDateTime;
@@ -30,6 +26,10 @@ import se.sundsvall.supportmanagement.integration.emailreader.EmailReaderClient;
 import se.sundsvall.supportmanagement.service.CommunicationService;
 import se.sundsvall.supportmanagement.service.ErrandService;
 import se.sundsvall.supportmanagement.service.EventService;
+
+import static java.util.Collections.emptyList;
+import static org.apache.commons.lang3.StringUtils.isAnyEmpty;
+import static se.sundsvall.supportmanagement.service.scheduler.emailreader.ErrandNumberParser.parseSubject;
 
 @Service
 public class EmailReaderWorker {

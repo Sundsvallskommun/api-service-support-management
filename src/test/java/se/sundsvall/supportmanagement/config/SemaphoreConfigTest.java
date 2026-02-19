@@ -1,12 +1,12 @@
 package se.sundsvall.supportmanagement.config;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import java.util.concurrent.Semaphore;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(classes = SemaphoreConfig.class)
 @TestPropertySource(properties = "semaphore.maxMemoryUsage=4")

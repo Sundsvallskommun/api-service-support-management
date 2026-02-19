@@ -1,8 +1,5 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
-import static java.util.Collections.emptyList;
-import static java.util.stream.Collectors.groupingBy;
-
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -12,6 +9,9 @@ import java.util.stream.Collectors;
 import se.sundsvall.supportmanagement.api.model.errand.Parameter;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ParameterEntity;
+
+import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.groupingBy;
 
 public final class ErrandParameterMapper {
 

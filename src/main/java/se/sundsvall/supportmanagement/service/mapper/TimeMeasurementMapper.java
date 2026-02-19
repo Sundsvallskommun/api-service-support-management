@@ -1,11 +1,11 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
-import static java.util.Collections.emptyList;
-
 import java.util.List;
 import java.util.Optional;
 import se.sundsvall.supportmanagement.api.model.errand.TimeMeasurement;
 import se.sundsvall.supportmanagement.integration.db.model.TimeMeasurementEntity;
+
+import static java.util.Collections.emptyList;
 
 public final class TimeMeasurementMapper {
 

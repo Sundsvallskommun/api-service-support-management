@@ -1,7 +1,5 @@
 package se.sundsvall.supportmanagement.service.util;
 
-import static java.util.Objects.nonNull;
-
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Root;
@@ -12,6 +10,8 @@ import org.springframework.data.jpa.domain.Specification;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
+
+import static java.util.Objects.nonNull;
 
 public class SpecificationBuilder<T> {
 

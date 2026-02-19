@@ -1,25 +1,5 @@
 package se.sundsvall.supportmanagement.service;
 
-import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
-import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
-import static java.util.Collections.emptyList;
-import static java.util.Objects.isNull;
-import static java.util.Optional.ofNullable;
-import static org.apache.commons.lang3.ObjectUtils.notEqual;
-import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
-import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
-import static org.zalando.problem.Status.INSUFFICIENT_STORAGE;
-import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
-import static org.zalando.problem.Status.NOT_FOUND;
-import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.createReporterEmailRequest;
-import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toEmailAttachments;
-import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toEmailRequest;
-import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toMessagingMessageRequest;
-import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toSmsRequest;
-import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toWebMessageRequest;
-import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getStakeholderMatchingRole;
-import static se.sundsvall.supportmanagement.service.util.ServiceUtil.retrieveUsername;
-
 import generated.se.sundsvall.employee.PortalPersonData;
 import generated.se.sundsvall.messaging.Message;
 import generated.se.sundsvall.messaging.MessageParty;
@@ -59,6 +39,26 @@ import se.sundsvall.supportmanagement.integration.messaging.MessagingClient;
 import se.sundsvall.supportmanagement.integration.messagingsettings.MessagingSettingsIntegration;
 import se.sundsvall.supportmanagement.service.mapper.CommunicationMapper;
 import se.sundsvall.supportmanagement.service.model.MessagingSettings;
+
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
+import static java.util.Collections.emptyList;
+import static java.util.Objects.isNull;
+import static java.util.Optional.ofNullable;
+import static org.apache.commons.lang3.ObjectUtils.notEqual;
+import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
+import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
+import static org.zalando.problem.Status.INSUFFICIENT_STORAGE;
+import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
+import static org.zalando.problem.Status.NOT_FOUND;
+import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.createReporterEmailRequest;
+import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toEmailAttachments;
+import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toEmailRequest;
+import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toMessagingMessageRequest;
+import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toSmsRequest;
+import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toWebMessageRequest;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getStakeholderMatchingRole;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.retrieveUsername;
 
 @Service
 public class CommunicationService {

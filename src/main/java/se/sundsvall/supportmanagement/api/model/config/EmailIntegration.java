@@ -1,13 +1,13 @@
 package se.sundsvall.supportmanagement.api.model.config;
 
-import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
-
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import java.time.OffsetDateTime;
 import java.util.Objects;
 import se.sundsvall.supportmanagement.api.validation.ValidRole;
 import se.sundsvall.supportmanagement.api.validation.ValidStatus;
+
+import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 
 @Schema(description = "Email integration config model")
 public class EmailIntegration {

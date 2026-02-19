@@ -1,5 +1,10 @@
 package se.sundsvall.supportmanagement.integration.db.model.communication;
 
+import java.util.List;
+import java.util.UUID;
+import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.Test;
+
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanEquals;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanHashCode;
@@ -8,11 +13,6 @@ import static com.google.code.beanmatchers.BeanMatchers.hasValidGettersAndSetter
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.allOf;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader.IN_REPLY_TO;
-
-import java.util.List;
-import java.util.UUID;
-import org.hamcrest.MatcherAssert;
-import org.junit.jupiter.api.Test;
 
 class CommunicationEmailHeaderEntityTest {
 

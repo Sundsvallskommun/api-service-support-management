@@ -1,5 +1,7 @@
 package se.sundsvall.supportmanagement.integration.db.model.enums;
 
+import org.junit.jupiter.api.Test;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationSubType.ATTACHMENT;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationSubType.DECISION;
@@ -9,8 +11,6 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.Notifica
 import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationSubType.SUSPENSION;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationSubType.SYSTEM;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationSubType.values;
-
-import org.junit.jupiter.api.Test;
 
 class NotificationSubTypeTest {
 

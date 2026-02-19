@@ -1,12 +1,12 @@
 package se.sundsvall.supportmanagement.api.validation.impl;
 
-import static java.util.Objects.nonNull;
-import static org.apache.commons.codec.binary.Base64.isBase64;
-
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import org.springframework.beans.factory.annotation.Value;
 import se.sundsvall.supportmanagement.api.validation.ValidFileSize;
+
+import static java.util.Objects.nonNull;
+import static org.apache.commons.codec.binary.Base64.isBase64;
 
 public class ValidFileSizeConstraintValidator implements ConstraintValidator<ValidFileSize, String> {
 	private static final String CUSTOM_ERROR_MESSAGE_TEMPLATE = "attachment exceeds the maximum allowed size of %s bytes";

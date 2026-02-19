@@ -1,10 +1,10 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 class OffsetDateTimeSerializerTest {
 

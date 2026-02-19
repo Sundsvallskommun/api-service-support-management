@@ -1,12 +1,12 @@
 package se.sundsvall.supportmanagement.integration.db.model.enums;
 
+import org.junit.jupiter.api.Test;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader.AUTO_SUBMITTED;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader.IN_REPLY_TO;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader.MESSAGE_ID;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader.REFERENCES;
-
-import org.junit.jupiter.api.Test;
 
 class EmailHeaderTest {
 

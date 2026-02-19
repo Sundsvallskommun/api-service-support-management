@@ -1,5 +1,12 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
+import java.util.List;
+import org.springframework.stereotype.Component;
+import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
+import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity;
+import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigValueEmbeddable;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ValueType;
+
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ValueType.BOOLEAN;
@@ -11,13 +18,6 @@ import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyE
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_NOTIFY_REPORTER;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_SHORT_CODE;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.getValue;
-
-import java.util.List;
-import org.springframework.stereotype.Component;
-import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
-import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity;
-import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigValueEmbeddable;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ValueType;
 
 @Component
 public class NamespaceConfigMapper {

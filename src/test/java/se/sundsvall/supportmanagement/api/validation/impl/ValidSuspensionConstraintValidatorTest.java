@@ -1,7 +1,5 @@
 package se.sundsvall.supportmanagement.api.validation.impl;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import jakarta.validation.ConstraintValidatorContext;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -15,6 +13,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import se.sundsvall.supportmanagement.api.model.errand.Suspension;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @ExtendWith(MockitoExtension.class)
 class ValidSuspensionConstraintValidatorTest {

@@ -1,13 +1,13 @@
 package se.sundsvall.supportmanagement.api.model.attachment;
 
-import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
-
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Null;
 import java.time.OffsetDateTime;
 import java.util.Objects;
 import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
+
+import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 
 @Schema(description = "ErrandAttachment model")
 public class ErrandAttachment {

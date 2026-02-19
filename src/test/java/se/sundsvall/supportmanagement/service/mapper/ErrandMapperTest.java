@@ -1,22 +1,5 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
-import static java.time.OffsetDateTime.now;
-import static java.time.temporal.ChronoUnit.SECONDS;
-import static java.util.Collections.emptyList;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.within;
-import static org.assertj.core.groups.Tuple.tuple;
-import static se.sundsvall.supportmanagement.TestObjectsBuilder.createNotification;
-import static se.sundsvall.supportmanagement.TestObjectsBuilder.createNotificationEntity;
-import static se.sundsvall.supportmanagement.api.model.errand.Priority.HIGH;
-import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrand;
-import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandEntity;
-import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrands;
-import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandsWithAccessControl;
-import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toLimitedErrand;
-import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toReferredFromRelation;
-import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.updateEntity;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import generated.se.sundsvall.relation.ResourceIdentifier;
 import java.time.OffsetDateTime;
@@ -47,6 +30,23 @@ import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderParameterEntity;
+
+import static java.time.OffsetDateTime.now;
+import static java.time.temporal.ChronoUnit.SECONDS;
+import static java.util.Collections.emptyList;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
+import static org.assertj.core.groups.Tuple.tuple;
+import static se.sundsvall.supportmanagement.TestObjectsBuilder.createNotification;
+import static se.sundsvall.supportmanagement.TestObjectsBuilder.createNotificationEntity;
+import static se.sundsvall.supportmanagement.api.model.errand.Priority.HIGH;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrand;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandEntity;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrands;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandsWithAccessControl;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toLimitedErrand;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toReferredFromRelation;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.updateEntity;
 
 class ErrandMapperTest {
 

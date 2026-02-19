@@ -1,8 +1,5 @@
 package se.sundsvall.supportmanagement.integration.messageexchange.configuration;
 
-import static java.util.Optional.ofNullable;
-import static se.sundsvall.dept44.support.Identifier.HEADER_NAME;
-
 import org.springframework.cloud.openfeign.FeignBuilderCustomizer;
 import org.springframework.cloud.openfeign.support.JsonFormWriter;
 import org.springframework.context.annotation.Bean;
@@ -12,6 +9,9 @@ import se.sundsvall.dept44.configuration.feign.FeignConfiguration;
 import se.sundsvall.dept44.configuration.feign.FeignMultiCustomizer;
 import se.sundsvall.dept44.configuration.feign.decoder.ProblemErrorDecoder;
 import se.sundsvall.dept44.support.Identifier;
+
+import static java.util.Optional.ofNullable;
+import static se.sundsvall.dept44.support.Identifier.HEADER_NAME;
 
 @Import(FeignConfiguration.class)
 public class MessageExchangeConfiguration {

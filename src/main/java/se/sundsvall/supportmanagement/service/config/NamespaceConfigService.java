@@ -1,9 +1,5 @@
 package se.sundsvall.supportmanagement.service.config;
 
-import static java.util.Objects.isNull;
-import static org.zalando.problem.Status.BAD_REQUEST;
-import static org.zalando.problem.Status.NOT_FOUND;
-
 import java.util.List;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -13,6 +9,10 @@ import org.zalando.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
 import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
 import se.sundsvall.supportmanagement.service.mapper.NamespaceConfigMapper;
+
+import static java.util.Objects.isNull;
+import static org.zalando.problem.Status.BAD_REQUEST;
+import static org.zalando.problem.Status.NOT_FOUND;
 
 @Service
 public class NamespaceConfigService {

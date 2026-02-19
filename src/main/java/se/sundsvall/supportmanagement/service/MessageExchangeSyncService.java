@@ -1,11 +1,5 @@
 package se.sundsvall.supportmanagement.service;
 
-import static generated.se.sundsvall.eventlog.EventType.UPDATE;
-import static java.util.Optional.ofNullable;
-import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationSubType.MESSAGE;
-import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.mergeIntoConversationEntity;
-
 import generated.se.sundsvall.messageexchange.Message;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.InputStreamResource;
@@ -18,6 +12,12 @@ import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.ConversationEntity;
 import se.sundsvall.supportmanagement.integration.messageexchange.MessageExchangeClient;
+
+import static generated.se.sundsvall.eventlog.EventType.UPDATE;
+import static java.util.Optional.ofNullable;
+import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationSubType.MESSAGE;
+import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.mergeIntoConversationEntity;
 
 @Service
 public class MessageExchangeSyncService {

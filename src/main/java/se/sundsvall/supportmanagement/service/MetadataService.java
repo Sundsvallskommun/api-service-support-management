@@ -1,27 +1,5 @@
 package se.sundsvall.supportmanagement.service;
 
-import static java.util.Collections.emptyList;
-import static java.util.Comparator.comparing;
-import static java.util.Comparator.naturalOrder;
-import static java.util.Comparator.nullsFirst;
-import static org.springframework.util.CollectionUtils.isEmpty;
-import static org.zalando.problem.Status.BAD_REQUEST;
-import static org.zalando.problem.Status.NOT_FOUND;
-import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toCategory;
-import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toCategoryEntity;
-import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toContactReason;
-import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toContactReasonEntity;
-import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toExternalIdType;
-import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toExternalIdTypeEntity;
-import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toLabels;
-import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toMetadataLabelEntityList;
-import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toRole;
-import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toRoleEntity;
-import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toStatus;
-import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toStatusEntity;
-import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateContactReason;
-import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateEntity;
-
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -54,6 +32,28 @@ import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ValidationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EntityType;
 import se.sundsvall.supportmanagement.service.mapper.MetadataMapper;
+
+import static java.util.Collections.emptyList;
+import static java.util.Comparator.comparing;
+import static java.util.Comparator.naturalOrder;
+import static java.util.Comparator.nullsFirst;
+import static org.springframework.util.CollectionUtils.isEmpty;
+import static org.zalando.problem.Status.BAD_REQUEST;
+import static org.zalando.problem.Status.NOT_FOUND;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toCategory;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toCategoryEntity;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toContactReason;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toContactReasonEntity;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toExternalIdType;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toExternalIdTypeEntity;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toLabels;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toMetadataLabelEntityList;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toRole;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toRoleEntity;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toStatus;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toStatusEntity;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateContactReason;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateEntity;
 
 @Service
 public class MetadataService {
