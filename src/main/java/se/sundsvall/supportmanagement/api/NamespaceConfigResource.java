@@ -34,12 +34,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.zalando.problem.Problem;
-import org.zalando.problem.Status;
 import org.zalando.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.dept44.common.validators.annotation.ValidMunicipalityId;
 import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
 import se.sundsvall.supportmanagement.api.model.config.action.Config;
+import se.sundsvall.supportmanagement.service.ErrandActionService;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 
 @RestController
@@ -48,9 +48,11 @@ import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 class NamespaceConfigResource {
 
 	private final NamespaceConfigService service;
+	private final ErrandActionService actionService;
 
-	NamespaceConfigResource(final NamespaceConfigService service) {
+	NamespaceConfigResource(final NamespaceConfigService service, final ErrandActionService actionService) {
 		this.service = service;
+		this.actionService = actionService;
 	}
 
 	@PostMapping(path = "/{municipalityId}/{namespace}/namespace-config", consumes = APPLICATION_JSON_VALUE, produces = ALL_VALUE)
@@ -156,7 +158,7 @@ class NamespaceConfigResource {
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId) {
 
-		throw Problem.valueOf(Status.NOT_IMPLEMENTED);
+		return ok(actionService.getActionConfigs(municipalityId, namespace));
 	}
 
 	@PostMapping(path = "/{municipalityId}/{namespace}/namespace-config/action-config", consumes = APPLICATION_JSON_VALUE, produces = ALL_VALUE)
@@ -172,7 +174,12 @@ class NamespaceConfigResource {
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Valid @NotNull @RequestBody final Config config) {
 
-		throw Problem.valueOf(Status.NOT_IMPLEMENTED);
+		var id = actionService.createActionConfig(municipalityId, namespace, config);
+
+		return created(fromPath("/{municipalityId}/{namespace}/namespace-config/action-config/{id}")
+			.buildAndExpand(municipalityId, namespace, id).toUri())
+			.header(CONTENT_TYPE, ALL_VALUE)
+			.build();
 	}
 
 	@PutMapping(path = "/{municipalityId}/{namespace}/namespace-config/action-config/{id}", consumes = APPLICATION_JSON_VALUE, produces = ALL_VALUE)
@@ -189,7 +196,10 @@ class NamespaceConfigResource {
 		@Parameter(name = "id", description = "Action config id") @ValidUuid @PathVariable final String id,
 		@Valid @NotNull @RequestBody final Config config) {
 
-		throw Problem.valueOf(Status.NOT_IMPLEMENTED);
+		actionService.updateActionConfig(municipalityId, namespace, id, config);
+		return noContent()
+			.header(CONTENT_TYPE, ALL_VALUE)
+			.build();
 	}
 
 	@DeleteMapping(path = "/{municipalityId}/{namespace}/namespace-config/action-config/{id}", produces = ALL_VALUE)
@@ -206,6 +216,9 @@ class NamespaceConfigResource {
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "id", description = "Action config id") @ValidUuid @PathVariable final String id) {
 
-		throw Problem.valueOf(Status.NOT_IMPLEMENTED);
+		actionService.deleteActionConfig(municipalityId, namespace, id);
+		return noContent()
+			.header(CONTENT_TYPE, ALL_VALUE)
+			.build();
 	}
 }

@@ -121,8 +121,6 @@
 				<configuration>
 					<excludes>
 						<exclude>**/se/sundsvall/supportmanagement/Application*</exclude>
-						<!-- TODO: Remove when new resources are implemented fully -->
-						<exclude>**/se/sundsvall/supportmanagement/api/NamespaceConfigResource*</exclude>
 						<exclude>**/generated/se/sundsvall/**/*</exclude>
 					</excludes>
 				</configuration>

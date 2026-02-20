@@ -17,7 +17,7 @@ import org.hibernate.annotations.UuidGenerator;
 
 @Entity
 @Table(name = "action_config_parameter")
-public class ActionConfigParameterEntity {
+public class ActionConfigParameterEntity implements ActionConfigKeyValues {
 
 	@Id
 	@UuidGenerator
