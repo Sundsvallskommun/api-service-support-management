@@ -1,18 +1,18 @@
-    create table errand_access_labels (
+    create table if not exists errand_access_labels (
         errand_id varchar(255) not null,
         metadata_label_id varchar(255) not null
     ) engine=InnoDB;
 
-    create index idx_errand_access_labels_errand_id_metadata_label_id
+    create index if not exists idx_errand_access_labels_errand_id_metadata_label_id
         on errand_access_labels (errand_id, metadata_label_id);
 
-    create index idx_errand_access_labels_metadata_label_id_errand_id
+    create index if not exists idx_errand_access_labels_metadata_label_id_errand_id
         on errand_access_labels (metadata_label_id, errand_id);
 
-    create index idx_errand_access_labels_errand_id
+    create index if not exists idx_errand_access_labels_errand_id
         on errand_access_labels (errand_id);
 
-    create index idx_errand_access_labels_metadata_label_id
+    create index if not exists idx_errand_access_labels_metadata_label_id
         on errand_access_labels (metadata_label_id);
 
     alter table if exists errand_access_labels
