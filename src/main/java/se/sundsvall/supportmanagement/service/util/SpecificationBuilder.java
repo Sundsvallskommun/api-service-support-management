@@ -7,8 +7,8 @@ import jakarta.persistence.criteria.Subquery;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.data.jpa.domain.Specification;
+import se.sundsvall.supportmanagement.integration.db.model.AccessLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 
 import static java.util.Objects.nonNull;
@@ -16,7 +16,7 @@ import static java.util.Objects.nonNull;
 public class SpecificationBuilder<T> {
 
 	private static final SpecificationBuilder<ErrandEntity> ERRAND_ENTITY_BUILDER = new SpecificationBuilder<>();
-	private static final String LABELS_ATTRIBUTE = "labels";
+	private static final String ACCESS_LABELS_ATTRIBUTE = "accessLabels";
 	private static final String ID_ATTRIBUTE = "id";
 	private static final String METADATA_LABEL_ID_ATTRIBUTE = "metadataLabelId";
 
@@ -43,18 +43,18 @@ public class SpecificationBuilder<T> {
 				.map(MetadataLabelEntity::getId)
 				.collect(Collectors.toSet());
 
-			// Subquery 1: Count total labels for this errand
+			// Subquery 1: Count total access labels for this errand
 			Subquery<Long> totalLabelsSubquery = query.subquery(Long.class);
 			Root<ErrandEntity> totalRoot = totalLabelsSubquery.from(ErrandEntity.class);
-			Join<ErrandEntity, ErrandLabelEmbeddable> totalLabelJoin = totalRoot.join(LABELS_ATTRIBUTE, JoinType.LEFT);
+			Join<ErrandEntity, AccessLabelEmbeddable> totalLabelJoin = totalRoot.join(ACCESS_LABELS_ATTRIBUTE, JoinType.LEFT);
 
 			totalLabelsSubquery.select(criteriaBuilder.count(totalLabelJoin))
 				.where(criteriaBuilder.equal(totalRoot.get(ID_ATTRIBUTE), root.get(ID_ATTRIBUTE)));
 
-			// Subquery 2: Count labels that are in the allowed list
+			// Subquery 2: Count access labels that are in the allowed list
 			Subquery<Long> allowedLabelsSubquery = query.subquery(Long.class);
 			Root<ErrandEntity> allowedRoot = allowedLabelsSubquery.from(ErrandEntity.class);
-			Join<ErrandEntity, ErrandLabelEmbeddable> allowedLabelJoin = allowedRoot.join(LABELS_ATTRIBUTE, JoinType.LEFT);
+			Join<ErrandEntity, AccessLabelEmbeddable> allowedLabelJoin = allowedRoot.join(ACCESS_LABELS_ATTRIBUTE, JoinType.LEFT);
 
 			allowedLabelsSubquery.select(criteriaBuilder.count(allowedLabelJoin))
 				.where(

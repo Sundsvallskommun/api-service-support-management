@@ -33,6 +33,7 @@ import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.ContactReasonRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.util.ErrandNumberGeneratorService;
@@ -116,6 +117,9 @@ class ErrandServiceTest {
 
 	@Mock
 	private RelationClient relationClientMock;
+
+	@Mock
+	private MetadataLabelRepository metadataLabelRepositoryMock;
 
 	@Spy
 	private FilterSpecificationConverter filterSpecificationConverterSpy;
@@ -388,6 +392,6 @@ class ErrandServiceTest {
 
 	@AfterEach
 	void verifyNoMoreInteractionsOnMocks() {
-		verifyNoMoreInteractions(errandRepositoryMock, revisionServiceMock, eventServiceMock);
+		verifyNoMoreInteractions(errandRepositoryMock, revisionServiceMock, eventServiceMock, metadataLabelRepositoryMock);
 	}
 }

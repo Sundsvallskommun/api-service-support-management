@@ -69,6 +69,7 @@ class ErrandEntityTest {
 		final var timeMeasure = List.of(TimeMeasurementEntity.create().withStartTime(now).withStopTime(now).withDescription("description").withAdministrator("administrator"));
 		final var tempPreviousStatus = "tempPreviousStatus";
 		final var labels = List.of(ErrandLabelEmbeddable.create());
+		final var accessLabels = List.of(AccessLabelEmbeddable.create().withMetadataLabelId("label-id"));
 		final var notifications = List.of(NotificationEntity.create());
 
 		final var errandEntity = ErrandEntity.create()
@@ -105,7 +106,8 @@ class ErrandEntityTest {
 			.withTimeMeasures(timeMeasure)
 			.withTempPreviousStatus(tempPreviousStatus)
 			.withNotifications(notifications)
-			.withLabels(labels);
+			.withLabels(labels)
+			.withAccessLabels(accessLabels);
 
 		assertThat(errandEntity).hasNoNullFieldsOrProperties();
 		assertThat(errandEntity.getAssignedGroupId()).isEqualTo(assignedGroupId);
@@ -139,6 +141,7 @@ class ErrandEntityTest {
 		assertThat(errandEntity.getTimeMeasures()).isSameAs(timeMeasure);
 		assertThat(errandEntity.getTempPreviousStatus()).isEqualTo(tempPreviousStatus);
 		assertThat(errandEntity.getLabels()).isEqualTo(labels);
+		assertThat(errandEntity.getAccessLabels()).isEqualTo(accessLabels);
 		assertThat(errandEntity.getNotifications()).isEqualTo(notifications);
 	}
 
