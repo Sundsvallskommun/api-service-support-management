@@ -41,10 +41,9 @@ class ErrandActionServiceTest {
 
 	@Test
 	void constructorThrowsOnDuplicateActionName() {
-		final var action1 = createActionMock("DUPLICATE");
-		final var action2 = createActionMock("DUPLICATE");
+		final var listOfAction = List.of(createActionMock("DUPLICATE"), createActionMock("DUPLICATE"));
 
-		assertThatThrownBy(() -> new ErrandActionService(actionConfigRepositoryMock, List.of(action1, action2)))
+		assertThatThrownBy(() -> new ErrandActionService(actionConfigRepositoryMock, listOfAction))
 			.isInstanceOf(IllegalStateException.class)
 			.hasMessage("Duplicate action.name 'DUPLICATE'");
 	}
