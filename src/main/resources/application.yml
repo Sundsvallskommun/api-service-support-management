@@ -102,6 +102,13 @@ spring:
           spec: maximumSize=500, expireAfterWrite=60m
   datasource:
     driver-class-name: org.mariadb.jdbc.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 3
+      connection-timeout: 5000
+      max-lifetime: 540000
+      idle-timeout: 480000
+      keepalive-time: 300000
   flyway:
     enabled: false
   jpa:
