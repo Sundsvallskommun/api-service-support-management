@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import org.springframework.stereotype.Service;
 import org.zalando.problem.Problem;
+import se.sundsvall.supportmanagement.api.model.config.action.ActionDefinition;
 import se.sundsvall.supportmanagement.api.model.config.action.Config;
 import se.sundsvall.supportmanagement.integration.db.ActionConfigRepository;
 import se.sundsvall.supportmanagement.service.action.Action;
@@ -33,6 +34,16 @@ public class ErrandActionService {
 				throw new IllegalStateException("Duplicate action.name '%s'".formatted(action.getName()));
 			}
 		});
+	}
+
+	public List<ActionDefinition> getActionDefinitions() {
+		return actions.values().stream()
+			.map(action -> ActionDefinition.create()
+				.withName(action.getName())
+				.withDescription(action.getDescription())
+				.withConditionDefinitions(action.getConditionDefinitions())
+				.withParameterDefinitions(action.getParameterDefinitions()))
+			.toList();
 	}
 
 	public List<Config> getActionConfigs(String municipalityId, String namespace) {

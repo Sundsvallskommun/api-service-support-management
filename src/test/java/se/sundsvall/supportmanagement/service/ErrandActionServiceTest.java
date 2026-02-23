@@ -18,6 +18,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.zalando.problem.ThrowableProblem;
 import se.sundsvall.supportmanagement.api.model.config.action.Config;
+import se.sundsvall.supportmanagement.api.model.config.action.Definition;
 import se.sundsvall.supportmanagement.api.model.config.action.Parameter;
 import se.sundsvall.supportmanagement.integration.db.ActionConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigConditionEntity;
@@ -46,6 +47,34 @@ class ErrandActionServiceTest {
 		assertThatThrownBy(() -> new ErrandActionService(actionConfigRepositoryMock, listOfAction))
 			.isInstanceOf(IllegalStateException.class)
 			.hasMessage("Duplicate action.name 'DUPLICATE'");
+	}
+
+	@Test
+	void getActionDefinitions() {
+		final var conditionDefinitions = List.of(Definition.create().withKey("status").withMandatory(true));
+		final var parameterDefinitions = List.of(Definition.create().withKey("label").withMandatory(true));
+
+		when(actionMock.getName()).thenReturn(ACTION_NAME);
+		when(actionMock.getDescription()).thenReturn("Test action description");
+		when(actionMock.getConditionDefinitions()).thenReturn(conditionDefinitions);
+		when(actionMock.getParameterDefinitions()).thenReturn(parameterDefinitions);
+
+		final var service = new ErrandActionService(actionConfigRepositoryMock, List.of(actionMock));
+		final var result = service.getActionDefinitions();
+
+		assertThat(result).hasSize(1);
+		assertThat(result.getFirst().getName()).isEqualTo(ACTION_NAME);
+		assertThat(result.getFirst().getDescription()).isEqualTo("Test action description");
+		assertThat(result.getFirst().getConditionDefinitions()).isEqualTo(conditionDefinitions);
+		assertThat(result.getFirst().getParameterDefinitions()).isEqualTo(parameterDefinitions);
+	}
+
+	@Test
+	void getActionDefinitionsWhenEmpty() {
+		final var service = new ErrandActionService(actionConfigRepositoryMock, List.of());
+		final var result = service.getActionDefinitions();
+
+		assertThat(result).isEmpty();
 	}
 
 	@Test
