@@ -15,6 +15,8 @@ public final class Constants {
 	public static final String EXTERNAL_TAG_KEY_CURRENT_REVISION = "CurrentRevision";
 	public static final String EXTERNAL_TAG_KEY_CURRENT_VERSION = "CurrentVersion";
 	public static final String EXTERNAL_TAG_KEY_NAMESPACE = "Namespace";
+	public static final String EXTERNAL_TAG_KEY_CHANNEL = "Channel";
+	public static final String EXTERNAL_TAG_KEY_STATUS = "Status";
 
 	private Constants() {}
 }

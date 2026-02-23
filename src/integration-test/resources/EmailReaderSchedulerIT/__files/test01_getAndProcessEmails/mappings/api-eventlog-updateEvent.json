@@ -14,6 +14,14 @@
 						{
 							"key": "Namespace",
 							"value": "NAMESPACE-1"
+						},
+						{
+							"key": "Channel",
+							"value": "CHANNEL-1"
+						},
+						{
+							"key": "Status",
+							"value": "STATUS-1"
 						}
 					],
 					"sourceType": "Errand",
