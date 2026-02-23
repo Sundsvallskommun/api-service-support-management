@@ -33,6 +33,8 @@ scheduler:
   messageexchange:
     cron: "-"
     enabled: false
+  suspension:
+    cron: "-"
 spring:
   cache:
     type: none
