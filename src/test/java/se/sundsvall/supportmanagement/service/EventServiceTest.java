@@ -81,7 +81,10 @@ class EventServiceTest {
 		final var sourceType = Errand.class.getSimpleName();
 		final var assignedUserId = "assignedUserId";
 
-		final var entity = ErrandEntity.create().withMunicipalityId(municipalityId).withId(errandId).withAssignedUserId(assignedUserId).withStakeholders(List.of(StakeholderEntity.create()));
+		final var channel = "ESERVICE_INTERNAL";
+		final var status = "OPEN";
+
+		final var entity = ErrandEntity.create().withMunicipalityId(municipalityId).withId(errandId).withAssignedUserId(assignedUserId).withChannel(channel).withStatus(status).withStakeholders(List.of(StakeholderEntity.create()));
 		final var currentRevision = Revision.create().withId(currentRevisionId).withVersion(currentRevisionVersion);
 		final var previousRevision = Revision.create().withId(previousRevisionId).withVersion(previousRevisionVersion);
 		final var executingUserId = "executingUserId";
@@ -106,6 +109,8 @@ class EventServiceTest {
 				tuple("CurrentRevision", currentRevisionId),
 				tuple("PreviousVersion", String.valueOf(previousRevisionVersion)),
 				tuple("PreviousRevision", previousRevisionId),
+				tuple("Channel", channel),
+				tuple("Status", status),
 				tuple("ExecutedBy", executingUserId));
 		assertThat(event.getOwner()).isEqualTo(owner);
 		assertThat(event.getSourceType()).isEqualTo(sourceType);

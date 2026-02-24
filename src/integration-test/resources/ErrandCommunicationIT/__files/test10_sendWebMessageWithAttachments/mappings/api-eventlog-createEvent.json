@@ -26,6 +26,14 @@
 						{
 							"key": "Namespace",
 							"value": "NAMESPACE-1"
+						},
+						{
+							"key": "Channel",
+							"value": "ESERVICE_INTERNAL"
+						},
+						{
+							"key": "Status",
+							"value": "STATUS-1"
 						}
 					],
 					"historyReference": "${json-unit.any-string}",

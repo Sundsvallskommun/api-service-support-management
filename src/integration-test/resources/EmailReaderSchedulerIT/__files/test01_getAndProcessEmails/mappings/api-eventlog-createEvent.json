@@ -24,6 +24,14 @@
 								{
 									"key": "Namespace",
 									"value": "NAMESPACE-1"
+								},
+								{
+									"key": "Channel",
+									"value": "CHANNEL-1"
+								},
+								{
+									"key": "Status",
+									"value": "STATUS-1"
 								}
 							],
 							"historyReference": "${json-unit.regex}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
@@ -71,6 +79,14 @@
 								{
 									"key": "Namespace",
 									"value": "NAMESPACE-1"
+								},
+								{
+									"key": "Channel",
+									"value": "CHANNEL-1"
+								},
+								{
+									"key": "Status",
+									"value": "STATUS-1"
 								}
 							],
 							"historyReference": "${json-unit.regex}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
@@ -119,6 +135,14 @@
 								{
 									"key": "Namespace",
 									"value": "NAMESPACE-1"
+								},
+								{
+									"key": "Channel",
+									"value": "CHANNEL-1"
+								},
+								{
+									"key": "Status",
+									"value": "STATUS-1"
 								}
 							],
 							"historyReference": "${json-unit.regex}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",

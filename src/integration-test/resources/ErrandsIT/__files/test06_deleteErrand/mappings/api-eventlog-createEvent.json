@@ -26,6 +26,10 @@
 						{
 							"key": "Namespace",
 							"value": "NAMESPACE-1"
+						},
+						{
+							"key": "Status",
+							"value": "STATUS-3"
 						}
 					],
 					"historyReference": "59328e70-4297-4bb5-ba69-cb17f2d15a17",

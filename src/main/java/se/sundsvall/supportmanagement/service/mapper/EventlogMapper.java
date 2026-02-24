@@ -23,6 +23,7 @@ import static java.util.Collections.emptyMap;
 import static java.util.Map.entry;
 import static java.util.Optional.ofNullable;
 import static se.sundsvall.supportmanagement.Constants.EXTERNAL_TAG_KEY_CASE_ID;
+import static se.sundsvall.supportmanagement.Constants.EXTERNAL_TAG_KEY_CHANNEL;
 import static se.sundsvall.supportmanagement.Constants.EXTERNAL_TAG_KEY_CURRENT_REVISION;
 import static se.sundsvall.supportmanagement.Constants.EXTERNAL_TAG_KEY_CURRENT_VERSION;
 import static se.sundsvall.supportmanagement.Constants.EXTERNAL_TAG_KEY_EXECUTED_BY;
@@ -30,6 +31,7 @@ import static se.sundsvall.supportmanagement.Constants.EXTERNAL_TAG_KEY_NAMESPAC
 import static se.sundsvall.supportmanagement.Constants.EXTERNAL_TAG_KEY_NOTE_ID;
 import static se.sundsvall.supportmanagement.Constants.EXTERNAL_TAG_KEY_PREVIOUS_REVISION;
 import static se.sundsvall.supportmanagement.Constants.EXTERNAL_TAG_KEY_PREVIOUS_VERSION;
+import static se.sundsvall.supportmanagement.Constants.EXTERNAL_TAG_KEY_STATUS;
 
 public class EventlogMapper {
 
@@ -80,10 +82,22 @@ public class EventlogMapper {
 			.map(ErrandEntity::getNamespace)
 			.orElse(null);
 
-		return toMetadataMap(caseId, null, currentRevision, previousRevision, namespace);
+		final var channel = ofNullable(errandEntity)
+			.map(ErrandEntity::getChannel)
+			.orElse(null);
+
+		final var status = ofNullable(errandEntity)
+			.map(ErrandEntity::getStatus)
+			.orElse(null);
+
+		return toMetadataMap(caseId, null, currentRevision, previousRevision, namespace, channel, status);
 	}
 
 	public static Map<String, String> toMetadataMap(final String caseId, final String noteId, final Revision currentRevision, final Revision previousRevision, final String namespace) {
+		return toMetadataMap(caseId, noteId, currentRevision, previousRevision, namespace, null, null);
+	}
+
+	public static Map<String, String> toMetadataMap(final String caseId, final String noteId, final Revision currentRevision, final Revision previousRevision, final String namespace, final String channel, final String status) {
 		final var metadata = new HashMap<String, String>();
 
 		// Add caseId to metadata if present
@@ -105,6 +119,8 @@ public class EventlogMapper {
 		});
 
 		ofNullable(namespace).ifPresent(value -> metadata.put(EXTERNAL_TAG_KEY_NAMESPACE, value));
+		ofNullable(channel).ifPresent(value -> metadata.put(EXTERNAL_TAG_KEY_CHANNEL, value));
+		ofNullable(status).ifPresent(value -> metadata.put(EXTERNAL_TAG_KEY_STATUS, value));
 
 		return metadata;
 	}

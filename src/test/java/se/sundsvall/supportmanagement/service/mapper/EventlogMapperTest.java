@@ -126,6 +126,39 @@ class EventlogMapperTest {
 			Arguments.of(null, null, null, emptyMap()));
 	}
 
+	@Test
+	void toMetadataMapWithChannelAndStatus() {
+		final var channel = "ESERVICE";
+		final var status = "OPEN";
+		final var namespace = "testNamespace";
+		final var entity = ErrandEntity.create()
+			.withChannel(channel)
+			.withStatus(status)
+			.withNamespace(namespace)
+			.withExternalTags(List.of(DbExternalTag.create().withKey(KEY_CASE_ID).withValue(CASE_ID)));
+
+		final var result = EventlogMapper.toMetadataMap(entity, null, null);
+
+		assertThat(result).containsExactlyInAnyOrderEntriesOf(Map.of(
+			"Channel", channel,
+			"Status", status,
+			"Namespace", namespace,
+			KEY_CASE_ID, CASE_ID));
+	}
+
+	@Test
+	void toMetadataMapWithNullChannelAndStatus() {
+		final var entity = ErrandEntity.create()
+			.withNamespace("ns")
+			.withExternalTags(List.of(DbExternalTag.create().withKey(KEY_CASE_ID).withValue(CASE_ID)));
+
+		final var result = EventlogMapper.toMetadataMap(entity, null, null);
+
+		assertThat(result).containsExactlyInAnyOrderEntriesOf(Map.of(
+			"Namespace", "ns",
+			KEY_CASE_ID, CASE_ID));
+	}
+
 	@ParameterizedTest
 	@MethodSource("eventFromEventlogEventArgumentProvider")
 	void toEventFromEventlogEvent(EventType returnedType, se.sundsvall.supportmanagement.api.model.event.EventType mappedType) {
