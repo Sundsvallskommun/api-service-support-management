@@ -33,6 +33,7 @@ TRUNCATE table namespace_config_value;
 TRUNCATE table time_measurement;
 TRUNCATE table communication_errand_attachment;
 TRUNCATE table errand_labels;
+TRUNCATE table errand_access_labels;
 TRUNCATE table conversation;
 TRUNCATE table conversation_relation_id;
 TRUNCATE table message_exchange_sync;
