@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import se.sundsvall.supportmanagement.api.model.errand.Classification;
 import se.sundsvall.supportmanagement.api.model.errand.ContactChannel;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
+import se.sundsvall.supportmanagement.api.model.errand.ErrandAction;
 import se.sundsvall.supportmanagement.api.model.errand.ErrandLabel;
 import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
@@ -19,9 +20,11 @@ import se.sundsvall.supportmanagement.api.model.errand.Priority;
 import se.sundsvall.supportmanagement.api.model.errand.Stakeholder;
 import se.sundsvall.supportmanagement.api.model.errand.Suspension;
 import se.sundsvall.supportmanagement.api.model.notification.Notification;
+import se.sundsvall.supportmanagement.integration.db.model.ActionConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ContactChannelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandActionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.JsonParameterEntity;
@@ -199,7 +202,8 @@ public final class ErrandMapper {
 				.withContactReasonDescription(e.getContactReasonDescription())
 				.withEscalationEmail(e.getEscalationEmail())
 				.withLabels(toErrandLabels(e.getLabels()))
-				.withActiveNotifications(toActiveNotifications(e.getNotifications())))
+				.withActiveNotifications(toActiveNotifications(e.getNotifications()))
+				.withActions(toErrandActions(e.getActions())))
 			.orElse(null);
 	}
 
@@ -313,6 +317,17 @@ public final class ErrandMapper {
 			.stream()
 			.filter(notification -> !notification.isGlobalAcknowledged() || !notification.isAcknowledged())
 			.map(NotificationMapper::toNotification)
+			.toList();
+	}
+
+	private static List<ErrandAction> toErrandActions(final List<ErrandActionEntity> entities) {
+		return ofNullable(entities).orElse(emptyList()).stream()
+			.map(entity -> ErrandAction.create()
+				.withId(entity.getId())
+				.withActionName(ofNullable(entity.getActionConfigEntity()).map(ActionConfigEntity::getName).orElse(null))
+				.withExecuteAfter(entity.getExecuteAfter())
+				.withActionConfigId(ofNullable(entity.getActionConfigEntity()).map(ActionConfigEntity::getId).orElse(null))
+				.withDisplayValue(ofNullable(entity.getActionConfigEntity()).map(ActionConfigEntity::getDisplayValue).orElse(null)))
 			.toList();
 	}
 

@@ -216,9 +216,17 @@
         primary key (id)
     ) engine=InnoDB;
 
-    create table errand_access_labels (
+create table errand_access_labels (
         errand_id varchar(255) not null,
         metadata_label_id varchar(255) not null
+    ) engine=InnoDB;
+
+    create table errand_action (
+        execute_after datetime(6),
+        action_config_id varchar(255),
+        errand_id varchar(255) not null,
+        id varchar(255) not null,
+        primary key (id)
     ) engine=InnoDB;
 
     create table errand_labels (
@@ -556,7 +564,7 @@
     alter table if exists errand 
        add constraint uq_errand_number unique (errand_number);
 
-    create index idx_errand_access_labels_errand_id_metadata_label_id 
+create index idx_errand_access_labels_errand_id_metadata_label_id 
        on errand_access_labels (errand_id, metadata_label_id);
 
     create index idx_errand_access_labels_metadata_label_id_errand_id 
@@ -567,6 +575,12 @@
 
     create index idx_errand_access_labels_metadata_label_id 
        on errand_access_labels (metadata_label_id);
+
+    create index idx_errand_action_errand_id 
+       on errand_action (errand_id);
+
+    create index idx_errand_action_execute_after 
+       on errand_action (execute_after);
 
     create index idx_errand_id_metadata_label_id 
        on errand_labels (errand_id, metadata_label_id);
@@ -759,8 +773,18 @@
        foreign key (contact_reason_id) 
        references contact_reason (id);
 
-    alter table if exists errand_access_labels 
+alter table if exists errand_access_labels 
        add constraint fk_errand_access_labels_errand_id 
+       foreign key (errand_id) 
+       references errand (id);
+
+    alter table if exists errand_action 
+       add constraint fk_errand_action_action_config_id 
+       foreign key (action_config_id) 
+       references action_config (id);
+
+    alter table if exists errand_action 
+       add constraint fk_errand_action_errand_id 
        foreign key (errand_id) 
        references errand (id);
 

@@ -45,6 +45,7 @@
 	"resolution": "fixed",
 	"labels": [],
 	"activeNotifications": [],
+	"actions": [],
 	"assignedGroupId": "hardware support",
 	"contactReason": "reason1",
 	"id": "${json-unit.any-string}",

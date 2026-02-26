@@ -28,6 +28,7 @@
 	"resolution": "pending",
 	"labels": [],
 	"activeNotifications": [],
+	"actions": [],
 	"assignedGroupId": "support group",
 	"contactReason": "reason1",
 	"id": "${json-unit.any-string}",
