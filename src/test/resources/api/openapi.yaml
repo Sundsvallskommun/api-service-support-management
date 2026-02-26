@@ -7,7 +7,7 @@ info:
     url: https://opensource.org/licenses/MIT
   version: "12.5"
 servers:
-- url: http://localhost:55833
+- url: http://localhost:40091
   description: Generated server url
 tags:
 - name: Errand attachments
@@ -336,102 +336,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        "500":
-          description: Internal Server Error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-  /{municipalityId}/{namespace}/namespace-config/action-config:
-    get:
-      tags:
-      - Configuration for namespace
-      summary: Read all action configurations
-      description: Fetches action config for a municipality/namespace
-      operationId: getActionConfig
-      parameters:
-      - name: namespace
-        in: path
-        description: Namespace
-        required: true
-        schema:
-          type: string
-          pattern: "[\\w|\\-]+"
-        example: MY_NAMESPACE
-      - name: municipalityId
-        in: path
-        description: Municipality id
-        required: true
-        schema:
-          type: string
-        example: 2281
-      responses:
-        "200":
-          description: Successful Operation
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Config"
-        "400":
-          description: Bad Request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "500":
-          description: Internal Server Error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-    post:
-      tags:
-      - Configuration for namespace
-      summary: Create action configuration
-      description: Create action config for a municipality/namespace
-      operationId: createActionConfig
-      parameters:
-      - name: namespace
-        in: path
-        description: Namespace
-        required: true
-        schema:
-          type: string
-          pattern: "[\\w|\\-]+"
-        example: MY_NAMESPACE
-      - name: municipalityId
-        in: path
-        description: Municipality id
-        required: true
-        schema:
-          type: string
-        example: 2281
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/Config"
-        required: true
-      responses:
-        "201":
-          description: Successful operation
-          headers:
-            Location:
-              style: simple
-              schema:
-                type: string
-        "400":
-          description: Bad Request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
         "500":
           description: Internal Server Error
           content:
@@ -1020,6 +924,102 @@ paths:
                 $ref: "#/components/schemas/Problem"
         "500":
           description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/namespace-config/action-config:
+    get:
+      tags:
+      - Configuration for namespace
+      summary: Read all action configurations
+      description: Fetches action config for a municipality/namespace
+      operationId: getActionConfig
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      responses:
+        "200":
+          description: Successful Operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Config"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server Error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    post:
+      tags:
+      - Configuration for namespace
+      summary: Create action configuration
+      description: Create action config for a municipality/namespace
+      operationId: createActionConfig
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Config"
+        required: true
+      responses:
+        "201":
+          description: Successful operation
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server Error
           content:
             application/problem+json:
               schema:
@@ -3799,6 +3799,52 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/namespace-config/action-definition:
+    get:
+      tags:
+      - Configuration for namespace
+      summary: Read all action definitions
+      description: Fetches all available action definitions
+      operationId: getActionDefinitions
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      responses:
+        "200":
+          description: Successful Operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActionDefinition"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server Error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/metadata:
     get:
       tags:
@@ -5261,20 +5307,20 @@ components:
         parameters:
           type: object
           additionalProperties: {}
-        status:
-          $ref: "#/components/schemas/StatusType"
         title:
           type: string
         detail:
           type: string
+        status:
+          $ref: "#/components/schemas/StatusType"
     StatusType:
       type: object
       properties:
-        reasonPhrase:
-          type: string
         statusCode:
           type: integer
           format: int32
+        reasonPhrase:
+          type: string
     ConstraintViolationProblem:
       type: object
       properties:
@@ -5393,12 +5439,12 @@ components:
         parameters:
           type: object
           additionalProperties: {}
-        status:
-          $ref: "#/components/schemas/StatusType"
         title:
           type: string
         detail:
           type: string
+        status:
+          $ref: "#/components/schemas/StatusType"
         suppressed:
           type: array
           items:
@@ -5501,6 +5547,69 @@ components:
       required:
       - displayName
       - shortCode
+    ActionParameter:
+      type: object
+      description: Errand action parameter model
+      properties:
+        key:
+          type: string
+          description: Parameter key
+          minLength: 1
+        values:
+          type: array
+          description: Parameter values. Each value can have a maximum length of 2000
+            characters
+          items:
+            type: string
+            maxLength: 2000
+            minLength: 0
+      required:
+      - key
+    Config:
+      type: object
+      description: Errand action config model
+      properties:
+        id:
+          type: string
+          description: Unique id for action config
+          examples:
+          - a337d0de-5a6d-4952-9f39-74800b254c21
+          readOnly: true
+        name:
+          type: string
+          description: Name of the type of action. Must match an existing action definition
+          examples:
+          - ADD_LABEL
+          minLength: 1
+        active:
+          type: boolean
+          default: false
+          description: "If set to true, action will be active"
+          examples:
+          - "true"
+        conditions:
+          type: array
+          description: Conditions for when the action should be added to errand. Parameters
+            must match action definition.
+          items:
+            $ref: "#/components/schemas/ActionParameter"
+          minItems: 1
+        parameters:
+          type: array
+          description: Parameters for action. Must match action definition.
+          items:
+            $ref: "#/components/schemas/ActionParameter"
+          minItems: 1
+        displayValue:
+          type: string
+          description: Display value for this action. Will be mapped to each action
+            on errands
+          examples:
+          - Classification change will occur
+      required:
+      - conditions
+      - name
+      - parameters
     Label:
       type: object
       description: Label model
@@ -5896,69 +6005,6 @@ components:
           readOnly: true
       required:
       - name
-    Config:
-      type: object
-      description: Errand action config model
-      properties:
-        id:
-          type: string
-          description: Unique id for action config
-          examples:
-          - a337d0de-5a6d-4952-9f39-74800b254c21
-          readOnly: true
-        name:
-          type: string
-          description: Name of the type of action. Must match an existing action definition
-          examples:
-          - ADD_LABEL
-          minLength: 1
-        active:
-          type: boolean
-          default: false
-          description: "If set to true, action will be active"
-          examples:
-          - "true"
-        conditions:
-          type: array
-          description: Conditions for when the action should be added to errand. Parameters
-            must match action definition.
-          items:
-            $ref: "#/components/schemas/ActionParameter"
-          minItems: 1
-        parameters:
-          type: array
-          description: Parameters for action. Must match action definition.
-          items:
-            $ref: "#/components/schemas/ActionParameter"
-          minItems: 1
-        displayValue:
-          type: string
-          description: Display value for this action. Will be mapped to each action
-            on errands
-          examples:
-          - Classification change will occur
-      required:
-      - conditions
-      - name
-      - parameters
-    ActionParameter:
-      type: object
-      description: Errand action parameter model
-      properties:
-        key:
-          type: string
-          description: Parameter key
-          minLength: 1
-        values:
-          type: array
-          description: Parameter values. Each value can have a maximum length of 2000
-            characters
-          items:
-            type: string
-            maxLength: 2000
-            minLength: 0
-      required:
-      - key
     Classification:
       type: object
       description: Classification model
@@ -6841,6 +6887,70 @@ components:
           items:
             $ref: "#/components/schemas/KeyValues"
             description: A list of metadata objects associated with the conversation
+    ActionDefinition:
+      type: object
+      description: Action definition model describing an available action and its
+        conditions/parameters
+      properties:
+        name:
+          type: string
+          description: Name of the action
+          examples:
+          - ADD_LABEL
+        description:
+          type: string
+          description: Description of the action
+          examples:
+          - Adds a label to the errand when conditions are met
+        conditionDefinitions:
+          type: array
+          description: Definitions of conditions for this action
+          items:
+            $ref: "#/components/schemas/Definition"
+        parameterDefinitions:
+          type: array
+          description: Definitions of parameters for this action
+          items:
+            $ref: "#/components/schemas/Definition"
+    Definition:
+      type: object
+      description: Definition of a condition or parameter for an action
+      properties:
+        key:
+          type: string
+          description: Key for the definition
+          examples:
+          - status
+        mandatory:
+          type: boolean
+          default: false
+          description: Whether this definition is mandatory
+          examples:
+          - "true"
+        description:
+          type: string
+          description: Description of the definition
+          examples:
+          - The status to match against
+        possibleValues:
+          type: array
+          description: List of possible values for this definition
+          items:
+            $ref: "#/components/schemas/PossibleValue"
+    PossibleValue:
+      type: object
+      description: Possible value for an action definition parameter or condition
+      properties:
+        value:
+          type: string
+          description: The value
+          examples:
+          - CATEGORY_1
+        displayName:
+          type: string
+          description: Display name for the value
+          examples:
+          - Category 1
     Labels:
       type: object
       description: Labels model
@@ -6880,12 +6990,12 @@ components:
     PageErrand:
       type: object
       properties:
-        totalPages:
-          type: integer
-          format: int32
         totalElements:
           type: integer
           format: int64
+        totalPages:
+          type: integer
+          format: int32
         size:
           type: integer
           format: int32
@@ -6896,17 +7006,17 @@ components:
         number:
           type: integer
           format: int32
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
         first:
           type: boolean
         last:
           type: boolean
-        sort:
-          $ref: "#/components/schemas/SortObject"
         numberOfElements:
           type: integer
           format: int32
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
+        sort:
+          $ref: "#/components/schemas/SortObject"
         empty:
           type: boolean
     PageableObject:
@@ -6915,26 +7025,26 @@ components:
         offset:
           type: integer
           format: int64
-        sort:
-          $ref: "#/components/schemas/SortObject"
-        unpaged:
+        paged:
           type: boolean
-        pageSize:
-          type: integer
-          format: int32
         pageNumber:
           type: integer
           format: int32
-        paged:
+        pageSize:
+          type: integer
+          format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        unpaged:
           type: boolean
     SortObject:
       type: object
       properties:
         empty:
           type: boolean
-        unsorted:
-          type: boolean
         sorted:
+          type: boolean
+        unsorted:
           type: boolean
     Revision:
       type: object
@@ -7151,12 +7261,12 @@ components:
     PageEvent:
       type: object
       properties:
-        totalPages:
-          type: integer
-          format: int32
         totalElements:
           type: integer
           format: int64
+        totalPages:
+          type: integer
+          format: int32
         size:
           type: integer
           format: int32
@@ -7167,17 +7277,17 @@ components:
         number:
           type: integer
           format: int32
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
         first:
           type: boolean
         last:
           type: boolean
-        sort:
-          $ref: "#/components/schemas/SortObject"
         numberOfElements:
           type: integer
           format: int32
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
+        sort:
+          $ref: "#/components/schemas/SortObject"
         empty:
           type: boolean
     Communication:
@@ -7372,12 +7482,12 @@ components:
     PageMessage:
       type: object
       properties:
-        totalPages:
-          type: integer
-          format: int32
         totalElements:
           type: integer
           format: int64
+        totalPages:
+          type: integer
+          format: int32
         size:
           type: integer
           format: int32
@@ -7388,17 +7498,17 @@ components:
         number:
           type: integer
           format: int32
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
         first:
           type: boolean
         last:
           type: boolean
-        sort:
-          $ref: "#/components/schemas/SortObject"
         numberOfElements:
           type: integer
           format: int32
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
+        sort:
+          $ref: "#/components/schemas/SortObject"
         empty:
           type: boolean
     ReadBy:

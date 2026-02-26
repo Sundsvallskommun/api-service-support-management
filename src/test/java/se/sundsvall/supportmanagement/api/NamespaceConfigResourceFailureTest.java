@@ -29,6 +29,7 @@ import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 class NamespaceConfigResourceFailureTest {
 
 	private static final String PATH = "/{municipalityId}/{namespace}/namespace-config";
+	private static final String ACTION_DEFINITION_PATH = "/{municipalityId}/{namespace}/namespace-config/action-definition";
 	private static final String ACTION_CONFIG_PATH = "/{municipalityId}/{namespace}/namespace-config/action-config";
 	private static final String ACTION_CONFIG_ID_PATH = "/{municipalityId}/{namespace}/namespace-config/action-config/{id}";
 	private static final String NAMESPACE = "namespace";
@@ -439,6 +440,48 @@ class NamespaceConfigResourceFailureTest {
 			.containsExactly(tuple("deleteNamespaceConfig.municipalityId", "not a valid municipality ID"));
 
 		verifyNoInteractions(serviceMock);
+	}
+
+	// =============== Action Definition ===============
+
+	@Test
+	void getActionDefinitionsWithInvalidNamespace() {
+		final var response = webTestClient.get()
+			.uri(uriBuilder -> uriBuilder.path(ACTION_DEFINITION_PATH).build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID)))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::getField, Violation::getMessage)
+			.containsExactly(tuple("getActionDefinitions.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
+
+		verifyNoInteractions(actionServiceMock);
+	}
+
+	@Test
+	void getActionDefinitionsWithInvalidMunicipalityId() {
+		final var response = webTestClient.get()
+			.uri(uriBuilder -> uriBuilder.path(ACTION_DEFINITION_PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", INVALID)))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::getField, Violation::getMessage)
+			.containsExactly(tuple("getActionDefinitions.municipalityId", "not a valid municipality ID"));
+
+		verifyNoInteractions(actionServiceMock);
 	}
 
 	// =============== Action Config ===============

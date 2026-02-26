@@ -118,5 +118,14 @@ spring:
             client-id: the-client-id
             client-secret: the-client-secret
 scheduler:
+  emailreader:
+    cron: "-"
+  web-message-collector:
+    cron: "-"
+  notification:
+    cron: "-"
   messageexchange:
+    cron: "-"
     enabled: false
+  suspension:
+    cron: "-"

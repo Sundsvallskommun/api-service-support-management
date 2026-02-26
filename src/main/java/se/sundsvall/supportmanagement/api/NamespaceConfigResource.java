@@ -38,6 +38,7 @@ import org.zalando.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.dept44.common.validators.annotation.ValidMunicipalityId;
 import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
+import se.sundsvall.supportmanagement.api.model.config.action.ActionDefinition;
 import se.sundsvall.supportmanagement.api.model.config.action.Config;
 import se.sundsvall.supportmanagement.service.ErrandActionService;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
@@ -145,6 +146,21 @@ class NamespaceConfigResource {
 	}
 
 	// =============== Action ===============
+
+	@GetMapping(path = "/{municipalityId}/{namespace}/namespace-config/action-definition", produces = APPLICATION_JSON_VALUE)
+	@Operation(summary = "Read all action definitions", description = "Fetches all available action definitions", responses = {
+		@ApiResponse(responseCode = "200", description = "Successful Operation", useReturnTypeSchema = true),
+		@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
+			Problem.class, ConstraintViolationProblem.class
+		}))),
+		@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+	})
+	ResponseEntity<List<ActionDefinition>> getActionDefinitions(
+		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
+		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId) {
+
+		return ok(actionService.getActionDefinitions());
+	}
 
 	@GetMapping(path = "/{municipalityId}/{namespace}/namespace-config/action-config", produces = APPLICATION_JSON_VALUE)
 	@Operation(summary = "Read all action configurations", description = "Fetches action config for a municipality/namespace", responses = {

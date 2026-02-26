@@ -19,7 +19,9 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
+import se.sundsvall.supportmanagement.api.model.config.action.ActionDefinition;
 import se.sundsvall.supportmanagement.api.model.config.action.Config;
+import se.sundsvall.supportmanagement.api.model.config.action.Definition;
 import se.sundsvall.supportmanagement.api.model.config.action.Parameter;
 import se.sundsvall.supportmanagement.service.ErrandActionService;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
@@ -29,6 +31,7 @@ import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 class NamespaceConfigResourceTest {
 
 	private static final String PATH = "/{municipalityId}/{namespace}/namespace-config";
+	private static final String ACTION_DEFINITION_PATH = "/{municipalityId}/{namespace}/namespace-config/action-definition";
 	private static final String ACTION_CONFIG_PATH = "/{municipalityId}/{namespace}/namespace-config/action-config";
 	private static final String ACTION_CONFIG_ID_PATH = "/{municipalityId}/{namespace}/namespace-config/action-config/{id}";
 	private static final String NAMESPACE = "namespace";
@@ -158,6 +161,31 @@ class NamespaceConfigResourceTest {
 			.expectBody().isEmpty();
 
 		verify(serviceMock).delete(NAMESPACE, MUNICIPALITY_ID);
+	}
+
+	// =============== Action ===============
+
+	@Test
+	void getActionDefinitions() {
+		final var definitions = List.of(ActionDefinition.create()
+			.withName("ADD_LABEL")
+			.withDescription("Adds a label")
+			.withConditionDefinitions(List.of(Definition.create().withKey("status").withMandatory(true)))
+			.withParameterDefinitions(List.of(Definition.create().withKey("label").withMandatory(true))));
+
+		when(actionServiceMock.getActionDefinitions()).thenReturn(definitions);
+
+		final var response = webTestClient.get()
+			.uri(uriBuilder -> uriBuilder.path(ACTION_DEFINITION_PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+			.exchange()
+			.expectStatus().isOk()
+			.expectHeader().contentType(APPLICATION_JSON)
+			.expectBodyList(ActionDefinition.class)
+			.returnResult()
+			.getResponseBody();
+
+		verify(actionServiceMock).getActionDefinitions();
+		assertThat(response).isNotNull().isEqualTo(definitions);
 	}
 
 	// =============== Action Config ===============
