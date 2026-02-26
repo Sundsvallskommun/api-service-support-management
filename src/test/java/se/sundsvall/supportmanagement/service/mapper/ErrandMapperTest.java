@@ -29,6 +29,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import se.sundsvall.supportmanagement.api.model.errand.Classification;
 import se.sundsvall.supportmanagement.api.model.errand.ContactChannel;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
+import se.sundsvall.supportmanagement.api.model.errand.ErrandAction;
 import se.sundsvall.supportmanagement.api.model.errand.ErrandLabel;
 import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
@@ -36,10 +37,12 @@ import se.sundsvall.supportmanagement.api.model.errand.Parameter;
 import se.sundsvall.supportmanagement.api.model.errand.Priority;
 import se.sundsvall.supportmanagement.api.model.errand.Stakeholder;
 import se.sundsvall.supportmanagement.api.model.errand.Suspension;
+import se.sundsvall.supportmanagement.integration.db.model.ActionConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ContactChannelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandActionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.JsonParameterEntity;
@@ -93,6 +96,11 @@ class ErrandMapperTest {
 	private static final String JSON_PARAMETER_KEY = "jsonKey";
 	private static final String JSON_PARAMETER_SCHEMA_ID = "schemaId";
 	private static final String JSON_PARAMETER_VALUE_STRING = "{\"field\":\"value\"}";
+	private static final String ACTION_ID = "action-id";
+	private static final String ACTION_NAME = "ADD_LABEL";
+	private static final OffsetDateTime ACTION_EXECUTE_AFTER = now().plusDays(5);
+	private static final String ACTION_CONFIG_ID = "action-config-id";
+	private static final String ACTION_DISPLAY_VALUE = "Label will be added";
 	private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
 	private static final ErrandLabel LABEL_1 = ErrandLabel.create().withId("id1");
@@ -180,7 +188,14 @@ class ErrandMapperTest {
 			.withErrandNumber(ERRAND_NUMBER)
 			.withBusinessRelated(BUSINESS_RELATED)
 			.withLabels(List.of(LABEL_EMBEDDABLE_1, LABEL_EMBEDDABLE_2))
-			.withNotifications(List.of(createNotificationEntity(null)));
+			.withNotifications(List.of(createNotificationEntity(null)))
+			.withActions(List.of(ErrandActionEntity.create()
+				.withId(ACTION_ID)
+				.withExecuteAfter(ACTION_EXECUTE_AFTER)
+				.withActionConfigEntity(ActionConfigEntity.create()
+					.withId(ACTION_CONFIG_ID)
+					.withName(ACTION_NAME)
+					.withDisplayValue(ACTION_DISPLAY_VALUE))));
 
 	}
 
@@ -253,6 +268,9 @@ class ErrandMapperTest {
 		assertThat(errand.getContactReason()).isEqualTo(CONTACT_REASON);
 		assertThat(errand.getContactReasonDescription()).isEqualTo(CONTACT_REASON_DESCRIPTION);
 		assertThat(errand.getLabels()).containsExactly(LABEL_1, LABEL_2);
+		assertThat(errand.getActions()).hasSize(1)
+			.extracting(ErrandAction::getId, ErrandAction::getActionName, ErrandAction::getExecuteAfter, ErrandAction::getActionConfigId, ErrandAction::getDisplayValue)
+			.containsExactly(tuple(ACTION_ID, ACTION_NAME, ACTION_EXECUTE_AFTER, ACTION_CONFIG_ID, ACTION_DISPLAY_VALUE));
 		assertThat(errand).hasNoNullFieldsOrPropertiesExcept("notifications");
 	}
 

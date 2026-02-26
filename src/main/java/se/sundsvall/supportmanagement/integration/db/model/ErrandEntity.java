@@ -145,6 +145,9 @@ public class ErrandEntity {
 	@OneToMany(mappedBy = "errandEntity", cascade = ALL, orphanRemoval = true)
 	private List<NotificationEntity> notifications;
 
+	@OneToMany(mappedBy = "errandEntity", cascade = ALL, orphanRemoval = true)
+	private List<ErrandActionEntity> actions;
+
 	@Column(name = "suspended_to")
 	@TimeZoneStorage(NORMALIZE)
 	private OffsetDateTime suspendedTo;
@@ -466,6 +469,19 @@ public class ErrandEntity {
 		return this;
 	}
 
+	public List<ErrandActionEntity> getActions() {
+		return actions;
+	}
+
+	public void setActions(final List<ErrandActionEntity> actions) {
+		this.actions = actions;
+	}
+
+	public ErrandEntity withActions(final List<ErrandActionEntity> actions) {
+		this.actions = actions;
+		return this;
+	}
+
 	public List<ErrandLabelEmbeddable> getLabels() {
 		return labels;
 	}
@@ -656,7 +672,7 @@ public class ErrandEntity {
 				category, that.category) && Objects.equals(type, that.type) && Objects.equals(status, that.status) && Objects.equals(resolution, that.resolution) && Objects.equals(description, that.description) && Objects.equals(channel, that.channel)
 			&& Objects.equals(priority, that.priority) && Objects.equals(reporterUserId, that.reporterUserId) && Objects.equals(assignedUserId, that.assignedUserId) && Objects.equals(assignedGroupId, that.assignedGroupId) && Objects.equals(escalationEmail,
 				that.escalationEmail) && Objects.equals(parameters, that.parameters) && Objects.equals(jsonParameters, that.jsonParameters) && Objects.equals(attachments, that.attachments) && Objects.equals(notifications, that.notifications) && Objects
-					.equals(suspendedTo, that.suspendedTo) && Objects.equals(
+					.equals(actions, that.actions) && Objects.equals(suspendedTo, that.suspendedTo) && Objects.equals(
 						suspendedFrom, that.suspendedFrom) && Objects.equals(labels, that.labels) && Objects.equals(created, that.created) && Objects.equals(modified, that.modified) && Objects.equals(touched, that.touched) && Objects.equals(errandNumber,
 							that.errandNumber) && Objects.equals(tempPreviousStatus, that.tempPreviousStatus) && Objects.equals(previousStatus, that.previousStatus) && Objects.equals(timeMeasures, that.timeMeasures);
 	}
@@ -664,7 +680,7 @@ public class ErrandEntity {
 	@Override
 	public int hashCode() {
 		return Objects.hash(id, externalTags, stakeholders, contactReasonEntity, contactReasonDescription, businessRelated, municipalityId, namespace, title, category, type, status, resolution, description, channel, priority, reporterUserId,
-			assignedUserId, assignedGroupId, escalationEmail, parameters, jsonParameters, attachments, notifications, suspendedTo, suspendedFrom, labels, created, modified, touched, errandNumber, tempPreviousStatus, previousStatus, timeMeasures);
+			assignedUserId, assignedGroupId, escalationEmail, parameters, jsonParameters, attachments, notifications, actions, suspendedTo, suspendedFrom, labels, created, modified, touched, errandNumber, tempPreviousStatus, previousStatus, timeMeasures);
 	}
 
 	@Override
@@ -695,6 +711,7 @@ public class ErrandEntity {
 			", jsonParameters=" + jsonParameters +
 			", attachments=" + attachments +
 			", notifications=" + notifications +
+			", actions=" + actions +
 			", suspendedTo=" + suspendedTo +
 			", suspendedFrom=" + suspendedFrom +
 			", labels=" + labels +

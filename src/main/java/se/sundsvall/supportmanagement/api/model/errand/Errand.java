@@ -139,6 +139,12 @@ public class Errand {
 	})
 	private List<Notification> activeNotifications;
 
+	@Schema(description = "List of pending actions for the errand", accessMode = READ_ONLY)
+	@Null(groups = {
+		OnCreate.class, OnUpdate.class
+	})
+	private List<ErrandAction> actions;
+
 	@Schema(description = "Timestamp when errand was created", examples = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	@DateTimeFormat(iso = ISO.DATE_TIME)
 	@Null(groups = {
@@ -489,6 +495,19 @@ public class Errand {
 		return this;
 	}
 
+	public List<ErrandAction> getActions() {
+		return actions;
+	}
+
+	public void setActions(final List<ErrandAction> actions) {
+		this.actions = actions;
+	}
+
+	public Errand withActions(final List<ErrandAction> actions) {
+		this.actions = actions;
+		return this;
+	}
+
 	public Suspension getSuspension() {
 		return suspension;
 	}
@@ -504,7 +523,7 @@ public class Errand {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(assignedGroupId, assignedUserId, businessRelated, channel, classification, contactReason, contactReasonDescription, created, description, errandNumber, escalationEmail, externalTags, id, jsonParameters, labels,
+		return Objects.hash(actions, assignedGroupId, assignedUserId, businessRelated, channel, classification, contactReason, contactReasonDescription, created, description, errandNumber, escalationEmail, externalTags, id, jsonParameters, labels,
 			activeNotifications, modified,
 			parameters, priority, reporterUserId, resolution, stakeholders, status, suspension, title, touched);
 	}
@@ -517,11 +536,12 @@ public class Errand {
 		if (!(obj instanceof final Errand other)) {
 			return false;
 		}
-		return Objects.equals(assignedGroupId, other.assignedGroupId) && Objects.equals(assignedUserId, other.assignedUserId) && Objects.equals(businessRelated, other.businessRelated) && Objects.equals(channel, other.channel) && Objects.equals(
-			classification, other.classification) && Objects.equals(contactReason, other.contactReason) && Objects.equals(contactReasonDescription, other.contactReasonDescription) && Objects.equals(created, other.created) && Objects.equals(description,
-				other.description) && Objects.equals(errandNumber, other.errandNumber) && Objects.equals(escalationEmail, other.escalationEmail) && Objects.equals(externalTags, other.externalTags) && Objects.equals(id, other.id) && Objects.equals(
-					jsonParameters,
-					other.jsonParameters) && Objects.equals(labels, other.labels) && Objects.equals(activeNotifications, other.activeNotifications) && Objects.equals(modified, other.modified) && Objects.equals(parameters, other.parameters)
+		return Objects.equals(actions, other.actions) && Objects.equals(assignedGroupId, other.assignedGroupId) && Objects.equals(assignedUserId, other.assignedUserId) && Objects.equals(businessRelated, other.businessRelated) && Objects.equals(channel,
+			other.channel) && Objects.equals(
+				classification, other.classification) && Objects.equals(contactReason, other.contactReason) && Objects.equals(contactReasonDescription, other.contactReasonDescription) && Objects.equals(created, other.created) && Objects.equals(description,
+					other.description) && Objects.equals(errandNumber, other.errandNumber) && Objects.equals(escalationEmail, other.escalationEmail) && Objects.equals(externalTags, other.externalTags) && Objects.equals(id, other.id) && Objects.equals(
+						jsonParameters,
+						other.jsonParameters) && Objects.equals(labels, other.labels) && Objects.equals(activeNotifications, other.activeNotifications) && Objects.equals(modified, other.modified) && Objects.equals(parameters, other.parameters)
 			&& Objects.equals(priority, other.priority) && Objects.equals(
 				reporterUserId, other.reporterUserId) && Objects.equals(resolution, other.resolution) && Objects.equals(stakeholders, other.stakeholders) && Objects.equals(status, other.status) && Objects.equals(suspension, other.suspension) && Objects
 					.equals(
@@ -531,7 +551,8 @@ public class Errand {
 	@Override
 	public String toString() {
 		return "Errand{" +
-			"id='" + id + '\'' +
+			"actions=" + actions +
+			", id='" + id + '\'' +
 			", errandNumber='" + errandNumber + '\'' +
 			", title='" + title + '\'' +
 			", priority=" + priority +

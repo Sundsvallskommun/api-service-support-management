@@ -278,3 +278,10 @@ VALUES ('param-1', 'action-config-id-1', 'label');
 
 INSERT INTO action_config_parameter_values(action_config_parameter_id, value, value_order)
 VALUES ('param-1', 'priority-high', 0);
+
+-------------------------------------
+-- ErrandAction
+-------------------------------------
+INSERT INTO errand_action(id, errand_id, execute_after, action_config_id)
+VALUES ('errand-action-id-1', 'ERRAND_ID-1', '2024-01-01 00:00:00.000', 'action-config-id-3'),
+       ('errand-action-id-2', 'ERRAND_ID-2', '2099-12-31 23:59:59.999', 'action-config-id-2');

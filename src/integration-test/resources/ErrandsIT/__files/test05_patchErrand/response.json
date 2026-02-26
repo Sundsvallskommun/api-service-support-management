@@ -120,6 +120,7 @@
 			"errandNumber": "KC-23020003"
 		}
 	],
+	"actions": [],
 	"assignedGroupId": "ASSIGNED_GROUP_ID-3",
 	"modified": "${json-unit.any-string}",
 	"contactReason": "reason5",
