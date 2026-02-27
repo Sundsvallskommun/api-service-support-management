@@ -129,3 +129,5 @@ scheduler:
     enabled: false
   suspension:
     cron: "-"
+  action:
+    cron: "-"

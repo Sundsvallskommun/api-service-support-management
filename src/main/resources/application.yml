@@ -24,6 +24,11 @@ scheduler:
     cron: 0 */1 * * * *
     shedlock-lock-at-most-for: PT2M
     maximum-execution-time: PT1M
+  action:
+    name: process_actions
+    cron: 0 */1 * * * *
+    shedlock-lock-at-most-for: PT4M
+    maximum-execution-time: PT2M
 integration:
   accessmapper:
     connectTimeout: 5

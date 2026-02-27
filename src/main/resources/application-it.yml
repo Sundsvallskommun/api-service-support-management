@@ -35,6 +35,8 @@ scheduler:
     enabled: false
   suspension:
     cron: "-"
+  action:
+    cron: "-"
 spring:
   cache:
     type: none

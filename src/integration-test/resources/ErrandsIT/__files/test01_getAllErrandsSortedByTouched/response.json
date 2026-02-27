@@ -28,6 +28,7 @@
 			"businessRelated": false,
 			"labels": [],
 			"activeNotifications": [],
+			"actions": [],
 			"created": "2024-01-01T12:00:00+01:00",
 			"touched": "2024-01-01T12:00:00+01:00"
 		},
@@ -59,6 +60,7 @@
 			"businessRelated": false,
 			"labels": [],
 			"activeNotifications": [],
+			"actions": [],
 			"created": "2024-01-01T12:00:00+01:00",
 			"touched": "2024-01-01T12:00:00+01:00"
 		},
@@ -127,6 +129,7 @@
 				}
 			],
 			"activeNotifications": [],
+			"actions": [],
 			"created": "2023-04-26T15:48:17.124+02:00",
 			"modified": "2023-04-26T16:05:08.806+02:00",
 			"touched": "2023-04-26T16:05:08.806+02:00"
@@ -181,6 +184,7 @@
 					"errandNumber": "KC-23020002"
 				}
 			],
+			"actions": [],
 			"created": "2022-02-01T12:00:00+01:00",
 			"modified": "2022-04-01T12:00:00+02:00",
 			"touched": "2022-04-01T12:00:00+02:00"
@@ -304,6 +308,7 @@
 					"errandNumber": "KC-23020003"
 				}
 			],
+			"actions": [],
 			"created": "2022-03-01T12:00:00+01:00",
 			"touched": "2022-03-01T12:00:00+01:00"
 		},
@@ -460,6 +465,7 @@
 					"errandNumber": "KC-23020001"
 				}
 			],
+			"actions": [],
 			"created": "2022-01-01T12:00:00+01:00",
 			"touched": "2022-01-01T12:00:00+01:00"
 		}

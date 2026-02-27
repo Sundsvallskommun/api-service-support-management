@@ -7,7 +7,7 @@ info:
     url: https://opensource.org/licenses/MIT
   version: "12.5"
 servers:
-- url: http://localhost:40091
+- url: http://localhost:46717
   description: Generated server url
 tags:
 - name: Errand attachments
@@ -5307,12 +5307,12 @@ components:
         parameters:
           type: object
           additionalProperties: {}
+        status:
+          $ref: "#/components/schemas/StatusType"
         title:
           type: string
         detail:
           type: string
-        status:
-          $ref: "#/components/schemas/StatusType"
     StatusType:
       type: object
       properties:
@@ -5439,12 +5439,12 @@ components:
         parameters:
           type: object
           additionalProperties: {}
+        status:
+          $ref: "#/components/schemas/StatusType"
         title:
           type: string
         detail:
           type: string
-        status:
-          $ref: "#/components/schemas/StatusType"
         suppressed:
           type: array
           items:
@@ -6151,6 +6151,12 @@ components:
           items:
             $ref: "#/components/schemas/Notification"
           readOnly: true
+        actions:
+          type: array
+          description: List of pending actions for the errand
+          items:
+            $ref: "#/components/schemas/ErrandAction"
+          readOnly: true
         created:
           type: string
           format: date-time
@@ -6171,6 +6177,41 @@ components:
           description: Timestamp when errand was last touched (created or modified)
           examples:
           - 2000-10-31T01:30:00.000+02:00
+          readOnly: true
+    ErrandAction:
+      type: object
+      description: Errand action model
+      properties:
+        id:
+          type: string
+          description: Unique id for the action
+          examples:
+          - f0882f1d-06bc-47fd-b017-1d8307f5ce95
+          readOnly: true
+        actionName:
+          type: string
+          description: Name of the action
+          examples:
+          - ADD_LABEL
+          readOnly: true
+        executeAfter:
+          type: string
+          format: date-time
+          description: Timestamp after which the action should be executed
+          examples:
+          - 2000-10-31T01:30:00.000+02:00
+          readOnly: true
+        actionConfigId:
+          type: string
+          description: Id of the action config that created this action
+          examples:
+          - f0882f1d-06bc-47fd-b017-1d8307f5ce95
+          readOnly: true
+        displayValue:
+          type: string
+          description: Display value for the action
+          examples:
+          - Label will be added
           readOnly: true
     ErrandLabel:
       type: object

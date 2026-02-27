@@ -42,5 +42,6 @@ TRUNCATE table action_config_condition_values;
 TRUNCATE table action_config_condition;
 TRUNCATE table action_config_parameter_values;
 TRUNCATE table action_config_parameter;
+TRUNCATE table errand_action;
 TRUNCATE table action_config;
 SET FOREIGN_KEY_CHECKS = 1;

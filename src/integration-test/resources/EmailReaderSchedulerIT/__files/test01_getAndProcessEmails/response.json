@@ -45,6 +45,7 @@
 				}
 			],
 			"activeNotifications": [],
+			"actions": [],
 			"created": "${json-unit.any-string}",
 			"touched": "${json-unit.any-string}"
 		},
@@ -78,6 +79,7 @@
 			"suspension": {},
 			"labels": [],
 			"activeNotifications": [],
+			"actions": [],
 			"created": "${json-unit.any-string}",
 			"touched": "${json-unit.any-string}"
 		}
