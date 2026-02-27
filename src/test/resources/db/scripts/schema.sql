@@ -760,7 +760,8 @@
     alter table if exists errand_action 
        add constraint fk_errand_action_errand_id 
        foreign key (errand_id) 
-       references errand (id);
+       references errand (id)
+       on delete cascade;
 
     alter table if exists errand_labels 
        add constraint fk_errand_labels_metadata_label_id 

@@ -13,6 +13,8 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.OffsetDateTime;
 import java.util.Objects;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.annotations.TimeZoneStorage;
 import org.hibernate.annotations.UuidGenerator;
 
@@ -31,6 +33,7 @@ public class ErrandActionEntity {
 
 	@ManyToOne(fetch = LAZY)
 	@JoinColumn(name = "errand_id", nullable = false, foreignKey = @ForeignKey(name = "fk_errand_action_errand_id"))
+	@OnDelete(action = OnDeleteAction.CASCADE)
 	private ErrandEntity errandEntity;
 
 	@Column(name = "execute_after")
@@ -106,20 +109,22 @@ public class ErrandActionEntity {
 			return false;
 		}
 		final ErrandActionEntity that = (ErrandActionEntity) o;
-		return Objects.equals(id, that.id) && Objects.equals(errandEntity, that.errandEntity) && Objects.equals(executeAfter, that.executeAfter) && Objects.equals(actionConfigEntity,
-			that.actionConfigEntity);
+		return Objects.equals(id, that.id)
+			&& Objects.equals(errandEntity != null ? errandEntity.getId() : null, that.errandEntity != null ? that.errandEntity.getId() : null)
+			&& Objects.equals(executeAfter, that.executeAfter)
+			&& Objects.equals(actionConfigEntity, that.actionConfigEntity);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, errandEntity, executeAfter, actionConfigEntity);
+		return Objects.hash(id, errandEntity != null ? errandEntity.getId() : null, executeAfter, actionConfigEntity);
 	}
 
 	@Override
 	public String toString() {
 		return "ErrandActionEntity{" +
 			"id='" + id + '\'' +
-			", errandEntity=" + errandEntity +
+			", errandEntity=" + (errandEntity != null ? errandEntity.getId() : null) +
 			", executeAfter=" + executeAfter +
 			", actionConfigEntity=" + actionConfigEntity +
 			'}';

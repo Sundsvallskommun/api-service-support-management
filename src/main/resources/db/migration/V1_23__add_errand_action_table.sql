@@ -14,7 +14,8 @@ create index idx_errand_action_execute_after
 
 alter table errand_action
     add constraint fk_errand_action_errand_id
-    foreign key (errand_id) references errand (id);
+    foreign key (errand_id) references errand (id)
+    on delete cascade;
 
 alter table errand_action
     add constraint fk_errand_action_action_config_id
