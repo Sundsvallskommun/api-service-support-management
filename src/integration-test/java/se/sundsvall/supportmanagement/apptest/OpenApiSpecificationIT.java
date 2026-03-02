@@ -1,10 +1,5 @@
 package se.sundsvall.supportmanagement.apptest;
 
-import static java.nio.file.Files.writeString;
-import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
@@ -12,16 +7,22 @@ import net.javacrumbs.jsonunit.core.Option;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.resttestclient.TestRestTemplate;
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
-import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.core.io.Resource;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.web.util.UriComponentsBuilder;
 import se.sundsvall.dept44.util.ResourceUtils;
 import se.sundsvall.supportmanagement.Application;
+import tools.jackson.dataformat.yaml.YAMLMapper;
+
+import static java.nio.file.Files.writeString;
+import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 
 @ActiveProfiles("it")
+@AutoConfigureTestRestTemplate
 @SpringBootTest(
 	webEnvironment = WebEnvironment.RANDOM_PORT,
 	classes = Application.class,
@@ -75,15 +76,11 @@ class OpenApiSpecificationIT {
 	/**
 	 * Attempts to convert the given YAML (no YAML-check...) to JSON.
 	 *
-	 * @param  yaml the YAML to convert
-	 * @return      a JSON string
+	 * @param yaml the YAML to convert
+	 * @return a JSON string
 	 */
 	private String toJson(final String yaml) {
-		try {
-			return YAML_MAPPER.readTree(yaml).toString();
-		} catch (final JsonProcessingException e) {
-			throw new IllegalStateException("Unable to convert YAML to JSON", e);
-		}
+		return YAML_MAPPER.readTree(yaml).toString();
 	}
 
 }

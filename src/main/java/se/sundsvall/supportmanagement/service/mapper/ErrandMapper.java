@@ -1,8 +1,5 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import generated.se.sundsvall.relation.Relation;
 import generated.se.sundsvall.relation.ResourceIdentifier;
 import java.util.ArrayList;
@@ -30,6 +27,9 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable
 import se.sundsvall.supportmanagement.integration.db.model.JsonParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
@@ -355,7 +355,7 @@ public final class ErrandMapper {
 		}
 		try {
 			return OBJECT_MAPPER.writeValueAsString(jsonNode);
-		} catch (final JsonProcessingException e) {
+		} catch (final JacksonException e) {
 			LOG.warn("Failed to convert JsonNode to String", e);
 			return null;
 		}
@@ -367,7 +367,7 @@ public final class ErrandMapper {
 		}
 		try {
 			return OBJECT_MAPPER.readTree(jsonString);
-		} catch (final JsonProcessingException e) {
+		} catch (final JacksonException e) {
 			LOG.warn("Failed to convert String to JsonNode", e);
 			return null;
 		}

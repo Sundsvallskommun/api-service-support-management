@@ -1,7 +1,5 @@
 package se.sundsvall.supportmanagement.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.flipkart.zjsonpatch.DiffFlags;
 import com.flipkart.zjsonpatch.JsonDiff;
 import com.jayway.jsonpath.Configuration;
@@ -12,7 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.zalando.problem.Problem;
+import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.revision.DifferenceResponse;
 import se.sundsvall.supportmanagement.api.model.revision.Operation;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
@@ -23,6 +21,7 @@ import se.sundsvall.supportmanagement.integration.notes.NotesClient;
 import se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper;
 import se.sundsvall.supportmanagement.service.mapper.RevisionMapper;
 import se.sundsvall.supportmanagement.service.model.RevisionResult;
+import tools.jackson.databind.ObjectMapper;
 
 import static com.flipkart.zjsonpatch.DiffFlags.ADD_ORIGINAL_VALUE_ON_REPLACE;
 import static com.flipkart.zjsonpatch.DiffFlags.OMIT_COPY_OPERATION;
@@ -32,8 +31,8 @@ import static com.jayway.jsonpath.Option.SUPPRESS_EXCEPTIONS;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static org.apache.commons.lang3.ObjectUtils.anyNull;
-import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
-import static org.zalando.problem.Status.NOT_FOUND;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static se.sundsvall.supportmanagement.service.mapper.RevisionMapper.toRevision;
 import static se.sundsvall.supportmanagement.service.mapper.RevisionMapper.toRevisionEntity;
 import static se.sundsvall.supportmanagement.service.mapper.RevisionMapper.toSerializedSnapshot;
@@ -41,6 +40,8 @@ import static se.sundsvall.supportmanagement.service.mapper.RevisionMapper.toSer
 @Service
 @Transactional
 public class RevisionService {
+
+	private static final com.fasterxml.jackson.databind.ObjectMapper JACKSON2_MAPPER = new com.fasterxml.jackson.databind.ObjectMapper();
 
 	private static final EnumSet<DiffFlags> DIFF_SETTINGS = EnumSet.of(ADD_ORIGINAL_VALUE_ON_REPLACE, OMIT_COPY_OPERATION, OMIT_MOVE_OPERATION);
 
@@ -225,11 +226,11 @@ public class RevisionService {
 		return ErrandNoteMapper.toDifferenceResponse(notesClient.compareNoteRevisions(municipalityId, noteId, sourceVersion, targetVersion));
 	}
 
-	private JsonNode toJsonNode(final String value) {
+	private com.fasterxml.jackson.databind.JsonNode toJsonNode(final String value) {
 		try {
 			final var document = JsonPath.using(JSONPATH_CONFIG).parse(value);
 			EXCLUDED_ATTRIBUTES.forEach(document::delete);
-			return objectMapper.readTree(document.jsonString());
+			return JACKSON2_MAPPER.readTree(document.jsonString());
 		} catch (final Exception e) {
 			throw Problem.valueOf(INTERNAL_SERVER_ERROR, e.getMessage());
 		}

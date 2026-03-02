@@ -22,7 +22,7 @@
 		},
 		"status": 400,
 		"jsonBody": {
-			"type": "https://zalando.github.io/problem/constraint-violation",
+			"type": "about:blank",
 			"status": 400,
 			"violations": [
 				{

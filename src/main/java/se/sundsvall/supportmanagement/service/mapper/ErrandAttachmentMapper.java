@@ -12,8 +12,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
-import org.zalando.problem.Problem;
-import org.zalando.problem.Status;
+import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
@@ -21,6 +20,7 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 
 import static java.util.Collections.emptyList;
 import static org.apache.commons.lang3.ObjectUtils.anyNull;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.detectMimeTypeFromStream;
 
 public final class ErrandAttachmentMapper {
@@ -46,7 +46,7 @@ public final class ErrandAttachmentMapper {
 				.withMimeType(detectMimeTypeFromStream(errandAttachment.getOriginalFilename(), errandAttachment.getInputStream()));
 		} catch (final IOException e) {
 			LOGGER.warn("Exception when reading file", e);
-			throw Problem.valueOf(Status.BAD_REQUEST, "Could not read input stream!");
+			throw Problem.valueOf(BAD_REQUEST, "Could not read input stream!");
 		}
 	}
 
@@ -59,7 +59,7 @@ public final class ErrandAttachmentMapper {
 		try {
 			content = errandAttachment.getBody().getInputStream();
 		} catch (final Exception e) {
-			throw Problem.valueOf(Status.BAD_REQUEST, "Could not read input stream!");
+			throw Problem.valueOf(BAD_REQUEST, "Could not read input stream!");
 		}
 
 		final Session session = entityManager.unwrap(Session.class);

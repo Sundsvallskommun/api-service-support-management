@@ -1,6 +1,5 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import generated.se.sundsvall.relation.ResourceIdentifier;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -30,6 +29,7 @@ import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderParameterEntity;
+import tools.jackson.databind.ObjectMapper;
 
 import static java.time.OffsetDateTime.now;
 import static java.time.temporal.ChronoUnit.SECONDS;

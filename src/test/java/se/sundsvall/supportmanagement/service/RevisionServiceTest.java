@@ -1,7 +1,6 @@
 package se.sundsvall.supportmanagement.service;
 
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import generated.se.sundsvall.notes.DifferenceResponse;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -9,7 +8,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mariadb.jdbc.MariaDbBlob;
@@ -19,7 +17,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.zalando.problem.ThrowableProblem;
+import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.supportmanagement.api.model.revision.Operation;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.RevisionRepository;
@@ -29,6 +27,8 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.RevisionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.notes.NotesClient;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
@@ -41,8 +41,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
-import static org.zalando.problem.Status.NOT_FOUND;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static se.sundsvall.supportmanagement.service.mapper.RevisionMapper.toSerializedSnapshot;
 
 @ExtendWith(MockitoExtension.class)
@@ -70,12 +70,9 @@ class RevisionServiceTest {
 	private ArgumentCaptor<RevisionEntity> entityCaptor;
 
 	@Spy
-	private ObjectMapper objectMapperSpy;
-
-	@BeforeEach
-	void setup() {
-		objectMapperSpy.setSerializationInclusion(Include.NON_NULL);
-	}
+	private ObjectMapper objectMapperSpy = JsonMapper.builder()
+		.changeDefaultPropertyInclusion(c -> c.withValueInclusion(JsonInclude.Include.NON_NULL))
+		.build();
 
 	@Test
 	void shouldCreateErrandRevisionWhenNoPreviousRevisionExists() throws Exception {
