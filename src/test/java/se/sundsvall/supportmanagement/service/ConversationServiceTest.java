@@ -22,7 +22,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockMultipartFile;
-import org.zalando.problem.Problem;
+import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationRequest;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationType;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.Identifier;

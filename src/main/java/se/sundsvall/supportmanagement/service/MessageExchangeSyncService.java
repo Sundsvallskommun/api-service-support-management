@@ -6,7 +6,7 @@ import org.springframework.core.io.InputStreamResource;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.zalando.problem.Problem;
+import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.supportmanagement.integration.db.ConversationRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
@@ -15,7 +15,7 @@ import se.sundsvall.supportmanagement.integration.messageexchange.MessageExchang
 
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
 import static java.util.Optional.ofNullable;
-import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationSubType.MESSAGE;
 import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.mergeIntoConversationEntity;
 

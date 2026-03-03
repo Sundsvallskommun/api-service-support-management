@@ -1,7 +1,5 @@
 package se.sundsvall.supportmanagement.api;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.headers.Header;
@@ -16,8 +14,10 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import java.io.IOException;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -33,10 +33,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-import org.zalando.problem.Problem;
-import org.zalando.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.dept44.common.validators.annotation.ValidMunicipalityId;
 import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
+import se.sundsvall.dept44.problem.Problem;
+import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.supportmanagement.api.model.communication.Communication;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
 import se.sundsvall.supportmanagement.api.model.communication.SmsRequest;
@@ -47,8 +47,10 @@ import se.sundsvall.supportmanagement.api.model.communication.conversation.Messa
 import se.sundsvall.supportmanagement.api.model.communication.conversation.MessageRequest;
 import se.sundsvall.supportmanagement.service.CommunicationService;
 import se.sundsvall.supportmanagement.service.ConversationService;
+import tools.jackson.databind.ObjectMapper;
 
 import static jakarta.validation.Validation.buildDefaultValidatorFactory;
+import static java.util.Comparator.comparing;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpHeaders.LOCATION;
 import static org.springframework.http.MediaType.ALL_VALUE;
@@ -115,9 +117,17 @@ class ErrandCommunicationResource {
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "errandId", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("errandId") final String errandId,
 		@Parameter(name = "communicationId", description = "communication ID", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("communicationId") final String communicationId,
-		@Parameter(name = "isViewed", description = "If a message is viewed", example = "true") @PathVariable final boolean isViewed) {
+		@Parameter(name = "isViewed", description = "If a message is viewed", example = "true") @PathVariable final String isViewed) {
 
-		communicationService.updateViewedStatus(namespace, municipalityId, errandId, communicationId, isViewed);
+		final boolean parsedIsViewed;
+		if ("true".equalsIgnoreCase(isViewed) || "false".equalsIgnoreCase(isViewed)) {
+			parsedIsViewed = Boolean.parseBoolean(isViewed);
+		} else {
+			throw se.sundsvall.dept44.problem.Problem.valueOf(org.springframework.http.HttpStatus.BAD_REQUEST,
+				"Method parameter 'isViewed': Failed to convert value of type 'java.lang.String' to required type 'boolean'; Invalid boolean value [" + isViewed + "]");
+		}
+
+		communicationService.updateViewedStatus(namespace, municipalityId, errandId, communicationId, parsedIsViewed);
 		return noContent()
 			.header(CONTENT_TYPE, ALL_VALUE)
 			.build();
@@ -259,7 +269,7 @@ class ErrandCommunicationResource {
 		@Parameter(name = "errandId", description = "Errand ID", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("errandId") final String errandId,
 		@Parameter(name = "conversationId", description = "Conversation ID", example = "1aefbbb8-de82-414b-b5d7-ba7c5bbe4506") @ValidUuid @PathVariable("conversationId") final String conversationId,
 		@RequestPart("message") @Schema(description = "Message body", implementation = MessageRequest.class) final String messageRequest,
-		@RequestPart(value = "attachments", required = false) final List<MultipartFile> attachments) throws JsonProcessingException {
+		@RequestPart(value = "attachments", required = false) final List<MultipartFile> attachments) {
 
 		final var messageRequestObj = objectMapper.readValue(messageRequest, MessageRequest.class);
 		validate(messageRequestObj);
@@ -308,7 +318,10 @@ class ErrandCommunicationResource {
 		final var validator = buildDefaultValidatorFactory().getValidator();
 		final Set<ConstraintViolation<T>> violations = validator.validate(t);
 		if (!violations.isEmpty()) {
-			throw new ConstraintViolationException(violations);
+			final var sorted = violations.stream()
+				.sorted(comparing(v -> v.getPropertyPath().toString()))
+				.collect(Collectors.toCollection(LinkedHashSet::new));
+			throw new ConstraintViolationException(sorted);
 		}
 	}
 }

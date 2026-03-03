@@ -4,11 +4,12 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
-import org.zalando.problem.violations.ConstraintViolationProblem;
-import org.zalando.problem.violations.Violation;
+import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
+import se.sundsvall.dept44.problem.violations.Violation;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.note.CreateErrandNoteRequest;
 import se.sundsvall.supportmanagement.api.model.note.ErrandNote;
@@ -20,9 +21,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
-import static org.zalando.problem.Status.BAD_REQUEST;
 
+@AutoConfigureWebTestClient
 @SpringBootTest(classes = Application.class, webEnvironment = RANDOM_PORT)
 @ActiveProfiles("junit")
 class ErrandNotesResourceFailureTest {
@@ -56,7 +58,7 @@ class ErrandNotesResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactlyInAnyOrder(tuple("readErrandNote.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
 
 		// Verification
@@ -79,7 +81,7 @@ class ErrandNotesResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactlyInAnyOrder(tuple("readErrandNote.municipalityId", "not a valid municipality ID"));
 
 		// Verification
@@ -102,7 +104,7 @@ class ErrandNotesResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactlyInAnyOrder(tuple("readErrandNote.errandId", "not a valid UUID"));
 
 		// Verification
@@ -125,7 +127,7 @@ class ErrandNotesResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactlyInAnyOrder(tuple("readErrandNote.noteId", "not a valid UUID"));
 
 		// Verification
@@ -148,7 +150,7 @@ class ErrandNotesResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple("findErrandNotes.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
 
 		// Verification
@@ -171,7 +173,7 @@ class ErrandNotesResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactlyInAnyOrder(tuple("findErrandNotes.municipalityId", "not a valid municipality ID"));
 
 		// Verification
@@ -194,7 +196,7 @@ class ErrandNotesResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactlyInAnyOrder(tuple("limit", "must be less than or equal to 1000"));
 
 		// Verification
@@ -219,7 +221,7 @@ class ErrandNotesResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactlyInAnyOrder(tuple("createErrandNote.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
 
 		// Verification
@@ -244,7 +246,7 @@ class ErrandNotesResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactlyInAnyOrder(tuple("createErrandNote.municipalityId", "not a valid municipality ID"));
 
 		// Verification
@@ -272,7 +274,7 @@ class ErrandNotesResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactlyInAnyOrder(tuple("createErrandNote.errandId", "not a valid UUID"));
 
 		// Verification
@@ -297,7 +299,7 @@ class ErrandNotesResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactlyInAnyOrder(
 				tuple("body", "must not be blank"),
 				tuple("context", "must not be blank"),
@@ -328,7 +330,7 @@ class ErrandNotesResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactlyInAnyOrder(tuple("updateErrandNote.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
 
 		// Verification
@@ -354,7 +356,7 @@ class ErrandNotesResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactlyInAnyOrder(tuple("updateErrandNote.municipalityId", "not a valid municipality ID"));
 
 		// Verification
@@ -380,7 +382,7 @@ class ErrandNotesResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactlyInAnyOrder(tuple("updateErrandNote.errandId", "not a valid UUID"));
 
 		// Verification
@@ -406,7 +408,7 @@ class ErrandNotesResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactlyInAnyOrder(tuple("updateErrandNote.noteId", "not a valid UUID"));
 
 		// Verification
@@ -432,7 +434,7 @@ class ErrandNotesResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactlyInAnyOrder(
 				tuple("body", "must not be blank"),
 				tuple("modifiedBy", "must not be blank"),
@@ -458,7 +460,7 @@ class ErrandNotesResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactlyInAnyOrder(tuple("deleteErrandNote.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
 
 		// Verification
@@ -481,7 +483,7 @@ class ErrandNotesResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactlyInAnyOrder(tuple("deleteErrandNote.municipalityId", "not a valid municipality ID"));
 
 		// Verification
@@ -504,7 +506,7 @@ class ErrandNotesResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactlyInAnyOrder(tuple("deleteErrandNote.errandId", "not a valid UUID"));
 
 		// Verification
@@ -527,7 +529,7 @@ class ErrandNotesResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactlyInAnyOrder(tuple("deleteErrandNote.noteId", "not a valid UUID"));
 
 		// Verification

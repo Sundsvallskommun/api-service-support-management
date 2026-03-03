@@ -8,14 +8,14 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
 import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
-import org.zalando.problem.AbstractThrowableProblem;
-import org.zalando.problem.Problem;
-import org.zalando.problem.violations.ConstraintViolationProblem;
-import org.zalando.problem.violations.Violation;
+import se.sundsvall.dept44.problem.Problem;
+import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
+import se.sundsvall.dept44.problem.violations.Violation;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.communication.EmailAttachment;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
@@ -38,12 +38,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.TOO_MANY_REQUESTS;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
 import static org.springframework.web.reactive.function.BodyInserters.fromMultipartData;
-import static org.zalando.problem.Status.BAD_REQUEST;
-import static org.zalando.problem.Status.TOO_MANY_REQUESTS;
 
+@AutoConfigureWebTestClient
 @SpringBootTest(classes = Application.class, webEnvironment = RANDOM_PORT)
 @ActiveProfiles("junit")
 class ErrandCommunicationResourceFailureTest {
@@ -110,7 +111,7 @@ class ErrandCommunicationResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple("getCommunications.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
 
 		// Verification
@@ -134,7 +135,7 @@ class ErrandCommunicationResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple("getCommunications.municipalityId", "not a valid municipality ID"));
 
 		// Verification
@@ -159,7 +160,7 @@ class ErrandCommunicationResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple("getCommunications.errandId", "not a valid UUID"));
 
 		// Verification
@@ -183,7 +184,7 @@ class ErrandCommunicationResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple("updateViewedStatus.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
 
 		// Verification
@@ -207,7 +208,7 @@ class ErrandCommunicationResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple("updateViewedStatus.municipalityId", "not a valid municipality ID"));
 
 		// Verification
@@ -231,7 +232,7 @@ class ErrandCommunicationResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple("updateViewedStatus.errandId", "not a valid UUID"));
 
 		// Verification
@@ -255,7 +256,7 @@ class ErrandCommunicationResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple("updateViewedStatus.communicationId", "not a valid UUID"));
 
 		// Verification
@@ -266,19 +267,15 @@ class ErrandCommunicationResourceFailureTest {
 	void setViewedStatusForMessageWithInvalidIsViewed() {
 
 		// Call
-		final var response = webTestClient.put()
+		webTestClient.put()
 			.uri(builder -> builder.path(PATH_PREFIX + "/{messageID}/viewed/{isViewed}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "messageID", MESSAGE_ID, "isViewed", INVALID)))
 			.contentType(APPLICATION_JSON)
 			.exchange()
 			.expectStatus().isBadRequest()
-			.expectBody(AbstractThrowableProblem.class)
-			.returnResult()
-			.getResponseBody();
-
-		assertThat(response).isNotNull();
-		assertThat(response.getTitle()).isEqualTo("Bad Request");
-		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
-		assertThat(response.getDetail()).isEqualTo("Method parameter 'isViewed': Failed to convert value of type 'java.lang.String' to required type 'boolean'; Invalid boolean value [" + INVALID + "]");
+			.expectBody()
+			.jsonPath("$.title").isEqualTo("Bad Request")
+			.jsonPath("$.status").isEqualTo(400)
+			.jsonPath("$.detail").value(detail -> assertThat(detail.toString()).contains("Method parameter 'isViewed'", "Failed to convert value", "Invalid boolean value"));
 
 		// Verification
 		verifyNoInteractions(communicationServiceMock, conversationServiceMock);
@@ -312,7 +309,7 @@ class ErrandCommunicationResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple(field, "can only contain A-Z, a-z, 0-9, - and _"));
 
 		// Verification
@@ -348,7 +345,7 @@ class ErrandCommunicationResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo(CONSTRAINT_VIOLATION);
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple(field, "not a valid municipality ID"));
 
 		// Verification
@@ -384,7 +381,7 @@ class ErrandCommunicationResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo(CONSTRAINT_VIOLATION);
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple(field, "not a valid UUID"));
 
 		// Verification
@@ -406,10 +403,7 @@ class ErrandCommunicationResourceFailureTest {
 
 		assertThat(response).isNotNull();
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
-		assertThat(response.getDetail()).isEqualTo("""
-			Required request body is missing: org.springframework.http.ResponseEntity<java.lang.Void> \
-			se.sundsvall.supportmanagement.api.ErrandCommunicationResource.sendSms(java.lang.String,java.lang.String,\
-			java.lang.String,se.sundsvall.supportmanagement.api.model.communication.SmsRequest)""");
+		assertThat(response.getDetail()).isEqualTo("Failed to read request");
 
 		// Verification
 		verifyNoInteractions(communicationServiceMock, conversationServiceMock);
@@ -432,7 +426,7 @@ class ErrandCommunicationResourceFailureTest {
 		assertThat(response).isNotNull();
 		assertThat(response.getTitle()).isEqualTo(CONSTRAINT_VIOLATION);
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
-		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
+		assertThat(response.getViolations()).extracting(Violation::field, Violation::message).containsExactlyInAnyOrder(
 			tuple("message", "must not be blank"),
 			tuple("recipient", "must be a valid MSISDN (example: +46701740605). Regular expression: ^\\+[1-9][\\d]{3,14}$"),
 			tuple("sender", "must not be null"));
@@ -460,7 +454,7 @@ class ErrandCommunicationResourceFailureTest {
 		assertThat(response).isNotNull();
 		assertThat(response.getTitle()).isEqualTo(CONSTRAINT_VIOLATION);
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
-		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
+		assertThat(response.getViolations()).extracting(Violation::field, Violation::message).containsExactlyInAnyOrder(
 			tuple("recipient", "must be a valid MSISDN (example: +46701740605). Regular expression: ^\\+[1-9][\\d]{3,14}$"),
 			tuple("sender", "size must be between 1 and 11"));
 
@@ -483,10 +477,7 @@ class ErrandCommunicationResourceFailureTest {
 
 		assertThat(response).isNotNull();
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
-		assertThat(response.getDetail()).isEqualTo("""
-			Required request body is missing: org.springframework.http.ResponseEntity<java.lang.Void> \
-			se.sundsvall.supportmanagement.api.ErrandCommunicationResource.sendEmail(java.lang.String,java.lang.String,\
-			java.lang.String,se.sundsvall.supportmanagement.api.model.communication.EmailRequest)""");
+		assertThat(response.getDetail()).isEqualTo("Failed to read request");
 
 		// Verification
 		verifyNoInteractions(communicationServiceMock, conversationServiceMock);
@@ -509,7 +500,7 @@ class ErrandCommunicationResourceFailureTest {
 		assertThat(response).isNotNull();
 		assertThat(response.getTitle()).isEqualTo(CONSTRAINT_VIOLATION);
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
-		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
+		assertThat(response.getViolations()).extracting(Violation::field, Violation::message).containsExactlyInAnyOrder(
 			tuple("htmlMessage", "must not be blank"),
 			tuple("message", "must not be blank"),
 			tuple("recipient", "must not be null"),
@@ -539,7 +530,7 @@ class ErrandCommunicationResourceFailureTest {
 		assertThat(response).isNotNull();
 		assertThat(response.getTitle()).isEqualTo(CONSTRAINT_VIOLATION);
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
-		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
+		assertThat(response.getViolations()).extracting(Violation::field, Violation::message).containsExactlyInAnyOrder(
 			tuple("recipient", "must be a well-formed email address"),
 			tuple("sender", "must be a well-formed email address"));
 
@@ -564,7 +555,7 @@ class ErrandCommunicationResourceFailureTest {
 		assertThat(response).isNotNull();
 		assertThat(response.getTitle()).isEqualTo(CONSTRAINT_VIOLATION);
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
-		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
+		assertThat(response.getViolations()).extracting(Violation::field, Violation::message).containsExactlyInAnyOrder(
 			tuple("message", "must not be blank"));
 
 		// Verification
@@ -586,10 +577,7 @@ class ErrandCommunicationResourceFailureTest {
 
 		assertThat(response).isNotNull();
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
-		assertThat(response.getDetail()).isEqualTo("""
-			Required request body is missing: org.springframework.http.ResponseEntity<java.lang.Void> \
-			se.sundsvall.supportmanagement.api.ErrandCommunicationResource.sendWebMessage(java.lang.String,java.lang.String,\
-			java.lang.String,se.sundsvall.supportmanagement.api.model.communication.WebMessageRequest)""");
+		assertThat(response.getDetail()).isEqualTo("Failed to read request");
 
 		// Verification
 		verifyNoInteractions(communicationServiceMock, conversationServiceMock);
@@ -622,7 +610,7 @@ class ErrandCommunicationResourceFailureTest {
 		assertThat(response).isNotNull();
 		assertThat(response.getTitle()).isEqualTo(CONSTRAINT_VIOLATION);
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
-		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
+		assertThat(response.getViolations()).extracting(Violation::field, Violation::message).containsExactlyInAnyOrder(
 			tuple("attachments[0].base64EncodedString", "not a valid BASE64-encoded string"),
 			tuple("attachments[0].fileName", "must not be blank"));
 
@@ -663,7 +651,7 @@ class ErrandCommunicationResourceFailureTest {
 		assertThat(response).isNotNull();
 		assertThat(response.getTitle()).isEqualTo(CONSTRAINT_VIOLATION);
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
-		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
+		assertThat(response.getViolations()).extracting(Violation::field, Violation::message).containsExactlyInAnyOrder(
 			tuple("attachments[0].base64EncodedString", "not a valid BASE64-encoded string"));
 
 		// Verification
@@ -716,8 +704,7 @@ class ErrandCommunicationResourceFailureTest {
 		assertThat(response).isNotNull();
 		assertThat(response.getTitle()).isEqualTo(BAD_REQUEST.getReasonPhrase());
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
-		assertThat(response.getDetail()).isEqualTo(
-			"Required request body is missing: org.springframework.http.ResponseEntity<java.lang.Void> se.sundsvall.supportmanagement.api.ErrandCommunicationResource.createConversation(java.lang.String,java.lang.String,java.lang.String,se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationRequest)");
+		assertThat(response.getDetail()).isEqualTo("Failed to read request");
 
 		// Verification
 		verifyNoInteractions(communicationServiceMock, conversationServiceMock);
@@ -746,7 +733,7 @@ class ErrandCommunicationResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple("type", "must not be null"));
 
 		// Verification
@@ -776,7 +763,7 @@ class ErrandCommunicationResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple("topic", "must not be blank"));
 
 		// Verification
@@ -800,7 +787,7 @@ class ErrandCommunicationResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple("getConversations.municipalityId", "not a valid municipality ID"));
 
 		// Verification
@@ -824,7 +811,7 @@ class ErrandCommunicationResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple("getConversations.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
 
 		// Verification
@@ -849,7 +836,7 @@ class ErrandCommunicationResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple("getConversation.conversationId", "not a valid UUID"));
 
 		// Verification
@@ -880,7 +867,7 @@ class ErrandCommunicationResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple("updateConversation.conversationId", "not a valid UUID"));
 
 		// Verification
@@ -909,8 +896,8 @@ class ErrandCommunicationResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactly(
+			.extracting(Violation::field, Violation::message)
+			.containsExactlyInAnyOrder(
 				tuple("topic", "must not be blank"),
 				tuple("type", "must not be null"));
 
@@ -935,8 +922,7 @@ class ErrandCommunicationResourceFailureTest {
 		assertThat(response).isNotNull();
 		assertThat(response.getTitle()).isEqualTo(BAD_REQUEST.getReasonPhrase());
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
-		assertThat(response.getDetail()).isEqualTo(
-			"Required request body is missing: org.springframework.http.ResponseEntity<se.sundsvall.supportmanagement.api.model.communication.conversation.Conversation> se.sundsvall.supportmanagement.api.ErrandCommunicationResource.updateConversation(java.lang.String,java.lang.String,java.lang.String,java.lang.String,se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationRequest)");
+		assertThat(response.getDetail()).isEqualTo("Failed to read request");
 
 		// Verification
 		verifyNoInteractions(communicationServiceMock, conversationServiceMock);
@@ -993,8 +979,8 @@ class ErrandCommunicationResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactly(
+			.extracting(Violation::field, Violation::message)
+			.containsExactlyInAnyOrder(
 				tuple("content", "must not be blank"),
 				tuple("inReplyToMessageId", "not a valid UUID"));
 
@@ -1022,7 +1008,7 @@ class ErrandCommunicationResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple("getConversationMessageAttachment.attachmentId", "not a valid UUID"));
 
 		// Assert

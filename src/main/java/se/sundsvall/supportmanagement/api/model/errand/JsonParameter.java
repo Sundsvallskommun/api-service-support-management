@@ -1,10 +1,10 @@
 package se.sundsvall.supportmanagement.api.model.errand;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.util.Objects;
+import tools.jackson.databind.JsonNode;
 
 @Schema(description = "JSON Parameter model")
 public class JsonParameter {

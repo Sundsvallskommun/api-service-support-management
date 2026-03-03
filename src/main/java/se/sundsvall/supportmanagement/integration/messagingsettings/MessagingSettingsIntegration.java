@@ -7,13 +7,13 @@ import org.apache.commons.lang3.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import org.zalando.problem.Problem;
-import org.zalando.problem.ThrowableProblem;
+import se.sundsvall.dept44.problem.Problem;
+import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.supportmanagement.service.model.MessagingSettings;
 
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
-import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.service.mapper.MessagingSettingsMapper.toFilterString;
 
@@ -52,7 +52,7 @@ public class MessagingSettingsIntegration {
 				retrieveValue(KEY_CONTACT_INFORMATION_EMAIL, messagingSettings),
 				retrieveOptionalValue(KEY_CONTACT_INFORMATION_EMAIL_NAME, messagingSettings).orElse(retrieveValue(KEY_CONTACT_INFORMATION_EMAIL, messagingSettings)));
 		} catch (final ThrowableProblem e) {
-			LOG.error("{} for namespace '{}' and department with name '{}' within municipality '{}'", e.getDetail(), sanitizeForLogging(namespace), sanitizeForLogging(departmentName), sanitizeForLogging(municipalityId));
+			LOG.error("{} for namespace '{}' and department with name '{}' within municipality '{}'", e.getMessage(), sanitizeForLogging(namespace), sanitizeForLogging(departmentName), sanitizeForLogging(municipalityId));
 			throw Problem.valueOf(INTERNAL_SERVER_ERROR, "One or more mandatory settings %s are absent for namespace '%s' and department with name '%s' within municipality with id '%s'"
 				.formatted(List.of(KEY_CONTACT_INFORMATION_EMAIL, KEY_CONTACT_INFORMATION_URL, KEY_SMS_SENDER), namespace, departmentName, municipalityId));
 		}

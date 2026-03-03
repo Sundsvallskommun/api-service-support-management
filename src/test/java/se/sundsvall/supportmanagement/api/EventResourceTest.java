@@ -3,16 +3,15 @@ package se.sundsvall.supportmanagement.api;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.JsonNode;
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -26,6 +25,7 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.event.Event;
 import se.sundsvall.supportmanagement.service.EventService;
+import tools.jackson.databind.JsonNode;
 
 import static com.fasterxml.jackson.annotation.JsonCreator.Mode.PROPERTIES;
 import static java.util.UUID.randomUUID;
@@ -37,6 +37,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
+@AutoConfigureWebTestClient
 @SpringBootTest(classes = Application.class, webEnvironment = RANDOM_PORT)
 @ActiveProfiles("junit")
 class EventResourceTest {
@@ -49,9 +50,6 @@ class EventResourceTest {
 
 	@MockitoBean
 	private EventService eventServiceMock;
-
-	@Captor
-	private ArgumentCaptor<Pageable> pageableCaptor;
 
 	@Autowired
 	private WebTestClient webTestClient;
@@ -76,6 +74,7 @@ class EventResourceTest {
 			.getResponseBody();
 
 		// Verification
+		final var pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
 		verify(eventServiceMock).readEvents(eq(MUNICIPALITY_ID), eq(errandId), pageableCaptor.capture());
 
 		assertThat(pageableCaptor.getValue().getPageNumber()).isZero();
@@ -110,6 +109,7 @@ class EventResourceTest {
 			.getResponseBody();
 
 		// Verification
+		final var pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
 		verify(eventServiceMock).readEvents(eq(MUNICIPALITY_ID), eq(errandId), pageableCaptor.capture());
 		assertThat(pageableCaptor.getValue().getPageNumber()).isEqualTo(10);
 		assertThat(pageableCaptor.getValue().getPageSize()).isEqualTo(5);

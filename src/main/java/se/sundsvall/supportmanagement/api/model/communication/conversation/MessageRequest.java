@@ -24,11 +24,11 @@ public class MessageRequest {
 		return inReplyToMessageId;
 	}
 
-	public void setInReplyToMessageId(String inReplyToMessageId) {
+	public void setInReplyToMessageId(final String inReplyToMessageId) {
 		this.inReplyToMessageId = inReplyToMessageId;
 	}
 
-	public MessageRequest withInReplyToMessageId(String inReplyToMessageId) {
+	public MessageRequest withInReplyToMessageId(final String inReplyToMessageId) {
 		this.inReplyToMessageId = inReplyToMessageId;
 		return this;
 	}
@@ -37,11 +37,11 @@ public class MessageRequest {
 		return content;
 	}
 
-	public void setContent(String content) {
+	public void setContent(final String content) {
 		this.content = content;
 	}
 
-	public MessageRequest withContent(String content) {
+	public MessageRequest withContent(final String content) {
 		this.content = content;
 		return this;
 	}
@@ -52,7 +52,7 @@ public class MessageRequest {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(final Object obj) {
 		if (this == obj) {
 			return true;
 		}
@@ -62,7 +62,7 @@ public class MessageRequest {
 		if (getClass() != obj.getClass()) {
 			return false;
 		}
-		MessageRequest other = (MessageRequest) obj;
+		final MessageRequest other = (MessageRequest) obj;
 		return Objects.equals(content, other.content) && Objects.equals(inReplyToMessageId, other.inReplyToMessageId);
 	}
 

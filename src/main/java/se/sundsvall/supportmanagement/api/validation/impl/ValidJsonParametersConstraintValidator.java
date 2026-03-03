@@ -4,8 +4,8 @@ import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import java.util.HashSet;
 import java.util.List;
-import org.zalando.problem.ThrowableProblem;
 import se.sundsvall.dept44.exception.ServerProblem;
+import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
 import se.sundsvall.supportmanagement.api.validation.ValidJsonParameters;
 import se.sundsvall.supportmanagement.integration.jsonschema.JsonSchemaClient;
@@ -65,7 +65,7 @@ public class ValidJsonParametersConstraintValidator extends AbstractTagConstrain
 	}
 
 	private String extractErrorMessage(final ThrowableProblem e, final JsonParameter param) {
-		return ofNullable(e.getDetail())
+		return ofNullable(e.getMessage())
 			.filter(detail -> !detail.isBlank())
 			.orElse("validation failed for schema '%s'".formatted(param.getSchemaId()));
 	}

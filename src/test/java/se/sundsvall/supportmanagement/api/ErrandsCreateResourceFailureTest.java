@@ -1,7 +1,5 @@
 package se.sundsvall.supportmanagement.api;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
@@ -9,13 +7,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
-import org.zalando.problem.Problem;
-import org.zalando.problem.violations.ConstraintViolationProblem;
-import org.zalando.problem.violations.Violation;
 import se.sundsvall.dept44.exception.ClientProblem;
+import se.sundsvall.dept44.problem.Problem;
+import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
+import se.sundsvall.dept44.problem.violations.Violation;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.errand.Classification;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
@@ -32,6 +31,8 @@ import se.sundsvall.supportmanagement.api.model.metadata.Type;
 import se.sundsvall.supportmanagement.integration.jsonschema.JsonSchemaClient;
 import se.sundsvall.supportmanagement.service.ErrandService;
 import se.sundsvall.supportmanagement.service.MetadataService;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
@@ -43,9 +44,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
-import static org.zalando.problem.Status.BAD_REQUEST;
 
+@AutoConfigureWebTestClient
 @SpringBootTest(classes = Application.class, webEnvironment = RANDOM_PORT)
 @ActiveProfiles("junit")
 class ErrandsCreateResourceFailureTest {
@@ -112,7 +114,7 @@ class ErrandsCreateResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple("createErrand.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
 
 		// Verification
@@ -141,7 +143,7 @@ class ErrandsCreateResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple("createErrand.municipalityId", "not a valid municipality ID"));
 
 		// Verification
@@ -168,9 +170,7 @@ class ErrandsCreateResourceFailureTest {
 		assertThat(response).isNotNull();
 		assertThat(response.getTitle()).isEqualTo("Bad Request");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
-		assertThat(response.getDetail()).isEqualTo("""
-			Required request body is missing: org.springframework.http.ResponseEntity<java.lang.Void> \
-			se.sundsvall.supportmanagement.api.ErrandsResource.createErrand(java.lang.String,java.lang.String,java.lang.String,se.sundsvall.supportmanagement.api.model.errand.Errand)""");
+		assertThat(response.getDetail()).isEqualTo("Failed to read request");
 
 		// Verification
 		verifyNoInteractions(metadataServiceMock, errandServiceMock);
@@ -197,7 +197,7 @@ class ErrandsCreateResourceFailureTest {
 		assertThat(response).isNotNull();
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
-		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
+		assertThat(response.getViolations()).extracting(Violation::field, Violation::message).containsExactlyInAnyOrder(
 			tuple("createErrand.errand.id", "must be null"),
 			tuple("createErrand.errand.created", "must be null"),
 			tuple("createErrand.errand.modified", "must be null"));
@@ -228,7 +228,7 @@ class ErrandsCreateResourceFailureTest {
 		assertThat(response).isNotNull();
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
-		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
+		assertThat(response.getViolations()).extracting(Violation::field, Violation::message).containsExactlyInAnyOrder(
 			tuple("createErrand.errand.reporterUserId", "must not be blank"),
 			tuple("createErrand.errand.priority", "must not be null"),
 			tuple("createErrand.errand.status", "must not be blank"),
@@ -257,7 +257,7 @@ class ErrandsCreateResourceFailureTest {
 
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
-		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
+		assertThat(response.getViolations()).extracting(Violation::field, Violation::message).containsExactlyInAnyOrder(
 			tuple("createErrand.errand.classification.category", "must not be blank"),
 			tuple("createErrand.errand.classification.type", "must not be blank"),
 			tuple("createErrand.errand.title", "must not be blank"),
@@ -290,7 +290,7 @@ class ErrandsCreateResourceFailureTest {
 		assertThat(response).isNotNull();
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
-		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
+		assertThat(response.getViolations()).extracting(Violation::field, Violation::message).containsExactlyInAnyOrder(
 			tuple("createErrand.errand.externalTags[0].key", "must not be blank"),
 			tuple("createErrand.errand.externalTags[0].value", "must not be blank"),
 			tuple("createErrand.errand.externalTags[1].key", "must not be blank"),
@@ -327,7 +327,7 @@ class ErrandsCreateResourceFailureTest {
 		assertThat(response).isNotNull();
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
-		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactly(
+		assertThat(response.getViolations()).extracting(Violation::field, Violation::message).containsExactly(
 			tuple("createErrand.errand.externalTags", "keys in the collection must be unique"));
 
 		// Verification
@@ -352,7 +352,7 @@ class ErrandsCreateResourceFailureTest {
 		assertThat(response).isNotNull();
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
-		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
+		assertThat(response.getViolations()).extracting(Violation::field, Violation::message).containsExactlyInAnyOrder(
 			tuple("createErrand.errand.classification", "value 'invalid_category' doesn't match any of [CATEGORY_1, CATEGORY_2]"),
 			tuple("createErrand.errand.status", "value 'invalid_status' doesn't match any of [STATUS_1, STATUS_2]"));
 
@@ -379,7 +379,7 @@ class ErrandsCreateResourceFailureTest {
 		assertThat(response).isNotNull();
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
-		assertThat(response.getViolations()).extracting(Violation::getField, Violation::getMessage).containsExactlyInAnyOrder(
+		assertThat(response.getViolations()).extracting(Violation::field, Violation::message).containsExactlyInAnyOrder(
 			tuple("createErrand.errand.classification", "value 'invalid_type' doesn't match any of [TYPE_1, TYPE_2]"));
 
 		// Verification
@@ -407,7 +407,7 @@ class ErrandsCreateResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple("createErrand.errand.escalationEmail", "must be a well-formed email address"));
 
 		// Verification
@@ -433,7 +433,7 @@ class ErrandsCreateResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple("createErrand.errand.channel", "size must be between 0 and 255"));
 
 		// Verification
@@ -459,7 +459,7 @@ class ErrandsCreateResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple("createErrand.errand.contactReasonDescription", "size must be between 0 and 4096"));
 
 		// Verification
@@ -486,7 +486,7 @@ class ErrandsCreateResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple("parameters[0].key", "must not be blank"));
 
 		// Verification
@@ -512,7 +512,7 @@ class ErrandsCreateResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple("stakeholders[0].role", "value 'INVALID' doesn't match any of [ROLE_1]"));
 
 		// Verification
@@ -541,7 +541,7 @@ class ErrandsCreateResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple("stakeholders[0].parameters[0].key", "must not be blank"));
 
 		// Verification
@@ -572,7 +572,7 @@ class ErrandsCreateResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple("jsonParameters[0].key", "must not be blank"));
 
 		// Verification
@@ -603,7 +603,7 @@ class ErrandsCreateResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple("jsonParameters[0].value", "must not be null"));
 
 		// Verification
@@ -634,7 +634,7 @@ class ErrandsCreateResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple("jsonParameters[0].schemaId", "must not be blank"));
 
 		// Verification
@@ -661,7 +661,7 @@ class ErrandsCreateResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactlyInAnyOrder(
 				tuple("jsonParameters[0].key", "must not be blank"),
 				tuple("jsonParameters[0].value", "must not be null"),
@@ -702,8 +702,8 @@ class ErrandsCreateResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
-			.containsExactly(tuple("createErrand.errand.jsonParameters[0]", "Schema validation failed: missing required field"));
+			.extracting(Violation::field, Violation::message)
+			.containsExactly(tuple("createErrand.errand.jsonParameters[0]", "Bad Request: Schema validation failed: missing required field"));
 
 		// Verification
 		verify(jsonSchemaClientMock).validateJson(MUNICIPALITY_ID, schemaId, jsonValue);

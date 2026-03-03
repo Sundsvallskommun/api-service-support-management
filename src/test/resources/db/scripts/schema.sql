@@ -43,7 +43,7 @@
         sender_user_id varchar(255),
         subject varchar(255),
         target varchar(255),
-        type varchar(255) not null,
+        type varchar(255) not null check ((type in ('WEB_MESSAGE','SMS','EMAIL'))),
         direction enum ('INBOUND','OUTBOUND'),
         html_message_body longtext,
         message_body longtext,
@@ -253,7 +253,7 @@
     create table namespace_config_value (
         namespace_config_id bigint not null,
         `key` varchar(255) not null,
-        `type` varchar(255) not null,
+        `type` varchar(255) not null check ((`type` in ('STRING','BOOLEAN','INTEGER'))),
         `value` text not null
     ) engine=InnoDB;
 

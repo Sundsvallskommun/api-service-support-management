@@ -4,12 +4,13 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
-import org.zalando.problem.Problem;
-import org.zalando.problem.violations.ConstraintViolationProblem;
-import org.zalando.problem.violations.Violation;
+import se.sundsvall.dept44.problem.Problem;
+import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
+import se.sundsvall.dept44.problem.violations.Violation;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.service.RevisionService;
 
@@ -18,9 +19,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON;
-import static org.zalando.problem.Status.BAD_REQUEST;
 
+@AutoConfigureWebTestClient
 @SpringBootTest(classes = Application.class, webEnvironment = RANDOM_PORT)
 @ActiveProfiles("junit")
 class RevisionResourceFailuresTest {
@@ -62,7 +64,7 @@ class RevisionResourceFailuresTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple("getErrandRevisions.errandId", "not a valid UUID"));
 
 		verifyNoInteractions(revisionServiceMock);
@@ -87,7 +89,7 @@ class RevisionResourceFailuresTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple("getErrandDiffByVersions.errandId", "not a valid UUID"));
 
 		verifyNoInteractions(revisionServiceMock);
@@ -110,7 +112,7 @@ class RevisionResourceFailuresTest {
 		assertThat(response).isNotNull();
 		assertThat(response.getTitle()).isEqualTo("Bad Request");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
-		assertThat(response.getDetail()).isEqualTo("Required request parameter 'source' for method parameter type Integer is not present");
+		assertThat(response.getDetail()).isEqualTo("Required parameter 'source' is not present.");
 
 		verifyNoInteractions(revisionServiceMock);
 	}
@@ -132,7 +134,7 @@ class RevisionResourceFailuresTest {
 		assertThat(response).isNotNull();
 		assertThat(response.getTitle()).isEqualTo("Bad Request");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
-		assertThat(response.getDetail()).isEqualTo("Required request parameter 'target' for method parameter type Integer is not present");
+		assertThat(response.getDetail()).isEqualTo("Required parameter 'target' is not present.");
 
 		verifyNoInteractions(revisionServiceMock);
 	}
@@ -155,7 +157,7 @@ class RevisionResourceFailuresTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple("getErrandDiffByVersions.source", "must be between 0 and 2147483647"));
 
 		verifyNoInteractions(revisionServiceMock);
@@ -179,7 +181,7 @@ class RevisionResourceFailuresTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple("getErrandDiffByVersions.target", "must be between 0 and 2147483647"));
 
 		verifyNoInteractions(revisionServiceMock);
@@ -209,7 +211,7 @@ class RevisionResourceFailuresTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple("getErrandNoteRevisions.errandId", "not a valid UUID"));
 
 		verifyNoInteractions(revisionServiceMock);
@@ -235,7 +237,7 @@ class RevisionResourceFailuresTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple("getErrandNoteRevisions.noteId", "not a valid UUID"));
 
 		verifyNoInteractions(revisionServiceMock);
@@ -261,7 +263,7 @@ class RevisionResourceFailuresTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple("getErrandNoteDiffByVersions.errandId", "not a valid UUID"));
 
 		verifyNoInteractions(revisionServiceMock);
@@ -287,7 +289,7 @@ class RevisionResourceFailuresTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple("getErrandNoteDiffByVersions.noteId", "not a valid UUID"));
 
 		verifyNoInteractions(revisionServiceMock);
@@ -311,7 +313,7 @@ class RevisionResourceFailuresTest {
 		assertThat(response).isNotNull();
 		assertThat(response.getTitle()).isEqualTo("Bad Request");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
-		assertThat(response.getDetail()).isEqualTo("Required request parameter 'source' for method parameter type Integer is not present");
+		assertThat(response.getDetail()).isEqualTo("Required parameter 'source' is not present.");
 
 		verifyNoInteractions(revisionServiceMock);
 	}
@@ -334,7 +336,7 @@ class RevisionResourceFailuresTest {
 		assertThat(response).isNotNull();
 		assertThat(response.getTitle()).isEqualTo("Bad Request");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
-		assertThat(response.getDetail()).isEqualTo("Required request parameter 'target' for method parameter type Integer is not present");
+		assertThat(response.getDetail()).isEqualTo("Required parameter 'target' is not present.");
 
 		verifyNoInteractions(revisionServiceMock);
 	}
@@ -358,7 +360,7 @@ class RevisionResourceFailuresTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple("getErrandNoteDiffByVersions.source", "must be between 0 and 2147483647"));
 
 		verifyNoInteractions(revisionServiceMock);
@@ -383,7 +385,7 @@ class RevisionResourceFailuresTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple("getErrandNoteDiffByVersions.target", "must be between 0 and 2147483647"));
 
 		verifyNoInteractions(revisionServiceMock);
