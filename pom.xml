@@ -145,7 +145,8 @@
 							<generateApis>false</generateApis>
 							<generateSupportingFiles>false</generateSupportingFiles>
 							<configOptions>
-								<useSpringBoot3>true</useSpringBoot3>
+								<useSpringBoot4>true</useSpringBoot4>
+								<useJackson3>true</useJackson3>
 								<sourceFolder>models</sourceFolder>
 								<dateLibrary>java8</dateLibrary>
 								<apiPackage>generated</apiPackage>
@@ -170,7 +171,8 @@
 							<generateApis>false</generateApis>
 							<generateSupportingFiles>false</generateSupportingFiles>
 							<configOptions>
-								<useSpringBoot3>true</useSpringBoot3>
+								<useSpringBoot4>true</useSpringBoot4>
+								<useJackson3>true</useJackson3>
 								<sourceFolder>models</sourceFolder>
 								<dateLibrary>java8</dateLibrary>
 								<apiPackage>generated</apiPackage>
@@ -195,7 +197,8 @@
 							<generateApis>false</generateApis>
 							<generateSupportingFiles>false</generateSupportingFiles>
 							<configOptions>
-								<useSpringBoot3>true</useSpringBoot3>
+								<useSpringBoot4>true</useSpringBoot4>
+								<useJackson3>true</useJackson3>
 								<sourceFolder>models</sourceFolder>
 								<dateLibrary>java8</dateLibrary>
 								<apiPackage>generated</apiPackage>
@@ -220,7 +223,8 @@
 							<generateApis>false</generateApis>
 							<generateSupportingFiles>false</generateSupportingFiles>
 							<configOptions>
-								<useSpringBoot3>true</useSpringBoot3>
+								<useSpringBoot4>true</useSpringBoot4>
+								<useJackson3>true</useJackson3>
 								<sourceFolder>models</sourceFolder>
 								<dateLibrary>java8</dateLibrary>
 								<apiPackage>generated</apiPackage>
@@ -245,7 +249,8 @@
 							<generateApis>false</generateApis>
 							<generateSupportingFiles>false</generateSupportingFiles>
 							<configOptions>
-								<useSpringBoot3>true</useSpringBoot3>
+								<useSpringBoot4>true</useSpringBoot4>
+								<useJackson3>true</useJackson3>
 								<sourceFolder>models</sourceFolder>
 								<dateLibrary>java8</dateLibrary>
 								<apiPackage>generated</apiPackage>
@@ -270,7 +275,8 @@
 							<generateApis>false</generateApis>
 							<generateSupportingFiles>false</generateSupportingFiles>
 							<configOptions>
-								<useSpringBoot3>true</useSpringBoot3>
+								<useSpringBoot4>true</useSpringBoot4>
+								<useJackson3>true</useJackson3>
 								<sourceFolder>models</sourceFolder>
 								<dateLibrary>java8</dateLibrary>
 								<apiPackage>generated</apiPackage>
@@ -295,7 +301,8 @@
 							<generateApis>false</generateApis>
 							<generateSupportingFiles>false</generateSupportingFiles>
 							<configOptions>
-								<useSpringBoot3>true</useSpringBoot3>
+								<useSpringBoot4>true</useSpringBoot4>
+								<useJackson3>true</useJackson3>
 								<sourceFolder>models</sourceFolder>
 								<dateLibrary>java8</dateLibrary>
 								<apiPackage>generated</apiPackage>
@@ -320,7 +327,8 @@
 							<generateApis>false</generateApis>
 							<generateSupportingFiles>false</generateSupportingFiles>
 							<configOptions>
-								<useSpringBoot3>true</useSpringBoot3>
+								<useSpringBoot4>true</useSpringBoot4>
+								<useJackson3>true</useJackson3>
 								<sourceFolder>models</sourceFolder>
 								<dateLibrary>java8</dateLibrary>
 								<apiPackage>generated</apiPackage>
@@ -345,7 +353,8 @@
 							<generateApis>false</generateApis>
 							<generateSupportingFiles>false</generateSupportingFiles>
 							<configOptions>
-								<useSpringBoot3>true</useSpringBoot3>
+								<useSpringBoot4>true</useSpringBoot4>
+								<useJackson3>true</useJackson3>
 								<sourceFolder>models</sourceFolder>
 								<dateLibrary>java8</dateLibrary>
 								<apiPackage>generated</apiPackage>
@@ -370,7 +379,8 @@
 							<generateApis>false</generateApis>
 							<generateSupportingFiles>false</generateSupportingFiles>
 							<configOptions>
-								<useSpringBoot3>true</useSpringBoot3>
+								<useSpringBoot4>true</useSpringBoot4>
+								<useJackson3>true</useJackson3>
 								<sourceFolder>models</sourceFolder>
 								<dateLibrary>java8</dateLibrary>
 								<apiPackage>generated</apiPackage>
@@ -395,7 +405,8 @@
 							<generateApis>false</generateApis>
 							<generateSupportingFiles>false</generateSupportingFiles>
 							<configOptions>
-								<useSpringBoot3>true</useSpringBoot3>
+								<useSpringBoot4>true</useSpringBoot4>
+								<useJackson3>true</useJackson3>
 								<sourceFolder>models</sourceFolder>
 								<dateLibrary>java8</dateLibrary>
 								<apiPackage>generated</apiPackage>
@@ -420,7 +431,8 @@
 							<generateApis>false</generateApis>
 							<generateSupportingFiles>false</generateSupportingFiles>
 							<configOptions>
-								<useSpringBoot3>true</useSpringBoot3>
+								<useSpringBoot4>true</useSpringBoot4>
+								<useJackson3>true</useJackson3>
 								<sourceFolder>models</sourceFolder>
 								<dateLibrary>java8</dateLibrary>
 								<apiPackage>generated</apiPackage>
