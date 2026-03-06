@@ -6,7 +6,17 @@
 			"X-Sent-By": {
 				"equalTo": "joe01doe; type=adAccount"
 			}
-		}
+		},
+		"multipartPatterns": [
+			{
+				"matchingType": "ANY",
+				"headers": {
+					"Content-Disposition": {
+						"contains": "name=\"message\""
+					}
+				}
+			}
+		]
 	},
 	"response": {
 		"headers": {
