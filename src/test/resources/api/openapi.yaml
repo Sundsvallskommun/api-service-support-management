@@ -7,7 +7,7 @@ info:
     url: https://opensource.org/licenses/MIT
   version: "12.4"
 servers:
-  - url: http://localhost:51578
+  - url: http://localhost:49453
     description: Generated server url
 tags:
   - name: Errand attachments
@@ -3107,6 +3107,7 @@ paths:
           required: true
           schema:
             type: string
+            minLength: 1
           example: propertyInfo
       responses:
         "200":
@@ -3173,6 +3174,7 @@ paths:
           required: true
           schema:
             type: string
+            minLength: 1
           example: propertyInfo
       responses:
         "204":
@@ -3233,6 +3235,7 @@ paths:
           required: true
           schema:
             type: string
+            minLength: 1
           example: propertyInfo
       requestBody:
         content:
@@ -5050,9 +5053,9 @@ components:
     Problem:
       type: object
       properties:
-        title:
-          type: string
         detail:
+          type: string
+        title:
           type: string
         instance:
           type: string
@@ -5783,6 +5786,12 @@ components:
     JsonNode:
       type: object
       properties:
+        number:
+          type: boolean
+        valueNode:
+          type: boolean
+        missingNode:
+          type: boolean
         nodeType:
           type: string
           enum:
@@ -5799,13 +5808,7 @@ components:
           type: boolean
         integralNumber:
           type: boolean
-        valueNode:
-          type: boolean
-        missingNode:
-          type: boolean
         pojo:
-          type: boolean
-        number:
           type: boolean
         short:
           type: boolean
@@ -5826,9 +5829,9 @@ components:
           type: boolean
         binary:
           type: boolean
-        container:
-          type: boolean
         floatingPointNumber:
+          type: boolean
+        container:
           type: boolean
         empty:
           type: boolean
@@ -6119,6 +6122,7 @@ components:
           description: Created by
           examples:
             - John Doe
+          minLength: 1
       required:
         - body
         - context
@@ -6134,6 +6138,7 @@ components:
           description: The attachment file name
           examples:
             - test.txt
+          minLength: 1
         base64EncodedString:
           type: string
           format: base64
@@ -6165,6 +6170,7 @@ components:
           description: Message in plain text
           examples:
             - Message in plain text
+          minLength: 1
         attachments:
           type: array
           items:
@@ -6196,6 +6202,7 @@ components:
         message:
           type: string
           description: Message
+          minLength: 1
         internal:
           type: boolean
           description: Indicates if the message is internal
@@ -6214,6 +6221,7 @@ components:
           description: The attachment file name
           examples:
             - test.txt
+          minLength: 1
         base64EncodedString:
           type: string
           format: base64
@@ -6251,16 +6259,19 @@ components:
           description: Subject
           examples:
             - Subject
+          minLength: 1
         htmlMessage:
           type: string
           description: Message in html (optionally in BASE64 encoded format)
           examples:
             - <html>HTML-formatted message</html>
+          minLength: 1
         message:
           type: string
           description: Message in plain text
           examples:
             - Message in plain text
+          minLength: 1
         internal:
           type: boolean
           description: Indicates if the message is internal
@@ -6400,6 +6411,7 @@ components:
           description: Modified by
           examples:
             - John Doe
+          minLength: 1
       required:
         - body
         - modifiedBy
@@ -6545,17 +6557,17 @@ components:
         totalPages:
           type: integer
           format: int32
-        sort:
-          $ref: "#/components/schemas/SortObject"
         pageable:
           $ref: "#/components/schemas/PageableObject"
+        numberOfElements:
+          type: integer
+          format: int32
         first:
           type: boolean
         last:
           type: boolean
-        numberOfElements:
-          type: integer
-          format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
         size:
           type: integer
           format: int32
@@ -6571,27 +6583,27 @@ components:
     PageableObject:
       type: object
       properties:
-        paged:
-          type: boolean
-        sort:
-          $ref: "#/components/schemas/SortObject"
         unpaged:
           type: boolean
-        pageSize:
-          type: integer
-          format: int32
+        paged:
+          type: boolean
         pageNumber:
           type: integer
           format: int32
+        pageSize:
+          type: integer
+          format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
         offset:
           type: integer
           format: int64
     SortObject:
       type: object
       properties:
-        sorted:
-          type: boolean
         unsorted:
+          type: boolean
+        sorted:
           type: boolean
         empty:
           type: boolean
@@ -6816,17 +6828,17 @@ components:
         totalPages:
           type: integer
           format: int32
-        sort:
-          $ref: "#/components/schemas/SortObject"
         pageable:
           $ref: "#/components/schemas/PageableObject"
+        numberOfElements:
+          type: integer
+          format: int32
         first:
           type: boolean
         last:
           type: boolean
-        numberOfElements:
-          type: integer
-          format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
         size:
           type: integer
           format: int32
@@ -7037,17 +7049,17 @@ components:
         totalPages:
           type: integer
           format: int32
-        sort:
-          $ref: "#/components/schemas/SortObject"
         pageable:
           $ref: "#/components/schemas/PageableObject"
+        numberOfElements:
+          type: integer
+          format: int32
         first:
           type: boolean
         last:
           type: boolean
-        numberOfElements:
-          type: integer
-          format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
         size:
           type: integer
           format: int32
