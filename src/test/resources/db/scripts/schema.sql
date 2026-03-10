@@ -290,7 +290,7 @@
 
     create table parameter_values (
         value_order integer default 0 not null,
-        value varchar(2000),
+        value varchar(3000),
         parameter_id varchar(255) not null,
         primary key (value_order, parameter_id)
     ) engine=InnoDB;
