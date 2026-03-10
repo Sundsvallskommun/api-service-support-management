@@ -8,13 +8,15 @@ import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import javax.sql.rowset.serial.SerialBlob;
+import org.hibernate.Hibernate;
+import org.hibernate.LobHelper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.Direction;
-import se.sundsvall.supportmanagement.service.util.BlobBuilder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
@@ -24,11 +26,10 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.Communic
 @ExtendWith(org.mockito.junit.jupiter.MockitoExtension.class)
 class WebMessageCollectorMapperTest {
 
-	@InjectMocks
-	private WebMessageCollectorMapper webMessageCollectorMapper;
-
 	@Mock
-	private BlobBuilder blobBuilder;
+	private LobHelper lobHelperMock;
+
+	private final WebMessageCollectorMapper webMessageCollectorMapper = new WebMessageCollectorMapper();
 
 	@Test
 	void toCommunicationEntity() {
@@ -92,15 +93,19 @@ class WebMessageCollectorMapperTest {
 		// Arrange
 		final var attachmentData = "attachmentData".getBytes();
 		final var blob = new SerialBlob(attachmentData);
-		when(blobBuilder.createBlob(attachmentData)).thenReturn(blob);
 
-		// Act
-		final var result = webMessageCollectorMapper.toAttachmentDataEntity(attachmentData);
+		try (MockedStatic<Hibernate> hibernateMock = Mockito.mockStatic(Hibernate.class)) {
+			hibernateMock.when(Hibernate::getLobHelper).thenReturn(lobHelperMock);
+			when(lobHelperMock.createBlob(attachmentData)).thenReturn(blob);
 
-		// Assert
-		assertThat(result).isNotNull();
-		assertThat(result.getFile()).isNotNull();
-		assertThat(result.getFile()).isSameAs(blob);
+			// Act
+			final var result = webMessageCollectorMapper.toAttachmentDataEntity(attachmentData);
+
+			// Assert
+			assertThat(result).isNotNull();
+			assertThat(result.getFile()).isNotNull();
+			assertThat(result.getFile()).isSameAs(blob);
+		}
 	}
 
 }

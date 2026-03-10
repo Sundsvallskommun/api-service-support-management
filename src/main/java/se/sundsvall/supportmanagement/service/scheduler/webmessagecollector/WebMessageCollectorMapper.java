@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
+import org.hibernate.Hibernate;
 import org.springframework.stereotype.Component;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
@@ -13,7 +14,6 @@ import se.sundsvall.supportmanagement.integration.db.model.communication.Communi
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.Direction;
-import se.sundsvall.supportmanagement.service.util.BlobBuilder;
 
 import static java.time.OffsetTime.now;
 import static java.time.ZoneId.systemDefault;
@@ -21,12 +21,6 @@ import static java.util.Collections.emptyList;
 
 @Component
 public class WebMessageCollectorMapper {
-
-	private final BlobBuilder blobBuilder;
-
-	public WebMessageCollectorMapper(final BlobBuilder blobBuilder) {
-		this.blobBuilder = blobBuilder;
-	}
 
 	CommunicationEntity toCommunicationEntity(final MessageDTO messageDTO, final ErrandEntity errand) {
 		final var communicationEntity = CommunicationEntity.create()
@@ -64,7 +58,7 @@ public class WebMessageCollectorMapper {
 
 	AttachmentDataEntity toAttachmentDataEntity(final byte[] attachmentData) {
 		return AttachmentDataEntity.create()
-			.withFile(blobBuilder.createBlob(attachmentData));
+			.withFile(Hibernate.getLobHelper().createBlob(attachmentData));
 
 	}
 

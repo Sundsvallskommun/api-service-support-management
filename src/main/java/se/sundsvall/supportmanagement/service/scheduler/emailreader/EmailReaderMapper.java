@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.hibernate.Hibernate;
 import org.springframework.stereotype.Component;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
@@ -26,7 +27,6 @@ import se.sundsvall.supportmanagement.integration.db.model.communication.Communi
 import se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.Direction;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
-import se.sundsvall.supportmanagement.service.util.BlobBuilder;
 
 import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
@@ -38,11 +38,9 @@ import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErran
 @Component
 public class EmailReaderMapper {
 
-	private final BlobBuilder blobBuilder;
 	private final MetadataLabelRepository metadataLabelRepository;
 
-	public EmailReaderMapper(final BlobBuilder blobBuilder, final MetadataLabelRepository metadataLabelRepository) {
-		this.blobBuilder = blobBuilder;
+	public EmailReaderMapper(final MetadataLabelRepository metadataLabelRepository) {
 		this.metadataLabelRepository = metadataLabelRepository;
 	}
 
@@ -162,6 +160,6 @@ public class EmailReaderMapper {
 	}
 
 	public AttachmentDataEntity toAttachmentDataEntity(final byte[] attachmentData) {
-		return AttachmentDataEntity.create().withFile(blobBuilder.createBlob(attachmentData));
+		return AttachmentDataEntity.create().withFile(Hibernate.getLobHelper().createBlob(attachmentData));
 	}
 }
