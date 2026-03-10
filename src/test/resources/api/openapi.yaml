@@ -5982,11 +5982,11 @@ components:
           description: Parameter group name
         values:
           type: array
-          description: Parameter values. Each value can have a maximum length of 2000
+          description: Parameter values. Each value can have a maximum length of 3000
             characters
           items:
             type: string
-            maxLength: 2000
+            maxLength: 3000
             minLength: 0
       required:
       - key

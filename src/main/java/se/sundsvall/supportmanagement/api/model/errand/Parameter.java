@@ -20,9 +20,9 @@ public class Parameter {
 	@Schema(description = "Parameter group name")
 	private String group;
 
-	@Schema(description = "Parameter values. Each value can have a maximum length of 2000 characters")
+	@Schema(description = "Parameter values. Each value can have a maximum length of 3000 characters")
 	@Valid
-	private List<@Size(max = 2000) String> values;
+	private List<@Size(max = 3000) String> values;
 
 	public static Parameter create() {
 		return new Parameter();
