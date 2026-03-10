@@ -138,7 +138,7 @@ public class EmailReaderMapper {
 
 		final var map = email.getHeaders().entrySet().stream()
 			.collect(toMap(
-				entry -> EmailHeader.valueOf(entry.getKey()), Map.Entry::getValue, (oldValue, newValue) -> newValue));
+				entry -> EmailHeader.valueOf(entry.getKey()), Map.Entry::getValue, (_, newValue) -> newValue));
 
 		final var messageId = Optional.ofNullable(map.get(EmailHeader.MESSAGE_ID))
 			.flatMap(list -> list.stream().findFirst())

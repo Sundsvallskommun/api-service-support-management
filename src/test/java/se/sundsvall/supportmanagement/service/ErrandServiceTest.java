@@ -60,8 +60,6 @@ import static org.springframework.data.domain.Sort.Direction.DESC;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrand;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrandEntity;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationSubType.ERRAND;
-import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withMunicipalityId;
-import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withNamespace;
 
 @ExtendWith(MockitoExtension.class)
 class ErrandServiceTest {
@@ -198,7 +196,7 @@ class ErrandServiceTest {
 		final Specification<ErrandEntity> filter = filterSpecificationConverterSpy.convert("id: 'uuid'");
 		final var sort = Sort.by(DESC, "attribute.1", "attribute.2");
 		final Pageable pageable = PageRequest.of(1, 2, sort);
-		final Specification<ErrandEntity> specification = (root, query, criteriaBuilder) -> criteriaBuilder.conjunction();
+		final Specification<ErrandEntity> specification = (_, _, criteriaBuilder) -> criteriaBuilder.conjunction();
 		final var user = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user");
 		Identifier.set(user);
 
@@ -220,7 +218,7 @@ class ErrandServiceTest {
 
 		verify(accessControlServiceMock).withAccessControl(NAMESPACE, MUNICIPALITY_ID, user);
 		verify(accessControlServiceMock).limitedMappingPredicateByLabel(NAMESPACE, MUNICIPALITY_ID, user);
-		verify(errandRepositoryMock).findAll(any(Specification.class), eq(pageable));
+		verify(errandRepositoryMock).findAll(ArgumentMatchers.<Specification<ErrandEntity>>any(), eq(pageable));
 	}
 
 	@Test
@@ -229,7 +227,7 @@ class ErrandServiceTest {
 		final Specification<ErrandEntity> filter = filterSpecificationConverterSpy.convert("id: 'uuid'");
 		final var sort = Sort.by(DESC, "attribute.1", "attribute.2");
 		final Pageable pageable = PageRequest.of(3, 7, sort);
-		final Specification<ErrandEntity> specification = (root, query, criteriaBuilder) -> criteriaBuilder.conjunction();
+		final Specification<ErrandEntity> specification = (_, _, criteriaBuilder) -> criteriaBuilder.conjunction();
 		final var user = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user");
 		Identifier.set(user);
 
@@ -249,7 +247,7 @@ class ErrandServiceTest {
 		assertThat(matches.getSort()).usingRecursiveComparison().isEqualTo(sort);
 
 		verify(accessControlServiceMock).withAccessControl(NAMESPACE, MUNICIPALITY_ID, user);
-		verify(errandRepositoryMock).findAll(any(Specification.class), eq(pageable));
+		verify(errandRepositoryMock).findAll(ArgumentMatchers.<Specification<ErrandEntity>>any(), eq(pageable));
 	}
 
 	@ParameterizedTest
@@ -369,7 +367,7 @@ class ErrandServiceTest {
 		final var user = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user");
 		Identifier.set(user);
 		final Specification<ErrandEntity> filter = filterSpecificationConverterSpy.convert("id: 'uuid'");
-		final Specification<ErrandEntity> specification = (root, query, criteriaBuilder) -> criteriaBuilder.conjunction();
+		final Specification<ErrandEntity> specification = (_, _, criteriaBuilder) -> criteriaBuilder.conjunction();
 
 		// Mock
 		when(accessControlServiceMock.withAccessControl(any(), any(), any())).thenReturn(specification);
@@ -382,7 +380,7 @@ class ErrandServiceTest {
 		assertThat(count).isEqualTo(42L);
 
 		verify(accessControlServiceMock).withAccessControl(NAMESPACE, MUNICIPALITY_ID, user);
-		verify(errandRepositoryMock).count(any(Specification.class));
+		verify(errandRepositoryMock).count(ArgumentMatchers.<Specification<ErrandEntity>>any());
 	}
 
 	@AfterEach
