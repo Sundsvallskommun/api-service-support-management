@@ -7,7 +7,9 @@ public enum EmailHeader {
 	IN_REPLY_TO("In-Reply-To"),
 	REFERENCES("References"),
 	MESSAGE_ID("Message-ID"),
-	AUTO_SUBMITTED("Auto-Submitted");
+	AUTO_SUBMITTED("Auto-Submitted"),
+	RETURN_PATH("Return-Path"),
+	CONTENT_TYPE("Content-Type");
 
 	private final String name;
 

@@ -11,5 +11,7 @@
 	"modified": "2022-12-31T23:59:59.999+01:00",
 	"stakeholderRole": "ROLE-1",
 	"addSenderAsStakeholder": true,
-	"errandClosedEmailTemplate": "template-1"
+	"errandClosedEmailTemplate": "template-1",
+	"ignoreAutoReply": true,
+	"ignoreNoReply": true
 }

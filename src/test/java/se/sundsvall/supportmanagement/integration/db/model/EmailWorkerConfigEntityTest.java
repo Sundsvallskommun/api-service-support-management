@@ -56,6 +56,8 @@ class EmailWorkerConfigEntityTest {
 		final var addSenderAsStakeholder = true;
 		final var stakeholderRole = "stakeholderRole";
 		final var errandChannel = "errandChannel";
+		final var ignoreAutoReply = true;
+		final var ignoreNoReply = true;
 		final var created = OffsetDateTime.now().minusDays(1);
 		final var modified = OffsetDateTime.now();
 
@@ -76,6 +78,8 @@ class EmailWorkerConfigEntityTest {
 			.withAddSenderAsStakeholder(addSenderAsStakeholder)
 			.withStakeholderRole(stakeholderRole)
 			.withErrandChannel(errandChannel)
+			.withIgnoreAutoReply(ignoreAutoReply)
+			.withIgnoreNoReply(ignoreNoReply)
 			.withCreated(created)
 			.withModified(modified)
 			.withErrandClosedEmailHTMLTemplate(errandClosedHtmlEmailTemplate)
@@ -98,6 +102,8 @@ class EmailWorkerConfigEntityTest {
 		assertThat(entity.isAddSenderAsStakeholder()).isTrue();
 		assertThat(entity.getStakeholderRole()).isEqualTo(stakeholderRole);
 		assertThat(entity.getErrandChannel()).isEqualTo(errandChannel);
+		assertThat(entity.isIgnoreAutoReply()).isTrue();
+		assertThat(entity.isIgnoreNoReply()).isTrue();
 		assertThat(entity.getCreated()).isEqualTo(created);
 		assertThat(entity.getModified()).isEqualTo(modified);
 		assertThat(entity.getErrandClosedEmailHTMLTemplate()).isEqualTo(errandClosedHtmlEmailTemplate);
@@ -110,7 +116,7 @@ class EmailWorkerConfigEntityTest {
 		entity.onCreate();
 
 		assertThat(entity.getCreated()).isCloseTo(now(), within(1, SECONDS));
-		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("created", "enabled", "addSenderAsStakeholder");
+		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("created", "enabled", "addSenderAsStakeholder", "ignoreAutoReply", "ignoreNoReply");
 	}
 
 	@Test
@@ -119,12 +125,12 @@ class EmailWorkerConfigEntityTest {
 		entity.onUpdate();
 
 		assertThat(entity.getModified()).isCloseTo(now(), within(1, SECONDS));
-		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("modified", "enabled", "addSenderAsStakeholder");
+		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("modified", "enabled", "addSenderAsStakeholder", "ignoreAutoReply", "ignoreNoReply");
 	}
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(EmailWorkerConfigEntity.create()).hasAllNullFieldsOrPropertiesExcept("enabled", "addSenderAsStakeholder");
-		assertThat(new EmailWorkerConfigEntity()).hasAllNullFieldsOrPropertiesExcept("enabled", "addSenderAsStakeholder");
+		assertThat(EmailWorkerConfigEntity.create()).hasAllNullFieldsOrPropertiesExcept("enabled", "addSenderAsStakeholder", "ignoreAutoReply", "ignoreNoReply");
+		assertThat(new EmailWorkerConfigEntity()).hasAllNullFieldsOrPropertiesExcept("enabled", "addSenderAsStakeholder", "ignoreAutoReply", "ignoreNoReply");
 	}
 }

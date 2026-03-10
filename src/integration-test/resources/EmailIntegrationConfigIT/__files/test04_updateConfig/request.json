@@ -9,5 +9,7 @@
 	"inactiveStatus": "STATUS-3",
 	"addSenderAsStakeholder": false,
 	"enabled": false,
-	"errandClosedEmailTemplate": "template-update"
+	"errandClosedEmailTemplate": "template-update",
+	"ignoreAutoReply": false,
+	"ignoreNoReply": false
 }

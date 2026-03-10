@@ -87,6 +87,12 @@ public class EmailWorkerConfigEntity {
 	@Column(name = "errand_channel")
 	private String errandChannel;
 
+	@Column(name = "ignore_auto_reply")
+	private boolean ignoreAutoReply;
+
+	@Column(name = "ignore_no_reply")
+	private boolean ignoreNoReply;
+
 	@Column(name = "created")
 	@TimeZoneStorage(NORMALIZE)
 	private OffsetDateTime created;
@@ -333,6 +339,32 @@ public class EmailWorkerConfigEntity {
 		return this;
 	}
 
+	public boolean isIgnoreAutoReply() {
+		return ignoreAutoReply;
+	}
+
+	public void setIgnoreAutoReply(final boolean ignoreAutoReply) {
+		this.ignoreAutoReply = ignoreAutoReply;
+	}
+
+	public EmailWorkerConfigEntity withIgnoreAutoReply(final boolean ignoreAutoReply) {
+		setIgnoreAutoReply(ignoreAutoReply);
+		return this;
+	}
+
+	public boolean isIgnoreNoReply() {
+		return ignoreNoReply;
+	}
+
+	public void setIgnoreNoReply(final boolean ignoreNoReply) {
+		this.ignoreNoReply = ignoreNoReply;
+	}
+
+	public EmailWorkerConfigEntity withIgnoreNoReply(final boolean ignoreNoReply) {
+		setIgnoreNoReply(ignoreNoReply);
+		return this;
+	}
+
 	public OffsetDateTime getCreated() {
 		return created;
 	}
@@ -374,7 +406,8 @@ public class EmailWorkerConfigEntity {
 		if (o == null || getClass() != o.getClass())
 			return false;
 		final EmailWorkerConfigEntity that = (EmailWorkerConfigEntity) o;
-		return enabled == that.enabled && addSenderAsStakeholder == that.addSenderAsStakeholder && Objects.equals(id, that.id) && Objects.equals(municipalityId, that.municipalityId) && Objects.equals(namespace, that.namespace)
+		return enabled == that.enabled && addSenderAsStakeholder == that.addSenderAsStakeholder && ignoreAutoReply == that.ignoreAutoReply && ignoreNoReply == that.ignoreNoReply && Objects.equals(id, that.id) && Objects.equals(municipalityId,
+			that.municipalityId) && Objects.equals(namespace, that.namespace)
 			&& Objects.equals(errandClosedEmailSender, that.errandClosedEmailSender) && Objects.equals(errandClosedEmailTemplate, that.errandClosedEmailTemplate) && Objects.equals(errandClosedEmailHTMLTemplate,
 				that.errandClosedEmailHTMLTemplate) && Objects.equals(errandNewEmailSender, that.errandNewEmailSender) && Objects.equals(errandNewEmailTemplate, that.errandNewEmailTemplate) && Objects.equals(
 					errandNewEmailHTMLTemplate, that.errandNewEmailHTMLTemplate) && Objects.equals(daysOfInactivityBeforeReject, that.daysOfInactivityBeforeReject) && Objects.equals(statusForNew, that.statusForNew) && Objects.equals(
@@ -385,7 +418,7 @@ public class EmailWorkerConfigEntity {
 	@Override
 	public int hashCode() {
 		return Objects.hash(id, municipalityId, namespace, enabled, errandClosedEmailSender, errandClosedEmailTemplate, errandClosedEmailHTMLTemplate, errandNewEmailSender, errandNewEmailTemplate, errandNewEmailHTMLTemplate, daysOfInactivityBeforeReject,
-			statusForNew, triggerStatusChangeOn, statusChangeTo, inactiveStatus, addSenderAsStakeholder, stakeholderRole, errandChannel, created, modified);
+			statusForNew, triggerStatusChangeOn, statusChangeTo, inactiveStatus, addSenderAsStakeholder, stakeholderRole, errandChannel, ignoreAutoReply, ignoreNoReply, created, modified);
 	}
 
 	@Override
@@ -409,6 +442,8 @@ public class EmailWorkerConfigEntity {
 			", addSenderAsStakeholder=" + addSenderAsStakeholder +
 			", stakeholderRole='" + stakeholderRole + '\'' +
 			", errandChannel='" + errandChannel + '\'' +
+			", ignoreAutoReply=" + ignoreAutoReply +
+			", ignoreNoReply=" + ignoreNoReply +
 			", created=" + created +
 			", modified=" + modified +
 			'}';
