@@ -8,12 +8,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import javax.sql.rowset.serial.SerialBlob;
+import org.hibernate.Hibernate;
+import org.hibernate.LobHelper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import se.sundsvall.supportmanagement.api.model.errand.ErrandLabel;
 import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
@@ -22,7 +26,6 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
-import se.sundsvall.supportmanagement.service.util.BlobBuilder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -35,7 +38,7 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.Directio
 class EmailReaderMapperTest {
 
 	@Mock
-	private BlobBuilder blobBuilderMock;
+	private LobHelper lobHelperMock;
 
 	@Mock
 	private MetadataLabelRepository metadataLabelRepositoryMock;
@@ -242,14 +245,18 @@ class EmailReaderMapperTest {
 		// Arrange
 		final var attachmentData = "attachmentData".getBytes();
 		final var blob = new SerialBlob(attachmentData);
-		when(blobBuilderMock.createBlob(attachmentData)).thenReturn(blob);
 
-		// Act
-		final var result = emailReaderMapper.toAttachmentDataEntity(attachmentData);
+		try (MockedStatic<Hibernate> hibernateMock = Mockito.mockStatic(Hibernate.class)) {
+			hibernateMock.when(Hibernate::getLobHelper).thenReturn(lobHelperMock);
+			when(lobHelperMock.createBlob(attachmentData)).thenReturn(blob);
 
-		// Assert
-		assertThat(result).isNotNull();
-		assertThat(result.getFile()).isNotNull();
-		assertThat(result.getFile()).isSameAs(blob);
+			// Act
+			final var result = emailReaderMapper.toAttachmentDataEntity(attachmentData);
+
+			// Assert
+			assertThat(result).isNotNull();
+			assertThat(result.getFile()).isNotNull();
+			assertThat(result.getFile()).isSameAs(blob);
+		}
 	}
 }

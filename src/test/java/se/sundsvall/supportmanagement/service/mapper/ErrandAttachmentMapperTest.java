@@ -1,17 +1,18 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
-import jakarta.persistence.EntityManager;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.sql.Blob;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import org.hibernate.Hibernate;
 import org.hibernate.LobHelper;
-import org.hibernate.Session;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.ResponseEntity;
@@ -39,13 +40,7 @@ class ErrandAttachmentMapperTest {
 	private static final OffsetDateTime CREATED = now().minusWeeks(1);
 
 	@Mock
-	private EntityManager entityManagerMock;
-
-	@Mock
 	private MultipartFile multipartFileMock;
-
-	@Mock
-	private Session sessionMock;
 
 	@Mock
 	private LobHelper lobHelperMock;
@@ -58,21 +53,23 @@ class ErrandAttachmentMapperTest {
 
 		final var errandEntity = buildErrandEntity().withAttachments(new ArrayList<>());
 
-		when(entityManagerMock.unwrap(Session.class)).thenReturn(sessionMock);
-		when(sessionMock.getLobHelper()).thenReturn(lobHelperMock);
-		when(lobHelperMock.createBlob(any(), anyLong())).thenReturn(blobMock);
 		when(multipartFileMock.getOriginalFilename()).thenReturn(FILE_NAME);
 		when(multipartFileMock.getInputStream()).thenReturn(new ByteArrayInputStream("test".getBytes()));
 
-		final var result = ErrandAttachmentMapper.toAttachmentEntity(errandEntity, multipartFileMock, entityManagerMock);
+		try (MockedStatic<Hibernate> hibernateMock = Mockito.mockStatic(Hibernate.class)) {
+			hibernateMock.when(Hibernate::getLobHelper).thenReturn(lobHelperMock);
+			when(lobHelperMock.createBlob(any(), anyLong())).thenReturn(blobMock);
 
-		assertThat(result).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "created", "modified");
-		assertThat(result.getMunicipalityId()).isEqualTo(errandEntity.getMunicipalityId());
-		assertThat(result.getNamespace()).isEqualTo(errandEntity.getNamespace());
-		assertThat(result.getFileName()).isEqualTo(FILE_NAME);
-		assertThat(result.getAttachmentData().getFile()).isSameAs(blobMock);
-		assertThat(result.getMimeType()).isEqualTo("text/plain");
-		assertThat(result.getErrandEntity()).isSameAs(errandEntity);
+			final var result = ErrandAttachmentMapper.toAttachmentEntity(errandEntity, multipartFileMock);
+
+			assertThat(result).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "created", "modified");
+			assertThat(result.getMunicipalityId()).isEqualTo(errandEntity.getMunicipalityId());
+			assertThat(result.getNamespace()).isEqualTo(errandEntity.getNamespace());
+			assertThat(result.getFileName()).isEqualTo(FILE_NAME);
+			assertThat(result.getAttachmentData().getFile()).isSameAs(blobMock);
+			assertThat(result.getMimeType()).isEqualTo("text/plain");
+			assertThat(result.getErrandEntity()).isSameAs(errandEntity);
+		}
 	}
 
 	@Test
@@ -81,22 +78,23 @@ class ErrandAttachmentMapperTest {
 
 		final var file = ResponseEntity.ok()
 			.header("Content-Type", "application/octet-stream")
-			.header("Content-Disposition", "attachment; filename=" + FILE_NAME) // Add this line to include the filename
+			.header("Content-Disposition", "attachment; filename=" + FILE_NAME)
 			.body(new InputStreamResource(new ByteArrayInputStream(new byte[0])));
 
-		when(entityManagerMock.unwrap(Session.class)).thenReturn(sessionMock);
-		when(sessionMock.getLobHelper()).thenReturn(lobHelperMock);
-		when(lobHelperMock.createBlob(any(), anyLong())).thenReturn(blobMock);
+		try (MockedStatic<Hibernate> hibernateMock = Mockito.mockStatic(Hibernate.class)) {
+			hibernateMock.when(Hibernate::getLobHelper).thenReturn(lobHelperMock);
+			when(lobHelperMock.createBlob(any(), anyLong())).thenReturn(blobMock);
 
-		final var result = ErrandAttachmentMapper.toAttachmentEntity(errandEntity, file, entityManagerMock);
+			final var result = ErrandAttachmentMapper.toAttachmentEntity(errandEntity, file);
 
-		assertThat(result).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "created", "modified");
-		assertThat(result.getMunicipalityId()).isEqualTo(errandEntity.getMunicipalityId());
-		assertThat(result.getNamespace()).isEqualTo(errandEntity.getNamespace());
-		assertThat(result.getFileName()).isEqualTo(FILE_NAME);
-		assertThat(result.getAttachmentData().getFile()).isSameAs(blobMock);
-		assertThat(result.getMimeType()).isEqualTo("application/octet-stream"); // Update expected MIME type
-		assertThat(result.getErrandEntity()).isSameAs(errandEntity);
+			assertThat(result).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "created", "modified");
+			assertThat(result.getMunicipalityId()).isEqualTo(errandEntity.getMunicipalityId());
+			assertThat(result.getNamespace()).isEqualTo(errandEntity.getNamespace());
+			assertThat(result.getFileName()).isEqualTo(FILE_NAME);
+			assertThat(result.getAttachmentData().getFile()).isSameAs(blobMock);
+			assertThat(result.getMimeType()).isEqualTo("application/octet-stream");
+			assertThat(result.getErrandEntity()).isSameAs(errandEntity);
+		}
 	}
 
 	@Test
@@ -104,7 +102,7 @@ class ErrandAttachmentMapperTest {
 
 		final var multipartFile = (MultipartFile) null;
 
-		assertThat(ErrandAttachmentMapper.toAttachmentEntity(null, multipartFile, null)).isNull();
+		assertThat(ErrandAttachmentMapper.toAttachmentEntity(null, multipartFile)).isNull();
 	}
 
 	@Test
@@ -124,6 +122,19 @@ class ErrandAttachmentMapperTest {
 
 		assertThat(ErrandAttachmentMapper.toErrandAttachments(null))
 			.isNotNull().isEmpty();
+	}
+
+	@Test
+	void toErrandAttachmentFromNull() {
+		assertThat(ErrandAttachmentMapper.toErrandAttachment(null)).isNull();
+	}
+
+	@Test
+	void toAttachmentEntityFromResponseEntityWithNullBody() {
+		final var errandEntity = buildErrandEntity();
+		final ResponseEntity<InputStreamResource> response = ResponseEntity.ok().body(null);
+
+		assertThat(ErrandAttachmentMapper.toAttachmentEntity(errandEntity, response)).isNull();
 	}
 
 }

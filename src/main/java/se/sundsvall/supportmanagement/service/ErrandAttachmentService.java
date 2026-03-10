@@ -1,6 +1,5 @@
 package se.sundsvall.supportmanagement.service;
 
-import jakarta.persistence.EntityManager;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.SQLException;
@@ -52,31 +51,29 @@ public class ErrandAttachmentService {
 	private final AttachmentRepository attachmentRepository;
 	private final RevisionService revisionService;
 	private final EventService eventService;
-	private final EntityManager entityManager;
 	private final Semaphore semaphore;
 
 	public ErrandAttachmentService(
 		final ErrandsRepository errandsRepository,
 		final AccessControlService accessControlService,
 		final RevisionService revisionService, final EventService eventService,
-		final AttachmentRepository attachmentRepository, final EntityManager entityManager, final Semaphore semaphore) {
+		final AttachmentRepository attachmentRepository, final Semaphore semaphore) {
 		this.errandsRepository = errandsRepository;
 		this.accessControlService = accessControlService;
 		this.revisionService = revisionService;
 		this.eventService = eventService;
 		this.attachmentRepository = attachmentRepository;
-		this.entityManager = entityManager;
 		this.semaphore = semaphore;
 	}
 
 	public String createErrandAttachment(final String namespace, final String municipalityId, final String errandId, final MultipartFile errandAttachment) {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, RW);
 
-		return createErrandAttachmentInternal(errandEntity, () -> toAttachmentEntity(errandEntity, errandAttachment, entityManager));
+		return createErrandAttachmentInternal(errandEntity, () -> toAttachmentEntity(errandEntity, errandAttachment));
 	}
 
 	public String createErrandAttachment(final ErrandEntity errandEntity, final ResponseEntity<InputStreamResource> file) {
-		return createErrandAttachmentInternal(errandEntity, () -> toAttachmentEntity(errandEntity, file, entityManager));
+		return createErrandAttachmentInternal(errandEntity, () -> toAttachmentEntity(errandEntity, file));
 	}
 
 	private String createErrandAttachmentInternal(final ErrandEntity errandEntity,

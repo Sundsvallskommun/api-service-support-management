@@ -17,6 +17,11 @@ public class ExternalIdType {
 	@NotBlank
 	private String name;
 
+	@Schema(description = "Display name for the external id type", examples = "External id type name", types = {
+		"string", "null"
+	})
+	private String displayName;
+
 	@Schema(description = "Timestamp when the external id type was created", examples = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	@DateTimeFormat(iso = ISO.DATE_TIME)
 	@Null
@@ -41,6 +46,19 @@ public class ExternalIdType {
 
 	public ExternalIdType withName(final String name) {
 		this.name = name;
+		return this;
+	}
+
+	public String getDisplayName() {
+		return displayName;
+	}
+
+	public void setDisplayName(final String displayName) {
+		this.displayName = displayName;
+	}
+
+	public ExternalIdType withDisplayName(final String displayName) {
+		this.displayName = displayName;
 		return this;
 	}
 
@@ -72,7 +90,7 @@ public class ExternalIdType {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(created, modified, name);
+		return Objects.hash(created, displayName, modified, name);
 	}
 
 	@Override
@@ -80,20 +98,17 @@ public class ExternalIdType {
 		if (this == obj) {
 			return true;
 		}
-		if (obj == null) {
+		if (!(obj instanceof final ExternalIdType other)) {
 			return false;
 		}
-		if (getClass() != obj.getClass()) {
-			return false;
-		}
-		final ExternalIdType other = (ExternalIdType) obj;
-		return Objects.equals(created, other.created) && Objects.equals(modified, other.modified) && Objects.equals(name, other.name);
+		return Objects.equals(created, other.created) && Objects.equals(displayName, other.displayName) && Objects.equals(modified, other.modified) && Objects.equals(name, other.name);
 	}
 
 	@Override
 	public String toString() {
 		return "ExternalIdType{" +
 			"name='" + name + '\'' +
+			", displayName='" + displayName + '\'' +
 			", created=" + created +
 			", modified=" + modified +
 			'}';

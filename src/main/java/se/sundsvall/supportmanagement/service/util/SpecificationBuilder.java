@@ -76,7 +76,6 @@ public class SpecificationBuilder<T> {
 	 * @return           Specification<T> matching sent in comparison
 	 */
 	private Specification<T> buildEqualFilter(String attribute, Object value) {
-		return (entity, cq, cb) -> nonNull(value) ? cb.equal(entity.get(attribute), value) : cb.and();
+		return (entity, _, cb) -> nonNull(value) ? cb.equal(entity.get(attribute), value) : cb.and();
 	}
-
 }

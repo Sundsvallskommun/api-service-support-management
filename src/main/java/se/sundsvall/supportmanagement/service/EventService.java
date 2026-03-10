@@ -75,7 +75,7 @@ public class EventService {
 	}
 
 	private void createNotification(final ErrandEntity errandEntity, final generated.se.sundsvall.eventlog.Event event, final NotificationSubType subtype) {
-		Optional.ofNullable(errandEntity.getAssignedUserId()).ifPresent(assignedUserId -> {
+		Optional.ofNullable(errandEntity.getAssignedUserId()).ifPresent(_ -> {
 			final var notification = toNotification(event, errandEntity, getAdUser(), subtype);
 			notificationService.createNotification(errandEntity.getMunicipalityId(), errandEntity.getNamespace(), errandEntity.getId(), notification);
 		});

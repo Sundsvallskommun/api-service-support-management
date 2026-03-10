@@ -140,7 +140,7 @@ class AccessControlServiceTest {
 		final var specification = accessControlService.withAccessControl(NAMESPACE, MUNICIPALITY_ID, user);
 
 		// Verify
-		assertThat(specification).usingRecursiveComparison().isEqualTo((Specification<ErrandEntity>) (root, query, criteriaBuilder) -> criteriaBuilder.conjunction());
+		assertThat(specification).usingRecursiveComparison().isEqualTo((Specification<ErrandEntity>) (_, _, criteriaBuilder) -> criteriaBuilder.conjunction());
 		verify(namespaceConfigServiceMock).get(NAMESPACE, MUNICIPALITY_ID);
 
 	}

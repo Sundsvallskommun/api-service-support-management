@@ -146,7 +146,7 @@ public class ConversationService {
 
 		messageExchangeClient.createMessage(municipalityId, messageExchangeNamespace, conversationEntity.getMessageExchangeId(), toMessageRequest(messageRequest), attachments);
 
-		Optional.ofNullable(attachments).ifPresent(attachment -> messageExchangeScheduler.triggerSyncConversationsAsync());
+		Optional.ofNullable(attachments).ifPresent(_ -> messageExchangeScheduler.triggerSyncConversationsAsync());
 
 		try {
 			if (EXTERNAL.name().equals(conversationEntity.getType())) {

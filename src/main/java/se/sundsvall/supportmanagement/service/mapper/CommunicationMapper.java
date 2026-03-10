@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.hibernate.Hibernate;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 import se.sundsvall.supportmanagement.api.model.communication.Communication;
@@ -23,19 +24,12 @@ import se.sundsvall.supportmanagement.integration.db.model.communication.Communi
 import se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.Direction;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
-import se.sundsvall.supportmanagement.service.util.BlobBuilder;
 
 import static org.apache.commons.codec.binary.Base64.decodeBase64;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.detectMimeType;
 
 @Component
 public class CommunicationMapper {
-
-	private final BlobBuilder blobBuilder;
-
-	public CommunicationMapper(final BlobBuilder blobBuilder) {
-		this.blobBuilder = blobBuilder;
-	}
 
 	@NotNull
 	private static Map<EmailHeader, List<String>> toHeaders(final CommunicationEntity entity) {
@@ -193,6 +187,6 @@ public class CommunicationMapper {
 
 	private AttachmentDataEntity toMessageAttachmentData(final byte[] byteArray) {
 		return AttachmentDataEntity.create()
-			.withFile(blobBuilder.createBlob(byteArray));
+			.withFile(Hibernate.getLobHelper().createBlob(byteArray));
 	}
 }

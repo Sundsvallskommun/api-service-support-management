@@ -5,10 +5,13 @@ import java.time.OffsetDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import org.hibernate.Hibernate;
+import org.hibernate.LobHelper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import se.sundsvall.supportmanagement.api.model.communication.Communication;
 import se.sundsvall.supportmanagement.api.model.communication.CommunicationAttachment;
@@ -25,7 +28,6 @@ import se.sundsvall.supportmanagement.integration.db.model.communication.Communi
 import se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.Direction;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
-import se.sundsvall.supportmanagement.service.util.BlobBuilder;
 
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -40,13 +42,12 @@ class CommunicationMapperTest {
 	private static final String ERRAND_NUMBER = "errandNumber";
 
 	@Mock
-	private BlobBuilder blobBuilder;
+	private LobHelper lobHelperMock;
 
 	@Mock
 	private Blob blobMock;
 
-	@InjectMocks
-	private CommunicationMapper communicationMapper;
+	private final CommunicationMapper communicationMapper = new CommunicationMapper();
 
 	@Test
 	void toCommunicationsReturnsCorrectCommunicationList() {
@@ -121,33 +122,36 @@ class CommunicationMapperTest {
 	@Test
 	void toCommunicationEntityFromEmailRequest() {
 
-		when(blobBuilder.createBlob(any())).thenReturn(blobMock);
+		try (MockedStatic<Hibernate> hibernateMock = Mockito.mockStatic(Hibernate.class)) {
+			hibernateMock.when(Hibernate::getLobHelper).thenReturn(lobHelperMock);
+			when(lobHelperMock.createBlob(any(byte[].class))).thenReturn(blobMock);
 
-		final var emailRequest = new EmailRequest()
-			.withRecipient("recipient")
-			.withSender("sender")
-			.withSenderName("senderName")
-			.withSubject("subject")
-			.withMessage("message")
-			.withHtmlMessage("htmlMessage")
-			.withInternal(true)
-			.withEmailHeaders(Map.of(EmailHeader.MESSAGE_ID, List.of("<test@test.se>")))
-			.withAttachments(singletonList(new EmailAttachment().withFileName("name").withBase64EncodedString("base64EncodedString")));
+			final var emailRequest = new EmailRequest()
+				.withRecipient("recipient")
+				.withSender("sender")
+				.withSenderName("senderName")
+				.withSubject("subject")
+				.withMessage("message")
+				.withHtmlMessage("htmlMessage")
+				.withInternal(true)
+				.withEmailHeaders(Map.of(EmailHeader.MESSAGE_ID, List.of("<test@test.se>")))
+				.withAttachments(singletonList(new EmailAttachment().withFileName("name").withBase64EncodedString("base64EncodedString")));
 
-		final var communicationEntity = communicationMapper.toCommunicationEntity(NAMESPACE, MUNICIPALITY_ID, emailRequest);
+			final var communicationEntity = communicationMapper.toCommunicationEntity(NAMESPACE, MUNICIPALITY_ID, emailRequest);
 
-		assertThat(communicationEntity).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "errandNumber", "externalId", "errandAttachments", "senderUserId");
-		assertThat(communicationEntity.getSender()).isEqualTo(emailRequest.getSender());
-		assertThat(communicationEntity.getDirection()).isEqualTo(Direction.OUTBOUND);
-		assertThat(communicationEntity.getTarget()).isEqualTo(emailRequest.getRecipient());
-		assertThat(communicationEntity.getType()).isEqualTo(CommunicationType.EMAIL);
-		assertThat(communicationEntity.getSubject()).isEqualTo(emailRequest.getSubject());
-		assertThat(communicationEntity.getMessageBody()).isEqualTo(emailRequest.getMessage());
-		assertThat(communicationEntity.getAttachments()).hasSize(1);
-		assertThat(communicationEntity.getAttachments().getFirst().getFileName()).isEqualTo("name");
-		assertThat(communicationEntity.getAttachments().getFirst().getMimeType()).isEqualTo("application/octet-stream");
-		assertThat(communicationEntity.getAttachments().getFirst().getAttachmentData().getFile()).isSameAs(blobMock);
-		assertThat(communicationEntity.isInternal()).isTrue();
+			assertThat(communicationEntity).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "errandNumber", "externalId", "errandAttachments", "senderUserId");
+			assertThat(communicationEntity.getSender()).isEqualTo(emailRequest.getSender());
+			assertThat(communicationEntity.getDirection()).isEqualTo(Direction.OUTBOUND);
+			assertThat(communicationEntity.getTarget()).isEqualTo(emailRequest.getRecipient());
+			assertThat(communicationEntity.getType()).isEqualTo(CommunicationType.EMAIL);
+			assertThat(communicationEntity.getSubject()).isEqualTo(emailRequest.getSubject());
+			assertThat(communicationEntity.getMessageBody()).isEqualTo(emailRequest.getMessage());
+			assertThat(communicationEntity.getAttachments()).hasSize(1);
+			assertThat(communicationEntity.getAttachments().getFirst().getFileName()).isEqualTo("name");
+			assertThat(communicationEntity.getAttachments().getFirst().getMimeType()).isEqualTo("application/octet-stream");
+			assertThat(communicationEntity.getAttachments().getFirst().getAttachmentData().getFile()).isSameAs(blobMock);
+			assertThat(communicationEntity.isInternal()).isTrue();
+		}
 
 	}
 
@@ -176,27 +180,30 @@ class CommunicationMapperTest {
 		final var adUser = "adUser";
 		final var fullName = "fullName";
 
-		when(blobBuilder.createBlob(any())).thenReturn(blobMock);
+		try (MockedStatic<Hibernate> hibernateMock = Mockito.mockStatic(Hibernate.class)) {
+			hibernateMock.when(Hibernate::getLobHelper).thenReturn(lobHelperMock);
+			when(lobHelperMock.createBlob(any(byte[].class))).thenReturn(blobMock);
 
-		final var webMessageRequest = new WebMessageRequest()
-			.withMessage("message")
-			.withInternal(true)
-			.withAttachments(List.of(new WebMessageAttachment().withFileName("name").withBase64EncodedString("base64EncodedString")));
+			final var webMessageRequest = new WebMessageRequest()
+				.withMessage("message")
+				.withInternal(true)
+				.withAttachments(List.of(new WebMessageAttachment().withFileName("name").withBase64EncodedString("base64EncodedString")));
 
-		final var communicationEntity = communicationMapper.toCommunicationEntity(NAMESPACE, MUNICIPALITY_ID, ERRAND_NUMBER, webMessageRequest, fullName, adUser);
+			final var communicationEntity = communicationMapper.toCommunicationEntity(NAMESPACE, MUNICIPALITY_ID, ERRAND_NUMBER, webMessageRequest, fullName, adUser);
 
-		assertThat(communicationEntity).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "externalId", "sender", "target", "recipients", "subject", "errandAttachments", "emailHeaders", "htmlMessageBody");
-		assertThat(communicationEntity.getErrandNumber()).isEqualTo(ERRAND_NUMBER);
-		assertThat(communicationEntity.getDirection()).isEqualTo(Direction.OUTBOUND);
-		assertThat(communicationEntity.getType()).isEqualTo(CommunicationType.WEB_MESSAGE);
-		assertThat(communicationEntity.getSender()).isEqualTo(fullName);
-		assertThat(communicationEntity.getSenderUserId()).isEqualTo(adUser);
-		assertThat(communicationEntity.getMessageBody()).isEqualTo(webMessageRequest.getMessage());
-		assertThat(communicationEntity.getAttachments()).hasSize(1);
-		assertThat(communicationEntity.getAttachments().getFirst().getFileName()).isEqualTo("name");
-		assertThat(communicationEntity.getAttachments().getFirst().getMimeType()).isEqualTo("application/octet-stream");
-		assertThat(communicationEntity.getAttachments().getFirst().getAttachmentData().getFile()).isSameAs(blobMock);
-		assertThat(communicationEntity.isInternal()).isTrue();
+			assertThat(communicationEntity).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "externalId", "sender", "target", "recipients", "subject", "errandAttachments", "emailHeaders", "htmlMessageBody");
+			assertThat(communicationEntity.getErrandNumber()).isEqualTo(ERRAND_NUMBER);
+			assertThat(communicationEntity.getDirection()).isEqualTo(Direction.OUTBOUND);
+			assertThat(communicationEntity.getType()).isEqualTo(CommunicationType.WEB_MESSAGE);
+			assertThat(communicationEntity.getSender()).isEqualTo(fullName);
+			assertThat(communicationEntity.getSenderUserId()).isEqualTo(adUser);
+			assertThat(communicationEntity.getMessageBody()).isEqualTo(webMessageRequest.getMessage());
+			assertThat(communicationEntity.getAttachments()).hasSize(1);
+			assertThat(communicationEntity.getAttachments().getFirst().getFileName()).isEqualTo("name");
+			assertThat(communicationEntity.getAttachments().getFirst().getMimeType()).isEqualTo("application/octet-stream");
+			assertThat(communicationEntity.getAttachments().getFirst().getAttachmentData().getFile()).isSameAs(blobMock);
+			assertThat(communicationEntity.isInternal()).isTrue();
+		}
 
 	}
 

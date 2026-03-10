@@ -66,7 +66,7 @@ public class AccessControlService {
 					.map(AccessLabelEmbeddable::getMetadataLabelId)
 					.collect(Collectors.toSet()));
 		}
-		return errandEntity -> false;
+		return _ -> false;
 	}
 
 	/**
@@ -83,7 +83,7 @@ public class AccessControlService {
 			final var filter = accessLevelEnums.length == 0 ? List.of(LR, R, RW) : Arrays.stream(accessLevelEnums).toList();
 			return hasAllowedMetadataLabels(accessMapperService.getAccessibleLabels(municipalityId, namespace, user, filter));
 		}
-		return (root, query, criteriaBuilder) -> criteriaBuilder.conjunction();
+		return (_, _, criteriaBuilder) -> criteriaBuilder.conjunction();
 	}
 
 	private boolean hasAccessControlActive(String namespace, String municipalityId) {

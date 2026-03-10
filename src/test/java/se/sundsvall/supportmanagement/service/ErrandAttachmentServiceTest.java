@@ -1,6 +1,5 @@
 package se.sundsvall.supportmanagement.service;
 
-import jakarta.persistence.EntityManager;
 import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.ByteArrayInputStream;
@@ -100,9 +99,6 @@ class ErrandAttachmentServiceTest {
 	private MultipartFile multipartFileMock;
 
 	@Mock
-	private EntityManager entityManagerMock;
-
-	@Mock
 	private AttachmentRepository attachmentRepositoryMock;
 
 	@Mock
@@ -130,14 +126,14 @@ class ErrandAttachmentServiceTest {
 
 		// Call
 		try (final MockedStatic<ErrandAttachmentMapper> mapper = Mockito.mockStatic(ErrandAttachmentMapper.class)) {
-			mapper.when(() -> ErrandAttachmentMapper.toAttachmentEntity(any(), any(MultipartFile.class), any())).thenReturn(attachmentMock);
+			mapper.when(() -> ErrandAttachmentMapper.toAttachmentEntity(any(), any(MultipartFile.class))).thenReturn(attachmentMock);
 
 			final var result = service.createErrandAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, multipartFileMock);
 
 			// Assertions and verifications
 			assertThat(result).isNotNull().isEqualTo(ATTACHMENT_ID);
 
-			mapper.verify(() -> ErrandAttachmentMapper.toAttachmentEntity(same(errandMock), same(multipartFileMock), same(entityManagerMock)));
+			mapper.verify(() -> ErrandAttachmentMapper.toAttachmentEntity(same(errandMock), same(multipartFileMock)));
 			verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, RW);
 			verify(attachmentRepositoryMock).save(attachmentMock);
 			verify(revisionServiceMock).createErrandRevision(errandMock);
