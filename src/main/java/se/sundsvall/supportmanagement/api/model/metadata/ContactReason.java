@@ -17,6 +17,11 @@ public class ContactReason {
 	@NotBlank
 	private String reason;
 
+	@Schema(description = "Display name for the contact reason", examples = "Contact reason name", types = {
+		"string", "null"
+	})
+	private String displayName;
+
 	@Schema(description = "Timestamp when the contact reason was created", examples = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	private OffsetDateTime created;
 
@@ -53,6 +58,19 @@ public class ContactReason {
 		return this;
 	}
 
+	public String getDisplayName() {
+		return displayName;
+	}
+
+	public void setDisplayName(final String displayName) {
+		this.displayName = displayName;
+	}
+
+	public ContactReason withDisplayName(final String displayName) {
+		this.displayName = displayName;
+		return this;
+	}
+
 	public OffsetDateTime getCreated() {
 		return created;
 	}
@@ -81,7 +99,7 @@ public class ContactReason {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(created, id, modified, reason);
+		return Objects.hash(created, displayName, id, modified, reason);
 	}
 
 	@Override
@@ -92,7 +110,7 @@ public class ContactReason {
 		if (!(obj instanceof final ContactReason other)) {
 			return false;
 		}
-		return Objects.equals(created, other.created) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(reason, other.reason);
+		return Objects.equals(created, other.created) && Objects.equals(displayName, other.displayName) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(reason, other.reason);
 	}
 
 	@Override
@@ -100,6 +118,7 @@ public class ContactReason {
 		return "ContactReason{" +
 			"id=" + id +
 			", reason='" + reason + '\'' +
+			", displayName='" + displayName + '\'' +
 			", created=" + created +
 			", modified=" + modified +
 			'}';

@@ -39,17 +39,20 @@ class ContactReasonTest {
 		final var created = OffsetDateTime.now();
 		final var modified = OffsetDateTime.now().plusDays(1);
 		final var reason = "name";
+		final var displayName = "displayName";
 		final var id = 123L;
 
 		final var bean = ContactReason.create()
 			.withCreated(created)
 			.withModified(modified)
 			.withReason(reason)
+			.withDisplayName(displayName)
 			.withId(id);
 
 		assertThat(bean.getCreated()).isEqualTo(created);
 		assertThat(bean.getModified()).isEqualTo(modified);
 		assertThat(bean.getReason()).isEqualTo(reason);
+		assertThat(bean.getDisplayName()).isEqualTo(displayName);
 		assertThat(bean.getId()).isEqualTo(id);
 	}
 

@@ -43,7 +43,7 @@ class RawDataDeserializerTest {
 		assertThat(deserializer.deserialize(jsonParserMock, null)).isEqualTo(wantedString);
 
 		verify(jsonNodeMock).isContainer();
-		verify(jsonNodeMock, never()).asText();
+		verify(jsonNodeMock, never()).asString();
 	}
 
 	@Test
@@ -52,12 +52,12 @@ class RawDataDeserializerTest {
 
 		doReturn(objectReadContextMock).when(jsonParserMock).objectReadContext();
 		when(objectReadContextMock.readTree(jsonParserMock)).thenReturn(jsonNodeMock);
-		when(jsonNodeMock.asText()).thenReturn(wantedString);
+		when(jsonNodeMock.asString()).thenReturn(wantedString);
 
 		assertThat(deserializer.deserialize(jsonParserMock, null)).isEqualTo(wantedString);
 
 		verify(jsonNodeMock).isContainer();
-		verify(jsonNodeMock).asText();
+		verify(jsonNodeMock).asString();
 
 	}
 

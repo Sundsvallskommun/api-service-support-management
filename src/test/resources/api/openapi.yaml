@@ -5,7 +5,7 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "12.4"
+  version: "12.5"
 servers:
 - url: http://localhost:56182
   description: Generated server url
@@ -5391,6 +5391,20 @@ components:
           examples:
           - statusName
           minLength: 1
+        displayName:
+          type:
+          - string
+          - "null"
+          description: Display name for the status
+          examples:
+          - Status name
+        externalDisplayName:
+          type:
+          - string
+          - "null"
+          description: External display name for the status
+          examples:
+          - External status name
         created:
           type: string
           format: date-time
@@ -5450,6 +5464,13 @@ components:
           examples:
           - PRIVATE
           minLength: 1
+        displayName:
+          type:
+          - string
+          - "null"
+          description: Display name for the external id type
+          examples:
+          - External id type name
         created:
           type: string
           format: date-time
@@ -5483,6 +5504,13 @@ components:
           examples:
           - Segt internet
           minLength: 1
+        displayName:
+          type:
+          - string
+          - "null"
+          description: Display name for the contact reason
+          examples:
+          - Contact reason name
         created:
           type: string
           format: date-time

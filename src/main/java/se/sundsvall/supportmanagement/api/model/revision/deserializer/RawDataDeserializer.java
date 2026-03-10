@@ -27,6 +27,6 @@ public class RawDataDeserializer extends ValueDeserializer<String> {
 				.replaceAll(EXCESSIVE_SPACES, SPACE);
 		}
 
-		return node.asText();
+		return node.asString();
 	}
 }

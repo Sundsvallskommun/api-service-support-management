@@ -17,6 +17,16 @@ public class Status {
 	@NotBlank
 	private String name;
 
+	@Schema(description = "Display name for the status", examples = "Status name", types = {
+		"string", "null"
+	})
+	private String displayName;
+
+	@Schema(description = "External display name for the status", examples = "External status name", types = {
+		"string", "null"
+	})
+	private String externalDisplayName;
+
 	@Schema(description = "Timestamp when the status was created", examples = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	@DateTimeFormat(iso = ISO.DATE_TIME)
 	@Null
@@ -41,6 +51,32 @@ public class Status {
 
 	public Status withName(final String name) {
 		this.name = name;
+		return this;
+	}
+
+	public String getDisplayName() {
+		return displayName;
+	}
+
+	public void setDisplayName(final String displayName) {
+		this.displayName = displayName;
+	}
+
+	public Status withDisplayName(final String displayName) {
+		this.displayName = displayName;
+		return this;
+	}
+
+	public String getExternalDisplayName() {
+		return externalDisplayName;
+	}
+
+	public void setExternalDisplayName(final String externalDisplayName) {
+		this.externalDisplayName = externalDisplayName;
+	}
+
+	public Status withExternalDisplayName(final String externalDisplayName) {
+		this.externalDisplayName = externalDisplayName;
 		return this;
 	}
 
@@ -72,7 +108,7 @@ public class Status {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(created, modified, name);
+		return Objects.hash(created, displayName, externalDisplayName, modified, name);
 	}
 
 	@Override
@@ -80,18 +116,20 @@ public class Status {
 		if (this == obj) {
 			return true;
 		}
-		if (obj == null) {
+		if (!(obj instanceof final Status other)) {
 			return false;
 		}
-		if (getClass() != obj.getClass()) {
-			return false;
-		}
-		final Status other = (Status) obj;
-		return Objects.equals(created, other.created) && Objects.equals(modified, other.modified) && Objects.equals(name, other.name);
+		return Objects.equals(created, other.created) && Objects.equals(displayName, other.displayName) && Objects.equals(externalDisplayName, other.externalDisplayName) && Objects.equals(modified, other.modified) && Objects.equals(name, other.name);
 	}
 
 	@Override
 	public String toString() {
-		return "Status [name=" + name + ", created=" + created + ", modified=" + modified + "]";
+		return "Status{" +
+			"name='" + name + '\'' +
+			", displayName='" + displayName + '\'' +
+			", externalDisplayName='" + externalDisplayName + '\'' +
+			", created=" + created +
+			", modified=" + modified +
+			'}';
 	}
 }

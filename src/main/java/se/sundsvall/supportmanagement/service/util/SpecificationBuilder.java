@@ -78,5 +78,4 @@ public class SpecificationBuilder<T> {
 	private Specification<T> buildEqualFilter(String attribute, Object value) {
 		return (entity, cq, cb) -> nonNull(value) ? cb.equal(entity.get(attribute), value) : cb.and();
 	}
-
 }

@@ -38,15 +38,21 @@ class StatusTest {
 		final var created = OffsetDateTime.now();
 		final var modified = OffsetDateTime.now().plusDays(1);
 		final var name = "name";
+		final var displayName = "displayName";
+		final var externalDisplayName = "externalDisplayName";
 
 		final var bean = Status.create()
 			.withCreated(created)
 			.withModified(modified)
-			.withName(name);
+			.withName(name)
+			.withDisplayName(displayName)
+			.withExternalDisplayName(externalDisplayName);
 
 		assertThat(bean.getCreated()).isEqualTo(created);
 		assertThat(bean.getModified()).isEqualTo(modified);
 		assertThat(bean.getName()).isEqualTo(name);
+		assertThat(bean.getDisplayName()).isEqualTo(displayName);
+		assertThat(bean.getExternalDisplayName()).isEqualTo(externalDisplayName);
 	}
 
 	@Test
