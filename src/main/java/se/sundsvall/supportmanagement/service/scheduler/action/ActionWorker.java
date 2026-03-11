@@ -11,7 +11,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.supportmanagement.integration.db.ErrandActionRepository;
+import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ActionConfigParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandActionEntity;
 import se.sundsvall.supportmanagement.service.action.Action;
 
@@ -21,10 +23,12 @@ public class ActionWorker {
 	private static final Logger LOG = LoggerFactory.getLogger(ActionWorker.class);
 
 	private final ErrandActionRepository errandActionRepository;
+	private final ErrandsRepository errandsRepository;
 	private final Map<String, Action> actions;
 
-	public ActionWorker(final ErrandActionRepository errandActionRepository, final List<Action> actionList) {
+	public ActionWorker(final ErrandActionRepository errandActionRepository, final List<Action> actionList, final ErrandsRepository errandsRepository) {
 		this.errandActionRepository = errandActionRepository;
+		this.errandsRepository = errandsRepository;
 		this.actions = new HashMap<>();
 		actionList.forEach(action -> this.actions.put(action.getName(), action));
 	}
@@ -54,7 +58,8 @@ public class ActionWorker {
 		if (action.actionFulfilled(errand, parameters)) {
 			errandActionRepository.delete(actionEntity);
 		} else {
-			action.executeAction(errand, configEntity);
+			var lockedErrand = errandsRepository.findWithLockingById(errand.getId()).orElseThrow(() -> new RuntimeException("Could not find errand"));
+			action.executeAction(lockedErrand, configEntity);
 			errandActionRepository.delete(actionEntity);
 		}
 	}
@@ -65,7 +70,7 @@ public class ActionWorker {
 		}
 		return configEntity.getParameters().stream()
 			.collect(Collectors.toMap(
-				p -> p.getKey(),
-				p -> p.getValues()));
+				ActionConfigParameterEntity::getKey,
+				ActionConfigParameterEntity::getValues));
 	}
 }

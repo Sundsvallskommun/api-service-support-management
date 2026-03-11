@@ -36,13 +36,13 @@ public class ErrandActionService {
 		});
 	}
 
-	public List<ActionDefinition> getActionDefinitions() {
+	public List<ActionDefinition> getActionDefinitions(String municipalityId, String namespace) {
 		return actions.values().stream()
 			.map(action -> ActionDefinition.create()
 				.withName(action.getName())
 				.withDescription(action.getDescription())
-				.withConditionDefinitions(action.getConditionDefinitions())
-				.withParameterDefinitions(action.getParameterDefinitions()))
+				.withConditionDefinitions(action.getConditionDefinitions(municipalityId, namespace))
+				.withParameterDefinitions(action.getParameterDefinitions(municipalityId, namespace)))
 			.toList();
 	}
 

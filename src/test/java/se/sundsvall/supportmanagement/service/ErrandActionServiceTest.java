@@ -56,12 +56,14 @@ class ErrandActionServiceTest {
 
 		when(actionMock.getName()).thenReturn(ACTION_NAME);
 		when(actionMock.getDescription()).thenReturn("Test action description");
-		when(actionMock.getConditionDefinitions()).thenReturn(conditionDefinitions);
-		when(actionMock.getParameterDefinitions()).thenReturn(parameterDefinitions);
+		when(actionMock.getConditionDefinitions(any(), any())).thenReturn(conditionDefinitions);
+		when(actionMock.getParameterDefinitions(any(), any())).thenReturn(parameterDefinitions);
 
 		final var service = new ErrandActionService(actionConfigRepositoryMock, List.of(actionMock));
-		final var result = service.getActionDefinitions();
+		final var result = service.getActionDefinitions(MUNICIPALITY_ID, NAMESPACE);
 
+		verify(actionMock).getConditionDefinitions(MUNICIPALITY_ID, NAMESPACE);
+		verify(actionMock).getParameterDefinitions(MUNICIPALITY_ID, NAMESPACE);
 		assertThat(result).hasSize(1);
 		assertThat(result.getFirst().getName()).isEqualTo(ACTION_NAME);
 		assertThat(result.getFirst().getDescription()).isEqualTo("Test action description");
@@ -72,7 +74,7 @@ class ErrandActionServiceTest {
 	@Test
 	void getActionDefinitionsWhenEmpty() {
 		final var service = new ErrandActionService(actionConfigRepositoryMock, List.of());
-		final var result = service.getActionDefinitions();
+		final var result = service.getActionDefinitions(MUNICIPALITY_ID, NAMESPACE);
 
 		assertThat(result).isEmpty();
 	}

@@ -159,7 +159,7 @@ class NamespaceConfigResource {
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId) {
 
-		return ok(actionService.getActionDefinitions());
+		return ok(actionService.getActionDefinitions(municipalityId, namespace));
 	}
 
 	@GetMapping(path = "/{municipalityId}/{namespace}/namespace-config/action-config", produces = APPLICATION_JSON_VALUE)

@@ -15,9 +15,9 @@ public interface Action {
 
 	String getDescription();
 
-	List<Definition> getConditionDefinitions();
+	List<Definition> getConditionDefinitions(String municipalityId, String namespace);
 
-	List<Definition> getParameterDefinitions();
+	List<Definition> getParameterDefinitions(String municipalityId, String namespace);
 
 	void validateConditions(String municipalityId, String namespace, Map<String, List<String>> conditions) throws ThrowableProblem;
 
