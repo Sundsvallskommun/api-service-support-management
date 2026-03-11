@@ -87,10 +87,10 @@ public class EmailWorkerConfigEntity {
 	@Column(name = "errand_channel")
 	private String errandChannel;
 
-	@Column(name = "ignore_auto_reply")
+	@Column(name = "ignore_auto_reply", nullable = false)
 	private boolean ignoreAutoReply;
 
-	@Column(name = "ignore_no_reply")
+	@Column(name = "ignore_no_reply", nullable = false)
 	private boolean ignoreNoReply;
 
 	@Column(name = "created")
