@@ -52,7 +52,7 @@ class EmailIntegrationConfigResourceTest {
 
 	@Test
 	void create() {
-		final var emailConfig = EmailIntegration.create().withEnabled(true).withStatusForNew("NEW");
+		final var emailConfig = EmailIntegration.create().withEnabled(true).withStatusForNew("NEW").withIgnoreAutoReply(false).withIgnoreNoReply(false);
 
 		webTestClient.post()
 			.uri(uriBuilder -> uriBuilder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
@@ -92,7 +92,7 @@ class EmailIntegrationConfigResourceTest {
 
 	@Test
 	void update() {
-		final var emailConfig = EmailIntegration.create().withEnabled(true).withStatusForNew("NEW");
+		final var emailConfig = EmailIntegration.create().withEnabled(true).withStatusForNew("NEW").withIgnoreAutoReply(false).withIgnoreNoReply(false);
 
 		webTestClient.put()
 			.uri(uriBuilder -> uriBuilder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))

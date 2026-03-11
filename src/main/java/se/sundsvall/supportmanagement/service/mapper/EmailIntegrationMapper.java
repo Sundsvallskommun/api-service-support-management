@@ -25,7 +25,9 @@ public class EmailIntegrationMapper {
 			.withInactiveStatus(config.getInactiveStatus())
 			.withAddSenderAsStakeholder(config.getAddSenderAsStakeholder() != null && config.getAddSenderAsStakeholder())
 			.withErrandChannel(config.getErrandChannel())
-			.withStakeholderRole(config.getStakeholderRole());
+			.withStakeholderRole(config.getStakeholderRole())
+			.withIgnoreAutoReply(config.getIgnoreAutoReply())
+			.withIgnoreNoReply(config.getIgnoreNoReply());
 	}
 
 	public EmailIntegration toEmailIntegration(final EmailWorkerConfigEntity entity) {
@@ -45,6 +47,8 @@ public class EmailIntegrationMapper {
 			.withAddSenderAsStakeholder(entity.isAddSenderAsStakeholder())
 			.withStakeholderRole(entity.getStakeholderRole())
 			.withErrandChannel(entity.getErrandChannel())
+			.withIgnoreAutoReply(entity.isIgnoreAutoReply())
+			.withIgnoreNoReply(entity.isIgnoreNoReply())
 			.withCreated(entity.getCreated())
 			.withModified(entity.getModified());
 	}

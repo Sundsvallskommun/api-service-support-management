@@ -44,6 +44,8 @@ class EmailWorkerConfigRepositoryTest {
 		final var addSenderAsStakeholder = true;
 		final var stakeholderRole = "stakeholderRole";
 		final var errandChannel = "errandChannel";
+		final var ignoreAutoReply = true;
+		final var ignoreNoReply = true;
 
 		final var entity = EmailWorkerConfigEntity.create()
 			.withMunicipalityId(municipalityId)
@@ -60,7 +62,9 @@ class EmailWorkerConfigRepositoryTest {
 			.withInactiveStatus(inactiveStatus)
 			.withAddSenderAsStakeholder(addSenderAsStakeholder)
 			.withStakeholderRole(stakeholderRole)
-			.withErrandChannel(errandChannel);
+			.withErrandChannel(errandChannel)
+			.withIgnoreAutoReply(ignoreAutoReply)
+			.withIgnoreNoReply(ignoreNoReply);
 
 		assertThat(repository.existsByNamespaceAndMunicipalityId(namespace, municipalityId)).isFalse();
 
@@ -86,6 +90,8 @@ class EmailWorkerConfigRepositoryTest {
 		assertThat(result.get().isAddSenderAsStakeholder()).isEqualTo(addSenderAsStakeholder);
 		assertThat(result.get().getStakeholderRole()).isEqualTo(stakeholderRole);
 		assertThat(result.get().getErrandChannel()).isEqualTo(errandChannel);
+		assertThat(result.get().isIgnoreAutoReply()).isEqualTo(ignoreAutoReply);
+		assertThat(result.get().isIgnoreNoReply()).isEqualTo(ignoreNoReply);
 		assertThat(result.get().getCreated()).isCloseTo(OffsetDateTime.now(), within(2, SECONDS));
 		assertThat(result.get().getModified()).isNull();
 	}

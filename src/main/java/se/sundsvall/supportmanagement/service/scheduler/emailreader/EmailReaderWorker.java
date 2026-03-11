@@ -8,8 +8,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.Strings;
-import org.apache.commons.validator.routines.EmailValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -29,6 +27,10 @@ import se.sundsvall.supportmanagement.service.EventService;
 
 import static java.util.Collections.emptyList;
 import static org.apache.commons.lang3.StringUtils.isAnyEmpty;
+import static se.sundsvall.supportmanagement.service.scheduler.emailreader.EmailReaderUtilities.isAutoReply;
+import static se.sundsvall.supportmanagement.service.scheduler.emailreader.EmailReaderUtilities.isDeliveryStatusReport;
+import static se.sundsvall.supportmanagement.service.scheduler.emailreader.EmailReaderUtilities.isNoReplyAddress;
+import static se.sundsvall.supportmanagement.service.scheduler.emailreader.EmailReaderUtilities.shouldSuppressConfirmation;
 import static se.sundsvall.supportmanagement.service.scheduler.emailreader.ErrandNumberParser.parseSubject;
 
 @Service
@@ -76,6 +78,18 @@ public class EmailReaderWorker {
 
 	@Transactional
 	public void processEmail(final Email email, final EmailWorkerConfigEntity config, final Consumer<String> setUnHealthyConsumer) {
+
+		// Delete and skip entirely when configured to fully ignore
+		if (config.isIgnoreAutoReply() && isAutoReply(email) && !isDeliveryStatusReport(email)) {
+			LOG.info("Email '{}' is an auto-reply and will be deleted per namespace config", email.getId());
+			emailReaderClient.deleteEmail(config.getMunicipalityId(), email.getId());
+			return;
+		}
+		if (config.isIgnoreNoReply() && isNoReplyAddress(email)) {
+			LOG.info("Email '{}' is from a no-reply address and will be deleted per namespace config", email.getId());
+			emailReaderClient.deleteEmail(config.getMunicipalityId(), email.getId());
+			return;
+		}
 
 		final var errandNumber = parseSubject(email.getSubject());
 
@@ -152,9 +166,8 @@ public class EmailReaderWorker {
 
 	private EmailRequest createEmailClosed(final Email email, final EmailWorkerConfigEntity config) {
 
-		if (isNonUsableEmailAddress(email.getSender())) {
-			// Don't send to a bad email address or to emails starting with no-reply or noreply.
-			LOG.info("No mail for closed errand will be sent as email address '{}' is either invalid or contains a no reply address", email.getSender());
+		if (shouldSuppressConfirmation(email)) {
+			LOG.info("No confirmation for closed errand will be sent for email from '{}'", email.getSender());
 			return null;
 		}
 
@@ -168,19 +181,14 @@ public class EmailReaderWorker {
 			return null;
 		}
 
-		if (isNonUsableEmailAddress(email.getSender())) {
-			// Don't send to a bad email address or to emails starting with no-reply or noreply.
-			LOG.info("No mail for new errand will be sent as email address '{}' is either invalid or contains a no reply address", email.getSender());
+		if (shouldSuppressConfirmation(email)) {
+			LOG.info("No confirmation for new errand will be sent for email from '{}'", email.getSender());
 			return null;
 		}
 
 		final var subject = EMAIL_NEW_SUBJECT_PREFIX + "#" + errand.getErrandNumber() + " " + email.getSubject();
 
 		return emailReaderMapper.createEmailRequest(email, config.getErrandNewEmailSender(), config.getErrandNewEmailTemplate(), config.getErrandNewEmailHTMLTemplate(), subject);
-	}
-
-	private boolean isNonUsableEmailAddress(final String value) {
-		return !EmailValidator.getInstance().isValid(value) || Strings.CI.startsWithAny(value, "no-reply", "noreply");
 	}
 
 	void addAttachments(final CommunicationEntity communicationEntity) {

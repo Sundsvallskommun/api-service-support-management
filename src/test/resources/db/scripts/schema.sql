@@ -65,7 +65,7 @@
     create table communication_email_header (
         communication_id varchar(255),
         id varchar(255) not null,
-        header_key enum ('AUTO_SUBMITTED','IN_REPLY_TO','MESSAGE_ID','REFERENCES'),
+        header_key enum ('AUTO_SUBMITTED','CONTENT_TYPE','IN_REPLY_TO','MESSAGE_ID','REFERENCES','RETURN_PATH'),
         primary key (id)
     ) engine=InnoDB;
 
@@ -124,6 +124,8 @@
         add_sender_as_stakeholder bit,
         days_of_inactivity_before_reject integer,
         enabled bit not null,
+        ignore_auto_reply bit not null,
+        ignore_no_reply bit not null,
         created datetime(6),
         id bigint not null auto_increment,
         modified datetime(6),
