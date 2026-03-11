@@ -53,7 +53,7 @@ class EmailIntegrationConfigResourceFailureTest {
 
 	@Test
 	void createWithInvalidNamespace() {
-		final var emailConfig = EmailIntegration.create().withEnabled(true).withStatusForNew("NEW");
+		final var emailConfig = EmailIntegration.create().withEnabled(true).withStatusForNew("NEW").withIgnoreAutoReply(false).withIgnoreNoReply(false);
 
 		final var response = webTestClient.post()
 			.uri(uriBuilder -> uriBuilder.path(PATH).build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID)))
@@ -78,7 +78,7 @@ class EmailIntegrationConfigResourceFailureTest {
 
 	@Test
 	void createWithInvalidMunicipalityId() {
-		final var emailConfig = EmailIntegration.create().withEnabled(true).withStatusForNew("NEW");
+		final var emailConfig = EmailIntegration.create().withEnabled(true).withStatusForNew("NEW").withIgnoreAutoReply(false).withIgnoreNoReply(false);
 
 		final var response = webTestClient.post()
 			.uri(uriBuilder -> uriBuilder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", INVALID)))
@@ -102,7 +102,7 @@ class EmailIntegrationConfigResourceFailureTest {
 
 	@Test
 	void createWithStatusForNewNull() {
-		final var emailConfig = EmailIntegration.create().withEnabled(true);
+		final var emailConfig = EmailIntegration.create().withEnabled(true).withIgnoreAutoReply(false).withIgnoreNoReply(false);
 
 		final var response = webTestClient.post()
 			.uri(uriBuilder -> uriBuilder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
@@ -126,7 +126,7 @@ class EmailIntegrationConfigResourceFailureTest {
 
 	@Test
 	void createWithEnabledNull() {
-		final var emailConfig = EmailIntegration.create().withStatusForNew("NEW");
+		final var emailConfig = EmailIntegration.create().withStatusForNew("NEW").withIgnoreAutoReply(false).withIgnoreNoReply(false);
 
 		final var response = webTestClient.post()
 			.uri(uriBuilder -> uriBuilder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
@@ -149,8 +149,56 @@ class EmailIntegrationConfigResourceFailureTest {
 	}
 
 	@Test
+	void createWithIgnoreAutoReplyNull() {
+		final var emailConfig = EmailIntegration.create().withEnabled(true).withStatusForNew("NEW").withIgnoreNoReply(false);
+
+		final var response = webTestClient.post()
+			.uri(uriBuilder -> uriBuilder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(emailConfig)
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactly(tuple("ignoreAutoReply", "must not be null"));
+
+		verifyNoInteractions(serviceMock);
+	}
+
+	@Test
+	void createWithIgnoreNoReplyNull() {
+		final var emailConfig = EmailIntegration.create().withEnabled(true).withStatusForNew("NEW").withIgnoreAutoReply(false);
+
+		final var response = webTestClient.post()
+			.uri(uriBuilder -> uriBuilder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(emailConfig)
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactly(tuple("ignoreNoReply", "must not be null"));
+
+		verifyNoInteractions(serviceMock);
+	}
+
+	@Test
 	void createWithInvalidStatus() {
-		final var emailConfig = EmailIntegration.create().withEnabled(true).withStatusForNew("invalid");
+		final var emailConfig = EmailIntegration.create().withEnabled(true).withStatusForNew("invalid").withIgnoreAutoReply(false).withIgnoreNoReply(false);
 
 		final var response = webTestClient.post()
 			.uri(uriBuilder -> uriBuilder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
@@ -214,7 +262,7 @@ class EmailIntegrationConfigResourceFailureTest {
 
 	@Test
 	void updateWithInvalidNamespace() {
-		final var emailConfig = EmailIntegration.create().withEnabled(true).withStatusForNew("NEW");
+		final var emailConfig = EmailIntegration.create().withEnabled(true).withStatusForNew("NEW").withIgnoreAutoReply(false).withIgnoreNoReply(false);
 
 		final var response = webTestClient.put()
 			.uri(uriBuilder -> uriBuilder.path(PATH).build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID)))
@@ -239,7 +287,7 @@ class EmailIntegrationConfigResourceFailureTest {
 
 	@Test
 	void updateWithInvalidMunicipalityId() {
-		final var emailConfig = EmailIntegration.create().withEnabled(true).withStatusForNew("NEW");
+		final var emailConfig = EmailIntegration.create().withEnabled(true).withStatusForNew("NEW").withIgnoreAutoReply(false).withIgnoreNoReply(false);
 
 		final var response = webTestClient.put()
 			.uri(uriBuilder -> uriBuilder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", INVALID)))
@@ -263,7 +311,7 @@ class EmailIntegrationConfigResourceFailureTest {
 
 	@Test
 	void updateWithStatusForNewNull() {
-		final var emailConfig = EmailIntegration.create().withEnabled(true);
+		final var emailConfig = EmailIntegration.create().withEnabled(true).withIgnoreAutoReply(false).withIgnoreNoReply(false);
 
 		final var response = webTestClient.put()
 			.uri(uriBuilder -> uriBuilder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
@@ -287,7 +335,7 @@ class EmailIntegrationConfigResourceFailureTest {
 
 	@Test
 	void updateWithEnabledNull() {
-		final var emailConfig = EmailIntegration.create().withStatusForNew("NEW");
+		final var emailConfig = EmailIntegration.create().withStatusForNew("NEW").withIgnoreAutoReply(false).withIgnoreNoReply(false);
 
 		final var response = webTestClient.put()
 			.uri(uriBuilder -> uriBuilder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
@@ -310,8 +358,56 @@ class EmailIntegrationConfigResourceFailureTest {
 	}
 
 	@Test
+	void updateWithIgnoreAutoReplyNull() {
+		final var emailConfig = EmailIntegration.create().withEnabled(true).withStatusForNew("NEW").withIgnoreNoReply(false);
+
+		final var response = webTestClient.put()
+			.uri(uriBuilder -> uriBuilder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(emailConfig)
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactly(tuple("ignoreAutoReply", "must not be null"));
+
+		verifyNoInteractions(serviceMock);
+	}
+
+	@Test
+	void updateWithIgnoreNoReplyNull() {
+		final var emailConfig = EmailIntegration.create().withEnabled(true).withStatusForNew("NEW").withIgnoreAutoReply(false);
+
+		final var response = webTestClient.put()
+			.uri(uriBuilder -> uriBuilder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(emailConfig)
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactly(tuple("ignoreNoReply", "must not be null"));
+
+		verifyNoInteractions(serviceMock);
+	}
+
+	@Test
 	void updateWithInvalidStatus() {
-		final var emailConfig = EmailIntegration.create().withEnabled(true).withStatusForNew("invalid");
+		final var emailConfig = EmailIntegration.create().withEnabled(true).withStatusForNew("invalid").withIgnoreAutoReply(false).withIgnoreNoReply(false);
 
 		final var response = webTestClient.put()
 			.uri(uriBuilder -> uriBuilder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))

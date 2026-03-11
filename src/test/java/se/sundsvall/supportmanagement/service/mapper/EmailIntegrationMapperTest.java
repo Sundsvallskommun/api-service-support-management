@@ -31,6 +31,8 @@ class EmailIntegrationMapperTest {
 		final var addSenderAsStakeholder = true;
 		final var stakeholderRole = "stakeholderRole";
 		final var errandChannel = "errandChannel";
+		final var ignoreAutoReply = true;
+		final var ignoreNoReply = true;
 		final var created = OffsetDateTime.now();
 		final var modified = OffsetDateTime.now().plusDays(1);
 
@@ -50,6 +52,8 @@ class EmailIntegrationMapperTest {
 			.withAddSenderAsStakeholder(addSenderAsStakeholder)
 			.withStakeholderRole(stakeholderRole)
 			.withErrandChannel(errandChannel)
+			.withIgnoreAutoReply(ignoreAutoReply)
+			.withIgnoreNoReply(ignoreNoReply)
 			.withCreated(created)
 			.withModified(modified);
 
@@ -73,6 +77,8 @@ class EmailIntegrationMapperTest {
 		assertThat(entity.isAddSenderAsStakeholder()).isEqualTo(addSenderAsStakeholder);
 		assertThat(entity.getStakeholderRole()).isEqualTo(stakeholderRole);
 		assertThat(entity.getErrandChannel()).isEqualTo(errandChannel);
+		assertThat(entity.isIgnoreAutoReply()).isEqualTo(ignoreAutoReply);
+		assertThat(entity.isIgnoreNoReply()).isEqualTo(ignoreNoReply);
 	}
 
 	@Test
@@ -95,6 +101,8 @@ class EmailIntegrationMapperTest {
 		final var addSenderAsStakeholder = true;
 		final var stakeholderRole = "stakeholderRole";
 		final var errandChannel = "errandChannel";
+		final var ignoreAutoReply = true;
+		final var ignoreNoReply = true;
 		final var created = OffsetDateTime.now().minusDays(1);
 		final var modified = OffsetDateTime.now();
 
@@ -117,6 +125,8 @@ class EmailIntegrationMapperTest {
 			.withAddSenderAsStakeholder(addSenderAsStakeholder)
 			.withStakeholderRole(stakeholderRole)
 			.withErrandChannel(errandChannel)
+			.withIgnoreAutoReply(ignoreAutoReply)
+			.withIgnoreNoReply(ignoreNoReply)
 			.withCreated(created)
 			.withModified(modified);
 
@@ -136,6 +146,8 @@ class EmailIntegrationMapperTest {
 		assertThat(config.getAddSenderAsStakeholder()).isEqualTo(addSenderAsStakeholder);
 		assertThat(config.getStakeholderRole()).isEqualTo(stakeholderRole);
 		assertThat(config.getErrandChannel()).isEqualTo(errandChannel);
+		assertThat(config.getIgnoreAutoReply()).isEqualTo(ignoreAutoReply);
+		assertThat(config.getIgnoreNoReply()).isEqualTo(ignoreNoReply);
 		assertThat(config.getCreated()).isEqualTo(created);
 		assertThat(config.getModified()).isEqualTo(modified);
 	}

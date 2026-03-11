@@ -211,7 +211,11 @@ class EmailReaderMapperTest {
 		final var sender = "someSender";
 		final var template = "someTemplate";
 		final var htmlTemplate = "someHtmlTemplate";
-		final Map<String, List<String>> emailHeaders = Map.of("MESSAGE_ID", List.of("someValue"), "IN_REPLY_TO", List.of("someValue"));
+		final var emailHeaders = new java.util.HashMap<String, List<String>>();
+		emailHeaders.put("MESSAGE_ID", List.of("someValue"));
+		emailHeaders.put("IN_REPLY_TO", List.of("someValue"));
+		emailHeaders.put("RETURN_PATH", List.of("<user@domain.com>"));
+		emailHeaders.put("CONTENT_TYPE", List.of("text/plain"));
 
 		final var email = new Email()
 			.subject(subject)
@@ -237,6 +241,8 @@ class EmailReaderMapperTest {
 		assertThat(result.getEmailHeaders().get(EmailHeader.IN_REPLY_TO)).isNotNull().hasSize(1).contains("someValue");
 		assertThat(result.getEmailHeaders().get(EmailHeader.REFERENCES)).isNotNull().hasSize(1).contains("someValue");
 		assertThat(result.getEmailHeaders().get(EmailHeader.AUTO_SUBMITTED)).isNotNull().hasSize(1).contains("auto-generated");
+		assertThat(result.getEmailHeaders().get(EmailHeader.RETURN_PATH)).isNull();
+		assertThat(result.getEmailHeaders().get(EmailHeader.CONTENT_TYPE)).isNull();
 	}
 
 	@Test

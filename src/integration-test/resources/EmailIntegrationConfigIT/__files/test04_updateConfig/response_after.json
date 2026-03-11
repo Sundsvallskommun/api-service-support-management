@@ -11,5 +11,7 @@
 	"modified": "${json-unit.ignore}",
 	"stakeholderRole": "ROLE-2",
 	"addSenderAsStakeholder": false,
-	"errandClosedEmailTemplate": "template-update"
+	"errandClosedEmailTemplate": "template-update",
+	"ignoreAutoReply": false,
+	"ignoreNoReply": false
 }
