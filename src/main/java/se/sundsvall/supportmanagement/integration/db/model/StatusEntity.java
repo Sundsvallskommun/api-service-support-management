@@ -39,6 +39,12 @@ public class StatusEntity {
 	@Column(name = "name", nullable = false)
 	private String name;
 
+	@Column(name = "display_name")
+	private String displayName;
+
+	@Column(name = "external_display_name")
+	private String externalDisplayName;
+
 	@Column(name = "municipality_id", nullable = false, length = 8)
 	private String municipalityId;
 
@@ -80,6 +86,32 @@ public class StatusEntity {
 
 	public StatusEntity withName(final String name) {
 		this.name = name;
+		return this;
+	}
+
+	public String getDisplayName() {
+		return displayName;
+	}
+
+	public void setDisplayName(final String displayName) {
+		this.displayName = displayName;
+	}
+
+	public StatusEntity withDisplayName(final String displayName) {
+		this.displayName = displayName;
+		return this;
+	}
+
+	public String getExternalDisplayName() {
+		return externalDisplayName;
+	}
+
+	public void setExternalDisplayName(final String externalDisplayName) {
+		this.externalDisplayName = externalDisplayName;
+	}
+
+	public StatusEntity withExternalDisplayName(final String externalDisplayName) {
+		this.externalDisplayName = externalDisplayName;
 		return this;
 	}
 
@@ -147,7 +179,7 @@ public class StatusEntity {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(created, id, modified, municipalityId, name, namespace);
+		return Objects.hash(created, displayName, externalDisplayName, id, modified, municipalityId, name, namespace);
 	}
 
 	@Override
@@ -162,8 +194,9 @@ public class StatusEntity {
 			return false;
 		}
 		final StatusEntity other = (StatusEntity) obj;
-		return Objects.equals(created, other.created) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(municipalityId, other.municipalityId) && Objects.equals(name, other.name) && Objects.equals(namespace,
-			other.namespace);
+		return Objects.equals(created, other.created) && Objects.equals(displayName, other.displayName) && Objects.equals(externalDisplayName, other.externalDisplayName) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects
+			.equals(municipalityId, other.municipalityId) && Objects.equals(name, other.name) && Objects.equals(namespace,
+				other.namespace);
 	}
 
 	@Override
@@ -171,6 +204,8 @@ public class StatusEntity {
 		return "StatusEntity{" +
 			"id=" + id +
 			", name='" + name + '\'' +
+			", displayName='" + displayName + '\'' +
+			", externalDisplayName='" + externalDisplayName + '\'' +
 			", municipalityId='" + municipalityId + '\'' +
 			", namespace='" + namespace + '\'' +
 			", created=" + created +

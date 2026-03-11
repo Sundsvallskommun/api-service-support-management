@@ -39,6 +39,8 @@ class StatusEntityTest {
 	void hasValidBuilderMethods() {
 
 		final var created = OffsetDateTime.now().minusDays(1);
+		final var displayName = "displayName";
+		final var externalDisplayName = "externalDisplayName";
 		final var id = 1L;
 		final var modified = OffsetDateTime.now();
 		final var municipalityId = "municipalityId";
@@ -47,6 +49,8 @@ class StatusEntityTest {
 
 		final var entity = StatusEntity.create()
 			.withCreated(created)
+			.withDisplayName(displayName)
+			.withExternalDisplayName(externalDisplayName)
 			.withId(id)
 			.withModified(modified)
 			.withMunicipalityId(municipalityId)
@@ -55,6 +59,8 @@ class StatusEntityTest {
 
 		assertThat(entity).hasNoNullFieldsOrProperties();
 		assertThat(entity.getCreated()).isEqualTo(created);
+		assertThat(entity.getDisplayName()).isEqualTo(displayName);
+		assertThat(entity.getExternalDisplayName()).isEqualTo(externalDisplayName);
 		assertThat(entity.getId()).isEqualTo(id);
 		assertThat(entity.getModified()).isEqualTo(modified);
 		assertThat(entity.getMunicipalityId()).isEqualTo(municipalityId);

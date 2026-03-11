@@ -24,6 +24,9 @@ public class ContactReasonEntity {
 	@Column(name = "reason")
 	private String reason;
 
+	@Column(name = "display_name")
+	private String displayName;
+
 	@Column(name = "municipality_id", nullable = false, length = 8)
 	private String municipalityId;
 
@@ -65,6 +68,19 @@ public class ContactReasonEntity {
 
 	public ContactReasonEntity withReason(final String reason) {
 		this.reason = reason;
+		return this;
+	}
+
+	public String getDisplayName() {
+		return displayName;
+	}
+
+	public void setDisplayName(final String displayName) {
+		this.displayName = displayName;
+	}
+
+	public ContactReasonEntity withDisplayName(final String displayName) {
+		this.displayName = displayName;
 		return this;
 	}
 
@@ -125,6 +141,7 @@ public class ContactReasonEntity {
 		return "ContactReasonEntity{" +
 			"id='" + id + '\'' +
 			", reason='" + reason + '\'' +
+			", displayName='" + displayName + '\'' +
 			", municipalityId='" + municipalityId + '\'' +
 			", namespace='" + namespace + '\'' +
 			", created=" + created +
@@ -139,12 +156,13 @@ public class ContactReasonEntity {
 		if (o == null || getClass() != o.getClass())
 			return false;
 		final ContactReasonEntity that = (ContactReasonEntity) o;
-		return Objects.equals(id, that.id) && Objects.equals(reason, that.reason) && Objects.equals(municipalityId, that.municipalityId) && Objects.equals(namespace, that.namespace) && Objects.equals(created, that.created) && Objects.equals(modified,
-			that.modified);
+		return Objects.equals(id, that.id) && Objects.equals(reason, that.reason) && Objects.equals(displayName, that.displayName) && Objects.equals(municipalityId, that.municipalityId) && Objects.equals(namespace, that.namespace) && Objects.equals(
+			created, that.created) && Objects.equals(modified,
+				that.modified);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, reason, municipalityId, namespace, created, modified);
+		return Objects.hash(id, reason, displayName, municipalityId, namespace, created, modified);
 	}
 }

@@ -33,6 +33,7 @@ class ContactReasonEntityTest {
 
 		final var id = 10L;
 		final var reason = "reason";
+		final var displayName = "displayName";
 		final var nameSpace = "nameSpace";
 		final var municipalityId = "municipalityId";
 		final var created = OffsetDateTime.now();
@@ -43,11 +44,13 @@ class ContactReasonEntityTest {
 			.withNamespace(nameSpace)
 			.withMunicipalityId(municipalityId)
 			.withReason(reason)
+			.withDisplayName(displayName)
 			.withCreated(created)
 			.withModified(modified);
 
 		Assertions.assertThat(entity).hasNoNullFieldsOrProperties();
 		Assertions.assertThat(entity.getReason()).isEqualTo(reason);
+		Assertions.assertThat(entity.getDisplayName()).isEqualTo(displayName);
 		Assertions.assertThat(entity.getId()).isEqualTo(id);
 		Assertions.assertThat(entity.getNamespace()).isEqualTo(nameSpace);
 		Assertions.assertThat(entity.getMunicipalityId()).isEqualTo(municipalityId);
