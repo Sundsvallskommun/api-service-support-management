@@ -166,7 +166,7 @@ public class EmailReaderWorker {
 
 	private EmailRequest createEmailClosed(final Email email, final EmailWorkerConfigEntity config) {
 
-		if (shouldSuppressConfirmation(email, config)) {
+		if (shouldSuppressConfirmation(email)) {
 			LOG.info("No confirmation for closed errand will be sent for email from '{}'", email.getSender());
 			return null;
 		}
@@ -181,7 +181,7 @@ public class EmailReaderWorker {
 			return null;
 		}
 
-		if (shouldSuppressConfirmation(email, config)) {
+		if (shouldSuppressConfirmation(email)) {
 			LOG.info("No confirmation for new errand will be sent for email from '{}'", email.getSender());
 			return null;
 		}

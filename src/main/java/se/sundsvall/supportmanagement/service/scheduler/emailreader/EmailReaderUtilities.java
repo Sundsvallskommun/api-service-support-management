@@ -4,7 +4,6 @@ import generated.se.sundsvall.emailreader.Email;
 import java.util.Optional;
 import org.apache.commons.lang3.Strings;
 import org.apache.commons.validator.routines.EmailValidator;
-import se.sundsvall.supportmanagement.integration.db.model.EmailWorkerConfigEntity;
 
 import static java.util.Collections.emptyList;
 
@@ -48,7 +47,7 @@ public final class EmailReaderUtilities {
 		return !EmailValidator.getInstance().isValid(email.getSender());
 	}
 
-	static boolean shouldSuppressConfirmation(final Email email, final EmailWorkerConfigEntity config) {
+	static boolean shouldSuppressConfirmation(final Email email) {
 		// Always suppress for system messages
 		if (isSystemMessage(email)) {
 			return true;

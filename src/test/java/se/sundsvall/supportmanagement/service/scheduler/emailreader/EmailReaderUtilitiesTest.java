@@ -6,7 +6,6 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import se.sundsvall.supportmanagement.integration.db.model.EmailWorkerConfigEntity;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static se.sundsvall.supportmanagement.service.scheduler.emailreader.EmailReaderUtilities.isAutoReply;
@@ -130,18 +129,16 @@ class EmailReaderUtilitiesTest {
 		final var email = new Email();
 		email.setSender("postmaster@domain.com");
 		email.setHeaders(Map.of("RETURN_PATH", List.of("<>")));
-		final var config = EmailWorkerConfigEntity.create();
 
-		assertThat(shouldSuppressConfirmation(email, config)).isTrue();
+		assertThat(shouldSuppressConfirmation(email)).isTrue();
 	}
 
 	@Test
 	void shouldSuppressConfirmationWithInvalidEmail() {
 		final var email = new Email();
 		email.setSender("invalid");
-		final var config = EmailWorkerConfigEntity.create();
 
-		assertThat(shouldSuppressConfirmation(email, config)).isTrue();
+		assertThat(shouldSuppressConfirmation(email)).isTrue();
 	}
 
 	@Test
@@ -149,9 +146,8 @@ class EmailReaderUtilitiesTest {
 		final var email = new Email();
 		email.setSender("user@domain.com");
 		email.setHeaders(Map.of("AUTO_SUBMITTED", List.of("auto-replied")));
-		final var config = EmailWorkerConfigEntity.create();
 
-		assertThat(shouldSuppressConfirmation(email, config)).isTrue();
+		assertThat(shouldSuppressConfirmation(email)).isTrue();
 	}
 
 	@Test
@@ -161,9 +157,8 @@ class EmailReaderUtilitiesTest {
 		email.setHeaders(Map.of(
 			"AUTO_SUBMITTED", List.of("auto-replied"),
 			"CONTENT_TYPE", List.of("multipart/report; report-type=delivery-status")));
-		final var config = EmailWorkerConfigEntity.create();
 
-		assertThat(shouldSuppressConfirmation(email, config)).isFalse();
+		assertThat(shouldSuppressConfirmation(email)).isFalse();
 	}
 
 	@ParameterizedTest
@@ -173,17 +168,15 @@ class EmailReaderUtilitiesTest {
 	void shouldSuppressConfirmationWithNoReplyAddress(final String sender) {
 		final var email = new Email();
 		email.setSender(sender);
-		final var config = EmailWorkerConfigEntity.create();
 
-		assertThat(shouldSuppressConfirmation(email, config)).isTrue();
+		assertThat(shouldSuppressConfirmation(email)).isTrue();
 	}
 
 	@Test
 	void shouldSuppressConfirmationWithValidRegularEmail() {
 		final var email = new Email();
 		email.setSender("user@domain.com");
-		final var config = EmailWorkerConfigEntity.create();
 
-		assertThat(shouldSuppressConfirmation(email, config)).isFalse();
+		assertThat(shouldSuppressConfirmation(email)).isFalse();
 	}
 }
