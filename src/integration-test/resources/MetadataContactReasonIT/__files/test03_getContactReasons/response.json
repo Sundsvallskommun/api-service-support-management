@@ -1,18 +1,21 @@
 [
 	{
 		"reason": "reason1",
+		"displayName": "Reason 1",
 		"created": "2023-12-31T23:59:59.999+01:00",
 		"modified": "2023-12-31T23:59:59.999+01:00",
 		"id": 123
 	},
 	{
 		"reason": "reason2",
+		"displayName": "Reason 2",
 		"created": "2023-12-31T23:59:59.999+01:00",
 		"modified": "2023-12-31T23:59:59.999+01:00",
 		"id": 124
 	},
 	{
 		"reason": "reason3",
+		"displayName": "Reason 3",
 		"created": "2023-12-31T23:59:59.999+01:00",
 		"modified": "2023-12-31T23:59:59.999+01:00",
 		"id": 127
