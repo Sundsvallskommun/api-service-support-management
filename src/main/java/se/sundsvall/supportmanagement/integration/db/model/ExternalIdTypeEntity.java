@@ -39,6 +39,9 @@ public class ExternalIdTypeEntity {
 	@Column(name = "name", nullable = false)
 	private String name;
 
+	@Column(name = "display_name")
+	private String displayName;
+
 	@Column(name = "municipality_id", nullable = false, length = 8)
 	private String municipalityId;
 
@@ -80,6 +83,19 @@ public class ExternalIdTypeEntity {
 
 	public ExternalIdTypeEntity withName(final String name) {
 		this.name = name;
+		return this;
+	}
+
+	public String getDisplayName() {
+		return displayName;
+	}
+
+	public void setDisplayName(final String displayName) {
+		this.displayName = displayName;
+	}
+
+	public ExternalIdTypeEntity withDisplayName(final String displayName) {
+		this.displayName = displayName;
 		return this;
 	}
 
@@ -147,7 +163,7 @@ public class ExternalIdTypeEntity {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(created, id, modified, municipalityId, name, namespace);
+		return Objects.hash(created, displayName, id, modified, municipalityId, name, namespace);
 	}
 
 	@Override
@@ -162,8 +178,9 @@ public class ExternalIdTypeEntity {
 			return false;
 		}
 		final ExternalIdTypeEntity other = (ExternalIdTypeEntity) obj;
-		return Objects.equals(created, other.created) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(municipalityId, other.municipalityId) && Objects.equals(name, other.name) && Objects.equals(namespace,
-			other.namespace);
+		return Objects.equals(created, other.created) && Objects.equals(displayName, other.displayName) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(municipalityId, other.municipalityId) && Objects.equals(
+			name, other.name) && Objects.equals(namespace,
+				other.namespace);
 	}
 
 	@Override
@@ -171,6 +188,7 @@ public class ExternalIdTypeEntity {
 		return "ExternalIdTypeEntity{" +
 			"id=" + id +
 			", name='" + name + '\'' +
+			", displayName='" + displayName + '\'' +
 			", municipalityId='" + municipalityId + '\'' +
 			", namespace='" + namespace + '\'' +
 			", created=" + created +

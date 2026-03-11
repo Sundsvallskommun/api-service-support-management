@@ -2,12 +2,17 @@ package se.sundsvall.supportmanagement.integration.db.model;
 
 import java.time.OffsetDateTime;
 import java.util.Random;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static com.google.code.beanmatchers.BeanMatchers.*;
+import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;
+import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanEquals;
+import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanHashCode;
+import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanToString;
+import static com.google.code.beanmatchers.BeanMatchers.hasValidGettersAndSetters;
+import static com.google.code.beanmatchers.BeanMatchers.registerValueGenerator;
 import static java.time.OffsetDateTime.now;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.AllOf.allOf;
 
@@ -33,6 +38,7 @@ class ContactReasonEntityTest {
 
 		final var id = 10L;
 		final var reason = "reason";
+		final var displayName = "displayName";
 		final var nameSpace = "nameSpace";
 		final var municipalityId = "municipalityId";
 		final var created = OffsetDateTime.now();
@@ -43,21 +49,23 @@ class ContactReasonEntityTest {
 			.withNamespace(nameSpace)
 			.withMunicipalityId(municipalityId)
 			.withReason(reason)
+			.withDisplayName(displayName)
 			.withCreated(created)
 			.withModified(modified);
 
-		Assertions.assertThat(entity).hasNoNullFieldsOrProperties();
-		Assertions.assertThat(entity.getReason()).isEqualTo(reason);
-		Assertions.assertThat(entity.getId()).isEqualTo(id);
-		Assertions.assertThat(entity.getNamespace()).isEqualTo(nameSpace);
-		Assertions.assertThat(entity.getMunicipalityId()).isEqualTo(municipalityId);
-		Assertions.assertThat(entity.getCreated()).isEqualTo(created);
-		Assertions.assertThat(entity.getModified()).isEqualTo(modified);
+		assertThat(entity).hasNoNullFieldsOrProperties();
+		assertThat(entity.getReason()).isEqualTo(reason);
+		assertThat(entity.getDisplayName()).isEqualTo(displayName);
+		assertThat(entity.getId()).isEqualTo(id);
+		assertThat(entity.getNamespace()).isEqualTo(nameSpace);
+		assertThat(entity.getMunicipalityId()).isEqualTo(municipalityId);
+		assertThat(entity.getCreated()).isEqualTo(created);
+		assertThat(entity.getModified()).isEqualTo(modified);
 	}
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		Assertions.assertThat(ContactReasonEntity.create()).hasAllNullFieldsOrProperties();
-		Assertions.assertThat(new ContactReasonEntity()).hasAllNullFieldsOrProperties();
+		assertThat(ContactReasonEntity.create()).hasAllNullFieldsOrProperties();
+		assertThat(new ContactReasonEntity()).hasAllNullFieldsOrProperties();
 	}
 }

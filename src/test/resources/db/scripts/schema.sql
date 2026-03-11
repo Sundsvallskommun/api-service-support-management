@@ -98,6 +98,7 @@
         modified datetime(6),
         municipality_id varchar(8) not null,
         namespace varchar(32) not null,
+        display_name varchar(255),
         reason varchar(255),
         primary key (id)
     ) engine=InnoDB;
@@ -199,6 +200,7 @@
         modified datetime(6),
         municipality_id varchar(8) not null,
         namespace varchar(32) not null,
+        display_name varchar(255),
         name varchar(255) not null,
         primary key (id)
     ) engine=InnoDB;
@@ -210,7 +212,6 @@
     ) engine=InnoDB;
 
     create table json_parameter (
-        json_parameter_order integer default 0 not null,
         errand_id varchar(255) not null,
         id varchar(255) not null,
         parameter_key varchar(255),
@@ -281,7 +282,6 @@
     ) engine=InnoDB;
 
     create table parameter (
-        parameter_order integer default 0 not null,
         display_name varchar(255),
         errand_id varchar(255) not null,
         id varchar(255) not null,
@@ -356,6 +356,8 @@
         modified datetime(6),
         municipality_id varchar(8) not null,
         namespace varchar(32) not null,
+        display_name varchar(255),
+        external_display_name varchar(255),
         name varchar(255) not null,
         primary key (id)
     ) engine=InnoDB;

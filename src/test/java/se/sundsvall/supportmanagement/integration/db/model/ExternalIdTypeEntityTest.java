@@ -39,6 +39,7 @@ class ExternalIdTypeEntityTest {
 	void hasValidBuilderMethods() {
 
 		final var created = OffsetDateTime.now().minusDays(1);
+		final var displayName = "displayName";
 		final var id = 1L;
 		final var modified = OffsetDateTime.now();
 		final var municipalityId = "municipalityId";
@@ -47,6 +48,7 @@ class ExternalIdTypeEntityTest {
 
 		final var entity = ExternalIdTypeEntity.create()
 			.withCreated(created)
+			.withDisplayName(displayName)
 			.withId(id)
 			.withModified(modified)
 			.withMunicipalityId(municipalityId)
@@ -55,6 +57,7 @@ class ExternalIdTypeEntityTest {
 
 		assertThat(entity).hasNoNullFieldsOrProperties();
 		assertThat(entity.getCreated()).isEqualTo(created);
+		assertThat(entity.getDisplayName()).isEqualTo(displayName);
 		assertThat(entity.getId()).isEqualTo(id);
 		assertThat(entity.getModified()).isEqualTo(modified);
 		assertThat(entity.getMunicipalityId()).isEqualTo(municipalityId);

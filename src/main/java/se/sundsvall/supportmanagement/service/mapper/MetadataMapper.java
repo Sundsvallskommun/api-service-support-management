@@ -107,6 +107,8 @@ public class MetadataMapper {
 		return ofNullable(entity)
 			.map(e -> Status.create()
 				.withCreated(e.getCreated())
+				.withDisplayName(e.getDisplayName())
+				.withExternalDisplayName(e.getExternalDisplayName())
 				.withModified(e.getModified())
 				.withName(e.getName()))
 			.orElse(null);
@@ -118,6 +120,8 @@ public class MetadataMapper {
 		}
 
 		return StatusEntity.create()
+			.withDisplayName(status.getDisplayName())
+			.withExternalDisplayName(status.getExternalDisplayName())
 			.withMunicipalityId(municipalityId)
 			.withName(status.getName())
 			.withNamespace(namespace);
@@ -157,6 +161,7 @@ public class MetadataMapper {
 		return ofNullable(entity)
 			.map(e -> ExternalIdType.create()
 				.withCreated(e.getCreated())
+				.withDisplayName(e.getDisplayName())
 				.withModified(e.getModified())
 				.withName(e.getName()))
 			.orElse(null);
@@ -168,6 +173,7 @@ public class MetadataMapper {
 		}
 
 		return ExternalIdTypeEntity.create()
+			.withDisplayName(externalIdType.getDisplayName())
 			.withMunicipalityId(municipalityId)
 			.withName(externalIdType.getName())
 			.withNamespace(namespace);
@@ -283,6 +289,7 @@ public class MetadataMapper {
 			.map(entity -> ContactReason.create()
 				.withId(contactReasonEntity.getId())
 				.withReason(entity.getReason())
+				.withDisplayName(entity.getDisplayName())
 				.withModified(entity.getModified())
 				.withCreated(entity.getCreated()))
 			.orElse(null);
@@ -292,6 +299,7 @@ public class MetadataMapper {
 		return Optional.ofNullable(contactReason)
 			.map(request -> ContactReasonEntity.create()
 				.withReason(request.getReason())
+				.withDisplayName(request.getDisplayName())
 				.withNamespace(namespace)
 				.withMunicipalityId(municipalityId)
 				.withCreated(now())
@@ -305,6 +313,7 @@ public class MetadataMapper {
 		}
 
 		Optional.ofNullable(contactReason.getReason()).ifPresent(entity::setReason);
+		Optional.ofNullable(contactReason.getDisplayName()).ifPresent(entity::setDisplayName);
 
 		return entity;
 	}
