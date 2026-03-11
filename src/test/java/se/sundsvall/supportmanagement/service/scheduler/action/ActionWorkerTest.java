@@ -11,12 +11,14 @@ import static org.mockito.Mockito.when;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import se.sundsvall.supportmanagement.integration.db.ErrandActionRepository;
+import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandActionEntity;
@@ -30,6 +32,9 @@ class ActionWorkerTest {
 	private ErrandActionRepository errandActionRepositoryMock;
 
 	@Mock
+	private ErrandsRepository errandsRepositoryMock;
+
+	@Mock
 	private Action actionMock;
 
 	private ActionWorker actionWorker;
@@ -37,7 +42,7 @@ class ActionWorkerTest {
 	@BeforeEach
 	void setUp() {
 		when(actionMock.getName()).thenReturn("testAction");
-		actionWorker = new ActionWorker(errandActionRepositoryMock, List.of(actionMock));
+		actionWorker = new ActionWorker(errandActionRepositoryMock, List.of(actionMock), errandsRepositoryMock);
 	}
 
 	@Test
@@ -49,7 +54,7 @@ class ActionWorkerTest {
 
 		assertThat(result).containsExactly(expiredAction);
 		verify(errandActionRepositoryMock).findAllByExecuteAfterBefore(any(OffsetDateTime.class));
-		verifyNoMoreInteractions(errandActionRepositoryMock);
+		verifyNoMoreInteractions(errandActionRepositoryMock, errandsRepositoryMock);
 	}
 
 	@Test
@@ -69,7 +74,7 @@ class ActionWorkerTest {
 
 		verify(actionMock).actionFulfilled(errand, Map.of("label", List.of("priority-high")));
 		verify(errandActionRepositoryMock).delete(actionEntity);
-		verifyNoMoreInteractions(errandActionRepositoryMock);
+		verifyNoMoreInteractions(errandActionRepositoryMock, errandsRepositoryMock);
 	}
 
 	@Test
@@ -84,13 +89,15 @@ class ActionWorkerTest {
 			.withActionConfigEntity(config);
 
 		when(actionMock.actionFulfilled(errand, Map.of("label", List.of("priority-high")))).thenReturn(false);
+		when(errandsRepositoryMock.findWithLockingById(any())).thenReturn(Optional.of(errand));
 
 		actionWorker.processAction(actionEntity);
 
 		verify(actionMock).actionFulfilled(errand, Map.of("label", List.of("priority-high")));
+		verify(errandsRepositoryMock).findWithLockingById("errand-id");
 		verify(actionMock).executeAction(errand, config);
 		verify(errandActionRepositoryMock).delete(actionEntity);
-		verifyNoMoreInteractions(errandActionRepositoryMock);
+		verifyNoMoreInteractions(errandActionRepositoryMock, errandsRepositoryMock);
 	}
 
 	@Test
@@ -106,7 +113,7 @@ class ActionWorkerTest {
 			.isInstanceOf(IllegalStateException.class)
 			.hasMessage("No action implementation found for name: UNKNOWN_ACTION");
 
-		verifyNoInteractions(errandActionRepositoryMock);
+		verifyNoInteractions(errandActionRepositoryMock, errandsRepositoryMock);
 	}
 
 	@Test
@@ -119,6 +126,6 @@ class ActionWorkerTest {
 			.isInstanceOf(IllegalStateException.class)
 			.hasMessage("No action config found for errand action with id: action-id");
 
-		verifyNoInteractions(errandActionRepositoryMock);
+		verifyNoInteractions(errandActionRepositoryMock, errandsRepositoryMock);
 	}
 }
