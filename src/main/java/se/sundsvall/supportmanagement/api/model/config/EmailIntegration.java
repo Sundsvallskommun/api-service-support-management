@@ -91,6 +91,14 @@ public class EmailIntegration {
 	})
 	private String errandChannel;
 
+	@Schema(description = "If true, auto-reply emails (with Auto-Submitted header) will be ignored and not processed, except for delivery-status reports", examples = "true")
+	@NotNull
+	private Boolean ignoreAutoReply;
+
+	@Schema(description = "If true, no confirmation email will be sent to no-reply addresses", examples = "true")
+	@NotNull
+	private Boolean ignoreNoReply;
+
 	@Schema(description = "Timestamp when the configuration was created", examples = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	private OffsetDateTime created;
 
@@ -322,6 +330,32 @@ public class EmailIntegration {
 		return this;
 	}
 
+	public Boolean getIgnoreAutoReply() {
+		return ignoreAutoReply;
+	}
+
+	public void setIgnoreAutoReply(final Boolean ignoreAutoReply) {
+		this.ignoreAutoReply = ignoreAutoReply;
+	}
+
+	public EmailIntegration withIgnoreAutoReply(final Boolean ignoreAutoReply) {
+		this.ignoreAutoReply = ignoreAutoReply;
+		return this;
+	}
+
+	public Boolean getIgnoreNoReply() {
+		return ignoreNoReply;
+	}
+
+	public void setIgnoreNoReply(final Boolean ignoreNoReply) {
+		this.ignoreNoReply = ignoreNoReply;
+	}
+
+	public EmailIntegration withIgnoreNoReply(final Boolean ignoreNoReply) {
+		this.ignoreNoReply = ignoreNoReply;
+		return this;
+	}
+
 	@Override
 	public boolean equals(final Object o) {
 		if (o == null || getClass() != o.getClass())
@@ -331,7 +365,8 @@ public class EmailIntegration {
 			&& Objects.equals(errandClosedEmailHTMLTemplate, that.errandClosedEmailHTMLTemplate) && Objects.equals(errandNewEmailSender, that.errandNewEmailSender) && Objects.equals(errandNewEmailTemplate,
 				that.errandNewEmailTemplate) && Objects.equals(errandNewEmailHTMLTemplate, that.errandNewEmailHTMLTemplate) && Objects.equals(daysOfInactivityBeforeReject, that.daysOfInactivityBeforeReject) && Objects.equals(
 					statusForNew, that.statusForNew) && Objects.equals(triggerStatusChangeOn, that.triggerStatusChangeOn) && Objects.equals(statusChangeTo, that.statusChangeTo) && Objects.equals(inactiveStatus, that.inactiveStatus)
-			&& Objects.equals(addSenderAsStakeholder, that.addSenderAsStakeholder) && Objects.equals(stakeholderRole, that.stakeholderRole) && Objects.equals(errandChannel, that.errandChannel) && Objects.equals(created,
+			&& Objects.equals(addSenderAsStakeholder, that.addSenderAsStakeholder) && Objects.equals(stakeholderRole, that.stakeholderRole) && Objects.equals(errandChannel, that.errandChannel)
+			&& Objects.equals(ignoreAutoReply, that.ignoreAutoReply) && Objects.equals(ignoreNoReply, that.ignoreNoReply) && Objects.equals(created,
 				that.created) && Objects.equals(modified, that.modified);
 	}
 
@@ -339,7 +374,7 @@ public class EmailIntegration {
 	public int hashCode() {
 		return Objects.hash(enabled, errandClosedEmailSender, errandClosedEmailTemplate, errandClosedEmailHTMLTemplate, errandNewEmailSender, errandNewEmailTemplate, errandNewEmailHTMLTemplate, daysOfInactivityBeforeReject, statusForNew,
 			triggerStatusChangeOn,
-			statusChangeTo, inactiveStatus, addSenderAsStakeholder, stakeholderRole, errandChannel, created, modified);
+			statusChangeTo, inactiveStatus, addSenderAsStakeholder, stakeholderRole, errandChannel, ignoreAutoReply, ignoreNoReply, created, modified);
 	}
 
 	@Override
@@ -360,6 +395,8 @@ public class EmailIntegration {
 			", addSenderAsStakeholder=" + addSenderAsStakeholder +
 			", stakeholderRole='" + stakeholderRole + '\'' +
 			", errandChannel='" + errandChannel + '\'' +
+			", ignoreAutoReply=" + ignoreAutoReply +
+			", ignoreNoReply=" + ignoreNoReply +
 			", created=" + created +
 			", modified=" + modified +
 			'}';

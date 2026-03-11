@@ -6,5 +6,7 @@
 	"triggerStatusChangeOn": "STATUS-3",
 	"inactiveStatus": "STATUS-1",
 	"enabled": false,
-	"errandClosedEmailTemplate": "template"
+	"errandClosedEmailTemplate": "template",
+	"ignoreAutoReply": false,
+	"ignoreNoReply": false
 }

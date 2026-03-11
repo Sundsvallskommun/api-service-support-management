@@ -1,4 +1,6 @@
 {
 	"statusForNew": "STATUS-1",
-	"enabled": false
+	"enabled": false,
+	"ignoreAutoReply": false,
+	"ignoreNoReply": false
 }

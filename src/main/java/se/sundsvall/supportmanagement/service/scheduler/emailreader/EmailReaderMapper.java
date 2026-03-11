@@ -156,6 +156,10 @@ public class EmailReaderMapper {
 
 		map.put(EmailHeader.AUTO_SUBMITTED, List.of("auto-generated"));
 
+		// Remove headers that should not be included in outgoing emails
+		map.remove(EmailHeader.RETURN_PATH);
+		map.remove(EmailHeader.CONTENT_TYPE);
+
 		return map;
 	}
 

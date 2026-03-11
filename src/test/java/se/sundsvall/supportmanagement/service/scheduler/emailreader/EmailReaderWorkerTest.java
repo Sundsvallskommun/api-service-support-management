@@ -245,17 +245,14 @@ class EmailReaderWorkerTest {
 		verifyNoMoreInteractions(emailReaderClientMock, errandRepositoryMock, emailReaderMapperMock, communicationServiceMock, emailWorkerConfigRepositoryMock, eventServiceMock);
 	}
 
-	@ParameterizedTest
-	@ValueSource(strings = {
-		"invalid", "no-reply@domain.com", "noreply@domain.com", "NO-reply@otherdomain.com", "noREPLY@OTHERdomain.com"
-	})
-	void processEmailWithExpiredErrandAndInvalidSenderAddress(final String sender) {
+	@Test
+	void processEmailWithExpiredErrandAndInvalidSenderAddress() {
 
 		// ARRANGE
 		final var email = new Email();
 		email.setSubject("Ärende #PRH-2022-000002 Ansökan om bygglov för fastighet KATARINA 4");
 		email.setId("id");
-		email.setSender(sender);
+		email.setSender("invalid");
 
 		final var emailConfig = EmailWorkerConfigEntity.create()
 			.withEnabled(true)
@@ -271,21 +268,18 @@ class EmailReaderWorkerTest {
 
 		final var errandEntity = ErrandEntity.create().withId("id").withStatus("SOLVED").withCreated(OffsetDateTime.now().minusDays(6)).withTouched(OffsetDateTime.now().minusDays(6));
 		final var communicationEntity = CommunicationEntity.create();
-		final var emailRequest = new EmailRequest();
 
 		// MOCK
 		when(errandRepositoryMock.findByErrandNumberAndNamespace(anyString(), anyString())).thenReturn(Optional.of(errandEntity));
 		when(emailReaderMapperMock.toCommunicationEntity(any(), any())).thenReturn(communicationEntity);
-		when(emailReaderMapperMock.createEmailRequest(any(Email.class), any(String.class), any(String.class), any(String.class), any(String.class))).thenReturn(emailRequest);
 
 		// ACT
 		emailReaderWorker.processEmail(email, emailConfig, consumerMock);
 
-		// VERIFY
+		// VERIFY - errand is processed but no confirmation email sent (invalid sender suppressed)
 		verify(errandRepositoryMock).findByErrandNumberAndNamespace("PRH-2022-000002", NAMESPACE);
-		verify(emailReaderMapperMock, never()).createEmailRequest(same(email), eq(emailConfig.getErrandClosedEmailSender()), eq(emailConfig.getErrandClosedEmailTemplate()), eq(emailConfig.getErrandClosedEmailHTMLTemplate()),
-			eq("Ärende #PRH-2022-000002 Ansökan om bygglov för fastighet KATARINA 4"));
-		verify(communicationServiceMock, never()).sendEmail(eq(emailConfig.getNamespace()), eq(emailConfig.getMunicipalityId()), eq(errandEntity.getId()), same(emailRequest));
+		verify(emailReaderMapperMock, never()).createEmailRequest(any(), any(), any(), any(), any());
+		verify(communicationServiceMock, never()).sendEmail(any(ErrandEntity.class), any());
 		verify(emailReaderMapperMock).toCommunicationEntity(same(email), same(errandEntity));
 		verify(communicationServiceMock).saveAttachment(same(communicationEntity), same(errandEntity));
 		verify(communicationServiceMock).saveCommunication(same(communicationEntity));
@@ -349,15 +343,12 @@ class EmailReaderWorkerTest {
 		verifyNoMoreInteractions(emailReaderClientMock, errandRepositoryMock, emailReaderMapperMock, communicationServiceMock, emailWorkerConfigRepositoryMock, eventServiceMock);
 	}
 
-	@ParameterizedTest
-	@ValueSource(strings = {
-		"invalid", "no-reply@domain.com", "noreply@domain.com", "NO-reply@otherdomain.com", "noREPLY@OTHERdomain.com"
-	})
-	void processEmailWithNewErrandAndInvalidSenderAddress(final String sender) {
+	@Test
+	void processEmailWithNewErrandAndInvalidSenderAddress() {
 
 		// ARRANGE
 		final var email = new Email();
-		email.setSender(sender);
+		email.setSender("invalid");
 		email.setSubject("Ansökan om bygglov för fastighet KATARINA 4");
 		email.setId("id");
 
@@ -377,7 +368,6 @@ class EmailReaderWorkerTest {
 
 		final var errandEntity = ErrandEntity.create().withId("id").withErrandNumber("errandNumber").withStatus("NEW").withCreated(OffsetDateTime.now());
 		final var communicationEntity = CommunicationEntity.create();
-		final var emailRequest = new EmailRequest();
 
 		// MOCK
 		when(errandRepositoryMock.findById(anyString())).thenReturn(Optional.of(errandEntity));
@@ -385,12 +375,11 @@ class EmailReaderWorkerTest {
 		when(errandServiceMock.createErrand(anyString(), anyString(), any())).thenReturn(errandEntity.getId());
 		when(emailReaderMapperMock.toErrand(any(), any())).thenReturn(new Errand());
 		when(emailReaderMapperMock.toCommunicationEntity(any(), any())).thenReturn(communicationEntity);
-		when(emailReaderMapperMock.createEmailRequest(any(Email.class), any(String.class), any(String.class), any(String.class), any(String.class))).thenReturn(emailRequest);
 
 		// ACT
 		emailReaderWorker.processEmail(email, emailConfig, consumerMock);
 
-		// VERIFY
+		// VERIFY - errand is created but no confirmation email sent (invalid sender suppressed)
 		verify(errandRepositoryMock).findById(errandEntity.getId());
 		verify(emailReaderMapperMock, never()).createEmailRequest(any(), any(), any(), any(), any());
 		verify(emailReaderMapperMock).toErrand(same(email), same(emailConfig));
@@ -545,4 +534,283 @@ class EmailReaderWorkerTest {
 		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Nytt meddelande"), same(errandEntity), isNull(), isNull(), eq(MESSAGE));
 		verifyNoMoreInteractions(emailWorkerConfigRepositoryMock, emailReaderClientMock, errandServiceMock, errandRepositoryMock, emailReaderMapperMock, communicationServiceMock, eventServiceMock);
 	}
+
+	@Test
+	void processEmailAutoReplyIgnored() {
+
+		// ARRANGE
+		final var email = new Email();
+		email.setSubject("Out of office");
+		email.setId("id");
+		email.setHeaders(Map.of("AUTO_SUBMITTED", List.of("auto-replied")));
+
+		final var emailConfig = EmailWorkerConfigEntity.create()
+			.withEnabled(true)
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withNamespace(NAMESPACE)
+			.withStatusForNew("NEW")
+			.withIgnoreAutoReply(true);
+
+		// ACT
+		emailReaderWorker.processEmail(email, emailConfig, consumerMock);
+
+		// VERIFY
+		verify(emailReaderClientMock).deleteEmail(MUNICIPALITY_ID, email.getId());
+		verifyNoInteractions(errandRepositoryMock, errandServiceMock, communicationServiceMock, eventServiceMock, emailReaderMapperMock);
+		verifyNoMoreInteractions(emailReaderClientMock);
+	}
+
+	@Test
+	void processEmailAutoReplyNotIgnoredWhenConfigDisabled() {
+
+		// ARRANGE
+		final var email = new Email();
+		email.setSubject("Ärende #PRH-2022-000001 Out of office");
+		email.setId("id");
+		email.setHeaders(Map.of("AUTO_SUBMITTED", List.of("auto-replied")));
+
+		final var emailConfig = EmailWorkerConfigEntity.create()
+			.withEnabled(true)
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withNamespace(NAMESPACE)
+			.withStatusForNew("NEW")
+			.withTriggerStatusChangeOn("SOLVED")
+			.withStatusChangeTo("ONGOING")
+			.withIgnoreAutoReply(false);
+
+		final var errandEntity = ErrandEntity.create().withId("id").withStatus("SOLVED").withCreated(OffsetDateTime.now().minusDays(1)).withModified(OffsetDateTime.now()).withTouched(OffsetDateTime.now());
+		final var communicationEntity = CommunicationEntity.create();
+
+		// MOCK
+		when(errandRepositoryMock.findByErrandNumberAndNamespace(anyString(), anyString())).thenReturn(Optional.of(errandEntity));
+		when(emailReaderMapperMock.toCommunicationEntity(any(), any())).thenReturn(communicationEntity);
+
+		// ACT
+		emailReaderWorker.processEmail(email, emailConfig, consumerMock);
+
+		// VERIFY - email should be processed normally
+		verify(errandRepositoryMock).findByErrandNumberAndNamespace("PRH-2022-000001", NAMESPACE);
+		verify(errandRepositoryMock).save(same(errandEntity));
+		verify(emailReaderMapperMock).toCommunicationEntity(same(email), same(errandEntity));
+		verify(emailReaderClientMock).deleteEmail(MUNICIPALITY_ID, email.getId());
+		verify(communicationServiceMock).saveCommunication(same(communicationEntity));
+		verify(communicationServiceMock).saveAttachment(same(communicationEntity), same(errandEntity));
+		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Nytt meddelande"), same(errandEntity), isNull(), isNull(), eq(MESSAGE));
+		verifyNoInteractions(errandServiceMock);
+		verifyNoMoreInteractions(emailReaderClientMock, errandRepositoryMock, emailReaderMapperMock, communicationServiceMock, emailWorkerConfigRepositoryMock, eventServiceMock, consumerMock);
+	}
+
+	@Test
+	void processEmailDeliveryStatusNotIgnoredEvenWithAutoReplyConfig() {
+
+		// ARRANGE
+		final var email = new Email();
+		email.setSubject("Ärende #PRH-2022-000001 Delivery Status Notification");
+		email.setId("id");
+		email.setHeaders(Map.of(
+			"AUTO_SUBMITTED", List.of("auto-replied"),
+			"CONTENT_TYPE", List.of("multipart/report; report-type=delivery-status")));
+
+		final var emailConfig = EmailWorkerConfigEntity.create()
+			.withEnabled(true)
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withNamespace(NAMESPACE)
+			.withStatusForNew("NEW")
+			.withTriggerStatusChangeOn("SOLVED")
+			.withStatusChangeTo("ONGOING")
+			.withIgnoreAutoReply(true);
+
+		final var errandEntity = ErrandEntity.create().withId("id").withStatus("SOLVED").withCreated(OffsetDateTime.now().minusDays(1)).withModified(OffsetDateTime.now()).withTouched(OffsetDateTime.now());
+		final var communicationEntity = CommunicationEntity.create();
+
+		// MOCK
+		when(errandRepositoryMock.findByErrandNumberAndNamespace(anyString(), anyString())).thenReturn(Optional.of(errandEntity));
+		when(emailReaderMapperMock.toCommunicationEntity(any(), any())).thenReturn(communicationEntity);
+
+		// ACT
+		emailReaderWorker.processEmail(email, emailConfig, consumerMock);
+
+		// VERIFY - delivery-status should be processed despite auto-reply header
+		verify(errandRepositoryMock).findByErrandNumberAndNamespace("PRH-2022-000001", NAMESPACE);
+		verify(errandRepositoryMock).save(same(errandEntity));
+		verify(emailReaderMapperMock).toCommunicationEntity(same(email), same(errandEntity));
+		verify(emailReaderClientMock).deleteEmail(MUNICIPALITY_ID, email.getId());
+		verify(communicationServiceMock).saveCommunication(same(communicationEntity));
+		verify(communicationServiceMock).saveAttachment(same(communicationEntity), same(errandEntity));
+		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Nytt meddelande"), same(errandEntity), isNull(), isNull(), eq(MESSAGE));
+		verifyNoInteractions(errandServiceMock);
+		verifyNoMoreInteractions(emailReaderClientMock, errandRepositoryMock, emailReaderMapperMock, communicationServiceMock, emailWorkerConfigRepositoryMock, eventServiceMock, consumerMock);
+	}
+
+	@Test
+	void processEmailWithSystemMessageOnClosedErrand() {
+
+		// ARRANGE
+		final var email = new Email();
+		email.setSubject("Ärende #PRH-2022-000002 Mailbox almost full");
+		email.setId("id");
+		email.setSender("postmaster@domain.com");
+		email.setHeaders(Map.of("RETURN_PATH", List.of("<>")));
+
+		final var emailConfig = EmailWorkerConfigEntity.create()
+			.withEnabled(true)
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withNamespace(NAMESPACE)
+			.withErrandClosedEmailSender("errandClosedEmailSender")
+			.withErrandClosedEmailTemplate("errandClosedEmailTemplate")
+			.withErrandClosedEmailHTMLTemplate("errandClosedEmailHTMLTemplate")
+			.withDaysOfInactivityBeforeReject(5)
+			.withStatusForNew("NEW")
+			.withTriggerStatusChangeOn("SOLVED")
+			.withStatusChangeTo("ONGOING")
+			.withInactiveStatus("SOLVED");
+
+		final var errandEntity = ErrandEntity.create().withId("id").withStatus("SOLVED").withCreated(OffsetDateTime.now().minusDays(6)).withTouched(OffsetDateTime.now().minusDays(6));
+		final var communicationEntity = CommunicationEntity.create();
+
+		// MOCK
+		when(errandRepositoryMock.findByErrandNumberAndNamespace(anyString(), anyString())).thenReturn(Optional.of(errandEntity));
+		when(emailReaderMapperMock.toCommunicationEntity(any(), any())).thenReturn(communicationEntity);
+
+		// ACT
+		emailReaderWorker.processEmail(email, emailConfig, consumerMock);
+
+		// VERIFY - no closed-errand email should be sent for system messages
+		verify(errandRepositoryMock).findByErrandNumberAndNamespace("PRH-2022-000002", NAMESPACE);
+		verify(emailReaderMapperMock, never()).createEmailRequest(any(), any(), any(), any(), any());
+		verify(communicationServiceMock, never()).sendEmail(any(ErrandEntity.class), any());
+		verify(emailReaderMapperMock).toCommunicationEntity(same(email), same(errandEntity));
+		verify(communicationServiceMock).saveAttachment(same(communicationEntity), same(errandEntity));
+		verify(communicationServiceMock).saveCommunication(same(communicationEntity));
+		verify(emailReaderClientMock).deleteEmail(MUNICIPALITY_ID, email.getId());
+		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Nytt meddelande"), same(errandEntity), isNull(), isNull(), eq(MESSAGE));
+		verifyNoInteractions(errandServiceMock);
+		verifyNoMoreInteractions(emailReaderClientMock, errandRepositoryMock, emailReaderMapperMock, communicationServiceMock, emailWorkerConfigRepositoryMock, eventServiceMock);
+	}
+
+	@Test
+	void processEmailWithSystemMessageOnNewErrand() {
+
+		// ARRANGE
+		final var email = new Email();
+		email.setSender("postmaster@domain.com");
+		email.setSubject("Ansökan om bygglov");
+		email.setId("id");
+		email.setHeaders(Map.of("RETURN_PATH", List.of("<>")));
+
+		final var emailConfig = EmailWorkerConfigEntity.create()
+			.withEnabled(true)
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withNamespace(NAMESPACE)
+			.withErrandNewEmailSender("errandNewEmailSender")
+			.withErrandNewEmailTemplate("errandNewEmailTemplate")
+			.withErrandNewEmailHTMLTemplate("errandNewEmailHTMLTemplate")
+			.withDaysOfInactivityBeforeReject(5)
+			.withStatusForNew("NEW")
+			.withTriggerStatusChangeOn("SOLVED")
+			.withStatusChangeTo("ONGOING")
+			.withInactiveStatus("SOLVED");
+
+		final var errandEntity = ErrandEntity.create().withId("id").withErrandNumber("errandNumber").withStatus("NEW").withCreated(OffsetDateTime.now());
+		final var communicationEntity = CommunicationEntity.create();
+
+		// MOCK
+		when(errandRepositoryMock.findById(anyString())).thenReturn(Optional.of(errandEntity));
+		when(errandServiceMock.createErrand(anyString(), anyString(), any())).thenReturn(errandEntity.getId());
+		when(emailReaderMapperMock.toErrand(any(), any())).thenReturn(new Errand());
+		when(emailReaderMapperMock.toCommunicationEntity(any(), any())).thenReturn(communicationEntity);
+
+		// ACT
+		emailReaderWorker.processEmail(email, emailConfig, consumerMock);
+
+		// VERIFY - no new-errand email should be sent for system messages
+		verify(errandRepositoryMock).findById(errandEntity.getId());
+		verify(emailReaderMapperMock, never()).createEmailRequest(any(), any(), any(), any(), any());
+		verify(communicationServiceMock, never()).sendEmail(any(ErrandEntity.class), any());
+		verify(emailReaderMapperMock).toErrand(same(email), same(emailConfig));
+		verify(emailReaderMapperMock).toCommunicationEntity(same(email), same(errandEntity));
+		verify(communicationServiceMock).saveAttachment(same(communicationEntity), same(errandEntity));
+		verify(communicationServiceMock).saveCommunication(same(communicationEntity));
+		verify(emailReaderClientMock).deleteEmail(MUNICIPALITY_ID, email.getId());
+		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Nytt meddelande"), same(errandEntity), isNull(), isNull(), eq(MESSAGE));
+		verifyNoMoreInteractions(emailReaderClientMock, errandRepositoryMock, emailReaderMapperMock, communicationServiceMock, emailWorkerConfigRepositoryMock, eventServiceMock);
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"no-reply@domain.com", "noreply@domain.com", "NO-reply@otherdomain.com", "noREPLY@OTHERdomain.com"
+	})
+	void processEmailNoReplyDeletedWhenIgnoreEnabled(final String sender) {
+
+		// ARRANGE
+		final var email = new Email();
+		email.setSubject("Some notification");
+		email.setId("id");
+		email.setSender(sender);
+
+		final var emailConfig = EmailWorkerConfigEntity.create()
+			.withEnabled(true)
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withNamespace(NAMESPACE)
+			.withStatusForNew("NEW")
+			.withIgnoreNoReply(true);
+
+		// ACT
+		emailReaderWorker.processEmail(email, emailConfig, consumerMock);
+
+		// VERIFY - email is deleted entirely, no errand processing
+		verify(emailReaderClientMock).deleteEmail(MUNICIPALITY_ID, email.getId());
+		verifyNoInteractions(errandRepositoryMock, errandServiceMock, communicationServiceMock, eventServiceMock, emailReaderMapperMock);
+		verifyNoMoreInteractions(emailReaderClientMock);
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"no-reply@domain.com", "noreply@domain.com", "NO-reply@otherdomain.com", "noREPLY@OTHERdomain.com"
+	})
+	void processEmailNoReplyProcessedButSuppressedWhenIgnoreDisabled(final String sender) {
+
+		// ARRANGE
+		final var email = new Email();
+		email.setSubject("Ärende #PRH-2022-000001 Some notification");
+		email.setId("id");
+		email.setSender(sender);
+
+		final var emailConfig = EmailWorkerConfigEntity.create()
+			.withEnabled(true)
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withNamespace(NAMESPACE)
+			.withErrandClosedEmailSender("errandClosedEmailSender")
+			.withErrandClosedEmailTemplate("errandClosedEmailTemplate")
+			.withErrandClosedEmailHTMLTemplate("errandClosedEmailHTMLTemplate")
+			.withDaysOfInactivityBeforeReject(5)
+			.withStatusForNew("NEW")
+			.withTriggerStatusChangeOn("SOLVED")
+			.withStatusChangeTo("ONGOING")
+			.withInactiveStatus("SOLVED")
+			.withIgnoreNoReply(false);
+
+		final var errandEntity = ErrandEntity.create().withId("id").withStatus("SOLVED").withCreated(OffsetDateTime.now().minusDays(6)).withTouched(OffsetDateTime.now().minusDays(6));
+		final var communicationEntity = CommunicationEntity.create();
+
+		// MOCK
+		when(errandRepositoryMock.findByErrandNumberAndNamespace(anyString(), anyString())).thenReturn(Optional.of(errandEntity));
+		when(emailReaderMapperMock.toCommunicationEntity(any(), any())).thenReturn(communicationEntity);
+
+		// ACT
+		emailReaderWorker.processEmail(email, emailConfig, consumerMock);
+
+		// VERIFY - errand is processed but no confirmation email (noreply suppressed)
+		verify(errandRepositoryMock).findByErrandNumberAndNamespace("PRH-2022-000001", NAMESPACE);
+		verify(emailReaderMapperMock, never()).createEmailRequest(any(), any(), any(), any(), any());
+		verify(communicationServiceMock, never()).sendEmail(any(ErrandEntity.class), any());
+		verify(emailReaderMapperMock).toCommunicationEntity(same(email), same(errandEntity));
+		verify(communicationServiceMock).saveAttachment(same(communicationEntity), same(errandEntity));
+		verify(communicationServiceMock).saveCommunication(same(communicationEntity));
+		verify(emailReaderClientMock).deleteEmail(MUNICIPALITY_ID, email.getId());
+		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Nytt meddelande"), same(errandEntity), isNull(), isNull(), eq(MESSAGE));
+		verifyNoInteractions(errandServiceMock);
+		verifyNoMoreInteractions(emailReaderClientMock, errandRepositoryMock, emailReaderMapperMock, communicationServiceMock, emailWorkerConfigRepositoryMock, eventServiceMock);
+	}
+
 }

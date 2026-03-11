@@ -51,6 +51,8 @@ class EmailIntegrationTest {
 		final var addSenderAsStakeholder = true;
 		final var stakeholderRole = "stakeholderRole";
 		final var errandChannel = "errandChannel";
+		final var ignoreAutoReply = true;
+		final var ignoreNoReply = true;
 		final var created = OffsetDateTime.now();
 		final var modified = OffsetDateTime.now().plusDays(1);
 
@@ -70,6 +72,8 @@ class EmailIntegrationTest {
 			.withAddSenderAsStakeholder(addSenderAsStakeholder)
 			.withStakeholderRole(stakeholderRole)
 			.withErrandChannel(errandChannel)
+			.withIgnoreAutoReply(ignoreAutoReply)
+			.withIgnoreNoReply(ignoreNoReply)
 			.withCreated(created)
 			.withModified(modified);
 
@@ -89,6 +93,8 @@ class EmailIntegrationTest {
 		assertThat(bean.getAddSenderAsStakeholder()).isTrue();
 		assertThat(bean.getStakeholderRole()).isEqualTo(stakeholderRole);
 		assertThat(bean.getErrandChannel()).isEqualTo(errandChannel);
+		assertThat(bean.getIgnoreAutoReply()).isTrue();
+		assertThat(bean.getIgnoreNoReply()).isTrue();
 		assertThat(bean.getCreated()).isEqualTo(created);
 		assertThat(bean.getModified()).isEqualTo(modified);
 	}
