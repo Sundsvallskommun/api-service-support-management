@@ -68,6 +68,7 @@ public class ErrandService {
 	private final AccessControlService accessControlService;
 	private final RelationClient relationClient;
 	private final MetadataLabelRepository metadataLabelRepository;
+	private final ErrandActionService errandActionService;
 
 	public ErrandService(
 		final ErrandsRepository repository,
@@ -82,7 +83,8 @@ public class ErrandService {
 		final NotesClient notesClient,
 		final AccessControlService accessControlService,
 		final RelationClient relationClient,
-		final MetadataLabelRepository metadataLabelRepository) {
+		final MetadataLabelRepository metadataLabelRepository,
+		final ErrandActionService errandActionService) {
 
 		this.repository = repository;
 		this.contactReasonRepository = contactReasonRepository;
@@ -97,6 +99,7 @@ public class ErrandService {
 		this.accessControlService = accessControlService;
 		this.relationClient = relationClient;
 		this.metadataLabelRepository = metadataLabelRepository;
+		this.errandActionService = errandActionService;
 	}
 
 	public String createErrand(String namespace, String municipalityId, Errand errand) {
@@ -119,7 +122,7 @@ public class ErrandService {
 		});
 
 		computeAndSetAccessLabels(errandEntity);
-
+		errandActionService.processErrandActions(errandEntity);
 		final var persistedEntity = repository.save(errandEntity);
 		final var revision = revisionService.createErrandRevision(persistedEntity);
 
@@ -166,7 +169,7 @@ public class ErrandService {
 		if (errand.getLabels() != null) {
 			computeAndSetAccessLabels(errandEntity);
 		}
-
+		errandActionService.processErrandActions(errandEntity);
 		final var entity = repository.save(errandEntity);
 
 		final var revisionResult = revisionService.createErrandRevision(entity);
