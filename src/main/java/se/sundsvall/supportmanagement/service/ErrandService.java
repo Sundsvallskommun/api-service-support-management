@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.service;
 
 import generated.se.sundsvall.accessmapper.Access;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -26,6 +27,7 @@ import se.sundsvall.supportmanagement.integration.db.util.ErrandNumberGeneratorS
 import se.sundsvall.supportmanagement.integration.notes.NotesClient;
 import se.sundsvall.supportmanagement.integration.relation.RelationClient;
 import se.sundsvall.supportmanagement.service.mapper.ErrandMapper;
+import se.sundsvall.supportmanagement.service.model.ReferredFrom;
 
 import static generated.se.sundsvall.eventlog.EventType.CREATE;
 import static generated.se.sundsvall.eventlog.EventType.DELETE;
@@ -33,6 +35,7 @@ import static generated.se.sundsvall.eventlog.EventType.UPDATE;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationSubType.ERRAND;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrand;
@@ -123,8 +126,9 @@ public class ErrandService {
 		// Create a log event, but don't create a notification.
 		eventService.createErrandEvent(CREATE, EVENT_LOG_CREATE_ERRAND, persistedEntity, revision.latest(), null, false, ERRAND);
 
-		if (referredFrom != null && !referredFrom.isBlank()) {
-			final var relation = ErrandMapper.toReferredFromRelation(namespace, referredFrom, persistedEntity.getId());
+		if (isNotBlank(referredFrom)) {
+			final var expandedReferredFrom = expandReferredFrom(referredFrom);
+			final var relation = ErrandMapper.toReferredFromRelation(namespace, expandedReferredFrom, persistedEntity.getId());
 			relationClient.createRelation(municipalityId, relation);
 		}
 
@@ -233,4 +237,14 @@ public class ErrandService {
 		errandEntity.setAccessLabels(accessLabels);
 	}
 
+	ReferredFrom expandReferredFrom(final String referredFromAsString) {
+		if (isNotBlank(referredFromAsString)) {
+			var parts = referredFromAsString.split(",");
+			if (parts.length == 3 && Arrays.stream(parts).map(String::trim).noneMatch(String::isBlank)) {
+				return new ReferredFrom(parts[0].trim(), parts[1].trim(), parts[2].trim());
+			}
+		}
+
+		throw Problem.valueOf(BAD_REQUEST, "Referred from should be three non-blank comma-separated parts: <service>,<namespace>,<identifier>");
+	}
 }
