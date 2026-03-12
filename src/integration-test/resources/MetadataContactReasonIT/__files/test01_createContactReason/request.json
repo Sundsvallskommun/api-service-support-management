@@ -1,3 +1,4 @@
 {
-	"reason": "INVOICE"
+	"reason": "INVOICE",
+	"displayName": "Invoice"
 }

@@ -61,14 +61,17 @@
 	"externalIdTypes": [
 		{
 			"name": "EXTERNAL-ID-TYPE-1",
+			"displayName": "External Id Type 1",
 			"created": "2023-01-01T12:00:00+01:00"
 		},
 		{
 			"name": "EXTERNAL-ID-TYPE-2",
+			"displayName": "External Id Type 2",
 			"created": "2023-01-01T12:00:00+01:00"
 		},
 		{
 			"name": "EXTERNAL-ID-TYPE-3",
+			"displayName": "External Id Type 3",
 			"created": "2023-01-01T12:00:00+01:00"
 		}
 	],
@@ -171,14 +174,20 @@
 	"statuses": [
 		{
 			"name": "STATUS-1",
+			"displayName": "Status 1",
+			"externalDisplayName": "External Status 1",
 			"created": "2023-01-01T12:00:00+01:00"
 		},
 		{
 			"name": "STATUS-2",
+			"displayName": "Status 2",
+			"externalDisplayName": "External Status 2",
 			"created": "2023-01-01T12:00:00+01:00"
 		},
 		{
 			"name": "STATUS-3",
+			"displayName": "Status 3",
+			"externalDisplayName": "External Status 3",
 			"created": "2023-01-01T12:00:00+01:00"
 		}
 	],
@@ -201,6 +210,7 @@
 		{
 			"id": 128,
 			"reason": "reason5",
+			"displayName": "Reason 5",
 			"created": "2023-12-31T23:59:59.999+01:00",
 			"modified": "2023-12-31T23:59:59.999+01:00"
 		}
