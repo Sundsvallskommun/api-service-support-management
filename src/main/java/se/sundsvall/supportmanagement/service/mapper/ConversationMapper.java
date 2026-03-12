@@ -14,7 +14,9 @@ import se.sundsvall.supportmanagement.api.model.communication.conversation.Messa
 import se.sundsvall.supportmanagement.api.model.communication.conversation.MessageRequest;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.MessageType;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.ReadBy;
+import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.ConversationEntity;
+import se.sundsvall.supportmanagement.service.util.BlobMultipartFile;
 
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
@@ -25,7 +27,7 @@ public final class ConversationMapper {
 
 	private ConversationMapper() {}
 
-	public static generated.se.sundsvall.messageexchange.Conversation toMessageExchangeConversation(String municipalityId, String messageExchangeNamespace, ConversationRequest conversationRequest) {
+	public static generated.se.sundsvall.messageexchange.Conversation toMessageExchangeConversation(final String municipalityId, final String messageExchangeNamespace, final ConversationRequest conversationRequest) {
 		return ofNullable(conversationRequest)
 			.map(c -> new generated.se.sundsvall.messageexchange.Conversation()
 				.externalReferences(ofNullable(c.getRelationIds())
@@ -39,7 +41,7 @@ public final class ConversationMapper {
 			.orElse(null);
 	}
 
-	public static ConversationEntity toConversationEntity(String municipalityId, String namespace, String errandId, ConversationType type, generated.se.sundsvall.messageexchange.Conversation conversation) {
+	public static ConversationEntity toConversationEntity(final String municipalityId, final String namespace, final String errandId, final ConversationType type, final generated.se.sundsvall.messageexchange.Conversation conversation) {
 		return ofNullable(conversation)
 			.map(c -> ConversationEntity.create()
 				.withErrandId(errandId)
@@ -53,7 +55,7 @@ public final class ConversationMapper {
 			.orElse(null);
 	}
 
-	public static Conversation toConversation(generated.se.sundsvall.messageexchange.Conversation conversation, ConversationEntity conversationEntity) {
+	public static Conversation toConversation(final generated.se.sundsvall.messageexchange.Conversation conversation, final ConversationEntity conversationEntity) {
 		return ofNullable(conversation)
 			.map(c -> Conversation.create()
 				.withId(conversationEntity.getId())
@@ -65,13 +67,13 @@ public final class ConversationMapper {
 			.orElse(null);
 	}
 
-	public static List<Conversation> toConversationList(List<ConversationEntity> conversationEntityList) {
+	public static List<Conversation> toConversationList(final List<ConversationEntity> conversationEntityList) {
 		return ofNullable(conversationEntityList).orElse(emptyList()).stream()
 			.map(ConversationMapper::toConversation)
 			.toList();
 	}
 
-	public static Conversation toConversation(ConversationEntity conversationEntity) {
+	public static Conversation toConversation(final ConversationEntity conversationEntity) {
 		return ofNullable(conversationEntity)
 			.map(c -> Conversation.create()
 				.withId(c.getId())
@@ -81,7 +83,7 @@ public final class ConversationMapper {
 			.orElse(null);
 	}
 
-	public static ConversationEntity mergeIntoConversationEntity(ConversationEntity conversationEntity, generated.se.sundsvall.messageexchange.Conversation conversation) {
+	public static ConversationEntity mergeIntoConversationEntity(final ConversationEntity conversationEntity, final generated.se.sundsvall.messageexchange.Conversation conversation) {
 		ofNullable(conversation)
 			.ifPresent(c -> conversationEntity
 				.withLatestSyncedSequenceNumber(c.getLatestSequenceNumber())
@@ -122,13 +124,24 @@ public final class ConversationMapper {
 			.toList();
 	}
 
+	public static List<BlobMultipartFile> toMultipartFiles(final List<AttachmentEntity> attachmentEntities) {
+		return ofNullable(attachmentEntities).orElse(emptyList()).stream()
+			.map(entity -> new BlobMultipartFile(
+				entity.getFileName(),
+				entity.getFileName(),
+				entity.getMimeType(),
+				ofNullable(entity.getFileSize()).orElse(0),
+				entity.getAttachmentData().getFile()))
+			.toList();
+	}
+
 	public static generated.se.sundsvall.messageexchange.Message toMessageRequest(final MessageRequest messageRequest) {
 		return new generated.se.sundsvall.messageexchange.Message()
 			.inReplyToMessageId(messageRequest.getInReplyToMessageId())
 			.content(messageRequest.getContent());
 	}
 
-	private static List<KeyValues> toKeyValuesList(List<generated.se.sundsvall.messageexchange.KeyValues> keyValueList) {
+	private static List<KeyValues> toKeyValuesList(final List<generated.se.sundsvall.messageexchange.KeyValues> keyValueList) {
 		return ofNullable(keyValueList).orElse(emptyList()).stream()
 			.map(kv -> KeyValues.create()
 				.withKey(kv.getKey())
@@ -136,7 +149,7 @@ public final class ConversationMapper {
 			.toList();
 	}
 
-	private static List<generated.se.sundsvall.messageexchange.KeyValues> toMessageExchangeKeyValuesList(List<KeyValues> keyValueList) {
+	private static List<generated.se.sundsvall.messageexchange.KeyValues> toMessageExchangeKeyValuesList(final List<KeyValues> keyValueList) {
 		return ofNullable(keyValueList).orElse(emptyList()).stream()
 			.map(kv -> new generated.se.sundsvall.messageexchange.KeyValues()
 				.key(kv.getKey())
@@ -144,13 +157,13 @@ public final class ConversationMapper {
 			.toList();
 	}
 
-	private static List<generated.se.sundsvall.messageexchange.Identifier> toMessageExchangeIdentifierList(List<Identifier> identifierList) {
+	private static List<generated.se.sundsvall.messageexchange.Identifier> toMessageExchangeIdentifierList(final List<Identifier> identifierList) {
 		return ofNullable(identifierList).orElse(emptyList()).stream()
 			.map(ConversationMapper::toMessageExchangeIdentifier)
 			.toList();
 	}
 
-	private static generated.se.sundsvall.messageexchange.Identifier toMessageExchangeIdentifier(Identifier identifier) {
+	private static generated.se.sundsvall.messageexchange.Identifier toMessageExchangeIdentifier(final Identifier identifier) {
 		return ofNullable(identifier)
 			.map(i -> new generated.se.sundsvall.messageexchange.Identifier()
 				.type(i.getType())
@@ -158,13 +171,13 @@ public final class ConversationMapper {
 			.orElse(null);
 	}
 
-	private static List<Identifier> toIdentifierList(List<generated.se.sundsvall.messageexchange.Identifier> identifierList) {
+	private static List<Identifier> toIdentifierList(final List<generated.se.sundsvall.messageexchange.Identifier> identifierList) {
 		return ofNullable(identifierList).orElse(emptyList()).stream()
 			.map(ConversationMapper::toIdentifier)
 			.toList();
 	}
 
-	private static Identifier toIdentifier(generated.se.sundsvall.messageexchange.Identifier identifier) {
+	private static Identifier toIdentifier(final generated.se.sundsvall.messageexchange.Identifier identifier) {
 		return ofNullable(identifier)
 			.map(i -> Identifier.create()
 				.withType(i.getType())
@@ -172,7 +185,7 @@ public final class ConversationMapper {
 			.orElse(null);
 	}
 
-	private static List<String> toStringList(List<KeyValues> keyValueList, String key) {
+	private static List<String> toStringList(final List<KeyValues> keyValueList, final String key) {
 		return new ArrayList<>(ofNullable(keyValueList).orElse(emptyList()).stream()
 			.filter(keyValues -> Strings.CI.equals(keyValues.getKey(), key))
 			.flatMap(keyValues -> keyValues.getValues().stream())

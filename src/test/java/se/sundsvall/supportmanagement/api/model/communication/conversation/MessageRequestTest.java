@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.api.model.communication.conversation;
 
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
@@ -29,14 +30,17 @@ class MessageRequestTest {
 
 		final var content = "content";
 		final var inReplyToMessageId = UUID.randomUUID().toString();
+		final var attachmentIds = List.of("id1", "id2");
 
 		final var o = MessageRequest.create()
 			.withContent(content)
-			.withInReplyToMessageId(inReplyToMessageId);
+			.withInReplyToMessageId(inReplyToMessageId)
+			.withAttachmentIds(attachmentIds);
 
 		assertThat(o).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(o.getContent()).isEqualTo(content);
 		assertThat(o.getInReplyToMessageId()).isEqualTo(inReplyToMessageId);
+		assertThat(o.getAttachmentIds()).isEqualTo(attachmentIds);
 
 	}
 

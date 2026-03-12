@@ -4,6 +4,7 @@ import generated.se.sundsvall.messageexchange.Conversation;
 import generated.se.sundsvall.messageexchange.Message;
 import java.io.IOException;
 import java.net.URI;
+import java.sql.Blob;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,6 +23,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.web.multipart.MultipartFile;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationRequest;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationType;
@@ -30,6 +32,8 @@ import se.sundsvall.supportmanagement.api.model.communication.conversation.KeyVa
 import se.sundsvall.supportmanagement.api.model.communication.conversation.MessageRequest;
 import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
 import se.sundsvall.supportmanagement.integration.db.ConversationRepository;
+import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
+import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.ConversationEntity;
 import se.sundsvall.supportmanagement.integration.messageexchange.MessageExchangeClient;
@@ -96,8 +100,14 @@ class ConversationServiceTest {
 	@Mock
 	private NamespaceConfigService namespaceConfigServiceMock;
 
+	@Mock
+	private ErrandAttachmentService errandAttachmentServiceMock;
+
 	@Captor
 	private ArgumentCaptor<ConversationEntity> conversationEntityCaptor;
+
+	@Captor
+	private ArgumentCaptor<List<MultipartFile>> attachmentsCaptor;
 
 	@InjectMocks
 	private ConversationService conversationService;
@@ -267,11 +277,12 @@ class ConversationServiceTest {
 
 		// Assert
 		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, RW);
+		verify(errandAttachmentServiceMock).findByNamespaceAndMunicipalityIdAndIdIn(NAMESPACE, MUNICIPALITY_ID, null);
 		verify(conversationRepositoryMock).findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID);
 		verify(messageExchangeClientMock).createMessage(eq(MUNICIPALITY_ID), eq(MESSAGE_EXCHANGE_NAMESPACE), eq(MESSAGE_EXCHANGE_ID), any(), eq(null));
 		verify(communicationServiceMock).sendMessageNotification(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_DEPARTMENT_NAME);
 
-		verifyNoMoreInteractions(conversationRepositoryMock, messageExchangeClientMock, communicationServiceMock);
+		verifyNoMoreInteractions(conversationRepositoryMock, messageExchangeClientMock, communicationServiceMock, errandAttachmentServiceMock);
 		verifyNoInteractions(messageExchangeSchedulerMock);
 	}
 
@@ -293,12 +304,84 @@ class ConversationServiceTest {
 
 		// Assert
 		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, RW);
+		verify(errandAttachmentServiceMock).findByNamespaceAndMunicipalityIdAndIdIn(NAMESPACE, MUNICIPALITY_ID, null);
 		verify(conversationRepositoryMock).findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID);
 		verify(messageExchangeClientMock).createMessage(eq(MUNICIPALITY_ID), eq(MESSAGE_EXCHANGE_NAMESPACE), eq(MESSAGE_EXCHANGE_ID), any(), any());
 		verify(messageExchangeSchedulerMock).triggerSyncConversationsAsync();
 		verify(communicationServiceMock).sendMessageNotification(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_DEPARTMENT_NAME);
 
-		verifyNoMoreInteractions(conversationRepositoryMock, messageExchangeClientMock, messageExchangeSchedulerMock, communicationServiceMock);
+		verifyNoMoreInteractions(conversationRepositoryMock, messageExchangeClientMock, messageExchangeSchedulerMock, communicationServiceMock, errandAttachmentServiceMock);
+	}
+
+	@Test
+	void createExternalMessageWithAttachmentIds() {
+		// Arrange
+		final var conversationEntity = ConversationEntity.create().withId(CONVERSATION_ID).withType(EXTERNAL.name()).withMessageExchangeId(MESSAGE_EXCHANGE_ID).withErrandId(ERRAND_ID);
+		final var attachmentIds = List.of("att-id-1", "att-id-2");
+		final var messageRequest = MessageRequest.create().withAttachmentIds(attachmentIds);
+		final var blobMock = Mockito.mock(Blob.class);
+		final var attachmentEntities = List.of(
+			AttachmentEntity.create().withFileName("file1.pdf").withMimeType("application/pdf").withFileSize(100)
+				.withAttachmentData(AttachmentDataEntity.create().withFile(blobMock)),
+			AttachmentEntity.create().withFileName("file2.txt").withMimeType("text/plain").withFileSize(200)
+				.withAttachmentData(AttachmentDataEntity.create().withFile(blobMock)));
+
+		when(conversationRepositoryMock.findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID))
+			.thenReturn(Optional.ofNullable(conversationEntity));
+		when(errandAttachmentServiceMock.findByNamespaceAndMunicipalityIdAndIdIn(NAMESPACE, MUNICIPALITY_ID, attachmentIds))
+			.thenReturn(attachmentEntities);
+		when(messageExchangeClientMock.createMessage(eq(MUNICIPALITY_ID), eq(MESSAGE_EXCHANGE_NAMESPACE), eq(MESSAGE_EXCHANGE_ID), any(), any()))
+			.thenReturn(ResponseEntity.ok().build());
+
+		// Act
+		conversationService.createMessage(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID, messageRequest, null);
+
+		// Assert
+		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, RW);
+		verify(errandAttachmentServiceMock).findByNamespaceAndMunicipalityIdAndIdIn(NAMESPACE, MUNICIPALITY_ID, attachmentIds);
+		verify(conversationRepositoryMock).findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID);
+
+		verify(messageExchangeClientMock).createMessage(eq(MUNICIPALITY_ID), eq(MESSAGE_EXCHANGE_NAMESPACE), eq(MESSAGE_EXCHANGE_ID), any(), attachmentsCaptor.capture());
+		assertThat(attachmentsCaptor.getValue()).hasSize(2);
+
+		verify(messageExchangeSchedulerMock).triggerSyncConversationsAsync();
+		verify(communicationServiceMock).sendMessageNotification(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_DEPARTMENT_NAME);
+
+		verifyNoMoreInteractions(conversationRepositoryMock, messageExchangeClientMock, messageExchangeSchedulerMock, communicationServiceMock, errandAttachmentServiceMock);
+	}
+
+	@Test
+	void createExternalMessageWithBothUploadedAndReferencedAttachments() {
+		// Arrange
+		final var conversationEntity = ConversationEntity.create().withId(CONVERSATION_ID).withType(EXTERNAL.name()).withMessageExchangeId(MESSAGE_EXCHANGE_ID).withErrandId(ERRAND_ID);
+		final var attachmentIds = List.of("att-id-1");
+		final var messageRequest = MessageRequest.create().withAttachmentIds(attachmentIds);
+		final var multipartFile = new MockMultipartFile("attachments", "uploaded.txt", "text/plain", "content".getBytes());
+		final var blobMock = Mockito.mock(Blob.class);
+		final var attachmentEntities = List.of(
+			AttachmentEntity.create().withFileName("referenced.pdf").withMimeType("application/pdf").withFileSize(100)
+				.withAttachmentData(AttachmentDataEntity.create().withFile(blobMock)));
+
+		when(conversationRepositoryMock.findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID))
+			.thenReturn(Optional.ofNullable(conversationEntity));
+		when(errandAttachmentServiceMock.findByNamespaceAndMunicipalityIdAndIdIn(NAMESPACE, MUNICIPALITY_ID, attachmentIds))
+			.thenReturn(attachmentEntities);
+		when(messageExchangeClientMock.createMessage(eq(MUNICIPALITY_ID), eq(MESSAGE_EXCHANGE_NAMESPACE), eq(MESSAGE_EXCHANGE_ID), any(), any()))
+			.thenReturn(ResponseEntity.ok().build());
+
+		// Act
+		conversationService.createMessage(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID, messageRequest, List.of(multipartFile));
+
+		// Assert
+		verify(messageExchangeClientMock).createMessage(eq(MUNICIPALITY_ID), eq(MESSAGE_EXCHANGE_NAMESPACE), eq(MESSAGE_EXCHANGE_ID), any(), attachmentsCaptor.capture());
+		assertThat(attachmentsCaptor.getValue()).hasSize(2);
+
+		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, RW);
+		verify(errandAttachmentServiceMock).findByNamespaceAndMunicipalityIdAndIdIn(NAMESPACE, MUNICIPALITY_ID, attachmentIds);
+		verify(messageExchangeSchedulerMock).triggerSyncConversationsAsync();
+		verify(communicationServiceMock).sendMessageNotification(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_DEPARTMENT_NAME);
+
+		verifyNoMoreInteractions(conversationRepositoryMock, messageExchangeClientMock, messageExchangeSchedulerMock, communicationServiceMock, errandAttachmentServiceMock);
 	}
 
 	@Test
@@ -318,13 +401,14 @@ class ConversationServiceTest {
 
 		// Assert
 		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, RW);
+		verify(errandAttachmentServiceMock).findByNamespaceAndMunicipalityIdAndIdIn(NAMESPACE, MUNICIPALITY_ID, null);
 		verify(conversationRepositoryMock).findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID);
 		verify(messageExchangeClientMock).createMessage(eq(MUNICIPALITY_ID), eq(MESSAGE_EXCHANGE_NAMESPACE), eq(MESSAGE_EXCHANGE_ID), any(), eq(null));
 		verify(namespaceConfigServiceMock).get(NAMESPACE, MUNICIPALITY_ID);
 		verify(namespaceConfigMock).isNotifyReporter();
 		verify(communicationServiceMock).sendEmailNotificationToReporter(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_DEPARTMENT_NAME);
 
-		verifyNoMoreInteractions(conversationRepositoryMock, messageExchangeClientMock, communicationServiceMock, namespaceConfigServiceMock, namespaceConfigMock);
+		verifyNoMoreInteractions(conversationRepositoryMock, messageExchangeClientMock, communicationServiceMock, namespaceConfigServiceMock, namespaceConfigMock, errandAttachmentServiceMock);
 		verifyNoInteractions(messageExchangeSchedulerMock);
 	}
 
@@ -344,12 +428,13 @@ class ConversationServiceTest {
 
 		// Assert
 		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, RW);
+		verify(errandAttachmentServiceMock).findByNamespaceAndMunicipalityIdAndIdIn(NAMESPACE, MUNICIPALITY_ID, null);
 		verify(conversationRepositoryMock).findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID);
 		verify(messageExchangeClientMock).createMessage(eq(MUNICIPALITY_ID), eq(MESSAGE_EXCHANGE_NAMESPACE), eq(MESSAGE_EXCHANGE_ID), any(), eq(null));
 		verify(namespaceConfigServiceMock).get(NAMESPACE, MUNICIPALITY_ID);
 		verify(namespaceConfigMock).isNotifyReporter();
 
-		verifyNoMoreInteractions(conversationRepositoryMock, messageExchangeClientMock, namespaceConfigServiceMock, namespaceConfigMock);
+		verifyNoMoreInteractions(conversationRepositoryMock, messageExchangeClientMock, namespaceConfigServiceMock, namespaceConfigMock, errandAttachmentServiceMock);
 		verifyNoInteractions(communicationServiceMock, messageExchangeSchedulerMock);
 	}
 

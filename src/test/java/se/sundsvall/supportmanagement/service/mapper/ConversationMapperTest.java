@@ -1,15 +1,22 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
 import generated.se.sundsvall.messageexchange.Message;
+import java.sql.Blob;
 import java.time.OffsetDateTime;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationRequest;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationType;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.Identifier;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.KeyValues;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.MessageType;
+import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
+import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.ConversationEntity;
+import se.sundsvall.supportmanagement.service.util.BlobMultipartFile;
 
 import static java.time.OffsetDateTime.now;
 import static java.time.temporal.ChronoUnit.SECONDS;
@@ -17,6 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.RELATION_ID_KEY;
 
+@ExtendWith(MockitoExtension.class)
 class ConversationMapperTest {
 
 	private static final Long LATEST_SEQUENCE_NUMBER = 123L;
@@ -260,6 +268,45 @@ class ConversationMapperTest {
 		assertThat(result.getFirst().getIdentifier().getType()).isEqualTo(type);
 		assertThat(result.getFirst().getIdentifier().getValue()).isEqualTo(value);
 		assertThat(result.getFirst().getReadAt()).isCloseTo(readAt, within(5, SECONDS));
+	}
+
+	@Mock
+	private Blob blobMock;
+
+	@Test
+	void toMultipartFilesWithNull() {
+		final var result = ConversationMapper.toMultipartFiles(null);
+
+		assertThat(result).isNotNull().isEmpty();
+	}
+
+	@Test
+	void toMultipartFilesWithEmptyList() {
+		final var result = ConversationMapper.toMultipartFiles(List.of());
+
+		assertThat(result).isNotNull().isEmpty();
+	}
+
+	@Test
+	void toMultipartFilesWithValidEntities() {
+		final var fileName = "test.pdf";
+		final var mimeType = "application/pdf";
+		final var fileSize = 1024;
+
+		final var attachmentEntity = AttachmentEntity.create()
+			.withFileName(fileName)
+			.withMimeType(mimeType)
+			.withFileSize(fileSize)
+			.withAttachmentData(AttachmentDataEntity.create().withFile(blobMock));
+
+		final var result = ConversationMapper.toMultipartFiles(List.of(attachmentEntity));
+
+		assertThat(result).hasSize(1);
+		assertThat(result.getFirst()).isInstanceOf(BlobMultipartFile.class);
+		assertThat(result.getFirst().getName()).isEqualTo(fileName);
+		assertThat(result.getFirst().getOriginalFilename()).isEqualTo(fileName);
+		assertThat(result.getFirst().getContentType()).isEqualTo(mimeType);
+		assertThat(result.getFirst().getSize()).isEqualTo(fileSize);
 	}
 
 	private generated.se.sundsvall.messageexchange.Message createMessageExchangeMessage() {
