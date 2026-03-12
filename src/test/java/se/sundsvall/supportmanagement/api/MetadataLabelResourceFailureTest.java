@@ -92,13 +92,10 @@ class MetadataLabelResourceFailureTest {
 		return Stream.of(
 			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabel("class", "RESOURCE_NAME_1"), createLabel("class", "RESOURCE_NAME_1")),
 				tuples(
-					tuple(method + ".labels", "each entry must have unique name, resourceName and same classification compared to its siblings"))),
+					tuple(method + ".labels", "each entry must have unique resourceName compared to its siblings"))),
 			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabel("class", "RESOURCE_NAME"), createLabel("class", "RESOURCE_NAME")),
 				tuples(
-					tuple(method + ".labels", "each entry must have unique name, resourceName and same classification compared to its siblings"))),
-			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabel("class_1", "RESOURCE_NAME_1"), createLabel("class_2", "RESOURCE_NAME_2")),
-				tuples(
-					tuple(method + ".labels", "each entry must have unique name, resourceName and same classification compared to its siblings"))),
+					tuple(method + ".labels", "each entry must have unique resourceName compared to its siblings"))),
 			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabel(null, "RESOURCE_NAME")),
 				tuples(
 					tuple(method + ".labels[0].classification", "must not be blank"))),

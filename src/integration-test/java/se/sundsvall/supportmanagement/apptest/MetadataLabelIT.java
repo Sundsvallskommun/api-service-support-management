@@ -1,5 +1,12 @@
 package se.sundsvall.supportmanagement.apptest;
 
+import java.util.List;
+import org.junit.jupiter.api.Test;
+import org.springframework.test.context.jdbc.Sql;
+import se.sundsvall.dept44.test.AbstractAppTest;
+import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
+import se.sundsvall.supportmanagement.Application;
+
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.GET;
@@ -10,13 +17,6 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
-
-import java.util.List;
-import org.junit.jupiter.api.Test;
-import org.springframework.test.context.jdbc.Sql;
-import se.sundsvall.dept44.test.AbstractAppTest;
-import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
-import se.sundsvall.supportmanagement.Application;
 
 /**
  * Label Metadata IT tests.
@@ -35,6 +35,7 @@ class MetadataLabelIT extends AbstractAppTest {
 	private static final String MUNICIPALITY_2281 = "2281";
 	private static final String MUNICIPALITY_2282 = "2282";
 	private static final String MUNICIPALITY_2309 = "2309";
+	private static final String MUNICIPALITY_2303 = "2303";
 	private static final String MUNICIPALITY_2584 = "2584";
 
 	@Test
@@ -117,6 +118,50 @@ class MetadataLabelIT extends AbstractAppTest {
 			.withExpectedResponseBodyIsNull()
 			.sendRequestAndVerifyResponse();
 
+		setupCall()
+			.withServicePath(path)
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	void test06_createLabelsWithDifferentClassificationSiblings() {
+		final var path = "/" + MUNICIPALITY_2282 + "/" + NAMESPACE + "/metadata/labels";
+
+		// Create labels where siblings have different classifications (previously invalid, now allowed)
+		setupCall()
+			.withServicePath(path)
+			.withHttpMethod(POST)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(ACCEPTED)
+			.withExpectedResponseBodyIsNull()
+			.sendRequestAndVerifyResponse();
+
+		// Verify the created labels
+		setupCall()
+			.withServicePath(path)
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	void test07_updateLabelsWithDifferentClassificationSiblings() {
+		final var path = "/" + MUNICIPALITY_2303 + "/" + NAMESPACE + "/metadata/labels";
+
+		// Update pre-existing labels (from testdata-it.sql) to have different classifications among siblings
+		setupCall()
+			.withServicePath(path)
+			.withHttpMethod(PUT)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(NO_CONTENT)
+			.withExpectedResponseBodyIsNull()
+			.sendRequestAndVerifyResponse();
+
+		// Verify the updated labels
 		setupCall()
 			.withServicePath(path)
 			.withHttpMethod(GET)

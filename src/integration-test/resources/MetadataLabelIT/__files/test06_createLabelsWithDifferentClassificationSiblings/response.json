@@ -1,0 +1,37 @@
+{
+	"labelStructure": [
+		{
+			"id": "${json-unit.any-string}",
+			"classification": "CLASSIFICATION_1",
+			"displayName": "Label A",
+			"resourcePath": "LABEL_A",
+			"resourceName": "LABEL_A",
+			"labels": [
+				{
+					"id": "${json-unit.any-string}",
+					"classification": "SUB_CLASS_X",
+					"displayName": "Child A1",
+					"resourcePath": "LABEL_A/CHILD_A1",
+					"resourceName": "CHILD_A1",
+					"labels": []
+				},
+				{
+					"id": "${json-unit.any-string}",
+					"classification": "SUB_CLASS_Y",
+					"displayName": "Child A2",
+					"resourcePath": "LABEL_A/CHILD_A2",
+					"resourceName": "CHILD_A2",
+					"labels": []
+				}
+			]
+		},
+		{
+			"id": "${json-unit.any-string}",
+			"classification": "CLASSIFICATION_2",
+			"displayName": "Label B",
+			"resourcePath": "LABEL_B",
+			"resourceName": "LABEL_B",
+			"labels": []
+		}
+	]
+}
