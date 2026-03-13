@@ -55,6 +55,7 @@ public class ErrandService {
 	private final NotesClient notesClient;
 	private final AccessControlService accessControlService;
 	private final RelationClient relationClient;
+	private final ErrandActionService errandActionService;
 
 	public ErrandService(
 		final ErrandsRepository repository,
@@ -68,7 +69,8 @@ public class ErrandService {
 		final ConversationService conversationService,
 		final NotesClient notesClient,
 		final AccessControlService accessControlService,
-		final RelationClient relationClient) {
+		final RelationClient relationClient,
+		final ErrandActionService errandActionService) {
 
 		this.repository = repository;
 		this.contactReasonRepository = contactReasonRepository;
@@ -82,6 +84,7 @@ public class ErrandService {
 		this.notesClient = notesClient;
 		this.accessControlService = accessControlService;
 		this.relationClient = relationClient;
+		this.errandActionService = errandActionService;
 	}
 
 	public String createErrand(String namespace, String municipalityId, Errand errand) {
@@ -104,6 +107,7 @@ public class ErrandService {
 		});
 
 		final var persistedEntity = repository.save(errandEntity);
+		errandActionService.processErrandActions(persistedEntity);
 		final var revision = revisionService.createErrandRevision(persistedEntity);
 
 		// Create a log event, but don't create a notification.
@@ -145,6 +149,7 @@ public class ErrandService {
 		});
 
 		final var entity = repository.save(errandEntity);
+		errandActionService.processErrandActions(entity);
 
 		final var revisionResult = revisionService.createErrandRevision(entity);
 

@@ -64,7 +64,7 @@ public final class ErrandMapper {
 		return errandEntity
 			.withAssignedGroupId(errand.getAssignedGroupId())
 			.withAssignedUserId(errand.getAssignedUserId())
-			.withAttachments(emptyList())
+			.withAttachments(new ArrayList<>())
 			.withCategory(ofNullable(errand.getClassification()).map(Classification::getCategory).orElse(null))
 			.withType(ofNullable(errand.getClassification()).map(Classification::getType).orElse(null))
 			.withDescription(errand.getDescription())

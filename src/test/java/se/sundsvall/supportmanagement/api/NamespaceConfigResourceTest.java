@@ -173,7 +173,7 @@ class NamespaceConfigResourceTest {
 			.withConditionDefinitions(List.of(Definition.create().withKey("status").withMandatory(true)))
 			.withParameterDefinitions(List.of(Definition.create().withKey("label").withMandatory(true))));
 
-		when(actionServiceMock.getActionDefinitions()).thenReturn(definitions);
+		when(actionServiceMock.getActionDefinitions(any(), any())).thenReturn(definitions);
 
 		final var response = webTestClient.get()
 			.uri(uriBuilder -> uriBuilder.path(ACTION_DEFINITION_PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
@@ -184,7 +184,7 @@ class NamespaceConfigResourceTest {
 			.returnResult()
 			.getResponseBody();
 
-		verify(actionServiceMock).getActionDefinitions();
+		verify(actionServiceMock).getActionDefinitions(MUNICIPALITY_ID, NAMESPACE);
 		assertThat(response).isNotNull().isEqualTo(definitions);
 	}
 

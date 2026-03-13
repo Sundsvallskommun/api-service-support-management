@@ -5,7 +5,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.google.gson.FieldAttributes;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.jupiter.api.Test;
+import se.sundsvall.supportmanagement.integration.db.model.ActionConfigConditionEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ActionConfigParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandActionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.JsonParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ParameterEntity;
@@ -34,6 +37,9 @@ class CircularReferenceExclusionStrategyTest {
 	@Test
 	void shouldNotSkipFieldForNonDeclaredFieldInDeclaredClass() {
 		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(AttachmentEntity.class, "id", true)))).isFalse();
+		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(ErrandActionEntity.class, "id", true)))).isFalse();
+		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(ActionConfigConditionEntity.class, "id", true)))).isFalse();
+		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(ActionConfigParameterEntity.class, "id", true)))).isFalse();
 		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(JsonParameterEntity.class, "id", true)))).isFalse();
 		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(StakeholderEntity.class, "id", true)))).isFalse();
 		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(ParameterEntity.class, "id", true)))).isFalse();
@@ -42,6 +48,9 @@ class CircularReferenceExclusionStrategyTest {
 	@Test
 	void shouldSkipFieldForDeclaredFieldInDeclaredClass() {
 		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(AttachmentEntity.class, "errandEntity", true)))).isTrue();
+		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(ErrandActionEntity.class, "errandEntity", true)))).isTrue();
+		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(ActionConfigConditionEntity.class, "actionConfigEntity", true)))).isTrue();
+		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(ActionConfigParameterEntity.class, "actionConfigEntity", true)))).isTrue();
 		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(JsonParameterEntity.class, "errandEntity", true)))).isTrue();
 		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(StakeholderEntity.class, "errandEntity", true)))).isTrue();
 		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(ParameterEntity.class, "errandEntity", true)))).isTrue();

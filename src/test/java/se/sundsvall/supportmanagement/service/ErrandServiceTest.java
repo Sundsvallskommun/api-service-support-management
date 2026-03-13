@@ -117,6 +117,9 @@ class ErrandServiceTest {
 	@Mock
 	private RelationClient relationClientMock;
 
+	@Mock
+	private ErrandActionService errandActionServiceMock;
+
 	@Spy
 	private FilterSpecificationConverter filterSpecificationConverterSpy;
 
@@ -143,6 +146,7 @@ class ErrandServiceTest {
 		assertThat(result).isEqualTo(ERRAND_ID);
 
 		verify(errandRepositoryMock).save(any(ErrandEntity.class));
+		verify(errandActionServiceMock).processErrandActions(any(ErrandEntity.class));
 		verify(revisionServiceMock).createErrandRevision(any(ErrandEntity.class));
 		verify(eventServiceMock).createErrandEvent(eq(CREATE), eq(EVENT_LOG_CREATE_ERRAND), any(ErrandEntity.class), eq(currentRevisionMock), eq(null), eq(false), eq(ERRAND));
 		verifyNoInteractions(relationClientMock);
@@ -179,6 +183,7 @@ class ErrandServiceTest {
 		assertThat(result).isEqualTo(ERRAND_ID);
 
 		verify(errandRepositoryMock).save(any(ErrandEntity.class));
+		verify(errandActionServiceMock).processErrandActions(any(ErrandEntity.class));
 		verify(revisionServiceMock).createErrandRevision(any(ErrandEntity.class));
 		verify(eventServiceMock).createErrandEvent(eq(CREATE), eq(EVENT_LOG_CREATE_ERRAND), any(ErrandEntity.class),
 			eq(currentRevisionMock), eq(null), eq(false), eq(ERRAND));
@@ -301,6 +306,7 @@ class ErrandServiceTest {
 
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, Access.AccessLevelEnum.RW);
 		verify(errandRepositoryMock).save(entity);
+		verify(errandActionServiceMock).processErrandActions(entity);
 		verify(revisionServiceMock).createErrandRevision(entity);
 		verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_UPDATE_ERRAND, entity, currentRevisionMock, previousRevisionMock, ERRAND);
 	}
@@ -327,6 +333,7 @@ class ErrandServiceTest {
 
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, Access.AccessLevelEnum.RW);
 		verify(errandRepositoryMock).save(entity);
+		verify(errandActionServiceMock).processErrandActions(entity);
 		verify(revisionServiceMock).createErrandRevision(entity);
 		verify(revisionServiceMock, never()).getErrandRevisionByVersion(any(), any(), any(), anyInt());
 		verify(eventServiceMock, never()).createErrandEvent(any(), any(), any(), any(), any(), any());
