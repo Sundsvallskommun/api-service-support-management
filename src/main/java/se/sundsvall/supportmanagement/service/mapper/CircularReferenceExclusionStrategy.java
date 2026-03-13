@@ -2,6 +2,8 @@ package se.sundsvall.supportmanagement.service.mapper;
 
 import com.google.gson.ExclusionStrategy;
 import com.google.gson.FieldAttributes;
+import java.util.Map;
+import java.util.Set;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigConditionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
@@ -15,9 +17,20 @@ import se.sundsvall.supportmanagement.integration.db.model.StakeholderParameterE
 
 public class CircularReferenceExclusionStrategy implements ExclusionStrategy {
 
-	private static final String ACTION_CONFIG_ENTITY = "actionConfigEntity";
 	private static final String ERRAND_ENTITY = "errandEntity";
-	private static final String STAKEHOLDER_ENTITY = "stakeholderEntity";
+	private static final String ACTION_CONFIG_ENTITY = "actionConfigEntity";
+
+	private static final Map<Class<?>, Set<String>> EXCLUDED_FIELDS = Map.of(
+		AttachmentEntity.class, Set.of(ERRAND_ENTITY),
+		ErrandActionEntity.class, Set.of(ERRAND_ENTITY),
+		ActionConfigConditionEntity.class, Set.of(ACTION_CONFIG_ENTITY),
+		ActionConfigParameterEntity.class, Set.of(ACTION_CONFIG_ENTITY),
+		JsonParameterEntity.class, Set.of(ERRAND_ENTITY),
+		StakeholderEntity.class, Set.of(ERRAND_ENTITY),
+		StakeholderParameterEntity.class, Set.of("stakeholderEntity"),
+		ParameterEntity.class, Set.of(ERRAND_ENTITY),
+		MetadataLabelEntity.class, Set.of("parent"),
+		NotificationEntity.class, Set.of(ERRAND_ENTITY));
 
 	public static CircularReferenceExclusionStrategy create() {
 		return new CircularReferenceExclusionStrategy();
@@ -25,16 +38,7 @@ public class CircularReferenceExclusionStrategy implements ExclusionStrategy {
 
 	@Override
 	public boolean shouldSkipField(final FieldAttributes f) {
-		return ((f.getDeclaringClass() == AttachmentEntity.class) && ERRAND_ENTITY.equals(f.getName())) ||
-			((f.getDeclaringClass() == ErrandActionEntity.class) && ERRAND_ENTITY.equals(f.getName())) ||
-			((f.getDeclaringClass() == ActionConfigConditionEntity.class) && ACTION_CONFIG_ENTITY.equals(f.getName())) ||
-			((f.getDeclaringClass() == ActionConfigParameterEntity.class) && ACTION_CONFIG_ENTITY.equals(f.getName())) ||
-			((f.getDeclaringClass() == JsonParameterEntity.class) && ERRAND_ENTITY.equals(f.getName())) ||
-			((f.getDeclaringClass() == StakeholderEntity.class) && ERRAND_ENTITY.equals(f.getName())) ||
-			((f.getDeclaringClass() == StakeholderParameterEntity.class) && STAKEHOLDER_ENTITY.equals(f.getName())) ||
-			((f.getDeclaringClass() == ParameterEntity.class) && ERRAND_ENTITY.equals(f.getName())) ||
-			((f.getDeclaringClass() == MetadataLabelEntity.class) && "parent".equals(f.getName())) ||
-			((f.getDeclaringClass() == NotificationEntity.class) && ERRAND_ENTITY.equals(f.getName()));
+		return EXCLUDED_FIELDS.getOrDefault(f.getDeclaringClass(), Set.of()).contains(f.getName());
 	}
 
 	@Override
