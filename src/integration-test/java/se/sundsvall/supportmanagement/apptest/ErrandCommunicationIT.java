@@ -324,4 +324,16 @@ class ErrandCommunicationIT extends AbstractAppTest {
 			.withExpectedResponseStatus(NO_CONTENT)
 			.sendRequestAndVerifyResponse();
 	}
+
+	@Test
+	void test22_createConversationMessageWithAttachmentIds() throws FileNotFoundException {
+		setupCall()
+			.withHttpMethod(POST)
+			.withServicePath(PATH + "/ec677eb3-604c-4935-bff7-f8f0b500c8f4/communication/conversations/f4524497-a592-4618-a746-b59a60a76f13/messages")
+			.withHeader(HEADER_NAME, "type=adAccount; joe01doe")
+			.withContentType(MULTIPART_FORM_DATA)
+			.withRequestFile("message", REQUEST_FILE)
+			.withExpectedResponseStatus(NO_CONTENT)
+			.sendRequestAndVerifyResponse();
+	}
 }
