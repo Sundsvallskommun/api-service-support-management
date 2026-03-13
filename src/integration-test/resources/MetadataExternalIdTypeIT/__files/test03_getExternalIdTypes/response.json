@@ -1,14 +1,17 @@
 [
 	{
 		"created": "2023-01-01T12:00:00+01:00",
-		"name": "EXTERNAL-ID-TYPE-1"
+		"name": "EXTERNAL-ID-TYPE-1",
+		"displayName": "External Id Type 1"
 	},
 	{
 		"created": "2023-01-01T12:00:00+01:00",
-		"name": "EXTERNAL-ID-TYPE-2"
+		"name": "EXTERNAL-ID-TYPE-2",
+		"displayName": "External Id Type 2"
 	},
 	{
 		"created": "2023-01-01T12:00:00+01:00",
-		"name": "EXTERNAL-ID-TYPE-3"
+		"name": "EXTERNAL-ID-TYPE-3",
+		"displayName": "External Id Type 3"
 	}
 ]
