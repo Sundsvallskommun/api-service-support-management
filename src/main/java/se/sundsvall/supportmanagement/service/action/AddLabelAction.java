@@ -10,7 +10,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.springframework.stereotype.Component;
 import org.zalando.problem.Problem;
 import org.zalando.problem.ThrowableProblem;
@@ -190,17 +189,17 @@ public class AddLabelAction implements Action {
 
 	@Override
 	public void executeAction(ErrandEntity errand, ActionConfigEntity actionConfigEntity) {
-		var labels = actionConfigEntity.getParameters().stream()
+		var newLabels = actionConfigEntity.getParameters().stream()
 			.filter(parameter -> parameter.getKey().equals(LABEL))
 			.findFirst()
 			.map(ActionConfigParameterEntity::getValues)
 			.stream()
 			.flatMap(List::stream)
 			.map(labelId -> ErrandLabelEmbeddable.create().withMetadataLabelId(labelId))
+			.filter(label -> !errand.getLabels().contains(label))
 			.toList();
 
-		var errandLabels = Stream.concat(errand.getLabels().stream(), labels.stream()).distinct().toList();
-		errand.setLabels(errandLabels);
+		errand.getLabels().addAll(newLabels);
 
 		errandsRepository.save(errand);
 	}

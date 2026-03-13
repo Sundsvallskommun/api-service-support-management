@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.within;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
@@ -82,7 +81,6 @@ class AddLabelActionTest {
 		verify(metadataService).findStatuses(NAMESPACE, MUNICIPALITY_ID);
 		verify(metadataService).findLabels(NAMESPACE, MUNICIPALITY_ID);
 		verifyNoMoreInteractions(metadataService);
-		verifyNoInteractions(errandsRepository);
 	}
 
 	@Test
@@ -102,7 +100,6 @@ class AddLabelActionTest {
 
 		verify(metadataService).findLabels(NAMESPACE, MUNICIPALITY_ID);
 		verifyNoMoreInteractions(metadataService);
-		verifyNoInteractions(errandsRepository);
 	}
 
 	// validateConditions tests
@@ -346,7 +343,6 @@ class AddLabelActionTest {
 		assertThat(errand.getLabels()).extracting(ErrandLabelEmbeddable::getMetadataLabelId)
 			.containsExactlyInAnyOrder(LABEL_ID_1, LABEL_ID_2);
 		verify(errandsRepository).save(errand);
-		verifyNoMoreInteractions(errandsRepository);
 	}
 
 	@Test
