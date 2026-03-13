@@ -2,7 +2,10 @@ package se.sundsvall.supportmanagement.service.mapper;
 
 import com.google.gson.ExclusionStrategy;
 import com.google.gson.FieldAttributes;
+import se.sundsvall.supportmanagement.integration.db.model.ActionConfigConditionEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ActionConfigParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandActionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.JsonParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
@@ -12,6 +15,7 @@ import se.sundsvall.supportmanagement.integration.db.model.StakeholderParameterE
 
 public class CircularReferenceExclusionStrategy implements ExclusionStrategy {
 
+	private static final String ACTION_CONFIG_ENTITY = "actionConfigEntity";
 	private static final String ERRAND_ENTITY = "errandEntity";
 	private static final String STAKEHOLDER_ENTITY = "stakeholderEntity";
 
@@ -22,6 +26,9 @@ public class CircularReferenceExclusionStrategy implements ExclusionStrategy {
 	@Override
 	public boolean shouldSkipField(final FieldAttributes f) {
 		return ((f.getDeclaringClass() == AttachmentEntity.class) && ERRAND_ENTITY.equals(f.getName())) ||
+			((f.getDeclaringClass() == ErrandActionEntity.class) && ERRAND_ENTITY.equals(f.getName())) ||
+			((f.getDeclaringClass() == ActionConfigConditionEntity.class) && ACTION_CONFIG_ENTITY.equals(f.getName())) ||
+			((f.getDeclaringClass() == ActionConfigParameterEntity.class) && ACTION_CONFIG_ENTITY.equals(f.getName())) ||
 			((f.getDeclaringClass() == JsonParameterEntity.class) && ERRAND_ENTITY.equals(f.getName())) ||
 			((f.getDeclaringClass() == StakeholderEntity.class) && ERRAND_ENTITY.equals(f.getName())) ||
 			((f.getDeclaringClass() == StakeholderParameterEntity.class) && STAKEHOLDER_ENTITY.equals(f.getName())) ||

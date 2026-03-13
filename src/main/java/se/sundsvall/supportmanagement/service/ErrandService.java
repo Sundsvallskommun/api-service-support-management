@@ -106,8 +106,8 @@ public class ErrandService {
 				.withContactReasonDescription(errand.getContactReasonDescription());
 		});
 
-		errandActionService.processErrandActions(errandEntity);
 		final var persistedEntity = repository.save(errandEntity);
+		errandActionService.processErrandActions(persistedEntity);
 		final var revision = revisionService.createErrandRevision(persistedEntity);
 
 		// Create a log event, but don't create a notification.
@@ -148,8 +148,8 @@ public class ErrandService {
 			errandEntity.withContactReason(contactReason);
 		});
 
-		errandActionService.processErrandActions(errandEntity);
 		final var entity = repository.save(errandEntity);
+		errandActionService.processErrandActions(entity);
 
 		final var revisionResult = revisionService.createErrandRevision(entity);
 

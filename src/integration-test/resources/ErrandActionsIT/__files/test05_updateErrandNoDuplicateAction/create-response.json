@@ -1,0 +1,31 @@
+{
+	"id": "${json-unit.any-string}",
+	"errandNumber": "${json-unit.any-string}",
+	"title": "Errand for no duplicate action test",
+	"reporterUserId": "joe01doe",
+	"priority": "LOW",
+	"status": "STATUS-1",
+	"classification": {
+		"category": "CATEGORY-1",
+		"type": "TYPE-1"
+	},
+	"labels": [],
+	"actions": [
+		{
+			"id": "${json-unit.any-string}",
+			"actionName": "ADD_LABEL",
+			"executeAfter": "${json-unit.any-string}",
+			"actionConfigId": "ac-add-label-with-duration",
+			"displayValue": "Label will be added after 24h"
+		}
+	],
+	"activeNotifications": [],
+	"suspension": {},
+	"created": "${json-unit.any-string}",
+	"modified": "${json-unit.any-string}",
+	"touched": "${json-unit.any-string}",
+	"jsonParameters": [],
+	"externalTags": [],
+	"parameters": [],
+	"stakeholders": []
+}

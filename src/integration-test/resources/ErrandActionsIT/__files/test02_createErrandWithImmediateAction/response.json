@@ -1,0 +1,30 @@
+{
+	"id": "${json-unit.any-string}",
+	"errandNumber": "${json-unit.any-string}",
+	"title": "Errand with immediate action",
+	"reporterUserId": "joe01doe",
+	"priority": "LOW",
+	"status": "STATUS-2",
+	"classification": {
+		"category": "CATEGORY-1",
+		"type": "TYPE-1"
+	},
+	"labels": [
+		{
+			"id": "0eb1f695-48b1-40fd-af8c-b277c37db2d4",
+			"classification": "DEEPSUBTYPE",
+			"displayName": "DEEPSUBTYPE-DISPLAY-NAME-2",
+			"resourcePath": "CATEGORY-1/TYPE-2/SUBTYPE-4/DEEPSUBTYPE-2",
+			"resourceName": "DEEPSUBTYPE-2"
+		}
+	],
+	"actions": [],
+	"activeNotifications": [],
+	"suspension": {},
+	"created": "${json-unit.any-string}",
+	"touched": "${json-unit.any-string}",
+	"jsonParameters": [],
+	"externalTags": [],
+	"parameters": [],
+	"stakeholders": []
+}

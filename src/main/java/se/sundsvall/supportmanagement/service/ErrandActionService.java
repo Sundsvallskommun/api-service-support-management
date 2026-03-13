@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.zalando.problem.Problem;
@@ -20,6 +21,7 @@ import se.sundsvall.supportmanagement.api.model.config.action.Config;
 import se.sundsvall.supportmanagement.integration.db.ActionConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigParameterEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandActionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.service.action.Action;
 import se.sundsvall.supportmanagement.service.mapper.ErrandActionMapper;
@@ -96,55 +98,59 @@ public class ErrandActionService {
 	}
 
 	public void processErrandActions(ErrandEntity errand) {
-		if (errand.getActions() == null) {
-			errand.setActions(new ArrayList<>());
+		removeFulfilledActions(errand);
+
+		var actionsToAdd = createActionsToAdd(errand);
+
+		if (!actionsToAdd.isEmpty()) {
+			if (errand.getActions() == null) {
+				errand.setActions(new ArrayList<>());
+			}
+			errand.getActions().addAll(actionsToAdd);
 		}
+	}
+
+	private List<ErrandActionEntity> createActionsToAdd(ErrandEntity errand) {
+		var actionsToAdd = new ArrayList<ErrandActionEntity>();
 
 		final var configs = actionConfigRepository.findAllByNamespaceAndMunicipalityId(errand.getNamespace(), errand.getMunicipalityId());
 
-		final var existingConfigIds = errand.getActions().stream()
+		final var existingConfigIds = Optional.ofNullable(errand.getActions()).orElse(new ArrayList<>()).stream()
 			.map(action -> action.getActionConfigEntity().getId())
 			.collect(Collectors.toSet());
 
-		for (final var config : configs) {
-			if (!config.getActive()) {
-				continue;
-			}
-
-			final var action = actions.get(config.getName());
-			if (action == null) {
-				continue;
-			}
-
-			if (existingConfigIds.contains(config.getId())) {
-				continue;
-			}
-
-			final var parameters = toParameterMap(config);
-
-			if (action.actionFulfilled(errand, parameters)) {
-				continue;
-			}
-
-			action.createAction(errand, config).ifPresent(errandAction -> {
-				if (errandAction.getExecuteAfter().isBefore(now())) {
-					action.executeAction(errand, config);
-				} else {
-					errand.getActions().add(errandAction);
-				}
-			});
-		}
-
-		// Remove existing actions that are now fulfilled
-		final var actionsToRemove = new ArrayList<>(errand.getActions().stream()
-			.filter(errandAction -> {
-				final var config = errandAction.getActionConfigEntity();
+		configs.stream()
+			.filter(ActionConfigEntity::getActive)
+			.filter(config -> actions.get(config.getName()) != null)
+			.filter(config -> !existingConfigIds.contains(config.getId()))
+			.filter(config -> !actions.get(config.getName()).actionFulfilled(errand, toParameterMap(config)))
+			.forEach(config -> {
 				final var action = actions.get(config.getName());
-				return action != null && action.actionFulfilled(errand, toParameterMap(config));
-			})
-			.toList());
+				action.createAction(errand, config).ifPresent(errandAction -> {
+					if (errandAction.getExecuteAfter().isBefore(now())) {
+						action.executeAction(errand, config);
+					} else {
+						actionsToAdd.add(errandAction);
+					}
+				});
+			});
 
-		errand.getActions().removeAll(actionsToRemove);
+		return actionsToAdd;
+	}
+
+	private void removeFulfilledActions(ErrandEntity errand) {
+		if (errand.getActions() != null && !errand.getActions().isEmpty()) {
+			// Remove existing actions that are now fulfilled
+			final var actionsToRemove = new ArrayList<>(errand.getActions().stream()
+				.filter(errandAction -> {
+					final var config = errandAction.getActionConfigEntity();
+					final var action = actions.get(config.getName());
+					return action != null && action.actionFulfilled(errand, toParameterMap(config));
+				})
+				.toList());
+
+			errand.getActions().removeAll(actionsToRemove);
+		}
 	}
 
 	private Map<String, List<String>> toParameterMap(final ActionConfigEntity config) {

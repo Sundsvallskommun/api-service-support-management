@@ -9,6 +9,7 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreRemove;
 import jakarta.persistence.PreUpdate;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -33,7 +34,7 @@ public class ErrandListener {
 		Optional.ofNullable(errandEntity.getTimeMeasures())
 			.ifPresentOrElse(
 				list -> list.add(startTimeEntry(errandEntity, now())),
-				() -> errandEntity.setTimeMeasures(List.of(startTimeEntry(errandEntity, now()))));
+				() -> errandEntity.setTimeMeasures(new ArrayList<>(List.of(startTimeEntry(errandEntity, now())))));
 	}
 
 	@PreUpdate
@@ -52,7 +53,7 @@ public class ErrandListener {
 				.ifPresentOrElse(list -> {
 					findTimeMeasureEntityWithoutStopTime(errandEntity, now);
 					list.add(startTimeEntry(errandEntity, now));
-				}, () -> errandEntity.setTimeMeasures(List.of((startTimeEntry(errandEntity, now)))));
+				}, () -> errandEntity.setTimeMeasures(new ArrayList<>(List.of(startTimeEntry(errandEntity, now)))));
 			errandEntity.setPreviousStatus(errandEntity.getTempPreviousStatus());
 		}
 	}
