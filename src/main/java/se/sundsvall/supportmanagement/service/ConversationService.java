@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.service;
 
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.slf4j.Logger;
@@ -26,6 +27,7 @@ import se.sundsvall.supportmanagement.service.scheduler.messageexchange.MessageE
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static java.util.Collections.emptyList;
+import static java.util.Optional.ofNullable;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
@@ -37,6 +39,7 @@ import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.t
 import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.toMessageExchangeConversation;
 import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.toMessagePage;
 import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.toMessageRequest;
+import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.toMultipartFiles;
 
 @Service
 public class ConversationService {
@@ -52,6 +55,7 @@ public class ConversationService {
 	private final RelationClient relationClient;
 	private final AccessControlService accessControlService;
 	private final NamespaceConfigService namespaceConfigService;
+	private final ErrandAttachmentService errandAttachmentService;
 
 	@Value("${integration.messageexchange.namespace:draken}")
 	private String messageExchangeNamespace;
@@ -63,7 +67,8 @@ public class ConversationService {
 		final CommunicationService communicationService,
 		final RelationClient relationClient,
 		final AccessControlService accessControlService,
-		final NamespaceConfigService namespaceConfigService) {
+		final NamespaceConfigService namespaceConfigService,
+		final ErrandAttachmentService errandAttachmentService) {
 
 		this.messageExchangeClient = messageExchangeClient;
 		this.conversationRepository = conversationRepository;
@@ -72,6 +77,7 @@ public class ConversationService {
 		this.relationClient = relationClient;
 		this.accessControlService = accessControlService;
 		this.namespaceConfigService = namespaceConfigService;
+		this.errandAttachmentService = errandAttachmentService;
 	}
 
 	public Conversation createConversation(final String municipalityId, final String namespace, final String errandId, final ConversationRequest conversationRequest) {
@@ -144,9 +150,22 @@ public class ConversationService {
 		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, RW);
 		final var conversationEntity = getConversationEntity(municipalityId, namespace, errandId, conversationId);
 
-		messageExchangeClient.createMessage(municipalityId, messageExchangeNamespace, conversationEntity.getMessageExchangeId(), toMessageRequest(messageRequest), attachments);
+		// Fetch referenced errand attachments and convert to MultipartFiles
+		final var referencedAttachments = toMultipartFiles(
+			errandAttachmentService.findByNamespaceAndMunicipalityIdAndIdIn(namespace, municipalityId, messageRequest.getAttachmentIds()));
 
-		Optional.ofNullable(attachments).ifPresent(_ -> messageExchangeScheduler.triggerSyncConversationsAsync());
+		// Merge uploaded attachments with referenced attachments
+		final var mergedAttachments = new ArrayList<MultipartFile>();
+		ofNullable(attachments).ifPresent(mergedAttachments::addAll);
+		mergedAttachments.addAll(referencedAttachments);
+
+		final var effectiveAttachments = Optional.of(mergedAttachments)
+			.filter(list -> !list.isEmpty())
+			.orElse(null);
+
+		messageExchangeClient.createMessage(municipalityId, messageExchangeNamespace, conversationEntity.getMessageExchangeId(), toMessageRequest(messageRequest), effectiveAttachments);
+
+		ofNullable(effectiveAttachments).ifPresent(_ -> messageExchangeScheduler.triggerSyncConversationsAsync());
 
 		try {
 			if (EXTERNAL.name().equals(conversationEntity.getType())) {
@@ -161,7 +180,7 @@ public class ConversationService {
 		}
 	}
 
-	private boolean hasNotifyReporterActive(String namespace, String municipalityId) {
+	private boolean hasNotifyReporterActive(final String namespace, final String municipalityId) {
 		return namespaceConfigService.get(namespace, municipalityId).isNotifyReporter();
 	}
 
@@ -249,9 +268,6 @@ public class ConversationService {
 
 		try {
 			final var meConversation = fetchConversationFromMessageExchange(municipalityId, messageExchangeId);
-			if (meConversation == null) {
-				return;
-			}
 
 			final var relationIds = Optional.ofNullable(conversationEntity.getRelationIds()).orElse(List.of());
 			final var refs = Optional.ofNullable(meConversation.getExternalReferences()).orElse(List.of());

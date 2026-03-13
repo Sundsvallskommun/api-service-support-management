@@ -1,7 +1,9 @@
 package se.sundsvall.supportmanagement.api.model.communication.conversation;
 
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import java.util.List;
 import java.util.Objects;
 import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 
@@ -15,6 +17,9 @@ public class MessageRequest {
 	@NotBlank
 	@Schema(description = "The content of the message.", examples = "Hello, how can I help you?")
 	private String content;
+
+	@ArraySchema(schema = @Schema(description = "List with attachment ids"))
+	private List<String> attachmentIds;
 
 	public static MessageRequest create() {
 		return new MessageRequest();
@@ -46,9 +51,22 @@ public class MessageRequest {
 		return this;
 	}
 
+	public List<String> getAttachmentIds() {
+		return attachmentIds;
+	}
+
+	public void setAttachmentIds(final List<String> attachmentIds) {
+		this.attachmentIds = attachmentIds;
+	}
+
+	public MessageRequest withAttachmentIds(final List<String> attachmentIds) {
+		this.attachmentIds = attachmentIds;
+		return this;
+	}
+
 	@Override
 	public int hashCode() {
-		return Objects.hash(content, inReplyToMessageId);
+		return Objects.hash(attachmentIds, content, inReplyToMessageId);
 	}
 
 	@Override
@@ -63,11 +81,11 @@ public class MessageRequest {
 			return false;
 		}
 		final MessageRequest other = (MessageRequest) obj;
-		return Objects.equals(content, other.content) && Objects.equals(inReplyToMessageId, other.inReplyToMessageId);
+		return Objects.equals(attachmentIds, other.attachmentIds) && Objects.equals(content, other.content) && Objects.equals(inReplyToMessageId, other.inReplyToMessageId);
 	}
 
 	@Override
 	public String toString() {
-		return "MessageRequest [inReplyToMessageId=" + inReplyToMessageId + ", content=" + content + "]";
+		return "MessageRequest [inReplyToMessageId=" + inReplyToMessageId + ", content=" + content + ", attachmentIds=" + attachmentIds + "]";
 	}
 }
