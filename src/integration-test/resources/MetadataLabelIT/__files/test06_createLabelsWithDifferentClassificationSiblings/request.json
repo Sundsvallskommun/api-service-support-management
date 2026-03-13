@@ -1,0 +1,24 @@
+[
+	{
+		"displayName": "Label A",
+		"resourceName": "LABEL_A",
+		"classification": "CLASSIFICATION_1",
+		"labels": [
+			{
+				"displayName": "Child A1",
+				"resourceName": "CHILD_A1",
+				"classification": "SUB_CLASS_X"
+			},
+			{
+				"displayName": "Child A2",
+				"resourceName": "CHILD_A2",
+				"classification": "SUB_CLASS_Y"
+			}
+		]
+	},
+	{
+		"displayName": "Label B",
+		"resourceName": "LABEL_B",
+		"classification": "CLASSIFICATION_2"
+	}
+]
