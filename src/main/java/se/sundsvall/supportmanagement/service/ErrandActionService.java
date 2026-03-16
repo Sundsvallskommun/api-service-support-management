@@ -127,7 +127,7 @@ public class ErrandActionService {
 			.forEach(config -> {
 				final var action = actions.get(config.getName());
 				action.createAction(errand, config).ifPresent(errandAction -> {
-					if (errandAction.getExecuteAfter().isBefore(now())) {
+					if (errandAction.getExecuteAfter().isEqual(now()) || errandAction.getExecuteAfter().isBefore(now())) {
 						action.executeAction(errand, config);
 					} else {
 						actionsToAdd.add(errandAction);
