@@ -279,10 +279,6 @@ public class MetadataMapper {
 		return entity;
 	}
 
-	/**
-	 * Recursively updates existing label entities in-place by matching on id.
-	 * New labels (without id) are added, removed labels are deleted from the list (orphanRemoval handles DB cleanup).
-	 */
 	public static void updateMetadataLabelEntities(List<MetadataLabelEntity> existingEntities, List<Label> incomingLabels, String namespace, String municipalityId) {
 		updateMetadataLabelEntities(existingEntities, incomingLabels, namespace, municipalityId, null);
 	}

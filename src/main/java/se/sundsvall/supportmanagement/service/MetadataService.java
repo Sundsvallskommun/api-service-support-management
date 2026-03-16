@@ -18,6 +18,8 @@ import se.sundsvall.supportmanagement.api.model.metadata.ExternalIdType;
 import se.sundsvall.supportmanagement.api.model.metadata.Label;
 import se.sundsvall.supportmanagement.api.model.metadata.Labels;
 import se.sundsvall.supportmanagement.api.model.metadata.MetadataResponse;
+import se.sundsvall.supportmanagement.api.model.metadata.Phase;
+import se.sundsvall.supportmanagement.api.model.metadata.PhaseTransition;
 import se.sundsvall.supportmanagement.api.model.metadata.Role;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
 import se.sundsvall.supportmanagement.api.model.metadata.Type;
@@ -107,7 +109,8 @@ public class MetadataService {
 			.withStatuses(findStatuses(namespace, municipalityId))
 			.withRoles(findRoles(namespace, municipalityId))
 			.withExternalIdTypes(findExternalIdTypes(namespace, municipalityId))
-			.withContactReasons(findContactReasons(namespace, municipalityId));
+			.withContactReasons(findContactReasons(namespace, municipalityId))
+			.withPhases(findPhases(namespace, municipalityId));
 	}
 
 	@Cacheable(value = CACHE_NAME, key = "{#root.methodName, #namespace, #municipalityId, #type}")
@@ -460,5 +463,45 @@ public class MetadataService {
 			throw Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(CONTACT_REASON, contactReasonId, namespace, municipalityId));
 		}
 		contactReasonRepository.deleteByIdAndNamespaceAndMunicipalityId(contactReasonId, namespace, municipalityId);
+	}
+
+	// =================================================================
+	// Phase operations
+	// =================================================================
+
+	public String createPhase(final String namespace, final String municipalityId, final Phase phase) {
+		throw new UnsupportedOperationException("Phase persistence not yet implemented");
+	}
+
+	public Phase getPhase(final String namespace, final String municipalityId, final String phaseId) {
+		throw new UnsupportedOperationException("Phase persistence not yet implemented");
+	}
+
+	public List<Phase> findPhases(final String namespace, final String municipalityId) {
+		return emptyList();
+	}
+
+	public Phase patchPhase(final String phaseId, final String namespace, final String municipalityId, final Phase phase) {
+		throw new UnsupportedOperationException("Phase persistence not yet implemented");
+	}
+
+	public void deletePhase(final String phaseId, final String namespace, final String municipalityId) {
+		throw new UnsupportedOperationException("Phase persistence not yet implemented");
+	}
+
+	// =================================================================
+	// Phase Transition operations
+	// =================================================================
+
+	public String createPhaseTransition(final String namespace, final String municipalityId, final String phaseId, final PhaseTransition transition) {
+		throw new UnsupportedOperationException("Phase transition persistence not yet implemented");
+	}
+
+	public List<PhaseTransition> findPhaseTransitions(final String namespace, final String municipalityId, final String phaseId) {
+		return emptyList();
+	}
+
+	public void deletePhaseTransition(final String namespace, final String municipalityId, final String phaseId, final String transitionId) {
+		throw new UnsupportedOperationException("Phase transition persistence not yet implemented");
 	}
 }

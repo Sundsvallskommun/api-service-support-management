@@ -133,6 +133,9 @@ public class Errand {
 	@Schema(description = "List of labels for the errand")
 	private List<ErrandLabel> labels;
 
+	@Schema(description = "List of phases for the errand")
+	private List<ErrandPhase> phases;
+
 	@Schema(description = "List of active notifications for the errand", accessMode = READ_ONLY)
 	@Null(groups = {
 		OnCreate.class, OnUpdate.class
@@ -482,6 +485,19 @@ public class Errand {
 		return this;
 	}
 
+	public List<ErrandPhase> getPhases() {
+		return phases;
+	}
+
+	public void setPhases(final List<ErrandPhase> phases) {
+		this.phases = phases;
+	}
+
+	public Errand withPhases(final List<ErrandPhase> phases) {
+		this.phases = phases;
+		return this;
+	}
+
 	public List<Notification> getActiveNotifications() {
 		return activeNotifications;
 	}
@@ -525,7 +541,7 @@ public class Errand {
 	public int hashCode() {
 		return Objects.hash(actions, assignedGroupId, assignedUserId, businessRelated, channel, classification, contactReason, contactReasonDescription, created, description, errandNumber, escalationEmail, externalTags, id, jsonParameters, labels,
 			activeNotifications, modified,
-			parameters, priority, reporterUserId, resolution, stakeholders, status, suspension, title, touched);
+			parameters, phases, priority, reporterUserId, resolution, stakeholders, status, suspension, title, touched);
 	}
 
 	@Override
@@ -542,7 +558,7 @@ public class Errand {
 					other.description) && Objects.equals(errandNumber, other.errandNumber) && Objects.equals(escalationEmail, other.escalationEmail) && Objects.equals(externalTags, other.externalTags) && Objects.equals(id, other.id) && Objects.equals(
 						jsonParameters,
 						other.jsonParameters) && Objects.equals(labels, other.labels) && Objects.equals(activeNotifications, other.activeNotifications) && Objects.equals(modified, other.modified) && Objects.equals(parameters, other.parameters)
-			&& Objects.equals(priority, other.priority) && Objects.equals(
+			&& Objects.equals(phases, other.phases) && Objects.equals(priority, other.priority) && Objects.equals(
 				reporterUserId, other.reporterUserId) && Objects.equals(resolution, other.resolution) && Objects.equals(stakeholders, other.stakeholders) && Objects.equals(status, other.status) && Objects.equals(suspension, other.suspension) && Objects
 					.equals(
 						title, other.title) && Objects.equals(touched, other.touched);
@@ -574,6 +590,7 @@ public class Errand {
 			", suspension=" + suspension +
 			", businessRelated=" + businessRelated +
 			", labels=" + labels +
+			", phases=" + phases +
 			", activeNotifications=" + activeNotifications +
 			", created=" + created +
 			", modified=" + modified +
