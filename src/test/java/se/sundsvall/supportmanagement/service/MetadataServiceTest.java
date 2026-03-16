@@ -769,16 +769,24 @@ class MetadataServiceTest {
 		// Setup
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
-		final var label = Label.create().withResourceName("name");
-		final var metadataLabelEntity = MetadataLabelEntity.create();
+		final var labelId = "label-id";
+		final var label = Label.create().withId(labelId).withResourceName("name").withClassification("updated_class").withDisplayName("Updated");
+		final var existingEntity = MetadataLabelEntity.create().withId(labelId).withResourceName("name").withClassification("old_class").withDisplayName("Old")
+			.withMunicipalityId(municipalityId).withNamespace(namespace);
+		final var existingEntities = new java.util.ArrayList<>(List.of(existingEntity));
 		// Mock
 		when(metadataLabelRepositoryMock.existsByNamespaceAndMunicipalityId(namespace, municipalityId)).thenReturn(true);
+		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndParentIsNull(namespace, municipalityId)).thenReturn(existingEntities);
 		// Call
 		metadataService.updateLabels(namespace, municipalityId, List.of(label));
 		// Verifications
 		verify(metadataLabelRepositoryMock).existsByNamespaceAndMunicipalityId(namespace, municipalityId);
-		verify(metadataLabelRepositoryMock).saveAll(List.of(metadataLabelEntity.withMunicipalityId(municipalityId).withNamespace(namespace).withResourceName("name")));
+		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndParentIsNull(namespace, municipalityId);
+		verify(metadataLabelRepositoryMock).saveAll(existingEntities);
 		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, roleRepositoryMock, validationRepositoryMock, statusRepositoryMock);
+		// Verify entity was updated in-place
+		assertThat(existingEntity.getClassification()).isEqualTo("updated_class");
+		assertThat(existingEntity.getDisplayName()).isEqualTo("Updated");
 	}
 
 	@Test

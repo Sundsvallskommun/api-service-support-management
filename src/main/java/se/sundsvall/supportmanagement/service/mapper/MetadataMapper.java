@@ -3,7 +3,6 @@ package se.sundsvall.supportmanagement.service.mapper;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -65,7 +64,7 @@ public class MetadataMapper {
 	}
 
 	private static List<Type> toTypes(final List<TypeEntity> typeEntities) {
-		return Optional.ofNullable(typeEntities).orElse(emptyList()).stream()
+		return ofNullable(typeEntities).orElse(emptyList()).stream()
 			.map(MetadataMapper::toType)
 			.filter(Objects::nonNull)
 			.sorted(comparing(Type::getDisplayName, nullsFirst(naturalOrder())))
@@ -84,7 +83,7 @@ public class MetadataMapper {
 	}
 
 	public static List<TypeEntity> toTypeEntities(final List<Type> types) {
-		return Optional.ofNullable(types).orElse(emptyList()).stream()
+		return ofNullable(types).orElse(emptyList()).stream()
 			.map(MetadataMapper::toTypeEntity)
 			.filter(Objects::nonNull)
 			.toList();
@@ -212,7 +211,7 @@ public class MetadataMapper {
 	// =================================================================
 
 	public static Labels toLabels(List<MetadataLabelEntity> metadataLabelEntityList) {
-		final var labelList = Optional.ofNullable(metadataLabelEntityList)
+		final var labelList = ofNullable(metadataLabelEntityList)
 			.orElse(emptyList())
 			.stream()
 			.map(MetadataMapper::toLabel)
@@ -239,7 +238,7 @@ public class MetadataMapper {
 			.withResourceName(entity.getResourceName())
 			.withResourcePath(entity.getResourcePath());
 
-		var children = Optional.ofNullable(entity.getMetadataLabels())
+		var children = ofNullable(entity.getMetadataLabels())
 			.orElse(emptyList())
 			.stream()
 			.map(MetadataMapper::toLabel)
@@ -249,7 +248,7 @@ public class MetadataMapper {
 	}
 
 	public static List<MetadataLabelEntity> toMetadataLabelEntityList(String namespace, String municipalityId, List<Label> labels) {
-		return Optional.ofNullable(labels).orElse(emptyList()).stream()
+		return ofNullable(labels).orElse(emptyList()).stream()
 			.map(labelObj -> toMetadataLabelEntityFromLabel(namespace, municipalityId, labelObj))
 			.filter(Objects::nonNull)
 			.toList();
@@ -269,7 +268,7 @@ public class MetadataMapper {
 			.withResourceName(trim(label.getResourceName()));
 
 		// Map children recursively
-		final var children = Optional.ofNullable(label.getLabels()).orElse(emptyList())
+		final var children = ofNullable(label.getLabels()).orElse(emptyList())
 			.stream()
 			.map(child -> toMetadataLabelEntityFromLabel(namespace, municipalityId, child))
 			.toList();
@@ -278,6 +277,47 @@ public class MetadataMapper {
 		entity.withMetadataLabels(children);
 
 		return entity;
+	}
+
+	/**
+	 * Recursively updates existing label entities in-place by matching on id.
+	 * New labels (without id) are added, removed labels are deleted from the list (orphanRemoval handles DB cleanup).
+	 */
+	public static void updateMetadataLabelEntities(List<MetadataLabelEntity> existingEntities, List<Label> incomingLabels, String namespace, String municipalityId) {
+		updateMetadataLabelEntities(existingEntities, incomingLabels, namespace, municipalityId, null);
+	}
+
+	private static void updateMetadataLabelEntities(List<MetadataLabelEntity> existingEntities, List<Label> incomingLabels, String namespace, String municipalityId,
+		MetadataLabelEntity parent) {
+		final var incoming = ofNullable(incomingLabels).orElse(emptyList());
+
+		// Build a map of existing entities by id for quick lookup
+		final var existingById = existingEntities.stream()
+			.filter(e -> e.getId() != null)
+			.collect(Collectors.toMap(MetadataLabelEntity::getId, Function.identity(), (a, _) -> a));
+
+		// Remove entities whose id is not in the incoming list
+		existingEntities.removeIf(entity -> incoming.stream()
+			.noneMatch(label -> Objects.equals(label.getId(), entity.getId())));
+
+		for (final var label : incoming) {
+			final var existing = label.getId() != null ? existingById.get(label.getId()) : null;
+
+			if (existing != null) {
+				// Update existing entity in-place
+				existing.setClassification(label.getClassification());
+				existing.setDisplayName(label.getDisplayName());
+				existing.setResourceName(trim(label.getResourceName()));
+
+				// Recursively update children
+				updateMetadataLabelEntities(existing.getMetadataLabels(), label.getLabels(), namespace, municipalityId, existing);
+			} else {
+				// Add new entity with parent reference
+				final var newEntity = toMetadataLabelEntityFromLabel(namespace, municipalityId, label);
+				newEntity.setParent(parent);
+				existingEntities.add(newEntity);
+			}
+		}
 	}
 
 	// =================================================================
@@ -296,7 +336,7 @@ public class MetadataMapper {
 	}
 
 	public static ContactReasonEntity toContactReasonEntity(final String namespace, final String municipalityId, final ContactReason contactReason) {
-		return Optional.ofNullable(contactReason)
+		return ofNullable(contactReason)
 			.map(request -> ContactReasonEntity.create()
 				.withReason(request.getReason())
 				.withDisplayName(request.getDisplayName())
@@ -312,8 +352,8 @@ public class MetadataMapper {
 			return entity;
 		}
 
-		Optional.ofNullable(contactReason.getReason()).ifPresent(entity::setReason);
-		Optional.ofNullable(contactReason.getDisplayName()).ifPresent(entity::setDisplayName);
+		ofNullable(contactReason.getReason()).ifPresent(entity::setReason);
+		ofNullable(contactReason.getDisplayName()).ifPresent(entity::setDisplayName);
 
 		return entity;
 	}

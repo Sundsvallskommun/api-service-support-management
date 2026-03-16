@@ -22,7 +22,7 @@ class ValidLabelSiblingsConstraintValidatorTest {
 	void oneLevelWithDifferentClassificationAndUniqueResourceName() {
 		assertThat(validator.isValid(List.of(
 			Label.create().withClassification("classification_1").withResourceName("resourceName_1"),
-			Label.create().withClassification("classification_2").withResourceName("resourceName_2")), null)).isFalse();
+			Label.create().withClassification("classification_2").withResourceName("resourceName_2")), null)).isTrue();
 	}
 
 	@Test
@@ -51,7 +51,7 @@ class ValidLabelSiblingsConstraintValidatorTest {
 				Label.create().withClassification("classification_1").withResourceName("resourceName_1"),
 				Label.create().withClassification("classification_2").withResourceName("resourceName_2")));
 
-		assertThat(validator.isValid(List.of(root), null)).isFalse();
+		assertThat(validator.isValid(List.of(root), null)).isTrue();
 	}
 
 	@Test

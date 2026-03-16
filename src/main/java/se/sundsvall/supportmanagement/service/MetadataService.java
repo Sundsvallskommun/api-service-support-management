@@ -54,6 +54,7 @@ import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toSta
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toStatusEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateContactReason;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateEntity;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateMetadataLabelEntities;
 
 @Service
 public class MetadataService {
@@ -276,7 +277,10 @@ public class MetadataService {
 		if (!metadataLabelRepository.existsByNamespaceAndMunicipalityId(namespace, municipalityId)) {
 			throw Problem.valueOf(NOT_FOUND, "Labels are not present in namespace '%s' for municipalityId '%s'".formatted(namespace, municipalityId));
 		}
-		metadataLabelRepository.saveAll(toMetadataLabelEntityList(namespace, municipalityId, labels));
+
+		final var existingEntities = metadataLabelRepository.findByNamespaceAndMunicipalityIdAndParentIsNull(namespace, municipalityId);
+		updateMetadataLabelEntities(existingEntities, labels, namespace, municipalityId);
+		metadataLabelRepository.saveAll(existingEntities);
 	}
 
 	@Cacheable(value = CACHE_NAME, key = "{#root.methodName, #namespace, #municipalityId}")
