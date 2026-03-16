@@ -460,7 +460,7 @@ class NamespaceConfigResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple("getActionDefinitions.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
 
 		verifyNoInteractions(actionServiceMock);
@@ -480,7 +480,7 @@ class NamespaceConfigResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple("getActionDefinitions.municipalityId", "not a valid municipality ID"));
 
 		verifyNoInteractions(actionServiceMock);
@@ -502,7 +502,7 @@ class NamespaceConfigResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple("getActionConfig.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
 
 		verifyNoInteractions(actionServiceMock);
@@ -522,7 +522,7 @@ class NamespaceConfigResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple("getActionConfig.municipalityId", "not a valid municipality ID"));
 
 		verifyNoInteractions(actionServiceMock);
@@ -546,7 +546,7 @@ class NamespaceConfigResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple("createActionConfig.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
 
 		verifyNoInteractions(actionServiceMock);
@@ -570,7 +570,7 @@ class NamespaceConfigResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple("createActionConfig.municipalityId", "not a valid municipality ID"));
 
 		verifyNoInteractions(actionServiceMock);
@@ -594,7 +594,7 @@ class NamespaceConfigResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple("updateActionConfig.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
 
 		verifyNoInteractions(actionServiceMock);
@@ -618,7 +618,7 @@ class NamespaceConfigResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple("updateActionConfig.municipalityId", "not a valid municipality ID"));
 
 		verifyNoInteractions(actionServiceMock);
@@ -642,7 +642,7 @@ class NamespaceConfigResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple("updateActionConfig.id", "not a valid UUID"));
 
 		verifyNoInteractions(actionServiceMock);
@@ -662,7 +662,7 @@ class NamespaceConfigResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple("deleteActionConfig.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
 
 		verifyNoInteractions(actionServiceMock);
@@ -682,7 +682,7 @@ class NamespaceConfigResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple("deleteActionConfig.municipalityId", "not a valid municipality ID"));
 
 		verifyNoInteractions(actionServiceMock);
@@ -702,7 +702,7 @@ class NamespaceConfigResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
-			.extracting(Violation::getField, Violation::getMessage)
+			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple("deleteActionConfig.id", "not a valid UUID"));
 
 		verifyNoInteractions(actionServiceMock);

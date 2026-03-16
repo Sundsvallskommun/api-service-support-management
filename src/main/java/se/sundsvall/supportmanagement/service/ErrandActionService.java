@@ -1,12 +1,5 @@
 package se.sundsvall.supportmanagement.service;
 
-import static java.time.OffsetDateTime.now;
-import static org.zalando.problem.Status.BAD_REQUEST;
-import static org.zalando.problem.Status.NOT_FOUND;
-import static se.sundsvall.supportmanagement.service.mapper.ErrandActionMapper.toEntity;
-import static se.sundsvall.supportmanagement.service.mapper.ErrandActionMapper.toMap;
-import static se.sundsvall.supportmanagement.service.mapper.ErrandActionMapper.updateEntity;
-
 import jakarta.transaction.Transactional;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -15,7 +8,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
-import org.zalando.problem.Problem;
+import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.config.action.ActionDefinition;
 import se.sundsvall.supportmanagement.api.model.config.action.Config;
 import se.sundsvall.supportmanagement.integration.db.ActionConfigRepository;
@@ -25,6 +18,13 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandActionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.service.action.Action;
 import se.sundsvall.supportmanagement.service.mapper.ErrandActionMapper;
+
+import static java.time.OffsetDateTime.now;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandActionMapper.toEntity;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandActionMapper.toMap;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandActionMapper.updateEntity;
 
 @Service
 @Transactional

@@ -3,7 +3,7 @@ package se.sundsvall.supportmanagement.service.action;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.zalando.problem.ThrowableProblem;
+import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.supportmanagement.api.model.config.action.Definition;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandActionEntity;

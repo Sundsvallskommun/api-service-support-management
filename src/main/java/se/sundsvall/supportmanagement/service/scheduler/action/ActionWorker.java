@@ -1,7 +1,5 @@
 package se.sundsvall.supportmanagement.service.scheduler.action;
 
-import static java.time.OffsetDateTime.now;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,6 +14,8 @@ import se.sundsvall.supportmanagement.integration.db.model.ActionConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandActionEntity;
 import se.sundsvall.supportmanagement.service.action.Action;
+
+import static java.time.OffsetDateTime.now;
 
 @Component
 public class ActionWorker {
