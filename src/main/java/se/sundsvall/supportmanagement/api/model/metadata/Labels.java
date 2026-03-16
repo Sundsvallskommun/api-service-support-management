@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 
@@ -28,6 +29,19 @@ public class Labels {
 	public Labels withLabelStructure(final List<Label> labelStructure) {
 		setLabelStructure(labelStructure);
 		return this;
+	}
+
+	public List<Label> flatten() {
+		return flattenLabels(labelStructure);
+	}
+
+	private List<Label> flattenLabels(List<Label> labels) {
+		if (labels == null) {
+			return List.of();
+		}
+		return labels.stream()
+			.flatMap(label -> Stream.concat(Stream.of(label), flattenLabels(label.getLabels()).stream()))
+			.toList();
 	}
 
 	@Override

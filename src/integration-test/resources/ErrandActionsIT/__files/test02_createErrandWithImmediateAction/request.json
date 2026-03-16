@@ -1,0 +1,10 @@
+{
+	"title": "Errand with immediate action",
+	"reporterUserId": "joe01doe",
+	"priority": "LOW",
+	"status": "STATUS-2",
+	"classification": {
+		"category": "CATEGORY-1",
+		"type": "TYPE-1"
+	}
+}
