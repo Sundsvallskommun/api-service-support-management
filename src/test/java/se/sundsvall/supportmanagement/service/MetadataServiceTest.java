@@ -1025,4 +1025,52 @@ class MetadataServiceTest {
 		verify(validationRepositoryMock).findByNamespaceAndMunicipalityIdAndType(namespace, municipalityId, type);
 		verifyNoInteractions(statusRepositoryMock, categoryRepositoryMock, externalIdTypeRepositoryMock, roleRepositoryMock);
 	}
+
+	// =================================================================
+	// Phase tests
+	// =================================================================
+
+	@Test
+	void createPhaseThrowsUnsupportedOperationException() {
+		assertThrows(UnsupportedOperationException.class, () -> metadataService.createPhase("namespace", "municipalityId", new se.sundsvall.supportmanagement.api.model.metadata.Phase()));
+	}
+
+	@Test
+	void getPhaseThrowsUnsupportedOperationException() {
+		assertThrows(UnsupportedOperationException.class, () -> metadataService.getPhase("namespace", "municipalityId", "phaseId"));
+	}
+
+	@Test
+	void findPhasesReturnsEmptyList() {
+		assertThat(metadataService.findPhases("namespace", "municipalityId")).isEmpty();
+	}
+
+	@Test
+	void patchPhaseThrowsUnsupportedOperationException() {
+		assertThrows(UnsupportedOperationException.class, () -> metadataService.patchPhase("phaseId", "namespace", "municipalityId", new se.sundsvall.supportmanagement.api.model.metadata.Phase()));
+	}
+
+	@Test
+	void deletePhaseThrowsUnsupportedOperationException() {
+		assertThrows(UnsupportedOperationException.class, () -> metadataService.deletePhase("phaseId", "namespace", "municipalityId"));
+	}
+
+	// =================================================================
+	// Phase Transition tests
+	// =================================================================
+
+	@Test
+	void createPhaseTransitionThrowsUnsupportedOperationException() {
+		assertThrows(UnsupportedOperationException.class, () -> metadataService.createPhaseTransition("namespace", "municipalityId", "phaseId", new se.sundsvall.supportmanagement.api.model.metadata.PhaseTransition()));
+	}
+
+	@Test
+	void findPhaseTransitionsReturnsEmptyList() {
+		assertThat(metadataService.findPhaseTransitions("namespace", "municipalityId", "phaseId")).isEmpty();
+	}
+
+	@Test
+	void deletePhaseTransitionThrowsUnsupportedOperationException() {
+		assertThrows(UnsupportedOperationException.class, () -> metadataService.deletePhaseTransition("namespace", "municipalityId", "phaseId", "transitionId"));
+	}
 }
