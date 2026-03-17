@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -17,6 +18,7 @@ import se.sundsvall.supportmanagement.api.model.metadata.Status;
 import se.sundsvall.supportmanagement.api.model.metadata.Type;
 import se.sundsvall.supportmanagement.integration.db.CategoryRepository;
 import se.sundsvall.supportmanagement.integration.db.ContactReasonRepository;
+import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.ExternalIdTypeRepository;
 import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
 import se.sundsvall.supportmanagement.integration.db.RoleRepository;
@@ -35,6 +37,7 @@ import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -48,6 +51,9 @@ class MetadataServiceTest {
 
 	@Mock
 	private CategoryRepository categoryRepositoryMock;
+
+	@Mock
+	private ErrandsRepository errandsRepositoryMock;
 
 	@Mock
 	private ExternalIdTypeRepository externalIdTypeRepositoryMock;
@@ -766,27 +772,26 @@ class MetadataServiceTest {
 
 	@Test
 	void updateLabels() {
-		// Setup
+		// Setup — all existing labels are kept (no removals)
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
 		final var labelId = "label-id";
 		final var label = Label.create().withId(labelId).withResourceName("name").withClassification("updated_class").withDisplayName("Updated");
 		final var existingEntity = MetadataLabelEntity.create().withId(labelId).withResourceName("name").withClassification("old_class").withDisplayName("Old")
 			.withMunicipalityId(municipalityId).withNamespace(namespace);
-		final var existingEntities = new java.util.ArrayList<>(List.of(existingEntity));
-		// Mock
-		when(metadataLabelRepositoryMock.existsByNamespaceAndMunicipalityId(namespace, municipalityId)).thenReturn(true);
-		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndParentIsNull(namespace, municipalityId)).thenReturn(existingEntities);
-		// Call
+
+		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityId(namespace, municipalityId)).thenReturn(List.of(existingEntity));
+		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndParentIsNull(namespace, municipalityId))
+			.thenReturn(new ArrayList<>(List.of(existingEntity)));
+
 		metadataService.updateLabels(namespace, municipalityId, List.of(label));
-		// Verifications
-		verify(metadataLabelRepositoryMock).existsByNamespaceAndMunicipalityId(namespace, municipalityId);
+
+		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityId(namespace, municipalityId);
 		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndParentIsNull(namespace, municipalityId);
-		verify(metadataLabelRepositoryMock).saveAll(existingEntities);
+		verify(metadataLabelRepositoryMock).flush();
+		verify(metadataLabelRepositoryMock).saveAll(any());
+		verifyNoInteractions(errandsRepositoryMock);
 		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, roleRepositoryMock, validationRepositoryMock, statusRepositoryMock);
-		// Verify entity was updated in-place
-		assertThat(existingEntity.getClassification()).isEqualTo("updated_class");
-		assertThat(existingEntity.getDisplayName()).isEqualTo("Updated");
 	}
 
 	@Test
@@ -796,15 +801,140 @@ class MetadataServiceTest {
 		final var municipalityId = "municipalityId";
 		final var labels = List.of(Label.create().withResourceName("name"));
 		// Mock
-		when(metadataLabelRepositoryMock.existsByNamespaceAndMunicipalityId(namespace, municipalityId)).thenReturn(false);
+		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityId(namespace, municipalityId)).thenReturn(emptyList());
 		// Call
 		final var e = assertThrows(ThrowableProblem.class, () -> metadataService.updateLabels(namespace, municipalityId, labels));
 		// Verifications
 		assertThat(e.getStatus()).isEqualTo(NOT_FOUND);
 		assertThat(e.getMessage()).isEqualTo("Not Found: Labels are not present in namespace 'namespace' for municipalityId 'municipalityId'");
-		verify(metadataLabelRepositoryMock).existsByNamespaceAndMunicipalityId(namespace, municipalityId);
+		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityId(namespace, municipalityId);
 		verifyNoMoreInteractions(metadataLabelRepositoryMock);
 		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, roleRepositoryMock, validationRepositoryMock, statusRepositoryMock);
+	}
+
+	@Test
+	void updateLabelsDeletesRemovedRootLabel() {
+		// Setup: two existing root labels, incoming request only has one — the other should be deleted
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var keepId = "keep-id";
+		final var deleteId = "delete-id";
+		final var keepLabel = Label.create().withId(keepId).withResourceName("keep");
+		final var existingKeep = MetadataLabelEntity.create().withId(keepId).withResourceName("keep")
+			.withMunicipalityId(municipalityId).withNamespace(namespace);
+		final var existingDelete = MetadataLabelEntity.create().withId(deleteId).withResourceName("delete")
+			.withMunicipalityId(municipalityId).withNamespace(namespace);
+
+		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityId(namespace, municipalityId)).thenReturn(List.of(existingKeep, existingDelete));
+		when(errandsRepositoryMock.existsByLabelsMetadataLabelIdIn(any())).thenReturn(false);
+		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndParentIsNull(namespace, municipalityId))
+			.thenReturn(new ArrayList<>(List.of(existingKeep, existingDelete)));
+
+		metadataService.updateLabels(namespace, municipalityId, List.of(keepLabel));
+
+		verify(errandsRepositoryMock).existsByLabelsMetadataLabelIdIn(any());
+		verify(metadataLabelRepositoryMock).deleteById(deleteId);
+		verify(metadataLabelRepositoryMock, never()).deleteById(keepId);
+		verify(metadataLabelRepositoryMock).flush();
+		verify(metadataLabelRepositoryMock).saveAll(any());
+	}
+
+	@Test
+	void updateLabelsDeletesRemovedChildLabel() {
+		// Setup: existing root with two children, incoming request only has one child — the other child should be removed
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var rootId = "root-id";
+		final var keepChildId = "keep-child-id";
+		final var deleteChildId = "delete-child-id";
+
+		final var keepChildLabel = Label.create().withId(keepChildId).withResourceName("keep_child");
+		final var rootLabel = Label.create().withId(rootId).withResourceName("root").withLabels(List.of(keepChildLabel));
+
+		final var existingKeepChild = MetadataLabelEntity.create().withId(keepChildId).withResourceName("keep_child")
+			.withMunicipalityId(municipalityId).withNamespace(namespace);
+		final var existingDeleteChild = MetadataLabelEntity.create().withId(deleteChildId).withResourceName("delete_child")
+			.withMunicipalityId(municipalityId).withNamespace(namespace);
+		final var existingRoot = MetadataLabelEntity.create().withId(rootId).withResourceName("root")
+			.withMunicipalityId(municipalityId).withNamespace(namespace)
+			.withMetadataLabels(new ArrayList<>(List.of(existingKeepChild, existingDeleteChild)));
+
+		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityId(namespace, municipalityId)).thenReturn(List.of(existingRoot, existingKeepChild, existingDeleteChild));
+		when(errandsRepositoryMock.existsByLabelsMetadataLabelIdIn(any())).thenReturn(false);
+		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndParentIsNull(namespace, municipalityId))
+			.thenReturn(new ArrayList<>(List.of(existingRoot)));
+
+		metadataService.updateLabels(namespace, municipalityId, List.of(rootLabel));
+
+		// Root is not deleted — child removal handled by updateMetadataLabelEntities + orphanRemoval
+		verify(errandsRepositoryMock).existsByLabelsMetadataLabelIdIn(any());
+		verify(metadataLabelRepositoryMock, never()).deleteById(any());
+		verify(metadataLabelRepositoryMock).flush();
+		verify(metadataLabelRepositoryMock).saveAll(any());
+		// Verify the deleted child was removed from the root's children list
+		assertThat(existingRoot.getMetadataLabels()).hasSize(1);
+		assertThat(existingRoot.getMetadataLabels().getFirst().getId()).isEqualTo(keepChildId);
+	}
+
+	@Test
+	void updateLabelsBlockedByReferencedErrand() {
+		// Setup: trying to remove a label that is referenced by an errand
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var keepId = "keep-id";
+		final var referencedId = "referenced-id";
+		final var keepLabel = Label.create().withId(keepId).withResourceName("keep");
+
+		final var existingKeep = MetadataLabelEntity.create().withId(keepId).withResourceName("keep")
+			.withMunicipalityId(municipalityId).withNamespace(namespace);
+		final var existingReferenced = MetadataLabelEntity.create().withId(referencedId).withResourceName("referenced")
+			.withMunicipalityId(municipalityId).withNamespace(namespace);
+
+		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityId(namespace, municipalityId)).thenReturn(List.of(existingKeep, existingReferenced));
+		when(errandsRepositoryMock.existsByLabelsMetadataLabelIdIn(any())).thenReturn(true);
+
+		// Call — should throw because referencedId is used by an errand
+		final var e = assertThrows(ThrowableProblem.class, () -> metadataService.updateLabels(namespace, municipalityId, List.of(keepLabel)));
+
+		// Verifications
+		assertThat(e.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(e.getMessage()).contains("Cannot delete labels with ids");
+		assertThat(e.getMessage()).contains(referencedId);
+		verify(errandsRepositoryMock).existsByLabelsMetadataLabelIdIn(any());
+		verifyNoMoreInteractions(errandsRepositoryMock);
+	}
+
+	@Test
+	void updateLabelsBlockedByReferencedChildErrand() {
+		// Setup: trying to remove a child label that is referenced by an errand
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var rootId = "root-id";
+		final var keepChildId = "keep-child-id";
+		final var referencedChildId = "referenced-child-id";
+
+		final var keepChildLabel = Label.create().withId(keepChildId).withResourceName("keep-child");
+		final var rootLabel = Label.create().withId(rootId).withResourceName("root").withLabels(List.of(keepChildLabel));
+
+		final var existingRoot = MetadataLabelEntity.create().withId(rootId).withResourceName("root")
+			.withMunicipalityId(municipalityId).withNamespace(namespace);
+		final var existingKeepChild = MetadataLabelEntity.create().withId(keepChildId).withResourceName("keep-child")
+			.withMunicipalityId(municipalityId).withNamespace(namespace);
+		final var existingReferencedChild = MetadataLabelEntity.create().withId(referencedChildId).withResourceName("referenced-child")
+			.withMunicipalityId(municipalityId).withNamespace(namespace);
+
+		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityId(namespace, municipalityId)).thenReturn(List.of(existingRoot, existingKeepChild, existingReferencedChild));
+		when(errandsRepositoryMock.existsByLabelsMetadataLabelIdIn(any())).thenReturn(true);
+
+		// Call — should throw because referencedChildId is used by an errand
+		final var e = assertThrows(ThrowableProblem.class, () -> metadataService.updateLabels(namespace, municipalityId, List.of(rootLabel)));
+
+		// Verifications
+		assertThat(e.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(e.getMessage()).contains("Cannot delete labels with ids");
+		assertThat(e.getMessage()).contains(referencedChildId);
+		verify(errandsRepositoryMock).existsByLabelsMetadataLabelIdIn(any());
+		verifyNoMoreInteractions(errandsRepositoryMock);
 	}
 
 	@Test

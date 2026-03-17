@@ -1,0 +1,5 @@
+{
+	"title": "Bad Request",
+	"status": 400,
+	"detail": "${json-unit.regex}Cannot delete labels with ids \\[.*\\] because they are referenced by one or more errands"
+}
