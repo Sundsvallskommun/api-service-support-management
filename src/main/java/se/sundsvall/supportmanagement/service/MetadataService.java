@@ -1,10 +1,12 @@
 package se.sundsvall.supportmanagement.service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
@@ -25,6 +27,7 @@ import se.sundsvall.supportmanagement.api.model.metadata.Status;
 import se.sundsvall.supportmanagement.api.model.metadata.Type;
 import se.sundsvall.supportmanagement.integration.db.CategoryRepository;
 import se.sundsvall.supportmanagement.integration.db.ContactReasonRepository;
+import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.ExternalIdTypeRepository;
 import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
 import se.sundsvall.supportmanagement.integration.db.RoleRepository;
@@ -73,6 +76,7 @@ public class MetadataService {
 	private static final String STATUS = "Status";
 
 	private final CategoryRepository categoryRepository;
+	private final ErrandsRepository errandsRepository;
 	private final ExternalIdTypeRepository externalIdTypeRepository;
 	private final MetadataLabelRepository metadataLabelRepository;
 	private final RoleRepository roleRepository;
@@ -82,11 +86,13 @@ public class MetadataService {
 	private final AntPathMatcher pathMatcher;
 
 	public MetadataService(final CategoryRepository categoryRepository,
+		final ErrandsRepository errandsRepository,
 		final ExternalIdTypeRepository externalIdTypeRepository,
 		final MetadataLabelRepository metadataLabelRepository, final RoleRepository roleRepository,
 		final StatusRepository statusRepository, final ValidationRepository validationRepository,
 		final ContactReasonRepository contactReasonRepository) {
 		this.categoryRepository = categoryRepository;
+		this.errandsRepository = errandsRepository;
 		this.externalIdTypeRepository = externalIdTypeRepository;
 		this.metadataLabelRepository = metadataLabelRepository;
 		this.roleRepository = roleRepository;
@@ -276,14 +282,52 @@ public class MetadataService {
 		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}"),
 		@CacheEvict(value = PATTERN_CACHE_NAME, allEntries = true)
 	})
+	@Transactional
 	public void updateLabels(final String namespace, final String municipalityId, final List<Label> labels) {
-		if (!metadataLabelRepository.existsByNamespaceAndMunicipalityId(namespace, municipalityId)) {
+		// Fetch all existing labels and verify existence
+		final var allExisting = metadataLabelRepository.findByNamespaceAndMunicipalityId(namespace, municipalityId);
+		if (allExisting.isEmpty()) {
 			throw Problem.valueOf(NOT_FOUND, "Labels are not present in namespace '%s' for municipalityId '%s'".formatted(namespace, municipalityId));
 		}
 
-		final var existingEntities = metadataLabelRepository.findByNamespaceAndMunicipalityIdAndParentIsNull(namespace, municipalityId);
-		updateMetadataLabelEntities(existingEntities, labels, namespace, municipalityId);
-		metadataLabelRepository.saveAll(existingEntities);
+		// Determine which labels are being removed
+		final var existingIds = allExisting.stream()
+			.map(MetadataLabelEntity::getId)
+			.collect(Collectors.toSet());
+		final var incomingIds = collectLabelIds(labels);
+		final var removedIds = existingIds.stream()
+			.filter(id -> !incomingIds.contains(id))
+			.collect(Collectors.toSet());
+
+		// Verify no removed labels are referenced by errands
+		if (!removedIds.isEmpty() && errandsRepository.existsByLabelsMetadataLabelIdIn(removedIds)) {
+			throw Problem.valueOf(BAD_REQUEST, "Cannot delete labels with ids %s because they are referenced by one or more errands".formatted(removedIds));
+		}
+
+		// Delete removed root labels (cascade handles their children)
+		final var existingRoots = metadataLabelRepository.findByNamespaceAndMunicipalityIdAndParentIsNull(namespace, municipalityId);
+		final var removedRoots = existingRoots.stream()
+			.filter(root -> removedIds.contains(root.getId()))
+			.toList();
+		removedRoots.forEach(root -> metadataLabelRepository.deleteById(root.getId()));
+		metadataLabelRepository.flush();
+
+		// Merge remaining roots with incoming data (orphanRemoval handles child deletion)
+		final var remainingRoots = new ArrayList<>(existingRoots);
+		remainingRoots.removeAll(removedRoots);
+		updateMetadataLabelEntities(remainingRoots, labels, namespace, municipalityId);
+		metadataLabelRepository.saveAll(remainingRoots);
+	}
+
+	private static Set<String> collectLabelIds(final List<Label> labels) {
+		if (isEmpty(labels)) {
+			return Set.of();
+		}
+		return labels.stream()
+			.flatMap(label -> Stream.concat(
+				Stream.ofNullable(label.getId()),
+				collectLabelIds(label.getLabels()).stream()))
+			.collect(Collectors.toSet());
 	}
 
 	@Cacheable(value = CACHE_NAME, key = "{#root.methodName, #namespace, #municipalityId}")

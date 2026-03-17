@@ -13,6 +13,7 @@ import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpMethod.PUT;
 import static org.springframework.http.HttpStatus.ACCEPTED;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
@@ -36,6 +37,7 @@ class MetadataLabelIT extends AbstractAppTest {
 	private static final String MUNICIPALITY_2282 = "2282";
 	private static final String MUNICIPALITY_2309 = "2309";
 	private static final String MUNICIPALITY_2303 = "2303";
+	private static final String NAMESPACE_2 = "NAMESPACE-2";
 	private static final String MUNICIPALITY_2584 = "2584";
 
 	@Test
@@ -166,6 +168,64 @@ class MetadataLabelIT extends AbstractAppTest {
 			.withServicePath(path)
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	void test08_updateLabelsDeletesRootLabel() {
+		final var path = "/" + MUNICIPALITY_2309 + "/" + NAMESPACE_2 + "/metadata/labels";
+
+		// PUT with Root B removed — should succeed since no errands reference it
+		setupCall()
+			.withServicePath(path)
+			.withHttpMethod(PUT)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(NO_CONTENT)
+			.withExpectedResponseBodyIsNull()
+			.sendRequestAndVerifyResponse();
+
+		// Verify Root B is gone
+		setupCall()
+			.withServicePath(path)
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	void test09_updateLabelsDeletesChildLabel() {
+		final var path = "/" + MUNICIPALITY_2309 + "/" + NAMESPACE_2 + "/metadata/labels";
+
+		// PUT with Child A1 (and its child Grandchild A1a) removed — should succeed
+		setupCall()
+			.withServicePath(path)
+			.withHttpMethod(PUT)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(NO_CONTENT)
+			.withExpectedResponseBodyIsNull()
+			.sendRequestAndVerifyResponse();
+
+		// Verify Child A1 and Grandchild A1a are gone
+		setupCall()
+			.withServicePath(path)
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	void test10_updateLabelsBlockedByReferencedErrand() {
+		final var path = "/" + MUNICIPALITY_2281 + "/" + NAMESPACE + "/metadata/labels";
+
+		// PUT that removes labels referenced by errands — should be blocked with BAD_REQUEST
+		setupCall()
+			.withServicePath(path)
+			.withHttpMethod(PUT)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(BAD_REQUEST)
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 	}

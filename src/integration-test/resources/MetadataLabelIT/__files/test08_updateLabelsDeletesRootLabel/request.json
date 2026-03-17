@@ -1,0 +1,32 @@
+[
+	{
+		"id": "aaa00001-0000-0000-0000-000000000001",
+		"classification": "CATEGORY",
+		"displayName": "Root A",
+		"resourceName": "ROOT_A",
+		"labels": [
+			{
+				"id": "aaa00001-0000-0000-0000-000000000002",
+				"classification": "TYPE",
+				"displayName": "Child A1",
+				"resourceName": "CHILD_A1",
+				"labels": [
+					{
+						"id": "aaa00001-0000-0000-0000-000000000003",
+						"classification": "SUBTYPE",
+						"displayName": "Grandchild A1a",
+						"resourceName": "GRANDCHILD_A1A",
+						"labels": []
+					}
+				]
+			},
+			{
+				"id": "aaa00001-0000-0000-0000-000000000004",
+				"classification": "TYPE",
+				"displayName": "Child A2",
+				"resourceName": "CHILD_A2",
+				"labels": []
+			}
+		]
+	}
+]
