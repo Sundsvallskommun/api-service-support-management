@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.integration.db;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import jakarta.persistence.LockModeType;
 import java.time.OffsetDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -28,5 +29,7 @@ public interface ErrandsRepository extends JpaRepository<ErrandEntity, String>, 
 	Optional<ErrandEntity> findByIdAndNamespaceAndMunicipalityId(String id, String namespace, String municipalityId);
 
 	List<ErrandEntity> findAllBySuspendedToBefore(OffsetDateTime now);
+
+	boolean existsByLabelsMetadataLabelIdIn(Collection<String> labelIds);
 
 }
