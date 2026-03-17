@@ -12,6 +12,7 @@ import jakarta.annotation.Nullable;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
+import java.util.Map;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -114,9 +115,11 @@ class ErrandsResource {
 		@Parameter(description = "Syntax description: [spring-filter](https://github.com/turkraft/spring-filter/blob/85730f950a5f8623159cc0eb4d737555f9382bb7/README.md#syntax)",
 			example = "categoryTag:'SUPPORT-CASE' and stakeholder.externalId:'81471222-5798-11e9-ae24-57fa13b361e1' and externalTags.key:'caseId' and externalTags.value:'111' and created>'2022-09-08T12:00:00.000+02:00'",
 			schema = @Schema(implementation = String.class)) @Nullable @Filter final Specification<ErrandEntity> filter,
+		@Parameter(name = "jsonParameterKey", description = "JSON parameter key to filter on") @RequestParam(required = false) final String jsonParameterKey,
+		@Parameter(name = "jsonParameterFilter", description = "JSON field path/value filters for searching within JSON parameters, e.g. address.city=Sundsvall") @RequestParam(required = false) final Map<String, Object> jsonParameterFilter,
 		@ParameterObject final Pageable pageable) {
 
-		return ok(service.findErrands(namespace, municipalityId, filter, pageable));
+		return ok(service.findErrands(namespace, municipalityId, filter, jsonParameterKey, jsonParameterFilter, pageable));
 	}
 
 	@PatchMapping(path = "/{errandId}", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)

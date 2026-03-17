@@ -1,9 +1,6 @@
 package se.sundsvall.supportmanagement.service.util;
 
-import jakarta.persistence.criteria.Join;
-import jakarta.persistence.criteria.JoinType;
-import jakarta.persistence.criteria.Root;
-import jakarta.persistence.criteria.Subquery;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.data.jpa.domain.Specification;
@@ -32,38 +29,32 @@ public class SpecificationBuilder<T> {
 		return ERRAND_ENTITY_BUILDER.buildEqualFilter("id", id);
 	}
 
+	public static Specification<ErrandEntity> withIdIn(List<String> ids) {
+		return (root, _, _) -> root.get(ID_ATTRIBUTE).in(ids);
+	}
+
 	public static Specification<ErrandEntity> hasAllowedMetadataLabels(Set<MetadataLabelEntity> allowedLabels) {
 		return (root, query, criteriaBuilder) -> {
 			if (allowedLabels == null || allowedLabels.isEmpty()) {
 				return criteriaBuilder.disjunction(); // No access if no allowed labels
 			}
 
-			// Extract IDs from the MetadataLabelEntity set
-			Set<String> allowedLabelIds = allowedLabels.stream()
+			final var allowedLabelIds = allowedLabels.stream()
 				.map(MetadataLabelEntity::getId)
 				.collect(Collectors.toSet());
 
-			// Subquery 1: Count total access labels for this errand
-			Subquery<Long> totalLabelsSubquery = query.subquery(Long.class);
-			Root<ErrandEntity> totalRoot = totalLabelsSubquery.from(ErrandEntity.class);
-			Join<ErrandEntity, AccessLabelEmbeddable> totalLabelJoin = totalRoot.join(ACCESS_LABELS_ATTRIBUTE, JoinType.LEFT);
+			// Accessible if no access label exists that is NOT in the allowed set.
+			// For errands with no labels: NOT EXISTS → TRUE → accessible to everyone.
+			final var subquery = query.subquery(Integer.class);
+			final var subRoot = subquery.from(ErrandEntity.class);
+			final var labelJoin = subRoot.join(ACCESS_LABELS_ATTRIBUTE);
 
-			totalLabelsSubquery.select(criteriaBuilder.count(totalLabelJoin))
-				.where(criteriaBuilder.equal(totalRoot.get(ID_ATTRIBUTE), root.get(ID_ATTRIBUTE)));
-
-			// Subquery 2: Count access labels that are in the allowed list
-			Subquery<Long> allowedLabelsSubquery = query.subquery(Long.class);
-			Root<ErrandEntity> allowedRoot = allowedLabelsSubquery.from(ErrandEntity.class);
-			Join<ErrandEntity, AccessLabelEmbeddable> allowedLabelJoin = allowedRoot.join(ACCESS_LABELS_ATTRIBUTE, JoinType.LEFT);
-
-			allowedLabelsSubquery.select(criteriaBuilder.count(allowedLabelJoin))
+			subquery.select(criteriaBuilder.literal(1))
 				.where(
-					criteriaBuilder.equal(allowedRoot.get(ID_ATTRIBUTE), root.get(ID_ATTRIBUTE)),
-					allowedLabelJoin.get(METADATA_LABEL_ID_ATTRIBUTE).in(allowedLabelIds));
+					criteriaBuilder.equal(subRoot.get(ID_ATTRIBUTE), root.get(ID_ATTRIBUTE)),
+					criteriaBuilder.not(labelJoin.get(METADATA_LABEL_ID_ATTRIBUTE).in(allowedLabelIds)));
 
-			// Check if counts are equal
-			// For errands with no labels: 0 == 0 → TRUE → accessible to everyone
-			return criteriaBuilder.equal(totalLabelsSubquery, allowedLabelsSubquery);
+			return criteriaBuilder.not(criteriaBuilder.exists(subquery));
 		};
 	}
 

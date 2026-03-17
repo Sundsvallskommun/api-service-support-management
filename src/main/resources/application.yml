@@ -30,6 +30,8 @@ scheduler:
     shedlock-lock-at-most-for: PT4M
     maximum-execution-time: PT2M
 integration:
+  elasticsearch:
+    enabled: true
   accessmapper:
     connectTimeout: 5
     readTimeout: 30
@@ -94,6 +96,9 @@ resilience4j:
       json-schema:
         ignoreExceptions: se.sundsvall.dept44.exception.ClientProblem
 spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchRepositoriesAutoConfiguration
   application:
     name: support-management
   cache:
@@ -105,12 +110,20 @@ spring:
       spec-overrides: 
         - cache-name: accessibleLabelsCache
           spec: maximumSize=500, expireAfterWrite=60m
+  elasticsearch:
+    uris: ${ELASTICSEARCH_URI:http://localhost:9200}
+  data:
+    elasticsearch:
+      repositories:
+        enabled: false
   datasource:
     driver-class-name: org.mariadb.jdbc.Driver
   flyway:
     enabled: false
   jpa:
     properties:
+      hibernate:
+        default_batch_fetch_size: 20
       jakarta:
         persistence:
           schema-generation:

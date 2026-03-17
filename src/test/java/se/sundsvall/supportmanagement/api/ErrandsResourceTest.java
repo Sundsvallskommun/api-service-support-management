@@ -214,7 +214,7 @@ class ErrandsResourceTest {
 		final var matches = new RestResponsePage<>(List.of(Errand.create()), pageable, 1);
 
 		// Mock
-		when(errandServiceMock.findErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), any(), any())).thenReturn(matches);
+		when(errandServiceMock.findErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), any(), any(), any(), any())).thenReturn(matches);
 
 		// Call
 		final var response = webTestClient.get()
@@ -229,7 +229,7 @@ class ErrandsResourceTest {
 			.getResponseBody();
 
 		// Verification
-		verify(errandServiceMock).findErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), any(), eq(pageable));
+		verify(errandServiceMock).findErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), any(), any(), any(), eq(pageable));
 		assertThat(response).isNotNull();
 		assertThat(response.getContent()).hasSize(1);
 	}
@@ -244,7 +244,7 @@ class ErrandsResourceTest {
 		final var filter = "categoryTag:'SUPPORT_CASE' and reporterUserId:'joe01doe'";
 
 		// Mock
-		when(errandServiceMock.findErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), ArgumentMatchers.any(), eq(pageable))).thenReturn(matches);
+		when(errandServiceMock.findErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), ArgumentMatchers.any(), any(), any(), eq(pageable))).thenReturn(matches);
 
 		// Call
 		final var response = webTestClient.get()
@@ -263,7 +263,7 @@ class ErrandsResourceTest {
 			.getResponseBody();
 
 		// Verification
-		verify(errandServiceMock).findErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), ArgumentMatchers.any(), eq(pageable));
+		verify(errandServiceMock).findErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), ArgumentMatchers.any(), any(), any(), eq(pageable));
 		assertThat(response).isNotNull();
 		assertThat(response.getContent()).hasSize(1);
 	}
@@ -281,7 +281,7 @@ class ErrandsResourceTest {
 		final var filter = "created > '" + from + "' and created < '" + to + "'";
 
 		// Mock
-		when(errandServiceMock.findErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), ArgumentMatchers.any(), eq(pageable))).thenReturn(matches);
+		when(errandServiceMock.findErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), ArgumentMatchers.any(), any(), any(), eq(pageable))).thenReturn(matches);
 
 		// Call
 		final var response = webTestClient.get().uri(builder -> builder.path(PATH)
@@ -299,7 +299,7 @@ class ErrandsResourceTest {
 			.getResponseBody();
 
 		// Verification
-		verify(errandServiceMock).findErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), ArgumentMatchers.any(), eq(pageable));
+		verify(errandServiceMock).findErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), ArgumentMatchers.any(), any(), any(), eq(pageable));
 		assertThat(response).isNotNull();
 		assertThat(response.getContent()).hasSize(1);
 	}

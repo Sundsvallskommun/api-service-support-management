@@ -23,7 +23,6 @@ import org.hibernate.annotations.UuidGenerator;
 import se.sundsvall.supportmanagement.integration.db.model.listener.ErrandListener;
 
 import static jakarta.persistence.CascadeType.ALL;
-import static jakarta.persistence.FetchType.EAGER;
 import static org.hibernate.Length.LONG32;
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 
@@ -198,7 +197,7 @@ public class ErrandEntity {
 	@Column(name = "previous_status")
 	private String previousStatus;
 
-	@OneToMany(cascade = ALL, orphanRemoval = true, fetch = EAGER)
+	@OneToMany(cascade = ALL, orphanRemoval = true)
 	@JoinColumn(name = "errand_id", referencedColumnName = "id", foreignKey = @ForeignKey(name = "fk_errand_time_measure_errand_id"))
 	private List<TimeMeasurementEntity> timeMeasures;
 

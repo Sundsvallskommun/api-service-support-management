@@ -8,6 +8,7 @@ import generated.se.sundsvall.relation.Relation;
 import generated.se.sundsvall.relation.ResourceIdentifier;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.AfterEach;
@@ -25,6 +26,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -59,6 +61,7 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -131,6 +134,12 @@ class ErrandServiceTest {
 	@Mock
 	private ErrandActionService errandActionServiceMock;
 
+	@Mock
+	private org.springframework.context.ApplicationEventPublisher eventPublisherMock;
+
+	@Mock
+	private ObjectProvider<se.sundsvall.supportmanagement.integration.elasticsearch.JsonParameterSearchService> jsonParameterSearchServiceProviderMock;
+
 	@Spy
 	private FilterSpecificationConverter filterSpecificationConverterSpy;
 
@@ -139,6 +148,14 @@ class ErrandServiceTest {
 
 	@Captor
 	private ArgumentCaptor<Specification<ErrandEntity>> specificationCaptor;
+
+	@org.junit.jupiter.api.BeforeEach
+	void setUp() {
+		org.mockito.Mockito.lenient().doAnswer(invocation -> {
+			invocation.getArgument(0, Consumer.class).accept(null);
+			return null;
+		}).when(jsonParameterSearchServiceProviderMock).ifAvailable(any());
+	}
 
 	@Test
 	void createErrand() {
@@ -160,6 +177,7 @@ class ErrandServiceTest {
 		verify(errandActionServiceMock).processErrandActions(any(ErrandEntity.class));
 		verify(revisionServiceMock).createErrandRevision(any(ErrandEntity.class));
 		verify(eventServiceMock).createErrandEvent(eq(CREATE), eq(EVENT_LOG_CREATE_ERRAND), any(ErrandEntity.class), eq(currentRevisionMock), eq(null), eq(false), eq(ERRAND));
+		verify(eventPublisherMock).publishEvent(any(se.sundsvall.supportmanagement.integration.elasticsearch.JsonParameterSyncEvent.class));
 		verifyNoInteractions(relationClientMock);
 	}
 
@@ -201,6 +219,7 @@ class ErrandServiceTest {
 		verify(revisionServiceMock).createErrandRevision(any(ErrandEntity.class));
 		verify(eventServiceMock).createErrandEvent(eq(CREATE), eq(EVENT_LOG_CREATE_ERRAND), any(ErrandEntity.class),
 			eq(currentRevisionMock), eq(null), eq(false), eq(ERRAND));
+		verify(eventPublisherMock).publishEvent(any(se.sundsvall.supportmanagement.integration.elasticsearch.JsonParameterSyncEvent.class));
 		verify(relationClientMock).createRelation(MUNICIPALITY_ID, relation);
 	}
 
@@ -223,7 +242,7 @@ class ErrandServiceTest {
 		when(accessControlServiceMock.limitedMappingPredicateByLabel(any(), any(), any())).thenReturn(_ -> limited);
 
 		// Call
-		final var matches = service.findErrands(NAMESPACE, MUNICIPALITY_ID, filter, pageable);
+		final var matches = service.findErrands(NAMESPACE, MUNICIPALITY_ID, filter, null, null, pageable);
 
 		// Assertions and verifications
 		assertThat(matches.getContent()).isNotEmpty().hasSize(2).extracting("priority").containsOnly(limited ? null : Priority.HIGH);
@@ -253,7 +272,7 @@ class ErrandServiceTest {
 		when(accessControlServiceMock.withAccessControl(any(), any(), any())).thenReturn(specification);
 
 		// Call
-		final var matches = service.findErrands(NAMESPACE, MUNICIPALITY_ID, filter, pageable);
+		final var matches = service.findErrands(NAMESPACE, MUNICIPALITY_ID, filter, null, null, pageable);
 
 		// Assertions and verifications
 		assertThat(matches.getContent()).isEmpty();
@@ -319,6 +338,7 @@ class ErrandServiceTest {
 		verify(errandActionServiceMock).processErrandActions(entity);
 		verify(revisionServiceMock).createErrandRevision(entity);
 		verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_UPDATE_ERRAND, entity, currentRevisionMock, previousRevisionMock, ERRAND);
+		verify(eventPublisherMock).publishEvent(any(se.sundsvall.supportmanagement.integration.elasticsearch.JsonParameterSyncEvent.class));
 	}
 
 	@Test
@@ -347,6 +367,7 @@ class ErrandServiceTest {
 		verify(revisionServiceMock).createErrandRevision(entity);
 		verify(revisionServiceMock, never()).getErrandRevisionByVersion(any(), any(), any(), anyInt());
 		verify(eventServiceMock, never()).createErrandEvent(any(), any(), any(), any(), any(), any());
+		verify(eventPublisherMock).publishEvent(any(se.sundsvall.supportmanagement.integration.elasticsearch.JsonParameterSyncEvent.class));
 	}
 
 	@Test
@@ -373,6 +394,7 @@ class ErrandServiceTest {
 		verify(notesClientMock).findNotes(MUNICIPALITY_ID, null, null, ERRAND_ID, null, null, 1, 1000);
 		verify(notesClientMock).deleteNoteById(MUNICIPALITY_ID, "id");
 		verify(errandRepositoryMock).deleteById(ERRAND_ID);
+		verify(eventPublisherMock).publishEvent(any(se.sundsvall.supportmanagement.integration.elasticsearch.JsonParameterSyncEvent.class));
 		verify(communicationServiceMock).deleteAllCommunicationsByErrandNumber(entity.getErrandNumber());
 		verify(errandAttachmentServiceMock).readErrandAttachments(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 		verify(attachmentRepositoryMock).deleteById(errandAttachment.getId());
@@ -431,6 +453,6 @@ class ErrandServiceTest {
 
 	@AfterEach
 	void verifyNoMoreInteractionsOnMocks() {
-		verifyNoMoreInteractions(errandRepositoryMock, revisionServiceMock, eventServiceMock, metadataLabelRepositoryMock);
+		verifyNoMoreInteractions(errandRepositoryMock, revisionServiceMock, eventServiceMock, metadataLabelRepositoryMock, eventPublisherMock);
 	}
 }

@@ -1,4 +1,6 @@
 integration:
+  elasticsearch:
+    enabled: false
   accessmapper:
     url: https//accessmapper.url
   emailreader:
@@ -30,6 +32,11 @@ integration:
   json-schema:
     url: http://json-schema.url
 spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchRepositoriesAutoConfiguration
+      - org.springframework.boot.autoconfigure.elasticsearch.ElasticsearchClientAutoConfiguration
+      - org.springframework.boot.autoconfigure.elasticsearch.ElasticsearchRestClientAutoConfiguration
   cache:
     type: none
   datasource:

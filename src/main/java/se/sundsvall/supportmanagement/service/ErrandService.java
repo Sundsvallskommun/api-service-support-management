@@ -3,9 +3,12 @@ package se.sundsvall.supportmanagement.service;
 import generated.se.sundsvall.accessmapper.Access;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -24,6 +27,8 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.util.ErrandNumberGeneratorService;
+import se.sundsvall.supportmanagement.integration.elasticsearch.JsonParameterSearchService;
+import se.sundsvall.supportmanagement.integration.elasticsearch.JsonParameterSyncEvent;
 import se.sundsvall.supportmanagement.integration.notes.NotesClient;
 import se.sundsvall.supportmanagement.integration.relation.RelationClient;
 import se.sundsvall.supportmanagement.service.mapper.ErrandMapper;
@@ -43,6 +48,7 @@ import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErran
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandWithAccessControl;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandsWithAccessControl;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.updateEntity;
+import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withIdIn;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withMunicipalityId;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withNamespace;
 
@@ -69,6 +75,8 @@ public class ErrandService {
 	private final RelationClient relationClient;
 	private final MetadataLabelRepository metadataLabelRepository;
 	private final ErrandActionService errandActionService;
+	private final ApplicationEventPublisher eventPublisher;
+	private final ObjectProvider<JsonParameterSearchService> jsonParameterSearchServiceProvider;
 
 	public ErrandService(
 		final ErrandsRepository repository,
@@ -84,6 +92,8 @@ public class ErrandService {
 		final AccessControlService accessControlService,
 		final RelationClient relationClient,
 		final MetadataLabelRepository metadataLabelRepository,
+		final ApplicationEventPublisher eventPublisher,
+		final ObjectProvider<JsonParameterSearchService> jsonParameterSearchServiceProvider) {
 		final ErrandActionService errandActionService) {
 
 		this.repository = repository;
@@ -99,6 +109,8 @@ public class ErrandService {
 		this.accessControlService = accessControlService;
 		this.relationClient = relationClient;
 		this.metadataLabelRepository = metadataLabelRepository;
+		this.eventPublisher = eventPublisher;
+		this.jsonParameterSearchServiceProvider = jsonParameterSearchServiceProvider;
 		this.errandActionService = errandActionService;
 	}
 
@@ -135,11 +147,26 @@ public class ErrandService {
 			relationClient.createRelation(municipalityId, relation);
 		}
 
+		publishElasticsearchSyncEvent(JsonParameterSyncEvent.upsert(persistedEntity.getId(), namespace, municipalityId));
+
 		return persistedEntity.getId();
 	}
 
-	public Page<Errand> findErrands(final String namespace, final String municipalityId, final Specification<ErrandEntity> filter, final Pageable pageable) {
-		final var baseFilter = withNamespace(namespace).and(withMunicipalityId(municipalityId)).and(accessControlService.withAccessControl(namespace, municipalityId, Identifier.get()));
+	public Page<Errand> findErrands(final String namespace, final String municipalityId, final Specification<ErrandEntity> filter,
+		final String jsonParameterKey, final Map<String, Object> jsonParameterFilter, final Pageable pageable) {
+
+		var baseFilter = withNamespace(namespace).and(withMunicipalityId(municipalityId)).and(accessControlService.withAccessControl(namespace, municipalityId, Identifier.get()));
+
+		// Hybrid search: if JSON parameter filters are provided, query Elasticsearch first
+		final var searchService = jsonParameterSearchServiceProvider.getIfAvailable();
+		if (searchService != null && jsonParameterFilter != null && !jsonParameterFilter.isEmpty()) {
+			final var matchingErrandIds = searchService.findErrandIdsByJsonParameterValues(namespace, municipalityId, jsonParameterKey, jsonParameterFilter);
+			if (matchingErrandIds.isEmpty()) {
+				return new PageImpl<>(List.of(), pageable, 0);
+			}
+			baseFilter = baseFilter.and(withIdIn(matchingErrandIds));
+		}
+
 		final var fullFilter = ofNullable(filter).map(baseFilter::and).orElse(baseFilter);
 		final var matches = repository.findAll(fullFilter, pageable);
 		final var limitedMapping = accessControlService.limitedMappingPredicateByLabel(namespace, municipalityId, Identifier.get());
@@ -179,6 +206,8 @@ public class ErrandService {
 			eventService.createErrandEvent(UPDATE, EVENT_LOG_UPDATE_ERRAND, entity, revisionResult.latest(), revisionResult.previous(), ERRAND);
 		}
 
+		publishElasticsearchSyncEvent(JsonParameterSyncEvent.upsert(entity.getId(), namespace, municipalityId));
+
 		return toErrand(entity);
 	}
 
@@ -196,6 +225,8 @@ public class ErrandService {
 
 		// Delete errand
 		repository.deleteById(id);
+
+		publishElasticsearchSyncEvent(JsonParameterSyncEvent.delete(id, namespace, municipalityId));
 
 		// Create a log event
 		final var latestRevision = revisionService.getLatestErrandRevision(entity);
@@ -249,5 +280,9 @@ public class ErrandService {
 		}
 
 		throw Problem.valueOf(BAD_REQUEST, "Referred from should be three non-blank comma-separated parts: <service>,<namespace>,<identifier>");
+	}
+
+	private void publishElasticsearchSyncEvent(final JsonParameterSyncEvent event) {
+		jsonParameterSearchServiceProvider.ifAvailable(_ -> eventPublisher.publishEvent(event));
 	}
 }
