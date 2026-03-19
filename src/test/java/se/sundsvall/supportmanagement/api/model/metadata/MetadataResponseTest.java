@@ -33,18 +33,22 @@ class MetadataResponseTest {
 		final var roles = List.of(Role.create().withName("ROLE"));
 		final var statuses = List.of(Status.create().withName("STATUS"));
 
+		final var phases = List.of(Phase.create().withName("INVESTIGATION"));
+
 		final var response = MetadataResponse.create()
 			.withCategories(categories)
 			.withExternalIdTypes(externalIdTypes)
 			.withLabels(labels)
 			.withRoles(roles)
-			.withStatuses(statuses);
+			.withStatuses(statuses)
+			.withPhases(phases);
 
 		assertThat(response.getCategories()).isEqualTo(categories);
 		assertThat(response.getExternalIdTypes()).isEqualTo(externalIdTypes);
 		assertThat(response.getLabels()).isEqualTo(labels);
 		assertThat(response.getRoles()).isEqualTo(roles);
 		assertThat(response.getStatuses()).isEqualTo(statuses);
+		assertThat(response.getPhases()).isEqualTo(phases);
 	}
 
 	@Test

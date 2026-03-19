@@ -28,6 +28,9 @@ public class MetadataResponse {
 	@ArraySchema(schema = @Schema(implementation = ContactReason.class))
 	private List<ContactReason> contactReasons;
 
+	@ArraySchema(schema = @Schema(implementation = Phase.class))
+	private List<Phase> phases;
+
 	public static MetadataResponse create() {
 		return new MetadataResponse();
 	}
@@ -55,6 +58,19 @@ public class MetadataResponse {
 
 	public MetadataResponse withContactReasons(final List<ContactReason> contactReasons) {
 		this.contactReasons = contactReasons;
+		return this;
+	}
+
+	public List<Phase> getPhases() {
+		return phases;
+	}
+
+	public void setPhases(final List<Phase> phases) {
+		this.phases = phases;
+	}
+
+	public MetadataResponse withPhases(final List<Phase> phases) {
+		this.phases = phases;
 		return this;
 	}
 
@@ -119,6 +135,7 @@ public class MetadataResponse {
 			", statuses=" + statuses +
 			", roles=" + roles +
 			", contactReasons=" + contactReasons +
+			", phases=" + phases +
 			'}';
 	}
 
@@ -130,11 +147,11 @@ public class MetadataResponse {
 			return false;
 		final MetadataResponse that = (MetadataResponse) o;
 		return Objects.equals(categories, that.categories) && Objects.equals(externalIdTypes, that.externalIdTypes) && Objects.equals(labels, that.labels) && Objects.equals(statuses, that.statuses) && Objects.equals(roles, that.roles) && Objects.equals(
-			contactReasons, that.contactReasons);
+			contactReasons, that.contactReasons) && Objects.equals(phases, that.phases);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(categories, externalIdTypes, labels, statuses, roles, contactReasons);
+		return Objects.hash(categories, externalIdTypes, labels, phases, statuses, roles, contactReasons);
 	}
 }

@@ -24,7 +24,7 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
 import se.sundsvall.supportmanagement.service.MetadataService;
 
-import static org.springframework.http.HttpStatus.UNPROCESSABLE_ENTITY;
+import static org.springframework.http.HttpStatus.UNPROCESSABLE_CONTENT;
 
 @Component
 public class AddLabelAction implements Action {
@@ -91,7 +91,7 @@ public class AddLabelAction implements Action {
 		conditions.keySet()
 			.forEach(key -> {
 				if (!validKeys.contains(key)) {
-					throw Problem.valueOf(UNPROCESSABLE_ENTITY, String.format("Key '%s' is not valid", key));
+					throw Problem.valueOf(UNPROCESSABLE_CONTENT, String.format("Key '%s' is not valid", key));
 				}
 			});
 
@@ -99,7 +99,7 @@ public class AddLabelAction implements Action {
 			var validStatuses = metadataService.findStatuses(namespace, municipalityId).stream().map(Status::getName).toList();
 			conditions.get(STATUS).forEach(value -> {
 				if (!validStatuses.contains(value)) {
-					throw Problem.valueOf(UNPROCESSABLE_ENTITY, String.format("Status '%s' is not valid for this namespace", value));
+					throw Problem.valueOf(UNPROCESSABLE_CONTENT, String.format("Status '%s' is not valid for this namespace", value));
 				}
 			});
 		}
@@ -108,7 +108,7 @@ public class AddLabelAction implements Action {
 			var validLabelIds = getValidLabelIds(municipalityId, namespace);
 			conditions.get(HAS_LABEL).forEach(value -> {
 				if (!validLabelIds.contains(value)) {
-					throw Problem.valueOf(UNPROCESSABLE_ENTITY, String.format("Label ID '%s' is not valid", value));
+					throw Problem.valueOf(UNPROCESSABLE_CONTENT, String.format("Label ID '%s' is not valid", value));
 				}
 			});
 		}
@@ -120,29 +120,29 @@ public class AddLabelAction implements Action {
 		parameters.keySet()
 			.forEach(key -> {
 				if (!validKeys.contains(key)) {
-					throw Problem.valueOf(UNPROCESSABLE_ENTITY, String.format("Key '%s' is not valid", key));
+					throw Problem.valueOf(UNPROCESSABLE_CONTENT, String.format("Key '%s' is not valid", key));
 				}
 			});
 
 		if (!parameters.containsKey(LABEL) || parameters.get(LABEL).isEmpty()) {
-			throw Problem.valueOf(UNPROCESSABLE_ENTITY, String.format("Key '%s' is mandatory and cannot be empty", LABEL));
+			throw Problem.valueOf(UNPROCESSABLE_CONTENT, String.format("Key '%s' is mandatory and cannot be empty", LABEL));
 		}
 
 		if (parameters.containsKey(DURATION)) {
 			if (parameters.get(DURATION).size() > 1) {
-				throw Problem.valueOf(UNPROCESSABLE_ENTITY, String.format("Cannot handle multiple values of key '%s' ", DURATION));
+				throw Problem.valueOf(UNPROCESSABLE_CONTENT, String.format("Cannot handle multiple values of key '%s' ", DURATION));
 			}
 			try {
 				Duration.parse(parameters.get(DURATION).getFirst());
 			} catch (DateTimeParseException e) {
-				throw Problem.valueOf(UNPROCESSABLE_ENTITY, String.format("Could not parse duration '%s'", parameters.get(DURATION).getFirst()));
+				throw Problem.valueOf(UNPROCESSABLE_CONTENT, String.format("Could not parse duration '%s'", parameters.get(DURATION).getFirst()));
 			}
 		}
 
 		var validLabelIds = getValidLabelIds(municipalityId, namespace);
 		parameters.get(LABEL).forEach(value -> {
 			if (!validLabelIds.contains(value)) {
-				throw Problem.valueOf(UNPROCESSABLE_ENTITY, String.format("Label ID '%s' is not valid ", value));
+				throw Problem.valueOf(UNPROCESSABLE_CONTENT, String.format("Label ID '%s' is not valid ", value));
 			}
 		});
 	}
