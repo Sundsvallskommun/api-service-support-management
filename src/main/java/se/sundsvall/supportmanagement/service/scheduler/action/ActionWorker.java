@@ -4,8 +4,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.supportmanagement.integration.db.ErrandActionRepository;
@@ -19,8 +17,6 @@ import static java.time.OffsetDateTime.now;
 
 @Component
 public class ActionWorker {
-
-	private static final Logger LOG = LoggerFactory.getLogger(ActionWorker.class);
 
 	private final ErrandActionRepository errandActionRepository;
 	private final ErrandsRepository errandsRepository;

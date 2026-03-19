@@ -19,6 +19,7 @@
 		}
 	],
 	"actions": [],
+	"phases": [],
 	"activeNotifications": [],
 	"suspension": {},
 	"created": "${json-unit.any-string}",

@@ -46,6 +46,7 @@
 	"labels": [],
 	"activeNotifications": [],
 	"actions": [],
+	"phases": [],
 	"assignedGroupId": "hardware support",
 	"contactReason": "reason1",
 	"id": "${json-unit.any-string}",

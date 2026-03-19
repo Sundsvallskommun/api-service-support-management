@@ -45,4 +45,8 @@ TRUNCATE table action_config_parameter_values;
 TRUNCATE table action_config_parameter;
 TRUNCATE table errand_action;
 TRUNCATE table action_config;
+TRUNCATE table errand_phase;
+TRUNCATE table phase_transition;
+TRUNCATE table phase_allowed_status;
+TRUNCATE table phase;
 SET FOREIGN_KEY_CHECKS = 1;
