@@ -553,7 +553,10 @@ public class MetadataService {
 		return phaseRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId).stream()
 			.map(MetadataMapper::toPhase)
 			.filter(Objects::nonNull)
-			.peek(phase -> enrichPhaseTransitions(phase, namespace, municipalityId))
+			.map(phase -> {
+				enrichPhaseTransitions(phase, namespace, municipalityId);
+				return phase;
+			})
 			.sorted(comparing(Phase::getPhaseOrder, nullsFirst(naturalOrder())))
 			.toList();
 	}
@@ -630,11 +633,14 @@ public class MetadataService {
 		return phaseEntity.getTransitions().stream()
 			.map(MetadataMapper::toPhaseTransition)
 			.filter(Objects::nonNull)
-			.peek(transition -> phaseRepository.findByIdAndNamespaceAndMunicipalityId(transition.getTargetPhaseId(), namespace, municipalityId)
-				.ifPresent(targetPhase -> {
-					transition.setTargetPhaseName(targetPhase.getName());
-					transition.setTargetPhaseDisplayName(targetPhase.getDisplayName());
-				}))
+			.map(transition -> {
+				phaseRepository.findByIdAndNamespaceAndMunicipalityId(transition.getTargetPhaseId(), namespace, municipalityId)
+					.ifPresent(targetPhase -> {
+						transition.setTargetPhaseName(targetPhase.getName());
+						transition.setTargetPhaseDisplayName(targetPhase.getDisplayName());
+					});
+				return transition;
+			})
 			.toList();
 	}
 
