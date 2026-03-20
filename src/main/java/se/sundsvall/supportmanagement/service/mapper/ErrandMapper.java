@@ -13,6 +13,7 @@ import se.sundsvall.supportmanagement.api.model.errand.ContactChannel;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.errand.ErrandAction;
 import se.sundsvall.supportmanagement.api.model.errand.ErrandLabel;
+import se.sundsvall.supportmanagement.api.model.errand.ErrandPhase;
 import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
 import se.sundsvall.supportmanagement.api.model.errand.Parameter;
@@ -27,8 +28,10 @@ import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandActionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandPhaseEntity;
 import se.sundsvall.supportmanagement.integration.db.model.JsonParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
+import se.sundsvall.supportmanagement.integration.db.model.PhaseEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.service.model.ReferredFrom;
 import tools.jackson.core.JacksonException;
@@ -202,6 +205,7 @@ public final class ErrandMapper {
 				.withContactReasonDescription(e.getContactReasonDescription())
 				.withEscalationEmail(e.getEscalationEmail())
 				.withLabels(toErrandLabels(e.getLabels()))
+				.withPhases(toErrandPhases(e.getPhases()))
 				.withActiveNotifications(toActiveNotifications(e.getNotifications()))
 				.withActions(toErrandActions(e.getActions())))
 			.orElse(null);
@@ -317,6 +321,17 @@ public final class ErrandMapper {
 			.stream()
 			.filter(notification -> !notification.isGlobalAcknowledged() || !notification.isAcknowledged())
 			.map(NotificationMapper::toNotification)
+			.toList();
+	}
+
+	private static List<ErrandPhase> toErrandPhases(final List<ErrandPhaseEntity> entities) {
+		return ofNullable(entities).orElse(emptyList()).stream()
+			.map(entity -> ErrandPhase.create()
+				.withId(entity.getId())
+				.withName(ofNullable(entity.getPhaseEntity()).map(PhaseEntity::getName).orElse(null))
+				.withDisplayName(ofNullable(entity.getPhaseEntity()).map(PhaseEntity::getDisplayName).orElse(null))
+				.withStarted(entity.getStarted())
+				.withEnded(entity.getEnded()))
 			.toList();
 	}
 

@@ -30,6 +30,7 @@ import se.sundsvall.supportmanagement.integration.db.ContactReasonRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.ExternalIdTypeRepository;
 import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
+import se.sundsvall.supportmanagement.integration.db.PhaseRepository;
 import se.sundsvall.supportmanagement.integration.db.RoleRepository;
 import se.sundsvall.supportmanagement.integration.db.StatusRepository;
 import se.sundsvall.supportmanagement.integration.db.ValidationRepository;
@@ -42,6 +43,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Comparator.comparing;
 import static java.util.Comparator.naturalOrder;
 import static java.util.Comparator.nullsFirst;
+import static java.util.Optional.ofNullable;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.util.CollectionUtils.isEmpty;
@@ -53,6 +55,9 @@ import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toExt
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toExternalIdTypeEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toLabels;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toMetadataLabelEntityList;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toPhase;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toPhaseEntity;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toPhaseTransitionEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toRole;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toRoleEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toStatus;
@@ -60,6 +65,7 @@ import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toSta
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateContactReason;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateMetadataLabelEntities;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updatePhaseEntity;
 
 @Service
 public class MetadataService {
@@ -72,6 +78,8 @@ public class MetadataService {
 	private static final String CONTACT_REASON = "ContactReason";
 	private static final String CATEGORY = "Category";
 	private static final String EXTERNAL_ID_TYPE = "ExternalIdType";
+	private static final String PHASE = "Phase";
+	private static final String PHASE_TRANSITION = "PhaseTransition";
 	private static final String ROLE = "Role";
 	private static final String STATUS = "Status";
 
@@ -79,6 +87,7 @@ public class MetadataService {
 	private final ErrandsRepository errandsRepository;
 	private final ExternalIdTypeRepository externalIdTypeRepository;
 	private final MetadataLabelRepository metadataLabelRepository;
+	private final PhaseRepository phaseRepository;
 	private final RoleRepository roleRepository;
 	private final StatusRepository statusRepository;
 	private final ValidationRepository validationRepository;
@@ -88,13 +97,16 @@ public class MetadataService {
 	public MetadataService(final CategoryRepository categoryRepository,
 		final ErrandsRepository errandsRepository,
 		final ExternalIdTypeRepository externalIdTypeRepository,
-		final MetadataLabelRepository metadataLabelRepository, final RoleRepository roleRepository,
+		final MetadataLabelRepository metadataLabelRepository,
+		final PhaseRepository phaseRepository,
+		final RoleRepository roleRepository,
 		final StatusRepository statusRepository, final ValidationRepository validationRepository,
 		final ContactReasonRepository contactReasonRepository) {
 		this.categoryRepository = categoryRepository;
 		this.errandsRepository = errandsRepository;
 		this.externalIdTypeRepository = externalIdTypeRepository;
 		this.metadataLabelRepository = metadataLabelRepository;
+		this.phaseRepository = phaseRepository;
 		this.roleRepository = roleRepository;
 		this.statusRepository = statusRepository;
 		this.validationRepository = validationRepository;
@@ -513,39 +525,139 @@ public class MetadataService {
 	// Phase operations
 	// =================================================================
 
+	@Caching(evict = {
+		@CacheEvict(value = CACHE_NAME, key = "{'findPhases', #namespace, #municipalityId}"),
+		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}")
+	})
+	@Transactional
 	public String createPhase(final String namespace, final String municipalityId, final Phase phase) {
-		throw new UnsupportedOperationException("Phase persistence not yet implemented");
+		if (phaseRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, phase.getName())) {
+			throw Problem.valueOf(BAD_REQUEST, ITEM_ALREADY_EXISTS_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(PHASE, phase.getName(), namespace, municipalityId));
+		}
+
+		return phaseRepository.save(toPhaseEntity(namespace, municipalityId, phase)).getId();
 	}
 
 	public Phase getPhase(final String namespace, final String municipalityId, final String phaseId) {
-		throw new UnsupportedOperationException("Phase persistence not yet implemented");
+		return phaseRepository.findByIdAndNamespaceAndMunicipalityId(phaseId, namespace, municipalityId)
+			.map(entity -> {
+				final var phase = toPhase(entity);
+				enrichPhaseTransitions(phase, namespace, municipalityId);
+				return phase;
+			})
+			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(PHASE, phaseId, namespace, municipalityId)));
 	}
 
+	@Cacheable(value = CACHE_NAME, key = "{#root.methodName, #namespace, #municipalityId}")
 	public List<Phase> findPhases(final String namespace, final String municipalityId) {
-		return emptyList();
+		return phaseRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId).stream()
+			.map(MetadataMapper::toPhase)
+			.filter(Objects::nonNull)
+			.map(phase -> {
+				enrichPhaseTransitions(phase, namespace, municipalityId);
+				return phase;
+			})
+			.sorted(comparing(Phase::getPhaseOrder, nullsFirst(naturalOrder())))
+			.toList();
 	}
 
+	@Caching(evict = {
+		@CacheEvict(value = CACHE_NAME, key = "{'findPhases', #namespace, #municipalityId}"),
+		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}")
+	})
+	@Transactional
 	public Phase patchPhase(final String phaseId, final String namespace, final String municipalityId, final Phase phase) {
-		throw new UnsupportedOperationException("Phase persistence not yet implemented");
+		final var entity = phaseRepository.findByIdAndNamespaceAndMunicipalityId(phaseId, namespace, municipalityId)
+			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(PHASE, phaseId, namespace, municipalityId)));
+
+		final var updatedPhase = toPhase(phaseRepository.save(updatePhaseEntity(entity, phase)));
+		enrichPhaseTransitions(updatedPhase, namespace, municipalityId);
+		return updatedPhase;
 	}
 
+	@Caching(evict = {
+		@CacheEvict(value = CACHE_NAME, key = "{'findPhases', #namespace, #municipalityId}"),
+		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}")
+	})
+	@Transactional
 	public void deletePhase(final String phaseId, final String namespace, final String municipalityId) {
-		throw new UnsupportedOperationException("Phase persistence not yet implemented");
+		if (!phaseRepository.existsByIdAndNamespaceAndMunicipalityId(phaseId, namespace, municipalityId)) {
+			throw Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(PHASE, phaseId, namespace, municipalityId));
+		}
+
+		if (errandsRepository.existsByPhasesPhaseEntityId(phaseId)) {
+			throw Problem.valueOf(BAD_REQUEST, "Phase '%s' cannot be deleted because it is referenced by one or more errands".formatted(phaseId));
+		}
+
+		phaseRepository.deleteByIdAndNamespaceAndMunicipalityId(phaseId, namespace, municipalityId);
+	}
+
+	private void enrichPhaseTransitions(final Phase phase, final String namespace, final String municipalityId) {
+		ofNullable(phase.getTransitions()).orElse(emptyList()).forEach(transition -> {
+			phaseRepository.findByIdAndNamespaceAndMunicipalityId(transition.getTargetPhaseId(), namespace, municipalityId)
+				.ifPresent(targetPhase -> {
+					transition.setTargetPhaseName(targetPhase.getName());
+					transition.setTargetPhaseDisplayName(targetPhase.getDisplayName());
+				});
+		});
 	}
 
 	// =================================================================
 	// Phase Transition operations
 	// =================================================================
 
+	@Caching(evict = {
+		@CacheEvict(value = CACHE_NAME, key = "{'findPhases', #namespace, #municipalityId}"),
+		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}")
+	})
+	@Transactional
 	public String createPhaseTransition(final String namespace, final String municipalityId, final String phaseId, final PhaseTransition transition) {
-		throw new UnsupportedOperationException("Phase transition persistence not yet implemented");
+		final var phaseEntity = phaseRepository.findByIdAndNamespaceAndMunicipalityId(phaseId, namespace, municipalityId)
+			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(PHASE, phaseId, namespace, municipalityId)));
+
+		if (!phaseRepository.existsByIdAndNamespaceAndMunicipalityId(transition.getTargetPhaseId(), namespace, municipalityId)) {
+			throw Problem.valueOf(BAD_REQUEST, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(PHASE, transition.getTargetPhaseId(), namespace, municipalityId));
+		}
+
+		final var transitionEntity = toPhaseTransitionEntity(phaseEntity, transition);
+		phaseEntity.getTransitions().add(transitionEntity);
+		phaseRepository.save(phaseEntity);
+
+		return transitionEntity.getId();
 	}
 
 	public List<PhaseTransition> findPhaseTransitions(final String namespace, final String municipalityId, final String phaseId) {
-		return emptyList();
+		final var phaseEntity = phaseRepository.findByIdAndNamespaceAndMunicipalityId(phaseId, namespace, municipalityId)
+			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(PHASE, phaseId, namespace, municipalityId)));
+
+		return phaseEntity.getTransitions().stream()
+			.map(MetadataMapper::toPhaseTransition)
+			.filter(Objects::nonNull)
+			.map(transition -> {
+				phaseRepository.findByIdAndNamespaceAndMunicipalityId(transition.getTargetPhaseId(), namespace, municipalityId)
+					.ifPresent(targetPhase -> {
+						transition.setTargetPhaseName(targetPhase.getName());
+						transition.setTargetPhaseDisplayName(targetPhase.getDisplayName());
+					});
+				return transition;
+			})
+			.toList();
 	}
 
+	@Caching(evict = {
+		@CacheEvict(value = CACHE_NAME, key = "{'findPhases', #namespace, #municipalityId}"),
+		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}")
+	})
+	@Transactional
 	public void deletePhaseTransition(final String namespace, final String municipalityId, final String phaseId, final String transitionId) {
-		throw new UnsupportedOperationException("Phase transition persistence not yet implemented");
+		final var phaseEntity = phaseRepository.findByIdAndNamespaceAndMunicipalityId(phaseId, namespace, municipalityId)
+			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(PHASE, phaseId, namespace, municipalityId)));
+
+		final var removed = phaseEntity.getTransitions().removeIf(t -> Objects.equals(t.getId(), transitionId));
+		if (!removed) {
+			throw Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(PHASE_TRANSITION, transitionId, namespace, municipalityId));
+		}
+
+		phaseRepository.save(phaseEntity);
 	}
 }

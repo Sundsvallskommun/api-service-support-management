@@ -11,6 +11,8 @@ import se.sundsvall.supportmanagement.api.model.metadata.ContactReason;
 import se.sundsvall.supportmanagement.api.model.metadata.ExternalIdType;
 import se.sundsvall.supportmanagement.api.model.metadata.Label;
 import se.sundsvall.supportmanagement.api.model.metadata.Labels;
+import se.sundsvall.supportmanagement.api.model.metadata.Phase;
+import se.sundsvall.supportmanagement.api.model.metadata.PhaseTransition;
 import se.sundsvall.supportmanagement.api.model.metadata.Role;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
 import se.sundsvall.supportmanagement.api.model.metadata.Type;
@@ -18,6 +20,8 @@ import se.sundsvall.supportmanagement.integration.db.model.CategoryEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ExternalIdTypeEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
+import se.sundsvall.supportmanagement.integration.db.model.PhaseEntity;
+import se.sundsvall.supportmanagement.integration.db.model.PhaseTransitionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.RoleEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StatusEntity;
 import se.sundsvall.supportmanagement.integration.db.model.TypeEntity;
@@ -314,6 +318,79 @@ public class MetadataMapper {
 				existingEntities.add(newEntity);
 			}
 		}
+	}
+
+	// =================================================================
+	// Phase operations
+	// =================================================================
+
+	public static Phase toPhase(final PhaseEntity entity) {
+		return ofNullable(entity)
+			.map(e -> Phase.create()
+				.withId(e.getId())
+				.withName(e.getName())
+				.withDisplayName(e.getDisplayName())
+				.withDescription(e.getDescription())
+				.withPhaseOrder(e.getPhaseOrder())
+				.withAllowedStatuses(e.getAllowedStatuses())
+				.withTransitions(toPhaseTransitions(e.getTransitions()))
+				.withCreated(e.getCreated())
+				.withModified(e.getModified()))
+			.orElse(null);
+	}
+
+	public static PhaseEntity toPhaseEntity(final String namespace, final String municipalityId, final Phase phase) {
+		if (anyNull(namespace, municipalityId, phase)) {
+			return null;
+		}
+		return PhaseEntity.create()
+			.withNamespace(namespace)
+			.withMunicipalityId(municipalityId)
+			.withName(phase.getName())
+			.withDisplayName(phase.getDisplayName())
+			.withDescription(phase.getDescription())
+			.withPhaseOrder(phase.getPhaseOrder())
+			.withAllowedStatuses(ofNullable(phase.getAllowedStatuses()).orElse(emptyList()));
+	}
+
+	public static PhaseEntity updatePhaseEntity(final PhaseEntity entity, final Phase phase) {
+		if (isNull(phase)) {
+			return entity;
+		}
+
+		ofNullable(phase.getName()).ifPresent(entity::setName);
+		ofNullable(phase.getDisplayName()).ifPresent(entity::setDisplayName);
+		ofNullable(phase.getDescription()).ifPresent(entity::setDescription);
+		ofNullable(phase.getPhaseOrder()).ifPresent(entity::setPhaseOrder);
+		ofNullable(phase.getAllowedStatuses()).ifPresent(entity::setAllowedStatuses);
+
+		return entity;
+	}
+
+	private static List<PhaseTransition> toPhaseTransitions(final List<PhaseTransitionEntity> entities) {
+		return ofNullable(entities).orElse(emptyList()).stream()
+			.map(MetadataMapper::toPhaseTransition)
+			.filter(Objects::nonNull)
+			.toList();
+	}
+
+	public static PhaseTransition toPhaseTransition(final PhaseTransitionEntity entity) {
+		return ofNullable(entity)
+			.map(e -> PhaseTransition.create()
+				.withId(e.getId())
+				.withTargetPhaseId(e.getTargetPhaseId())
+				.withDescription(e.getDescription()))
+			.orElse(null);
+	}
+
+	public static PhaseTransitionEntity toPhaseTransitionEntity(final PhaseEntity phaseEntity, final PhaseTransition transition) {
+		if (anyNull(phaseEntity, transition)) {
+			return null;
+		}
+		return PhaseTransitionEntity.create()
+			.withPhaseEntity(phaseEntity)
+			.withTargetPhaseId(transition.getTargetPhaseId())
+			.withDescription(transition.getDescription());
 	}
 
 	// =================================================================

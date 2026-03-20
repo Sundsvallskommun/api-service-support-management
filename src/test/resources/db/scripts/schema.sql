@@ -216,7 +216,7 @@
         primary key (id)
     ) engine=InnoDB;
 
-create table errand_access_labels (
+    create table errand_access_labels (
         errand_id varchar(255) not null,
         metadata_label_id varchar(255) not null
     ) engine=InnoDB;
@@ -240,6 +240,15 @@ create table errand_access_labels (
         municipality_id varchar(8),
         namespace varchar(32) not null,
         primary key (namespace)
+    ) engine=InnoDB;
+
+    create table errand_phase (
+        ended datetime(6),
+        started datetime(6),
+        errand_id varchar(255) not null,
+        id varchar(255) not null,
+        phase_id varchar(255) not null,
+        primary key (id)
     ) engine=InnoDB;
 
     create table external_id_type (
@@ -343,6 +352,34 @@ create table errand_access_labels (
         value varchar(3000),
         parameter_id varchar(255) not null,
         primary key (value_order, parameter_id)
+    ) engine=InnoDB;
+
+    create table phase (
+        phase_order integer,
+        created datetime(6),
+        modified datetime(6),
+        municipality_id varchar(8) not null,
+        namespace varchar(32) not null,
+        description varchar(255),
+        display_name varchar(255),
+        id varchar(255) not null,
+        name varchar(255) not null,
+        primary key (id)
+    ) engine=InnoDB;
+
+    create table phase_allowed_status (
+        status_order integer default 0 not null,
+        status varchar(64),
+        phase_id varchar(255) not null,
+        primary key (status_order, phase_id)
+    ) engine=InnoDB;
+
+    create table phase_transition (
+        description varchar(255),
+        id varchar(255) not null,
+        phase_id varchar(255) not null,
+        target_phase_id varchar(255) not null,
+        primary key (id)
     ) engine=InnoDB;
 
     create table revision (
@@ -564,7 +601,7 @@ create table errand_access_labels (
     alter table if exists errand 
        add constraint uq_errand_number unique (errand_number);
 
-create index idx_errand_access_labels_errand_id_metadata_label_id 
+    create index idx_errand_access_labels_errand_id_metadata_label_id 
        on errand_access_labels (errand_id, metadata_label_id);
 
     create index idx_errand_access_labels_metadata_label_id_errand_id 
@@ -596,6 +633,12 @@ create index idx_errand_access_labels_errand_id_metadata_label_id
 
     create index idx_errand_number_sequence_namespace_municipality_id 
        on errand_number_sequence (namespace, municipality_id);
+
+    create index idx_errand_phase_errand_id 
+       on errand_phase (errand_id);
+
+    create index idx_errand_phase_phase_id 
+       on errand_phase (phase_id);
 
     create index idx_namespace_municipality_id 
        on external_id_type (namespace, municipality_id);
@@ -650,6 +693,18 @@ create index idx_errand_access_labels_errand_id_metadata_label_id
 
     create index idx_notification_municipality_id_namespace_owner_id 
        on notification (municipality_id, namespace, owner_id);
+
+    create index idx_phase_municipality_id_namespace 
+       on phase (municipality_id, namespace);
+
+    alter table if exists phase 
+       add constraint uq_phase_namespace_municipality_id_name unique (namespace, municipality_id, name);
+
+    create index idx_phase_allowed_status_phase_id 
+       on phase_allowed_status (phase_id);
+
+    create index idx_phase_transition_phase_id 
+       on phase_transition (phase_id);
 
     create index revision_entity_id_index 
        on revision (entity_id);
@@ -773,7 +828,7 @@ create index idx_errand_access_labels_errand_id_metadata_label_id
        foreign key (contact_reason_id) 
        references contact_reason (id);
 
-alter table if exists errand_access_labels 
+    alter table if exists errand_access_labels 
        add constraint fk_errand_access_labels_errand_id 
        foreign key (errand_id) 
        references errand (id);
@@ -786,7 +841,7 @@ alter table if exists errand_access_labels
     alter table if exists errand_action 
        add constraint fk_errand_action_errand_id 
        foreign key (errand_id) 
-       references errand (id)
+       references errand (id) 
        on delete cascade;
 
     alter table if exists errand_labels 
@@ -798,6 +853,16 @@ alter table if exists errand_access_labels
        add constraint fk_errand_labels_errand_id 
        foreign key (errand_id) 
        references errand (id);
+
+    alter table if exists errand_phase
+       add constraint fk_errand_phase_errand_id
+       foreign key (errand_id)
+       references errand (id);
+
+    alter table if exists errand_phase
+       add constraint fk_errand_phase_phase_id
+       foreign key (phase_id)
+       references phase (id);
 
     alter table if exists external_tag 
        add constraint fk_errand_external_tag_errand_id 
@@ -833,6 +898,16 @@ alter table if exists errand_access_labels
        add constraint fk_parameter_values_parameter_id 
        foreign key (parameter_id) 
        references parameter (id);
+
+    alter table if exists phase_allowed_status
+       add constraint fk_phase_allowed_status_phase_id
+       foreign key (phase_id)
+       references phase (id);
+
+    alter table if exists phase_transition
+       add constraint fk_phase_transition_phase_id
+       foreign key (phase_id)
+       references phase (id);
 
     alter table if exists stakeholder 
        add constraint fk_errand_stakeholder_errand_id 

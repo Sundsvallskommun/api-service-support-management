@@ -72,6 +72,7 @@ class ErrandEntityTest {
 		final var accessLabels = List.of(AccessLabelEmbeddable.create().withMetadataLabelId("label-id"));
 		final var notifications = List.of(NotificationEntity.create());
 		final var actions = List.of(ErrandActionEntity.create().withId("action-id"));
+		final var phases = List.of(ErrandPhaseEntity.create().withId("phase-id"));
 
 		final var errandEntity = ErrandEntity.create()
 			.withAssignedGroupId(assignedGroupId)
@@ -108,6 +109,7 @@ class ErrandEntityTest {
 			.withTempPreviousStatus(tempPreviousStatus)
 			.withNotifications(notifications)
 			.withActions(actions)
+			.withPhases(phases)
 			.withLabels(labels)
 			.withAccessLabels(accessLabels);
 

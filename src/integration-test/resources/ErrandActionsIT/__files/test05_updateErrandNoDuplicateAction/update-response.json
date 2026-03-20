@@ -19,6 +19,7 @@
 			"displayValue": "Label will be added after 24h"
 		}
 	],
+	"phases": [],
 	"activeNotifications": [],
 	"suspension": {},
 	"created": "${json-unit.any-string}",

@@ -46,6 +46,7 @@
 			],
 			"activeNotifications": [],
 			"actions": [],
+			"phases": [],
 			"created": "${json-unit.any-string}",
 			"touched": "${json-unit.any-string}"
 		},
@@ -80,6 +81,7 @@
 			"labels": [],
 			"activeNotifications": [],
 			"actions": [],
+			"phases": [],
 			"created": "${json-unit.any-string}",
 			"touched": "${json-unit.any-string}"
 		}
