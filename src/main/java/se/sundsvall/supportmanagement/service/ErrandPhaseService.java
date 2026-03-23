@@ -17,6 +17,7 @@ import static java.time.temporal.ChronoUnit.MILLIS;
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 
 @Service
 public class ErrandPhaseService {
@@ -24,6 +25,7 @@ public class ErrandPhaseService {
 	private static final String PHASE_NOT_FOUND = "Phase with id '%s' not found for namespace '%s' and municipality with id '%s'";
 	private static final String INVALID_TRANSITION = "Transition from phase '%s' to phase '%s' is not allowed";
 	private static final String NO_TRANSITIONS_CONFIGURED = "Phase '%s' has no configured transitions";
+	private static final String MULTIPLE_ACTIVE_PHASES = "Data integrity error: errand has %d active phases";
 	private static final String STATUS_NOT_ALLOWED = "Status '%s' is not allowed in the active phase '%s'. Allowed statuses: %s";
 
 	private final PhaseRepository phaseRepository;
@@ -103,9 +105,15 @@ public class ErrandPhaseService {
 	}
 
 	private Optional<ErrandPhaseEntity> findActivePhase(final ErrandEntity errandEntity) {
-		return getOrEmpty(errandEntity.getPhases()).stream()
+		final var activePhases = getOrEmpty(errandEntity.getPhases()).stream()
 			.filter(phase -> phase.getEnded() == null)
-			.findFirst();
+			.toList();
+
+		if (activePhases.size() > 1) {
+			throw Problem.valueOf(INTERNAL_SERVER_ERROR, MULTIPLE_ACTIVE_PHASES.formatted(activePhases.size()));
+		}
+
+		return activePhases.stream().findFirst();
 	}
 
 	private static <T> List<T> getOrEmpty(final List<T> list) {

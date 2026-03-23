@@ -22,6 +22,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 
 @ExtendWith(MockitoExtension.class)
 class ErrandPhaseServiceTest {
@@ -252,5 +253,41 @@ class ErrandPhaseServiceTest {
 		service.validateStatusAgainstActivePhase(errandEntity, null);
 
 		verifyNoInteractions(phaseRepositoryMock);
+	}
+
+	@Test
+	void processPhaseChange_multipleActivePhases_throwsException() {
+		final var phaseId = "phase-id-new";
+		final var phaseEntity = PhaseEntity.create().withId(phaseId).withName("NEW");
+
+		final var errandEntity = ErrandEntity.create()
+			.withPhases(new ArrayList<>(List.of(
+				ErrandPhaseEntity.create().withPhaseEntity(PhaseEntity.create().withId("phase-1")),
+				ErrandPhaseEntity.create().withPhaseEntity(PhaseEntity.create().withId("phase-2")))));
+
+		when(phaseRepositoryMock.findByIdAndNamespaceAndMunicipalityId(phaseId, NAMESPACE, MUNICIPALITY_ID))
+			.thenReturn(Optional.of(phaseEntity));
+
+		assertThatThrownBy(() -> service.processPhaseChange(errandEntity, phaseId, NAMESPACE, MUNICIPALITY_ID))
+			.asInstanceOf(InstanceOfAssertFactories.type(ThrowableProblem.class))
+			.satisfies(problem -> {
+				assertThat(problem.getStatus()).isEqualTo(INTERNAL_SERVER_ERROR);
+				assertThat(problem.getMessage()).isEqualTo("Internal Server Error: Data integrity error: errand has 2 active phases");
+			});
+	}
+
+	@Test
+	void validateStatus_multipleActivePhases_throwsException() {
+		final var errandEntity = ErrandEntity.create()
+			.withPhases(new ArrayList<>(List.of(
+				ErrandPhaseEntity.create().withPhaseEntity(PhaseEntity.create().withAllowedStatuses(List.of("NEW"))),
+				ErrandPhaseEntity.create().withPhaseEntity(PhaseEntity.create().withAllowedStatuses(List.of("NEW"))))));
+
+		assertThatThrownBy(() -> service.validateStatusAgainstActivePhase(errandEntity, "NEW"))
+			.asInstanceOf(InstanceOfAssertFactories.type(ThrowableProblem.class))
+			.satisfies(problem -> {
+				assertThat(problem.getStatus()).isEqualTo(INTERNAL_SERVER_ERROR);
+				assertThat(problem.getMessage()).isEqualTo("Internal Server Error: Data integrity error: errand has 2 active phases");
+			});
 	}
 }
