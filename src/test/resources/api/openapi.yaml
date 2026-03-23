@@ -6601,6 +6601,7 @@ components:
             errand
           examples:
           - b5b2e4c0-1234-5678-9abc-def012345678
+          writeOnly: true
         activeNotifications:
           type: array
           description: List of active notifications for the errand

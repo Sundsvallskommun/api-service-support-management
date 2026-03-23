@@ -25,6 +25,7 @@ import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
 import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
 
 import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
+import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.WRITE_ONLY;
 
 @Schema(description = "Errand model")
 public class Errand {
@@ -140,7 +141,7 @@ public class Errand {
 	})
 	private List<ErrandPhase> phases;
 
-	@Schema(description = "Phase metadata ID to assign as the active phase on the errand", examples = "b5b2e4c0-1234-5678-9abc-def012345678")
+	@Schema(description = "Phase metadata ID to assign as the active phase on the errand", examples = "b5b2e4c0-1234-5678-9abc-def012345678", accessMode = WRITE_ONLY)
 	@ValidUuid(nullable = true, groups = {
 		OnCreate.class, OnUpdate.class
 	})
