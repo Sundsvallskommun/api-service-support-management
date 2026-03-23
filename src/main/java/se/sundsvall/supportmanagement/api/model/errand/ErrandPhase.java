@@ -3,15 +3,13 @@ package se.sundsvall.supportmanagement.api.model.errand;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.OffsetDateTime;
 import java.util.Objects;
-import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 
 import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 
 @Schema(description = "Errand phase model")
 public class ErrandPhase {
 
-	@Schema(description = "Phase ID", examples = "5f79a808-0ef3-4985-99b9-b12f23e202a7")
-	@ValidUuid(nullable = true)
+	@Schema(description = "Unique errand phase record ID", examples = "5f79a808-0ef3-4985-99b9-b12f23e202a7", accessMode = READ_ONLY)
 	private String id;
 
 	@Schema(description = "Phase name", examples = "INVESTIGATION", accessMode = READ_ONLY)

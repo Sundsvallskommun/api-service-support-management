@@ -131,6 +131,9 @@ class ErrandServiceTest {
 	@Mock
 	private ErrandActionService errandActionServiceMock;
 
+	@Mock
+	private ErrandPhaseService errandPhaseServiceMock;
+
 	@Spy
 	private FilterSpecificationConverter filterSpecificationConverterSpy;
 
@@ -156,6 +159,8 @@ class ErrandServiceTest {
 		// Assertions and verifications
 		assertThat(result).isEqualTo(ERRAND_ID);
 
+		verify(errandPhaseServiceMock).processPhaseChange(any(ErrandEntity.class), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
+		verify(errandPhaseServiceMock).validateStatusAgainstActivePhase(any(ErrandEntity.class), any());
 		verify(errandRepositoryMock).save(any(ErrandEntity.class));
 		verify(errandActionServiceMock).processErrandActions(any(ErrandEntity.class));
 		verify(revisionServiceMock).createErrandRevision(any(ErrandEntity.class));
@@ -196,6 +201,8 @@ class ErrandServiceTest {
 		// Assertions and verifications
 		assertThat(result).isEqualTo(ERRAND_ID);
 
+		verify(errandPhaseServiceMock).processPhaseChange(any(ErrandEntity.class), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
+		verify(errandPhaseServiceMock).validateStatusAgainstActivePhase(any(ErrandEntity.class), any());
 		verify(errandRepositoryMock).save(any(ErrandEntity.class));
 		verify(errandActionServiceMock).processErrandActions(any(ErrandEntity.class));
 		verify(revisionServiceMock).createErrandRevision(any(ErrandEntity.class));
@@ -315,6 +322,8 @@ class ErrandServiceTest {
 		assertThat(response.getSuspension()).extracting("suspendedFrom", "suspendedTo").containsExactlyInAnyOrder(entity.getSuspendedFrom(), entity.getSuspendedTo());
 
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, Access.AccessLevelEnum.RW);
+		verify(errandPhaseServiceMock).processPhaseChange(eq(entity), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
+		verify(errandPhaseServiceMock).validateStatusAgainstActivePhase(eq(entity), any());
 		verify(errandRepositoryMock).save(entity);
 		verify(errandActionServiceMock).processErrandActions(entity);
 		verify(revisionServiceMock).createErrandRevision(entity);
@@ -342,6 +351,8 @@ class ErrandServiceTest {
 		assertThat(response.getId()).isEqualTo(ERRAND_ID);
 
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, Access.AccessLevelEnum.RW);
+		verify(errandPhaseServiceMock).processPhaseChange(eq(entity), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
+		verify(errandPhaseServiceMock).validateStatusAgainstActivePhase(eq(entity), any());
 		verify(errandRepositoryMock).save(entity);
 		verify(errandActionServiceMock).processErrandActions(entity);
 		verify(revisionServiceMock).createErrandRevision(entity);
@@ -431,6 +442,6 @@ class ErrandServiceTest {
 
 	@AfterEach
 	void verifyNoMoreInteractionsOnMocks() {
-		verifyNoMoreInteractions(errandRepositoryMock, revisionServiceMock, eventServiceMock, metadataLabelRepositoryMock);
+		verifyNoMoreInteractions(errandRepositoryMock, revisionServiceMock, eventServiceMock, metadataLabelRepositoryMock, errandPhaseServiceMock);
 	}
 }

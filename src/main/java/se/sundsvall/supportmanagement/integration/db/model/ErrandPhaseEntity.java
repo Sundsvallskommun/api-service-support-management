@@ -8,16 +8,12 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.time.OffsetDateTime;
 import java.util.Objects;
 import org.hibernate.annotations.TimeZoneStorage;
 import org.hibernate.annotations.UuidGenerator;
 
-import static java.time.OffsetDateTime.now;
-import static java.time.ZoneId.systemDefault;
-import static java.time.temporal.ChronoUnit.MILLIS;
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 
 @Entity
@@ -116,11 +112,6 @@ public class ErrandPhaseEntity {
 	public ErrandPhaseEntity withEnded(final OffsetDateTime ended) {
 		this.ended = ended;
 		return this;
-	}
-
-	@PrePersist
-	void onCreate() {
-		started = now(systemDefault()).truncatedTo(MILLIS);
 	}
 
 	@Override

@@ -6591,9 +6591,16 @@ components:
             $ref: "#/components/schemas/ErrandLabel"
         phases:
           type: array
-          description: List of phases for the errand
+          description: Phase history for the errand
           items:
             $ref: "#/components/schemas/ErrandPhase"
+          readOnly: true
+        activePhaseId:
+          type: string
+          description: Phase metadata ID to assign as the active phase on the
+            errand
+          examples:
+          - b5b2e4c0-1234-5678-9abc-def012345678
         activeNotifications:
           type: array
           description: List of active notifications for the errand
@@ -6701,9 +6708,10 @@ components:
       properties:
         id:
           type: string
-          description: Phase ID
+          description: Unique errand phase record ID
           examples:
           - 5f79a808-0ef3-4985-99b9-b12f23e202a7
+          readOnly: true
         name:
           type: string
           description: Phase name

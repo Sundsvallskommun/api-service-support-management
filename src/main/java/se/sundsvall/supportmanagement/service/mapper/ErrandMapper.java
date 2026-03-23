@@ -31,7 +31,6 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable
 import se.sundsvall.supportmanagement.integration.db.model.ErrandPhaseEntity;
 import se.sundsvall.supportmanagement.integration.db.model.JsonParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
-import se.sundsvall.supportmanagement.integration.db.model.PhaseEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.service.model.ReferredFrom;
 import tools.jackson.core.JacksonException;
@@ -326,12 +325,15 @@ public final class ErrandMapper {
 
 	private static List<ErrandPhase> toErrandPhases(final List<ErrandPhaseEntity> entities) {
 		return ofNullable(entities).orElse(emptyList()).stream()
-			.map(entity -> ErrandPhase.create()
-				.withId(entity.getId())
-				.withName(ofNullable(entity.getPhaseEntity()).map(PhaseEntity::getName).orElse(null))
-				.withDisplayName(ofNullable(entity.getPhaseEntity()).map(PhaseEntity::getDisplayName).orElse(null))
-				.withStarted(entity.getStarted())
-				.withEnded(entity.getEnded()))
+			.map(entity -> {
+				final var phase = entity.getPhaseEntity();
+				return ErrandPhase.create()
+					.withId(entity.getId())
+					.withName(nonNull(phase) ? phase.getName() : null)
+					.withDisplayName(nonNull(phase) ? phase.getDisplayName() : null)
+					.withStarted(entity.getStarted())
+					.withEnded(entity.getEnded());
+			})
 			.toList();
 	}
 

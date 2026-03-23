@@ -12,9 +12,7 @@ import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanToStringExcl
 import static com.google.code.beanmatchers.BeanMatchers.hasValidGettersAndSetters;
 import static com.google.code.beanmatchers.BeanMatchers.registerValueGenerator;
 import static java.time.OffsetDateTime.now;
-import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.within;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.AllOf.allOf;
 
@@ -56,15 +54,6 @@ class ErrandPhaseEntityTest {
 		assertThat(entity.getPhaseEntity()).isEqualTo(phaseEntity);
 		assertThat(entity.getStarted()).isEqualTo(started);
 		assertThat(entity.getEnded()).isEqualTo(ended);
-	}
-
-	@Test
-	void testOnCreate() {
-		final var entity = ErrandPhaseEntity.create();
-		entity.onCreate();
-
-		assertThat(entity.getStarted()).isCloseTo(now(), within(1, SECONDS));
-		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("started");
 	}
 
 	@Test

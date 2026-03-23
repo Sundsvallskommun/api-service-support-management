@@ -69,6 +69,7 @@ class ErrandTest {
 		final var contactReasonDescription = "contactReasonDescription";
 		final var labels = List.of(ErrandLabel.create());
 		final var phases = List.of(ErrandPhase.create());
+		final var activePhaseId = "activePhaseId";
 		final var activeNotifications = List.of(Notification.create());
 		final var actions = List.of(ErrandAction.create().withId("action-id").withActionName("ADD_LABEL"));
 
@@ -99,6 +100,7 @@ class ErrandTest {
 			.withContactReasonDescription(contactReasonDescription)
 			.withLabels(labels)
 			.withPhases(phases)
+			.withActivePhaseId(activePhaseId)
 			.withActiveNotifications(activeNotifications)
 			.withActions(actions);
 
@@ -130,6 +132,7 @@ class ErrandTest {
 		assertThat(bean.getContactReasonDescription()).isEqualTo(contactReasonDescription);
 		assertThat(bean.getLabels()).isEqualTo(labels);
 		assertThat(bean.getPhases()).isEqualTo(phases);
+		assertThat(bean.getActivePhaseId()).isEqualTo(activePhaseId);
 		assertThat(bean.getActiveNotifications()).isEqualTo(activeNotifications);
 		assertThat(bean.getActions()).isEqualTo(actions);
 	}

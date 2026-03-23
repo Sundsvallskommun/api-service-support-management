@@ -69,6 +69,7 @@ public class ErrandService {
 	private final RelationClient relationClient;
 	private final MetadataLabelRepository metadataLabelRepository;
 	private final ErrandActionService errandActionService;
+	private final ErrandPhaseService errandPhaseService;
 
 	public ErrandService(
 		final ErrandsRepository repository,
@@ -84,7 +85,8 @@ public class ErrandService {
 		final AccessControlService accessControlService,
 		final RelationClient relationClient,
 		final MetadataLabelRepository metadataLabelRepository,
-		final ErrandActionService errandActionService) {
+		final ErrandActionService errandActionService,
+		final ErrandPhaseService errandPhaseService) {
 
 		this.repository = repository;
 		this.contactReasonRepository = contactReasonRepository;
@@ -100,6 +102,7 @@ public class ErrandService {
 		this.relationClient = relationClient;
 		this.metadataLabelRepository = metadataLabelRepository;
 		this.errandActionService = errandActionService;
+		this.errandPhaseService = errandPhaseService;
 	}
 
 	public String createErrand(String namespace, String municipalityId, Errand errand) {
@@ -120,6 +123,9 @@ public class ErrandService {
 				.withContactReason(contactReason)
 				.withContactReasonDescription(errand.getContactReasonDescription());
 		});
+
+		errandPhaseService.processPhaseChange(errandEntity, errand.getActivePhaseId(), namespace, municipalityId);
+		errandPhaseService.validateStatusAgainstActivePhase(errandEntity, errandEntity.getStatus());
 
 		computeAndSetAccessLabels(errandEntity);
 		final var persistedEntity = repository.save(errandEntity);
@@ -157,6 +163,9 @@ public class ErrandService {
 		final var errandEntityToUpdate = accessControlService.getErrand(namespace, municipalityId, id, true, Access.AccessLevelEnum.RW);
 
 		final var errandEntity = updateEntity(errandEntityToUpdate, errand);
+
+		errandPhaseService.processPhaseChange(errandEntity, errand.getActivePhaseId(), namespace, municipalityId);
+		errandPhaseService.validateStatusAgainstActivePhase(errandEntity, errand.getStatus());
 
 		// Add contactReason
 		Optional.ofNullable(errand.getContactReason()).ifPresent(reason -> {
