@@ -141,7 +141,9 @@ public class Errand {
 	private List<ErrandPhase> phases;
 
 	@Schema(description = "Phase metadata ID to assign as the active phase on the errand", examples = "b5b2e4c0-1234-5678-9abc-def012345678")
-	@ValidUuid(nullable = true)
+	@ValidUuid(nullable = true, groups = {
+		OnCreate.class, OnUpdate.class
+	})
 	private String activePhaseId;
 
 	@Schema(description = "List of active notifications for the errand", accessMode = READ_ONLY)

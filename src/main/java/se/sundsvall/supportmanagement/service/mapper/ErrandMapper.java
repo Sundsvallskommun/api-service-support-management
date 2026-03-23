@@ -328,7 +328,7 @@ public final class ErrandMapper {
 			.map(entity -> {
 				final var phase = entity.getPhaseEntity();
 				return ErrandPhase.create()
-					.withId(entity.getId())
+					.withPhaseId(nonNull(phase) ? phase.getId() : null)
 					.withName(nonNull(phase) ? phase.getName() : null)
 					.withDisplayName(nonNull(phase) ? phase.getDisplayName() : null)
 					.withStarted(entity.getStarted())

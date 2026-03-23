@@ -6705,39 +6705,35 @@ components:
     ErrandPhase:
       type: object
       description: Errand phase model
+      readOnly: true
       properties:
-        id:
+        phaseId:
           type: string
-          description: Unique errand phase record ID
+          description: Phase metadata ID
           examples:
           - 5f79a808-0ef3-4985-99b9-b12f23e202a7
-          readOnly: true
         name:
           type: string
           description: Phase name
           examples:
           - INVESTIGATION
-          readOnly: true
         displayName:
           type: string
           description: Phase display name
           examples:
           - Utredning
-          readOnly: true
         started:
           type: string
           format: date-time
           description: Timestamp when the errand entered this phase
           examples:
           - 2000-10-31T01:30:00.000+02:00
-          readOnly: true
         ended:
           type: string
           format: date-time
           description: Timestamp when the errand left this phase
           examples:
           - 2000-10-31T01:30:00.000+02:00
-          readOnly: true
     ExternalTag:
       type: object
       description: External tag model

@@ -36,21 +36,21 @@ class ErrandPhaseTest {
 	@Test
 	void testCreatePattern() {
 
-		final var id = "id";
+		final var phaseId = "phaseId";
 		final var name = "INVESTIGATION";
 		final var displayName = "Utredning";
 		final var started = OffsetDateTime.now();
 		final var ended = OffsetDateTime.now().plusDays(1);
 
 		final var bean = ErrandPhase.create()
-			.withId(id)
+			.withPhaseId(phaseId)
 			.withName(name)
 			.withDisplayName(displayName)
 			.withStarted(started)
 			.withEnded(ended);
 
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
-		assertThat(bean.getId()).isEqualTo(id);
+		assertThat(bean.getPhaseId()).isEqualTo(phaseId);
 		assertThat(bean.getName()).isEqualTo(name);
 		assertThat(bean.getDisplayName()).isEqualTo(displayName);
 		assertThat(bean.getStarted()).isEqualTo(started);

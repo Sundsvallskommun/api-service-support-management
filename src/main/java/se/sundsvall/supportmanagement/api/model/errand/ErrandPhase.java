@@ -6,38 +6,38 @@ import java.util.Objects;
 
 import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 
-@Schema(description = "Errand phase model")
+@Schema(description = "Errand phase model", accessMode = READ_ONLY)
 public class ErrandPhase {
 
-	@Schema(description = "Unique errand phase record ID", examples = "5f79a808-0ef3-4985-99b9-b12f23e202a7", accessMode = READ_ONLY)
-	private String id;
+	@Schema(description = "Phase metadata ID", examples = "5f79a808-0ef3-4985-99b9-b12f23e202a7")
+	private String phaseId;
 
-	@Schema(description = "Phase name", examples = "INVESTIGATION", accessMode = READ_ONLY)
+	@Schema(description = "Phase name", examples = "INVESTIGATION")
 	private String name;
 
-	@Schema(description = "Phase display name", examples = "Utredning", accessMode = READ_ONLY)
+	@Schema(description = "Phase display name", examples = "Utredning")
 	private String displayName;
 
-	@Schema(description = "Timestamp when the errand entered this phase", examples = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
+	@Schema(description = "Timestamp when the errand entered this phase", examples = "2000-10-31T01:30:00.000+02:00")
 	private OffsetDateTime started;
 
-	@Schema(description = "Timestamp when the errand left this phase", examples = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
+	@Schema(description = "Timestamp when the errand left this phase", examples = "2000-10-31T01:30:00.000+02:00")
 	private OffsetDateTime ended;
 
 	public static ErrandPhase create() {
 		return new ErrandPhase();
 	}
 
-	public String getId() {
-		return id;
+	public String getPhaseId() {
+		return phaseId;
 	}
 
-	public void setId(final String id) {
-		this.id = id;
+	public void setPhaseId(final String phaseId) {
+		this.phaseId = phaseId;
 	}
 
-	public ErrandPhase withId(final String id) {
-		this.id = id;
+	public ErrandPhase withPhaseId(final String phaseId) {
+		this.phaseId = phaseId;
 		return this;
 	}
 
@@ -95,7 +95,7 @@ public class ErrandPhase {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(displayName, ended, id, name, started);
+		return Objects.hash(displayName, ended, name, phaseId, started);
 	}
 
 	@Override
@@ -106,13 +106,13 @@ public class ErrandPhase {
 		if (!(obj instanceof final ErrandPhase other)) {
 			return false;
 		}
-		return Objects.equals(displayName, other.displayName) && Objects.equals(ended, other.ended) && Objects.equals(id, other.id) && Objects.equals(name, other.name) && Objects.equals(started, other.started);
+		return Objects.equals(displayName, other.displayName) && Objects.equals(ended, other.ended) && Objects.equals(name, other.name) && Objects.equals(phaseId, other.phaseId) && Objects.equals(started, other.started);
 	}
 
 	@Override
 	public String toString() {
 		return "ErrandPhase{" +
-			"id='" + id + '\'' +
+			"phaseId='" + phaseId + '\'' +
 			", name='" + name + '\'' +
 			", displayName='" + displayName + '\'' +
 			", started=" + started +
