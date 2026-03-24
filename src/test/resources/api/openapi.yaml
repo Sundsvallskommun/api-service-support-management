@@ -7,7 +7,7 @@ info:
     url: https://opensource.org/licenses/MIT
   version: "12.8"
 servers:
-- url: http://localhost:56558
+- url: http://localhost:49156
   description: Generated server url
 tags:
 - name: Errand attachments
@@ -1319,6 +1319,7 @@ paths:
   /{municipalityId}/{namespace}/metadata/phases/{phaseId}/transitions:
     get:
       tags:
+      - Metadata for phases
       - Metadata for phase transitions
       summary: Get phase transitions
       description: Get all transitions for the given phase
@@ -1371,6 +1372,7 @@ paths:
                 $ref: "#/components/schemas/Problem"
     post:
       tags:
+      - Metadata for phases
       - Metadata for phase transitions
       summary: Create phase transition
       description: Create new phase transition for the given phase
@@ -5671,6 +5673,7 @@ paths:
   /{municipalityId}/{namespace}/metadata/phases/{phaseId}/transitions/{transitionId}:
     delete:
       tags:
+      - Metadata for phases
       - Metadata for phase transitions
       summary: Delete phase transition
       description: Delete phase transition by id
@@ -5739,9 +5742,9 @@ components:
         type:
           type: string
           format: uri
-        title:
-          type: string
         detail:
+          type: string
+        title:
           type: string
         status:
           type: integer
@@ -5764,10 +5767,10 @@ components:
         instance:
           type: string
           format: uri
-        detail:
-          type: string
         causeAsProblem:
           $ref: "#/components/schemas/ThrowableProblem"
+        detail:
+          type: string
     ThrowableProblem:
       type: object
       properties:
@@ -6597,8 +6600,7 @@ components:
           readOnly: true
         activePhaseId:
           type: string
-          description: Phase metadata ID to assign as the active phase on the
-            errand
+          description: Phase metadata ID to assign as the active phase on the errand
           examples:
           - b5b2e4c0-1234-5678-9abc-def012345678
           writeOnly: true
@@ -6706,7 +6708,6 @@ components:
     ErrandPhase:
       type: object
       description: Errand phase model
-      readOnly: true
       properties:
         phaseId:
           type: string
@@ -6735,6 +6736,7 @@ components:
           description: Timestamp when the errand left this phase
           examples:
           - 2000-10-31T01:30:00.000+02:00
+      readOnly: true
     ExternalTag:
       type: object
       description: External tag model
@@ -6764,10 +6766,6 @@ components:
           type: boolean
         container:
           type: boolean
-        number:
-          type: boolean
-        valueNode:
-          type: boolean
         nodeType:
           type: string
           enum:
@@ -6780,34 +6778,38 @@ components:
           - OBJECT
           - POJO
           - STRING
-        integralNumber:
+        valueNode:
           type: boolean
         missingNode:
-          type: boolean
-        bigInteger:
           type: boolean
         floatingPointNumber:
           type: boolean
         bigDecimal:
           type: boolean
+        bigInteger:
+          type: boolean
+        integralNumber:
+          type: boolean
+        number:
+          type: boolean
         string:
           type: boolean
-        short:
+        pojo:
           type: boolean
-        double:
+        long:
           type: boolean
         textual:
           type: boolean
           deprecated: true
+        short:
+          type: boolean
         boolean:
           type: boolean
-        int:
-          type: boolean
-        long:
-          type: boolean
-        pojo:
-          type: boolean
         binary:
+          type: boolean
+        double:
+          type: boolean
+        int:
           type: boolean
         embeddedValue:
           type: boolean
@@ -7590,12 +7592,12 @@ components:
     PageErrand:
       type: object
       properties:
-        totalElements:
-          type: integer
-          format: int64
         totalPages:
           type: integer
           format: int32
+        totalElements:
+          type: integer
+          format: int64
         size:
           type: integer
           format: int32
@@ -7606,8 +7608,6 @@ components:
         number:
           type: integer
           format: int32
-        sort:
-          $ref: "#/components/schemas/SortObject"
         first:
           type: boolean
         last:
@@ -7615,6 +7615,8 @@ components:
         numberOfElements:
           type: integer
           format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
         pageable:
           $ref: "#/components/schemas/PageableObject"
         empty:
@@ -7625,12 +7627,12 @@ components:
         offset:
           type: integer
           format: int64
-        sort:
-          $ref: "#/components/schemas/SortObject"
         unpaged:
           type: boolean
         paged:
           type: boolean
+        sort:
+          $ref: "#/components/schemas/SortObject"
         pageNumber:
           type: integer
           format: int32
@@ -7861,12 +7863,12 @@ components:
     PageEvent:
       type: object
       properties:
-        totalElements:
-          type: integer
-          format: int64
         totalPages:
           type: integer
           format: int32
+        totalElements:
+          type: integer
+          format: int64
         size:
           type: integer
           format: int32
@@ -7877,8 +7879,6 @@ components:
         number:
           type: integer
           format: int32
-        sort:
-          $ref: "#/components/schemas/SortObject"
         first:
           type: boolean
         last:
@@ -7886,6 +7886,8 @@ components:
         numberOfElements:
           type: integer
           format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
         pageable:
           $ref: "#/components/schemas/PageableObject"
         empty:
@@ -8082,12 +8084,12 @@ components:
     PageMessage:
       type: object
       properties:
-        totalElements:
-          type: integer
-          format: int64
         totalPages:
           type: integer
           format: int32
+        totalElements:
+          type: integer
+          format: int64
         size:
           type: integer
           format: int32
@@ -8098,8 +8100,6 @@ components:
         number:
           type: integer
           format: int32
-        sort:
-          $ref: "#/components/schemas/SortObject"
         first:
           type: boolean
         last:
@@ -8107,6 +8107,8 @@ components:
         numberOfElements:
           type: integer
           format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
         pageable:
           $ref: "#/components/schemas/PageableObject"
         empty:
