@@ -48,7 +48,7 @@ public final class ErrandAttachmentMapper {
 		}
 	}
 
-	public static AttachmentEntity toAttachmentEntity(final ErrandEntity errandEntity, final ResponseEntity<InputStreamResource> errandAttachment) {
+	public static AttachmentEntity toAttachmentEntity(final ErrandEntity errandEntity, final ResponseEntity<InputStreamResource> errandAttachment, final String fileName, final int fileSize) {
 		if (anyNull(errandEntity, errandAttachment, errandAttachment.getBody())) {
 			return null;
 		}
@@ -64,10 +64,10 @@ public final class ErrandAttachmentMapper {
 			.withErrandEntity(errandEntity)
 			.withNamespace(errandEntity.getNamespace())
 			.withMunicipalityId(errandEntity.getMunicipalityId())
-			.withFileSize(Math.toIntExact(errandAttachment.getHeaders().getContentLength()))
-			.withAttachmentData(new AttachmentDataEntity().withFile(Hibernate.getLobHelper().createBlob(content, errandAttachment.getHeaders().getContentLength())))
-			.withFileName(errandAttachment.getHeaders().getContentDisposition().getFilename())
-			.withMimeType(detectMimeTypeFromStream(errandAttachment.getBody().getFilename(), content));
+			.withFileSize(fileSize)
+			.withAttachmentData(new AttachmentDataEntity().withFile(Hibernate.getLobHelper().createBlob(content, fileSize)))
+			.withFileName(fileName)
+			.withMimeType(detectMimeTypeFromStream(fileName, content));
 	}
 
 	public static List<ErrandAttachment> toErrandAttachments(final List<AttachmentEntity> attachmentEntities) {

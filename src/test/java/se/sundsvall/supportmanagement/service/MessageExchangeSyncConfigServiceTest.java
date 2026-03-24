@@ -288,7 +288,7 @@ class MessageExchangeSyncConfigServiceTest {
 	@Test
 	void syncAttachment() {
 		// Arrange
-		final var errandEntity = ErrandEntity.create().withId("123L");
+		final var errandEntity = ErrandEntity.create().withId("123L").withAttachments(new java.util.ArrayList<>());
 		final var municipalityId = "municipalityId";
 		final var namespace = "namespace";
 		final var conversationEntity = ConversationEntity.create()
@@ -296,7 +296,7 @@ class MessageExchangeSyncConfigServiceTest {
 			.withMunicipalityId(municipalityId)
 			.withNamespace(namespace);
 		final var message = new generated.se.sundsvall.messageexchange.Message();
-		final var attachment = new generated.se.sundsvall.messageexchange.Attachment().id("attachmentId");
+		final var attachment = new generated.se.sundsvall.messageexchange.Attachment().id("attachmentId").fileName("test.txt").fileSize(1024);
 
 		when(errandsRepositoryMock.getReferenceById(any())).thenReturn(errandEntity);
 		when(messageExchangeClientMock.getMessageAttachment(eq(municipalityId), any(), any(), any(), eq(attachment.getId())))
@@ -310,24 +310,49 @@ class MessageExchangeSyncConfigServiceTest {
 		// Assert
 		verify(messageExchangeClientMock).getMessageAttachment(eq(municipalityId), any(), any(), any(), eq(attachment.getId()));
 		verify(errandsRepositoryMock).getReferenceById("123L");
-		verify(attachmentServiceMock).createErrandAttachment(same(errandEntity), ArgumentMatchers.<ResponseEntity<InputStreamResource>>any());
+		verify(attachmentServiceMock).createErrandAttachment(same(errandEntity), ArgumentMatchers.<ResponseEntity<InputStreamResource>>any(), eq("test.txt"), eq(1024));
 		verifyNoMoreInteractions(attachmentServiceMock, messageExchangeClientMock);
 		verifyNoInteractions(conversationRepositoryMock);
+	}
+
+	@Test
+	void syncAttachmentSkipsDuplicate() {
+		// Arrange
+		final var existingAttachment = se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity.create().withFileName("test.txt");
+		final var errandEntity = ErrandEntity.create().withId("123L").withAttachments(new java.util.ArrayList<>(List.of(existingAttachment)));
+		final var municipalityId = "municipalityId";
+		final var conversationEntity = ConversationEntity.create()
+			.withErrandId(errandEntity.getId())
+			.withMunicipalityId(municipalityId)
+			.withNamespace("namespace");
+		final var message = new generated.se.sundsvall.messageexchange.Message();
+		final var attachment = new generated.se.sundsvall.messageexchange.Attachment().id("attachmentId").fileName("test.txt").fileSize(1024);
+
+		when(errandsRepositoryMock.getReferenceById(any())).thenReturn(errandEntity);
+
+		// Act
+		service.syncAttachment(conversationEntity, message, attachment);
+
+		// Assert
+		verify(errandsRepositoryMock).getReferenceById("123L");
+		verifyNoInteractions(messageExchangeClientMock, attachmentServiceMock, conversationRepositoryMock);
 	}
 
 	@Test
 	void saveAttachment() {
 		// Arrange
 		final var errandEntity = ErrandEntity.create();
+		final var fileName = "test.txt";
+		final var fileSize = 1024;
 		final var file = ResponseEntity.ok()
 			.header("Content-Type", "application/octet-stream")
 			.body(new InputStreamResource(new ByteArrayInputStream(new byte[0])));
 
 		// Act
-		service.saveAttachment(errandEntity, file);
+		service.saveAttachment(errandEntity, file, fileName, fileSize);
 
 		// Assert
-		verify(attachmentServiceMock).createErrandAttachment(same(errandEntity), ArgumentMatchers.<ResponseEntity<InputStreamResource>>any());
+		verify(attachmentServiceMock).createErrandAttachment(same(errandEntity), ArgumentMatchers.<ResponseEntity<InputStreamResource>>any(), eq(fileName), eq(fileSize));
 		verifyNoMoreInteractions(attachmentServiceMock);
 		verifyNoInteractions(conversationRepositoryMock, messageExchangeClientMock);
 	}
@@ -341,7 +366,7 @@ class MessageExchangeSyncConfigServiceTest {
 			.build();
 
 		// Act & Assert
-		assertThatThrownBy(() -> service.saveAttachment(errandEntity, file))
+		assertThatThrownBy(() -> service.saveAttachment(errandEntity, file, "test.txt", 1024))
 			.isInstanceOf(Problem.class)
 			.hasMessageContaining("Failed to retrieve attachment from Message Exchange");
 
@@ -356,7 +381,7 @@ class MessageExchangeSyncConfigServiceTest {
 			.body(new InputStreamResource(new ByteArrayInputStream(new byte[0])));
 
 		// Act & Assert
-		assertThatThrownBy(() -> service.saveAttachment(errandEntity, file))
+		assertThatThrownBy(() -> service.saveAttachment(errandEntity, file, "test.txt", 1024))
 			.isInstanceOf(Problem.class)
 			.hasMessageContaining("Failed to retrieve attachment from Message Exchange");
 
