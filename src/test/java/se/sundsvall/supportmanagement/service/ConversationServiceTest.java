@@ -514,6 +514,7 @@ class ConversationServiceTest {
 			.thenReturn(ResponseEntity.ok()
 				.contentType(contentType)
 				.contentLength(content.length)
+				.header("Content-Disposition", "attachment; filename=\"" + filename + "\"")
 				.body(inputStreamResource));
 
 		when(conversationRepositoryMock.findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, conversationId))
