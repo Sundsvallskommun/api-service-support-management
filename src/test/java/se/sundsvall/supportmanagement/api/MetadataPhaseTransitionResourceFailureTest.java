@@ -94,6 +94,32 @@ class MetadataPhaseTransitionResourceFailureTest {
 		verifyNoInteractions(metadataServiceMock);
 	}
 
+	private static Stream<Arguments> getTransitionsInvalidParamsProvider() {
+		final var validPhaseId = randomUUID().toString();
+		return Stream.of(
+			Arguments.of("not-a-valid-municipalityId", "namespace", validPhaseId, "getTransitions.municipalityId", "not a valid municipality ID"),
+			Arguments.of("2281", "#not-a-valid-namespace", validPhaseId, "getTransitions.namespace", "can only contain A-Z, a-z, 0-9, - and _"),
+			Arguments.of("2281", "namespace", "not-a-valid-uuid", "getTransitions.phaseId", "not a valid UUID"));
+	}
+
+	@ParameterizedTest
+	@MethodSource("getTransitionsInvalidParamsProvider")
+	void getTransitionsWithInvalidParams(String municipalityId, String namespace, String phaseId, String field, String message) {
+		final var response = webTestClient.get().uri(builder -> builder.path(PATH).build(municipalityId, namespace, phaseId))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations()).extracting(Violation::field, Violation::message).containsExactly(tuple(field, message));
+
+		verifyNoInteractions(metadataServiceMock);
+	}
+
 	private static Stream<Arguments> deleteTransitionInvalidParamsProvider() {
 		final var validPhaseId = randomUUID().toString();
 		final var validTransitionId = randomUUID().toString();

@@ -65,6 +65,30 @@ class MetadataPhaseResourceFailureTest {
 		verifyNoInteractions(metadataServiceMock);
 	}
 
+	private static Stream<Arguments> getPhasesInvalidParamsProvider() {
+		return Stream.of(
+			Arguments.of("not-a-valid-municipalityId", "namespace", "getPhases.municipalityId", "not a valid municipality ID"),
+			Arguments.of("2281", "#not-a-valid-namespace", "getPhases.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
+	}
+
+	@ParameterizedTest
+	@MethodSource("getPhasesInvalidParamsProvider")
+	void getPhasesWithInvalidParams(String municipalityId, String namespace, String field, String message) {
+		final var response = webTestClient.get().uri(builder -> builder.path(PATH).build(municipalityId, namespace))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations()).extracting(Violation::field, Violation::message).containsExactly(tuple(field, message));
+
+		verifyNoInteractions(metadataServiceMock);
+	}
+
 	private static Stream<Arguments> getPhaseInvalidPhaseIdProvider() {
 		return Stream.of(
 			Arguments.of("2281", "namespace", "not-a-valid-uuid", "getPhase.phaseId", "not a valid UUID"),
@@ -76,6 +100,33 @@ class MetadataPhaseResourceFailureTest {
 	@MethodSource("getPhaseInvalidPhaseIdProvider")
 	void getPhaseWithInvalidParams(String municipalityId, String namespace, String phaseId, String field, String message) {
 		final var response = webTestClient.get().uri(builder -> builder.path(PATH + "/{phaseId}").build(municipalityId, namespace, phaseId))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations()).extracting(Violation::field, Violation::message).containsExactly(tuple(field, message));
+
+		verifyNoInteractions(metadataServiceMock);
+	}
+
+	private static Stream<Arguments> updatePhaseInvalidParamsProvider() {
+		return Stream.of(
+			Arguments.of("not-a-valid-municipalityId", "namespace", randomUUID().toString(), "updatePhase.municipalityId", "not a valid municipality ID"),
+			Arguments.of("2281", "#not-a-valid-namespace", randomUUID().toString(), "updatePhase.namespace", "can only contain A-Z, a-z, 0-9, - and _"),
+			Arguments.of("2281", "namespace", "not-a-valid-uuid", "updatePhase.phaseId", "not a valid UUID"));
+	}
+
+	@ParameterizedTest
+	@MethodSource("updatePhaseInvalidParamsProvider")
+	void updatePhaseWithInvalidParams(String municipalityId, String namespace, String phaseId, String field, String message) {
+		final var response = webTestClient.patch().uri(builder -> builder.path(PATH + "/{phaseId}").build(municipalityId, namespace, phaseId))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(Phase.create().withName("INVESTIGATION"))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
