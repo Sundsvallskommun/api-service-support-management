@@ -223,7 +223,7 @@ public class ConversationService {
 
 		response.setContentType(contentType.toString());
 
-		response.setHeader("Content-Disposition", "attachment; filename=\"" + body.getFilename() + "\"");
+		response.setHeader("Content-Disposition", "attachment; filename=\"" + attachmentResponse.getHeaders().getContentDisposition().getFilename() + "\"");
 		response.setContentLengthLong(attachmentResponse.getHeaders().getContentLength());
 
 		try (final var in = body.getInputStream(); final var out = response.getOutputStream()) {
