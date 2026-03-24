@@ -7,7 +7,7 @@ info:
     url: https://opensource.org/licenses/MIT
   version: "12.8"
 servers:
-- url: http://localhost:49156
+- url: http://localhost:63145
   description: Generated server url
 tags:
 - name: Errand attachments
@@ -36,8 +36,6 @@ tags:
   description: User notifications operations
 - name: Metadata for external ID types
   description: ExternalIdType metadata operations
-- name: Metadata for phase transitions
-  description: Phase transition operations
 - name: Metadata
   description: Metadata operations
 - name: Metadata for roles
@@ -1320,7 +1318,6 @@ paths:
     get:
       tags:
       - Metadata for phases
-      - Metadata for phase transitions
       summary: Get phase transitions
       description: Get all transitions for the given phase
       operationId: getTransitions
@@ -1373,7 +1370,6 @@ paths:
     post:
       tags:
       - Metadata for phases
-      - Metadata for phase transitions
       summary: Create phase transition
       description: Create new phase transition for the given phase
       operationId: createTransition
@@ -5674,7 +5670,6 @@ paths:
     delete:
       tags:
       - Metadata for phases
-      - Metadata for phase transitions
       summary: Delete phase transition
       description: Delete phase transition by id
       operationId: deleteTransition
@@ -5742,9 +5737,9 @@ components:
         type:
           type: string
           format: uri
-        detail:
-          type: string
         title:
+          type: string
+        detail:
           type: string
         status:
           type: integer
@@ -5767,10 +5762,10 @@ components:
         instance:
           type: string
           format: uri
-        causeAsProblem:
-          $ref: "#/components/schemas/ThrowableProblem"
         detail:
           type: string
+        causeAsProblem:
+          $ref: "#/components/schemas/ThrowableProblem"
     ThrowableProblem:
       type: object
       properties:
@@ -6766,6 +6761,8 @@ components:
           type: boolean
         container:
           type: boolean
+        valueNode:
+          type: boolean
         nodeType:
           type: string
           enum:
@@ -6778,38 +6775,36 @@ components:
           - OBJECT
           - POJO
           - STRING
-        valueNode:
-          type: boolean
-        missingNode:
-          type: boolean
         floatingPointNumber:
-          type: boolean
-        bigDecimal:
           type: boolean
         bigInteger:
           type: boolean
+        missingNode:
+          type: boolean
         integralNumber:
+          type: boolean
+        bigDecimal:
           type: boolean
         number:
           type: boolean
         string:
           type: boolean
-        pojo:
-          type: boolean
-        long:
+        double:
           type: boolean
         textual:
           type: boolean
           deprecated: true
+        pojo:
+          type: boolean
         short:
           type: boolean
         boolean:
           type: boolean
-        binary:
-          type: boolean
-        double:
-          type: boolean
         int:
+          type: boolean
+        long:
+          type: boolean
+        binary:
           type: boolean
         embeddedValue:
           type: boolean
@@ -7608,17 +7603,17 @@ components:
         number:
           type: integer
           format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
         first:
           type: boolean
         last:
           type: boolean
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
         numberOfElements:
           type: integer
           format: int32
-        sort:
-          $ref: "#/components/schemas/SortObject"
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
         empty:
           type: boolean
     PageableObject:
@@ -7627,10 +7622,6 @@ components:
         offset:
           type: integer
           format: int64
-        unpaged:
-          type: boolean
-        paged:
-          type: boolean
         sort:
           $ref: "#/components/schemas/SortObject"
         pageNumber:
@@ -7639,6 +7630,10 @@ components:
         pageSize:
           type: integer
           format: int32
+        unpaged:
+          type: boolean
+        paged:
+          type: boolean
     SortObject:
       type: object
       properties:
@@ -7879,17 +7874,17 @@ components:
         number:
           type: integer
           format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
         first:
           type: boolean
         last:
           type: boolean
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
         numberOfElements:
           type: integer
           format: int32
-        sort:
-          $ref: "#/components/schemas/SortObject"
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
         empty:
           type: boolean
     Communication:
@@ -8100,17 +8095,17 @@ components:
         number:
           type: integer
           format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
         first:
           type: boolean
         last:
           type: boolean
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
         numberOfElements:
           type: integer
           format: int32
-        sort:
-          $ref: "#/components/schemas/SortObject"
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
         empty:
           type: boolean
     ReadBy:

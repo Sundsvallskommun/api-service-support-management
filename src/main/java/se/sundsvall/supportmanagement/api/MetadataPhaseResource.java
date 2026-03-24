@@ -137,7 +137,6 @@ class MetadataPhaseResource {
 	@Operation(summary = "Create phase transition", description = "Create new phase transition for the given phase", responses = {
 		@ApiResponse(responseCode = "201", headers = @Header(name = LOCATION, schema = @Schema(type = "string")), description = "Successful operation", useReturnTypeSchema = true)
 	})
-	@Tag(name = "Metadata for phase transitions", description = "Phase transition operations")
 	ResponseEntity<Void> createTransition(
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
@@ -154,7 +153,6 @@ class MetadataPhaseResource {
 	@Operation(summary = "Get phase transitions", description = "Get all transitions for the given phase", responses = {
 		@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true)
 	})
-	@Tag(name = "Metadata for phase transitions", description = "Phase transition operations")
 	ResponseEntity<List<PhaseTransition>> getTransitions(
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
@@ -168,7 +166,6 @@ class MetadataPhaseResource {
 		@ApiResponse(responseCode = "204", description = "Successful operation", useReturnTypeSchema = true),
 		@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	})
-	@Tag(name = "Metadata for phase transitions", description = "Phase transition operations")
 	ResponseEntity<Void> deleteTransition(
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
