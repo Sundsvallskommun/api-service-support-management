@@ -1,6 +1,9 @@
 package se.sundsvall.supportmanagement.service;
 
+import generated.se.sundsvall.messageexchange.Attachment;
 import generated.se.sundsvall.messageexchange.Message;
+import java.util.Collections;
+import java.util.Objects;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.data.domain.Pageable;
@@ -70,17 +73,25 @@ public class MessageExchangeSyncService {
 			.allMatch(message -> message.getCreatedBy() != null && message.getCreatedBy().getValue().equals(errandAssignedUserId));
 	}
 
-	void syncAttachment(final ConversationEntity conversationEntity, final Message message, final generated.se.sundsvall.messageexchange.Attachment attachment) {
-		final var file = messageExchangeClient.getMessageAttachment(conversationEntity.getMunicipalityId(), messageExchangeNamespace, conversationEntity.getMessageExchangeId(), message.getId(), attachment.getId());
+	void syncAttachment(final ConversationEntity conversationEntity, final Message message, final Attachment attachment) {
 		final var errandEntity = errandsRepository.getReferenceById(conversationEntity.getErrandId());
-		saveAttachment(errandEntity, file);
+
+		// Skip if attachment with same fileName already exists on the errand
+		final var alreadyExists = ofNullable(errandEntity.getAttachments()).orElse(Collections.emptyList()).stream()
+			.anyMatch(existing -> Objects.equals(existing.getFileName(), attachment.getFileName()));
+		if (alreadyExists) {
+			return;
+		}
+
+		final var file = messageExchangeClient.getMessageAttachment(conversationEntity.getMunicipalityId(), messageExchangeNamespace, conversationEntity.getMessageExchangeId(), message.getId(), attachment.getId());
+		saveAttachment(errandEntity, file, attachment.getFileName(), ofNullable(attachment.getFileSize()).orElse(0));
 	}
 
-	void saveAttachment(final ErrandEntity errandEntity, final ResponseEntity<InputStreamResource> file) {
+	void saveAttachment(final ErrandEntity errandEntity, final ResponseEntity<InputStreamResource> file, final String fileName, final int fileSize) {
 		if (file.getBody() == null || file.getHeaders().getContentType() == null) {
 			throw Problem.valueOf(INTERNAL_SERVER_ERROR, "Failed to retrieve attachment from Message Exchange");
 		}
 
-		attachmentService.createErrandAttachment(errandEntity, file);
+		attachmentService.createErrandAttachment(errandEntity, file, fileName, fileSize);
 	}
 }

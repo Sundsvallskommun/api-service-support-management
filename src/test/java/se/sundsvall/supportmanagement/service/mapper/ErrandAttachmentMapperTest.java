@@ -75,22 +75,23 @@ class ErrandAttachmentMapperTest {
 	@Test
 	void toAttachmentEntityFromResponseEntity() {
 		final var errandEntity = buildErrandEntity().withAttachments(new ArrayList<>());
+		final var fileSize = 1024;
 
 		final var file = ResponseEntity.ok()
 			.header("Content-Type", "application/octet-stream")
-			.header("Content-Disposition", "attachment; filename=" + FILE_NAME)
 			.body(new InputStreamResource(new ByteArrayInputStream(new byte[0])));
 
 		try (MockedStatic<Hibernate> hibernateMock = Mockito.mockStatic(Hibernate.class)) {
 			hibernateMock.when(Hibernate::getLobHelper).thenReturn(lobHelperMock);
 			when(lobHelperMock.createBlob(any(), anyLong())).thenReturn(blobMock);
 
-			final var result = ErrandAttachmentMapper.toAttachmentEntity(errandEntity, file);
+			final var result = ErrandAttachmentMapper.toAttachmentEntity(errandEntity, file, FILE_NAME, fileSize);
 
 			assertThat(result).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "created", "modified");
 			assertThat(result.getMunicipalityId()).isEqualTo(errandEntity.getMunicipalityId());
 			assertThat(result.getNamespace()).isEqualTo(errandEntity.getNamespace());
 			assertThat(result.getFileName()).isEqualTo(FILE_NAME);
+			assertThat(result.getFileSize()).isEqualTo(fileSize);
 			assertThat(result.getAttachmentData().getFile()).isSameAs(blobMock);
 			assertThat(result.getMimeType()).isEqualTo("application/octet-stream");
 			assertThat(result.getErrandEntity()).isSameAs(errandEntity);
@@ -134,7 +135,7 @@ class ErrandAttachmentMapperTest {
 		final var errandEntity = buildErrandEntity();
 		final ResponseEntity<InputStreamResource> response = ResponseEntity.ok().body(null);
 
-		assertThat(ErrandAttachmentMapper.toAttachmentEntity(errandEntity, response)).isNull();
+		assertThat(ErrandAttachmentMapper.toAttachmentEntity(errandEntity, response, "fileName", 0)).isNull();
 	}
 
 }
