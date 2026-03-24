@@ -6591,9 +6591,17 @@ components:
             $ref: "#/components/schemas/ErrandLabel"
         phases:
           type: array
-          description: List of phases for the errand
+          description: Phase history for the errand
           items:
             $ref: "#/components/schemas/ErrandPhase"
+          readOnly: true
+        activePhaseId:
+          type: string
+          description: Phase metadata ID to assign as the active phase on the
+            errand
+          examples:
+          - b5b2e4c0-1234-5678-9abc-def012345678
+          writeOnly: true
         activeNotifications:
           type: array
           description: List of active notifications for the errand
@@ -6698,10 +6706,11 @@ components:
     ErrandPhase:
       type: object
       description: Errand phase model
+      readOnly: true
       properties:
-        id:
+        phaseId:
           type: string
-          description: Phase ID
+          description: Phase metadata ID
           examples:
           - 5f79a808-0ef3-4985-99b9-b12f23e202a7
         name:
@@ -6709,27 +6718,23 @@ components:
           description: Phase name
           examples:
           - INVESTIGATION
-          readOnly: true
         displayName:
           type: string
           description: Phase display name
           examples:
           - Utredning
-          readOnly: true
         started:
           type: string
           format: date-time
           description: Timestamp when the errand entered this phase
           examples:
           - 2000-10-31T01:30:00.000+02:00
-          readOnly: true
         ended:
           type: string
           format: date-time
           description: Timestamp when the errand left this phase
           examples:
           - 2000-10-31T01:30:00.000+02:00
-          readOnly: true
     ExternalTag:
       type: object
       description: External tag model

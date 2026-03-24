@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Objects;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.format.annotation.DateTimeFormat.ISO;
+import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 import se.sundsvall.supportmanagement.api.model.notification.Notification;
 import se.sundsvall.supportmanagement.api.validation.UniqueExternalTagKeys;
 import se.sundsvall.supportmanagement.api.validation.ValidClassificationCreate;
@@ -24,6 +25,7 @@ import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
 import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
 
 import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
+import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.WRITE_ONLY;
 
 @Schema(description = "Errand model")
 public class Errand {
@@ -133,8 +135,17 @@ public class Errand {
 	@Schema(description = "List of labels for the errand")
 	private List<ErrandLabel> labels;
 
-	@Schema(description = "List of phases for the errand")
+	@Schema(description = "Phase history for the errand", accessMode = READ_ONLY)
+	@Null(groups = {
+		OnCreate.class, OnUpdate.class
+	})
 	private List<ErrandPhase> phases;
+
+	@Schema(description = "Phase metadata ID to assign as the active phase on the errand", examples = "b5b2e4c0-1234-5678-9abc-def012345678", accessMode = WRITE_ONLY)
+	@ValidUuid(nullable = true, groups = {
+		OnCreate.class, OnUpdate.class
+	})
+	private String activePhaseId;
 
 	@Schema(description = "List of active notifications for the errand", accessMode = READ_ONLY)
 	@Null(groups = {
@@ -498,6 +509,19 @@ public class Errand {
 		return this;
 	}
 
+	public String getActivePhaseId() {
+		return activePhaseId;
+	}
+
+	public void setActivePhaseId(final String activePhaseId) {
+		this.activePhaseId = activePhaseId;
+	}
+
+	public Errand withActivePhaseId(final String activePhaseId) {
+		this.activePhaseId = activePhaseId;
+		return this;
+	}
+
 	public List<Notification> getActiveNotifications() {
 		return activeNotifications;
 	}
@@ -539,8 +563,8 @@ public class Errand {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(actions, assignedGroupId, assignedUserId, businessRelated, channel, classification, contactReason, contactReasonDescription, created, description, errandNumber, escalationEmail, externalTags, id, jsonParameters, labels,
-			activeNotifications, modified,
+		return Objects.hash(activePhaseId, actions, assignedGroupId, assignedUserId, businessRelated, channel, classification, contactReason, contactReasonDescription, created, description, errandNumber, escalationEmail, externalTags, id, jsonParameters,
+			labels, activeNotifications, modified,
 			parameters, phases, priority, reporterUserId, resolution, stakeholders, status, suspension, title, touched);
 	}
 
@@ -552,16 +576,13 @@ public class Errand {
 		if (!(obj instanceof final Errand other)) {
 			return false;
 		}
-		return Objects.equals(actions, other.actions) && Objects.equals(assignedGroupId, other.assignedGroupId) && Objects.equals(assignedUserId, other.assignedUserId) && Objects.equals(businessRelated, other.businessRelated) && Objects.equals(channel,
-			other.channel) && Objects.equals(
-				classification, other.classification) && Objects.equals(contactReason, other.contactReason) && Objects.equals(contactReasonDescription, other.contactReasonDescription) && Objects.equals(created, other.created) && Objects.equals(description,
-					other.description) && Objects.equals(errandNumber, other.errandNumber) && Objects.equals(escalationEmail, other.escalationEmail) && Objects.equals(externalTags, other.externalTags) && Objects.equals(id, other.id) && Objects.equals(
-						jsonParameters,
-						other.jsonParameters) && Objects.equals(labels, other.labels) && Objects.equals(activeNotifications, other.activeNotifications) && Objects.equals(modified, other.modified) && Objects.equals(parameters, other.parameters)
-			&& Objects.equals(phases, other.phases) && Objects.equals(priority, other.priority) && Objects.equals(
-				reporterUserId, other.reporterUserId) && Objects.equals(resolution, other.resolution) && Objects.equals(stakeholders, other.stakeholders) && Objects.equals(status, other.status) && Objects.equals(suspension, other.suspension) && Objects
-					.equals(
-						title, other.title) && Objects.equals(touched, other.touched);
+		return Objects.equals(activePhaseId, other.activePhaseId) && Objects.equals(actions, other.actions) && Objects.equals(assignedGroupId, other.assignedGroupId) && Objects.equals(assignedUserId, other.assignedUserId)
+			&& Objects.equals(businessRelated, other.businessRelated) && Objects.equals(channel, other.channel) && Objects.equals(classification, other.classification) && Objects.equals(contactReason, other.contactReason)
+			&& Objects.equals(contactReasonDescription, other.contactReasonDescription) && Objects.equals(created, other.created) && Objects.equals(description, other.description) && Objects.equals(errandNumber, other.errandNumber)
+			&& Objects.equals(escalationEmail, other.escalationEmail) && Objects.equals(externalTags, other.externalTags) && Objects.equals(id, other.id) && Objects.equals(jsonParameters, other.jsonParameters) && Objects.equals(labels, other.labels)
+			&& Objects.equals(activeNotifications, other.activeNotifications) && Objects.equals(modified, other.modified) && Objects.equals(parameters, other.parameters) && Objects.equals(phases, other.phases) && Objects.equals(priority, other.priority)
+			&& Objects.equals(reporterUserId, other.reporterUserId) && Objects.equals(resolution, other.resolution) && Objects.equals(stakeholders, other.stakeholders) && Objects.equals(status, other.status)
+			&& Objects.equals(suspension, other.suspension) && Objects.equals(title, other.title) && Objects.equals(touched, other.touched);
 	}
 
 	@Override
@@ -591,6 +612,7 @@ public class Errand {
 			", businessRelated=" + businessRelated +
 			", labels=" + labels +
 			", phases=" + phases +
+			", activePhaseId='" + activePhaseId + '\'' +
 			", activeNotifications=" + activeNotifications +
 			", created=" + created +
 			", modified=" + modified +
