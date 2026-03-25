@@ -114,7 +114,7 @@ Refer to the [API Documentation](#api-documentation) for detailed information on
 ### Example Request
 
 ```bash
-curl -X GET http://localhost:8080/api/2281/my.namespace/errands/b82bd8ac-1507-4d9a-958d-369261eecc15/communication
+curl -X GET http://localhost:8080/2281/my.namespace/errands/b82bd8ac-1507-4d9a-958d-369261eecc15/communication
 ```
 
 ## Configuration

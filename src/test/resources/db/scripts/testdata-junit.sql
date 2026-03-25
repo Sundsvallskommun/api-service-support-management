@@ -283,6 +283,25 @@ INSERT INTO action_config_parameter_values(action_config_parameter_id, value, va
 VALUES ('param-1', 'priority-high', 0);
 
 -------------------------------------
+-- Phase
+-------------------------------------
+INSERT INTO phase(id, municipality_id, namespace, name, display_name, description, phase_order, created)
+VALUES ('phase-id-1', '2281', 'namespace-1', 'phase-1', 'Phase 1', 'First phase', 1, now()),
+       ('phase-id-2', '2281', 'namespace-1', 'phase-2', 'Phase 2', 'Second phase', 2, now()),
+       ('phase-id-3', '2281', 'namespace-1', 'phase-3', 'Phase 3', 'Third phase', 3, now()),
+       ('phase-id-4', '2281', 'namespace-2', 'phase-1', 'Phase 1', 'First phase ns2', 1, now()),
+       ('phase-id-5', '2282', 'namespace-1', 'phase-1', 'Phase 1', 'First phase other mun', 1, now());
+
+INSERT INTO phase_allowed_status(phase_id, status, status_order)
+VALUES ('phase-id-1', 'NEW', 0),
+       ('phase-id-1', 'IN_PROGRESS', 1),
+       ('phase-id-2', 'WAITING', 0);
+
+INSERT INTO phase_transition(id, phase_id, target_phase_id, description)
+VALUES ('transition-id-1', 'phase-id-1', 'phase-id-2', 'To phase 2'),
+       ('transition-id-2', 'phase-id-2', 'phase-id-3', 'To phase 3');
+
+-------------------------------------
 -- ErrandAction
 -------------------------------------
 INSERT INTO errand_action(id, errand_id, execute_after, action_config_id)

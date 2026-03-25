@@ -13,6 +13,7 @@ import se.sundsvall.supportmanagement.api.model.errand.ContactChannel;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.errand.ErrandAction;
 import se.sundsvall.supportmanagement.api.model.errand.ErrandLabel;
+import se.sundsvall.supportmanagement.api.model.errand.ErrandPhase;
 import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
 import se.sundsvall.supportmanagement.api.model.errand.Parameter;
@@ -27,9 +28,11 @@ import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandActionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandPhaseEntity;
 import se.sundsvall.supportmanagement.integration.db.model.JsonParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ParameterEntity;
+import se.sundsvall.supportmanagement.integration.db.model.PhaseEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderParameterEntity;
 import se.sundsvall.supportmanagement.service.model.ReferredFrom;
@@ -102,6 +105,10 @@ class ErrandMapperTest {
 	private static final OffsetDateTime ACTION_EXECUTE_AFTER = now().plusDays(5);
 	private static final String ACTION_CONFIG_ID = "action-config-id";
 	private static final String ACTION_DISPLAY_VALUE = "Label will be added";
+	private static final String PHASE_ID = "phase-id-1";
+	private static final String PHASE_NAME = "INVESTIGATION";
+	private static final String PHASE_DISPLAY_NAME = "Utredning";
+	private static final OffsetDateTime PHASE_STARTED = now().minusDays(3);
 	private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
 	private static final ErrandLabel LABEL_1 = ErrandLabel.create().withId("id1");
@@ -196,7 +203,13 @@ class ErrandMapperTest {
 				.withActionConfigEntity(ActionConfigEntity.create()
 					.withId(ACTION_CONFIG_ID)
 					.withName(ACTION_NAME)
-					.withDisplayValue(ACTION_DISPLAY_VALUE))));
+					.withDisplayValue(ACTION_DISPLAY_VALUE))))
+			.withPhases(List.of(ErrandPhaseEntity.create()
+				.withPhaseEntity(PhaseEntity.create()
+					.withId(PHASE_ID)
+					.withName(PHASE_NAME)
+					.withDisplayName(PHASE_DISPLAY_NAME))
+				.withStarted(PHASE_STARTED)));
 
 	}
 
@@ -272,7 +285,10 @@ class ErrandMapperTest {
 		assertThat(errand.getActions()).hasSize(1)
 			.extracting(ErrandAction::getId, ErrandAction::getActionName, ErrandAction::getExecuteAfter, ErrandAction::getActionConfigId, ErrandAction::getDisplayValue)
 			.containsExactly(tuple(ACTION_ID, ACTION_NAME, ACTION_EXECUTE_AFTER, ACTION_CONFIG_ID, ACTION_DISPLAY_VALUE));
-		assertThat(errand).hasNoNullFieldsOrPropertiesExcept("notifications", "phases", "activePhaseId");
+		assertThat(errand.getPhases()).hasSize(1)
+			.extracting(ErrandPhase::getPhaseId, ErrandPhase::getName, ErrandPhase::getDisplayName, ErrandPhase::getStarted, ErrandPhase::getEnded)
+			.containsExactly(tuple(PHASE_ID, PHASE_NAME, PHASE_DISPLAY_NAME, PHASE_STARTED, null));
+		assertThat(errand).hasNoNullFieldsOrPropertiesExcept("notifications", "activePhaseId");
 	}
 
 	@Test
@@ -359,7 +375,7 @@ class ErrandMapperTest {
 					notification.setErrandId("cb20c51f-fcf3-42c0-b613-de563634a8ec");
 				}))));
 
-		assertThat(errands.getFirst()).hasNoNullFieldsOrPropertiesExcept("notifications", "phases", "activePhaseId");
+		assertThat(errands.getFirst()).hasNoNullFieldsOrPropertiesExcept("notifications", "activePhaseId");
 	}
 
 	@Test
@@ -377,7 +393,7 @@ class ErrandMapperTest {
 				assertThat(errand).hasAllNullFieldsOrPropertiesExcept("id", "created", "errandNumber", "modified", "status", "title", "touched", "resolution", "channel");
 				assertThat(errand.getErrandNumber()).isEqualTo("limited");
 			} else {
-				assertThat(errand).hasNoNullFieldsOrPropertiesExcept("notifications", "phases", "activePhaseId");
+				assertThat(errand).hasNoNullFieldsOrPropertiesExcept("notifications", "activePhaseId");
 				assertThat(errand.getErrandNumber()).isEqualTo("full");
 				assertThat(errand.getBusinessRelated()).isFalse();
 			}

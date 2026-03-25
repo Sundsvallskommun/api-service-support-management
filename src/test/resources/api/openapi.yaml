@@ -7,7 +7,7 @@ info:
     url: https://opensource.org/licenses/MIT
   version: "12.8"
 servers:
-- url: http://localhost:56558
+- url: http://localhost:63145
   description: Generated server url
 tags:
 - name: Errand attachments
@@ -36,8 +36,6 @@ tags:
   description: User notifications operations
 - name: Metadata for external ID types
   description: ExternalIdType metadata operations
-- name: Metadata for phase transitions
-  description: Phase transition operations
 - name: Metadata
   description: Metadata operations
 - name: Metadata for roles
@@ -1319,7 +1317,7 @@ paths:
   /{municipalityId}/{namespace}/metadata/phases/{phaseId}/transitions:
     get:
       tags:
-      - Metadata for phase transitions
+      - Metadata for phases
       summary: Get phase transitions
       description: Get all transitions for the given phase
       operationId: getTransitions
@@ -1371,7 +1369,7 @@ paths:
                 $ref: "#/components/schemas/Problem"
     post:
       tags:
-      - Metadata for phase transitions
+      - Metadata for phases
       summary: Create phase transition
       description: Create new phase transition for the given phase
       operationId: createTransition
@@ -5671,7 +5669,7 @@ paths:
   /{municipalityId}/{namespace}/metadata/phases/{phaseId}/transitions/{transitionId}:
     delete:
       tags:
-      - Metadata for phase transitions
+      - Metadata for phases
       summary: Delete phase transition
       description: Delete phase transition by id
       operationId: deleteTransition
@@ -6597,8 +6595,7 @@ components:
           readOnly: true
         activePhaseId:
           type: string
-          description: Phase metadata ID to assign as the active phase on the
-            errand
+          description: Phase metadata ID to assign as the active phase on the errand
           examples:
           - b5b2e4c0-1234-5678-9abc-def012345678
           writeOnly: true
@@ -6706,7 +6703,6 @@ components:
     ErrandPhase:
       type: object
       description: Errand phase model
-      readOnly: true
       properties:
         phaseId:
           type: string
@@ -6735,6 +6731,7 @@ components:
           description: Timestamp when the errand left this phase
           examples:
           - 2000-10-31T01:30:00.000+02:00
+      readOnly: true
     ExternalTag:
       type: object
       description: External tag model
@@ -6764,8 +6761,6 @@ components:
           type: boolean
         container:
           type: boolean
-        number:
-          type: boolean
         valueNode:
           type: boolean
         nodeType:
@@ -6780,32 +6775,34 @@ components:
           - OBJECT
           - POJO
           - STRING
-        integralNumber:
-          type: boolean
-        missingNode:
+        floatingPointNumber:
           type: boolean
         bigInteger:
           type: boolean
-        floatingPointNumber:
+        missingNode:
+          type: boolean
+        integralNumber:
           type: boolean
         bigDecimal:
           type: boolean
-        string:
+        number:
           type: boolean
-        short:
+        string:
           type: boolean
         double:
           type: boolean
         textual:
           type: boolean
           deprecated: true
+        pojo:
+          type: boolean
+        short:
+          type: boolean
         boolean:
           type: boolean
         int:
           type: boolean
         long:
-          type: boolean
-        pojo:
           type: boolean
         binary:
           type: boolean
@@ -7590,12 +7587,12 @@ components:
     PageErrand:
       type: object
       properties:
-        totalElements:
-          type: integer
-          format: int64
         totalPages:
           type: integer
           format: int32
+        totalElements:
+          type: integer
+          format: int64
         size:
           type: integer
           format: int32
@@ -7612,11 +7609,11 @@ components:
           type: boolean
         last:
           type: boolean
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
         numberOfElements:
           type: integer
           format: int32
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
         empty:
           type: boolean
     PageableObject:
@@ -7627,16 +7624,16 @@ components:
           format: int64
         sort:
           $ref: "#/components/schemas/SortObject"
-        unpaged:
-          type: boolean
-        paged:
-          type: boolean
         pageNumber:
           type: integer
           format: int32
         pageSize:
           type: integer
           format: int32
+        unpaged:
+          type: boolean
+        paged:
+          type: boolean
     SortObject:
       type: object
       properties:
@@ -7861,12 +7858,12 @@ components:
     PageEvent:
       type: object
       properties:
-        totalElements:
-          type: integer
-          format: int64
         totalPages:
           type: integer
           format: int32
+        totalElements:
+          type: integer
+          format: int64
         size:
           type: integer
           format: int32
@@ -7883,11 +7880,11 @@ components:
           type: boolean
         last:
           type: boolean
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
         numberOfElements:
           type: integer
           format: int32
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
         empty:
           type: boolean
     Communication:
@@ -8082,12 +8079,12 @@ components:
     PageMessage:
       type: object
       properties:
-        totalElements:
-          type: integer
-          format: int64
         totalPages:
           type: integer
           format: int32
+        totalElements:
+          type: integer
+          format: int64
         size:
           type: integer
           format: int32
@@ -8104,11 +8101,11 @@ components:
           type: boolean
         last:
           type: boolean
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
         numberOfElements:
           type: integer
           format: int32
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
         empty:
           type: boolean
     ReadBy:

@@ -11,12 +11,16 @@ import org.junit.jupiter.params.provider.MethodSource;
 import se.sundsvall.supportmanagement.api.model.metadata.Category;
 import se.sundsvall.supportmanagement.api.model.metadata.ExternalIdType;
 import se.sundsvall.supportmanagement.api.model.metadata.Label;
+import se.sundsvall.supportmanagement.api.model.metadata.Phase;
+import se.sundsvall.supportmanagement.api.model.metadata.PhaseTransition;
 import se.sundsvall.supportmanagement.api.model.metadata.Role;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
 import se.sundsvall.supportmanagement.api.model.metadata.Type;
 import se.sundsvall.supportmanagement.integration.db.model.CategoryEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ExternalIdTypeEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
+import se.sundsvall.supportmanagement.integration.db.model.PhaseEntity;
+import se.sundsvall.supportmanagement.integration.db.model.PhaseTransitionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.RoleEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StatusEntity;
 import se.sundsvall.supportmanagement.integration.db.model.TypeEntity;
@@ -439,5 +443,193 @@ class MetadataMapperTest {
 		final var result = MetadataMapper.toMetadataLabelEntityList("any", "any", null);
 
 		assertThat(result).isEmpty();
+	}
+
+	// =================================================================
+	// Phase tests
+	// =================================================================
+
+	@Test
+	void toPhase() {
+		final var created = now().minusDays(1);
+		final var modified = now();
+		final var id = "phase-id";
+		final var name = "INVESTIGATION";
+		final var displayName = "Utredning";
+		final var description = "Fas för utredning";
+		final var phaseOrder = 2;
+		final var allowedStatuses = List.of("IN_PROGRESS", "WAITING");
+		final var transitionEntity = PhaseTransitionEntity.create()
+			.withId("transition-id")
+			.withTargetPhaseId("target-phase-id")
+			.withDescription("To decision");
+
+		final var entity = PhaseEntity.create()
+			.withId(id)
+			.withName(name)
+			.withDisplayName(displayName)
+			.withDescription(description)
+			.withPhaseOrder(phaseOrder)
+			.withAllowedStatuses(allowedStatuses)
+			.withTransitions(List.of(transitionEntity))
+			.withCreated(created)
+			.withModified(modified);
+
+		final var bean = MetadataMapper.toPhase(entity);
+
+		assertThat(bean.getId()).isEqualTo(id);
+		assertThat(bean.getName()).isEqualTo(name);
+		assertThat(bean.getDisplayName()).isEqualTo(displayName);
+		assertThat(bean.getDescription()).isEqualTo(description);
+		assertThat(bean.getPhaseOrder()).isEqualTo(phaseOrder);
+		assertThat(bean.getAllowedStatuses()).isEqualTo(allowedStatuses);
+		assertThat(bean.getTransitions()).hasSize(1);
+		assertThat(bean.getTransitions().getFirst().getId()).isEqualTo("transition-id");
+		assertThat(bean.getTransitions().getFirst().getTargetPhaseId()).isEqualTo("target-phase-id");
+		assertThat(bean.getCreated()).isEqualTo(created);
+		assertThat(bean.getModified()).isEqualTo(modified);
+	}
+
+	@Test
+	void toPhaseForEmptyEntity() {
+		assertThat(MetadataMapper.toPhase(PhaseEntity.create()))
+			.hasAllNullFieldsOrPropertiesExcept("transitions", "allowedStatuses")
+			.satisfies(phase -> {
+				assertThat(phase.getTransitions()).isEmpty();
+			});
+	}
+
+	@Test
+	void toPhaseForNull() {
+		assertThat(MetadataMapper.toPhase(null)).isNull();
+	}
+
+	@ParameterizedTest
+	@MethodSource(value = "toPhaseEntityArguments")
+	void toPhaseEntity(final String namespace, final String municipalityId, final Phase phase, final PhaseEntity expectedResult) {
+		assertThat(MetadataMapper.toPhaseEntity(namespace, municipalityId, phase)).isEqualTo(expectedResult);
+	}
+
+	private static Stream<Arguments> toPhaseEntityArguments() {
+		return Stream.of(
+			Arguments.of("namespace", "municipalityId", null, null),
+			Arguments.of("namespace", null, Phase.create().withName("name"), null),
+			Arguments.of(null, "municipalityId", Phase.create().withName("name"), null),
+			Arguments.of("namespace", "municipalityId", Phase.create().withName("name").withDisplayName("Display").withDescription("Desc").withPhaseOrder(1).withAllowedStatuses(List.of("NEW")),
+				PhaseEntity.create().withNamespace("namespace").withMunicipalityId("municipalityId").withName("name").withDisplayName("Display").withDescription("Desc").withPhaseOrder(1).withAllowedStatuses(List.of("NEW"))),
+			Arguments.of("namespace", "municipalityId", Phase.create().withName("name"),
+				PhaseEntity.create().withNamespace("namespace").withMunicipalityId("municipalityId").withName("name").withAllowedStatuses(emptyList())));
+	}
+
+	@Test
+	void updatePhaseEntity() {
+		final var entity = PhaseEntity.create()
+			.withName("OLD")
+			.withDisplayName("Old Display")
+			.withDescription("Old Desc")
+			.withPhaseOrder(1)
+			.withAllowedStatuses(List.of("OLD_STATUS"));
+
+		final var phase = Phase.create()
+			.withName("NEW")
+			.withDisplayName("New Display")
+			.withDescription("New Desc")
+			.withPhaseOrder(5)
+			.withAllowedStatuses(List.of("NEW_STATUS"));
+
+		final var result = MetadataMapper.updatePhaseEntity(entity, phase);
+
+		assertThat(result).isSameAs(entity);
+		assertThat(result.getName()).isEqualTo("NEW");
+		assertThat(result.getDisplayName()).isEqualTo("New Display");
+		assertThat(result.getDescription()).isEqualTo("New Desc");
+		assertThat(result.getPhaseOrder()).isEqualTo(5);
+		assertThat(result.getAllowedStatuses()).containsExactly("NEW_STATUS");
+	}
+
+	@Test
+	void updatePhaseEntityWithPartialUpdate() {
+		final var entity = PhaseEntity.create()
+			.withName("OLD")
+			.withDisplayName("Old Display")
+			.withDescription("Old Desc")
+			.withPhaseOrder(1)
+			.withAllowedStatuses(List.of("OLD_STATUS"));
+
+		final var phase = Phase.create().withDisplayName("New Display");
+
+		final var result = MetadataMapper.updatePhaseEntity(entity, phase);
+
+		assertThat(result.getName()).isEqualTo("OLD");
+		assertThat(result.getDisplayName()).isEqualTo("New Display");
+		assertThat(result.getDescription()).isEqualTo("Old Desc");
+		assertThat(result.getPhaseOrder()).isEqualTo(1);
+		assertThat(result.getAllowedStatuses()).containsExactly("OLD_STATUS");
+	}
+
+	@Test
+	void updatePhaseEntityWithNullPhase() {
+		final var entity = PhaseEntity.create().withName("OLD");
+
+		final var result = MetadataMapper.updatePhaseEntity(entity, null);
+
+		assertThat(result).isSameAs(entity);
+		assertThat(result.getName()).isEqualTo("OLD");
+	}
+
+	// =================================================================
+	// Phase Transition tests
+	// =================================================================
+
+	@Test
+	void toPhaseTransition() {
+		final var id = "transition-id";
+		final var targetPhaseId = "target-id";
+		final var description = "Go to decision";
+
+		final var entity = PhaseTransitionEntity.create()
+			.withId(id)
+			.withTargetPhaseId(targetPhaseId)
+			.withDescription(description);
+
+		final var bean = MetadataMapper.toPhaseTransition(entity);
+
+		assertThat(bean.getId()).isEqualTo(id);
+		assertThat(bean.getTargetPhaseId()).isEqualTo(targetPhaseId);
+		assertThat(bean.getDescription()).isEqualTo(description);
+	}
+
+	@Test
+	void toPhaseTransitionForEmptyEntity() {
+		assertThat(MetadataMapper.toPhaseTransition(PhaseTransitionEntity.create())).hasAllNullFieldsOrProperties();
+	}
+
+	@Test
+	void toPhaseTransitionForNull() {
+		assertThat(MetadataMapper.toPhaseTransition(null)).isNull();
+	}
+
+	@ParameterizedTest
+	@MethodSource(value = "toPhaseTransitionEntityArguments")
+	void toPhaseTransitionEntity(final PhaseEntity phaseEntity, final PhaseTransition transition, final boolean expectNull) {
+		final var result = MetadataMapper.toPhaseTransitionEntity(phaseEntity, transition);
+		if (expectNull) {
+			assertThat(result).isNull();
+		} else {
+			assertThat(result).isNotNull();
+			assertThat(result.getPhaseEntity()).isEqualTo(phaseEntity);
+			assertThat(result.getTargetPhaseId()).isEqualTo(transition.getTargetPhaseId());
+			assertThat(result.getDescription()).isEqualTo(transition.getDescription());
+		}
+	}
+
+	private static Stream<Arguments> toPhaseTransitionEntityArguments() {
+		final var phaseEntity = PhaseEntity.create().withId("phase-id");
+		final var transition = PhaseTransition.create().withTargetPhaseId("target-id").withDescription("desc");
+		return Stream.of(
+			Arguments.of(null, transition, true),
+			Arguments.of(phaseEntity, null, true),
+			Arguments.of(null, null, true),
+			Arguments.of(phaseEntity, transition, false));
 	}
 }
