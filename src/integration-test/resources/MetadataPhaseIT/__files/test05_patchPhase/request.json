@@ -1,0 +1,11 @@
+{
+	"name": "DEEP_INVESTIGATION",
+	"displayName": "Djuputredning",
+	"description": "Uppdaterad fas för utredning",
+	"phaseOrder": 10,
+	"allowedStatuses": [
+		"IN_PROGRESS",
+		"WAITING",
+		"ON_HOLD"
+	]
+}

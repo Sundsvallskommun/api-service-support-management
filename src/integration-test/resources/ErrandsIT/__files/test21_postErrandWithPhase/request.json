@@ -1,0 +1,11 @@
+{
+	"title": "test21_postErrandWithPhase",
+	"priority": "MEDIUM",
+	"classification": {
+		"category": "CATEGORY-2",
+		"type": "TYPE-2"
+	},
+	"status": "STATUS-2",
+	"reporterUserId": "joe01doe",
+	"activePhaseId": "d4e5f6a7-1111-2222-3333-444455556666"
+}

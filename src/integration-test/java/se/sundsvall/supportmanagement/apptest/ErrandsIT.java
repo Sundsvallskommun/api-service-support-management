@@ -339,4 +339,54 @@ class ErrandsIT extends AbstractAppTest {
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 	}
+
+	@Test
+	void test21_postErrandWithPhase() {
+		final var headers = setupCall()
+			.withHeader(SENT_BY_HEADER, "joe01doe; type=adAccount")
+			.withServicePath(PATH.replace("NAMESPACE-1", "CONTACTCENTER"))
+			.withHttpMethod(POST)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(CREATED)
+			.withExpectedResponseHeader(LOCATION, List.of("/2281/CONTACTCENTER/errands/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"))
+			.sendRequest()
+			.getResponseHeaders();
+
+		setupCall()
+			.withServicePath(headers.get(LOCATION).stream().findFirst().get())
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	void test22_patchErrandWithPhaseTransition() {
+		final var id = "1be673c0-6ba3-4fb0-af4a-43acf23389f6";
+
+		// Set initial phase on the errand
+		setupCall()
+			.withServicePath(PATH + "/" + id)
+			.withHttpMethod(PATCH)
+			.withRequest("request-initial-phase.json")
+			.withExpectedResponseStatus(OK)
+			.sendRequest();
+
+		// Transition to the next phase
+		setupCall()
+			.withServicePath(PATH + "/" + id)
+			.withHttpMethod(PATCH)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(OK)
+			.sendRequest();
+
+		// Verify phase transition by GET
+		setupCall()
+			.withServicePath(PATH + "/" + id)
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
 }

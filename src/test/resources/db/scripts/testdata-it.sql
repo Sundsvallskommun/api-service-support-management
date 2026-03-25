@@ -485,3 +485,33 @@ VALUES ('f4524497-a592-4618-a746-b59a60a76f13', 'RELATION-ID-1'),
 INSERT INTO message_exchange_sync(id, municipality_id, namespace, active, latest_synced_sequence_number, updated)
 VALUES ('1', '2281', 'external-namespace-1', true, 11, '2025-08-11 23:59:59.999'),
        ('2', '2281', 'external-namespace-2', false, 22, '2025-08-22 23:59:59.999');
+
+-- -----------------------------------
+-- Phases
+-- -----------------------------------
+INSERT INTO phase(id, municipality_id, namespace, name, display_name, description, phase_order, created, modified)
+VALUES ('a1b2c3d4-1111-2222-3333-444455556666', '2281', 'NAMESPACE-1', 'REGISTRATION', 'Registrering', 'Fas för registrering', 0, '2023-01-01 12:00:00.000', null),
+       ('b2c3d4e5-1111-2222-3333-444455556666', '2281', 'NAMESPACE-1', 'INVESTIGATION', 'Utredning', 'Fas för utredning', 1, '2023-01-01 12:00:00.000', null),
+       ('c3d4e5f6-1111-2222-3333-444455556666', '2281', 'NAMESPACE-1', 'DECISION', 'Beslut', 'Fas för beslut', 2, '2023-01-01 12:00:00.000', null),
+       ('d4e5f6a7-1111-2222-3333-444455556666', '2281', 'CONTACTCENTER', 'INTAKE', 'Intag', 'Fas för intag', 0, '2023-01-01 12:00:00.000', null),
+       ('e5f6a7b8-1111-2222-3333-444455556666', '2281', 'CONTACTCENTER', 'PROCESSING', 'Handläggning', 'Fas för handläggning', 1, '2023-01-01 12:00:00.000', null);
+
+INSERT INTO phase_allowed_status(phase_id, status, status_order)
+VALUES ('a1b2c3d4-1111-2222-3333-444455556666', 'NEW', 0),
+       ('a1b2c3d4-1111-2222-3333-444455556666', 'IN_PROGRESS', 1),
+       ('b2c3d4e5-1111-2222-3333-444455556666', 'IN_PROGRESS', 0),
+       ('b2c3d4e5-1111-2222-3333-444455556666', 'WAITING', 1),
+       ('c3d4e5f6-1111-2222-3333-444455556666', 'CLOSED', 0);
+
+INSERT INTO phase_transition(id, phase_id, target_phase_id, description)
+VALUES ('11111111-aaaa-bbbb-cccc-ddddeeee0001', 'a1b2c3d4-1111-2222-3333-444455556666', 'b2c3d4e5-1111-2222-3333-444455556666', 'Skicka till utredning'),
+       ('11111111-aaaa-bbbb-cccc-ddddeeee0003', 'a1b2c3d4-1111-2222-3333-444455556666', 'c3d4e5f6-1111-2222-3333-444455556666', 'Skicka direkt till beslut'),
+       ('11111111-aaaa-bbbb-cccc-ddddeeee0002', 'b2c3d4e5-1111-2222-3333-444455556666', 'c3d4e5f6-1111-2222-3333-444455556666', 'Skicka till beslut'),
+       ('11111111-aaaa-bbbb-cccc-ddddeeee0004', 'b2c3d4e5-1111-2222-3333-444455556666', 'a1b2c3d4-1111-2222-3333-444455556666', 'Skicka tillbaka till registrering');
+
+-- -----------------------------------
+-- Errand Phases (errand -> phase reference)
+-- -----------------------------------
+INSERT INTO errand_phase(id, errand_id, phase_id, started, ended)
+VALUES ('aaaa1111-bbbb-cccc-dddd-eeeeffff0001', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', 'a1b2c3d4-1111-2222-3333-444455556666', '2023-06-01 12:00:00.000', '2023-06-02 12:00:00.000'),
+       ('aaaa1111-bbbb-cccc-dddd-eeeeffff0002', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', 'b2c3d4e5-1111-2222-3333-444455556666', '2023-06-02 12:00:00.000', '2023-06-03 12:00:00.000');
