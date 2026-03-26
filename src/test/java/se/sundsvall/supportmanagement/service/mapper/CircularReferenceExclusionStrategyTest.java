@@ -8,8 +8,10 @@ import se.sundsvall.supportmanagement.integration.db.model.ActionConfigParameter
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandActionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandPhaseEntity;
 import se.sundsvall.supportmanagement.integration.db.model.JsonParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ParameterEntity;
+import se.sundsvall.supportmanagement.integration.db.model.PhaseTransitionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -43,6 +45,8 @@ class CircularReferenceExclusionStrategyTest {
 		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(JsonParameterEntity.class, "id", true)))).isFalse();
 		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(StakeholderEntity.class, "id", true)))).isFalse();
 		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(ParameterEntity.class, "id", true)))).isFalse();
+		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(ErrandPhaseEntity.class, "id", true)))).isFalse();
+		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(PhaseTransitionEntity.class, "id", true)))).isFalse();
 	}
 
 	@Test
@@ -54,6 +58,8 @@ class CircularReferenceExclusionStrategyTest {
 		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(JsonParameterEntity.class, "errandEntity", true)))).isTrue();
 		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(StakeholderEntity.class, "errandEntity", true)))).isTrue();
 		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(ParameterEntity.class, "errandEntity", true)))).isTrue();
+		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(ErrandPhaseEntity.class, "errandEntity", true)))).isTrue();
+		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(PhaseTransitionEntity.class, "phaseEntity", true)))).isTrue();
 	}
 
 }

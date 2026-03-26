@@ -154,7 +154,22 @@
 				}
 			],
 			"actions": [],
-			"phases": [],
+			"phases": [
+				{
+					"phaseId": "a1b2c3d4-1111-2222-3333-444455556666",
+					"name": "REGISTRATION",
+					"displayName": "Registrering",
+					"started": "2023-06-01T12:00:00+02:00",
+					"ended": "2023-06-02T12:00:00+02:00"
+				},
+				{
+					"phaseId": "b2c3d4e5-1111-2222-3333-444455556666",
+					"name": "INVESTIGATION",
+					"displayName": "Utredning",
+					"started": "2023-06-02T12:00:00+02:00",
+					"ended": "2023-06-03T12:00:00+02:00"
+				}
+			],
 			"created": "2022-01-01T12:00:00+01:00",
 			"touched": "2022-01-01T12:00:00+01:00"
 		}

@@ -214,5 +214,75 @@
 			"created": "2023-12-31T23:59:59.999+01:00",
 			"modified": "2023-12-31T23:59:59.999+01:00"
 		}
+	],
+	"phases": [
+		{
+			"id": "a1b2c3d4-1111-2222-3333-444455556666",
+			"name": "REGISTRATION",
+			"displayName": "Registrering",
+			"description": "Fas för registrering",
+			"phaseOrder": 0,
+			"allowedStatuses": [
+				"NEW",
+				"IN_PROGRESS"
+			],
+			"transitions": [
+				{
+					"id": "11111111-aaaa-bbbb-cccc-ddddeeee0001",
+					"targetPhaseId": "b2c3d4e5-1111-2222-3333-444455556666",
+					"targetPhaseName": "INVESTIGATION",
+					"targetPhaseDisplayName": "Utredning",
+					"description": "Skicka till utredning"
+				},
+				{
+					"id": "11111111-aaaa-bbbb-cccc-ddddeeee0003",
+					"targetPhaseId": "c3d4e5f6-1111-2222-3333-444455556666",
+					"targetPhaseName": "DECISION",
+					"targetPhaseDisplayName": "Beslut",
+					"description": "Skicka direkt till beslut"
+				}
+			],
+			"created": "2023-01-01T12:00:00+01:00"
+		},
+		{
+			"id": "b2c3d4e5-1111-2222-3333-444455556666",
+			"name": "INVESTIGATION",
+			"displayName": "Utredning",
+			"description": "Fas för utredning",
+			"phaseOrder": 1,
+			"allowedStatuses": [
+				"IN_PROGRESS",
+				"WAITING"
+			],
+			"transitions": [
+				{
+					"id": "11111111-aaaa-bbbb-cccc-ddddeeee0002",
+					"targetPhaseId": "c3d4e5f6-1111-2222-3333-444455556666",
+					"targetPhaseName": "DECISION",
+					"targetPhaseDisplayName": "Beslut",
+					"description": "Skicka till beslut"
+				},
+				{
+					"id": "11111111-aaaa-bbbb-cccc-ddddeeee0004",
+					"targetPhaseId": "a1b2c3d4-1111-2222-3333-444455556666",
+					"targetPhaseName": "REGISTRATION",
+					"targetPhaseDisplayName": "Registrering",
+					"description": "Skicka tillbaka till registrering"
+				}
+			],
+			"created": "2023-01-01T12:00:00+01:00"
+		},
+		{
+			"id": "c3d4e5f6-1111-2222-3333-444455556666",
+			"name": "DECISION",
+			"displayName": "Beslut",
+			"description": "Fas för beslut",
+			"phaseOrder": 2,
+			"allowedStatuses": [
+				"CLOSED"
+			],
+			"transitions": [],
+			"created": "2023-01-01T12:00:00+01:00"
+		}
 	]
 }

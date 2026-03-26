@@ -1,0 +1,89 @@
+{
+	"id": "1be673c0-6ba3-4fb0-af4a-43acf23389f6",
+	"errandNumber": "KC-23020003",
+	"title": "TITLE-3",
+	"priority": "HIGH",
+	"stakeholders": [
+		{
+			"externalId": "7fba994b-e99e-4beb-8ab5-63cc74483b66",
+			"externalIdType": "ENTERPRISE",
+			"contactChannels": [],
+			"parameters": []
+		}
+	],
+	"externalTags": [
+		{
+			"key": "KEY-4",
+			"value": "VALUE-4"
+		},
+		{
+			"key": "KEY-5",
+			"value": "VALUE-5"
+		}
+	],
+	"parameters": [
+		{
+			"key": "keyA",
+			"displayName": "Displayname A",
+			"values": [
+				"valueA1",
+				"valueA2"
+			]
+		},
+		{
+			"key": "keyB",
+			"displayName": "Displayname B",
+			"values": [
+				"valueB1"
+			]
+		}
+	],
+	"jsonParameters": [],
+	"classification": {
+		"category": "CATEGORY-3",
+		"type": "TYPE-3"
+	},
+	"status": "STATUS-3",
+	"resolution": "RESOLUTION",
+	"description": "DESCRIPTION",
+	"reporterUserId": "REPORTER_USER_ID-3",
+	"assignedUserId": "ASSIGNED_USER_ID-3",
+	"assignedGroupId": "ASSIGNED_GROUP_ID-3",
+	"suspension": {},
+	"businessRelated": false,
+	"labels": [
+		{
+			"id": "926fd3f9-f488-4ba4-93f6-2789dee0c0c3",
+			"classification": "SUBTYPE",
+			"displayName": "SUBTYPE-DISPLAY-NAME-3",
+			"resourcePath": "CATEGORY-1/TYPE-2/SUBTYPE-3",
+			"resourceName": "SUBTYPE-3"
+		},
+		{
+			"id": "f4d6e210-633b-48a6-ad0a-7be839b28762",
+			"classification": "SUBTYPE",
+			"displayName": "SUBTYPE-DISPLAY-NAME-4",
+			"resourcePath": "CATEGORY-1/TYPE-2/SUBTYPE-4",
+			"resourceName": "SUBTYPE-4"
+		}
+	],
+	"activeNotifications": "${json-unit.ignore}",
+	"actions": [],
+	"phases": [
+		{
+			"phaseId": "a1b2c3d4-1111-2222-3333-444455556666",
+			"name": "REGISTRATION",
+			"displayName": "Registrering",
+			"started": "${json-unit.any-string}",
+			"ended": "${json-unit.any-string}"
+		},
+		{
+			"phaseId": "b2c3d4e5-1111-2222-3333-444455556666",
+			"name": "INVESTIGATION",
+			"displayName": "Utredning",
+			"started": "${json-unit.any-string}"
+		}
+	],
+	"created": "2022-03-01T12:00:00+01:00",
+	"touched": "2022-03-01T12:00:00+01:00"
+}

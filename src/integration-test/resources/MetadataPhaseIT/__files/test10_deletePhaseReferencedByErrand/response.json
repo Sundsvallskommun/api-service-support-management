@@ -1,0 +1,5 @@
+{
+	"title": "Bad Request",
+	"status": 400,
+	"detail": "Phase 'a1b2c3d4-1111-2222-3333-444455556666' cannot be deleted because it is referenced by one or more errands"
+}

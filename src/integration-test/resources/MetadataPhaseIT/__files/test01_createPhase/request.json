@@ -1,0 +1,10 @@
+{
+	"name": "CLOSURE",
+	"displayName": "Avslut",
+	"description": "Fas för avslut",
+	"phaseOrder": 3,
+	"allowedStatuses": [
+		"CLOSED",
+		"ARCHIVED"
+	]
+}

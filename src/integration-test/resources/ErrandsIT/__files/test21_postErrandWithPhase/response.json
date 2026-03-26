@@ -1,0 +1,30 @@
+{
+	"id": "${json-unit.any-string}",
+	"errandNumber": "${json-unit.regex}(KC-\\d{8})",
+	"title": "test21_postErrandWithPhase",
+	"priority": "MEDIUM",
+	"classification": {
+		"category": "CATEGORY-2",
+		"type": "TYPE-2"
+	},
+	"status": "STATUS-2",
+	"labels": [],
+	"activeNotifications": [],
+	"actions": [],
+	"phases": [
+		{
+			"phaseId": "d4e5f6a7-1111-2222-3333-444455556666",
+			"name": "INTAKE",
+			"displayName": "Intag",
+			"started": "${json-unit.any-string}"
+		}
+	],
+	"stakeholders": [],
+	"externalTags": [],
+	"parameters": [],
+	"jsonParameters": [],
+	"suspension": {},
+	"reporterUserId": "joe01doe",
+	"created": "${json-unit.any-string}",
+	"touched": "${json-unit.any-string}"
+}

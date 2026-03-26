@@ -1,0 +1,13 @@
+{
+	"id": "${json-unit.any-string}",
+	"name": "CLOSURE",
+	"displayName": "Avslut",
+	"description": "Fas för avslut",
+	"phaseOrder": 3,
+	"allowedStatuses": [
+		"CLOSED",
+		"ARCHIVED"
+	],
+	"transitions": [],
+	"created": "${json-unit.any-string}"
+}
