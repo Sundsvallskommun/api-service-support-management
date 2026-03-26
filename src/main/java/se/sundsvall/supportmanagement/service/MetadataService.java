@@ -4,12 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.AntPathMatcher;
@@ -70,8 +66,6 @@ import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updat
 @Service
 public class MetadataService {
 
-	private static final String CACHE_NAME = "metadataCache";
-	private static final String PATTERN_CACHE_NAME = "metadataLabelsByPatternCache";
 	private static final String ITEM_ALREADY_EXISTS_IN_NAMESPACE_FOR_MUNICIPALITY_ID = "%s '%s' already exists in namespace '%s' for municipalityId '%s'";
 	private static final String ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID = "%s '%s' is not present in namespace '%s' for municipalityId '%s'";
 
@@ -100,7 +94,8 @@ public class MetadataService {
 		final MetadataLabelRepository metadataLabelRepository,
 		final PhaseRepository phaseRepository,
 		final RoleRepository roleRepository,
-		final StatusRepository statusRepository, final ValidationRepository validationRepository,
+		final StatusRepository statusRepository,
+		final ValidationRepository validationRepository,
 		final ContactReasonRepository contactReasonRepository) {
 		this.categoryRepository = categoryRepository;
 		this.errandsRepository = errandsRepository;
@@ -119,7 +114,6 @@ public class MetadataService {
 	// Common operations
 	// =================================================================
 
-	@Cacheable(value = CACHE_NAME, key = "{#root.methodName, #namespace, #municipalityId}")
 	public MetadataResponse findAll(final String namespace, final String municipalityId) {
 		return MetadataResponse.create()
 			.withCategories(findCategories(namespace, municipalityId))
@@ -131,7 +125,6 @@ public class MetadataService {
 			.withPhases(findPhases(namespace, municipalityId));
 	}
 
-	@Cacheable(value = CACHE_NAME, key = "{#root.methodName, #namespace, #municipalityId, #type}")
 	public boolean isValidated(final String namespace, final String municipalityId, final EntityType type) {
 		return validationRepository.findByNamespaceAndMunicipalityIdAndType(namespace, municipalityId, type)
 			.map(ValidationEntity::isValidated)
@@ -142,10 +135,6 @@ public class MetadataService {
 	// ExternalIdType operations
 	// =================================================================
 
-	@Caching(evict = {
-		@CacheEvict(value = CACHE_NAME, key = "{'findExternalIdTypes', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}")
-	})
 	public String createExternalIdType(final String namespace, final String municipalityId, final ExternalIdType externalIdType) {
 		if (externalIdTypeRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, externalIdType.getName())) {
 			throw Problem.valueOf(BAD_REQUEST, ITEM_ALREADY_EXISTS_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(EXTERNAL_ID_TYPE, externalIdType.getName(), namespace, municipalityId));
@@ -162,20 +151,14 @@ public class MetadataService {
 		return toExternalIdType(externalIdTypeRepository.getByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name));
 	}
 
-	@Cacheable(value = CACHE_NAME, key = "{#root.methodName, #namespace, #municipalityId}")
 	public List<ExternalIdType> findExternalIdTypes(final String namespace, final String municipalityId) {
 		return externalIdTypeRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId)
 			.stream()
 			.map(MetadataMapper::toExternalIdType)
-			.filter(Objects::nonNull)
 			.sorted(comparing(ExternalIdType::getName))
 			.toList();
 	}
 
-	@Caching(evict = {
-		@CacheEvict(value = CACHE_NAME, key = "{'findExternalIdTypes', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}")
-	})
 	public void deleteExternalIdType(final String namespace, final String municipalityId, final String name) {
 		if (!externalIdTypeRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)) {
 			throw Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(EXTERNAL_ID_TYPE, name, namespace, municipalityId));
@@ -188,10 +171,6 @@ public class MetadataService {
 	// Status operations
 	// =================================================================
 
-	@Caching(evict = {
-		@CacheEvict(value = CACHE_NAME, key = "{'findStatuses', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}")
-	})
 	public String createStatus(final String namespace, final String municipalityId, final Status status) {
 		if (statusRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, status.getName())) {
 			throw Problem.valueOf(BAD_REQUEST, ITEM_ALREADY_EXISTS_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(STATUS, status.getName(), namespace, municipalityId));
@@ -208,20 +187,14 @@ public class MetadataService {
 		return toStatus(statusRepository.getByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name));
 	}
 
-	@Cacheable(value = CACHE_NAME, key = "{#root.methodName, #namespace, #municipalityId}")
 	public List<Status> findStatuses(final String namespace, final String municipalityId) {
 		return statusRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId)
 			.stream()
 			.map(MetadataMapper::toStatus)
-			.filter(Objects::nonNull)
 			.sorted(comparing(Status::getName))
 			.toList();
 	}
 
-	@Caching(evict = {
-		@CacheEvict(value = CACHE_NAME, key = "{'findStatuses', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}")
-	})
 	public void deleteStatus(final String namespace, final String municipalityId, final String name) {
 		if (!statusRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)) {
 			throw Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(STATUS, name, namespace, municipalityId));
@@ -234,10 +207,6 @@ public class MetadataService {
 	// Role operations
 	// =================================================================
 
-	@Caching(evict = {
-		@CacheEvict(value = CACHE_NAME, key = "{'findRoles', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}")
-	})
 	public String createRole(final String namespace, final String municipalityId, final Role role) {
 		if (roleRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, role.getName())) {
 			throw Problem.valueOf(BAD_REQUEST, ITEM_ALREADY_EXISTS_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(ROLE, role.getName(), namespace, municipalityId));
@@ -254,20 +223,14 @@ public class MetadataService {
 		return toRole(roleRepository.getByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name));
 	}
 
-	@Cacheable(value = CACHE_NAME, key = "{#root.methodName, #namespace, #municipalityId}")
 	public List<Role> findRoles(final String namespace, final String municipalityId) {
 		return roleRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId)
 			.stream()
 			.map(MetadataMapper::toRole)
-			.filter(Objects::nonNull)
 			.sorted(comparing(Role::getName))
 			.toList();
 	}
 
-	@Caching(evict = {
-		@CacheEvict(value = CACHE_NAME, key = "{'findRoles', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}")
-	})
 	public void deleteRole(final String namespace, final String municipalityId, final String name) {
 		if (!roleRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)) {
 			throw Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(ROLE, name, namespace, municipalityId));
@@ -280,20 +243,10 @@ public class MetadataService {
 	// Label operations
 	// =================================================================
 
-	@Caching(evict = {
-		@CacheEvict(value = CACHE_NAME, key = "{'findLabels', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}"),
-		@CacheEvict(value = PATTERN_CACHE_NAME, allEntries = true)
-	})
 	public void createLabels(final String namespace, final String municipalityId, final List<Label> labels) {
 		metadataLabelRepository.saveAll(toMetadataLabelEntityList(namespace, municipalityId, labels));
 	}
 
-	@Caching(evict = {
-		@CacheEvict(value = CACHE_NAME, key = "{'findLabels', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}"),
-		@CacheEvict(value = PATTERN_CACHE_NAME, allEntries = true)
-	})
 	@Transactional
 	public void updateLabels(final String namespace, final String municipalityId, final List<Label> labels) {
 		// Fetch all existing labels and verify existence
@@ -342,16 +295,10 @@ public class MetadataService {
 			.collect(Collectors.toSet());
 	}
 
-	@Cacheable(value = CACHE_NAME, key = "{#root.methodName, #namespace, #municipalityId}")
 	public Labels findLabels(final String namespace, final String municipalityId) {
 		return toLabels(metadataLabelRepository.findByNamespaceAndMunicipalityIdAndParentIsNull(namespace, municipalityId));
 	}
 
-	@Caching(evict = {
-		@CacheEvict(value = CACHE_NAME, key = "{'findLabels', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}"),
-		@CacheEvict(value = PATTERN_CACHE_NAME, allEntries = true)
-	})
 	public void deleteLabels(final String namespace, final String municipalityId) {
 		if (!metadataLabelRepository.existsByNamespaceAndMunicipalityId(namespace, municipalityId)) {
 			throw Problem.valueOf(NOT_FOUND, "Labels are not present in namespace '%s' for municipalityId '%s'".formatted(namespace, municipalityId));
@@ -362,8 +309,6 @@ public class MetadataService {
 			.forEach(metadataLabelRepository::deleteById);
 	}
 
-	@Cacheable(value = PATTERN_CACHE_NAME,
-		key = "{#root.methodName, #namespace, #municipalityId, #root.targetClass.createCacheKey(#resourcePathPatterns)}")
 	@Transactional(readOnly = true)
 	public Set<MetadataLabelEntity> patternToLabels(
 		final String namespace,
@@ -383,22 +328,10 @@ public class MetadataService {
 			.collect(Collectors.toSet());
 	}
 
-	public static String createCacheKey(List<String> patterns) {
-		if (patterns == null || patterns.isEmpty()) {
-			return "EMPTY";
-		}
-		return String.join("|", new TreeSet<>(patterns)).toLowerCase();
-	}
-
 	// =================================================================
 	// Category and Type operations
 	// =================================================================
 
-	@Caching(evict = {
-		@CacheEvict(value = CACHE_NAME, key = "{'findCategories', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'findTypes', #namespace, #municipalityId, #category.name}")
-	})
 	public String createCategory(final String namespace, final String municipalityId, final Category category) {
 		if (categoryRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, category.getName())) {
 			throw Problem.valueOf(BAD_REQUEST, ITEM_ALREADY_EXISTS_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(CATEGORY, category.getName(), namespace, municipalityId));
@@ -415,11 +348,6 @@ public class MetadataService {
 		return MetadataMapper.toCategory(categoryRepository.getByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name));
 	}
 
-	@Caching(evict = {
-		@CacheEvict(value = CACHE_NAME, key = "{'findCategories', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'findTypes', #namespace, #municipalityId, #name}")
-	})
 	public Category updateCategory(final String namespace, final String municipalityId, final String name, final Category category) {
 		if (!categoryRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)) {
 			throw Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(CATEGORY, name, namespace, municipalityId));
@@ -428,17 +356,14 @@ public class MetadataService {
 		return toCategory(categoryRepository.save(entity));
 	}
 
-	@Cacheable(value = CACHE_NAME, key = "{#root.methodName, #namespace, #municipalityId}")
 	public List<Category> findCategories(final String namespace, final String municipalityId) {
 		return categoryRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId)
 			.stream()
 			.map(MetadataMapper::toCategory)
-			.filter(Objects::nonNull)
 			.sorted(comparing(Category::getDisplayName, nullsFirst(naturalOrder())))
 			.toList();
 	}
 
-	@Cacheable(value = CACHE_NAME, key = "{#root.methodName, #namespace, #municipalityId, #category}")
 	public List<Type> findTypes(final String namespace, final String municipalityId, final String category) {
 		return findCategories(namespace, municipalityId)
 			.stream()
@@ -451,11 +376,6 @@ public class MetadataService {
 			.toList();
 	}
 
-	@Caching(evict = {
-		@CacheEvict(value = CACHE_NAME, key = "{'findCategories', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'findTypes', #namespace, #municipalityId, #name}")
-	})
 	public void deleteCategory(final String namespace, final String municipalityId, final String name) {
 		if (!categoryRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)) {
 			throw Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(CATEGORY, name, namespace, municipalityId));
@@ -468,18 +388,12 @@ public class MetadataService {
 	// ContactReason Operations
 	// =================================================================
 
-	@Cacheable(value = CACHE_NAME, key = "{#root.methodName, #namespace, #municipalityId}")
 	public List<ContactReason> findContactReasons(final String namespace, final String municipalityId) {
 		return contactReasonRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId).stream()
 			.map(MetadataMapper::toContactReason)
-			.filter(Objects::nonNull)
 			.toList();
 	}
 
-	@Caching(evict = {
-		@CacheEvict(value = CACHE_NAME, key = "{'findContactReasons', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}")
-	})
 	public Long createContactReason(final String namespace, final String municipalityId, final ContactReason contactReason) {
 		return contactReasonRepository.save(toContactReasonEntity(namespace, municipalityId, contactReason)).getId();
 	}
@@ -496,10 +410,6 @@ public class MetadataService {
 			.toList();
 	}
 
-	@Caching(evict = {
-		@CacheEvict(value = CACHE_NAME, key = "{'findContactReasons', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}")
-	})
 	public ContactReason patchContactReason(final Long contactReasonId, final String namespace, final String municipalityId, final ContactReason contactReason) {
 		if (!contactReasonRepository.existsByIdAndNamespaceAndMunicipalityId(contactReasonId, namespace, municipalityId)) {
 			throw Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(CONTACT_REASON, contactReasonId, namespace, municipalityId));
@@ -509,10 +419,6 @@ public class MetadataService {
 		return toContactReason(contactReasonRepository.save(contactReasonEntity));
 	}
 
-	@Caching(evict = {
-		@CacheEvict(value = CACHE_NAME, key = "{'findContactReasons', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}")
-	})
 	@Transactional
 	public void deleteContactReason(final Long contactReasonId, final String namespace, final String municipalityId) {
 		if (!contactReasonRepository.existsByIdAndNamespaceAndMunicipalityId(contactReasonId, namespace, municipalityId)) {
@@ -525,10 +431,6 @@ public class MetadataService {
 	// Phase operations
 	// =================================================================
 
-	@Caching(evict = {
-		@CacheEvict(value = CACHE_NAME, key = "{'findPhases', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}")
-	})
 	@Transactional
 	public String createPhase(final String namespace, final String municipalityId, final Phase phase) {
 		if (phaseRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, phase.getName())) {
@@ -548,11 +450,9 @@ public class MetadataService {
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(PHASE, phaseId, namespace, municipalityId)));
 	}
 
-	@Cacheable(value = CACHE_NAME, key = "{#root.methodName, #namespace, #municipalityId}")
 	public List<Phase> findPhases(final String namespace, final String municipalityId) {
 		return phaseRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId).stream()
 			.map(MetadataMapper::toPhase)
-			.filter(Objects::nonNull)
 			.map(phase -> {
 				enrichPhaseTransitions(phase, namespace, municipalityId);
 				return phase;
@@ -561,10 +461,6 @@ public class MetadataService {
 			.toList();
 	}
 
-	@Caching(evict = {
-		@CacheEvict(value = CACHE_NAME, key = "{'findPhases', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}")
-	})
 	@Transactional
 	public Phase patchPhase(final String phaseId, final String namespace, final String municipalityId, final Phase phase) {
 		final var entity = phaseRepository.findByIdAndNamespaceAndMunicipalityId(phaseId, namespace, municipalityId)
@@ -575,10 +471,6 @@ public class MetadataService {
 		return updatedPhase;
 	}
 
-	@Caching(evict = {
-		@CacheEvict(value = CACHE_NAME, key = "{'findPhases', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}")
-	})
 	@Transactional
 	public void deletePhase(final String phaseId, final String namespace, final String municipalityId) {
 		if (!phaseRepository.existsByIdAndNamespaceAndMunicipalityId(phaseId, namespace, municipalityId)) {
@@ -606,10 +498,6 @@ public class MetadataService {
 	// Phase Transition operations
 	// =================================================================
 
-	@Caching(evict = {
-		@CacheEvict(value = CACHE_NAME, key = "{'findPhases', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}")
-	})
 	@Transactional
 	public String createPhaseTransition(final String namespace, final String municipalityId, final String phaseId, final PhaseTransition transition) {
 		final var phaseEntity = phaseRepository.findByIdAndNamespaceAndMunicipalityId(phaseId, namespace, municipalityId)
@@ -632,7 +520,6 @@ public class MetadataService {
 
 		return phaseEntity.getTransitions().stream()
 			.map(MetadataMapper::toPhaseTransition)
-			.filter(Objects::nonNull)
 			.map(transition -> {
 				phaseRepository.findByIdAndNamespaceAndMunicipalityId(transition.getTargetPhaseId(), namespace, municipalityId)
 					.ifPresent(targetPhase -> {
@@ -644,10 +531,6 @@ public class MetadataService {
 			.toList();
 	}
 
-	@Caching(evict = {
-		@CacheEvict(value = CACHE_NAME, key = "{'findPhases', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #namespace, #municipalityId}")
-	})
 	@Transactional
 	public void deletePhaseTransition(final String namespace, final String municipalityId, final String phaseId, final String transitionId) {
 		final var phaseEntity = phaseRepository.findByIdAndNamespaceAndMunicipalityId(phaseId, namespace, municipalityId)
