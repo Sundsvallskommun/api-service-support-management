@@ -50,14 +50,13 @@ public class ActionWorker {
 			throw new IllegalStateException("No action implementation found for name: " + actionName);
 		}
 
-		final var errand = actionEntity.getErrandEntity();
+		final var errand = errandsRepository.findWithLockingById(actionEntity.getErrandEntity().getId()).orElseThrow(() -> new RuntimeException("Could not find errand"));
 		final var parameters = toParameterMap(configEntity);
 
 		if (action.actionFulfilled(errand, parameters)) {
 			errandActionRepository.delete(actionEntity);
 		} else {
-			var lockedErrand = errandsRepository.findWithLockingById(errand.getId()).orElseThrow(() -> new RuntimeException("Could not find errand"));
-			action.executeAction(lockedErrand, configEntity);
+			action.executeAction(errand, configEntity);
 			errandActionRepository.delete(actionEntity);
 		}
 	}
