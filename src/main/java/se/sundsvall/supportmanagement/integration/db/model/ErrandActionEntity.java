@@ -15,7 +15,7 @@ import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.annotations.TimeZoneStorage;
 import org.hibernate.annotations.UuidGenerator;
 
-import static jakarta.persistence.FetchType.LAZY;
+import static jakarta.persistence.FetchType.EAGER;
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 
 @Entity
@@ -31,7 +31,7 @@ public class ErrandActionEntity {
 	@Column(name = "id")
 	private String id;
 
-	@ManyToOne(fetch = LAZY)
+	@ManyToOne(fetch = EAGER)
 	@JoinColumn(name = "errand_id", nullable = false, foreignKey = @ForeignKey(name = "fk_errand_action_errand_id"))
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private ErrandEntity errandEntity;
@@ -40,7 +40,7 @@ public class ErrandActionEntity {
 	@TimeZoneStorage(NORMALIZE)
 	private OffsetDateTime executeAfter;
 
-	@ManyToOne(fetch = LAZY)
+	@ManyToOne(fetch = EAGER)
 	@JoinColumn(name = "action_config_id", foreignKey = @ForeignKey(name = "fk_errand_action_action_config_id"))
 	private ActionConfigEntity actionConfigEntity;
 
