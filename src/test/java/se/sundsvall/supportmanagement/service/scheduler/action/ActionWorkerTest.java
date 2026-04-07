@@ -69,9 +69,11 @@ class ActionWorkerTest {
 			.withActionConfigEntity(config);
 
 		when(actionMock.actionFulfilled(errand, Map.of("label", List.of("priority-high")))).thenReturn(true);
+		when(errandsRepositoryMock.findWithLockingById(any())).thenReturn(Optional.of(errand));
 
 		actionWorker.processAction(actionEntity);
 
+		verify(errandsRepositoryMock).findWithLockingById("errand-id");
 		verify(actionMock).actionFulfilled(errand, Map.of("label", List.of("priority-high")));
 		verify(errandActionRepositoryMock).delete(actionEntity);
 		verifyNoMoreInteractions(errandActionRepositoryMock, errandsRepositoryMock);

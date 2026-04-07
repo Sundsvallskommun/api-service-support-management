@@ -14,6 +14,7 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandActionEntity;
 import se.sundsvall.supportmanagement.service.action.Action;
 
 import static java.time.OffsetDateTime.now;
+import static org.springframework.transaction.annotation.Propagation.REQUIRES_NEW;
 
 @Component
 public class ActionWorker {
@@ -29,11 +30,12 @@ public class ActionWorker {
 		actionList.forEach(action -> this.actions.put(action.getName(), action));
 	}
 
+	@Transactional
 	public List<ErrandActionEntity> getExpiredActions() {
 		return errandActionRepository.findAllByExecuteAfterBefore(now());
 	}
 
-	@Transactional
+	@Transactional(propagation = REQUIRES_NEW)
 	public void processAction(final ErrandActionEntity actionEntity) {
 		final var configEntity = actionEntity.getActionConfigEntity();
 
@@ -48,14 +50,13 @@ public class ActionWorker {
 			throw new IllegalStateException("No action implementation found for name: " + actionName);
 		}
 
-		final var errand = actionEntity.getErrandEntity();
+		final var errand = errandsRepository.findWithLockingById(actionEntity.getErrandEntity().getId()).orElseThrow(() -> new RuntimeException("Could not find errand"));
 		final var parameters = toParameterMap(configEntity);
 
 		if (action.actionFulfilled(errand, parameters)) {
 			errandActionRepository.delete(actionEntity);
 		} else {
-			var lockedErrand = errandsRepository.findWithLockingById(errand.getId()).orElseThrow(() -> new RuntimeException("Could not find errand"));
-			action.executeAction(lockedErrand, configEntity);
+			action.executeAction(errand, configEntity);
 			errandActionRepository.delete(actionEntity);
 		}
 	}
