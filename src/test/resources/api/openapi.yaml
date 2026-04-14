@@ -1815,11 +1815,11 @@ paths:
         example: 2281
       - name: referred_from
         in: query
-        description: Referenced from errand
+        description: "Relation reference in format (only source is used): '{relationType}|{sourceResourceId};{sourceType};{sourceService};{sourceNamespace}|{targetResourceId};{targetType};{targetService};{targetNamespace}'"
         required: false
         schema:
           type: string
-        example: ABC-123456
+        example: LINK|1234;case;service;MY_NAMESPACE|
       requestBody:
         content:
           application/json:

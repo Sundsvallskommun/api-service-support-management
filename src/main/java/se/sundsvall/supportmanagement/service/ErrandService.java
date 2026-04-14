@@ -2,7 +2,6 @@ package se.sundsvall.supportmanagement.service;
 
 import generated.se.sundsvall.accessmapper.Access;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -14,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.support.Identifier;
+import se.sundsvall.dept44.support.Relation;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.ContactReasonRepository;
@@ -27,12 +27,12 @@ import se.sundsvall.supportmanagement.integration.db.util.ErrandNumberGeneratorS
 import se.sundsvall.supportmanagement.integration.notes.NotesClient;
 import se.sundsvall.supportmanagement.integration.relation.RelationClient;
 import se.sundsvall.supportmanagement.service.mapper.ErrandMapper;
-import se.sundsvall.supportmanagement.service.model.ReferredFrom;
 
 import static generated.se.sundsvall.eventlog.EventType.CREATE;
 import static generated.se.sundsvall.eventlog.EventType.DELETE;
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
 import static java.util.Collections.emptyList;
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -136,8 +136,7 @@ public class ErrandService {
 		eventService.createErrandEvent(CREATE, EVENT_LOG_CREATE_ERRAND, persistedEntity, revision.latest(), null, false, ERRAND);
 
 		if (isNotBlank(referredFrom)) {
-			final var expandedReferredFrom = expandReferredFrom(referredFrom);
-			final var relation = ErrandMapper.toReferredFromRelation(namespace, expandedReferredFrom, persistedEntity.getId());
+			final var relation = ErrandMapper.toReferredFromRelation(namespace, expandRelation(referredFrom), persistedEntity.getId());
 			relationClient.createRelation(municipalityId, relation);
 		}
 
@@ -249,14 +248,21 @@ public class ErrandService {
 		errandEntity.setAccessLabels(accessLabels);
 	}
 
-	ReferredFrom expandReferredFrom(final String referredFromAsString) {
+	se.sundsvall.dept44.support.Relation expandRelation(final String referredFromAsString) {
 		if (isNotBlank(referredFromAsString)) {
-			var parts = referredFromAsString.split(",");
-			if (parts.length == 3 && Arrays.stream(parts).map(String::trim).noneMatch(String::isBlank)) {
-				return new ReferredFrom(parts[0].trim(), parts[1].trim(), parts[2].trim());
+			final var relation = Relation.parseRelation(referredFromAsString);
+			if (isNull(relation)) {
+				throw Problem.valueOf(BAD_REQUEST, "Invalid referredFrom format. Could not parse relation from: '%s'. Expected format is '{relationType}|{sourceResourceId};{sourceType};{sourceService};{sourceNamespace}|'"
+					.formatted(referredFromAsString));
 			}
+			if (isNull(relation.getSource())) {
+				throw Problem.valueOf(BAD_REQUEST,
+					"Source information is missing in the referredFrom relation. Received: '%s'. The source must contain: sourceResourceId, sourceType, sourceService, and sourceNamespace. Expected format is '{relationType}|{sourceResourceId};{sourceType};{sourceService};{sourceNamespace}|'"
+						.formatted(referredFromAsString));
+			}
+			return relation;
 		}
 
-		throw Problem.valueOf(BAD_REQUEST, "Referred from should be three non-blank comma-separated parts: <service>,<namespace>,<identifier>");
+		throw Problem.valueOf(BAD_REQUEST, "Referred from is empty or blank. Expected format is '{relationType}|{sourceResourceId};{sourceType};{sourceService};{sourceNamespace}|'");
 	}
 }
