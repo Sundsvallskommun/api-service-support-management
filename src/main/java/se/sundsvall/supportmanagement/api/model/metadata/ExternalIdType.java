@@ -13,6 +13,9 @@ import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 @Schema(description = "ExternalIdType model")
 public class ExternalIdType {
 
+	@Schema(description = "ExternalIdType ID", examples = "5f79a808-0ef3-4985-99b9-b12f23e202a7", accessMode = READ_ONLY)
+	private String id;
+
 	@Schema(description = "Name for the external id type", examples = "PRIVATE")
 	@NotBlank
 	private String name;
@@ -34,6 +37,19 @@ public class ExternalIdType {
 
 	public static ExternalIdType create() {
 		return new ExternalIdType();
+	}
+
+	public String getId() {
+		return id;
+	}
+
+	public void setId(final String id) {
+		this.id = id;
+	}
+
+	public ExternalIdType withId(final String id) {
+		this.id = id;
+		return this;
 	}
 
 	public String getName() {
@@ -90,7 +106,7 @@ public class ExternalIdType {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(created, displayName, modified, name);
+		return Objects.hash(created, displayName, id, modified, name);
 	}
 
 	@Override
@@ -101,13 +117,14 @@ public class ExternalIdType {
 		if (!(obj instanceof final ExternalIdType other)) {
 			return false;
 		}
-		return Objects.equals(created, other.created) && Objects.equals(displayName, other.displayName) && Objects.equals(modified, other.modified) && Objects.equals(name, other.name);
+		return Objects.equals(created, other.created) && Objects.equals(displayName, other.displayName) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(name, other.name);
 	}
 
 	@Override
 	public String toString() {
 		return "ExternalIdType{" +
-			"name='" + name + '\'' +
+			"id='" + id + '\'' +
+			", name='" + name + '\'' +
 			", displayName='" + displayName + '\'' +
 			", created=" + created +
 			", modified=" + modified +

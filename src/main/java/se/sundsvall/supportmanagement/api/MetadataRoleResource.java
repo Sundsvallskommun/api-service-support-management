@@ -15,12 +15,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import se.sundsvall.dept44.common.validators.annotation.ValidMunicipalityId;
+import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.supportmanagement.api.model.metadata.Role;
@@ -63,14 +65,14 @@ class MetadataRoleResource {
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Valid @NotNull @RequestBody final Role body) {
 
-		return created(fromPath("/{municipalityId}/{namespace}/metadata/roles/{role}")
+		return created(fromPath("/{municipalityId}/{namespace}/metadata/roles/{id}")
 			.buildAndExpand(municipalityId, namespace, metadataService.createRole(namespace, municipalityId, body)).toUri())
 			.header(CONTENT_TYPE, ALL_VALUE)
 			.build();
 	}
 
-	@GetMapping(path = "/{role}", produces = APPLICATION_JSON_VALUE)
-	@Operation(summary = "Get role", description = "Get role matching sent in namespace, municipality and role", responses = {
+	@GetMapping(path = "/{id}", produces = APPLICATION_JSON_VALUE)
+	@Operation(summary = "Get role", description = "Get role matching namespace, municipality and id", responses = {
 		@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true),
 		@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
 			Problem.class, ConstraintViolationProblem.class
@@ -81,9 +83,10 @@ class MetadataRoleResource {
 	ResponseEntity<Role> getRole(
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
-		@Parameter(name = "role", description = "Name of role", example = "ROLE-1") @PathVariable final String role) {
+		@Parameter(name = "id", description = "Role id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable final String id) {
 
-		return ok(metadataService.getRole(namespace, municipalityId, role));
+		// TODO follow-up branch: lookup by id
+		return ok(metadataService.getRole(namespace, municipalityId, id));
 	}
 
 	@GetMapping(produces = APPLICATION_JSON_VALUE)
@@ -101,8 +104,27 @@ class MetadataRoleResource {
 		return ok(metadataService.findRoles(namespace, municipalityId));
 	}
 
-	@DeleteMapping(path = "/{role}", produces = ALL_VALUE)
-	@Operation(summary = "Delete role", description = "Delete role matching namespace, municipality and role", responses = {
+	@PatchMapping(path = "/{id}", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
+	@Operation(summary = "Update role", description = "Update role matching namespace, municipality and id", responses = {
+		@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true),
+		@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
+			Problem.class, ConstraintViolationProblem.class
+		}))),
+		@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
+		@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+	})
+	ResponseEntity<Role> updateRole(
+		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
+		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
+		@Parameter(name = "id", description = "Role id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable final String id,
+		@Valid @NotNull @RequestBody final Role body) {
+
+		// TODO follow-up branch: implement service.updateRole(namespace, municipalityId, id, body)
+		throw new UnsupportedOperationException("Not yet implemented");
+	}
+
+	@DeleteMapping(path = "/{id}", produces = ALL_VALUE)
+	@Operation(summary = "Delete role", description = "Delete role matching namespace, municipality and id", responses = {
 		@ApiResponse(responseCode = "204", description = "Successful operation", useReturnTypeSchema = true),
 		@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
 			Problem.class, ConstraintViolationProblem.class
@@ -113,9 +135,10 @@ class MetadataRoleResource {
 	ResponseEntity<Void> deleteRole(
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
-		@Parameter(name = "role", description = "Name of role", example = "ROLE-1") @PathVariable final String role) {
+		@Parameter(name = "id", description = "Role id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable final String id) {
 
-		metadataService.deleteRole(namespace, municipalityId, role);
+		// TODO follow-up branch: lookup by id
+		metadataService.deleteRole(namespace, municipalityId, id);
 		return noContent()
 			.header(CONTENT_TYPE, ALL_VALUE)
 			.build();
