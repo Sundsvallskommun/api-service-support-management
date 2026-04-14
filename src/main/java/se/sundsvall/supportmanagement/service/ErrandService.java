@@ -249,20 +249,12 @@ public class ErrandService {
 	}
 
 	se.sundsvall.dept44.support.Relation expandRelation(final String referredFromAsString) {
-		if (isNotBlank(referredFromAsString)) {
-			final var relation = Relation.parseRelation(referredFromAsString);
-			if (isNull(relation)) {
-				throw Problem.valueOf(BAD_REQUEST, "Invalid referredFrom format. Could not parse relation from: '%s'. Expected format is '{relationType}|{sourceResourceId};{sourceType};{sourceService};{sourceNamespace}|'"
+		final var relation = Relation.parseRelation(referredFromAsString);
+		if (isNull(relation.getSource())) {
+			throw Problem.valueOf(BAD_REQUEST,
+				"Source information is missing in the referredFrom relation. Received: '%s'. The source must contain: sourceResourceId, sourceType, sourceService, and sourceNamespace. Expected format is '{relationType}|{sourceResourceId};{sourceType};{sourceService};{sourceNamespace}|'"
 					.formatted(referredFromAsString));
-			}
-			if (isNull(relation.getSource())) {
-				throw Problem.valueOf(BAD_REQUEST,
-					"Source information is missing in the referredFrom relation. Received: '%s'. The source must contain: sourceResourceId, sourceType, sourceService, and sourceNamespace. Expected format is '{relationType}|{sourceResourceId};{sourceType};{sourceService};{sourceNamespace}|'"
-						.formatted(referredFromAsString));
-			}
-			return relation;
 		}
-
-		throw Problem.valueOf(BAD_REQUEST, "Referred from is empty or blank. Expected format is '{relationType}|{sourceResourceId};{sourceType};{sourceService};{sourceNamespace}|'");
+		return relation;
 	}
 }

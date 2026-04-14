@@ -29,7 +29,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
-import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
 import se.sundsvall.supportmanagement.api.model.errand.Priority;
@@ -426,8 +425,8 @@ class ErrandServiceTest {
 
 	static Stream<Arguments> argumentsForExpandRelation() {
 		return Stream.of(
-			argumentSet("null input", null, false, ThrowableProblem.class),
-			argumentSet("blank input", "", false, ThrowableProblem.class),
+			argumentSet("null input", null, false, IllegalArgumentException.class),
+			argumentSet("blank input", "", false, IllegalArgumentException.class),
 			argumentSet("invalid format", "someService,someNamespace", false, IllegalArgumentException.class),
 			argumentSet("valid input", "REFERRED_FROM|someIdentifier;case;someService;someNamespace|", true, null));
 	}
