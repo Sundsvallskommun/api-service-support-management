@@ -15,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.UriComponentsBuilder;
 import se.sundsvall.dept44.common.validators.annotation.ValidMunicipalityId;
+import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
@@ -63,14 +65,14 @@ class MetadataStatusResource {
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Valid @NotNull @RequestBody final Status body) {
 
-		return created(UriComponentsBuilder.fromPath("/{municipalityId}/{namespace}/metadata/statuses/{status}")
+		return created(UriComponentsBuilder.fromPath("/{municipalityId}/{namespace}/metadata/statuses/{id}")
 			.buildAndExpand(municipalityId, namespace, metadataService.createStatus(namespace, municipalityId, body)).toUri())
 			.header(CONTENT_TYPE, ALL_VALUE)
 			.build();
 	}
 
-	@GetMapping(path = "/{status}", produces = APPLICATION_JSON_VALUE)
-	@Operation(summary = "Get status", description = "Get status matching sent in namespace, municipality and status", responses = {
+	@GetMapping(path = "/{id}", produces = APPLICATION_JSON_VALUE)
+	@Operation(summary = "Get status", description = "Get status matching namespace, municipality and id", responses = {
 		@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true),
 		@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
 			Problem.class, ConstraintViolationProblem.class
@@ -81,9 +83,10 @@ class MetadataStatusResource {
 	ResponseEntity<Status> getStatus(
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
-		@Parameter(name = "status", description = "Name of status", example = "NEW") @PathVariable final String status) {
+		@Parameter(name = "id", description = "Status id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable final String id) {
 
-		return ok(metadataService.getStatus(namespace, municipalityId, status));
+		// TODO follow-up branch: lookup by id
+		return ok(metadataService.getStatus(namespace, municipalityId, id));
 	}
 
 	@GetMapping(produces = APPLICATION_JSON_VALUE)
@@ -101,8 +104,27 @@ class MetadataStatusResource {
 		return ok(metadataService.findStatuses(namespace, municipalityId));
 	}
 
-	@DeleteMapping(path = "/{status}", produces = ALL_VALUE)
-	@Operation(summary = "Delete status", description = "Delete status matching namespace, municipality and status", responses = {
+	@PatchMapping(path = "/{id}", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
+	@Operation(summary = "Update status", description = "Update status matching namespace, municipality and id", responses = {
+		@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true),
+		@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
+			Problem.class, ConstraintViolationProblem.class
+		}))),
+		@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
+		@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+	})
+	ResponseEntity<Status> updateStatus(
+		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
+		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
+		@Parameter(name = "id", description = "Status id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable final String id,
+		@Valid @NotNull @RequestBody final Status body) {
+
+		// TODO follow-up branch: implement service.updateStatus(namespace, municipalityId, id, body)
+		throw new UnsupportedOperationException("Not yet implemented");
+	}
+
+	@DeleteMapping(path = "/{id}", produces = ALL_VALUE)
+	@Operation(summary = "Delete status", description = "Delete status matching namespace, municipality and id", responses = {
 		@ApiResponse(responseCode = "204", description = "Successful operation", useReturnTypeSchema = true),
 		@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
 			Problem.class, ConstraintViolationProblem.class
@@ -113,9 +135,10 @@ class MetadataStatusResource {
 	ResponseEntity<Void> deleteStatus(
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
-		@Parameter(name = "status", description = "Name of status", example = "PRIVATE") @PathVariable final String status) {
+		@Parameter(name = "id", description = "Status id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable final String id) {
 
-		metadataService.deleteStatus(namespace, municipalityId, status);
+		// TODO follow-up branch: lookup by id
+		metadataService.deleteStatus(namespace, municipalityId, id);
 		return noContent()
 			.header(CONTENT_TYPE, ALL_VALUE)
 			.build();

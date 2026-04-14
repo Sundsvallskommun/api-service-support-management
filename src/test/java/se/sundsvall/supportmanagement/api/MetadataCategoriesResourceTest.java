@@ -62,14 +62,14 @@ class MetadataCategoriesResourceTest {
 	@Test
 	void getCategory() {
 		// Parameters
-		final var name = "name";
-		final var body = Category.create().withName(name);
+		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
+		final var body = Category.create().withId(id).withName("name");
 
 		// Mock
-		when(metadataServiceMock.getCategory(NAMESPACE, MUNICIPALITY_ID, name)).thenReturn(body);
+		when(metadataServiceMock.getCategory(NAMESPACE, MUNICIPALITY_ID, id)).thenReturn(body);
 
 		// Call
-		final var result = webTestClient.get().uri(builder -> builder.path(PATH + "/{category}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "category", name)))
+		final var result = webTestClient.get().uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", id)))
 			.exchange()
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)
@@ -78,7 +78,7 @@ class MetadataCategoriesResourceTest {
 			.returnResult()
 			.getResponseBody();
 
-		verify(metadataServiceMock).getCategory(NAMESPACE, MUNICIPALITY_ID, name);
+		verify(metadataServiceMock).getCategory(NAMESPACE, MUNICIPALITY_ID, id);
 		assertThat(result).isNotNull().isEqualTo(body);
 	}
 
@@ -98,48 +98,48 @@ class MetadataCategoriesResourceTest {
 	@Test
 	void getCategoryTypes() {
 		// Parameters
-		final var name = "name";
-		webTestClient.get().uri(builder -> builder.path(PATH + "/{category}/types").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "category", name)))
+		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
+		webTestClient.get().uri(builder -> builder.path(PATH + "/{id}/types").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", id)))
 			.exchange()
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)
 			.expectBody(String[].class)
 			.isEqualTo(EMPTY_STRING_ARRAY);
 
-		verify(metadataServiceMock).findTypes(NAMESPACE, MUNICIPALITY_ID, name);
+		verify(metadataServiceMock).findTypes(NAMESPACE, MUNICIPALITY_ID, id);
 	}
 
 	@Test
 	void updateCategory() {
 		// Parameters
-		final var name = "name";
+		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
 		final var body = Category.create().withName("name");
 
 		// Mock
-		when(metadataServiceMock.updateCategory(NAMESPACE, MUNICIPALITY_ID, name, body)).thenReturn(body);
+		when(metadataServiceMock.updateCategory(NAMESPACE, MUNICIPALITY_ID, id, body)).thenReturn(body);
 
 		// Call
 		webTestClient.patch()
-			.uri(builder -> builder.path(PATH + "/{category}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "category", name)))
+			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", id)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(body)
 			.exchange()
 			.expectStatus().isEqualTo(HttpStatus.OK);
 
-		verify(metadataServiceMock).updateCategory(NAMESPACE, MUNICIPALITY_ID, name, body);
+		verify(metadataServiceMock).updateCategory(NAMESPACE, MUNICIPALITY_ID, id, body);
 	}
 
 	@Test
 	void deleteCategory() {
 		// Parameters
-		final var name = "name";
+		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
 		// Call
 		webTestClient.delete()
-			.uri(builder -> builder.path(PATH + "/{category}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "category", name)))
+			.uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", id)))
 			.exchange()
 			.expectStatus().isEqualTo(HttpStatus.NO_CONTENT);
 
-		verify(metadataServiceMock).deleteCategory(NAMESPACE, MUNICIPALITY_ID, name);
+		verify(metadataServiceMock).deleteCategory(NAMESPACE, MUNICIPALITY_ID, id);
 	}
 
 }

@@ -13,6 +13,9 @@ import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 @Schema(description = "Role model")
 public class Role {
 
+	@Schema(description = "Role ID", examples = "5f79a808-0ef3-4985-99b9-b12f23e202a7", accessMode = READ_ONLY)
+	private String id;
+
 	@Schema(description = "Name for the role. Used as key", examples = "roleName")
 	@NotBlank
 	private String name;
@@ -34,6 +37,19 @@ public class Role {
 
 	public static Role create() {
 		return new Role();
+	}
+
+	public String getId() {
+		return id;
+	}
+
+	public void setId(final String id) {
+		this.id = id;
+	}
+
+	public Role withId(final String id) {
+		this.id = id;
+		return this;
 	}
 
 	public String getName() {
@@ -90,7 +106,7 @@ public class Role {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(created, modified, name, displayName);
+		return Objects.hash(created, modified, id, name, displayName);
 	}
 
 	@Override
@@ -101,13 +117,14 @@ public class Role {
 		if (!(obj instanceof final Role other)) {
 			return false;
 		}
-		return Objects.equals(created, other.created) && Objects.equals(modified, other.modified) && Objects.equals(name, other.name) && Objects.equals(displayName, other.displayName);
+		return Objects.equals(created, other.created) && Objects.equals(modified, other.modified) && Objects.equals(id, other.id) && Objects.equals(name, other.name) && Objects.equals(displayName, other.displayName);
 	}
 
 	@Override
 	public String toString() {
 		return "Role{" +
-			"name='" + name + '\'' +
+			"id='" + id + '\'' +
+			", name='" + name + '\'' +
 			", displayName='" + displayName + '\'' +
 			", created=" + created +
 			", modified=" + modified +

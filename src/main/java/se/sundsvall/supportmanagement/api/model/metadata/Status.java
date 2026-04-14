@@ -13,6 +13,9 @@ import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 @Schema(description = "Status model")
 public class Status {
 
+	@Schema(description = "Status ID", examples = "5f79a808-0ef3-4985-99b9-b12f23e202a7", accessMode = READ_ONLY)
+	private String id;
+
 	@Schema(description = "Name for the status", examples = "statusName")
 	@NotBlank
 	private String name;
@@ -39,6 +42,19 @@ public class Status {
 
 	public static Status create() {
 		return new Status();
+	}
+
+	public String getId() {
+		return id;
+	}
+
+	public void setId(final String id) {
+		this.id = id;
+	}
+
+	public Status withId(final String id) {
+		this.id = id;
+		return this;
 	}
 
 	public String getName() {
@@ -108,7 +124,7 @@ public class Status {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(created, displayName, externalDisplayName, modified, name);
+		return Objects.hash(created, displayName, externalDisplayName, id, modified, name);
 	}
 
 	@Override
@@ -119,13 +135,15 @@ public class Status {
 		if (!(obj instanceof final Status other)) {
 			return false;
 		}
-		return Objects.equals(created, other.created) && Objects.equals(displayName, other.displayName) && Objects.equals(externalDisplayName, other.externalDisplayName) && Objects.equals(modified, other.modified) && Objects.equals(name, other.name);
+		return Objects.equals(created, other.created) && Objects.equals(displayName, other.displayName) && Objects.equals(externalDisplayName, other.externalDisplayName) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects
+			.equals(name, other.name);
 	}
 
 	@Override
 	public String toString() {
 		return "Status{" +
-			"name='" + name + '\'' +
+			"id='" + id + '\'' +
+			", name='" + name + '\'' +
 			", displayName='" + displayName + '\'' +
 			", externalDisplayName='" + externalDisplayName + '\'' +
 			", created=" + created +
