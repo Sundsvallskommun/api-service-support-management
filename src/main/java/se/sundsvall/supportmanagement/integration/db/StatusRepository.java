@@ -8,7 +8,7 @@ import se.sundsvall.supportmanagement.integration.db.model.StatusEntity;
 
 @Transactional
 @CircuitBreaker(name = "statusRepository")
-public interface StatusRepository extends JpaRepository<StatusEntity, Long> {
+public interface StatusRepository extends JpaRepository<StatusEntity, String> {
 	List<StatusEntity> findAllByNamespaceAndMunicipalityId(String namespace, String municipalityId);
 
 	boolean existsByNamespaceAndMunicipalityIdAndName(String namespace, String municipalityId, String name);

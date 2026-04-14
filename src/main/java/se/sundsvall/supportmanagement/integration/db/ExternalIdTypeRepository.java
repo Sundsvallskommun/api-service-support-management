@@ -8,7 +8,7 @@ import se.sundsvall.supportmanagement.integration.db.model.ExternalIdTypeEntity;
 
 @Transactional
 @CircuitBreaker(name = "externalIdTypeRepository")
-public interface ExternalIdTypeRepository extends JpaRepository<ExternalIdTypeEntity, Long> {
+public interface ExternalIdTypeRepository extends JpaRepository<ExternalIdTypeEntity, String> {
 	List<ExternalIdTypeEntity> findAllByNamespaceAndMunicipalityId(String namespace, String municipalityId);
 
 	boolean existsByNamespaceAndMunicipalityIdAndName(String namespace, String municipalityId, String name);

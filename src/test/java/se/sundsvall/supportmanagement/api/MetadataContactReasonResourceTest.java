@@ -42,7 +42,7 @@ class MetadataContactReasonResourceTest {
 	@Test
 	void createContactReason() {
 		final var body = ContactReason.create()
-			.withId(1L)
+			.withId("b82bd8ac-1507-4d9a-958d-369261eecc15")
 			.withReason("reason")
 			.withCreated(OffsetDateTime.now())
 			.withModified(OffsetDateTime.now());
@@ -62,7 +62,7 @@ class MetadataContactReasonResourceTest {
 	@Test
 	void getContactReason() {
 
-		final var contactReasonId = 1L;
+		final var contactReasonId = "b82bd8ac-1507-4d9a-958d-369261eecc15";
 		final var reason = "reason";
 		final var contactReason = ContactReason.create()
 			.withId(contactReasonId)
@@ -106,7 +106,7 @@ class MetadataContactReasonResourceTest {
 	@Test
 	void updateContactReason() {
 
-		final var contactReasonId = 1L;
+		final var contactReasonId = "b82bd8ac-1507-4d9a-958d-369261eecc15";
 		final var reason = "reason";
 		final var patch = ContactReason.create()
 			.withReason(reason)
@@ -127,7 +127,7 @@ class MetadataContactReasonResourceTest {
 	@Test
 	void deleteContactReason() {
 
-		final var contactReasonId = 1L;
+		final var contactReasonId = "b82bd8ac-1507-4d9a-958d-369261eecc15";
 
 		webTestClient.delete()
 			.uri(builder -> builder.path(PATH + "/{contactReasonId}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "contactReasonId", contactReasonId)))

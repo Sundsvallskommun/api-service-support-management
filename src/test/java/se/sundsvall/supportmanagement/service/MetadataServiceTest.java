@@ -509,7 +509,7 @@ class MetadataServiceTest {
 		final var municipalityId = "municipalityId";
 
 		final var entity = CategoryEntity.create()
-			.withId(1L)
+			.withId("b82bd8ac-1507-4d9a-958d-369261eecc15")
 			.withName("existing_category")
 			.withTypes(List.of(TypeEntity.create().withName("EXISTING_TYPE_1"), TypeEntity.create().withName("EXISTING_TYPE_2")));
 
