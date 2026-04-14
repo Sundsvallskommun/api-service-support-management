@@ -2,14 +2,13 @@ package se.sundsvall.supportmanagement.integration.db.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.OffsetDateTime;
 import java.util.Objects;
 import org.hibernate.annotations.TimeZoneStorage;
+import org.hibernate.annotations.UuidGenerator;
 
-import static jakarta.persistence.GenerationType.IDENTITY;
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 
 @Entity
@@ -17,15 +16,18 @@ import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 public class ContactReasonEntity {
 
 	@Id
-	@GeneratedValue(strategy = IDENTITY)
+	@UuidGenerator
 	@Column(name = "id")
-	private Long id;
+	private String id;
 
 	@Column(name = "reason")
 	private String reason;
 
 	@Column(name = "display_name")
 	private String displayName;
+
+	@Column(name = "sort_order")
+	private Integer sortOrder;
 
 	@Column(name = "municipality_id", nullable = false, length = 8)
 	private String municipalityId;
@@ -45,15 +47,15 @@ public class ContactReasonEntity {
 		return new ContactReasonEntity();
 	}
 
-	public Long getId() {
+	public String getId() {
 		return id;
 	}
 
-	public void setId(final Long id) {
+	public void setId(final String id) {
 		this.id = id;
 	}
 
-	public ContactReasonEntity withId(final Long id) {
+	public ContactReasonEntity withId(final String id) {
 		this.id = id;
 		return this;
 	}
@@ -81,6 +83,19 @@ public class ContactReasonEntity {
 
 	public ContactReasonEntity withDisplayName(final String displayName) {
 		this.displayName = displayName;
+		return this;
+	}
+
+	public Integer getSortOrder() {
+		return sortOrder;
+	}
+
+	public void setSortOrder(final Integer sortOrder) {
+		this.sortOrder = sortOrder;
+	}
+
+	public ContactReasonEntity withSortOrder(final Integer sortOrder) {
+		this.sortOrder = sortOrder;
 		return this;
 	}
 
@@ -142,6 +157,7 @@ public class ContactReasonEntity {
 			"id='" + id + '\'' +
 			", reason='" + reason + '\'' +
 			", displayName='" + displayName + '\'' +
+			", sortOrder=" + sortOrder +
 			", municipalityId='" + municipalityId + '\'' +
 			", namespace='" + namespace + '\'' +
 			", created=" + created +
@@ -156,13 +172,14 @@ public class ContactReasonEntity {
 		if (o == null || getClass() != o.getClass())
 			return false;
 		final ContactReasonEntity that = (ContactReasonEntity) o;
-		return Objects.equals(id, that.id) && Objects.equals(reason, that.reason) && Objects.equals(displayName, that.displayName) && Objects.equals(municipalityId, that.municipalityId) && Objects.equals(namespace, that.namespace) && Objects.equals(
-			created, that.created) && Objects.equals(modified,
-				that.modified);
+		return Objects.equals(id, that.id) && Objects.equals(reason, that.reason) && Objects.equals(displayName, that.displayName) && Objects.equals(sortOrder, that.sortOrder) && Objects.equals(municipalityId, that.municipalityId) && Objects.equals(
+			namespace, that.namespace) && Objects.equals(
+				created, that.created) && Objects.equals(modified,
+					that.modified);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, reason, displayName, municipalityId, namespace, created, modified);
+		return Objects.hash(id, reason, displayName, sortOrder, municipalityId, namespace, created, modified);
 	}
 }

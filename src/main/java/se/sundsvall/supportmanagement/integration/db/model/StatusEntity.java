@@ -2,7 +2,6 @@ package se.sundsvall.supportmanagement.integration.db.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.PrePersist;
@@ -12,8 +11,8 @@ import jakarta.persistence.UniqueConstraint;
 import java.time.OffsetDateTime;
 import java.util.Objects;
 import org.hibernate.annotations.TimeZoneStorage;
+import org.hibernate.annotations.UuidGenerator;
 
-import static jakarta.persistence.GenerationType.IDENTITY;
 import static java.time.OffsetDateTime.now;
 import static java.time.ZoneId.systemDefault;
 import static java.time.temporal.ChronoUnit.MILLIS;
@@ -32,15 +31,18 @@ import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 public class StatusEntity {
 
 	@Id
-	@GeneratedValue(strategy = IDENTITY)
+	@UuidGenerator
 	@Column(name = "id")
-	private Long id;
+	private String id;
 
 	@Column(name = "name", nullable = false)
 	private String name;
 
 	@Column(name = "display_name")
 	private String displayName;
+
+	@Column(name = "sort_order")
+	private Integer sortOrder;
 
 	@Column(name = "external_display_name")
 	private String externalDisplayName;
@@ -63,15 +65,15 @@ public class StatusEntity {
 		return new StatusEntity();
 	}
 
-	public Long getId() {
+	public String getId() {
 		return id;
 	}
 
-	public void setId(final Long id) {
+	public void setId(final String id) {
 		this.id = id;
 	}
 
-	public StatusEntity withId(final Long id) {
+	public StatusEntity withId(final String id) {
 		this.id = id;
 		return this;
 	}
@@ -112,6 +114,19 @@ public class StatusEntity {
 
 	public StatusEntity withExternalDisplayName(final String externalDisplayName) {
 		this.externalDisplayName = externalDisplayName;
+		return this;
+	}
+
+	public Integer getSortOrder() {
+		return sortOrder;
+	}
+
+	public void setSortOrder(final Integer sortOrder) {
+		this.sortOrder = sortOrder;
+	}
+
+	public StatusEntity withSortOrder(final Integer sortOrder) {
+		this.sortOrder = sortOrder;
 		return this;
 	}
 
@@ -179,7 +194,7 @@ public class StatusEntity {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(created, displayName, externalDisplayName, id, modified, municipalityId, name, namespace);
+		return Objects.hash(created, displayName, externalDisplayName, id, modified, municipalityId, name, namespace, sortOrder);
 	}
 
 	@Override
@@ -196,7 +211,7 @@ public class StatusEntity {
 		final StatusEntity other = (StatusEntity) obj;
 		return Objects.equals(created, other.created) && Objects.equals(displayName, other.displayName) && Objects.equals(externalDisplayName, other.externalDisplayName) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects
 			.equals(municipalityId, other.municipalityId) && Objects.equals(name, other.name) && Objects.equals(namespace,
-				other.namespace);
+				other.namespace) && Objects.equals(sortOrder, other.sortOrder);
 	}
 
 	@Override
@@ -206,6 +221,7 @@ public class StatusEntity {
 			", name='" + name + '\'' +
 			", displayName='" + displayName + '\'' +
 			", externalDisplayName='" + externalDisplayName + '\'' +
+			", sortOrder=" + sortOrder +
 			", municipalityId='" + municipalityId + '\'' +
 			", namespace='" + namespace + '\'' +
 			", created=" + created +
