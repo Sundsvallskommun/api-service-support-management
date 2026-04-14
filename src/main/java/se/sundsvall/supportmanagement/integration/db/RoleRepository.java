@@ -8,7 +8,7 @@ import se.sundsvall.supportmanagement.integration.db.model.RoleEntity;
 
 @Transactional
 @CircuitBreaker(name = "roleRepository")
-public interface RoleRepository extends JpaRepository<RoleEntity, Long> {
+public interface RoleRepository extends JpaRepository<RoleEntity, String> {
 
 	List<RoleEntity> findAllByNamespaceAndMunicipalityId(String namespace, String municipalityId);
 

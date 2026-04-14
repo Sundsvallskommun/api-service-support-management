@@ -29,7 +29,7 @@ import static org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTest
 	"/db/scripts/testdata-junit.sql"
 })
 class StatusRepositoryTest {
-	private static final long TEST_ID = 101;
+	private static final String TEST_ID = "sta-00000000-0000-0000-0000-000000000101";
 
 	@Autowired
 	private StatusRepository statusRepository;

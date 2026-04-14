@@ -394,11 +394,11 @@ public class MetadataService {
 			.toList();
 	}
 
-	public Long createContactReason(final String namespace, final String municipalityId, final ContactReason contactReason) {
+	public String createContactReason(final String namespace, final String municipalityId, final ContactReason contactReason) {
 		return contactReasonRepository.save(toContactReasonEntity(namespace, municipalityId, contactReason)).getId();
 	}
 
-	public ContactReason getContactReasonByIdAndNamespaceAndMunicipalityId(final Long contactReasonId, final String namespace, final String municipalityId) {
+	public ContactReason getContactReasonByIdAndNamespaceAndMunicipalityId(final String contactReasonId, final String namespace, final String municipalityId) {
 		final var contactReasonEntity = contactReasonRepository.findByIdAndNamespaceAndMunicipalityId(contactReasonId, namespace, municipalityId)
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(CONTACT_REASON, contactReasonId, namespace, municipalityId)));
 		return toContactReason(contactReasonEntity);
@@ -410,7 +410,7 @@ public class MetadataService {
 			.toList();
 	}
 
-	public ContactReason patchContactReason(final Long contactReasonId, final String namespace, final String municipalityId, final ContactReason contactReason) {
+	public ContactReason patchContactReason(final String contactReasonId, final String namespace, final String municipalityId, final ContactReason contactReason) {
 		if (!contactReasonRepository.existsByIdAndNamespaceAndMunicipalityId(contactReasonId, namespace, municipalityId)) {
 			throw Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(CONTACT_REASON, contactReasonId, namespace, municipalityId));
 		}
@@ -420,7 +420,7 @@ public class MetadataService {
 	}
 
 	@Transactional
-	public void deleteContactReason(final Long contactReasonId, final String namespace, final String municipalityId) {
+	public void deleteContactReason(final String contactReasonId, final String namespace, final String municipalityId) {
 		if (!contactReasonRepository.existsByIdAndNamespaceAndMunicipalityId(contactReasonId, namespace, municipalityId)) {
 			throw Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(CONTACT_REASON, contactReasonId, namespace, municipalityId));
 		}
