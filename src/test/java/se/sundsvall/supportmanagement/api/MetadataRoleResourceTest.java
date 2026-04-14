@@ -65,14 +65,14 @@ class MetadataRoleResourceTest {
 	@Test
 	void getRole() {
 		// Setup
-		final var roleName = "roleName";
-		final var role = Role.create().withName(roleName);
+		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
+		final var role = Role.create().withId(id).withName("roleName");
 
 		// Mock
-		when(metadataServiceMock.getRole(NAMESPACE, MUNICIPALITY_ID, roleName)).thenReturn(role);
+		when(metadataServiceMock.getRole(NAMESPACE, MUNICIPALITY_ID, id)).thenReturn(role);
 
 		// Call
-		final var response = webTestClient.get().uri(builder -> builder.path(PATH + "/{role}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "role", roleName)))
+		final var response = webTestClient.get().uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", id)))
 			.exchange()
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)
@@ -81,7 +81,7 @@ class MetadataRoleResourceTest {
 			.getResponseBody();
 
 		// Verifications & assertions
-		verify(metadataServiceMock).getRole(NAMESPACE, MUNICIPALITY_ID, roleName);
+		verify(metadataServiceMock).getRole(NAMESPACE, MUNICIPALITY_ID, id);
 		assertThat(response).isNotNull().isEqualTo(role);
 	}
 
@@ -102,15 +102,29 @@ class MetadataRoleResourceTest {
 	@Test
 	void deleteRole() {
 		// Setup
-		final var roleName = "roleName";
+		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
 
 		// Call
-		webTestClient.delete().uri(builder -> builder.path(PATH + "/{role}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "role", roleName)))
+		webTestClient.delete().uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", id)))
 			.exchange()
 			.expectStatus().isEqualTo(HttpStatus.NO_CONTENT);
 
 		// Verifications & assertions
-		verify(metadataServiceMock).deleteRole(NAMESPACE, MUNICIPALITY_ID, roleName);
+		verify(metadataServiceMock).deleteRole(NAMESPACE, MUNICIPALITY_ID, id);
+	}
+
+	@Test
+	void updateRoleReturnsNotImplemented() {
+		// Setup
+		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
+		final var body = Role.create().withName("roleName");
+
+		// Call
+		webTestClient.patch().uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", id)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(body)
+			.exchange()
+			.expectStatus().is5xxServerError();
 	}
 
 }

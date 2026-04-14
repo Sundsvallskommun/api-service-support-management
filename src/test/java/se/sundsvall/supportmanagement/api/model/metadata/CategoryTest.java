@@ -38,6 +38,7 @@ class CategoryTest {
 	void testCreatePattern() {
 		final var created = OffsetDateTime.now();
 		final var displayName = "displayName";
+		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
 		final var modified = OffsetDateTime.now().plusDays(1);
 		final var name = "name";
 		final var types = List.of(Type.create());
@@ -45,12 +46,14 @@ class CategoryTest {
 		final var bean = Category.create()
 			.withCreated(created)
 			.withDisplayName(displayName)
+			.withId(id)
 			.withModified(modified)
 			.withName(name)
 			.withTypes(types);
 
 		assertThat(bean.getCreated()).isEqualTo(created);
 		assertThat(bean.getDisplayName()).isEqualTo(displayName);
+		assertThat(bean.getId()).isEqualTo(id);
 		assertThat(bean.getModified()).isEqualTo(modified);
 		assertThat(bean.getName()).isEqualTo(name);
 		assertThat(bean.getTypes()).isEqualTo(types);

@@ -66,7 +66,7 @@ class MetadataExternalIdTypeResourceFailureTest {
 	@ParameterizedTest
 	@MethodSource("getExternalIdTypeArguments")
 	void getExternalIdTypeWithInvalidArguments(String namespace, String municipalityId, Tuple expectedResponse) {
-		final var response = webTestClient.get().uri(builder -> builder.path(PATH + "/externalIdType").build(Map.of("namespace", namespace, "municipalityId", municipalityId)))
+		final var response = webTestClient.get().uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", namespace, "municipalityId", municipalityId, "id", "5f79a808-0ef3-4985-99b9-b12f23e202a7")))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -115,7 +115,7 @@ class MetadataExternalIdTypeResourceFailureTest {
 	@MethodSource("deleteArguments")
 	void deleteWithInvalidArguments(String namespace, String municipalityId, Tuple expectedResponse) {
 
-		final var response = webTestClient.delete().uri(builder -> builder.path(PATH + "/externalIdType").build(Map.of("namespace", namespace, "municipalityId", municipalityId)))
+		final var response = webTestClient.delete().uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", namespace, "municipalityId", municipalityId, "id", "5f79a808-0ef3-4985-99b9-b12f23e202a7")))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)

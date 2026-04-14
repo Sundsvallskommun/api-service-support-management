@@ -65,14 +65,14 @@ class MetadataStatusResourceTest {
 	@Test
 	void getStatus() {
 		// Setup
-		final var statusName = "statusName";
-		final var status = Status.create().withName(statusName);
+		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
+		final var status = Status.create().withId(id).withName("statusName");
 
 		// Mock
-		when(metadataServiceMock.getStatus(NAMESPACE, MUNICIPALITY_ID, statusName)).thenReturn(status);
+		when(metadataServiceMock.getStatus(NAMESPACE, MUNICIPALITY_ID, id)).thenReturn(status);
 
 		// Call
-		final var response = webTestClient.get().uri(builder -> builder.path(PATH + "/{status}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "status", statusName)))
+		final var response = webTestClient.get().uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", id)))
 			.exchange()
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)
@@ -81,7 +81,7 @@ class MetadataStatusResourceTest {
 			.getResponseBody();
 
 		// Verifications & assertions
-		verify(metadataServiceMock).getStatus(NAMESPACE, MUNICIPALITY_ID, statusName);
+		verify(metadataServiceMock).getStatus(NAMESPACE, MUNICIPALITY_ID, id);
 		assertThat(response).isNotNull().isEqualTo(status);
 	}
 
@@ -102,15 +102,29 @@ class MetadataStatusResourceTest {
 	@Test
 	void deleteStatus() {
 		// Setup
-		final var statusName = "statusName";
+		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
 
 		// Call
-		webTestClient.delete().uri(builder -> builder.path(PATH + "/{status}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "status", statusName)))
+		webTestClient.delete().uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", id)))
 			.exchange()
 			.expectStatus().isEqualTo(HttpStatus.NO_CONTENT);
 
 		// Verifications & assertions
-		verify(metadataServiceMock).deleteStatus(NAMESPACE, MUNICIPALITY_ID, statusName);
+		verify(metadataServiceMock).deleteStatus(NAMESPACE, MUNICIPALITY_ID, id);
+	}
+
+	@Test
+	void updateStatusReturnsNotImplemented() {
+		// Setup
+		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
+		final var body = Status.create().withName("statusName");
+
+		// Call
+		webTestClient.patch().uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", id)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(body)
+			.exchange()
+			.expectStatus().is5xxServerError();
 	}
 
 }
