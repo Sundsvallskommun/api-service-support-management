@@ -33,6 +33,7 @@
 		"recipients": [
 			"john.a@zoidberg.com"
 		],
+		"ccRecipients": [],
 		"internal": false
 	}
 ]

@@ -71,3 +71,10 @@ build/
 .DS_Store
 /CLAUDE.md
 /.claude/
+
+# Local development
+/docker-compose.yml
+/src/main/resources/application-local.yml
+/docker/init.sql
+*.puml
+RELATIONS.md

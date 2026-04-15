@@ -948,6 +948,14 @@ components:
             - mysupportemail@sundsvall.se
           items:
             type: string
+        ccRecipients:
+          type: array
+          description: CC E-Mail addresses
+          example:
+            - cc1@sundsvall.se
+            - cc2@sundsvall.se
+          items:
+            type: string
         sender:
           type: string
           description: Sender E-Mail address

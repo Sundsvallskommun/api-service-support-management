@@ -31,6 +31,7 @@
 		"recipients": [
 			"turanga@leela.com"
 		],
+		"ccRecipients": [],
 		"internal": false
 	}
 ]

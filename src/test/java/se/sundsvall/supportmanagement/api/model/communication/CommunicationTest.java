@@ -69,6 +69,7 @@ class CommunicationTest {
 			.withCommunicationType(messageType)
 			.withTarget(target)
 			.withRecipients(List.of(target))
+			.withCcRecipients(List.of(target))
 			.withViewed(viewed)
 			.withCommunicationAttachments(communicationAttachments)
 			.withEmailHeaders(emailHeaders)

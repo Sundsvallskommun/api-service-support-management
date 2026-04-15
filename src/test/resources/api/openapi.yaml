@@ -5,9 +5,9 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "13.0"
+  version: "13.1"
 servers:
-- url: http://localhost:63145
+- url: http://localhost:51893
   description: Generated server url
 tags:
 - name: Errand attachments
@@ -5731,16 +5731,16 @@ components:
     Problem:
       type: object
       properties:
+        title:
+          type: string
+        detail:
+          type: string
         instance:
           type: string
           format: uri
         type:
           type: string
           format: uri
-        title:
-          type: string
-        detail:
-          type: string
         status:
           type: integer
           format: int32
@@ -5759,13 +5759,13 @@ components:
             $ref: "#/components/schemas/Violation"
         title:
           type: string
+        causeAsProblem:
+          $ref: "#/components/schemas/ThrowableProblem"
+        detail:
+          type: string
         instance:
           type: string
           format: uri
-        detail:
-          type: string
-        causeAsProblem:
-          $ref: "#/components/schemas/ThrowableProblem"
     ThrowableProblem:
       type: object
       properties:
@@ -6749,20 +6749,6 @@ components:
     JsonNode:
       type: object
       properties:
-        empty:
-          type: boolean
-        array:
-          type: boolean
-        "null":
-          type: boolean
-        object:
-          type: boolean
-        float:
-          type: boolean
-        container:
-          type: boolean
-        valueNode:
-          type: boolean
         nodeType:
           type: string
           enum:
@@ -6775,36 +6761,50 @@ components:
           - OBJECT
           - POJO
           - STRING
-        floatingPointNumber:
-          type: boolean
-        bigInteger:
-          type: boolean
-        missingNode:
+        string:
           type: boolean
         integralNumber:
           type: boolean
-        bigDecimal:
+        missingNode:
           type: boolean
-        number:
+        valueNode:
           type: boolean
-        string:
-          type: boolean
-        double:
-          type: boolean
-        textual:
-          type: boolean
-          deprecated: true
         pojo:
           type: boolean
         short:
-          type: boolean
-        boolean:
           type: boolean
         int:
           type: boolean
         long:
           type: boolean
+        double:
+          type: boolean
+        bigDecimal:
+          type: boolean
+        bigInteger:
+          type: boolean
+        textual:
+          type: boolean
+          deprecated: true
+        boolean:
+          type: boolean
         binary:
+          type: boolean
+        container:
+          type: boolean
+        number:
+          type: boolean
+        floatingPointNumber:
+          type: boolean
+        empty:
+          type: boolean
+        array:
+          type: boolean
+        "null":
+          type: boolean
+        object:
+          type: boolean
+        float:
           type: boolean
         embeddedValue:
           type: boolean
@@ -7593,6 +7593,17 @@ components:
         totalElements:
           type: integer
           format: int64
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        first:
+          type: boolean
+        last:
+          type: boolean
+        numberOfElements:
+          type: integer
+          format: int32
         size:
           type: integer
           format: int32
@@ -7603,45 +7614,34 @@ components:
         number:
           type: integer
           format: int32
-        sort:
-          $ref: "#/components/schemas/SortObject"
-        first:
-          type: boolean
-        last:
-          type: boolean
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
-        numberOfElements:
-          type: integer
-          format: int32
         empty:
           type: boolean
     PageableObject:
       type: object
       properties:
-        offset:
-          type: integer
-          format: int64
-        sort:
-          $ref: "#/components/schemas/SortObject"
+        unpaged:
+          type: boolean
+        paged:
+          type: boolean
         pageNumber:
           type: integer
           format: int32
         pageSize:
           type: integer
           format: int32
-        unpaged:
-          type: boolean
-        paged:
-          type: boolean
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        offset:
+          type: integer
+          format: int64
     SortObject:
       type: object
       properties:
-        empty:
-          type: boolean
         unsorted:
           type: boolean
         sorted:
+          type: boolean
+        empty:
           type: boolean
     Revision:
       type: object
@@ -7864,6 +7864,17 @@ components:
         totalElements:
           type: integer
           format: int64
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        first:
+          type: boolean
+        last:
+          type: boolean
+        numberOfElements:
+          type: integer
+          format: int32
         size:
           type: integer
           format: int32
@@ -7872,17 +7883,6 @@ components:
           items:
             $ref: "#/components/schemas/Event"
         number:
-          type: integer
-          format: int32
-        sort:
-          $ref: "#/components/schemas/SortObject"
-        first:
-          type: boolean
-        last:
-          type: boolean
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
-        numberOfElements:
           type: integer
           format: int32
         empty:
@@ -7955,6 +7955,13 @@ components:
           description: "The recipients of the communication, if email"
           examples:
           - "[\"kalle.anka@ankeborg.se\"]"
+          items:
+            type: string
+        ccRecipients:
+          type: array
+          description: "The CC recipients of the communication, if email"
+          examples:
+          - "[\"cc@ankeborg.se\"]"
           items:
             type: string
         internal:
@@ -8085,6 +8092,17 @@ components:
         totalElements:
           type: integer
           format: int64
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        first:
+          type: boolean
+        last:
+          type: boolean
+        numberOfElements:
+          type: integer
+          format: int32
         size:
           type: integer
           format: int32
@@ -8093,17 +8111,6 @@ components:
           items:
             $ref: "#/components/schemas/Message"
         number:
-          type: integer
-          format: int32
-        sort:
-          $ref: "#/components/schemas/SortObject"
-        first:
-          type: boolean
-        last:
-          type: boolean
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
-        numberOfElements:
           type: integer
           format: int32
         empty:

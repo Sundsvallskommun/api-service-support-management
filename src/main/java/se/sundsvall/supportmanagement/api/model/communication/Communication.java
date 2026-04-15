@@ -46,6 +46,9 @@ public class Communication {
 	@Schema(description = "The recipients of the communication, if email", examples = "[\"kalle.anka@ankeborg.se\"]")
 	private List<String> recipients;
 
+	@Schema(description = "The CC recipients of the communication, if email", examples = "[\"cc@ankeborg.se\"]")
+	private List<String> ccRecipients;
+
 	@Schema(description = "Indicates if the communication is internal", examples = "false")
 	private boolean internal;
 
@@ -218,6 +221,19 @@ public class Communication {
 		return this;
 	}
 
+	public List<String> getCcRecipients() {
+		return ccRecipients;
+	}
+
+	public void setCcRecipients(final List<String> ccRecipients) {
+		this.ccRecipients = ccRecipients;
+	}
+
+	public Communication withCcRecipients(final List<String> ccRecipients) {
+		this.ccRecipients = ccRecipients;
+		return this;
+	}
+
 	public Boolean getViewed() {
 		return viewed;
 	}
@@ -264,13 +280,14 @@ public class Communication {
 		final Communication that = (Communication) o;
 		return internal == that.internal && Objects.equals(communicationID, that.communicationID) && Objects.equals(sender, that.sender) && Objects.equals(errandNumber, that.errandNumber) && direction == that.direction
 			&& Objects.equals(messageBody, that.messageBody) && Objects.equals(htmlMessageBody, that.htmlMessageBody) && Objects.equals(sent, that.sent) && Objects.equals(subject, that.subject)
-			&& communicationType == that.communicationType && Objects.equals(target, that.target) && Objects.equals(recipients, that.recipients) && Objects.equals(viewed, that.viewed) && Objects.equals(emailHeaders,
+			&& communicationType == that.communicationType && Objects.equals(target, that.target) && Objects.equals(recipients, that.recipients) && Objects.equals(ccRecipients, that.ccRecipients) && Objects.equals(viewed, that.viewed) && Objects.equals(
+				emailHeaders,
 				that.emailHeaders) && Objects.equals(communicationAttachments, that.communicationAttachments);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(communicationID, sender, errandNumber, direction, messageBody, htmlMessageBody, sent, subject, communicationType, target, recipients, internal, viewed, emailHeaders, communicationAttachments);
+		return Objects.hash(communicationID, sender, errandNumber, direction, messageBody, htmlMessageBody, sent, subject, communicationType, target, recipients, ccRecipients, internal, viewed, emailHeaders, communicationAttachments);
 	}
 
 	@Override
@@ -287,6 +304,7 @@ public class Communication {
 			", communicationType=" + communicationType +
 			", target='" + target + '\'' +
 			", recipients=" + recipients +
+			", ccRecipients=" + ccRecipients +
 			", internal=" + internal +
 			", viewed=" + viewed +
 			", emailHeaders=" + emailHeaders +

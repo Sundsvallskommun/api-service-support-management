@@ -60,6 +60,7 @@ public class CommunicationMapper {
 				.withCommunicationType(e.getType())
 				.withTarget(e.getTarget())
 				.withRecipients(e.getRecipients())
+				.withCcRecipients(e.getCcRecipients())
 				.withViewed(e.isViewed())
 				.withInternal(e.isInternal())
 				.withCommunicationAttachments(toCommunicationAttachments(e.getAttachments(), e.getErrandAttachments())))
