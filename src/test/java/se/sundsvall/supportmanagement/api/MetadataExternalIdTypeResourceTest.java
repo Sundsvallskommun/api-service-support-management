@@ -41,11 +41,11 @@ class MetadataExternalIdTypeResourceTest {
 	@Test
 	void createExternalIdType() {
 		// Setup
-		final var externalIdTypeName = "externalIdTypeName";
-		final var externalIdType = ExternalIdType.create().withName(externalIdTypeName);
+		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
+		final var externalIdType = ExternalIdType.create().withName("externalIdTypeName");
 
 		// Mock
-		when(metadataServiceMock.createExternalIdType(NAMESPACE, MUNICIPALITY_ID, externalIdType)).thenReturn(externalIdTypeName);
+		when(metadataServiceMock.createExternalIdType(NAMESPACE, MUNICIPALITY_ID, externalIdType)).thenReturn(id);
 
 		// Call
 		webTestClient.post()
@@ -55,7 +55,7 @@ class MetadataExternalIdTypeResourceTest {
 			.exchange()
 			.expectStatus().isCreated()
 			.expectHeader().contentType(ALL)
-			.expectHeader().location("/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/metadata/external-id-types/" + externalIdTypeName)
+			.expectHeader().location("/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/metadata/external-id-types/" + id)
 			.expectBody().isEmpty();
 
 		// Verifications & assertions
