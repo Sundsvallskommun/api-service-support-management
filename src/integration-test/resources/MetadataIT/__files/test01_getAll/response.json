@@ -183,6 +183,7 @@
 			"name": "STATUS-1",
 			"displayName": "Status 1",
 			"externalDisplayName": "External Status 1",
+			"sortOrder": 3,
 			"created": "2023-01-01T12:00:00+01:00"
 		},
 		{
@@ -190,6 +191,7 @@
 			"name": "STATUS-2",
 			"displayName": "Status 2",
 			"externalDisplayName": "External Status 2",
+			"sortOrder": 1,
 			"created": "2023-01-01T12:00:00+01:00"
 		},
 		{
@@ -197,6 +199,7 @@
 			"name": "STATUS-3",
 			"displayName": "Status 3",
 			"externalDisplayName": "External Status 3",
+			"sortOrder": 2,
 			"created": "2023-01-01T12:00:00+01:00"
 		}
 	],

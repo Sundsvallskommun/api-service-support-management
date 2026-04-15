@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.api.validation.impl;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import java.util.List;
+import org.springframework.data.domain.Sort;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
 import se.sundsvall.supportmanagement.api.validation.ValidStatus;
 import se.sundsvall.supportmanagement.service.MetadataService;
@@ -24,7 +25,7 @@ public class ValidStatusConstraintValidator extends AbstractTagConstraintValidat
 	}
 
 	private List<String> getStatusNames() {
-		return ofNullable(metadataService.findStatuses(getPathVariable(PATHVARIABLE_NAMESPACE), getPathVariable(PATHVARIABLE_MUNICIPALITY_ID))).orElse(emptyList()).stream()
+		return ofNullable(metadataService.findStatuses(getPathVariable(PATHVARIABLE_NAMESPACE), getPathVariable(PATHVARIABLE_MUNICIPALITY_ID), Sort.unsorted())).orElse(emptyList()).stream()
 			.map(Status::getName)
 			.toList();
 	}

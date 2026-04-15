@@ -10,6 +10,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Sort;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.supportmanagement.api.model.metadata.Label;
 import se.sundsvall.supportmanagement.api.model.metadata.Labels;
@@ -60,7 +61,7 @@ class AddLabelActionTest {
 
 	@Test
 	void getConditionDefinitions() {
-		when(metadataService.findStatuses(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of(
+		when(metadataService.findStatuses(NAMESPACE, MUNICIPALITY_ID, Sort.unsorted())).thenReturn(List.of(
 			Status.create().withName(STATUS_OPEN),
 			Status.create().withName(STATUS_CLOSED)));
 		when(metadataService.findLabels(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Labels.create()
@@ -78,7 +79,7 @@ class AddLabelActionTest {
 		assertThat(result.get(1).getMandatory()).isFalse();
 		assertThat(result.get(1).getPossibleValues()).hasSize(2);
 
-		verify(metadataService).findStatuses(NAMESPACE, MUNICIPALITY_ID);
+		verify(metadataService).findStatuses(NAMESPACE, MUNICIPALITY_ID, Sort.unsorted());
 		verify(metadataService).findLabels(NAMESPACE, MUNICIPALITY_ID);
 		verifyNoMoreInteractions(metadataService);
 	}
@@ -106,7 +107,7 @@ class AddLabelActionTest {
 
 	@Test
 	void validateConditionsWithValidStatusAndLabel() {
-		when(metadataService.findStatuses(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of(Status.create().withName(STATUS_OPEN)));
+		when(metadataService.findStatuses(NAMESPACE, MUNICIPALITY_ID, Sort.unsorted())).thenReturn(List.of(Status.create().withName(STATUS_OPEN)));
 		when(metadataService.findLabels(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Labels.create()
 			.withLabelStructure(List.of(Label.create().withId(LABEL_ID_1).withDisplayName("Label 1").withClassification("type").withResourceName("LABEL_1"))));
 
@@ -114,7 +115,7 @@ class AddLabelActionTest {
 			"status", List.of(STATUS_OPEN),
 			"hasLabel", List.of(LABEL_ID_1)));
 
-		verify(metadataService).findStatuses(NAMESPACE, MUNICIPALITY_ID);
+		verify(metadataService).findStatuses(NAMESPACE, MUNICIPALITY_ID, Sort.unsorted());
 		verify(metadataService).findLabels(NAMESPACE, MUNICIPALITY_ID);
 		verifyNoMoreInteractions(metadataService);
 	}
@@ -128,7 +129,7 @@ class AddLabelActionTest {
 
 	@Test
 	void validateConditionsWithInvalidStatus() {
-		when(metadataService.findStatuses(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of(Status.create().withName(STATUS_OPEN)));
+		when(metadataService.findStatuses(NAMESPACE, MUNICIPALITY_ID, Sort.unsorted())).thenReturn(List.of(Status.create().withName(STATUS_OPEN)));
 
 		assertThatThrownBy(() -> addLabelAction.validateConditions(MUNICIPALITY_ID, NAMESPACE, Map.of("status", List.of("INVALID_STATUS"))))
 			.isInstanceOf(ThrowableProblem.class)

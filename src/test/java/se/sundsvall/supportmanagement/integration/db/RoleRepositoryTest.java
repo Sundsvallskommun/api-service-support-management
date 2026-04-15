@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.data.domain.Example;
+import org.springframework.data.domain.Sort;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 import se.sundsvall.supportmanagement.integration.db.model.RoleEntity;
@@ -139,7 +140,7 @@ class RoleRepositoryTest {
 		final var municipalityId = "2281";
 		final var namespace = "namespace-1";
 
-		final var matches = roleRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId);
+		final var matches = roleRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.unsorted());
 
 		assertThat(matches).hasSize(3)
 			.extracting(

@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -16,6 +17,8 @@ import se.sundsvall.supportmanagement.api.model.metadata.ContactReason;
 import se.sundsvall.supportmanagement.service.MetadataService;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
@@ -90,7 +93,7 @@ class MetadataContactReasonResourceTest {
 		final var contactReason2 = ContactReason.create().withReason("reason2");
 		final var contactReasons = List.of(contactReason1, contactReason2);
 
-		when(metadataServiceMock.findContactReasons(NAMESPACE, MUNICIPALITY_ID)).thenReturn(contactReasons);
+		when(metadataServiceMock.findContactReasons(eq(NAMESPACE), eq(MUNICIPALITY_ID), any(Sort.class))).thenReturn(contactReasons);
 
 		final var result = webTestClient.get().uri(builder -> builder.path(PATH).build(MUNICIPALITY_ID, NAMESPACE, reason))
 			.exchange()

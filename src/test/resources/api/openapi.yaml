@@ -7,7 +7,7 @@ info:
     url: https://opensource.org/licenses/MIT
   version: "14.0"
 servers:
-- url: http://localhost:43499
+- url: http://localhost:44715
   description: Generated server url
 tags:
 - name: Errand attachments
@@ -1049,6 +1049,15 @@ paths:
         schema:
           type: string
         example: 2281
+      - name: sort
+        in: query
+        description: "Sorting criteria in the format: property,(asc|desc). Default\
+          \ sort order is ascending. Multiple sort criteria are supported."
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
       responses:
         "200":
           description: Successful operation
@@ -1145,6 +1154,15 @@ paths:
         schema:
           type: string
         example: 2281
+      - name: sort
+        in: query
+        description: "Sorting criteria in the format: property,(asc|desc). Default\
+          \ sort order is ascending. Multiple sort criteria are supported."
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
       responses:
         "200":
           description: Successful operation
@@ -1447,6 +1465,15 @@ paths:
         schema:
           type: string
         example: 2281
+      - name: sort
+        in: query
+        description: "Sorting criteria in the format: property,(asc|desc). Default\
+          \ sort order is ascending. Multiple sort criteria are supported."
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
       responses:
         "200":
           description: Successful operation
@@ -1543,6 +1570,15 @@ paths:
         schema:
           type: string
         example: 2281
+      - name: sort
+        in: query
+        description: "Sorting criteria in the format: property,(asc|desc). Default\
+          \ sort order is ascending. Multiple sort criteria are supported."
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
       responses:
         "200":
           description: Successful operation
@@ -1640,6 +1676,15 @@ paths:
         schema:
           type: string
         example: 2281
+      - name: sort
+        in: query
+        description: "Sorting criteria in the format: property,(asc|desc). Default\
+          \ sort order is ascending. Multiple sort criteria are supported."
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
       responses:
         "200":
           description: Successful operation
@@ -6347,6 +6392,14 @@ components:
           description: External display name for the status
           examples:
           - External status name
+        sortOrder:
+          type:
+          - integer
+          - "null"
+          format: int32
+          description: Sort order for the status
+          examples:
+          - "1"
         created:
           type: string
           format: date-time
@@ -6386,6 +6439,14 @@ components:
           description: Display name for the role
           examples:
           - Role name
+        sortOrder:
+          type:
+          - integer
+          - "null"
+          format: int32
+          description: Sort order for the role
+          examples:
+          - "1"
         created:
           type: string
           format: date-time
@@ -6521,6 +6582,14 @@ components:
           description: Display name for the external id type
           examples:
           - External id type name
+        sortOrder:
+          type:
+          - integer
+          - "null"
+          format: int32
+          description: Sort order for the external id type
+          examples:
+          - "1"
         created:
           type: string
           format: date-time
@@ -6560,6 +6629,14 @@ components:
           description: Display name for the contact reason
           examples:
           - Contact reason name
+        sortOrder:
+          type:
+          - integer
+          - "null"
+          format: int32
+          description: Sort order for the contact reason
+          examples:
+          - "1"
         created:
           type: string
           format: date-time
@@ -6596,6 +6673,14 @@ components:
           description: Display name for the category
           examples:
           - Displayed name
+        sortOrder:
+          type:
+          - integer
+          - "null"
+          format: int32
+          description: Sort order for the category
+          examples:
+          - "1"
         types:
           type: array
           items:
@@ -6968,25 +7053,6 @@ components:
           type: boolean
         number:
           type: boolean
-        pojo:
-          type: boolean
-        floatingPointNumber:
-          type: boolean
-        short:
-          type: boolean
-        int:
-          type: boolean
-        long:
-          type: boolean
-        double:
-          type: boolean
-        bigDecimal:
-          type: boolean
-        bigInteger:
-          type: boolean
-        textual:
-          type: boolean
-          deprecated: true
         boolean:
           type: boolean
         binary:
@@ -7011,6 +7077,25 @@ components:
           type: boolean
         integralNumber:
           type: boolean
+        pojo:
+          type: boolean
+        floatingPointNumber:
+          type: boolean
+        short:
+          type: boolean
+        int:
+          type: boolean
+        long:
+          type: boolean
+        double:
+          type: boolean
+        bigDecimal:
+          type: boolean
+        bigInteger:
+          type: boolean
+        textual:
+          type: boolean
+          deprecated: true
         embeddedValue:
           type: boolean
     JsonParameter:
@@ -7792,12 +7877,12 @@ components:
     PageErrand:
       type: object
       properties:
-        totalPages:
-          type: integer
-          format: int32
         totalElements:
           type: integer
           format: int64
+        totalPages:
+          type: integer
+          format: int32
         size:
           type: integer
           format: int32
@@ -7810,12 +7895,12 @@ components:
           format: int32
         pageable:
           $ref: "#/components/schemas/PageableObject"
-        sort:
-          $ref: "#/components/schemas/SortObject"
         first:
           type: boolean
         last:
           type: boolean
+        sort:
+          $ref: "#/components/schemas/SortObject"
         numberOfElements:
           type: integer
           format: int32
@@ -8063,12 +8148,12 @@ components:
     PageEvent:
       type: object
       properties:
-        totalPages:
-          type: integer
-          format: int32
         totalElements:
           type: integer
           format: int64
+        totalPages:
+          type: integer
+          format: int32
         size:
           type: integer
           format: int32
@@ -8081,12 +8166,12 @@ components:
           format: int32
         pageable:
           $ref: "#/components/schemas/PageableObject"
-        sort:
-          $ref: "#/components/schemas/SortObject"
         first:
           type: boolean
         last:
           type: boolean
+        sort:
+          $ref: "#/components/schemas/SortObject"
         numberOfElements:
           type: integer
           format: int32
@@ -8291,12 +8376,12 @@ components:
     PageMessage:
       type: object
       properties:
-        totalPages:
-          type: integer
-          format: int32
         totalElements:
           type: integer
           format: int64
+        totalPages:
+          type: integer
+          format: int32
         size:
           type: integer
           format: int32
@@ -8309,12 +8394,12 @@ components:
           format: int32
         pageable:
           $ref: "#/components/schemas/PageableObject"
-        sort:
-          $ref: "#/components/schemas/SortObject"
         first:
           type: boolean
         last:
           type: boolean
+        sort:
+          $ref: "#/components/schemas/SortObject"
         numberOfElements:
           type: integer
           format: int32

@@ -12,6 +12,7 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Sort;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 import se.sundsvall.dept44.problem.ThrowableProblem;
@@ -21,6 +22,7 @@ import se.sundsvall.supportmanagement.service.MetadataService;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
@@ -61,7 +63,7 @@ class ValidStatusConstraintValidatorTest {
 			assertThat(validator.isValid("status-1", constraintValidatorContextMock)).isFalse();
 			verify(constraintValidatorContextMock).buildConstraintViolationWithTemplate(any());
 			verify(constraintViolationBuilderMock).addConstraintViolation();
-			verify(metadataServiceMock).findStatuses(namespace, municipalityId);
+			verify(metadataServiceMock).findStatuses(eq(namespace), eq(municipalityId), any(Sort.class));
 		}
 	}
 
@@ -74,10 +76,10 @@ class ValidStatusConstraintValidatorTest {
 		try (MockedStatic<RequestContextHolder> requestContextHolderMock = Mockito.mockStatic(RequestContextHolder.class)) {
 			requestContextHolderMock.when(RequestContextHolder::getRequestAttributes).thenReturn(requestAttributesMock);
 			when(requestAttributesMock.getAttribute(URI_TEMPLATE_VARIABLES_ATTRIBUTE, SCOPE_REQUEST)).thenReturn(attributes);
-			when(metadataServiceMock.findStatuses(namespace, municipalityId)).thenReturn(List.of(Status.create().withName("STATUS-1")));
+			when(metadataServiceMock.findStatuses(eq(namespace), eq(municipalityId), any(Sort.class))).thenReturn(List.of(Status.create().withName("STATUS-1")));
 
 			assertThat(validator.isValid("status-1", constraintValidatorContextMock)).isTrue();
-			verify(metadataServiceMock).findStatuses(namespace, municipalityId);
+			verify(metadataServiceMock).findStatuses(eq(namespace), eq(municipalityId), any(Sort.class));
 		}
 	}
 
@@ -92,7 +94,7 @@ class ValidStatusConstraintValidatorTest {
 			when(requestAttributesMock.getAttribute(URI_TEMPLATE_VARIABLES_ATTRIBUTE, SCOPE_REQUEST)).thenReturn(attributes);
 
 			assertThat(validator.isValid(null, constraintValidatorContextMock)).isTrue();
-			verify(metadataServiceMock).findStatuses(namespace, municipalityId);
+			verify(metadataServiceMock).findStatuses(eq(namespace), eq(municipalityId), any(Sort.class));
 		}
 	}
 
@@ -107,7 +109,7 @@ class ValidStatusConstraintValidatorTest {
 			when(requestAttributesMock.getAttribute(URI_TEMPLATE_VARIABLES_ATTRIBUTE, SCOPE_REQUEST)).thenReturn(attributes);
 
 			assertThat(validator.isValid(" ", constraintValidatorContextMock)).isTrue();
-			verify(metadataServiceMock).findStatuses(namespace, municipalityId);
+			verify(metadataServiceMock).findStatuses(eq(namespace), eq(municipalityId), any(Sort.class));
 		}
 	}
 

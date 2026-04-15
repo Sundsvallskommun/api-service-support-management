@@ -25,6 +25,11 @@ public class Role {
 	})
 	private String displayName;
 
+	@Schema(description = "Sort order for the role", examples = "1", types = {
+		"integer", "null"
+	})
+	private Integer sortOrder;
+
 	@Schema(description = "Timestamp when the role was created", examples = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	@DateTimeFormat(iso = ISO.DATE_TIME)
 	@Null
@@ -104,9 +109,22 @@ public class Role {
 		return this;
 	}
 
+	public Integer getSortOrder() {
+		return sortOrder;
+	}
+
+	public void setSortOrder(final Integer sortOrder) {
+		this.sortOrder = sortOrder;
+	}
+
+	public Role withSortOrder(final Integer sortOrder) {
+		this.sortOrder = sortOrder;
+		return this;
+	}
+
 	@Override
 	public int hashCode() {
-		return Objects.hash(created, modified, id, name, displayName);
+		return Objects.hash(created, modified, id, name, displayName, sortOrder);
 	}
 
 	@Override
@@ -117,7 +135,8 @@ public class Role {
 		if (!(obj instanceof final Role other)) {
 			return false;
 		}
-		return Objects.equals(created, other.created) && Objects.equals(modified, other.modified) && Objects.equals(id, other.id) && Objects.equals(name, other.name) && Objects.equals(displayName, other.displayName);
+		return Objects.equals(created, other.created) && Objects.equals(modified, other.modified) && Objects.equals(id, other.id) && Objects.equals(name, other.name) && Objects.equals(displayName, other.displayName) && Objects.equals(sortOrder,
+			other.sortOrder);
 	}
 
 	@Override
@@ -126,6 +145,7 @@ public class Role {
 			"id='" + id + '\'' +
 			", name='" + name + '\'' +
 			", displayName='" + displayName + '\'' +
+			", sortOrder=" + sortOrder +
 			", created=" + created +
 			", modified=" + modified +
 			'}';

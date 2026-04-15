@@ -15,6 +15,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.test.context.jdbc.Sql;
 import se.sundsvall.dept44.test.AbstractAppTest;
 import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
@@ -125,7 +126,7 @@ class MetadataRoleIT extends AbstractAppTest {
 			.sendRequestAndVerifyResponse();
 
 		assertThat(roleRepository.existsByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_2281, "ROLE_WITH_DISPLAY_NAME")).isTrue();
-		assertThat(roleRepository.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_2281))
+		assertThat(roleRepository.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_2281, Sort.unsorted()))
 			.filteredOn(role -> "ROLE_WITH_DISPLAY_NAME".equals(role.getName()))
 			.singleElement()
 			.satisfies(role -> assertThat(role.getDisplayName()).isEqualTo("Display name of role"));

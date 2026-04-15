@@ -50,6 +50,7 @@ public class MetadataMapper {
 				.withId(e.getId())
 				.withCreated(e.getCreated())
 				.withDisplayName(e.getDisplayName())
+				.withSortOrder(e.getSortOrder())
 				.withModified(e.getModified())
 				.withName(e.getName())
 				.withTypes(toTypes(e.getTypes()))).orElse(null);
@@ -63,6 +64,7 @@ public class MetadataMapper {
 			.withNamespace(namespace)
 			.withMunicipalityId(municipalityId)
 			.withDisplayName(category.getDisplayName())
+			.withSortOrder(category.getSortOrder())
 			.withName(category.getName())
 			.withTypes(toTypeEntities(category.getTypes()));
 	}
@@ -113,6 +115,7 @@ public class MetadataMapper {
 				.withCreated(e.getCreated())
 				.withDisplayName(e.getDisplayName())
 				.withExternalDisplayName(e.getExternalDisplayName())
+				.withSortOrder(e.getSortOrder())
 				.withModified(e.getModified())
 				.withName(e.getName()))
 			.orElse(null);
@@ -126,6 +129,7 @@ public class MetadataMapper {
 		return StatusEntity.create()
 			.withDisplayName(status.getDisplayName())
 			.withExternalDisplayName(status.getExternalDisplayName())
+			.withSortOrder(status.getSortOrder())
 			.withMunicipalityId(municipalityId)
 			.withName(status.getName())
 			.withNamespace(namespace);
@@ -142,7 +146,8 @@ public class MetadataMapper {
 				.withCreated(e.getCreated())
 				.withModified(e.getModified())
 				.withName(e.getName())
-				.withDisplayName(e.getDisplayName()))
+				.withDisplayName(e.getDisplayName())
+				.withSortOrder(e.getSortOrder()))
 			.orElse(null);
 	}
 
@@ -155,6 +160,7 @@ public class MetadataMapper {
 			.withMunicipalityId(municipalityId)
 			.withName(role.getName())
 			.withDisplayName(role.getDisplayName())
+			.withSortOrder(role.getSortOrder())
 			.withNamespace(namespace);
 	}
 
@@ -168,6 +174,7 @@ public class MetadataMapper {
 				.withId(e.getId())
 				.withCreated(e.getCreated())
 				.withDisplayName(e.getDisplayName())
+				.withSortOrder(e.getSortOrder())
 				.withModified(e.getModified())
 				.withName(e.getName()))
 			.orElse(null);
@@ -180,6 +187,7 @@ public class MetadataMapper {
 
 		return ExternalIdTypeEntity.create()
 			.withDisplayName(externalIdType.getDisplayName())
+			.withSortOrder(externalIdType.getSortOrder())
 			.withMunicipalityId(municipalityId)
 			.withName(externalIdType.getName())
 			.withNamespace(namespace);
@@ -192,6 +200,7 @@ public class MetadataMapper {
 
 		ofNullable(category.getName()).ifPresent(entity::setName);
 		ofNullable(category.getDisplayName()).ifPresent(entity::setDisplayName);
+		ofNullable(category.getSortOrder()).ifPresent(entity::setSortOrder);
 		ofNullable(category.getTypes()).ifPresent(value -> updateTypes(entity, value));
 
 		return entity;
@@ -204,6 +213,7 @@ public class MetadataMapper {
 
 		ofNullable(role.getName()).ifPresent(entity::setName);
 		ofNullable(role.getDisplayName()).ifPresent(entity::setDisplayName);
+		ofNullable(role.getSortOrder()).ifPresent(entity::setSortOrder);
 
 		return entity;
 	}
@@ -216,6 +226,7 @@ public class MetadataMapper {
 		ofNullable(status.getName()).ifPresent(entity::setName);
 		ofNullable(status.getDisplayName()).ifPresent(entity::setDisplayName);
 		ofNullable(status.getExternalDisplayName()).ifPresent(entity::setExternalDisplayName);
+		ofNullable(status.getSortOrder()).ifPresent(entity::setSortOrder);
 
 		return entity;
 	}
@@ -227,6 +238,7 @@ public class MetadataMapper {
 
 		ofNullable(externalIdType.getName()).ifPresent(entity::setName);
 		ofNullable(externalIdType.getDisplayName()).ifPresent(entity::setDisplayName);
+		ofNullable(externalIdType.getSortOrder()).ifPresent(entity::setSortOrder);
 
 		return entity;
 	}
@@ -440,6 +452,7 @@ public class MetadataMapper {
 				.withId(contactReasonEntity.getId())
 				.withReason(entity.getReason())
 				.withDisplayName(entity.getDisplayName())
+				.withSortOrder(entity.getSortOrder())
 				.withModified(entity.getModified())
 				.withCreated(entity.getCreated()))
 			.orElse(null);
@@ -450,6 +463,7 @@ public class MetadataMapper {
 			.map(request -> ContactReasonEntity.create()
 				.withReason(request.getReason())
 				.withDisplayName(request.getDisplayName())
+				.withSortOrder(request.getSortOrder())
 				.withNamespace(namespace)
 				.withMunicipalityId(municipalityId)
 				.withCreated(now())
@@ -464,6 +478,7 @@ public class MetadataMapper {
 
 		ofNullable(contactReason.getReason()).ifPresent(entity::setReason);
 		ofNullable(contactReason.getDisplayName()).ifPresent(entity::setDisplayName);
+		ofNullable(contactReason.getSortOrder()).ifPresent(entity::setSortOrder);
 
 		return entity;
 	}
