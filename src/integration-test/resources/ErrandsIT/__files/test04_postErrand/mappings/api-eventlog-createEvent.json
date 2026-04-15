@@ -32,6 +32,10 @@
 							"value": "The channel"
 						},
 						{
+							"key": "CaseId",
+							"value": "8849-2848"
+						},
+						{
 							"key": "Status",
 							"value": "STATUS-2"
 						}

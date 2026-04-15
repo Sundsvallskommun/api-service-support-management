@@ -39,6 +39,7 @@ class EventlogMapperTest {
 	private static final String META_VALUE = "metaValue";
 	private static final Map<String, String> META_DATA = Map.of(META_KEY, META_VALUE);
 	private static final String KEY_CASE_ID = "CaseId";
+	private static final String KEY_CASE_ID2 = "caseId";
 	private static final String KEY_PREVIOUS_REVISION = "PreviousRevision";
 	private static final String KEY_PREVIOUS_VERSION = "PreviousVersion";
 	private static final String KEY_CURRENT_REVISION = "CurrentRevision";
@@ -121,6 +122,10 @@ class EventlogMapperTest {
 	private static Stream<Arguments> metadataMapArgumentProvider() {
 		return Stream.of(
 			Arguments.of(ErrandEntity.create().withExternalTags(List.of(DbExternalTag.create().withKey(KEY_CASE_ID).withValue(CASE_ID))), null, null, Map.of(KEY_CASE_ID, CASE_ID)),
+			Arguments.of(ErrandEntity.create().withExternalTags(List.of(DbExternalTag.create().withKey(KEY_CASE_ID2).withValue(CASE_ID))), null, null, Map.of(KEY_CASE_ID, CASE_ID)),
+			Arguments.of(ErrandEntity.create().withExternalTags(List.of(DbExternalTag.create().withKey(KEY_CASE_ID2))), null, null, emptyMap()),
+			Arguments.of(ErrandEntity.create().withExternalTags(List.of(DbExternalTag.create().withValue(CASE_ID))), null, null, emptyMap()),
+			Arguments.of(ErrandEntity.create().withExternalTags(List.of(DbExternalTag.create())), null, null, emptyMap()),
 			Arguments.of(null, null, Revision.create().withId(PREVIOUS_ID).withVersion(PREVIOUS_VERSION), Map.of(KEY_PREVIOUS_REVISION, PREVIOUS_ID, KEY_PREVIOUS_VERSION, String.valueOf(PREVIOUS_VERSION))),
 			Arguments.of(null, Revision.create().withId(CURRENT_ID).withVersion(CURRENT_VERSION), null, Map.of(KEY_CURRENT_REVISION, CURRENT_ID, KEY_CURRENT_VERSION, String.valueOf(CURRENT_VERSION))),
 			Arguments.of(null, null, null, emptyMap()));
