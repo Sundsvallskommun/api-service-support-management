@@ -4,6 +4,7 @@ import generated.se.sundsvall.relation.Relation;
 import generated.se.sundsvall.relation.ResourceIdentifier;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
 import org.slf4j.Logger;
@@ -32,7 +33,6 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandPhaseEntity;
 import se.sundsvall.supportmanagement.integration.db.model.JsonParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
-import se.sundsvall.supportmanagement.service.model.ReferredFrom;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
@@ -348,14 +348,17 @@ public final class ErrandMapper {
 			.toList();
 	}
 
-	public static Relation toReferredFromRelation(final String namespace, final ReferredFrom referredFrom, final String newErrandId) {
+	public static Relation toReferredFromRelation(final String namespace, final se.sundsvall.dept44.support.Relation referredFrom, final String newErrandId) {
+		if (Objects.isNull(referredFrom) || Objects.isNull(referredFrom.getSource())) {
+			return null;
+		}
 		return new Relation()
 			.type(REFERRED_FROM_RELATION_TYPE)
 			.source(new ResourceIdentifier()
-				.resourceId(referredFrom.identifier())
+				.resourceId(referredFrom.getSource().getResourceId())
 				.type(REFERRED_FROM_RESOURCE_IDENTIFIER_TYPE)
-				.service(referredFrom.service())
-				.namespace(referredFrom.namespace()))
+				.service(referredFrom.getSource().getService())
+				.namespace(referredFrom.getSource().getNamespace()))
 			.target(new ResourceIdentifier()
 				.resourceId(newErrandId)
 				.type(REFERRED_FROM_RESOURCE_IDENTIFIER_TYPE)

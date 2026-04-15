@@ -9,7 +9,6 @@ import generated.se.sundsvall.relation.ResourceIdentifier;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
-import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -30,7 +29,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
-import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
 import se.sundsvall.supportmanagement.api.model.errand.Priority;
@@ -65,7 +63,6 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.data.domain.Sort.Direction.DESC;
-import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrand;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrandEntity;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationSubType.ERRAND;
@@ -172,16 +169,17 @@ class ErrandServiceTest {
 	void createErrandWithReferredFrom() {
 		// Setup
 		final var errand = buildErrand();
+		final var referredFromType = "referredFromType";
 		final var referredFromService = "referredFromService";
 		final var referredFromNamespace = "referredFromNamespace";
 		final var referredFromIdentifier = "referredFromIdentifier";
-		final var referredFrom = referredFromService + "," + referredFromNamespace + "," + referredFromIdentifier;
+		final var referredFrom = "|" + referredFromIdentifier + ";" + referredFromType + ";" + referredFromService + ";" + referredFromNamespace + "|";
 		final var relation = new Relation()
 			.type(REFERRED_FROM_RELATION_TYPE)
 			.source(new ResourceIdentifier()
 				.resourceId(referredFromIdentifier)
 				.type(REFERRED_FROM_RESOURCE_IDENTIFIER_TYPE)
-				.service(referredFromService)
+				.service(referredFromService.toLowerCase())
 				.namespace(referredFromNamespace))
 			.target(new ResourceIdentifier()
 				.resourceId(ERRAND_ID)
@@ -414,30 +412,23 @@ class ErrandServiceTest {
 	}
 
 	@ParameterizedTest
-	@MethodSource("argumentsForExpandReferredFrom")
-	void expandReferredFrom(final String input, final boolean expectSuccess) {
+	@MethodSource("argumentsForExpandRelation")
+	void expandRelation(final String input, final boolean expectSuccess, final Class<? extends Exception> expectedException) {
 		if (expectSuccess) {
-			assertThatNoException().isThrownBy(() -> service.expandReferredFrom(input));
+			assertThatNoException().isThrownBy(() -> service.expandRelation(input));
 		} else {
 			assertThatException()
-				.isThrownBy(() -> service.expandReferredFrom(input))
-				.asInstanceOf(InstanceOfAssertFactories.type(ThrowableProblem.class))
-				.satisfies(thrownProblem -> {
-					assertThat(thrownProblem.getStatus()).isEqualTo(BAD_REQUEST);
-					assertThat(thrownProblem.getMessage()).endsWith("Referred from should be three non-blank comma-separated parts: <service>,<namespace>,<identifier>");
-				});
+				.isThrownBy(() -> service.expandRelation(input))
+				.isInstanceOf(expectedException);
 		}
 	}
 
-	static Stream<Arguments> argumentsForExpandReferredFrom() {
+	static Stream<Arguments> argumentsForExpandRelation() {
 		return Stream.of(
-			argumentSet("null input", null, false),
-			argumentSet("blank input", "", false),
-			argumentSet("too few parts", "someService,someNamespace", false),
-			argumentSet("too many parts", "someService,someNamespace,someIdentifier,somethingElse", false),
-			argumentSet("some blank part", "someService,someNamespace,", false),
-			argumentSet("all blank parts", ",,", false),
-			argumentSet("valid input", "someService,someNamespace,someIdentifier", true));
+			argumentSet("null input", null, false, IllegalArgumentException.class),
+			argumentSet("blank input", "", false, IllegalArgumentException.class),
+			argumentSet("invalid format", "someService,someNamespace", false, IllegalArgumentException.class),
+			argumentSet("valid input", "REFERRED_FROM|someIdentifier;case;someService;someNamespace|", true, null));
 	}
 
 	@AfterEach

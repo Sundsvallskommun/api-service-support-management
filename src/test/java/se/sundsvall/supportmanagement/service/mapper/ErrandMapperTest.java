@@ -35,7 +35,6 @@ import se.sundsvall.supportmanagement.integration.db.model.ParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.PhaseEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderParameterEntity;
-import se.sundsvall.supportmanagement.service.model.ReferredFrom;
 import tools.jackson.databind.ObjectMapper;
 
 import static java.time.OffsetDateTime.now;
@@ -654,10 +653,13 @@ class ErrandMapperTest {
 
 	@Test
 	void testToReferredFromRelation() {
+		final var referredFromType = "someType";
 		final var referredFromService = "someService";
 		final var referredFromNamespace = "someNamespace";
 		final var referredFromErrandId = "foo-bar-123456";
-		final var referredFrom = new ReferredFrom(referredFromService, referredFromNamespace, referredFromErrandId);
+		final var referredFrom = se.sundsvall.dept44.support.Relation.create(referredFromType,
+			se.sundsvall.dept44.support.Relation.ResourceIdentifier.create(referredFromErrandId, "case", referredFromService, referredFromNamespace),
+			null);
 		final var newErrandId = "someRandomId";
 
 		final var relation = toReferredFromRelation(NAMESPACE, referredFrom, newErrandId);
@@ -674,7 +676,7 @@ class ErrandMapperTest {
 			.containsExactly(
 				referredFromErrandId,
 				"case",
-				referredFromService,
+				referredFromService.toLowerCase(),
 				referredFromNamespace);
 
 		assertThat(relation.getTarget())
