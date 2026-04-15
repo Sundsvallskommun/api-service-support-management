@@ -41,11 +41,11 @@ class MetadataRoleResourceTest {
 	@Test
 	void createRole() {
 		// Setup
-		final var roleName = "roleName";
-		final var role = Role.create().withName(roleName);
+		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
+		final var role = Role.create().withName("roleName");
 
 		// Mock
-		when(metadataServiceMock.createRole(NAMESPACE, MUNICIPALITY_ID, role)).thenReturn(roleName);
+		when(metadataServiceMock.createRole(NAMESPACE, MUNICIPALITY_ID, role)).thenReturn(id);
 
 		// Call
 		webTestClient.post()
@@ -55,7 +55,7 @@ class MetadataRoleResourceTest {
 			.exchange()
 			.expectStatus().isCreated()
 			.expectHeader().contentType(ALL)
-			.expectHeader().location("/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/metadata/roles/" + roleName)
+			.expectHeader().location("/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/metadata/roles/" + id)
 			.expectBody().isEmpty();
 
 		// Verifications & assertions

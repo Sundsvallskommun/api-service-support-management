@@ -41,11 +41,11 @@ class MetadataStatusResourceTest {
 	@Test
 	void createStatus() {
 		// Setup
-		final var statusName = "statusName";
-		final var status = Status.create().withName(statusName);
+		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
+		final var status = Status.create().withName("statusName");
 
 		// Mock
-		when(metadataServiceMock.createStatus(NAMESPACE, MUNICIPALITY_ID, status)).thenReturn(statusName);
+		when(metadataServiceMock.createStatus(NAMESPACE, MUNICIPALITY_ID, status)).thenReturn(id);
 
 		// Call
 		webTestClient.post()
@@ -55,7 +55,7 @@ class MetadataStatusResourceTest {
 			.exchange()
 			.expectStatus().isCreated()
 			.expectHeader().contentType(ALL)
-			.expectHeader().location("/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/metadata/statuses/" + statusName)
+			.expectHeader().location("/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/metadata/statuses/" + id)
 			.expectBody().isEmpty();
 
 		// Verifications & assertions

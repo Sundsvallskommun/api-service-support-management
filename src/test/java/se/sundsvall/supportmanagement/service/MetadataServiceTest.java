@@ -87,16 +87,17 @@ class MetadataServiceTest {
 	@Test
 	void createStatus() {
 		// Setup
+		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
 		final var name = "name";
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
 		final var status = Status.create().withName(name);
 
 		// Mock
-		when(statusRepositoryMock.save(any())).thenReturn(StatusEntity.create().withName(name));
+		when(statusRepositoryMock.save(any())).thenReturn(StatusEntity.create().withId(id).withName(name));
 
 		// Call
-		assertThat(metadataService.createStatus(namespace, municipalityId, status)).isEqualTo(name);
+		assertThat(metadataService.createStatus(namespace, municipalityId, status)).isEqualTo(id);
 
 		// Verifications
 		verify(statusRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
@@ -291,16 +292,17 @@ class MetadataServiceTest {
 	@Test
 	void createRole() {
 		// Setup
+		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
 		final var name = "name";
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
 		final var role = Role.create().withName(name);
 
 		// Mock
-		when(roleRepositoryMock.save(any())).thenReturn(RoleEntity.create().withName(name));
+		when(roleRepositoryMock.save(any())).thenReturn(RoleEntity.create().withId(id).withName(name));
 
 		// Call
-		assertThat(metadataService.createRole(namespace, municipalityId, role)).isEqualTo(name);
+		assertThat(metadataService.createRole(namespace, municipalityId, role)).isEqualTo(id);
 
 		// Verifications
 		verify(roleRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
@@ -492,16 +494,17 @@ class MetadataServiceTest {
 	@Test
 	void createCategory() {
 		// Setup
+		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
 		final var name = "name";
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
 		final var category = Category.create().withName(name);
 
 		// Mock
-		when(categoryRepositoryMock.save(any())).thenReturn(CategoryEntity.create().withName(name));
+		when(categoryRepositoryMock.save(any())).thenReturn(CategoryEntity.create().withId(id).withName(name));
 
 		// Call
-		assertThat(metadataService.createCategory(namespace, municipalityId, category)).isEqualTo(name);
+		assertThat(metadataService.createCategory(namespace, municipalityId, category)).isEqualTo(id);
 
 		// Verifications
 		verify(categoryRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
@@ -775,16 +778,17 @@ class MetadataServiceTest {
 	@Test
 	void createExternalIdType() {
 		// Setup
+		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
 		final var name = "name";
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
 		final var externalIdType = ExternalIdType.create().withName(name);
 
 		// Mock
-		when(externalIdTypeRepositoryMock.save(any())).thenReturn(ExternalIdTypeEntity.create().withName(name));
+		when(externalIdTypeRepositoryMock.save(any())).thenReturn(ExternalIdTypeEntity.create().withId(id).withName(name));
 
 		// Call
-		assertThat(metadataService.createExternalIdType(namespace, municipalityId, externalIdType)).isEqualTo(name);
+		assertThat(metadataService.createExternalIdType(namespace, municipalityId, externalIdType)).isEqualTo(id);
 
 		// Verifications
 		verify(externalIdTypeRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);

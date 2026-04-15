@@ -1,6 +1,7 @@
 {
 	"categories": [
 		{
+			"id": "aa000000-0000-0000-0000-000000000100",
 			"name": "CATEGORY-1",
 			"displayName": "CATEGORY-DISPLAY-NAME-1",
 			"types": [
@@ -26,6 +27,7 @@
 			"created": "2023-01-01T12:00:00+01:00"
 		},
 		{
+			"id": "aa000000-0000-0000-0000-000000000101",
 			"name": "CATEGORY-2",
 			"displayName": "CATEGORY-DISPLAY-NAME-2",
 			"types": [
@@ -45,6 +47,7 @@
 			"created": "2023-01-01T12:00:00+01:00"
 		},
 		{
+			"id": "aa000000-0000-0000-0000-000000000102",
 			"name": "CATEGORY-3",
 			"displayName": "CATEGORY-DISPLAY-NAME-3",
 			"types": [
@@ -60,16 +63,19 @@
 	],
 	"externalIdTypes": [
 		{
+			"id": "dd000000-0000-0000-0000-000000000100",
 			"name": "EXTERNAL-ID-TYPE-1",
 			"displayName": "External Id Type 1",
 			"created": "2023-01-01T12:00:00+01:00"
 		},
 		{
+			"id": "dd000000-0000-0000-0000-000000000101",
 			"name": "EXTERNAL-ID-TYPE-2",
 			"displayName": "External Id Type 2",
 			"created": "2023-01-01T12:00:00+01:00"
 		},
 		{
+			"id": "dd000000-0000-0000-0000-000000000102",
 			"name": "EXTERNAL-ID-TYPE-3",
 			"displayName": "External Id Type 3",
 			"created": "2023-01-01T12:00:00+01:00"
@@ -173,18 +179,21 @@
 	},
 	"statuses": [
 		{
+			"id": "bb000000-0000-0000-0000-000000000100",
 			"name": "STATUS-1",
 			"displayName": "Status 1",
 			"externalDisplayName": "External Status 1",
 			"created": "2023-01-01T12:00:00+01:00"
 		},
 		{
+			"id": "bb000000-0000-0000-0000-000000000101",
 			"name": "STATUS-2",
 			"displayName": "Status 2",
 			"externalDisplayName": "External Status 2",
 			"created": "2023-01-01T12:00:00+01:00"
 		},
 		{
+			"id": "bb000000-0000-0000-0000-000000000102",
 			"name": "STATUS-3",
 			"displayName": "Status 3",
 			"externalDisplayName": "External Status 3",
@@ -193,14 +202,17 @@
 	],
 	"roles": [
 		{
+			"id": "cc000000-0000-0000-0000-000000000100",
 			"name": "ROLE-1",
 			"created": "2023-01-01T12:00:00+01:00"
 		},
 		{
+			"id": "cc000000-0000-0000-0000-000000000101",
 			"name": "ROLE-2",
 			"created": "2023-01-01T12:00:00+01:00"
 		},
 		{
+			"id": "cc000000-0000-0000-0000-000000000102",
 			"name": "ROLE-3",
 			"displayName": "DISPLAY-NAME-3",
 			"created": "2023-01-01T12:00:00+01:00"

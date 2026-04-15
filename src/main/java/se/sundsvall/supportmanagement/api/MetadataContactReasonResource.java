@@ -92,7 +92,7 @@ class MetadataContactReasonResource {
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId) {
 
-		return ok(metadataService.findContactReasonsForNamespaceAndMunicipality(namespace, municipalityId));
+		return ok(metadataService.findContactReasons(namespace, municipalityId));
 	}
 
 	@PatchMapping(path = "/{contactReasonId}", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)

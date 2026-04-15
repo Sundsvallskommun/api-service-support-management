@@ -143,7 +143,7 @@ public class MetadataService {
 			throw Problem.valueOf(BAD_REQUEST, ITEM_ALREADY_EXISTS_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(EXTERNAL_ID_TYPE, externalIdType.getName(), namespace, municipalityId));
 		}
 
-		return externalIdTypeRepository.save(toExternalIdTypeEntity(namespace, municipalityId, externalIdType)).getName();
+		return externalIdTypeRepository.save(toExternalIdTypeEntity(namespace, municipalityId, externalIdType)).getId();
 	}
 
 	public ExternalIdType getExternalIdType(final String namespace, final String municipalityId, final String id) {
@@ -187,7 +187,7 @@ public class MetadataService {
 			throw Problem.valueOf(BAD_REQUEST, ITEM_ALREADY_EXISTS_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(STATUS, status.getName(), namespace, municipalityId));
 		}
 
-		return statusRepository.save(toStatusEntity(namespace, municipalityId, status)).getName();
+		return statusRepository.save(toStatusEntity(namespace, municipalityId, status)).getId();
 	}
 
 	public Status getStatus(final String namespace, final String municipalityId, final String id) {
@@ -231,7 +231,7 @@ public class MetadataService {
 			throw Problem.valueOf(BAD_REQUEST, ITEM_ALREADY_EXISTS_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(ROLE, role.getName(), namespace, municipalityId));
 		}
 
-		return roleRepository.save(toRoleEntity(namespace, municipalityId, role)).getName();
+		return roleRepository.save(toRoleEntity(namespace, municipalityId, role)).getId();
 	}
 
 	public Role getRole(final String namespace, final String municipalityId, final String id) {
@@ -364,7 +364,7 @@ public class MetadataService {
 			throw Problem.valueOf(BAD_REQUEST, ITEM_ALREADY_EXISTS_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(CATEGORY, category.getName(), namespace, municipalityId));
 		}
 
-		return categoryRepository.save(toCategoryEntity(namespace, municipalityId, category)).getName();
+		return categoryRepository.save(toCategoryEntity(namespace, municipalityId, category)).getId();
 	}
 
 	public Category getCategory(final String namespace, final String municipalityId, final String id) {
@@ -441,12 +441,6 @@ public class MetadataService {
 		final var contactReasonEntity = contactReasonRepository.findByIdAndNamespaceAndMunicipalityId(contactReasonId, namespace, municipalityId)
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(CONTACT_REASON, contactReasonId, namespace, municipalityId)));
 		return toContactReason(contactReasonEntity);
-	}
-
-	public List<ContactReason> findContactReasonsForNamespaceAndMunicipality(final String namespace, final String municipalityId) {
-		return contactReasonRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId).stream()
-			.map(MetadataMapper::toContactReason)
-			.toList();
 	}
 
 	public ContactReason patchContactReason(final String contactReasonId, final String namespace, final String municipalityId, final ContactReason contactReason) {
