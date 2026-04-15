@@ -7957,6 +7957,13 @@ components:
           - "[\"kalle.anka@ankeborg.se\"]"
           items:
             type: string
+        ccRecipients:
+          type: array
+          description: "The CC recipients of the communication, if email"
+          examples:
+          - "[\"cc@ankeborg.se\"]"
+          items:
+            type: string
         internal:
           type: boolean
           description: Indicates if the communication is internal

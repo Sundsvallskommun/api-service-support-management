@@ -81,6 +81,7 @@ class CommunicationEntityTest {
 			.withType(type)
 			.withTarget(target)
 			.withRecipients(List.of(target))
+			.withCcRecipients(List.of(target))
 			.withViewed(viewed)
 			.withErrandAttachments(errandAttachments)
 			.withAttachments(attachments)

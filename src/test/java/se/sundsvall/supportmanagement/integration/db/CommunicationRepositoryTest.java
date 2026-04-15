@@ -52,6 +52,7 @@ class CommunicationRepositoryTest {
 			.withType(CommunicationType.EMAIL)
 			.withTarget("target")
 			.withRecipients(List.of("recipient"))
+			.withCcRecipients(List.of("ccRecipient"))
 			.withViewed(true)
 			.withInternal(true)
 			.withAttachments(List.of(CommunicationAttachmentEntity.create()));

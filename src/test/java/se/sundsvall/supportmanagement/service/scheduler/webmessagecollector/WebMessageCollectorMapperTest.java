@@ -70,7 +70,7 @@ class WebMessageCollectorMapperTest {
 		final var result = webMessageCollectorMapper.toCommunicationEntity(messagedto, errand);
 
 		// Assert
-		assertThat(result).hasNoNullFieldsOrPropertiesExcept("id", "subject", "target", "recipients", "attachments", "emailHeaders", "errandAttachments", "htmlMessageBody");
+		assertThat(result).hasNoNullFieldsOrPropertiesExcept("id", "subject", "target", "recipients", "attachments", "emailHeaders", "errandAttachments", "htmlMessageBody", "ccRecipients");
 		assertThat(result.getNamespace()).isEqualTo(namespace);
 		assertThat(result.getMunicipalityId()).isEqualTo(municipalityId);
 		assertThat(result.getType()).isEqualTo(WEB_MESSAGE);

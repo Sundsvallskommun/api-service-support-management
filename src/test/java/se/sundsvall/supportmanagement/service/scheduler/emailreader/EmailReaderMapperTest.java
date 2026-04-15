@@ -59,6 +59,7 @@ class EmailReaderMapperTest {
 			.id("someId")
 			.subject("someSubject")
 			.recipients(List.of("someRecipient"))
+			.ccRecipients(List.of("someCcRecipient"))
 			.sender("someSender")
 			.message("someMessage")
 			.htmlMessage("someHtmlMessage")
@@ -81,6 +82,8 @@ class EmailReaderMapperTest {
 		assertThat(result.getDirection()).isEqualTo(INBOUND);
 		assertThat(result.getType()).isEqualTo(CommunicationType.EMAIL);
 		assertThat(result.getTarget()).isEqualTo("someRecipient");
+		assertThat(result.getRecipients()).containsExactly("someRecipient");
+		assertThat(result.getCcRecipients()).containsExactly("someCcRecipient");
 		assertThat(result.getMessageBody()).isEqualTo("someMessage");
 		assertThat(result.getHtmlMessageBody()).isEqualTo("someHtmlMessage");
 		assertThat(result.getSender()).isEqualTo("someSender");
@@ -92,6 +95,38 @@ class EmailReaderMapperTest {
 		assertThat(result.getEmailHeaders()).isNotNull().hasSize(1);
 		assertThat(result.getEmailHeaders().getFirst().getHeader()).isEqualTo(EmailHeader.MESSAGE_ID);
 		assertThat(result.getEmailHeaders().getFirst().getValues()).isNotNull().hasSize(1).contains("someValue");
+	}
+
+	@Test
+	void toCommunicationEntityWhenCcRecipientsIsNull() {
+
+		// Arrange
+		final var errandEntity = ErrandEntity.create()
+			.withNamespace("someNamespace")
+			.withMunicipalityId("someMunicipalityId")
+			.withErrandNumber("someErrandNumber");
+
+		final var email = new Email()
+			.id("someId")
+			.subject("someSubject")
+			.recipients(List.of("someRecipient"))
+			.ccRecipients(null)
+			.sender("someSender")
+			.message("someMessage")
+			.htmlMessage("someHtmlMessage")
+			.headers(Map.of(EmailHeader.MESSAGE_ID.toString(), List.of("someValue")))
+			.receivedAt(OffsetDateTime.now())
+			.attachments(List.of(new EmailAttachment()
+				.name("someName")
+				.contentType("text/plain")
+				.id(99L)));
+
+		// Act
+		final var result = emailReaderMapper.toCommunicationEntity(email, errandEntity);
+
+		// Assert
+		assertThat(result).isNotNull();
+		assertThat(result.getCcRecipients()).isEmpty();
 	}
 
 	@Test

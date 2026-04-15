@@ -24,6 +24,7 @@
 		"direction": "INBOUND",
 		"target": "1234567890",
 		"recipients": [],
+		"ccRecipients": [],
 		"internal": false
 	}
 ]
