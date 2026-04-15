@@ -36,13 +36,14 @@ class ContactReasonEntityTest {
 	@Test
 	void hasValidBuilderMethods() {
 
-		final var id = 10L;
+		final var id = "6a5b8c9d-1234-5678-abcd-ef0123456789";
 		final var reason = "reason";
 		final var displayName = "displayName";
 		final var nameSpace = "nameSpace";
 		final var municipalityId = "municipalityId";
 		final var created = OffsetDateTime.now();
 		final var modified = OffsetDateTime.now();
+		final var sortOrder = 5;
 
 		final var entity = ContactReasonEntity.create()
 			.withId(id)
@@ -51,7 +52,8 @@ class ContactReasonEntityTest {
 			.withReason(reason)
 			.withDisplayName(displayName)
 			.withCreated(created)
-			.withModified(modified);
+			.withModified(modified)
+			.withSortOrder(sortOrder);
 
 		assertThat(entity).hasNoNullFieldsOrProperties();
 		assertThat(entity.getReason()).isEqualTo(reason);
@@ -61,6 +63,7 @@ class ContactReasonEntityTest {
 		assertThat(entity.getMunicipalityId()).isEqualTo(municipalityId);
 		assertThat(entity.getCreated()).isEqualTo(created);
 		assertThat(entity.getModified()).isEqualTo(modified);
+		assertThat(entity.getSortOrder()).isEqualTo(sortOrder);
 	}
 
 	@Test

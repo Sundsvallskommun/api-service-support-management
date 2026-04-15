@@ -40,7 +40,7 @@ class ContactReasonTest {
 		final var modified = OffsetDateTime.now().plusDays(1);
 		final var reason = "name";
 		final var displayName = "displayName";
-		final var id = 123L;
+		final var id = "b82bd8ac-1507-4d9a-958d-369261eecc15";
 
 		final var bean = ContactReason.create()
 			.withCreated(created)

@@ -34,7 +34,7 @@ import static org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTest
 	"/db/scripts/testdata-junit.sql"
 })
 class CategoryRepositoryTest {
-	private static final long TEST_ID = 101;
+	private static final String TEST_ID = "cat-00000000-0000-0000-0000-000000000101";
 
 	@Autowired
 	private CategoryRepository categoryRepository;
@@ -137,9 +137,9 @@ class CategoryRepositoryTest {
 				CategoryEntity::getName,
 				CategoryEntity::getNamespace)
 			.containsExactlyInAnyOrder(
-				tuple("category-display-name-1", 100L, municipalityId, "category-1", namespace),
-				tuple("category-display-name-2", 101L, municipalityId, "category-2", namespace),
-				tuple("category-display-name-3", 102L, municipalityId, "category-3", namespace));
+				tuple("category-display-name-1", "cat-00000000-0000-0000-0000-000000000100", municipalityId, "category-1", namespace),
+				tuple("category-display-name-2", "cat-00000000-0000-0000-0000-000000000101", municipalityId, "category-2", namespace),
+				tuple("category-display-name-3", "cat-00000000-0000-0000-0000-000000000102", municipalityId, "category-3", namespace));
 
 		final var verifications = Map.of(
 			"category-1", List.of(
@@ -166,7 +166,7 @@ class CategoryRepositoryTest {
 
 		assertThat(categoryEntity).isNotNull();
 		assertThat(categoryEntity.getDisplayName()).isEqualTo("category-display-name-1");
-		assertThat(categoryEntity.getId()).isEqualTo(100L);
+		assertThat(categoryEntity.getId()).isEqualTo("cat-00000000-0000-0000-0000-000000000100");
 		assertThat(categoryEntity.getMunicipalityId()).isEqualTo(municipalityId);
 		assertThat(categoryEntity.getName()).isEqualTo(category);
 		assertThat(categoryEntity.getNamespace()).isEqualTo(namespace);

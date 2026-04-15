@@ -8,7 +8,7 @@ import se.sundsvall.supportmanagement.integration.db.model.CategoryEntity;
 
 @Transactional
 @CircuitBreaker(name = "categoryRepository")
-public interface CategoryRepository extends JpaRepository<CategoryEntity, Long> {
+public interface CategoryRepository extends JpaRepository<CategoryEntity, String> {
 	List<CategoryEntity> findAllByNamespaceAndMunicipalityId(String namespace, String municipalityId);
 
 	boolean existsByNamespaceAndMunicipalityIdAndName(String namespace, String municipalityId, String name);

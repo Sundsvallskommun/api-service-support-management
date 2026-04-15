@@ -60,12 +60,13 @@
     ) engine=InnoDB;
 
     create table category (
+        sort_order integer,
         created datetime(6),
-        id bigint not null auto_increment,
         modified datetime(6),
         municipality_id varchar(8) not null,
         namespace varchar(32) not null,
         display_name varchar(255),
+        id varchar(255) not null,
         name varchar(255) not null,
         primary key (id)
     ) engine=InnoDB;
@@ -133,12 +134,13 @@
     ) engine=InnoDB;
 
     create table contact_reason (
+        sort_order integer,
         created datetime(6),
-        id bigint not null auto_increment,
         modified datetime(6),
         municipality_id varchar(8) not null,
         namespace varchar(32) not null,
         display_name varchar(255),
+        id varchar(255) not null,
         reason varchar(255),
         primary key (id)
     ) engine=InnoDB;
@@ -189,7 +191,6 @@
 
     create table errand (
         business_related bit,
-        contact_reason_id bigint,
         created datetime(6),
         modified datetime(6),
         municipality_id varchar(8) not null,
@@ -204,6 +205,7 @@
         assigned_user_id varchar(255),
         category varchar(255),
         channel varchar(255),
+        contact_reason_id varchar(255),
         errand_number varchar(255) not null,
         escalation_email varchar(255),
         id varchar(255) not null,
@@ -252,12 +254,13 @@
     ) engine=InnoDB;
 
     create table external_id_type (
+        sort_order integer,
         created datetime(6),
-        id bigint not null auto_increment,
         modified datetime(6),
         municipality_id varchar(8) not null,
         namespace varchar(32) not null,
         display_name varchar(255),
+        id varchar(255) not null,
         name varchar(255) not null,
         primary key (id)
     ) engine=InnoDB;
@@ -395,12 +398,13 @@
     ) engine=InnoDB;
 
     create table role (
+        sort_order integer,
         created datetime(6),
-        id bigint not null auto_increment,
         modified datetime(6),
         municipality_id varchar(8) not null,
         namespace varchar(32) not null,
         display_name varchar(255),
+        id varchar(255) not null,
         name varchar(255) not null,
         primary key (id)
     ) engine=InnoDB;
@@ -436,13 +440,14 @@
     ) engine=InnoDB;
 
     create table status (
+        sort_order integer,
         created datetime(6),
-        id bigint not null auto_increment,
         modified datetime(6),
         municipality_id varchar(8) not null,
         namespace varchar(32) not null,
         display_name varchar(255),
         external_display_name varchar(255),
+        id varchar(255) not null,
         name varchar(255) not null,
         primary key (id)
     ) engine=InnoDB;
@@ -459,10 +464,10 @@
     ) engine=InnoDB;
 
     create table `type` (
-        category_id bigint not null,
         created datetime(6),
         id bigint not null auto_increment,
         modified datetime(6),
+        category_id varchar(255) not null,
         display_name varchar(255),
         escalation_email varchar(255),
         name varchar(255) not null,
@@ -854,14 +859,14 @@
        foreign key (errand_id) 
        references errand (id);
 
-    alter table if exists errand_phase
-       add constraint fk_errand_phase_errand_id
-       foreign key (errand_id)
+    alter table if exists errand_phase 
+       add constraint fk_errand_phase_errand_id 
+       foreign key (errand_id) 
        references errand (id);
 
-    alter table if exists errand_phase
-       add constraint fk_errand_phase_phase_id
-       foreign key (phase_id)
+    alter table if exists errand_phase 
+       add constraint fk_errand_phase_phase_id 
+       foreign key (phase_id) 
        references phase (id);
 
     alter table if exists external_tag 
@@ -899,14 +904,14 @@
        foreign key (parameter_id) 
        references parameter (id);
 
-    alter table if exists phase_allowed_status
-       add constraint fk_phase_allowed_status_phase_id
-       foreign key (phase_id)
+    alter table if exists phase_allowed_status 
+       add constraint fk_phase_allowed_status_phase_id 
+       foreign key (phase_id) 
        references phase (id);
 
-    alter table if exists phase_transition
-       add constraint fk_phase_transition_phase_id
-       foreign key (phase_id)
+    alter table if exists phase_transition 
+       add constraint fk_phase_transition_phase_id 
+       foreign key (phase_id) 
        references phase (id);
 
     alter table if exists stakeholder 

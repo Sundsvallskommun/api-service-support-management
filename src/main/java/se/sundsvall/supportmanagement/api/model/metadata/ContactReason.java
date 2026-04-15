@@ -10,8 +10,8 @@ import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 @Schema(description = "Contact reason model")
 public class ContactReason {
 
-	@Schema(description = "ID", examples = "123", accessMode = READ_ONLY)
-	private Long id;
+	@Schema(description = "ID", examples = "b82bd8ac-1507-4d9a-958d-369261eecc15", accessMode = READ_ONLY)
+	private String id;
 
 	@Schema(description = "Reason for contact", examples = "Segt internet")
 	@NotBlank
@@ -32,15 +32,15 @@ public class ContactReason {
 		return new ContactReason();
 	}
 
-	public Long getId() {
+	public String getId() {
 		return id;
 	}
 
-	public void setId(final Long id) {
+	public void setId(final String id) {
 		this.id = id;
 	}
 
-	public ContactReason withId(final Long id) {
+	public ContactReason withId(final String id) {
 		this.id = id;
 		return this;
 	}

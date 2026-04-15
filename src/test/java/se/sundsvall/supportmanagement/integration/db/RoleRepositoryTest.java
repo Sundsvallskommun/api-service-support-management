@@ -30,7 +30,7 @@ import static org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTest
 })
 class RoleRepositoryTest {
 
-	private static final long TEST_ID = 101;
+	private static final String TEST_ID = "rol-00000000-0000-0000-0000-000000000101";
 
 	@Autowired
 	private RoleRepository roleRepository;
