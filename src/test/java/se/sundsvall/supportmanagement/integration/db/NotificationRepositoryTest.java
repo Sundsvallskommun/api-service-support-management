@@ -103,14 +103,13 @@ class NotificationRepositoryTest {
 
 		// Arrange
 		final var timestamp = of(2024, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
-
-		assertThat(notificationRepository.findByExpiresBefore(timestamp)).hasSize(1);
+		assertThat(notificationRepository.existsById("1")).isTrue();
 
 		// Act
 		notificationRepository.deleteByExpiresBefore(timestamp);
 
 		// Assert
-		assertThat(notificationRepository.findByExpiresBefore(timestamp)).isEmpty();
+		assertThat(notificationRepository.existsById("1")).isFalse();
 	}
 
 	@Test
@@ -139,7 +138,7 @@ class NotificationRepositoryTest {
 	}
 
 	@Test
-	void existsByNamespaceAndMunicipalityIdAndOwnerIdAndErrandEntityAndDescription() {
+	void existsByNamespaceAndMunicipalityIdAndOwnerIdAndErrandEntityAndDescriptionAndCreatedIsAfter() {
 
 		// Arrange
 		final var errandEntity = ErrandEntity.create()
