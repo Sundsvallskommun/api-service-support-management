@@ -5,6 +5,7 @@ import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpHeaders.LOCATION;
 import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpMethod.PATCH;
 import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
@@ -128,5 +129,18 @@ class MetadataRoleIT extends AbstractAppTest {
 			.filteredOn(role -> "ROLE_WITH_DISPLAY_NAME".equals(role.getName()))
 			.singleElement()
 			.satisfies(role -> assertThat(role.getDisplayName()).isEqualTo("Display name of role"));
+	}
+
+	@Test
+	void test07_patchRole() {
+		final var roleId = "cc000000-0000-0000-0000-000000000102";
+		setupCall()
+			.withServicePath(PATH + "/" + roleId)
+			.withHttpMethod(PATCH)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
 	}
 }
