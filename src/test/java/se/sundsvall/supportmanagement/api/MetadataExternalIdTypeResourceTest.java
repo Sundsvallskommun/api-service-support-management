@@ -114,16 +114,27 @@ class MetadataExternalIdTypeResourceTest {
 	}
 
 	@Test
-	void updateExternalIdTypeReturnsNotImplemented() {
+	void updateExternalIdType() {
 		// Setup
 		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
 		final var body = ExternalIdType.create().withName("externalIdTypeName");
 
+		// Mock
+		when(metadataServiceMock.updateExternalIdType(NAMESPACE, MUNICIPALITY_ID, id, body)).thenReturn(body);
+
 		// Call
-		webTestClient.patch().uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", id)))
+		final var response = webTestClient.patch().uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", id)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(body)
 			.exchange()
-			.expectStatus().is5xxServerError();
+			.expectStatus().isEqualTo(HttpStatus.OK)
+			.expectHeader().contentType(APPLICATION_JSON)
+			.expectBody(ExternalIdType.class)
+			.returnResult()
+			.getResponseBody();
+
+		// Verifications & assertions
+		verify(metadataServiceMock).updateExternalIdType(NAMESPACE, MUNICIPALITY_ID, id, body);
+		assertThat(response).isNotNull().isEqualTo(body);
 	}
 }

@@ -8,12 +8,12 @@ import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.PATCH;
 import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpStatus.CREATED;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import java.util.List;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.jdbc.Sql;
@@ -58,11 +58,11 @@ class MetadataCategoryIT extends AbstractAppTest {
 		assertThat(categoryRepository.existsByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_2281, "NEW_CATEGORY")).isTrue();
 	}
 
-	@Disabled("TODO follow-up branch: enable when service layer supports id lookup (path now uses {id} with @ValidUuid)")
 	@Test
 	void test02_getCategory() {
+		final var categoryId = "aa000000-0000-0000-0000-000000000100";
 		setupCall()
-			.withServicePath(PATH + "/CATEGORY-1")
+			.withServicePath(PATH + "/" + categoryId)
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
@@ -95,12 +95,11 @@ class MetadataCategoryIT extends AbstractAppTest {
 			.sendRequestAndVerifyResponse();
 	}
 
-	@Disabled("TODO follow-up branch: enable when service layer supports id lookup (path now uses {id} with @ValidUuid)")
 	@Test
 	void test05_getTypes() {
-		final var categoryName = "CATEGORY-3";
+		final var categoryId = "aa000000-0000-0000-0000-000000000102";
 		setupCall()
-			.withServicePath(PATH + "/" + categoryName + "/types")
+			.withServicePath(PATH + "/" + categoryId + "/types")
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
@@ -108,45 +107,41 @@ class MetadataCategoryIT extends AbstractAppTest {
 			.sendRequestAndVerifyResponse();
 	}
 
-	@Disabled("TODO follow-up branch: enable when service layer supports id lookup (path now uses {id} with @ValidUuid)")
 	@Test
 	void test06_getTypesWhenEmpty() {
-		final var categoryName = "CATEGORY-1";
-		final var path = "/" + MUNICIPALITY_2309 + "/" + NAMESPACE + "/metadata/categories/" + categoryName + "/types";
+		final var categoryId = "aa000000-0000-0000-0000-000000000100";
+		final var path = "/" + MUNICIPALITY_2309 + "/" + NAMESPACE + "/metadata/categories/" + categoryId + "/types";
 
 		setupCall()
 			.withServicePath(path)
 			.withHttpMethod(GET)
-			.withExpectedResponseStatus(OK)
-			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
-			.withExpectedResponse(RESPONSE_FILE)
+			.withExpectedResponseStatus(NOT_FOUND)
 			.sendRequestAndVerifyResponse();
 	}
 
-	@Disabled("TODO follow-up branch: enable when service layer supports id lookup (path now uses {id} with @ValidUuid)")
 	@Test
 	void test07_deleteCategory() {
-		final var categoryName = "CATEGORY-3";
+		final var categoryId = "aa000000-0000-0000-0000-000000000102";
 
-		assertThat(categoryRepository.existsByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_2281, categoryName)).isTrue();
+		assertThat(categoryRepository.existsByIdAndNamespaceAndMunicipalityId(categoryId, NAMESPACE, MUNICIPALITY_2281)).isTrue();
 		assertThat(categoryRepository.count()).isEqualTo(3);
 
 		setupCall()
-			.withServicePath(PATH + "/" + categoryName)
+			.withServicePath(PATH + "/" + categoryId)
 			.withHttpMethod(DELETE)
 			.withExpectedResponseStatus(NO_CONTENT)
 			.withExpectedResponseBodyIsNull()
 			.sendRequestAndVerifyResponse();
 
-		assertThat(categoryRepository.existsByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_2281, categoryName)).isFalse();
+		assertThat(categoryRepository.existsByIdAndNamespaceAndMunicipalityId(categoryId, NAMESPACE, MUNICIPALITY_2281)).isFalse();
 		assertThat(categoryRepository.count()).isEqualTo(2);
 	}
 
-	@Disabled("TODO follow-up branch: enable when service layer supports id lookup (path now uses {id} with @ValidUuid)")
 	@Test
 	void test08_patchTypes() {
+		final var categoryId = "aa000000-0000-0000-0000-000000000100";
 		setupCall()
-			.withServicePath(PATH + "/CATEGORY-1")
+			.withServicePath(PATH + "/" + categoryId)
 			.withHttpMethod(PATCH)
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(OK)

@@ -12,7 +12,6 @@ import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import java.util.List;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.jdbc.Sql;
@@ -57,11 +56,11 @@ class MetadataRoleIT extends AbstractAppTest {
 		assertThat(roleRepository.existsByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_2281, "A_BRAND_NEW_ROLE")).isTrue();
 	}
 
-	@Disabled("TODO follow-up branch: enable when service layer supports id lookup (path now uses {id} with @ValidUuid)")
 	@Test
 	void test02_getRole() {
+		final var roleId = "cc000000-0000-0000-0000-000000000101";
 		setupCall()
-			.withServicePath(PATH + "/ROLE-2")
+			.withServicePath(PATH + "/" + roleId)
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
@@ -93,22 +92,21 @@ class MetadataRoleIT extends AbstractAppTest {
 			.sendRequestAndVerifyResponse();
 	}
 
-	@Disabled("TODO follow-up branch: enable when service layer supports id lookup (path now uses {id} with @ValidUuid)")
 	@Test
 	void test05_deleteRole() {
-		final var roleName = "ROLE-2";
+		final var roleId = "cc000000-0000-0000-0000-000000000101";
 
-		assertThat(roleRepository.existsByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_2281, roleName)).isTrue();
+		assertThat(roleRepository.existsByIdAndNamespaceAndMunicipalityId(roleId, NAMESPACE, MUNICIPALITY_2281)).isTrue();
 		assertThat(roleRepository.count()).isEqualTo(6);
 
 		setupCall()
-			.withServicePath(PATH + "/" + roleName)
+			.withServicePath(PATH + "/" + roleId)
 			.withHttpMethod(DELETE)
 			.withExpectedResponseStatus(NO_CONTENT)
 			.withExpectedResponseBodyIsNull()
 			.sendRequestAndVerifyResponse();
 
-		assertThat(roleRepository.existsByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_2281, roleName)).isFalse();
+		assertThat(roleRepository.existsByIdAndNamespaceAndMunicipalityId(roleId, NAMESPACE, MUNICIPALITY_2281)).isFalse();
 		assertThat(roleRepository.count()).isEqualTo(5);
 	}
 
@@ -126,6 +124,9 @@ class MetadataRoleIT extends AbstractAppTest {
 			.sendRequestAndVerifyResponse();
 
 		assertThat(roleRepository.existsByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_2281, "ROLE_WITH_DISPLAY_NAME")).isTrue();
-		assertThat(roleRepository.getByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_2281, "ROLE_WITH_DISPLAY_NAME").getDisplayName()).isEqualTo("Display name of role");
+		assertThat(roleRepository.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_2281))
+			.filteredOn(role -> "ROLE_WITH_DISPLAY_NAME".equals(role.getName()))
+			.singleElement()
+			.satisfies(role -> assertThat(role.getDisplayName()).isEqualTo("Display name of role"));
 	}
 }

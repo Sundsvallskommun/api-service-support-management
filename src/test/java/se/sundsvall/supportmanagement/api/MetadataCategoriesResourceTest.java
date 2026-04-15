@@ -106,7 +106,7 @@ class MetadataCategoriesResourceTest {
 			.expectBody(String[].class)
 			.isEqualTo(EMPTY_STRING_ARRAY);
 
-		verify(metadataServiceMock).findTypes(NAMESPACE, MUNICIPALITY_ID, id);
+		verify(metadataServiceMock).findTypesByCategoryId(NAMESPACE, MUNICIPALITY_ID, id);
 	}
 
 	@Test

@@ -13,7 +13,9 @@ public interface CategoryRepository extends JpaRepository<CategoryEntity, String
 
 	boolean existsByNamespaceAndMunicipalityIdAndName(String namespace, String municipalityId, String name);
 
-	CategoryEntity getByNamespaceAndMunicipalityIdAndName(String namespace, String municipalityId, String name);
+	boolean existsByIdAndNamespaceAndMunicipalityId(String id, String namespace, String municipalityId);
 
-	void deleteByNamespaceAndMunicipalityIdAndName(String namespace, String municipalityId, String name);
+	CategoryEntity getByIdAndNamespaceAndMunicipalityId(String id, String namespace, String municipalityId);
+
+	void deleteByIdAndNamespaceAndMunicipalityId(String id, String namespace, String municipalityId);
 }

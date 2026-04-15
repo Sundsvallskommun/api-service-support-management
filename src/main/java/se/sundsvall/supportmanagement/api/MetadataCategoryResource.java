@@ -87,7 +87,6 @@ class MetadataCategoryResource {
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "id", description = "Category id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable final String id) {
 
-		// TODO follow-up branch: lookup by id
 		return ok(metadataService.getCategory(namespace, municipalityId, id));
 	}
 
@@ -116,8 +115,7 @@ class MetadataCategoryResource {
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "id", description = "Category id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable final String id) {
 
-		// TODO follow-up branch: lookup by id
-		return ok(metadataService.findTypes(namespace, municipalityId, id));
+		return ok(metadataService.findTypesByCategoryId(namespace, municipalityId, id));
 	}
 
 	@PatchMapping(path = "/{id}", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
@@ -135,7 +133,6 @@ class MetadataCategoryResource {
 		@Parameter(name = "id", description = "Category id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable final String id,
 		@Valid @NotNull @RequestBody final Category body) {
 
-		// TODO follow-up branch: lookup by id
 		return ok(metadataService.updateCategory(namespace, municipalityId, id, body));
 	}
 
@@ -153,7 +150,6 @@ class MetadataCategoryResource {
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "id", description = "Category id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable final String id) {
 
-		// TODO follow-up branch: lookup by id
 		metadataService.deleteCategory(namespace, municipalityId, id);
 		return noContent()
 			.header(CONTENT_TYPE, ALL_VALUE)
