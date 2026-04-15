@@ -5,6 +5,7 @@ import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpHeaders.LOCATION;
 import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpMethod.PATCH;
 import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
@@ -109,6 +110,19 @@ class MetadataStatusIT extends AbstractAppTest {
 
 		assertThat(statusRepository.existsByIdAndNamespaceAndMunicipalityId(statusId, NAMESPACE, MUNICIPALITY_2281)).isFalse();
 		assertThat(statusRepository.count()).isEqualTo(10);
+	}
+
+	@Test
+	void test06_patchStatus() {
+		final var statusId = "bb000000-0000-0000-0000-000000000102";
+		setupCall()
+			.withServicePath(PATH + "/" + statusId)
+			.withHttpMethod(PATCH)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
 	}
 
 }
