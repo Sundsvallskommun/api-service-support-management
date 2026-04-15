@@ -1813,13 +1813,13 @@ paths:
         schema:
           type: string
         example: 2281
-      - name: referred_from
+      - name: referredFrom
         in: query
-        description: Referenced from errand
+        description: "Relation reference in format (only source is used): '{relationType}|{sourceResourceId};{sourceType};{sourceService};{sourceNamespace}|{targetResourceId};{targetType};{targetService};{targetNamespace}'"
         required: false
         schema:
           type: string
-        example: ABC-123456
+        example: LINK|1234;case;service;MY_NAMESPACE|
       requestBody:
         content:
           application/json:
@@ -8160,6 +8160,13 @@ components:
           description: "The recipients of the communication, if email"
           examples:
           - "[\"kalle.anka@ankeborg.se\"]"
+          items:
+            type: string
+        ccRecipients:
+          type: array
+          description: "The CC recipients of the communication, if email"
+          examples:
+          - "[\"cc@ankeborg.se\"]"
           items:
             type: string
         internal:
