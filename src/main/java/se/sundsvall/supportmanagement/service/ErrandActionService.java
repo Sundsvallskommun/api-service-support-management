@@ -1,6 +1,5 @@
 package se.sundsvall.supportmanagement.service;
 
-import jakarta.transaction.Transactional;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -8,6 +7,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.config.action.ActionDefinition;
 import se.sundsvall.supportmanagement.api.model.config.action.Config;
