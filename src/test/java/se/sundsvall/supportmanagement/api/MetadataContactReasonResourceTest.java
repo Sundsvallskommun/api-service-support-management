@@ -90,7 +90,7 @@ class MetadataContactReasonResourceTest {
 		final var contactReason2 = ContactReason.create().withReason("reason2");
 		final var contactReasons = List.of(contactReason1, contactReason2);
 
-		when(metadataServiceMock.findContactReasonsForNamespaceAndMunicipality(NAMESPACE, MUNICIPALITY_ID)).thenReturn(contactReasons);
+		when(metadataServiceMock.findContactReasons(NAMESPACE, MUNICIPALITY_ID)).thenReturn(contactReasons);
 
 		final var result = webTestClient.get().uri(builder -> builder.path(PATH).build(MUNICIPALITY_ID, NAMESPACE, reason))
 			.exchange()

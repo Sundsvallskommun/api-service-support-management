@@ -36,7 +36,7 @@ class MetadataContactReasonIT extends AbstractAppTest {
 	private static final String PATH = "/" + MUNICIPALITY_2281 + "/" + NAMESPACE + "/metadata/contactreasons";
 	private static final String REQUEST_FILE = "request.json";
 	private static final String RESPONSE_FILE = "response.json";
-	private static final String CONTACT_REASON_ID = "cr-000000000-0000-0000-0000-000000000123";
+	private static final String CONTACT_REASON_ID = "c0000000-0000-0000-0000-000000000123";
 
 	@Autowired
 	private ContactReasonRepository contactReasonRepository;

@@ -34,7 +34,6 @@ import static java.util.Comparator.nullsFirst;
 import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
 import static org.apache.commons.lang3.ObjectUtils.anyNull;
-import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.apache.commons.lang3.StringUtils.trim;
 
 public class MetadataMapper {
@@ -48,6 +47,7 @@ public class MetadataMapper {
 	public static Category toCategory(final CategoryEntity entity) {
 		return ofNullable(entity)
 			.map(e -> Category.create()
+				.withId(e.getId())
 				.withCreated(e.getCreated())
 				.withDisplayName(e.getDisplayName())
 				.withModified(e.getModified())
@@ -109,6 +109,7 @@ public class MetadataMapper {
 	public static Status toStatus(final StatusEntity entity) {
 		return ofNullable(entity)
 			.map(e -> Status.create()
+				.withId(e.getId())
 				.withCreated(e.getCreated())
 				.withDisplayName(e.getDisplayName())
 				.withExternalDisplayName(e.getExternalDisplayName())
@@ -137,6 +138,7 @@ public class MetadataMapper {
 	public static Role toRole(final RoleEntity entity) {
 		return ofNullable(entity)
 			.map(e -> Role.create()
+				.withId(e.getId())
 				.withCreated(e.getCreated())
 				.withModified(e.getModified())
 				.withName(e.getName())
@@ -163,6 +165,7 @@ public class MetadataMapper {
 	public static ExternalIdType toExternalIdType(final ExternalIdTypeEntity entity) {
 		return ofNullable(entity)
 			.map(e -> ExternalIdType.create()
+				.withId(e.getId())
 				.withCreated(e.getCreated())
 				.withDisplayName(e.getDisplayName())
 				.withModified(e.getModified())
@@ -187,9 +190,43 @@ public class MetadataMapper {
 			return entity;
 		}
 
-		ofNullable(category.getName()).ifPresent(value -> entity.setName(isEmpty(value) ? null : value));
-		ofNullable(category.getDisplayName()).ifPresent(value -> entity.setDisplayName(isEmpty(value) ? null : value));
+		ofNullable(category.getName()).ifPresent(entity::setName);
+		ofNullable(category.getDisplayName()).ifPresent(entity::setDisplayName);
 		ofNullable(category.getTypes()).ifPresent(value -> updateTypes(entity, value));
+
+		return entity;
+	}
+
+	public static RoleEntity updateRoleEntity(final RoleEntity entity, final Role role) {
+		if (isNull(role)) {
+			return entity;
+		}
+
+		ofNullable(role.getName()).ifPresent(entity::setName);
+		ofNullable(role.getDisplayName()).ifPresent(entity::setDisplayName);
+
+		return entity;
+	}
+
+	public static StatusEntity updateStatusEntity(final StatusEntity entity, final Status status) {
+		if (isNull(status)) {
+			return entity;
+		}
+
+		ofNullable(status.getName()).ifPresent(entity::setName);
+		ofNullable(status.getDisplayName()).ifPresent(entity::setDisplayName);
+		ofNullable(status.getExternalDisplayName()).ifPresent(entity::setExternalDisplayName);
+
+		return entity;
+	}
+
+	public static ExternalIdTypeEntity updateExternalIdTypeEntity(final ExternalIdTypeEntity entity, final ExternalIdType externalIdType) {
+		if (isNull(externalIdType)) {
+			return entity;
+		}
+
+		ofNullable(externalIdType.getName()).ifPresent(entity::setName);
+		ofNullable(externalIdType.getDisplayName()).ifPresent(entity::setDisplayName);
 
 		return entity;
 	}

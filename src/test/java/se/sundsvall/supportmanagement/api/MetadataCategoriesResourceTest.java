@@ -41,10 +41,11 @@ class MetadataCategoriesResourceTest {
 	@Test
 	void createCategory() {
 		// Parameters
+		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
 		final var body = Category.create().withName("name");
 
 		// Mock
-		when(metadataServiceMock.createCategory(NAMESPACE, MUNICIPALITY_ID, body)).thenReturn(body.getName());
+		when(metadataServiceMock.createCategory(NAMESPACE, MUNICIPALITY_ID, body)).thenReturn(id);
 
 		// Call
 		webTestClient.post().uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
@@ -53,7 +54,7 @@ class MetadataCategoriesResourceTest {
 			.exchange()
 			.expectStatus().isCreated()
 			.expectHeader().contentType(ALL)
-			.expectHeader().location("/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/metadata/categories/" + body.getName())
+			.expectHeader().location("/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/metadata/categories/" + id)
 			.expectBody().isEmpty();
 
 		verify(metadataServiceMock).createCategory(NAMESPACE, MUNICIPALITY_ID, body);
@@ -106,7 +107,7 @@ class MetadataCategoriesResourceTest {
 			.expectBody(String[].class)
 			.isEqualTo(EMPTY_STRING_ARRAY);
 
-		verify(metadataServiceMock).findTypes(NAMESPACE, MUNICIPALITY_ID, id);
+		verify(metadataServiceMock).findTypesByCategoryId(NAMESPACE, MUNICIPALITY_ID, id);
 	}
 
 	@Test

@@ -14,7 +14,9 @@ public interface RoleRepository extends JpaRepository<RoleEntity, String> {
 
 	boolean existsByNamespaceAndMunicipalityIdAndName(String namespace, String municipalityId, String name);
 
-	RoleEntity getByNamespaceAndMunicipalityIdAndName(String namespace, String municipalityId, String name);
+	boolean existsByIdAndNamespaceAndMunicipalityId(String id, String namespace, String municipalityId);
 
-	void deleteByNamespaceAndMunicipalityIdAndName(String namespace, String municipalityId, String name);
+	RoleEntity getByIdAndNamespaceAndMunicipalityId(String id, String namespace, String municipalityId);
+
+	void deleteByIdAndNamespaceAndMunicipalityId(String id, String namespace, String municipalityId);
 }
