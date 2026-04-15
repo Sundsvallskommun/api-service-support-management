@@ -194,6 +194,40 @@ public class MetadataMapper {
 		return entity;
 	}
 
+	public static RoleEntity updateRoleEntity(final RoleEntity entity, final Role role) {
+		if (isNull(role)) {
+			return entity;
+		}
+
+		ofNullable(role.getName()).ifPresent(value -> entity.setName(isEmpty(value) ? null : value));
+		ofNullable(role.getDisplayName()).ifPresent(value -> entity.setDisplayName(isEmpty(value) ? null : value));
+
+		return entity;
+	}
+
+	public static StatusEntity updateStatusEntity(final StatusEntity entity, final Status status) {
+		if (isNull(status)) {
+			return entity;
+		}
+
+		ofNullable(status.getName()).ifPresent(value -> entity.setName(isEmpty(value) ? null : value));
+		ofNullable(status.getDisplayName()).ifPresent(value -> entity.setDisplayName(isEmpty(value) ? null : value));
+		ofNullable(status.getExternalDisplayName()).ifPresent(value -> entity.setExternalDisplayName(isEmpty(value) ? null : value));
+
+		return entity;
+	}
+
+	public static ExternalIdTypeEntity updateExternalIdTypeEntity(final ExternalIdTypeEntity entity, final ExternalIdType externalIdType) {
+		if (isNull(externalIdType)) {
+			return entity;
+		}
+
+		ofNullable(externalIdType.getName()).ifPresent(value -> entity.setName(isEmpty(value) ? null : value));
+		ofNullable(externalIdType.getDisplayName()).ifPresent(value -> entity.setDisplayName(isEmpty(value) ? null : value));
+
+		return entity;
+	}
+
 	private static void updateTypes(final CategoryEntity entity, final List<Type> types) {
 		final var existingTypes = Stream.ofNullable(entity.getTypes())
 			.flatMap(Collection::stream)

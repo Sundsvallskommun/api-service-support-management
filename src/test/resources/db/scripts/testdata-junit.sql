@@ -2,52 +2,52 @@
 -- Category and Type
 -------------------------------------
 INSERT INTO category(id, created, display_name, modified, municipality_id, name, namespace)
-VALUES ('cat-00000000-0000-0000-0000-000000000100', now(), 'category-display-name-1', null, '2281', 'category-1', 'namespace-1'),
-       ('cat-00000000-0000-0000-0000-000000000101', now(), 'category-display-name-2', null, '2281', 'category-2', 'namespace-1'),
-       ('cat-00000000-0000-0000-0000-000000000102', now(), 'category-display-name-3', null, '2281', 'category-3', 'namespace-1'),
-       ('cat-00000000-0000-0000-0000-000000000104', now(), 'category-display-name-1', null, '2281', 'category-1', 'namespace-2'),
-       ('cat-00000000-0000-0000-0000-000000000105', now(), 'category-display-name-1', null, '2282', 'category-1', 'namespace-1');
+VALUES ('aa000000-0000-0000-0000-000000000100', now(), 'category-display-name-1', null, '2281', 'category-1', 'namespace-1'),
+       ('aa000000-0000-0000-0000-000000000101', now(), 'category-display-name-2', null, '2281', 'category-2', 'namespace-1'),
+       ('aa000000-0000-0000-0000-000000000102', now(), 'category-display-name-3', null, '2281', 'category-3', 'namespace-1'),
+       ('aa000000-0000-0000-0000-000000000104', now(), 'category-display-name-1', null, '2281', 'category-1', 'namespace-2'),
+       ('aa000000-0000-0000-0000-000000000105', now(), 'category-display-name-1', null, '2282', 'category-1', 'namespace-1');
 
 INSERT INTO type(id, created, display_name, escalation_email, modified, name, category_id)
-VALUES (100, now(), 'type-display-name-1', 'escalation-email-1', null, 'type-1', 'cat-00000000-0000-0000-0000-000000000100'),
-       (101, now(), 'type-display-name-2', 'escalation-email-2', null, 'type-2', 'cat-00000000-0000-0000-0000-000000000100'),
-       (102, now(), 'type-display-name-3', 'escalation-email-3', null, 'type-3', 'cat-00000000-0000-0000-0000-000000000100'),
-       (103, now(), 'type-display-name-1', 'escalation-email-1', null, 'type-1', 'cat-00000000-0000-0000-0000-000000000101'),
-       (104, now(), 'type-display-name-2', 'escalation-email-2', null, 'type-2', 'cat-00000000-0000-0000-0000-000000000101'),
-       (105, now(), 'type-display-name-1', 'escalation-email-1', null, 'type-1', 'cat-00000000-0000-0000-0000-000000000102');
+VALUES (100, now(), 'type-display-name-1', 'escalation-email-1', null, 'type-1', 'aa000000-0000-0000-0000-000000000100'),
+       (101, now(), 'type-display-name-2', 'escalation-email-2', null, 'type-2', 'aa000000-0000-0000-0000-000000000100'),
+       (102, now(), 'type-display-name-3', 'escalation-email-3', null, 'type-3', 'aa000000-0000-0000-0000-000000000100'),
+       (103, now(), 'type-display-name-1', 'escalation-email-1', null, 'type-1', 'aa000000-0000-0000-0000-000000000101'),
+       (104, now(), 'type-display-name-2', 'escalation-email-2', null, 'type-2', 'aa000000-0000-0000-0000-000000000101'),
+       (105, now(), 'type-display-name-1', 'escalation-email-1', null, 'type-1', 'aa000000-0000-0000-0000-000000000102');
        
 -------------------------------------
 -- ExternalIdType
 -------------------------------------
 INSERT INTO external_id_type(id, created, modified, municipality_id, name, namespace)
-VALUES ('ext-00000000-0000-0000-0000-000000000100', now(), null, '2281', 'external-id-type-1', 'namespace-1'),
-       ('ext-00000000-0000-0000-0000-000000000101', now(), null, '2281', 'external-id-type-2', 'namespace-1'),
-       ('ext-00000000-0000-0000-0000-000000000102', now(), null, '2281', 'external-id-type-3', 'namespace-1'),
-       ('ext-00000000-0000-0000-0000-000000000104', now(), null, '2281', 'external-id-type-1', 'namespace-2'),
-       ('ext-00000000-0000-0000-0000-000000000105', now(), null, '2282', 'external-id-type-1', 'namespace-1'),
-       ('ext-00000000-0000-0000-0000-000000000106', now(), null, '2282', 'external-id-type-2', 'namespace-1');
+VALUES ('dd000000-0000-0000-0000-000000000100', now(), null, '2281', 'external-id-type-1', 'namespace-1'),
+       ('dd000000-0000-0000-0000-000000000101', now(), null, '2281', 'external-id-type-2', 'namespace-1'),
+       ('dd000000-0000-0000-0000-000000000102', now(), null, '2281', 'external-id-type-3', 'namespace-1'),
+       ('dd000000-0000-0000-0000-000000000104', now(), null, '2281', 'external-id-type-1', 'namespace-2'),
+       ('dd000000-0000-0000-0000-000000000105', now(), null, '2282', 'external-id-type-1', 'namespace-1'),
+       ('dd000000-0000-0000-0000-000000000106', now(), null, '2282', 'external-id-type-2', 'namespace-1');
  
 -------------------------------------
 -- Status
 -------------------------------------
 INSERT INTO status(id, created, modified, municipality_id, name, namespace)
-VALUES ('sta-00000000-0000-0000-0000-000000000100', now(), null, '2281', 'status-1', 'namespace-1'),
-       ('sta-00000000-0000-0000-0000-000000000101', now(), null, '2281', 'status-2', 'namespace-1'),
-       ('sta-00000000-0000-0000-0000-000000000102', now(), null, '2281', 'status-3', 'namespace-1'),
-       ('sta-00000000-0000-0000-0000-000000000104', now(), null, '2281', 'status-1', 'namespace-2'),
-       ('sta-00000000-0000-0000-0000-000000000105', now(), null, '2282', 'status-1', 'namespace-1'),
-       ('sta-00000000-0000-0000-0000-000000000106', now(), null, '2282', 'status-2', 'namespace-1');
+VALUES ('bb000000-0000-0000-0000-000000000100', now(), null, '2281', 'status-1', 'namespace-1'),
+       ('bb000000-0000-0000-0000-000000000101', now(), null, '2281', 'status-2', 'namespace-1'),
+       ('bb000000-0000-0000-0000-000000000102', now(), null, '2281', 'status-3', 'namespace-1'),
+       ('bb000000-0000-0000-0000-000000000104', now(), null, '2281', 'status-1', 'namespace-2'),
+       ('bb000000-0000-0000-0000-000000000105', now(), null, '2282', 'status-1', 'namespace-1'),
+       ('bb000000-0000-0000-0000-000000000106', now(), null, '2282', 'status-2', 'namespace-1');
 
 -------------------------------------
 -- Role
 -------------------------------------
 INSERT INTO role(id, created, modified, municipality_id, name, namespace)
-VALUES ('rol-00000000-0000-0000-0000-000000000100', now(), null, '2281', 'role-1', 'namespace-1'),
-       ('rol-00000000-0000-0000-0000-000000000101', now(), null, '2281', 'role-2', 'namespace-1'),
-       ('rol-00000000-0000-0000-0000-000000000102', now(), null, '2281', 'role-3', 'namespace-1'),
-       ('rol-00000000-0000-0000-0000-000000000104', now(), null, '2281', 'role-1', 'namespace-2'),
-       ('rol-00000000-0000-0000-0000-000000000105', now(), null, '2282', 'role-1', 'namespace-1'),
-       ('rol-00000000-0000-0000-0000-000000000106', now(), null, '2282', 'role-2', 'namespace-1');
+VALUES ('cc000000-0000-0000-0000-000000000100', now(), null, '2281', 'role-1', 'namespace-1'),
+       ('cc000000-0000-0000-0000-000000000101', now(), null, '2281', 'role-2', 'namespace-1'),
+       ('cc000000-0000-0000-0000-000000000102', now(), null, '2281', 'role-3', 'namespace-1'),
+       ('cc000000-0000-0000-0000-000000000104', now(), null, '2281', 'role-1', 'namespace-2'),
+       ('cc000000-0000-0000-0000-000000000105', now(), null, '2282', 'role-1', 'namespace-1'),
+       ('cc000000-0000-0000-0000-000000000106', now(), null, '2282', 'role-2', 'namespace-1');
        
 -------------------------------------
 -- Validation

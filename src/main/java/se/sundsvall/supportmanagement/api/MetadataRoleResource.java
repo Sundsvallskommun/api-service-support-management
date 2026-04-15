@@ -85,7 +85,6 @@ class MetadataRoleResource {
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "id", description = "Role id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable final String id) {
 
-		// TODO follow-up branch: lookup by id
 		return ok(metadataService.getRole(namespace, municipalityId, id));
 	}
 
@@ -119,8 +118,7 @@ class MetadataRoleResource {
 		@Parameter(name = "id", description = "Role id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable final String id,
 		@Valid @NotNull @RequestBody final Role body) {
 
-		// TODO follow-up branch: implement service.updateRole(namespace, municipalityId, id, body)
-		throw new UnsupportedOperationException("Not yet implemented");
+		return ok(metadataService.updateRole(namespace, municipalityId, id, body));
 	}
 
 	@DeleteMapping(path = "/{id}", produces = ALL_VALUE)
@@ -137,7 +135,6 @@ class MetadataRoleResource {
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "id", description = "Role id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable final String id) {
 
-		// TODO follow-up branch: lookup by id
 		metadataService.deleteRole(namespace, municipalityId, id);
 		return noContent()
 			.header(CONTENT_TYPE, ALL_VALUE)

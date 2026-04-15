@@ -12,7 +12,6 @@ import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import java.util.List;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.jdbc.Sql;
@@ -57,11 +56,11 @@ class MetadataStatusIT extends AbstractAppTest {
 		assertThat(statusRepository.existsByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_2281, "A_BRAND_NEW_STATUS")).isTrue();
 	}
 
-	@Disabled("TODO follow-up branch: enable when service layer supports id lookup (path now uses {id} with @ValidUuid)")
 	@Test
 	void test02_getStatus() {
+		final var statusId = "bb000000-0000-0000-0000-000000000101";
 		setupCall()
-			.withServicePath(PATH + "/STATUS-2")
+			.withServicePath(PATH + "/" + statusId)
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
@@ -94,22 +93,21 @@ class MetadataStatusIT extends AbstractAppTest {
 			.sendRequestAndVerifyResponse();
 	}
 
-	@Disabled("TODO follow-up branch: enable when service layer supports id lookup (path now uses {id} with @ValidUuid)")
 	@Test
 	void test05_deleteStatus() {
-		final var statusName = "STATUS-2";
+		final var statusId = "bb000000-0000-0000-0000-000000000101";
 
-		assertThat(statusRepository.existsByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_2281, statusName)).isTrue();
+		assertThat(statusRepository.existsByIdAndNamespaceAndMunicipalityId(statusId, NAMESPACE, MUNICIPALITY_2281)).isTrue();
 		assertThat(statusRepository.count()).isEqualTo(11);
 
 		setupCall()
-			.withServicePath(PATH + "/" + statusName)
+			.withServicePath(PATH + "/" + statusId)
 			.withHttpMethod(DELETE)
 			.withExpectedResponseStatus(NO_CONTENT)
 			.withExpectedResponseBodyIsNull()
 			.sendRequestAndVerifyResponse();
 
-		assertThat(statusRepository.existsByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_2281, statusName)).isFalse();
+		assertThat(statusRepository.existsByIdAndNamespaceAndMunicipalityId(statusId, NAMESPACE, MUNICIPALITY_2281)).isFalse();
 		assertThat(statusRepository.count()).isEqualTo(10);
 	}
 

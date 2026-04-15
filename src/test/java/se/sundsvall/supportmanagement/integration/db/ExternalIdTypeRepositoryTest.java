@@ -29,7 +29,7 @@ import static org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTest
 	"/db/scripts/testdata-junit.sql"
 })
 class ExternalIdTypeRepositoryTest {
-	private static final String TEST_ID = "ext-00000000-0000-0000-0000-000000000101";
+	private static final String TEST_ID = "dd000000-0000-0000-0000-000000000101";
 
 	@Autowired
 	private ExternalIdTypeRepository externalIdTypeRepository;
@@ -91,20 +91,32 @@ class ExternalIdTypeRepositoryTest {
 	}
 
 	@Test
-	void getByNamespaceAndMunicipalityIdAndName() {
+	void getByIdAndNamespaceAndMunicipalityId() {
 		// Setup
 		final var municipalityId = "2281";
 		final var namespace = "namespace-1";
-		final var name = "external-id-type-3";
 
 		// Execution
-		final var entity = externalIdTypeRepository.getByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
+		final var entity = externalIdTypeRepository.getByIdAndNamespaceAndMunicipalityId(TEST_ID, namespace, municipalityId);
 
 		// Assertions
 		assertThat(entity).isNotNull();
+		assertThat(entity.getId()).isEqualTo(TEST_ID);
 		assertThat(entity.getNamespace()).isEqualTo(namespace);
 		assertThat(entity.getMunicipalityId()).isEqualTo(municipalityId);
-		assertThat(entity.getName()).isEqualTo(name);
+		assertThat(entity.getName()).isEqualTo("external-id-type-2");
+	}
+
+	@Test
+	void existsByIdAndNamespaceAndMunicipalityId() {
+		// Setup
+		final var municipalityId = "2281";
+		final var namespace = "namespace-1";
+		final var nonExistingId = "00000000-0000-0000-0000-000000000000";
+
+		// Execution & assertion
+		assertThat(externalIdTypeRepository.existsByIdAndNamespaceAndMunicipalityId(TEST_ID, namespace, municipalityId)).isTrue();
+		assertThat(externalIdTypeRepository.existsByIdAndNamespaceAndMunicipalityId(nonExistingId, namespace, municipalityId)).isFalse();
 	}
 
 	@Test
@@ -145,7 +157,7 @@ class ExternalIdTypeRepositoryTest {
 		final var existingEntity = externalIdTypeRepository.findById(TEST_ID).orElseThrow();
 
 		// Execution
-		externalIdTypeRepository.deleteByNamespaceAndMunicipalityIdAndName(existingEntity.getNamespace(), existingEntity.getMunicipalityId(), existingEntity.getName());
+		externalIdTypeRepository.deleteByIdAndNamespaceAndMunicipalityId(TEST_ID, existingEntity.getNamespace(), existingEntity.getMunicipalityId());
 
 		// Assertions
 		assertThat(externalIdTypeRepository.findById(TEST_ID)).isNotPresent();

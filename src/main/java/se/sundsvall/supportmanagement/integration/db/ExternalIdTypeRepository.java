@@ -13,7 +13,9 @@ public interface ExternalIdTypeRepository extends JpaRepository<ExternalIdTypeEn
 
 	boolean existsByNamespaceAndMunicipalityIdAndName(String namespace, String municipalityId, String name);
 
-	ExternalIdTypeEntity getByNamespaceAndMunicipalityIdAndName(String namespace, String municipalityId, String name);
+	boolean existsByIdAndNamespaceAndMunicipalityId(String id, String namespace, String municipalityId);
 
-	void deleteByNamespaceAndMunicipalityIdAndName(String namespace, String municipalityId, String name);
+	ExternalIdTypeEntity getByIdAndNamespaceAndMunicipalityId(String id, String namespace, String municipalityId);
+
+	void deleteByIdAndNamespaceAndMunicipalityId(String id, String namespace, String municipalityId);
 }

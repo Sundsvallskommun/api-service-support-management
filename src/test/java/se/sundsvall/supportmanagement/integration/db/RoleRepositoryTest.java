@@ -30,7 +30,7 @@ import static org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTest
 })
 class RoleRepositoryTest {
 
-	private static final String TEST_ID = "rol-00000000-0000-0000-0000-000000000101";
+	private static final String TEST_ID = "cc000000-0000-0000-0000-000000000101";
 
 	@Autowired
 	private RoleRepository roleRepository;
@@ -92,20 +92,32 @@ class RoleRepositoryTest {
 	}
 
 	@Test
-	void getByNamespaceAndMunicipalityIdAndName() {
+	void getByIdAndNamespaceAndMunicipalityId() {
 		// Setup
 		final var municipalityId = "2281";
 		final var namespace = "namespace-1";
-		final var name = "role-3";
 
 		// Execution
-		final var entity = roleRepository.getByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
+		final var entity = roleRepository.getByIdAndNamespaceAndMunicipalityId(TEST_ID, namespace, municipalityId);
 
 		// Assertions
 		assertThat(entity).isNotNull();
+		assertThat(entity.getId()).isEqualTo(TEST_ID);
 		assertThat(entity.getNamespace()).isEqualTo(namespace);
 		assertThat(entity.getMunicipalityId()).isEqualTo(municipalityId);
-		assertThat(entity.getName()).isEqualTo(name);
+		assertThat(entity.getName()).isEqualTo("role-2");
+	}
+
+	@Test
+	void existsByIdAndNamespaceAndMunicipalityId() {
+		// Setup
+		final var municipalityId = "2281";
+		final var namespace = "namespace-1";
+		final var nonExistingId = "00000000-0000-0000-0000-000000000000";
+
+		// Execution & assertion
+		assertThat(roleRepository.existsByIdAndNamespaceAndMunicipalityId(TEST_ID, namespace, municipalityId)).isTrue();
+		assertThat(roleRepository.existsByIdAndNamespaceAndMunicipalityId(nonExistingId, namespace, municipalityId)).isFalse();
 	}
 
 	@Test
@@ -146,7 +158,7 @@ class RoleRepositoryTest {
 		final var existingEntity = roleRepository.findById(TEST_ID).orElseThrow();
 
 		// Execution
-		roleRepository.deleteByNamespaceAndMunicipalityIdAndName(existingEntity.getNamespace(), existingEntity.getMunicipalityId(), existingEntity.getName());
+		roleRepository.deleteByIdAndNamespaceAndMunicipalityId(TEST_ID, existingEntity.getNamespace(), existingEntity.getMunicipalityId());
 
 		// Assertions
 		assertThat(roleRepository.findById(TEST_ID)).isNotPresent();

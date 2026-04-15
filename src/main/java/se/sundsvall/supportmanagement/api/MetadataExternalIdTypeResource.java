@@ -85,7 +85,6 @@ class MetadataExternalIdTypeResource {
 		@Parameter(name = "municipalityId", description = "Municipality ID", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "id", description = "ExternalIdType id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable final String id) {
 
-		// TODO follow-up branch: lookup by id
 		return ok(metadataService.getExternalIdType(namespace, municipalityId, id));
 	}
 
@@ -119,8 +118,7 @@ class MetadataExternalIdTypeResource {
 		@Parameter(name = "id", description = "ExternalIdType id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable final String id,
 		@Valid @NotNull @RequestBody final ExternalIdType body) {
 
-		// TODO follow-up branch: implement service.updateExternalIdType(namespace, municipalityId, id, body)
-		throw new UnsupportedOperationException("Not yet implemented");
+		return ok(metadataService.updateExternalIdType(namespace, municipalityId, id, body));
 	}
 
 	@DeleteMapping(path = "/{id}", produces = ALL_VALUE)
@@ -137,7 +135,6 @@ class MetadataExternalIdTypeResource {
 		@Parameter(name = "municipalityId", description = "Municipality ID", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "id", description = "ExternalIdType id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable final String id) {
 
-		// TODO follow-up branch: lookup by id
 		metadataService.deleteExternalIdType(namespace, municipalityId, id);
 		return noContent()
 			.header(CONTENT_TYPE, ALL_VALUE)
