@@ -78,7 +78,7 @@ public class ErrandEntity {
 	private List<StakeholderEntity> stakeholders;
 
 	@ManyToOne
-	@JoinColumn(name = "contact_reason_id")
+	@JoinColumn(name = "contact_reason_id", foreignKey = @ForeignKey(name = "fk_errand_contact_reason_id"))
 	private ContactReasonEntity contactReasonEntity;
 
 	@Column(name = "contact_reason_description", length = 4096)

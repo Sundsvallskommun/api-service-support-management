@@ -839,8 +839,8 @@
        references conversation (id);
 
     alter table if exists errand 
-       add constraint FKeudsxli8chjy568rft33oa79n 
-       foreign key (contact_reason_id) 
+       add constraint fk_errand_contact_reason_id
+       foreign key (contact_reason_id)
        references contact_reason (id);
 
     alter table if exists errand_access_labels 
