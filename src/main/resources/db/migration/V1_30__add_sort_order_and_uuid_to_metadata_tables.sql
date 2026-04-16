@@ -35,7 +35,11 @@ update contact_reason set uuid_id = uuid() where uuid_id is null;
 alter table errand add column if not exists contact_reason_uuid_id varchar(255);
 update errand e inner join contact_reason cr on e.contact_reason_id = cr.id set e.contact_reason_uuid_id = cr.uuid_id;
 
-alter table errand drop foreign key FKeudsxli8chjy568rft33oa79n;
+set @fk_name = (select constraint_name from information_schema.key_column_usage where table_name = 'errand' and column_name = 'contact_reason_id' and referenced_table_name = 'contact_reason' limit 1);
+set @sql = concat('alter table errand drop foreign key ', @fk_name);
+prepare stmt from @sql;
+execute stmt;
+deallocate prepare stmt;
 alter table errand drop column contact_reason_id;
 alter table errand change column contact_reason_uuid_id contact_reason_id varchar(255);
 
