@@ -1,4 +1,5 @@
 {
 	"name": "EXTERNAL-ID-TYPE-1-PATCHED",
-	"displayName": "External Id Type 1 patched"
+	"displayName": "External Id Type 1 patched",
+	"sortOrder": 7
 }
