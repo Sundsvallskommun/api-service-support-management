@@ -32,6 +32,10 @@
 							"value": "Web"
 						},
 						{
+							"key": "CaseId",
+							"value": "1234-5678"
+						},
+						{
 							"key": "Status",
 							"value": "STATUS-2"
 						}

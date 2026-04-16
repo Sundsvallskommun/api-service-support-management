@@ -16,6 +16,10 @@
 							"key": "CurrentVersion"
 						},
 						{
+							"key": "CaseId",
+							"value": "8849-2848"
+						},
+						{
 							"value": "${json-unit.regex}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
 							"key": "CurrentRevision"
 						},

@@ -73,8 +73,10 @@ public class EventlogMapper {
 			.map(ErrandEntity::getExternalTags)
 			.orElse(emptyList())
 			.stream()
-			.filter(et -> Objects.equals(EXTERNAL_TAG_KEY_CASE_ID, et.getKey()))
+			.filter(et -> Objects.equals(EXTERNAL_TAG_KEY_CASE_ID.toLowerCase(),
+				Optional.ofNullable(et.getKey()).map(String::toLowerCase).orElse("")))
 			.map(DbExternalTag::getValue)
+			.filter(Objects::nonNull)
 			.findAny()
 			.orElse(null);
 

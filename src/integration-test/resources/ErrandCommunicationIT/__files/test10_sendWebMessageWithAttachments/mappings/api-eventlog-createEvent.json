@@ -32,6 +32,10 @@
 							"value": "ESERVICE_INTERNAL"
 						},
 						{
+							"key": "CaseId",
+							"value": "1001"
+						},
+						{
 							"key": "Status",
 							"value": "STATUS-1"
 						}
