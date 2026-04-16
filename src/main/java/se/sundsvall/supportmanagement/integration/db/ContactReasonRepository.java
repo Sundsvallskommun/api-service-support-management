@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.integration.db;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
 
@@ -15,7 +16,7 @@ public interface ContactReasonRepository extends JpaRepository<ContactReasonEnti
 
 	ContactReasonEntity getByIdAndNamespaceAndMunicipalityId(final String id, final String namespace, final String municipalityId);
 
-	List<ContactReasonEntity> findAllByNamespaceAndMunicipalityId(final String namespace, final String municipalityId);
+	List<ContactReasonEntity> findAllByNamespaceAndMunicipalityId(final String namespace, final String municipalityId, Sort sort);
 
 	boolean existsByIdAndNamespaceAndMunicipalityId(final String id, final String namespace, final String municipalityId);
 

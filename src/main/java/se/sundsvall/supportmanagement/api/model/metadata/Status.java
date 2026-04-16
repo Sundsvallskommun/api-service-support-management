@@ -30,6 +30,11 @@ public class Status {
 	})
 	private String externalDisplayName;
 
+	@Schema(description = "Sort order for the status", examples = "1", types = {
+		"integer", "null"
+	})
+	private Integer sortOrder;
+
 	@Schema(description = "Timestamp when the status was created", examples = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	@DateTimeFormat(iso = ISO.DATE_TIME)
 	@Null
@@ -96,6 +101,19 @@ public class Status {
 		return this;
 	}
 
+	public Integer getSortOrder() {
+		return sortOrder;
+	}
+
+	public void setSortOrder(final Integer sortOrder) {
+		this.sortOrder = sortOrder;
+	}
+
+	public Status withSortOrder(final Integer sortOrder) {
+		this.sortOrder = sortOrder;
+		return this;
+	}
+
 	public OffsetDateTime getCreated() {
 		return created;
 	}
@@ -124,7 +142,7 @@ public class Status {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(created, displayName, externalDisplayName, id, modified, name);
+		return Objects.hash(created, displayName, externalDisplayName, id, modified, name, sortOrder);
 	}
 
 	@Override
@@ -136,7 +154,7 @@ public class Status {
 			return false;
 		}
 		return Objects.equals(created, other.created) && Objects.equals(displayName, other.displayName) && Objects.equals(externalDisplayName, other.externalDisplayName) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects
-			.equals(name, other.name);
+			.equals(name, other.name) && Objects.equals(sortOrder, other.sortOrder);
 	}
 
 	@Override
@@ -146,6 +164,7 @@ public class Status {
 			", name='" + name + '\'' +
 			", displayName='" + displayName + '\'' +
 			", externalDisplayName='" + externalDisplayName + '\'' +
+			", sortOrder=" + sortOrder +
 			", created=" + created +
 			", modified=" + modified +
 			'}';

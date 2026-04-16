@@ -16,6 +16,7 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.springframework.data.domain.Sort;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 import se.sundsvall.supportmanagement.api.model.errand.Classification;
@@ -25,6 +26,7 @@ import se.sundsvall.supportmanagement.service.MetadataService;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -88,7 +90,7 @@ class ValidClassificationConstraintValidatorTest {
 			verify(constraintValidatorContextMock).buildConstraintViolationWithTemplate(any());
 			verify(constraintViolationBuilderMock).addConstraintViolation();
 			verify(metadataServiceMock).isValidated(namespace, municipalityId, CATEGORY);
-			verify(metadataServiceMock).findCategories(namespace, municipalityId);
+			verify(metadataServiceMock).findCategories(eq(namespace), eq(municipalityId), any(Sort.class));
 		}
 	}
 
@@ -106,12 +108,12 @@ class ValidClassificationConstraintValidatorTest {
 			when(requestAttributesMock.getAttribute(URI_TEMPLATE_VARIABLES_ATTRIBUTE, SCOPE_REQUEST)).thenReturn(attributes);
 			when(metadataServiceMock.isValidated(namespace, municipalityId, CATEGORY)).thenReturn(true);
 			when(metadataServiceMock.isValidated(namespace, municipalityId, TYPE)).thenReturn(true);
-			when(metadataServiceMock.findCategories(namespace, municipalityId)).thenReturn(List.of(Category.create().withName(categoryName)));
+			when(metadataServiceMock.findCategories(eq(namespace), eq(municipalityId), any(Sort.class))).thenReturn(List.of(Category.create().withName(categoryName)));
 			when(metadataServiceMock.findTypes(namespace, municipalityId, categoryName)).thenReturn(List.of(Type.create().withName(typeName)));
 
 			assertThat(validator.isValid(Classification.create().withCategory(categoryName).withType(typeName), constraintValidatorContextMock)).isTrue();
 			verify(metadataServiceMock).isValidated(namespace, municipalityId, CATEGORY);
-			verify(metadataServiceMock).findCategories(namespace, municipalityId);
+			verify(metadataServiceMock).findCategories(eq(namespace), eq(municipalityId), any(Sort.class));
 			verify(metadataServiceMock).findTypes(namespace, municipalityId, categoryName);
 		}
 	}
@@ -130,13 +132,13 @@ class ValidClassificationConstraintValidatorTest {
 			when(requestAttributesMock.getAttribute(URI_TEMPLATE_VARIABLES_ATTRIBUTE, SCOPE_REQUEST)).thenReturn(attributes);
 			when(metadataServiceMock.isValidated(namespace, municipalityId, CATEGORY)).thenReturn(true);
 			when(metadataServiceMock.isValidated(namespace, municipalityId, TYPE)).thenReturn(true);
-			when(metadataServiceMock.findCategories(namespace, municipalityId)).thenReturn(List.of(Category.create().withName(categoryName)));
+			when(metadataServiceMock.findCategories(eq(namespace), eq(municipalityId), any(Sort.class))).thenReturn(List.of(Category.create().withName(categoryName)));
 			when(metadataServiceMock.findTypes(namespace, municipalityId, categoryName)).thenReturn(List.of(Type.create().withName("TYPE-1")));
 			when(constraintValidatorContextMock.buildConstraintViolationWithTemplate(any())).thenReturn(constraintViolationBuilderMock);
 
 			assertThat(validator.isValid(Classification.create().withCategory(categoryName).withType(typeName), constraintValidatorContextMock)).isFalse();
 			verify(metadataServiceMock).isValidated(namespace, municipalityId, CATEGORY);
-			verify(metadataServiceMock).findCategories(namespace, municipalityId);
+			verify(metadataServiceMock).findCategories(eq(namespace), eq(municipalityId), any(Sort.class));
 			verify(metadataServiceMock).findTypes(namespace, municipalityId, categoryName);
 		}
 	}
@@ -156,7 +158,7 @@ class ValidClassificationConstraintValidatorTest {
 
 			assertThat(validator.isValid(Classification.create(), constraintValidatorContextMock)).isFalse();
 			verify(metadataServiceMock).isValidated(namespace, municipalityId, CATEGORY);
-			verify(metadataServiceMock).findCategories(namespace, municipalityId);
+			verify(metadataServiceMock).findCategories(eq(namespace), eq(municipalityId), any(Sort.class));
 			verify(metadataServiceMock, never()).findTypes(any(), any(), any());
 		}
 	}
@@ -176,7 +178,7 @@ class ValidClassificationConstraintValidatorTest {
 
 			assertThat(validator.isValid(null, constraintValidatorContextMock)).isTrue();
 			verify(metadataServiceMock).isValidated(namespace, municipalityId, CATEGORY);
-			verify(metadataServiceMock).findCategories(namespace, municipalityId);
+			verify(metadataServiceMock).findCategories(eq(namespace), eq(municipalityId), any(Sort.class));
 			verify(metadataServiceMock, never()).findTypes(any(), any(), any());
 		}
 	}
@@ -194,12 +196,12 @@ class ValidClassificationConstraintValidatorTest {
 			when(requestAttributesMock.getAttribute(URI_TEMPLATE_VARIABLES_ATTRIBUTE, SCOPE_REQUEST)).thenReturn(attributes);
 			when(metadataServiceMock.isValidated(namespace, municipalityId, CATEGORY)).thenReturn(true);
 			when(metadataServiceMock.isValidated(namespace, municipalityId, TYPE)).thenReturn(true);
-			when(metadataServiceMock.findCategories(namespace, municipalityId)).thenReturn(List.of(Category.create().withName(categoryName)));
+			when(metadataServiceMock.findCategories(eq(namespace), eq(municipalityId), any(Sort.class))).thenReturn(List.of(Category.create().withName(categoryName)));
 			when(constraintValidatorContextMock.buildConstraintViolationWithTemplate(any())).thenReturn(constraintViolationBuilderMock);
 
 			assertThat(validator.isValid(Classification.create().withCategory(categoryName), constraintValidatorContextMock)).isFalse();
 			verify(metadataServiceMock).isValidated(namespace, municipalityId, CATEGORY);
-			verify(metadataServiceMock).findCategories(namespace, municipalityId);
+			verify(metadataServiceMock).findCategories(eq(namespace), eq(municipalityId), any(Sort.class));
 			verify(metadataServiceMock).findTypes(namespace, municipalityId, categoryName);
 		}
 	}
@@ -219,7 +221,7 @@ class ValidClassificationConstraintValidatorTest {
 
 			assertThat(validator.isValid(Classification.create().withCategory(" ").withType(" "), constraintValidatorContextMock)).isFalse();
 			verify(metadataServiceMock).isValidated(namespace, municipalityId, CATEGORY);
-			verify(metadataServiceMock).findCategories(namespace, municipalityId);
+			verify(metadataServiceMock).findCategories(eq(namespace), eq(municipalityId), any(Sort.class));
 		}
 	}
 }

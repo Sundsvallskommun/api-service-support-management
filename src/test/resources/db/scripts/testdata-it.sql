@@ -37,18 +37,18 @@ VALUES ('dd000000-0000-0000-0000-000000000100', '2023-01-01 12:00:00.000', null,
 -- -----------------------------------
 -- Status
 -- -----------------------------------
-INSERT INTO status(id, created, modified, municipality_id, name, display_name, external_display_name, namespace)
-VALUES ('bb000000-0000-0000-0000-000000000100', '2023-01-01 12:00:00.000', null, '2281', 'STATUS-1', 'Status 1', 'External Status 1', 'NAMESPACE-1'),
-       ('bb000000-0000-0000-0000-000000000101', '2023-01-01 12:00:00.000', null, '2281', 'STATUS-2', 'Status 2', 'External Status 2', 'NAMESPACE-1'),
-       ('bb000000-0000-0000-0000-000000000102', '2023-01-01 12:00:00.000', null, '2281', 'STATUS-3', 'Status 3', 'External Status 3', 'NAMESPACE-1'),
-       ('bb000000-0000-0000-0000-000000000104', '2023-01-01 12:00:00.000', null, '2281', 'STATUS-1', 'Status 1', 'External Status 1', 'NAMESPACE-2'),
-       ('bb000000-0000-0000-0000-000000000105', '2023-01-01 12:00:00.000', null, '2305', 'STATUS-1', 'Status 1', 'External Status 1', 'NAMESPACE-1'),
-       ('bb000000-0000-0000-0000-000000000106', '2023-01-01 12:00:00.000', null, '2305', 'STATUS-2', 'Status 2', 'External Status 2', 'NAMESPACE-1'),
-       ('bb000000-0000-0000-0000-000000000107', '2023-01-01 12:00:00.000', null, '2281', 'STATUS-2', 'Status 2', 'External Status 2', 'CONTACTCENTER'),
-       ('bb000000-0000-0000-0000-000000000108', '2023-01-01 12:00:00.000', null, '2281', 'STATUS-1', 'Status 1', 'External Status 1', 'NAMESPACE-3'),
-       ('bb000000-0000-0000-0000-000000000109', '2023-01-01 12:00:00.000', null, '2281', 'STATUS-2', 'Status 2', 'External Status 2', 'NAMESPACE-3'),
-       ('bb000000-0000-0000-0000-000000000110', '2023-01-01 12:00:00.000', null, '2281', 'STATUS-3', 'Status 3', 'External Status 3', 'NAMESPACE-3'),
-       ('bb000000-0000-0000-0000-000000000111', '2023-01-01 12:00:00.000', null, '2281', 'STATUS-4', 'Status 4', 'External Status 4', 'NAMESPACE-3');
+INSERT INTO status(id, created, modified, municipality_id, name, display_name, external_display_name, sort_order, namespace)
+VALUES ('bb000000-0000-0000-0000-000000000100', '2023-01-01 12:00:00.000', null, '2281', 'STATUS-1', 'Status 1', 'External Status 1', 3, 'NAMESPACE-1'),
+       ('bb000000-0000-0000-0000-000000000101', '2023-01-01 12:00:00.000', null, '2281', 'STATUS-2', 'Status 2', 'External Status 2', 1, 'NAMESPACE-1'),
+       ('bb000000-0000-0000-0000-000000000102', '2023-01-01 12:00:00.000', null, '2281', 'STATUS-3', 'Status 3', 'External Status 3', 2, 'NAMESPACE-1'),
+       ('bb000000-0000-0000-0000-000000000104', '2023-01-01 12:00:00.000', null, '2281', 'STATUS-1', 'Status 1', 'External Status 1', null, 'NAMESPACE-2'),
+       ('bb000000-0000-0000-0000-000000000105', '2023-01-01 12:00:00.000', null, '2305', 'STATUS-1', 'Status 1', 'External Status 1', null, 'NAMESPACE-1'),
+       ('bb000000-0000-0000-0000-000000000106', '2023-01-01 12:00:00.000', null, '2305', 'STATUS-2', 'Status 2', 'External Status 2', null, 'NAMESPACE-1'),
+       ('bb000000-0000-0000-0000-000000000107', '2023-01-01 12:00:00.000', null, '2281', 'STATUS-2', 'Status 2', 'External Status 2', null, 'CONTACTCENTER'),
+       ('bb000000-0000-0000-0000-000000000108', '2023-01-01 12:00:00.000', null, '2281', 'STATUS-1', 'Status 1', 'External Status 1', null, 'NAMESPACE-3'),
+       ('bb000000-0000-0000-0000-000000000109', '2023-01-01 12:00:00.000', null, '2281', 'STATUS-2', 'Status 2', 'External Status 2', null, 'NAMESPACE-3'),
+       ('bb000000-0000-0000-0000-000000000110', '2023-01-01 12:00:00.000', null, '2281', 'STATUS-3', 'Status 3', 'External Status 3', null, 'NAMESPACE-3'),
+       ('bb000000-0000-0000-0000-000000000111', '2023-01-01 12:00:00.000', null, '2281', 'STATUS-4', 'Status 4', 'External Status 4', null, 'NAMESPACE-3');
 -- -----------------------------------
 -- Role
 -- -----------------------------------

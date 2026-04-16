@@ -6,6 +6,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.AntPathMatcher;
@@ -119,12 +120,12 @@ public class MetadataService {
 
 	public MetadataResponse findAll(final String namespace, final String municipalityId) {
 		return MetadataResponse.create()
-			.withCategories(findCategories(namespace, municipalityId))
+			.withCategories(findCategories(namespace, municipalityId, Sort.unsorted()))
 			.withLabels(findLabels(namespace, municipalityId))
-			.withStatuses(findStatuses(namespace, municipalityId))
-			.withRoles(findRoles(namespace, municipalityId))
-			.withExternalIdTypes(findExternalIdTypes(namespace, municipalityId))
-			.withContactReasons(findContactReasons(namespace, municipalityId))
+			.withStatuses(findStatuses(namespace, municipalityId, Sort.unsorted()))
+			.withRoles(findRoles(namespace, municipalityId, Sort.unsorted()))
+			.withExternalIdTypes(findExternalIdTypes(namespace, municipalityId, Sort.unsorted()))
+			.withContactReasons(findContactReasons(namespace, municipalityId, Sort.unsorted()))
 			.withPhases(findPhases(namespace, municipalityId));
 	}
 
@@ -154,11 +155,10 @@ public class MetadataService {
 		return toExternalIdType(externalIdTypeRepository.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId));
 	}
 
-	public List<ExternalIdType> findExternalIdTypes(final String namespace, final String municipalityId) {
-		return externalIdTypeRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId)
+	public List<ExternalIdType> findExternalIdTypes(final String namespace, final String municipalityId, final Sort sort) {
+		return externalIdTypeRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId, sort)
 			.stream()
 			.map(MetadataMapper::toExternalIdType)
-			.sorted(comparing(ExternalIdType::getName))
 			.toList();
 	}
 
@@ -198,11 +198,10 @@ public class MetadataService {
 		return toStatus(statusRepository.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId));
 	}
 
-	public List<Status> findStatuses(final String namespace, final String municipalityId) {
-		return statusRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId)
+	public List<Status> findStatuses(final String namespace, final String municipalityId, final Sort sort) {
+		return statusRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId, sort)
 			.stream()
 			.map(MetadataMapper::toStatus)
-			.sorted(comparing(Status::getName))
 			.toList();
 	}
 
@@ -242,11 +241,10 @@ public class MetadataService {
 		return toRole(roleRepository.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId));
 	}
 
-	public List<Role> findRoles(final String namespace, final String municipalityId) {
-		return roleRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId)
+	public List<Role> findRoles(final String namespace, final String municipalityId, final Sort sort) {
+		return roleRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId, sort)
 			.stream()
 			.map(MetadataMapper::toRole)
-			.sorted(comparing(Role::getName))
 			.toList();
 	}
 
@@ -383,16 +381,15 @@ public class MetadataService {
 		return toCategory(categoryRepository.save(entity));
 	}
 
-	public List<Category> findCategories(final String namespace, final String municipalityId) {
-		return categoryRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId)
+	public List<Category> findCategories(final String namespace, final String municipalityId, final Sort sort) {
+		return categoryRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId, sort)
 			.stream()
 			.map(MetadataMapper::toCategory)
-			.sorted(comparing(Category::getDisplayName, nullsFirst(naturalOrder())))
 			.toList();
 	}
 
 	public List<Type> findTypes(final String namespace, final String municipalityId, final String category) {
-		return findCategories(namespace, municipalityId)
+		return findCategories(namespace, municipalityId, Sort.unsorted())
 			.stream()
 			.filter(entry -> Objects.equals(category, entry.getName()))
 			.map(Category::getTypes)
@@ -427,8 +424,8 @@ public class MetadataService {
 	// ContactReason Operations
 	// =================================================================
 
-	public List<ContactReason> findContactReasons(final String namespace, final String municipalityId) {
-		return contactReasonRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId).stream()
+	public List<ContactReason> findContactReasons(final String namespace, final String municipalityId, final Sort sort) {
+		return contactReasonRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId, sort).stream()
 			.map(MetadataMapper::toContactReason)
 			.toList();
 	}

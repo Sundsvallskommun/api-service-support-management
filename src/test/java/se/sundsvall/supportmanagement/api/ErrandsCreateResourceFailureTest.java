@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
+import org.springframework.data.domain.Sort;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
@@ -38,6 +39,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 import static org.flywaydb.core.internal.util.StringUtils.rightPad;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -90,11 +92,11 @@ class ErrandsCreateResourceFailureTest {
 	@BeforeEach
 	void setupMock() {
 		when(metadataServiceMock.isValidated(any(), any(), any())).thenReturn(true);
-		when(metadataServiceMock.findContactReasons(any(), any())).thenReturn(List.of(ContactReason.create().withReason("contactReason")));
-		when(metadataServiceMock.findCategories(any(), any())).thenReturn(List.of(Category.create().withName("CATEGORY_1"), Category.create().withName("CATEGORY_2")));
-		when(metadataServiceMock.findStatuses(any(), any())).thenReturn(List.of(Status.create().withName("STATUS_1"), Status.create().withName("STATUS_2")));
+		when(metadataServiceMock.findContactReasons(any(), any(), any(Sort.class))).thenReturn(List.of(ContactReason.create().withReason("contactReason")));
+		when(metadataServiceMock.findCategories(any(), any(), any(Sort.class))).thenReturn(List.of(Category.create().withName("CATEGORY_1"), Category.create().withName("CATEGORY_2")));
+		when(metadataServiceMock.findStatuses(any(), any(), any(Sort.class))).thenReturn(List.of(Status.create().withName("STATUS_1"), Status.create().withName("STATUS_2")));
 		when(metadataServiceMock.findTypes(any(), any(), any())).thenReturn(List.of(Type.create().withName("TYPE_1"), Type.create().withName("TYPE_2")));
-		when(metadataServiceMock.findRoles(any(), any())).thenReturn(List.of(Role.create().withName("ROLE_1")));
+		when(metadataServiceMock.findRoles(any(), any(), any(Sort.class))).thenReturn(List.of(Role.create().withName("ROLE_1")));
 	}
 
 	@Test
@@ -119,10 +121,10 @@ class ErrandsCreateResourceFailureTest {
 
 		// Verification
 		verify(metadataServiceMock, times(3)).isValidated(any(), any(), any());
-		verify(metadataServiceMock).findCategories(any(), any());
-		verify(metadataServiceMock).findStatuses(any(), any());
+		verify(metadataServiceMock).findCategories(any(), any(), any(Sort.class));
+		verify(metadataServiceMock).findStatuses(any(), any(), any(Sort.class));
 		verify(metadataServiceMock).findTypes(any(), any(), any());
-		verify(metadataServiceMock).findRoles(INVALID, MUNICIPALITY_ID);
+		verify(metadataServiceMock).findRoles(eq(INVALID), eq(MUNICIPALITY_ID), any(Sort.class));
 		verifyNoInteractions(errandServiceMock);
 	}
 
@@ -148,10 +150,10 @@ class ErrandsCreateResourceFailureTest {
 
 		// Verification
 		verify(metadataServiceMock, times(3)).isValidated(any(), any(), any());
-		verify(metadataServiceMock).findCategories(any(), any());
-		verify(metadataServiceMock).findStatuses(any(), any());
+		verify(metadataServiceMock).findCategories(any(), any(), any(Sort.class));
+		verify(metadataServiceMock).findStatuses(any(), any(), any(Sort.class));
 		verify(metadataServiceMock).findTypes(any(), any(), any());
-		verify(metadataServiceMock).findRoles(NAMESPACE, INVALID);
+		verify(metadataServiceMock).findRoles(eq(NAMESPACE), eq(INVALID), any(Sort.class));
 		verifyNoInteractions(errandServiceMock);
 	}
 
@@ -204,10 +206,10 @@ class ErrandsCreateResourceFailureTest {
 
 		// Verification
 		verify(metadataServiceMock, times(3)).isValidated(any(), any(), any());
-		verify(metadataServiceMock).findCategories(any(), any());
-		verify(metadataServiceMock).findStatuses(any(), any());
+		verify(metadataServiceMock).findCategories(any(), any(), any(Sort.class));
+		verify(metadataServiceMock).findStatuses(any(), any(), any(Sort.class));
 		verify(metadataServiceMock).findTypes(any(), any(), any());
-		verify(metadataServiceMock).findRoles(NAMESPACE, MUNICIPALITY_ID);
+		verify(metadataServiceMock).findRoles(eq(NAMESPACE), eq(MUNICIPALITY_ID), any(Sort.class));
 		verifyNoInteractions(errandServiceMock);
 	}
 
@@ -235,7 +237,7 @@ class ErrandsCreateResourceFailureTest {
 			tuple("createErrand.errand.title", "must not be blank"));
 
 		// Verification
-		verify(metadataServiceMock).findStatuses(any(), any());
+		verify(metadataServiceMock).findStatuses(any(), any(), any(Sort.class));
 		verifyNoInteractions(errandServiceMock);
 	}
 
@@ -267,8 +269,8 @@ class ErrandsCreateResourceFailureTest {
 			tuple("createErrand.errand.contactReason", "not a valid contact reason"));
 
 		// Verification
-		verify(metadataServiceMock).findCategories(any(), any());
-		verify(metadataServiceMock).findStatuses(any(), any());
+		verify(metadataServiceMock).findCategories(any(), any(), any(Sort.class));
+		verify(metadataServiceMock).findStatuses(any(), any(), any(Sort.class));
 		verifyNoInteractions(errandServiceMock);
 	}
 
@@ -302,7 +304,7 @@ class ErrandsCreateResourceFailureTest {
 			tuple("createErrand.errand.title", "must not be blank"));
 
 		// Verification
-		verify(metadataServiceMock).findStatuses(any(), any());
+		verify(metadataServiceMock).findStatuses(any(), any(), any(Sort.class));
 		verifyNoInteractions(errandServiceMock);
 	}
 
@@ -331,8 +333,8 @@ class ErrandsCreateResourceFailureTest {
 			tuple("createErrand.errand.externalTags", "keys in the collection must be unique"));
 
 		// Verification
-		verify(metadataServiceMock).findStatuses(any(), any());
-		verify(metadataServiceMock).findRoles(NAMESPACE, MUNICIPALITY_ID);
+		verify(metadataServiceMock).findStatuses(any(), any(), any(Sort.class));
+		verify(metadataServiceMock).findRoles(eq(NAMESPACE), eq(MUNICIPALITY_ID), any(Sort.class));
 		verifyNoInteractions(errandServiceMock);
 	}
 
@@ -357,9 +359,9 @@ class ErrandsCreateResourceFailureTest {
 			tuple("createErrand.errand.status", "value 'invalid_status' doesn't match any of [STATUS_1, STATUS_2]"));
 
 		// Verification
-		verify(metadataServiceMock).findCategories(any(), any());
-		verify(metadataServiceMock).findStatuses(any(), any());
-		verify(metadataServiceMock).findRoles(NAMESPACE, MUNICIPALITY_ID);
+		verify(metadataServiceMock).findCategories(any(), any(), any(Sort.class));
+		verify(metadataServiceMock).findStatuses(any(), any(), any(Sort.class));
+		verify(metadataServiceMock).findRoles(eq(NAMESPACE), eq(MUNICIPALITY_ID), any(Sort.class));
 		verifyNoInteractions(errandServiceMock);
 	}
 
@@ -383,10 +385,10 @@ class ErrandsCreateResourceFailureTest {
 			tuple("createErrand.errand.classification", "value 'invalid_type' doesn't match any of [TYPE_1, TYPE_2]"));
 
 		// Verification
-		verify(metadataServiceMock).findCategories(any(), any());
-		verify(metadataServiceMock).findStatuses(any(), any());
+		verify(metadataServiceMock).findCategories(any(), any(), any(Sort.class));
+		verify(metadataServiceMock).findStatuses(any(), any(), any(Sort.class));
 		verify(metadataServiceMock).findTypes(any(), any(), any());
-		verify(metadataServiceMock).findRoles(NAMESPACE, MUNICIPALITY_ID);
+		verify(metadataServiceMock).findRoles(eq(NAMESPACE), eq(MUNICIPALITY_ID), any(Sort.class));
 		verifyNoInteractions(errandServiceMock);
 	}
 
@@ -411,8 +413,8 @@ class ErrandsCreateResourceFailureTest {
 			.containsExactly(tuple("createErrand.errand.escalationEmail", "must be a well-formed email address"));
 
 		// Verification
-		verify(metadataServiceMock).findStatuses(any(), any());
-		verify(metadataServiceMock).findRoles(NAMESPACE, MUNICIPALITY_ID);
+		verify(metadataServiceMock).findStatuses(any(), any(), any(Sort.class));
+		verify(metadataServiceMock).findRoles(eq(NAMESPACE), eq(MUNICIPALITY_ID), any(Sort.class));
 		verifyNoInteractions(errandServiceMock);
 	}
 
@@ -437,8 +439,8 @@ class ErrandsCreateResourceFailureTest {
 			.containsExactly(tuple("createErrand.errand.channel", "size must be between 0 and 255"));
 
 		// Verification
-		verify(metadataServiceMock).findStatuses(any(), any());
-		verify(metadataServiceMock).findRoles(NAMESPACE, MUNICIPALITY_ID);
+		verify(metadataServiceMock).findStatuses(any(), any(), any(Sort.class));
+		verify(metadataServiceMock).findRoles(eq(NAMESPACE), eq(MUNICIPALITY_ID), any(Sort.class));
 		verifyNoInteractions(errandServiceMock);
 	}
 
@@ -463,8 +465,8 @@ class ErrandsCreateResourceFailureTest {
 			.containsExactly(tuple("createErrand.errand.contactReasonDescription", "size must be between 0 and 4096"));
 
 		// Verification
-		verify(metadataServiceMock).findStatuses(NAMESPACE, MUNICIPALITY_ID);
-		verify(metadataServiceMock).findRoles(NAMESPACE, MUNICIPALITY_ID);
+		verify(metadataServiceMock).findStatuses(eq(NAMESPACE), eq(MUNICIPALITY_ID), any(Sort.class));
+		verify(metadataServiceMock).findRoles(eq(NAMESPACE), eq(MUNICIPALITY_ID), any(Sort.class));
 		verifyNoInteractions(errandServiceMock);
 	}
 
@@ -491,7 +493,7 @@ class ErrandsCreateResourceFailureTest {
 
 		// Verification
 		verify(metadataServiceMock, times(1)).isValidated(any(), any(), any());
-		verify(metadataServiceMock).findRoles(NAMESPACE, MUNICIPALITY_ID);
+		verify(metadataServiceMock).findRoles(eq(NAMESPACE), eq(MUNICIPALITY_ID), any(Sort.class));
 		verifyNoInteractions(errandServiceMock);
 	}
 
@@ -517,7 +519,7 @@ class ErrandsCreateResourceFailureTest {
 
 		// Verification
 		verify(metadataServiceMock, times(1)).isValidated(any(), any(), any());
-		verify(metadataServiceMock).findRoles(NAMESPACE, MUNICIPALITY_ID);
+		verify(metadataServiceMock).findRoles(eq(NAMESPACE), eq(MUNICIPALITY_ID), any(Sort.class));
 		verifyNoInteractions(errandServiceMock);
 	}
 
@@ -546,7 +548,7 @@ class ErrandsCreateResourceFailureTest {
 
 		// Verification
 		verify(metadataServiceMock, times(1)).isValidated(any(), any(), any());
-		verify(metadataServiceMock).findRoles(NAMESPACE, MUNICIPALITY_ID);
+		verify(metadataServiceMock).findRoles(eq(NAMESPACE), eq(MUNICIPALITY_ID), any(Sort.class));
 		verifyNoInteractions(errandServiceMock);
 	}
 
@@ -577,7 +579,7 @@ class ErrandsCreateResourceFailureTest {
 
 		// Verification
 		verify(metadataServiceMock, times(1)).isValidated(any(), any(), any());
-		verify(metadataServiceMock).findRoles(NAMESPACE, MUNICIPALITY_ID);
+		verify(metadataServiceMock).findRoles(eq(NAMESPACE), eq(MUNICIPALITY_ID), any(Sort.class));
 		verifyNoInteractions(errandServiceMock);
 	}
 
@@ -608,7 +610,7 @@ class ErrandsCreateResourceFailureTest {
 
 		// Verification
 		verify(metadataServiceMock, times(1)).isValidated(any(), any(), any());
-		verify(metadataServiceMock).findRoles(NAMESPACE, MUNICIPALITY_ID);
+		verify(metadataServiceMock).findRoles(eq(NAMESPACE), eq(MUNICIPALITY_ID), any(Sort.class));
 		verifyNoInteractions(errandServiceMock);
 	}
 
@@ -639,7 +641,7 @@ class ErrandsCreateResourceFailureTest {
 
 		// Verification
 		verify(metadataServiceMock, times(1)).isValidated(any(), any(), any());
-		verify(metadataServiceMock).findRoles(NAMESPACE, MUNICIPALITY_ID);
+		verify(metadataServiceMock).findRoles(eq(NAMESPACE), eq(MUNICIPALITY_ID), any(Sort.class));
 		verifyNoInteractions(errandServiceMock);
 	}
 
@@ -669,7 +671,7 @@ class ErrandsCreateResourceFailureTest {
 
 		// Verification
 		verify(metadataServiceMock, times(1)).isValidated(any(), any(), any());
-		verify(metadataServiceMock).findRoles(NAMESPACE, MUNICIPALITY_ID);
+		verify(metadataServiceMock).findRoles(eq(NAMESPACE), eq(MUNICIPALITY_ID), any(Sort.class));
 		verifyNoInteractions(errandServiceMock);
 	}
 

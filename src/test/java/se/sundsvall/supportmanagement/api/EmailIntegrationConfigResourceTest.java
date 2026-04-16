@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
+import org.springframework.data.domain.Sort;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
@@ -47,7 +48,7 @@ class EmailIntegrationConfigResourceTest {
 
 	@BeforeEach
 	void setup() {
-		when(metadataServiceMock.findStatuses(any(), any())).thenReturn(List.of(Status.create().withName("NEW")));
+		when(metadataServiceMock.findStatuses(any(), any(), any(Sort.class))).thenReturn(List.of(Status.create().withName("NEW")));
 	}
 
 	@Test

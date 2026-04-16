@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.ThrowableProblem;
@@ -59,7 +60,7 @@ public class AddLabelAction implements Action {
 				.withKey(STATUS)
 				.withMandatory(false)
 				.withDescription("Errand status. If null action will execute for all statuses")
-				.withPossibleValues(metadataService.findStatuses(namespace, municipalityId).stream()
+				.withPossibleValues(metadataService.findStatuses(namespace, municipalityId, Sort.unsorted()).stream()
 					.map(status -> PossibleValue.create()
 						.withValue(status.getName())
 						.withDisplayName(status.getName()))
@@ -96,7 +97,7 @@ public class AddLabelAction implements Action {
 			});
 
 		if (conditions.containsKey(STATUS)) {
-			var validStatuses = metadataService.findStatuses(namespace, municipalityId).stream().map(Status::getName).toList();
+			var validStatuses = metadataService.findStatuses(namespace, municipalityId, Sort.unsorted()).stream().map(Status::getName).toList();
 			conditions.get(STATUS).forEach(value -> {
 				if (!validStatuses.contains(value)) {
 					throw Problem.valueOf(UNPROCESSABLE_CONTENT, String.format("Status '%s' is not valid for this namespace", value));

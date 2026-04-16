@@ -1,4 +1,5 @@
 {
 	"reason": "new-reason",
-	"displayName": "New Reason"
+	"displayName": "New Reason",
+	"sortOrder": 10
 }

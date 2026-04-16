@@ -11,6 +11,7 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Sort;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 import se.sundsvall.dept44.problem.ThrowableProblem;
@@ -20,6 +21,7 @@ import se.sundsvall.supportmanagement.service.MetadataService;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -64,7 +66,7 @@ class ValidRoleConstraintValidatorTest {
 			verify(constraintValidatorContextMock).buildConstraintViolationWithTemplate(any());
 			verify(constraintViolationBuilderMock).addConstraintViolation();
 			verify(metadataServiceMock).isValidated(namespace, municipalityId, ROLE);
-			verify(metadataServiceMock).findRoles(namespace, municipalityId);
+			verify(metadataServiceMock).findRoles(eq(namespace), eq(municipalityId), any(Sort.class));
 		}
 	}
 
@@ -77,12 +79,12 @@ class ValidRoleConstraintValidatorTest {
 		try (MockedStatic<RequestContextHolder> requestContextHolderMock = Mockito.mockStatic(RequestContextHolder.class)) {
 			requestContextHolderMock.when(RequestContextHolder::getRequestAttributes).thenReturn(requestAttributesMock);
 			when(requestAttributesMock.getAttribute(URI_TEMPLATE_VARIABLES_ATTRIBUTE, SCOPE_REQUEST)).thenReturn(attributes);
-			when(metadataServiceMock.findRoles(namespace, municipalityId)).thenReturn(List.of(Role.create().withName("ROLE-1")));
+			when(metadataServiceMock.findRoles(eq(namespace), eq(municipalityId), any(Sort.class))).thenReturn(List.of(Role.create().withName("ROLE-1")));
 			when(metadataServiceMock.isValidated(namespace, municipalityId, ROLE)).thenReturn(true);
 
 			assertThat(validator.isValid("role-1", constraintValidatorContextMock)).isTrue();
 			verify(metadataServiceMock).isValidated(namespace, municipalityId, ROLE);
-			verify(metadataServiceMock).findRoles(namespace, municipalityId);
+			verify(metadataServiceMock).findRoles(eq(namespace), eq(municipalityId), any(Sort.class));
 		}
 	}
 
@@ -99,7 +101,7 @@ class ValidRoleConstraintValidatorTest {
 
 			assertThat(validator.isValid(null, constraintValidatorContextMock)).isTrue();
 			verify(metadataServiceMock).isValidated(namespace, municipalityId, ROLE);
-			verify(metadataServiceMock).findRoles(namespace, municipalityId);
+			verify(metadataServiceMock).findRoles(eq(namespace), eq(municipalityId), any(Sort.class));
 		}
 	}
 
@@ -116,7 +118,7 @@ class ValidRoleConstraintValidatorTest {
 
 			assertThat(validator.isValid(" ", constraintValidatorContextMock)).isTrue();
 			verify(metadataServiceMock).isValidated(namespace, municipalityId, ROLE);
-			verify(metadataServiceMock).findRoles(namespace, municipalityId);
+			verify(metadataServiceMock).findRoles(eq(namespace), eq(municipalityId), any(Sort.class));
 		}
 	}
 

@@ -125,4 +125,16 @@ class MetadataStatusIT extends AbstractAppTest {
 			.sendRequestAndVerifyResponse();
 	}
 
+	@Test
+	void test07_getStatusesSortedBySortOrder() {
+
+		setupCall()
+			.withServicePath(PATH + "?sort=sortOrder,asc")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
 }

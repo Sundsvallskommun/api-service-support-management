@@ -27,6 +27,11 @@ public class Category {
 	@Schema(description = "Display name for the category", examples = "Displayed name")
 	private String displayName;
 
+	@Schema(description = "Sort order for the category", examples = "1", types = {
+		"integer", "null"
+	})
+	private Integer sortOrder;
+
 	@ArraySchema(uniqueItems = true)
 	@Valid
 	private List<Type> types;
@@ -84,6 +89,19 @@ public class Category {
 		return this;
 	}
 
+	public Integer getSortOrder() {
+		return sortOrder;
+	}
+
+	public void setSortOrder(final Integer sortOrder) {
+		this.sortOrder = sortOrder;
+	}
+
+	public Category withSortOrder(final Integer sortOrder) {
+		this.sortOrder = sortOrder;
+		return this;
+	}
+
 	public List<Type> getTypes() {
 		return types;
 	}
@@ -125,7 +143,7 @@ public class Category {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(created, displayName, id, modified, name, types);
+		return Objects.hash(created, displayName, id, modified, name, sortOrder, types);
 	}
 
 	@Override
@@ -140,11 +158,12 @@ public class Category {
 			return false;
 		}
 		final Category other = (Category) obj;
-		return Objects.equals(created, other.created) && Objects.equals(displayName, other.displayName) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(name, other.name) && Objects.equals(types, other.types);
+		return Objects.equals(created, other.created) && Objects.equals(displayName, other.displayName) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(name, other.name) && Objects.equals(sortOrder,
+			other.sortOrder) && Objects.equals(types, other.types);
 	}
 
 	@Override
 	public String toString() {
-		return "Category [id=" + id + ", name=" + name + ", displayName=" + displayName + ", types=" + types + ", created=" + created + ", modified=" + modified + "]";
+		return "Category [id=" + id + ", name=" + name + ", displayName=" + displayName + ", sortOrder=" + sortOrder + ", types=" + types + ", created=" + created + ", modified=" + modified + "]";
 	}
 }
