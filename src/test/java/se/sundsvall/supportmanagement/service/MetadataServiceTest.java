@@ -8,6 +8,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Sort;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.supportmanagement.api.model.metadata.Category;
 import se.sundsvall.supportmanagement.api.model.metadata.ContactReason;
@@ -87,16 +88,17 @@ class MetadataServiceTest {
 	@Test
 	void createStatus() {
 		// Setup
+		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
 		final var name = "name";
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
 		final var status = Status.create().withName(name);
 
 		// Mock
-		when(statusRepositoryMock.save(any())).thenReturn(StatusEntity.create().withName(name));
+		when(statusRepositoryMock.save(any())).thenReturn(StatusEntity.create().withId(id).withName(name));
 
 		// Call
-		assertThat(metadataService.createStatus(namespace, municipalityId, status)).isEqualTo(name);
+		assertThat(metadataService.createStatus(namespace, municipalityId, status)).isEqualTo(id);
 
 		// Verifications
 		verify(statusRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
@@ -129,21 +131,21 @@ class MetadataServiceTest {
 	@Test
 	void getStatus() {
 		// Setup
-		final var name = "name";
+		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
 
 		// Mock
-		when(statusRepositoryMock.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)).thenReturn(true);
-		when(statusRepositoryMock.getByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)).thenReturn(StatusEntity.create().withName(name));
+		when(statusRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(true);
+		when(statusRepositoryMock.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(StatusEntity.create().withId(id).withName("name"));
 
 		// Call
-		final var status = metadataService.getStatus(namespace, municipalityId, name);
+		final var status = metadataService.getStatus(namespace, municipalityId, id);
 
 		// Verifications
-		assertThat(status.getName()).isEqualTo(name);
-		verify(statusRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
-		verify(statusRepositoryMock).getByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
+		assertThat(status.getName()).isEqualTo("name");
+		verify(statusRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verify(statusRepositoryMock).getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
 		verifyNoMoreInteractions(statusRepositoryMock);
 		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, validationRepositoryMock, roleRepositoryMock);
 	}
@@ -151,17 +153,17 @@ class MetadataServiceTest {
 	@Test
 	void getNonExistingStatus() {
 		// Setup
-		final var name = "name";
+		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
 
 		// Call
-		final var e = assertThrows(ThrowableProblem.class, () -> metadataService.getStatus(namespace, municipalityId, name));
+		final var e = assertThrows(ThrowableProblem.class, () -> metadataService.getStatus(namespace, municipalityId, id));
 
 		// Verifications
 		assertThat(e.getStatus()).isEqualTo(NOT_FOUND);
-		assertThat(e.getMessage()).isEqualTo("Not Found: Status 'name' is not present in namespace 'namespace' for municipalityId 'municipalityId'");
-		verify(statusRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
+		assertThat(e.getMessage()).isEqualTo("Not Found: Status '%s' is not present in namespace 'namespace' for municipalityId 'municipalityId'".formatted(id));
+		verify(statusRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
 		verifyNoMoreInteractions(statusRepositoryMock);
 		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, validationRepositoryMock, roleRepositoryMock);
 	}
@@ -177,50 +179,109 @@ class MetadataServiceTest {
 			StatusEntity.create().withName("STATUS_2"));
 
 		// Mock
-		when(statusRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any())).thenReturn(statusEntityList);
+		when(statusRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any(), any(Sort.class))).thenReturn(statusEntityList);
 
 		// Call
-		final var result = metadataService.findStatuses(namespace, municipalityId);
+		final var result = metadataService.findStatuses(namespace, municipalityId, Sort.unsorted());
 
 		// Verifications
-		assertThat(result).hasSize(3).extracting(Status::getName).containsExactly("STATUS_1", "STATUS_2", "STATUS_3");
-		verify(statusRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId);
+		assertThat(result).hasSize(3).extracting(Status::getName).containsExactly("STATUS_3", "STATUS_1", "STATUS_2");
+		verify(statusRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.unsorted());
 		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, validationRepositoryMock, roleRepositoryMock);
 	}
 
 	@Test
 	void deleteStatus() {
 		// Setup
-		final var name = "name";
+		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
 
 		// Mock
-		when(statusRepositoryMock.existsByNamespaceAndMunicipalityIdAndName(any(), any(), any())).thenReturn(true);
+		when(statusRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(true);
 
 		// Call
-		metadataService.deleteStatus(namespace, municipalityId, name);
+		metadataService.deleteStatus(namespace, municipalityId, id);
 
 		// Verifications
-		verify(statusRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
-		verify(statusRepositoryMock).deleteByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
+		verify(statusRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verify(statusRepositoryMock).deleteByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
 		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, validationRepositoryMock, roleRepositoryMock);
 	}
 
 	@Test
 	void deleteNonExistingStatus() {
 		// Setup
-		final var name = "name";
+		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
 
 		// Call
-		final var e = assertThrows(ThrowableProblem.class, () -> metadataService.deleteStatus(namespace, municipalityId, name));
+		final var e = assertThrows(ThrowableProblem.class, () -> metadataService.deleteStatus(namespace, municipalityId, id));
 
 		// Verifications
 		assertThat(e.getStatus()).isEqualTo(NOT_FOUND);
-		assertThat(e.getMessage()).isEqualTo("Not Found: Status 'name' is not present in namespace 'namespace' for municipalityId 'municipalityId'");
-		verify(statusRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
+		assertThat(e.getMessage()).isEqualTo("Not Found: Status '%s' is not present in namespace 'namespace' for municipalityId 'municipalityId'".formatted(id));
+		verify(statusRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verifyNoMoreInteractions(statusRepositoryMock);
+		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, validationRepositoryMock, roleRepositoryMock);
+	}
+
+	@Test
+	void updateExistingStatus() {
+		// Setup
+		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+
+		final var entity = StatusEntity.create()
+			.withId(id)
+			.withName("existing_status")
+			.withDisplayName("existing_display")
+			.withExternalDisplayName("existing_external");
+
+		final var status = Status.create()
+			.withName("name")
+			.withDisplayName("displayName")
+			.withExternalDisplayName("externalDisplayName");
+
+		// Mock
+		when(statusRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(true);
+		when(statusRepositoryMock.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(entity);
+		when(statusRepositoryMock.save(entity)).thenReturn(entity);
+
+		// Call
+		final var response = metadataService.updateStatus(namespace, municipalityId, id, status);
+
+		// Assertions and verifications
+		assertThat(response.getName()).isEqualTo("name");
+		assertThat(response.getDisplayName()).isEqualTo("displayName");
+		assertThat(response.getExternalDisplayName()).isEqualTo("externalDisplayName");
+		verify(statusRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verify(statusRepositoryMock).getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verify(statusRepositoryMock).save(entity);
+		verifyNoMoreInteractions(statusRepositoryMock);
+		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, validationRepositoryMock, roleRepositoryMock);
+	}
+
+	@Test
+	void updateNonExistingStatus() {
+		// Setup
+		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var status = Status.create();
+
+		// Mock
+		when(statusRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(false);
+
+		// Call
+		final var exception = assertThrows(ThrowableProblem.class, () -> metadataService.updateStatus(namespace, municipalityId, id, status));
+
+		// Assertions and verifications
+		assertThat(exception.getStatus()).isEqualTo(NOT_FOUND);
+		assertThat(exception.getMessage()).isEqualTo("Not Found: Status '%s' is not present in namespace 'namespace' for municipalityId 'municipalityId'".formatted(id));
+		verify(statusRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
 		verifyNoMoreInteractions(statusRepositoryMock);
 		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, validationRepositoryMock, roleRepositoryMock);
 	}
@@ -232,16 +293,17 @@ class MetadataServiceTest {
 	@Test
 	void createRole() {
 		// Setup
+		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
 		final var name = "name";
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
 		final var role = Role.create().withName(name);
 
 		// Mock
-		when(roleRepositoryMock.save(any())).thenReturn(RoleEntity.create().withName(name));
+		when(roleRepositoryMock.save(any())).thenReturn(RoleEntity.create().withId(id).withName(name));
 
 		// Call
-		assertThat(metadataService.createRole(namespace, municipalityId, role)).isEqualTo(name);
+		assertThat(metadataService.createRole(namespace, municipalityId, role)).isEqualTo(id);
 
 		// Verifications
 		verify(roleRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
@@ -274,21 +336,21 @@ class MetadataServiceTest {
 	@Test
 	void getRole() {
 		// Setup
-		final var name = "name";
+		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
 
 		// Mock
-		when(roleRepositoryMock.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)).thenReturn(true);
-		when(roleRepositoryMock.getByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)).thenReturn(RoleEntity.create().withName(name));
+		when(roleRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(true);
+		when(roleRepositoryMock.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(RoleEntity.create().withId(id).withName("name"));
 
 		// Call
-		final var role = metadataService.getRole(namespace, municipalityId, name);
+		final var role = metadataService.getRole(namespace, municipalityId, id);
 
 		// Verifications
-		assertThat(role.getName()).isEqualTo(name);
-		verify(roleRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
-		verify(roleRepositoryMock).getByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
+		assertThat(role.getName()).isEqualTo("name");
+		verify(roleRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verify(roleRepositoryMock).getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
 		verifyNoMoreInteractions(roleRepositoryMock);
 		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, validationRepositoryMock, statusRepositoryMock);
 	}
@@ -296,17 +358,17 @@ class MetadataServiceTest {
 	@Test
 	void getNonExistingRole() {
 		// Setup
-		final var name = "name";
+		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
 
 		// Call
-		final var e = assertThrows(ThrowableProblem.class, () -> metadataService.getRole(namespace, municipalityId, name));
+		final var e = assertThrows(ThrowableProblem.class, () -> metadataService.getRole(namespace, municipalityId, id));
 
 		// Verifications
 		assertThat(e.getStatus()).isEqualTo(NOT_FOUND);
-		assertThat(e.getMessage()).isEqualTo("Not Found: Role 'name' is not present in namespace 'namespace' for municipalityId 'municipalityId'");
-		verify(roleRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
+		assertThat(e.getMessage()).isEqualTo("Not Found: Role '%s' is not present in namespace 'namespace' for municipalityId 'municipalityId'".formatted(id));
+		verify(roleRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
 		verifyNoMoreInteractions(roleRepositoryMock);
 		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, validationRepositoryMock, statusRepositoryMock);
 	}
@@ -322,50 +384,106 @@ class MetadataServiceTest {
 			RoleEntity.create().withName("ROLE_2"));
 
 		// Mock
-		when(roleRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any())).thenReturn(roleEntityList);
+		when(roleRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any(), any(Sort.class))).thenReturn(roleEntityList);
 
 		// Call
-		final var result = metadataService.findRoles(namespace, municipalityId);
+		final var result = metadataService.findRoles(namespace, municipalityId, Sort.unsorted());
 
 		// Verifications
-		assertThat(result).hasSize(3).extracting(Role::getName).containsExactly("ROLE_1", "ROLE_2", "ROLE_3");
-		verify(roleRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId);
+		assertThat(result).hasSize(3).extracting(Role::getName).containsExactly("ROLE_3", "ROLE_1", "ROLE_2");
+		verify(roleRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.unsorted());
 		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, validationRepositoryMock, statusRepositoryMock);
 	}
 
 	@Test
 	void deleteRole() {
 		// Setup
-		final var name = "name";
+		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
 
 		// Mock
-		when(roleRepositoryMock.existsByNamespaceAndMunicipalityIdAndName(any(), any(), any())).thenReturn(true);
+		when(roleRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(true);
 
 		// Call
-		metadataService.deleteRole(namespace, municipalityId, name);
+		metadataService.deleteRole(namespace, municipalityId, id);
 
 		// Verifications
-		verify(roleRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
-		verify(roleRepositoryMock).deleteByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
+		verify(roleRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verify(roleRepositoryMock).deleteByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
 		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, validationRepositoryMock, statusRepositoryMock);
 	}
 
 	@Test
 	void deleteNonExistingRole() {
 		// Setup
-		final var name = "name";
+		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
 
 		// Call
-		final var e = assertThrows(ThrowableProblem.class, () -> metadataService.deleteRole(namespace, municipalityId, name));
+		final var e = assertThrows(ThrowableProblem.class, () -> metadataService.deleteRole(namespace, municipalityId, id));
 
 		// Verifications
 		assertThat(e.getStatus()).isEqualTo(NOT_FOUND);
-		assertThat(e.getMessage()).isEqualTo("Not Found: Role 'name' is not present in namespace 'namespace' for municipalityId 'municipalityId'");
-		verify(roleRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
+		assertThat(e.getMessage()).isEqualTo("Not Found: Role '%s' is not present in namespace 'namespace' for municipalityId 'municipalityId'".formatted(id));
+		verify(roleRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verifyNoMoreInteractions(roleRepositoryMock);
+		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, validationRepositoryMock, statusRepositoryMock);
+	}
+
+	@Test
+	void updateExistingRole() {
+		// Setup
+		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+
+		final var entity = RoleEntity.create()
+			.withId(id)
+			.withName("existing_role")
+			.withDisplayName("existing_display");
+
+		final var role = Role.create()
+			.withName("name")
+			.withDisplayName("displayName");
+
+		// Mock
+		when(roleRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(true);
+		when(roleRepositoryMock.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(entity);
+		when(roleRepositoryMock.save(entity)).thenReturn(entity);
+
+		// Call
+		final var response = metadataService.updateRole(namespace, municipalityId, id, role);
+
+		// Assertions and verifications
+		assertThat(response.getName()).isEqualTo("name");
+		assertThat(response.getDisplayName()).isEqualTo("displayName");
+		verify(roleRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verify(roleRepositoryMock).getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verify(roleRepositoryMock).save(entity);
+		verifyNoMoreInteractions(roleRepositoryMock);
+		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, validationRepositoryMock, statusRepositoryMock);
+	}
+
+	@Test
+	void updateNonExistingRole() {
+		// Setup
+		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var role = Role.create();
+
+		// Mock
+		when(roleRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(false);
+
+		// Call
+		final var exception = assertThrows(ThrowableProblem.class, () -> metadataService.updateRole(namespace, municipalityId, id, role));
+
+		// Assertions and verifications
+		assertThat(exception.getStatus()).isEqualTo(NOT_FOUND);
+		assertThat(exception.getMessage()).isEqualTo("Not Found: Role '%s' is not present in namespace 'namespace' for municipalityId 'municipalityId'".formatted(id));
+		verify(roleRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
 		verifyNoMoreInteractions(roleRepositoryMock);
 		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, validationRepositoryMock, statusRepositoryMock);
 	}
@@ -377,16 +495,17 @@ class MetadataServiceTest {
 	@Test
 	void createCategory() {
 		// Setup
+		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
 		final var name = "name";
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
 		final var category = Category.create().withName(name);
 
 		// Mock
-		when(categoryRepositoryMock.save(any())).thenReturn(CategoryEntity.create().withName(name));
+		when(categoryRepositoryMock.save(any())).thenReturn(CategoryEntity.create().withId(id).withName(name));
 
 		// Call
-		assertThat(metadataService.createCategory(namespace, municipalityId, category)).isEqualTo(name);
+		assertThat(metadataService.createCategory(namespace, municipalityId, category)).isEqualTo(id);
 
 		// Verifications
 		verify(categoryRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
@@ -425,22 +544,21 @@ class MetadataServiceTest {
 	@Test
 	void getCategory() {
 		// Setup
-		// Setup
-		final var name = "name";
+		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
 
 		// Mock
-		when(categoryRepositoryMock.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)).thenReturn(true);
-		when(categoryRepositoryMock.getByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)).thenReturn(CategoryEntity.create().withName(name));
+		when(categoryRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(true);
+		when(categoryRepositoryMock.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(CategoryEntity.create().withId(id).withName("name"));
 
 		// Call
-		final var category = metadataService.getCategory(namespace, municipalityId, name);
+		final var category = metadataService.getCategory(namespace, municipalityId, id);
 
 		// Verifications
-		assertThat(category.getName()).isEqualTo(name);
-		verify(categoryRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
-		verify(categoryRepositoryMock).getByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
+		assertThat(category.getName()).isEqualTo("name");
+		verify(categoryRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verify(categoryRepositoryMock).getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
 		verifyNoMoreInteractions(categoryRepositoryMock);
 		verifyNoInteractions(statusRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, roleRepositoryMock, validationRepositoryMock);
 	}
@@ -448,17 +566,17 @@ class MetadataServiceTest {
 	@Test
 	void getNonExistingCategory() {
 		// Setup
-		final var name = "name";
+		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
 
 		// Call
-		final var e = assertThrows(ThrowableProblem.class, () -> metadataService.getCategory(namespace, municipalityId, name));
+		final var e = assertThrows(ThrowableProblem.class, () -> metadataService.getCategory(namespace, municipalityId, id));
 
 		// Verifications
 		assertThat(e.getStatus()).isEqualTo(NOT_FOUND);
-		assertThat(e.getMessage()).isEqualTo("Not Found: Category 'name' is not present in namespace 'namespace' for municipalityId 'municipalityId'");
-		verify(categoryRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
+		assertThat(e.getMessage()).isEqualTo("Not Found: Category '%s' is not present in namespace 'namespace' for municipalityId 'municipalityId'".formatted(id));
+		verify(categoryRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
 		verifyNoMoreInteractions(categoryRepositoryMock);
 		verifyNoInteractions(statusRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, roleRepositoryMock, validationRepositoryMock);
 	}
@@ -466,19 +584,19 @@ class MetadataServiceTest {
 	@Test
 	void deleteCategory() {
 		// Setup
-		final var name = "name";
+		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
 
 		// Mock
-		when(categoryRepositoryMock.existsByNamespaceAndMunicipalityIdAndName(any(), any(), any())).thenReturn(true);
+		when(categoryRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(true);
 
 		// Call
-		metadataService.deleteCategory(namespace, municipalityId, name);
+		metadataService.deleteCategory(namespace, municipalityId, id);
 
 		// Verifications
-		verify(categoryRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
-		verify(categoryRepositoryMock).deleteByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
+		verify(categoryRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verify(categoryRepositoryMock).deleteByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
 		verifyNoInteractions(statusRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, roleRepositoryMock, validationRepositoryMock);
 	}
 
@@ -486,17 +604,17 @@ class MetadataServiceTest {
 	void deleteNonExistingCategory() {
 
 		// Setup
-		final var name = "name";
+		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
 
 		// Call
-		final var e = assertThrows(ThrowableProblem.class, () -> metadataService.deleteCategory(namespace, municipalityId, name));
+		final var e = assertThrows(ThrowableProblem.class, () -> metadataService.deleteCategory(namespace, municipalityId, id));
 
 		// Verifications
 		assertThat(e.getStatus()).isEqualTo(NOT_FOUND);
-		assertThat(e.getMessage()).isEqualTo("Not Found: Category 'name' is not present in namespace 'namespace' for municipalityId 'municipalityId'");
-		verify(categoryRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
+		assertThat(e.getMessage()).isEqualTo("Not Found: Category '%s' is not present in namespace 'namespace' for municipalityId 'municipalityId'".formatted(id));
+		verify(categoryRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
 		verifyNoMoreInteractions(categoryRepositoryMock);
 		verifyNoInteractions(statusRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, roleRepositoryMock, validationRepositoryMock);
 	}
@@ -504,35 +622,35 @@ class MetadataServiceTest {
 	@Test
 	void updateExistingCategory() {
 		// Setup
-		final var name = "name";
+		final var id = "b82bd8ac-1507-4d9a-958d-369261eecc15";
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
 
 		final var entity = CategoryEntity.create()
-			.withId(1L)
+			.withId(id)
 			.withName("existing_category")
 			.withTypes(List.of(TypeEntity.create().withName("EXISTING_TYPE_1"), TypeEntity.create().withName("EXISTING_TYPE_2")));
 
-		final var category = Category.create().withName(name).withDisplayName("displayName").withTypes(List.of(
+		final var category = Category.create().withName("name").withDisplayName("displayName").withTypes(List.of(
 			Type.create().withName("TYPE_1").withDisplayName("Type-1"),
 			Type.create().withName("TYPE_2").withDisplayName("Type-2"),
 			Type.create().withName("TYPE_3").withDisplayName("Type-3"),
 			Type.create().withName("TYPE_4").withDisplayName("Type-4")));
 
 		// Mock
-		when(categoryRepositoryMock.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)).thenReturn(true);
-		when(categoryRepositoryMock.getByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)).thenReturn(entity);
+		when(categoryRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(true);
+		when(categoryRepositoryMock.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(entity);
 		when(categoryRepositoryMock.save(entity)).thenReturn(entity);
 
 		// Call
-		final var response = metadataService.updateCategory(namespace, municipalityId, name, category);
+		final var response = metadataService.updateCategory(namespace, municipalityId, id, category);
 
 		// Assertions and verifications
-		assertThat(response.getName()).isEqualTo(name);
+		assertThat(response.getName()).isEqualTo("name");
 		assertThat(response.getDisplayName()).isEqualTo("displayName");
 		assertThat(response.getTypes()).hasSize(4).extracting(Type::getName).containsExactly("TYPE_1", "TYPE_2", "TYPE_3", "TYPE_4");
-		verify(categoryRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
-		verify(categoryRepositoryMock).getByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
+		verify(categoryRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verify(categoryRepositoryMock).getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
 		verify(categoryRepositoryMock).save(entity);
 		verifyNoMoreInteractions(categoryRepositoryMock);
 		verifyNoInteractions(statusRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, roleRepositoryMock, validationRepositoryMock);
@@ -541,22 +659,22 @@ class MetadataServiceTest {
 	@Test
 	void updateNonExistingCategory() {
 		// Setup
-		final var name = "name";
+		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
 		final var category = Category.create();
 
 		// Mock
-		when(categoryRepositoryMock.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)).thenReturn(false);
+		when(categoryRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(false);
 
 		// Call
-		final var exception = assertThrows(ThrowableProblem.class, () -> metadataService.updateCategory(namespace, municipalityId, name, category));
+		final var exception = assertThrows(ThrowableProblem.class, () -> metadataService.updateCategory(namespace, municipalityId, id, category));
 
 		// Assertions and verifications
 		assertThat(exception.getStatus()).isEqualTo(NOT_FOUND);
 		assertThat(exception.getTitle()).isEqualTo(NOT_FOUND.getReasonPhrase());
-		assertThat(exception.getMessage()).isEqualTo("Not Found: Category 'name' is not present in namespace 'namespace' for municipalityId 'municipalityId'");
-		verify(categoryRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
+		assertThat(exception.getMessage()).isEqualTo("Not Found: Category '%s' is not present in namespace 'namespace' for municipalityId 'municipalityId'".formatted(id));
+		verify(categoryRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
 		verifyNoMoreInteractions(categoryRepositoryMock);
 		verifyNoInteractions(statusRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, roleRepositoryMock, validationRepositoryMock);
 	}
@@ -573,14 +691,14 @@ class MetadataServiceTest {
 			CategoryEntity.create().withName("CATEGORY_1").withDisplayName("Category-1"));
 
 		// Mock
-		when(categoryRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any())).thenReturn(categoryEntityList);
+		when(categoryRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any(), any(Sort.class))).thenReturn(categoryEntityList);
 
 		// Call
-		final var result = metadataService.findCategories(namespace, municipalityId);
+		final var result = metadataService.findCategories(namespace, municipalityId, Sort.unsorted());
 
 		// Verifications
-		assertThat(result).hasSize(4).extracting(Category::getName).containsExactly("CATEGORY_4", "CATEGORY_1", "CATEGORY_2", "CATEGORY_3");
-		verify(categoryRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId);
+		assertThat(result).hasSize(4).extracting(Category::getName).containsExactly("CATEGORY_2", "CATEGORY_4", "CATEGORY_3", "CATEGORY_1");
+		verify(categoryRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.unsorted());
 		verifyNoInteractions(statusRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, roleRepositoryMock, validationRepositoryMock);
 	}
 
@@ -599,14 +717,58 @@ class MetadataServiceTest {
 				TypeEntity.create().withName("TYPE_4").withDisplayName("Type-4"))));
 
 		// Mock
-		when(categoryRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any())).thenReturn(categoryEntityList);
+		when(categoryRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any(), any(Sort.class))).thenReturn(categoryEntityList);
 
 		// Call
 		final var result = metadataService.findTypes(namespace, municipalityId, category);
 
 		// Verifications
 		assertThat(result).hasSize(4).extracting(Type::getName).containsExactly("TYPE_6", "TYPE_3", "TYPE_4", "TYPE_5");
-		verify(categoryRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId);
+		verify(categoryRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.unsorted());
+		verifyNoInteractions(statusRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, roleRepositoryMock, validationRepositoryMock);
+	}
+
+	@Test
+	void findTypesByCategoryId() {
+		// Setup
+		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var entity = CategoryEntity.create().withId(id).withName("CATEGORY_2").withTypes(List.of(
+			TypeEntity.create().withName("TYPE_5").withDisplayName("Type-5"),
+			TypeEntity.create().withName("TYPE_6"),
+			TypeEntity.create().withName("TYPE_3").withDisplayName("Type-3"),
+			TypeEntity.create().withName("TYPE_4").withDisplayName("Type-4")));
+
+		// Mock
+		when(categoryRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(true);
+		when(categoryRepositoryMock.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(entity);
+
+		// Call
+		final var result = metadataService.findTypesByCategoryId(namespace, municipalityId, id);
+
+		// Verifications
+		assertThat(result).hasSize(4).extracting(Type::getName).containsExactly("TYPE_6", "TYPE_3", "TYPE_4", "TYPE_5");
+		verify(categoryRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verify(categoryRepositoryMock).getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verifyNoInteractions(statusRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, roleRepositoryMock, validationRepositoryMock);
+	}
+
+	@Test
+	void findTypesByCategoryIdNotFound() {
+		// Setup
+		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+
+		// Call
+		final var e = assertThrows(ThrowableProblem.class, () -> metadataService.findTypesByCategoryId(namespace, municipalityId, id));
+
+		// Verifications
+		assertThat(e.getStatus()).isEqualTo(NOT_FOUND);
+		assertThat(e.getMessage()).isEqualTo("Not Found: Category '%s' is not present in namespace 'namespace' for municipalityId 'municipalityId'".formatted(id));
+		verify(categoryRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verifyNoMoreInteractions(categoryRepositoryMock);
 		verifyNoInteractions(statusRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, roleRepositoryMock, validationRepositoryMock);
 	}
 
@@ -617,16 +779,17 @@ class MetadataServiceTest {
 	@Test
 	void createExternalIdType() {
 		// Setup
+		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
 		final var name = "name";
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
 		final var externalIdType = ExternalIdType.create().withName(name);
 
 		// Mock
-		when(externalIdTypeRepositoryMock.save(any())).thenReturn(ExternalIdTypeEntity.create().withName(name));
+		when(externalIdTypeRepositoryMock.save(any())).thenReturn(ExternalIdTypeEntity.create().withId(id).withName(name));
 
 		// Call
-		assertThat(metadataService.createExternalIdType(namespace, municipalityId, externalIdType)).isEqualTo(name);
+		assertThat(metadataService.createExternalIdType(namespace, municipalityId, externalIdType)).isEqualTo(id);
 
 		// Verifications
 		verify(externalIdTypeRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
@@ -659,21 +822,21 @@ class MetadataServiceTest {
 	@Test
 	void getExternalIdType() {
 		// Setup
-		final var name = "name";
+		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
 
 		// Mock
-		when(externalIdTypeRepositoryMock.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)).thenReturn(true);
-		when(externalIdTypeRepositoryMock.getByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)).thenReturn(ExternalIdTypeEntity.create().withName(name));
+		when(externalIdTypeRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(true);
+		when(externalIdTypeRepositoryMock.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(ExternalIdTypeEntity.create().withId(id).withName("name"));
 
 		// Call
-		final var status = metadataService.getExternalIdType(namespace, municipalityId, name);
+		final var status = metadataService.getExternalIdType(namespace, municipalityId, id);
 
 		// Verifications
-		assertThat(status.getName()).isEqualTo(name);
-		verify(externalIdTypeRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
-		verify(externalIdTypeRepositoryMock).getByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
+		assertThat(status.getName()).isEqualTo("name");
+		verify(externalIdTypeRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verify(externalIdTypeRepositoryMock).getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
 		verifyNoMoreInteractions(externalIdTypeRepositoryMock);
 		verifyNoInteractions(categoryRepositoryMock, statusRepositoryMock, validationRepositoryMock, metadataLabelRepositoryMock, roleRepositoryMock);
 	}
@@ -681,17 +844,17 @@ class MetadataServiceTest {
 	@Test
 	void getNonExistingExternalIdType() {
 		// Setup
-		final var name = "name";
+		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
 
 		// Call
-		final var e = assertThrows(ThrowableProblem.class, () -> metadataService.getExternalIdType(namespace, municipalityId, name));
+		final var e = assertThrows(ThrowableProblem.class, () -> metadataService.getExternalIdType(namespace, municipalityId, id));
 
 		// Verifications
 		assertThat(e.getStatus()).isEqualTo(NOT_FOUND);
-		assertThat(e.getMessage()).isEqualTo("Not Found: ExternalIdType 'name' is not present in namespace 'namespace' for municipalityId 'municipalityId'");
-		verify(externalIdTypeRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
+		assertThat(e.getMessage()).isEqualTo("Not Found: ExternalIdType '%s' is not present in namespace 'namespace' for municipalityId 'municipalityId'".formatted(id));
+		verify(externalIdTypeRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
 		verifyNoMoreInteractions(externalIdTypeRepositoryMock);
 		verifyNoInteractions(categoryRepositoryMock, statusRepositoryMock, validationRepositoryMock, metadataLabelRepositoryMock, roleRepositoryMock);
 	}
@@ -707,50 +870,106 @@ class MetadataServiceTest {
 			ExternalIdTypeEntity.create().withName("EXTERNALIDTYPE-2"));
 
 		// Mock
-		when(externalIdTypeRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any())).thenReturn(externalIdTypeEntityList);
+		when(externalIdTypeRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any(), any(Sort.class))).thenReturn(externalIdTypeEntityList);
 
 		// Call
-		final var result = metadataService.findExternalIdTypes(namespace, municipalityId);
+		final var result = metadataService.findExternalIdTypes(namespace, municipalityId, Sort.unsorted());
 
 		// Verifications
-		assertThat(result).hasSize(3).extracting(ExternalIdType::getName).containsExactly("EXTERNALIDTYPE-1", "EXTERNALIDTYPE-2", "EXTERNALIDTYPE-3");
-		verify(externalIdTypeRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId);
+		assertThat(result).hasSize(3).extracting(ExternalIdType::getName).containsExactly("EXTERNALIDTYPE-3", "EXTERNALIDTYPE-1", "EXTERNALIDTYPE-2");
+		verify(externalIdTypeRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.unsorted());
 		verifyNoInteractions(statusRepositoryMock, categoryRepositoryMock, validationRepositoryMock, metadataLabelRepositoryMock, roleRepositoryMock);
 	}
 
 	@Test
 	void deleteExternalIdType() {
 		// Setup
-		final var name = "name";
+		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
 
 		// Mock
-		when(externalIdTypeRepositoryMock.existsByNamespaceAndMunicipalityIdAndName(any(), any(), any())).thenReturn(true);
+		when(externalIdTypeRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(true);
 
 		// Call
-		metadataService.deleteExternalIdType(namespace, municipalityId, name);
+		metadataService.deleteExternalIdType(namespace, municipalityId, id);
 
 		// Verifications
-		verify(externalIdTypeRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
-		verify(externalIdTypeRepositoryMock).deleteByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
+		verify(externalIdTypeRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verify(externalIdTypeRepositoryMock).deleteByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
 		verifyNoInteractions(categoryRepositoryMock, statusRepositoryMock, validationRepositoryMock, metadataLabelRepositoryMock, roleRepositoryMock);
 	}
 
 	@Test
 	void deleteNonExistingExternalIdType() {
 		// Setup
-		final var name = "name";
+		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
 
 		// Call
-		final var e = assertThrows(ThrowableProblem.class, () -> metadataService.deleteExternalIdType(namespace, municipalityId, name));
+		final var e = assertThrows(ThrowableProblem.class, () -> metadataService.deleteExternalIdType(namespace, municipalityId, id));
 
 		// Verifications
 		assertThat(e.getStatus()).isEqualTo(NOT_FOUND);
-		assertThat(e.getMessage()).isEqualTo("Not Found: ExternalIdType 'name' is not present in namespace 'namespace' for municipalityId 'municipalityId'");
-		verify(externalIdTypeRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
+		assertThat(e.getMessage()).isEqualTo("Not Found: ExternalIdType '%s' is not present in namespace 'namespace' for municipalityId 'municipalityId'".formatted(id));
+		verify(externalIdTypeRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verifyNoMoreInteractions(externalIdTypeRepositoryMock);
+		verifyNoInteractions(categoryRepositoryMock, statusRepositoryMock, validationRepositoryMock, metadataLabelRepositoryMock, roleRepositoryMock);
+	}
+
+	@Test
+	void updateExistingExternalIdType() {
+		// Setup
+		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+
+		final var entity = ExternalIdTypeEntity.create()
+			.withId(id)
+			.withName("existing_name")
+			.withDisplayName("existing_display");
+
+		final var externalIdType = ExternalIdType.create()
+			.withName("name")
+			.withDisplayName("displayName");
+
+		// Mock
+		when(externalIdTypeRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(true);
+		when(externalIdTypeRepositoryMock.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(entity);
+		when(externalIdTypeRepositoryMock.save(entity)).thenReturn(entity);
+
+		// Call
+		final var response = metadataService.updateExternalIdType(namespace, municipalityId, id, externalIdType);
+
+		// Assertions and verifications
+		assertThat(response.getName()).isEqualTo("name");
+		assertThat(response.getDisplayName()).isEqualTo("displayName");
+		verify(externalIdTypeRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verify(externalIdTypeRepositoryMock).getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verify(externalIdTypeRepositoryMock).save(entity);
+		verifyNoMoreInteractions(externalIdTypeRepositoryMock);
+		verifyNoInteractions(categoryRepositoryMock, statusRepositoryMock, validationRepositoryMock, metadataLabelRepositoryMock, roleRepositoryMock);
+	}
+
+	@Test
+	void updateNonExistingExternalIdType() {
+		// Setup
+		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var externalIdType = ExternalIdType.create();
+
+		// Mock
+		when(externalIdTypeRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(false);
+
+		// Call
+		final var exception = assertThrows(ThrowableProblem.class, () -> metadataService.updateExternalIdType(namespace, municipalityId, id, externalIdType));
+
+		// Assertions and verifications
+		assertThat(exception.getStatus()).isEqualTo(NOT_FOUND);
+		assertThat(exception.getMessage()).isEqualTo("Not Found: ExternalIdType '%s' is not present in namespace 'namespace' for municipalityId 'municipalityId'".formatted(id));
+		verify(externalIdTypeRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
 		verifyNoMoreInteractions(externalIdTypeRepositoryMock);
 		verifyNoInteractions(categoryRepositoryMock, statusRepositoryMock, validationRepositoryMock, metadataLabelRepositoryMock, roleRepositoryMock);
 	}
@@ -1082,12 +1301,12 @@ class MetadataServiceTest {
 		final var metadataLabelEntity = List.of(MetadataLabelEntity.create().withResourceName("LABEL-1"));
 
 		// Mock
-		when(categoryRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any())).thenReturn(categoryEntityList);
-		when(externalIdTypeRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any())).thenReturn(externalIdTypeEntityList);
+		when(categoryRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any(), any(Sort.class))).thenReturn(categoryEntityList);
+		when(externalIdTypeRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any(), any(Sort.class))).thenReturn(externalIdTypeEntityList);
 		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndParentIsNull(any(), any())).thenReturn(metadataLabelEntity);
-		when(statusRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any())).thenReturn(statusEntityList);
-		when(roleRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any())).thenReturn(roleEntityList);
-		when(contactReasonRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any())).thenReturn(contactReasonEntityList);
+		when(statusRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any(), any(Sort.class))).thenReturn(statusEntityList);
+		when(roleRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any(), any(Sort.class))).thenReturn(roleEntityList);
+		when(contactReasonRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any(), any(Sort.class))).thenReturn(contactReasonEntityList);
 		when(phaseRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any())).thenReturn(emptyList());
 
 		// Call
@@ -1103,11 +1322,11 @@ class MetadataServiceTest {
 		assertThat(result.getStatuses()).hasSize(3).extracting(Status::getName).containsExactlyInAnyOrder("STATUS-1", "STATUS-2", "STATUS-3");
 		assertThat(result.getContactReasons()).hasSize(2).extracting(ContactReason::getReason).containsExactlyInAnyOrder("CONTACTREASON-1", "CONTACTREASON-2");
 
-		verify(categoryRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId);
-		verify(externalIdTypeRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId);
+		verify(categoryRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.unsorted());
+		verify(externalIdTypeRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.unsorted());
 		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndParentIsNull(namespace, municipalityId);
-		verify(roleRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId);
-		verify(statusRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId);
+		verify(roleRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.unsorted());
+		verify(statusRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.unsorted());
 		verifyNoInteractions(validationRepositoryMock);
 	}
 

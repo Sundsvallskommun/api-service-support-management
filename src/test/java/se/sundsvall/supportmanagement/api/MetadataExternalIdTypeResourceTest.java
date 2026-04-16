@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -15,6 +16,8 @@ import se.sundsvall.supportmanagement.service.MetadataService;
 
 import static org.apache.commons.lang3.ArrayUtils.EMPTY_STRING_ARRAY;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
@@ -41,11 +44,11 @@ class MetadataExternalIdTypeResourceTest {
 	@Test
 	void createExternalIdType() {
 		// Setup
-		final var externalIdTypeName = "externalIdTypeName";
-		final var externalIdType = ExternalIdType.create().withName(externalIdTypeName);
+		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
+		final var externalIdType = ExternalIdType.create().withName("externalIdTypeName");
 
 		// Mock
-		when(metadataServiceMock.createExternalIdType(NAMESPACE, MUNICIPALITY_ID, externalIdType)).thenReturn(externalIdTypeName);
+		when(metadataServiceMock.createExternalIdType(NAMESPACE, MUNICIPALITY_ID, externalIdType)).thenReturn(id);
 
 		// Call
 		webTestClient.post()
@@ -55,7 +58,7 @@ class MetadataExternalIdTypeResourceTest {
 			.exchange()
 			.expectStatus().isCreated()
 			.expectHeader().contentType(ALL)
-			.expectHeader().location("/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/metadata/external-id-types/" + externalIdTypeName)
+			.expectHeader().location("/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/metadata/external-id-types/" + id)
 			.expectBody().isEmpty();
 
 		// Verifications & assertions
@@ -65,14 +68,14 @@ class MetadataExternalIdTypeResourceTest {
 	@Test
 	void getExternalIdType() {
 		// Setup
-		final var externalIdTypeName = "externalIdTypeName";
-		final var externalIdType = ExternalIdType.create().withName(externalIdTypeName);
+		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
+		final var externalIdType = ExternalIdType.create().withId(id).withName("externalIdTypeName");
 
 		// Mock
-		when(metadataServiceMock.getExternalIdType(NAMESPACE, MUNICIPALITY_ID, externalIdTypeName)).thenReturn(externalIdType);
+		when(metadataServiceMock.getExternalIdType(NAMESPACE, MUNICIPALITY_ID, id)).thenReturn(externalIdType);
 
 		// Call
-		final var response = webTestClient.get().uri(builder -> builder.path(PATH + "/{externalIdType}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "externalIdType", externalIdTypeName)))
+		final var response = webTestClient.get().uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", id)))
 			.exchange()
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)
@@ -81,7 +84,7 @@ class MetadataExternalIdTypeResourceTest {
 			.getResponseBody();
 
 		// Verifications & assertions
-		verify(metadataServiceMock).getExternalIdType(NAMESPACE, MUNICIPALITY_ID, externalIdTypeName);
+		verify(metadataServiceMock).getExternalIdType(NAMESPACE, MUNICIPALITY_ID, id);
 		assertThat(response).isNotNull().isEqualTo(externalIdType);
 	}
 
@@ -96,20 +99,45 @@ class MetadataExternalIdTypeResourceTest {
 			.isEqualTo(EMPTY_STRING_ARRAY);
 
 		// Verifications & assertions
-		verify(metadataServiceMock).findExternalIdTypes(NAMESPACE, MUNICIPALITY_ID);
+		verify(metadataServiceMock).findExternalIdTypes(eq(NAMESPACE), eq(MUNICIPALITY_ID), any(Sort.class));
 	}
 
 	@Test
 	void deleteExternalIdType() {
 		// Setup
-		final var externalIdTypeName = "externalIdTypeName";
+		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
 
 		// Call
-		webTestClient.delete().uri(builder -> builder.path(PATH + "/{externalIdType}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "externalIdType", externalIdTypeName)))
+		webTestClient.delete().uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", id)))
 			.exchange()
 			.expectStatus().isEqualTo(HttpStatus.NO_CONTENT);
 
 		// Verifications & assertions
-		verify(metadataServiceMock).deleteExternalIdType(NAMESPACE, MUNICIPALITY_ID, externalIdTypeName);
+		verify(metadataServiceMock).deleteExternalIdType(NAMESPACE, MUNICIPALITY_ID, id);
+	}
+
+	@Test
+	void updateExternalIdType() {
+		// Setup
+		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
+		final var body = ExternalIdType.create().withName("externalIdTypeName");
+
+		// Mock
+		when(metadataServiceMock.updateExternalIdType(NAMESPACE, MUNICIPALITY_ID, id, body)).thenReturn(body);
+
+		// Call
+		final var response = webTestClient.patch().uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", id)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(body)
+			.exchange()
+			.expectStatus().isEqualTo(HttpStatus.OK)
+			.expectHeader().contentType(APPLICATION_JSON)
+			.expectBody(ExternalIdType.class)
+			.returnResult()
+			.getResponseBody();
+
+		// Verifications & assertions
+		verify(metadataServiceMock).updateExternalIdType(NAMESPACE, MUNICIPALITY_ID, id, body);
+		assertThat(response).isNotNull().isEqualTo(body);
 	}
 }

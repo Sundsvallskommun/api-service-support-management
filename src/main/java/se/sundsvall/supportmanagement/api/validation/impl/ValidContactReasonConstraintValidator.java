@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.api.validation.impl;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import java.util.List;
+import org.springframework.data.domain.Sort;
 import se.sundsvall.supportmanagement.api.model.metadata.ContactReason;
 import se.sundsvall.supportmanagement.api.validation.ValidContactReason;
 import se.sundsvall.supportmanagement.service.MetadataService;
@@ -43,7 +44,7 @@ public class ValidContactReasonConstraintValidator extends AbstractTagConstraint
 	}
 
 	private List<String> getContactReasons(final String namespace, final String municipalityId) {
-		return ofNullable(metadataService.findContactReasons(namespace, municipalityId)).orElse(emptyList()).stream()
+		return ofNullable(metadataService.findContactReasons(namespace, municipalityId, Sort.unsorted())).orElse(emptyList()).stream()
 			.map(ContactReason::getReason)
 			.toList();
 	}

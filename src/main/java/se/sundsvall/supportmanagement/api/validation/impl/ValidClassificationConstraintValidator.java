@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.api.validation.impl;
 
 import jakarta.validation.ConstraintValidatorContext;
 import java.util.List;
+import org.springframework.data.domain.Sort;
 import se.sundsvall.supportmanagement.api.model.errand.Classification;
 import se.sundsvall.supportmanagement.api.model.metadata.Category;
 import se.sundsvall.supportmanagement.api.model.metadata.Type;
@@ -49,7 +50,7 @@ public abstract class ValidClassificationConstraintValidator extends AbstractTag
 	}
 
 	private List<String> getCategoryNames(String namespace, String municipalityId) {
-		return ofNullable(metadataService.findCategories(namespace, municipalityId)).orElse(emptyList()).stream()
+		return ofNullable(metadataService.findCategories(namespace, municipalityId, Sort.unsorted())).orElse(emptyList()).stream()
 			.map(Category::getName)
 			.toList();
 	}

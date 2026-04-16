@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.data.domain.Example;
+import org.springframework.data.domain.Sort;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 import se.sundsvall.supportmanagement.integration.db.model.CategoryEntity;
@@ -34,7 +35,7 @@ import static org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTest
 	"/db/scripts/testdata-junit.sql"
 })
 class CategoryRepositoryTest {
-	private static final long TEST_ID = 101;
+	private static final String TEST_ID = "aa000000-0000-0000-0000-000000000101";
 
 	@Autowired
 	private CategoryRepository categoryRepository;
@@ -127,7 +128,7 @@ class CategoryRepositoryTest {
 		final var municipalityId = "2281";
 		final var namespace = "namespace-1";
 
-		final var matches = categoryRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId);
+		final var matches = categoryRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.unsorted());
 
 		assertThat(matches).hasSize(3)
 			.extracting(
@@ -137,9 +138,9 @@ class CategoryRepositoryTest {
 				CategoryEntity::getName,
 				CategoryEntity::getNamespace)
 			.containsExactlyInAnyOrder(
-				tuple("category-display-name-1", 100L, municipalityId, "category-1", namespace),
-				tuple("category-display-name-2", 101L, municipalityId, "category-2", namespace),
-				tuple("category-display-name-3", 102L, municipalityId, "category-3", namespace));
+				tuple("category-display-name-1", "aa000000-0000-0000-0000-000000000100", municipalityId, "category-1", namespace),
+				tuple("category-display-name-2", "aa000000-0000-0000-0000-000000000101", municipalityId, "category-2", namespace),
+				tuple("category-display-name-3", "aa000000-0000-0000-0000-000000000102", municipalityId, "category-3", namespace));
 
 		final var verifications = Map.of(
 			"category-1", List.of(
@@ -156,20 +157,32 @@ class CategoryRepositoryTest {
 	}
 
 	@Test
-	void getCategoryByNamespaceAndMunicipalityIdAndName() {
+	void getCategoryByIdAndNamespaceAndMunicipalityId() {
 		// Setup
+		final var id = "aa000000-0000-0000-0000-000000000100";
 		final var municipalityId = "2281";
 		final var namespace = "namespace-1";
-		final var category = "category-1";
 
-		final var categoryEntity = categoryRepository.getByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, category);
+		final var categoryEntity = categoryRepository.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
 
 		assertThat(categoryEntity).isNotNull();
 		assertThat(categoryEntity.getDisplayName()).isEqualTo("category-display-name-1");
-		assertThat(categoryEntity.getId()).isEqualTo(100L);
+		assertThat(categoryEntity.getId()).isEqualTo(id);
 		assertThat(categoryEntity.getMunicipalityId()).isEqualTo(municipalityId);
-		assertThat(categoryEntity.getName()).isEqualTo(category);
+		assertThat(categoryEntity.getName()).isEqualTo("category-1");
 		assertThat(categoryEntity.getNamespace()).isEqualTo(namespace);
+	}
+
+	@Test
+	void existsByIdAndNamespaceAndMunicipalityId() {
+		// Setup
+		final var municipalityId = "2281";
+		final var namespace = "namespace-1";
+		final var nonExistingId = "00000000-0000-0000-0000-000000000000";
+
+		// Execution & assertion
+		assertThat(categoryRepository.existsByIdAndNamespaceAndMunicipalityId(TEST_ID, namespace, municipalityId)).isTrue();
+		assertThat(categoryRepository.existsByIdAndNamespaceAndMunicipalityId(nonExistingId, namespace, municipalityId)).isFalse();
 	}
 
 	@Test
@@ -210,7 +223,7 @@ class CategoryRepositoryTest {
 		final var existingEntity = categoryRepository.findById(TEST_ID).orElseThrow();
 
 		// Execution
-		categoryRepository.deleteByNamespaceAndMunicipalityIdAndName(existingEntity.getNamespace(), existingEntity.getMunicipalityId(), existingEntity.getName());
+		categoryRepository.deleteByIdAndNamespaceAndMunicipalityId(TEST_ID, existingEntity.getNamespace(), existingEntity.getMunicipalityId());
 
 		// Assertions
 		assertThat(categoryRepository.findById(TEST_ID)).isNotPresent();

@@ -5,6 +5,7 @@ import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpHeaders.LOCATION;
 import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpMethod.PATCH;
 import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
@@ -49,7 +50,7 @@ class MetadataExternalIdTypeIT extends AbstractAppTest {
 			.withHttpMethod(POST)
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(CREATED)
-			.withExpectedResponseHeader(LOCATION, List.of("/" + MUNICIPALITY_2281 + "/" + NAMESPACE + "/metadata/external-id-types/A_BRAND_NEW_EXTERNAL_ID_TYPE"))
+			.withExpectedResponseHeader(LOCATION, List.of("/" + MUNICIPALITY_2281 + "/" + NAMESPACE + "/metadata/external-id-types/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"))
 			.withExpectedResponseBodyIsNull()
 			.sendRequestAndVerifyResponse();
 
@@ -58,8 +59,9 @@ class MetadataExternalIdTypeIT extends AbstractAppTest {
 
 	@Test
 	void test02_getExternalIdType() {
+		final var externalIdTypeId = "dd000000-0000-0000-0000-000000000102";
 		setupCall()
-			.withServicePath(PATH + "/EXTERNAL-ID-TYPE-3")
+			.withServicePath(PATH + "/" + externalIdTypeId)
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
@@ -93,20 +95,33 @@ class MetadataExternalIdTypeIT extends AbstractAppTest {
 
 	@Test
 	void test05_deleteExternalIdType() {
-		final var externalIdTypeName = "EXTERNAL-ID-TYPE-3";
+		final var externalIdTypeId = "dd000000-0000-0000-0000-000000000102";
 
-		assertThat(externalIdTypeRepository.existsByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_2281, externalIdTypeName)).isTrue();
+		assertThat(externalIdTypeRepository.existsByIdAndNamespaceAndMunicipalityId(externalIdTypeId, NAMESPACE, MUNICIPALITY_2281)).isTrue();
 		assertThat(externalIdTypeRepository.count()).isEqualTo(6);
 
 		setupCall()
-			.withServicePath(PATH + "/" + externalIdTypeName)
+			.withServicePath(PATH + "/" + externalIdTypeId)
 			.withHttpMethod(DELETE)
 			.withExpectedResponseStatus(NO_CONTENT)
 			.withExpectedResponseBodyIsNull()
 			.sendRequestAndVerifyResponse();
 
-		assertThat(externalIdTypeRepository.existsByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_2281, externalIdTypeName)).isFalse();
+		assertThat(externalIdTypeRepository.existsByIdAndNamespaceAndMunicipalityId(externalIdTypeId, NAMESPACE, MUNICIPALITY_2281)).isFalse();
 		assertThat(externalIdTypeRepository.count()).isEqualTo(5);
+	}
+
+	@Test
+	void test06_patchExternalIdType() {
+		final var externalIdTypeId = "dd000000-0000-0000-0000-000000000100";
+		setupCall()
+			.withServicePath(PATH + "/" + externalIdTypeId)
+			.withHttpMethod(PATCH)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
 	}
 
 }

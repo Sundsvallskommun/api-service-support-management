@@ -17,12 +17,20 @@ import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 @Schema(description = "Category model")
 public class Category {
 
+	@Schema(description = "Category ID", examples = "5f79a808-0ef3-4985-99b9-b12f23e202a7", accessMode = READ_ONLY)
+	private String id;
+
 	@Schema(description = "Name for the category", examples = "Category name")
 	@NotBlank(groups = OnCreate.class)
 	private String name;
 
 	@Schema(description = "Display name for the category", examples = "Displayed name")
 	private String displayName;
+
+	@Schema(description = "Sort order for the category", examples = "1", types = {
+		"integer", "null"
+	})
+	private Integer sortOrder;
 
 	@ArraySchema(uniqueItems = true)
 	@Valid
@@ -40,6 +48,19 @@ public class Category {
 
 	public static Category create() {
 		return new Category();
+	}
+
+	public String getId() {
+		return id;
+	}
+
+	public void setId(final String id) {
+		this.id = id;
+	}
+
+	public Category withId(final String id) {
+		this.id = id;
+		return this;
 	}
 
 	public String getName() {
@@ -65,6 +86,19 @@ public class Category {
 
 	public Category withDisplayName(final String displayName) {
 		this.displayName = displayName;
+		return this;
+	}
+
+	public Integer getSortOrder() {
+		return sortOrder;
+	}
+
+	public void setSortOrder(final Integer sortOrder) {
+		this.sortOrder = sortOrder;
+	}
+
+	public Category withSortOrder(final Integer sortOrder) {
+		this.sortOrder = sortOrder;
 		return this;
 	}
 
@@ -109,7 +143,7 @@ public class Category {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(created, displayName, modified, name, types);
+		return Objects.hash(created, displayName, id, modified, name, sortOrder, types);
 	}
 
 	@Override
@@ -124,11 +158,12 @@ public class Category {
 			return false;
 		}
 		final Category other = (Category) obj;
-		return Objects.equals(created, other.created) && Objects.equals(displayName, other.displayName) && Objects.equals(modified, other.modified) && Objects.equals(name, other.name) && Objects.equals(types, other.types);
+		return Objects.equals(created, other.created) && Objects.equals(displayName, other.displayName) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(name, other.name) && Objects.equals(sortOrder,
+			other.sortOrder) && Objects.equals(types, other.types);
 	}
 
 	@Override
 	public String toString() {
-		return "Category [name=" + name + ", displayName=" + displayName + ", types=" + types + ", created=" + created + ", modified=" + modified + "]";
+		return "Category [id=" + id + ", name=" + name + ", displayName=" + displayName + ", sortOrder=" + sortOrder + ", types=" + types + ", created=" + created + ", modified=" + modified + "]";
 	}
 }

@@ -2,7 +2,6 @@ package se.sundsvall.supportmanagement.integration.db.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.PrePersist;
@@ -12,8 +11,8 @@ import jakarta.persistence.UniqueConstraint;
 import java.time.OffsetDateTime;
 import java.util.Objects;
 import org.hibernate.annotations.TimeZoneStorage;
+import org.hibernate.annotations.UuidGenerator;
 
-import static jakarta.persistence.GenerationType.IDENTITY;
 import static java.time.OffsetDateTime.now;
 import static java.time.ZoneId.systemDefault;
 import static java.time.temporal.ChronoUnit.MILLIS;
@@ -32,15 +31,18 @@ import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 public class ExternalIdTypeEntity {
 
 	@Id
-	@GeneratedValue(strategy = IDENTITY)
+	@UuidGenerator
 	@Column(name = "id")
-	private Long id;
+	private String id;
 
 	@Column(name = "name", nullable = false)
 	private String name;
 
 	@Column(name = "display_name")
 	private String displayName;
+
+	@Column(name = "sort_order")
+	private Integer sortOrder;
 
 	@Column(name = "municipality_id", nullable = false, length = 8)
 	private String municipalityId;
@@ -60,15 +62,15 @@ public class ExternalIdTypeEntity {
 		return new ExternalIdTypeEntity();
 	}
 
-	public Long getId() {
+	public String getId() {
 		return id;
 	}
 
-	public void setId(final Long id) {
+	public void setId(final String id) {
 		this.id = id;
 	}
 
-	public ExternalIdTypeEntity withId(final Long id) {
+	public ExternalIdTypeEntity withId(final String id) {
 		this.id = id;
 		return this;
 	}
@@ -96,6 +98,19 @@ public class ExternalIdTypeEntity {
 
 	public ExternalIdTypeEntity withDisplayName(final String displayName) {
 		this.displayName = displayName;
+		return this;
+	}
+
+	public Integer getSortOrder() {
+		return sortOrder;
+	}
+
+	public void setSortOrder(final Integer sortOrder) {
+		this.sortOrder = sortOrder;
+	}
+
+	public ExternalIdTypeEntity withSortOrder(final Integer sortOrder) {
+		this.sortOrder = sortOrder;
 		return this;
 	}
 
@@ -163,7 +178,7 @@ public class ExternalIdTypeEntity {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(created, displayName, id, modified, municipalityId, name, namespace);
+		return Objects.hash(created, displayName, id, modified, municipalityId, name, namespace, sortOrder);
 	}
 
 	@Override
@@ -180,7 +195,7 @@ public class ExternalIdTypeEntity {
 		final ExternalIdTypeEntity other = (ExternalIdTypeEntity) obj;
 		return Objects.equals(created, other.created) && Objects.equals(displayName, other.displayName) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(municipalityId, other.municipalityId) && Objects.equals(
 			name, other.name) && Objects.equals(namespace,
-				other.namespace);
+				other.namespace) && Objects.equals(sortOrder, other.sortOrder);
 	}
 
 	@Override
@@ -189,6 +204,7 @@ public class ExternalIdTypeEntity {
 			"id=" + id +
 			", name='" + name + '\'' +
 			", displayName='" + displayName + '\'' +
+			", sortOrder=" + sortOrder +
 			", municipalityId='" + municipalityId + '\'' +
 			", namespace='" + namespace + '\'' +
 			", created=" + created +

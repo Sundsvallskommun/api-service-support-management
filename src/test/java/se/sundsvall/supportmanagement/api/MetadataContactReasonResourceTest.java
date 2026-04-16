@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -16,6 +17,8 @@ import se.sundsvall.supportmanagement.api.model.metadata.ContactReason;
 import se.sundsvall.supportmanagement.service.MetadataService;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
@@ -42,7 +45,7 @@ class MetadataContactReasonResourceTest {
 	@Test
 	void createContactReason() {
 		final var body = ContactReason.create()
-			.withId(1L)
+			.withId("b82bd8ac-1507-4d9a-958d-369261eecc15")
 			.withReason("reason")
 			.withCreated(OffsetDateTime.now())
 			.withModified(OffsetDateTime.now());
@@ -62,7 +65,7 @@ class MetadataContactReasonResourceTest {
 	@Test
 	void getContactReason() {
 
-		final var contactReasonId = 1L;
+		final var contactReasonId = "b82bd8ac-1507-4d9a-958d-369261eecc15";
 		final var reason = "reason";
 		final var contactReason = ContactReason.create()
 			.withId(contactReasonId)
@@ -90,7 +93,7 @@ class MetadataContactReasonResourceTest {
 		final var contactReason2 = ContactReason.create().withReason("reason2");
 		final var contactReasons = List.of(contactReason1, contactReason2);
 
-		when(metadataServiceMock.findContactReasonsForNamespaceAndMunicipality(NAMESPACE, MUNICIPALITY_ID)).thenReturn(contactReasons);
+		when(metadataServiceMock.findContactReasons(eq(NAMESPACE), eq(MUNICIPALITY_ID), any(Sort.class))).thenReturn(contactReasons);
 
 		final var result = webTestClient.get().uri(builder -> builder.path(PATH).build(MUNICIPALITY_ID, NAMESPACE, reason))
 			.exchange()
@@ -106,7 +109,7 @@ class MetadataContactReasonResourceTest {
 	@Test
 	void updateContactReason() {
 
-		final var contactReasonId = 1L;
+		final var contactReasonId = "b82bd8ac-1507-4d9a-958d-369261eecc15";
 		final var reason = "reason";
 		final var patch = ContactReason.create()
 			.withReason(reason)
@@ -127,7 +130,7 @@ class MetadataContactReasonResourceTest {
 	@Test
 	void deleteContactReason() {
 
-		final var contactReasonId = 1L;
+		final var contactReasonId = "b82bd8ac-1507-4d9a-958d-369261eecc15";
 
 		webTestClient.delete()
 			.uri(builder -> builder.path(PATH + "/{contactReasonId}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "contactReasonId", contactReasonId)))

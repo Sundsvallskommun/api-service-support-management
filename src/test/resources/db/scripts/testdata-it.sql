@@ -2,63 +2,63 @@
 -- Category and Type
 -- -----------------------------------
 INSERT INTO category(id, created, display_name, modified, municipality_id, name, namespace)
-VALUES (100, '2023-01-01 12:00:00.000', 'CATEGORY-DISPLAY-NAME-1', null, '2281', 'CATEGORY-1',
+VALUES ('aa000000-0000-0000-0000-000000000100', '2023-01-01 12:00:00.000', 'CATEGORY-DISPLAY-NAME-1', null, '2281', 'CATEGORY-1',
         'NAMESPACE-1'),
-       (101, '2023-01-01 12:00:00.000', 'CATEGORY-DISPLAY-NAME-2', null, '2281', 'CATEGORY-2',
+       ('aa000000-0000-0000-0000-000000000101', '2023-01-01 12:00:00.000', 'CATEGORY-DISPLAY-NAME-2', null, '2281', 'CATEGORY-2',
         'NAMESPACE-1'),
-       (102, '2023-01-01 12:00:00.000', 'CATEGORY-DISPLAY-NAME-3', null, '2281', 'CATEGORY-3',
+       ('aa000000-0000-0000-0000-000000000102', '2023-01-01 12:00:00.000', 'CATEGORY-DISPLAY-NAME-3', null, '2281', 'CATEGORY-3',
         'NAMESPACE-1');
 
 INSERT INTO type(id, created, display_name, escalation_email, modified, name, category_id)
 VALUES (100, '2023-01-01 12:00:00.000', 'TYPE-DISPLAY-NAME-1', 'ESCALATION-EMAIL-1', null, 'TYPE-1',
-        100),
+        'aa000000-0000-0000-0000-000000000100'),
        (101, '2023-01-01 12:00:00.000', 'TYPE-DISPLAY-NAME-2', 'ESCALATION-EMAIL-2', null, 'TYPE-2',
-        100),
+        'aa000000-0000-0000-0000-000000000100'),
        (102, '2023-01-01 12:00:00.000', 'TYPE-DISPLAY-NAME-3', 'ESCALATION-EMAIL-3', null, 'TYPE-3',
-        100),
+        'aa000000-0000-0000-0000-000000000100'),
        (103, '2023-01-01 12:00:00.000', 'TYPE-DISPLAY-NAME-1', 'ESCALATION-EMAIL-1', null, 'TYPE-1',
-        101),
+        'aa000000-0000-0000-0000-000000000101'),
        (104, '2023-01-01 12:00:00.000', 'TYPE-DISPLAY-NAME-2', 'ESCALATION-EMAIL-2', null, 'TYPE-2',
-        101),
+        'aa000000-0000-0000-0000-000000000101'),
        (105, '2023-01-01 12:00:00.000', 'TYPE-DISPLAY-NAME-1', 'ESCALATION-EMAIL-1', null, 'TYPE-1',
-        102);
+        'aa000000-0000-0000-0000-000000000102');
 
 -- -----------------------------------
 -- ExternalIdType
 -- -----------------------------------
 INSERT INTO external_id_type(id, created, modified, municipality_id, name, display_name, namespace)
-VALUES (100, '2023-01-01 12:00:00.000', null, '2281', 'EXTERNAL-ID-TYPE-1', 'External Id Type 1', 'NAMESPACE-1'),
-       (101, '2023-01-01 12:00:00.000', null, '2281', 'EXTERNAL-ID-TYPE-2', 'External Id Type 2', 'NAMESPACE-1'),
-       (102, '2023-01-01 12:00:00.000', null, '2281', 'EXTERNAL-ID-TYPE-3', 'External Id Type 3', 'NAMESPACE-1'),
-       (104, '2023-01-01 12:00:00.000', null, '2281', 'EXTERNAL-ID-TYPE-1', 'External Id Type 1', 'NAMESPACE-2'),
-       (105, '2023-01-01 12:00:00.000', null, '2305', 'EXTERNAL-ID-TYPE-1', 'External Id Type 1', 'NAMESPACE-1'),
-       (106, '2023-01-01 12:00:00.000', null, '2305', 'EXTERNAL-ID-TYPE-2', 'External Id Type 2', 'NAMESPACE-1');
+VALUES ('dd000000-0000-0000-0000-000000000100', '2023-01-01 12:00:00.000', null, '2281', 'EXTERNAL-ID-TYPE-1', 'External Id Type 1', 'NAMESPACE-1'),
+       ('dd000000-0000-0000-0000-000000000101', '2023-01-01 12:00:00.000', null, '2281', 'EXTERNAL-ID-TYPE-2', 'External Id Type 2', 'NAMESPACE-1'),
+       ('dd000000-0000-0000-0000-000000000102', '2023-01-01 12:00:00.000', null, '2281', 'EXTERNAL-ID-TYPE-3', 'External Id Type 3', 'NAMESPACE-1'),
+       ('dd000000-0000-0000-0000-000000000104', '2023-01-01 12:00:00.000', null, '2281', 'EXTERNAL-ID-TYPE-1', 'External Id Type 1', 'NAMESPACE-2'),
+       ('dd000000-0000-0000-0000-000000000105', '2023-01-01 12:00:00.000', null, '2305', 'EXTERNAL-ID-TYPE-1', 'External Id Type 1', 'NAMESPACE-1'),
+       ('dd000000-0000-0000-0000-000000000106', '2023-01-01 12:00:00.000', null, '2305', 'EXTERNAL-ID-TYPE-2', 'External Id Type 2', 'NAMESPACE-1');
 
 -- -----------------------------------
 -- Status
 -- -----------------------------------
-INSERT INTO status(id, created, modified, municipality_id, name, display_name, external_display_name, namespace)
-VALUES (100, '2023-01-01 12:00:00.000', null, '2281', 'STATUS-1', 'Status 1', 'External Status 1', 'NAMESPACE-1'),
-       (101, '2023-01-01 12:00:00.000', null, '2281', 'STATUS-2', 'Status 2', 'External Status 2', 'NAMESPACE-1'),
-       (102, '2023-01-01 12:00:00.000', null, '2281', 'STATUS-3', 'Status 3', 'External Status 3', 'NAMESPACE-1'),
-       (104, '2023-01-01 12:00:00.000', null, '2281', 'STATUS-1', 'Status 1', 'External Status 1', 'NAMESPACE-2'),
-       (105, '2023-01-01 12:00:00.000', null, '2305', 'STATUS-1', 'Status 1', 'External Status 1', 'NAMESPACE-1'),
-       (106, '2023-01-01 12:00:00.000', null, '2305', 'STATUS-2', 'Status 2', 'External Status 2', 'NAMESPACE-1'),
-       (107, '2023-01-01 12:00:00.000', null, '2281', 'STATUS-2', 'Status 2', 'External Status 2', 'CONTACTCENTER'),
-       (108, '2023-01-01 12:00:00.000', null, '2281', 'STATUS-1', 'Status 1', 'External Status 1', 'NAMESPACE-3'),
-       (109, '2023-01-01 12:00:00.000', null, '2281', 'STATUS-2', 'Status 2', 'External Status 2', 'NAMESPACE-3'),
-       (110, '2023-01-01 12:00:00.000', null, '2281', 'STATUS-3', 'Status 3', 'External Status 3', 'NAMESPACE-3'),
-       (111, '2023-01-01 12:00:00.000', null, '2281', 'STATUS-4', 'Status 4', 'External Status 4', 'NAMESPACE-3');
+INSERT INTO status(id, created, modified, municipality_id, name, display_name, external_display_name, sort_order, namespace)
+VALUES ('bb000000-0000-0000-0000-000000000100', '2023-01-01 12:00:00.000', null, '2281', 'STATUS-1', 'Status 1', 'External Status 1', 3, 'NAMESPACE-1'),
+       ('bb000000-0000-0000-0000-000000000101', '2023-01-01 12:00:00.000', null, '2281', 'STATUS-2', 'Status 2', 'External Status 2', 1, 'NAMESPACE-1'),
+       ('bb000000-0000-0000-0000-000000000102', '2023-01-01 12:00:00.000', null, '2281', 'STATUS-3', 'Status 3', 'External Status 3', 2, 'NAMESPACE-1'),
+       ('bb000000-0000-0000-0000-000000000104', '2023-01-01 12:00:00.000', null, '2281', 'STATUS-1', 'Status 1', 'External Status 1', null, 'NAMESPACE-2'),
+       ('bb000000-0000-0000-0000-000000000105', '2023-01-01 12:00:00.000', null, '2305', 'STATUS-1', 'Status 1', 'External Status 1', null, 'NAMESPACE-1'),
+       ('bb000000-0000-0000-0000-000000000106', '2023-01-01 12:00:00.000', null, '2305', 'STATUS-2', 'Status 2', 'External Status 2', null, 'NAMESPACE-1'),
+       ('bb000000-0000-0000-0000-000000000107', '2023-01-01 12:00:00.000', null, '2281', 'STATUS-2', 'Status 2', 'External Status 2', null, 'CONTACTCENTER'),
+       ('bb000000-0000-0000-0000-000000000108', '2023-01-01 12:00:00.000', null, '2281', 'STATUS-1', 'Status 1', 'External Status 1', null, 'NAMESPACE-3'),
+       ('bb000000-0000-0000-0000-000000000109', '2023-01-01 12:00:00.000', null, '2281', 'STATUS-2', 'Status 2', 'External Status 2', null, 'NAMESPACE-3'),
+       ('bb000000-0000-0000-0000-000000000110', '2023-01-01 12:00:00.000', null, '2281', 'STATUS-3', 'Status 3', 'External Status 3', null, 'NAMESPACE-3'),
+       ('bb000000-0000-0000-0000-000000000111', '2023-01-01 12:00:00.000', null, '2281', 'STATUS-4', 'Status 4', 'External Status 4', null, 'NAMESPACE-3');
 -- -----------------------------------
 -- Role
 -- -----------------------------------
 INSERT INTO role(id, created, modified, municipality_id, name, display_name, namespace)
-VALUES (100, '2023-01-01 12:00:00.000', null, '2281', 'ROLE-1', null, 'NAMESPACE-1'),
-       (101, '2023-01-01 12:00:00.000', null, '2281', 'ROLE-2', null, 'NAMESPACE-1'),
-       (102, '2023-01-01 12:00:00.000', null, '2281', 'ROLE-3', 'DISPLAY-NAME-3', 'NAMESPACE-1'),
-       (104, '2023-01-01 12:00:00.000', null, '2281', 'ROLE-1', null, 'NAMESPACE-2'),
-       (105, '2023-01-01 12:00:00.000', null, '2305', 'ROLE-1', null, 'NAMESPACE-1'),
-       (106, '2023-01-01 12:00:00.000', null, '2305', 'ROLE-2', null, 'NAMESPACE-1');
+VALUES ('cc000000-0000-0000-0000-000000000100', '2023-01-01 12:00:00.000', null, '2281', 'ROLE-1', null, 'NAMESPACE-1'),
+       ('cc000000-0000-0000-0000-000000000101', '2023-01-01 12:00:00.000', null, '2281', 'ROLE-2', null, 'NAMESPACE-1'),
+       ('cc000000-0000-0000-0000-000000000102', '2023-01-01 12:00:00.000', null, '2281', 'ROLE-3', 'DISPLAY-NAME-3', 'NAMESPACE-1'),
+       ('cc000000-0000-0000-0000-000000000104', '2023-01-01 12:00:00.000', null, '2281', 'ROLE-1', null, 'NAMESPACE-2'),
+       ('cc000000-0000-0000-0000-000000000105', '2023-01-01 12:00:00.000', null, '2305', 'ROLE-1', null, 'NAMESPACE-1'),
+       ('cc000000-0000-0000-0000-000000000106', '2023-01-01 12:00:00.000', null, '2305', 'ROLE-2', null, 'NAMESPACE-1');
 
 -------------------------------------
 -- MetadataLabel
@@ -354,12 +354,12 @@ VALUES (0, 0, '2023-12-31 23:59:59.999', '2024-12-31 23:59:59.999', '2023-12-31 
         '3cbf033d-b97b-464d-9411-c774b1f1cd3e', '2281', 'NAMESPACE-1', 'owner_full_name-3', 'owner_id-3', 'type-3');
 
 INSERT INTO contact_reason(id, reason, display_name, municipality_id, namespace, created, modified)
-VALUES (123, 'reason1', 'Reason 1', '2281', 'CONTACTCENTER', '2023-12-31 23:59:59.999', '2023-12-31 23:59:59.999'),
-       (124, 'reason2', 'Reason 2', '2281', 'CONTACTCENTER', '2023-12-31 23:59:59.999', '2023-12-31 23:59:59.999'),
-       (127, 'reason3', 'Reason 3', '2281', 'CONTACTCENTER', '2023-12-31 23:59:59.999', '2023-12-31 23:59:59.999'),
-       (125, 'reason3', 'Reason 3', '2281', 'namespace_2', '2023-12-31 23:59:59.999', '2023-12-31 23:59:59.999'),
-       (126, 'reason4', 'Reason 4', '2281', 'namespace_2', '2023-12-31 23:59:59.999', '2023-12-31 23:59:59.999'),
-       (128, 'reason5', 'Reason 5', '2281', 'NAMESPACE-1', '2023-12-31 23:59:59.999', '2023-12-31 23:59:59.999');
+VALUES ('c0000000-0000-0000-0000-000000000123', 'reason1', 'Reason 1', '2281', 'CONTACTCENTER', '2023-12-31 23:59:59.999', '2023-12-31 23:59:59.999'),
+       ('c0000000-0000-0000-0000-000000000124', 'reason2', 'Reason 2', '2281', 'CONTACTCENTER', '2023-12-31 23:59:59.999', '2023-12-31 23:59:59.999'),
+       ('c0000000-0000-0000-0000-000000000127', 'reason3', 'Reason 3', '2281', 'CONTACTCENTER', '2023-12-31 23:59:59.999', '2023-12-31 23:59:59.999'),
+       ('c0000000-0000-0000-0000-000000000125', 'reason3', 'Reason 3', '2281', 'namespace_2', '2023-12-31 23:59:59.999', '2023-12-31 23:59:59.999'),
+       ('c0000000-0000-0000-0000-000000000126', 'reason4', 'Reason 4', '2281', 'namespace_2', '2023-12-31 23:59:59.999', '2023-12-31 23:59:59.999'),
+       ('c0000000-0000-0000-0000-000000000128', 'reason5', 'Reason 5', '2281', 'NAMESPACE-1', '2023-12-31 23:59:59.999', '2023-12-31 23:59:59.999');
 
 -- -----------------------------------
 -- Email integration config

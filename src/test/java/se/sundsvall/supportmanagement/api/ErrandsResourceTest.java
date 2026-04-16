@@ -21,6 +21,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -98,11 +99,11 @@ class ErrandsResourceTest {
 	@BeforeEach
 	void setupMock() {
 		when(metadataServiceMock.isValidated(any(), any(), any())).thenReturn(true);
-		when(metadataServiceMock.findCategories(any(), any())).thenReturn(List.of(Category.create().withName("CATEGORY_1"), Category.create().withName("CATEGORY_2")));
-		when(metadataServiceMock.findStatuses(any(), any())).thenReturn(List.of(Status.create().withName("STATUS_1"), Status.create().withName("STATUS_2")));
+		when(metadataServiceMock.findCategories(any(), any(), any(Sort.class))).thenReturn(List.of(Category.create().withName("CATEGORY_1"), Category.create().withName("CATEGORY_2")));
+		when(metadataServiceMock.findStatuses(any(), any(), any(Sort.class))).thenReturn(List.of(Status.create().withName("STATUS_1"), Status.create().withName("STATUS_2")));
 		when(metadataServiceMock.findTypes(any(), any(), any())).thenReturn(List.of(Type.create().withName("TYPE_1"), Type.create().withName("TYPE_2")));
-		when(metadataServiceMock.findContactReasons(any(), any())).thenReturn(List.of(ContactReason.create().withReason("REASON_1"), ContactReason.create().withReason("REASON_2")));
-		when(metadataServiceMock.findRoles(any(), any())).thenReturn(List.of(Role.create().withName("ROLE_1")));
+		when(metadataServiceMock.findContactReasons(any(), any(), any(Sort.class))).thenReturn(List.of(ContactReason.create().withReason("REASON_1"), ContactReason.create().withReason("REASON_2")));
+		when(metadataServiceMock.findRoles(any(), any(), any(Sort.class))).thenReturn(List.of(Role.create().withName("ROLE_1")));
 	}
 
 	@Test
@@ -125,10 +126,10 @@ class ErrandsResourceTest {
 			.expectBody().isEmpty();
 
 		// Verification
-		verify(metadataServiceMock).findCategories(any(), any());
-		verify(metadataServiceMock).findStatuses(any(), any());
+		verify(metadataServiceMock).findCategories(any(), any(), any(Sort.class));
+		verify(metadataServiceMock).findStatuses(any(), any(), any(Sort.class));
 		verify(metadataServiceMock).findTypes(any(), any(), any());
-		verify(metadataServiceMock).findRoles(NAMESPACE, MUNICIPALITY_ID);
+		verify(metadataServiceMock).findRoles(eq(NAMESPACE), eq(MUNICIPALITY_ID), any(Sort.class));
 		verify(errandServiceMock).createErrand(NAMESPACE, MUNICIPALITY_ID, errandInstance, null);
 	}
 
@@ -154,7 +155,7 @@ class ErrandsResourceTest {
 			.expectBody().isEmpty();
 
 		// Verification
-		verify(metadataServiceMock).findStatuses(any(), any());
+		verify(metadataServiceMock).findStatuses(any(), any(), any(Sort.class));
 		verify(errandServiceMock).createErrand(NAMESPACE, MUNICIPALITY_ID, errandInstance, null);
 	}
 
@@ -178,8 +179,8 @@ class ErrandsResourceTest {
 			.expectBody().isEmpty();
 
 		// Verification
-		verify(metadataServiceMock).findCategories(any(), any());
-		verify(metadataServiceMock).findStatuses(any(), any());
+		verify(metadataServiceMock).findCategories(any(), any(), any(Sort.class));
+		verify(metadataServiceMock).findStatuses(any(), any(), any(Sort.class));
 		verify(metadataServiceMock).findTypes(any(), any(), any());
 		verify(errandServiceMock).createErrand(NAMESPACE, MUNICIPALITY_ID, errandInstance, null);
 	}

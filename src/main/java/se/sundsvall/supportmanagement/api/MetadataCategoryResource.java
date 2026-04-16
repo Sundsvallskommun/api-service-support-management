@@ -11,6 +11,8 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import java.util.List;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -22,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import se.sundsvall.dept44.common.validators.annotation.ValidMunicipalityId;
+import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.supportmanagement.api.model.metadata.Category;
@@ -67,13 +70,13 @@ class MetadataCategoryResource {
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId(groups = OnCreate.class) @PathVariable final String municipalityId,
 		@Valid @NotNull @RequestBody final Category body) {
 
-		return created(fromPath("/{municipalityId}/{namespace}/metadata/categories/{category}")
+		return created(fromPath("/{municipalityId}/{namespace}/metadata/categories/{id}")
 			.buildAndExpand(municipalityId, namespace, metadataService.createCategory(namespace, municipalityId, body)).toUri())
 			.header(CONTENT_TYPE, ALL_VALUE)
 			.build();
 	}
 
-	@GetMapping(path = "/{category}", produces = APPLICATION_JSON_VALUE)
+	@GetMapping(path = "/{id}", produces = APPLICATION_JSON_VALUE)
 	@Operation(summary = "Get category", description = "Get category and connected types for the namespace and municipality", responses = {
 		@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true),
 		@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
@@ -84,9 +87,9 @@ class MetadataCategoryResource {
 	ResponseEntity<Category> getCategory(
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
-		@Parameter(name = "category", description = "Name of category", example = "KSK_SERVICE_CENTER_SALARY_AND_PENSION") @PathVariable final String category) {
+		@Parameter(name = "id", description = "Category id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable final String id) {
 
-		return ok(metadataService.getCategory(namespace, municipalityId, category));
+		return ok(metadataService.getCategory(namespace, municipalityId, id));
 	}
 
 	@GetMapping(produces = APPLICATION_JSON_VALUE)
@@ -99,12 +102,13 @@ class MetadataCategoryResource {
 	})
 	ResponseEntity<List<Category>> getCategories(
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
-		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId) {
+		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
+		@ParameterObject final Sort sort) {
 
-		return ok(metadataService.findCategories(namespace, municipalityId));
+		return ok(metadataService.findCategories(namespace, municipalityId, sort));
 	}
 
-	@GetMapping(path = "/{category}/types", produces = APPLICATION_JSON_VALUE)
+	@GetMapping(path = "/{id}/types", produces = APPLICATION_JSON_VALUE)
 	@Operation(summary = "Get types connected to category", description = "Get all types for the namespace, municipality and category", responses = {
 		@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true),
 		@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
@@ -112,12 +116,12 @@ class MetadataCategoryResource {
 	ResponseEntity<List<Type>> getCategoryTypes(
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
-		@Parameter(name = "category", description = "Name of category", example = "KSK_SERVICE_CENTER_SALARY_AND_PENSION") @PathVariable final String category) {
+		@Parameter(name = "id", description = "Category id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable final String id) {
 
-		return ok(metadataService.findTypes(namespace, municipalityId, category));
+		return ok(metadataService.findTypesByCategoryId(namespace, municipalityId, id));
 	}
 
-	@PatchMapping(path = "/{category}", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
+	@PatchMapping(path = "/{id}", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
 	@Operation(summary = "Update category", description = "Update category matching namespace, municipality and id", responses = {
 		@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true),
 		@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
@@ -129,13 +133,13 @@ class MetadataCategoryResource {
 	ResponseEntity<Category> updateCategory(
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
-		@Parameter(name = "category", description = "Name of category", example = "KSK_SERVICE_CENTER_SALARY_AND_PENSION") @PathVariable final String category,
+		@Parameter(name = "id", description = "Category id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable final String id,
 		@Valid @NotNull @RequestBody final Category body) {
 
-		return ok(metadataService.updateCategory(namespace, municipalityId, category, body));
+		return ok(metadataService.updateCategory(namespace, municipalityId, id, body));
 	}
 
-	@DeleteMapping(path = "/{category}", produces = ALL_VALUE)
+	@DeleteMapping(path = "/{id}", produces = ALL_VALUE)
 	@Operation(summary = "Delete category", description = "Delete category matching namespace, municipality and id", responses = {
 		@ApiResponse(responseCode = "204", description = "Successful operation", useReturnTypeSchema = true),
 		@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
@@ -147,9 +151,9 @@ class MetadataCategoryResource {
 	ResponseEntity<Void> deleteCategory(
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
-		@Parameter(name = "category", description = "Name of category", example = "KSK_SERVICE_CENTER_SALARY_AND_PENSION") @PathVariable final String category) {
+		@Parameter(name = "id", description = "Category id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable final String id) {
 
-		metadataService.deleteCategory(namespace, municipalityId, category);
+		metadataService.deleteCategory(namespace, municipalityId, id);
 		return noContent()
 			.header(CONTENT_TYPE, ALL_VALUE)
 			.build();

@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
+import org.springframework.data.domain.Sort;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
@@ -88,8 +89,8 @@ class ErrandsUpdateResourceFailureTest {
 	@BeforeEach
 	void setupMock() {
 		when(metadataServiceMock.isValidated(any(), any(), any())).thenReturn(true);
-		when(metadataServiceMock.findCategories(any(), any())).thenReturn(List.of(Category.create().withName("CATEGORY_1"), Category.create().withName("CATEGORY_2")));
-		when(metadataServiceMock.findStatuses(any(), any())).thenReturn(List.of(Status.create().withName("STATUS_1"), Status.create().withName("STATUS_2")));
+		when(metadataServiceMock.findCategories(any(), any(), any(Sort.class))).thenReturn(List.of(Category.create().withName("CATEGORY_1"), Category.create().withName("CATEGORY_2")));
+		when(metadataServiceMock.findStatuses(any(), any(), any(Sort.class))).thenReturn(List.of(Status.create().withName("STATUS_1"), Status.create().withName("STATUS_2")));
 		when(metadataServiceMock.findTypes(any(), any(), any())).thenReturn(List.of(Type.create().withName("TYPE_1"), Type.create().withName("TYPE_2")));
 	}
 
@@ -113,7 +114,7 @@ class ErrandsUpdateResourceFailureTest {
 			tuple("updateErrand.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
 
 		// Verification
-		verify(metadataServiceMock).findStatuses(any(), any());
+		verify(metadataServiceMock).findStatuses(any(), any(), any(Sort.class));
 		verifyNoInteractions(errandServiceMock);
 	}
 
@@ -137,7 +138,7 @@ class ErrandsUpdateResourceFailureTest {
 			tuple("updateErrand.municipalityId", "not a valid municipality ID"));
 
 		// Verification
-		verify(metadataServiceMock).findStatuses(any(), any());
+		verify(metadataServiceMock).findStatuses(any(), any(), any(Sort.class));
 		verifyNoInteractions(errandServiceMock);
 	}
 
@@ -161,7 +162,7 @@ class ErrandsUpdateResourceFailureTest {
 			tuple("updateErrand.errandId", "not a valid UUID"));
 
 		// Verification
-		verify(metadataServiceMock).findStatuses(any(), any());
+		verify(metadataServiceMock).findStatuses(any(), any(), any(Sort.class));
 		verifyNoInteractions(errandServiceMock);
 	}
 
@@ -211,8 +212,8 @@ class ErrandsUpdateResourceFailureTest {
 			tuple("updateErrand.errand.reporterUserId", "must be null"));
 
 		// Verification
-		verify(metadataServiceMock).findCategories(any(), any());
-		verify(metadataServiceMock).findStatuses(any(), any());
+		verify(metadataServiceMock).findCategories(any(), any(), any(Sort.class));
+		verify(metadataServiceMock).findStatuses(any(), any(), any(Sort.class));
 		verify(metadataServiceMock).findTypes(any(), any(), any());
 		verifyNoInteractions(errandServiceMock);
 	}
@@ -241,8 +242,8 @@ class ErrandsUpdateResourceFailureTest {
 			tuple("updateErrand.errand.reporterUserId", "must be null"));
 
 		// Verification
-		verify(metadataServiceMock).findCategories(any(), any());
-		verify(metadataServiceMock).findStatuses(any(), any());
+		verify(metadataServiceMock).findCategories(any(), any(), any(Sort.class));
+		verify(metadataServiceMock).findStatuses(any(), any(), any(Sort.class));
 		verifyNoInteractions(errandServiceMock);
 	}
 
@@ -272,7 +273,7 @@ class ErrandsUpdateResourceFailureTest {
 			tuple("updateErrand.errand.externalTags[1].value", "must not be blank"));
 
 		// Verification
-		verify(metadataServiceMock).findStatuses(any(), any());
+		verify(metadataServiceMock).findStatuses(any(), any(), any(Sort.class));
 		verifyNoInteractions(errandServiceMock);
 	}
 
@@ -298,7 +299,7 @@ class ErrandsUpdateResourceFailureTest {
 			.containsExactlyInAnyOrder(tuple("updateErrand.errand.contactReasonDescription", "size must be between 0 and 4096"));
 
 		// Verification
-		verify(metadataServiceMock).findStatuses(any(), any());
+		verify(metadataServiceMock).findStatuses(any(), any(), any(Sort.class));
 		verifyNoInteractions(errandServiceMock);
 	}
 
@@ -324,8 +325,8 @@ class ErrandsUpdateResourceFailureTest {
 			tuple("updateErrand.errand.status", "value 'invalid_status' doesn't match any of [STATUS_1, STATUS_2]"));
 
 		// Verification
-		verify(metadataServiceMock).findCategories(any(), any());
-		verify(metadataServiceMock).findStatuses(any(), any());
+		verify(metadataServiceMock).findCategories(any(), any(), any(Sort.class));
+		verify(metadataServiceMock).findStatuses(any(), any(), any(Sort.class));
 		verifyNoInteractions(errandServiceMock);
 	}
 

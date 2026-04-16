@@ -3,7 +3,6 @@ package se.sundsvall.supportmanagement.integration.db.model;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.OneToMany;
@@ -18,8 +17,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import org.hibernate.annotations.TimeZoneStorage;
+import org.hibernate.annotations.UuidGenerator;
 
-import static jakarta.persistence.GenerationType.IDENTITY;
 import static java.time.OffsetDateTime.now;
 import static java.time.ZoneId.systemDefault;
 import static java.time.temporal.ChronoUnit.MILLIS;
@@ -38,15 +37,18 @@ import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 public class CategoryEntity {
 
 	@Id
-	@GeneratedValue(strategy = IDENTITY)
+	@UuidGenerator
 	@Column(name = "id")
-	private Long id;
+	private String id;
 
 	@Column(name = "name", nullable = false)
 	private String name;
 
 	@Column(name = "display_name")
 	private String displayName;
+
+	@Column(name = "sort_order")
+	private Integer sortOrder;
 
 	@OneToMany(mappedBy = "categoryEntity", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<TypeEntity> types;
@@ -69,15 +71,15 @@ public class CategoryEntity {
 		return new CategoryEntity();
 	}
 
-	public Long getId() {
+	public String getId() {
 		return id;
 	}
 
-	public void setId(final Long id) {
+	public void setId(final String id) {
 		this.id = id;
 	}
 
-	public CategoryEntity withId(final Long id) {
+	public CategoryEntity withId(final String id) {
 		this.id = id;
 		return this;
 	}
@@ -105,6 +107,19 @@ public class CategoryEntity {
 
 	public CategoryEntity withDisplayName(final String displayName) {
 		this.displayName = displayName;
+		return this;
+	}
+
+	public Integer getSortOrder() {
+		return sortOrder;
+	}
+
+	public void setSortOrder(final Integer sortOrder) {
+		this.sortOrder = sortOrder;
+	}
+
+	public CategoryEntity withSortOrder(final Integer sortOrder) {
+		this.sortOrder = sortOrder;
 		return this;
 	}
 
@@ -195,7 +210,7 @@ public class CategoryEntity {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(created, displayName, id, modified, municipalityId, name, namespace, types);
+		return Objects.hash(created, displayName, id, modified, municipalityId, name, namespace, sortOrder, types);
 	}
 
 	@Override
@@ -211,7 +226,7 @@ public class CategoryEntity {
 		}
 		final CategoryEntity other = (CategoryEntity) obj;
 		return Objects.equals(created, other.created) && Objects.equals(displayName, other.displayName) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(municipalityId, other.municipalityId) && Objects
-			.equals(name, other.name) && Objects.equals(namespace, other.namespace) && Objects.equals(types, other.types);
+			.equals(name, other.name) && Objects.equals(namespace, other.namespace) && Objects.equals(sortOrder, other.sortOrder) && Objects.equals(types, other.types);
 	}
 
 	@Override
@@ -220,6 +235,7 @@ public class CategoryEntity {
 			"id=" + id +
 			", name='" + name + '\'' +
 			", displayName='" + displayName + '\'' +
+			", sortOrder=" + sortOrder +
 			", types=" + types +
 			", municipalityId='" + municipalityId + '\'' +
 			", namespace='" + namespace + '\'' +

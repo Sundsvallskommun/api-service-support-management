@@ -36,7 +36,7 @@ class MetadataContactReasonIT extends AbstractAppTest {
 	private static final String PATH = "/" + MUNICIPALITY_2281 + "/" + NAMESPACE + "/metadata/contactreasons";
 	private static final String REQUEST_FILE = "request.json";
 	private static final String RESPONSE_FILE = "response.json";
-	private static final String CONTACT_REASON_ID = "123";
+	private static final String CONTACT_REASON_ID = "c0000000-0000-0000-0000-000000000123";
 
 	@Autowired
 	private ContactReasonRepository contactReasonRepository;
@@ -48,7 +48,7 @@ class MetadataContactReasonIT extends AbstractAppTest {
 			.withHttpMethod(POST)
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(CREATED)
-			.withExpectedResponseHeader(LOCATION, List.of("^" + PATH + "/(\\d+)$"))
+			.withExpectedResponseHeader(LOCATION, List.of("^" + PATH + "/(.+)$"))
 			.sendRequestAndVerifyResponse();
 	}
 
@@ -93,6 +93,6 @@ class MetadataContactReasonIT extends AbstractAppTest {
 			.withExpectedResponseStatus(NO_CONTENT)
 			.sendRequestAndVerifyResponse();
 
-		assertThat(contactReasonRepository.findByIdAndNamespaceAndMunicipalityId(Long.valueOf(CONTACT_REASON_ID), NAMESPACE, MUNICIPALITY_2281)).isNotPresent();
+		assertThat(contactReasonRepository.findByIdAndNamespaceAndMunicipalityId(CONTACT_REASON_ID, NAMESPACE, MUNICIPALITY_2281)).isNotPresent();
 	}
 }

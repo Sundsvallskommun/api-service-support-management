@@ -12,12 +12,15 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Sort;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 import se.sundsvall.supportmanagement.api.model.metadata.ContactReason;
 import se.sundsvall.supportmanagement.service.MetadataService;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.web.context.request.RequestAttributes.SCOPE_REQUEST;
@@ -57,10 +60,10 @@ class ValidContactReasonConstraintValidatorTest {
 		try (var requestContextHolderMock = Mockito.mockStatic(RequestContextHolder.class)) {
 			requestContextHolderMock.when(RequestContextHolder::getRequestAttributes).thenReturn(requestAttributesMock);
 			when(requestAttributesMock.getAttribute(URI_TEMPLATE_VARIABLES_ATTRIBUTE, SCOPE_REQUEST)).thenReturn(attributes);
-			when(metadataServiceMock.findContactReasons(namespace, municipalityId)).thenReturn(validReasons);
+			when(metadataServiceMock.findContactReasons(eq(namespace), eq(municipalityId), any(Sort.class))).thenReturn(validReasons);
 
 			assertThat(validator.isValid(reason, constraintValidatorContextMock)).isEqualTo(valid);
-			verify(metadataServiceMock).findContactReasons(namespace, municipalityId);
+			verify(metadataServiceMock).findContactReasons(eq(namespace), eq(municipalityId), any(Sort.class));
 		}
 
 	}

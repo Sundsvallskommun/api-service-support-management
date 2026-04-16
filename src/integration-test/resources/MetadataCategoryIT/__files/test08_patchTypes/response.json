@@ -1,4 +1,5 @@
 {
+	"id": "aa000000-0000-0000-0000-000000000100",
 	"types": [
 		{
 			"displayName": "TYPE-DISPLAY-NAME-2",
@@ -19,7 +20,9 @@
 			"name": "TYPE-4"
 		}
 	],
+	"sortOrder": 5,
 	"created": "2023-01-01T12:00:00+01:00",
+	"modified": "${json-unit.ignore}",
 	"displayName": "CATEGORY-DISPLAY-NAME-1",
 	"name": "CATEGORY-1"
 }

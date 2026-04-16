@@ -1,6 +1,8 @@
 {
+	"id": "bb000000-0000-0000-0000-000000000101",
 	"created": "2023-01-01T12:00:00+01:00",
 	"name": "STATUS-2",
 	"displayName": "Status 2",
-	"externalDisplayName": "External Status 2"
+	"externalDisplayName": "External Status 2",
+	"sortOrder": 1
 }

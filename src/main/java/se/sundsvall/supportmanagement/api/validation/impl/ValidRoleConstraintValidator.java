@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.api.validation.impl;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import java.util.List;
+import org.springframework.data.domain.Sort;
 import se.sundsvall.supportmanagement.api.model.metadata.Role;
 import se.sundsvall.supportmanagement.api.validation.ValidRole;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EntityType;
@@ -28,7 +29,7 @@ public class ValidRoleConstraintValidator extends AbstractTagConstraintValidator
 	}
 
 	private List<String> getRoles(String namespace, String municipalityId) {
-		return ofNullable(metadataService.findRoles(namespace, municipalityId)).orElse(emptyList()).stream()
+		return ofNullable(metadataService.findRoles(namespace, municipalityId, Sort.unsorted())).orElse(emptyList()).stream()
 			.map(Role::getName)
 			.toList();
 	}

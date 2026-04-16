@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.data.domain.Example;
+import org.springframework.data.domain.Sort;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 import se.sundsvall.supportmanagement.integration.db.model.StatusEntity;
@@ -29,7 +30,7 @@ import static org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTest
 	"/db/scripts/testdata-junit.sql"
 })
 class StatusRepositoryTest {
-	private static final long TEST_ID = 101;
+	private static final String TEST_ID = "bb000000-0000-0000-0000-000000000101";
 
 	@Autowired
 	private StatusRepository statusRepository;
@@ -91,20 +92,32 @@ class StatusRepositoryTest {
 	}
 
 	@Test
-	void getByNamespaceAndMunicipalityIdAndName() {
+	void getByIdAndNamespaceAndMunicipalityId() {
 		// Setup
 		final var municipalityId = "2281";
 		final var namespace = "namespace-1";
-		final var name = "status-3";
 
 		// Execution
-		final var entity = statusRepository.getByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
+		final var entity = statusRepository.getByIdAndNamespaceAndMunicipalityId(TEST_ID, namespace, municipalityId);
 
 		// Assertions
 		assertThat(entity).isNotNull();
+		assertThat(entity.getId()).isEqualTo(TEST_ID);
 		assertThat(entity.getNamespace()).isEqualTo(namespace);
 		assertThat(entity.getMunicipalityId()).isEqualTo(municipalityId);
-		assertThat(entity.getName()).isEqualTo(name);
+		assertThat(entity.getName()).isEqualTo("status-2");
+	}
+
+	@Test
+	void existsByIdAndNamespaceAndMunicipalityId() {
+		// Setup
+		final var municipalityId = "2281";
+		final var namespace = "namespace-1";
+		final var nonExistingId = "00000000-0000-0000-0000-000000000000";
+
+		// Execution & assertion
+		assertThat(statusRepository.existsByIdAndNamespaceAndMunicipalityId(TEST_ID, namespace, municipalityId)).isTrue();
+		assertThat(statusRepository.existsByIdAndNamespaceAndMunicipalityId(nonExistingId, namespace, municipalityId)).isFalse();
 	}
 
 	@Test
@@ -126,7 +139,7 @@ class StatusRepositoryTest {
 		final var municipalityId = "2281";
 		final var namespace = "namespace-1";
 
-		final var matches = statusRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId);
+		final var matches = statusRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.unsorted());
 
 		assertThat(matches).hasSize(3)
 			.extracting(
@@ -145,7 +158,7 @@ class StatusRepositoryTest {
 		final var existingEntity = statusRepository.findById(TEST_ID).orElseThrow();
 
 		// Execution
-		statusRepository.deleteByNamespaceAndMunicipalityIdAndName(existingEntity.getNamespace(), existingEntity.getMunicipalityId(), existingEntity.getName());
+		statusRepository.deleteByIdAndNamespaceAndMunicipalityId(TEST_ID, existingEntity.getNamespace(), existingEntity.getMunicipalityId());
 
 		// Assertions
 		assertThat(statusRepository.findById(TEST_ID)).isNotPresent();

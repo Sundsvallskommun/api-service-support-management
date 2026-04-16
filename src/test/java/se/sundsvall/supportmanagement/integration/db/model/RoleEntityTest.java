@@ -39,12 +39,13 @@ class RoleEntityTest {
 	void hasValidBuilderMethods() {
 
 		final var created = OffsetDateTime.now().minusDays(1);
-		final var id = 1L;
+		final var id = "6a5b8c9d-1234-5678-abcd-ef0123456789";
 		final var modified = OffsetDateTime.now();
 		final var municipalityId = "municipalityId";
 		final var name = "name";
 		final var displayName = "displayName";
 		final var namespace = "namespace";
+		final var sortOrder = 5;
 
 		final var entity = RoleEntity.create()
 			.withCreated(created)
@@ -53,7 +54,8 @@ class RoleEntityTest {
 			.withMunicipalityId(municipalityId)
 			.withName(name)
 			.withDisplayName(displayName)
-			.withNamespace(namespace);
+			.withNamespace(namespace)
+			.withSortOrder(sortOrder);
 
 		assertThat(entity).hasNoNullFieldsOrProperties();
 		assertThat(entity.getCreated()).isEqualTo(created);
@@ -63,6 +65,7 @@ class RoleEntityTest {
 		assertThat(entity.getName()).isEqualTo(name);
 		assertThat(entity.getDisplayName()).isEqualTo(displayName);
 		assertThat(entity.getNamespace()).isEqualTo(namespace);
+		assertThat(entity.getSortOrder()).isEqualTo(sortOrder);
 	}
 
 	@Test

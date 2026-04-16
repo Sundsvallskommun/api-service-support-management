@@ -10,8 +10,8 @@ import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 @Schema(description = "Contact reason model")
 public class ContactReason {
 
-	@Schema(description = "ID", examples = "123", accessMode = READ_ONLY)
-	private Long id;
+	@Schema(description = "ID", examples = "b82bd8ac-1507-4d9a-958d-369261eecc15", accessMode = READ_ONLY)
+	private String id;
 
 	@Schema(description = "Reason for contact", examples = "Segt internet")
 	@NotBlank
@@ -21,6 +21,11 @@ public class ContactReason {
 		"string", "null"
 	})
 	private String displayName;
+
+	@Schema(description = "Sort order for the contact reason", examples = "1", types = {
+		"integer", "null"
+	})
+	private Integer sortOrder;
 
 	@Schema(description = "Timestamp when the contact reason was created", examples = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	private OffsetDateTime created;
@@ -32,15 +37,15 @@ public class ContactReason {
 		return new ContactReason();
 	}
 
-	public Long getId() {
+	public String getId() {
 		return id;
 	}
 
-	public void setId(final Long id) {
+	public void setId(final String id) {
 		this.id = id;
 	}
 
-	public ContactReason withId(final Long id) {
+	public ContactReason withId(final String id) {
 		this.id = id;
 		return this;
 	}
@@ -68,6 +73,19 @@ public class ContactReason {
 
 	public ContactReason withDisplayName(final String displayName) {
 		this.displayName = displayName;
+		return this;
+	}
+
+	public Integer getSortOrder() {
+		return sortOrder;
+	}
+
+	public void setSortOrder(final Integer sortOrder) {
+		this.sortOrder = sortOrder;
+	}
+
+	public ContactReason withSortOrder(final Integer sortOrder) {
+		this.sortOrder = sortOrder;
 		return this;
 	}
 
@@ -99,7 +117,7 @@ public class ContactReason {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(created, displayName, id, modified, reason);
+		return Objects.hash(created, displayName, id, modified, reason, sortOrder);
 	}
 
 	@Override
@@ -110,7 +128,8 @@ public class ContactReason {
 		if (!(obj instanceof final ContactReason other)) {
 			return false;
 		}
-		return Objects.equals(created, other.created) && Objects.equals(displayName, other.displayName) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(reason, other.reason);
+		return Objects.equals(created, other.created) && Objects.equals(displayName, other.displayName) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(reason, other.reason) && Objects.equals(sortOrder,
+			other.sortOrder);
 	}
 
 	@Override
@@ -119,6 +138,7 @@ public class ContactReason {
 			"id=" + id +
 			", reason='" + reason + '\'' +
 			", displayName='" + displayName + '\'' +
+			", sortOrder=" + sortOrder +
 			", created=" + created +
 			", modified=" + modified +
 			'}';

@@ -13,6 +13,9 @@ import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 @Schema(description = "Status model")
 public class Status {
 
+	@Schema(description = "Status ID", examples = "5f79a808-0ef3-4985-99b9-b12f23e202a7", accessMode = READ_ONLY)
+	private String id;
+
 	@Schema(description = "Name for the status", examples = "statusName")
 	@NotBlank
 	private String name;
@@ -27,6 +30,11 @@ public class Status {
 	})
 	private String externalDisplayName;
 
+	@Schema(description = "Sort order for the status", examples = "1", types = {
+		"integer", "null"
+	})
+	private Integer sortOrder;
+
 	@Schema(description = "Timestamp when the status was created", examples = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	@DateTimeFormat(iso = ISO.DATE_TIME)
 	@Null
@@ -39,6 +47,19 @@ public class Status {
 
 	public static Status create() {
 		return new Status();
+	}
+
+	public String getId() {
+		return id;
+	}
+
+	public void setId(final String id) {
+		this.id = id;
+	}
+
+	public Status withId(final String id) {
+		this.id = id;
+		return this;
 	}
 
 	public String getName() {
@@ -80,6 +101,19 @@ public class Status {
 		return this;
 	}
 
+	public Integer getSortOrder() {
+		return sortOrder;
+	}
+
+	public void setSortOrder(final Integer sortOrder) {
+		this.sortOrder = sortOrder;
+	}
+
+	public Status withSortOrder(final Integer sortOrder) {
+		this.sortOrder = sortOrder;
+		return this;
+	}
+
 	public OffsetDateTime getCreated() {
 		return created;
 	}
@@ -108,7 +142,7 @@ public class Status {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(created, displayName, externalDisplayName, modified, name);
+		return Objects.hash(created, displayName, externalDisplayName, id, modified, name, sortOrder);
 	}
 
 	@Override
@@ -119,15 +153,18 @@ public class Status {
 		if (!(obj instanceof final Status other)) {
 			return false;
 		}
-		return Objects.equals(created, other.created) && Objects.equals(displayName, other.displayName) && Objects.equals(externalDisplayName, other.externalDisplayName) && Objects.equals(modified, other.modified) && Objects.equals(name, other.name);
+		return Objects.equals(created, other.created) && Objects.equals(displayName, other.displayName) && Objects.equals(externalDisplayName, other.externalDisplayName) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects
+			.equals(name, other.name) && Objects.equals(sortOrder, other.sortOrder);
 	}
 
 	@Override
 	public String toString() {
 		return "Status{" +
-			"name='" + name + '\'' +
+			"id='" + id + '\'' +
+			", name='" + name + '\'' +
 			", displayName='" + displayName + '\'' +
 			", externalDisplayName='" + externalDisplayName + '\'' +
+			", sortOrder=" + sortOrder +
 			", created=" + created +
 			", modified=" + modified +
 			'}';

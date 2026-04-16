@@ -5,6 +5,7 @@ import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpHeaders.LOCATION;
 import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpMethod.PATCH;
 import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
@@ -49,7 +50,7 @@ class MetadataStatusIT extends AbstractAppTest {
 			.withHttpMethod(POST)
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(CREATED)
-			.withExpectedResponseHeader(LOCATION, List.of("/" + MUNICIPALITY_2281 + "/" + NAMESPACE + "/metadata/statuses/A_BRAND_NEW_STATUS"))
+			.withExpectedResponseHeader(LOCATION, List.of("/" + MUNICIPALITY_2281 + "/" + NAMESPACE + "/metadata/statuses/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"))
 			.withExpectedResponseBodyIsNull()
 			.sendRequestAndVerifyResponse();
 
@@ -58,8 +59,9 @@ class MetadataStatusIT extends AbstractAppTest {
 
 	@Test
 	void test02_getStatus() {
+		final var statusId = "bb000000-0000-0000-0000-000000000101";
 		setupCall()
-			.withServicePath(PATH + "/STATUS-2")
+			.withServicePath(PATH + "/" + statusId)
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
@@ -94,20 +96,45 @@ class MetadataStatusIT extends AbstractAppTest {
 
 	@Test
 	void test05_deleteStatus() {
-		final var statusName = "STATUS-2";
+		final var statusId = "bb000000-0000-0000-0000-000000000101";
 
-		assertThat(statusRepository.existsByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_2281, statusName)).isTrue();
+		assertThat(statusRepository.existsByIdAndNamespaceAndMunicipalityId(statusId, NAMESPACE, MUNICIPALITY_2281)).isTrue();
 		assertThat(statusRepository.count()).isEqualTo(11);
 
 		setupCall()
-			.withServicePath(PATH + "/" + statusName)
+			.withServicePath(PATH + "/" + statusId)
 			.withHttpMethod(DELETE)
 			.withExpectedResponseStatus(NO_CONTENT)
 			.withExpectedResponseBodyIsNull()
 			.sendRequestAndVerifyResponse();
 
-		assertThat(statusRepository.existsByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_2281, statusName)).isFalse();
+		assertThat(statusRepository.existsByIdAndNamespaceAndMunicipalityId(statusId, NAMESPACE, MUNICIPALITY_2281)).isFalse();
 		assertThat(statusRepository.count()).isEqualTo(10);
+	}
+
+	@Test
+	void test06_patchStatus() {
+		final var statusId = "bb000000-0000-0000-0000-000000000102";
+		setupCall()
+			.withServicePath(PATH + "/" + statusId)
+			.withHttpMethod(PATCH)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	void test07_getStatusesSortedBySortOrder() {
+
+		setupCall()
+			.withServicePath(PATH + "?sort=sortOrder,asc")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
 	}
 
 }

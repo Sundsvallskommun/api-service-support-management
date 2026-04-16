@@ -11,6 +11,8 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import java.util.List;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -22,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import se.sundsvall.dept44.common.validators.annotation.ValidMunicipalityId;
+import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.supportmanagement.api.model.metadata.ContactReason;
@@ -79,7 +82,7 @@ class MetadataContactReasonResource {
 	ResponseEntity<ContactReason> getContactReason(
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
-		@Parameter(name = "contactReasonId", description = "ContactReason ID", example = "123") @PathVariable final Long contactReasonId) {
+		@Parameter(name = "contactReasonId", description = "ContactReason ID", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable final String contactReasonId) {
 
 		return ok(metadataService.getContactReasonByIdAndNamespaceAndMunicipalityId(contactReasonId, namespace, municipalityId));
 	}
@@ -90,9 +93,10 @@ class MetadataContactReasonResource {
 	})
 	ResponseEntity<List<ContactReason>> getContactReasons(
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
-		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId) {
+		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
+		@ParameterObject final Sort sort) {
 
-		return ok(metadataService.findContactReasonsForNamespaceAndMunicipality(namespace, municipalityId));
+		return ok(metadataService.findContactReasons(namespace, municipalityId, sort));
 	}
 
 	@PatchMapping(path = "/{contactReasonId}", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
@@ -103,7 +107,7 @@ class MetadataContactReasonResource {
 	ResponseEntity<ContactReason> updateContactReason(
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
-		@Parameter(name = "contactReasonId", description = "ContactReason ID", example = "123") @PathVariable final Long contactReasonId,
+		@Parameter(name = "contactReasonId", description = "ContactReason ID", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable final String contactReasonId,
 		@Valid @NotNull @RequestBody final ContactReason body) {
 
 		return ok(metadataService.patchContactReason(contactReasonId, namespace, municipalityId, body));
@@ -117,7 +121,7 @@ class MetadataContactReasonResource {
 	ResponseEntity<Void> deleteContactReason(
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
-		@Parameter(name = "contactReasonId", description = "ContactReason ID", example = "123") @PathVariable final Long contactReasonId) {
+		@Parameter(name = "contactReasonId", description = "ContactReason ID", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable final String contactReasonId) {
 
 		metadataService.deleteContactReason(contactReasonId, namespace, municipalityId);
 		return noContent()

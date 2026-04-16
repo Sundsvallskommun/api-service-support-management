@@ -66,7 +66,7 @@ class MetadataRoleResourceFailureTest {
 	@ParameterizedTest
 	@MethodSource("getRoleArguments")
 	void getRoleWithInvalidArguments(final String namespace, final String municipalityId, final Tuple expectedResponse) {
-		final var response = webTestClient.get().uri(builder -> builder.path(PATH + "/role").build(Map.of("namespace", namespace, "municipalityId", municipalityId)))
+		final var response = webTestClient.get().uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", namespace, "municipalityId", municipalityId, "id", "5f79a808-0ef3-4985-99b9-b12f23e202a7")))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -116,7 +116,7 @@ class MetadataRoleResourceFailureTest {
 	@MethodSource("deleteArguments")
 	void deleteWithInvalidArguments(final String namespace, final String municipalityId, final Tuple expectedResponse) {
 
-		final var response = webTestClient.delete().uri(builder -> builder.path(PATH + "/role").build(Map.of("namespace", namespace, "municipalityId", municipalityId)))
+		final var response = webTestClient.delete().uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", namespace, "municipalityId", municipalityId, "id", "5f79a808-0ef3-4985-99b9-b12f23e202a7")))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)

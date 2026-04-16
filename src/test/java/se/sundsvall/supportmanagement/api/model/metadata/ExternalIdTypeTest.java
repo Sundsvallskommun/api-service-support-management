@@ -37,15 +37,18 @@ class ExternalIdTypeTest {
 	void testCreatePattern() {
 		final var created = OffsetDateTime.now();
 		final var modified = OffsetDateTime.now().plusDays(1);
+		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
 		final var name = "name";
 		final var displayName = "displayName";
 
 		final var bean = ExternalIdType.create()
+			.withId(id)
 			.withCreated(created)
 			.withModified(modified)
 			.withName(name)
 			.withDisplayName(displayName);
 
+		assertThat(bean.getId()).isEqualTo(id);
 		assertThat(bean.getCreated()).isEqualTo(created);
 		assertThat(bean.getModified()).isEqualTo(modified);
 		assertThat(bean.getName()).isEqualTo(name);
