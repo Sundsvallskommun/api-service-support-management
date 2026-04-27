@@ -103,7 +103,8 @@ public class MessageExchangeWorker {
 	}
 
 	private boolean resourceIdentifierMatchesErrand(final ResourceIdentifier resourceIdentifier) {
-		return "support-management".equalsIgnoreCase(resourceIdentifier.getService()) && errandsRepository.findById(resourceIdentifier.getResourceId()).isPresent();
+		final var service = ofNullable(resourceIdentifier.getService()).orElse("").replace("-", "").replace("_", "");
+		return "supportmanagement".equalsIgnoreCase(service) && errandsRepository.findById(resourceIdentifier.getResourceId()).isPresent();
 	}
 
 	private Function<Relation, ConversationEntity> createConversation(final Conversation conversation) {
