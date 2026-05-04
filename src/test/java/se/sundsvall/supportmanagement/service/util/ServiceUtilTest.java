@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -14,6 +15,9 @@ import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderParameterEntity;
@@ -23,15 +27,49 @@ import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.REQUEST_GROUP_ID_HEADER;
 
 class ServiceUtilTest {
 
 	private static final String PATH = "mimetype_files/";
+
+	@AfterEach
+	void resetRequestContext() {
+		RequestContextHolder.resetRequestAttributes();
+	}
 	private static final String IMG_FILE_NAME = "image.jpg";
 	private static final String DOC_FILE_NAME = "document.doc";
 	private static final String DOCX_FILE_NAME = "document.docx";
 	private static final String PDF_FILE_NAME = "document.pdf";
 	private static final String TXT_FILE_NAME = "document.txt";
+
+	@Test
+	void getRequestGroupIdFromHeader() {
+		final var requestGroupId = UUID.randomUUID().toString();
+		final var request = new MockHttpServletRequest();
+		request.addHeader(REQUEST_GROUP_ID_HEADER, requestGroupId);
+		RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
+
+		assertThat(ServiceUtil.getRequestGroupId()).isEqualTo(requestGroupId);
+	}
+
+	@Test
+	void getRequestGroupIdGeneratesUuidWhenHeaderAbsent() {
+		RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(new MockHttpServletRequest()));
+
+		final var result = ServiceUtil.getRequestGroupId();
+
+		assertThat(result).isNotBlank();
+		assertThat(UUID.fromString(result)).isNotNull();
+	}
+
+	@Test
+	void getRequestGroupIdGeneratesUuidWhenNoRequestContext() {
+		final var result = ServiceUtil.getRequestGroupId();
+
+		assertThat(result).isNotBlank();
+		assertThat(UUID.fromString(result)).isNotNull();
+	}
 
 	@ParameterizedTest
 	@MethodSource("toValidUuidsStreamArguments")

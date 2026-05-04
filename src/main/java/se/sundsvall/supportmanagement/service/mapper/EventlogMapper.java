@@ -39,7 +39,7 @@ public class EventlogMapper {
 
 	private EventlogMapper() {}
 
-	public static Event toEvent(final EventType eventType, final String message, final String revision, final Class<?> sourceType, final Map<String, String> metaData, final String executedByUserId) {
+	public static Event toEvent(final EventType eventType, final String message, final String revision, final Class<?> sourceType, final Map<String, String> metaData, final String executedByUserId, final String subType, final String requestGroupId) {
 		return new Event()
 			.created(now(systemDefault()))
 			.historyReference(revision)
@@ -47,6 +47,8 @@ public class EventlogMapper {
 			.owner(OWNER)
 			.sourceType(ofNullable(sourceType).map(Class::getSimpleName).orElse(null))
 			.type(eventType)
+			.subType(subType)
+			.requestGroupId(requestGroupId)
 			.metadata(toMetadata(metaData, ofNullable(executedByUserId)));
 	}
 
@@ -129,13 +131,17 @@ public class EventlogMapper {
 
 	public static se.sundsvall.supportmanagement.api.model.event.Event toEvent(final Event event) {
 		return se.sundsvall.supportmanagement.api.model.event.Event.create()
+			.withId(event.getId())
 			.withCreated(event.getCreated())
 			.withHistoryReference(event.getHistoryReference())
 			.withMessage(event.getMessage())
+			.withDetails(event.getDetails())
 			.withMetadata(toMetadatas(event.getMetadata()))
 			.withOwner(event.getOwner())
 			.withSourceType(event.getSourceType())
-			.withType(toEventType(event.getType()));
+			.withType(toEventType(event.getType()))
+			.withSubType(event.getSubType())
+			.withRequestGroupId(event.getRequestGroupId());
 	}
 
 	private static se.sundsvall.supportmanagement.api.model.event.EventType toEventType(final EventType eventType) {

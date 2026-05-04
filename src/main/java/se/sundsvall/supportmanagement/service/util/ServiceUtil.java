@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
@@ -14,6 +15,8 @@ import org.apache.tika.Tika;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.CollectionUtils;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
@@ -28,6 +31,8 @@ import static se.sundsvall.dept44.support.Identifier.Type.AD_ACCOUNT;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 
 public class ServiceUtil {
+
+	public static final String REQUEST_GROUP_ID_HEADER = "X-Request-Group-Id";
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ServiceUtil.class);
 	private static final String MIME_ERROR_MSG = "Exception when detecting mime type of file with filename '{}'";
@@ -75,6 +80,20 @@ public class ServiceUtil {
 			.filter(identifier -> AD_ACCOUNT.equals(identifier.getType()))
 			.map(Identifier::getValue)
 			.orElse(null);
+	}
+
+	/**
+	 * Returns the value of the {@code X-Request-Group-Id} request header if present in the current
+	 * HTTP request context, otherwise generates a new random UUID. This allows clients to group
+	 * related events together by sending the same header value across multiple requests.
+	 */
+	public static String getRequestGroupId() {
+		return ofNullable(RequestContextHolder.getRequestAttributes())
+			.filter(ServletRequestAttributes.class::isInstance)
+			.map(ServletRequestAttributes.class::cast)
+			.map(attrs -> attrs.getRequest().getHeader(REQUEST_GROUP_ID_HEADER))
+			.filter(StringUtils::isNotBlank)
+			.orElseGet(() -> UUID.randomUUID().toString());
 	}
 
 	private static String handleFault(String filename, Exception e) {

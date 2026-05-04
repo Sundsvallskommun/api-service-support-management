@@ -21,6 +21,18 @@ import static se.sundsvall.supportmanagement.integration.eventlog.configuration.
 public interface EventlogClient {
 
 	/**
+	 * Fetch a single log event by its own id.
+	 *
+	 * @param  municipalityId municipality id the event belongs to
+	 * @param  id             the unique id of the event
+	 * @return                the event
+	 */
+	@GetMapping(path = "/{municipalityId}/events/{id}", produces = APPLICATION_JSON_VALUE)
+	ResponseEntity<Event> getEvent(
+		@PathVariable String municipalityId,
+		@PathVariable String id);
+
+	/**
 	 * Create a log event under logKey.
 	 *
 	 * @param municipalityId municipality id to create event for

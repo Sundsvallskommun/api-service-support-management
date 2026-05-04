@@ -5,7 +5,6 @@ import java.util.Optional;
 import se.sundsvall.supportmanagement.api.model.notification.Notification;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.NotificationSubType;
 
 import static java.time.OffsetDateTime.now;
 import static org.apache.commons.lang3.ObjectUtils.anyNull;
@@ -24,6 +23,7 @@ public final class NotificationMapper {
 			.withSubtype(notification.getSubtype())
 			.withDescription(notification.getDescription())
 			.withContent(notification.getContent())
+			.withRequestGroupId(notification.getRequestGroupId())
 			.withExpires(Optional.ofNullable(notification.getExpires()).orElse(now().plusDays(notificationTTLInDays)))
 			.withAcknowledged(notification.isAcknowledged())
 			.withGlobalAcknowledged(notification.isGlobalAcknowledged())
@@ -61,6 +61,7 @@ public final class NotificationMapper {
 				.withSubtype(entity.getSubtype())
 				.withDescription(entity.getDescription())
 				.withContent(entity.getContent())
+				.withRequestGroupId(entity.getRequestGroupId())
 				.withExpires(entity.getExpires())
 				.withAcknowledged(entity.isAcknowledged())
 				.withGlobalAcknowledged(entity.isGlobalAcknowledged())
@@ -71,13 +72,15 @@ public final class NotificationMapper {
 			.orElse(null);
 	}
 
-	public static Notification toNotification(final Event event, final ErrandEntity errandEntity, final String executingUser, final NotificationSubType subtype) {
+	public static Notification toNotification(final Event event, final ErrandEntity errandEntity, final String executingUser) {
 		return Notification.create()
 			.withDescription(event.getMessage())
+			.withContent(event.getDetails())
 			.withErrandId(errandEntity.getId())
 			.withErrandNumber(errandEntity.getErrandNumber())
 			.withType(event.getType().getValue())
-			.withSubtype(subtype.getValue())
+			.withSubtype(event.getSubType())
+			.withRequestGroupId(event.getRequestGroupId())
 			.withExpires(event.getExpires())
 			.withModified(event.getCreated())
 			.withCreated(event.getCreated())

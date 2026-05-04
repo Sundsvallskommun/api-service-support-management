@@ -82,6 +82,9 @@ public class NotificationEntity {
 	@JoinColumn(name = "errand_id", foreignKey = @ForeignKey(name = "fk_notification_errand_id"))
 	private ErrandEntity errandEntity;
 
+	@Column(name = "request_group_id")
+	private String requestGroupId;
+
 	@Column(name = "municipality_id", nullable = false, length = 8)
 	private String municipalityId;
 
@@ -297,6 +300,19 @@ public class NotificationEntity {
 		return this;
 	}
 
+	public String getRequestGroupId() {
+		return requestGroupId;
+	}
+
+	public void setRequestGroupId(final String requestGroupId) {
+		this.requestGroupId = requestGroupId;
+	}
+
+	public NotificationEntity withRequestGroupId(final String requestGroupId) {
+		this.requestGroupId = requestGroupId;
+		return this;
+	}
+
 	public String getMunicipalityId() {
 		return municipalityId;
 	}
@@ -331,12 +347,12 @@ public class NotificationEntity {
 		return globalAcknowledged == that.globalAcknowledged && acknowledged == that.acknowledged && Objects.equals(id, that.id) && Objects.equals(created, that.created) && Objects.equals(modified, that.modified)
 			&& Objects.equals(ownerFullName, that.ownerFullName) && Objects.equals(ownerId, that.ownerId) && Objects.equals(createdBy, that.createdBy) && Objects.equals(createdByFullName, that.createdByFullName)
 			&& Objects.equals(type, that.type) && Objects.equals(subtype, that.subtype) && Objects.equals(description, that.description) && Objects.equals(content, that.content) && Objects.equals(expires,
-				that.expires) && Objects.equals(errandEntity, that.errandEntity) && Objects.equals(municipalityId, that.municipalityId) && Objects.equals(namespace, that.namespace);
+				that.expires) && Objects.equals(requestGroupId, that.requestGroupId) && Objects.equals(errandEntity, that.errandEntity) && Objects.equals(municipalityId, that.municipalityId) && Objects.equals(namespace, that.namespace);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, created, modified, ownerFullName, ownerId, createdBy, createdByFullName, type, subtype, description, content, expires, globalAcknowledged, acknowledged, errandEntity, municipalityId, namespace);
+		return Objects.hash(id, created, modified, ownerFullName, ownerId, createdBy, createdByFullName, type, subtype, description, content, expires, requestGroupId, globalAcknowledged, acknowledged, errandEntity, municipalityId, namespace);
 	}
 
 	@Override
@@ -356,6 +372,7 @@ public class NotificationEntity {
 			", expires=" + expires +
 			", globalAcknowledged=" + globalAcknowledged +
 			", acknowledged=" + acknowledged +
+			", requestGroupId='" + requestGroupId + '\'' +
 			", errandEntity=" + errandEntity +
 			", municipalityId='" + municipalityId + '\'' +
 			", namespace='" + namespace + '\'' +

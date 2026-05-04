@@ -1,34 +1,33 @@
 package se.sundsvall.supportmanagement.service.scheduler.supensions;
 
+import generated.se.sundsvall.eventlog.EventType;
 import org.springframework.stereotype.Component;
-import se.sundsvall.supportmanagement.api.model.notification.Notification;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
-import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.service.EmployeeService;
+import se.sundsvall.supportmanagement.service.EventService;
 import se.sundsvall.supportmanagement.service.NotificationService;
+import se.sundsvall.supportmanagement.service.RevisionService;
 
 import static java.time.OffsetDateTime.now;
-import static java.util.Objects.nonNull;
-import static org.apache.commons.lang3.StringUtils.isBlank;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationSubType.SUSPENSION;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.SUSPENSION;
 
 @Component
 public class SuspensionWorker {
 
 	private static final String NOTIFICATION_MESSAGE = "Parkering av ärendet har upphört";
 
-	private static final String NOTIFICATION_TYPE = "UPDATE";
-
 	private final ErrandsRepository errandsRepository;
+
+	private final EventService eventService;
 
 	private final NotificationService notificationService;
 
-	private final EmployeeService employeeService;
+	private final RevisionService revisionService;
 
-	public SuspensionWorker(final ErrandsRepository errandsRepository, final NotificationService notificationService, final EmployeeService employeeService) {
+	public SuspensionWorker(final ErrandsRepository errandsRepository, final EventService eventService, final NotificationService notificationService, final RevisionService revisionService) {
 		this.errandsRepository = errandsRepository;
+		this.eventService = eventService;
 		this.notificationService = notificationService;
-		this.employeeService = employeeService;
+		this.revisionService = revisionService;
 	}
 
 	public void processExpiredSuspensions() {
@@ -43,34 +42,9 @@ public class SuspensionWorker {
 				if (!notificationService.doesNotificationWithSpecificDescriptionExistForOwnerAndErrandAndNotificationIsCreatedAfter(entity.getMunicipalityId(), entity.getNamespace(), entity.getAssignedUserId(), entity, NOTIFICATION_MESSAGE,
 					entity.getSuspendedFrom())) {
 
-					notificationService
-						.createNotification(entity, createNotification(entity));
+					final var latestRevision = revisionService.getLatestErrandRevision(entity);
+					eventService.createErrandEvent(EventType.UPDATE, NOTIFICATION_MESSAGE, entity, latestRevision, null, SUSPENSION);
 				}
 			});
-	}
-
-	private Notification createNotification(final ErrandEntity errand) {
-
-		final var ownerFullName = fetchFullNameByMunicipalityIdAndUserId(errand.getMunicipalityId(), errand.getAssignedUserId());
-
-		return Notification.create()
-			.withOwnerFullName(ownerFullName)
-			.withOwnerId(errand.getAssignedUserId())
-			.withType(NOTIFICATION_TYPE)
-			.withSubtype(SUSPENSION.getValue())
-			.withDescription(NOTIFICATION_MESSAGE)
-			.withErrandId(errand.getId())
-			.withErrandNumber(errand.getErrandNumber());
-	}
-
-	private String fetchFullNameByMunicipalityIdAndUserId(final String municipalityId, final String userId) {
-		if (!isBlank(userId)) {
-			final var owner = employeeService.getEmployeeByLoginName(municipalityId, userId);
-			if (nonNull(owner)) {
-				return owner.getFullname();
-			}
-		}
-
-		return "UNKNOWN";
 	}
 }

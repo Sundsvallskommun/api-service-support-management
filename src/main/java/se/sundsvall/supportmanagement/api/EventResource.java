@@ -41,6 +41,23 @@ class EventResource {
 		this.eventService = eventService;
 	}
 
+	@GetMapping(path = "/events/{eventId}", produces = APPLICATION_JSON_VALUE)
+	@Operation(summary = "Read a single event", description = "Returns the event that matches the provided event id", responses = {
+		@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true),
+		@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
+			Problem.class, ConstraintViolationProblem.class
+		}))),
+		@ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
+		@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+	})
+	ResponseEntity<Event> getEvent(
+		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
+		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
+		@Parameter(name = "eventId", description = "Event id", example = "922f95e3-608b-4e3c-ae22-f11fb849799a") @ValidUuid @PathVariable final String eventId) {
+
+		return ok(eventService.getEvent(municipalityId, eventId));
+	}
+
 	@GetMapping(path = "/errands/{errandId}/events", produces = APPLICATION_JSON_VALUE)
 	@Operation(summary = "Read errand events", description = "Returns all existing events for the errand that matches the provided id", responses = {
 		@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true),
@@ -58,4 +75,5 @@ class EventResource {
 
 		return ok(eventService.readEvents(municipalityId, errandId, pageable));
 	}
+
 }

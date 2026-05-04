@@ -55,7 +55,7 @@ import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildAttachmentEntity;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrandEntity;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationSubType.ATTACHMENT;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ATTACHMENT;
 
 @ExtendWith(MockitoExtension.class)
 class ErrandAttachmentServiceTest {
