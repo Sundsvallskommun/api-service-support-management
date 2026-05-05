@@ -288,12 +288,12 @@ class EventServiceTest {
 		final var errandId = randomUUID().toString();
 		final var pageable = Pageable.unpaged();
 
-		when(eventLogClientMock.getEvents(municipalityId, errandId, pageable)).thenReturn(pageEventMock);
+		when(eventLogClientMock.getEvents(municipalityId, errandId, pageable, null)).thenReturn(pageEventMock);
 		when(pageEventMock.getContent()).thenReturn(List.of(eventMock, eventMock, eventMock));
 		when(pageEventMock.getTotalElements()).thenReturn(3L);
 		when(eventMock.getType()).thenReturn(EventType.CREATE, EventType.UPDATE, EventType.DELETE);
 
-		final var pagedEvents = service.readEvents(municipalityId, errandId, pageable);
+		final var pagedEvents = service.readEvents(municipalityId, errandId, pageable, null);
 
 		verify(eventMock, times(3)).getType();
 		verify(pageEventMock).getTotalElements();
@@ -314,12 +314,12 @@ class EventServiceTest {
 		final var pageable = Pageable.unpaged();
 		final var municipalityId = "2281";
 
-		when(eventLogClientMock.getEvents(municipalityId, errandId, pageable)).thenReturn(pageEventMock);
+		when(eventLogClientMock.getEvents(municipalityId, errandId, pageable, null)).thenReturn(pageEventMock);
 		when(pageEventMock.getContent()).thenReturn(List.of(eventMock, eventMock, eventMock, eventMock, eventMock, eventMock));
 		when(pageEventMock.getTotalElements()).thenReturn(6L);
 		when(eventMock.getType()).thenReturn(EventType.ACCESS, EventType.CANCEL, EventType.DROP, EventType.EXECUTE, EventType.READ, null);
 
-		final var pagedEvents = service.readEvents(municipalityId, errandId, pageable);
+		final var pagedEvents = service.readEvents(municipalityId, errandId, pageable, null);
 
 		verify(eventMock, times(6)).getType();
 		verify(pageEventMock).getTotalElements();

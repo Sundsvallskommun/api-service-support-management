@@ -4,6 +4,8 @@ import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
@@ -34,16 +36,22 @@ public interface NotificationRepository extends JpaRepository<NotificationEntity
 		final String errandId,
 		final Sort sort);
 
+	List<NotificationEntity> findAllByNamespaceAndMunicipalityIdAndErrandEntityId(
+		final String namespace,
+		final String municipalityId,
+		final String errandId);
+
 	boolean existsByIdAndNamespaceAndMunicipalityIdAndErrandEntityId(
 		final String id,
 		final String namespace,
 		final String municipalityId,
 		final String errandId);
 
-	List<NotificationEntity> findAllByNamespaceAndMunicipalityIdAndOwnerId(
+	Page<NotificationEntity> findAllByNamespaceAndMunicipalityIdAndOwnerId(
 		final String namespace,
 		final String municipalityId,
-		final String ownerId);
+		final String ownerId,
+		final Pageable pageable);
 
 	void deleteByExpiresBefore(final OffsetDateTime expires);
 }

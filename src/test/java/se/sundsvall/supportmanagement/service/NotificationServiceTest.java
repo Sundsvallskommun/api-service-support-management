@@ -11,6 +11,8 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.support.Identifier;
@@ -118,15 +120,18 @@ class NotificationServiceTest {
 		final var municipalityId = "2281";
 		final var namespace = "namespace";
 		final var ownerId = randomUUID().toString();
+		final var pageable = Pageable.ofSize(20);
 
-		when(notificationRepositoryMock.findAllByNamespaceAndMunicipalityIdAndOwnerId(namespace, municipalityId, ownerId)).thenReturn(List.of(createNotificationEntity(_ -> {})));
+		when(notificationRepositoryMock.findAllByNamespaceAndMunicipalityIdAndOwnerId(namespace, municipalityId, ownerId, pageable))
+			.thenReturn(new PageImpl<>(List.of(createNotificationEntity(_ -> {}))));
 
 		// Act
-		final var result = notificationService.getNotificationsByOwnerId(municipalityId, namespace, ownerId);
+		final var result = notificationService.getNotificationsByOwnerId(municipalityId, namespace, ownerId, pageable);
 
 		// Assert
-		assertThat(result).isNotNull().hasSize(1);
-		verify(notificationRepositoryMock).findAllByNamespaceAndMunicipalityIdAndOwnerId(namespace, municipalityId, ownerId);
+		assertThat(result).isNotNull();
+		assertThat(result.getContent()).hasSize(1);
+		verify(notificationRepositoryMock).findAllByNamespaceAndMunicipalityIdAndOwnerId(namespace, municipalityId, ownerId, pageable);
 	}
 
 	@Test
@@ -136,13 +141,18 @@ class NotificationServiceTest {
 		final var municipalityId = "2281";
 		final var namespace = "namespace";
 		final var ownerId = randomUUID().toString();
+		final var pageable = Pageable.ofSize(20);
+
+		when(notificationRepositoryMock.findAllByNamespaceAndMunicipalityIdAndOwnerId(namespace, municipalityId, ownerId, pageable))
+			.thenReturn(new PageImpl<>(List.of()));
 
 		// Act
-		final var result = notificationService.getNotificationsByOwnerId(municipalityId, namespace, ownerId);
+		final var result = notificationService.getNotificationsByOwnerId(municipalityId, namespace, ownerId, pageable);
 
 		// Assert
-		assertThat(result).isNotNull().isEmpty();
-		verify(notificationRepositoryMock).findAllByNamespaceAndMunicipalityIdAndOwnerId(namespace, municipalityId, ownerId);
+		assertThat(result).isNotNull();
+		assertThat(result.getContent()).isEmpty();
+		verify(notificationRepositoryMock).findAllByNamespaceAndMunicipalityIdAndOwnerId(namespace, municipalityId, ownerId, pageable);
 	}
 
 	@Test
@@ -179,6 +189,51 @@ class NotificationServiceTest {
 		// Assert
 		assertThat(result).isNotNull().isEmpty();
 		verify(notificationRepositoryMock).findAllByNamespaceAndMunicipalityIdAndErrandEntityId(namespace, municipalityId, errandId, null);
+		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, R, RW);
+	}
+
+	@Test
+	void getNotificationsGroupedByErrandId() {
+
+		// Arrange
+		final var municipalityId = "2281";
+		final var namespace = "namespace";
+		final var errandId = randomUUID().toString();
+		final var groupId1 = randomUUID().toString();
+		final var groupId2 = randomUUID().toString();
+		final var entity1 = createNotificationEntity(e -> e.withRequestGroupId(groupId1));
+		final var entity2 = createNotificationEntity(e -> e.withRequestGroupId(groupId1));
+		final var entity3 = createNotificationEntity(e -> e.withRequestGroupId(groupId2));
+
+		when(notificationRepositoryMock.findAllByNamespaceAndMunicipalityIdAndErrandEntityId(namespace, municipalityId, errandId)).thenReturn(List.of(entity1, entity2, entity3));
+
+		// Act
+		final var result = notificationService.getNotificationsGroupedByErrandId(municipalityId, namespace, errandId);
+
+		// Assert
+		assertThat(result).isNotNull().hasSize(2);
+		assertThat(result).anyMatch(g -> g.getRequestGroupId().equals(groupId1) && g.getNotifications().size() == 2);
+		assertThat(result).anyMatch(g -> g.getRequestGroupId().equals(groupId2) && g.getNotifications().size() == 1);
+		verify(notificationRepositoryMock).findAllByNamespaceAndMunicipalityIdAndErrandEntityId(namespace, municipalityId, errandId);
+		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, R, RW);
+	}
+
+	@Test
+	void getNotificationsGroupedByErrandIdNoneFound() {
+
+		// Arrange
+		final var municipalityId = "2281";
+		final var namespace = "namespace";
+		final var errandId = randomUUID().toString();
+
+		when(notificationRepositoryMock.findAllByNamespaceAndMunicipalityIdAndErrandEntityId(namespace, municipalityId, errandId)).thenReturn(emptyList());
+
+		// Act
+		final var result = notificationService.getNotificationsGroupedByErrandId(municipalityId, namespace, errandId);
+
+		// Assert
+		assertThat(result).isNotNull().isEmpty();
+		verify(notificationRepositoryMock).findAllByNamespaceAndMunicipalityIdAndErrandEntityId(namespace, municipalityId, errandId);
 		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, R, RW);
 	}
 

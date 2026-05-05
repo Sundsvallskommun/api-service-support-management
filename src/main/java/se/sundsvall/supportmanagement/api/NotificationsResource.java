@@ -13,6 +13,8 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import java.util.List;
 import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -31,6 +33,7 @@ import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.supportmanagement.api.model.notification.Notification;
+import se.sundsvall.supportmanagement.api.model.notification.NotificationGroup;
 import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
 import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
 import se.sundsvall.supportmanagement.service.NotificationService;
@@ -75,6 +78,19 @@ class NotificationsResource {
 		@Parameter(name = "notificationId", description = "notification ID", example = "74540a24-70e1-4e82-90f7-7d8ad4666cdc") @ValidUuid @PathVariable final String notificationId) {
 
 		return ok(notificationService.getNotification(municipalityId, namespace, errandId, notificationId));
+	}
+
+	@GetMapping(path = "/errands/{errandId}/notifications/grouped", produces = APPLICATION_JSON_VALUE)
+	@Operation(summary = "Get notifications grouped by request group", description = "Get all notifications for the errand grouped by requestGroupId", responses = {
+		@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true),
+		@ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+	})
+	ResponseEntity<List<NotificationGroup>> getNotificationsGroupedByErrandId(
+		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
+		@Parameter(name = "municipalityId", description = "Municipality ID", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
+		@Parameter(name = "errandId", description = "Errand ID", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable final String errandId) {
+
+		return ok(notificationService.getNotificationsGroupedByErrandId(municipalityId, namespace, errandId));
 	}
 
 	@GetMapping(path = "/errands/{errandId}/notifications", produces = APPLICATION_JSON_VALUE)
@@ -152,12 +168,13 @@ class NotificationsResource {
 		@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true),
 		@ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	})
-	ResponseEntity<List<Notification>> getNotificationsByOwnerId(
+	ResponseEntity<Page<Notification>> getNotificationsByOwnerId(
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality ID", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
-		@Parameter(name = "ownerId", description = "owner ID", example = "12") @RequestParam final String ownerId) {
+		@Parameter(name = "ownerId", description = "owner ID", example = "12") @RequestParam final String ownerId,
+		@ParameterObject final Pageable pageable) {
 
-		return ok(notificationService.getNotificationsByOwnerId(municipalityId, namespace, ownerId));
+		return ok(notificationService.getNotificationsByOwnerId(municipalityId, namespace, ownerId, pageable));
 	}
 
 	@Validated(OnUpdate.class)

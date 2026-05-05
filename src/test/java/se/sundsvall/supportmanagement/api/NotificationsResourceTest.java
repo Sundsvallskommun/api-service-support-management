@@ -6,16 +6,24 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.TestObjectsBuilder;
 import se.sundsvall.supportmanagement.api.model.notification.Notification;
+import se.sundsvall.supportmanagement.api.model.notification.NotificationGroup;
 import se.sundsvall.supportmanagement.service.NotificationService;
 
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -41,9 +49,39 @@ class NotificationsResourceTest {
 	private WebTestClient webTestClient;
 
 	@Test
+	void getNotificationsGroupedByErrandId() {
+		// Mock
+		final var group1 = NotificationGroup.create()
+			.withRequestGroupId(randomUUID().toString())
+			.withNotifications(List.of(Notification.create(), Notification.create()));
+		final var group2 = NotificationGroup.create()
+			.withRequestGroupId(randomUUID().toString())
+			.withNotifications(List.of(Notification.create()));
+
+		when(notificationServiceMock.getNotificationsGroupedByErrandId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID))
+			.thenReturn(List.of(group1, group2));
+
+		// Call
+		final var response = webTestClient.get()
+			.uri(builder -> builder.path(ERRAND_NOTIFICATION_PATH + "/grouped")
+				.build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
+			.accept(APPLICATION_JSON)
+			.exchange()
+			.expectStatus().isOk()
+			.expectHeader().contentType(APPLICATION_JSON)
+			.expectBody(new ParameterizedTypeReference<List<NotificationGroup>>() {})
+			.returnResult();
+
+		// Verification
+		assertThat(response.getResponseBody()).isNotNull().hasSize(2);
+		verify(notificationServiceMock).getNotificationsGroupedByErrandId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID);
+	}
+
+	@Test
 	void getNotificationsByOwnerId() {
 		// Mock
-		when(notificationServiceMock.getNotificationsByOwnerId(MUNICIPALITY_ID, NAMESPACE, "12")).thenReturn(List.of(Notification.create()));
+		when(notificationServiceMock.getNotificationsByOwnerId(eq(MUNICIPALITY_ID), eq(NAMESPACE), eq("12"), any(Pageable.class)))
+			.thenReturn(new PageImpl<>(List.of(Notification.create()), PageRequest.of(0, 20), 1));
 
 		final var response = webTestClient.get()
 			.uri(builder -> builder.path(GLOBAL_NOTIFICATION_PATH)
@@ -53,12 +91,12 @@ class NotificationsResourceTest {
 			.exchange()
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)
-			.expectBody(List.class)
+			.expectBody(new ParameterizedTypeReference<Page<Notification>>() {})
 			.returnResult();
 
 		// Verification
 		assertThat(response).isNotNull();
-		verify(notificationServiceMock).getNotificationsByOwnerId(MUNICIPALITY_ID, NAMESPACE, "12");
+		verify(notificationServiceMock).getNotificationsByOwnerId(eq(MUNICIPALITY_ID), eq(NAMESPACE), eq("12"), any(Pageable.class));
 	}
 
 	@Test

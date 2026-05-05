@@ -46,7 +46,8 @@
 					"type": "UPDATE",
 					"message": "En bilaga har lagts till i ärendet."
 				},
-				"ignoreArrayOrder": true
+				"ignoreArrayOrder": true,
+				"ignoreExtraElements": true
 			}
 		],
 		"urlPath": "/api-eventlog/2281/b481b191-dd37-47ca-b417-ed3a56ba724c"

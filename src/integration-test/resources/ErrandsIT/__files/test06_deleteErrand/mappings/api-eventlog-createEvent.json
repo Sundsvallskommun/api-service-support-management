@@ -38,7 +38,8 @@
 					"type": "DELETE",
 					"message": "Ärendet har raderats."
 				},
-				"ignoreArrayOrder": true
+				"ignoreArrayOrder": true,
+				"ignoreExtraElements": true
 			}
 		],
 		"urlPath": "/api-eventlog/2281/1be673c0-6ba3-4fb0-af4a-43acf23389f6"

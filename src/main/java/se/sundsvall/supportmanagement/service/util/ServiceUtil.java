@@ -83,15 +83,15 @@ public class ServiceUtil {
 	}
 
 	/**
-	 * Returns the value of the {@code X-Request-Group-Id} request header if present in the current
-	 * HTTP request context, otherwise generates a new random UUID. This allows clients to group
-	 * related events together by sending the same header value across multiple requests.
+	 * Returns the {@code requestGroupId} set by {@code RequestGroupIdFilter} for the current HTTP
+	 * request context, otherwise generates a new random UUID as fallback for non-HTTP contexts
+	 * such as scheduled tasks.
 	 */
 	public static String getRequestGroupId() {
 		return ofNullable(RequestContextHolder.getRequestAttributes())
 			.filter(ServletRequestAttributes.class::isInstance)
 			.map(ServletRequestAttributes.class::cast)
-			.map(attrs -> attrs.getRequest().getHeader(REQUEST_GROUP_ID_HEADER))
+			.map(attrs -> (String) attrs.getRequest().getAttribute("requestGroupId"))
 			.filter(StringUtils::isNotBlank)
 			.orElseGet(() -> UUID.randomUUID().toString());
 	}

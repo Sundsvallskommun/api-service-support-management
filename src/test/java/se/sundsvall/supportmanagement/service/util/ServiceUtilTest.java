@@ -27,7 +27,6 @@ import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static se.sundsvall.supportmanagement.service.util.ServiceUtil.REQUEST_GROUP_ID_HEADER;
 
 class ServiceUtilTest {
 
@@ -37,6 +36,7 @@ class ServiceUtilTest {
 	void resetRequestContext() {
 		RequestContextHolder.resetRequestAttributes();
 	}
+
 	private static final String IMG_FILE_NAME = "image.jpg";
 	private static final String DOC_FILE_NAME = "document.doc";
 	private static final String DOCX_FILE_NAME = "document.docx";
@@ -44,17 +44,17 @@ class ServiceUtilTest {
 	private static final String TXT_FILE_NAME = "document.txt";
 
 	@Test
-	void getRequestGroupIdFromHeader() {
+	void getRequestGroupIdFromRequestAttribute() {
 		final var requestGroupId = UUID.randomUUID().toString();
 		final var request = new MockHttpServletRequest();
-		request.addHeader(REQUEST_GROUP_ID_HEADER, requestGroupId);
+		request.setAttribute("requestGroupId", requestGroupId);
 		RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
 
 		assertThat(ServiceUtil.getRequestGroupId()).isEqualTo(requestGroupId);
 	}
 
 	@Test
-	void getRequestGroupIdGeneratesUuidWhenHeaderAbsent() {
+	void getRequestGroupIdGeneratesUuidWhenAttributeAbsent() {
 		RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(new MockHttpServletRequest()));
 
 		final var result = ServiceUtil.getRequestGroupId();

@@ -42,7 +42,8 @@
 					"type": "CREATE",
 					"message": "Ärendet har skapats."
 				},
-				"ignoreArrayOrder": true
+				"ignoreArrayOrder": true,
+				"ignoreExtraElements": true
 			}
 		],
 		"urlPattern": "/api-eventlog/2281/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"

@@ -32,6 +32,7 @@ import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
@@ -48,6 +49,8 @@ class EventResourceTest {
 
 	private static final String PATH = "/{municipalityId}/{namespace}/errands/{errandId}/events";
 
+	private static final String EVENT_PATH = "/{municipalityId}/{namespace}/events/{eventId}";
+
 	@MockitoBean
 	private EventService eventServiceMock;
 
@@ -55,12 +58,35 @@ class EventResourceTest {
 	private WebTestClient webTestClient;
 
 	@Test
+	void getEvent() {
+		// Parameter values
+		final var eventId = randomUUID().toString();
+
+		// Mock
+		when(eventServiceMock.getEvent(MUNICIPALITY_ID, eventId)).thenReturn(Event.create());
+
+		// Call
+		final var response = webTestClient.get()
+			.uri(builder -> builder.path(EVENT_PATH).build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "eventId", eventId)))
+			.exchange()
+			.expectStatus().isOk()
+			.expectHeader().contentType(APPLICATION_JSON)
+			.expectBody(Event.class)
+			.returnResult()
+			.getResponseBody();
+
+		// Verification
+		assertThat(response).isNotNull();
+		verify(eventServiceMock).getEvent(MUNICIPALITY_ID, eventId);
+	}
+
+	@Test
 	void getErrandEventsWithDefaultPageSettings() {
 		// Parameter values
 		final var errandId = randomUUID().toString();
 
 		// Mock
-		when(eventServiceMock.readEvents(eq(MUNICIPALITY_ID), eq(errandId), any(Pageable.class))).thenReturn(new RestResponsePage<>(List.of(Event.create()), PageRequest.of(0, 20), 1));
+		when(eventServiceMock.readEvents(eq(MUNICIPALITY_ID), eq(errandId), any(Pageable.class), isNull())).thenReturn(new RestResponsePage<>(List.of(Event.create()), PageRequest.of(0, 20), 1));
 
 		// Call
 		final var response = webTestClient.get().uri(builder -> builder.path(PATH).build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", errandId)))
@@ -75,7 +101,7 @@ class EventResourceTest {
 
 		// Verification
 		final var pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-		verify(eventServiceMock).readEvents(eq(MUNICIPALITY_ID), eq(errandId), pageableCaptor.capture());
+		verify(eventServiceMock).readEvents(eq(MUNICIPALITY_ID), eq(errandId), pageableCaptor.capture(), isNull());
 
 		assertThat(pageableCaptor.getValue().getPageNumber()).isZero();
 		assertThat(pageableCaptor.getValue().getPageSize()).isEqualTo(20);
@@ -91,7 +117,7 @@ class EventResourceTest {
 		final var errandId = randomUUID().toString();
 
 		// Mock
-		when(eventServiceMock.readEvents(eq(MUNICIPALITY_ID), eq(errandId), any(Pageable.class))).thenReturn(new RestResponsePage<>(List.of(Event.create(), Event.create())));
+		when(eventServiceMock.readEvents(eq(MUNICIPALITY_ID), eq(errandId), any(Pageable.class), isNull())).thenReturn(new RestResponsePage<>(List.of(Event.create(), Event.create())));
 
 		// Call
 		final var response = webTestClient.get().uri(builder -> builder.path(PATH)
@@ -110,7 +136,7 @@ class EventResourceTest {
 
 		// Verification
 		final var pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-		verify(eventServiceMock).readEvents(eq(MUNICIPALITY_ID), eq(errandId), pageableCaptor.capture());
+		verify(eventServiceMock).readEvents(eq(MUNICIPALITY_ID), eq(errandId), pageableCaptor.capture(), isNull());
 		assertThat(pageableCaptor.getValue().getPageNumber()).isEqualTo(10);
 		assertThat(pageableCaptor.getValue().getPageSize()).isEqualTo(5);
 		assertThat(pageableCaptor.getValue().getSort()).isEqualTo(Sort.by(Direction.DESC, "created"));

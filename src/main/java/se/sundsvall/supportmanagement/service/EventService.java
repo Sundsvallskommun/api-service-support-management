@@ -63,8 +63,8 @@ public class EventService {
 		createNotification(errandEntity, event);
 	}
 
-	public Page<Event> readEvents(final String municipalityId, final String id, final Pageable pageable) {
-		final var response = eventLogClient.getEvents(municipalityId, id, pageable);
+	public Page<Event> readEvents(final String municipalityId, final String id, final Pageable pageable, final String requestGroupId) {
+		final var response = eventLogClient.getEvents(municipalityId, id, pageable, requestGroupId);
 
 		return new PageImpl<>(response.getContent().stream()
 			.map(EventlogMapper::toEvent)

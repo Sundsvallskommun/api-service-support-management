@@ -5,11 +5,14 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.apache.commons.lang3.Strings;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.notification.Notification;
+import se.sundsvall.supportmanagement.api.model.notification.NotificationGroup;
 import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.NotificationRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
@@ -19,6 +22,7 @@ import se.sundsvall.supportmanagement.service.mapper.NotificationMapper;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
+import static java.util.stream.Collectors.groupingBy;
 import static org.springframework.data.domain.Sort.unsorted;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.util.StringUtils.hasText;
@@ -57,11 +61,9 @@ public class NotificationService {
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, NOTIFICATION_ENTITY_NOT_FOUND.formatted(notificationId, namespace, municipalityId, errandId)));
 	}
 
-	public List<Notification> getNotificationsByOwnerId(final String municipalityId, final String namespace, final String ownerId) {
-		return notificationRepository.findAllByNamespaceAndMunicipalityIdAndOwnerId(namespace, municipalityId, ownerId)
-			.stream()
-			.map(NotificationMapper::toNotification)
-			.toList();
+	public Page<Notification> getNotificationsByOwnerId(final String municipalityId, final String namespace, final String ownerId, final Pageable pageable) {
+		return notificationRepository.findAllByNamespaceAndMunicipalityIdAndOwnerId(namespace, municipalityId, ownerId, pageable)
+			.map(NotificationMapper::toNotification);
 	}
 
 	public List<Notification> getNotificationsByErrandId(final String municipalityId, final String namespace, final String errandId, final Sort sort) {
@@ -69,6 +71,19 @@ public class NotificationService {
 		return notificationRepository.findAllByNamespaceAndMunicipalityIdAndErrandEntityId(namespace, municipalityId, errandId, sort)
 			.stream()
 			.map(NotificationMapper::toNotification)
+			.toList();
+	}
+
+	public List<NotificationGroup> getNotificationsGroupedByErrandId(final String municipalityId, final String namespace, final String errandId) {
+		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, R, RW);
+		return notificationRepository.findAllByNamespaceAndMunicipalityIdAndErrandEntityId(namespace, municipalityId, errandId)
+			.stream()
+			.map(NotificationMapper::toNotification)
+			.collect(groupingBy(Notification::getRequestGroupId))
+			.entrySet().stream()
+			.map(e -> NotificationGroup.create()
+				.withRequestGroupId(e.getKey())
+				.withNotifications(e.getValue()))
 			.toList();
 	}
 

@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
@@ -89,10 +90,20 @@ class NotificationRepositoryTest {
 	}
 
 	@Test
+	void findAllByNamespaceAndMunicipalityIdAndErrandEntityIdWithoutSort() {
+
+		// Act
+		final var result = notificationRepository.findAllByNamespaceAndMunicipalityIdAndErrandEntityId("namespace-1", "2281", "ERRAND_ID-1");
+
+		// Assert
+		assertThat(result).hasSize(1);
+	}
+
+	@Test
 	void findAllByNamespaceAndMunicipalityIdAndOwnerId() {
 
 		// Act
-		final var notifications = notificationRepository.findAllByNamespaceAndMunicipalityIdAndOwnerId("namespace-1", "2281", "owner_id-1");
+		final var notifications = notificationRepository.findAllByNamespaceAndMunicipalityIdAndOwnerId("namespace-1", "2281", "owner_id-1", PageRequest.of(0, 20));
 
 		// Assert
 		assertThat(notifications).hasSize(1);
