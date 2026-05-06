@@ -68,7 +68,16 @@
 	"pageable": {
 		"pageNumber": 0,
 		"pageSize": 20,
-		"sort": [],
+		"sort": [
+			{
+				"ascending": false,
+				"descending": true,
+				"direction": "DESC",
+				"ignoreCase": false,
+				"nullHandling": "NATIVE",
+				"property": "created"
+			}
+		],
 		"offset": 0,
 		"paged": true,
 		"unpaged": false
@@ -76,7 +85,16 @@
 	"totalElements": 4,
 	"totalPages": 1,
 	"last": true,
-	"sort": [],
+	"sort": [
+		{
+			"ascending": false,
+			"descending": true,
+			"direction": "DESC",
+			"ignoreCase": false,
+			"nullHandling": "NATIVE",
+			"property": "created"
+		}
+	],
 	"first": true,
 	"size": 20,
 	"number": 0,

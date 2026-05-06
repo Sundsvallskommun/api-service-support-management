@@ -90,16 +90,6 @@ class NotificationRepositoryTest {
 	}
 
 	@Test
-	void findAllByNamespaceAndMunicipalityIdAndErrandEntityIdWithoutSort() {
-
-		// Act
-		final var result = notificationRepository.findAllByNamespaceAndMunicipalityIdAndErrandEntityId("namespace-1", "2281", "ERRAND_ID-1");
-
-		// Assert
-		assertThat(result).hasSize(1);
-	}
-
-	@Test
 	void findAllByNamespaceAndMunicipalityIdAndOwnerId() {
 
 		// Act

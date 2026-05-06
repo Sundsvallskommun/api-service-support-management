@@ -76,7 +76,7 @@ public class NotificationService {
 
 	public List<NotificationGroup> getNotificationsGroupedByErrandId(final String municipalityId, final String namespace, final String errandId) {
 		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, R, RW);
-		return notificationRepository.findAllByNamespaceAndMunicipalityIdAndErrandEntityId(namespace, municipalityId, errandId)
+		return notificationRepository.findAllByNamespaceAndMunicipalityIdAndErrandEntityId(namespace, municipalityId, errandId, Sort.by(Sort.Direction.DESC, "created"))
 			.stream()
 			.map(NotificationMapper::toNotification)
 			.collect(groupingBy(Notification::getRequestGroupId))

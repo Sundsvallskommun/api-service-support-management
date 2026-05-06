@@ -16,6 +16,7 @@ import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.web.SortDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -102,7 +103,7 @@ class NotificationsResource {
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality ID", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "errandId", description = "Errand ID", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable final String errandId,
-		@ParameterObject final Sort sort) {
+		@SortDefault(sort = "created", direction = Sort.Direction.DESC) @ParameterObject final Sort sort) {
 
 		return ok(notificationService.getNotificationsByErrandId(municipalityId, namespace, errandId, sort));
 	}
@@ -172,7 +173,7 @@ class NotificationsResource {
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality ID", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "ownerId", description = "owner ID", example = "12") @RequestParam final String ownerId,
-		@ParameterObject final Pageable pageable) {
+		@SortDefault(sort = "created", direction = Sort.Direction.DESC) @ParameterObject final Pageable pageable) {
 
 		return ok(notificationService.getNotificationsByOwnerId(municipalityId, namespace, ownerId, pageable));
 	}

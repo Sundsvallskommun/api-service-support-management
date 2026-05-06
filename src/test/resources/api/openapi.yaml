@@ -7,7 +7,7 @@ info:
     url: https://opensource.org/licenses/MIT
   version: "15.0"
 servers:
-- url: http://localhost:51578
+- url: http://localhost:56866
   description: Generated server url
 tags:
 - name: Errand attachments
@@ -1934,6 +1934,8 @@ paths:
         required: false
         schema:
           type: array
+          default:
+          - "created,DESC"
           items:
             type: string
       responses:
@@ -2844,6 +2846,8 @@ paths:
         required: false
         schema:
           type: array
+          default:
+          - "created,DESC"
           items:
             type: string
       responses:

@@ -36,11 +36,6 @@ public interface NotificationRepository extends JpaRepository<NotificationEntity
 		final String errandId,
 		final Sort sort);
 
-	List<NotificationEntity> findAllByNamespaceAndMunicipalityIdAndErrandEntityId(
-		final String namespace,
-		final String municipalityId,
-		final String errandId);
-
 	boolean existsByIdAndNamespaceAndMunicipalityIdAndErrandEntityId(
 		final String id,
 		final String namespace,
