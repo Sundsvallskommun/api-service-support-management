@@ -110,7 +110,7 @@ class MessageExchangeWorkerTest {
 		conversation.setId("conversationId");
 		final var conversationEntities = new ArrayList<ConversationEntity>();
 		conversationEntities.add(ConversationEntity.create()
-			.withErrandId("existingErrand")
+			.withErrandId("existingErrandId")
 			.withMunicipalityId("municipalityId-existing")
 			.withNamespace("support-management-namespace-existing")
 			.withId("existingConversationEntityId")
@@ -122,6 +122,7 @@ class MessageExchangeWorkerTest {
 			ResponseEntity.ok(new Relation(null, new ResourceIdentifier().resourceId("toBeAddedErrand").service("support-management"), new ResourceIdentifier().resourceId("other-id"))), // relation 1
 			ResponseEntity.ok(new Relation(null, new ResourceIdentifier().resourceId("existingErrandId").service("support-management"), new ResourceIdentifier().resourceId("other-id")))); // relation 2
 		when(errandsRepositoryMock.findById("toBeAddedErrand")).thenReturn(Optional.of(ErrandEntity.create().withMunicipalityId("municipalityId").withNamespace("support-management-namespace").withId("toBeAddedErrand")));
+		when(errandsRepositoryMock.findById("existingErrandId")).thenReturn(Optional.of(ErrandEntity.create().withMunicipalityId("municipalityId").withNamespace("support-management-namespace").withId("existingErrandId")));
 
 		messageExchangeWorker.processConversation(conversation);
 
@@ -134,7 +135,7 @@ class MessageExchangeWorkerTest {
 		assertThat(conversationEntityArgumentCaptor.getAllValues()).hasSize(2)
 			.extracting(ConversationEntity::getErrandId, ConversationEntity::getMunicipalityId, ConversationEntity::getNamespace, ConversationEntity::getId, ConversationEntity::getMessageExchangeId)
 			.containsExactly(
-				tuple("existingErrand", "municipalityId-existing", "support-management-namespace-existing", "existingConversationEntityId", "existingMessageExchangeId"),
+				tuple("existingErrandId", "municipalityId-existing", "support-management-namespace-existing", "existingConversationEntityId", "existingMessageExchangeId"),
 				tuple("toBeAddedErrand", "municipalityId", "support-management-namespace", null, "conversationId"));
 
 		verifyNoMoreInteractions(conversationRepositoryMock, messageExchangeSyncServiceMock, relationClientMock, errandsRepositoryMock, conversationServiceMock, messageExchangeClientMock, messageExchangeSyncRepositoryMock);

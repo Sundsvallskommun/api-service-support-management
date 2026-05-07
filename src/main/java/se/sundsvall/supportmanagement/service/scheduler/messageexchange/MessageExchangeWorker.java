@@ -37,6 +37,7 @@ public class MessageExchangeWorker {
 	private final MessageExchangeSyncService messageExchangeSyncService;
 	private final RelationClient relationClient;
 	private final ErrandsRepository errandsRepository;
+	private static final String THIS_SERVICE = "supportmanagement";
 
 	public MessageExchangeWorker(final MessageExchangeClient messageExchangeClient, final MessageExchangeSyncRepository messageExchangeSyncRepository,
 		final ConversationRepository conversationRepository, final MessageExchangeSyncService messageExchangeSyncService,
@@ -87,6 +88,7 @@ public class MessageExchangeWorker {
 			.map(HttpEntity::getBody)
 			.filter(Objects::nonNull)
 			.flatMap(relation -> Stream.of(relation.getTarget(), relation.getSource()))
+			.filter(Objects::nonNull)
 			.filter(resourceIdentifierMatchesErrand())
 			.filter(resourceIdentifierDoesNotExistInEntityList(conversationEntities))
 			.map(createConversation(conversation))
@@ -103,7 +105,7 @@ public class MessageExchangeWorker {
 	private Predicate<ResourceIdentifier> resourceIdentifierMatchesErrand() {
 		return resourceIdentifier -> {
 			final var service = ofNullable(resourceIdentifier.getService()).orElse("").replace("-", "").replace("_", "");
-			return "supportmanagement".equalsIgnoreCase(service) && errandsRepository.findById(resourceIdentifier.getResourceId()).isPresent();
+			return THIS_SERVICE.equalsIgnoreCase(service) && errandsRepository.findById(resourceIdentifier.getResourceId()).isPresent();
 		};
 	}
 
