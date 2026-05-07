@@ -1,11 +1,12 @@
 package se.sundsvall.supportmanagement.service.scheduler.messageexchange;
 
 import generated.se.sundsvall.messageexchange.Conversation;
-import generated.se.sundsvall.relation.Relation;
 import generated.se.sundsvall.relation.ResourceIdentifier;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpEntity;
@@ -81,41 +82,39 @@ public class MessageExchangeWorker {
 		ofNullable(conversation.getExternalReferences()).orElse(emptyList()).stream()
 			.filter(keyValues -> keyValues.getKey() != null && keyValues.getKey().equals(RELATION_ID_KEY))
 			.flatMap(keyValues -> keyValues.getValues().stream())
-			.filter(isNotPresentInConversationRelations(conversationEntities))
 			.map(relationId -> relationClient.getRelation(conversation.getMunicipalityId(), relationId))
 			.filter(response -> response.getStatusCode().is2xxSuccessful())
 			.map(HttpEntity::getBody)
-			.filter(relationTargetConnectedToSupportManagementErrand())
+			.filter(Objects::nonNull)
+			.flatMap(relation -> Stream.of(relation.getTarget(), relation.getSource()))
+			.filter(resourceIdentifierMatchesErrand())
+			.filter(resourceIdentifierDoesNotExistInEntityList(conversationEntities))
 			.map(createConversation(conversation))
 			.forEach(conversationEntities::add);
 
 		return conversationEntities;
 	}
 
-	private Predicate<String> isNotPresentInConversationRelations(final List<ConversationEntity> conversationEntities) {
-		// if targetRelationId matches existing conversationEntity it means the conversation is already added
-		return relationId -> conversationEntities.stream().noneMatch(conversationEntity -> relationId.equals(conversationEntity.getTargetRelationId()));
+	private Predicate<ResourceIdentifier> resourceIdentifierDoesNotExistInEntityList(final List<ConversationEntity> conversationEntities) {
+		// Check if conversation is already present in the list
+		return identifier -> conversationEntities.stream().map(ConversationEntity::getErrandId).noneMatch(errandId -> errandId.equals(identifier.getResourceId()));
 	}
 
-	private Predicate<Relation> relationTargetConnectedToSupportManagementErrand() {
-		// Only match target, since source will be created through support-management service and already added
-		return relation -> resourceIdentifierMatchesErrand(relation.getTarget());
+	private Predicate<ResourceIdentifier> resourceIdentifierMatchesErrand() {
+		return resourceIdentifier -> {
+			final var service = ofNullable(resourceIdentifier.getService()).orElse("").replace("-", "").replace("_", "");
+			return "supportmanagement".equalsIgnoreCase(service) && errandsRepository.findById(resourceIdentifier.getResourceId()).isPresent();
+		};
 	}
 
-	private boolean resourceIdentifierMatchesErrand(final ResourceIdentifier resourceIdentifier) {
-		final var service = ofNullable(resourceIdentifier.getService()).orElse("").replace("-", "").replace("_", "");
-		return "supportmanagement".equalsIgnoreCase(service) && errandsRepository.findById(resourceIdentifier.getResourceId()).isPresent();
-	}
-
-	private Function<Relation, ConversationEntity> createConversation(final Conversation conversation) {
-		return relation -> {
-			final var errand = errandsRepository.findById(relation.getTarget().getResourceId())
+	private Function<ResourceIdentifier, ConversationEntity> createConversation(final Conversation conversation) {
+		return identifier -> {
+			final var errand = errandsRepository.findById(identifier.getResourceId())
 				.orElseThrow(() -> Problem.valueOf(INTERNAL_SERVER_ERROR, "Bug in relation filter"));
 			return ConversationEntity.create().withErrandId(errand.getId())
 				.withMessageExchangeId(conversation.getId())
 				.withNamespace(errand.getNamespace())
 				.withMunicipalityId(errand.getMunicipalityId())
-				.withTargetRelationId(relation.getId())
 				.withType("INTERNAL");
 		};
 	}
