@@ -110,6 +110,7 @@ class MessageExchangeWorkerTest {
 		conversation.setId("conversationId");
 		final var conversationEntities = new ArrayList<ConversationEntity>();
 		conversationEntities.add(ConversationEntity.create()
+			.withErrandId("existingErrandId")
 			.withMunicipalityId("municipalityId-existing")
 			.withNamespace("support-management-namespace-existing")
 			.withId("existingConversationEntityId")
@@ -118,22 +119,24 @@ class MessageExchangeWorkerTest {
 
 		when(conversationRepositoryMock.findByMessageExchangeId(any())).thenReturn(conversationEntities);
 		when(relationClientMock.getRelation(any(), any())).thenReturn(
-			ResponseEntity.ok(new Relation(null, new ResourceIdentifier().resourceId("other-id"), new ResourceIdentifier().resourceId("123").service("support-management"))), // relation 1
-			ResponseEntity.ok(new Relation(null, new ResourceIdentifier().resourceId("existingConversationEntityId"), new ResourceIdentifier().resourceId("other-id")))); // relation 2
-		when(errandsRepositoryMock.findById("123")).thenReturn(Optional.of(ErrandEntity.create().withMunicipalityId("municipalityId").withNamespace("support-management-namespace").withId("123")));
+			ResponseEntity.ok(new Relation(null, new ResourceIdentifier().resourceId("toBeAddedErrand").service("support-management"), new ResourceIdentifier().resourceId("other-id"))), // relation 1
+			ResponseEntity.ok(new Relation(null, new ResourceIdentifier().resourceId("existingErrandId").service("support-management"), new ResourceIdentifier().resourceId("other-id")))); // relation 2
+		when(errandsRepositoryMock.findById("toBeAddedErrand")).thenReturn(Optional.of(ErrandEntity.create().withMunicipalityId("municipalityId").withNamespace("support-management-namespace").withId("toBeAddedErrand")));
+		when(errandsRepositoryMock.findById("existingErrandId")).thenReturn(Optional.of(ErrandEntity.create().withMunicipalityId("municipalityId").withNamespace("support-management-namespace").withId("existingErrandId")));
 
 		messageExchangeWorker.processConversation(conversation);
 
 		verify(conversationRepositoryMock).findByMessageExchangeId("conversationId");
 		verify(relationClientMock).getRelation("municipalityId", "1");
 		verify(relationClientMock).getRelation("municipalityId", "2");
-		verify(errandsRepositoryMock, times(2)).findById("123");
+		verify(errandsRepositoryMock, times(2)).findById("toBeAddedErrand");
+		verify(errandsRepositoryMock, times(1)).findById("existingErrandId");
 		verify(messageExchangeSyncServiceMock, times(2)).syncConversation(conversationEntityArgumentCaptor.capture(), same(conversation));
 		assertThat(conversationEntityArgumentCaptor.getAllValues()).hasSize(2)
-			.extracting(ConversationEntity::getMunicipalityId, ConversationEntity::getNamespace, ConversationEntity::getId, ConversationEntity::getMessageExchangeId)
+			.extracting(ConversationEntity::getErrandId, ConversationEntity::getMunicipalityId, ConversationEntity::getNamespace, ConversationEntity::getId, ConversationEntity::getMessageExchangeId)
 			.containsExactly(
-				tuple("municipalityId-existing", "support-management-namespace-existing", "existingConversationEntityId", "existingMessageExchangeId"),
-				tuple("municipalityId", "support-management-namespace", null, "conversationId"));
+				tuple("existingErrandId", "municipalityId-existing", "support-management-namespace-existing", "existingConversationEntityId", "existingMessageExchangeId"),
+				tuple("toBeAddedErrand", "municipalityId", "support-management-namespace", null, "conversationId"));
 
 		verifyNoMoreInteractions(conversationRepositoryMock, messageExchangeSyncServiceMock, relationClientMock, errandsRepositoryMock, conversationServiceMock, messageExchangeClientMock, messageExchangeSyncRepositoryMock);
 	}
