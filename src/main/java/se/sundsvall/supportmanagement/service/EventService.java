@@ -63,19 +63,13 @@ public class EventService {
 		createNotification(errandEntity, event);
 	}
 
-	public Page<Event> readEvents(final String municipalityId, final String id, final Pageable pageable, final String requestGroupId) {
-		final var response = eventLogClient.getEvents(municipalityId, id, pageable, requestGroupId);
+	public Page<Event> readEvents(final String municipalityId, final String id, final Pageable pageable) {
+		final var response = eventLogClient.getEvents(municipalityId, id, pageable);
 
 		return new PageImpl<>(response.getContent().stream()
 			.map(EventlogMapper::toEvent)
 			.filter(event -> nonNull(event.getType()))
 			.toList(), pageable, response.getTotalElements());
-	}
-
-	public Event getEvent(final String municipalityId, final String eventId) {
-		return ofNullable(eventLogClient.getEvent(municipalityId, eventId).getBody())
-			.map(EventlogMapper::toEvent)
-			.orElse(null);
 	}
 
 	private String extractId(final Revision currentRevision) {

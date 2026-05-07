@@ -210,7 +210,6 @@ class NotificationMapperTest {
 		assertThat(notification.getCreatedBy()).isEqualTo(CREATED_BY);
 		assertThat(notification.getCreatedByFullName()).isNull();
 		assertThat(notification.getSubtype()).isEqualTo(SUBTYPE.getValue());
-		assertThat(notification.getRequestGroupId()).isEqualTo(requestGroupId);
 	}
 
 	@Test
@@ -239,6 +238,5 @@ class NotificationMapperTest {
 		assertThat(notification.getOwnerId()).isEqualTo(OWNER_ID);
 		assertThat(notification.getCreatedBy()).isEqualTo(CREATED_BY);
 		assertThat(notification.getSubtype()).isNull();
-		assertThat(notification.getRequestGroupId()).isNull();
 	}
 }

@@ -15,9 +15,6 @@ import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.mock.web.MockHttpServletRequest;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderParameterEntity;
@@ -27,14 +24,17 @@ import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.clearRequestGroupId;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getRequestGroupId;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.setRequestGroupId;
 
 class ServiceUtilTest {
 
 	private static final String PATH = "mimetype_files/";
 
 	@AfterEach
-	void resetRequestContext() {
-		RequestContextHolder.resetRequestAttributes();
+	void clearRequestGroupId() {
+		ServiceUtil.clearRequestGroupId();
 	}
 
 	private static final String IMG_FILE_NAME = "image.jpg";
@@ -44,31 +44,33 @@ class ServiceUtilTest {
 	private static final String TXT_FILE_NAME = "document.txt";
 
 	@Test
-	void getRequestGroupIdFromRequestAttribute() {
+	void getRequestGroupIdReturnsSetValue() {
 		final var requestGroupId = UUID.randomUUID().toString();
-		final var request = new MockHttpServletRequest();
-		request.setAttribute("requestGroupId", requestGroupId);
-		RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
+
+		ServiceUtil.setRequestGroupId(requestGroupId);
 
 		assertThat(ServiceUtil.getRequestGroupId()).isEqualTo(requestGroupId);
 	}
 
 	@Test
-	void getRequestGroupIdGeneratesUuidWhenAttributeAbsent() {
-		RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(new MockHttpServletRequest()));
-
-		final var result = ServiceUtil.getRequestGroupId();
-
-		assertThat(result).isNotBlank();
-		assertThat(UUID.fromString(result)).isNotNull();
+	void getRequestGroupIdReturnsNullWhenNotSet() {
+		assertThat(ServiceUtil.getRequestGroupId()).isNull();
 	}
 
 	@Test
-	void getRequestGroupIdGeneratesUuidWhenNoRequestContext() {
-		final var result = ServiceUtil.getRequestGroupId();
+	void clearRequestGroupIdRemovesValue() {
+		ServiceUtil.setRequestGroupId(UUID.randomUUID().toString());
+		ServiceUtil.clearRequestGroupId();
 
-		assertThat(result).isNotBlank();
-		assertThat(UUID.fromString(result)).isNotNull();
+		assertThat(ServiceUtil.getRequestGroupId()).isNull();
+	}
+
+	@Test
+	void setRequestGroupIdWithBlankValueClearsIt() {
+		ServiceUtil.setRequestGroupId(UUID.randomUUID().toString());
+		ServiceUtil.setRequestGroupId("  ");
+
+		assertThat(ServiceUtil.getRequestGroupId()).isNull();
 	}
 
 	@ParameterizedTest

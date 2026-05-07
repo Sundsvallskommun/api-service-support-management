@@ -12,7 +12,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.notification.Notification;
-import se.sundsvall.supportmanagement.api.model.notification.NotificationGroup;
 import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.NotificationRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
@@ -22,7 +21,6 @@ import se.sundsvall.supportmanagement.service.mapper.NotificationMapper;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
-import static java.util.stream.Collectors.groupingBy;
 import static org.springframework.data.domain.Sort.unsorted;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.util.StringUtils.hasText;
@@ -30,6 +28,7 @@ import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyE
 import static se.sundsvall.supportmanagement.service.mapper.NotificationMapper.toNotificationEntity;
 import static se.sundsvall.supportmanagement.service.mapper.NotificationMapper.updateEntity;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getAdUser;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getRequestGroupId;
 
 @Service
 public class NotificationService {
@@ -74,19 +73,6 @@ public class NotificationService {
 			.toList();
 	}
 
-	public List<NotificationGroup> getNotificationsGroupedByErrandId(final String municipalityId, final String namespace, final String errandId) {
-		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, R, RW);
-		return notificationRepository.findAllByNamespaceAndMunicipalityIdAndErrandEntityId(namespace, municipalityId, errandId, Sort.by(Sort.Direction.DESC, "created"))
-			.stream()
-			.map(NotificationMapper::toNotification)
-			.collect(groupingBy(Notification::getRequestGroupId))
-			.entrySet().stream()
-			.map(e -> NotificationGroup.create()
-				.withRequestGroupId(e.getKey())
-				.withNotifications(e.getValue()))
-			.toList();
-	}
-
 	public String createNotification(final String municipalityId, final String namespace, final String errandId, final Notification notification) {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, false, RW);
 		return createNotification(errandEntity, notification);
@@ -97,7 +83,8 @@ public class NotificationService {
 		final var namespaceConfig = namespaceConfigRepository.findByNamespaceAndMunicipalityId(errandEntity.getNamespace(), errandEntity.getMunicipalityId())
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, NAMESPACE_ENTITY_NOT_FOUND.formatted(errandEntity.getNamespace(), errandEntity.getMunicipalityId())));
 
-		final var entity = toNotificationEntity(errandEntity.getNamespace(), errandEntity.getMunicipalityId(), ConfigPropertyExtractor.getValue(namespaceConfig, PROPERTY_NOTIFICATION_TTL_IN_DAYS), notification, errandEntity);
+		final var entity = toNotificationEntity(errandEntity.getNamespace(), errandEntity.getMunicipalityId(), ConfigPropertyExtractor.getValue(namespaceConfig, PROPERTY_NOTIFICATION_TTL_IN_DAYS), notification, errandEntity)
+			.withRequestGroupId(getRequestGroupId());
 
 		applyBusinessLogicForCreate(entity);
 

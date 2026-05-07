@@ -87,9 +87,6 @@ public class Notification {
 	@Schema(description = "Errand number of the notification", examples = "PRH-2022-000001", accessMode = READ_ONLY)
 	private String errandNumber;
 
-	@Schema(description = "Groups related events and notifications together within one operation", examples = "f47ac10b-58cc-4372-a567-0e02b2c3d479", accessMode = READ_ONLY)
-	private String requestGroupId;
-
 	public static Notification create() {
 		return new Notification();
 	}
@@ -302,19 +299,6 @@ public class Notification {
 		return this;
 	}
 
-	public String getRequestGroupId() {
-		return requestGroupId;
-	}
-
-	public void setRequestGroupId(final String requestGroupId) {
-		this.requestGroupId = requestGroupId;
-	}
-
-	public Notification withRequestGroupId(final String requestGroupId) {
-		this.requestGroupId = requestGroupId;
-		return this;
-	}
-
 	@Override
 	public boolean equals(final Object o) {
 		if (o == null || getClass() != o.getClass())
@@ -323,12 +307,12 @@ public class Notification {
 		return globalAcknowledged == that.globalAcknowledged && acknowledged == that.acknowledged && Objects.equals(id, that.id) && Objects.equals(created, that.created) && Objects.equals(modified, that.modified)
 			&& Objects.equals(ownerFullName, that.ownerFullName) && Objects.equals(ownerId, that.ownerId) && Objects.equals(createdBy, that.createdBy) && Objects.equals(createdByFullName, that.createdByFullName)
 			&& Objects.equals(type, that.type) && Objects.equals(subtype, that.subtype) && Objects.equals(description, that.description) && Objects.equals(content, that.content) && Objects.equals(expires,
-				that.expires) && Objects.equals(errandId, that.errandId) && Objects.equals(errandNumber, that.errandNumber) && Objects.equals(requestGroupId, that.requestGroupId);
+				that.expires) && Objects.equals(errandId, that.errandId) && Objects.equals(errandNumber, that.errandNumber);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, created, modified, ownerFullName, ownerId, createdBy, createdByFullName, type, subtype, description, content, expires, globalAcknowledged, acknowledged, errandId, errandNumber, requestGroupId);
+		return Objects.hash(id, created, modified, ownerFullName, ownerId, createdBy, createdByFullName, type, subtype, description, content, expires, globalAcknowledged, acknowledged, errandId, errandNumber);
 	}
 
 	@Override
@@ -350,7 +334,6 @@ public class Notification {
 			", acknowledged=" + acknowledged +
 			", errandId='" + errandId + '\'' +
 			", errandNumber='" + errandNumber + '\'' +
-			", requestGroupId='" + requestGroupId + '\'' +
 			'}';
 	}
 }

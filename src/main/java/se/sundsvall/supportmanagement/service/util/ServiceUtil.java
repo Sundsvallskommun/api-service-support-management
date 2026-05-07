@@ -7,7 +7,6 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.UUID;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
@@ -15,8 +14,6 @@ import org.apache.tika.Tika;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.CollectionUtils;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
@@ -37,6 +34,7 @@ public class ServiceUtil {
 	private static final Logger LOGGER = LoggerFactory.getLogger(ServiceUtil.class);
 	private static final String MIME_ERROR_MSG = "Exception when detecting mime type of file with filename '{}'";
 	private static final Tika DETECTOR = new Tika();
+	private static final ThreadLocal<String> REQUEST_GROUP_ID = new ThreadLocal<>();
 
 	private ServiceUtil() {}
 
@@ -82,18 +80,20 @@ public class ServiceUtil {
 			.orElse(null);
 	}
 
-	/**
-	 * Returns the {@code requestGroupId} set by {@code RequestGroupIdFilter} for the current HTTP
-	 * request context, otherwise generates a new random UUID as fallback for non-HTTP contexts
-	 * such as scheduled tasks.
-	 */
+	public static void setRequestGroupId(final String requestGroupId) {
+		if (StringUtils.isBlank(requestGroupId)) {
+			REQUEST_GROUP_ID.remove();
+		} else {
+			REQUEST_GROUP_ID.set(requestGroupId);
+		}
+	}
+
 	public static String getRequestGroupId() {
-		return ofNullable(RequestContextHolder.getRequestAttributes())
-			.filter(ServletRequestAttributes.class::isInstance)
-			.map(ServletRequestAttributes.class::cast)
-			.map(attrs -> (String) attrs.getRequest().getAttribute("requestGroupId"))
-			.filter(StringUtils::isNotBlank)
-			.orElseGet(() -> UUID.randomUUID().toString());
+		return REQUEST_GROUP_ID.get();
+	}
+
+	public static void clearRequestGroupId() {
+		REQUEST_GROUP_ID.remove();
 	}
 
 	private static String handleFault(String filename, Exception e) {

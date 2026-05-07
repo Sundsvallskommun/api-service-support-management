@@ -62,7 +62,7 @@ class ErrandsResource {
 		this.service = service;
 	}
 
-	@PostMapping(consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
+	@PostMapping(consumes = APPLICATION_JSON_VALUE, produces = ALL_VALUE)
 	@Operation(summary = "Create errand", description = "Creates a new errand based on the supplied attributes", responses = {
 		@ApiResponse(responseCode = "201", headers = @Header(name = LOCATION, schema = @Schema(type = "string")), description = "Successful operation", useReturnTypeSchema = true),
 		@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
@@ -71,7 +71,7 @@ class ErrandsResource {
 		@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	})
 	@Validated(OnCreate.class)
-	ResponseEntity<Errand> createErrand(
+	ResponseEntity<Void> createErrand(
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE, groups = OnCreate.class) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId(groups = OnCreate.class) @PathVariable final String municipalityId,
 		@Parameter(name = "referredFrom",
@@ -79,10 +79,10 @@ class ErrandsResource {
 			example = "LINK|1234;case;service;MY_NAMESPACE|") @RequestParam(required = false) final String referredFrom,
 		@Valid @NotNull @RequestBody final Errand errand) {
 
-		final var errandId = service.createErrand(namespace, municipalityId, errand, referredFrom);
 		return created(fromPath("/{municipalityId}/{namespace}/errands/{errandId}")
-			.buildAndExpand(municipalityId, namespace, errandId).toUri())
-			.body(service.readErrand(namespace, municipalityId, errandId));
+			.buildAndExpand(municipalityId, namespace, service.createErrand(namespace, municipalityId, errand, referredFrom)).toUri())
+			.header(CONTENT_TYPE, ALL_VALUE)
+			.build();
 	}
 
 	@GetMapping(path = "/{errandId}", produces = APPLICATION_JSON_VALUE)

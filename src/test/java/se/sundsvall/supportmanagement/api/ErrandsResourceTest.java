@@ -52,6 +52,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
+import static org.springframework.http.MediaType.ALL;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
 @AutoConfigureWebTestClient
@@ -112,7 +113,6 @@ class ErrandsResourceTest {
 
 		// Mock
 		when(errandServiceMock.createErrand(NAMESPACE, MUNICIPALITY_ID, errandInstance, null)).thenReturn(ERRAND_ID);
-		when(errandServiceMock.readErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID)).thenReturn(errandInstance);
 
 		// Call
 		webTestClient.post()
@@ -121,9 +121,9 @@ class ErrandsResourceTest {
 			.bodyValue(errandInstance)
 			.exchange()
 			.expectStatus().isCreated()
-			.expectHeader().contentType(APPLICATION_JSON)
+			.expectHeader().contentType(ALL)
 			.expectHeader().location(LOCATION)
-			.expectBody(Errand.class);
+			.expectBody().isEmpty();
 
 		// Verification
 		verify(metadataServiceMock).findCategories(any(), any(), any(Sort.class));
@@ -131,7 +131,6 @@ class ErrandsResourceTest {
 		verify(metadataServiceMock).findTypes(any(), any(), any());
 		verify(metadataServiceMock).findRoles(eq(NAMESPACE), eq(MUNICIPALITY_ID), any(Sort.class));
 		verify(errandServiceMock).createErrand(NAMESPACE, MUNICIPALITY_ID, errandInstance, null);
-		verify(errandServiceMock).readErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 	}
 
 	@Test
@@ -143,7 +142,6 @@ class ErrandsResourceTest {
 
 		// Mock
 		when(errandServiceMock.createErrand(NAMESPACE, MUNICIPALITY_ID, errandInstance, null)).thenReturn(ERRAND_ID);
-		when(errandServiceMock.readErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID)).thenReturn(errandInstance);
 
 		// Call
 		webTestClient.post()
@@ -152,14 +150,13 @@ class ErrandsResourceTest {
 			.bodyValue(errandInstance)
 			.exchange()
 			.expectStatus().isCreated()
-			.expectHeader().contentType(APPLICATION_JSON)
+			.expectHeader().contentType(ALL)
 			.expectHeader().location(LOCATION)
-			.expectBody(Errand.class);
+			.expectBody().isEmpty();
 
 		// Verification
 		verify(metadataServiceMock).findStatuses(any(), any(), any(Sort.class));
 		verify(errandServiceMock).createErrand(NAMESPACE, MUNICIPALITY_ID, errandInstance, null);
-		verify(errandServiceMock).readErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 	}
 
 	@Test
@@ -169,7 +166,6 @@ class ErrandsResourceTest {
 
 		// Mock
 		when(errandServiceMock.createErrand(NAMESPACE, MUNICIPALITY_ID, errandInstance, null)).thenReturn(ERRAND_ID);
-		when(errandServiceMock.readErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID)).thenReturn(errandInstance);
 
 		// Call
 		webTestClient.post()
@@ -178,16 +174,15 @@ class ErrandsResourceTest {
 			.bodyValue(errandInstance)
 			.exchange()
 			.expectStatus().isCreated()
-			.expectHeader().contentType(APPLICATION_JSON)
+			.expectHeader().contentType(ALL)
 			.expectHeader().location(LOCATION)
-			.expectBody(Errand.class);
+			.expectBody().isEmpty();
 
 		// Verification
 		verify(metadataServiceMock).findCategories(any(), any(), any(Sort.class));
 		verify(metadataServiceMock).findStatuses(any(), any(), any(Sort.class));
 		verify(metadataServiceMock).findTypes(any(), any(), any());
 		verify(errandServiceMock).createErrand(NAMESPACE, MUNICIPALITY_ID, errandInstance, null);
-		verify(errandServiceMock).readErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 	}
 
 	@Test

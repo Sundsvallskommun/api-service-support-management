@@ -17,7 +17,6 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.TestObjectsBuilder;
 import se.sundsvall.supportmanagement.api.model.notification.Notification;
-import se.sundsvall.supportmanagement.api.model.notification.NotificationGroup;
 import se.sundsvall.supportmanagement.service.NotificationService;
 
 import static java.util.UUID.randomUUID;
@@ -47,35 +46,6 @@ class NotificationsResourceTest {
 
 	@Autowired
 	private WebTestClient webTestClient;
-
-	@Test
-	void getNotificationsGroupedByErrandId() {
-		// Mock
-		final var group1 = NotificationGroup.create()
-			.withRequestGroupId(randomUUID().toString())
-			.withNotifications(List.of(Notification.create(), Notification.create()));
-		final var group2 = NotificationGroup.create()
-			.withRequestGroupId(randomUUID().toString())
-			.withNotifications(List.of(Notification.create()));
-
-		when(notificationServiceMock.getNotificationsGroupedByErrandId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID))
-			.thenReturn(List.of(group1, group2));
-
-		// Call
-		final var response = webTestClient.get()
-			.uri(builder -> builder.path(ERRAND_NOTIFICATION_PATH + "/grouped")
-				.build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
-			.accept(APPLICATION_JSON)
-			.exchange()
-			.expectStatus().isOk()
-			.expectHeader().contentType(APPLICATION_JSON)
-			.expectBody(new ParameterizedTypeReference<List<NotificationGroup>>() {})
-			.returnResult();
-
-		// Verification
-		assertThat(response.getResponseBody()).isNotNull().hasSize(2);
-		verify(notificationServiceMock).getNotificationsGroupedByErrandId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID);
-	}
 
 	@Test
 	void getNotificationsByOwnerId() {

@@ -193,51 +193,6 @@ class NotificationServiceTest {
 	}
 
 	@Test
-	void getNotificationsGroupedByErrandId() {
-
-		// Arrange
-		final var municipalityId = "2281";
-		final var namespace = "namespace";
-		final var errandId = randomUUID().toString();
-		final var groupId1 = randomUUID().toString();
-		final var groupId2 = randomUUID().toString();
-		final var entity1 = createNotificationEntity(e -> e.withRequestGroupId(groupId1));
-		final var entity2 = createNotificationEntity(e -> e.withRequestGroupId(groupId1));
-		final var entity3 = createNotificationEntity(e -> e.withRequestGroupId(groupId2));
-
-		when(notificationRepositoryMock.findAllByNamespaceAndMunicipalityIdAndErrandEntityId(namespace, municipalityId, errandId, Sort.by(Sort.Direction.DESC, "created"))).thenReturn(List.of(entity1, entity2, entity3));
-
-		// Act
-		final var result = notificationService.getNotificationsGroupedByErrandId(municipalityId, namespace, errandId);
-
-		// Assert
-		assertThat(result).isNotNull().hasSize(2);
-		assertThat(result).anyMatch(g -> g.getRequestGroupId().equals(groupId1) && g.getNotifications().size() == 2);
-		assertThat(result).anyMatch(g -> g.getRequestGroupId().equals(groupId2) && g.getNotifications().size() == 1);
-		verify(notificationRepositoryMock).findAllByNamespaceAndMunicipalityIdAndErrandEntityId(namespace, municipalityId, errandId, Sort.by(Sort.Direction.DESC, "created"));
-		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, R, RW);
-	}
-
-	@Test
-	void getNotificationsGroupedByErrandIdNoneFound() {
-
-		// Arrange
-		final var municipalityId = "2281";
-		final var namespace = "namespace";
-		final var errandId = randomUUID().toString();
-
-		when(notificationRepositoryMock.findAllByNamespaceAndMunicipalityIdAndErrandEntityId(namespace, municipalityId, errandId, Sort.by(Sort.Direction.DESC, "created"))).thenReturn(emptyList());
-
-		// Act
-		final var result = notificationService.getNotificationsGroupedByErrandId(municipalityId, namespace, errandId);
-
-		// Assert
-		assertThat(result).isNotNull().isEmpty();
-		verify(notificationRepositoryMock).findAllByNamespaceAndMunicipalityIdAndErrandEntityId(namespace, municipalityId, errandId, Sort.by(Sort.Direction.DESC, "created"));
-		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, R, RW);
-	}
-
-	@Test
 	void createNotification() {
 
 		// Arrange

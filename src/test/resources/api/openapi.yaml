@@ -7,7 +7,7 @@ info:
     url: https://opensource.org/licenses/MIT
   version: "15.0"
 servers:
-- url: http://localhost:56866
+- url: http://localhost:52509
   description: Generated server url
 tags:
 - name: Errand attachments
@@ -74,6 +74,15 @@ paths:
         schema:
           type: string
         example: 2281
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "200":
           description: Successful Operation
@@ -123,6 +132,15 @@ paths:
         schema:
           type: string
         example: 2281
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       requestBody:
         content:
           application/json:
@@ -168,6 +186,15 @@ paths:
         schema:
           type: string
         example: 2281
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       requestBody:
         content:
           application/json:
@@ -218,6 +245,15 @@ paths:
         schema:
           type: string
         example: 2281
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "204":
           description: Successful operation
@@ -270,6 +306,15 @@ paths:
         required: true
         schema:
           type: string
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       requestBody:
         content:
           application/json:
@@ -321,6 +366,15 @@ paths:
         required: true
         schema:
           type: string
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "204":
           description: Successful operation
@@ -367,6 +421,15 @@ paths:
         schema:
           type: string
         example: 2281
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "200":
           description: Successful operation
@@ -410,6 +473,15 @@ paths:
         schema:
           type: string
         example: 2281
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       requestBody:
         content:
           application/json:
@@ -463,6 +535,15 @@ paths:
         schema:
           type: string
         example: 2281
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       requestBody:
         content:
           application/json:
@@ -510,6 +591,15 @@ paths:
         schema:
           type: string
         example: 2281
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "204":
           description: Successful operation
@@ -564,6 +654,15 @@ paths:
         schema:
           type: string
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "204":
           description: Successful operation
@@ -630,6 +729,15 @@ paths:
         schema:
           type: string
         example: true
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "204":
           description: No content - Successful operation
@@ -670,6 +778,15 @@ paths:
         schema:
           type: string
         example: 2281
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "200":
           description: Successful Operation
@@ -720,6 +837,15 @@ paths:
         schema:
           type: string
         example: 2281
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       requestBody:
         content:
           application/json:
@@ -766,6 +892,15 @@ paths:
         schema:
           type: string
         example: 2281
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       requestBody:
         content:
           application/json:
@@ -816,6 +951,15 @@ paths:
         schema:
           type: string
         example: 2281
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "204":
           description: Successful operation
@@ -862,6 +1006,15 @@ paths:
           type: integer
           format: int64
         example: 1
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       requestBody:
         content:
           application/json:
@@ -907,6 +1060,15 @@ paths:
           type: integer
           format: int64
         example: 1
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "204":
           description: Successful operation
@@ -953,6 +1115,15 @@ paths:
         schema:
           type: string
         example: 2281
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "200":
           description: Successful Operation
@@ -998,6 +1169,15 @@ paths:
         schema:
           type: string
         example: 2281
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       requestBody:
         content:
           application/json:
@@ -1058,6 +1238,15 @@ paths:
           type: array
           items:
             type: string
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "200":
           description: Successful operation
@@ -1103,6 +1292,15 @@ paths:
         schema:
           type: string
         example: 2281
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       requestBody:
         content:
           application/json:
@@ -1163,6 +1361,15 @@ paths:
           type: array
           items:
             type: string
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "200":
           description: Successful operation
@@ -1208,6 +1415,15 @@ paths:
         schema:
           type: string
         example: 2281
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       requestBody:
         content:
           application/json:
@@ -1259,6 +1475,15 @@ paths:
         schema:
           type: string
         example: 2281
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "200":
           description: Successful operation
@@ -1304,6 +1529,15 @@ paths:
         schema:
           type: string
         example: 2281
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       requestBody:
         content:
           application/json:
@@ -1362,6 +1596,15 @@ paths:
         schema:
           type: string
         example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "200":
           description: Successful operation
@@ -1414,6 +1657,15 @@ paths:
         schema:
           type: string
         example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       requestBody:
         content:
           application/json:
@@ -1474,6 +1726,15 @@ paths:
           type: array
           items:
             type: string
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "200":
           description: Successful operation
@@ -1519,6 +1780,15 @@ paths:
         schema:
           type: string
         example: 2281
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       requestBody:
         content:
           application/json:
@@ -1579,6 +1849,15 @@ paths:
           type: array
           items:
             type: string
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "200":
           description: Successful operation
@@ -1624,6 +1903,15 @@ paths:
         schema:
           type: string
         example: 2281
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       requestBody:
         content:
           application/json:
@@ -1685,6 +1973,15 @@ paths:
           type: array
           items:
             type: string
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "200":
           description: Successful operation
@@ -1730,6 +2027,15 @@ paths:
         schema:
           type: string
         example: 2281
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       requestBody:
         content:
           application/json:
@@ -1815,6 +2121,15 @@ paths:
           type: array
           items:
             type: string
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "200":
           description: Successful Operation
@@ -1865,6 +2180,15 @@ paths:
         schema:
           type: string
         example: LINK|1234;case;service;MY_NAMESPACE|
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       requestBody:
         content:
           application/json:
@@ -1879,10 +2203,6 @@ paths:
               style: simple
               schema:
                 type: string
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Errand"
         "400":
           description: Bad request
           content:
@@ -1938,6 +2258,15 @@ paths:
           - "created,DESC"
           items:
             type: string
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "200":
           description: Successful operation
@@ -1996,6 +2325,15 @@ paths:
         schema:
           type: string
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       requestBody:
         content:
           application/json:
@@ -2065,6 +2403,15 @@ paths:
         required: true
         schema:
           $ref: "#/components/schemas/FindErrandNotesRequest"
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "200":
           description: Successful Operation
@@ -2115,6 +2462,15 @@ paths:
         schema:
           type: string
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       requestBody:
         content:
           application/json:
@@ -2173,6 +2529,15 @@ paths:
         schema:
           type: string
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       requestBody:
         content:
           application/json:
@@ -2226,6 +2591,15 @@ paths:
         schema:
           type: string
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       requestBody:
         content:
           application/json:
@@ -2279,6 +2653,15 @@ paths:
         schema:
           type: string
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       requestBody:
         content:
           application/json:
@@ -2332,6 +2715,15 @@ paths:
         schema:
           type: string
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "200":
           description: Successful Operation
@@ -2390,6 +2782,15 @@ paths:
         schema:
           type: string
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       requestBody:
         content:
           application/json:
@@ -2480,6 +2881,15 @@ paths:
           type: array
           items:
             type: string
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "200":
           description: Successful Operation
@@ -2543,6 +2953,15 @@ paths:
         schema:
           type: string
         example: 1aefbbb8-de82-414b-b5d7-ba7c5bbe4506
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       requestBody:
         content:
           multipart/form-data:
@@ -2613,6 +3032,15 @@ paths:
         schema:
           type: string
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "200":
           description: Successful Operation
@@ -2671,6 +3099,15 @@ paths:
         schema:
           type: string
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       requestBody:
         content:
           multipart/form-data:
@@ -2720,6 +3157,15 @@ paths:
         schema:
           type: string
         example: 2281
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "200":
           description: Successful Operation
@@ -2764,6 +3210,15 @@ paths:
         schema:
           type: string
         example: 2281
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       requestBody:
         content:
           application/json:
@@ -2850,6 +3305,15 @@ paths:
           - "created,DESC"
           items:
             type: string
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "200":
           description: Successful operation
@@ -2899,6 +3363,15 @@ paths:
         schema:
           type: string
         example: 2281
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       requestBody:
         content:
           application/json:
@@ -2960,6 +3433,15 @@ paths:
         schema:
           type: string
         example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "200":
           description: Successful operation
@@ -3016,6 +3498,15 @@ paths:
         schema:
           type: string
         example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "204":
           description: Successful operation
@@ -3068,6 +3559,15 @@ paths:
         schema:
           type: string
         example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       requestBody:
         content:
           application/json:
@@ -3131,6 +3631,15 @@ paths:
         schema:
           type: string
         example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "200":
           description: Successful operation
@@ -3187,6 +3696,15 @@ paths:
         schema:
           type: string
         example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "204":
           description: Successful operation
@@ -3239,6 +3757,15 @@ paths:
         schema:
           type: string
         example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       requestBody:
         content:
           application/json:
@@ -3302,6 +3829,15 @@ paths:
         schema:
           type: string
         example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "200":
           description: Successful operation
@@ -3352,6 +3888,15 @@ paths:
         schema:
           type: string
         example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "204":
           description: Successful operation
@@ -3404,6 +3949,15 @@ paths:
         schema:
           type: string
         example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       requestBody:
         content:
           application/json:
@@ -3467,6 +4021,15 @@ paths:
         schema:
           type: string
         example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "200":
           description: Successful operation
@@ -3523,6 +4086,15 @@ paths:
         schema:
           type: string
         example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "204":
           description: Successful operation
@@ -3575,6 +4147,15 @@ paths:
         schema:
           type: string
         example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       requestBody:
         content:
           application/json:
@@ -3638,6 +4219,15 @@ paths:
         schema:
           type: string
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "200":
           description: Successful operation
@@ -3688,6 +4278,15 @@ paths:
         schema:
           type: string
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "204":
           description: Successful operation
@@ -3740,6 +4339,15 @@ paths:
         schema:
           type: string
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       requestBody:
         content:
           application/json:
@@ -3803,6 +4411,15 @@ paths:
         schema:
           type: string
         example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "200":
           description: Successful operation
@@ -3853,6 +4470,15 @@ paths:
         schema:
           type: string
         example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "204":
           description: Successful operation
@@ -3905,6 +4531,15 @@ paths:
         schema:
           type: string
         example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       requestBody:
         content:
           application/json:
@@ -3968,6 +4603,15 @@ paths:
         schema:
           type: string
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "200":
           description: Successful Operation
@@ -4024,6 +4668,15 @@ paths:
         schema:
           type: string
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "204":
           description: Successful operation
@@ -4076,6 +4729,15 @@ paths:
         schema:
           type: string
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       requestBody:
         content:
           application/json:
@@ -4139,6 +4801,15 @@ paths:
         schema:
           type: string
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "200":
           description: Successful Operation
@@ -4191,6 +4862,15 @@ paths:
         schema:
           type: string
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       requestBody:
         content:
           application/json:
@@ -4267,6 +4947,15 @@ paths:
           type: string
           minLength: 1
         example: propertyInfo
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "200":
           description: Successful Operation
@@ -4334,6 +5023,15 @@ paths:
           type: string
           minLength: 1
         example: propertyInfo
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "204":
           description: Successful operation
@@ -4395,6 +5093,15 @@ paths:
           type: string
           minLength: 1
         example: propertyInfo
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       requestBody:
         content:
           application/json:
@@ -4468,6 +5175,15 @@ paths:
         schema:
           type: string
         example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "200":
           description: Successful Operation
@@ -4532,6 +5248,15 @@ paths:
         schema:
           type: string
         example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "204":
           description: Successful operation
@@ -4592,6 +5317,15 @@ paths:
         schema:
           type: string
         example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       requestBody:
         content:
           application/json:
@@ -4662,6 +5396,15 @@ paths:
         schema:
           type: string
         example: 1aefbbb8-de82-414b-b5d7-ba7c5bbe4506
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "200":
           description: Successful Operation
@@ -4725,6 +5468,15 @@ paths:
         schema:
           type: string
         example: 1aefbbb8-de82-414b-b5d7-ba7c5bbe4506
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       requestBody:
         content:
           application/json:
@@ -4781,6 +5533,15 @@ paths:
         schema:
           type: string
         example: 2281
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "200":
           description: Successful Operation
@@ -4827,6 +5588,15 @@ paths:
         schema:
           type: string
         example: 2281
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "200":
           description: Successful operation
@@ -4878,6 +5648,15 @@ paths:
         schema:
           type: string
         example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "200":
           description: Successful operation
@@ -4887,63 +5666,6 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Type"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-  /{municipalityId}/{namespace}/events/{eventId}:
-    get:
-      tags:
-      - Errand events
-      summary: Read a single event
-      description: Returns the event that matches the provided event id
-      operationId: getEvent
-      parameters:
-      - name: namespace
-        in: path
-        description: Namespace
-        required: true
-        schema:
-          type: string
-          pattern: "[\\w|\\-]+"
-        example: MY_NAMESPACE
-      - name: municipalityId
-        in: path
-        description: Municipality id
-        required: true
-        schema:
-          type: string
-        example: 2281
-      - name: eventId
-        in: path
-        description: Event id
-        required: true
-        schema:
-          type: string
-        example: 922f95e3-608b-4e3c-ae22-f11fb849799a
-      responses:
-        "200":
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Event"
-        "400":
-          description: Bad request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "404":
-          description: Not found
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
         "500":
           description: Internal Server error
           content:
@@ -4980,6 +5702,15 @@ paths:
         schema:
           type: string
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "200":
           description: Successful operation
@@ -5030,6 +5761,15 @@ paths:
         schema:
           type: string
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "200":
           description: Successful operation
@@ -5110,6 +5850,15 @@ paths:
           maximum: 9223372036854775807
           minimum: 0
         example: 1
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "200":
           description: Successful operation
@@ -5174,6 +5923,15 @@ paths:
         schema:
           type: string
         example: 74540a24-70e1-4e82-90f7-7d8ad4666cdc
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "200":
           description: Successful operation
@@ -5237,68 +5995,18 @@ paths:
         schema:
           type: string
         example: 74540a24-70e1-4e82-90f7-7d8ad4666cdc
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "204":
           description: Successful operation
-        "404":
-          description: Not found
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-        "400":
-          description: Bad request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-  /{municipalityId}/{namespace}/errands/{errandId}/notifications/grouped:
-    get:
-      tags:
-      - User notifications
-      summary: Get notifications grouped by request group
-      description: Get all notifications for the errand grouped by requestGroupId
-      operationId: getNotificationsGroupedByErrandId
-      parameters:
-      - name: namespace
-        in: path
-        description: Namespace
-        required: true
-        schema:
-          type: string
-          pattern: "[\\w|\\-]+"
-        example: MY_NAMESPACE
-      - name: municipalityId
-        in: path
-        description: Municipality ID
-        required: true
-        schema:
-          type: string
-        example: 2281
-      - name: errandId
-        in: path
-        description: Errand ID
-        required: true
-        schema:
-          type: string
-        example: b82bd8ac-1507-4d9a-958d-369261eecc15
-      responses:
-        "200":
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/NotificationGroup"
         "404":
           description: Not found
           content:
@@ -5357,6 +6065,15 @@ paths:
         schema:
           type: string
         example: 22a57c09-47ca-45bf-ab02-819011c6fd8d
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "200":
           description: Successful operation
@@ -5444,6 +6161,15 @@ paths:
           maximum: 9223372036854775807
           minimum: 0
         example: 1
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "200":
           description: Successful operation
@@ -5502,13 +6228,6 @@ paths:
         schema:
           type: string
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
-      - name: requestGroupId
-        in: query
-        description: Filter events belonging to a specific request group
-        required: false
-        schema:
-          type: string
-        example: 550e8400-e29b-41d4-a716-446655440000
       - name: page
         in: query
         description: Zero-based page index (0..N)
@@ -5534,6 +6253,15 @@ paths:
           type: array
           items:
             type: string
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "200":
           description: Successful operation
@@ -5590,6 +6318,15 @@ paths:
         schema:
           type: string
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "200":
           description: OK - Successful operation
@@ -5658,6 +6395,15 @@ paths:
         schema:
           type: string
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "200":
           description: Successful Operation
@@ -5716,6 +6462,15 @@ paths:
         schema:
           type: string
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "200":
           description: OK - Successful operation
@@ -5791,6 +6546,15 @@ paths:
         schema:
           type: string
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "200":
           description: Successful Operation
@@ -5858,6 +6622,15 @@ paths:
         schema:
           type: string
         example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "200":
           description: Successful Operation
@@ -5918,6 +6691,15 @@ paths:
         schema:
           type: string
         example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "204":
           description: Successful operation
@@ -5972,6 +6754,15 @@ paths:
           type: string
         example: categoryTag:'SUPPORT-CASE' and stakeholder.externalId:'81471222-5798-11e9-ae24-57fa13b361e1'
           and externalTags.key:'caseId' and externalTags.value:'111' and created>'2022-09-08T12:00:00.000+02:00'
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "200":
           description: Successful operation
@@ -6008,6 +6799,15 @@ paths:
         schema:
           type: string
         example: 2281
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "200":
           description: Successful Operation
@@ -6037,6 +6837,16 @@ paths:
       - API
       summary: OpenAPI
       operationId: getApiDocs
+      parameters:
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "200":
           description: OK
@@ -6084,6 +6894,15 @@ paths:
         schema:
           type: string
         example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "204":
           description: Successful operation
@@ -6112,16 +6931,16 @@ components:
     Problem:
       type: object
       properties:
-        title:
-          type: string
-        detail:
-          type: string
         instance:
           type: string
           format: uri
         type:
           type: string
           format: uri
+        title:
+          type: string
+        detail:
+          type: string
         status:
           type: integer
           format: int32
@@ -6140,13 +6959,13 @@ components:
             $ref: "#/components/schemas/Violation"
         title:
           type: string
+        instance:
+          type: string
+          format: uri
         detail:
           type: string
         causeAsProblem:
           $ref: "#/components/schemas/ThrowableProblem"
-        instance:
-          type: string
-          format: uri
     ThrowableProblem:
       type: object
       properties:
@@ -7193,11 +8012,25 @@ components:
     JsonNode:
       type: object
       properties:
+        empty:
+          type: boolean
+        array:
+          type: boolean
+        "null":
+          type: boolean
+        object:
+          type: boolean
+        float:
+          type: boolean
         floatingPointNumber:
           type: boolean
         container:
           type: boolean
         number:
+          type: boolean
+        valueNode:
+          type: boolean
+        missingNode:
           type: boolean
         nodeType:
           type: string
@@ -7214,10 +8047,6 @@ components:
         string:
           type: boolean
         integralNumber:
-          type: boolean
-        missingNode:
-          type: boolean
-        valueNode:
           type: boolean
         pojo:
           type: boolean
@@ -7239,16 +8068,6 @@ components:
         boolean:
           type: boolean
         binary:
-          type: boolean
-        empty:
-          type: boolean
-        array:
-          type: boolean
-        "null":
-          type: boolean
-        object:
-          type: boolean
-        float:
           type: boolean
         embeddedValue:
           type: boolean
@@ -7372,13 +8191,6 @@ components:
           description: Errand number of the notification
           examples:
           - PRH-2022-000001
-          readOnly: true
-        requestGroupId:
-          type: string
-          description: Groups related events and notifications together within one
-            operation
-          examples:
-          - f47ac10b-58cc-4372-a567-0e02b2c3d479
           readOnly: true
     Parameter:
       type: object
@@ -7940,6 +8752,16 @@ components:
         totalPages:
           type: integer
           format: int32
+        size:
+          type: integer
+          format: int32
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/Notification"
+        number:
+          type: integer
+          format: int32
         numberOfElements:
           type: integer
           format: int32
@@ -7951,21 +8773,14 @@ components:
           $ref: "#/components/schemas/SortObject"
         pageable:
           $ref: "#/components/schemas/PageableObject"
-        size:
-          type: integer
-          format: int32
-        content:
-          type: array
-          items:
-            $ref: "#/components/schemas/Notification"
-        number:
-          type: integer
-          format: int32
         empty:
           type: boolean
     PageableObject:
       type: object
       properties:
+        offset:
+          type: integer
+          format: int64
         sort:
           $ref: "#/components/schemas/SortObject"
         paged:
@@ -7978,17 +8793,14 @@ components:
           format: int32
         unpaged:
           type: boolean
-        offset:
-          type: integer
-          format: int64
     SortObject:
       type: object
       properties:
+        empty:
+          type: boolean
         sorted:
           type: boolean
         unsorted:
-          type: boolean
-        empty:
           type: boolean
     ActionDefinition:
       type: object
@@ -8184,6 +8996,16 @@ components:
         totalPages:
           type: integer
           format: int32
+        size:
+          type: integer
+          format: int32
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/Errand"
+        number:
+          type: integer
+          format: int32
         numberOfElements:
           type: integer
           format: int32
@@ -8195,16 +9017,6 @@ components:
           $ref: "#/components/schemas/SortObject"
         pageable:
           $ref: "#/components/schemas/PageableObject"
-        size:
-          type: integer
-          format: int32
-        content:
-          type: array
-          items:
-            $ref: "#/components/schemas/Errand"
-        number:
-          type: integer
-          format: int32
         empty:
           type: boolean
     Revision:
@@ -8273,19 +9085,6 @@ components:
           examples:
           - John
       readOnly: true
-    NotificationGroup:
-      type: object
-      properties:
-        requestGroupId:
-          type: string
-          description: The request group ID that groups related notifications
-          examples:
-          - f47ac10b-58cc-4372-a567-0e02b2c3d479
-        notifications:
-          type: array
-          description: Notifications belonging to this group
-          items:
-            $ref: "#/components/schemas/Notification"
     FindErrandNotesRequest:
       type: object
       description: FindErrandNotesRequest model
@@ -8381,6 +9180,16 @@ components:
         totalPages:
           type: integer
           format: int32
+        size:
+          type: integer
+          format: int32
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/Event"
+        number:
+          type: integer
+          format: int32
         numberOfElements:
           type: integer
           format: int32
@@ -8392,16 +9201,6 @@ components:
           $ref: "#/components/schemas/SortObject"
         pageable:
           $ref: "#/components/schemas/PageableObject"
-        size:
-          type: integer
-          format: int32
-        content:
-          type: array
-          items:
-            $ref: "#/components/schemas/Event"
-        number:
-          type: integer
-          format: int32
         empty:
           type: boolean
     Communication:
@@ -8609,6 +9408,16 @@ components:
         totalPages:
           type: integer
           format: int32
+        size:
+          type: integer
+          format: int32
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/Message"
+        number:
+          type: integer
+          format: int32
         numberOfElements:
           type: integer
           format: int32
@@ -8620,16 +9429,6 @@ components:
           $ref: "#/components/schemas/SortObject"
         pageable:
           $ref: "#/components/schemas/PageableObject"
-        size:
-          type: integer
-          format: int32
-        content:
-          type: array
-          items:
-            $ref: "#/components/schemas/Message"
-        number:
-          type: integer
-          format: int32
         empty:
           type: boolean
     ReadBy:
