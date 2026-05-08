@@ -24,6 +24,7 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.eventlog.EventlogClient;
 
+import static generated.se.sundsvall.eventlog.ExecutingUser.TypeEnum.AD_USER;
 import static java.time.OffsetDateTime.now;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static java.util.UUID.randomUUID;
@@ -100,6 +101,11 @@ class EventServiceTest {
 		assertThat(event.getExpires()).isNull();
 		assertThat(event.getHistoryReference()).isEqualTo(currentRevisionId);
 		assertThat(event.getMessage()).isEqualTo(message);
+		assertThat(event.getExecutingUser()).isNotNull()
+			.satisfies(eu -> {
+				assertThat(eu.getType()).isEqualTo(AD_USER);
+				assertThat(eu.getValue()).isEqualTo(executingUserId);
+			});
 		assertThat(event.getMetadata()).isNotNull()
 			.extracting(
 				Metadata::getKey,
@@ -144,7 +150,14 @@ class EventServiceTest {
 		assertThat(event.getExpires()).isNull();
 		assertThat(event.getHistoryReference()).isNull();
 		assertThat(event.getMessage()).isEqualTo(message);
-		assertThat(event.getMetadata()).isEqualTo(List.of(new Metadata().key("ExecutedBy").value("executingUserId")));
+		assertThat(event.getExecutingUser()).isNotNull()
+			.satisfies(eu -> {
+				assertThat(eu.getType()).isEqualTo(AD_USER);
+				assertThat(eu.getValue()).isEqualTo("executingUserId");
+			});
+		assertThat(event.getMetadata()).isNotNull()
+			.extracting(Metadata::getKey, Metadata::getValue)
+			.containsExactly(tuple("ExecutedBy", "executingUserId"));
 		assertThat(event.getOwner()).isEqualTo(owner);
 		assertThat(event.getSourceType()).isEqualTo(sourceType);
 		assertThat(event.getType()).isEqualTo(eventType);
@@ -185,6 +198,11 @@ class EventServiceTest {
 				tuple("CurrentVersion", String.valueOf(currentRevisionVersion)),
 				tuple("CurrentRevision", currentRevisionId),
 				tuple("ExecutedBy", "executingUserId"));
+		assertThat(event.getExecutingUser()).isNotNull()
+			.satisfies(eu -> {
+				assertThat(eu.getType()).isEqualTo(AD_USER);
+				assertThat(eu.getValue()).isEqualTo("executingUserId");
+			});
 		assertThat(event.getOwner()).isEqualTo(owner);
 		assertThat(event.getSourceType()).isEqualTo(sourceType);
 		assertThat(event.getType()).isEqualTo(eventType);
@@ -234,6 +252,11 @@ class EventServiceTest {
 				tuple("PreviousVersion", String.valueOf(previousRevisionVersion)),
 				tuple("PreviousRevision", previousRevisionId),
 				tuple("ExecutedBy", executingUserId));
+		assertThat(event.getExecutingUser()).isNotNull()
+			.satisfies(eu -> {
+				assertThat(eu.getType()).isEqualTo(AD_USER);
+				assertThat(eu.getValue()).isEqualTo(executingUserId);
+			});
 		assertThat(event.getOwner()).isEqualTo(owner);
 		assertThat(event.getSourceType()).isEqualTo(sourceType);
 		assertThat(event.getType()).isEqualTo(eventType);
@@ -277,6 +300,11 @@ class EventServiceTest {
 				tuple("CurrentVersion", String.valueOf(currentRevisionVersion)),
 				tuple("CurrentRevision", currentRevisionId),
 				tuple("ExecutedBy", "executingUserId"));
+		assertThat(event.getExecutingUser()).isNotNull()
+			.satisfies(eu -> {
+				assertThat(eu.getType()).isEqualTo(AD_USER);
+				assertThat(eu.getValue()).isEqualTo("executingUserId");
+			});
 		assertThat(event.getOwner()).isEqualTo(owner);
 		assertThat(event.getSourceType()).isEqualTo(sourceType);
 		assertThat(event.getType()).isEqualTo(eventType);

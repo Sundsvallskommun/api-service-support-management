@@ -26,6 +26,7 @@ import static se.sundsvall.supportmanagement.service.mapper.EventlogMapper.toEve
 import static se.sundsvall.supportmanagement.service.mapper.EventlogMapper.toMetadataMap;
 import static se.sundsvall.supportmanagement.service.mapper.NotificationMapper.toNotification;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getAdUser;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getExecutingUser;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getRequestGroupId;
 
 @Service
@@ -42,7 +43,7 @@ public class EventService {
 	public void createErrandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final Revision currentRevision, final Revision previousRevision, final boolean sendNotification, final EventSubType subtype) {
 		final var requestGroupId = getRequestGroupId();
 		final var metadata = toMetadataMap(errandEntity, currentRevision, previousRevision);
-		final var event = toEvent(eventType, message, extractId(currentRevision), Errand.class, metadata, getAdUser(), subtype.getValue(), requestGroupId);
+		final var event = toEvent(eventType, message, extractId(currentRevision), Errand.class, metadata, getExecutingUser(), subtype.getValue(), requestGroupId);
 		eventLogClient.createEvent(errandEntity.getMunicipalityId(), errandEntity.getId(), event);
 
 		if (sendNotification) {
@@ -58,7 +59,7 @@ public class EventService {
 		final var requestGroupId = getRequestGroupId();
 		final var caseId = extractCaseId(errandEntity);
 		final var metadata = toMetadataMap(caseId, noteId, currentRevision, previousRevision, errandEntity.getNamespace());
-		final var event = toEvent(eventType, message, extractId(currentRevision), Note.class, metadata, getAdUser(), NOTE.getValue(), requestGroupId);
+		final var event = toEvent(eventType, message, extractId(currentRevision), Note.class, metadata, getExecutingUser(), NOTE.getValue(), requestGroupId);
 		eventLogClient.createEvent(errandEntity.getMunicipalityId(), logKey, event);
 		createNotification(errandEntity, event);
 	}

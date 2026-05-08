@@ -464,6 +464,21 @@ components:
           type: string
         message:
           type: string
+    ExecutingUser:
+      type: object
+      properties:
+        type:
+          type: string
+          description: The type of identifier for the executing user
+          enum:
+            - AD_USER
+            - PARTY_ID
+          example: AD_USER
+        value:
+          type: string
+          description: The identifier value, e.g. an AD username or a party UUID
+          example: john.doe
+      description: The user that triggered the event
     Event:
       required:
         - message
@@ -487,6 +502,8 @@ components:
           type: string
           description: Subtype describing what kind of entity the event refers to
           example: ATTACHMENT
+        executingUser:
+          $ref: "#/components/schemas/ExecutingUser"
         requestGroupId:
           type: string
           description: Groups related events and notifications together within one operation

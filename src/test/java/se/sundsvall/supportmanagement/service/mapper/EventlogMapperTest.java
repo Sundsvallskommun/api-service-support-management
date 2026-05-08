@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.service.mapper;
 
 import generated.se.sundsvall.eventlog.Event;
 import generated.se.sundsvall.eventlog.EventType;
+import generated.se.sundsvall.eventlog.ExecutingUser;
 import generated.se.sundsvall.eventlog.Metadata;
 import generated.se.sundsvall.notes.Note;
 import java.util.List;
@@ -12,6 +13,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.event.EventMetaData;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
@@ -26,12 +28,16 @@ import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static org.assertj.core.groups.Tuple.tuple;
+import static se.sundsvall.dept44.support.Identifier.Type.AD_ACCOUNT;
+import static se.sundsvall.dept44.support.Identifier.Type.PARTY_ID;
 
 class EventlogMapperTest {
 
 	private static final String OWNER = "SupportManagement";
 	private static final String SOURCE_TYPE = "Errand";
 	private static final String EXECUTED_BY = "ExecutedBy";
+	private static final String AD_USER_ID = "john.doe";
+	private static final String PARTY_UUID = "e82c8029-7676-467d-8ebb-8638d0abd2b4";
 	private static final EventType EVENT_TYPE = EventType.CREATE;
 	private static final String MESSAGE = "message";
 	private static final String REVISION = "revision";
@@ -69,12 +75,12 @@ class EventlogMapperTest {
 	@ValueSource(classes = {
 		Errand.class, Note.class
 	})
-	void toEventWithExecutingUserId(Class<?> clazz) {
+	void toEventWithAdAccountExecutingUser(Class<?> clazz) {
 		// Setup
-		final var userId = "userId";
+		final var identifier = Identifier.create().withType(AD_ACCOUNT).withValue(AD_USER_ID);
 
 		// Execute
-		final var result = EventlogMapper.toEvent(EVENT_TYPE, MESSAGE, REVISION, clazz, META_DATA, userId, SUB_TYPE, REQUEST_GROUP_ID);
+		final var result = EventlogMapper.toEvent(EVENT_TYPE, MESSAGE, REVISION, clazz, META_DATA, identifier, SUB_TYPE, REQUEST_GROUP_ID);
 
 		// Assert
 		assertThat(result.getCreated()).isCloseTo(now(systemDefault()), within(2, SECONDS));
@@ -86,19 +92,47 @@ class EventlogMapperTest {
 		assertThat(result.getType()).isEqualTo(EVENT_TYPE);
 		assertThat(result.getSubType()).isEqualTo(SUB_TYPE);
 		assertThat(result.getRequestGroupId()).isEqualTo(REQUEST_GROUP_ID);
+		assertThat(result.getExecutingUser()).isNotNull()
+			.satisfies(eu -> {
+				assertThat(eu.getType()).isEqualTo(ExecutingUser.TypeEnum.AD_USER);
+				assertThat(eu.getValue()).isEqualTo(AD_USER_ID);
+			});
 		assertThat(result.getMetadata()).hasSize(2)
-			.extracting(
-				Metadata::getKey, Metadata::getValue)
+			.extracting(Metadata::getKey, Metadata::getValue)
 			.containsExactlyInAnyOrder(
 				tuple(META_KEY, META_VALUE),
-				tuple(EXECUTED_BY, userId));
+				tuple(EXECUTED_BY, AD_USER_ID));
 	}
 
 	@ParameterizedTest
 	@ValueSource(classes = {
 		Errand.class, Note.class
 	})
-	void toEventWithoutExecutingUserId(Class<?> clazz) {
+	void toEventWithPartyIdExecutingUser(Class<?> clazz) {
+		// Setup
+		final var identifier = Identifier.create().withType(PARTY_ID).withValue(PARTY_UUID);
+
+		// Execute
+		final var result = EventlogMapper.toEvent(EVENT_TYPE, MESSAGE, REVISION, clazz, META_DATA, identifier, SUB_TYPE, REQUEST_GROUP_ID);
+
+		// Assert
+		assertThat(result.getExecutingUser()).isNotNull()
+			.satisfies(eu -> {
+				assertThat(eu.getType()).isEqualTo(ExecutingUser.TypeEnum.PARTY_ID);
+				assertThat(eu.getValue()).isEqualTo(PARTY_UUID);
+			});
+		assertThat(result.getMetadata()).hasSize(2)
+			.extracting(Metadata::getKey, Metadata::getValue)
+			.containsExactlyInAnyOrder(
+				tuple(META_KEY, META_VALUE),
+				tuple(EXECUTED_BY, PARTY_UUID));
+	}
+
+	@ParameterizedTest
+	@ValueSource(classes = {
+		Errand.class, Note.class
+	})
+	void toEventWithoutExecutingUser(Class<?> clazz) {
 		// Execute
 		final var result = EventlogMapper.toEvent(EVENT_TYPE, MESSAGE, REVISION, clazz, META_DATA, null, SUB_TYPE, REQUEST_GROUP_ID);
 
@@ -112,11 +146,10 @@ class EventlogMapperTest {
 		assertThat(result.getType()).isEqualTo(EVENT_TYPE);
 		assertThat(result.getSubType()).isEqualTo(SUB_TYPE);
 		assertThat(result.getRequestGroupId()).isEqualTo(REQUEST_GROUP_ID);
+		assertThat(result.getExecutingUser()).isNull();
 		assertThat(result.getMetadata()).hasSize(1)
-			.extracting(
-				Metadata::getKey, Metadata::getValue)
-			.containsExactly(
-				tuple(META_KEY, META_VALUE));
+			.extracting(Metadata::getKey, Metadata::getValue)
+			.containsExactly(tuple(META_KEY, META_VALUE));
 	}
 
 	@ParameterizedTest

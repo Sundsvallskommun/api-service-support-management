@@ -80,6 +80,10 @@ public class ServiceUtil {
 			.orElse(null);
 	}
 
+	public static Identifier getExecutingUser() {
+		return Identifier.get();
+	}
+
 	public static void setRequestGroupId(final String requestGroupId) {
 		if (StringUtils.isBlank(requestGroupId)) {
 			REQUEST_GROUP_ID.remove();
