@@ -5,7 +5,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
@@ -93,7 +92,7 @@ class NotificationRepositoryTest {
 	void findAllByNamespaceAndMunicipalityIdAndOwnerId() {
 
 		// Act
-		final var notifications = notificationRepository.findAllByNamespaceAndMunicipalityIdAndOwnerId("namespace-1", "2281", "owner_id-1", PageRequest.of(0, 20));
+		final var notifications = notificationRepository.findAllByNamespaceAndMunicipalityIdAndOwnerId("namespace-1", "2281", "owner_id-1", Sort.by(Sort.Direction.DESC, "created"));
 
 		// Assert
 		assertThat(notifications).hasSize(1);

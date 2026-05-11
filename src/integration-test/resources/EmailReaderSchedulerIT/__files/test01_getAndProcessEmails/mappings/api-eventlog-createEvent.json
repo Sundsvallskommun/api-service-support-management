@@ -11,15 +11,17 @@
 				"bodyPatterns": [
 					{
 						"equalToJson": {
+							"type": "CREATE",
+							"subType": "ERRAND",
 							"owner": "SupportManagement",
 							"metadata": [
 								{
-									"value": "0",
-									"key": "CurrentVersion"
+									"key": "CurrentRevision",
+									"value": "${json-unit.regex}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
 								},
 								{
-									"value": "${json-unit.regex}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
-									"key": "CurrentRevision"
+									"key": "CurrentVersion",
+									"value": "0"
 								},
 								{
 									"key": "Namespace",
@@ -34,14 +36,12 @@
 									"value": "STATUS-1"
 								}
 							],
+							"message": "Ärendet har skapats.",
 							"historyReference": "${json-unit.regex}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
 							"sourceType": "Errand",
-							"created": "${json-unit.any-string}",
-							"type": "CREATE",
-							"message": "Ärendet har skapats."
+							"created": "${json-unit.any-string}"
 						},
-						"ignoreArrayOrder": true,
-						"ignoreExtraElements": true
+						"ignoreArrayOrder": true
 					}
 				],
 				"urlPattern": "/api-eventlog/2281/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
@@ -67,15 +67,17 @@
 				"bodyPatterns": [
 					{
 						"equalToJson": {
+							"type": "CREATE",
+							"subType": "ERRAND",
 							"owner": "SupportManagement",
 							"metadata": [
 								{
-									"value": "0",
-									"key": "CurrentVersion"
+									"key": "CurrentRevision",
+									"value": "${json-unit.regex}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
 								},
 								{
-									"value": "${json-unit.regex}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
-									"key": "CurrentRevision"
+									"key": "CurrentVersion",
+									"value": "0"
 								},
 								{
 									"key": "Namespace",
@@ -90,14 +92,12 @@
 									"value": "STATUS-1"
 								}
 							],
+							"message": "Ärendet har skapats.",
 							"historyReference": "${json-unit.regex}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
 							"sourceType": "Errand",
-							"created": "${json-unit.any-string}",
-							"type": "CREATE",
-							"message": "Ärendet har skapats."
+							"created": "${json-unit.any-string}"
 						},
-						"ignoreArrayOrder": true,
-						"ignoreExtraElements": true
+						"ignoreArrayOrder": true
 					}
 				],
 				"urlPattern": "/api-eventlog/2281/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
@@ -124,15 +124,17 @@
 				"bodyPatterns": [
 					{
 						"equalToJson": {
+							"type": "CREATE",
+							"subType": "ERRAND",
 							"owner": "SupportManagement",
 							"metadata": [
 								{
-									"value": "0",
-									"key": "CurrentVersion"
+									"key": "CurrentRevision",
+									"value": "${json-unit.regex}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
 								},
 								{
-									"value": "${json-unit.regex}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
-									"key": "CurrentRevision"
+									"key": "CurrentVersion",
+									"value": "0"
 								},
 								{
 									"key": "Namespace",
@@ -147,14 +149,12 @@
 									"value": "STATUS-1"
 								}
 							],
+							"message": "Ärendet har skapats.",
 							"historyReference": "${json-unit.regex}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
 							"sourceType": "Errand",
-							"created": "${json-unit.any-string}",
-							"type": "CREATE",
-							"message": "Ärendet har skapats."
+							"created": "${json-unit.any-string}"
 						},
-						"ignoreArrayOrder": true,
-						"ignoreExtraElements": true
+						"ignoreArrayOrder": true
 					}
 				],
 				"urlPattern": "/api-eventlog/2281/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"

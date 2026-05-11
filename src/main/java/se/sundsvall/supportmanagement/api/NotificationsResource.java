@@ -13,8 +13,6 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import java.util.List;
 import org.springdoc.core.annotations.ParameterObject;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.SortDefault;
 import org.springframework.http.ResponseEntity;
@@ -155,13 +153,13 @@ class NotificationsResource {
 		@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true),
 		@ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	})
-	ResponseEntity<Page<Notification>> getNotificationsByOwnerId(
+	ResponseEntity<List<Notification>> getNotificationsByOwnerId(
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality ID", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "ownerId", description = "owner ID", example = "12") @RequestParam final String ownerId,
-		@SortDefault(sort = "created", direction = Sort.Direction.DESC) @ParameterObject final Pageable pageable) {
+		@SortDefault(sort = "created", direction = Sort.Direction.DESC) @ParameterObject final Sort sort) {
 
-		return ok(notificationService.getNotificationsByOwnerId(municipalityId, namespace, ownerId, pageable));
+		return ok(notificationService.getNotificationsByOwnerId(municipalityId, namespace, ownerId, sort));
 	}
 
 	@Validated(OnUpdate.class)

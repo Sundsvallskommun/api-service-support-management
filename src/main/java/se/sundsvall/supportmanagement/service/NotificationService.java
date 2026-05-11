@@ -5,8 +5,6 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.apache.commons.lang3.Strings;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,7 +26,6 @@ import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyE
 import static se.sundsvall.supportmanagement.service.mapper.NotificationMapper.toNotificationEntity;
 import static se.sundsvall.supportmanagement.service.mapper.NotificationMapper.updateEntity;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getAdUser;
-import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getRequestGroupId;
 
 @Service
 public class NotificationService {
@@ -60,9 +57,11 @@ public class NotificationService {
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, NOTIFICATION_ENTITY_NOT_FOUND.formatted(notificationId, namespace, municipalityId, errandId)));
 	}
 
-	public Page<Notification> getNotificationsByOwnerId(final String municipalityId, final String namespace, final String ownerId, final Pageable pageable) {
-		return notificationRepository.findAllByNamespaceAndMunicipalityIdAndOwnerId(namespace, municipalityId, ownerId, pageable)
-			.map(NotificationMapper::toNotification);
+	public List<Notification> getNotificationsByOwnerId(final String municipalityId, final String namespace, final String ownerId, final Sort sort) {
+		return notificationRepository.findAllByNamespaceAndMunicipalityIdAndOwnerId(namespace, municipalityId, ownerId, sort)
+			.stream()
+			.map(NotificationMapper::toNotification)
+			.toList();
 	}
 
 	public List<Notification> getNotificationsByErrandId(final String municipalityId, final String namespace, final String errandId, final Sort sort) {
@@ -83,8 +82,7 @@ public class NotificationService {
 		final var namespaceConfig = namespaceConfigRepository.findByNamespaceAndMunicipalityId(errandEntity.getNamespace(), errandEntity.getMunicipalityId())
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, NAMESPACE_ENTITY_NOT_FOUND.formatted(errandEntity.getNamespace(), errandEntity.getMunicipalityId())));
 
-		final var entity = toNotificationEntity(errandEntity.getNamespace(), errandEntity.getMunicipalityId(), ConfigPropertyExtractor.getValue(namespaceConfig, PROPERTY_NOTIFICATION_TTL_IN_DAYS), notification, errandEntity)
-			.withRequestGroupId(getRequestGroupId());
+		final var entity = toNotificationEntity(errandEntity.getNamespace(), errandEntity.getMunicipalityId(), ConfigPropertyExtractor.getValue(namespaceConfig, PROPERTY_NOTIFICATION_TTL_IN_DAYS), notification, errandEntity);
 
 		applyBusinessLogicForCreate(entity);
 

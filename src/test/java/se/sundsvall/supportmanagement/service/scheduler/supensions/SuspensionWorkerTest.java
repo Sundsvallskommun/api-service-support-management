@@ -8,12 +8,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.service.EventService;
 import se.sundsvall.supportmanagement.service.NotificationService;
-import se.sundsvall.supportmanagement.service.RevisionService;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -36,9 +34,6 @@ class SuspensionWorkerTest {
 	@Mock
 	private NotificationService notificationServiceMock;
 
-	@Mock
-	private RevisionService revisionServiceMock;
-
 	@InjectMocks
 	private SuspensionWorker suspensionWorker;
 
@@ -58,13 +53,10 @@ class SuspensionWorkerTest {
 			.withStatus("SUSPENDED")
 			.withMunicipalityId(municipalityId);
 
-		final var latestRevision = Revision.create().withId("revisionId").withVersion(1);
-
 		when(errandsRepositoryMock.findAllBySuspendedToBefore(any(OffsetDateTime.class))).thenReturn(List.of(errandEntity));
 		when(notificationServiceMock.doesNotificationWithSpecificDescriptionExistForOwnerAndErrandAndNotificationIsCreatedAfter(
 			municipalityId, namespace, errandEntity.getAssignedUserId(), errandEntity, "Parkering av ärendet har upphört", errandEntity.getSuspendedFrom()))
 			.thenReturn(false);
-		when(revisionServiceMock.getLatestErrandRevision(errandEntity)).thenReturn(latestRevision);
 
 		// Act
 		suspensionWorker.processExpiredSuspensions();
@@ -73,10 +65,9 @@ class SuspensionWorkerTest {
 		verify(errandsRepositoryMock).findAllBySuspendedToBefore(any(OffsetDateTime.class));
 		verify(notificationServiceMock).doesNotificationWithSpecificDescriptionExistForOwnerAndErrandAndNotificationIsCreatedAfter(
 			municipalityId, namespace, errandEntity.getAssignedUserId(), errandEntity, "Parkering av ärendet har upphört", errandEntity.getSuspendedFrom());
-		verify(revisionServiceMock).getLatestErrandRevision(errandEntity);
-		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Parkering av ärendet har upphört"), eq(errandEntity), eq(latestRevision), isNull(), eq(SUSPENSION));
+		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Parkering av ärendet har upphört"), eq(errandEntity), isNull(), isNull(), eq(SUSPENSION));
 
-		verifyNoMoreInteractions(errandsRepositoryMock, notificationServiceMock, revisionServiceMock, eventServiceMock);
+		verifyNoMoreInteractions(errandsRepositoryMock, notificationServiceMock, eventServiceMock);
 	}
 
 	@Test
@@ -106,7 +97,7 @@ class SuspensionWorkerTest {
 		verify(errandsRepositoryMock).findAllBySuspendedToBefore(any(OffsetDateTime.class));
 		verify(notificationServiceMock).doesNotificationWithSpecificDescriptionExistForOwnerAndErrandAndNotificationIsCreatedAfter(
 			municipalityId, namespace, errandEntity.getAssignedUserId(), errandEntity, "Parkering av ärendet har upphört", errandEntity.getSuspendedFrom());
-		verifyNoInteractions(eventServiceMock, revisionServiceMock);
+		verifyNoInteractions(eventServiceMock);
 		verifyNoMoreInteractions(errandsRepositoryMock, notificationServiceMock);
 	}
 
@@ -121,7 +112,7 @@ class SuspensionWorkerTest {
 
 		// Assert
 		verify(errandsRepositoryMock).findAllBySuspendedToBefore(any(OffsetDateTime.class));
-		verifyNoInteractions(eventServiceMock, notificationServiceMock, revisionServiceMock);
+		verifyNoInteractions(eventServiceMock, notificationServiceMock);
 		verifyNoMoreInteractions(errandsRepositoryMock);
 	}
 
@@ -142,7 +133,7 @@ class SuspensionWorkerTest {
 
 		// Assert
 		verify(errandsRepositoryMock).findAllBySuspendedToBefore(any(OffsetDateTime.class));
-		verifyNoInteractions(eventServiceMock, notificationServiceMock, revisionServiceMock);
+		verifyNoInteractions(eventServiceMock, notificationServiceMock);
 		verifyNoMoreInteractions(errandsRepositoryMock);
 	}
 }

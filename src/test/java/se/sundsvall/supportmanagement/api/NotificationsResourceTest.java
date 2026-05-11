@@ -7,10 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
@@ -50,8 +47,8 @@ class NotificationsResourceTest {
 	@Test
 	void getNotificationsByOwnerId() {
 		// Mock
-		when(notificationServiceMock.getNotificationsByOwnerId(eq(MUNICIPALITY_ID), eq(NAMESPACE), eq("12"), any(Pageable.class)))
-			.thenReturn(new PageImpl<>(List.of(Notification.create()), PageRequest.of(0, 20), 1));
+		when(notificationServiceMock.getNotificationsByOwnerId(eq(MUNICIPALITY_ID), eq(NAMESPACE), eq("12"), any(Sort.class)))
+			.thenReturn(List.of(Notification.create()));
 
 		final var response = webTestClient.get()
 			.uri(builder -> builder.path(GLOBAL_NOTIFICATION_PATH)
@@ -61,12 +58,12 @@ class NotificationsResourceTest {
 			.exchange()
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)
-			.expectBody(new ParameterizedTypeReference<Page<Notification>>() {})
+			.expectBody(new ParameterizedTypeReference<List<Notification>>() {})
 			.returnResult();
 
 		// Verification
 		assertThat(response).isNotNull();
-		verify(notificationServiceMock).getNotificationsByOwnerId(eq(MUNICIPALITY_ID), eq(NAMESPACE), eq("12"), any(Pageable.class));
+		verify(notificationServiceMock).getNotificationsByOwnerId(eq(MUNICIPALITY_ID), eq(NAMESPACE), eq("12"), any(Sort.class));
 	}
 
 	@Test

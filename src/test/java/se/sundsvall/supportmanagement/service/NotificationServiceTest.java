@@ -11,8 +11,6 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.support.Identifier;
@@ -120,18 +118,17 @@ class NotificationServiceTest {
 		final var municipalityId = "2281";
 		final var namespace = "namespace";
 		final var ownerId = randomUUID().toString();
-		final var pageable = Pageable.ofSize(20);
+		final var sort = Sort.by(Sort.Direction.DESC, "created");
 
-		when(notificationRepositoryMock.findAllByNamespaceAndMunicipalityIdAndOwnerId(namespace, municipalityId, ownerId, pageable))
-			.thenReturn(new PageImpl<>(List.of(createNotificationEntity(_ -> {}))));
+		when(notificationRepositoryMock.findAllByNamespaceAndMunicipalityIdAndOwnerId(namespace, municipalityId, ownerId, sort))
+			.thenReturn(List.of(createNotificationEntity(_ -> {})));
 
 		// Act
-		final var result = notificationService.getNotificationsByOwnerId(municipalityId, namespace, ownerId, pageable);
+		final var result = notificationService.getNotificationsByOwnerId(municipalityId, namespace, ownerId, sort);
 
 		// Assert
-		assertThat(result).isNotNull();
-		assertThat(result.getContent()).hasSize(1);
-		verify(notificationRepositoryMock).findAllByNamespaceAndMunicipalityIdAndOwnerId(namespace, municipalityId, ownerId, pageable);
+		assertThat(result).isNotNull().hasSize(1);
+		verify(notificationRepositoryMock).findAllByNamespaceAndMunicipalityIdAndOwnerId(namespace, municipalityId, ownerId, sort);
 	}
 
 	@Test
@@ -141,18 +138,17 @@ class NotificationServiceTest {
 		final var municipalityId = "2281";
 		final var namespace = "namespace";
 		final var ownerId = randomUUID().toString();
-		final var pageable = Pageable.ofSize(20);
+		final var sort = Sort.by(Sort.Direction.DESC, "created");
 
-		when(notificationRepositoryMock.findAllByNamespaceAndMunicipalityIdAndOwnerId(namespace, municipalityId, ownerId, pageable))
-			.thenReturn(new PageImpl<>(List.of()));
+		when(notificationRepositoryMock.findAllByNamespaceAndMunicipalityIdAndOwnerId(namespace, municipalityId, ownerId, sort))
+			.thenReturn(List.of());
 
 		// Act
-		final var result = notificationService.getNotificationsByOwnerId(municipalityId, namespace, ownerId, pageable);
+		final var result = notificationService.getNotificationsByOwnerId(municipalityId, namespace, ownerId, sort);
 
 		// Assert
-		assertThat(result).isNotNull();
-		assertThat(result.getContent()).isEmpty();
-		verify(notificationRepositoryMock).findAllByNamespaceAndMunicipalityIdAndOwnerId(namespace, municipalityId, ownerId, pageable);
+		assertThat(result).isNotNull().isEmpty();
+		verify(notificationRepositoryMock).findAllByNamespaceAndMunicipalityIdAndOwnerId(namespace, municipalityId, ownerId, sort);
 	}
 
 	@Test
