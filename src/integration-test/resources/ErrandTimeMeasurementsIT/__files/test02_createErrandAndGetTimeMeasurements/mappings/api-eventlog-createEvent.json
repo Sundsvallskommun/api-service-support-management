@@ -40,10 +40,14 @@
 					"sourceType": "Errand",
 					"created": "${json-unit.any-string}",
 					"type": "CREATE",
-					"message": "Ärendet har skapats."
+					"message": "Ärendet har skapats.",
+					"subType": "ERRAND",
+					"executingUser": {
+						"type": "AD_USER",
+						"value": "joe01doe"
+					}
 				},
-				"ignoreArrayOrder": true,
-				"ignoreExtraElements": true
+				"ignoreArrayOrder": true
 			}
 		],
 		"urlPattern": "/api-eventlog/2281/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"

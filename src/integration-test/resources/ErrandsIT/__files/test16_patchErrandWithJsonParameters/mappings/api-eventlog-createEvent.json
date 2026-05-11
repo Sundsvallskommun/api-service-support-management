@@ -40,10 +40,10 @@
 					"sourceType": "Errand",
 					"created": "${json-unit.any-string}",
 					"type": "UPDATE",
-					"message": "Ärendet har uppdaterats."
+					"message": "Ärendet har uppdaterats.",
+					"subType": "ERRAND"
 				},
-				"ignoreArrayOrder": true,
-				"ignoreExtraElements": true
+				"ignoreArrayOrder": true
 			}
 		],
 		"urlPath": "/api-eventlog/2281/1be673c0-6ba3-4fb0-af4a-43acf23389f6"

@@ -44,10 +44,14 @@
 					"sourceType": "Errand",
 					"created": "${json-unit.any-string}",
 					"type": "UPDATE",
-					"message": "En bilaga har lagts till i ärendet."
+					"message": "En bilaga har lagts till i ärendet.",
+					"subType": "ATTACHMENT",
+					"executingUser": {
+						"type": "AD_USER",
+						"value": "someUserId"
+					}
 				},
-				"ignoreArrayOrder": true,
-				"ignoreExtraElements": true
+				"ignoreArrayOrder": true
 			}
 		],
 		"urlPath": "/api-eventlog/2281/b481b191-dd37-47ca-b417-ed3a56ba724c"
