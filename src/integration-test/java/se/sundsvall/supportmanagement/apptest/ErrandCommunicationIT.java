@@ -294,8 +294,7 @@ class ErrandCommunicationIT extends AbstractAppTest {
 	}
 
 	/**
-	 * Test to verify email is sent to reporter when administrator creates a message in an internal conversation for an
-	 * errand where stakeholder with reporter role is present.
+	 * Test to verify email is sent to reporter when administrator creates a message in an internal conversation for an errand where stakeholder with reporter role is present.
 	 */
 	@Test
 	void test20_createInternalConversationMessageToReporter() throws FileNotFoundException {
@@ -310,8 +309,7 @@ class ErrandCommunicationIT extends AbstractAppTest {
 	}
 
 	/**
-	 * Test to verify email is NOT sent to reporter when reporter creates a message in an internal conversation for an
-	 * errand where stakeholder with reporter role is present.
+	 * Test to verify email is NOT sent to reporter when reporter creates a message in an internal conversation for an errand where stakeholder with reporter role is present.
 	 */
 	@Test
 	void test21_createInternalConversationMessageToAdministrator() throws FileNotFoundException {
