@@ -17,8 +17,8 @@ import static org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME
 @Schema(description = "A subscriber describes who receives notifications, which channels they prefer, and which event types they are interested in.")
 public class Subscriber {
 
-	@Null
-	@Schema(description = "Unique identifier of the subscriber. Read-only — set by the server on create and addressed via the URL path on update/delete.", examples = "123e4567-e89b-12d3-a456-426614174000", accessMode = READ_ONLY)
+	@Null(groups = OnCreate.class)
+	@Schema(description = "Unique identifier of the subscriber", examples = "123e4567-e89b-12d3-a456-426614174000", accessMode = READ_ONLY)
 	private String id;
 
 	@Schema(description = "Optional human-readable label. Useful when a person has several subscribers (e.g. one per role or purpose).", examples = "Servicedesk-bevakning")
