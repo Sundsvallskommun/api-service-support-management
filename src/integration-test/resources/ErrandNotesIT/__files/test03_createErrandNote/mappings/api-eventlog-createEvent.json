@@ -36,7 +36,12 @@
 					"sourceType": "Note",
 					"created": "${json-unit.any-string}",
 					"type": "CREATE",
-					"message": "Ärendenotering har skapats."
+					"message": "Ärendenotering har skapats.",
+					"subType": "NOTE",
+					"executingUser": {
+						"type": "AD_USER",
+						"value": "cre03ate"
+					}
 				},
 				"ignoreArrayOrder": true
 			}

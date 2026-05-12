@@ -1,6 +1,6 @@
 package se.sundsvall.supportmanagement.integration.db.model.enums;
 
-public enum NotificationSubType {
+public enum EventSubType {
 
 	ATTACHMENT,
 	DECISION,

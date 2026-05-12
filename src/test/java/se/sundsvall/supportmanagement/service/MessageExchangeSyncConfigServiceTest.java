@@ -25,7 +25,7 @@ import se.sundsvall.supportmanagement.integration.db.ConversationRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.ConversationEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.NotificationSubType;
+import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
 import se.sundsvall.supportmanagement.integration.messageexchange.MessageExchangeClient;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -123,7 +123,7 @@ class MessageExchangeSyncConfigServiceTest {
 		// Assert
 		verify(errandsRepositoryMock).getReferenceById(errandId);
 		verify(messageExchangeClientMock).getMessages(municipalityId, MESSAGE_EXCHANGE_NS, messageExchangeId, "sequenceNumber.id >123", Pageable.unpaged());
-		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Ny händelse för topic"), same(errandEntity), eq(null), eq(null), eq(true), eq(NotificationSubType.MESSAGE));
+		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Ny händelse för topic"), same(errandEntity), eq(null), eq(null), eq(true), eq(EventSubType.MESSAGE));
 		verify(conversationRepositoryMock).save(conversationEntityCaptor.capture());
 
 		final var savedEntity = conversationEntityCaptor.getValue();

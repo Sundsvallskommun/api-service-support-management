@@ -92,7 +92,7 @@ class NotificationRepositoryTest {
 	void findAllByNamespaceAndMunicipalityIdAndOwnerId() {
 
 		// Act
-		final var notifications = notificationRepository.findAllByNamespaceAndMunicipalityIdAndOwnerId("namespace-1", "2281", "owner_id-1");
+		final var notifications = notificationRepository.findAllByNamespaceAndMunicipalityIdAndOwnerId("namespace-1", "2281", "owner_id-1", Sort.by(Sort.Direction.DESC, "created"));
 
 		// Assert
 		assertThat(notifications).hasSize(1);

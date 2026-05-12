@@ -44,7 +44,12 @@
 					"sourceType": "Errand",
 					"created": "${json-unit.any-string}",
 					"type": "UPDATE",
-					"message": "En bilaga har lagts till i ärendet."
+					"message": "En bilaga har lagts till i ärendet.",
+					"subType": "ATTACHMENT",
+					"executingUser": {
+						"type": "AD_USER",
+						"value": "cre03ate"
+					}
 				},
 				"ignoreArrayOrder": true
 			}

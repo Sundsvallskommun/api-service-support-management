@@ -9,6 +9,8 @@
 		"bodyPatterns": [
 			{
 				"equalToJson": {
+					"type": "UPDATE",
+					"subType": "MESSAGE",
 					"owner": "SupportManagement",
 					"metadata": [
 						{
@@ -24,10 +26,9 @@
 							"value": "STATUS-1"
 						}
 					],
+					"message": "Nytt meddelande",
 					"sourceType": "Errand",
-					"created": "${json-unit.any-string}",
-					"type": "UPDATE",
-					"message": "Nytt meddelande"
+					"created": "${json-unit.any-string}"
 				},
 				"ignoreArrayOrder": true
 			}

@@ -19,7 +19,7 @@ import se.sundsvall.supportmanagement.integration.messageexchange.MessageExchang
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
 import static java.util.Optional.ofNullable;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationSubType.MESSAGE;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE;
 import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.mergeIntoConversationEntity;
 
 @Service

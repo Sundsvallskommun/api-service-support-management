@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.service.mapper;
 
 import generated.se.sundsvall.eventlog.Event;
 import generated.se.sundsvall.eventlog.EventType;
+import generated.se.sundsvall.eventlog.ExecutingUser;
 import generated.se.sundsvall.eventlog.Metadata;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -11,6 +12,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
+import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.event.EventMetaData;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
@@ -22,6 +24,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Map.entry;
 import static java.util.Optional.ofNullable;
+import static se.sundsvall.dept44.support.Identifier.Type.AD_ACCOUNT;
 import static se.sundsvall.supportmanagement.Constants.EXTERNAL_TAG_KEY_CASE_ID;
 import static se.sundsvall.supportmanagement.Constants.EXTERNAL_TAG_KEY_CHANNEL;
 import static se.sundsvall.supportmanagement.Constants.EXTERNAL_TAG_KEY_CURRENT_REVISION;
@@ -39,7 +42,7 @@ public class EventlogMapper {
 
 	private EventlogMapper() {}
 
-	public static Event toEvent(final EventType eventType, final String message, final String revision, final Class<?> sourceType, final Map<String, String> metaData, final String executedByUserId) {
+	public static Event toEvent(final EventType eventType, final String message, final String revision, final Class<?> sourceType, final Map<String, String> metaData, final Identifier executedBy, final String subType, final String requestGroupId) {
 		return new Event()
 			.created(now(systemDefault()))
 			.historyReference(revision)
@@ -47,13 +50,25 @@ public class EventlogMapper {
 			.owner(OWNER)
 			.sourceType(ofNullable(sourceType).map(Class::getSimpleName).orElse(null))
 			.type(eventType)
-			.metadata(toMetadata(metaData, ofNullable(executedByUserId)));
+			.subType(subType)
+			.requestGroupId(requestGroupId)
+			.executingUser(toExecutingUser(executedBy))
+			.metadata(toMetadata(metaData, ofNullable(executedBy)));
 	}
 
-	private static List<Metadata> toMetadata(final Map<String, String> metadata, final Optional<String> executedByUserId) {
+	private static ExecutingUser toExecutingUser(final Identifier identifier) {
+		return ofNullable(identifier)
+			.map(id -> new ExecutingUser()
+				.type(AD_ACCOUNT.equals(id.getType()) ? ExecutingUser.TypeEnum.AD_USER : ExecutingUser.TypeEnum.PARTY_ID)
+				.value(id.getValue()))
+			.orElse(null);
+	}
+
+	private static List<Metadata> toMetadata(final Map<String, String> metadata, final Optional<Identifier> executedBy) {
 		final var metadataList = new ArrayList<Metadata>();
 		metadataList.addAll(toMetadatas(metadata));
-		executedByUserId.ifPresent(userId -> metadataList.add(toMetadata(entry(EXTERNAL_TAG_KEY_EXECUTED_BY, userId))));
+		// ExecutedBy kept for backwards compatibility — superseded by executingUser field
+		executedBy.ifPresent(id -> metadataList.add(toMetadata(entry(EXTERNAL_TAG_KEY_EXECUTED_BY, id.getValue()))));
 
 		return metadataList;
 	}
@@ -129,13 +144,17 @@ public class EventlogMapper {
 
 	public static se.sundsvall.supportmanagement.api.model.event.Event toEvent(final Event event) {
 		return se.sundsvall.supportmanagement.api.model.event.Event.create()
+			.withId(event.getId())
 			.withCreated(event.getCreated())
 			.withHistoryReference(event.getHistoryReference())
 			.withMessage(event.getMessage())
+			.withDetails(event.getDetails())
 			.withMetadata(toMetadatas(event.getMetadata()))
 			.withOwner(event.getOwner())
 			.withSourceType(event.getSourceType())
-			.withType(toEventType(event.getType()));
+			.withType(toEventType(event.getType()))
+			.withSubType(event.getSubType())
+			.withRequestGroupId(event.getRequestGroupId());
 	}
 
 	private static se.sundsvall.supportmanagement.api.model.event.EventType toEventType(final EventType eventType) {

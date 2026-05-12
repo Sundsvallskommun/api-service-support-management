@@ -44,7 +44,12 @@
 					"sourceType": "Note",
 					"created": "${json-unit.any-string}",
 					"type": "UPDATE",
-					"message": "Ärendenotering har uppdaterats."
+					"message": "Ärendenotering har uppdaterats.",
+					"subType": "NOTE",
+					"executingUser": {
+						"type": "AD_USER",
+						"value": "upd04ate"
+					}
 				},
 				"ignoreArrayOrder": true
 			}

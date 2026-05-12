@@ -29,9 +29,12 @@ import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 
 public class ServiceUtil {
 
+	public static final String REQUEST_GROUP_ID_HEADER = "X-Request-Group-Id";
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(ServiceUtil.class);
 	private static final String MIME_ERROR_MSG = "Exception when detecting mime type of file with filename '{}'";
 	private static final Tika DETECTOR = new Tika();
+	private static final ThreadLocal<String> REQUEST_GROUP_ID = new ThreadLocal<>();
 
 	private ServiceUtil() {}
 
@@ -75,6 +78,26 @@ public class ServiceUtil {
 			.filter(identifier -> AD_ACCOUNT.equals(identifier.getType()))
 			.map(Identifier::getValue)
 			.orElse(null);
+	}
+
+	public static Identifier getExecutingUser() {
+		return Identifier.get();
+	}
+
+	public static void setRequestGroupId(final String requestGroupId) {
+		if (StringUtils.isBlank(requestGroupId)) {
+			REQUEST_GROUP_ID.remove();
+		} else {
+			REQUEST_GROUP_ID.set(requestGroupId);
+		}
+	}
+
+	public static String getRequestGroupId() {
+		return REQUEST_GROUP_ID.get();
+	}
+
+	public static void clearRequestGroupId() {
+		REQUEST_GROUP_ID.remove();
 	}
 
 	private static String handleFault(String filename, Exception e) {

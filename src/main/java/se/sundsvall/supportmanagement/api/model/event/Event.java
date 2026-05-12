@@ -12,11 +12,23 @@ import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 @Schema(description = "Event model", accessMode = READ_ONLY)
 public class Event {
 
+	@Schema(description = "Unique identifier for the event", examples = "922f95e3-608b-4e3c-ae22-f11fb849799a")
+	private String id;
+
 	@Schema(implementation = EventType.class)
 	private EventType type;
 
-	@Schema(description = "Event description", examples = "Errand has been created")
+	@Schema(description = "Subtype describing what kind of entity the event refers to", examples = "ATTACHMENT")
+	private String subType;
+
+	@Schema(description = "Groups related events and notifications together within one operation", examples = "f47ac10b-58cc-4372-a567-0e02b2c3d479")
+	private String requestGroupId;
+
+	@Schema(description = "Short event description", examples = "Bilaga har skapats")
 	private String message;
+
+	@Schema(description = "Detailed event description", examples = "Filnamn 'abc.pdf'")
+	private String details;
 
 	@Schema(description = "Service that created event", examples = "SupportManagement")
 	private String owner;
@@ -38,6 +50,19 @@ public class Event {
 		return new Event();
 	}
 
+	public String getId() {
+		return id;
+	}
+
+	public void setId(final String id) {
+		this.id = id;
+	}
+
+	public Event withId(final String id) {
+		this.id = id;
+		return this;
+	}
+
 	public EventType getType() {
 		return type;
 	}
@@ -51,6 +76,32 @@ public class Event {
 		return this;
 	}
 
+	public String getSubType() {
+		return subType;
+	}
+
+	public void setSubType(final String subType) {
+		this.subType = subType;
+	}
+
+	public Event withSubType(final String subType) {
+		this.subType = subType;
+		return this;
+	}
+
+	public String getRequestGroupId() {
+		return requestGroupId;
+	}
+
+	public void setRequestGroupId(final String requestGroupId) {
+		this.requestGroupId = requestGroupId;
+	}
+
+	public Event withRequestGroupId(final String requestGroupId) {
+		this.requestGroupId = requestGroupId;
+		return this;
+	}
+
 	public String getMessage() {
 		return message;
 	}
@@ -61,6 +112,19 @@ public class Event {
 
 	public Event withMessage(final String message) {
 		this.message = message;
+		return this;
+	}
+
+	public String getDetails() {
+		return details;
+	}
+
+	public void setDetails(final String details) {
+		this.details = details;
+	}
+
+	public Event withDetails(final String details) {
+		this.details = details;
 		return this;
 	}
 
@@ -131,7 +195,7 @@ public class Event {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(created, historyReference, message, metadata, owner, sourceType, type);
+		return Objects.hash(id, type, subType, requestGroupId, message, details, owner, created, historyReference, sourceType, metadata);
 	}
 
 	@Override
@@ -142,13 +206,16 @@ public class Event {
 		if (!(obj instanceof final Event other)) {
 			return false;
 		}
-		return Objects.equals(created, other.created) && Objects.equals(historyReference, other.historyReference) && Objects.equals(message, other.message) && Objects.equals(metadata, other.metadata) && Objects.equals(owner, other.owner) && Objects
-			.equals(sourceType, other.sourceType) && type == other.type;
+		return Objects.equals(id, other.id) && type == other.type && Objects.equals(subType, other.subType) && Objects.equals(requestGroupId, other.requestGroupId)
+			&& Objects.equals(message, other.message) && Objects.equals(details, other.details) && Objects.equals(owner, other.owner)
+			&& Objects.equals(created, other.created) && Objects.equals(historyReference, other.historyReference)
+			&& Objects.equals(sourceType, other.sourceType) && Objects.equals(metadata, other.metadata);
 	}
 
 	@Override
 	public String toString() {
-		return "Event [type=" + type + ", message=" + message + ", owner=" + owner + ", created=" + created + ", historyReference=" + historyReference + ", sourceType="
-			+ sourceType + ", metadata=" + metadata + "]";
+		return "Event [id=" + id + ", type=" + type + ", subType=" + subType + ", requestGroupId=" + requestGroupId
+			+ ", message=" + message + ", details=" + details + ", owner=" + owner + ", created=" + created
+			+ ", historyReference=" + historyReference + ", sourceType=" + sourceType + ", metadata=" + metadata + "]";
 	}
 }

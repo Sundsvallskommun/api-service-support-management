@@ -37,7 +37,11 @@ class EventTest {
 	@Test
 	void testBuilderMethods() {
 		final var eventType = EventType.CREATE;
+		final var id = "id";
+		final var subType = "ATTACHMENT";
+		final var requestGroupId = "requestGroupId";
 		final var message = "message";
+		final var details = "details";
 		final var owner = "owner";
 		final var timestamp = OffsetDateTime.now();
 		final var historyReference = "historyReference";
@@ -45,22 +49,30 @@ class EventTest {
 		final var metadata = EventMetaData.create().withKey("key").withValue("value");
 
 		final var bean = Event.create()
+			.withId(id)
 			.withCreated(timestamp)
 			.withHistoryReference(historyReference)
 			.withMessage(message)
+			.withDetails(details)
 			.withMetadata(List.of(metadata))
 			.withOwner(owner)
 			.withSourceType(sourceType)
-			.withType(eventType);
+			.withType(eventType)
+			.withSubType(subType)
+			.withRequestGroupId(requestGroupId);
 
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
+		assertThat(bean.getId()).isEqualTo(id);
 		assertThat(bean.getCreated()).isEqualTo(timestamp);
 		assertThat(bean.getHistoryReference()).isEqualTo(historyReference);
 		assertThat(bean.getMessage()).isEqualTo(message);
+		assertThat(bean.getDetails()).isEqualTo(details);
 		assertThat(bean.getMetadata()).containsExactly(metadata);
 		assertThat(bean.getOwner()).isEqualTo(owner);
 		assertThat(bean.getSourceType()).isEqualTo(sourceType);
 		assertThat(bean.getType()).isEqualTo(eventType);
+		assertThat(bean.getSubType()).isEqualTo(subType);
+		assertThat(bean.getRequestGroupId()).isEqualTo(requestGroupId);
 	}
 
 	@Test

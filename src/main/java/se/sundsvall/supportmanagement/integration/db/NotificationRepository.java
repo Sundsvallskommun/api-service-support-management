@@ -43,7 +43,8 @@ public interface NotificationRepository extends JpaRepository<NotificationEntity
 	List<NotificationEntity> findAllByNamespaceAndMunicipalityIdAndOwnerId(
 		final String namespace,
 		final String municipalityId,
-		final String ownerId);
+		final String ownerId,
+		final Sort sort);
 
 	void deleteByExpiresBefore(final OffsetDateTime expires);
 }

@@ -6,6 +6,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.data.domain.Sort;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
@@ -16,6 +18,8 @@ import se.sundsvall.supportmanagement.service.NotificationService;
 
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -43,7 +47,8 @@ class NotificationsResourceTest {
 	@Test
 	void getNotificationsByOwnerId() {
 		// Mock
-		when(notificationServiceMock.getNotificationsByOwnerId(MUNICIPALITY_ID, NAMESPACE, "12")).thenReturn(List.of(Notification.create()));
+		when(notificationServiceMock.getNotificationsByOwnerId(eq(MUNICIPALITY_ID), eq(NAMESPACE), eq("12"), any(Sort.class)))
+			.thenReturn(List.of(Notification.create()));
 
 		final var response = webTestClient.get()
 			.uri(builder -> builder.path(GLOBAL_NOTIFICATION_PATH)
@@ -53,12 +58,12 @@ class NotificationsResourceTest {
 			.exchange()
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)
-			.expectBody(List.class)
+			.expectBody(new ParameterizedTypeReference<List<Notification>>() {})
 			.returnResult();
 
 		// Verification
 		assertThat(response).isNotNull();
-		verify(notificationServiceMock).getNotificationsByOwnerId(MUNICIPALITY_ID, NAMESPACE, "12");
+		verify(notificationServiceMock).getNotificationsByOwnerId(eq(MUNICIPALITY_ID), eq(NAMESPACE), eq("12"), any(Sort.class));
 	}
 
 	@Test

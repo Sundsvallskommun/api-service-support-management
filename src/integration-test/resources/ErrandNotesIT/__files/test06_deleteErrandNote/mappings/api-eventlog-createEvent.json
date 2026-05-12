@@ -36,7 +36,12 @@
 					"sourceType": "Note",
 					"created": "${json-unit.any-string}",
 					"type": "DELETE",
-					"message": "Ärendenotering har raderats."
+					"message": "Ärendenotering har raderats.",
+					"subType": "NOTE",
+					"executingUser": {
+						"type": "AD_USER",
+						"value": "del06ete"
+					}
 				},
 				"ignoreArrayOrder": true
 			}

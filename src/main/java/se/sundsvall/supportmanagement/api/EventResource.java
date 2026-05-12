@@ -58,4 +58,5 @@ class EventResource {
 
 		return ok(eventService.readEvents(municipalityId, errandId, pageable));
 	}
+
 }

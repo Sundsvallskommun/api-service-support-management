@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.service.mapper;
 
 import generated.se.sundsvall.eventlog.Event;
 import generated.se.sundsvall.eventlog.EventType;
+import generated.se.sundsvall.eventlog.ExecutingUser;
 import generated.se.sundsvall.eventlog.Metadata;
 import generated.se.sundsvall.notes.Note;
 import java.util.List;
@@ -12,6 +13,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.event.EventMetaData;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
@@ -26,15 +28,21 @@ import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static org.assertj.core.groups.Tuple.tuple;
+import static se.sundsvall.dept44.support.Identifier.Type.AD_ACCOUNT;
+import static se.sundsvall.dept44.support.Identifier.Type.PARTY_ID;
 
 class EventlogMapperTest {
 
 	private static final String OWNER = "SupportManagement";
 	private static final String SOURCE_TYPE = "Errand";
 	private static final String EXECUTED_BY = "ExecutedBy";
+	private static final String AD_USER_ID = "john.doe";
+	private static final String PARTY_UUID = "e82c8029-7676-467d-8ebb-8638d0abd2b4";
 	private static final EventType EVENT_TYPE = EventType.CREATE;
 	private static final String MESSAGE = "message";
 	private static final String REVISION = "revision";
+	private static final String SUB_TYPE = "ATTACHMENT";
+	private static final String REQUEST_GROUP_ID = "requestGroupId";
 	private static final String META_KEY = "metaKey";
 	private static final String META_VALUE = "metaValue";
 	private static final Map<String, String> META_DATA = Map.of(META_KEY, META_VALUE);
@@ -52,7 +60,7 @@ class EventlogMapperTest {
 
 	@Test
 	void toEventAllNulls() {
-		assertThat(EventlogMapper.toEvent(null, null, null, null, null, null))
+		assertThat(EventlogMapper.toEvent(null, null, null, null, null, null, null, null))
 			.isNotNull()
 			.hasAllNullFieldsOrPropertiesExcept("created", "owner", "metadata")
 			.extracting(
@@ -67,12 +75,12 @@ class EventlogMapperTest {
 	@ValueSource(classes = {
 		Errand.class, Note.class
 	})
-	void toEventWithExecutingUserId(Class<?> clazz) {
+	void toEventWithAdAccountExecutingUser(Class<?> clazz) {
 		// Setup
-		final var userId = "userId";
+		final var identifier = Identifier.create().withType(AD_ACCOUNT).withValue(AD_USER_ID);
 
 		// Execute
-		final var result = EventlogMapper.toEvent(EVENT_TYPE, MESSAGE, REVISION, clazz, META_DATA, userId);
+		final var result = EventlogMapper.toEvent(EVENT_TYPE, MESSAGE, REVISION, clazz, META_DATA, identifier, SUB_TYPE, REQUEST_GROUP_ID);
 
 		// Assert
 		assertThat(result.getCreated()).isCloseTo(now(systemDefault()), within(2, SECONDS));
@@ -82,21 +90,51 @@ class EventlogMapperTest {
 		assertThat(result.getOwner()).isEqualTo(OWNER);
 		assertThat(result.getSourceType()).isEqualTo(clazz.getSimpleName());
 		assertThat(result.getType()).isEqualTo(EVENT_TYPE);
+		assertThat(result.getSubType()).isEqualTo(SUB_TYPE);
+		assertThat(result.getRequestGroupId()).isEqualTo(REQUEST_GROUP_ID);
+		assertThat(result.getExecutingUser()).isNotNull()
+			.satisfies(eu -> {
+				assertThat(eu.getType()).isEqualTo(ExecutingUser.TypeEnum.AD_USER);
+				assertThat(eu.getValue()).isEqualTo(AD_USER_ID);
+			});
 		assertThat(result.getMetadata()).hasSize(2)
-			.extracting(
-				Metadata::getKey, Metadata::getValue)
+			.extracting(Metadata::getKey, Metadata::getValue)
 			.containsExactlyInAnyOrder(
 				tuple(META_KEY, META_VALUE),
-				tuple(EXECUTED_BY, userId));
+				tuple(EXECUTED_BY, AD_USER_ID));
 	}
 
 	@ParameterizedTest
 	@ValueSource(classes = {
 		Errand.class, Note.class
 	})
-	void toEventWithoutExecutingUserId(Class<?> clazz) {
+	void toEventWithPartyIdExecutingUser(Class<?> clazz) {
+		// Setup
+		final var identifier = Identifier.create().withType(PARTY_ID).withValue(PARTY_UUID);
+
 		// Execute
-		final var result = EventlogMapper.toEvent(EVENT_TYPE, MESSAGE, REVISION, clazz, META_DATA, null);
+		final var result = EventlogMapper.toEvent(EVENT_TYPE, MESSAGE, REVISION, clazz, META_DATA, identifier, SUB_TYPE, REQUEST_GROUP_ID);
+
+		// Assert
+		assertThat(result.getExecutingUser()).isNotNull()
+			.satisfies(eu -> {
+				assertThat(eu.getType()).isEqualTo(ExecutingUser.TypeEnum.PARTY_ID);
+				assertThat(eu.getValue()).isEqualTo(PARTY_UUID);
+			});
+		assertThat(result.getMetadata()).hasSize(2)
+			.extracting(Metadata::getKey, Metadata::getValue)
+			.containsExactlyInAnyOrder(
+				tuple(META_KEY, META_VALUE),
+				tuple(EXECUTED_BY, PARTY_UUID));
+	}
+
+	@ParameterizedTest
+	@ValueSource(classes = {
+		Errand.class, Note.class
+	})
+	void toEventWithoutExecutingUser(Class<?> clazz) {
+		// Execute
+		final var result = EventlogMapper.toEvent(EVENT_TYPE, MESSAGE, REVISION, clazz, META_DATA, null, SUB_TYPE, REQUEST_GROUP_ID);
 
 		// Assert
 		assertThat(result.getCreated()).isCloseTo(now(systemDefault()), within(2, SECONDS));
@@ -106,11 +144,12 @@ class EventlogMapperTest {
 		assertThat(result.getOwner()).isEqualTo(OWNER);
 		assertThat(result.getSourceType()).isEqualTo(clazz.getSimpleName());
 		assertThat(result.getType()).isEqualTo(EVENT_TYPE);
+		assertThat(result.getSubType()).isEqualTo(SUB_TYPE);
+		assertThat(result.getRequestGroupId()).isEqualTo(REQUEST_GROUP_ID);
+		assertThat(result.getExecutingUser()).isNull();
 		assertThat(result.getMetadata()).hasSize(1)
-			.extracting(
-				Metadata::getKey, Metadata::getValue)
-			.containsExactly(
-				tuple(META_KEY, META_VALUE));
+			.extracting(Metadata::getKey, Metadata::getValue)
+			.containsExactly(tuple(META_KEY, META_VALUE));
 	}
 
 	@ParameterizedTest
@@ -168,34 +207,44 @@ class EventlogMapperTest {
 	@MethodSource("eventFromEventlogEventArgumentProvider")
 	void toEventFromEventlogEvent(EventType returnedType, se.sundsvall.supportmanagement.api.model.event.EventType mappedType) {
 		final var created = now(systemDefault());
+		final var eventId = "eventId";
 		final var eventlogEvent = new Event()
+			.id(eventId)
 			.created(created)
 			.historyReference(CURRENT_ID)
 			.message(MESSAGE)
 			.metadata(List.of(new Metadata().key(META_KEY).value(META_VALUE)))
 			.owner(OWNER)
 			.sourceType(SOURCE_TYPE)
-			.type(returnedType);
+			.type(returnedType)
+			.subType(SUB_TYPE)
+			.requestGroupId(REQUEST_GROUP_ID);
 
 		final var event = EventlogMapper.toEvent(eventlogEvent);
 
 		assertThat(event).isNotNull()
 			.extracting(
+				se.sundsvall.supportmanagement.api.model.event.Event::getId,
 				se.sundsvall.supportmanagement.api.model.event.Event::getCreated,
 				se.sundsvall.supportmanagement.api.model.event.Event::getHistoryReference,
 				se.sundsvall.supportmanagement.api.model.event.Event::getMessage,
 				se.sundsvall.supportmanagement.api.model.event.Event::getMetadata,
 				se.sundsvall.supportmanagement.api.model.event.Event::getOwner,
 				se.sundsvall.supportmanagement.api.model.event.Event::getSourceType,
-				se.sundsvall.supportmanagement.api.model.event.Event::getType)
+				se.sundsvall.supportmanagement.api.model.event.Event::getType,
+				se.sundsvall.supportmanagement.api.model.event.Event::getSubType,
+				se.sundsvall.supportmanagement.api.model.event.Event::getRequestGroupId)
 			.containsExactly(
+				eventId,
 				created,
 				CURRENT_ID,
 				MESSAGE,
 				List.of(EventMetaData.create().withKey(META_KEY).withValue(META_VALUE)),
 				OWNER,
 				SOURCE_TYPE,
-				mappedType);
+				mappedType,
+				SUB_TYPE,
+				REQUEST_GROUP_ID);
 	}
 
 	private static Stream<Arguments> eventFromEventlogEventArgumentProvider() {
@@ -217,9 +266,17 @@ class EventlogMapperTest {
 			.hasAllNullFieldsOrPropertiesExcept("type", "metadata")
 			.extracting(
 				se.sundsvall.supportmanagement.api.model.event.Event::getType,
-				se.sundsvall.supportmanagement.api.model.event.Event::getMetadata)
-			.contains(
+				se.sundsvall.supportmanagement.api.model.event.Event::getMetadata,
+				se.sundsvall.supportmanagement.api.model.event.Event::getId,
+				se.sundsvall.supportmanagement.api.model.event.Event::getSubType,
+				se.sundsvall.supportmanagement.api.model.event.Event::getRequestGroupId,
+				se.sundsvall.supportmanagement.api.model.event.Event::getDetails)
+			.containsExactly(
 				se.sundsvall.supportmanagement.api.model.event.EventType.UNKNOWN,
-				emptyList());
+				emptyList(),
+				null,
+				null,
+				null,
+				null);
 	}
 }

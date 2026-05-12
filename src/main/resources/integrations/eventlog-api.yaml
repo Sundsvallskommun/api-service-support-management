@@ -10,6 +10,47 @@ tags:
   - name: Events
     description: Event operations
 paths:
+  /{municipalityId}/events/{id}:
+    get:
+      tags:
+        - Events
+      summary: Fetch a single log event
+      description: Fetch a single log event by its own id
+      operationId: getEvent
+      parameters:
+        - name: municipalityId
+          in: path
+          description: Municipality id
+          required: true
+          schema:
+            type: string
+          example: 2281
+        - name: id
+          in: path
+          description: The unique id of the event
+          required: true
+          schema:
+            type: string
+          example: 922f95e3-608b-4e3c-ae22-f11fb849799a
+      responses:
+        "200":
+          description: Successful Operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Event"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{logKey}:
     get:
       tags:
@@ -423,6 +464,21 @@ components:
           type: string
         message:
           type: string
+    ExecutingUser:
+      type: object
+      properties:
+        type:
+          type: string
+          description: The type of identifier for the executing user
+          enum:
+            - AD_USER
+            - PARTY_ID
+          example: AD_USER
+        value:
+          type: string
+          description: The identifier value, e.g. an AD username or a party UUID
+          example: john.doe
+      description: The user that triggered the event
     Event:
       required:
         - message
@@ -430,13 +486,28 @@ components:
         - type
       type: object
       properties:
+        id:
+          type: string
+          description: Unique identifier for the event
+          readOnly: true
+          example: 922f95e3-608b-4e3c-ae22-f11fb849799a
         logKey:
           type: string
-          description: Unique identifier
+          description: The logKey this event is stored under
           readOnly: true
           example: fbe2fb67-005c-4f26-990f-1c95b5f6933e
         type:
           $ref: "#/components/schemas/EventType"
+        subType:
+          type: string
+          description: Subtype describing what kind of entity the event refers to
+          example: ATTACHMENT
+        executingUser:
+          $ref: "#/components/schemas/ExecutingUser"
+        requestGroupId:
+          type: string
+          description: Groups related events and notifications together within one operation
+          example: f47ac10b-58cc-4372-a567-0e02b2c3d479
         municipalityId:
           type: string
           description: Municipality ID
@@ -445,8 +516,13 @@ components:
         message:
           minLength: 1
           type: string
-          description: Event description
-          example: Request saved in database
+          description: Short event description
+          example: Bilaga har skapats
+        details:
+          type: string
+          description: Detailed event description
+          nullable: true
+          example: "Filnamn 'abc.pdf'"
         expires:
           type: string
           description: Date when event can be scheduled for delete. 'null' means never
@@ -473,7 +549,7 @@ components:
           type: string
           description: Source which the event refers to
           nullable: true
-          example: errand
+          example: Errand
         metadata:
           type: array
           items:

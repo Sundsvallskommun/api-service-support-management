@@ -36,7 +36,12 @@
 					"sourceType": "Errand",
 					"created": "${json-unit.any-string}",
 					"type": "DELETE",
-					"message": "Ärendet har raderats."
+					"message": "Ärendet har raderats.",
+					"subType": "ERRAND",
+					"executingUser": {
+						"type": "AD_USER",
+						"value": "smo02key"
+					}
 				},
 				"ignoreArrayOrder": true
 			}

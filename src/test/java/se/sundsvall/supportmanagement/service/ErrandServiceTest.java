@@ -65,7 +65,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.data.domain.Sort.Direction.DESC;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrand;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrandEntity;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationSubType.ERRAND;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
 
 @ExtendWith(MockitoExtension.class)
 class ErrandServiceTest {

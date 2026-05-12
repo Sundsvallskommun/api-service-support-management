@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -23,15 +24,54 @@ import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.clearRequestGroupId;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getRequestGroupId;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.setRequestGroupId;
 
 class ServiceUtilTest {
 
 	private static final String PATH = "mimetype_files/";
+
+	@AfterEach
+	void clearRequestGroupId() {
+		ServiceUtil.clearRequestGroupId();
+	}
+
 	private static final String IMG_FILE_NAME = "image.jpg";
 	private static final String DOC_FILE_NAME = "document.doc";
 	private static final String DOCX_FILE_NAME = "document.docx";
 	private static final String PDF_FILE_NAME = "document.pdf";
 	private static final String TXT_FILE_NAME = "document.txt";
+
+	@Test
+	void getRequestGroupIdReturnsSetValue() {
+		final var requestGroupId = UUID.randomUUID().toString();
+
+		ServiceUtil.setRequestGroupId(requestGroupId);
+
+		assertThat(ServiceUtil.getRequestGroupId()).isEqualTo(requestGroupId);
+	}
+
+	@Test
+	void getRequestGroupIdReturnsNullWhenNotSet() {
+		assertThat(ServiceUtil.getRequestGroupId()).isNull();
+	}
+
+	@Test
+	void clearRequestGroupIdRemovesValue() {
+		ServiceUtil.setRequestGroupId(UUID.randomUUID().toString());
+		ServiceUtil.clearRequestGroupId();
+
+		assertThat(ServiceUtil.getRequestGroupId()).isNull();
+	}
+
+	@Test
+	void setRequestGroupIdWithBlankValueClearsIt() {
+		ServiceUtil.setRequestGroupId(UUID.randomUUID().toString());
+		ServiceUtil.setRequestGroupId("  ");
+
+		assertThat(ServiceUtil.getRequestGroupId()).isNull();
+	}
 
 	@ParameterizedTest
 	@MethodSource("toValidUuidsStreamArguments")

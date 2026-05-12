@@ -40,7 +40,12 @@
 					"sourceType": "Errand",
 					"created": "${json-unit.any-string}",
 					"type": "CREATE",
-					"message": "Ärendet har skapats."
+					"message": "Ärendet har skapats.",
+					"subType": "ERRAND",
+					"executingUser": {
+						"type": "AD_USER",
+						"value": "joe01doe"
+					}
 				},
 				"ignoreArrayOrder": true
 			}

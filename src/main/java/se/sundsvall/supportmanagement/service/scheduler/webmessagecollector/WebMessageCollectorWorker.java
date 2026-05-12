@@ -15,7 +15,7 @@ import se.sundsvall.supportmanagement.service.CommunicationService;
 import se.sundsvall.supportmanagement.service.EventService;
 
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationSubType.MESSAGE;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE;
 import static se.sundsvall.supportmanagement.integration.db.specification.ErrandSpecification.hasMatchingTags;
 
 @Component

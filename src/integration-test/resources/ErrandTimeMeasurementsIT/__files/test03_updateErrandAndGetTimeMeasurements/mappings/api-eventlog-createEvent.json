@@ -32,7 +32,8 @@
 					"sourceType": "Errand",
 					"created": "${json-unit.any-string}",
 					"type": "UPDATE",
-					"message": "Ärendet har uppdaterats."
+					"message": "Ärendet har uppdaterats.",
+					"subType": "ERRAND"
 				},
 				"ignoreArrayOrder": true
 			}

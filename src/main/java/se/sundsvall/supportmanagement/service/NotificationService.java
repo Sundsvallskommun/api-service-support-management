@@ -57,8 +57,8 @@ public class NotificationService {
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, NOTIFICATION_ENTITY_NOT_FOUND.formatted(notificationId, namespace, municipalityId, errandId)));
 	}
 
-	public List<Notification> getNotificationsByOwnerId(final String municipalityId, final String namespace, final String ownerId) {
-		return notificationRepository.findAllByNamespaceAndMunicipalityIdAndOwnerId(namespace, municipalityId, ownerId)
+	public List<Notification> getNotificationsByOwnerId(final String municipalityId, final String namespace, final String ownerId, final Sort sort) {
+		return notificationRepository.findAllByNamespaceAndMunicipalityIdAndOwnerId(namespace, municipalityId, ownerId, sort)
 			.stream()
 			.map(NotificationMapper::toNotification)
 			.toList();
