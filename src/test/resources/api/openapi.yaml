@@ -7957,8 +7957,7 @@ components:
       properties:
         id:
           type: string
-          description: Unique identifier of the subscriber. Read-only — set by the
-            server on create and addressed via the URL path on update/delete.
+          description: Unique identifier of the subscriber
           examples:
           - 123e4567-e89b-12d3-a456-426614174000
           readOnly: true
