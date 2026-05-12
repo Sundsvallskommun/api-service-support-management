@@ -5,9 +5,9 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "14.1"
+  version: "14.2"
 servers:
-- url: http://localhost:52509
+- url: http://localhost:59882
   description: Generated server url
 tags:
 - name: Errand attachments
@@ -26,6 +26,11 @@ tags:
   description: Errand and errand note revision operations
 - name: Metadata for labels
   description: Label metadata operations
+- name: Subscriptions
+  description: "Subscription operations. A subscription describes what a subscriber\
+    \ listens for (an errand or all events in a namespace). Subscriptions support\
+    \ create, list and delete — to change what is being listened to, delete and create\
+    \ a new one."
 - name: Errand notes
   description: Errand notes operations
 - name: Metadata for contact reasons
@@ -38,6 +43,9 @@ tags:
   description: ExternalIdType metadata operations
 - name: Metadata
   description: Metadata operations
+- name: Subscribers
+  description: "Subscriber CRUD operations. A subscriber describes who receives notifications\
+    \ and how (channels, event filters, optional pause window)."
 - name: Metadata for roles
   description: Role metadata operations
 - name: Time measures
@@ -1086,6 +1094,291 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/subscribers:
+    get:
+      tags:
+      - Subscribers
+      summary: List subscribers
+      description: List subscribers in the namespace. Optionally filter by identifier
+        (both type and value must be provided together).
+      operationId: getSubscribers
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality ID
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: identifierType
+        in: query
+        description: Optional filter — identifier type (adAccount or partyId). Must
+          be combined with identifierValue.
+        required: false
+        schema:
+          type: string
+      - name: identifierValue
+        in: query
+        description: Optional filter — identifier value. Must be combined with identifierType.
+        required: false
+        schema:
+          type: string
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Subscriber"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    post:
+      tags:
+      - Subscribers
+      summary: Create subscriber
+      description: Create a new subscriber in the namespace.
+      operationId: createSubscriber
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality ID
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Subscriber"
+        required: true
+      responses:
+        "201":
+          description: Created
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
+        "409":
+          description: Conflict — a subscriber with the same identifier and name already
+            exists in the namespace
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/subscribers/{subscriberId}/subscriptions:
+    get:
+      tags:
+      - Subscriptions
+      summary: List subscriptions
+      description: List all subscriptions owned by the given subscriber.
+      operationId: getSubscriptions
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality ID
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: subscriberId
+        in: path
+        description: Subscriber ID
+        required: true
+        schema:
+          type: string
+        example: 123e4567-e89b-12d3-a456-426614174000
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Subscription"
+        "404":
+          description: Subscriber not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    post:
+      tags:
+      - Subscriptions
+      summary: Create subscription
+      description: "Create a new subscription for the given subscriber. The request\
+        \ body's target field decides what is being subscribed to: an errand (target.type=ERRAND,\
+        \ target.id=<errand UUID>) or the whole namespace (target.type=NAMESPACE).\
+        \ Optionally include eventFilters to override the subscriber's global filters\
+        \ for this subscription only."
+      operationId: createSubscription
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality ID
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: subscriberId
+        in: path
+        description: Subscriber ID
+        required: true
+        schema:
+          type: string
+        example: 123e4567-e89b-12d3-a456-426614174000
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Subscription"
+        required: true
+      responses:
+        "201":
+          description: Created
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
+        "404":
+          description: Subscriber not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: Conflict — an equivalent subscription already exists
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
         "500":
           description: Internal Server error
           content:
@@ -3233,6 +3526,208 @@ paths:
               style: simple
               schema:
                 type: string
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/subscribers/{subscriberId}:
+    get:
+      tags:
+      - Subscribers
+      summary: Get subscriber
+      description: Fetch a single subscriber by id.
+      operationId: getSubscriber
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality ID
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: subscriberId
+        in: path
+        description: Subscriber ID
+        required: true
+        schema:
+          type: string
+        example: 123e4567-e89b-12d3-a456-426614174000
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscriber"
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    delete:
+      tags:
+      - Subscribers
+      summary: Delete subscriber
+      description: Delete a subscriber. All subscriptions owned by the subscriber
+        are also removed.
+      operationId: deleteSubscriber
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality ID
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: subscriberId
+        in: path
+        description: Subscriber ID
+        required: true
+        schema:
+          type: string
+        example: 123e4567-e89b-12d3-a456-426614174000
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      responses:
+        "204":
+          description: Successful operation
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    patch:
+      tags:
+      - Subscribers
+      summary: Update subscriber
+      description: "Partially update an existing subscriber. Only non-null fields\
+        \ in the request body are applied. Use this endpoint to change channels, event\
+        \ filters, name, or to set/clear the pause window. Identifier is immutable\
+        \ — to change it, delete and recreate."
+      operationId: updateSubscriber
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality ID
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: subscriberId
+        in: path
+        description: Subscriber ID
+        required: true
+        schema:
+          type: string
+        example: 123e4567-e89b-12d3-a456-426614174000
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Subscriber"
+        required: true
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscriber"
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -6843,6 +7338,75 @@ paths:
       x-auth-type: None
       x-throttling-tier: Unlimited
       x-wso2-mutual-ssl: Optional
+  /{municipalityId}/{namespace}/subscribers/{subscriberId}/subscriptions/{subscriptionId}:
+    delete:
+      tags:
+      - Subscriptions
+      summary: Delete subscription
+      description: Delete a subscription owned by the given subscriber.
+      operationId: deleteSubscription
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality ID
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: subscriberId
+        in: path
+        description: Subscriber ID
+        required: true
+        schema:
+          type: string
+        example: 123e4567-e89b-12d3-a456-426614174000
+      - name: subscriptionId
+        in: path
+        description: Subscription ID
+        required: true
+        schema:
+          type: string
+        example: 123e4567-e89b-12d3-a456-426614174000
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      responses:
+        "204":
+          description: Successful operation
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/metadata/phases/{phaseId}/transitions/{transitionId}:
     delete:
       tags:
@@ -7321,6 +7885,202 @@ components:
           description: If set to true conversations will be synced
       required:
       - active
+    EventFilter:
+      type: object
+      description: "Filter on event type/subtype, used to limit which eventlog events\
+        \ trigger a notification"
+      properties:
+        type:
+          type: string
+          description: "Event type. Matches the eventlog EventType enum (CREATE, READ,\
+            \ UPDATE, DELETE, ACCESS, EXECUTE, CANCEL, DROP)."
+          examples:
+          - UPDATE
+          minLength: 1
+        subtype:
+          type: string
+          description: "Event subtype. If null, all subtypes of the given type match."
+          examples:
+          - ATTACHMENT
+      required:
+      - type
+    Identifier:
+      type: object
+      description: Identifier describing a user or subject (AD-account or party-id)
+      properties:
+        type:
+          type: string
+          description: Identifier type
+          enum:
+          - adAccount
+          - partyId
+          examples:
+          - adAccount
+          - partyId
+          minLength: 1
+          pattern: ^(adAccount|partyId)$
+        value:
+          type: string
+          description: Identifier value (AD-account name or partyId UUID)
+          examples:
+          - joe01doe
+          minLength: 1
+      required:
+      - type
+      - value
+    NotificationChannel:
+      type: object
+      description: Channel a subscriber wants to receive notifications on
+      properties:
+        type:
+          type: string
+          description: Channel type
+          enum:
+          - INTERNAL
+          - EMAIL
+          - SMS
+          examples:
+          - EMAIL
+        destination:
+          type: string
+          description: "Optional destination override (e.g. an alternative e-mail\
+            \ address or phone number). If omitted, the default destination derived\
+            \ from the subscriber's identifier is used."
+          examples:
+          - user@example.com
+      required:
+      - type
+    Subscriber:
+      type: object
+      description: "A subscriber describes who receives notifications, which channels\
+        \ they prefer, and which event types they are interested in."
+      properties:
+        id:
+          type: string
+          description: Unique identifier of the subscriber. Read-only — set by the
+            server on create and addressed via the URL path on update/delete.
+          examples:
+          - 123e4567-e89b-12d3-a456-426614174000
+          readOnly: true
+        name:
+          type: string
+          description: Optional human-readable label. Useful when a person has several
+            subscribers (e.g. one per role or purpose).
+          examples:
+          - Servicedesk-bevakning
+        identifier:
+          $ref: "#/components/schemas/Identifier"
+          description: Identifier of the principal that ultimately receives notifications
+            (AD-account or partyId).
+        channels:
+          type: array
+          description: "Channels the subscriber wants to receive notifications on.\
+            \ If empty, defaults to INTERNAL."
+          items:
+            $ref: "#/components/schemas/NotificationChannel"
+        eventFilters:
+          type: array
+          description: "Event filters that restrict which eventlog events trigger\
+            \ notifications. If empty, all events match."
+          items:
+            $ref: "#/components/schemas/EventFilter"
+        pausedFrom:
+          type: string
+          format: date-time
+          description: When the subscriber's notifications are paused from (inclusive).
+            Null means not paused.
+          examples:
+          - 2026-06-01T00:00:00+02:00
+        pausedUntil:
+          type: string
+          format: date-time
+          description: When the subscriber's notifications resume (exclusive). Null
+            means paused indefinitely (only meaningful if pausedFrom is set).
+          examples:
+          - 2026-06-30T00:00:00+02:00
+        created:
+          type: string
+          format: date-time
+          description: Timestamp when the subscriber was created
+          readOnly: true
+        modified:
+          type: string
+          format: date-time
+          description: Timestamp when the subscriber was last modified
+          readOnly: true
+        createdBy:
+          $ref: "#/components/schemas/Identifier"
+          description: Identifier of the principal that created the subscriber
+          readOnly: true
+        subscriptionCount:
+          type: integer
+          format: int32
+          description: Number of subscriptions currently owned by this subscriber
+          examples:
+          - "3"
+          readOnly: true
+    Subscription:
+      type: object
+      description: "A subscription describes what a subscriber is listening for (an\
+        \ errand or all events in a namespace). Subscriptions support create and delete\
+        \ only — to change what is being listened to, delete and create a new one."
+      properties:
+        id:
+          type: string
+          description: Unique identifier of the subscription
+          examples:
+          - 123e4567-e89b-12d3-a456-426614174000
+          readOnly: true
+        target:
+          $ref: "#/components/schemas/SubscriptionTarget"
+          description: What this subscription targets (an errand or the whole namespace).
+        eventFilters:
+          type: array
+          description: "Optional per-subscription override of the subscriber-level\
+            \ event filters. When set, these filters apply to events matched by this\
+            \ subscription instead of the subscriber's global filters. When null or\
+            \ empty, the subscriber-level filters are used as-is."
+          items:
+            $ref: "#/components/schemas/EventFilter"
+        expiresAt:
+          type: string
+          format: date-time
+          description: Optional expiration timestamp. After this point the subscription
+            is eligible for automatic cleanup.
+          examples:
+          - 2026-12-31T23:59:59+02:00
+        created:
+          type: string
+          format: date-time
+          description: Timestamp when the subscription was created
+          readOnly: true
+        createdBy:
+          $ref: "#/components/schemas/Identifier"
+          description: "Identifier of the principal that created the subscription\
+            \ (may differ from the owning subscriber, e.g. when an admin subscribes\
+            \ on behalf of someone else)."
+          readOnly: true
+    SubscriptionTarget:
+      type: object
+      description: What a subscription targets. The id field is required when type=ERRAND
+        and ignored when type=NAMESPACE.
+      properties:
+        type:
+          type: string
+          description: Target type
+          enum:
+          - ERRAND
+          - NAMESPACE
+          examples:
+          - ERRAND
+        id:
+          type: string
+          description: Identifier of the target. Required (errand UUID) when type=ERRAND.
+            Must be null when type=NAMESPACE.
+          examples:
+          - b82bd8ac-1507-4d9a-958d-369261eecc15
+      required:
+      - type
     Status:
       type: object
       description: Status model
@@ -8008,15 +8768,7 @@ components:
           type: boolean
         float:
           type: boolean
-        floatingPointNumber:
-          type: boolean
         container:
-          type: boolean
-        number:
-          type: boolean
-        valueNode:
-          type: boolean
-        missingNode:
           type: boolean
         nodeType:
           type: string
@@ -8030,30 +8782,38 @@ components:
           - OBJECT
           - POJO
           - STRING
-        string:
+        floatingPointNumber:
           type: boolean
-        integralNumber:
-          type: boolean
-        pojo:
-          type: boolean
-        short:
-          type: boolean
-        int:
-          type: boolean
-        long:
-          type: boolean
-        double:
+        valueNode:
           type: boolean
         bigDecimal:
           type: boolean
         bigInteger:
           type: boolean
+        integralNumber:
+          type: boolean
+        short:
+          type: boolean
+        pojo:
+          type: boolean
+        int:
+          type: boolean
+        string:
+          type: boolean
+        binary:
+          type: boolean
         textual:
           type: boolean
           deprecated: true
+        double:
+          type: boolean
         boolean:
           type: boolean
-        binary:
+        long:
+          type: boolean
+        missingNode:
+          type: boolean
+        number:
           type: boolean
         embeddedValue:
           type: boolean
@@ -8552,24 +9312,6 @@ components:
       enum:
       - INTERNAL
       - EXTERNAL
-    Identifier:
-      type: object
-      description: Identifier model
-      properties:
-        type:
-          type: string
-          description: The conversation identifier type
-          examples:
-          - adAccount
-          pattern: ^(adAccount|partyId)$
-        value:
-          type: string
-          description: The conversation identifier value
-          examples:
-          - joe01doe
-          minLength: 1
-      required:
-      - value
     KeyValues:
       type: object
       description: KeyValues model
@@ -8729,33 +9471,6 @@ components:
           items:
             $ref: "#/components/schemas/KeyValues"
             description: A list of metadata objects associated with the conversation
-    PageableObject:
-      type: object
-      properties:
-        offset:
-          type: integer
-          format: int64
-        sort:
-          $ref: "#/components/schemas/SortObject"
-        paged:
-          type: boolean
-        pageNumber:
-          type: integer
-          format: int32
-        pageSize:
-          type: integer
-          format: int32
-        unpaged:
-          type: boolean
-    SortObject:
-      type: object
-      properties:
-        empty:
-          type: boolean
-        sorted:
-          type: boolean
-        unsorted:
-          type: boolean
     ActionDefinition:
       type: object
       description: Action definition model describing an available action and its
@@ -8860,96 +9575,15 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Phase"
-    Event:
-      type: object
-      description: Event model
-      properties:
-        id:
-          type: string
-          description: Unique identifier for the event
-          examples:
-          - 922f95e3-608b-4e3c-ae22-f11fb849799a
-        type:
-          $ref: "#/components/schemas/EventType"
-        subType:
-          type: string
-          description: Subtype describing what kind of entity the event refers to
-          examples:
-          - ATTACHMENT
-        requestGroupId:
-          type: string
-          description: Groups related events and notifications together within one
-            operation
-          examples:
-          - f47ac10b-58cc-4372-a567-0e02b2c3d479
-        message:
-          type: string
-          description: Short event description
-          examples:
-          - Bilaga har skapats
-        details:
-          type: string
-          description: Detailed event description
-          examples:
-          - Filnamn 'abc.pdf'
-        owner:
-          type: string
-          description: Service that created event
-          examples:
-          - SupportManagement
-        created:
-          type: string
-          format: date-time
-          description: Timestamp when the event was created
-          examples:
-          - 2000-10-31T01:30:00.000+02:00
-        historyReference:
-          type: string
-          description: Reference to the snapshot of data at the time when the event
-            was created
-          examples:
-          - fbe2fb67-005c-4f26-990f-1c95b5f6933e
-        sourceType:
-          type: string
-          description: Source which the event refers to
-          examples:
-          - errand
-        metadata:
-          type: array
-          items:
-            $ref: "#/components/schemas/EventMetaData"
-      readOnly: true
-    EventMetaData:
-      type: object
-      description: Event Metadata model
-      properties:
-        key:
-          type: string
-          description: The key
-          examples:
-          - userId
-        value:
-          type: string
-          description: The value
-          examples:
-          - john123
-    EventType:
-      type: string
-      description: Type of event
-      enum:
-      - CREATE
-      - UPDATE
-      - DELETE
-      - UNKNOWN
     PageErrand:
       type: object
       properties:
-        totalElements:
-          type: integer
-          format: int64
         totalPages:
           type: integer
           format: int32
+        totalElements:
+          type: integer
+          format: int64
         size:
           type: integer
           format: int32
@@ -8960,18 +9594,45 @@ components:
         number:
           type: integer
           format: int32
-        numberOfElements:
-          type: integer
-          format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
         first:
           type: boolean
         last:
           type: boolean
-        sort:
-          $ref: "#/components/schemas/SortObject"
+        numberOfElements:
+          type: integer
+          format: int32
         pageable:
           $ref: "#/components/schemas/PageableObject"
         empty:
+          type: boolean
+    PageableObject:
+      type: object
+      properties:
+        offset:
+          type: integer
+          format: int64
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        pageNumber:
+          type: integer
+          format: int32
+        pageSize:
+          type: integer
+          format: int32
+        unpaged:
+          type: boolean
+        paged:
+          type: boolean
+    SortObject:
+      type: object
+      properties:
+        empty:
+          type: boolean
+        unsorted:
+          type: boolean
+        sorted:
           type: boolean
     Revision:
       type: object
@@ -9125,15 +9786,96 @@ components:
           examples:
           - "23"
           readOnly: true
+    Event:
+      type: object
+      description: Event model
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the event
+          examples:
+          - 922f95e3-608b-4e3c-ae22-f11fb849799a
+        type:
+          $ref: "#/components/schemas/EventType"
+        subType:
+          type: string
+          description: Subtype describing what kind of entity the event refers to
+          examples:
+          - ATTACHMENT
+        requestGroupId:
+          type: string
+          description: Groups related events and notifications together within one
+            operation
+          examples:
+          - f47ac10b-58cc-4372-a567-0e02b2c3d479
+        message:
+          type: string
+          description: Short event description
+          examples:
+          - Bilaga har skapats
+        details:
+          type: string
+          description: Detailed event description
+          examples:
+          - Filnamn 'abc.pdf'
+        owner:
+          type: string
+          description: Service that created event
+          examples:
+          - SupportManagement
+        created:
+          type: string
+          format: date-time
+          description: Timestamp when the event was created
+          examples:
+          - 2000-10-31T01:30:00.000+02:00
+        historyReference:
+          type: string
+          description: Reference to the snapshot of data at the time when the event
+            was created
+          examples:
+          - fbe2fb67-005c-4f26-990f-1c95b5f6933e
+        sourceType:
+          type: string
+          description: Source which the event refers to
+          examples:
+          - errand
+        metadata:
+          type: array
+          items:
+            $ref: "#/components/schemas/EventMetaData"
+      readOnly: true
+    EventMetaData:
+      type: object
+      description: Event Metadata model
+      properties:
+        key:
+          type: string
+          description: The key
+          examples:
+          - userId
+        value:
+          type: string
+          description: The value
+          examples:
+          - john123
+    EventType:
+      type: string
+      description: Type of event
+      enum:
+      - CREATE
+      - UPDATE
+      - DELETE
+      - UNKNOWN
     PageEvent:
       type: object
       properties:
-        totalElements:
-          type: integer
-          format: int64
         totalPages:
           type: integer
           format: int32
+        totalElements:
+          type: integer
+          format: int64
         size:
           type: integer
           format: int32
@@ -9144,15 +9886,15 @@ components:
         number:
           type: integer
           format: int32
-        numberOfElements:
-          type: integer
-          format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
         first:
           type: boolean
         last:
           type: boolean
-        sort:
-          $ref: "#/components/schemas/SortObject"
+        numberOfElements:
+          type: integer
+          format: int32
         pageable:
           $ref: "#/components/schemas/PageableObject"
         empty:
@@ -9356,12 +10098,12 @@ components:
     PageMessage:
       type: object
       properties:
-        totalElements:
-          type: integer
-          format: int64
         totalPages:
           type: integer
           format: int32
+        totalElements:
+          type: integer
+          format: int64
         size:
           type: integer
           format: int32
@@ -9372,15 +10114,15 @@ components:
         number:
           type: integer
           format: int32
-        numberOfElements:
-          type: integer
-          format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
         first:
           type: boolean
         last:
           type: boolean
-        sort:
-          $ref: "#/components/schemas/SortObject"
+        numberOfElements:
+          type: integer
+          format: int32
         pageable:
           $ref: "#/components/schemas/PageableObject"
         empty:
