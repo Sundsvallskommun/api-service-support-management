@@ -353,7 +353,7 @@ public final class ErrandMapper {
 			return null;
 		}
 		return new Relation()
-			.type(REFERRED_FROM_RELATION_TYPE)
+			.type(referredFrom.getType())
 			.source(new ResourceIdentifier()
 				.resourceId(referredFrom.getSource().getResourceId())
 				.type(REFERRED_FROM_RESOURCE_IDENTIFIER_TYPE)

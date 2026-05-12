@@ -5,9 +5,9 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "14.2"
+  version: "14.3"
 servers:
-- url: http://localhost:59882
+- url: http://localhost:34557
   description: Generated server url
 tags:
 - name: Errand attachments
@@ -2468,7 +2468,7 @@ paths:
         example: 2281
       - name: referredFrom
         in: query
-        description: "Relation reference in format (only source is used): '{relationType}|{sourceResourceId};{sourceType};{sourceService};{sourceNamespace}|{targetResourceId};{targetType};{targetService};{targetNamespace}'"
+        description: "Relation reference in format (target part is ignored): '{relationType}|{sourceResourceId};{sourceType};{sourceService};{sourceNamespace}|{targetResourceId};{targetType};{targetService};{targetNamespace}'"
         required: false
         schema:
           type: string
@@ -7487,9 +7487,9 @@ components:
         type:
           type: string
           format: uri
-        title:
-          type: string
         detail:
+          type: string
+        title:
           type: string
         status:
           type: integer
@@ -8769,6 +8769,16 @@ components:
           type: boolean
         container:
           type: boolean
+        number:
+          type: boolean
+        boolean:
+          type: boolean
+        binary:
+          type: boolean
+        valueNode:
+          type: boolean
+        missingNode:
+          type: boolean
         nodeType:
           type: string
           enum:
@@ -8781,39 +8791,29 @@ components:
           - OBJECT
           - POJO
           - STRING
+        string:
+          type: boolean
+        integralNumber:
+          type: boolean
+        pojo:
+          type: boolean
         floatingPointNumber:
           type: boolean
-        valueNode:
+        short:
+          type: boolean
+        int:
+          type: boolean
+        long:
+          type: boolean
+        double:
           type: boolean
         bigDecimal:
           type: boolean
         bigInteger:
           type: boolean
-        integralNumber:
-          type: boolean
-        short:
-          type: boolean
-        pojo:
-          type: boolean
-        int:
-          type: boolean
-        string:
-          type: boolean
-        binary:
-          type: boolean
         textual:
           type: boolean
           deprecated: true
-        double:
-          type: boolean
-        boolean:
-          type: boolean
-        long:
-          type: boolean
-        missingNode:
-          type: boolean
-        number:
-          type: boolean
         embeddedValue:
           type: boolean
     JsonParameter:
@@ -9577,12 +9577,12 @@ components:
     PageErrand:
       type: object
       properties:
-        totalPages:
-          type: integer
-          format: int32
         totalElements:
           type: integer
           format: int64
+        totalPages:
+          type: integer
+          format: int32
         size:
           type: integer
           format: int32
@@ -9593,17 +9593,17 @@ components:
         number:
           type: integer
           format: int32
-        sort:
-          $ref: "#/components/schemas/SortObject"
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
         first:
           type: boolean
         last:
           type: boolean
+        sort:
+          $ref: "#/components/schemas/SortObject"
         numberOfElements:
           type: integer
           format: int32
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
         empty:
           type: boolean
     PageableObject:
@@ -9612,26 +9612,26 @@ components:
         offset:
           type: integer
           format: int64
-        sort:
-          $ref: "#/components/schemas/SortObject"
+        paged:
+          type: boolean
         pageNumber:
           type: integer
           format: int32
         pageSize:
           type: integer
           format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
         unpaged:
-          type: boolean
-        paged:
           type: boolean
     SortObject:
       type: object
       properties:
         empty:
           type: boolean
-        unsorted:
-          type: boolean
         sorted:
+          type: boolean
+        unsorted:
           type: boolean
     Revision:
       type: object
@@ -9869,12 +9869,12 @@ components:
     PageEvent:
       type: object
       properties:
-        totalPages:
-          type: integer
-          format: int32
         totalElements:
           type: integer
           format: int64
+        totalPages:
+          type: integer
+          format: int32
         size:
           type: integer
           format: int32
@@ -9885,17 +9885,17 @@ components:
         number:
           type: integer
           format: int32
-        sort:
-          $ref: "#/components/schemas/SortObject"
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
         first:
           type: boolean
         last:
           type: boolean
+        sort:
+          $ref: "#/components/schemas/SortObject"
         numberOfElements:
           type: integer
           format: int32
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
         empty:
           type: boolean
     Communication:
@@ -10097,12 +10097,12 @@ components:
     PageMessage:
       type: object
       properties:
-        totalPages:
-          type: integer
-          format: int32
         totalElements:
           type: integer
           format: int64
+        totalPages:
+          type: integer
+          format: int32
         size:
           type: integer
           format: int32
@@ -10113,17 +10113,17 @@ components:
         number:
           type: integer
           format: int32
-        sort:
-          $ref: "#/components/schemas/SortObject"
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
         first:
           type: boolean
         last:
           type: boolean
+        sort:
+          $ref: "#/components/schemas/SortObject"
         numberOfElements:
           type: integer
           format: int32
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
         empty:
           type: boolean
     ReadBy:
