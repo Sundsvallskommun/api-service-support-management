@@ -307,3 +307,28 @@ VALUES ('transition-id-1', 'phase-id-1', 'phase-id-2', 'To phase 2'),
 INSERT INTO errand_action(id, errand_id, execute_after, action_config_id)
 VALUES ('errand-action-id-1', 'ERRAND_ID-1', '2024-01-01 00:00:00.000', 'action-config-id-3'),
        ('errand-action-id-2', 'ERRAND_ID-2', '2099-12-31 23:59:59.999', 'action-config-id-2');
+
+-------------------------------------
+-- Subscriber + Subscription
+-------------------------------------
+INSERT INTO subscriber(id, municipality_id, namespace, name, identifier_type, identifier_value, paused_from, paused_until, created, modified, created_by_type, created_by_value)
+VALUES ('subscriber-id-1', '2281', 'namespace-1', 'subscriber-name-1', 'adAccount', 'joe01doe', null, null, now(), null, 'adAccount', 'admin01'),
+       ('subscriber-id-2', '2281', 'namespace-1', 'subscriber-name-2', 'partyId',   'c4e9b1f7-1111-2222-3333-444455556666', null, null, now(), null, 'adAccount', 'admin01'),
+       ('subscriber-id-3', '2281', 'namespace-2', 'subscriber-name-3', 'adAccount', 'joe01doe', null, null, now(), null, 'adAccount', 'admin01'),
+       ('subscriber-id-4', '2282', 'namespace-1', 'subscriber-name-4', 'adAccount', 'joe01doe', null, null, now(), null, 'adAccount', 'admin01');
+
+INSERT INTO subscriber_channel(subscriber_id, type, destination, sort_order)
+VALUES ('subscriber-id-1', 'EMAIL',    'user@example.com', 0),
+       ('subscriber-id-1', 'INTERNAL', null,               1);
+
+INSERT INTO subscriber_event_filter(subscriber_id, type, subtype, sort_order)
+VALUES ('subscriber-id-1', 'UPDATE', 'ATTACHMENT', 0),
+       ('subscriber-id-1', 'CREATE', null,         1);
+
+INSERT INTO subscription(id, subscriber_id, target_type, errand_id, expires_at, created, created_by_type, created_by_value)
+VALUES ('subscription-id-1', 'subscriber-id-1', 'ERRAND',    'ERRAND_ID-1', null, now(), 'adAccount', 'admin01'),
+       ('subscription-id-2', 'subscriber-id-1', 'NAMESPACE', null,          null, now(), 'adAccount', 'admin01'),
+       ('subscription-id-3', 'subscriber-id-2', 'ERRAND',    'ERRAND_ID-2', null, now(), 'adAccount', 'admin01');
+
+INSERT INTO subscription_event_filter(subscription_id, type, subtype, sort_order)
+VALUES ('subscription-id-1', 'UPDATE', 'STATUS', 0);

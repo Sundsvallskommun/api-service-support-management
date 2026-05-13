@@ -457,6 +457,58 @@
         primary key (id)
     ) engine=InnoDB;
 
+    create table subscriber (
+        created datetime(6),
+        modified datetime(6),
+        municipality_id varchar(8) not null,
+        paused_from datetime(6),
+        paused_until datetime(6),
+        created_by_type varchar(16),
+        identifier_type varchar(16) not null,
+        namespace varchar(32) not null,
+        created_by_value varchar(255),
+        id varchar(255) not null,
+        identifier_value varchar(255) not null,
+        name varchar(255),
+        primary key (id)
+    ) engine=InnoDB;
+
+    create table subscriber_channel (
+        sort_order integer not null,
+        type varchar(32) not null check ((type in ('INTERNAL','SMS','EMAIL'))),
+        destination varchar(255),
+        subscriber_id varchar(255) not null,
+        primary key (sort_order, subscriber_id)
+    ) engine=InnoDB;
+
+    create table subscriber_event_filter (
+        sort_order integer not null,
+        subtype varchar(64),
+        type varchar(64) not null,
+        subscriber_id varchar(255) not null,
+        primary key (sort_order, subscriber_id)
+    ) engine=InnoDB;
+
+    create table subscription (
+        created datetime(6),
+        expires_at datetime(6),
+        created_by_type varchar(16),
+        created_by_value varchar(255),
+        errand_id varchar(255),
+        id varchar(255) not null,
+        subscriber_id varchar(255) not null,
+        target_type enum ('ERRAND','NAMESPACE') not null,
+        primary key (id)
+    ) engine=InnoDB;
+
+    create table subscription_event_filter (
+        sort_order integer not null,
+        subtype varchar(64),
+        type varchar(64) not null,
+        subscription_id varchar(255) not null,
+        primary key (sort_order, subscription_id)
+    ) engine=InnoDB;
+
     create table time_measurement (
         id bigint not null auto_increment,
         start_time datetime(6),
@@ -746,6 +798,21 @@
     alter table if exists status 
        add constraint uq_namespace_municipality_id_name unique (namespace, municipality_id, name);
 
+    create index idx_subscriber_municipality_id_namespace 
+       on subscriber (municipality_id, namespace);
+
+    create index idx_subscriber_municipality_id_namespace_identifier 
+       on subscriber (municipality_id, namespace, identifier_type, identifier_value);
+
+    alter table if exists subscriber 
+       add constraint uq_subscriber_municipality_namespace_identifier_name unique (municipality_id, namespace, identifier_type, identifier_value, name);
+
+    create index idx_subscription_subscriber_id 
+       on subscription (subscriber_id);
+
+    create index idx_subscription_errand_id 
+       on subscription (errand_id);
+
     alter table if exists `type` 
        add constraint uq_category_id_name unique (category_id, name);
 
@@ -798,34 +865,34 @@
        foreign key (communication_id) 
        references communication (id);
 
-    alter table if exists communication_cc_recipients
-       add constraint fk_communication_cc_recipients_communication_id
-       foreign key (communication_id)
+    alter table if exists communication_cc_recipients 
+       add constraint fk_communication_cc_recipients_communication_id 
+       foreign key (communication_id) 
        references communication (id);
 
-    alter table if exists communication_email_header
-       add constraint fk_email_header_email_id
-       foreign key (communication_id)
+    alter table if exists communication_email_header 
+       add constraint fk_email_header_email_id 
+       foreign key (communication_id) 
        references communication (id);
 
-    alter table if exists communication_email_header_value
-       add constraint fk_header_value_header_id
-       foreign key (header_id)
+    alter table if exists communication_email_header_value 
+       add constraint fk_header_value_header_id 
+       foreign key (header_id) 
        references communication_email_header (id);
 
-    alter table if exists communication_errand_attachment
-       add constraint FKhedy3oimyh7w729ih0ng5etop
-       foreign key (errand_attachment_id)
+    alter table if exists communication_errand_attachment 
+       add constraint FKhedy3oimyh7w729ih0ng5etop 
+       foreign key (errand_attachment_id) 
        references attachment (id);
 
-    alter table if exists communication_errand_attachment
-       add constraint FKl9pe6hofx8h94egfys403g7n8
-       foreign key (communication_id)
+    alter table if exists communication_errand_attachment 
+       add constraint FKl9pe6hofx8h94egfys403g7n8 
+       foreign key (communication_id) 
        references communication (id);
 
-    alter table if exists communication_recipients
-       add constraint fk_communication_recipients_message_id
-       foreign key (communication_id)
+    alter table if exists communication_recipients 
+       add constraint fk_communication_recipients_message_id 
+       foreign key (communication_id) 
        references communication (id);
 
     alter table if exists contact_channel 
@@ -839,8 +906,8 @@
        references conversation (id);
 
     alter table if exists errand 
-       add constraint fk_errand_contact_reason_id
-       foreign key (contact_reason_id)
+       add constraint fk_errand_contact_reason_id 
+       foreign key (contact_reason_id) 
        references contact_reason (id);
 
     alter table if exists errand_access_labels 
@@ -938,6 +1005,33 @@
        add constraint fk_stakeholder_parameter_values_stakeholder_parameter_id 
        foreign key (stakeholder_parameter_id) 
        references stakeholder_parameter (id);
+
+    alter table if exists subscriber_channel 
+       add constraint fk_subscriber_channel_subscriber_id 
+       foreign key (subscriber_id) 
+       references subscriber (id);
+
+    alter table if exists subscriber_event_filter 
+       add constraint fk_subscriber_event_filter_subscriber_id 
+       foreign key (subscriber_id) 
+       references subscriber (id);
+
+    alter table if exists subscription 
+       add constraint fk_subscription_errand_id 
+       foreign key (errand_id) 
+       references errand (id) 
+       on delete cascade;
+
+    alter table if exists subscription 
+       add constraint fk_subscription_subscriber_id 
+       foreign key (subscriber_id) 
+       references subscriber (id) 
+       on delete cascade;
+
+    alter table if exists subscription_event_filter 
+       add constraint fk_subscription_event_filter_subscription_id 
+       foreign key (subscription_id) 
+       references subscription (id);
 
     alter table if exists time_measurement 
        add constraint fk_errand_time_measure_errand_id 
