@@ -493,11 +493,11 @@
         created datetime(6),
         expires_at datetime(6),
         created_by_type varchar(16),
+        target_type varchar(16) not null check ((target_type in ('NAMESPACE','ERRAND'))),
         created_by_value varchar(255),
         errand_id varchar(255),
         id varchar(255) not null,
         subscriber_id varchar(255) not null,
-        target_type enum ('ERRAND','NAMESPACE') not null,
         primary key (id)
     ) engine=InnoDB;
 

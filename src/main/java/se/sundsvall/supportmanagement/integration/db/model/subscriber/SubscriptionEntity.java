@@ -7,8 +7,6 @@ import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.ForeignKey;
 import jakarta.persistence.Id;
@@ -50,7 +48,6 @@ public class SubscriptionEntity {
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private SubscriberEntity subscriber;
 
-	@Enumerated(EnumType.STRING)
 	@Column(name = "target_type", nullable = false, length = 16)
 	private SubscriptionTargetType targetType;
 
