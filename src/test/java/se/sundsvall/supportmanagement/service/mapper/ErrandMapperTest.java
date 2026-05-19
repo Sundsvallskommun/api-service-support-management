@@ -665,7 +665,7 @@ class ErrandMapperTest {
 		final var relation = toReferredFromRelation(NAMESPACE, referredFrom, newErrandId);
 
 		assertThat(relation).isNotNull();
-		assertThat(relation.getType()).isEqualTo("REFERRED_FROM");
+		assertThat(relation.getType()).isEqualTo(referredFromType.toUpperCase());
 
 		assertThat(relation.getSource())
 			.extracting(
