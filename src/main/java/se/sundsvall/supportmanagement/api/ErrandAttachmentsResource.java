@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import se.sundsvall.dept44.common.validators.annotation.OneOf;
 import se.sundsvall.dept44.common.validators.annotation.ValidMunicipalityId;
 import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 import se.sundsvall.dept44.problem.Problem;
@@ -67,9 +68,12 @@ class ErrandAttachmentsResource {
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE, groups = OnCreate.class) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId(groups = OnCreate.class) @PathVariable final String municipalityId,
 		@Parameter(name = "errandId", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid(groups = OnCreate.class) @PathVariable("errandId") final String errandId,
-		@NotNull @RequestPart("errandAttachment") final MultipartFile errandAttachment) {
+		@NotNull @RequestPart("errandAttachment") final MultipartFile errandAttachment,
+		@Parameter(name = "channel", description = "Channel the attachment was received via", example = "WEB_UI") @OneOf(value = {
+			"EMAIL", "ESERVICE", "WEB_UI", "MY_PAGES"
+		}, nullable = true) @RequestPart(name = "channel", required = false) final String channel) {
 
-		final var attachmentId = errandAttachmentService.createErrandAttachment(namespace, municipalityId, errandId, errandAttachment);
+		final var attachmentId = errandAttachmentService.createErrandAttachment(namespace, municipalityId, errandId, errandAttachment, channel);
 
 		return created(fromPath("/{municipalityId}/{namespace}/errands/{errandId}/attachments/{attachmentId}")
 			.buildAndExpand(municipalityId, namespace, errandId, attachmentId).toUri())

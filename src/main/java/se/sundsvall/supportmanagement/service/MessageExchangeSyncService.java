@@ -23,6 +23,7 @@ import static java.util.Optional.ofNullable;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE;
 import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.mergeIntoConversationEntity;
+import static se.sundsvall.supportmanagement.service.mapper.IdentifierMapper.resolveChannel;
 
 @Service
 public class MessageExchangeSyncService {
@@ -118,14 +119,14 @@ public class MessageExchangeSyncService {
 		}
 
 		final var file = messageExchangeClient.getMessageAttachment(conversationEntity.getMunicipalityId(), messageExchangeNamespace, conversationEntity.getMessageExchangeId(), message.getId(), attachment.getId());
-		saveAttachment(errandEntity, file, attachment.getFileName(), ofNullable(attachment.getFileSize()).orElse(0));
+		saveAttachment(errandEntity, file, attachment.getFileName(), ofNullable(attachment.getFileSize()).orElse(0), resolveChannel(message.getCreatedBy()));
 	}
 
-	void saveAttachment(final ErrandEntity errandEntity, final ResponseEntity<InputStreamResource> file, final String fileName, final int fileSize) {
+	void saveAttachment(final ErrandEntity errandEntity, final ResponseEntity<InputStreamResource> file, final String fileName, final int fileSize, final String channel) {
 		if (file.getBody() == null || file.getHeaders().getContentType() == null) {
 			throw Problem.valueOf(INTERNAL_SERVER_ERROR, "Failed to retrieve attachment from Message Exchange");
 		}
 
-		attachmentService.createErrandAttachment(errandEntity, file, fileName, fileSize);
+		attachmentService.createErrandAttachment(errandEntity, file, fileName, fileSize, channel);
 	}
 }

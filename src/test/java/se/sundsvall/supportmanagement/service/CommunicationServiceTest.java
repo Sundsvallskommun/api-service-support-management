@@ -53,6 +53,7 @@ import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationAttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationType;
 import se.sundsvall.supportmanagement.integration.messaging.MessagingClient;
 import se.sundsvall.supportmanagement.integration.messagingsettings.MessagingSettingsIntegration;
 import se.sundsvall.supportmanagement.service.mapper.CommunicationMapper;
@@ -516,6 +517,7 @@ class CommunicationServiceTest {
 		when(communicationEntityMock.withViewed(true)).thenReturn(communicationEntityMock);
 		when(communicationMapperMock.toAttachments(any())).thenReturn(List.of(attachmentEntityMock));
 		when(attachmentEntityMock.withErrandEntity(any())).thenReturn(attachmentEntityMock);
+		when(communicationEntityMock.getType()).thenReturn(CommunicationType.WEB_MESSAGE);
 		when(employeeServiceMock.getEmployeeByLoginName(MUNICIPALITY_ID, adUser)).thenReturn(portalPersonDataMock);
 		when(portalPersonDataMock.getFullname()).thenReturn(fullName);
 
@@ -539,7 +541,9 @@ class CommunicationServiceTest {
 		verify(messagingClientMock).sendWebMessage(eq(MUNICIPALITY_ID), eq(false), same(webMessageRequest));
 		verify(communicationRepositoryMock).saveAndFlush(same(communicationEntityMock));
 		verify(communicationMapperMock).toAttachments(same(communicationEntityMock));
+		verify(communicationEntityMock).getType();
 		verify(attachmentEntityMock).withErrandEntity(same(errandEntityMock));
+		verify(attachmentEntityMock).withChannel("ESERVICE");
 		verify(errandAttachmentServiceMock).createErrandAttachment(same(attachmentEntityMock), same(errandEntityMock));
 
 		verifyNoMoreInteractions(accessControlServiceMock, messagingClientMock, communicationMapperMock, communicationRepositoryMock, attachmentEntityMock, communicationEntityMock, errandAttachmentServiceMock,
@@ -622,6 +626,30 @@ class CommunicationServiceTest {
 		verify(communicationRepositoryMock).saveAndFlush(any(CommunicationEntity.class));
 		verifyNoMoreInteractions(communicationRepositoryMock);
 		verifyNoInteractions(accessControlServiceMock, communicationAttachmentRepositoryMock, messagingClientMock, communicationMapperMock);
+	}
+
+	@ParameterizedTest
+	@MethodSource("saveAttachmentArguments")
+	void saveAttachment(final CommunicationType type, final String expectedChannel) {
+		when(communicationMapperMock.toAttachments(any())).thenReturn(List.of(attachmentEntityMock));
+		when(attachmentEntityMock.withErrandEntity(any())).thenReturn(attachmentEntityMock);
+		when(communicationEntityMock.getType()).thenReturn(type);
+
+		communicationService.saveAttachment(communicationEntityMock, errandEntityMock);
+
+		verify(communicationMapperMock).toAttachments(same(communicationEntityMock));
+		verify(communicationEntityMock).getType();
+		verify(attachmentEntityMock).withErrandEntity(same(errandEntityMock));
+		verify(attachmentEntityMock).withChannel(expectedChannel);
+		verify(errandAttachmentServiceMock).createErrandAttachment(same(attachmentEntityMock), same(errandEntityMock));
+		verifyNoMoreInteractions(communicationMapperMock, attachmentEntityMock, errandAttachmentServiceMock, communicationEntityMock);
+	}
+
+	private static Stream<Arguments> saveAttachmentArguments() {
+		return Stream.of(
+			Arguments.of(CommunicationType.EMAIL, "EMAIL"),
+			Arguments.of(CommunicationType.WEB_MESSAGE, "ESERVICE"),
+			Arguments.of(CommunicationType.SMS, null));
 	}
 
 	/**

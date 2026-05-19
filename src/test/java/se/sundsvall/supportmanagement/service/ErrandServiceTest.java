@@ -76,7 +76,6 @@ class ErrandServiceTest {
 	private static final String EVENT_LOG_CREATE_ERRAND = "Ärendet har skapats.";
 	private static final String EVENT_LOG_UPDATE_ERRAND = "Ärendet har uppdaterats.";
 	private static final String EVENT_LOG_DELETE_ERRAND = "Ärendet har raderats.";
-	private static final String REFERRED_FROM_RELATION_TYPE = "REFERRED_FROM";
 	private static final String REFERRED_FROM_RESOURCE_IDENTIFIER_TYPE = "case";
 	private static final String REFERRED_FROM_RESOURCE_IDENTIFIER_SERVICE = "support-management";
 
@@ -169,13 +168,14 @@ class ErrandServiceTest {
 	void createErrandWithReferredFrom() {
 		// Setup
 		final var errand = buildErrand();
+		final var relationType = "some_relation_type";
 		final var referredFromType = "referredFromType";
 		final var referredFromService = "referredFromService";
 		final var referredFromNamespace = "referredFromNamespace";
 		final var referredFromIdentifier = "referredFromIdentifier";
-		final var referredFrom = "|" + referredFromIdentifier + ";" + referredFromType + ";" + referredFromService + ";" + referredFromNamespace + "|";
+		final var referredFrom = relationType + "|" + referredFromIdentifier + ";" + referredFromType + ";" + referredFromService + ";" + referredFromNamespace + "|";
 		final var relation = new Relation()
-			.type(REFERRED_FROM_RELATION_TYPE)
+			.type(relationType.toUpperCase())
 			.source(new ResourceIdentifier()
 				.resourceId(referredFromIdentifier)
 				.type(REFERRED_FROM_RESOURCE_IDENTIFIER_TYPE)

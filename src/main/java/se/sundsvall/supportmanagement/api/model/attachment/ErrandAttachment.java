@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Null;
 import java.time.OffsetDateTime;
 import java.util.Objects;
+import se.sundsvall.dept44.common.validators.annotation.OneOf;
 import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
 
 import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
@@ -22,6 +23,14 @@ public class ErrandAttachment {
 
 	@Schema(description = "Mime type of the file", accessMode = Schema.AccessMode.READ_ONLY)
 	private String mimeType;
+
+	@Schema(description = "The channel the attachment was received via", examples = "EMAIL", allowableValues = {
+		"EMAIL", "ESERVICE", "WEB_UI", "MY_PAGES"
+	}, nullable = true)
+	@OneOf(value = {
+		"EMAIL", "ESERVICE", "WEB_UI", "MY_PAGES"
+	}, nullable = true)
+	private String channel;
 
 	@Schema(description = "The attachment created date", examples = "2023-01-01T00:00:00Z")
 	private OffsetDateTime created;
@@ -69,6 +78,19 @@ public class ErrandAttachment {
 		return this;
 	}
 
+	public String getChannel() {
+		return this.channel;
+	}
+
+	public void setChannel(final String channel) {
+		this.channel = channel;
+	}
+
+	public ErrandAttachment withChannel(final String channel) {
+		this.channel = channel;
+		return this;
+	}
+
 	public OffsetDateTime getCreated() {
 		return created;
 	}
@@ -87,12 +109,12 @@ public class ErrandAttachment {
 		if (o == null || getClass() != o.getClass())
 			return false;
 		final ErrandAttachment that = (ErrandAttachment) o;
-		return Objects.equals(id, that.id) && Objects.equals(fileName, that.fileName) && Objects.equals(mimeType, that.mimeType) && Objects.equals(created, that.created);
+		return Objects.equals(id, that.id) && Objects.equals(fileName, that.fileName) && Objects.equals(mimeType, that.mimeType) && Objects.equals(channel, that.channel) && Objects.equals(created, that.created);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, fileName, mimeType, created);
+		return Objects.hash(id, fileName, mimeType, channel, created);
 	}
 
 	@Override
@@ -101,6 +123,7 @@ public class ErrandAttachment {
 			"id='" + id + '\'' +
 			", fileName='" + fileName + '\'' +
 			", mimeType='" + mimeType + '\'' +
+			", channel='" + channel + '\'' +
 			", created=" + created +
 			'}';
 	}

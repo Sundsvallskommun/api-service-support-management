@@ -44,6 +44,7 @@ class AttachmentEntityTest {
 		final var fileName = "fileName";
 		final var file = new AttachmentDataEntity().withFile(new MariaDbBlob("file".getBytes()));
 		final var mimeType = "mimeType";
+		final var channel = "EMAIL";
 		final var errandEntity = ErrandEntity.create().withId(UUID.randomUUID().toString());
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
@@ -56,6 +57,7 @@ class AttachmentEntityTest {
 			.withFileName(fileName)
 			.withAttachmentData(file)
 			.withMimeType(mimeType)
+			.withChannel(channel)
 			.withErrandEntity(errandEntity)
 			.withCreated(now().truncatedTo(SECONDS))
 			.withModified(now().truncatedTo(SECONDS))
@@ -68,6 +70,7 @@ class AttachmentEntityTest {
 		assertThat(attachmentEntity.getFileName()).isEqualTo(fileName);
 		assertThat(attachmentEntity.getAttachmentData()).isEqualTo(file);
 		assertThat(attachmentEntity.getMimeType()).isEqualTo(mimeType);
+		assertThat(attachmentEntity.getChannel()).isEqualTo(channel);
 		assertThat(attachmentEntity.getErrandEntity()).isEqualTo(errandEntity);
 		assertThat(attachmentEntity.getFileSize()).isEqualTo(fileSize);
 	}

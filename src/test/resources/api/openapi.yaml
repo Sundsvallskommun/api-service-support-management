@@ -5,9 +5,9 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "14.3"
+  version: "14.5"
 servers:
-- url: http://localhost:49711
+- url: http://localhost:51386
   description: Generated server url
 tags:
 - name: Errand attachments
@@ -2698,7 +2698,7 @@ paths:
         example: 2281
       - name: referredFrom
         in: query
-        description: "Relation reference in format (only source is used): '{relationType}|{sourceResourceId};{sourceType};{sourceService};{sourceNamespace}|{targetResourceId};{targetType};{targetService};{targetNamespace}'"
+        description: "Relation reference in format (target part is ignored): '{relationType}|{sourceResourceId};{sourceType};{sourceService};{sourceNamespace}|{targetResourceId};{targetType};{targetService};{targetNamespace}'"
         required: false
         schema:
           type: string
@@ -3640,6 +3640,9 @@ paths:
                 errandAttachment:
                   type: string
                   format: binary
+                channel:
+                  type: string
+                  description: Channel the attachment was received via
               required:
               - errandAttachment
         required: true
@@ -7717,9 +7720,9 @@ components:
         type:
           type: string
           format: uri
-        title:
-          type: string
         detail:
+          type: string
+        title:
           type: string
         status:
           type: integer
@@ -7742,10 +7745,10 @@ components:
         instance:
           type: string
           format: uri
-        detail:
-          type: string
         causeAsProblem:
           $ref: "#/components/schemas/ThrowableProblem"
+        detail:
+          type: string
     ThrowableProblem:
       type: object
       properties:
@@ -9031,13 +9034,11 @@ components:
           type: boolean
         float:
           type: boolean
+        container:
+          type: boolean
+        number:
+          type: boolean
         missingNode:
-          type: boolean
-        pojo:
-          type: boolean
-        boolean:
-          type: boolean
-        binary:
           type: boolean
         long:
           type: boolean
@@ -9046,15 +9047,25 @@ components:
         textual:
           type: boolean
           deprecated: true
-        double:
+        boolean:
+          type: boolean
+        binary:
+          type: boolean
+        pojo:
           type: boolean
         int:
           type: boolean
         string:
           type: boolean
-        container:
+        double:
           type: boolean
-        number:
+        bigDecimal:
+          type: boolean
+        integralNumber:
+          type: boolean
+        floatingPointNumber:
+          type: boolean
+        bigInteger:
           type: boolean
         nodeType:
           type: string
@@ -9068,15 +9079,7 @@ components:
           - OBJECT
           - POJO
           - STRING
-        integralNumber:
-          type: boolean
-        floatingPointNumber:
-          type: boolean
         valueNode:
-          type: boolean
-        bigDecimal:
-          type: boolean
-        bigInteger:
           type: boolean
         embeddedValue:
           type: boolean
@@ -9841,12 +9844,12 @@ components:
     PageErrand:
       type: object
       properties:
-        totalPages:
-          type: integer
-          format: int32
         totalElements:
           type: integer
           format: int64
+        totalPages:
+          type: integer
+          format: int32
         size:
           type: integer
           format: int32
@@ -9878,6 +9881,8 @@ components:
           format: int64
         sort:
           $ref: "#/components/schemas/SortObject"
+        unpaged:
+          type: boolean
         pageSize:
           type: integer
           format: int32
@@ -9886,16 +9891,14 @@ components:
           format: int32
         paged:
           type: boolean
-        unpaged:
-          type: boolean
     SortObject:
       type: object
       properties:
         empty:
           type: boolean
-        sorted:
-          type: boolean
         unsorted:
+          type: boolean
+        sorted:
           type: boolean
     Revision:
       type: object
@@ -10133,12 +10136,12 @@ components:
     PageEvent:
       type: object
       properties:
-        totalPages:
-          type: integer
-          format: int32
         totalElements:
           type: integer
           format: int64
+        totalPages:
+          type: integer
+          format: int32
         size:
           type: integer
           format: int32
@@ -10361,12 +10364,12 @@ components:
     PageMessage:
       type: object
       properties:
-        totalPages:
-          type: integer
-          format: int32
         totalElements:
           type: integer
           format: int64
+        totalPages:
+          type: integer
+          format: int32
         size:
           type: integer
           format: int32
@@ -10424,6 +10427,16 @@ components:
           type: string
           description: Mime type of the file
           readOnly: true
+        channel:
+          type: string
+          description: The channel the attachment was received via
+          enum:
+          - EMAIL
+          - ESERVICE
+          - WEB_UI
+          - MY_PAGES
+          examples:
+          - EMAIL
         created:
           type: string
           format: date-time
