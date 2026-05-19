@@ -46,6 +46,7 @@
         modified datetime(6),
         municipality_id varchar(8),
         namespace varchar(32),
+        channel varchar(255),
         errand_id varchar(255) not null,
         file_name varchar(255),
         id varchar(255) not null,

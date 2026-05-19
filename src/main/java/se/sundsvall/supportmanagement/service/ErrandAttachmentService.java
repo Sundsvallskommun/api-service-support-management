@@ -66,14 +66,14 @@ public class ErrandAttachmentService {
 		this.semaphore = semaphore;
 	}
 
-	public String createErrandAttachment(final String namespace, final String municipalityId, final String errandId, final MultipartFile errandAttachment) {
+	public String createErrandAttachment(final String namespace, final String municipalityId, final String errandId, final MultipartFile errandAttachment, final String channel) {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, RW);
 
-		return createErrandAttachmentInternal(errandEntity, () -> toAttachmentEntity(errandEntity, errandAttachment));
+		return createErrandAttachmentInternal(errandEntity, () -> toAttachmentEntity(errandEntity, errandAttachment, channel));
 	}
 
-	public String createErrandAttachment(final ErrandEntity errandEntity, final ResponseEntity<InputStreamResource> file, final String fileName, final int fileSize) {
-		return createErrandAttachmentInternal(errandEntity, () -> toAttachmentEntity(errandEntity, file, fileName, fileSize));
+	public String createErrandAttachment(final ErrandEntity errandEntity, final ResponseEntity<InputStreamResource> file, final String fileName, final int fileSize, final String channel) {
+		return createErrandAttachmentInternal(errandEntity, () -> toAttachmentEntity(errandEntity, file, fileName, fileSize, channel));
 	}
 
 	private String createErrandAttachmentInternal(final ErrandEntity errandEntity,

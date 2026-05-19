@@ -18,8 +18,10 @@ import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 
 import static java.util.Collections.emptyList;
+import static java.util.Optional.ofNullable;
 import static org.apache.commons.lang3.ObjectUtils.anyNull;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static se.sundsvall.supportmanagement.service.mapper.Channels.WEB_UI;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.detectMimeTypeFromStream;
 
 public final class ErrandAttachmentMapper {
@@ -28,7 +30,7 @@ public final class ErrandAttachmentMapper {
 
 	private ErrandAttachmentMapper() {}
 
-	public static AttachmentEntity toAttachmentEntity(final ErrandEntity errandEntity, final MultipartFile errandAttachment) {
+	public static AttachmentEntity toAttachmentEntity(final ErrandEntity errandEntity, final MultipartFile errandAttachment, final String channel) {
 		if (anyNull(errandEntity, errandAttachment)) {
 			return null;
 		}
@@ -41,14 +43,15 @@ public final class ErrandAttachmentMapper {
 				.withFileSize(Math.toIntExact(errandAttachment.getSize()))
 				.withAttachmentData(new AttachmentDataEntity().withFile(Hibernate.getLobHelper().createBlob(errandAttachment.getInputStream(), errandAttachment.getSize())))
 				.withFileName(errandAttachment.getOriginalFilename())
-				.withMimeType(detectMimeTypeFromStream(errandAttachment.getOriginalFilename(), errandAttachment.getInputStream()));
+				.withMimeType(detectMimeTypeFromStream(errandAttachment.getOriginalFilename(), errandAttachment.getInputStream()))
+				.withChannel(ofNullable(channel).orElse(WEB_UI));
 		} catch (final IOException e) {
 			LOGGER.warn("Exception when reading file", e);
 			throw Problem.valueOf(BAD_REQUEST, "Could not read input stream!");
 		}
 	}
 
-	public static AttachmentEntity toAttachmentEntity(final ErrandEntity errandEntity, final ResponseEntity<InputStreamResource> errandAttachment, final String fileName, final int fileSize) {
+	public static AttachmentEntity toAttachmentEntity(final ErrandEntity errandEntity, final ResponseEntity<InputStreamResource> errandAttachment, final String fileName, final int fileSize, final String channel) {
 		if (anyNull(errandEntity, errandAttachment, errandAttachment.getBody())) {
 			return null;
 		}
@@ -67,7 +70,8 @@ public final class ErrandAttachmentMapper {
 			.withFileSize(fileSize)
 			.withAttachmentData(new AttachmentDataEntity().withFile(Hibernate.getLobHelper().createBlob(content, fileSize)))
 			.withFileName(fileName)
-			.withMimeType(detectMimeTypeFromStream(fileName, content));
+			.withMimeType(detectMimeTypeFromStream(fileName, content))
+			.withChannel(channel);
 	}
 
 	public static List<ErrandAttachment> toErrandAttachments(final List<AttachmentEntity> attachmentEntities) {
@@ -83,7 +87,8 @@ public final class ErrandAttachmentMapper {
 				.withFileName(e.getFileName())
 				.withCreated(e.getCreated())
 				.withId(e.getId())
-				.withMimeType(e.getMimeType()))
+				.withMimeType(e.getMimeType())
+				.withChannel(e.getChannel()))
 			.orElse(null);
 	}
 

@@ -34,6 +34,7 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationAttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
 import se.sundsvall.supportmanagement.integration.messaging.MessagingClient;
 import se.sundsvall.supportmanagement.integration.messagingsettings.MessagingSettingsIntegration;
@@ -51,6 +52,8 @@ import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpStatus.INSUFFICIENT_STORAGE;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static se.sundsvall.supportmanagement.service.mapper.Channels.EMAIL;
+import static se.sundsvall.supportmanagement.service.mapper.Channels.ESERVICE;
 import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.createReporterEmailRequest;
 import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toEmailAttachments;
 import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toEmailRequest;
@@ -255,9 +258,17 @@ public class CommunicationService {
 	public void saveAttachment(final CommunicationEntity communicationEntity, final ErrandEntity entity) {
 		communicationMapper.toAttachments(communicationEntity)
 			.forEach(attachmentEntity -> {
-				attachmentEntity.withErrandEntity(entity);
+				attachmentEntity.withErrandEntity(entity).withChannel(toChannel(communicationEntity.getType()));
 				errandAttachmentService.createErrandAttachment(attachmentEntity, entity);
 			});
+	}
+
+	private static String toChannel(final CommunicationType type) {
+		return type == null ? null : switch (type) {
+			case EMAIL -> EMAIL;
+			case WEB_MESSAGE -> ESERVICE;
+			case SMS -> null;
+		};
 	}
 
 	public void saveCommunication(final CommunicationEntity communicationEntity) {
