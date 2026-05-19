@@ -32,6 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -310,7 +311,7 @@ class MessageExchangeSyncConfigServiceTest {
 		// Assert
 		verify(messageExchangeClientMock).getMessageAttachment(eq(municipalityId), any(), any(), any(), eq(attachment.getId()));
 		verify(errandsRepositoryMock).getReferenceById("123L");
-		verify(attachmentServiceMock).createErrandAttachment(same(errandEntity), ArgumentMatchers.<ResponseEntity<InputStreamResource>>any(), eq("test.txt"), eq(1024));
+		verify(attachmentServiceMock).createErrandAttachment(same(errandEntity), ArgumentMatchers.<ResponseEntity<InputStreamResource>>any(), eq("test.txt"), eq(1024), nullable(String.class));
 		verifyNoMoreInteractions(attachmentServiceMock, messageExchangeClientMock);
 		verifyNoInteractions(conversationRepositoryMock);
 	}
@@ -349,10 +350,10 @@ class MessageExchangeSyncConfigServiceTest {
 			.body(new InputStreamResource(new ByteArrayInputStream(new byte[0])));
 
 		// Act
-		service.saveAttachment(errandEntity, file, fileName, fileSize);
+		service.saveAttachment(errandEntity, file, fileName, fileSize, "WEB_UI");
 
 		// Assert
-		verify(attachmentServiceMock).createErrandAttachment(same(errandEntity), ArgumentMatchers.<ResponseEntity<InputStreamResource>>any(), eq(fileName), eq(fileSize));
+		verify(attachmentServiceMock).createErrandAttachment(same(errandEntity), ArgumentMatchers.<ResponseEntity<InputStreamResource>>any(), eq(fileName), eq(fileSize), eq("WEB_UI"));
 		verifyNoMoreInteractions(attachmentServiceMock);
 		verifyNoInteractions(conversationRepositoryMock, messageExchangeClientMock);
 	}
@@ -366,7 +367,7 @@ class MessageExchangeSyncConfigServiceTest {
 			.build();
 
 		// Act & Assert
-		assertThatThrownBy(() -> service.saveAttachment(errandEntity, file, "test.txt", 1024))
+		assertThatThrownBy(() -> service.saveAttachment(errandEntity, file, "test.txt", 1024, null))
 			.isInstanceOf(Problem.class)
 			.hasMessageContaining("Failed to retrieve attachment from Message Exchange");
 
@@ -381,11 +382,10 @@ class MessageExchangeSyncConfigServiceTest {
 			.body(new InputStreamResource(new ByteArrayInputStream(new byte[0])));
 
 		// Act & Assert
-		assertThatThrownBy(() -> service.saveAttachment(errandEntity, file, "test.txt", 1024))
+		assertThatThrownBy(() -> service.saveAttachment(errandEntity, file, "test.txt", 1024, null))
 			.isInstanceOf(Problem.class)
 			.hasMessageContaining("Failed to retrieve attachment from Message Exchange");
 
 		verifyNoInteractions(conversationRepositoryMock, messageExchangeClientMock);
 	}
-
 }

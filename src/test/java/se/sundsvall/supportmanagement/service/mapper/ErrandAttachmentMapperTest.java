@@ -60,7 +60,7 @@ class ErrandAttachmentMapperTest {
 			hibernateMock.when(Hibernate::getLobHelper).thenReturn(lobHelperMock);
 			when(lobHelperMock.createBlob(any(), anyLong())).thenReturn(blobMock);
 
-			final var result = ErrandAttachmentMapper.toAttachmentEntity(errandEntity, multipartFileMock);
+			final var result = ErrandAttachmentMapper.toAttachmentEntity(errandEntity, multipartFileMock, null);
 
 			assertThat(result).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "created", "modified");
 			assertThat(result.getMunicipalityId()).isEqualTo(errandEntity.getMunicipalityId());
@@ -68,7 +68,25 @@ class ErrandAttachmentMapperTest {
 			assertThat(result.getFileName()).isEqualTo(FILE_NAME);
 			assertThat(result.getAttachmentData().getFile()).isSameAs(blobMock);
 			assertThat(result.getMimeType()).isEqualTo("text/plain");
+			assertThat(result.getChannel()).isEqualTo("WEB_UI");
 			assertThat(result.getErrandEntity()).isSameAs(errandEntity);
+		}
+	}
+
+	@Test
+	void toAttachmentEntityWithClientProvidedChannel() throws IOException {
+		final var errandEntity = buildErrandEntity().withAttachments(new ArrayList<>());
+
+		when(multipartFileMock.getOriginalFilename()).thenReturn(FILE_NAME);
+		when(multipartFileMock.getInputStream()).thenReturn(new ByteArrayInputStream("test".getBytes()));
+
+		try (MockedStatic<Hibernate> hibernateMock = Mockito.mockStatic(Hibernate.class)) {
+			hibernateMock.when(Hibernate::getLobHelper).thenReturn(lobHelperMock);
+			when(lobHelperMock.createBlob(any(), anyLong())).thenReturn(blobMock);
+
+			final var result = ErrandAttachmentMapper.toAttachmentEntity(errandEntity, multipartFileMock, "MY_PAGES");
+
+			assertThat(result.getChannel()).isEqualTo("MY_PAGES");
 		}
 	}
 
@@ -85,7 +103,7 @@ class ErrandAttachmentMapperTest {
 			hibernateMock.when(Hibernate::getLobHelper).thenReturn(lobHelperMock);
 			when(lobHelperMock.createBlob(any(), anyLong())).thenReturn(blobMock);
 
-			final var result = ErrandAttachmentMapper.toAttachmentEntity(errandEntity, file, FILE_NAME, fileSize);
+			final var result = ErrandAttachmentMapper.toAttachmentEntity(errandEntity, file, FILE_NAME, fileSize, "MY_PAGES");
 
 			assertThat(result).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "created", "modified");
 			assertThat(result.getMunicipalityId()).isEqualTo(errandEntity.getMunicipalityId());
@@ -94,6 +112,7 @@ class ErrandAttachmentMapperTest {
 			assertThat(result.getFileSize()).isEqualTo(fileSize);
 			assertThat(result.getAttachmentData().getFile()).isSameAs(blobMock);
 			assertThat(result.getMimeType()).isEqualTo("application/octet-stream");
+			assertThat(result.getChannel()).isEqualTo("MY_PAGES");
 			assertThat(result.getErrandEntity()).isSameAs(errandEntity);
 		}
 	}
@@ -103,18 +122,19 @@ class ErrandAttachmentMapperTest {
 
 		final var multipartFile = (MultipartFile) null;
 
-		assertThat(ErrandAttachmentMapper.toAttachmentEntity(null, multipartFile)).isNull();
+		assertThat(ErrandAttachmentMapper.toAttachmentEntity(null, multipartFile, null)).isNull();
 	}
 
 	@Test
 	void toErrandAttachments() {
 
-		final var result = ErrandAttachmentMapper.toErrandAttachments(List.of(buildAttachmentEntity(buildErrandEntity()).withCreated(CREATED)));
+		final var result = ErrandAttachmentMapper.toErrandAttachments(List.of(buildAttachmentEntity(buildErrandEntity()).withCreated(CREATED).withChannel("EMAIL")));
 
 		assertThat(result).isNotNull();
 		assertThat(result.getFirst().getId()).isEqualTo(ATTACHMENT_ID);
 		assertThat(result.getFirst().getFileName()).isEqualTo(FILE_NAME);
 		assertThat(result.getFirst().getMimeType()).isEqualTo(MIME_TYPE);
+		assertThat(result.getFirst().getChannel()).isEqualTo("EMAIL");
 		assertThat(result.getFirst().getCreated()).isCloseTo(CREATED, within(5, SECONDS));
 	}
 
@@ -135,7 +155,7 @@ class ErrandAttachmentMapperTest {
 		final var errandEntity = buildErrandEntity();
 		final ResponseEntity<InputStreamResource> response = ResponseEntity.ok().body(null);
 
-		assertThat(ErrandAttachmentMapper.toAttachmentEntity(errandEntity, response, "fileName", 0)).isNull();
+		assertThat(ErrandAttachmentMapper.toAttachmentEntity(errandEntity, response, "fileName", 0, null)).isNull();
 	}
 
 }
