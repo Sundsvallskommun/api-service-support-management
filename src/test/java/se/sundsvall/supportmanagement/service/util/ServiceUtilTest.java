@@ -24,9 +24,6 @@ import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static se.sundsvall.supportmanagement.service.util.ServiceUtil.clearRequestGroupId;
-import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getRequestGroupId;
-import static se.sundsvall.supportmanagement.service.util.ServiceUtil.setRequestGroupId;
 
 class ServiceUtilTest {
 

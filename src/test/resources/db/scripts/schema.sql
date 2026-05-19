@@ -285,6 +285,17 @@
         primary key (id)
     ) engine=InnoDB;
 
+    create table message_exchange_integration_config (
+        created datetime(6),
+        id bigint not null auto_increment,
+        modified datetime(6),
+        municipality_id varchar(8) not null,
+        namespace varchar(32) not null,
+        status_change_to varchar(255),
+        trigger_status_change_on varchar(255),
+        primary key (id)
+    ) engine=InnoDB;
+
     create table message_exchange_sync (
         active bit,
         id bigint not null auto_increment,
@@ -674,6 +685,12 @@
     create index idx_json_parameter_key 
        on json_parameter (parameter_key);
 
+    create index idx_mex_integration_config_namespace_municipality_id 
+       on message_exchange_integration_config (namespace, municipality_id);
+
+    alter table if exists message_exchange_integration_config 
+       add constraint uq_mex_integration_config_namespace_municipality_id unique (namespace, municipality_id);
+
     create index idx_namespace_municipality_id 
        on metadata_label (namespace, municipality_id);
 
@@ -798,34 +815,34 @@
        foreign key (communication_id) 
        references communication (id);
 
-    alter table if exists communication_cc_recipients
-       add constraint fk_communication_cc_recipients_communication_id
-       foreign key (communication_id)
+    alter table if exists communication_cc_recipients 
+       add constraint fk_communication_cc_recipients_communication_id 
+       foreign key (communication_id) 
        references communication (id);
 
-    alter table if exists communication_email_header
-       add constraint fk_email_header_email_id
-       foreign key (communication_id)
+    alter table if exists communication_email_header 
+       add constraint fk_email_header_email_id 
+       foreign key (communication_id) 
        references communication (id);
 
-    alter table if exists communication_email_header_value
-       add constraint fk_header_value_header_id
-       foreign key (header_id)
+    alter table if exists communication_email_header_value 
+       add constraint fk_header_value_header_id 
+       foreign key (header_id) 
        references communication_email_header (id);
 
-    alter table if exists communication_errand_attachment
-       add constraint FKhedy3oimyh7w729ih0ng5etop
-       foreign key (errand_attachment_id)
+    alter table if exists communication_errand_attachment 
+       add constraint FKhedy3oimyh7w729ih0ng5etop 
+       foreign key (errand_attachment_id) 
        references attachment (id);
 
-    alter table if exists communication_errand_attachment
-       add constraint FKl9pe6hofx8h94egfys403g7n8
-       foreign key (communication_id)
+    alter table if exists communication_errand_attachment 
+       add constraint FKl9pe6hofx8h94egfys403g7n8 
+       foreign key (communication_id) 
        references communication (id);
 
-    alter table if exists communication_recipients
-       add constraint fk_communication_recipients_message_id
-       foreign key (communication_id)
+    alter table if exists communication_recipients 
+       add constraint fk_communication_recipients_message_id 
+       foreign key (communication_id) 
        references communication (id);
 
     alter table if exists contact_channel 
@@ -839,8 +856,8 @@
        references conversation (id);
 
     alter table if exists errand 
-       add constraint fk_errand_contact_reason_id
-       foreign key (contact_reason_id)
+       add constraint fk_errand_contact_reason_id 
+       foreign key (contact_reason_id) 
        references contact_reason (id);
 
     alter table if exists errand_access_labels 
