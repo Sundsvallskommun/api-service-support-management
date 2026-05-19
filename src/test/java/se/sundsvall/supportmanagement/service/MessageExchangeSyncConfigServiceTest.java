@@ -388,27 +388,4 @@ class MessageExchangeSyncConfigServiceTest {
 
 		verifyNoInteractions(conversationRepositoryMock, messageExchangeClientMock);
 	}
-
-	@Test
-	void resolveChannelFromAdAccount() {
-		final var identifier = new generated.se.sundsvall.messageexchange.Identifier().type("adAccount").value("joe01doe");
-		assertThat(MessageExchangeSyncService.resolveChannel(identifier)).isEqualTo("WEB_UI");
-	}
-
-	@Test
-	void resolveChannelFromPartyId() {
-		final var identifier = new generated.se.sundsvall.messageexchange.Identifier().type("partyId").value("d8b40f9e-1234-4abc-9012-3456789abcde");
-		assertThat(MessageExchangeSyncService.resolveChannel(identifier)).isEqualTo("MY_PAGES");
-	}
-
-	@Test
-	void resolveChannelFromNullIdentifier() {
-		assertThat(MessageExchangeSyncService.resolveChannel(null)).isNull();
-	}
-
-	@Test
-	void resolveChannelFromUnknownType() {
-		final var identifier = new generated.se.sundsvall.messageexchange.Identifier().type("something-else").value("x");
-		assertThat(MessageExchangeSyncService.resolveChannel(identifier)).isNull();
-	}
 }

@@ -264,7 +264,10 @@ public class CommunicationService {
 	}
 
 	private static String toChannel(final CommunicationType type) {
-		return type == null ? null : switch (type) {
+		if (type == null) {
+			return null;
+		}
+		return switch (type) {
 			case EMAIL -> EMAIL;
 			case WEB_MESSAGE -> ESERVICE;
 			case SMS -> null;
