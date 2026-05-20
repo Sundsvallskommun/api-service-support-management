@@ -54,6 +54,9 @@ public class AttachmentEntity {
 	@Column(name = "mime_type")
 	private String mimeType;
 
+	@Column(name = "channel")
+	private String channel;
+
 	@Column(name = "file_size")
 	private Integer fileSize;
 
@@ -152,6 +155,19 @@ public class AttachmentEntity {
 		return this;
 	}
 
+	public String getChannel() {
+		return channel;
+	}
+
+	public void setChannel(final String channel) {
+		this.channel = channel;
+	}
+
+	public AttachmentEntity withChannel(final String channel) {
+		this.channel = channel;
+		return this;
+	}
+
 	public AttachmentDataEntity getAttachmentData() {
 		return attachmentData;
 	}
@@ -223,13 +239,14 @@ public class AttachmentEntity {
 			return false;
 		final AttachmentEntity that = (AttachmentEntity) o;
 		return Objects.equals(id, that.id) && Objects.equals(namespace, that.namespace) && Objects.equals(municipalityId, that.municipalityId) && Objects.equals(fileName, that.fileName) && Objects.equals(
-			mimeType, that.mimeType) && Objects.equals(fileSize, that.fileSize) && Objects.equals(attachmentData, that.attachmentData) && Objects.equals(created, that.created) && Objects.equals(modified, that.modified)
+			mimeType, that.mimeType) && Objects.equals(channel, that.channel) && Objects.equals(fileSize, that.fileSize) && Objects.equals(attachmentData, that.attachmentData) && Objects.equals(created, that.created) && Objects.equals(
+				modified, that.modified)
 			&& Objects.equals(errandEntity, that.errandEntity);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, namespace, municipalityId, fileName, mimeType, fileSize, attachmentData, created, modified, errandEntity);
+		return Objects.hash(id, namespace, municipalityId, fileName, mimeType, channel, fileSize, attachmentData, created, modified, errandEntity);
 	}
 
 	@Override
@@ -240,6 +257,7 @@ public class AttachmentEntity {
 			", municipalityId='" + municipalityId + '\'' +
 			", fileName='" + fileName + '\'' +
 			", mimeType='" + mimeType + '\'' +
+			", channel='" + channel + '\'' +
 			", fileSize=" + fileSize +
 			", attachmentData=" + attachmentData +
 			", created=" + created +

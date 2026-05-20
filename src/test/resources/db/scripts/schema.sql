@@ -46,6 +46,7 @@
         modified datetime(6),
         municipality_id varchar(8),
         namespace varchar(32),
+        channel varchar(255),
         errand_id varchar(255) not null,
         file_name varchar(255),
         id varchar(255) not null,
@@ -282,6 +283,17 @@
         parameter_key varchar(255),
         schema_id varchar(255),
         value longtext,
+        primary key (id)
+    ) engine=InnoDB;
+
+    create table message_exchange_integration_config (
+        created datetime(6),
+        id bigint not null auto_increment,
+        modified datetime(6),
+        municipality_id varchar(8) not null,
+        namespace varchar(32) not null,
+        status_change_to varchar(255),
+        trigger_status_change_on varchar(255),
         primary key (id)
     ) engine=InnoDB;
 
@@ -725,6 +737,12 @@
 
     create index idx_json_parameter_key 
        on json_parameter (parameter_key);
+
+    create index idx_mex_integration_config_namespace_municipality_id 
+       on message_exchange_integration_config (namespace, municipality_id);
+
+    alter table if exists message_exchange_integration_config 
+       add constraint uq_mex_integration_config_namespace_municipality_id unique (namespace, municipality_id);
 
     create index idx_namespace_municipality_id 
        on metadata_label (namespace, municipality_id);

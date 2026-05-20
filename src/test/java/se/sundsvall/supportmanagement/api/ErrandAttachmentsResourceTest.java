@@ -22,6 +22,7 @@ import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
@@ -63,7 +64,7 @@ class ErrandAttachmentsResourceTest {
 		final var attachmentId = "attachmentId";
 
 		// Mock
-		when(errandAttachmentServiceMock.createErrandAttachment(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), any(MultipartFile.class))).thenReturn(attachmentId);
+		when(errandAttachmentServiceMock.createErrandAttachment(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), any(MultipartFile.class), nullable(String.class))).thenReturn(attachmentId);
 
 		// Call
 		webTestClient.post().uri(builder -> builder.path(PATH)
@@ -79,7 +80,7 @@ class ErrandAttachmentsResourceTest {
 
 		// Verification
 		final ArgumentCaptor<MultipartFile> fileArgumentCaptor = ArgumentCaptor.forClass(MultipartFile.class);
-		verify(errandAttachmentServiceMock).createErrandAttachment(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), fileArgumentCaptor.capture());
+		verify(errandAttachmentServiceMock).createErrandAttachment(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), fileArgumentCaptor.capture(), nullable(String.class));
 		final var multipartFile = fileArgumentCaptor.getValue();
 		assertThat(multipartFile.getOriginalFilename()).isEqualTo(fileName);
 		assertThat(multipartFile.getContentType()).isEqualTo(TEXT_PLAIN_VALUE);

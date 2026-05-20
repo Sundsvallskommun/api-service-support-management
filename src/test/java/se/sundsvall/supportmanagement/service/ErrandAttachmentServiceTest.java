@@ -43,6 +43,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -127,14 +128,14 @@ class ErrandAttachmentServiceTest {
 
 		// Call
 		try (final MockedStatic<ErrandAttachmentMapper> mapper = Mockito.mockStatic(ErrandAttachmentMapper.class)) {
-			mapper.when(() -> ErrandAttachmentMapper.toAttachmentEntity(any(), any(MultipartFile.class))).thenReturn(attachmentMock);
+			mapper.when(() -> ErrandAttachmentMapper.toAttachmentEntity(any(), any(MultipartFile.class), nullable(String.class))).thenReturn(attachmentMock);
 
-			final var result = service.createErrandAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, multipartFileMock);
+			final var result = service.createErrandAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, multipartFileMock, null);
 
 			// Assertions and verifications
 			assertThat(result).isNotNull().isEqualTo(ATTACHMENT_ID);
 
-			mapper.verify(() -> ErrandAttachmentMapper.toAttachmentEntity(same(errandMock), same(multipartFileMock)));
+			mapper.verify(() -> ErrandAttachmentMapper.toAttachmentEntity(same(errandMock), same(multipartFileMock), nullable(String.class)));
 			verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, RW);
 			verify(attachmentRepositoryMock).save(attachmentMock);
 			verify(revisionServiceMock).createErrandRevision(errandMock);

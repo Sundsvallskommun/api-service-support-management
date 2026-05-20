@@ -4,8 +4,10 @@ import generated.se.sundsvall.eventlog.EventType;
 import generated.se.sundsvall.messageexchange.Conversation;
 import generated.se.sundsvall.messageexchange.Identifier;
 import generated.se.sundsvall.messageexchange.KeyValues;
+import generated.se.sundsvall.messageexchange.Message;
 import java.io.ByteArrayInputStream;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,7 +25,9 @@ import org.springframework.test.util.ReflectionTestUtils;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.supportmanagement.integration.db.ConversationRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.MessageExchangeIntegrationConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.MessageExchangeIntegrationConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.ConversationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
 import se.sundsvall.supportmanagement.integration.messageexchange.MessageExchangeClient;
@@ -32,7 +36,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.ArgumentMatchers.same;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -40,7 +46,9 @@ import static org.mockito.Mockito.when;
 import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.RELATION_ID_KEY;
 
 @ExtendWith(MockitoExtension.class)
-class MessageExchangeSyncConfigServiceTest {
+class MessageExchangeSyncServiceTest {
+
+	private static final String MESSAGE_EXCHANGE_NS = "messageExchangeNamespace";
 
 	@Mock
 	private MessageExchangeClient messageExchangeClientMock;
@@ -57,13 +65,14 @@ class MessageExchangeSyncConfigServiceTest {
 	@Mock
 	private EventService eventServiceMock;
 
+	@Mock
+	private MessageExchangeIntegrationConfigRepository messageExchangeIntegrationConfigRepositoryMock;
+
 	@Captor
 	private ArgumentCaptor<ConversationEntity> conversationEntityCaptor;
 
 	@InjectMocks
 	private MessageExchangeSyncService service;
-
-	private static final String MESSAGE_EXCHANGE_NS = "messageExchangeNamespace";
 
 	@BeforeEach
 	void setUp() {
@@ -115,7 +124,7 @@ class MessageExchangeSyncConfigServiceTest {
 		when(conversationRepositoryMock.save(entity)).thenReturn(entity);
 		when(errandsRepositoryMock.getReferenceById(any())).thenReturn(errandEntity);
 		when(messageExchangeClientMock.getMessages(eq(municipalityId), eq(MESSAGE_EXCHANGE_NS), any(), any(), any()))
-			.thenReturn(ResponseEntity.ok(new PageImpl<>(List.of(new generated.se.sundsvall.messageexchange.Message()))));
+			.thenReturn(ResponseEntity.ok(new PageImpl<>(List.of(new Message()))));
 
 		// Act
 		service.syncConversation(entity, conversation);
@@ -140,24 +149,16 @@ class MessageExchangeSyncConfigServiceTest {
 	@Test
 	void syncMessages() {
 		// Arrange
-		final var errandId = 123L;
 		final var municipalityId = "municipalityId";
-		final var namespace = "namespace";
 		final var user = "user";
 		final var messageExchangeId = "messageExchangeId";
-		final var latestSyncedSequenceNumber = 99L;
-		final var conversationEntity = ConversationEntity.create()
-			.withErrandId(String.valueOf(errandId))
-			.withMunicipalityId(municipalityId)
-			.withNamespace(namespace)
-			.withMessageExchangeId(messageExchangeId)
-			.withLatestSyncedSequenceNumber(latestSyncedSequenceNumber);
+		final var conversationEntity = baseConversation(municipalityId, messageExchangeId);
 
 		when(messageExchangeClientMock.getMessages(eq(municipalityId), eq(MESSAGE_EXCHANGE_NS), any(), any(), any()))
-			.thenReturn(ResponseEntity.ok(new PageImpl<>(List.of(new generated.se.sundsvall.messageexchange.Message()))));
+			.thenReturn(ResponseEntity.ok(new PageImpl<>(List.of(new Message()))));
 
 		// Act
-		var shouldNotify = service.syncMessages(conversationEntity, user);
+		final var shouldNotify = service.syncMessages(conversationEntity, ErrandEntity.create().withAssignedUserId(user));
 
 		// Assert
 		assertThat(shouldNotify).isTrue();
@@ -169,24 +170,16 @@ class MessageExchangeSyncConfigServiceTest {
 	@Test
 	void syncMessagesCreatedByAssignedUser() {
 		// Arrange
-		final var errandId = 123L;
 		final var municipalityId = "municipalityId";
-		final var namespace = "namespace";
 		final var user = "user";
 		final var messageExchangeId = "messageExchangeId";
-		final var latestSyncedSequenceNumber = 99L;
-		final var conversationEntity = ConversationEntity.create()
-			.withErrandId(String.valueOf(errandId))
-			.withMunicipalityId(municipalityId)
-			.withNamespace(namespace)
-			.withMessageExchangeId(messageExchangeId)
-			.withLatestSyncedSequenceNumber(latestSyncedSequenceNumber);
+		final var conversationEntity = baseConversation(municipalityId, messageExchangeId);
 
 		when(messageExchangeClientMock.getMessages(eq(municipalityId), eq(MESSAGE_EXCHANGE_NS), any(), any(), any()))
-			.thenReturn(ResponseEntity.ok(new PageImpl<>(List.of(new generated.se.sundsvall.messageexchange.Message().createdBy(new Identifier().value(user))))));
+			.thenReturn(ResponseEntity.ok(new PageImpl<>(List.of(new Message().createdBy(new Identifier().value(user))))));
 
 		// Act
-		var shouldNotify = service.syncMessages(conversationEntity, user);
+		final var shouldNotify = service.syncMessages(conversationEntity, ErrandEntity.create().withAssignedUserId(user));
 
 		// Assert
 		assertThat(shouldNotify).isFalse();
@@ -198,27 +191,19 @@ class MessageExchangeSyncConfigServiceTest {
 	@Test
 	void syncMessagesCreatedByAssignedUserAndOtherUser() {
 		// Arrange
-		final var errandId = 123L;
 		final var municipalityId = "municipalityId";
-		final var namespace = "namespace";
 		final var user = "user";
 		final var otherUser = "otherUser";
 		final var messageExchangeId = "messageExchangeId";
-		final var latestSyncedSequenceNumber = 99L;
-		final var conversationEntity = ConversationEntity.create()
-			.withErrandId(String.valueOf(errandId))
-			.withMunicipalityId(municipalityId)
-			.withNamespace(namespace)
-			.withMessageExchangeId(messageExchangeId)
-			.withLatestSyncedSequenceNumber(latestSyncedSequenceNumber);
+		final var conversationEntity = baseConversation(municipalityId, messageExchangeId);
 
 		when(messageExchangeClientMock.getMessages(eq(municipalityId), eq(MESSAGE_EXCHANGE_NS), any(), any(), any()))
 			.thenReturn(ResponseEntity.ok(new PageImpl<>(List.of(
-				new generated.se.sundsvall.messageexchange.Message().createdBy(new Identifier().value(user)),
-				new generated.se.sundsvall.messageexchange.Message().createdBy(new Identifier().value(otherUser))))));
+				new Message().createdBy(new Identifier().value(user)),
+				new Message().createdBy(new Identifier().value(otherUser))))));
 
 		// Act
-		var shouldNotify = service.syncMessages(conversationEntity, user);
+		final var shouldNotify = service.syncMessages(conversationEntity, ErrandEntity.create().withAssignedUserId(user));
 
 		// Assert
 		assertThat(shouldNotify).isTrue();
@@ -230,24 +215,16 @@ class MessageExchangeSyncConfigServiceTest {
 	@Test
 	void syncMessagesNoMessages() {
 		// Arrange
-		final var errandId = 123L;
 		final var municipalityId = "municipalityId";
-		final var namespace = "namespace";
 		final var user = "user";
 		final var messageExchangeId = "messageExchangeId";
-		final var latestSyncedSequenceNumber = 99L;
-		final var conversationEntity = ConversationEntity.create()
-			.withErrandId(String.valueOf(errandId))
-			.withMunicipalityId(municipalityId)
-			.withNamespace(namespace)
-			.withMessageExchangeId(messageExchangeId)
-			.withLatestSyncedSequenceNumber(latestSyncedSequenceNumber);
+		final var conversationEntity = baseConversation(municipalityId, messageExchangeId);
 
 		when(messageExchangeClientMock.getMessages(eq(municipalityId), eq(MESSAGE_EXCHANGE_NS), any(), any(), any()))
 			.thenReturn(ResponseEntity.ok(new PageImpl<>(List.of())));
 
 		// Act
-		final var shouldNotify = service.syncMessages(conversationEntity, user);
+		final var shouldNotify = service.syncMessages(conversationEntity, ErrandEntity.create().withAssignedUserId(user));
 
 		// Assert
 		assertThat(shouldNotify).isFalse();
@@ -259,30 +236,140 @@ class MessageExchangeSyncConfigServiceTest {
 	@Test
 	void syncMessagesNoResponse() {
 		// Arrange
-		final var errandId = 123L;
 		final var municipalityId = "municipalityId";
-		final var namespace = "namespace";
 		final var user = "user";
 		final var messageExchangeId = "messageExchangeId";
-		final var latestSyncedSequenceNumber = 99L;
-		final var conversationEntity = ConversationEntity.create()
-			.withErrandId(String.valueOf(errandId))
-			.withMunicipalityId(municipalityId)
-			.withNamespace(namespace)
-			.withMessageExchangeId(messageExchangeId)
-			.withLatestSyncedSequenceNumber(latestSyncedSequenceNumber);
+		final var conversationEntity = baseConversation(municipalityId, messageExchangeId);
 
 		when(messageExchangeClientMock.getMessages(eq(municipalityId), eq(MESSAGE_EXCHANGE_NS), any(), any(), any()))
 			.thenReturn(null);
 
 		// Act & Assert
-		assertThatThrownBy(() -> service.syncMessages(conversationEntity, user))
+		final var errandEntity = ErrandEntity.create().withAssignedUserId(user);
+		assertThatThrownBy(() -> service.syncMessages(conversationEntity, errandEntity))
 			.isInstanceOf(Problem.class)
 			.hasMessageContaining("Failed to retrieve messages from Message Exchange");
 
 		verify(messageExchangeClientMock).getMessages(municipalityId, MESSAGE_EXCHANGE_NS, messageExchangeId, "sequenceNumber.id >99", Pageable.unpaged());
 		verifyNoMoreInteractions(messageExchangeClientMock);
 		verifyNoInteractions(attachmentServiceMock, conversationRepositoryMock);
+	}
+
+	@Test
+	void syncMessagesTriggersStatusChangeWhenIncomingFromOther() {
+		// Arrange
+		final var municipalityId = "municipalityId";
+		final var namespace = "namespace";
+		final var assignedUserId = "handler";
+		final var conversationEntity = baseConversation(municipalityId, "messageExchangeId").withNamespace(namespace);
+		final var errand = ErrandEntity.create().withMunicipalityId(municipalityId).withNamespace(namespace).withAssignedUserId(assignedUserId).withStatus("SOLVED");
+		final var config = MessageExchangeIntegrationConfigEntity.create().withTriggerStatusChangeOn("SOLVED").withStatusChangeTo("OPEN");
+
+		when(messageExchangeClientMock.getMessages(eq(municipalityId), eq(MESSAGE_EXCHANGE_NS), any(), any(), any()))
+			.thenReturn(ResponseEntity.ok(new PageImpl<>(List.of(new Message().createdBy(new Identifier().value("someoneElse"))))));
+		when(messageExchangeIntegrationConfigRepositoryMock.getByNamespaceAndMunicipalityId(namespace, municipalityId))
+			.thenReturn(Optional.of(config));
+
+		// Act
+		final var shouldNotify = service.syncMessages(conversationEntity, errand);
+
+		// Assert
+		assertThat(shouldNotify).isTrue();
+		assertThat(errand.getStatus()).isEqualTo("OPEN");
+		verify(errandsRepositoryMock).save(errand);
+	}
+
+	@Test
+	void syncMessagesDoesNotTriggerStatusChangeWhenStatusDoesNotMatchTrigger() {
+		// Arrange
+		final var municipalityId = "municipalityId";
+		final var namespace = "namespace";
+		final var assignedUserId = "handler";
+		final var conversationEntity = baseConversation(municipalityId, "messageExchangeId").withNamespace(namespace);
+		final var errand = ErrandEntity.create().withMunicipalityId(municipalityId).withNamespace(namespace).withAssignedUserId(assignedUserId).withStatus("NEW");
+		final var config = MessageExchangeIntegrationConfigEntity.create().withTriggerStatusChangeOn("SOLVED").withStatusChangeTo("OPEN");
+
+		when(messageExchangeClientMock.getMessages(eq(municipalityId), eq(MESSAGE_EXCHANGE_NS), any(), any(), any()))
+			.thenReturn(ResponseEntity.ok(new PageImpl<>(List.of(new Message().createdBy(new Identifier().value("someoneElse"))))));
+		when(messageExchangeIntegrationConfigRepositoryMock.getByNamespaceAndMunicipalityId(namespace, municipalityId))
+			.thenReturn(Optional.of(config));
+
+		// Act
+		final var shouldNotify = service.syncMessages(conversationEntity, errand);
+
+		// Assert
+		assertThat(shouldNotify).isTrue();
+		assertThat(errand.getStatus()).isEqualTo("NEW");
+		verify(errandsRepositoryMock, never()).save(any());
+	}
+
+	@Test
+	void syncMessagesDoesNotTriggerStatusChangeWhenConfigMissing() {
+		// Arrange
+		final var municipalityId = "municipalityId";
+		final var namespace = "namespace";
+		final var assignedUserId = "handler";
+		final var conversationEntity = baseConversation(municipalityId, "messageExchangeId").withNamespace(namespace);
+		final var errand = ErrandEntity.create().withMunicipalityId(municipalityId).withNamespace(namespace).withAssignedUserId(assignedUserId).withStatus("SOLVED");
+
+		when(messageExchangeClientMock.getMessages(eq(municipalityId), eq(MESSAGE_EXCHANGE_NS), any(), any(), any()))
+			.thenReturn(ResponseEntity.ok(new PageImpl<>(List.of(new Message().createdBy(new Identifier().value("someoneElse"))))));
+		when(messageExchangeIntegrationConfigRepositoryMock.getByNamespaceAndMunicipalityId(namespace, municipalityId))
+			.thenReturn(Optional.empty());
+
+		// Act
+		final var shouldNotify = service.syncMessages(conversationEntity, errand);
+
+		// Assert
+		assertThat(shouldNotify).isTrue();
+		assertThat(errand.getStatus()).isEqualTo("SOLVED");
+		verify(errandsRepositoryMock, never()).save(any());
+	}
+
+	@Test
+	void syncMessagesDoesNotTriggerStatusChangeWhenTriggerStatusNull() {
+		// Arrange
+		final var municipalityId = "municipalityId";
+		final var namespace = "namespace";
+		final var assignedUserId = "handler";
+		final var conversationEntity = baseConversation(municipalityId, "messageExchangeId").withNamespace(namespace);
+		final var errand = ErrandEntity.create().withMunicipalityId(municipalityId).withNamespace(namespace).withAssignedUserId(assignedUserId).withStatus("SOLVED");
+		final var config = MessageExchangeIntegrationConfigEntity.create().withTriggerStatusChangeOn(null).withStatusChangeTo("OPEN");
+
+		when(messageExchangeClientMock.getMessages(eq(municipalityId), eq(MESSAGE_EXCHANGE_NS), any(), any(), any()))
+			.thenReturn(ResponseEntity.ok(new PageImpl<>(List.of(new Message().createdBy(new Identifier().value("someoneElse"))))));
+		when(messageExchangeIntegrationConfigRepositoryMock.getByNamespaceAndMunicipalityId(namespace, municipalityId))
+			.thenReturn(Optional.of(config));
+
+		// Act
+		final var shouldNotify = service.syncMessages(conversationEntity, errand);
+
+		// Assert
+		assertThat(shouldNotify).isTrue();
+		assertThat(errand.getStatus()).isEqualTo("SOLVED");
+		verify(errandsRepositoryMock, never()).save(any());
+	}
+
+	@Test
+	void syncMessagesDoesNotConsultConfigWhenAllMessagesFromAssignedUser() {
+		// Arrange
+		final var municipalityId = "municipalityId";
+		final var namespace = "namespace";
+		final var assignedUserId = "handler";
+		final var conversationEntity = baseConversation(municipalityId, "messageExchangeId").withNamespace(namespace);
+		final var errand = ErrandEntity.create().withMunicipalityId(municipalityId).withNamespace(namespace).withAssignedUserId(assignedUserId).withStatus("SOLVED");
+
+		when(messageExchangeClientMock.getMessages(eq(municipalityId), eq(MESSAGE_EXCHANGE_NS), any(), any(), any()))
+			.thenReturn(ResponseEntity.ok(new PageImpl<>(List.of(new Message().createdBy(new Identifier().value(assignedUserId))))));
+
+		// Act
+		final var shouldNotify = service.syncMessages(conversationEntity, errand);
+
+		// Assert
+		assertThat(shouldNotify).isFalse();
+		assertThat(errand.getStatus()).isEqualTo("SOLVED");
+		verifyNoInteractions(messageExchangeIntegrationConfigRepositoryMock);
+		verify(errandsRepositoryMock, never()).save(any());
 	}
 
 	@Test
@@ -295,7 +382,7 @@ class MessageExchangeSyncConfigServiceTest {
 			.withErrandId(errandEntity.getId())
 			.withMunicipalityId(municipalityId)
 			.withNamespace(namespace);
-		final var message = new generated.se.sundsvall.messageexchange.Message();
+		final var message = new Message();
 		final var attachment = new generated.se.sundsvall.messageexchange.Attachment().id("attachmentId").fileName("test.txt").fileSize(1024);
 
 		when(errandsRepositoryMock.getReferenceById(any())).thenReturn(errandEntity);
@@ -310,7 +397,7 @@ class MessageExchangeSyncConfigServiceTest {
 		// Assert
 		verify(messageExchangeClientMock).getMessageAttachment(eq(municipalityId), any(), any(), any(), eq(attachment.getId()));
 		verify(errandsRepositoryMock).getReferenceById("123L");
-		verify(attachmentServiceMock).createErrandAttachment(same(errandEntity), ArgumentMatchers.<ResponseEntity<InputStreamResource>>any(), eq("test.txt"), eq(1024));
+		verify(attachmentServiceMock).createErrandAttachment(same(errandEntity), ArgumentMatchers.<ResponseEntity<InputStreamResource>>any(), eq("test.txt"), eq(1024), nullable(String.class));
 		verifyNoMoreInteractions(attachmentServiceMock, messageExchangeClientMock);
 		verifyNoInteractions(conversationRepositoryMock);
 	}
@@ -325,7 +412,7 @@ class MessageExchangeSyncConfigServiceTest {
 			.withErrandId(errandEntity.getId())
 			.withMunicipalityId(municipalityId)
 			.withNamespace("namespace");
-		final var message = new generated.se.sundsvall.messageexchange.Message();
+		final var message = new Message();
 		final var attachment = new generated.se.sundsvall.messageexchange.Attachment().id("attachmentId").fileName("test.txt").fileSize(1024);
 
 		when(errandsRepositoryMock.getReferenceById(any())).thenReturn(errandEntity);
@@ -349,10 +436,10 @@ class MessageExchangeSyncConfigServiceTest {
 			.body(new InputStreamResource(new ByteArrayInputStream(new byte[0])));
 
 		// Act
-		service.saveAttachment(errandEntity, file, fileName, fileSize);
+		service.saveAttachment(errandEntity, file, fileName, fileSize, "WEB_UI");
 
 		// Assert
-		verify(attachmentServiceMock).createErrandAttachment(same(errandEntity), ArgumentMatchers.<ResponseEntity<InputStreamResource>>any(), eq(fileName), eq(fileSize));
+		verify(attachmentServiceMock).createErrandAttachment(same(errandEntity), ArgumentMatchers.<ResponseEntity<InputStreamResource>>any(), eq(fileName), eq(fileSize), eq("WEB_UI"));
 		verifyNoMoreInteractions(attachmentServiceMock);
 		verifyNoInteractions(conversationRepositoryMock, messageExchangeClientMock);
 	}
@@ -366,7 +453,7 @@ class MessageExchangeSyncConfigServiceTest {
 			.build();
 
 		// Act & Assert
-		assertThatThrownBy(() -> service.saveAttachment(errandEntity, file, "test.txt", 1024))
+		assertThatThrownBy(() -> service.saveAttachment(errandEntity, file, "test.txt", 1024, null))
 			.isInstanceOf(Problem.class)
 			.hasMessageContaining("Failed to retrieve attachment from Message Exchange");
 
@@ -381,11 +468,19 @@ class MessageExchangeSyncConfigServiceTest {
 			.body(new InputStreamResource(new ByteArrayInputStream(new byte[0])));
 
 		// Act & Assert
-		assertThatThrownBy(() -> service.saveAttachment(errandEntity, file, "test.txt", 1024))
+		assertThatThrownBy(() -> service.saveAttachment(errandEntity, file, "test.txt", 1024, null))
 			.isInstanceOf(Problem.class)
 			.hasMessageContaining("Failed to retrieve attachment from Message Exchange");
 
 		verifyNoInteractions(conversationRepositoryMock, messageExchangeClientMock);
 	}
 
+	private static ConversationEntity baseConversation(final String municipalityId, final String messageExchangeId) {
+		return ConversationEntity.create()
+			.withErrandId("errandId")
+			.withMunicipalityId(municipalityId)
+			.withNamespace("namespace")
+			.withMessageExchangeId(messageExchangeId)
+			.withLatestSyncedSequenceNumber(99L);
+	}
 }

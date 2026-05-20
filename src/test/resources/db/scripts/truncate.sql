@@ -37,6 +37,7 @@ TRUNCATE table errand_access_labels;
 TRUNCATE table conversation;
 TRUNCATE table conversation_relation_id;
 TRUNCATE table message_exchange_sync;
+TRUNCATE table message_exchange_integration_config;
 TRUNCATE table web_message_collect;
 TRUNCATE table web_message_collect_family_ids;
 TRUNCATE table action_config_condition_values;

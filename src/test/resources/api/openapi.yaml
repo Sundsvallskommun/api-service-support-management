@@ -5,9 +5,9 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "14.2"
+  version: "14.5"
 servers:
-- url: http://localhost:59882
+- url: http://localhost:51386
   description: Generated server url
 tags:
 - name: Errand attachments
@@ -54,6 +54,8 @@ tags:
   description: Status metadata operations
 - name: Errand communication
   description: Errand communication operations
+- name: Configuration for message exchange integration
+  description: Settings for message exchange integration per municipality/namespace
 - name: Configuration for email integration
   description: Settings for email integration per municipality/namespace
 - name: Errands
@@ -583,6 +585,234 @@ paths:
       summary: Delete label structure
       description: Delete label structure for provided namespace and municipality
       operationId: deleteLabels
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      responses:
+        "204":
+          description: Successful operation
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/messageexchange-integration-config:
+    get:
+      tags:
+      - Configuration for message exchange integration
+      summary: Read message exchange integration config
+      description: Fetches message exchange integration config for a municipality/namespace
+      operationId: readMessageExchangeIntegrationConfig
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      responses:
+        "200":
+          description: Successful Operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageExchangeIntegration"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server Error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    put:
+      tags:
+      - Configuration for message exchange integration
+      summary: Update message exchange integration config
+      description: Update message exchange integration config used for status-change-on-incoming-message
+        behaviour
+      operationId: updateMessageExchangeIntegrationConfig
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MessageExchangeIntegration"
+        required: true
+      responses:
+        "204":
+          description: Successful operation
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    post:
+      tags:
+      - Configuration for message exchange integration
+      summary: Create message exchange integration config
+      description: Create message exchange integration config used for status-change-on-incoming-message
+        behaviour
+      operationId: createMessageExchangeIntegrationConfig
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MessageExchangeIntegration"
+        required: true
+      responses:
+        "201":
+          description: Successful operation
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    delete:
+      tags:
+      - Configuration for message exchange integration
+      summary: Delete message exchange integration config
+      description: Deletes the message exchange integration config for a municipality/namespace
+      operationId: deleteMessageExchangeIntegrationConfig
       parameters:
       - name: namespace
         in: path
@@ -2468,7 +2698,7 @@ paths:
         example: 2281
       - name: referredFrom
         in: query
-        description: "Relation reference in format (only source is used): '{relationType}|{sourceResourceId};{sourceType};{sourceService};{sourceNamespace}|{targetResourceId};{targetType};{targetService};{targetNamespace}'"
+        description: "Relation reference in format (target part is ignored): '{relationType}|{sourceResourceId};{sourceType};{sourceService};{sourceNamespace}|{targetResourceId};{targetType};{targetService};{targetNamespace}'"
         required: false
         schema:
           type: string
@@ -3410,6 +3640,9 @@ paths:
                 errandAttachment:
                   type: string
                   format: binary
+                channel:
+                  type: string
+                  description: Channel the attachment was received via
               required:
               - errandAttachment
         required: true
@@ -7487,9 +7720,9 @@ components:
         type:
           type: string
           format: uri
-        title:
-          type: string
         detail:
+          type: string
+        title:
           type: string
         status:
           type: integer
@@ -7512,10 +7745,10 @@ components:
         instance:
           type: string
           format: uri
-        detail:
-          type: string
         causeAsProblem:
           $ref: "#/components/schemas/ThrowableProblem"
+        detail:
+          type: string
     ThrowableProblem:
       type: object
       properties:
@@ -7705,6 +7938,40 @@ components:
       required:
       - classification
       - resourceName
+    MessageExchangeIntegration:
+      type: object
+      description: Message exchange worker config model
+      properties:
+        triggerStatusChangeOn:
+          type:
+          - string
+          - "null"
+          description: Status on errand that will trigger a status change when a new
+            incoming message refers to an existing errand
+          examples:
+          - SOLVED
+        statusChangeTo:
+          type:
+          - string
+          - "null"
+          description: Status that will be set on errand if status change is triggered.
+            Can only be null if 'triggerStatusChangeOn' is null.
+          examples:
+          - OPEN
+        created:
+          type: string
+          format: date-time
+          description: Timestamp when the configuration was created
+          examples:
+          - 2000-10-31T01:30:00.000+02:00
+          readOnly: true
+        modified:
+          type: string
+          format: date-time
+          description: Timestamp when the configuration was last modified
+          examples:
+          - 2000-10-31T01:30:00.000+02:00
+          readOnly: true
     EmailIntegration:
       type: object
       description: Email integration config model
@@ -8769,6 +9036,37 @@ components:
           type: boolean
         container:
           type: boolean
+        number:
+          type: boolean
+        missingNode:
+          type: boolean
+        long:
+          type: boolean
+        short:
+          type: boolean
+        textual:
+          type: boolean
+          deprecated: true
+        boolean:
+          type: boolean
+        binary:
+          type: boolean
+        pojo:
+          type: boolean
+        int:
+          type: boolean
+        string:
+          type: boolean
+        double:
+          type: boolean
+        bigDecimal:
+          type: boolean
+        integralNumber:
+          type: boolean
+        floatingPointNumber:
+          type: boolean
+        bigInteger:
+          type: boolean
         nodeType:
           type: string
           enum:
@@ -8781,38 +9079,7 @@ components:
           - OBJECT
           - POJO
           - STRING
-        floatingPointNumber:
-          type: boolean
         valueNode:
-          type: boolean
-        bigDecimal:
-          type: boolean
-        bigInteger:
-          type: boolean
-        integralNumber:
-          type: boolean
-        short:
-          type: boolean
-        pojo:
-          type: boolean
-        int:
-          type: boolean
-        string:
-          type: boolean
-        binary:
-          type: boolean
-        textual:
-          type: boolean
-          deprecated: true
-        double:
-          type: boolean
-        boolean:
-          type: boolean
-        long:
-          type: boolean
-        missingNode:
-          type: boolean
-        number:
           type: boolean
         embeddedValue:
           type: boolean
@@ -9577,12 +9844,12 @@ components:
     PageErrand:
       type: object
       properties:
-        totalPages:
-          type: integer
-          format: int32
         totalElements:
           type: integer
           format: int64
+        totalPages:
+          type: integer
+          format: int32
         size:
           type: integer
           format: int32
@@ -9595,13 +9862,13 @@ components:
           format: int32
         sort:
           $ref: "#/components/schemas/SortObject"
+        numberOfElements:
+          type: integer
+          format: int32
         first:
           type: boolean
         last:
           type: boolean
-        numberOfElements:
-          type: integer
-          format: int32
         pageable:
           $ref: "#/components/schemas/PageableObject"
         empty:
@@ -9614,14 +9881,14 @@ components:
           format: int64
         sort:
           $ref: "#/components/schemas/SortObject"
-        pageNumber:
-          type: integer
-          format: int32
+        unpaged:
+          type: boolean
         pageSize:
           type: integer
           format: int32
-        unpaged:
-          type: boolean
+        pageNumber:
+          type: integer
+          format: int32
         paged:
           type: boolean
     SortObject:
@@ -9869,12 +10136,12 @@ components:
     PageEvent:
       type: object
       properties:
-        totalPages:
-          type: integer
-          format: int32
         totalElements:
           type: integer
           format: int64
+        totalPages:
+          type: integer
+          format: int32
         size:
           type: integer
           format: int32
@@ -9887,13 +10154,13 @@ components:
           format: int32
         sort:
           $ref: "#/components/schemas/SortObject"
+        numberOfElements:
+          type: integer
+          format: int32
         first:
           type: boolean
         last:
           type: boolean
-        numberOfElements:
-          type: integer
-          format: int32
         pageable:
           $ref: "#/components/schemas/PageableObject"
         empty:
@@ -10097,12 +10364,12 @@ components:
     PageMessage:
       type: object
       properties:
-        totalPages:
-          type: integer
-          format: int32
         totalElements:
           type: integer
           format: int64
+        totalPages:
+          type: integer
+          format: int32
         size:
           type: integer
           format: int32
@@ -10115,13 +10382,13 @@ components:
           format: int32
         sort:
           $ref: "#/components/schemas/SortObject"
+        numberOfElements:
+          type: integer
+          format: int32
         first:
           type: boolean
         last:
           type: boolean
-        numberOfElements:
-          type: integer
-          format: int32
         pageable:
           $ref: "#/components/schemas/PageableObject"
         empty:
@@ -10160,6 +10427,16 @@ components:
           type: string
           description: Mime type of the file
           readOnly: true
+        channel:
+          type: string
+          description: The channel the attachment was received via
+          enum:
+          - EMAIL
+          - ESERVICE
+          - WEB_UI
+          - MY_PAGES
+          examples:
+          - EMAIL
         created:
           type: string
           format: date-time
