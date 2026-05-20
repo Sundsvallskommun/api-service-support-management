@@ -196,6 +196,13 @@ VALUES (1, true, '2020-10-10 10:10:59.999', 1, '2021-11-11 11:11:59.999',
        false, false);
 
 -------------------------------------
+-- MessageExchangeIntegration
+-------------------------------------
+INSERT INTO message_exchange_integration_config(id, municipality_id, namespace, trigger_status_change_on, status_change_to, created, modified)
+VALUES (1, '2281', 'namespace-1', 'SOLVED', 'OPEN', '2020-10-10 10:10:59.999', '2021-11-11 11:11:59.999'),
+       (2, '2282', 'namespace-2', 'CLOSED', 'IN_PROGRESS', '2022-02-02 12:12:59.999', '2023-03-03 13:13:59.999');
+
+-------------------------------------
 -- NamespaceConfig
 -------------------------------------
 

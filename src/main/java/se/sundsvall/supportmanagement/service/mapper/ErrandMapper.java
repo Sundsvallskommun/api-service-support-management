@@ -53,7 +53,6 @@ public final class ErrandMapper {
 
 	private static final Logger LOG = LoggerFactory.getLogger(ErrandMapper.class);
 	private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-	private static final String REFERRED_FROM_RELATION_TYPE = "REFERRED_FROM";
 	private static final String REFERRED_FROM_RESOURCE_IDENTIFIER_TYPE = "case";
 	private static final String REFERRED_FROM_RESOURCE_IDENTIFIER_SERVICE = "support-management";
 
@@ -116,7 +115,7 @@ public final class ErrandMapper {
 		ofNullable(errand.getChannel()).ifPresent(value -> entity.setChannel(isEmpty(value) ? null : value));
 		ofNullable(errand.getContactReasonDescription()).ifPresent(value -> entity.setContactReasonDescription(isEmpty(value) ? null : value));
 		ofNullable(errand.getEscalationEmail()).ifPresent(value -> entity.setEscalationEmail(isEmpty(value) ? null : value));
-		ofNullable(errand.getBusinessRelated()).ifPresent(value -> entity.setBusinessRelated(value));
+		ofNullable(errand.getBusinessRelated()).ifPresent(entity::setBusinessRelated);
 		ofNullable(errand.getParameters()).ifPresent(value -> updateParameters(entity, value));
 		ofNullable(errand.getJsonParameters()).ifPresent(value -> updateJsonParameters(entity, value));
 		ofNullable(errand.getLabels()).ifPresent(value -> entity.setLabels(toErrandLabelEmbeddables(value)));
