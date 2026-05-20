@@ -1,0 +1,5 @@
+{
+	"triggerStatusChangeOn": "STATUS-1",
+	"statusChangeTo": "STATUS-2",
+	"created": "${json-unit.any-string}"
+}
