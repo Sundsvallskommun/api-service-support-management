@@ -80,6 +80,7 @@ public class MetadataService {
 	private static final String PHASE_TRANSITION = "PhaseTransition";
 	private static final String ROLE = "Role";
 	private static final String STATUS = "Status";
+	private static final String SORT_ORDER = "sortOrder";
 
 	private final CategoryRepository categoryRepository;
 	private final ErrandsRepository errandsRepository;
@@ -156,7 +157,7 @@ public class MetadataService {
 	}
 
 	public List<ExternalIdType> findExternalIdTypes(final String namespace, final String municipalityId, final Sort sort) {
-		return externalIdTypeRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId, sort)
+		return externalIdTypeRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId, getDefaultSortIfUnsorted(sort))
 			.stream()
 			.map(MetadataMapper::toExternalIdType)
 			.toList();
@@ -199,7 +200,7 @@ public class MetadataService {
 	}
 
 	public List<Status> findStatuses(final String namespace, final String municipalityId, final Sort sort) {
-		return statusRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId, sort)
+		return statusRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId, getDefaultSortIfUnsorted(sort))
 			.stream()
 			.map(MetadataMapper::toStatus)
 			.toList();
@@ -242,7 +243,7 @@ public class MetadataService {
 	}
 
 	public List<Role> findRoles(final String namespace, final String municipalityId, final Sort sort) {
-		return roleRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId, sort)
+		return roleRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId, getDefaultSortIfUnsorted(sort))
 			.stream()
 			.map(MetadataMapper::toRole)
 			.toList();
@@ -382,7 +383,7 @@ public class MetadataService {
 	}
 
 	public List<Category> findCategories(final String namespace, final String municipalityId, final Sort sort) {
-		return categoryRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId, sort)
+		return categoryRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId, getDefaultSortIfUnsorted(sort))
 			.stream()
 			.map(MetadataMapper::toCategory)
 			.toList();
@@ -425,7 +426,7 @@ public class MetadataService {
 	// =================================================================
 
 	public List<ContactReason> findContactReasons(final String namespace, final String municipalityId, final Sort sort) {
-		return contactReasonRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId, sort).stream()
+		return contactReasonRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId, getDefaultSortIfUnsorted(sort)).stream()
 			.map(MetadataMapper::toContactReason)
 			.toList();
 	}
@@ -572,5 +573,9 @@ public class MetadataService {
 		}
 
 		phaseRepository.save(phaseEntity);
+	}
+
+	private Sort getDefaultSortIfUnsorted(final Sort sort) {
+		return (Objects.isNull(sort) || sort.isUnsorted()) ? Sort.by(SORT_ORDER) : sort;
 	}
 }
