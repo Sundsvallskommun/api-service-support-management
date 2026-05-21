@@ -86,6 +86,20 @@ alter table if exists subscription
     foreign key (subscriber_id) references subscriber (id)
     on delete cascade;
 
+-- Match subscription.errand_id's charset/collation to errand.id before declaring
+-- the FK. errand was created in V1_0 under the then-current database default; in
+-- environments where the default has since changed (e.g. swedish_ci -> unicode_ci),
+-- new tables otherwise pick up the new default and the FK fails with errno 150.
+set @errand_id_charset = (select character_set_name from information_schema.columns
+    where table_schema = database() and table_name = 'errand' and column_name = 'id');
+set @errand_id_collation = (select collation_name from information_schema.columns
+    where table_schema = database() and table_name = 'errand' and column_name = 'id');
+set @sql := concat('alter table subscription modify errand_id varchar(255) character set ',
+    @errand_id_charset, ' collate ', @errand_id_collation);
+prepare stmt from @sql;
+execute stmt;
+deallocate prepare stmt;
+
 alter table if exists subscription
     add constraint fk_subscription_errand_id
     foreign key (errand_id) references errand (id)
