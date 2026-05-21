@@ -1,0 +1,4 @@
+{
+	"triggerStatusChangeOn": "STATUS-1",
+	"statusChangeTo": "STATUS-3"
+}
