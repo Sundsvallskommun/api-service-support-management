@@ -15,7 +15,7 @@ class OpenApiConfig {
 
 	@Bean
 	OperationCustomizer requestGroupIdHeaderCustomizer() {
-		return (Operation operation, HandlerMethod handlerMethod) -> {
+		return (Operation operation, @SuppressWarnings("unused") HandlerMethod handlerMethod) -> {
 			operation.addParametersItem(new Parameter()
 				.name(REQUEST_GROUP_ID_HEADER)
 				.in("header")
