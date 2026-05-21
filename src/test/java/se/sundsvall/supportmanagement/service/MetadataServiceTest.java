@@ -51,6 +51,8 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.EntityTy
 @ExtendWith(MockitoExtension.class)
 class MetadataServiceTest {
 
+	private static final String DEFAULT_SORT = "sortOrder";
+
 	@Mock
 	private CategoryRepository categoryRepositoryMock;
 
@@ -186,8 +188,26 @@ class MetadataServiceTest {
 
 		// Verifications
 		assertThat(result).hasSize(3).extracting(Status::getName).containsExactly("STATUS_3", "STATUS_1", "STATUS_2");
-		verify(statusRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.unsorted());
+		verify(statusRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.by(DEFAULT_SORT));
 		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, validationRepositoryMock, roleRepositoryMock);
+	}
+
+	@Test
+	void findStatusesWhenSortIsNull() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var statusEntityList = List.of(StatusEntity.create().withName("STATUS_1"));
+
+		// Mock
+		when(statusRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any(), any(Sort.class))).thenReturn(statusEntityList);
+
+		// Call
+		final var result = metadataService.findStatuses(namespace, municipalityId, null);
+
+		// Verifications
+		assertThat(result).hasSize(1);
+		verify(statusRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.by(DEFAULT_SORT));
 	}
 
 	@Test
@@ -391,8 +411,26 @@ class MetadataServiceTest {
 
 		// Verifications
 		assertThat(result).hasSize(3).extracting(Role::getName).containsExactly("ROLE_3", "ROLE_1", "ROLE_2");
-		verify(roleRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.unsorted());
+		verify(roleRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.by(DEFAULT_SORT));
 		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, validationRepositoryMock, statusRepositoryMock);
+	}
+
+	@Test
+	void findRolesWhenSortIsNull() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var roleEntityList = List.of(RoleEntity.create().withName("ROLE_1"));
+
+		// Mock
+		when(roleRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any(), any(Sort.class))).thenReturn(roleEntityList);
+
+		// Call
+		final var result = metadataService.findRoles(namespace, municipalityId, null);
+
+		// Verifications
+		assertThat(result).hasSize(1);
+		verify(roleRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.by(DEFAULT_SORT));
 	}
 
 	@Test
@@ -698,8 +736,26 @@ class MetadataServiceTest {
 
 		// Verifications
 		assertThat(result).hasSize(4).extracting(Category::getName).containsExactly("CATEGORY_2", "CATEGORY_4", "CATEGORY_3", "CATEGORY_1");
-		verify(categoryRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.unsorted());
+		verify(categoryRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.by(DEFAULT_SORT));
 		verifyNoInteractions(statusRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, roleRepositoryMock, validationRepositoryMock);
+	}
+
+	@Test
+	void findCategoriesWhenSortIsNull() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var categoryEntityList = List.of(CategoryEntity.create().withName("CATEGORY_1").withDisplayName("Category-1"));
+
+		// Mock
+		when(categoryRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any(), any(Sort.class))).thenReturn(categoryEntityList);
+
+		// Call
+		final var result = metadataService.findCategories(namespace, municipalityId, null);
+
+		// Verifications
+		assertThat(result).hasSize(1);
+		verify(categoryRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.by(DEFAULT_SORT));
 	}
 
 	@Test
@@ -724,7 +780,7 @@ class MetadataServiceTest {
 
 		// Verifications
 		assertThat(result).hasSize(4).extracting(Type::getName).containsExactly("TYPE_6", "TYPE_3", "TYPE_4", "TYPE_5");
-		verify(categoryRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.unsorted());
+		verify(categoryRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.by(DEFAULT_SORT));
 		verifyNoInteractions(statusRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, roleRepositoryMock, validationRepositoryMock);
 	}
 
@@ -877,8 +933,26 @@ class MetadataServiceTest {
 
 		// Verifications
 		assertThat(result).hasSize(3).extracting(ExternalIdType::getName).containsExactly("EXTERNALIDTYPE-3", "EXTERNALIDTYPE-1", "EXTERNALIDTYPE-2");
-		verify(externalIdTypeRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.unsorted());
+		verify(externalIdTypeRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.by(DEFAULT_SORT));
 		verifyNoInteractions(statusRepositoryMock, categoryRepositoryMock, validationRepositoryMock, metadataLabelRepositoryMock, roleRepositoryMock);
+	}
+
+	@Test
+	void findExternalIdTypesWhenSortIsNull() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var externalIdTypeEntityList = List.of(ExternalIdTypeEntity.create().withName("EXTERNALIDTYPE-1"));
+
+		// Mock
+		when(externalIdTypeRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any(), any(Sort.class))).thenReturn(externalIdTypeEntityList);
+
+		// Call
+		final var result = metadataService.findExternalIdTypes(namespace, municipalityId, null);
+
+		// Verifications
+		assertThat(result).hasSize(1);
+		verify(externalIdTypeRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.by(DEFAULT_SORT));
 	}
 
 	@Test
@@ -1268,6 +1342,28 @@ class MetadataServiceTest {
 	}
 
 	// =================================================================
+	// ContactReason tests
+	// =================================================================
+
+	@Test
+	void findContactReasonsWhenSortIsNull() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var contactReasonEntityList = List.of(ContactReasonEntity.create().withReason("CONTACTREASON-1"));
+
+		// Mock
+		when(contactReasonRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any(), any(Sort.class))).thenReturn(contactReasonEntityList);
+
+		// Call
+		final var result = metadataService.findContactReasons(namespace, municipalityId, null);
+
+		// Verifications
+		assertThat(result).hasSize(1);
+		verify(contactReasonRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.by(DEFAULT_SORT));
+	}
+
+	// =================================================================
 	// Common tests
 	// ================================================================
 
@@ -1322,11 +1418,12 @@ class MetadataServiceTest {
 		assertThat(result.getStatuses()).hasSize(3).extracting(Status::getName).containsExactlyInAnyOrder("STATUS-1", "STATUS-2", "STATUS-3");
 		assertThat(result.getContactReasons()).hasSize(2).extracting(ContactReason::getReason).containsExactlyInAnyOrder("CONTACTREASON-1", "CONTACTREASON-2");
 
-		verify(categoryRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.unsorted());
-		verify(externalIdTypeRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.unsorted());
+		verify(categoryRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.by(DEFAULT_SORT));
+		verify(externalIdTypeRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.by(DEFAULT_SORT));
 		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndParentIsNull(namespace, municipalityId);
-		verify(roleRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.unsorted());
-		verify(statusRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.unsorted());
+		verify(roleRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.by(DEFAULT_SORT));
+		verify(contactReasonRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.by(DEFAULT_SORT));
+		verify(statusRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.by(DEFAULT_SORT));
 		verifyNoInteractions(validationRepositoryMock);
 	}
 
