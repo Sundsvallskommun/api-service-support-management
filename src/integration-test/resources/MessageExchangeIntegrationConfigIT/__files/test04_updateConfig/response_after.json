@@ -1,0 +1,6 @@
+{
+	"triggerStatusChangeOn": "STATUS-1",
+	"statusChangeTo": "STATUS-3",
+	"created": "2021-12-31T23:59:59.999+01:00",
+	"modified": "${json-unit.any-string}"
+}
