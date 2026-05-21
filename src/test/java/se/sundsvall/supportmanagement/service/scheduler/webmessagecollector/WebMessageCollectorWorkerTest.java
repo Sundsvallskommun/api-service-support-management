@@ -32,6 +32,7 @@ import se.sundsvall.supportmanagement.service.EventService;
 import static java.time.OffsetDateTime.now;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.Assertions.within;
 import static org.mockito.ArgumentMatchers.any;
@@ -39,6 +40,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.same;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -88,7 +90,6 @@ class WebMessageCollectorWorkerTest {
 
 	@Test
 	void processMessage() {
-		// Arrange
 		final var id = 1;
 		final var caseId = "caseId";
 		final var status = "SOLVED";
@@ -97,8 +98,7 @@ class WebMessageCollectorWorkerTest {
 		final var errandNumber = "errandNumber";
 		final var attachmentId = 666;
 		final var data = "data".getBytes();
-		final var messageAttachment = new MessageAttachment()
-			.attachmentId(attachmentId);
+		final var messageAttachment = new MessageAttachment().attachmentId(attachmentId);
 
 		final var messagedto = new MessageDTO()
 			.direction(MessageDTO.DirectionEnum.INBOUND)
@@ -122,7 +122,6 @@ class WebMessageCollectorWorkerTest {
 			.withStatus(status)
 			.withTouched(now().minusDays(2));
 
-		// Mock
 		when(errandsRepositoryMock.findOne(ArgumentMatchers.<Specification<ErrandEntity>>any())).thenReturn(Optional.of(errandEntity));
 		when(communicationRepositoryMock.existsByErrandNumberAndExternalId(any(), any())).thenReturn(false);
 		when(webMessageCollectorMapperMock.toCommunicationEntity(any(), any())).thenCallRealMethod();
@@ -132,10 +131,8 @@ class WebMessageCollectorWorkerTest {
 		try (final MockedStatic<ErrandSpecification> specificationMockedStatic = Mockito.mockStatic(ErrandSpecification.class)) {
 			specificationMockedStatic.when(() -> ErrandSpecification.hasMatchingTags(any())).thenReturn(specificationMock);
 
-			// Act
 			webMessageCollectorWorker.processMessage(messagedto, MUNICIPALITY_ID);
 
-			// Verify static
 			specificationMockedStatic.verify(() -> ErrandSpecification.hasMatchingTags(dbExternalTagsArgumentCaptor.capture()));
 			assertThat(dbExternalTagsArgumentCaptor.getValue())
 				.hasSize(2)
@@ -145,7 +142,6 @@ class WebMessageCollectorWorkerTest {
 					tuple("familyId", familyId));
 		}
 
-		// Verify
 		verify(errandsRepositoryMock).findOne(same(specificationMock));
 		verify(communicationRepositoryMock).existsByErrandNumberAndExternalId(errandNumber, messageId);
 		verify(webMessageCollectorMapperMock).toCommunicationEntity(messagedto, errandEntity);
@@ -175,23 +171,17 @@ class WebMessageCollectorWorkerTest {
 
 	@Test
 	void processMessage_NoErrandFound() {
-		// Arrange
 		final var externalCaseId = "123";
 		final var familyId = "321";
-		final var messagedto = new MessageDTO()
-			.externalCaseId(externalCaseId)
-			.familyId(familyId);
+		final var messagedto = new MessageDTO().externalCaseId(externalCaseId).familyId(familyId);
 
-		// Mock
 		when(errandsRepositoryMock.findOne(ArgumentMatchers.<Specification<ErrandEntity>>any())).thenReturn(Optional.empty());
 
 		try (final MockedStatic<ErrandSpecification> specificationMockedStatic = Mockito.mockStatic(ErrandSpecification.class)) {
 			specificationMockedStatic.when(() -> ErrandSpecification.hasMatchingTags(any())).thenReturn(specificationMock);
 
-			// Act
 			webMessageCollectorWorker.processMessage(messagedto, MUNICIPALITY_ID);
 
-			// Verify static
 			specificationMockedStatic.verify(() -> ErrandSpecification.hasMatchingTags(dbExternalTagsArgumentCaptor.capture()));
 			assertThat(dbExternalTagsArgumentCaptor.getValue())
 				.hasSize(2)
@@ -201,23 +191,58 @@ class WebMessageCollectorWorkerTest {
 					tuple("familyId", familyId));
 		}
 
-		// Verify
 		verify(errandsRepositoryMock).findOne(same(specificationMock));
 		verifyNoMoreInteractions(webMessageCollectorClientMock, errandsRepositoryMock, communicationRepositoryMock, webMessageCollectorMapperMock, eventServiceMock);
 	}
 
 	@Test
+	void processMessage_eventServiceFails_messageStillProcessed() {
+		final var messagedto = new MessageDTO().id(1).externalCaseId("caseId").familyId("familyId").messageId("msg-1").sent(LocalDateTime.now().toString()).attachments(List.of());
+		final var errandEntity = ErrandEntity.create().withErrandNumber("errandNumber").withMunicipalityId(MUNICIPALITY_ID);
+
+		when(errandsRepositoryMock.findOne(ArgumentMatchers.<Specification<ErrandEntity>>any())).thenReturn(Optional.of(errandEntity));
+		when(communicationRepositoryMock.existsByErrandNumberAndExternalId(any(), any())).thenReturn(false);
+		when(webMessageCollectorMapperMock.toCommunicationEntity(any(), any())).thenCallRealMethod();
+		doThrow(new RuntimeException("EventLog down")).when(eventServiceMock).createErrandEvent(any(), any(), any(), any(), any(), any());
+
+		try (final MockedStatic<ErrandSpecification> specificationMockedStatic = Mockito.mockStatic(ErrandSpecification.class)) {
+			specificationMockedStatic.when(() -> ErrandSpecification.hasMatchingTags(any())).thenReturn(specificationMock);
+
+			assertThatNoException().isThrownBy(() -> webMessageCollectorWorker.processMessage(messagedto, MUNICIPALITY_ID));
+		}
+
+		verify(communicationServiceMock).saveCommunication(any(CommunicationEntity.class));
+		verify(webMessageCollectorClientMock).deleteMessages(MUNICIPALITY_ID, List.of(1));
+	}
+
+	@Test
+	void processMessage_deleteMessagesFails_messageStillProcessed() {
+		final var messagedto = new MessageDTO().id(1).externalCaseId("caseId").familyId("familyId").messageId("msg-1").sent(LocalDateTime.now().toString()).attachments(List.of());
+		final var errandEntity = ErrandEntity.create().withErrandNumber("errandNumber").withMunicipalityId(MUNICIPALITY_ID);
+
+		when(errandsRepositoryMock.findOne(ArgumentMatchers.<Specification<ErrandEntity>>any())).thenReturn(Optional.of(errandEntity));
+		when(communicationRepositoryMock.existsByErrandNumberAndExternalId(any(), any())).thenReturn(false);
+		when(webMessageCollectorMapperMock.toCommunicationEntity(any(), any())).thenCallRealMethod();
+		doThrow(new RuntimeException("WebMessageCollector down")).when(webMessageCollectorClientMock).deleteMessages(any(), any());
+
+		try (final MockedStatic<ErrandSpecification> specificationMockedStatic = Mockito.mockStatic(ErrandSpecification.class)) {
+			specificationMockedStatic.when(() -> ErrandSpecification.hasMatchingTags(any())).thenReturn(specificationMock);
+
+			assertThatNoException().isThrownBy(() -> webMessageCollectorWorker.processMessage(messagedto, MUNICIPALITY_ID));
+		}
+
+		verify(communicationServiceMock).saveCommunication(any(CommunicationEntity.class));
+		verify(webMessageCollectorClientMock).deleteMessages(MUNICIPALITY_ID, List.of(1));
+	}
+
+	@Test
 	void getWebMessages() {
-		// Arrange
 		final var instance = "instance";
 		final var familyId = "familyId";
 		final var list = List.of(new MessageDTO());
 
-		// Mock
 		when(webMessageCollectorClientMock.getMessages(any(), any(), any())).thenReturn(list);
-		// Act
 		final var result = webMessageCollectorWorker.getWebMessages(instance, familyId, MUNICIPALITY_ID);
-		// Verify
 		verify(webMessageCollectorClientMock).getMessages(MUNICIPALITY_ID, familyId, instance);
 		assertThat(result).isSameAs(list);
 	}

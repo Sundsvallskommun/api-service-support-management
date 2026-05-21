@@ -27,7 +27,6 @@ import static se.sundsvall.supportmanagement.service.mapper.ErrandActionMapper.t
 import static se.sundsvall.supportmanagement.service.mapper.ErrandActionMapper.updateEntity;
 
 @Service
-@Transactional
 public class ErrandActionService {
 
 	private final ActionConfigRepository actionConfigRepository;
@@ -44,6 +43,7 @@ public class ErrandActionService {
 		});
 	}
 
+	@Transactional(readOnly = true)
 	public List<ActionDefinition> getActionDefinitions(String municipalityId, String namespace) {
 		return actions.values().stream()
 			.map(action -> ActionDefinition.create()
@@ -54,12 +54,14 @@ public class ErrandActionService {
 			.toList();
 	}
 
+	@Transactional(readOnly = true)
 	public List<Config> getActionConfigs(String municipalityId, String namespace) {
 		return actionConfigRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId).stream()
 			.map(ErrandActionMapper::toActionConfig)
 			.toList();
 	}
 
+	@Transactional
 	public String createActionConfig(String municipalityId, String namespace, Config config) {
 		var action = actions.get(config.getName());
 
@@ -73,6 +75,7 @@ public class ErrandActionService {
 		return actionConfigRepository.save(toEntity(municipalityId, namespace, config)).getId();
 	}
 
+	@Transactional
 	public void updateActionConfig(String municipalityId, String namespace, String id, Config config) {
 		var entity = actionConfigRepository.findByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, "Could not find action config with id '%s'".formatted(id)));
@@ -89,6 +92,7 @@ public class ErrandActionService {
 		actionConfigRepository.save(updateEntity(entity, config));
 	}
 
+	@Transactional
 	public void deleteActionConfig(String municipalityId, String namespace, String id) {
 		if (!actionConfigRepository.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)) {
 			throw Problem.valueOf(NOT_FOUND, "Could not find action config with id '%s'".formatted(id));
@@ -97,6 +101,7 @@ public class ErrandActionService {
 		actionConfigRepository.deleteByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
 	}
 
+	@Transactional
 	public void processErrandActions(ErrandEntity errand) {
 		removeFulfilledActions(errand);
 

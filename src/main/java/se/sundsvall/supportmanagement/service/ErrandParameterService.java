@@ -20,7 +20,6 @@ import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMappe
 import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.toParameterList;
 
 @Service
-@Transactional
 public class ErrandParameterService {
 
 	private static final String PARAMETER_NOT_FOUND = "A parameter with key '%s' could not be found in errand with id '%s'";
@@ -33,6 +32,7 @@ public class ErrandParameterService {
 		this.accessControlService = accessControlService;
 	}
 
+	@Transactional
 	public List<Parameter> updateErrandParameters(final String namespace, final String municipalityId, final String errandId, final List<Parameter> parameters) {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, RW);
 
@@ -46,16 +46,19 @@ public class ErrandParameterService {
 		return toParameterList(errandsRepository.save(errandEntity).getParameters());
 	}
 
+	@Transactional(readOnly = true)
 	public List<String> readErrandParameter(final String namespace, final String municipalityId, final String errandId, final String parameterKey) {
 		final var errand = accessControlService.getErrand(namespace, municipalityId, errandId, false, R, RW);
 		return findParameterEntityOrElseThrow(errand, parameterKey);
 	}
 
+	@Transactional(readOnly = true)
 	public List<Parameter> findErrandParameters(final String namespace, final String municipalityId, final String errandId) {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, false, R, RW);
 		return toParameterList(errandEntity.getParameters());
 	}
 
+	@Transactional
 	public Parameter updateErrandParameter(final String namespace, final String municipalityId, final String errandId, final String parameterKey, final List<String> parameterValues) {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, RW);
 
@@ -70,6 +73,7 @@ public class ErrandParameterService {
 		return toParameter(parameterEntity);
 	}
 
+	@Transactional
 	public void deleteErrandParameter(final String namespace, final String municipalityId, final String errandId, final String parameterKey) {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, RW);
 

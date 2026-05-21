@@ -96,7 +96,11 @@ public class EmailReaderWorker {
 		getErrand(errandNumber, email, config).ifPresent(errand -> {
 			final var emailRequest = processErrand(errand, email, config);
 
-			emailReaderClient.deleteEmail(config.getMunicipalityId(), email.getId());
+			try {
+				emailReaderClient.deleteEmail(config.getMunicipalityId(), email.getId());
+			} catch (final Exception e) {
+				LOG.warn("Failed to delete email {} from EmailReader for errand {}: {}", email.getId(), errand.getId(), e.getMessage());
+			}
 
 			try {
 				sendEmail(errand, emailRequest);
@@ -139,7 +143,11 @@ public class EmailReaderWorker {
 			errandRepository.save(errand);
 		}
 		saveEmail(email, errand);
-		eventService.createErrandEvent(EventType.UPDATE, EVENT_LOG_COMMUNICATION, errand, null, null, EventSubType.MESSAGE);
+		try {
+			eventService.createErrandEvent(EventType.UPDATE, EVENT_LOG_COMMUNICATION, errand, null, null, EventSubType.MESSAGE);
+		} catch (final Exception e) {
+			LOG.warn("Failed to log new-message event for errand {}: {}", errand.getId(), e.getMessage());
+		}
 		return emailRequest;
 	}
 

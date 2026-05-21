@@ -57,6 +57,7 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -141,10 +142,8 @@ class ErrandServiceTest {
 
 	@Test
 	void createErrand() {
-		// Setup
 		final var errand = buildErrand();
 
-		// Mock
 		when(errandRepositoryMock.save(any(ErrandEntity.class))).thenReturn(ErrandEntity.create().withId(ERRAND_ID));
 		when(revisionServiceMock.createErrandRevision(any())).thenReturn(new RevisionResult(null, currentRevisionMock));
 		when(stringGeneratorServiceMock.generateErrandNumber(any(String.class), any(String.class))).thenReturn("KC-23090001");
@@ -152,7 +151,6 @@ class ErrandServiceTest {
 
 		final var result = service.createErrand(NAMESPACE, MUNICIPALITY_ID, errand);
 
-		// Assertions and verifications
 		assertThat(result).isEqualTo(ERRAND_ID);
 
 		verify(errandPhaseServiceMock).processPhaseChange(any(ErrandEntity.class), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
@@ -166,7 +164,6 @@ class ErrandServiceTest {
 
 	@Test
 	void createErrandWithReferredFrom() {
-		// Setup
 		final var errand = buildErrand();
 		final var relationType = "some_relation_type";
 		final var referredFromType = "referredFromType";
@@ -187,7 +184,6 @@ class ErrandServiceTest {
 				.service(REFERRED_FROM_RESOURCE_IDENTIFIER_SERVICE)
 				.namespace(NAMESPACE));
 
-		// Mock
 		when(errandRepositoryMock.save(any(ErrandEntity.class))).thenReturn(ErrandEntity.create().withId(ERRAND_ID));
 		when(revisionServiceMock.createErrandRevision(any())).thenReturn(new RevisionResult(null, currentRevisionMock));
 		when(stringGeneratorServiceMock.generateErrandNumber(any(String.class), any(String.class))).thenReturn("KC-23090001");
@@ -196,7 +192,6 @@ class ErrandServiceTest {
 
 		final var result = service.createErrand(NAMESPACE, MUNICIPALITY_ID, errand, referredFrom);
 
-		// Assertions and verifications
 		assertThat(result).isEqualTo(ERRAND_ID);
 
 		verify(errandPhaseServiceMock).processPhaseChange(any(ErrandEntity.class), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
@@ -209,12 +204,56 @@ class ErrandServiceTest {
 		verify(relationClientMock).createRelation(MUNICIPALITY_ID, relation);
 	}
 
+	@Test
+	@DisplayName("Verification that errand is still persisted when eventService throws during create")
+	void createErrand_eventServiceFails_errandStillCreated() {
+		final var errand = buildErrand();
+		final var persistedEntity = ErrandEntity.create().withId(ERRAND_ID);
+
+		when(errandRepositoryMock.save(any(ErrandEntity.class))).thenReturn(persistedEntity);
+		when(revisionServiceMock.createErrandRevision(any())).thenReturn(new RevisionResult(null, currentRevisionMock));
+		when(stringGeneratorServiceMock.generateErrandNumber(any(String.class), any(String.class))).thenReturn("KC-23090001");
+		when(contactReasonRepositoryMock.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(Optional.ofNullable(ContactReasonEntity.create().withReason("reason")));
+		doThrow(new RuntimeException("EventLog down")).when(eventServiceMock).createErrandEvent(any(), any(), any(), any(), any(), anyBoolean(), any());
+
+		final var result = service.createErrand(NAMESPACE, MUNICIPALITY_ID, errand);
+
+		assertThat(result).isEqualTo(ERRAND_ID);
+		verify(errandPhaseServiceMock).processPhaseChange(any(ErrandEntity.class), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
+		verify(errandPhaseServiceMock).validateStatusAgainstActivePhase(any(ErrandEntity.class), any());
+		verify(errandRepositoryMock).save(any(ErrandEntity.class));
+		verify(revisionServiceMock).createErrandRevision(any(ErrandEntity.class));
+		verify(eventServiceMock).createErrandEvent(eq(CREATE), eq(EVENT_LOG_CREATE_ERRAND), any(ErrandEntity.class), eq(currentRevisionMock), eq(null), eq(false), eq(ERRAND));
+	}
+
+	@Test
+	@DisplayName("Verification that errand is still persisted when relationClient throws during create with referredFrom")
+	void createErrand_relationClientFails_errandStillCreated() {
+		final var errand = buildErrand();
+		final var referredFrom = "REFERRED_FROM|src;case;service;ns|";
+
+		when(errandRepositoryMock.save(any(ErrandEntity.class))).thenReturn(ErrandEntity.create().withId(ERRAND_ID));
+		when(revisionServiceMock.createErrandRevision(any())).thenReturn(new RevisionResult(null, currentRevisionMock));
+		when(stringGeneratorServiceMock.generateErrandNumber(any(String.class), any(String.class))).thenReturn("KC-23090001");
+		when(contactReasonRepositoryMock.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(Optional.ofNullable(ContactReasonEntity.create().withReason("reason")));
+		doThrow(new RuntimeException("Relation service down")).when(relationClientMock).createRelation(any(), any());
+
+		final var result = service.createErrand(NAMESPACE, MUNICIPALITY_ID, errand, referredFrom);
+
+		assertThat(result).isEqualTo(ERRAND_ID);
+		verify(errandPhaseServiceMock).processPhaseChange(any(ErrandEntity.class), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
+		verify(errandPhaseServiceMock).validateStatusAgainstActivePhase(any(ErrandEntity.class), any());
+		verify(errandRepositoryMock).save(any(ErrandEntity.class));
+		verify(revisionServiceMock).createErrandRevision(any(ErrandEntity.class));
+		verify(eventServiceMock).createErrandEvent(eq(CREATE), eq(EVENT_LOG_CREATE_ERRAND), any(ErrandEntity.class), eq(currentRevisionMock), eq(null), eq(false), eq(ERRAND));
+		verify(relationClientMock).createRelation(any(), any());
+	}
+
 	@ParameterizedTest
 	@ValueSource(booleans = {
 		true, false
 	})
 	void findErrandWithMatches(boolean limited) {
-		// Setup
 		final Specification<ErrandEntity> filter = filterSpecificationConverterSpy.convert("id: 'uuid'");
 		final var sort = Sort.by(DESC, "attribute.1", "attribute.2");
 		final Pageable pageable = PageRequest.of(1, 2, sort);
@@ -222,15 +261,12 @@ class ErrandServiceTest {
 		final var user = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user");
 		Identifier.set(user);
 
-		// Mock
 		when(errandRepositoryMock.findAll(ArgumentMatchers.<Specification<ErrandEntity>>any(), eq(pageable))).thenReturn(new PageImpl<>(List.of(buildErrandEntity(), buildErrandEntity()), pageable, 2L));
 		when(accessControlServiceMock.withAccessControl(any(), any(), any())).thenReturn(specification);
 		when(accessControlServiceMock.limitedMappingPredicateByLabel(any(), any(), any())).thenReturn(_ -> limited);
 
-		// Call
 		final var matches = service.findErrands(NAMESPACE, MUNICIPALITY_ID, filter, pageable);
 
-		// Assertions and verifications
 		assertThat(matches.getContent()).isNotEmpty().hasSize(2).extracting("priority").containsOnly(limited ? null : Priority.HIGH);
 		assertThat(matches.getNumberOfElements()).isEqualTo(2);
 		assertThat(matches.getTotalElements()).isEqualTo(4);
@@ -245,7 +281,6 @@ class ErrandServiceTest {
 
 	@Test
 	void findErrandWithoutMatches() {
-		// Setup
 		final Specification<ErrandEntity> filter = filterSpecificationConverterSpy.convert("id: 'uuid'");
 		final var sort = Sort.by(DESC, "attribute.1", "attribute.2");
 		final Pageable pageable = PageRequest.of(3, 7, sort);
@@ -253,14 +288,11 @@ class ErrandServiceTest {
 		final var user = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user");
 		Identifier.set(user);
 
-		// Mock
 		when(errandRepositoryMock.findAll(ArgumentMatchers.<Specification<ErrandEntity>>any(), eq(pageable))).thenReturn(new PageImpl<>(emptyList()));
 		when(accessControlServiceMock.withAccessControl(any(), any(), any())).thenReturn(specification);
 
-		// Call
 		final var matches = service.findErrands(NAMESPACE, MUNICIPALITY_ID, filter, pageable);
 
-		// Assertions and verifications
 		assertThat(matches.getContent()).isEmpty();
 		assertThat(matches.getNumberOfElements()).isZero();
 		assertThat(matches.getTotalElements()).isZero();
@@ -277,19 +309,15 @@ class ErrandServiceTest {
 		true, false
 	})
 	void readExistingErrand(boolean limited) {
-		// Setup
 		final var entity = buildErrandEntity();
 		final var user = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user");
 		Identifier.set(user);
 
-		// Mock
 		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean())).thenReturn(entity);
 		when(accessControlServiceMock.limitedMappingPredicateByLabel(any(), any(), any())).thenReturn(_ -> limited);
 
-		// Call
 		final var response = service.readErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 
-		// Assertions and verifications
 		assertThat(response.getId()).isEqualTo(ERRAND_ID);
 		assertThat(response.getPriority()).isEqualTo(limited ? null : Priority.HIGH);
 
@@ -300,22 +328,18 @@ class ErrandServiceTest {
 
 	@Test
 	void updateExistingErrand() {
-		// Setup
 		final var entity = buildErrandEntity();
 		final var user = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user");
 		Identifier.set(user);
 
-		// Mock
 		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(entity);
 		when(errandRepositoryMock.save(entity)).thenReturn(entity);
 		when(revisionServiceMock.createErrandRevision(any())).thenReturn(new RevisionResult(previousRevisionMock, currentRevisionMock));
 		when(contactReasonRepositoryMock.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId("reason", NAMESPACE, MUNICIPALITY_ID))
 			.thenReturn(Optional.ofNullable(ContactReasonEntity.create().withReason("reason")));
 
-		// Call
 		final var response = service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, buildErrand());
 
-		// Assertions and verifications
 		assertThat(response.getId()).isEqualTo(ERRAND_ID);
 		assertThat(response.getSuspension()).extracting("suspendedFrom", "suspendedTo").containsExactlyInAnyOrder(entity.getSuspendedFrom(), entity.getSuspendedTo());
 
@@ -331,21 +355,17 @@ class ErrandServiceTest {
 	@Test
 	@DisplayName("Verification that an update with no change to the errand (hence no creation of a new revision) doesn't create a log event")
 	void updateExistingErrandWhenCreateRevisionReturnsNull() {
-		// Setup
 		final var entity = buildErrandEntity();
 		final var user = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user");
 		Identifier.set(user);
 
-		// Mock
 		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(entity);
 		when(errandRepositoryMock.save(entity)).thenReturn(entity);
 		when(contactReasonRepositoryMock.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId("reason", NAMESPACE, MUNICIPALITY_ID))
 			.thenReturn(Optional.ofNullable(ContactReasonEntity.create().withReason("reason")));
 
-		// Call
 		final var response = service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, buildErrand());
 
-		// Assertions and verifications
 		assertThat(response.getId()).isEqualTo(ERRAND_ID);
 
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, Access.AccessLevelEnum.RW);
@@ -360,23 +380,19 @@ class ErrandServiceTest {
 
 	@Test
 	void deleteExistingErrand() {
-		// Setup
 		final var entity = buildErrandEntity();
 		final var errandAttachment = ErrandAttachment.create().withId("id");
 		final var user = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user");
 		Identifier.set(user);
 
-		// Mock
 		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(entity);
 		when(revisionServiceMock.getLatestErrandRevision(any())).thenReturn(currentRevisionMock);
 		when(errandAttachmentServiceMock.readErrandAttachments(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID)).thenReturn(List.of(errandAttachment));
 		when(notesClientMock.findNotes(MUNICIPALITY_ID, null, null, ERRAND_ID, null, null, 1, 1000))
 			.thenReturn(new FindNotesResponse().notes(List.of(new Note().id("id"))));
 
-		// Call
 		service.deleteErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 
-		// Assertions and verifications
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, Access.AccessLevelEnum.RW);
 		verify(conversationServiceMock).deleteByErrandId(same(entity));
 		verify(notesClientMock).findNotes(MUNICIPALITY_ID, null, null, ERRAND_ID, null, null, 1, 1000);
@@ -390,21 +406,56 @@ class ErrandServiceTest {
 	}
 
 	@Test
+	@DisplayName("Verification that delete still proceeds when notesClient cleanup throws — errand row must be removed")
+	void deleteErrand_whenNotesClientFails_errandIsStillDeleted() {
+		final var entity = buildErrandEntity();
+		final var user = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user");
+		Identifier.set(user);
+
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(entity);
+		when(revisionServiceMock.getLatestErrandRevision(any())).thenReturn(currentRevisionMock);
+		when(errandAttachmentServiceMock.readErrandAttachments(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID)).thenReturn(emptyList());
+		when(notesClientMock.findNotes(MUNICIPALITY_ID, null, null, ERRAND_ID, null, null, 1, 1000))
+			.thenThrow(new RuntimeException("Notes service down"));
+
+		service.deleteErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
+
+		verify(errandRepositoryMock).deleteById(ERRAND_ID);
+		verify(eventServiceMock).createErrandEvent(eq(DELETE), eq(EVENT_LOG_DELETE_ERRAND), eq(entity), eq(currentRevisionMock), eq(null), eq(false), eq(ERRAND));
+	}
+
+	@Test
+	@DisplayName("Verification that delete still proceeds when conversation-cleanup throws — errand row must be removed")
+	void deleteErrand_whenConversationServiceFails_errandIsStillDeleted() {
+		final var entity = buildErrandEntity();
+		final var user = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user");
+		Identifier.set(user);
+
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(entity);
+		when(revisionServiceMock.getLatestErrandRevision(any())).thenReturn(currentRevisionMock);
+		when(errandAttachmentServiceMock.readErrandAttachments(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID)).thenReturn(emptyList());
+		when(notesClientMock.findNotes(MUNICIPALITY_ID, null, null, ERRAND_ID, null, null, 1, 1000))
+			.thenReturn(new FindNotesResponse().notes(emptyList()));
+		doThrow(new RuntimeException("Conversation service down")).when(conversationServiceMock).deleteByErrandId(any());
+
+		service.deleteErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
+
+		verify(errandRepositoryMock).deleteById(ERRAND_ID);
+		verify(eventServiceMock).createErrandEvent(eq(DELETE), eq(EVENT_LOG_DELETE_ERRAND), eq(entity), eq(currentRevisionMock), eq(null), eq(false), eq(ERRAND));
+	}
+
+	@Test
 	void countErrands() {
-		// Setup
 		final var user = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user");
 		Identifier.set(user);
 		final Specification<ErrandEntity> filter = filterSpecificationConverterSpy.convert("id: 'uuid'");
 		final Specification<ErrandEntity> specification = (_, _, criteriaBuilder) -> criteriaBuilder.conjunction();
 
-		// Mock
 		when(accessControlServiceMock.withAccessControl(any(), any(), any())).thenReturn(specification);
 		when(errandRepositoryMock.count(ArgumentMatchers.<Specification<ErrandEntity>>any())).thenReturn(42L);
 
-		// Call
 		final var count = service.countErrands(NAMESPACE, MUNICIPALITY_ID, filter);
 
-		// Assertions and verifications
 		assertThat(count).isEqualTo(42L);
 
 		verify(accessControlServiceMock).withAccessControl(NAMESPACE, MUNICIPALITY_ID, user);

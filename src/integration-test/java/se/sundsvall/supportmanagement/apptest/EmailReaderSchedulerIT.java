@@ -44,8 +44,10 @@ class EmailReaderSchedulerIT extends AbstractAppTest {
 			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequest();
-		// Verify mocks
-		verify(2, deleteRequestedFor(urlMatching("/api-emailreader/2281/email/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")));
+		// Verify mocks — all three emails are deleted from EmailReader: the errand for
+		// "Error subject" is now also created (eventlog 500 no longer rolls back the tx),
+		// so its source email is removed too.
+		verify(3, deleteRequestedFor(urlMatching("/api-emailreader/2281/email/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")));
 		verifyStubs();
 	}
 }
