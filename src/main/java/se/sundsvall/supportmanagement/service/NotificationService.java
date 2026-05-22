@@ -5,6 +5,8 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.apache.commons.lang3.Strings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +24,7 @@ import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static org.springframework.data.domain.Sort.unsorted;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.util.StringUtils.hasText;
+import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_NOTIFICATION_TTL_IN_DAYS;
 import static se.sundsvall.supportmanagement.service.mapper.NotificationMapper.toNotificationEntity;
 import static se.sundsvall.supportmanagement.service.mapper.NotificationMapper.updateEntity;
@@ -30,8 +33,11 @@ import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getAdUser;
 @Service
 public class NotificationService {
 
+	private static final Logger LOG = LoggerFactory.getLogger(NotificationService.class);
+
 	private static final String NOTIFICATION_ENTITY_NOT_FOUND = "Notification with id:'%s' not found in namespace:'%s' for municipality with id:'%s' and errand with id:'%s'";
 	private static final String NAMESPACE_ENTITY_NOT_FOUND = "Namespace with name:'%s' and municiplaityId '%s' not found!";
+	private static final String EMPLOYEE_LOOKUP_FAILED = "Failed to resolve employee {} in municipality {}: {}";
 
 	private final NotificationRepository notificationRepository;
 	private final NamespaceConfigRepository namespaceConfigRepository;
@@ -145,20 +151,29 @@ public class NotificationService {
 
 		// If ownerId is set, use this to fetch "ownerFullName".
 		if (hasText(notificationEntity.getOwnerId())) {
-			final var ownerFullName = Optional.ofNullable(employeeService.getEmployeeByLoginName(municipalityId, notificationEntity.getOwnerId()))
-				.map(PortalPersonData::getFullname)
-				.orElse(null);
-
+			String ownerFullName = null;
+			try {
+				ownerFullName = Optional.ofNullable(employeeService.getEmployeeByLoginName(municipalityId, notificationEntity.getOwnerId()))
+					.map(PortalPersonData::getFullname)
+					.orElse(null);
+			} catch (final Exception e) {
+				final var sanitizedOwnerId = sanitizeForLogging(notificationEntity.getOwnerId());
+				LOG.warn(EMPLOYEE_LOOKUP_FAILED, sanitizedOwnerId, municipalityId, e.getMessage());
+			}
 			notificationEntity.setOwnerFullName(ownerFullName);
 		}
 
 		// If executingUser is set, use this to populate "createdBy" and createdByFullName (but only if createdBy is empty).
 		if (hasText(executingUser)) {
-
-			final var createdByFullName = Optional.ofNullable(employeeService.getEmployeeByLoginName(municipalityId, executingUser))
-				.map(PortalPersonData::getFullname)
-				.orElse(null);
-
+			String createdByFullName = null;
+			try {
+				createdByFullName = Optional.ofNullable(employeeService.getEmployeeByLoginName(municipalityId, executingUser))
+					.map(PortalPersonData::getFullname)
+					.orElse(null);
+			} catch (final Exception e) {
+				final var sanitizedExecutingUser = sanitizeForLogging(executingUser);
+				LOG.warn(EMPLOYEE_LOOKUP_FAILED, sanitizedExecutingUser, municipalityId, e.getMessage());
+			}
 			notificationEntity.setCreatedBy(executingUser);
 			notificationEntity.setCreatedByFullName(createdByFullName);
 		}
@@ -173,10 +188,15 @@ public class NotificationService {
 
 		// If ownerId is set, fetch "ownerFullName" again.
 		if (hasText(notification.getOwnerId())) {
-			final var ownerFullName = Optional.ofNullable(employeeService.getEmployeeByLoginName(notificationEntity.getMunicipalityId(), notification.getOwnerId()))
-				.map(PortalPersonData::getFullname)
-				.orElse(null);
-
+			String ownerFullName = null;
+			try {
+				ownerFullName = Optional.ofNullable(employeeService.getEmployeeByLoginName(notificationEntity.getMunicipalityId(), notification.getOwnerId()))
+					.map(PortalPersonData::getFullname)
+					.orElse(null);
+			} catch (final Exception e) {
+				final var sanitizedOwnerId = sanitizeForLogging(notification.getOwnerId());
+				LOG.warn(EMPLOYEE_LOOKUP_FAILED, sanitizedOwnerId, notificationEntity.getMunicipalityId(), e.getMessage());
+			}
 			notificationEntity.setOwnerFullName(ownerFullName);
 		}
 	}

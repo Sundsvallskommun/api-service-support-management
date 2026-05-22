@@ -1,6 +1,8 @@
 package se.sundsvall.supportmanagement.service;
 
 import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import se.sundsvall.supportmanagement.api.model.note.CreateErrandNoteRequest;
@@ -21,6 +23,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.springframework.http.HttpHeaders.LOCATION;
+import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper.toCreateNoteRequest;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper.toErrandNote;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper.toFindErrandNotesResponse;
@@ -28,6 +31,8 @@ import static se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper.toU
 
 @Service
 public class ErrandNoteService {
+
+	private static final Logger LOG = LoggerFactory.getLogger(ErrandNoteService.class);
 
 	private static final String EVENT_LOG_CREATE_ERRAND_NOTE = "Ärendenotering har skapats.";
 	private static final String EVENT_LOG_UPDATE_ERRAND_NOTE = "Ärendenotering har uppdaterats.";
@@ -50,11 +55,16 @@ public class ErrandNoteService {
 
 		final var response = notesClient.createNote(municipalityId, toCreateNoteRequest(id, CLIENT_ID, createErrandNoteRequest));
 
-		// Create log event
 		final var currentRevision = extractRevisionInformationFromHeader(response, RevisionType.CURRENT);
 		final var noteId = extractNoteIdFromLocationHeader(response);
 
-		eventService.createErrandNoteEvent(CREATE, EVENT_LOG_CREATE_ERRAND_NOTE, id, errandEntity, noteId, currentRevision, null); // Create only has a currentRevision
+		try {
+			eventService.createErrandNoteEvent(CREATE, EVENT_LOG_CREATE_ERRAND_NOTE, id, errandEntity, noteId, currentRevision, null);
+		} catch (final Exception e) {
+			final var sanitizedId = sanitizeForLogging(id);
+			final var sanitizedNoteId = sanitizeForLogging(noteId);
+			LOG.warn("Failed to log CREATE note event for errand {} note {}: {}", sanitizedId, sanitizedNoteId, e.getMessage());
+		}
 
 		return noteId;
 	}
@@ -82,11 +92,16 @@ public class ErrandNoteService {
 
 		final var response = notesClient.updateNoteById(municipalityId, noteId, toUpdateNoteRequest(updateErrandNoteRequest));
 
-		// Create log event if the update has modified the note (and thus has created a new revision)
 		final var currentRevision = extractRevisionInformationFromHeader(response, RevisionType.CURRENT);
 		if (nonNull(currentRevision)) {
 			final var previousRevision = extractRevisionInformationFromHeader(response, RevisionType.PREVIOUS);
-			eventService.createErrandNoteEvent(UPDATE, EVENT_LOG_UPDATE_ERRAND_NOTE, id, errandEntity, noteId, currentRevision, previousRevision);
+			try {
+				eventService.createErrandNoteEvent(UPDATE, EVENT_LOG_UPDATE_ERRAND_NOTE, id, errandEntity, noteId, currentRevision, previousRevision);
+			} catch (final Exception e) {
+				final var sanitizedId = sanitizeForLogging(id);
+				final var sanitizedNoteId = sanitizeForLogging(noteId);
+				LOG.warn("Failed to log UPDATE note event for errand {} note {}: {}", sanitizedId, sanitizedNoteId, e.getMessage());
+			}
 		}
 
 		return toErrandNote(response.getBody());
@@ -97,9 +112,14 @@ public class ErrandNoteService {
 
 		final var response = notesClient.deleteNoteById(municipalityId, noteId);
 
-		// Create log event
 		final var currentRevision = extractRevisionInformationFromHeader(response, RevisionType.CURRENT);
-		eventService.createErrandNoteEvent(DELETE, EVENT_LOG_DELETE_ERRAND_NOTE, id, errandEntity, noteId, currentRevision, null); // Delete only has a currentRevision
+		try {
+			eventService.createErrandNoteEvent(DELETE, EVENT_LOG_DELETE_ERRAND_NOTE, id, errandEntity, noteId, currentRevision, null);
+		} catch (final Exception e) {
+			final var sanitizedId = sanitizeForLogging(id);
+			final var sanitizedNoteId = sanitizeForLogging(noteId);
+			LOG.warn("Failed to log DELETE note event for errand {} note {}: {}", sanitizedId, sanitizedNoteId, e.getMessage());
+		}
 	}
 
 	private String extractNoteIdFromLocationHeader(final ResponseEntity<Void> response) {

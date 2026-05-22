@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -37,6 +39,7 @@ import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrand;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandEntity;
@@ -47,8 +50,9 @@ import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.w
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withNamespace;
 
 @Service
-@Transactional
 public class ErrandService {
+
+	private static final Logger LOG = LoggerFactory.getLogger(ErrandService.class);
 
 	private static final String BAD_CONTACT_REASON = "'%s' is not a valid contact reason for namespace '%s' and municipality with id '%s'";
 	private static final String EVENT_LOG_CREATE_ERRAND = "Ärendet har skapats.";
@@ -105,16 +109,11 @@ public class ErrandService {
 		this.errandPhaseService = errandPhaseService;
 	}
 
-	public String createErrand(String namespace, String municipalityId, Errand errand) {
-		return createErrand(namespace, municipalityId, errand, null);
-	}
-
+	@Transactional
 	public String createErrand(final String namespace, final String municipalityId, final Errand errand, final String referredFrom) {
-		// Generate unique errand number
 		errand.withErrandNumber(errandNumberGeneratorService.generateErrandNumber(namespace, municipalityId));
 
 		final var errandEntity = toErrandEntity(namespace, municipalityId, errand);
-		// Validate ContactReason
 		Optional.ofNullable(errand.getContactReason()).ifPresent(reason -> {
 			final var contactReason = contactReasonRepository.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId(reason, namespace, municipalityId)
 				.orElseThrow(() -> Problem.valueOf(BAD_REQUEST, BAD_CONTACT_REASON.formatted(reason, namespace, municipalityId)));
@@ -132,17 +131,25 @@ public class ErrandService {
 		errandActionService.processErrandActions(persistedEntity);
 		final var revision = revisionService.createErrandRevision(persistedEntity);
 
-		// Create a log event, but don't create a notification.
-		eventService.createErrandEvent(CREATE, EVENT_LOG_CREATE_ERRAND, persistedEntity, revision.latest(), null, false, ERRAND);
+		try {
+			eventService.createErrandEvent(CREATE, EVENT_LOG_CREATE_ERRAND, persistedEntity, revision.latest(), null, false, ERRAND);
+		} catch (final Exception e) {
+			LOG.warn("Failed to log CREATE event for errand {}: {}", persistedEntity.getId(), e.getMessage());
+		}
 
 		if (isNotBlank(referredFrom)) {
 			final var relation = ErrandMapper.toReferredFromRelation(namespace, expandRelation(referredFrom), persistedEntity.getId());
-			relationClient.createRelation(municipalityId, relation);
+			try {
+				relationClient.createRelation(municipalityId, relation);
+			} catch (final Exception e) {
+				LOG.warn("Failed to create referredFrom relation for errand {}: {}", persistedEntity.getId(), e.getMessage());
+			}
 		}
 
 		return persistedEntity.getId();
 	}
 
+	@Transactional(readOnly = true)
 	public Page<Errand> findErrands(final String namespace, final String municipalityId, final Specification<ErrandEntity> filter, final Pageable pageable) {
 		final var baseFilter = withNamespace(namespace).and(withMunicipalityId(municipalityId)).and(accessControlService.withAccessControl(namespace, municipalityId, Identifier.get()));
 		final var fullFilter = ofNullable(filter).map(baseFilter::and).orElse(baseFilter);
@@ -152,12 +159,14 @@ public class ErrandService {
 		return new PageImpl<>(toErrandsWithAccessControl(matches.getContent(), limitedMapping), pageable, matches.getTotalElements());
 	}
 
+	@Transactional(readOnly = true)
 	public Errand readErrand(final String namespace, final String municipalityId, final String id) {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, id, false);
 		final var limitedMapping = accessControlService.limitedMappingPredicateByLabel(namespace, municipalityId, Identifier.get());
 		return toErrandWithAccessControl(errandEntity, limitedMapping);
 	}
 
+	@Transactional
 	public Errand updateErrand(final String namespace, final String municipalityId, final String id, final Errand errand) {
 		final var errandEntityToUpdate = accessControlService.getErrand(namespace, municipalityId, id, true, Access.AccessLevelEnum.RW);
 
@@ -166,7 +175,6 @@ public class ErrandService {
 		errandPhaseService.processPhaseChange(errandEntity, errand.getActivePhaseId(), namespace, municipalityId);
 		errandPhaseService.validateStatusAgainstActivePhase(errandEntity, errand.getStatus());
 
-		// Add contactReason
 		Optional.ofNullable(errand.getContactReason()).ifPresent(reason -> {
 			final var contactReason = contactReasonRepository.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId(reason, namespace, municipalityId)
 				.orElseThrow(() -> Problem.valueOf(BAD_REQUEST, BAD_CONTACT_REASON.formatted(reason, namespace, municipalityId)));
@@ -182,34 +190,54 @@ public class ErrandService {
 
 		final var revisionResult = revisionService.createErrandRevision(entity);
 
-		// Create a log event if the update has modified the errand (and thus has created a new revision)
 		if (nonNull(revisionResult)) {
-			eventService.createErrandEvent(UPDATE, EVENT_LOG_UPDATE_ERRAND, entity, revisionResult.latest(), revisionResult.previous(), ERRAND);
+			try {
+				eventService.createErrandEvent(UPDATE, EVENT_LOG_UPDATE_ERRAND, entity, revisionResult.latest(), revisionResult.previous(), ERRAND);
+			} catch (final Exception e) {
+				LOG.warn("Failed to log UPDATE event for errand {}: {}", entity.getId(), e.getMessage());
+			}
 		}
 
 		return toErrand(entity);
 	}
 
+	@Transactional
 	public void deleteErrand(final String namespace, final String municipalityId, final String id) {
 		final var entity = accessControlService.getErrand(namespace, municipalityId, id, true, Access.AccessLevelEnum.RW);
 
-		conversationService.deleteByErrandId(entity);
+		try {
+			conversationService.deleteByErrandId(entity);
+		} catch (final Exception e) {
+			final var sanitizedId = sanitizeForLogging(id);
+			LOG.warn("Failed to delete conversations for errand {}: {}", sanitizedId, e.getMessage());
+		}
 
 		communicationService.deleteAllCommunicationsByErrandNumber(entity.getErrandNumber());
 		errandAttachmentService.readErrandAttachments(namespace, municipalityId, id)
 			.forEach(attachment -> attachmentRepository.deleteById(attachment.getId()));
 
-		final var notes = notesClient.findNotes(municipalityId, null, null, id, null, null, 1, 1000);
-		notes.getNotes().forEach(note -> notesClient.deleteNoteById(municipalityId, note.getId()));
+		try {
+			final var notes = notesClient.findNotes(municipalityId, null, null, id, null, null, 1, 1000);
+			notes.getNotes().forEach(note -> notesClient.deleteNoteById(municipalityId, note.getId()));
+		} catch (final Exception e) {
+			final var sanitizedId = sanitizeForLogging(id);
+			LOG.warn("Failed to delete notes for errand {}: {}", sanitizedId, e.getMessage());
+		}
 
 		// Delete errand
 		repository.deleteById(id);
 
 		// Create a log event
 		final var latestRevision = revisionService.getLatestErrandRevision(entity);
-		eventService.createErrandEvent(DELETE, EVENT_LOG_DELETE_ERRAND, entity, latestRevision, null, false, ERRAND);
+		try {
+			eventService.createErrandEvent(DELETE, EVENT_LOG_DELETE_ERRAND, entity, latestRevision, null, false, ERRAND);
+		} catch (final Exception e) {
+			final var sanitizedId = sanitizeForLogging(id);
+			LOG.warn("Failed to log DELETE event for errand {}: {}", sanitizedId, e.getMessage());
+		}
 	}
 
+	@Transactional(readOnly = true)
 	public Long countErrands(final String namespace, final String municipalityId, final Specification<ErrandEntity> filter) {
 		final var baseFilter = withNamespace(namespace).and(withMunicipalityId(municipalityId)).and(accessControlService.withAccessControl(namespace, municipalityId, Identifier.get()));
 		final var fullFilter = ofNullable(filter).map(baseFilter::and).orElse(baseFilter);

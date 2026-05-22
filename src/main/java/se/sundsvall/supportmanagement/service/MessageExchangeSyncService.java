@@ -4,6 +4,8 @@ import generated.se.sundsvall.messageexchange.Attachment;
 import generated.se.sundsvall.messageexchange.Message;
 import java.util.Collections;
 import java.util.Objects;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.data.domain.Pageable;
@@ -27,6 +29,8 @@ import static se.sundsvall.supportmanagement.service.mapper.IdentifierMapper.res
 
 @Service
 public class MessageExchangeSyncService {
+
+	private static final Logger LOG = LoggerFactory.getLogger(MessageExchangeSyncService.class);
 
 	private static final String EVENT_LOG_CONVERSATION = "Ny händelse för %s";
 
@@ -55,7 +59,11 @@ public class MessageExchangeSyncService {
 		if (ofNullable(conversationEntity.getLatestSyncedSequenceNumber()).orElse(0L) < ofNullable(conversation.getLatestSequenceNumber()).orElse(0L)) {
 			final var errandEntity = errandsRepository.getReferenceById(conversationEntity.getErrandId());
 			final var shouldCreateNotification = syncMessages(conversationEntity, errandEntity);
-			eventService.createErrandEvent(UPDATE, EVENT_LOG_CONVERSATION.formatted(conversation.getTopic()), errandEntity, null, null, shouldCreateNotification, MESSAGE);
+			try {
+				eventService.createErrandEvent(UPDATE, EVENT_LOG_CONVERSATION.formatted(conversation.getTopic()), errandEntity, null, null, shouldCreateNotification, MESSAGE);
+			} catch (final Exception e) {
+				LOG.warn("Failed to log conversation event for errand {}: {}", errandEntity.getId(), e.getMessage());
+			}
 		}
 
 		final var updatedConversationEntity = mergeIntoConversationEntity(conversationEntity, conversation);

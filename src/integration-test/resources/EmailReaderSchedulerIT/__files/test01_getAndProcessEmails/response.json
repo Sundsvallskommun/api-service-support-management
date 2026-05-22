@@ -53,6 +53,41 @@
 		{
 			"id": "${json-unit.any-string}",
 			"errandNumber": "${json-unit.regex}(NS1-\\d{8})",
+			"title": "Error subject",
+			"priority": "MEDIUM",
+			"stakeholders": [
+				{
+					"role": "ROLE-1",
+					"contactChannels": [
+						{
+							"type": "EMAIL",
+							"value": "sender@this.is.a.test"
+						}
+					],
+					"parameters": []
+				}
+			],
+			"externalTags": [],
+			"parameters": [],
+			"jsonParameters": [],
+			"classification": {
+				"category": "CATEGORY-1",
+				"type": "TYPE-1"
+			},
+			"status": "STATUS-1",
+			"description": "Error 😊",
+			"channel": "CHANNEL-1",
+			"suspension": {},
+			"labels": [],
+			"activeNotifications": [],
+			"actions": [],
+			"phases": [],
+			"created": "${json-unit.any-string}",
+			"touched": "${json-unit.any-string}"
+		},
+		{
+			"id": "${json-unit.any-string}",
+			"errandNumber": "${json-unit.regex}(NS1-\\d{8})",
 			"title": "Test subject 2",
 			"priority": "MEDIUM",
 			"stakeholders": [
@@ -94,13 +129,13 @@
 		"paged": true,
 		"unpaged": false
 	},
-	"totalElements": 2,
+	"totalElements": 3,
 	"totalPages": 1,
 	"last": true,
 	"sort": [],
 	"first": true,
 	"size": 20,
 	"number": 0,
-	"numberOfElements": 2,
+	"numberOfElements": 3,
 	"empty": false
 }

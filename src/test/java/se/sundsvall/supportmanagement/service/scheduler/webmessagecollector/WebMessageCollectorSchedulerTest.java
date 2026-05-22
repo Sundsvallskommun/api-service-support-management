@@ -75,7 +75,7 @@ class WebMessageCollectorSchedulerTest {
 		// Verify
 		verify(webMessageCollectRepositoryMock).findAll();
 		verify(webMessageCollectorWorkerMock, times(2)).getWebMessages(eq(INSTANCE), familyIdCaptor.capture(), eq(MUNICIPALITY_ID));
-		verify(webMessageCollectorWorkerMock, times(2)).processMessage(messageCaptor.capture(), eq(MUNICIPALITY_ID));
+		verify(webMessageCollectorWorkerMock, times(2)).processMessage(messageCaptor.capture(), eq(MUNICIPALITY_ID), any());
 		verifyNoMoreInteractions(webMessageCollectorWorkerMock, webMessageCollectRepositoryMock, healthIndicatorMock);
 
 		assertThat(familyIdCaptor.getAllValues()).containsExactly("1", "2");
@@ -104,7 +104,7 @@ class WebMessageCollectorSchedulerTest {
 		verify(webMessageCollectRepositoryMock).findAll();
 		verify(webMessageCollectorWorkerMock, times(2)).getWebMessages(eq(INSTANCE), familyIdCaptor.capture(), eq(MUNICIPALITY_ID));
 		verify(healthIndicatorMock).setHealthIndicatorUnhealthy("web-message-collector", "Error fetching web messages");
-		verify(webMessageCollectorWorkerMock, times(1)).processMessage(same(message2), eq(MUNICIPALITY_ID));
+		verify(webMessageCollectorWorkerMock, times(1)).processMessage(same(message2), eq(MUNICIPALITY_ID), any());
 		verifyNoMoreInteractions(webMessageCollectorWorkerMock, webMessageCollectRepositoryMock, healthIndicatorMock);
 
 		assertThat(familyIdCaptor.getAllValues()).containsExactly("1", "2");
@@ -123,7 +123,7 @@ class WebMessageCollectorSchedulerTest {
 			.withFamilyIds(FAMILY_IDS)));
 		when(webMessageCollectorWorkerMock.getWebMessages(any(), eq("1"), any())).thenReturn(List.of(message1));
 		when(webMessageCollectorWorkerMock.getWebMessages(any(), eq("2"), any())).thenReturn(List.of(message2));
-		doThrow(new RuntimeException("ERROR")).when(webMessageCollectorWorkerMock).processMessage(same(message1), any());
+		doThrow(new RuntimeException("ERROR")).when(webMessageCollectorWorkerMock).processMessage(same(message1), any(), any());
 
 		// Act
 		scheduler.fetchWebMessages();
@@ -131,7 +131,7 @@ class WebMessageCollectorSchedulerTest {
 		// Verify
 		verify(webMessageCollectRepositoryMock).findAll();
 		verify(webMessageCollectorWorkerMock, times(2)).getWebMessages(eq(INSTANCE), familyIdCaptor.capture(), eq(MUNICIPALITY_ID));
-		verify(webMessageCollectorWorkerMock, times(2)).processMessage(messageCaptor.capture(), eq(MUNICIPALITY_ID));
+		verify(webMessageCollectorWorkerMock, times(2)).processMessage(messageCaptor.capture(), eq(MUNICIPALITY_ID), any());
 		verify(healthIndicatorMock).setHealthIndicatorUnhealthy("web-message-collector", "Error processing individual web messages");
 		verifyNoMoreInteractions(webMessageCollectorWorkerMock, webMessageCollectRepositoryMock, healthIndicatorMock);
 		assertThat(familyIdCaptor.getAllValues()).containsExactly("1", "2");

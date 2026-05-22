@@ -1,11 +1,9 @@
 package se.sundsvall.supportmanagement.service.scheduler.supensions;
 
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.dept44.scheduling.Dept44Scheduled;
 
 @Service
-@Transactional
 public class SuspensionScheduler {
 
 	private final SuspensionWorker suspensionWorker;

@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -38,8 +40,9 @@ import static se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapp
 import static se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapper.toErrandAttachments;
 
 @Service
-@Transactional
 public class ErrandAttachmentService {
+
+	private static final Logger LOG = LoggerFactory.getLogger(ErrandAttachmentService.class);
 
 	private static final String ATTACHMENT_ENTITY_NOT_FOUND = "An attachment with id '%s' could not be found on errand with id '%s'";
 	private static final String ATTACHMENT_ENTITY_NOT_CREATED = "Attachment could not be created";
@@ -66,12 +69,14 @@ public class ErrandAttachmentService {
 		this.semaphore = semaphore;
 	}
 
+	@Transactional
 	public String createErrandAttachment(final String namespace, final String municipalityId, final String errandId, final MultipartFile errandAttachment, final String channel) {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, RW);
 
 		return createErrandAttachmentInternal(errandEntity, () -> toAttachmentEntity(errandEntity, errandAttachment, channel));
 	}
 
+	@Transactional
 	public String createErrandAttachment(final ErrandEntity errandEntity, final ResponseEntity<InputStreamResource> file, final String fileName, final int fileSize, final String channel) {
 		return createErrandAttachmentInternal(errandEntity, () -> toAttachmentEntity(errandEntity, file, fileName, fileSize, channel));
 	}
@@ -88,12 +93,16 @@ public class ErrandAttachmentService {
 		// Update errand with new attachment and create new revision
 		final var revisionResult = revisionService.createErrandRevision(errandEntity);
 
-		// Create log event
-		eventService.createErrandEvent(UPDATE, EVENT_LOG_ADD_ATTACHMENT, errandEntity, revisionResult.latest(), revisionResult.previous(), ATTACHMENT);
+		try {
+			eventService.createErrandEvent(UPDATE, EVENT_LOG_ADD_ATTACHMENT, errandEntity, revisionResult.latest(), revisionResult.previous(), ATTACHMENT);
+		} catch (final Exception e) {
+			LOG.warn("Failed to log attachment-added event for errand {}: {}", errandEntity.getId(), e.getMessage());
+		}
 
 		return attachmentEntity.getId();
 	}
 
+	@Transactional(readOnly = true)
 	public void readErrandAttachment(final String namespace, final String municipalityId, final String errandId, final String attachmentId, final HttpServletResponse response) {
 
 		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, R, RW);
@@ -105,11 +114,13 @@ public class ErrandAttachmentService {
 		streamAttachmentData(attachmentEntity, response);
 	}
 
+	@Transactional(readOnly = true)
 	public List<ErrandAttachment> readErrandAttachments(final String namespace, final String municipalityId, final String errandId) {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, false, R, RW);
 		return toErrandAttachments(errandEntity.getAttachments());
 	}
 
+	@Transactional
 	public void deleteErrandAttachment(final String namespace, final String municipalityId, final String errandId, final String attachmentId) {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, RW);
 		final var attachmentEntity = ofNullable(errandEntity.getAttachments()).orElse(emptyList()).stream()
@@ -127,20 +138,29 @@ public class ErrandAttachmentService {
 			throw Problem.valueOf(INTERNAL_SERVER_ERROR, String.format("Failed to delete attachment with id '%s' from errand with id '%s'", attachmentId, errandId));
 		}
 		final var revisionResult = revisionService.createErrandRevision(entity);
-		// Create log event
 		if (nonNull(revisionResult)) {
-			eventService.createErrandEvent(UPDATE, EVENT_LOG_REMOVE_ATTACHMENT, errandEntity, revisionResult.latest(), revisionResult.previous(), ATTACHMENT);
+			try {
+				eventService.createErrandEvent(UPDATE, EVENT_LOG_REMOVE_ATTACHMENT, errandEntity, revisionResult.latest(), revisionResult.previous(), ATTACHMENT);
+			} catch (final Exception e) {
+				LOG.warn("Failed to log attachment-removed event for errand {}: {}", errandEntity.getId(), e.getMessage());
+			}
 		}
 	}
 
+	@Transactional
 	public void createErrandAttachment(final AttachmentEntity attachmentEntity, final ErrandEntity errandEntity) {
 		attachmentRepository.saveAndFlush(attachmentEntity);
 		final var revisionResult = revisionService.createErrandRevision(errandEntity);
 		if (revisionResult != null) {
-			eventService.createErrandEvent(UPDATE, EVENT_LOG_ADD_ATTACHMENT, errandEntity, revisionResult.latest(), revisionResult.previous(), ATTACHMENT);
+			try {
+				eventService.createErrandEvent(UPDATE, EVENT_LOG_ADD_ATTACHMENT, errandEntity, revisionResult.latest(), revisionResult.previous(), ATTACHMENT);
+			} catch (final Exception e) {
+				LOG.warn("Failed to log attachment-added event for errand {}: {}", errandEntity.getId(), e.getMessage());
+			}
 		}
 	}
 
+	@Transactional(readOnly = true)
 	public List<AttachmentEntity> findByNamespaceAndMunicipalityIdAndIdIn(final String namespace, final String municipalityId, final List<String> attachmentIds) {
 		if (attachmentIds == null) {
 			return emptyList();

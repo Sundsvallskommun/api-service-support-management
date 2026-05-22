@@ -2,6 +2,9 @@ package se.sundsvall.supportmanagement.service.scheduler.webmessagecollector;
 
 import generated.se.sundsvall.webmessagecollector.MessageDTO;
 import java.util.List;
+import java.util.function.Consumer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.supportmanagement.integration.db.CommunicationRepository;
@@ -20,6 +23,8 @@ import static se.sundsvall.supportmanagement.integration.db.specification.Errand
 
 @Component
 public class WebMessageCollectorWorker {
+
+	private static final Logger LOG = LoggerFactory.getLogger(WebMessageCollectorWorker.class);
 
 	private static final String EVENT_LOG_COMMUNICATION = "Nytt meddelande";
 
@@ -46,7 +51,7 @@ public class WebMessageCollectorWorker {
 	}
 
 	@Transactional
-	public void processMessage(final MessageDTO message, final String municipalityId) {
+	public void processMessage(final MessageDTO message, final String municipalityId, final Consumer<String> setUnHealthyConsumer) {
 
 		final var entity = errandsRepository.findOne(hasMatchingTags(List.of(
 			DbExternalTag.create().withKey("caseId").withValue(message.getExternalCaseId()),
@@ -59,14 +64,23 @@ public class WebMessageCollectorWorker {
 				.map(this::addAttachments)
 				.ifPresent(communicationEntity -> saveMessage(communicationEntity, entity.get()));
 
-			webMessageCollectorClient.deleteMessages(municipalityId, List.of(message.getId()));
+			try {
+				webMessageCollectorClient.deleteMessages(municipalityId, List.of(message.getId()));
+			} catch (final Exception e) {
+				LOG.warn("Failed to delete web-message {} from WebMessageCollector for errand {}: {}", message.getId(), entity.get().getId(), e.getMessage());
+				setUnHealthyConsumer.accept("Failed to delete web-message from WebMessageCollector — message will be re-processed each run");
+			}
 		}
 	}
 
 	private void saveMessage(final CommunicationEntity communicationEntity, final ErrandEntity errand) {
 		communicationService.saveCommunication(communicationEntity);
 		communicationService.saveAttachment(communicationEntity, errand);
-		eventService.createErrandEvent(UPDATE, EVENT_LOG_COMMUNICATION, errand, null, null, MESSAGE);
+		try {
+			eventService.createErrandEvent(UPDATE, EVENT_LOG_COMMUNICATION, errand, null, null, MESSAGE);
+		} catch (final Exception e) {
+			LOG.warn("Failed to log new-message event for errand {}: {}", errand.getId(), e.getMessage());
+		}
 	}
 
 	private CommunicationEntity addAttachments(final CommunicationEntity communicationEntity) {

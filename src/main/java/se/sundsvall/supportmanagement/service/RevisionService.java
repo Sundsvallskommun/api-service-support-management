@@ -38,7 +38,6 @@ import static se.sundsvall.supportmanagement.service.mapper.RevisionMapper.toRev
 import static se.sundsvall.supportmanagement.service.mapper.RevisionMapper.toSerializedSnapshot;
 
 @Service
-@Transactional
 public class RevisionService {
 
 	private static final com.fasterxml.jackson.databind.ObjectMapper JACKSON2_MAPPER = new com.fasterxml.jackson.databind.ObjectMapper();
@@ -83,6 +82,7 @@ public class RevisionService {
 	 * @param  entity the entity that will have a new revision.
 	 * @return        the created revision.
 	 */
+	@Transactional
 	public RevisionResult createErrandRevision(final ErrandEntity entity) {
 
 		final var lastRevision = revisionRepository.findFirstByNamespaceAndMunicipalityIdAndEntityIdOrderByVersionDesc(entity.getNamespace(), entity.getMunicipalityId(), entity.getId());
@@ -128,6 +128,7 @@ public class RevisionService {
 	 * @param  errandId id of the errand to fetch revisions for.
 	 * @return          a list of Revision objects containing information on every revision of the errand.
 	 */
+	@Transactional(readOnly = true)
 	public List<Revision> getErrandRevisions(final String namespace, final String municipalityId, final String errandId) {
 		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, R, RW);
 
@@ -140,6 +141,7 @@ public class RevisionService {
 	 * @param  entity Errand entity.
 	 * @return        the latest revision for the errand or null if errand does not exist.
 	 */
+	@Transactional(readOnly = true)
 	public Revision getLatestErrandRevision(final ErrandEntity entity) {
 		return revisionRepository.findFirstByNamespaceAndMunicipalityIdAndEntityIdOrderByVersionDesc(entity.getNamespace(), entity.getMunicipalityId(), entity.getId())
 			.map(RevisionMapper::toRevision)
@@ -153,6 +155,7 @@ public class RevisionService {
 	 * @param  version  the revision version to fetch.
 	 * @return          requested revision for the errand or null if errand or revision does not exist.
 	 */
+	@Transactional(readOnly = true)
 	public Revision getErrandRevisionByVersion(final String namespace, final String municipalityId, final String errandId, final int version) {
 		return revisionRepository.findByNamespaceAndMunicipalityIdAndEntityIdAndVersion(namespace, municipalityId, errandId, version)
 			.map(RevisionMapper::toRevision)
@@ -169,6 +172,7 @@ public class RevisionService {
 	 * @param  targetVersion  version that will act as target in the comparison.
 	 * @return                response containing the difference between the source version and the target version.
 	 */
+	@Transactional(readOnly = true)
 	public DifferenceResponse compareErrandRevisionVersions(final String namespace, final String municipalityId, final String errandId, final int sourceVersion, final int targetVersion) {
 		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, R, RW);
 
@@ -203,6 +207,7 @@ public class RevisionService {
 	 * @param  noteId         id of the note to fetch revisions for.
 	 * @return                a list of Revision objects containing information on every revision of the note.
 	 */
+	@Transactional(readOnly = true)
 	public List<Revision> getNoteRevisions(final String namespace, final String municipalityId, final String errandId, final String noteId) {
 		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, R, RW);
 
@@ -220,6 +225,7 @@ public class RevisionService {
 	 * @param  targetVersion  version that will act as target in the comparison.
 	 * @return                response containing the difference between the source version and the target version.
 	 */
+	@Transactional(readOnly = true)
 	public DifferenceResponse compareNoteRevisionVersions(final String namespace, final String municipalityId, final String errandId, final String noteId, final int sourceVersion, final int targetVersion) {
 		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, R, RW);
 
