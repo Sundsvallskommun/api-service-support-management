@@ -39,6 +39,7 @@ import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrand;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandEntity;
@@ -106,10 +107,6 @@ public class ErrandService {
 		this.metadataLabelRepository = metadataLabelRepository;
 		this.errandActionService = errandActionService;
 		this.errandPhaseService = errandPhaseService;
-	}
-
-	public String createErrand(String namespace, String municipalityId, Errand errand) {
-		return createErrand(namespace, municipalityId, errand, null);
 	}
 
 	@Transactional
@@ -211,7 +208,8 @@ public class ErrandService {
 		try {
 			conversationService.deleteByErrandId(entity);
 		} catch (final Exception e) {
-			LOG.warn("Failed to delete conversations for errand {}: {}", id, e.getMessage());
+			final var sanitizedId = sanitizeForLogging(id);
+			LOG.warn("Failed to delete conversations for errand {}: {}", sanitizedId, e.getMessage());
 		}
 
 		communicationService.deleteAllCommunicationsByErrandNumber(entity.getErrandNumber());
@@ -222,7 +220,8 @@ public class ErrandService {
 			final var notes = notesClient.findNotes(municipalityId, null, null, id, null, null, 1, 1000);
 			notes.getNotes().forEach(note -> notesClient.deleteNoteById(municipalityId, note.getId()));
 		} catch (final Exception e) {
-			LOG.warn("Failed to delete notes for errand {}: {}", id, e.getMessage());
+			final var sanitizedId = sanitizeForLogging(id);
+			LOG.warn("Failed to delete notes for errand {}: {}", sanitizedId, e.getMessage());
 		}
 
 		// Delete errand
@@ -233,7 +232,8 @@ public class ErrandService {
 		try {
 			eventService.createErrandEvent(DELETE, EVENT_LOG_DELETE_ERRAND, entity, latestRevision, null, false, ERRAND);
 		} catch (final Exception e) {
-			LOG.warn("Failed to log DELETE event for errand {}: {}", id, e.getMessage());
+			final var sanitizedId = sanitizeForLogging(id);
+			LOG.warn("Failed to log DELETE event for errand {}: {}", sanitizedId, e.getMessage());
 		}
 	}
 

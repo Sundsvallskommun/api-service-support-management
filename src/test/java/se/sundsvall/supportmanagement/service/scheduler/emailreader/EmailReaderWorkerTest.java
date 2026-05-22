@@ -250,7 +250,7 @@ class EmailReaderWorkerTest {
 
 		when(errandRepositoryMock.findById(anyString())).thenReturn(Optional.of(errandEntity));
 		when(errandNumberGeneratorServiceMock.generateErrandNumber(anyString(), anyString())).thenReturn("errandNumber");
-		when(errandServiceMock.createErrand(anyString(), anyString(), any())).thenReturn(errandEntity.getId());
+		when(errandServiceMock.createErrand(anyString(), anyString(), any(), isNull())).thenReturn(errandEntity.getId());
 		when(emailReaderMapperMock.toErrand(any(), any())).thenReturn(new Errand());
 		when(emailReaderMapperMock.toCommunicationEntity(any(), any())).thenReturn(communicationEntity);
 		when(emailReaderMapperMock.createEmailRequest(any(Email.class), any(String.class), any(String.class), any(String.class), any(String.class))).thenReturn(emailRequest);
@@ -282,7 +282,7 @@ class EmailReaderWorkerTest {
 		final var communicationEntity = CommunicationEntity.create();
 		final var errand = new Errand();
 
-		when(errandServiceMock.createErrand(anyString(), anyString(), any())).thenReturn(errandEntity.getId());
+		when(errandServiceMock.createErrand(anyString(), anyString(), any(), isNull())).thenReturn(errandEntity.getId());
 		when(errandRepositoryMock.findById(anyString())).thenReturn(Optional.of(errandEntity));
 		when(emailReaderMapperMock.toCommunicationEntity(any(), any())).thenReturn(communicationEntity);
 		when(emailReaderMapperMock.toErrand(any(), any())).thenReturn(errand);
@@ -291,7 +291,7 @@ class EmailReaderWorkerTest {
 
 		verify(errandRepositoryMock).findById(errandEntity.getId());
 		verify(emailReaderMapperMock).toErrand(same(email), same(emailConfig));
-		verify(errandServiceMock).createErrand(eq(emailConfig.getNamespace()), eq(emailConfig.getMunicipalityId()), same(errand));
+		verify(errandServiceMock).createErrand(eq(emailConfig.getNamespace()), eq(emailConfig.getMunicipalityId()), same(errand), isNull());
 		verify(emailReaderMapperMock).toCommunicationEntity(same(email), same(errandEntity));
 		verify(emailReaderClientMock).deleteEmail(MUNICIPALITY_ID, email.getId());
 		verify(communicationServiceMock).saveAttachment(same(communicationEntity), same(errandEntity));

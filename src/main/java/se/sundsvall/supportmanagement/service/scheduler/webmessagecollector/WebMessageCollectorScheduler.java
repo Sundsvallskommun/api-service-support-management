@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.service.scheduler.webmessagecollector;
 
+import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,6 +17,7 @@ public class WebMessageCollectorScheduler {
 	private final WebMessageCollectorWorker worker;
 	private final WebMessageCollectRepository repository;
 	private final Dept44HealthUtility healthUtility;
+	private final Consumer<String> setUnHealthyConsumer;
 
 	@Value("${scheduler.web-message-collector.name}")
 	private String jobName;
@@ -27,6 +29,7 @@ public class WebMessageCollectorScheduler {
 		this.worker = worker;
 		this.repository = repository;
 		this.healthUtility = healthUtility;
+		this.setUnHealthyConsumer = msg -> healthUtility.setHealthIndicatorUnhealthy(jobName, msg);
 	}
 
 	@Dept44Scheduled(
@@ -40,7 +43,7 @@ public class WebMessageCollectorScheduler {
 			try {
 				worker.getWebMessages(entity.getInstance(), familyId, entity.getMunicipalityId()).forEach(message -> {
 					try {
-						worker.processMessage(message, entity.getMunicipalityId());
+						worker.processMessage(message, entity.getMunicipalityId(), setUnHealthyConsumer);
 					} catch (final Exception e) {
 						LOG.error("Error processing web message with id '{}'", message.getMessageId(), e);
 						healthUtility.setHealthIndicatorUnhealthy(jobName, "Error processing individual web messages");

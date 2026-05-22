@@ -149,7 +149,7 @@ class ErrandServiceTest {
 		when(stringGeneratorServiceMock.generateErrandNumber(any(String.class), any(String.class))).thenReturn("KC-23090001");
 		when(contactReasonRepositoryMock.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(Optional.ofNullable(ContactReasonEntity.create().withReason("reason")));
 
-		final var result = service.createErrand(NAMESPACE, MUNICIPALITY_ID, errand);
+		final var result = service.createErrand(NAMESPACE, MUNICIPALITY_ID, errand, null);
 
 		assertThat(result).isEqualTo(ERRAND_ID);
 
@@ -216,7 +216,7 @@ class ErrandServiceTest {
 		when(contactReasonRepositoryMock.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(Optional.ofNullable(ContactReasonEntity.create().withReason("reason")));
 		doThrow(new RuntimeException("EventLog down")).when(eventServiceMock).createErrandEvent(any(), any(), any(), any(), any(), anyBoolean(), any());
 
-		final var result = service.createErrand(NAMESPACE, MUNICIPALITY_ID, errand);
+		final var result = service.createErrand(NAMESPACE, MUNICIPALITY_ID, errand, null);
 
 		assertThat(result).isEqualTo(ERRAND_ID);
 		verify(errandPhaseServiceMock).processPhaseChange(any(ErrandEntity.class), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));

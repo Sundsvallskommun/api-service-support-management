@@ -100,6 +100,7 @@ public class EmailReaderWorker {
 				emailReaderClient.deleteEmail(config.getMunicipalityId(), email.getId());
 			} catch (final Exception e) {
 				LOG.warn("Failed to delete email {} from EmailReader for errand {}: {}", email.getId(), errand.getId(), e.getMessage());
+				setUnHealthyConsumer.accept("Failed to delete email from EmailReader — email will be re-processed and may cause duplicate communications");
 			}
 
 			try {
@@ -128,7 +129,8 @@ public class EmailReaderWorker {
 					config.getMunicipalityId(),
 					emailReaderMapper.toErrand(
 						email,
-						config))));
+						config),
+					null)));
 	}
 
 	private EmailRequest processErrand(final ErrandEntity errand, final Email email, final EmailWorkerConfigEntity config) {

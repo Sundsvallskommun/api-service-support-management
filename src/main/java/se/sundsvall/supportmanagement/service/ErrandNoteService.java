@@ -23,6 +23,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.springframework.http.HttpHeaders.LOCATION;
+import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper.toCreateNoteRequest;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper.toErrandNote;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper.toFindErrandNotesResponse;
@@ -60,7 +61,9 @@ public class ErrandNoteService {
 		try {
 			eventService.createErrandNoteEvent(CREATE, EVENT_LOG_CREATE_ERRAND_NOTE, id, errandEntity, noteId, currentRevision, null);
 		} catch (final Exception e) {
-			LOG.warn("Failed to log CREATE note event for errand {} note {}: {}", id, noteId, e.getMessage());
+			final var sanitizedId = sanitizeForLogging(id);
+			final var sanitizedNoteId = sanitizeForLogging(noteId);
+			LOG.warn("Failed to log CREATE note event for errand {} note {}: {}", sanitizedId, sanitizedNoteId, e.getMessage());
 		}
 
 		return noteId;
@@ -95,7 +98,9 @@ public class ErrandNoteService {
 			try {
 				eventService.createErrandNoteEvent(UPDATE, EVENT_LOG_UPDATE_ERRAND_NOTE, id, errandEntity, noteId, currentRevision, previousRevision);
 			} catch (final Exception e) {
-				LOG.warn("Failed to log UPDATE note event for errand {} note {}: {}", id, noteId, e.getMessage());
+				final var sanitizedId = sanitizeForLogging(id);
+				final var sanitizedNoteId = sanitizeForLogging(noteId);
+				LOG.warn("Failed to log UPDATE note event for errand {} note {}: {}", sanitizedId, sanitizedNoteId, e.getMessage());
 			}
 		}
 
@@ -111,7 +116,9 @@ public class ErrandNoteService {
 		try {
 			eventService.createErrandNoteEvent(DELETE, EVENT_LOG_DELETE_ERRAND_NOTE, id, errandEntity, noteId, currentRevision, null);
 		} catch (final Exception e) {
-			LOG.warn("Failed to log DELETE note event for errand {} note {}: {}", id, noteId, e.getMessage());
+			final var sanitizedId = sanitizeForLogging(id);
+			final var sanitizedNoteId = sanitizeForLogging(noteId);
+			LOG.warn("Failed to log DELETE note event for errand {} note {}: {}", sanitizedId, sanitizedNoteId, e.getMessage());
 		}
 	}
 

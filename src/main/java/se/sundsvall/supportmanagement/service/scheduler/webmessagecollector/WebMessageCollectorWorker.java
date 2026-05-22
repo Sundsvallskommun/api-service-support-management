@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.service.scheduler.webmessagecollector;
 
 import generated.se.sundsvall.webmessagecollector.MessageDTO;
 import java.util.List;
+import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -50,7 +51,7 @@ public class WebMessageCollectorWorker {
 	}
 
 	@Transactional
-	public void processMessage(final MessageDTO message, final String municipalityId) {
+	public void processMessage(final MessageDTO message, final String municipalityId, final Consumer<String> setUnHealthyConsumer) {
 
 		final var entity = errandsRepository.findOne(hasMatchingTags(List.of(
 			DbExternalTag.create().withKey("caseId").withValue(message.getExternalCaseId()),
@@ -67,6 +68,7 @@ public class WebMessageCollectorWorker {
 				webMessageCollectorClient.deleteMessages(municipalityId, List.of(message.getId()));
 			} catch (final Exception e) {
 				LOG.warn("Failed to delete web-message {} from WebMessageCollector for errand {}: {}", message.getId(), entity.get().getId(), e.getMessage());
+				setUnHealthyConsumer.accept("Failed to delete web-message from WebMessageCollector — message will be re-processed each run");
 			}
 		}
 	}

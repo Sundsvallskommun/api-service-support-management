@@ -25,10 +25,12 @@ import se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -262,5 +264,67 @@ class ErrandNoteServiceTest {
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, RW);
 		verify(notesClientMock).deleteNoteById(MUNICIPALITY_ID, NOTE_ID);
 		verify(eventServiceMock).createErrandNoteEvent(EventType.DELETE, "Ärendenotering har raderats.", ERRAND_ID, ERRAND_ENTITY, NOTE_ID, Revision.create().withId("currentRevision").withVersion(1), null);
+	}
+
+	@Test
+	void createErrandNote_eventServiceFails_noteStillReturned() {
+		final var locationUrl = "http://localhost/2281/notes/" + NOTE_ID;
+		final var errandNote = buildCreateErrandNoteRequest();
+
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(ERRAND_ENTITY);
+		when(notesClientMock.createNote(any(), any())).thenReturn(responseEntityWithVoidMock);
+		when(responseEntityWithVoidMock.getHeaders()).thenReturn(httpHeadersMock);
+		when(httpHeadersMock.get(anyString())).thenAnswer((Answer<List<String>>) invocation -> switch ((String) invocation.getArgument(0)) {
+			case "x-current-revision" -> List.of("currentRevision");
+			case "x-current-version" -> List.of("0");
+			case LOCATION -> List.of(locationUrl);
+			default -> null;
+		});
+		doThrow(new RuntimeException("EventLog down")).when(eventServiceMock).createErrandNoteEvent(any(), any(), any(), any(), any(), any(), any());
+
+		assertThatNoException().isThrownBy(() -> {
+			final var result = service.createErrandNote(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, errandNote);
+			assertThat(result).isEqualTo(NOTE_ID);
+		});
+		verify(eventServiceMock).createErrandNoteEvent(any(), any(), any(), any(), any(), any(), any());
+	}
+
+	@Test
+	void updateErrandNote_eventServiceFails_noteStillReturned() {
+		final var errandNote = buildUpdateErrandNoteRequest();
+		final var updateNoteRequest = ErrandNoteMapper.toUpdateNoteRequest(errandNote);
+
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(ERRAND_ENTITY);
+		when(notesClientMock.updateNoteById(MUNICIPALITY_ID, NOTE_ID, updateNoteRequest)).thenReturn(responseEntityWithNoteMock);
+		when(responseEntityWithNoteMock.getHeaders()).thenReturn(httpHeadersMock);
+		when(responseEntityWithNoteMock.getBody()).thenReturn(new Note());
+		when(httpHeadersMock.get(anyString())).thenAnswer((Answer<List<String>>) invocation -> switch ((String) invocation.getArgument(0)) {
+			case "x-current-revision" -> List.of("currentRevision");
+			case "x-current-version" -> List.of("1");
+			case "x-previous-revision" -> List.of("previousRevision");
+			case "x-previous-version" -> List.of("0");
+			default -> null;
+		});
+		doThrow(new RuntimeException("EventLog down")).when(eventServiceMock).createErrandNoteEvent(any(), any(), any(), any(), any(), any(), any());
+
+		assertThatNoException().isThrownBy(() -> service.updateErrandNote(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, NOTE_ID, errandNote));
+		verify(eventServiceMock).createErrandNoteEvent(any(), any(), any(), any(), any(), any(), any());
+	}
+
+	@Test
+	void deleteErrandNote_eventServiceFails_deletionCompletes() {
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(ERRAND_ENTITY);
+		when(notesClientMock.deleteNoteById(MUNICIPALITY_ID, NOTE_ID)).thenReturn(responseEntityWithVoidMock);
+		when(responseEntityWithVoidMock.getHeaders()).thenReturn(httpHeadersMock);
+		when(httpHeadersMock.get(anyString())).thenAnswer((Answer<List<String>>) invocation -> switch ((String) invocation.getArgument(0)) {
+			case "x-current-revision" -> List.of("currentRevision");
+			case "x-current-version" -> List.of("1");
+			default -> null;
+		});
+		doThrow(new RuntimeException("EventLog down")).when(eventServiceMock).createErrandNoteEvent(any(), any(), any(), any(), any(), any(), any());
+
+		assertThatNoException().isThrownBy(() -> service.deleteErrandNote(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, NOTE_ID));
+		verify(notesClientMock).deleteNoteById(MUNICIPALITY_ID, NOTE_ID);
+		verify(eventServiceMock).createErrandNoteEvent(any(), any(), any(), any(), any(), any(), any());
 	}
 }

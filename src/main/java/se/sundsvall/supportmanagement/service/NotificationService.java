@@ -24,6 +24,7 @@ import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static org.springframework.data.domain.Sort.unsorted;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.util.StringUtils.hasText;
+import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_NOTIFICATION_TTL_IN_DAYS;
 import static se.sundsvall.supportmanagement.service.mapper.NotificationMapper.toNotificationEntity;
 import static se.sundsvall.supportmanagement.service.mapper.NotificationMapper.updateEntity;
@@ -36,6 +37,7 @@ public class NotificationService {
 
 	private static final String NOTIFICATION_ENTITY_NOT_FOUND = "Notification with id:'%s' not found in namespace:'%s' for municipality with id:'%s' and errand with id:'%s'";
 	private static final String NAMESPACE_ENTITY_NOT_FOUND = "Namespace with name:'%s' and municiplaityId '%s' not found!";
+	private static final String EMPLOYEE_LOOKUP_FAILED = "Failed to resolve employee {} in municipality {}: {}";
 
 	private final NotificationRepository notificationRepository;
 	private final NamespaceConfigRepository namespaceConfigRepository;
@@ -155,7 +157,8 @@ public class NotificationService {
 					.map(PortalPersonData::getFullname)
 					.orElse(null);
 			} catch (final Exception e) {
-				LOG.warn("Failed to resolve employee {} in municipality {}: {}", notificationEntity.getOwnerId(), municipalityId, e.getMessage());
+				final var sanitizedOwnerId = sanitizeForLogging(notificationEntity.getOwnerId());
+				LOG.warn(EMPLOYEE_LOOKUP_FAILED, sanitizedOwnerId, municipalityId, e.getMessage());
 			}
 			notificationEntity.setOwnerFullName(ownerFullName);
 		}
@@ -168,7 +171,8 @@ public class NotificationService {
 					.map(PortalPersonData::getFullname)
 					.orElse(null);
 			} catch (final Exception e) {
-				LOG.warn("Failed to resolve employee {} in municipality {}: {}", executingUser, municipalityId, e.getMessage());
+				final var sanitizedExecutingUser = sanitizeForLogging(executingUser);
+				LOG.warn(EMPLOYEE_LOOKUP_FAILED, sanitizedExecutingUser, municipalityId, e.getMessage());
 			}
 			notificationEntity.setCreatedBy(executingUser);
 			notificationEntity.setCreatedByFullName(createdByFullName);
@@ -190,7 +194,8 @@ public class NotificationService {
 					.map(PortalPersonData::getFullname)
 					.orElse(null);
 			} catch (final Exception e) {
-				LOG.warn("Failed to resolve employee {} in municipality {}: {}", notification.getOwnerId(), notificationEntity.getMunicipalityId(), e.getMessage());
+				final var sanitizedOwnerId = sanitizeForLogging(notification.getOwnerId());
+				LOG.warn(EMPLOYEE_LOOKUP_FAILED, sanitizedOwnerId, notificationEntity.getMunicipalityId(), e.getMessage());
 			}
 			notificationEntity.setOwnerFullName(ownerFullName);
 		}

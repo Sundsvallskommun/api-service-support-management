@@ -6,6 +6,7 @@ import generated.se.sundsvall.webmessagecollector.MessageDTO;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -76,6 +77,9 @@ class WebMessageCollectorWorkerTest {
 	@Mock
 	private AttachmentDataEntity attachmentDataEntityMock;
 
+	@Mock
+	private Consumer<String> setUnHealthyConsumerMock;
+
 	@InjectMocks
 	private WebMessageCollectorWorker webMessageCollectorWorker;
 
@@ -131,7 +135,7 @@ class WebMessageCollectorWorkerTest {
 		try (final MockedStatic<ErrandSpecification> specificationMockedStatic = Mockito.mockStatic(ErrandSpecification.class)) {
 			specificationMockedStatic.when(() -> ErrandSpecification.hasMatchingTags(any())).thenReturn(specificationMock);
 
-			webMessageCollectorWorker.processMessage(messagedto, MUNICIPALITY_ID);
+			webMessageCollectorWorker.processMessage(messagedto, MUNICIPALITY_ID, setUnHealthyConsumerMock);
 
 			specificationMockedStatic.verify(() -> ErrandSpecification.hasMatchingTags(dbExternalTagsArgumentCaptor.capture()));
 			assertThat(dbExternalTagsArgumentCaptor.getValue())
@@ -180,7 +184,7 @@ class WebMessageCollectorWorkerTest {
 		try (final MockedStatic<ErrandSpecification> specificationMockedStatic = Mockito.mockStatic(ErrandSpecification.class)) {
 			specificationMockedStatic.when(() -> ErrandSpecification.hasMatchingTags(any())).thenReturn(specificationMock);
 
-			webMessageCollectorWorker.processMessage(messagedto, MUNICIPALITY_ID);
+			webMessageCollectorWorker.processMessage(messagedto, MUNICIPALITY_ID, setUnHealthyConsumerMock);
 
 			specificationMockedStatic.verify(() -> ErrandSpecification.hasMatchingTags(dbExternalTagsArgumentCaptor.capture()));
 			assertThat(dbExternalTagsArgumentCaptor.getValue())
@@ -208,7 +212,7 @@ class WebMessageCollectorWorkerTest {
 		try (final MockedStatic<ErrandSpecification> specificationMockedStatic = Mockito.mockStatic(ErrandSpecification.class)) {
 			specificationMockedStatic.when(() -> ErrandSpecification.hasMatchingTags(any())).thenReturn(specificationMock);
 
-			assertThatNoException().isThrownBy(() -> webMessageCollectorWorker.processMessage(messagedto, MUNICIPALITY_ID));
+			assertThatNoException().isThrownBy(() -> webMessageCollectorWorker.processMessage(messagedto, MUNICIPALITY_ID, setUnHealthyConsumerMock));
 		}
 
 		verify(communicationServiceMock).saveCommunication(any(CommunicationEntity.class));
@@ -228,11 +232,12 @@ class WebMessageCollectorWorkerTest {
 		try (final MockedStatic<ErrandSpecification> specificationMockedStatic = Mockito.mockStatic(ErrandSpecification.class)) {
 			specificationMockedStatic.when(() -> ErrandSpecification.hasMatchingTags(any())).thenReturn(specificationMock);
 
-			assertThatNoException().isThrownBy(() -> webMessageCollectorWorker.processMessage(messagedto, MUNICIPALITY_ID));
+			assertThatNoException().isThrownBy(() -> webMessageCollectorWorker.processMessage(messagedto, MUNICIPALITY_ID, setUnHealthyConsumerMock));
 		}
 
 		verify(communicationServiceMock).saveCommunication(any(CommunicationEntity.class));
 		verify(webMessageCollectorClientMock).deleteMessages(MUNICIPALITY_ID, List.of(1));
+		verify(setUnHealthyConsumerMock).accept(any(String.class));
 	}
 
 	@Test
