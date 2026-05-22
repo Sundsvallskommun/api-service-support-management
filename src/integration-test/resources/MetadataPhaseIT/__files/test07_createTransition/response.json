@@ -4,6 +4,7 @@
 		"targetPhaseId": "a1b2c3d4-1111-2222-3333-444455556666",
 		"targetPhaseName": "REGISTRATION",
 		"targetPhaseDisplayName": "Registrering",
-		"description": "Skicka tillbaka till registrering"
+		"description": "Skicka tillbaka till registrering",
+		"deprecated": false
 	}
 ]

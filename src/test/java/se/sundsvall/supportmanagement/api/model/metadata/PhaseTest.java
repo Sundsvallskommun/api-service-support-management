@@ -40,6 +40,7 @@ class PhaseTest {
 		final var id = "id";
 		final var name = "INVESTIGATION";
 		final var displayName = "Utredning";
+		final var deprecated = true;
 		final var description = "Fas för utredning";
 		final var phaseOrder = 0;
 		final var allowedStatuses = List.of("IN_PROGRESS", "WAITING");
@@ -51,6 +52,7 @@ class PhaseTest {
 			.withId(id)
 			.withName(name)
 			.withDisplayName(displayName)
+			.withDeprecated(deprecated)
 			.withDescription(description)
 			.withPhaseOrder(phaseOrder)
 			.withAllowedStatuses(allowedStatuses)
@@ -62,6 +64,7 @@ class PhaseTest {
 		assertThat(bean.getId()).isEqualTo(id);
 		assertThat(bean.getName()).isEqualTo(name);
 		assertThat(bean.getDisplayName()).isEqualTo(displayName);
+		assertThat(bean.isDeprecated()).isEqualTo(deprecated);
 		assertThat(bean.getDescription()).isEqualTo(description);
 		assertThat(bean.getPhaseOrder()).isEqualTo(phaseOrder);
 		assertThat(bean.getAllowedStatuses()).isEqualTo(allowedStatuses);
@@ -72,7 +75,7 @@ class PhaseTest {
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(Phase.create()).hasAllNullFieldsOrProperties();
-		assertThat(new Phase()).hasAllNullFieldsOrProperties();
+		assertThat(Phase.create()).hasAllNullFieldsOrPropertiesExcept("deprecated");
+		assertThat(new Phase()).hasAllNullFieldsOrPropertiesExcept("deprecated");
 	}
 }

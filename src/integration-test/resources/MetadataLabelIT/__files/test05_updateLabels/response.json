@@ -27,9 +27,11 @@
 									"displayName": "DEEPSUBTYPE-DISPLAY-NAME-3",
 									"resourcePath": "CATEGORY_1/TYPE_2/SUBTYPE_1/DEEPSUBTYPE_3",
 									"resourceName": "DEEPSUBTYPE_3",
-									"labels": []
+									"labels": [],
+									"deprecated": false
 								}
-							]
+							],
+							"deprecated": false
 						},
 						{
 							"id": "f4d6e210-633b-48a6-ad0a-7be839b28762",
@@ -44,7 +46,8 @@
 									"displayName": "DEEPSUBTYPE-DISPLAY-NAME-2",
 									"resourcePath": "${json-unit.any-string}",
 									"resourceName": "DEEPSUBTYPE_2",
-									"labels": []
+									"labels": [],
+									"deprecated": false
 								},
 								{
 									"id": "ffe5f120-6a3b-4404-ace8-8ea87b559907",
@@ -52,13 +55,17 @@
 									"displayName": "DEEPSUBTYPE-DISPLAY-NAME-1",
 									"resourcePath": "${json-unit.any-string}",
 									"resourceName": "DEEPSUBTYPE_1",
-									"labels": []
+									"labels": [],
+									"deprecated": false
 								}
-							]
+							],
+							"deprecated": false
 						}
-					]
+					],
+					"deprecated": false
 				}
-			]
+			],
+			"deprecated": false
 		}
 	]
 }

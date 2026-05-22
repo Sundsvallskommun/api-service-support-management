@@ -5,7 +5,8 @@
 		"name": "STATUS-1",
 		"displayName": "Status 1",
 		"externalDisplayName": "External Status 1",
-		"sortOrder": 3
+		"sortOrder": 3,
+		"deprecated": false
 	},
 	{
 		"id": "bb000000-0000-0000-0000-000000000101",
@@ -13,7 +14,8 @@
 		"name": "STATUS-2",
 		"displayName": "Status 2",
 		"externalDisplayName": "External Status 2",
-		"sortOrder": 1
+		"sortOrder": 1,
+		"deprecated": false
 	},
 	{
 		"id": "bb000000-0000-0000-0000-000000000102",
@@ -21,6 +23,7 @@
 		"name": "STATUS-3",
 		"displayName": "Status 3",
 		"externalDisplayName": "External Status 3",
-		"sortOrder": 2
+		"sortOrder": 2,
+		"deprecated": false
 	}
 ]

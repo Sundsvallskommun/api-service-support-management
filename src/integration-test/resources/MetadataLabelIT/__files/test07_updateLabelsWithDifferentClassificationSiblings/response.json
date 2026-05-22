@@ -13,7 +13,8 @@
 					"displayName": "Updated Child A1",
 					"resourcePath": "LABEL_A/CHILD_A1",
 					"resourceName": "CHILD_A1",
-					"labels": []
+					"labels": [],
+					"deprecated": false
 				},
 				{
 					"id": "d3c4e5f6-a7b8-9012-cdef-123456789012",
@@ -21,9 +22,11 @@
 					"displayName": "Updated Child A2",
 					"resourcePath": "LABEL_A/CHILD_A2",
 					"resourceName": "CHILD_A2",
-					"labels": []
+					"labels": [],
+					"deprecated": false
 				}
-			]
+			],
+			"deprecated": false
 		},
 		{
 			"id": "e4d5f6a7-b8c9-0123-defa-234567890123",
@@ -31,7 +34,8 @@
 			"displayName": "Updated Label B",
 			"resourcePath": "LABEL_B",
 			"resourceName": "LABEL_B",
-			"labels": []
+			"labels": [],
+			"deprecated": false
 		}
 	]
 }

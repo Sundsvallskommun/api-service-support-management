@@ -2,17 +2,20 @@
 	{
 		"id": "cc000000-0000-0000-0000-000000000100",
 		"created": "2023-01-01T12:00:00+01:00",
-		"name": "ROLE-1"
+		"name": "ROLE-1",
+		"deprecated": false
 	},
 	{
 		"id": "cc000000-0000-0000-0000-000000000101",
 		"created": "2023-01-01T12:00:00+01:00",
-		"name": "ROLE-2"
+		"name": "ROLE-2",
+		"deprecated": false
 	},
 	{
 		"id": "cc000000-0000-0000-0000-000000000102",
 		"displayName": "DISPLAY-NAME-3",
 		"created": "2023-01-01T12:00:00+01:00",
-		"name": "ROLE-3"
+		"name": "ROLE-3",
+		"deprecated": false
 	}
 ]

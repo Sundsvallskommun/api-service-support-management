@@ -37,6 +37,7 @@ class ContactReasonTest {
 	void testCreatePattern() {
 
 		final var created = OffsetDateTime.now();
+		final var deprecated = true;
 		final var modified = OffsetDateTime.now().plusDays(1);
 		final var reason = "name";
 		final var displayName = "displayName";
@@ -44,12 +45,14 @@ class ContactReasonTest {
 
 		final var bean = ContactReason.create()
 			.withCreated(created)
+			.withDeprecated(deprecated)
 			.withModified(modified)
 			.withReason(reason)
 			.withDisplayName(displayName)
 			.withId(id);
 
 		assertThat(bean.getCreated()).isEqualTo(created);
+		assertThat(bean.isDeprecated()).isEqualTo(deprecated);
 		assertThat(bean.getModified()).isEqualTo(modified);
 		assertThat(bean.getReason()).isEqualTo(reason);
 		assertThat(bean.getDisplayName()).isEqualTo(displayName);
@@ -58,7 +61,7 @@ class ContactReasonTest {
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(ContactReason.create()).hasAllNullFieldsOrProperties();
-		assertThat(new ContactReason()).hasAllNullFieldsOrProperties();
+		assertThat(ContactReason.create()).hasAllNullFieldsOrPropertiesExcept("deprecated");
+		assertThat(new ContactReason()).hasAllNullFieldsOrPropertiesExcept("deprecated");
 	}
 }

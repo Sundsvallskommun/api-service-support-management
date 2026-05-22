@@ -30,6 +30,7 @@ class PhaseTransitionTest {
 		final var targetPhaseId = "targetPhaseId";
 		final var targetPhaseName = "targetPhaseName";
 		final var targetPhaseDisplayName = "targetPhaseDisplayName";
+		final var deprecated = true;
 		final var description = "description";
 
 		final var bean = PhaseTransition.create()
@@ -37,6 +38,7 @@ class PhaseTransitionTest {
 			.withTargetPhaseId(targetPhaseId)
 			.withTargetPhaseName(targetPhaseName)
 			.withTargetPhaseDisplayName(targetPhaseDisplayName)
+			.withDeprecated(deprecated)
 			.withDescription(description);
 
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
@@ -44,12 +46,13 @@ class PhaseTransitionTest {
 		assertThat(bean.getTargetPhaseId()).isEqualTo(targetPhaseId);
 		assertThat(bean.getTargetPhaseName()).isEqualTo(targetPhaseName);
 		assertThat(bean.getTargetPhaseDisplayName()).isEqualTo(targetPhaseDisplayName);
+		assertThat(bean.isDeprecated()).isEqualTo(deprecated);
 		assertThat(bean.getDescription()).isEqualTo(description);
 	}
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(PhaseTransition.create()).hasAllNullFieldsOrProperties();
-		assertThat(new PhaseTransition()).hasAllNullFieldsOrProperties();
+		assertThat(PhaseTransition.create()).hasAllNullFieldsOrPropertiesExcept("deprecated");
+		assertThat(new PhaseTransition()).hasAllNullFieldsOrPropertiesExcept("deprecated");
 	}
 }

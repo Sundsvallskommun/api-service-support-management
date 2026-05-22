@@ -30,6 +30,9 @@ public class Role {
 	})
 	private Integer sortOrder;
 
+	@Schema(description = "", defaultValue = "false", examples = "true")
+	private boolean deprecated = false;
+
 	@Schema(description = "Timestamp when the role was created", examples = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	@DateTimeFormat(iso = ISO.DATE_TIME)
 	@Null
@@ -122,9 +125,22 @@ public class Role {
 		return this;
 	}
 
+	public boolean isDeprecated() {
+		return deprecated;
+	}
+
+	public void setDeprecated(final boolean deprecated) {
+		this.deprecated = deprecated;
+	}
+
+	public Role withDeprecated(final boolean deprecated) {
+		this.deprecated = deprecated;
+		return this;
+	}
+
 	@Override
 	public int hashCode() {
-		return Objects.hash(created, modified, id, name, displayName, sortOrder);
+		return Objects.hash(created, deprecated, modified, id, name, displayName, sortOrder);
 	}
 
 	@Override
@@ -135,8 +151,9 @@ public class Role {
 		if (!(obj instanceof final Role other)) {
 			return false;
 		}
-		return Objects.equals(created, other.created) && Objects.equals(modified, other.modified) && Objects.equals(id, other.id) && Objects.equals(name, other.name) && Objects.equals(displayName, other.displayName) && Objects.equals(sortOrder,
-			other.sortOrder);
+		return Objects.equals(created, other.created) && deprecated == other.deprecated && Objects.equals(modified, other.modified) && Objects.equals(id, other.id) && Objects.equals(name, other.name) && Objects.equals(displayName, other.displayName)
+			&& Objects.equals(sortOrder,
+				other.sortOrder);
 	}
 
 	@Override
@@ -146,6 +163,7 @@ public class Role {
 			", name='" + name + '\'' +
 			", displayName='" + displayName + '\'' +
 			", sortOrder=" + sortOrder +
+			", deprecated=" + deprecated +
 			", created=" + created +
 			", modified=" + modified +
 			'}';

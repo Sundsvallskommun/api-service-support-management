@@ -13,9 +13,11 @@
 					"displayName": "Child A2",
 					"resourcePath": "ROOT_A/CHILD_A2",
 					"resourceName": "CHILD_A2",
-					"labels": []
+					"labels": [],
+					"deprecated": false
 				}
-			]
+			],
+			"deprecated": false
 		},
 		{
 			"id": "${json-unit.any-string}",
@@ -23,7 +25,8 @@
 			"displayName": "Root B",
 			"resourcePath": "ROOT_B",
 			"resourceName": "ROOT_B",
-			"labels": []
+			"labels": [],
+			"deprecated": false
 		}
 	]
 }

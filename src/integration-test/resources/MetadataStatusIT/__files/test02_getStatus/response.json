@@ -4,5 +4,6 @@
 	"name": "STATUS-2",
 	"displayName": "Status 2",
 	"externalDisplayName": "External Status 2",
-	"sortOrder": 1
+	"sortOrder": 1,
+	"deprecated": false
 }

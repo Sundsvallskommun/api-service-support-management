@@ -36,6 +36,7 @@ class StatusTest {
 	@Test
 	void testCreatePattern() {
 		final var created = OffsetDateTime.now();
+		final var deprecated = true;
 		final var modified = OffsetDateTime.now().plusDays(1);
 		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
 		final var name = "name";
@@ -45,6 +46,7 @@ class StatusTest {
 		final var bean = Status.create()
 			.withId(id)
 			.withCreated(created)
+			.withDeprecated(deprecated)
 			.withModified(modified)
 			.withName(name)
 			.withDisplayName(displayName)
@@ -52,6 +54,7 @@ class StatusTest {
 
 		assertThat(bean.getId()).isEqualTo(id);
 		assertThat(bean.getCreated()).isEqualTo(created);
+		assertThat(bean.isDeprecated()).isEqualTo(deprecated);
 		assertThat(bean.getModified()).isEqualTo(modified);
 		assertThat(bean.getName()).isEqualTo(name);
 		assertThat(bean.getDisplayName()).isEqualTo(displayName);
@@ -60,7 +63,7 @@ class StatusTest {
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(Status.create()).hasAllNullFieldsOrProperties();
-		assertThat(new Status()).hasAllNullFieldsOrProperties();
+		assertThat(Status.create()).hasAllNullFieldsOrPropertiesExcept("deprecated");
+		assertThat(new Status()).hasAllNullFieldsOrPropertiesExcept("deprecated");
 	}
 }

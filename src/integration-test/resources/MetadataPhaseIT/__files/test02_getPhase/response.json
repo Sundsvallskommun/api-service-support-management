@@ -14,15 +14,18 @@
 			"targetPhaseId": "b2c3d4e5-1111-2222-3333-444455556666",
 			"targetPhaseName": "INVESTIGATION",
 			"targetPhaseDisplayName": "Utredning",
-			"description": "Skicka till utredning"
+			"description": "Skicka till utredning",
+			"deprecated": false
 		},
 		{
 			"id": "11111111-aaaa-bbbb-cccc-ddddeeee0003",
 			"targetPhaseId": "c3d4e5f6-1111-2222-3333-444455556666",
 			"targetPhaseName": "DECISION",
 			"targetPhaseDisplayName": "Beslut",
-			"description": "Skicka direkt till beslut"
+			"description": "Skicka direkt till beslut",
+			"deprecated": false
 		}
 	],
-	"created": "2023-01-01T12:00:00+01:00"
+	"created": "2023-01-01T12:00:00+01:00",
+	"deprecated": false
 }

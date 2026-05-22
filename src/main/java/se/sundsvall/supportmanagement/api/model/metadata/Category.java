@@ -32,6 +32,9 @@ public class Category {
 	})
 	private Integer sortOrder;
 
+	@Schema(description = "", defaultValue = "false", examples = "true")
+	private boolean deprecated = false;
+
 	@ArraySchema(uniqueItems = true)
 	@Valid
 	private List<Type> types;
@@ -102,6 +105,19 @@ public class Category {
 		return this;
 	}
 
+	public boolean isDeprecated() {
+		return deprecated;
+	}
+
+	public void setDeprecated(final boolean deprecated) {
+		this.deprecated = deprecated;
+	}
+
+	public Category withDeprecated(final boolean deprecated) {
+		this.deprecated = deprecated;
+		return this;
+	}
+
 	public List<Type> getTypes() {
 		return types;
 	}
@@ -143,7 +159,7 @@ public class Category {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(created, displayName, id, modified, name, sortOrder, types);
+		return Objects.hash(created, deprecated, displayName, id, modified, name, sortOrder, types);
 	}
 
 	@Override
@@ -158,12 +174,13 @@ public class Category {
 			return false;
 		}
 		final Category other = (Category) obj;
-		return Objects.equals(created, other.created) && Objects.equals(displayName, other.displayName) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(name, other.name) && Objects.equals(sortOrder,
-			other.sortOrder) && Objects.equals(types, other.types);
+		return Objects.equals(created, other.created) && deprecated == other.deprecated && Objects.equals(displayName, other.displayName) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(name, other.name)
+			&& Objects.equals(sortOrder,
+				other.sortOrder) && Objects.equals(types, other.types);
 	}
 
 	@Override
 	public String toString() {
-		return "Category [id=" + id + ", name=" + name + ", displayName=" + displayName + ", sortOrder=" + sortOrder + ", types=" + types + ", created=" + created + ", modified=" + modified + "]";
+		return "Category [id=" + id + ", name=" + name + ", displayName=" + displayName + ", sortOrder=" + sortOrder + ", deprecated=" + deprecated + ", types=" + types + ", created=" + created + ", modified=" + modified + "]";
 	}
 }

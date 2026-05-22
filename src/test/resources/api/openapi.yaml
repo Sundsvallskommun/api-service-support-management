@@ -5,9 +5,9 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "14.5"
+  version: "14.6"
 servers:
-- url: http://localhost:51386
+- url: http://localhost:54969
   description: Generated server url
 tags:
 - name: Errand attachments
@@ -7720,9 +7720,9 @@ components:
         type:
           type: string
           format: uri
-        detail:
-          type: string
         title:
+          type: string
+        detail:
           type: string
         status:
           type: integer
@@ -7745,10 +7745,10 @@ components:
         instance:
           type: string
           format: uri
-        causeAsProblem:
-          $ref: "#/components/schemas/ThrowableProblem"
         detail:
           type: string
+        causeAsProblem:
+          $ref: "#/components/schemas/ThrowableProblem"
     ThrowableProblem:
       type: object
       properties:
@@ -7931,6 +7931,11 @@ components:
           - keycard
           minLength: 1
           pattern: "[A-Z0-9_]+"
+        deprecated:
+          type: boolean
+          default: false
+          examples:
+          - "true"
         labels:
           type: array
           items:
@@ -8385,6 +8390,11 @@ components:
           description: Sort order for the status
           examples:
           - "1"
+        deprecated:
+          type: boolean
+          default: false
+          examples:
+          - "true"
         created:
           type: string
           format: date-time
@@ -8432,6 +8442,11 @@ components:
           description: Sort order for the role
           examples:
           - "1"
+        deprecated:
+          type: boolean
+          default: false
+          examples:
+          - "true"
         created:
           type: string
           format: date-time
@@ -8493,6 +8508,11 @@ components:
           items:
             $ref: "#/components/schemas/PhaseTransition"
           readOnly: true
+        deprecated:
+          type: boolean
+          default: false
+          examples:
+          - "true"
         created:
           type: string
           format: date-time
@@ -8542,6 +8562,11 @@ components:
           description: Description of the transition
           examples:
           - Skicka till utredning
+        deprecated:
+          type: boolean
+          default: false
+          examples:
+          - "true"
       required:
       - targetPhaseId
     ExternalIdType:
@@ -8575,6 +8600,11 @@ components:
           description: Sort order for the external id type
           examples:
           - "1"
+        deprecated:
+          type: boolean
+          default: false
+          examples:
+          - "true"
         created:
           type: string
           format: date-time
@@ -8622,6 +8652,11 @@ components:
           description: Sort order for the contact reason
           examples:
           - "1"
+        deprecated:
+          type: boolean
+          default: false
+          examples:
+          - "true"
         created:
           type: string
           format: date-time
@@ -8666,6 +8701,11 @@ components:
           description: Sort order for the category
           examples:
           - "1"
+        deprecated:
+          type: boolean
+          default: false
+          examples:
+          - "true"
         types:
           type: array
           items:
@@ -8706,6 +8746,11 @@ components:
           description: Email for where to escalate the errand if needed
           examples:
           - escalationgroup@sesamestreet.com
+        deprecated:
+          type: boolean
+          default: false
+          examples:
+          - "true"
         created:
           type: string
           format: date-time
@@ -9036,36 +9081,7 @@ components:
           type: boolean
         container:
           type: boolean
-        number:
-          type: boolean
-        missingNode:
-          type: boolean
-        long:
-          type: boolean
-        short:
-          type: boolean
-        textual:
-          type: boolean
-          deprecated: true
-        boolean:
-          type: boolean
-        binary:
-          type: boolean
-        pojo:
-          type: boolean
-        int:
-          type: boolean
-        string:
-          type: boolean
-        double:
-          type: boolean
-        bigDecimal:
-          type: boolean
-        integralNumber:
-          type: boolean
-        floatingPointNumber:
-          type: boolean
-        bigInteger:
+        valueNode:
           type: boolean
         nodeType:
           type: string
@@ -9079,7 +9095,36 @@ components:
           - OBJECT
           - POJO
           - STRING
-        valueNode:
+        missingNode:
+          type: boolean
+        integralNumber:
+          type: boolean
+        bigInteger:
+          type: boolean
+        bigDecimal:
+          type: boolean
+        floatingPointNumber:
+          type: boolean
+        short:
+          type: boolean
+        long:
+          type: boolean
+        double:
+          type: boolean
+        binary:
+          type: boolean
+        int:
+          type: boolean
+        boolean:
+          type: boolean
+        pojo:
+          type: boolean
+        string:
+          type: boolean
+        textual:
+          type: boolean
+          deprecated: true
+        number:
           type: boolean
         embeddedValue:
           type: boolean
@@ -9860,15 +9905,15 @@ components:
         number:
           type: integer
           format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
         sort:
           $ref: "#/components/schemas/SortObject"
         numberOfElements:
           type: integer
           format: int32
-        first:
-          type: boolean
-        last:
-          type: boolean
         pageable:
           $ref: "#/components/schemas/PageableObject"
         empty:
@@ -10152,15 +10197,15 @@ components:
         number:
           type: integer
           format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
         sort:
           $ref: "#/components/schemas/SortObject"
         numberOfElements:
           type: integer
           format: int32
-        first:
-          type: boolean
-        last:
-          type: boolean
         pageable:
           $ref: "#/components/schemas/PageableObject"
         empty:
@@ -10380,15 +10425,15 @@ components:
         number:
           type: integer
           format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
         sort:
           $ref: "#/components/schemas/SortObject"
         numberOfElements:
           type: integer
           format: int32
-        first:
-          type: boolean
-        last:
-          type: boolean
         pageable:
           $ref: "#/components/schemas/PageableObject"
         empty:
