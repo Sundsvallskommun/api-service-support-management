@@ -5,9 +5,9 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "14.6"
+  version: "14.7"
 servers:
-- url: http://localhost:54114
+- url: http://localhost:38949
   description: Generated server url
 tags:
 - name: Errand attachments
@@ -7940,9 +7940,37 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Label"
+        attributes:
+          type: array
+          description: "Free-form key/value data owned by the client. Stored and returned\
+            \ as-is by the service, which does not interpret or validate the contents.\
+            \ Keys are conventions agreed between clients (e.g. 'escalationEmail')."
+          items:
+            $ref: "#/components/schemas/LabelAttribute"
       required:
       - classification
       - resourceName
+    LabelAttribute:
+      type: object
+      description: Label attribute model. Free-form key/value data owned by the client;
+        not interpreted by the service. Keys are conventions agreed between clients
+        (e.g. 'escalationEmail').
+      properties:
+        key:
+          type: string
+          description: Attribute key
+          examples:
+          - escalationEmail
+          minLength: 1
+        value:
+          type: string
+          description: Attribute value
+          examples:
+          - escalation@example.com
+          minLength: 1
+      required:
+      - key
+      - value
     MessageExchangeIntegration:
       type: object
       description: Message exchange worker config model
@@ -9082,24 +9110,32 @@ components:
           type: boolean
         number:
           type: boolean
-        long:
+        pojo:
           type: boolean
-        binary:
+        floatingPointNumber:
+          type: boolean
+        short:
+          type: boolean
+        int:
+          type: boolean
+        long:
           type: boolean
         double:
           type: boolean
-        short:
+        bigDecimal:
+          type: boolean
+        bigInteger:
           type: boolean
         textual:
           type: boolean
           deprecated: true
-        pojo:
-          type: boolean
-        int:
-          type: boolean
-        string:
-          type: boolean
         boolean:
+          type: boolean
+        binary:
+          type: boolean
+        valueNode:
+          type: boolean
+        missingNode:
           type: boolean
         nodeType:
           type: string
@@ -9113,17 +9149,9 @@ components:
           - OBJECT
           - POJO
           - STRING
-        bigDecimal:
-          type: boolean
-        bigInteger:
-          type: boolean
-        valueNode:
-          type: boolean
-        missingNode:
+        string:
           type: boolean
         integralNumber:
-          type: boolean
-        floatingPointNumber:
           type: boolean
         embeddedValue:
           type: boolean
@@ -9909,6 +9937,8 @@ components:
         number:
           type: integer
           format: int32
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
         sort:
           $ref: "#/components/schemas/SortObject"
         first:
@@ -9918,8 +9948,6 @@ components:
         numberOfElements:
           type: integer
           format: int32
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
         empty:
           type: boolean
     PageableObject:
@@ -9928,9 +9956,7 @@ components:
         offset:
           type: integer
           format: int64
-        sort:
-          $ref: "#/components/schemas/SortObject"
-        unpaged:
+        paged:
           type: boolean
         pageNumber:
           type: integer
@@ -9938,16 +9964,18 @@ components:
         pageSize:
           type: integer
           format: int32
-        paged:
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        unpaged:
           type: boolean
     SortObject:
       type: object
       properties:
         empty:
           type: boolean
-        unsorted:
-          type: boolean
         sorted:
+          type: boolean
+        unsorted:
           type: boolean
     Revision:
       type: object
@@ -10201,6 +10229,8 @@ components:
         number:
           type: integer
           format: int32
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
         sort:
           $ref: "#/components/schemas/SortObject"
         first:
@@ -10210,8 +10240,6 @@ components:
         numberOfElements:
           type: integer
           format: int32
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
         empty:
           type: boolean
     Communication:
@@ -10434,6 +10462,8 @@ components:
         number:
           type: integer
           format: int32
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
         sort:
           $ref: "#/components/schemas/SortObject"
         first:
@@ -10443,8 +10473,6 @@ components:
         numberOfElements:
           type: integer
           format: int32
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
         empty:
           type: boolean
     ReadBy:

@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.api.model.metadata;
 
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import java.util.List;
@@ -37,6 +38,10 @@ public class Label {
 
 	@ArraySchema(arraySchema = @Schema(ref = "#/components/schemas/Label"))
 	private List<Label> labels;
+
+	@Schema(description = "Free-form key/value data owned by the client. Stored and returned as-is by the service, which does not interpret or validate the contents. Keys are conventions agreed between clients (e.g. 'escalationEmail').")
+	@Valid
+	private List<LabelAttribute> attributes;
 
 	public static Label create() {
 		return new Label();
@@ -133,9 +138,22 @@ public class Label {
 		return this;
 	}
 
+	public List<LabelAttribute> getAttributes() {
+		return attributes;
+	}
+
+	public void setAttributes(final List<LabelAttribute> attributes) {
+		this.attributes = attributes;
+	}
+
+	public Label withAttributes(final List<LabelAttribute> attributes) {
+		setAttributes(attributes);
+		return this;
+	}
+
 	@Override
 	public int hashCode() {
-		return Objects.hash(classification, deprecated, displayName, id, labels, resourceName, resourcePath);
+		return Objects.hash(attributes, classification, deprecated, displayName, id, labels, resourceName, resourcePath);
 	}
 
 	@Override
@@ -150,12 +168,14 @@ public class Label {
 			return false;
 		}
 		Label other = (Label) obj;
-		return Objects.equals(classification, other.classification) && deprecated == other.deprecated && Objects.equals(displayName, other.displayName) && Objects.equals(id, other.id) && Objects.equals(labels, other.labels) && Objects.equals(
-			resourceName, other.resourceName) && Objects.equals(resourcePath, other.resourcePath);
+		return Objects.equals(attributes, other.attributes) && Objects.equals(classification, other.classification) && deprecated == other.deprecated && Objects.equals(displayName, other.displayName) && Objects.equals(id, other.id) && Objects.equals(
+			labels, other.labels) && Objects
+				.equals(resourceName, other.resourceName) && Objects.equals(resourcePath, other.resourcePath);
 	}
 
 	@Override
 	public String toString() {
-		return "Label [id=" + id + ", classification=" + classification + ", displayName=" + displayName + ", resourcePath=" + resourcePath + ", resourceName=" + resourceName + ", deprecated=" + deprecated + ", labels=" + labels + "]";
+		return "Label [id=" + id + ", classification=" + classification + ", displayName=" + displayName + ", resourcePath=" + resourcePath + ", resourceName=" + resourceName + ", deprecated=" + deprecated + ", labels=" + labels + ", attributes="
+			+ attributes + "]";
 	}
 }
