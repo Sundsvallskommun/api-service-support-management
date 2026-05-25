@@ -36,6 +36,7 @@ class TypeTest {
 	@Test
 	void testCreatePattern() {
 		final var created = OffsetDateTime.now();
+		final var deprecated = true;
 		final var displayName = "displayName";
 		final var escalationEmail = "escalationEmail";
 		final var modified = OffsetDateTime.now().plusDays(1);
@@ -43,12 +44,14 @@ class TypeTest {
 
 		final var bean = Type.create()
 			.withCreated(created)
+			.withDeprecated(deprecated)
 			.withDisplayName(displayName)
 			.withEscalationEmail(escalationEmail)
 			.withModified(modified)
 			.withName(name);
 
 		assertThat(bean.getCreated()).isEqualTo(created);
+		assertThat(bean.isDeprecated()).isEqualTo(deprecated);
 		assertThat(bean.getDisplayName()).isEqualTo(displayName);
 		assertThat(bean.getEscalationEmail()).isEqualTo(escalationEmail);
 		assertThat(bean.getModified()).isEqualTo(modified);
@@ -57,7 +60,7 @@ class TypeTest {
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(Type.create()).hasAllNullFieldsOrProperties();
-		assertThat(new Type()).hasAllNullFieldsOrProperties();
+		assertThat(Type.create()).hasAllNullFieldsOrPropertiesExcept("deprecated");
+		assertThat(new Type()).hasAllNullFieldsOrPropertiesExcept("deprecated");
 	}
 }

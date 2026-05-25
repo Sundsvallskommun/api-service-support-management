@@ -27,6 +27,9 @@ public class ContactReason {
 	})
 	private Integer sortOrder;
 
+	@Schema(description = "", defaultValue = "false", examples = "true")
+	private boolean deprecated = false;
+
 	@Schema(description = "Timestamp when the contact reason was created", examples = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	private OffsetDateTime created;
 
@@ -89,6 +92,19 @@ public class ContactReason {
 		return this;
 	}
 
+	public boolean isDeprecated() {
+		return deprecated;
+	}
+
+	public void setDeprecated(final boolean deprecated) {
+		this.deprecated = deprecated;
+	}
+
+	public ContactReason withDeprecated(final boolean deprecated) {
+		this.deprecated = deprecated;
+		return this;
+	}
+
 	public OffsetDateTime getCreated() {
 		return created;
 	}
@@ -117,7 +133,7 @@ public class ContactReason {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(created, displayName, id, modified, reason, sortOrder);
+		return Objects.hash(created, deprecated, displayName, id, modified, reason, sortOrder);
 	}
 
 	@Override
@@ -128,8 +144,9 @@ public class ContactReason {
 		if (!(obj instanceof final ContactReason other)) {
 			return false;
 		}
-		return Objects.equals(created, other.created) && Objects.equals(displayName, other.displayName) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(reason, other.reason) && Objects.equals(sortOrder,
-			other.sortOrder);
+		return Objects.equals(created, other.created) && deprecated == other.deprecated && Objects.equals(displayName, other.displayName) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(reason, other.reason)
+			&& Objects.equals(sortOrder,
+				other.sortOrder);
 	}
 
 	@Override
@@ -139,6 +156,7 @@ public class ContactReason {
 			", reason='" + reason + '\'' +
 			", displayName='" + displayName + '\'' +
 			", sortOrder=" + sortOrder +
+			", deprecated=" + deprecated +
 			", created=" + created +
 			", modified=" + modified +
 			'}';

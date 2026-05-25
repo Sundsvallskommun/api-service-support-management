@@ -20,9 +20,11 @@
 							"displayName": "Grandchild A1a",
 							"resourcePath": "ROOT_A/CHILD_A1/GRANDCHILD_A1A",
 							"resourceName": "GRANDCHILD_A1A",
-							"labels": []
+							"labels": [],
+							"deprecated": false
 						}
-					]
+					],
+					"deprecated": false
 				},
 				{
 					"id": "${json-unit.any-string}",
@@ -30,9 +32,11 @@
 					"displayName": "Child A2",
 					"resourcePath": "ROOT_A/CHILD_A2",
 					"resourceName": "CHILD_A2",
-					"labels": []
+					"labels": [],
+					"deprecated": false
 				}
-			]
+			],
+			"deprecated": false
 		}
 	]
 }

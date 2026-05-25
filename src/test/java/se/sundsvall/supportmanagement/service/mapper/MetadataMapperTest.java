@@ -69,7 +69,7 @@ class MetadataMapperTest {
 	@Test
 	void toCategoryForEmptyEntity() {
 		assertThat(MetadataMapper.toCategory(CategoryEntity.create()))
-			.hasAllNullFieldsOrPropertiesExcept("types")
+			.hasAllNullFieldsOrPropertiesExcept("types", "deprecated")
 			.hasFieldOrPropertyWithValue("types", emptyList());
 	}
 
@@ -133,7 +133,7 @@ class MetadataMapperTest {
 
 	@Test
 	void toExternalIdTypeForEmptyEntity() {
-		assertThat(MetadataMapper.toExternalIdType(ExternalIdTypeEntity.create())).hasAllNullFieldsOrProperties();
+		assertThat(MetadataMapper.toExternalIdType(ExternalIdTypeEntity.create())).hasAllNullFieldsOrPropertiesExcept("deprecated");
 	}
 
 	@Test
@@ -179,7 +179,7 @@ class MetadataMapperTest {
 
 	@Test
 	void toStatusForEmptyEntity() {
-		assertThat(MetadataMapper.toStatus(StatusEntity.create())).hasAllNullFieldsOrProperties();
+		assertThat(MetadataMapper.toStatus(StatusEntity.create())).hasAllNullFieldsOrPropertiesExcept("deprecated");
 	}
 
 	@Test
@@ -228,7 +228,7 @@ class MetadataMapperTest {
 
 	@Test
 	void toRoleForEmptyEntity() {
-		assertThat(MetadataMapper.toRole(RoleEntity.create())).hasAllNullFieldsOrProperties();
+		assertThat(MetadataMapper.toRole(RoleEntity.create())).hasAllNullFieldsOrPropertiesExcept("deprecated");
 	}
 
 	@Test
@@ -493,7 +493,7 @@ class MetadataMapperTest {
 	@Test
 	void toPhaseForEmptyEntity() {
 		assertThat(MetadataMapper.toPhase(PhaseEntity.create()))
-			.hasAllNullFieldsOrPropertiesExcept("transitions", "allowedStatuses")
+			.hasAllNullFieldsOrPropertiesExcept("transitions", "allowedStatuses", "deprecated")
 			.satisfies(phase -> {
 				assertThat(phase.getTransitions()).isEmpty();
 			});
@@ -601,7 +601,7 @@ class MetadataMapperTest {
 
 	@Test
 	void toPhaseTransitionForEmptyEntity() {
-		assertThat(MetadataMapper.toPhaseTransition(PhaseTransitionEntity.create())).hasAllNullFieldsOrProperties();
+		assertThat(MetadataMapper.toPhaseTransition(PhaseTransitionEntity.create())).hasAllNullFieldsOrPropertiesExcept("deprecated");
 	}
 
 	@Test

@@ -5,22 +5,26 @@
 			"escalationEmail": "ESCALATION-EMAIL-1",
 			"displayName": "TYPE-DISPLAY-NAME-1",
 			"created": "2023-01-01T12:00:00+01:00",
-			"name": "TYPE-1"
+			"name": "TYPE-1",
+			"deprecated": false
 		},
 		{
 			"escalationEmail": "ESCALATION-EMAIL-2",
 			"displayName": "TYPE-DISPLAY-NAME-2",
 			"created": "2023-01-01T12:00:00+01:00",
-			"name": "TYPE-2"
+			"name": "TYPE-2",
+			"deprecated": false
 		},
 		{
 			"escalationEmail": "ESCALATION-EMAIL-3",
 			"displayName": "TYPE-DISPLAY-NAME-3",
 			"created": "2023-01-01T12:00:00+01:00",
-			"name": "TYPE-3"
+			"name": "TYPE-3",
+			"deprecated": false
 		}
 	],
 	"displayName": "CATEGORY-DISPLAY-NAME-1",
 	"created": "2023-01-01T12:00:00+01:00",
-	"name": "CATEGORY-1"
+	"name": "CATEGORY-1",
+	"deprecated": false
 }

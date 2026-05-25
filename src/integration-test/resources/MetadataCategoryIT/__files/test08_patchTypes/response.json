@@ -5,24 +5,28 @@
 			"displayName": "TYPE-DISPLAY-NAME-2",
 			"created": "2023-01-01T12:00:00+01:00",
 			"name": "TYPE-2",
-			"modified": "${json-unit.ignore}"
+			"modified": "${json-unit.ignore}",
+			"deprecated": false
 		},
 		{
 			"displayName": "TYPE-DISPLAY-NAME-3",
 			"created": "2023-01-01T12:00:00+01:00",
 			"name": "TYPE-3",
-			"modified": "${json-unit.ignore}"
+			"modified": "${json-unit.ignore}",
+			"deprecated": false
 		},
 		{
 			"escalationEmail": "email@test.com",
 			"displayName": "TYPE-DISPLAY-NAME-4",
 			"created": "${json-unit.ignore}",
-			"name": "TYPE-4"
+			"name": "TYPE-4",
+			"deprecated": false
 		}
 	],
 	"sortOrder": 5,
 	"created": "2023-01-01T12:00:00+01:00",
 	"modified": "${json-unit.ignore}",
 	"displayName": "CATEGORY-DISPLAY-NAME-1",
-	"name": "CATEGORY-1"
+	"name": "CATEGORY-1",
+	"deprecated": false
 }

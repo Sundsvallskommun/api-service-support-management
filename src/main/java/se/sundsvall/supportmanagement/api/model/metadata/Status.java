@@ -35,6 +35,9 @@ public class Status {
 	})
 	private Integer sortOrder;
 
+	@Schema(description = "", defaultValue = "false", examples = "true")
+	private boolean deprecated = false;
+
 	@Schema(description = "Timestamp when the status was created", examples = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	@DateTimeFormat(iso = ISO.DATE_TIME)
 	@Null
@@ -114,6 +117,19 @@ public class Status {
 		return this;
 	}
 
+	public boolean isDeprecated() {
+		return deprecated;
+	}
+
+	public void setDeprecated(final boolean deprecated) {
+		this.deprecated = deprecated;
+	}
+
+	public Status withDeprecated(final boolean deprecated) {
+		this.deprecated = deprecated;
+		return this;
+	}
+
 	public OffsetDateTime getCreated() {
 		return created;
 	}
@@ -142,7 +158,7 @@ public class Status {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(created, displayName, externalDisplayName, id, modified, name, sortOrder);
+		return Objects.hash(created, deprecated, displayName, externalDisplayName, id, modified, name, sortOrder);
 	}
 
 	@Override
@@ -153,8 +169,9 @@ public class Status {
 		if (!(obj instanceof final Status other)) {
 			return false;
 		}
-		return Objects.equals(created, other.created) && Objects.equals(displayName, other.displayName) && Objects.equals(externalDisplayName, other.externalDisplayName) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects
-			.equals(name, other.name) && Objects.equals(sortOrder, other.sortOrder);
+		return Objects.equals(created, other.created) && deprecated == other.deprecated && Objects.equals(displayName, other.displayName) && Objects.equals(externalDisplayName, other.externalDisplayName) && Objects.equals(id, other.id) && Objects.equals(
+			modified, other.modified) && Objects
+				.equals(name, other.name) && Objects.equals(sortOrder, other.sortOrder);
 	}
 
 	@Override
@@ -165,6 +182,7 @@ public class Status {
 			", displayName='" + displayName + '\'' +
 			", externalDisplayName='" + externalDisplayName + '\'' +
 			", sortOrder=" + sortOrder +
+			", deprecated=" + deprecated +
 			", created=" + created +
 			", modified=" + modified +
 			'}';

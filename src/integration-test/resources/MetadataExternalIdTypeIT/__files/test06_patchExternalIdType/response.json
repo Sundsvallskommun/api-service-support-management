@@ -4,5 +4,6 @@
 	"displayName": "External Id Type 1 patched",
 	"sortOrder": 7,
 	"created": "2023-01-01T12:00:00+01:00",
-	"modified": "${json-unit.ignore}"
+	"modified": "${json-unit.ignore}",
+	"deprecated": false
 }

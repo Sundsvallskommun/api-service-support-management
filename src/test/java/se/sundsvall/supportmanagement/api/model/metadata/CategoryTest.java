@@ -37,6 +37,7 @@ class CategoryTest {
 	@Test
 	void testCreatePattern() {
 		final var created = OffsetDateTime.now();
+		final var deprecated = true;
 		final var displayName = "displayName";
 		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
 		final var modified = OffsetDateTime.now().plusDays(1);
@@ -45,6 +46,7 @@ class CategoryTest {
 
 		final var bean = Category.create()
 			.withCreated(created)
+			.withDeprecated(deprecated)
 			.withDisplayName(displayName)
 			.withId(id)
 			.withModified(modified)
@@ -52,6 +54,7 @@ class CategoryTest {
 			.withTypes(types);
 
 		assertThat(bean.getCreated()).isEqualTo(created);
+		assertThat(bean.isDeprecated()).isEqualTo(deprecated);
 		assertThat(bean.getDisplayName()).isEqualTo(displayName);
 		assertThat(bean.getId()).isEqualTo(id);
 		assertThat(bean.getModified()).isEqualTo(modified);
@@ -61,7 +64,7 @@ class CategoryTest {
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(Category.create()).hasAllNullFieldsOrProperties();
-		assertThat(new Category()).hasAllNullFieldsOrProperties();
+		assertThat(Category.create()).hasAllNullFieldsOrPropertiesExcept("deprecated");
+		assertThat(new Category()).hasAllNullFieldsOrPropertiesExcept("deprecated");
 	}
 }

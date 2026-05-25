@@ -32,6 +32,9 @@ public class Label {
 	@Pattern(regexp = "[A-Z0-9_]+", message = "can only contain A-Z, 0-9 and _")
 	private String resourceName;
 
+	@Schema(description = "", defaultValue = "false", examples = "true")
+	private boolean deprecated = false;
+
 	@ArraySchema(arraySchema = @Schema(ref = "#/components/schemas/Label"))
 	private List<Label> labels;
 
@@ -104,6 +107,19 @@ public class Label {
 		return this;
 	}
 
+	public boolean isDeprecated() {
+		return deprecated;
+	}
+
+	public void setDeprecated(final boolean deprecated) {
+		this.deprecated = deprecated;
+	}
+
+	public Label withDeprecated(final boolean deprecated) {
+		this.deprecated = deprecated;
+		return this;
+	}
+
 	public List<Label> getLabels() {
 		return labels;
 	}
@@ -119,7 +135,7 @@ public class Label {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(classification, displayName, id, labels, resourceName, resourcePath);
+		return Objects.hash(classification, deprecated, displayName, id, labels, resourceName, resourcePath);
 	}
 
 	@Override
@@ -134,12 +150,12 @@ public class Label {
 			return false;
 		}
 		Label other = (Label) obj;
-		return Objects.equals(classification, other.classification) && Objects.equals(displayName, other.displayName) && Objects.equals(id, other.id) && Objects.equals(labels, other.labels) && Objects.equals(
+		return Objects.equals(classification, other.classification) && deprecated == other.deprecated && Objects.equals(displayName, other.displayName) && Objects.equals(id, other.id) && Objects.equals(labels, other.labels) && Objects.equals(
 			resourceName, other.resourceName) && Objects.equals(resourcePath, other.resourcePath);
 	}
 
 	@Override
 	public String toString() {
-		return "Label [id=" + id + ", classification=" + classification + ", displayName=" + displayName + ", resourcePath=" + resourcePath + ", resourceName=" + resourceName + ", labels=" + labels + "]";
+		return "Label [id=" + id + ", classification=" + classification + ", displayName=" + displayName + ", resourcePath=" + resourcePath + ", resourceName=" + resourceName + ", deprecated=" + deprecated + ", labels=" + labels + "]";
 	}
 }

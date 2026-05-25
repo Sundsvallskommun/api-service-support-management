@@ -36,6 +36,7 @@ class RoleTest {
 	@Test
 	void testCreatePattern() {
 		final var created = OffsetDateTime.now();
+		final var deprecated = true;
 		final var modified = OffsetDateTime.now().plusDays(1);
 		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
 		final var name = "name";
@@ -44,12 +45,14 @@ class RoleTest {
 		final var bean = Role.create()
 			.withId(id)
 			.withCreated(created)
+			.withDeprecated(deprecated)
 			.withModified(modified)
 			.withName(name)
 			.withDisplayName(displayName);
 
 		assertThat(bean.getId()).isEqualTo(id);
 		assertThat(bean.getCreated()).isEqualTo(created);
+		assertThat(bean.isDeprecated()).isEqualTo(deprecated);
 		assertThat(bean.getModified()).isEqualTo(modified);
 		assertThat(bean.getName()).isEqualTo(name);
 		assertThat(bean.getDisplayName()).isEqualTo(displayName);
@@ -57,7 +60,7 @@ class RoleTest {
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(Role.create()).hasAllNullFieldsOrProperties();
-		assertThat(new Role()).hasAllNullFieldsOrProperties();
+		assertThat(Role.create()).hasAllNullFieldsOrPropertiesExcept("deprecated");
+		assertThat(new Role()).hasAllNullFieldsOrPropertiesExcept("deprecated");
 	}
 }

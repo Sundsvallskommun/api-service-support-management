@@ -13,7 +13,8 @@
 					"displayName": "Child A1",
 					"resourcePath": "LABEL_A/CHILD_A1",
 					"resourceName": "CHILD_A1",
-					"labels": []
+					"labels": [],
+					"deprecated": false
 				},
 				{
 					"id": "${json-unit.any-string}",
@@ -21,9 +22,11 @@
 					"displayName": "Child A2",
 					"resourcePath": "LABEL_A/CHILD_A2",
 					"resourceName": "CHILD_A2",
-					"labels": []
+					"labels": [],
+					"deprecated": false
 				}
-			]
+			],
+			"deprecated": false
 		},
 		{
 			"id": "${json-unit.any-string}",
@@ -31,7 +34,8 @@
 			"displayName": "Label B",
 			"resourcePath": "LABEL_B",
 			"resourceName": "LABEL_B",
-			"labels": []
+			"labels": [],
+			"deprecated": false
 		}
 	]
 }

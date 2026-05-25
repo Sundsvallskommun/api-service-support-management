@@ -20,7 +20,8 @@
 							"displayName": "Nivå 1.1.1",
 							"resourcePath": "RES_1/RES_1_1/RES_1_1_1",
 							"resourceName": "RES_1_1_1",
-							"labels": []
+							"labels": [],
+							"deprecated": false
 						},
 						{
 							"id": "${json-unit.any-string}",
@@ -28,11 +29,14 @@
 							"displayName": "Nivå 1.1.2",
 							"resourcePath": "RES_1/RES_1_1/RES_1_1_2",
 							"resourceName": "RES_1_1_2",
-							"labels": []
+							"labels": [],
+							"deprecated": false
 						}
-					]
+					],
+					"deprecated": false
 				}
-			]
+			],
+			"deprecated": false
 		}
 	]
 }
