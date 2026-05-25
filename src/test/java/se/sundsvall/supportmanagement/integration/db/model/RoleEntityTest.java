@@ -46,9 +46,11 @@ class RoleEntityTest {
 		final var displayName = "displayName";
 		final var namespace = "namespace";
 		final var sortOrder = 5;
+		final var deprecated = true;
 
 		final var entity = RoleEntity.create()
 			.withCreated(created)
+			.withDeprecated(deprecated)
 			.withId(id)
 			.withModified(modified)
 			.withMunicipalityId(municipalityId)
@@ -59,6 +61,7 @@ class RoleEntityTest {
 
 		assertThat(entity).hasNoNullFieldsOrProperties();
 		assertThat(entity.getCreated()).isEqualTo(created);
+		assertThat(entity.isDeprecated()).isEqualTo(deprecated);
 		assertThat(entity.getId()).isEqualTo(id);
 		assertThat(entity.getModified()).isEqualTo(modified);
 		assertThat(entity.getMunicipalityId()).isEqualTo(municipalityId);
@@ -74,7 +77,7 @@ class RoleEntityTest {
 		entity.onCreate();
 
 		assertThat(entity.getCreated()).isCloseTo(now(), within(1, SECONDS));
-		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("created");
+		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("created", "deprecated");
 	}
 
 	@Test
@@ -83,12 +86,12 @@ class RoleEntityTest {
 		entity.onUpdate();
 
 		assertThat(entity.getModified()).isCloseTo(now(), within(1, SECONDS));
-		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("modified");
+		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("modified", "deprecated");
 	}
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(RoleEntity.create()).hasAllNullFieldsOrProperties();
-		assertThat(new RoleEntity()).hasAllNullFieldsOrProperties();
+		assertThat(RoleEntity.create()).hasAllNullFieldsOrPropertiesExcept("deprecated");
+		assertThat(new RoleEntity()).hasAllNullFieldsOrPropertiesExcept("deprecated");
 	}
 }

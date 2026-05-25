@@ -46,9 +46,11 @@ class ExternalIdTypeEntityTest {
 		final var name = "name";
 		final var namespace = "namespace";
 		final var sortOrder = 5;
+		final var deprecated = true;
 
 		final var entity = ExternalIdTypeEntity.create()
 			.withCreated(created)
+			.withDeprecated(deprecated)
 			.withDisplayName(displayName)
 			.withId(id)
 			.withModified(modified)
@@ -59,6 +61,7 @@ class ExternalIdTypeEntityTest {
 
 		assertThat(entity).hasNoNullFieldsOrProperties();
 		assertThat(entity.getCreated()).isEqualTo(created);
+		assertThat(entity.isDeprecated()).isEqualTo(deprecated);
 		assertThat(entity.getDisplayName()).isEqualTo(displayName);
 		assertThat(entity.getId()).isEqualTo(id);
 		assertThat(entity.getModified()).isEqualTo(modified);
@@ -74,7 +77,7 @@ class ExternalIdTypeEntityTest {
 		entity.onCreate();
 
 		assertThat(entity.getCreated()).isCloseTo(now(), within(1, SECONDS));
-		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("created");
+		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("created", "deprecated");
 	}
 
 	@Test
@@ -83,12 +86,12 @@ class ExternalIdTypeEntityTest {
 		entity.onUpdate();
 
 		assertThat(entity.getModified()).isCloseTo(now(), within(1, SECONDS));
-		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("modified");
+		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("modified", "deprecated");
 	}
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(TypeEntity.create()).hasAllNullFieldsOrProperties();
-		assertThat(new TypeEntity()).hasAllNullFieldsOrProperties();
+		assertThat(TypeEntity.create()).hasAllNullFieldsOrPropertiesExcept("deprecated");
+		assertThat(new TypeEntity()).hasAllNullFieldsOrPropertiesExcept("deprecated");
 	}
 }

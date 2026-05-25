@@ -1,0 +1,9 @@
+alter table category add column if not exists deprecated bit not null default 0;
+alter table contact_reason add column if not exists deprecated bit not null default 0;
+alter table external_id_type add column if not exists deprecated bit not null default 0;
+alter table metadata_label add column if not exists deprecated bit not null default 0;
+alter table phase add column if not exists deprecated bit not null default 0;
+alter table phase_transition add column if not exists deprecated bit not null default 0;
+alter table role add column if not exists deprecated bit not null default 0;
+alter table status add column if not exists deprecated bit not null default 0;
+alter table `type` add column if not exists deprecated bit not null default 0;

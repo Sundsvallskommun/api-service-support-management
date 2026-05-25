@@ -47,6 +47,9 @@ public class StatusEntity {
 	@Column(name = "external_display_name")
 	private String externalDisplayName;
 
+	@Column(name = "deprecated", nullable = false)
+	private boolean deprecated;
+
 	@Column(name = "municipality_id", nullable = false, length = 8)
 	private String municipalityId;
 
@@ -114,6 +117,19 @@ public class StatusEntity {
 
 	public StatusEntity withExternalDisplayName(final String externalDisplayName) {
 		this.externalDisplayName = externalDisplayName;
+		return this;
+	}
+
+	public boolean isDeprecated() {
+		return deprecated;
+	}
+
+	public void setDeprecated(final boolean deprecated) {
+		this.deprecated = deprecated;
+	}
+
+	public StatusEntity withDeprecated(final boolean deprecated) {
+		this.deprecated = deprecated;
 		return this;
 	}
 
@@ -194,7 +210,7 @@ public class StatusEntity {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(created, displayName, externalDisplayName, id, modified, municipalityId, name, namespace, sortOrder);
+		return Objects.hash(created, deprecated, displayName, externalDisplayName, id, modified, municipalityId, name, namespace, sortOrder);
 	}
 
 	@Override
@@ -209,9 +225,10 @@ public class StatusEntity {
 			return false;
 		}
 		final StatusEntity other = (StatusEntity) obj;
-		return Objects.equals(created, other.created) && Objects.equals(displayName, other.displayName) && Objects.equals(externalDisplayName, other.externalDisplayName) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects
-			.equals(municipalityId, other.municipalityId) && Objects.equals(name, other.name) && Objects.equals(namespace,
-				other.namespace) && Objects.equals(sortOrder, other.sortOrder);
+		return Objects.equals(created, other.created) && deprecated == other.deprecated && Objects.equals(displayName, other.displayName) && Objects.equals(externalDisplayName, other.externalDisplayName) && Objects.equals(id, other.id) && Objects.equals(
+			modified, other.modified) && Objects
+				.equals(municipalityId, other.municipalityId) && Objects.equals(name, other.name) && Objects.equals(namespace,
+					other.namespace) && Objects.equals(sortOrder, other.sortOrder);
 	}
 
 	@Override
@@ -222,6 +239,7 @@ public class StatusEntity {
 			", displayName='" + displayName + '\'' +
 			", externalDisplayName='" + externalDisplayName + '\'' +
 			", sortOrder=" + sortOrder +
+			", deprecated=" + deprecated +
 			", municipalityId='" + municipalityId + '\'' +
 			", namespace='" + namespace + '\'' +
 			", created=" + created +

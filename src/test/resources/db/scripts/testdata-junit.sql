@@ -1,53 +1,53 @@
 -------------------------------------
 -- Category and Type
 -------------------------------------
-INSERT INTO category(id, created, display_name, modified, municipality_id, name, namespace)
-VALUES ('aa000000-0000-0000-0000-000000000100', now(), 'category-display-name-1', null, '2281', 'category-1', 'namespace-1'),
-       ('aa000000-0000-0000-0000-000000000101', now(), 'category-display-name-2', null, '2281', 'category-2', 'namespace-1'),
-       ('aa000000-0000-0000-0000-000000000102', now(), 'category-display-name-3', null, '2281', 'category-3', 'namespace-1'),
-       ('aa000000-0000-0000-0000-000000000104', now(), 'category-display-name-1', null, '2281', 'category-1', 'namespace-2'),
-       ('aa000000-0000-0000-0000-000000000105', now(), 'category-display-name-1', null, '2282', 'category-1', 'namespace-1');
+INSERT INTO category(id, created, display_name, modified, municipality_id, name, namespace, deprecated)
+VALUES ('aa000000-0000-0000-0000-000000000100', now(), 'category-display-name-1', null, '2281', 'category-1', 'namespace-1', false),
+       ('aa000000-0000-0000-0000-000000000101', now(), 'category-display-name-2', null, '2281', 'category-2', 'namespace-1', false),
+       ('aa000000-0000-0000-0000-000000000102', now(), 'category-display-name-3', null, '2281', 'category-3', 'namespace-1', false),
+       ('aa000000-0000-0000-0000-000000000104', now(), 'category-display-name-1', null, '2281', 'category-1', 'namespace-2', false),
+       ('aa000000-0000-0000-0000-000000000105', now(), 'category-display-name-1', null, '2282', 'category-1', 'namespace-1', false);
 
-INSERT INTO type(id, created, display_name, escalation_email, modified, name, category_id)
-VALUES (100, now(), 'type-display-name-1', 'escalation-email-1', null, 'type-1', 'aa000000-0000-0000-0000-000000000100'),
-       (101, now(), 'type-display-name-2', 'escalation-email-2', null, 'type-2', 'aa000000-0000-0000-0000-000000000100'),
-       (102, now(), 'type-display-name-3', 'escalation-email-3', null, 'type-3', 'aa000000-0000-0000-0000-000000000100'),
-       (103, now(), 'type-display-name-1', 'escalation-email-1', null, 'type-1', 'aa000000-0000-0000-0000-000000000101'),
-       (104, now(), 'type-display-name-2', 'escalation-email-2', null, 'type-2', 'aa000000-0000-0000-0000-000000000101'),
-       (105, now(), 'type-display-name-1', 'escalation-email-1', null, 'type-1', 'aa000000-0000-0000-0000-000000000102');
+INSERT INTO type(id, created, display_name, escalation_email, modified, name, category_id, deprecated)
+VALUES (100, now(), 'type-display-name-1', 'escalation-email-1', null, 'type-1', 'aa000000-0000-0000-0000-000000000100', false),
+       (101, now(), 'type-display-name-2', 'escalation-email-2', null, 'type-2', 'aa000000-0000-0000-0000-000000000100', false),
+       (102, now(), 'type-display-name-3', 'escalation-email-3', null, 'type-3', 'aa000000-0000-0000-0000-000000000100', false),
+       (103, now(), 'type-display-name-1', 'escalation-email-1', null, 'type-1', 'aa000000-0000-0000-0000-000000000101', false),
+       (104, now(), 'type-display-name-2', 'escalation-email-2', null, 'type-2', 'aa000000-0000-0000-0000-000000000101', false),
+       (105, now(), 'type-display-name-1', 'escalation-email-1', null, 'type-1', 'aa000000-0000-0000-0000-000000000102', false);
        
 -------------------------------------
 -- ExternalIdType
 -------------------------------------
-INSERT INTO external_id_type(id, created, modified, municipality_id, name, namespace)
-VALUES ('dd000000-0000-0000-0000-000000000100', now(), null, '2281', 'external-id-type-1', 'namespace-1'),
-       ('dd000000-0000-0000-0000-000000000101', now(), null, '2281', 'external-id-type-2', 'namespace-1'),
-       ('dd000000-0000-0000-0000-000000000102', now(), null, '2281', 'external-id-type-3', 'namespace-1'),
-       ('dd000000-0000-0000-0000-000000000104', now(), null, '2281', 'external-id-type-1', 'namespace-2'),
-       ('dd000000-0000-0000-0000-000000000105', now(), null, '2282', 'external-id-type-1', 'namespace-1'),
-       ('dd000000-0000-0000-0000-000000000106', now(), null, '2282', 'external-id-type-2', 'namespace-1');
+INSERT INTO external_id_type(id, created, modified, municipality_id, name, namespace, deprecated)
+VALUES ('dd000000-0000-0000-0000-000000000100', now(), null, '2281', 'external-id-type-1', 'namespace-1', false),
+       ('dd000000-0000-0000-0000-000000000101', now(), null, '2281', 'external-id-type-2', 'namespace-1', false),
+       ('dd000000-0000-0000-0000-000000000102', now(), null, '2281', 'external-id-type-3', 'namespace-1', false),
+       ('dd000000-0000-0000-0000-000000000104', now(), null, '2281', 'external-id-type-1', 'namespace-2', false),
+       ('dd000000-0000-0000-0000-000000000105', now(), null, '2282', 'external-id-type-1', 'namespace-1', false),
+       ('dd000000-0000-0000-0000-000000000106', now(), null, '2282', 'external-id-type-2', 'namespace-1', false);
  
 -------------------------------------
 -- Status
 -------------------------------------
-INSERT INTO status(id, created, modified, municipality_id, name, namespace)
-VALUES ('bb000000-0000-0000-0000-000000000100', now(), null, '2281', 'status-1', 'namespace-1'),
-       ('bb000000-0000-0000-0000-000000000101', now(), null, '2281', 'status-2', 'namespace-1'),
-       ('bb000000-0000-0000-0000-000000000102', now(), null, '2281', 'status-3', 'namespace-1'),
-       ('bb000000-0000-0000-0000-000000000104', now(), null, '2281', 'status-1', 'namespace-2'),
-       ('bb000000-0000-0000-0000-000000000105', now(), null, '2282', 'status-1', 'namespace-1'),
-       ('bb000000-0000-0000-0000-000000000106', now(), null, '2282', 'status-2', 'namespace-1');
+INSERT INTO status(id, created, modified, municipality_id, name, namespace, deprecated)
+VALUES ('bb000000-0000-0000-0000-000000000100', now(), null, '2281', 'status-1', 'namespace-1', false),
+       ('bb000000-0000-0000-0000-000000000101', now(), null, '2281', 'status-2', 'namespace-1', false),
+       ('bb000000-0000-0000-0000-000000000102', now(), null, '2281', 'status-3', 'namespace-1', false),
+       ('bb000000-0000-0000-0000-000000000104', now(), null, '2281', 'status-1', 'namespace-2', false),
+       ('bb000000-0000-0000-0000-000000000105', now(), null, '2282', 'status-1', 'namespace-1', false),
+       ('bb000000-0000-0000-0000-000000000106', now(), null, '2282', 'status-2', 'namespace-1', false);
 
 -------------------------------------
 -- Role
 -------------------------------------
-INSERT INTO role(id, created, modified, municipality_id, name, namespace)
-VALUES ('cc000000-0000-0000-0000-000000000100', now(), null, '2281', 'role-1', 'namespace-1'),
-       ('cc000000-0000-0000-0000-000000000101', now(), null, '2281', 'role-2', 'namespace-1'),
-       ('cc000000-0000-0000-0000-000000000102', now(), null, '2281', 'role-3', 'namespace-1'),
-       ('cc000000-0000-0000-0000-000000000104', now(), null, '2281', 'role-1', 'namespace-2'),
-       ('cc000000-0000-0000-0000-000000000105', now(), null, '2282', 'role-1', 'namespace-1'),
-       ('cc000000-0000-0000-0000-000000000106', now(), null, '2282', 'role-2', 'namespace-1');
+INSERT INTO role(id, created, modified, municipality_id, name, namespace, deprecated)
+VALUES ('cc000000-0000-0000-0000-000000000100', now(), null, '2281', 'role-1', 'namespace-1', false),
+       ('cc000000-0000-0000-0000-000000000101', now(), null, '2281', 'role-2', 'namespace-1', false),
+       ('cc000000-0000-0000-0000-000000000102', now(), null, '2281', 'role-3', 'namespace-1', false),
+       ('cc000000-0000-0000-0000-000000000104', now(), null, '2281', 'role-1', 'namespace-2', false),
+       ('cc000000-0000-0000-0000-000000000105', now(), null, '2282', 'role-1', 'namespace-1', false),
+       ('cc000000-0000-0000-0000-000000000106', now(), null, '2282', 'role-2', 'namespace-1', false);
        
 -------------------------------------
 -- Validation
@@ -134,23 +134,23 @@ VALUES ('59328e70-4297-4bb5-ba69-cb17f2d15a17', '9791682e-4ba8-4f3a-857a-54e1483
 -------------------------------------
 -- MetadataLabel
 -------------------------------------
-INSERT INTO metadata_label (id, created, municipality_id, namespace, resource_path, resource_name, parent_id)
-VALUES 
+INSERT INTO metadata_label (id, created, municipality_id, namespace, resource_path, resource_name, parent_id, deprecated)
+VALUES
   -- 2281 / namespace-1
-  ('9b2a5a7d-3e8f-4a7c-8f9b-2f7d3c1a0b11', now(), '2281', 'namespace-1', 'parent', 'parent', NULL),
-  ('f3a1c6d9-7b2e-4d5a-9c1f-8e2b2c3d4e5f', now(), '2281', 'namespace-1', 'parent/child', 'child', '9b2a5a7d-3e8f-4a7c-8f9b-2f7d3c1a0b11'),
-  ('a0bb7b61-8d55-4857-b619-547572eed26f', now(), '2281', 'namespace-1', 'parent/child/resource1', 'resource1', 'f3a1c6d9-7b2e-4d5a-9c1f-8e2b2c3d4e5f'),
-  ('86d459cd-4810-4b4a-b365-97aa0c2c0ff5', now(), '2281', 'namespace-1', 'parent/child/resource2', 'resource2', 'f3a1c6d9-7b2e-4d5a-9c1f-8e2b2c3d4e5f'),
+  ('9b2a5a7d-3e8f-4a7c-8f9b-2f7d3c1a0b11', now(), '2281', 'namespace-1', 'parent', 'parent', NULL, false),
+  ('f3a1c6d9-7b2e-4d5a-9c1f-8e2b2c3d4e5f', now(), '2281', 'namespace-1', 'parent/child', 'child', '9b2a5a7d-3e8f-4a7c-8f9b-2f7d3c1a0b11', false),
+  ('a0bb7b61-8d55-4857-b619-547572eed26f', now(), '2281', 'namespace-1', 'parent/child/resource1', 'resource1', 'f3a1c6d9-7b2e-4d5a-9c1f-8e2b2c3d4e5f', false),
+  ('86d459cd-4810-4b4a-b365-97aa0c2c0ff5', now(), '2281', 'namespace-1', 'parent/child/resource2', 'resource2', 'f3a1c6d9-7b2e-4d5a-9c1f-8e2b2c3d4e5f', false),
   -- 2282 / namespace-1
-  ('0c5d8a12-6b74-4e39-9f0a-1b2c3d4e5f60', now(), '2282', 'namespace-1', 'parent', 'parent', NULL),
-  ('1a2b3c4d-5e6f-7081-92a3-b4c5d6e7f801', now(), '2282', 'namespace-1', 'parent/child', 'child', '0c5d8a12-6b74-4e39-9f0a-1b2c3d4e5f60'),
-  ('821033d0-f059-4f2b-90f2-cc0562ac0560', now(), '2282', 'namespace-1', 'parent/child/resource3', 'resource3', '1a2b3c4d-5e6f-7081-92a3-b4c5d6e7f801'),
+  ('0c5d8a12-6b74-4e39-9f0a-1b2c3d4e5f60', now(), '2282', 'namespace-1', 'parent', 'parent', NULL, false),
+  ('1a2b3c4d-5e6f-7081-92a3-b4c5d6e7f801', now(), '2282', 'namespace-1', 'parent/child', 'child', '0c5d8a12-6b74-4e39-9f0a-1b2c3d4e5f60', false),
+  ('821033d0-f059-4f2b-90f2-cc0562ac0560', now(), '2282', 'namespace-1', 'parent/child/resource3', 'resource3', '1a2b3c4d-5e6f-7081-92a3-b4c5d6e7f801', false),
   -- 2283 / namespace-1
-  ('2b4c6d8e-0f12-4a3b-9c5d-6e7f8012a3b4', now(), '2283', 'namespace-1', 'parent', 'parent', NULL),
-  ('3c5d7e9f-1021-4b3c-8d6e-7f8012a3b4c5', now(), '2283', 'namespace-1', 'parent/child', 'child', '2b4c6d8e-0f12-4a3b-9c5d-6e7f8012a3b4'),
-  ('4bee7529-b904-4559-97ae-0437f74de935', now(), '2283', 'namespace-1', 'parent/child/resource4', 'resource4', '3c5d7e9f-1021-4b3c-8d6e-7f8012a3b4c5'),
+  ('2b4c6d8e-0f12-4a3b-9c5d-6e7f8012a3b4', now(), '2283', 'namespace-1', 'parent', 'parent', NULL, false),
+  ('3c5d7e9f-1021-4b3c-8d6e-7f8012a3b4c5', now(), '2283', 'namespace-1', 'parent/child', 'child', '2b4c6d8e-0f12-4a3b-9c5d-6e7f8012a3b4', false),
+  ('4bee7529-b904-4559-97ae-0437f74de935', now(), '2283', 'namespace-1', 'parent/child/resource4', 'resource4', '3c5d7e9f-1021-4b3c-8d6e-7f8012a3b4c5', false),
   -- 2285 / namespace-123 (egen rot)
-  ('8fa9beb8-944d-41c1-884a-c0f6db4f7bf6', now(), '2285', 'namespace-123', 'parent', 'parent', NULL);
+  ('8fa9beb8-944d-41c1-884a-c0f6db4f7bf6', now(), '2285', 'namespace-123', 'parent', 'parent', NULL, false);
   
 -------------------------------------
 -- Communication
@@ -292,21 +292,21 @@ VALUES ('param-1', 'priority-high', 0);
 -------------------------------------
 -- Phase
 -------------------------------------
-INSERT INTO phase(id, municipality_id, namespace, name, display_name, description, phase_order, created)
-VALUES ('phase-id-1', '2281', 'namespace-1', 'phase-1', 'Phase 1', 'First phase', 1, now()),
-       ('phase-id-2', '2281', 'namespace-1', 'phase-2', 'Phase 2', 'Second phase', 2, now()),
-       ('phase-id-3', '2281', 'namespace-1', 'phase-3', 'Phase 3', 'Third phase', 3, now()),
-       ('phase-id-4', '2281', 'namespace-2', 'phase-1', 'Phase 1', 'First phase ns2', 1, now()),
-       ('phase-id-5', '2282', 'namespace-1', 'phase-1', 'Phase 1', 'First phase other mun', 1, now());
+INSERT INTO phase(id, municipality_id, namespace, name, display_name, description, phase_order, created, deprecated)
+VALUES ('phase-id-1', '2281', 'namespace-1', 'phase-1', 'Phase 1', 'First phase', 1, now(), false),
+       ('phase-id-2', '2281', 'namespace-1', 'phase-2', 'Phase 2', 'Second phase', 2, now(), false),
+       ('phase-id-3', '2281', 'namespace-1', 'phase-3', 'Phase 3', 'Third phase', 3, now(), false),
+       ('phase-id-4', '2281', 'namespace-2', 'phase-1', 'Phase 1', 'First phase ns2', 1, now(), false),
+       ('phase-id-5', '2282', 'namespace-1', 'phase-1', 'Phase 1', 'First phase other mun', 1, now(), false);
 
 INSERT INTO phase_allowed_status(phase_id, status, status_order)
 VALUES ('phase-id-1', 'NEW', 0),
        ('phase-id-1', 'IN_PROGRESS', 1),
        ('phase-id-2', 'WAITING', 0);
 
-INSERT INTO phase_transition(id, phase_id, target_phase_id, description)
-VALUES ('transition-id-1', 'phase-id-1', 'phase-id-2', 'To phase 2'),
-       ('transition-id-2', 'phase-id-2', 'phase-id-3', 'To phase 3');
+INSERT INTO phase_transition(id, phase_id, target_phase_id, description, deprecated)
+VALUES ('transition-id-1', 'phase-id-1', 'phase-id-2', 'To phase 2', false),
+       ('transition-id-2', 'phase-id-2', 'phase-id-3', 'To phase 3', false);
 
 -------------------------------------
 -- ErrandAction

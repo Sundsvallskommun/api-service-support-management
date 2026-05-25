@@ -44,6 +44,9 @@ public class RoleEntity {
 	@Column(name = "sort_order")
 	private Integer sortOrder;
 
+	@Column(name = "deprecated", nullable = false)
+	private boolean deprecated;
+
 	@Column(name = "municipality_id", nullable = false, length = 8)
 	private String municipalityId;
 
@@ -114,6 +117,19 @@ public class RoleEntity {
 		return this;
 	}
 
+	public boolean isDeprecated() {
+		return deprecated;
+	}
+
+	public void setDeprecated(final boolean deprecated) {
+		this.deprecated = deprecated;
+	}
+
+	public RoleEntity withDeprecated(final boolean deprecated) {
+		this.deprecated = deprecated;
+		return this;
+	}
+
 	public String getMunicipalityId() {
 		return municipalityId;
 	}
@@ -178,7 +194,7 @@ public class RoleEntity {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(created, id, modified, municipalityId, name, namespace, displayName, sortOrder);
+		return Objects.hash(created, deprecated, id, modified, municipalityId, name, namespace, displayName, sortOrder);
 	}
 
 	@Override
@@ -189,8 +205,9 @@ public class RoleEntity {
 		if (!(obj instanceof final RoleEntity other)) {
 			return false;
 		}
-		return Objects.equals(created, other.created) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(municipalityId, other.municipalityId) && Objects.equals(name, other.name) && Objects.equals(namespace,
-			other.namespace) && Objects.equals(displayName, other.displayName) && Objects.equals(sortOrder, other.sortOrder);
+		return Objects.equals(created, other.created) && deprecated == other.deprecated && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(municipalityId, other.municipalityId) && Objects.equals(name, other.name)
+			&& Objects.equals(namespace,
+				other.namespace) && Objects.equals(displayName, other.displayName) && Objects.equals(sortOrder, other.sortOrder);
 	}
 
 	@Override
@@ -199,6 +216,7 @@ public class RoleEntity {
 			+ ", name=" + name
 			+ ", displayName=" + displayName
 			+ ", sortOrder=" + sortOrder
+			+ ", deprecated=" + deprecated
 			+ ", municipalityId=" + municipalityId
 			+ ", namespace=" + namespace
 			+ ", created=" + created

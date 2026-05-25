@@ -51,10 +51,12 @@ class MetadataLabelEntityTest {
 		final var parent = MetadataLabelEntity.create();
 		final var resourceName = "resourceName";
 		final var resourcePath = "resourcePath";
+		final var deprecated = true;
 
 		final var entity = MetadataLabelEntity.create()
 			.withClassification(classification)
 			.withCreated(created)
+			.withDeprecated(deprecated)
 			.withDisplayName(displayName)
 			.withId(id)
 			.withModified(modified)
@@ -68,6 +70,7 @@ class MetadataLabelEntityTest {
 		assertThat(entity).hasNoNullFieldsOrProperties();
 		assertThat(entity.getClassification()).isEqualTo(classification);
 		assertThat(entity.getCreated()).isEqualTo(created);
+		assertThat(entity.isDeprecated()).isEqualTo(deprecated);
 		assertThat(entity.getDisplayName()).isEqualTo(displayName);
 		assertThat(entity.getId()).isEqualTo(id);
 		assertThat(entity.getModified()).isEqualTo(modified);
@@ -85,7 +88,7 @@ class MetadataLabelEntityTest {
 		entity.onCreate();
 
 		assertThat(entity.getCreated()).isCloseTo(now(), within(1, SECONDS));
-		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("created", "metadataLabels");
+		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("created", "metadataLabels", "deprecated");
 	}
 
 	@Test
@@ -145,7 +148,7 @@ class MetadataLabelEntityTest {
 		entity.onUpdate();
 
 		assertThat(entity.getModified()).isCloseTo(now(), within(1, SECONDS));
-		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("modified", "metadataLabels");
+		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("modified", "metadataLabels", "deprecated");
 	}
 
 	@Test
@@ -179,7 +182,7 @@ class MetadataLabelEntityTest {
 
 	@Test
 	void noDirtOnCreatedBean() {
-		assertThat(MetadataLabelEntity.create()).hasAllNullFieldsOrPropertiesExcept("metadataLabels");
-		assertThat(new MetadataLabelEntity()).hasAllNullFieldsOrPropertiesExcept("metadataLabels");
+		assertThat(MetadataLabelEntity.create()).hasAllNullFieldsOrPropertiesExcept("metadataLabels", "deprecated");
+		assertThat(new MetadataLabelEntity()).hasAllNullFieldsOrPropertiesExcept("metadataLabels", "deprecated");
 	}
 }

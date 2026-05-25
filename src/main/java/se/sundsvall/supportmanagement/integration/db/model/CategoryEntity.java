@@ -50,6 +50,9 @@ public class CategoryEntity {
 	@Column(name = "sort_order")
 	private Integer sortOrder;
 
+	@Column(name = "deprecated", nullable = false)
+	private boolean deprecated;
+
 	@OneToMany(mappedBy = "categoryEntity", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<TypeEntity> types;
 
@@ -120,6 +123,19 @@ public class CategoryEntity {
 
 	public CategoryEntity withSortOrder(final Integer sortOrder) {
 		this.sortOrder = sortOrder;
+		return this;
+	}
+
+	public boolean isDeprecated() {
+		return deprecated;
+	}
+
+	public void setDeprecated(final boolean deprecated) {
+		this.deprecated = deprecated;
+	}
+
+	public CategoryEntity withDeprecated(final boolean deprecated) {
+		this.deprecated = deprecated;
 		return this;
 	}
 
@@ -210,7 +226,7 @@ public class CategoryEntity {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(created, displayName, id, modified, municipalityId, name, namespace, sortOrder, types);
+		return Objects.hash(created, deprecated, displayName, id, modified, municipalityId, name, namespace, sortOrder, types);
 	}
 
 	@Override
@@ -225,8 +241,9 @@ public class CategoryEntity {
 			return false;
 		}
 		final CategoryEntity other = (CategoryEntity) obj;
-		return Objects.equals(created, other.created) && Objects.equals(displayName, other.displayName) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(municipalityId, other.municipalityId) && Objects
-			.equals(name, other.name) && Objects.equals(namespace, other.namespace) && Objects.equals(sortOrder, other.sortOrder) && Objects.equals(types, other.types);
+		return Objects.equals(created, other.created) && deprecated == other.deprecated && Objects.equals(displayName, other.displayName) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(municipalityId,
+			other.municipalityId) && Objects
+				.equals(name, other.name) && Objects.equals(namespace, other.namespace) && Objects.equals(sortOrder, other.sortOrder) && Objects.equals(types, other.types);
 	}
 
 	@Override
@@ -236,6 +253,7 @@ public class CategoryEntity {
 			", name='" + name + '\'' +
 			", displayName='" + displayName + '\'' +
 			", sortOrder=" + sortOrder +
+			", deprecated=" + deprecated +
 			", types=" + types +
 			", municipalityId='" + municipalityId + '\'' +
 			", namespace='" + namespace + '\'' +

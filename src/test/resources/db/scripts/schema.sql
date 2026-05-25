@@ -61,6 +61,7 @@
     ) engine=InnoDB;
 
     create table category (
+        deprecated bit not null,
         sort_order integer,
         created datetime(6),
         modified datetime(6),
@@ -140,6 +141,7 @@
     ) engine=InnoDB;
 
     create table contact_reason (
+        deprecated bit not null,
         sort_order integer,
         created datetime(6),
         modified datetime(6),
@@ -260,6 +262,7 @@
     ) engine=InnoDB;
 
     create table external_id_type (
+        deprecated bit not null,
         sort_order integer,
         created datetime(6),
         modified datetime(6),
@@ -308,6 +311,7 @@
     ) engine=InnoDB;
 
     create table metadata_label (
+        deprecated bit not null,
         created datetime(6),
         modified datetime(6),
         municipality_id varchar(8) not null,
@@ -375,6 +379,7 @@
     ) engine=InnoDB;
 
     create table phase (
+        deprecated bit not null,
         phase_order integer,
         created datetime(6),
         modified datetime(6),
@@ -395,6 +400,7 @@
     ) engine=InnoDB;
 
     create table phase_transition (
+        deprecated bit not null,
         description varchar(255),
         id varchar(255) not null,
         phase_id varchar(255) not null,
@@ -415,6 +421,7 @@
     ) engine=InnoDB;
 
     create table role (
+        deprecated bit not null,
         sort_order integer,
         created datetime(6),
         modified datetime(6),
@@ -457,6 +464,7 @@
     ) engine=InnoDB;
 
     create table status (
+        deprecated bit not null,
         sort_order integer,
         created datetime(6),
         modified datetime(6),
@@ -533,6 +541,7 @@
     ) engine=InnoDB;
 
     create table `type` (
+        deprecated bit not null,
         created datetime(6),
         id bigint not null auto_increment,
         modified datetime(6),

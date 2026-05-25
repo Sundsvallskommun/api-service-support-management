@@ -44,6 +44,7 @@ class ContactReasonEntityTest {
 		final var created = OffsetDateTime.now();
 		final var modified = OffsetDateTime.now();
 		final var sortOrder = 5;
+		final var deprecated = true;
 
 		final var entity = ContactReasonEntity.create()
 			.withId(id)
@@ -53,7 +54,8 @@ class ContactReasonEntityTest {
 			.withDisplayName(displayName)
 			.withCreated(created)
 			.withModified(modified)
-			.withSortOrder(sortOrder);
+			.withSortOrder(sortOrder)
+			.withDeprecated(deprecated);
 
 		assertThat(entity).hasNoNullFieldsOrProperties();
 		assertThat(entity.getReason()).isEqualTo(reason);
@@ -64,11 +66,12 @@ class ContactReasonEntityTest {
 		assertThat(entity.getCreated()).isEqualTo(created);
 		assertThat(entity.getModified()).isEqualTo(modified);
 		assertThat(entity.getSortOrder()).isEqualTo(sortOrder);
+		assertThat(entity.isDeprecated()).isEqualTo(deprecated);
 	}
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(ContactReasonEntity.create()).hasAllNullFieldsOrProperties();
-		assertThat(new ContactReasonEntity()).hasAllNullFieldsOrProperties();
+		assertThat(ContactReasonEntity.create()).hasAllNullFieldsOrPropertiesExcept("deprecated");
+		assertThat(new ContactReasonEntity()).hasAllNullFieldsOrPropertiesExcept("deprecated");
 	}
 }

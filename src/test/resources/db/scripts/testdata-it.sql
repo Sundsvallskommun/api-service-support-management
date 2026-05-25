@@ -1,106 +1,106 @@
 -- -----------------------------------
 -- Category and Type
 -- -----------------------------------
-INSERT INTO category(id, created, display_name, modified, municipality_id, name, namespace)
+INSERT INTO category(id, created, display_name, modified, municipality_id, name, namespace, deprecated)
 VALUES ('aa000000-0000-0000-0000-000000000100', '2023-01-01 12:00:00.000', 'CATEGORY-DISPLAY-NAME-1', null, '2281', 'CATEGORY-1',
-        'NAMESPACE-1'),
+        'NAMESPACE-1', false),
        ('aa000000-0000-0000-0000-000000000101', '2023-01-01 12:00:00.000', 'CATEGORY-DISPLAY-NAME-2', null, '2281', 'CATEGORY-2',
-        'NAMESPACE-1'),
+        'NAMESPACE-1', false),
        ('aa000000-0000-0000-0000-000000000102', '2023-01-01 12:00:00.000', 'CATEGORY-DISPLAY-NAME-3', null, '2281', 'CATEGORY-3',
-        'NAMESPACE-1');
+        'NAMESPACE-1', false);
 
-INSERT INTO type(id, created, display_name, escalation_email, modified, name, category_id)
+INSERT INTO type(id, created, display_name, escalation_email, modified, name, category_id, deprecated)
 VALUES (100, '2023-01-01 12:00:00.000', 'TYPE-DISPLAY-NAME-1', 'ESCALATION-EMAIL-1', null, 'TYPE-1',
-        'aa000000-0000-0000-0000-000000000100'),
+        'aa000000-0000-0000-0000-000000000100', false),
        (101, '2023-01-01 12:00:00.000', 'TYPE-DISPLAY-NAME-2', 'ESCALATION-EMAIL-2', null, 'TYPE-2',
-        'aa000000-0000-0000-0000-000000000100'),
+        'aa000000-0000-0000-0000-000000000100', false),
        (102, '2023-01-01 12:00:00.000', 'TYPE-DISPLAY-NAME-3', 'ESCALATION-EMAIL-3', null, 'TYPE-3',
-        'aa000000-0000-0000-0000-000000000100'),
+        'aa000000-0000-0000-0000-000000000100', false),
        (103, '2023-01-01 12:00:00.000', 'TYPE-DISPLAY-NAME-1', 'ESCALATION-EMAIL-1', null, 'TYPE-1',
-        'aa000000-0000-0000-0000-000000000101'),
+        'aa000000-0000-0000-0000-000000000101', false),
        (104, '2023-01-01 12:00:00.000', 'TYPE-DISPLAY-NAME-2', 'ESCALATION-EMAIL-2', null, 'TYPE-2',
-        'aa000000-0000-0000-0000-000000000101'),
+        'aa000000-0000-0000-0000-000000000101', false),
        (105, '2023-01-01 12:00:00.000', 'TYPE-DISPLAY-NAME-1', 'ESCALATION-EMAIL-1', null, 'TYPE-1',
-        'aa000000-0000-0000-0000-000000000102');
+        'aa000000-0000-0000-0000-000000000102', false);
 
 -- -----------------------------------
 -- ExternalIdType
 -- -----------------------------------
-INSERT INTO external_id_type(id, created, modified, municipality_id, name, display_name, namespace)
-VALUES ('dd000000-0000-0000-0000-000000000100', '2023-01-01 12:00:00.000', null, '2281', 'EXTERNAL-ID-TYPE-1', 'External Id Type 1', 'NAMESPACE-1'),
-       ('dd000000-0000-0000-0000-000000000101', '2023-01-01 12:00:00.000', null, '2281', 'EXTERNAL-ID-TYPE-2', 'External Id Type 2', 'NAMESPACE-1'),
-       ('dd000000-0000-0000-0000-000000000102', '2023-01-01 12:00:00.000', null, '2281', 'EXTERNAL-ID-TYPE-3', 'External Id Type 3', 'NAMESPACE-1'),
-       ('dd000000-0000-0000-0000-000000000104', '2023-01-01 12:00:00.000', null, '2281', 'EXTERNAL-ID-TYPE-1', 'External Id Type 1', 'NAMESPACE-2'),
-       ('dd000000-0000-0000-0000-000000000105', '2023-01-01 12:00:00.000', null, '2305', 'EXTERNAL-ID-TYPE-1', 'External Id Type 1', 'NAMESPACE-1'),
-       ('dd000000-0000-0000-0000-000000000106', '2023-01-01 12:00:00.000', null, '2305', 'EXTERNAL-ID-TYPE-2', 'External Id Type 2', 'NAMESPACE-1');
+INSERT INTO external_id_type(id, created, modified, municipality_id, name, display_name, namespace, deprecated)
+VALUES ('dd000000-0000-0000-0000-000000000100', '2023-01-01 12:00:00.000', null, '2281', 'EXTERNAL-ID-TYPE-1', 'External Id Type 1', 'NAMESPACE-1', false),
+       ('dd000000-0000-0000-0000-000000000101', '2023-01-01 12:00:00.000', null, '2281', 'EXTERNAL-ID-TYPE-2', 'External Id Type 2', 'NAMESPACE-1', false),
+       ('dd000000-0000-0000-0000-000000000102', '2023-01-01 12:00:00.000', null, '2281', 'EXTERNAL-ID-TYPE-3', 'External Id Type 3', 'NAMESPACE-1', false),
+       ('dd000000-0000-0000-0000-000000000104', '2023-01-01 12:00:00.000', null, '2281', 'EXTERNAL-ID-TYPE-1', 'External Id Type 1', 'NAMESPACE-2', false),
+       ('dd000000-0000-0000-0000-000000000105', '2023-01-01 12:00:00.000', null, '2305', 'EXTERNAL-ID-TYPE-1', 'External Id Type 1', 'NAMESPACE-1', false),
+       ('dd000000-0000-0000-0000-000000000106', '2023-01-01 12:00:00.000', null, '2305', 'EXTERNAL-ID-TYPE-2', 'External Id Type 2', 'NAMESPACE-1', false);
 
 -- -----------------------------------
 -- Status
 -- -----------------------------------
-INSERT INTO status(id, created, modified, municipality_id, name, display_name, external_display_name, sort_order, namespace)
-VALUES ('bb000000-0000-0000-0000-000000000100', '2023-01-01 12:00:00.000', null, '2281', 'STATUS-1', 'Status 1', 'External Status 1', 3, 'NAMESPACE-1'),
-       ('bb000000-0000-0000-0000-000000000101', '2023-01-01 12:00:00.000', null, '2281', 'STATUS-2', 'Status 2', 'External Status 2', 1, 'NAMESPACE-1'),
-       ('bb000000-0000-0000-0000-000000000102', '2023-01-01 12:00:00.000', null, '2281', 'STATUS-3', 'Status 3', 'External Status 3', 2, 'NAMESPACE-1'),
-       ('bb000000-0000-0000-0000-000000000104', '2023-01-01 12:00:00.000', null, '2281', 'STATUS-1', 'Status 1', 'External Status 1', null, 'NAMESPACE-2'),
-       ('bb000000-0000-0000-0000-000000000105', '2023-01-01 12:00:00.000', null, '2305', 'STATUS-1', 'Status 1', 'External Status 1', null, 'NAMESPACE-1'),
-       ('bb000000-0000-0000-0000-000000000106', '2023-01-01 12:00:00.000', null, '2305', 'STATUS-2', 'Status 2', 'External Status 2', null, 'NAMESPACE-1'),
-       ('bb000000-0000-0000-0000-000000000107', '2023-01-01 12:00:00.000', null, '2281', 'STATUS-2', 'Status 2', 'External Status 2', null, 'CONTACTCENTER'),
-       ('bb000000-0000-0000-0000-000000000108', '2023-01-01 12:00:00.000', null, '2281', 'STATUS-1', 'Status 1', 'External Status 1', null, 'NAMESPACE-3'),
-       ('bb000000-0000-0000-0000-000000000109', '2023-01-01 12:00:00.000', null, '2281', 'STATUS-2', 'Status 2', 'External Status 2', null, 'NAMESPACE-3'),
-       ('bb000000-0000-0000-0000-000000000110', '2023-01-01 12:00:00.000', null, '2281', 'STATUS-3', 'Status 3', 'External Status 3', null, 'NAMESPACE-3'),
-       ('bb000000-0000-0000-0000-000000000111', '2023-01-01 12:00:00.000', null, '2281', 'STATUS-4', 'Status 4', 'External Status 4', null, 'NAMESPACE-3');
+INSERT INTO status(id, created, modified, municipality_id, name, display_name, external_display_name, sort_order, namespace, deprecated)
+VALUES ('bb000000-0000-0000-0000-000000000100', '2023-01-01 12:00:00.000', null, '2281', 'STATUS-1', 'Status 1', 'External Status 1', 3, 'NAMESPACE-1', false),
+       ('bb000000-0000-0000-0000-000000000101', '2023-01-01 12:00:00.000', null, '2281', 'STATUS-2', 'Status 2', 'External Status 2', 1, 'NAMESPACE-1', false),
+       ('bb000000-0000-0000-0000-000000000102', '2023-01-01 12:00:00.000', null, '2281', 'STATUS-3', 'Status 3', 'External Status 3', 2, 'NAMESPACE-1', false),
+       ('bb000000-0000-0000-0000-000000000104', '2023-01-01 12:00:00.000', null, '2281', 'STATUS-1', 'Status 1', 'External Status 1', null, 'NAMESPACE-2', false),
+       ('bb000000-0000-0000-0000-000000000105', '2023-01-01 12:00:00.000', null, '2305', 'STATUS-1', 'Status 1', 'External Status 1', null, 'NAMESPACE-1', false),
+       ('bb000000-0000-0000-0000-000000000106', '2023-01-01 12:00:00.000', null, '2305', 'STATUS-2', 'Status 2', 'External Status 2', null, 'NAMESPACE-1', false),
+       ('bb000000-0000-0000-0000-000000000107', '2023-01-01 12:00:00.000', null, '2281', 'STATUS-2', 'Status 2', 'External Status 2', null, 'CONTACTCENTER', false),
+       ('bb000000-0000-0000-0000-000000000108', '2023-01-01 12:00:00.000', null, '2281', 'STATUS-1', 'Status 1', 'External Status 1', null, 'NAMESPACE-3', false),
+       ('bb000000-0000-0000-0000-000000000109', '2023-01-01 12:00:00.000', null, '2281', 'STATUS-2', 'Status 2', 'External Status 2', null, 'NAMESPACE-3', false),
+       ('bb000000-0000-0000-0000-000000000110', '2023-01-01 12:00:00.000', null, '2281', 'STATUS-3', 'Status 3', 'External Status 3', null, 'NAMESPACE-3', false),
+       ('bb000000-0000-0000-0000-000000000111', '2023-01-01 12:00:00.000', null, '2281', 'STATUS-4', 'Status 4', 'External Status 4', null, 'NAMESPACE-3', false);
 -- -----------------------------------
 -- Role
 -- -----------------------------------
-INSERT INTO role(id, created, modified, municipality_id, name, display_name, namespace)
-VALUES ('cc000000-0000-0000-0000-000000000100', '2023-01-01 12:00:00.000', null, '2281', 'ROLE-1', null, 'NAMESPACE-1'),
-       ('cc000000-0000-0000-0000-000000000101', '2023-01-01 12:00:00.000', null, '2281', 'ROLE-2', null, 'NAMESPACE-1'),
-       ('cc000000-0000-0000-0000-000000000102', '2023-01-01 12:00:00.000', null, '2281', 'ROLE-3', 'DISPLAY-NAME-3', 'NAMESPACE-1'),
-       ('cc000000-0000-0000-0000-000000000104', '2023-01-01 12:00:00.000', null, '2281', 'ROLE-1', null, 'NAMESPACE-2'),
-       ('cc000000-0000-0000-0000-000000000105', '2023-01-01 12:00:00.000', null, '2305', 'ROLE-1', null, 'NAMESPACE-1'),
-       ('cc000000-0000-0000-0000-000000000106', '2023-01-01 12:00:00.000', null, '2305', 'ROLE-2', null, 'NAMESPACE-1');
+INSERT INTO role(id, created, modified, municipality_id, name, display_name, namespace, deprecated)
+VALUES ('cc000000-0000-0000-0000-000000000100', '2023-01-01 12:00:00.000', null, '2281', 'ROLE-1', null, 'NAMESPACE-1', false),
+       ('cc000000-0000-0000-0000-000000000101', '2023-01-01 12:00:00.000', null, '2281', 'ROLE-2', null, 'NAMESPACE-1', false),
+       ('cc000000-0000-0000-0000-000000000102', '2023-01-01 12:00:00.000', null, '2281', 'ROLE-3', 'DISPLAY-NAME-3', 'NAMESPACE-1', false),
+       ('cc000000-0000-0000-0000-000000000104', '2023-01-01 12:00:00.000', null, '2281', 'ROLE-1', null, 'NAMESPACE-2', false),
+       ('cc000000-0000-0000-0000-000000000105', '2023-01-01 12:00:00.000', null, '2305', 'ROLE-1', null, 'NAMESPACE-1', false),
+       ('cc000000-0000-0000-0000-000000000106', '2023-01-01 12:00:00.000', null, '2305', 'ROLE-2', null, 'NAMESPACE-1', false);
 
 -------------------------------------
 -- MetadataLabel
 -------------------------------------
-INSERT INTO metadata_label (created, modified, municipality_id, namespace, classification, display_name, id, parent_id, resource_name, resource_path) VALUES
-    ('2025-10-16 09:45:49.815000', NULL, '2281', 'NAMESPACE-1', 'CATEGORY', 'SOME_CATEGORY_1', '5940c8c8-d84a-4144-b650-313356ad1333', NULL, 'CATEGORY-1', 'LABEL-1'),
-    ('2025-10-16 09:45:49.815000', NULL, '2281', 'NAMESPACE-1', 'CATEGORY', 'SOME_CATEGORY_2', '13a6abf3-b5ed-4edc-b582-6cf58fa667e3', NULL, 'CATEGORY-2', 'LABEL-2'),
+INSERT INTO metadata_label (created, modified, municipality_id, namespace, classification, display_name, id, parent_id, resource_name, resource_path, deprecated) VALUES
+    ('2025-10-16 09:45:49.815000', NULL, '2281', 'NAMESPACE-1', 'CATEGORY', 'SOME_CATEGORY_1', '5940c8c8-d84a-4144-b650-313356ad1333', NULL, 'CATEGORY-1', 'LABEL-1', false),
+    ('2025-10-16 09:45:49.815000', NULL, '2281', 'NAMESPACE-1', 'CATEGORY', 'SOME_CATEGORY_2', '13a6abf3-b5ed-4edc-b582-6cf58fa667e3', NULL, 'CATEGORY-2', 'LABEL-2', false),
     -- CATEGORY (root, parent_id = NULL)
-    ('2025-10-16 09:45:49.815000', NULL, '2281', 'NAMESPACE-1', 'CATEGORY', 'CATEGORY-DISPLAY-NAME-1', 'a8fe832f-77a7-4906-9a97-ac5cbd73dbe7', NULL, 'CATEGORY-1', 'CATEGORY-1'),
+    ('2025-10-16 09:45:49.815000', NULL, '2281', 'NAMESPACE-1', 'CATEGORY', 'CATEGORY-DISPLAY-NAME-1', 'a8fe832f-77a7-4906-9a97-ac5cbd73dbe7', NULL, 'CATEGORY-1', 'CATEGORY-1', false),
     -- TYPE-1 (child of CATEGORY)
-    ('2025-10-16 09:45:49.830000', NULL, '2281', 'NAMESPACE-1', 'TYPE', 'TYPE-DISPLAY-NAME-1', 'cd99569f-6b6d-4d7a-b04c-9ae528be8258', 'a8fe832f-77a7-4906-9a97-ac5cbd73dbe7', 'TYPE-1', 'CATEGORY-1/TYPE-1'),
+    ('2025-10-16 09:45:49.830000', NULL, '2281', 'NAMESPACE-1', 'TYPE', 'TYPE-DISPLAY-NAME-1', 'cd99569f-6b6d-4d7a-b04c-9ae528be8258', 'a8fe832f-77a7-4906-9a97-ac5cbd73dbe7', 'TYPE-1', 'CATEGORY-1/TYPE-1', false),
     -- TYPE-2 (child of CATEGORY)
-    ('2025-10-16 09:45:49.831000', NULL, '2281', 'NAMESPACE-1', 'TYPE', 'TYPE-DISPLAY-NAME-2', '3273e374-855c-4525-b8fc-aeaa710b83c5', 'a8fe832f-77a7-4906-9a97-ac5cbd73dbe7', 'TYPE-2', 'CATEGORY-1/TYPE-2'),
+    ('2025-10-16 09:45:49.831000', NULL, '2281', 'NAMESPACE-1', 'TYPE', 'TYPE-DISPLAY-NAME-2', '3273e374-855c-4525-b8fc-aeaa710b83c5', 'a8fe832f-77a7-4906-9a97-ac5cbd73dbe7', 'TYPE-2', 'CATEGORY-1/TYPE-2', false),
     -- SUBTYPEs under TYPE-1
-    ('2025-10-16 09:45:49.830000', NULL, '2281', 'NAMESPACE-1', 'SUBTYPE', 'SUBTYPE-DISPLAY-NAME-1', '8d0ac81c-9c56-43b7-95cd-fa3c3592666d', 'cd99569f-6b6d-4d7a-b04c-9ae528be8258', 'SUBTYPE-1', 'CATEGORY-1/TYPE-1/SUBTYPE-1'),
-    ('2025-10-16 09:45:49.830000', NULL, '2281', 'NAMESPACE-1', 'SUBTYPE', 'SUBTYPE-DISPLAY-NAME-2', '6dd1f18b-3f45-4d5f-b38b-176bfb3329c8', 'cd99569f-6b6d-4d7a-b04c-9ae528be8258', 'SUBTYPE-2', 'CATEGORY-1/TYPE-1/SUBTYPE-2'),
+    ('2025-10-16 09:45:49.830000', NULL, '2281', 'NAMESPACE-1', 'SUBTYPE', 'SUBTYPE-DISPLAY-NAME-1', '8d0ac81c-9c56-43b7-95cd-fa3c3592666d', 'cd99569f-6b6d-4d7a-b04c-9ae528be8258', 'SUBTYPE-1', 'CATEGORY-1/TYPE-1/SUBTYPE-1', false),
+    ('2025-10-16 09:45:49.830000', NULL, '2281', 'NAMESPACE-1', 'SUBTYPE', 'SUBTYPE-DISPLAY-NAME-2', '6dd1f18b-3f45-4d5f-b38b-176bfb3329c8', 'cd99569f-6b6d-4d7a-b04c-9ae528be8258', 'SUBTYPE-2', 'CATEGORY-1/TYPE-1/SUBTYPE-2', false),
     -- SUBTYPEs under TYPE-2
-    ('2025-10-16 09:45:49.831000', NULL, '2281', 'NAMESPACE-1', 'SUBTYPE', 'SUBTYPE-DISPLAY-NAME-3', '926fd3f9-f488-4ba4-93f6-2789dee0c0c3', '3273e374-855c-4525-b8fc-aeaa710b83c5', 'SUBTYPE-3', 'CATEGORY-1/TYPE-2/SUBTYPE-3'),
-    ('2025-10-16 09:45:49.831000', NULL, '2281', 'NAMESPACE-1', 'SUBTYPE', 'SUBTYPE-DISPLAY-NAME-4', 'f4d6e210-633b-48a6-ad0a-7be839b28762', '3273e374-855c-4525-b8fc-aeaa710b83c5', 'SUBTYPE-4', 'CATEGORY-1/TYPE-2/SUBTYPE-4'),
+    ('2025-10-16 09:45:49.831000', NULL, '2281', 'NAMESPACE-1', 'SUBTYPE', 'SUBTYPE-DISPLAY-NAME-3', '926fd3f9-f488-4ba4-93f6-2789dee0c0c3', '3273e374-855c-4525-b8fc-aeaa710b83c5', 'SUBTYPE-3', 'CATEGORY-1/TYPE-2/SUBTYPE-3', false),
+    ('2025-10-16 09:45:49.831000', NULL, '2281', 'NAMESPACE-1', 'SUBTYPE', 'SUBTYPE-DISPLAY-NAME-4', 'f4d6e210-633b-48a6-ad0a-7be839b28762', '3273e374-855c-4525-b8fc-aeaa710b83c5', 'SUBTYPE-4', 'CATEGORY-1/TYPE-2/SUBTYPE-4', false),
     -- DEEPSUBTYPEs under SUBTYPE-3
-    ('2025-10-16 09:45:49.831000', NULL, '2281', 'NAMESPACE-1', 'DEEPSUBTYPE', 'DEEPSUBTYPE-DISPLAY-NAME-1', 'ffe5f120-6a3b-4404-ace8-8ea87b559907', 'f4d6e210-633b-48a6-ad0a-7be839b28762', 'DEEPSUBTYPE-1', 'CATEGORY-1/TYPE-2/SUBTYPE-4/DEEPSUBTYPE-1'),
-    ('2025-10-16 09:45:49.831000', NULL, '2281', 'NAMESPACE-1', 'DEEPSUBTYPE', 'DEEPSUBTYPE-DISPLAY-NAME-2', '0eb1f695-48b1-40fd-af8c-b277c37db2d4', 'f4d6e210-633b-48a6-ad0a-7be839b28762', 'DEEPSUBTYPE-2', 'CATEGORY-1/TYPE-2/SUBTYPE-4/DEEPSUBTYPE-2'),
+    ('2025-10-16 09:45:49.831000', NULL, '2281', 'NAMESPACE-1', 'DEEPSUBTYPE', 'DEEPSUBTYPE-DISPLAY-NAME-1', 'ffe5f120-6a3b-4404-ace8-8ea87b559907', 'f4d6e210-633b-48a6-ad0a-7be839b28762', 'DEEPSUBTYPE-1', 'CATEGORY-1/TYPE-2/SUBTYPE-4/DEEPSUBTYPE-1', false),
+    ('2025-10-16 09:45:49.831000', NULL, '2281', 'NAMESPACE-1', 'DEEPSUBTYPE', 'DEEPSUBTYPE-DISPLAY-NAME-2', '0eb1f695-48b1-40fd-af8c-b277c37db2d4', 'f4d6e210-633b-48a6-ad0a-7be839b28762', 'DEEPSUBTYPE-2', 'CATEGORY-1/TYPE-2/SUBTYPE-4/DEEPSUBTYPE-2', false),
     -- 2506 labels
-    ('2025-11-05 09:45:49.831000', NULL, '2506', 'NAMESPACE-2506', 'CLASS', 'ROOT-DISPLAY-NAME', '2f3d54e5-075a-4e21-ae30-b8fa69d24eeb', null, 'ROOT', 'ROOT'),
-    ('2025-11-05 09:45:49.831000', NULL, '2506', 'NAMESPACE-2506', 'CLASS', 'LEVELONE-1-DISPLAY-NAME', '8f78a6ae-b1f6-4a63-87f0-30314c038e02', '2f3d54e5-075a-4e21-ae30-b8fa69d24eeb', 'LEVELONE-1', 'ROOT/LEVELONE-1'),
-    ('2025-11-05 09:45:49.831000', NULL, '2506', 'NAMESPACE-2506', 'CLASS', 'LEVELTWO-1-DISPLAY-NAME', '8f1c6101-8c32-4c77-b72c-3348f23394f1', '8f78a6ae-b1f6-4a63-87f0-30314c038e02', 'LEVELTWO-1', 'ROOT/LEVELONE-1/LEVELTWO-1'),
-    ('2025-11-05 09:45:49.831000', NULL, '2506', 'NAMESPACE-2506', 'CLASS', 'LEVELTWO-2-DISPLAY-NAME', '7ac8f12e-7c9b-47dc-ac7f-92a1f62ca53f', '8f78a6ae-b1f6-4a63-87f0-30314c038e02', 'LEVELTWO-2', 'ROOT/LEVELONE-1/LEVELTWO-2'),
-    ('2025-11-05 09:45:49.831000', NULL, '2506', 'NAMESPACE-2506', 'CLASS', 'LEVELONE-2-DISPLAY-NAME', 'b1e63167-4bba-4f78-825b-e6ca9ce85903', '2f3d54e5-075a-4e21-ae30-b8fa69d24eeb', 'LEVELONE-2', 'ROOT/LEVELONE-2'),
+    ('2025-11-05 09:45:49.831000', NULL, '2506', 'NAMESPACE-2506', 'CLASS', 'ROOT-DISPLAY-NAME', '2f3d54e5-075a-4e21-ae30-b8fa69d24eeb', null, 'ROOT', 'ROOT', false),
+    ('2025-11-05 09:45:49.831000', NULL, '2506', 'NAMESPACE-2506', 'CLASS', 'LEVELONE-1-DISPLAY-NAME', '8f78a6ae-b1f6-4a63-87f0-30314c038e02', '2f3d54e5-075a-4e21-ae30-b8fa69d24eeb', 'LEVELONE-1', 'ROOT/LEVELONE-1', false),
+    ('2025-11-05 09:45:49.831000', NULL, '2506', 'NAMESPACE-2506', 'CLASS', 'LEVELTWO-1-DISPLAY-NAME', '8f1c6101-8c32-4c77-b72c-3348f23394f1', '8f78a6ae-b1f6-4a63-87f0-30314c038e02', 'LEVELTWO-1', 'ROOT/LEVELONE-1/LEVELTWO-1', false),
+    ('2025-11-05 09:45:49.831000', NULL, '2506', 'NAMESPACE-2506', 'CLASS', 'LEVELTWO-2-DISPLAY-NAME', '7ac8f12e-7c9b-47dc-ac7f-92a1f62ca53f', '8f78a6ae-b1f6-4a63-87f0-30314c038e02', 'LEVELTWO-2', 'ROOT/LEVELONE-1/LEVELTWO-2', false),
+    ('2025-11-05 09:45:49.831000', NULL, '2506', 'NAMESPACE-2506', 'CLASS', 'LEVELONE-2-DISPLAY-NAME', 'b1e63167-4bba-4f78-825b-e6ca9ce85903', '2f3d54e5-075a-4e21-ae30-b8fa69d24eeb', 'LEVELONE-2', 'ROOT/LEVELONE-2', false),
     -- 2584 labels
-    ('2025-11-05 09:45:49.831000', NULL, '2584', 'NAMESPACE-2584', 'CLASS', 'ROOT-DISPLAY-NAME', 'a39ed27b-6431-475c-8a42-c3d758887a1f', null, 'ROOT-2584', 'ROOT-2584'),
-    ('2025-11-05 09:45:49.831000', NULL, '2584', 'NAMESPACE-2584', 'CLASS', 'LEVELONE-1-DISPLAY-NAME', '7a363843-f6e5-40af-a6b2-95252799b8c6', 'a39ed27b-6431-475c-8a42-c3d758887a1f', 'LEVELONE-1', 'ROOT-2584/LEVELONE-1'),
+    ('2025-11-05 09:45:49.831000', NULL, '2584', 'NAMESPACE-2584', 'CLASS', 'ROOT-DISPLAY-NAME', 'a39ed27b-6431-475c-8a42-c3d758887a1f', null, 'ROOT-2584', 'ROOT-2584', false),
+    ('2025-11-05 09:45:49.831000', NULL, '2584', 'NAMESPACE-2584', 'CLASS', 'LEVELONE-1-DISPLAY-NAME', '7a363843-f6e5-40af-a6b2-95252799b8c6', 'a39ed27b-6431-475c-8a42-c3d758887a1f', 'LEVELONE-1', 'ROOT-2584/LEVELONE-1', false),
     -- 2303 labels (for test07 update with different classification siblings)
-    ('2025-12-01 10:00:00.000000', NULL, '2303', 'NAMESPACE-1', 'SAME_CLASS', 'Label A', 'b1a2c3d4-e5f6-7890-abcd-ef1234567890', NULL, 'LABEL_A', 'LABEL_A'),
-    ('2025-12-01 10:00:00.000000', NULL, '2303', 'NAMESPACE-1', 'SAME_SUB_CLASS', 'Child A1', 'c2b3d4e5-f6a7-8901-bcde-f12345678901', 'b1a2c3d4-e5f6-7890-abcd-ef1234567890', 'CHILD_A1', 'LABEL_A/CHILD_A1'),
-    ('2025-12-01 10:00:00.000000', NULL, '2303', 'NAMESPACE-1', 'SAME_SUB_CLASS', 'Child A2', 'd3c4e5f6-a7b8-9012-cdef-123456789012', 'b1a2c3d4-e5f6-7890-abcd-ef1234567890', 'CHILD_A2', 'LABEL_A/CHILD_A2'),
-    ('2025-12-01 10:00:00.000000', NULL, '2303', 'NAMESPACE-1', 'SAME_CLASS', 'Label B', 'e4d5f6a7-b8c9-0123-defa-234567890123', NULL, 'LABEL_B', 'LABEL_B'),
+    ('2025-12-01 10:00:00.000000', NULL, '2303', 'NAMESPACE-1', 'SAME_CLASS', 'Label A', 'b1a2c3d4-e5f6-7890-abcd-ef1234567890', NULL, 'LABEL_A', 'LABEL_A', false),
+    ('2025-12-01 10:00:00.000000', NULL, '2303', 'NAMESPACE-1', 'SAME_SUB_CLASS', 'Child A1', 'c2b3d4e5-f6a7-8901-bcde-f12345678901', 'b1a2c3d4-e5f6-7890-abcd-ef1234567890', 'CHILD_A1', 'LABEL_A/CHILD_A1', false),
+    ('2025-12-01 10:00:00.000000', NULL, '2303', 'NAMESPACE-1', 'SAME_SUB_CLASS', 'Child A2', 'd3c4e5f6-a7b8-9012-cdef-123456789012', 'b1a2c3d4-e5f6-7890-abcd-ef1234567890', 'CHILD_A2', 'LABEL_A/CHILD_A2', false),
+    ('2025-12-01 10:00:00.000000', NULL, '2303', 'NAMESPACE-1', 'SAME_CLASS', 'Label B', 'e4d5f6a7-b8c9-0123-defa-234567890123', NULL, 'LABEL_B', 'LABEL_B', false),
     -- 2309 NAMESPACE-2 labels (for test08/test09 - update labels that removes root/child)
-    ('2025-12-01 10:00:00.000000', NULL, '2309', 'NAMESPACE-2', 'CATEGORY', 'Root A', 'aaa00001-0000-0000-0000-000000000001', NULL, 'ROOT_A', 'ROOT_A'),
-    ('2025-12-01 10:00:00.000000', NULL, '2309', 'NAMESPACE-2', 'TYPE', 'Child A1', 'aaa00001-0000-0000-0000-000000000002', 'aaa00001-0000-0000-0000-000000000001', 'CHILD_A1', 'ROOT_A/CHILD_A1'),
-    ('2025-12-01 10:00:00.000000', NULL, '2309', 'NAMESPACE-2', 'SUBTYPE', 'Grandchild A1a', 'aaa00001-0000-0000-0000-000000000003', 'aaa00001-0000-0000-0000-000000000002', 'GRANDCHILD_A1A', 'ROOT_A/CHILD_A1/GRANDCHILD_A1A'),
-    ('2025-12-01 10:00:00.000000', NULL, '2309', 'NAMESPACE-2', 'TYPE', 'Child A2', 'aaa00001-0000-0000-0000-000000000004', 'aaa00001-0000-0000-0000-000000000001', 'CHILD_A2', 'ROOT_A/CHILD_A2'),
-    ('2025-12-01 10:00:00.000000', NULL, '2309', 'NAMESPACE-2', 'CATEGORY', 'Root B', 'aaa00001-0000-0000-0000-000000000005', NULL, 'ROOT_B', 'ROOT_B');
+    ('2025-12-01 10:00:00.000000', NULL, '2309', 'NAMESPACE-2', 'CATEGORY', 'Root A', 'aaa00001-0000-0000-0000-000000000001', NULL, 'ROOT_A', 'ROOT_A', false),
+    ('2025-12-01 10:00:00.000000', NULL, '2309', 'NAMESPACE-2', 'TYPE', 'Child A1', 'aaa00001-0000-0000-0000-000000000002', 'aaa00001-0000-0000-0000-000000000001', 'CHILD_A1', 'ROOT_A/CHILD_A1', false),
+    ('2025-12-01 10:00:00.000000', NULL, '2309', 'NAMESPACE-2', 'SUBTYPE', 'Grandchild A1a', 'aaa00001-0000-0000-0000-000000000003', 'aaa00001-0000-0000-0000-000000000002', 'GRANDCHILD_A1A', 'ROOT_A/CHILD_A1/GRANDCHILD_A1A', false),
+    ('2025-12-01 10:00:00.000000', NULL, '2309', 'NAMESPACE-2', 'TYPE', 'Child A2', 'aaa00001-0000-0000-0000-000000000004', 'aaa00001-0000-0000-0000-000000000001', 'CHILD_A2', 'ROOT_A/CHILD_A2', false),
+    ('2025-12-01 10:00:00.000000', NULL, '2309', 'NAMESPACE-2', 'CATEGORY', 'Root B', 'aaa00001-0000-0000-0000-000000000005', NULL, 'ROOT_B', 'ROOT_B', false);
 
 -- -----------------------------------
 -- Validation
@@ -353,13 +353,13 @@ VALUES (0, 0, '2023-12-31 23:59:59.999', '2024-12-31 23:59:59.999', '2023-12-31 
         'created_by-3', 'description-1-a', '1be673c0-6ba3-4fb0-af4a-43acf23389f6',
         '3cbf033d-b97b-464d-9411-c774b1f1cd3e', '2281', 'NAMESPACE-1', 'owner_full_name-3', 'owner_id-3', 'type-3');
 
-INSERT INTO contact_reason(id, reason, display_name, municipality_id, namespace, created, modified)
-VALUES ('c0000000-0000-0000-0000-000000000123', 'reason1', 'Reason 1', '2281', 'CONTACTCENTER', '2023-12-31 23:59:59.999', '2023-12-31 23:59:59.999'),
-       ('c0000000-0000-0000-0000-000000000124', 'reason2', 'Reason 2', '2281', 'CONTACTCENTER', '2023-12-31 23:59:59.999', '2023-12-31 23:59:59.999'),
-       ('c0000000-0000-0000-0000-000000000127', 'reason3', 'Reason 3', '2281', 'CONTACTCENTER', '2023-12-31 23:59:59.999', '2023-12-31 23:59:59.999'),
-       ('c0000000-0000-0000-0000-000000000125', 'reason3', 'Reason 3', '2281', 'namespace_2', '2023-12-31 23:59:59.999', '2023-12-31 23:59:59.999'),
-       ('c0000000-0000-0000-0000-000000000126', 'reason4', 'Reason 4', '2281', 'namespace_2', '2023-12-31 23:59:59.999', '2023-12-31 23:59:59.999'),
-       ('c0000000-0000-0000-0000-000000000128', 'reason5', 'Reason 5', '2281', 'NAMESPACE-1', '2023-12-31 23:59:59.999', '2023-12-31 23:59:59.999');
+INSERT INTO contact_reason(id, reason, display_name, municipality_id, namespace, created, modified, deprecated)
+VALUES ('c0000000-0000-0000-0000-000000000123', 'reason1', 'Reason 1', '2281', 'CONTACTCENTER', '2023-12-31 23:59:59.999', '2023-12-31 23:59:59.999', false),
+       ('c0000000-0000-0000-0000-000000000124', 'reason2', 'Reason 2', '2281', 'CONTACTCENTER', '2023-12-31 23:59:59.999', '2023-12-31 23:59:59.999', false),
+       ('c0000000-0000-0000-0000-000000000127', 'reason3', 'Reason 3', '2281', 'CONTACTCENTER', '2023-12-31 23:59:59.999', '2023-12-31 23:59:59.999', false),
+       ('c0000000-0000-0000-0000-000000000125', 'reason3', 'Reason 3', '2281', 'namespace_2', '2023-12-31 23:59:59.999', '2023-12-31 23:59:59.999', false),
+       ('c0000000-0000-0000-0000-000000000126', 'reason4', 'Reason 4', '2281', 'namespace_2', '2023-12-31 23:59:59.999', '2023-12-31 23:59:59.999', false),
+       ('c0000000-0000-0000-0000-000000000128', 'reason5', 'Reason 5', '2281', 'NAMESPACE-1', '2023-12-31 23:59:59.999', '2023-12-31 23:59:59.999', false);
 
 -- -----------------------------------
 -- Email integration config
@@ -495,12 +495,12 @@ VALUES ('1', '2281', 'external-namespace-1', true, 11, '2025-08-11 23:59:59.999'
 -- -----------------------------------
 -- Phases
 -- -----------------------------------
-INSERT INTO phase(id, municipality_id, namespace, name, display_name, description, phase_order, created, modified)
-VALUES ('a1b2c3d4-1111-2222-3333-444455556666', '2281', 'NAMESPACE-1', 'REGISTRATION', 'Registrering', 'Fas för registrering', 0, '2023-01-01 12:00:00.000', null),
-       ('b2c3d4e5-1111-2222-3333-444455556666', '2281', 'NAMESPACE-1', 'INVESTIGATION', 'Utredning', 'Fas för utredning', 1, '2023-01-01 12:00:00.000', null),
-       ('c3d4e5f6-1111-2222-3333-444455556666', '2281', 'NAMESPACE-1', 'DECISION', 'Beslut', 'Fas för beslut', 2, '2023-01-01 12:00:00.000', null),
-       ('d4e5f6a7-1111-2222-3333-444455556666', '2281', 'CONTACTCENTER', 'INTAKE', 'Intag', 'Fas för intag', 0, '2023-01-01 12:00:00.000', null),
-       ('e5f6a7b8-1111-2222-3333-444455556666', '2281', 'CONTACTCENTER', 'PROCESSING', 'Handläggning', 'Fas för handläggning', 1, '2023-01-01 12:00:00.000', null);
+INSERT INTO phase(id, municipality_id, namespace, name, display_name, description, phase_order, created, modified, deprecated)
+VALUES ('a1b2c3d4-1111-2222-3333-444455556666', '2281', 'NAMESPACE-1', 'REGISTRATION', 'Registrering', 'Fas för registrering', 0, '2023-01-01 12:00:00.000', null, false),
+       ('b2c3d4e5-1111-2222-3333-444455556666', '2281', 'NAMESPACE-1', 'INVESTIGATION', 'Utredning', 'Fas för utredning', 1, '2023-01-01 12:00:00.000', null, false),
+       ('c3d4e5f6-1111-2222-3333-444455556666', '2281', 'NAMESPACE-1', 'DECISION', 'Beslut', 'Fas för beslut', 2, '2023-01-01 12:00:00.000', null, false),
+       ('d4e5f6a7-1111-2222-3333-444455556666', '2281', 'CONTACTCENTER', 'INTAKE', 'Intag', 'Fas för intag', 0, '2023-01-01 12:00:00.000', null, false),
+       ('e5f6a7b8-1111-2222-3333-444455556666', '2281', 'CONTACTCENTER', 'PROCESSING', 'Handläggning', 'Fas för handläggning', 1, '2023-01-01 12:00:00.000', null, false);
 
 INSERT INTO phase_allowed_status(phase_id, status, status_order)
 VALUES ('a1b2c3d4-1111-2222-3333-444455556666', 'NEW', 0),
@@ -509,11 +509,11 @@ VALUES ('a1b2c3d4-1111-2222-3333-444455556666', 'NEW', 0),
        ('b2c3d4e5-1111-2222-3333-444455556666', 'WAITING', 1),
        ('c3d4e5f6-1111-2222-3333-444455556666', 'CLOSED', 0);
 
-INSERT INTO phase_transition(id, phase_id, target_phase_id, description)
-VALUES ('11111111-aaaa-bbbb-cccc-ddddeeee0001', 'a1b2c3d4-1111-2222-3333-444455556666', 'b2c3d4e5-1111-2222-3333-444455556666', 'Skicka till utredning'),
-       ('11111111-aaaa-bbbb-cccc-ddddeeee0003', 'a1b2c3d4-1111-2222-3333-444455556666', 'c3d4e5f6-1111-2222-3333-444455556666', 'Skicka direkt till beslut'),
-       ('11111111-aaaa-bbbb-cccc-ddddeeee0002', 'b2c3d4e5-1111-2222-3333-444455556666', 'c3d4e5f6-1111-2222-3333-444455556666', 'Skicka till beslut'),
-       ('11111111-aaaa-bbbb-cccc-ddddeeee0004', 'b2c3d4e5-1111-2222-3333-444455556666', 'a1b2c3d4-1111-2222-3333-444455556666', 'Skicka tillbaka till registrering');
+INSERT INTO phase_transition(id, phase_id, target_phase_id, description, deprecated)
+VALUES ('11111111-aaaa-bbbb-cccc-ddddeeee0001', 'a1b2c3d4-1111-2222-3333-444455556666', 'b2c3d4e5-1111-2222-3333-444455556666', 'Skicka till utredning', false),
+       ('11111111-aaaa-bbbb-cccc-ddddeeee0003', 'a1b2c3d4-1111-2222-3333-444455556666', 'c3d4e5f6-1111-2222-3333-444455556666', 'Skicka direkt till beslut', false),
+       ('11111111-aaaa-bbbb-cccc-ddddeeee0002', 'b2c3d4e5-1111-2222-3333-444455556666', 'c3d4e5f6-1111-2222-3333-444455556666', 'Skicka till beslut', false),
+       ('11111111-aaaa-bbbb-cccc-ddddeeee0004', 'b2c3d4e5-1111-2222-3333-444455556666', 'a1b2c3d4-1111-2222-3333-444455556666', 'Skicka tillbaka till registrering', false);
 
 -- -----------------------------------
 -- Errand Phases (errand -> phase reference)
