@@ -11,7 +11,6 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import java.util.List;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -23,7 +22,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 import se.sundsvall.dept44.common.validators.annotation.ValidMunicipalityId;
 import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 import se.sundsvall.dept44.problem.Problem;
@@ -31,11 +29,17 @@ import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.supportmanagement.api.model.subscriber.Subscriber;
 import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
 import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
+import se.sundsvall.supportmanagement.service.SubscriberService;
 
+import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpHeaders.LOCATION;
 import static org.springframework.http.MediaType.ALL_VALUE;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON_VALUE;
+import static org.springframework.http.ResponseEntity.created;
+import static org.springframework.http.ResponseEntity.noContent;
+import static org.springframework.http.ResponseEntity.ok;
+import static org.springframework.web.util.UriComponentsBuilder.fromPath;
 import static se.sundsvall.supportmanagement.Constants.NAMESPACE_REGEXP;
 import static se.sundsvall.supportmanagement.Constants.NAMESPACE_VALIDATION_MESSAGE;
 
@@ -49,7 +53,11 @@ import static se.sundsvall.supportmanagement.Constants.NAMESPACE_VALIDATION_MESS
 @ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 class SubscribersResource {
 
-	private static final String NOT_IMPLEMENTED_MESSAGE = "Service layer pending — endpoint not yet implemented";
+	private final SubscriberService service;
+
+	SubscribersResource(final SubscriberService service) {
+		this.service = service;
+	}
 
 	@GetMapping(produces = APPLICATION_JSON_VALUE)
 	@Operation(summary = "List subscribers", description = "List subscribers in the namespace. Optionally filter by identifier (both type and value must be provided together).", responses = {
@@ -61,7 +69,7 @@ class SubscribersResource {
 		@Parameter(name = "identifierType", description = "Optional filter — identifier type (adAccount or partyId). Must be combined with identifierValue.") @RequestParam(required = false) final String identifierType,
 		@Parameter(name = "identifierValue", description = "Optional filter — identifier value. Must be combined with identifierType.") @RequestParam(required = false) final String identifierValue) {
 
-		throw new ResponseStatusException(HttpStatus.NOT_IMPLEMENTED, NOT_IMPLEMENTED_MESSAGE);
+		return ok(service.findSubscribers(municipalityId, namespace, identifierType, identifierValue));
 	}
 
 	@GetMapping(path = "/{subscriberId}", produces = APPLICATION_JSON_VALUE)
@@ -74,7 +82,7 @@ class SubscribersResource {
 		@Parameter(name = "municipalityId", description = "Municipality ID", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "subscriberId", description = "Subscriber ID", example = "123e4567-e89b-12d3-a456-426614174000") @ValidUuid @PathVariable final String subscriberId) {
 
-		throw new ResponseStatusException(HttpStatus.NOT_IMPLEMENTED, NOT_IMPLEMENTED_MESSAGE);
+		return ok(service.findSubscriber(municipalityId, namespace, subscriberId));
 	}
 
 	@Validated(OnCreate.class)
@@ -90,7 +98,11 @@ class SubscribersResource {
 		@Parameter(name = "municipalityId", description = "Municipality ID", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Valid @NotNull @RequestBody final Subscriber subscriber) {
 
-		throw new ResponseStatusException(HttpStatus.NOT_IMPLEMENTED, NOT_IMPLEMENTED_MESSAGE);
+		final var id = service.createSubscriber(municipalityId, namespace, subscriber);
+		return created(fromPath("/{municipalityId}/{namespace}/subscribers/{id}")
+			.buildAndExpand(municipalityId, namespace, id).toUri())
+			.header(CONTENT_TYPE, ALL_VALUE)
+			.build();
 	}
 
 	@Validated(OnUpdate.class)
@@ -108,7 +120,7 @@ class SubscribersResource {
 		@Parameter(name = "subscriberId", description = "Subscriber ID", example = "123e4567-e89b-12d3-a456-426614174000") @ValidUuid @PathVariable final String subscriberId,
 		@Valid @NotNull @RequestBody final Subscriber subscriber) {
 
-		throw new ResponseStatusException(HttpStatus.NOT_IMPLEMENTED, NOT_IMPLEMENTED_MESSAGE);
+		return ok(service.updateSubscriber(municipalityId, namespace, subscriberId, subscriber));
 	}
 
 	@DeleteMapping(path = "/{subscriberId}", produces = ALL_VALUE)
@@ -121,6 +133,9 @@ class SubscribersResource {
 		@Parameter(name = "municipalityId", description = "Municipality ID", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "subscriberId", description = "Subscriber ID", example = "123e4567-e89b-12d3-a456-426614174000") @ValidUuid @PathVariable final String subscriberId) {
 
-		throw new ResponseStatusException(HttpStatus.NOT_IMPLEMENTED, NOT_IMPLEMENTED_MESSAGE);
+		service.deleteSubscriber(municipalityId, namespace, subscriberId);
+		return noContent()
+			.header(CONTENT_TYPE, ALL_VALUE)
+			.build();
 	}
 }

@@ -19,4 +19,6 @@ public interface SubscriptionRepository extends JpaRepository<SubscriptionEntity
 	boolean existsBySubscriberIdAndTargetTypeAndErrandId(String subscriberId, SubscriptionTargetType targetType, String errandId);
 
 	boolean existsBySubscriberIdAndTargetTypeAndErrandIsNull(String subscriberId, SubscriptionTargetType targetType);
+
+	long countBySubscriberId(String subscriberId);
 }
