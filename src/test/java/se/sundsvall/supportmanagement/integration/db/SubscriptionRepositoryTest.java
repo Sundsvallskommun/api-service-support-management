@@ -12,11 +12,13 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.EventFilterEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.IdentifierEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
+import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberSubscriptionCount;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionTargetType;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase.Replace.NONE;
 
 @DataJpaTest
@@ -216,6 +218,62 @@ class SubscriptionRepositoryTest {
 		// Act + Assert
 		assertThatThrownBy(() -> subscriptionRepository.saveAndFlush(subscription))
 			.isInstanceOf(DataIntegrityViolationException.class);
+	}
+
+	@Test
+	void countBySubscriberId() {
+
+		// Act + Assert — fixture: subscriber-id-1 has 2 subscriptions, subscriber-id-2 has 1, subscriber-id-3 has 0
+		assertThat(subscriptionRepository.countBySubscriberId("subscriber-id-1")).isEqualTo(2);
+		assertThat(subscriptionRepository.countBySubscriberId("subscriber-id-2")).isEqualTo(1);
+		assertThat(subscriptionRepository.countBySubscriberId("subscriber-id-3")).isZero();
+		assertThat(subscriptionRepository.countBySubscriberId("does-not-exist")).isZero();
+	}
+
+	@Test
+	void countBySubscriberIdInReturnsCountsForGivenSubscribers() {
+
+		// Act — covers a subscriber with multiple subs and a subscriber with one sub
+		final var result = subscriptionRepository.countBySubscriberIdIn(List.of("subscriber-id-1", "subscriber-id-2"));
+
+		// Assert
+		assertThat(result)
+			.extracting(SubscriberSubscriptionCount::subscriberId, SubscriberSubscriptionCount::count)
+			.containsExactlyInAnyOrder(
+				tuple("subscriber-id-1", 2L),
+				tuple("subscriber-id-2", 1L));
+	}
+
+	@Test
+	void countBySubscriberIdInSkipsSubscribersWithoutSubscriptions() {
+
+		// Act — subscriber-id-3 has no subscriptions, must not show up in the result
+		final var result = subscriptionRepository.countBySubscriberIdIn(List.of("subscriber-id-1", "subscriber-id-3"));
+
+		// Assert
+		assertThat(result)
+			.extracting(SubscriberSubscriptionCount::subscriberId, SubscriberSubscriptionCount::count)
+			.containsExactly(tuple("subscriber-id-1", 2L));
+	}
+
+	@Test
+	void countBySubscriberIdInWithEmptyListReturnsEmpty() {
+
+		// Act
+		final var result = subscriptionRepository.countBySubscriberIdIn(List.of());
+
+		// Assert
+		assertThat(result).isEmpty();
+	}
+
+	@Test
+	void countBySubscriberIdInWithUnknownIdsReturnsEmpty() {
+
+		// Act
+		final var result = subscriptionRepository.countBySubscriberIdIn(List.of("does-not-exist-1", "does-not-exist-2"));
+
+		// Assert
+		assertThat(result).isEmpty();
 	}
 
 	@Test

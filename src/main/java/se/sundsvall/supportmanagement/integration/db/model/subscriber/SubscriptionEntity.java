@@ -33,8 +33,10 @@ import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 @Entity
 @Table(name = "subscription",
 	indexes = {
-		@Index(name = "idx_subscription_subscriber_id", columnList = "subscriber_id"),
-		@Index(name = "idx_subscription_errand_id", columnList = "errand_id")
+		@Index(name = "idx_subscription_errand_id", columnList = "errand_id"),
+		// Covers all queries that filter by subscriber_id alone (subscriber_id is the leading column),
+		// so a separate idx_subscription_subscriber_id index would be redundant.
+		@Index(name = "idx_subscription_subscriber_target", columnList = "subscriber_id, target_type, errand_id")
 	})
 public class SubscriptionEntity {
 

@@ -834,11 +834,11 @@
     alter table if exists subscriber 
        add constraint uq_subscriber_municipality_namespace_identifier_name unique (municipality_id, namespace, identifier_type, identifier_value, name);
 
-    create index idx_subscription_subscriber_id 
-       on subscription (subscriber_id);
-
-    create index idx_subscription_errand_id 
+    create index idx_subscription_errand_id
        on subscription (errand_id);
+
+    create index idx_subscription_subscriber_target
+       on subscription (subscriber_id, target_type, errand_id);
 
     alter table if exists `type` 
        add constraint uq_category_id_name unique (category_id, name);

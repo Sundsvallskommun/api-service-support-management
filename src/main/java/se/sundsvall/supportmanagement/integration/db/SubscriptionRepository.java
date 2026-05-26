@@ -1,9 +1,13 @@
 package se.sundsvall.supportmanagement.integration.db;
 
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberSubscriptionCount;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionTargetType;
 
@@ -19,4 +23,14 @@ public interface SubscriptionRepository extends JpaRepository<SubscriptionEntity
 	boolean existsBySubscriberIdAndTargetTypeAndErrandId(String subscriberId, SubscriptionTargetType targetType, String errandId);
 
 	boolean existsBySubscriberIdAndTargetTypeAndErrandIsNull(String subscriberId, SubscriptionTargetType targetType);
+
+	long countBySubscriberId(String subscriberId);
+
+	@Query("""
+		select new se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberSubscriptionCount(s.subscriber.id, count(s))
+		from SubscriptionEntity s
+		where s.subscriber.id in :subscriberIds
+		group by s.subscriber.id
+		""")
+	List<SubscriberSubscriptionCount> countBySubscriberIdIn(@Param("subscriberIds") Collection<String> subscriberIds);
 }
