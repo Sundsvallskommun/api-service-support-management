@@ -43,7 +43,7 @@ public final class SubscriptionMapper {
 			.orElse(null);
 	}
 
-	public static SubscriptionTargetType toApiTargetType(final se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionTargetType dbType) {
+	static SubscriptionTargetType toApiTargetType(final se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionTargetType dbType) {
 		return Optional.ofNullable(dbType)
 			.map(t -> SubscriptionTargetType.valueOf(t.name()))
 			.orElse(null);

@@ -12,6 +12,7 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.identifier.Identifier;
 import se.sundsvall.supportmanagement.api.model.subscriber.Subscriber;
@@ -19,10 +20,12 @@ import se.sundsvall.supportmanagement.integration.db.SubscriberRepository;
 import se.sundsvall.supportmanagement.integration.db.SubscriptionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.IdentifierEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
+import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberSubscriptionCount;
 
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -68,7 +71,8 @@ class SubscriberServiceTest {
 		final var entity = SubscriberEntity.create().withId(randomUUID().toString()).withName("a")
 			.withIdentifier(IdentifierEmbeddable.create().withType("adAccount").withValue("joe01doe"));
 		when(subscriberRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of(entity));
-		when(subscriptionRepositoryMock.countBySubscriberId(entity.getId())).thenReturn(3L);
+		when(subscriptionRepositoryMock.countBySubscriberIdIn(List.of(entity.getId())))
+			.thenReturn(List.of(count(entity.getId(), 3L)));
 
 		final var result = service.findSubscribers(MUNICIPALITY_ID, NAMESPACE, null, null);
 
@@ -76,8 +80,30 @@ class SubscriberServiceTest {
 		assertThat(result.getFirst().getId()).isEqualTo(entity.getId());
 		assertThat(result.getFirst().getSubscriptionCount()).isEqualTo(3);
 		verify(subscriberRepositoryMock).findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID);
-		verify(subscriptionRepositoryMock).countBySubscriberId(entity.getId());
+		verify(subscriptionRepositoryMock).countBySubscriberIdIn(List.of(entity.getId()));
 		verifyNoMoreInteractions(subscriberRepositoryMock, subscriptionRepositoryMock);
+	}
+
+	@Test
+	void findSubscribersDefaultsMissingCountToZero() {
+		final var entityWithSubs = SubscriberEntity.create().withId("with").withName("a")
+			.withIdentifier(IdentifierEmbeddable.create().withType("adAccount").withValue("a"));
+		final var entityWithoutSubs = SubscriberEntity.create().withId("without").withName("b")
+			.withIdentifier(IdentifierEmbeddable.create().withType("adAccount").withValue("b"));
+		when(subscriberRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID))
+			.thenReturn(List.of(entityWithSubs, entityWithoutSubs));
+		// Projection skips subscribers without subscriptions — service must default missing entries to 0
+		when(subscriptionRepositoryMock.countBySubscriberIdIn(List.of("with", "without")))
+			.thenReturn(List.of(count("with", 2L)));
+
+		final var result = service.findSubscribers(MUNICIPALITY_ID, NAMESPACE, null, null);
+
+		assertThat(result).extracting(Subscriber::getId, Subscriber::getSubscriptionCount)
+			.containsExactly(tuple("with", 2), tuple("without", 0));
+	}
+
+	private static SubscriberSubscriptionCount count(final String subscriberId, final long count) {
+		return new SubscriberSubscriptionCount(subscriberId, count);
 	}
 
 	@Test
@@ -147,14 +173,14 @@ class SubscriberServiceTest {
 		final var newId = randomUUID().toString();
 		when(subscriberRepositoryMock.existsByNamespaceAndMunicipalityIdAndIdentifierTypeAndIdentifierValueAndName(
 			NAMESPACE, MUNICIPALITY_ID, "adAccount", "joe01doe", "Servicedesk")).thenReturn(false);
-		when(subscriberRepositoryMock.save(any(SubscriberEntity.class))).thenAnswer(inv -> inv.<SubscriberEntity>getArgument(0).withId(newId));
+		when(subscriberRepositoryMock.saveAndFlush(any(SubscriberEntity.class))).thenAnswer(inv -> inv.<SubscriberEntity>getArgument(0).withId(newId));
 
 		final var result = service.createSubscriber(MUNICIPALITY_ID, NAMESPACE, dto);
 
 		assertThat(result).isEqualTo(newId);
 		verify(subscriberRepositoryMock).existsByNamespaceAndMunicipalityIdAndIdentifierTypeAndIdentifierValueAndName(
 			NAMESPACE, MUNICIPALITY_ID, "adAccount", "joe01doe", "Servicedesk");
-		verify(subscriberRepositoryMock).save(entityCaptor.capture());
+		verify(subscriberRepositoryMock).saveAndFlush(entityCaptor.capture());
 		final var saved = entityCaptor.getValue();
 		assertThat(saved.getMunicipalityId()).isEqualTo(MUNICIPALITY_ID);
 		assertThat(saved.getNamespace()).isEqualTo(NAMESPACE);
@@ -171,14 +197,14 @@ class SubscriberServiceTest {
 	void createSubscriberSkipsConflictCheckWhenNameIsNull() {
 		final var dto = Subscriber.create()
 			.withIdentifier(Identifier.create().withType("adAccount").withValue("joe01doe"));
-		when(subscriberRepositoryMock.save(any(SubscriberEntity.class)))
+		when(subscriberRepositoryMock.saveAndFlush(any(SubscriberEntity.class)))
 			.thenAnswer(inv -> inv.<SubscriberEntity>getArgument(0).withId(randomUUID().toString()));
 
 		service.createSubscriber(MUNICIPALITY_ID, NAMESPACE, dto);
 
 		verify(subscriberRepositoryMock, never()).existsByNamespaceAndMunicipalityIdAndIdentifierTypeAndIdentifierValueAndName(
 			any(), any(), any(), any(), any());
-		verify(subscriberRepositoryMock).save(any(SubscriberEntity.class));
+		verify(subscriberRepositoryMock).saveAndFlush(any(SubscriberEntity.class));
 		verifyNoMoreInteractions(subscriberRepositoryMock);
 		verifyNoInteractions(subscriptionRepositoryMock);
 	}
@@ -197,7 +223,7 @@ class SubscriberServiceTest {
 
 		verify(subscriberRepositoryMock).existsByNamespaceAndMunicipalityIdAndIdentifierTypeAndIdentifierValueAndName(
 			NAMESPACE, MUNICIPALITY_ID, "adAccount", "joe01doe", "Servicedesk");
-		verify(subscriberRepositoryMock, never()).save(any());
+		verify(subscriberRepositoryMock, never()).saveAndFlush(any());
 		verifyNoMoreInteractions(subscriberRepositoryMock);
 		verifyNoInteractions(subscriptionRepositoryMock);
 	}
@@ -209,7 +235,7 @@ class SubscriberServiceTest {
 			.withMunicipalityId(MUNICIPALITY_ID).withNamespace(NAMESPACE)
 			.withIdentifier(IdentifierEmbeddable.create().withType("adAccount").withValue("joe01doe"));
 		when(subscriberRepositoryMock.findByIdAndNamespaceAndMunicipalityId(id, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(existing));
-		when(subscriberRepositoryMock.save(any(SubscriberEntity.class))).thenAnswer(inv -> inv.getArgument(0));
+		when(subscriberRepositoryMock.saveAndFlush(any(SubscriberEntity.class))).thenAnswer(inv -> inv.getArgument(0));
 		when(subscriptionRepositoryMock.countBySubscriberId(id)).thenReturn(0L);
 
 		final var patch = Subscriber.create().withName("new");
@@ -217,7 +243,7 @@ class SubscriberServiceTest {
 
 		assertThat(result.getName()).isEqualTo("new");
 		verify(subscriberRepositoryMock).findByIdAndNamespaceAndMunicipalityId(id, NAMESPACE, MUNICIPALITY_ID);
-		verify(subscriberRepositoryMock).save(entityCaptor.capture());
+		verify(subscriberRepositoryMock).saveAndFlush(entityCaptor.capture());
 		verify(subscriptionRepositoryMock).countBySubscriberId(id);
 		assertThat(entityCaptor.getValue().getName()).isEqualTo("new");
 		// Identifier untouched
@@ -235,7 +261,84 @@ class SubscriberServiceTest {
 			.extracting("status").isEqualTo(NOT_FOUND);
 
 		verify(subscriberRepositoryMock).findByIdAndNamespaceAndMunicipalityId(id, NAMESPACE, MUNICIPALITY_ID);
-		verify(subscriberRepositoryMock, never()).save(any());
+		verify(subscriberRepositoryMock, never()).saveAndFlush(any());
+		verifyNoMoreInteractions(subscriberRepositoryMock);
+		verifyNoInteractions(subscriptionRepositoryMock);
+	}
+
+	@Test
+	void createSubscriberRejectsInvertedPauseWindow() {
+		final var dto = Subscriber.create()
+			.withIdentifier(Identifier.create().withType("adAccount").withValue("joe01doe"))
+			.withPausedFrom(OffsetDateTime.parse("2026-06-30T00:00:00+02:00"))
+			.withPausedUntil(OffsetDateTime.parse("2026-06-01T00:00:00+02:00"));
+
+		assertThatThrownBy(() -> service.createSubscriber(MUNICIPALITY_ID, NAMESPACE, dto))
+			.isInstanceOf(Problem.class)
+			.extracting("status").isEqualTo(BAD_REQUEST);
+
+		verify(subscriberRepositoryMock, never()).saveAndFlush(any());
+		verifyNoInteractions(subscriptionRepositoryMock);
+	}
+
+	@Test
+	void updateSubscriberRejectsInvertedPauseWindow() {
+		final var id = randomUUID().toString();
+		final var existing = SubscriberEntity.create().withId(id).withName("a")
+			.withMunicipalityId(MUNICIPALITY_ID).withNamespace(NAMESPACE)
+			.withIdentifier(IdentifierEmbeddable.create().withType("adAccount").withValue("joe01doe"))
+			.withPausedFrom(OffsetDateTime.parse("2026-06-01T00:00:00+02:00"));
+		when(subscriberRepositoryMock.findByIdAndNamespaceAndMunicipalityId(id, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(existing));
+
+		final var patch = Subscriber.create().withPausedUntil(OffsetDateTime.parse("2026-05-15T00:00:00+02:00"));
+
+		assertThatThrownBy(() -> service.updateSubscriber(MUNICIPALITY_ID, NAMESPACE, id, patch))
+			.isInstanceOf(Problem.class)
+			.extracting("status").isEqualTo(BAD_REQUEST);
+
+		verify(subscriberRepositoryMock).findByIdAndNamespaceAndMunicipalityId(id, NAMESPACE, MUNICIPALITY_ID);
+		verify(subscriberRepositoryMock, never()).saveAndFlush(any());
+		verifyNoMoreInteractions(subscriberRepositoryMock);
+		verifyNoInteractions(subscriptionRepositoryMock);
+	}
+
+	@Test
+	void createSubscriberRaceTranslatesDbViolationToConflict() {
+		// Two concurrent creates may both pass rejectDuplicate (existsBy) before either saves.
+		// The losing transaction hits the unique constraint at flush — we must translate to 409, not 500.
+		final var dto = Subscriber.create()
+			.withName("Servicedesk")
+			.withIdentifier(Identifier.create().withType("adAccount").withValue("joe01doe"));
+		when(subscriberRepositoryMock.existsByNamespaceAndMunicipalityIdAndIdentifierTypeAndIdentifierValueAndName(
+			NAMESPACE, MUNICIPALITY_ID, "adAccount", "joe01doe", "Servicedesk")).thenReturn(false);
+		when(subscriberRepositoryMock.saveAndFlush(any(SubscriberEntity.class)))
+			.thenThrow(new DataIntegrityViolationException("uq_subscriber_municipality_namespace_identifier_name"));
+
+		assertThatThrownBy(() -> service.createSubscriber(MUNICIPALITY_ID, NAMESPACE, dto))
+			.isInstanceOf(Problem.class)
+			.extracting("status").isEqualTo(CONFLICT);
+	}
+
+	@Test
+	void updateSubscriberToDuplicateNameTranslatesDbViolationToConflict() {
+		// PATCH does not pre-check uniqueness, so a name collision only surfaces at flush.
+		// Must surface as 409 to the client, not 500.
+		final var id = randomUUID().toString();
+		final var existing = SubscriberEntity.create().withId(id).withName("old")
+			.withMunicipalityId(MUNICIPALITY_ID).withNamespace(NAMESPACE)
+			.withIdentifier(IdentifierEmbeddable.create().withType("adAccount").withValue("joe01doe"));
+		when(subscriberRepositoryMock.findByIdAndNamespaceAndMunicipalityId(id, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(existing));
+		when(subscriberRepositoryMock.saveAndFlush(any(SubscriberEntity.class)))
+			.thenThrow(new DataIntegrityViolationException("uq_subscriber_municipality_namespace_identifier_name"));
+
+		final var patch = Subscriber.create().withName("conflicting");
+
+		assertThatThrownBy(() -> service.updateSubscriber(MUNICIPALITY_ID, NAMESPACE, id, patch))
+			.isInstanceOf(Problem.class)
+			.extracting("status").isEqualTo(CONFLICT);
+
+		verify(subscriberRepositoryMock).findByIdAndNamespaceAndMunicipalityId(id, NAMESPACE, MUNICIPALITY_ID);
+		verify(subscriberRepositoryMock).saveAndFlush(any(SubscriberEntity.class));
 		verifyNoMoreInteractions(subscriberRepositoryMock);
 		verifyNoInteractions(subscriptionRepositoryMock);
 	}

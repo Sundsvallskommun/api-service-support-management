@@ -79,15 +79,14 @@ class SubscriberMapperTest {
 	}
 
 	@Test
-	void toSubscriberWithoutCountSetsNull() {
+	void toSubscriberWithNullCountLeavesFieldUnset() {
 		final var entity = SubscriberEntity.create().withId("id-1");
-		final var dto = SubscriberMapper.toSubscriber(entity);
+		final var dto = SubscriberMapper.toSubscriber(entity, null);
 		assertThat(dto.getSubscriptionCount()).isNull();
 	}
 
 	@Test
 	void toSubscriberReturnsNullForNullInput() {
-		assertThat(SubscriberMapper.toSubscriber(null)).isNull();
 		assertThat(SubscriberMapper.toSubscriber(null, 1L)).isNull();
 	}
 
@@ -138,6 +137,30 @@ class SubscriberMapperTest {
 		SubscriberMapper.applyPatch(entity, null);
 		SubscriberMapper.applyPatch(null, Subscriber.create().withName("b"));
 		assertThat(entity.getName()).isEqualTo("a");
+	}
+
+	@Test
+	void applyPatchSetsPauseWindow() {
+		final var entity = SubscriberEntity.create().withName("a");
+		final var from = OffsetDateTime.parse("2026-06-01T00:00:00+02:00");
+		final var until = OffsetDateTime.parse("2026-06-30T00:00:00+02:00");
+
+		SubscriberMapper.applyPatch(entity, Subscriber.create().withPausedFrom(from).withPausedUntil(until));
+
+		assertThat(entity.getPausedFrom()).isEqualTo(from);
+		assertThat(entity.getPausedUntil()).isEqualTo(until);
+	}
+
+	@Test
+	void applyPatchSetsOnlyPausedFromWhenUntilIsNull() {
+		final var existingUntil = OffsetDateTime.parse("2026-06-30T00:00:00+02:00");
+		final var entity = SubscriberEntity.create().withPausedUntil(existingUntil);
+		final var newFrom = OffsetDateTime.parse("2026-06-15T00:00:00+02:00");
+
+		SubscriberMapper.applyPatch(entity, Subscriber.create().withPausedFrom(newFrom));
+
+		assertThat(entity.getPausedFrom()).isEqualTo(newFrom);
+		assertThat(entity.getPausedUntil()).isEqualTo(existingUntil);
 	}
 
 	@Test

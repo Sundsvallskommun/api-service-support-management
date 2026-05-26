@@ -43,10 +43,6 @@ public final class SubscriberMapper {
 		Optional.ofNullable(patch.getPausedUntil()).ifPresent(entity::setPausedUntil);
 	}
 
-	public static Subscriber toSubscriber(final SubscriberEntity entity) {
-		return toSubscriber(entity, null);
-	}
-
 	public static Subscriber toSubscriber(final SubscriberEntity entity, final Long subscriptionCount) {
 		return Optional.ofNullable(entity)
 			.map(e -> Subscriber.create()

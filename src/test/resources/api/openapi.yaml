@@ -5,9 +5,9 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "14.6"
+  version: "14.5"
 servers:
-- url: http://localhost:61876
+- url: http://localhost:51758
   description: Generated server url
 tags:
 - name: Errand attachments
@@ -6551,7 +6551,7 @@ paths:
         schema:
           type: integer
           format: int32
-          maximum: 2147483647
+          maximum: 9223372036854775807
           minimum: 0
         example: 0
       - name: target
@@ -6561,7 +6561,7 @@ paths:
         schema:
           type: integer
           format: int32
-          maximum: 2147483647
+          maximum: 9223372036854775807
           minimum: 0
         example: 1
       - name: X-Request-Group-Id
@@ -6862,7 +6862,7 @@ paths:
         schema:
           type: integer
           format: int32
-          maximum: 2147483647
+          maximum: 9223372036854775807
           minimum: 0
         example: 0
       - name: target
@@ -6872,7 +6872,7 @@ paths:
         schema:
           type: integer
           format: int32
-          maximum: 2147483647
+          maximum: 9223372036854775807
           minimum: 0
         example: 1
       - name: X-Request-Group-Id
@@ -7714,16 +7714,16 @@ components:
     Problem:
       type: object
       properties:
-        title:
-          type: string
-        detail:
-          type: string
         instance:
           type: string
           format: uri
         type:
           type: string
           format: uri
+        title:
+          type: string
+        detail:
+          type: string
         status:
           type: integer
           format: int32
@@ -7742,13 +7742,13 @@ components:
             $ref: "#/components/schemas/Violation"
         title:
           type: string
+        instance:
+          type: string
+          format: uri
         causeAsProblem:
           $ref: "#/components/schemas/ThrowableProblem"
         detail:
           type: string
-        instance:
-          type: string
-          format: uri
     ThrowableProblem:
       type: object
       properties:
@@ -7804,7 +7804,7 @@ components:
           format: int32
           description: Time to live (in days) for notifications created in this namespace
           examples:
-          - 40
+          - "40"
         created:
           type: string
           format: date-time
@@ -7931,11 +7931,6 @@ components:
           - keycard
           minLength: 1
           pattern: "[A-Z0-9_]+"
-        deprecated:
-          type: boolean
-          default: false
-          examples:
-          - "true"
         labels:
           type: array
           items:
@@ -8030,6 +8025,7 @@ components:
           - <html><body>New errand is created.</body></html>
         daysOfInactivityBeforeReject:
           type:
+          - integer
           - string
           - "null"
           format: int32
@@ -8070,6 +8066,7 @@ components:
           - SOLVED
         addSenderAsStakeholder:
           type:
+          - boolean
           - string
           - "null"
           description: If true sender is added as stakeholder
@@ -8128,7 +8125,7 @@ components:
           format: int64
           description: Unique id
           examples:
-          - 1
+          - "1"
           readOnly: true
         namespace:
           type: string
@@ -8141,7 +8138,7 @@ components:
           format: int64
           description: Latest synced sequence number
           examples:
-          - 333
+          - "333"
           readOnly: true
         modified:
           type: string
@@ -8240,7 +8237,7 @@ components:
         identifier:
           $ref: "#/components/schemas/Identifier"
           description: Identifier of the principal that ultimately receives notifications
-            (AD-account or partyId).
+            (AD-account or partyId). Immutable once created.
         channels:
           type: array
           description: "Channels the subscriber wants to receive notifications on.\
@@ -8286,7 +8283,7 @@ components:
           format: int32
           description: Number of subscriptions currently owned by this subscriber
           examples:
-          - 3
+          - "3"
           readOnly: true
     Subscription:
       type: object
@@ -8387,12 +8384,7 @@ components:
           format: int32
           description: Sort order for the status
           examples:
-          - 1
-        deprecated:
-          type: boolean
-          default: false
-          examples:
-          - "true"
+          - "1"
         created:
           type: string
           format: date-time
@@ -8439,12 +8431,7 @@ components:
           format: int32
           description: Sort order for the role
           examples:
-          - 1
-        deprecated:
-          type: boolean
-          default: false
-          examples:
-          - "true"
+          - "1"
         created:
           type: string
           format: date-time
@@ -8492,13 +8479,12 @@ components:
           format: int32
           description: Order of the phase in the process (0 = initial phase)
           examples:
-          - 0
+          - "0"
         allowedStatuses:
           type: array
           description: Allowed statuses in this phase
           examples:
-          - - IN_PROGRESS
-            - WAITING
+          - "[\"IN_PROGRESS\", \"WAITING\"]"
           items:
             type: string
         transitions:
@@ -8507,11 +8493,6 @@ components:
           items:
             $ref: "#/components/schemas/PhaseTransition"
           readOnly: true
-        deprecated:
-          type: boolean
-          default: false
-          examples:
-          - "true"
         created:
           type: string
           format: date-time
@@ -8561,11 +8542,6 @@ components:
           description: Description of the transition
           examples:
           - Skicka till utredning
-        deprecated:
-          type: boolean
-          default: false
-          examples:
-          - "true"
       required:
       - targetPhaseId
     ExternalIdType:
@@ -8598,12 +8574,7 @@ components:
           format: int32
           description: Sort order for the external id type
           examples:
-          - 1
-        deprecated:
-          type: boolean
-          default: false
-          examples:
-          - "true"
+          - "1"
         created:
           type: string
           format: date-time
@@ -8650,12 +8621,7 @@ components:
           format: int32
           description: Sort order for the contact reason
           examples:
-          - 1
-        deprecated:
-          type: boolean
-          default: false
-          examples:
-          - "true"
+          - "1"
         created:
           type: string
           format: date-time
@@ -8699,12 +8665,7 @@ components:
           format: int32
           description: Sort order for the category
           examples:
-          - 1
-        deprecated:
-          type: boolean
-          default: false
-          examples:
-          - "true"
+          - "1"
         types:
           type: array
           items:
@@ -8745,11 +8706,6 @@ components:
           description: Email for where to escalate the errand if needed
           examples:
           - escalationgroup@sesamestreet.com
-        deprecated:
-          type: boolean
-          default: false
-          examples:
-          - "true"
         created:
           type: string
           format: date-time
@@ -9068,7 +9024,27 @@ components:
     JsonNode:
       type: object
       properties:
-        number:
+        empty:
+          type: boolean
+        array:
+          type: boolean
+        "null":
+          type: boolean
+        object:
+          type: boolean
+        float:
+          type: boolean
+        container:
+          type: boolean
+        bigInteger:
+          type: boolean
+        missingNode:
+          type: boolean
+        bigDecimal:
+          type: boolean
+        valueNode:
+          type: boolean
+        integralNumber:
           type: boolean
         nodeType:
           type: string
@@ -9082,48 +9058,28 @@ components:
           - OBJECT
           - POJO
           - STRING
-        string:
-          type: boolean
-        integralNumber:
-          type: boolean
-        missingNode:
-          type: boolean
-        valueNode:
-          type: boolean
-        pojo:
+        floatingPointNumber:
           type: boolean
         short:
           type: boolean
         int:
           type: boolean
-        long:
-          type: boolean
         double:
-          type: boolean
-        bigDecimal:
-          type: boolean
-        bigInteger:
           type: boolean
         textual:
           type: boolean
           deprecated: true
-        boolean:
-          type: boolean
         binary:
           type: boolean
-        container:
+        long:
           type: boolean
-        floatingPointNumber:
+        boolean:
           type: boolean
-        empty:
+        string:
           type: boolean
-        array:
+        pojo:
           type: boolean
-        "null":
-          type: boolean
-        object:
-          type: boolean
-        float:
+        number:
           type: boolean
         embeddedValue:
           type: boolean
@@ -9567,13 +9523,8 @@ components:
               type: string
           description: Headers for keeping track of email conversations
           examples:
-          - IN_REPLY_TO:
-            - reply-to@example.com
-            REFERENCES:
-            - reference1
-            - reference2
-            MESSAGE_ID:
-            - "123456789"
+          - "{\"IN_REPLY_TO\": [\"reply-to@example.com\"], \"REFERENCES\": [\"reference1\"\
+            , \"reference2\"], \"MESSAGE_ID\": [\"123456789\"]}"
         attachments:
           type: array
           items:
@@ -9893,21 +9844,10 @@ components:
     PageErrand:
       type: object
       properties:
-        totalPages:
-          type: integer
-          format: int32
         totalElements:
           type: integer
           format: int64
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
-        sort:
-          $ref: "#/components/schemas/SortObject"
-        first:
-          type: boolean
-        last:
-          type: boolean
-        numberOfElements:
+        totalPages:
           type: integer
           format: int32
         size:
@@ -9920,34 +9860,45 @@ components:
         number:
           type: integer
           format: int32
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        first:
+          type: boolean
+        last:
+          type: boolean
+        numberOfElements:
+          type: integer
+          format: int32
         empty:
           type: boolean
     PageableObject:
       type: object
       properties:
-        paged:
-          type: boolean
+        offset:
+          type: integer
+          format: int64
         pageNumber:
           type: integer
           format: int32
         pageSize:
           type: integer
           format: int32
-        unpaged:
-          type: boolean
         sort:
           $ref: "#/components/schemas/SortObject"
-        offset:
-          type: integer
-          format: int64
+        unpaged:
+          type: boolean
+        paged:
+          type: boolean
     SortObject:
       type: object
       properties:
+        empty:
+          type: boolean
         unsorted:
           type: boolean
         sorted:
-          type: boolean
-        empty:
           type: boolean
     Revision:
       type: object
@@ -9973,7 +9924,7 @@ components:
           format: int32
           description: Version of the revision
           examples:
-          - 1
+          - "1"
         created:
           type: string
           format: date-time
@@ -10025,7 +9976,7 @@ components:
           default: 1
           description: Page number
           examples:
-          - 1
+          - "1"
           minimum: 1
         limit:
           type: integer
@@ -10033,7 +9984,7 @@ components:
           default: 100
           description: Result size per page
           examples:
-          - 100
+          - "100"
           maximum: 1000
           minimum: 1
         context:
@@ -10071,35 +10022,35 @@ components:
           format: int32
           description: Current page
           examples:
-          - 5
+          - "5"
           readOnly: true
         limit:
           type: integer
           format: int32
           description: Displayed objects per page
           examples:
-          - 20
+          - "20"
           readOnly: true
         count:
           type: integer
           format: int32
           description: Displayed objects on current page
           examples:
-          - 13
+          - "13"
           readOnly: true
         totalRecords:
           type: integer
           format: int64
           description: Total amount of hits based on provided search parameters
           examples:
-          - 98
+          - "98"
           readOnly: true
         totalPages:
           type: integer
           format: int32
           description: Total amount of pages based on provided search parameters
           examples:
-          - 23
+          - "23"
           readOnly: true
     Event:
       type: object
@@ -10185,21 +10136,10 @@ components:
     PageEvent:
       type: object
       properties:
-        totalPages:
-          type: integer
-          format: int32
         totalElements:
           type: integer
           format: int64
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
-        sort:
-          $ref: "#/components/schemas/SortObject"
-        first:
-          type: boolean
-        last:
-          type: boolean
-        numberOfElements:
+        totalPages:
           type: integer
           format: int32
         size:
@@ -10210,6 +10150,17 @@ components:
           items:
             $ref: "#/components/schemas/Event"
         number:
+          type: integer
+          format: int32
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        first:
+          type: boolean
+        last:
+          type: boolean
+        numberOfElements:
           type: integer
           format: int32
         empty:
@@ -10281,14 +10232,14 @@ components:
           type: array
           description: "The recipients of the communication, if email"
           examples:
-          - - kalle.anka@ankeborg.se
+          - "[\"kalle.anka@ankeborg.se\"]"
           items:
             type: string
         ccRecipients:
           type: array
           description: "The CC recipients of the communication, if email"
           examples:
-          - - cc@ankeborg.se
+          - "[\"cc@ankeborg.se\"]"
           items:
             type: string
         internal:
@@ -10309,13 +10260,8 @@ components:
               type: string
           description: Headers for keeping track of email conversations
           examples:
-          - IN_REPLY_TO:
-            - reply-to@example.com
-            REFERENCES:
-            - reference1
-            - reference2
-            MESSAGE_ID:
-            - "123456789"
+          - "{\"IN_REPLY_TO\": [\"reply-to@example.com\"], \"REFERENCES\": [\"reference1\"\
+            , \"reference2\"], \"MESSAGE_ID\": [\"123456789\"]}"
         communicationAttachments:
           type: array
           description: List of communicationAttachments on the message
@@ -10358,7 +10304,7 @@ components:
           format: int32
           description: Size of the file in bytes
           examples:
-          - 1024
+          - "1024"
         mimeType:
           type: string
           description: Mime type of the file
@@ -10418,21 +10364,10 @@ components:
     PageMessage:
       type: object
       properties:
-        totalPages:
-          type: integer
-          format: int32
         totalElements:
           type: integer
           format: int64
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
-        sort:
-          $ref: "#/components/schemas/SortObject"
-        first:
-          type: boolean
-        last:
-          type: boolean
-        numberOfElements:
+        totalPages:
           type: integer
           format: int32
         size:
@@ -10443,6 +10378,17 @@ components:
           items:
             $ref: "#/components/schemas/Message"
         number:
+          type: integer
+          format: int32
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        first:
+          type: boolean
+        last:
+          type: boolean
+        numberOfElements:
           type: integer
           format: int32
         empty:
@@ -10482,9 +10428,7 @@ components:
           description: Mime type of the file
           readOnly: true
         channel:
-          type:
-          - string
-          - "null"
+          type: string
           description: The channel the attachment was received via
           enum:
           - EMAIL
