@@ -58,9 +58,11 @@ class CategoryEntityTest {
 		final var namespace = "namespace";
 		final var sortOrder = 5;
 		final var types = List.of(TypeEntity.create());
+		final var deprecated = true;
 
 		final var entity = CategoryEntity.create()
 			.withCreated(created)
+			.withDeprecated(deprecated)
 			.withDisplayName(displayName)
 			.withId(id)
 			.withModified(modified)
@@ -72,6 +74,7 @@ class CategoryEntityTest {
 
 		assertThat(entity).hasNoNullFieldsOrProperties();
 		assertThat(entity.getCreated()).isEqualTo(created);
+		assertThat(entity.isDeprecated()).isEqualTo(deprecated);
 		assertThat(entity.getDisplayName()).isEqualTo(displayName);
 		assertThat(entity.getId()).isEqualTo(id);
 		assertThat(entity.getModified()).isEqualTo(modified);
@@ -88,7 +91,7 @@ class CategoryEntityTest {
 		entity.onCreate();
 
 		assertThat(entity.getCreated()).isCloseTo(now(), within(1, SECONDS));
-		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("created");
+		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("created", "deprecated");
 	}
 
 	@Test
@@ -97,12 +100,12 @@ class CategoryEntityTest {
 		entity.onUpdate();
 
 		assertThat(entity.getModified()).isCloseTo(now(), within(1, SECONDS));
-		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("modified");
+		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("modified", "deprecated");
 	}
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(CategoryEntity.create()).hasAllNullFieldsOrProperties();
-		assertThat(new CategoryEntity()).hasAllNullFieldsOrProperties();
+		assertThat(CategoryEntity.create()).hasAllNullFieldsOrPropertiesExcept("deprecated");
+		assertThat(new CategoryEntity()).hasAllNullFieldsOrPropertiesExcept("deprecated");
 	}
 }

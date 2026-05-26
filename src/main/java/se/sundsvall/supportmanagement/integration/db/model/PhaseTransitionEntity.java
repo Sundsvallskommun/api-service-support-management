@@ -34,6 +34,9 @@ public class PhaseTransitionEntity {
 	@Column(name = "description")
 	private String description;
 
+	@Column(name = "deprecated", nullable = false)
+	private boolean deprecated;
+
 	public static PhaseTransitionEntity create() {
 		return new PhaseTransitionEntity();
 	}
@@ -90,9 +93,22 @@ public class PhaseTransitionEntity {
 		return this;
 	}
 
+	public boolean isDeprecated() {
+		return deprecated;
+	}
+
+	public void setDeprecated(final boolean deprecated) {
+		this.deprecated = deprecated;
+	}
+
+	public PhaseTransitionEntity withDeprecated(final boolean deprecated) {
+		this.deprecated = deprecated;
+		return this;
+	}
+
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, targetPhaseId, description);
+		return Objects.hash(id, targetPhaseId, description, deprecated);
 	}
 
 	@Override
@@ -103,7 +119,7 @@ public class PhaseTransitionEntity {
 		if (!(obj instanceof final PhaseTransitionEntity other)) {
 			return false;
 		}
-		return Objects.equals(id, other.id) && Objects.equals(targetPhaseId, other.targetPhaseId) && Objects.equals(description, other.description);
+		return Objects.equals(id, other.id) && Objects.equals(targetPhaseId, other.targetPhaseId) && Objects.equals(description, other.description) && deprecated == other.deprecated;
 	}
 
 	@Override
@@ -112,6 +128,7 @@ public class PhaseTransitionEntity {
 			"id='" + id + '\'' +
 			", targetPhaseId='" + targetPhaseId + '\'' +
 			", description='" + description + '\'' +
+			", deprecated=" + deprecated +
 			'}';
 	}
 }

@@ -49,6 +49,7 @@ class PhaseEntityTest {
 		final var transitions = List.of(PhaseTransitionEntity.create());
 		final var created = OffsetDateTime.now().minusDays(1);
 		final var modified = OffsetDateTime.now();
+		final var deprecated = true;
 
 		final var entity = PhaseEntity.create()
 			.withId(id)
@@ -58,6 +59,7 @@ class PhaseEntityTest {
 			.withDisplayName(displayName)
 			.withDescription(description)
 			.withPhaseOrder(phaseOrder)
+			.withDeprecated(deprecated)
 			.withAllowedStatuses(allowedStatuses)
 			.withTransitions(transitions)
 			.withCreated(created)
@@ -71,6 +73,7 @@ class PhaseEntityTest {
 		assertThat(entity.getDisplayName()).isEqualTo(displayName);
 		assertThat(entity.getDescription()).isEqualTo(description);
 		assertThat(entity.getPhaseOrder()).isEqualTo(phaseOrder);
+		assertThat(entity.isDeprecated()).isEqualTo(deprecated);
 		assertThat(entity.getAllowedStatuses()).isEqualTo(allowedStatuses);
 		assertThat(entity.getTransitions()).isEqualTo(transitions);
 		assertThat(entity.getCreated()).isEqualTo(created);
@@ -83,7 +86,7 @@ class PhaseEntityTest {
 		entity.onCreate();
 
 		assertThat(entity.getCreated()).isCloseTo(now(), within(1, SECONDS));
-		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("allowedStatuses", "transitions", "created")
+		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("allowedStatuses", "transitions", "created", "deprecated")
 			.satisfies(e -> {
 				assertThat(e.getAllowedStatuses()).isEmpty();
 				assertThat(e.getTransitions()).isEmpty();
@@ -96,7 +99,7 @@ class PhaseEntityTest {
 		entity.onUpdate();
 
 		assertThat(entity.getModified()).isCloseTo(now(), within(1, SECONDS));
-		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("allowedStatuses", "transitions", "modified")
+		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("allowedStatuses", "transitions", "modified", "deprecated")
 			.satisfies(e -> {
 				assertThat(e.getAllowedStatuses()).isEmpty();
 				assertThat(e.getTransitions()).isEmpty();
@@ -105,12 +108,12 @@ class PhaseEntityTest {
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(PhaseEntity.create()).hasAllNullFieldsOrPropertiesExcept("allowedStatuses", "transitions")
+		assertThat(PhaseEntity.create()).hasAllNullFieldsOrPropertiesExcept("allowedStatuses", "transitions", "deprecated")
 			.satisfies(e -> {
 				assertThat(e.getAllowedStatuses()).isEmpty();
 				assertThat(e.getTransitions()).isEmpty();
 			});
-		assertThat(new PhaseEntity()).hasAllNullFieldsOrPropertiesExcept("allowedStatuses", "transitions")
+		assertThat(new PhaseEntity()).hasAllNullFieldsOrPropertiesExcept("allowedStatuses", "transitions", "deprecated")
 			.satisfies(e -> {
 				assertThat(e.getAllowedStatuses()).isEmpty();
 				assertThat(e.getTransitions()).isEmpty();

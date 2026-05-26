@@ -46,6 +46,9 @@ public class TypeEntity {
 	@Column(name = "escalation_email")
 	private String escalationEmail;
 
+	@Column(name = "deprecated", nullable = false)
+	private boolean deprecated;
+
 	@Column(name = "created")
 	@TimeZoneStorage(NORMALIZE)
 	private OffsetDateTime created;
@@ -114,6 +117,19 @@ public class TypeEntity {
 		return this;
 	}
 
+	public boolean isDeprecated() {
+		return deprecated;
+	}
+
+	public void setDeprecated(final boolean deprecated) {
+		this.deprecated = deprecated;
+	}
+
+	public TypeEntity withDeprecated(final boolean deprecated) {
+		this.deprecated = deprecated;
+		return this;
+	}
+
 	public OffsetDateTime getCreated() {
 		return created;
 	}
@@ -166,7 +182,7 @@ public class TypeEntity {
 	@Override
 	public int hashCode() {
 		final var categoryId = Optional.ofNullable(categoryEntity).map(CategoryEntity::getId).orElse(null);
-		return Objects.hash(categoryId, created, displayName, escalationEmail, id, modified, name);
+		return Objects.hash(categoryId, created, deprecated, displayName, escalationEmail, id, modified, name);
 	}
 
 	@Override
@@ -184,14 +200,15 @@ public class TypeEntity {
 
 		final var thisCategoryId = Optional.ofNullable(categoryEntity).map(CategoryEntity::getId).orElse(null);
 		final var otherCategoryId = Optional.ofNullable(other.categoryEntity).map(CategoryEntity::getId).orElse(null);
-		return Objects.equals(thisCategoryId, otherCategoryId) && Objects.equals(created, other.created) && Objects.equals(displayName, other.displayName) && Objects.equals(escalationEmail, other.escalationEmail) && Objects.equals(id, other.id)
+		return Objects.equals(thisCategoryId, otherCategoryId) && Objects.equals(created, other.created) && deprecated == other.deprecated && Objects.equals(displayName, other.displayName) && Objects.equals(escalationEmail, other.escalationEmail)
+			&& Objects.equals(id, other.id)
 			&& Objects.equals(modified, other.modified) && Objects.equals(name, other.name);
 	}
 
 	@Override
 	public String toString() {
 		final var categoryId = Optional.ofNullable(categoryEntity).map(CategoryEntity::getId).orElse(null);
-		return "TypeEntity [id=" + id + ", name=" + name + ", displayName=" + displayName + ", escalationEmail=" + escalationEmail + ", created=" + created + ", modified="
+		return "TypeEntity [id=" + id + ", name=" + name + ", displayName=" + displayName + ", escalationEmail=" + escalationEmail + ", deprecated=" + deprecated + ", created=" + created + ", modified="
 			+ modified + ", categoryEntity.id=" + categoryId + "]";
 	}
 }

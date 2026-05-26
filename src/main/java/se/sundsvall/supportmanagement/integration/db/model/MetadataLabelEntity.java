@@ -72,6 +72,9 @@ public class MetadataLabelEntity {
 	@Column(name = "resource_path")
 	private String resourcePath;
 
+	@Column(name = "deprecated", nullable = false)
+	private boolean deprecated;
+
 	@Column(name = "created", updatable = false)
 	@TimeZoneStorage(NORMALIZE)
 	private OffsetDateTime created;
@@ -179,6 +182,19 @@ public class MetadataLabelEntity {
 
 	public MetadataLabelEntity withResourcePath(String resourcePath) {
 		this.resourcePath = resourcePath;
+		return this;
+	}
+
+	public boolean isDeprecated() {
+		return deprecated;
+	}
+
+	public void setDeprecated(boolean deprecated) {
+		this.deprecated = deprecated;
+	}
+
+	public MetadataLabelEntity withDeprecated(boolean deprecated) {
+		this.deprecated = deprecated;
 		return this;
 	}
 
@@ -309,7 +325,7 @@ public class MetadataLabelEntity {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(classification, created, displayName, id, metadataLabels, modified, municipalityId, namespace, parent, resourceName, resourcePath);
+		return Objects.hash(classification, created, deprecated, displayName, id, metadataLabels, modified, municipalityId, namespace, parent, resourceName, resourcePath);
 	}
 
 	@Override
@@ -324,7 +340,8 @@ public class MetadataLabelEntity {
 			return false;
 		}
 		MetadataLabelEntity other = (MetadataLabelEntity) obj;
-		return Objects.equals(classification, other.classification) && Objects.equals(created, other.created) && Objects.equals(displayName, other.displayName) && Objects.equals(id, other.id) && Objects.equals(metadataLabels, other.metadataLabels)
+		return Objects.equals(classification, other.classification) && Objects.equals(created, other.created) && deprecated == other.deprecated && Objects.equals(displayName, other.displayName) && Objects.equals(id, other.id) && Objects.equals(
+			metadataLabels, other.metadataLabels)
 			&& Objects.equals(modified, other.modified) && Objects.equals(municipalityId, other.municipalityId) && Objects.equals(namespace, other.namespace) && Objects.equals(
 				resourceName, other.resourceName)
 			&& Objects.equals(resourcePath, other.resourcePath);
@@ -332,7 +349,7 @@ public class MetadataLabelEntity {
 
 	@Override
 	public String toString() {
-		return "MetadataLabelEntity [id=" + id + ", municipalityId=" + municipalityId + ", namespace=" + namespace + ", classification=" + classification + ", displayName=" + displayName + ", resourceName=" + resourceName
+		return "MetadataLabelEntity [id=" + id + ", municipalityId=" + municipalityId + ", namespace=" + namespace + ", classification=" + classification + ", displayName=" + displayName + ", deprecated=" + deprecated + ", resourceName=" + resourceName
 			+ ", resourcePath=" + resourcePath
 			+ ", created=" + created + ", modified=" + modified + ", parent.id=" + (parent != null ? parent.id : null) + ", metadataLabels=" + metadataLabels + "]";
 	}

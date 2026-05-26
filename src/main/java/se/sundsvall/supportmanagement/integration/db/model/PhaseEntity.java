@@ -63,6 +63,9 @@ public class PhaseEntity {
 	@Column(name = "phase_order")
 	private Integer phaseOrder;
 
+	@Column(name = "deprecated", nullable = false)
+	private boolean deprecated;
+
 	@ElementCollection(fetch = EAGER)
 	@CollectionTable(
 		name = "phase_allowed_status",
@@ -178,6 +181,19 @@ public class PhaseEntity {
 		return this;
 	}
 
+	public boolean isDeprecated() {
+		return deprecated;
+	}
+
+	public void setDeprecated(final boolean deprecated) {
+		this.deprecated = deprecated;
+	}
+
+	public PhaseEntity withDeprecated(final boolean deprecated) {
+		this.deprecated = deprecated;
+		return this;
+	}
+
 	public List<String> getAllowedStatuses() {
 		return allowedStatuses;
 	}
@@ -242,7 +258,7 @@ public class PhaseEntity {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, municipalityId, namespace, name, displayName, description, phaseOrder, allowedStatuses, created, modified);
+		return Objects.hash(id, municipalityId, namespace, name, displayName, description, phaseOrder, deprecated, allowedStatuses, created, modified);
 	}
 
 	@Override
@@ -254,7 +270,7 @@ public class PhaseEntity {
 			return false;
 		}
 		return Objects.equals(id, other.id) && Objects.equals(municipalityId, other.municipalityId) && Objects.equals(namespace, other.namespace) && Objects.equals(name, other.name)
-			&& Objects.equals(displayName, other.displayName) && Objects.equals(description, other.description) && Objects.equals(phaseOrder, other.phaseOrder)
+			&& Objects.equals(displayName, other.displayName) && Objects.equals(description, other.description) && Objects.equals(phaseOrder, other.phaseOrder) && deprecated == other.deprecated
 			&& Objects.equals(allowedStatuses, other.allowedStatuses) && Objects.equals(created, other.created) && Objects.equals(modified, other.modified);
 	}
 
@@ -268,6 +284,7 @@ public class PhaseEntity {
 			", displayName='" + displayName + '\'' +
 			", description='" + description + '\'' +
 			", phaseOrder=" + phaseOrder +
+			", deprecated=" + deprecated +
 			", allowedStatuses=" + allowedStatuses +
 			", transitions=" + transitions +
 			", created=" + created +

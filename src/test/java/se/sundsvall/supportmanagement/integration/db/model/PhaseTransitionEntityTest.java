@@ -29,23 +29,26 @@ class PhaseTransitionEntityTest {
 		final var phaseEntity = PhaseEntity.create().withId("phase-id");
 		final var targetPhaseId = "target-phase-id";
 		final var description = "description";
+		final var deprecated = true;
 
 		final var entity = PhaseTransitionEntity.create()
 			.withId(id)
 			.withPhaseEntity(phaseEntity)
 			.withTargetPhaseId(targetPhaseId)
-			.withDescription(description);
+			.withDescription(description)
+			.withDeprecated(deprecated);
 
 		assertThat(entity).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(entity.getId()).isEqualTo(id);
 		assertThat(entity.getPhaseEntity()).isEqualTo(phaseEntity);
 		assertThat(entity.getTargetPhaseId()).isEqualTo(targetPhaseId);
 		assertThat(entity.getDescription()).isEqualTo(description);
+		assertThat(entity.isDeprecated()).isEqualTo(deprecated);
 	}
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(PhaseTransitionEntity.create()).hasAllNullFieldsOrProperties();
-		assertThat(new PhaseTransitionEntity()).hasAllNullFieldsOrProperties();
+		assertThat(PhaseTransitionEntity.create()).hasAllNullFieldsOrPropertiesExcept("deprecated");
+		assertThat(new PhaseTransitionEntity()).hasAllNullFieldsOrPropertiesExcept("deprecated");
 	}
 }
