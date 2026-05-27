@@ -171,8 +171,8 @@ public class Label {
 			return false;
 		}
 		Label other = (Label) obj;
-		return Objects.equals(attributes, other.attributes) && Objects.equals(classification, other.classification) && Objects.equals(deprecated, other.deprecated) && Objects.equals(displayName, other.displayName) && Objects.equals(id, other.id) && Objects.equals(labels, other.labels) && Objects.equals(
-			resourceName, other.resourceName) && Objects.equals(resourcePath, other.resourcePath);
+		return Objects.equals(attributes, other.attributes) && Objects.equals(classification, other.classification) && Objects.equals(deprecated, other.deprecated) && Objects.equals(displayName, other.displayName) &&
+			Objects.equals(id, other.id) && Objects.equals(labels, other.labels) && Objects.equals(resourceName, other.resourceName) && Objects.equals(resourcePath, other.resourcePath);
 	}
 
 	@Override
