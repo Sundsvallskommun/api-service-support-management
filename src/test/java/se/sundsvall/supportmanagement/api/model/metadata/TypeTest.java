@@ -51,7 +51,7 @@ class TypeTest {
 			.withName(name);
 
 		assertThat(bean.getCreated()).isEqualTo(created);
-		assertThat(bean.isDeprecated()).isEqualTo(deprecated);
+		assertThat(bean.getDeprecated()).isEqualTo(deprecated);
 		assertThat(bean.getDisplayName()).isEqualTo(displayName);
 		assertThat(bean.getEscalationEmail()).isEqualTo(escalationEmail);
 		assertThat(bean.getModified()).isEqualTo(modified);
@@ -60,7 +60,7 @@ class TypeTest {
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(Type.create()).hasAllNullFieldsOrPropertiesExcept("deprecated");
-		assertThat(new Type()).hasAllNullFieldsOrPropertiesExcept("deprecated");
+		assertThat(Type.create()).hasAllNullFieldsOrProperties();
+		assertThat(new Type()).hasAllNullFieldsOrProperties();
 	}
 }

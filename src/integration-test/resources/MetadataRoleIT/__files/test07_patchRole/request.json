@@ -1,5 +1,6 @@
 {
 	"name": "ROLE-3-PATCHED",
 	"displayName": "Role 3 patched",
-	"sortOrder": 42
+	"sortOrder": 42,
+	"deprecated": true
 }

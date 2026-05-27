@@ -46,6 +46,7 @@
 						"name": "SUBTYPE-3",
 						"resourcePath": "CATEGORY-1/TYPE-2/SUBTYPE-3",
 						"resourceName": "RENAMED_SUBTYPE_3",
+						"deprecated": true,
 						"labels": [
 							{
 								"id": "0eb1f695-48b1-40fd-af8c-b277c37db2d4",
@@ -61,6 +62,7 @@
 								"displayName": "DEEPSUBTYPE-DISPLAY-NAME-1",
 								"name": "DEEPSUBTYPE-1",
 								"resourceName": "DEEPSUBTYPE_1",
+								"deprecated": true,
 								"labels": []
 							}
 						]

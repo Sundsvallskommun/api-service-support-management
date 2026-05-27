@@ -52,7 +52,7 @@ class ExternalIdTypeTest {
 
 		assertThat(bean.getId()).isEqualTo(id);
 		assertThat(bean.getCreated()).isEqualTo(created);
-		assertThat(bean.isDeprecated()).isEqualTo(deprecated);
+		assertThat(bean.getDeprecated()).isEqualTo(deprecated);
 		assertThat(bean.getModified()).isEqualTo(modified);
 		assertThat(bean.getName()).isEqualTo(name);
 		assertThat(bean.getDisplayName()).isEqualTo(displayName);
@@ -60,7 +60,7 @@ class ExternalIdTypeTest {
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(ExternalIdType.create()).hasAllNullFieldsOrPropertiesExcept("deprecated");
-		assertThat(new ExternalIdType()).hasAllNullFieldsOrPropertiesExcept("deprecated");
+		assertThat(ExternalIdType.create()).hasAllNullFieldsOrProperties();
+		assertThat(new ExternalIdType()).hasAllNullFieldsOrProperties();
 	}
 }

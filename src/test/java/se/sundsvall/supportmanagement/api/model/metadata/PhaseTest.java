@@ -64,7 +64,7 @@ class PhaseTest {
 		assertThat(bean.getId()).isEqualTo(id);
 		assertThat(bean.getName()).isEqualTo(name);
 		assertThat(bean.getDisplayName()).isEqualTo(displayName);
-		assertThat(bean.isDeprecated()).isEqualTo(deprecated);
+		assertThat(bean.getDeprecated()).isEqualTo(deprecated);
 		assertThat(bean.getDescription()).isEqualTo(description);
 		assertThat(bean.getPhaseOrder()).isEqualTo(phaseOrder);
 		assertThat(bean.getAllowedStatuses()).isEqualTo(allowedStatuses);
@@ -75,7 +75,7 @@ class PhaseTest {
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(Phase.create()).hasAllNullFieldsOrPropertiesExcept("deprecated");
-		assertThat(new Phase()).hasAllNullFieldsOrPropertiesExcept("deprecated");
+		assertThat(Phase.create()).hasAllNullFieldsOrProperties();
+		assertThat(new Phase()).hasAllNullFieldsOrProperties();
 	}
 }

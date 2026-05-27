@@ -55,6 +55,7 @@ public class MetadataMapper {
 				.withSortOrder(e.getSortOrder())
 				.withModified(e.getModified())
 				.withName(e.getName())
+				.withDeprecated(e.isDeprecated())
 				.withTypes(toTypes(e.getTypes()))).orElse(null);
 	}
 
@@ -62,13 +63,15 @@ public class MetadataMapper {
 		if (anyNull(namespace, municipalityId, category)) {
 			return null;
 		}
-		return CategoryEntity.create()
+		final var entity = CategoryEntity.create()
 			.withNamespace(namespace)
 			.withMunicipalityId(municipalityId)
 			.withDisplayName(category.getDisplayName())
 			.withSortOrder(category.getSortOrder())
 			.withName(category.getName())
 			.withTypes(toTypeEntities(category.getTypes()));
+		ofNullable(category.getDeprecated()).ifPresent(entity::setDeprecated);
+		return entity;
 	}
 
 	private static List<Type> toTypes(final List<TypeEntity> typeEntities) {
@@ -86,6 +89,7 @@ public class MetadataMapper {
 				.withDisplayName(e.getDisplayName())
 				.withEscalationEmail(e.getEscalationEmail())
 				.withModified(e.getModified())
+				.withDeprecated(e.isDeprecated())
 				.withName(e.getName()))
 			.orElse(null);
 	}
@@ -99,10 +103,14 @@ public class MetadataMapper {
 
 	private static TypeEntity toTypeEntity(final Type type) {
 		return ofNullable(type)
-			.map(e -> TypeEntity.create()
-				.withDisplayName(e.getDisplayName())
-				.withEscalationEmail(e.getEscalationEmail())
-				.withName(e.getName()))
+			.map(e -> {
+				final var entity = TypeEntity.create()
+					.withDisplayName(e.getDisplayName())
+					.withEscalationEmail(e.getEscalationEmail())
+					.withName(e.getName());
+				ofNullable(e.getDeprecated()).ifPresent(entity::setDeprecated);
+				return entity;
+			})
 			.orElse(null);
 	}
 
@@ -119,6 +127,7 @@ public class MetadataMapper {
 				.withExternalDisplayName(e.getExternalDisplayName())
 				.withSortOrder(e.getSortOrder())
 				.withModified(e.getModified())
+				.withDeprecated(e.isDeprecated())
 				.withName(e.getName()))
 			.orElse(null);
 	}
@@ -128,13 +137,15 @@ public class MetadataMapper {
 			return null;
 		}
 
-		return StatusEntity.create()
+		final var entity = StatusEntity.create()
 			.withDisplayName(status.getDisplayName())
 			.withExternalDisplayName(status.getExternalDisplayName())
 			.withSortOrder(status.getSortOrder())
 			.withMunicipalityId(municipalityId)
 			.withName(status.getName())
 			.withNamespace(namespace);
+		ofNullable(status.getDeprecated()).ifPresent(entity::setDeprecated);
+		return entity;
 	}
 
 	// =================================================================
@@ -149,6 +160,7 @@ public class MetadataMapper {
 				.withModified(e.getModified())
 				.withName(e.getName())
 				.withDisplayName(e.getDisplayName())
+				.withDeprecated(e.isDeprecated())
 				.withSortOrder(e.getSortOrder()))
 			.orElse(null);
 	}
@@ -158,12 +170,14 @@ public class MetadataMapper {
 			return null;
 		}
 
-		return RoleEntity.create()
+		final var entity = RoleEntity.create()
 			.withMunicipalityId(municipalityId)
 			.withName(role.getName())
 			.withDisplayName(role.getDisplayName())
 			.withSortOrder(role.getSortOrder())
 			.withNamespace(namespace);
+		ofNullable(role.getDeprecated()).ifPresent(entity::setDeprecated);
+		return entity;
 	}
 
 	// =================================================================
@@ -178,6 +192,7 @@ public class MetadataMapper {
 				.withDisplayName(e.getDisplayName())
 				.withSortOrder(e.getSortOrder())
 				.withModified(e.getModified())
+				.withDeprecated(e.isDeprecated())
 				.withName(e.getName()))
 			.orElse(null);
 	}
@@ -187,12 +202,14 @@ public class MetadataMapper {
 			return null;
 		}
 
-		return ExternalIdTypeEntity.create()
+		final var entity = ExternalIdTypeEntity.create()
 			.withDisplayName(externalIdType.getDisplayName())
 			.withSortOrder(externalIdType.getSortOrder())
 			.withMunicipalityId(municipalityId)
 			.withName(externalIdType.getName())
 			.withNamespace(namespace);
+		ofNullable(externalIdType.getDeprecated()).ifPresent(entity::setDeprecated);
+		return entity;
 	}
 
 	public static CategoryEntity updateEntity(final CategoryEntity entity, final Category category) {
@@ -203,6 +220,7 @@ public class MetadataMapper {
 		ofNullable(category.getName()).ifPresent(entity::setName);
 		ofNullable(category.getDisplayName()).ifPresent(entity::setDisplayName);
 		ofNullable(category.getSortOrder()).ifPresent(entity::setSortOrder);
+		ofNullable(category.getDeprecated()).ifPresent(entity::setDeprecated);
 		ofNullable(category.getTypes()).ifPresent(value -> updateTypes(entity, value));
 
 		return entity;
@@ -216,6 +234,7 @@ public class MetadataMapper {
 		ofNullable(role.getName()).ifPresent(entity::setName);
 		ofNullable(role.getDisplayName()).ifPresent(entity::setDisplayName);
 		ofNullable(role.getSortOrder()).ifPresent(entity::setSortOrder);
+		ofNullable(role.getDeprecated()).ifPresent(entity::setDeprecated);
 
 		return entity;
 	}
@@ -229,6 +248,7 @@ public class MetadataMapper {
 		ofNullable(status.getDisplayName()).ifPresent(entity::setDisplayName);
 		ofNullable(status.getExternalDisplayName()).ifPresent(entity::setExternalDisplayName);
 		ofNullable(status.getSortOrder()).ifPresent(entity::setSortOrder);
+		ofNullable(status.getDeprecated()).ifPresent(entity::setDeprecated);
 
 		return entity;
 	}
@@ -241,6 +261,7 @@ public class MetadataMapper {
 		ofNullable(externalIdType.getName()).ifPresent(entity::setName);
 		ofNullable(externalIdType.getDisplayName()).ifPresent(entity::setDisplayName);
 		ofNullable(externalIdType.getSortOrder()).ifPresent(entity::setSortOrder);
+		ofNullable(externalIdType.getDeprecated()).ifPresent(entity::setDeprecated);
 
 		return entity;
 	}
@@ -292,7 +313,9 @@ public class MetadataMapper {
 			.withDisplayName(entity.getDisplayName())
 			.withResourceName(entity.getResourceName())
 			.withResourcePath(entity.getResourcePath())
-			.withAttributes(toLabelAttributes(entity.getAttributes()));
+			.withAttributes(toLabelAttributes(entity.getAttributes()))
+			.withResourcePath(entity.getResourcePath())
+			.withDeprecated(entity.isDeprecated());
 
 		var children = ofNullable(entity.getMetadataLabels())
 			.orElse(emptyList())
@@ -336,7 +359,9 @@ public class MetadataMapper {
 			.withClassification(label.getClassification())
 			.withDisplayName(label.getDisplayName())
 			.withResourceName(trim(label.getResourceName()))
-			.withAttributes(toLabelAttributeEmbeddables(label.getAttributes()));
+			.withAttributes(toLabelAttributeEmbeddables(label.getAttributes()))
+			.withResourceName(trim(label.getResourceName()));
+		ofNullable(label.getDeprecated()).ifPresent(entity::setDeprecated);
 
 		// Map children recursively
 		final var children = ofNullable(label.getLabels()).orElse(emptyList())
@@ -375,6 +400,7 @@ public class MetadataMapper {
 				existing.setClassification(label.getClassification());
 				existing.setDisplayName(label.getDisplayName());
 				existing.setResourceName(trim(label.getResourceName()));
+				ofNullable(label.getDeprecated()).ifPresent(existing::setDeprecated);
 
 				// Replace attributes in-place so Hibernate's orphan removal on the element collection works
 				existing.getAttributes().clear();
@@ -405,6 +431,7 @@ public class MetadataMapper {
 				.withPhaseOrder(e.getPhaseOrder())
 				.withAllowedStatuses(e.getAllowedStatuses())
 				.withTransitions(toPhaseTransitions(e.getTransitions()))
+				.withDeprecated(e.isDeprecated())
 				.withCreated(e.getCreated())
 				.withModified(e.getModified()))
 			.orElse(null);
@@ -414,7 +441,7 @@ public class MetadataMapper {
 		if (anyNull(namespace, municipalityId, phase)) {
 			return null;
 		}
-		return PhaseEntity.create()
+		final var entity = PhaseEntity.create()
 			.withNamespace(namespace)
 			.withMunicipalityId(municipalityId)
 			.withName(phase.getName())
@@ -422,6 +449,8 @@ public class MetadataMapper {
 			.withDescription(phase.getDescription())
 			.withPhaseOrder(phase.getPhaseOrder())
 			.withAllowedStatuses(ofNullable(phase.getAllowedStatuses()).orElse(emptyList()));
+		ofNullable(phase.getDeprecated()).ifPresent(entity::setDeprecated);
+		return entity;
 	}
 
 	public static PhaseEntity updatePhaseEntity(final PhaseEntity entity, final Phase phase) {
@@ -434,6 +463,7 @@ public class MetadataMapper {
 		ofNullable(phase.getDescription()).ifPresent(entity::setDescription);
 		ofNullable(phase.getPhaseOrder()).ifPresent(entity::setPhaseOrder);
 		ofNullable(phase.getAllowedStatuses()).ifPresent(entity::setAllowedStatuses);
+		ofNullable(phase.getDeprecated()).ifPresent(entity::setDeprecated);
 
 		return entity;
 	}
@@ -450,7 +480,8 @@ public class MetadataMapper {
 			.map(e -> PhaseTransition.create()
 				.withId(e.getId())
 				.withTargetPhaseId(e.getTargetPhaseId())
-				.withDescription(e.getDescription()))
+				.withDescription(e.getDescription())
+				.withDeprecated(e.isDeprecated()))
 			.orElse(null);
 	}
 
@@ -458,10 +489,12 @@ public class MetadataMapper {
 		if (anyNull(phaseEntity, transition)) {
 			return null;
 		}
-		return PhaseTransitionEntity.create()
+		final var entity = PhaseTransitionEntity.create()
 			.withPhaseEntity(phaseEntity)
 			.withTargetPhaseId(transition.getTargetPhaseId())
 			.withDescription(transition.getDescription());
+		ofNullable(transition.getDeprecated()).ifPresent(entity::setDeprecated);
+		return entity;
 	}
 
 	// =================================================================
@@ -475,6 +508,7 @@ public class MetadataMapper {
 				.withReason(entity.getReason())
 				.withDisplayName(entity.getDisplayName())
 				.withSortOrder(entity.getSortOrder())
+				.withDeprecated(entity.isDeprecated())
 				.withModified(entity.getModified())
 				.withCreated(entity.getCreated()))
 			.orElse(null);
@@ -482,14 +516,18 @@ public class MetadataMapper {
 
 	public static ContactReasonEntity toContactReasonEntity(final String namespace, final String municipalityId, final ContactReason contactReason) {
 		return ofNullable(contactReason)
-			.map(request -> ContactReasonEntity.create()
-				.withReason(request.getReason())
-				.withDisplayName(request.getDisplayName())
-				.withSortOrder(request.getSortOrder())
-				.withNamespace(namespace)
-				.withMunicipalityId(municipalityId)
-				.withCreated(now())
-				.withModified(now()))
+			.map(request -> {
+				final var entity = ContactReasonEntity.create()
+					.withReason(request.getReason())
+					.withDisplayName(request.getDisplayName())
+					.withSortOrder(request.getSortOrder())
+					.withNamespace(namespace)
+					.withMunicipalityId(municipalityId)
+					.withCreated(now())
+					.withModified(now());
+				ofNullable(request.getDeprecated()).ifPresent(entity::setDeprecated);
+				return entity;
+			})
 			.orElse(null);
 	}
 
@@ -501,6 +539,7 @@ public class MetadataMapper {
 		ofNullable(contactReason.getReason()).ifPresent(entity::setReason);
 		ofNullable(contactReason.getDisplayName()).ifPresent(entity::setDisplayName);
 		ofNullable(contactReason.getSortOrder()).ifPresent(entity::setSortOrder);
+		ofNullable(contactReason.getDeprecated()).ifPresent(entity::setDeprecated);
 
 		return entity;
 	}

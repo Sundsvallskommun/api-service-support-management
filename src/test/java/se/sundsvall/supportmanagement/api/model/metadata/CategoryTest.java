@@ -54,7 +54,7 @@ class CategoryTest {
 			.withTypes(types);
 
 		assertThat(bean.getCreated()).isEqualTo(created);
-		assertThat(bean.isDeprecated()).isEqualTo(deprecated);
+		assertThat(bean.getDeprecated()).isEqualTo(deprecated);
 		assertThat(bean.getDisplayName()).isEqualTo(displayName);
 		assertThat(bean.getId()).isEqualTo(id);
 		assertThat(bean.getModified()).isEqualTo(modified);
@@ -64,7 +64,7 @@ class CategoryTest {
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(Category.create()).hasAllNullFieldsOrPropertiesExcept("deprecated");
-		assertThat(new Category()).hasAllNullFieldsOrPropertiesExcept("deprecated");
+		assertThat(Category.create()).hasAllNullFieldsOrProperties();
+		assertThat(new Category()).hasAllNullFieldsOrProperties();
 	}
 }

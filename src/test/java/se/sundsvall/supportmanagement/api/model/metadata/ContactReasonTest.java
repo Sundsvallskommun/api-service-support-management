@@ -52,7 +52,7 @@ class ContactReasonTest {
 			.withId(id);
 
 		assertThat(bean.getCreated()).isEqualTo(created);
-		assertThat(bean.isDeprecated()).isEqualTo(deprecated);
+		assertThat(bean.getDeprecated()).isEqualTo(deprecated);
 		assertThat(bean.getModified()).isEqualTo(modified);
 		assertThat(bean.getReason()).isEqualTo(reason);
 		assertThat(bean.getDisplayName()).isEqualTo(displayName);
@@ -61,7 +61,7 @@ class ContactReasonTest {
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(ContactReason.create()).hasAllNullFieldsOrPropertiesExcept("deprecated");
-		assertThat(new ContactReason()).hasAllNullFieldsOrPropertiesExcept("deprecated");
+		assertThat(ContactReason.create()).hasAllNullFieldsOrProperties();
+		assertThat(new ContactReason()).hasAllNullFieldsOrProperties();
 	}
 }
