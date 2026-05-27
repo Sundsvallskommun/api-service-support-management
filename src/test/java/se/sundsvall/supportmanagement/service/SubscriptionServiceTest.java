@@ -18,6 +18,7 @@ import se.sundsvall.supportmanagement.api.model.subscription.SubscriptionTargetT
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.SubscriptionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.subscriber.DbSubscriptionTargetType;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionEntity;
 
@@ -42,8 +43,8 @@ class SubscriptionServiceTest {
 	private static final String NAMESPACE = "my-namespace";
 	private static final String SUBSCRIBER_ID = "subscriber-1";
 	private static final String ERRAND_ID = "errand-1";
-	private static final se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionTargetType DB_ERRAND = se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionTargetType.ERRAND;
-	private static final se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionTargetType DB_NAMESPACE = se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionTargetType.NAMESPACE;
+	private static final DbSubscriptionTargetType DB_ERRAND = DbSubscriptionTargetType.ERRAND;
+	private static final DbSubscriptionTargetType DB_NAMESPACE = DbSubscriptionTargetType.NAMESPACE;
 
 	@Mock
 	private SubscriberService subscriberServiceMock;
@@ -114,7 +115,7 @@ class SubscriptionServiceTest {
 		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(errand));
 		when(subscriptionRepositoryMock.existsBySubscriberIdAndTargetTypeAndErrandId(SUBSCRIBER_ID, DB_ERRAND, ERRAND_ID)).thenReturn(false);
 		final var newId = randomUUID().toString();
-		when(subscriptionRepositoryMock.save(any(SubscriptionEntity.class))).thenAnswer(inv -> inv.<SubscriptionEntity>getArgument(0).withId(newId));
+		when(subscriptionRepositoryMock.saveAndFlush(any(SubscriptionEntity.class))).thenAnswer(inv -> inv.<SubscriptionEntity>getArgument(0).withId(newId));
 
 		final var result = service.createSubscription(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID, dto);
 
@@ -122,7 +123,7 @@ class SubscriptionServiceTest {
 		verify(subscriberServiceMock).findEntity(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID);
 		verify(errandsRepositoryMock).findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(subscriptionRepositoryMock).existsBySubscriberIdAndTargetTypeAndErrandId(SUBSCRIBER_ID, DB_ERRAND, ERRAND_ID);
-		verify(subscriptionRepositoryMock).save(entityCaptor.capture());
+		verify(subscriptionRepositoryMock).saveAndFlush(entityCaptor.capture());
 		final var saved = entityCaptor.getValue();
 		assertThat(saved.getSubscriber()).isSameAs(subscriber);
 		assertThat(saved.getErrand()).isSameAs(errand);
@@ -140,13 +141,13 @@ class SubscriptionServiceTest {
 
 		when(subscriberServiceMock.findEntity(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID)).thenReturn(subscriber);
 		when(subscriptionRepositoryMock.existsBySubscriberIdAndTargetTypeAndErrandIsNull(SUBSCRIBER_ID, DB_NAMESPACE)).thenReturn(false);
-		when(subscriptionRepositoryMock.save(any(SubscriptionEntity.class))).thenAnswer(inv -> inv.<SubscriptionEntity>getArgument(0).withId("new"));
+		when(subscriptionRepositoryMock.saveAndFlush(any(SubscriptionEntity.class))).thenAnswer(inv -> inv.<SubscriptionEntity>getArgument(0).withId("new"));
 
 		service.createSubscription(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID, dto);
 
 		verify(subscriberServiceMock).findEntity(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID);
 		verify(subscriptionRepositoryMock).existsBySubscriberIdAndTargetTypeAndErrandIsNull(SUBSCRIBER_ID, DB_NAMESPACE);
-		verify(subscriptionRepositoryMock).save(entityCaptor.capture());
+		verify(subscriptionRepositoryMock).saveAndFlush(entityCaptor.capture());
 		assertThat(entityCaptor.getValue().getErrand()).isNull();
 		assertThat(entityCaptor.getValue().getTargetType()).isEqualTo(DB_NAMESPACE);
 		verifyNoMoreInteractions(subscriberServiceMock, subscriptionRepositoryMock);
@@ -185,7 +186,7 @@ class SubscriptionServiceTest {
 
 		verify(subscriberServiceMock).findEntity(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID);
 		verify(errandsRepositoryMock).findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
-		verify(subscriptionRepositoryMock, never()).save(any());
+		verify(subscriptionRepositoryMock, never()).saveAndFlush(any());
 		verifyNoMoreInteractions(subscriberServiceMock, errandsRepositoryMock);
 		verifyNoInteractions(subscriptionRepositoryMock);
 	}
@@ -208,7 +209,7 @@ class SubscriptionServiceTest {
 		verify(subscriberServiceMock).findEntity(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID);
 		verify(errandsRepositoryMock).findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(subscriptionRepositoryMock).existsBySubscriberIdAndTargetTypeAndErrandId(SUBSCRIBER_ID, DB_ERRAND, ERRAND_ID);
-		verify(subscriptionRepositoryMock, never()).save(any());
+		verify(subscriptionRepositoryMock, never()).saveAndFlush(any());
 		verifyNoMoreInteractions(subscriberServiceMock, subscriptionRepositoryMock, errandsRepositoryMock);
 	}
 
@@ -227,7 +228,7 @@ class SubscriptionServiceTest {
 
 		verify(subscriberServiceMock).findEntity(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID);
 		verify(subscriptionRepositoryMock).existsBySubscriberIdAndTargetTypeAndErrandIsNull(SUBSCRIBER_ID, DB_NAMESPACE);
-		verify(subscriptionRepositoryMock, never()).save(any());
+		verify(subscriptionRepositoryMock, never()).saveAndFlush(any());
 		verifyNoMoreInteractions(subscriberServiceMock, subscriptionRepositoryMock);
 		verifyNoInteractions(errandsRepositoryMock);
 	}
@@ -264,6 +265,42 @@ class SubscriptionServiceTest {
 		verify(subscriberServiceMock).findEntity(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID);
 		verifyNoMoreInteractions(subscriberServiceMock);
 		verifyNoInteractions(subscriptionRepositoryMock, errandsRepositoryMock);
+	}
+
+	@Test
+	void createErrandSubscriptionRaceTranslatesDbViolationToConflict() {
+		// Precheck reports no duplicate (false), but saveAndFlush throws DataIntegrityViolationException
+		// — simulates the TOCTOU race past rejectDuplicate.
+		final var subscriber = SubscriberEntity.create().withId(SUBSCRIBER_ID);
+		final var errand = new ErrandEntity().withId(ERRAND_ID);
+		when(subscriberServiceMock.findEntity(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID)).thenReturn(subscriber);
+		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(errand));
+		when(subscriptionRepositoryMock.existsBySubscriberIdAndTargetTypeAndErrandId(SUBSCRIBER_ID, DB_ERRAND, ERRAND_ID)).thenReturn(false);
+		when(subscriptionRepositoryMock.saveAndFlush(any(SubscriptionEntity.class)))
+			.thenThrow(new org.springframework.dao.DataIntegrityViolationException("uq_subscription_subscriber_target_errand"));
+
+		final var dto = Subscription.create()
+			.withTarget(SubscriptionTarget.create().withType(SubscriptionTargetType.ERRAND).withId(ERRAND_ID));
+
+		assertThatThrownBy(() -> service.createSubscription(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID, dto))
+			.isInstanceOf(Problem.class)
+			.extracting("status").isEqualTo(CONFLICT);
+	}
+
+	@Test
+	void createNamespaceSubscriptionRaceTranslatesDbViolationToConflict() {
+		final var subscriber = SubscriberEntity.create().withId(SUBSCRIBER_ID);
+		when(subscriberServiceMock.findEntity(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID)).thenReturn(subscriber);
+		when(subscriptionRepositoryMock.existsBySubscriberIdAndTargetTypeAndErrandIsNull(SUBSCRIBER_ID, DB_NAMESPACE)).thenReturn(false);
+		when(subscriptionRepositoryMock.saveAndFlush(any(SubscriptionEntity.class)))
+			.thenThrow(new org.springframework.dao.DataIntegrityViolationException("uq_subscription_subscriber_target_errand"));
+
+		final var dto = Subscription.create()
+			.withTarget(SubscriptionTarget.create().withType(SubscriptionTargetType.NAMESPACE));
+
+		assertThatThrownBy(() -> service.createSubscription(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID, dto))
+			.isInstanceOf(Problem.class)
+			.extracting("status").isEqualTo(CONFLICT);
 	}
 
 	@Test

@@ -1,0 +1,22 @@
+[
+	{
+		"id": "aabbccdd-0000-0000-0000-000000000001",
+		"name": "Servicedesk-bevakning",
+		"identifier": {
+			"type": "adAccount",
+			"value": "joe01doe"
+		},
+		"channels": [
+			{
+				"type": "INTERNAL"
+			}
+		],
+		"eventFilters": [],
+		"created": "${json-unit.any-string}",
+		"createdBy": {
+			"type": "adAccount",
+			"value": "adm01adm"
+		},
+		"subscriptionCount": 2
+	}
+]

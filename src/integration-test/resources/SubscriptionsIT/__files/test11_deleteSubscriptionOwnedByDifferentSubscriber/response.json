@@ -1,0 +1,5 @@
+{
+	"title": "Not Found",
+	"status": 404,
+	"detail": "Subscription with id:'bbccddee-0000-0000-0000-000000000002' not found for subscriber with id:'aabbccdd-0000-0000-0000-000000000002' in namespace:'NAMESPACE-1' for municipality with id:'2281'"
+}

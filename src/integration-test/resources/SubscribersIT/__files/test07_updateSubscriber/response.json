@@ -1,0 +1,30 @@
+{
+	"id": "aabbccdd-0000-0000-0000-000000000001",
+	"name": "Servicedesk-updated",
+	"identifier": {
+		"type": "adAccount",
+		"value": "joe01doe"
+	},
+	"channels": [
+		{
+			"type": "INTERNAL"
+		},
+		{
+			"type": "SMS",
+			"destination": "+46701234567"
+		}
+	],
+	"eventFilters": [
+		{
+			"type": "UPDATE",
+			"subtype": "STATUS"
+		}
+	],
+	"created": "${json-unit.any-string}",
+	"modified": "${json-unit.any-string}",
+	"createdBy": {
+		"type": "adAccount",
+		"value": "adm01adm"
+	},
+	"subscriptionCount": 2
+}

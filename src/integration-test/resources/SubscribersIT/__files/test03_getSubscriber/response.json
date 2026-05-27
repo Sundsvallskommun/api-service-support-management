@@ -1,0 +1,35 @@
+{
+	"id": "aabbccdd-0000-0000-0000-000000000002",
+	"name": "Tickets",
+	"identifier": {
+		"type": "adAccount",
+		"value": "jane11dane"
+	},
+	"channels": [
+		{
+			"type": "INTERNAL"
+		},
+		{
+			"type": "EMAIL",
+			"destination": "jane@example.com"
+		}
+	],
+	"eventFilters": [
+		{
+			"type": "UPDATE",
+			"subtype": "ATTACHMENT"
+		},
+		{
+			"type": "CREATE"
+		}
+	],
+	"pausedFrom": "${json-unit.any-string}",
+	"pausedUntil": "${json-unit.any-string}",
+	"created": "${json-unit.any-string}",
+	"modified": "${json-unit.any-string}",
+	"createdBy": {
+		"type": "adAccount",
+		"value": "jane11dane"
+	},
+	"subscriptionCount": 1
+}

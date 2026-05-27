@@ -38,10 +38,12 @@ public class Subscription {
 	@Schema(description = "Optional expiration timestamp. After this point the subscription is eligible for automatic cleanup.", examples = "2026-12-31T23:59:59+02:00")
 	private OffsetDateTime expiresAt;
 
+	@Null(groups = OnCreate.class)
 	@DateTimeFormat(iso = DATE_TIME)
 	@Schema(description = "Timestamp when the subscription was created", accessMode = READ_ONLY)
 	private OffsetDateTime created;
 
+	@Null(groups = OnCreate.class)
 	@Schema(description = "Identifier of the principal that created the subscription (may differ from the owning subscriber, e.g. when an admin subscribes on behalf of someone else).", accessMode = READ_ONLY)
 	private Identifier createdBy;
 

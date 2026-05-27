@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.service;
 
 import java.util.List;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.dept44.problem.Problem;
@@ -12,7 +13,7 @@ import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.SubscriptionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionEntity;
-import se.sundsvall.supportmanagement.service.mapper.SubscriberMapper;
+import se.sundsvall.supportmanagement.service.mapper.IdentifierEmbeddableMapper;
 import se.sundsvall.supportmanagement.service.mapper.SubscriptionMapper;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
@@ -61,9 +62,9 @@ public class SubscriptionService {
 		rejectDuplicate(subscriberId, target.getType(), errand);
 
 		final var entity = SubscriptionMapper.toSubscriptionEntity(subscriber, errand, subscription)
-			.withCreatedBy(SubscriberMapper.fromExecutingUser(Identifier.get()));
+			.withCreatedBy(IdentifierEmbeddableMapper.fromExecutingUser(Identifier.get()));
 
-		return subscriptionRepository.save(entity).getId();
+		return persistOrThrowConflict(entity, subscriberId, target.getType(), errand).getId();
 	}
 
 	@Transactional
@@ -93,11 +94,28 @@ public class SubscriptionService {
 		final var dbTargetType = SubscriptionMapper.toDbTargetType(targetType);
 		if (targetType == SubscriptionTargetType.ERRAND) {
 			if (subscriptionRepository.existsBySubscriberIdAndTargetTypeAndErrandId(subscriberId, dbTargetType, errand.getId())) {
-				throw Problem.valueOf(CONFLICT, DUPLICATE_ERRAND_SUBSCRIPTION.formatted(errand.getId(), subscriberId));
+				throw duplicateConflict(targetType, subscriberId, errand);
 			}
 		} else if (subscriptionRepository.existsBySubscriberIdAndTargetTypeAndErrandIsNull(subscriberId, dbTargetType)) {
-			throw Problem.valueOf(CONFLICT, DUPLICATE_NAMESPACE_SUBSCRIPTION.formatted(subscriberId));
+			throw duplicateConflict(targetType, subscriberId, errand);
 		}
+	}
+
+	// Flush eagerly so the uq_subscription_subscriber_target_errand constraint (V1_36) fires
+	// inside this method, catching the TOCTOU race past rejectDuplicate. Translate to 409 instead of 500.
+	private SubscriptionEntity persistOrThrowConflict(final SubscriptionEntity entity, final String subscriberId, final SubscriptionTargetType targetType, final ErrandEntity errand) {
+		try {
+			return subscriptionRepository.saveAndFlush(entity);
+		} catch (final DataIntegrityViolationException e) {
+			throw duplicateConflict(targetType, subscriberId, errand);
+		}
+	}
+
+	private static se.sundsvall.dept44.problem.ThrowableProblem duplicateConflict(final SubscriptionTargetType targetType, final String subscriberId, final ErrandEntity errand) {
+		if (targetType == SubscriptionTargetType.ERRAND) {
+			return Problem.valueOf(CONFLICT, DUPLICATE_ERRAND_SUBSCRIPTION.formatted(errand.getId(), subscriberId));
+		}
+		return Problem.valueOf(CONFLICT, DUPLICATE_NAMESPACE_SUBSCRIPTION.formatted(subscriberId));
 	}
 
 	private SubscriptionEntity loadSubscriptionOrThrow(final String municipalityId, final String namespace, final String subscriberId, final String subscriptionId) {

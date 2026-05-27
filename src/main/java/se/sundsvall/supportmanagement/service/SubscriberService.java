@@ -15,6 +15,7 @@ import se.sundsvall.supportmanagement.integration.db.SubscriptionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.IdentifierEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberSubscriptionCount;
+import se.sundsvall.supportmanagement.service.mapper.IdentifierEmbeddableMapper;
 import se.sundsvall.supportmanagement.service.mapper.SubscriberMapper;
 
 import static java.util.Collections.emptyList;
@@ -30,6 +31,7 @@ public class SubscriberService {
 	private static final String SUBSCRIBER_CONFLICT = "Subscriber with identifier (type:'%s', value:'%s') and name:'%s' already exists in namespace:'%s' for municipality with id:'%s'";
 	private static final String IDENTIFIER_FILTER_INCOMPLETE = "Both identifierType and identifierValue must be provided together";
 	private static final String INVALID_PAUSE_WINDOW = "pausedUntil must be after pausedFrom";
+	private static final String PAUSED_UNTIL_REQUIRES_PAUSED_FROM = "pausedUntil cannot be set without pausedFrom";
 
 	private final SubscriberRepository subscriberRepository;
 	private final SubscriptionRepository subscriptionRepository;
@@ -72,7 +74,7 @@ public class SubscriberService {
 	public String createSubscriber(final String municipalityId, final String namespace, final Subscriber subscriber) {
 		rejectDuplicate(municipalityId, namespace, subscriber);
 		final var entity = SubscriberMapper.toSubscriberEntity(municipalityId, namespace, subscriber);
-		entity.setCreatedBy(SubscriberMapper.fromExecutingUser(Identifier.get()));
+		entity.setCreatedBy(IdentifierEmbeddableMapper.fromExecutingUser(Identifier.get()));
 		validatePauseWindow(entity);
 		return persistOrThrowConflict(entity).getId();
 	}
@@ -104,6 +106,9 @@ public class SubscriberService {
 	}
 
 	private void validatePauseWindow(final SubscriberEntity entity) {
+		if (entity.getPausedUntil() != null && entity.getPausedFrom() == null) {
+			throw Problem.valueOf(BAD_REQUEST, PAUSED_UNTIL_REQUIRES_PAUSED_FROM);
+		}
 		if (entity.getPausedFrom() != null && entity.getPausedUntil() != null && !entity.getPausedUntil().isAfter(entity.getPausedFrom())) {
 			throw Problem.valueOf(BAD_REQUEST, INVALID_PAUSE_WINDOW);
 		}

@@ -1,19 +1,19 @@
 package se.sundsvall.supportmanagement.integration.db.converter;
 
 import org.junit.jupiter.api.Test;
-import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionTargetType;
+import se.sundsvall.supportmanagement.integration.db.model.subscriber.DbSubscriptionTargetType;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-class SubscriptionTargetTypeConverterTest {
+class DbSubscriptionTargetTypeConverterTest {
 
-	private final SubscriptionTargetTypeConverter converter = new SubscriptionTargetTypeConverter();
+	private final DbSubscriptionTargetTypeConverter converter = new DbSubscriptionTargetTypeConverter();
 
 	@Test
 	void convertToDatabaseColumn() {
-		assertThat(converter.convertToDatabaseColumn(SubscriptionTargetType.ERRAND)).isEqualTo("ERRAND");
-		assertThat(converter.convertToDatabaseColumn(SubscriptionTargetType.NAMESPACE)).isEqualTo("NAMESPACE");
+		assertThat(converter.convertToDatabaseColumn(DbSubscriptionTargetType.ERRAND)).isEqualTo("ERRAND");
+		assertThat(converter.convertToDatabaseColumn(DbSubscriptionTargetType.NAMESPACE)).isEqualTo("NAMESPACE");
 	}
 
 	@Test
@@ -23,8 +23,8 @@ class SubscriptionTargetTypeConverterTest {
 
 	@Test
 	void convertToEntityAttribute() {
-		assertThat(converter.convertToEntityAttribute("ERRAND")).isEqualTo(SubscriptionTargetType.ERRAND);
-		assertThat(converter.convertToEntityAttribute("NAMESPACE")).isEqualTo(SubscriptionTargetType.NAMESPACE);
+		assertThat(converter.convertToEntityAttribute("ERRAND")).isEqualTo(DbSubscriptionTargetType.ERRAND);
+		assertThat(converter.convertToEntityAttribute("NAMESPACE")).isEqualTo(DbSubscriptionTargetType.NAMESPACE);
 	}
 
 	@Test

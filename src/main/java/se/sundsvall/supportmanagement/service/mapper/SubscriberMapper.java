@@ -1,17 +1,29 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import se.sundsvall.supportmanagement.api.model.identifier.Identifier;
 import se.sundsvall.supportmanagement.api.model.subscriber.EventFilter;
 import se.sundsvall.supportmanagement.api.model.subscriber.NotificationChannel;
 import se.sundsvall.supportmanagement.api.model.subscriber.NotificationChannelType;
 import se.sundsvall.supportmanagement.api.model.subscriber.Subscriber;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.EventFilterEmbeddable;
-import se.sundsvall.supportmanagement.integration.db.model.subscriber.IdentifierEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.NotificationChannelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
 
+import static java.util.stream.Collectors.toCollection;
+
+/**
+ * Maps between {@link Subscriber} DTOs and {@link SubscriberEntity}.
+ *
+ * <p>
+ * Collection-returning methods that produce entity embeddables ({@link #toChannelEmbeddables},
+ * {@link #toEventFilterEmbeddables}) return <strong>mutable</strong> ArrayLists. This is required
+ * so Hibernate can manage {@code @ElementCollection @OrderColumn} lists during update flush —
+ * {@code Stream.toList()} returns an immutable list which would cause
+ * {@code UnsupportedOperationException}, translated by dept44 to {@code 501 NOT_IMPLEMENTED}.
+ * See {@code SubscribersIT.test07_updateSubscriber} for regression coverage.
+ */
 public final class SubscriberMapper {
 
 	private SubscriberMapper() {
@@ -24,7 +36,7 @@ public final class SubscriberMapper {
 				.withMunicipalityId(municipalityId)
 				.withNamespace(namespace)
 				.withName(dto.getName())
-				.withIdentifier(toIdentifierEmbeddable(dto.getIdentifier()))
+				.withIdentifier(IdentifierEmbeddableMapper.toIdentifierEmbeddable(dto.getIdentifier()))
 				.withChannels(toChannelEmbeddables(dto.getChannels()))
 				.withEventFilters(toEventFilterEmbeddables(dto.getEventFilters()))
 				.withPausedFrom(dto.getPausedFrom())
@@ -48,41 +60,15 @@ public final class SubscriberMapper {
 			.map(e -> Subscriber.create()
 				.withId(e.getId())
 				.withName(e.getName())
-				.withIdentifier(toIdentifier(e.getIdentifier()))
+				.withIdentifier(IdentifierEmbeddableMapper.toIdentifier(e.getIdentifier()))
 				.withChannels(toChannels(e.getChannels()))
 				.withEventFilters(toEventFilters(e.getEventFilters()))
 				.withPausedFrom(e.getPausedFrom())
 				.withPausedUntil(e.getPausedUntil())
 				.withCreated(e.getCreated())
 				.withModified(e.getModified())
-				.withCreatedBy(toIdentifier(e.getCreatedBy()))
+				.withCreatedBy(IdentifierEmbeddableMapper.toIdentifier(e.getCreatedBy()))
 				.withSubscriptionCount(subscriptionCount == null ? null : subscriptionCount.intValue()))
-			.orElse(null);
-	}
-
-	static Identifier toIdentifier(final IdentifierEmbeddable embeddable) {
-		return Optional.ofNullable(embeddable)
-			.filter(e -> e.getType() != null || e.getValue() != null)
-			.map(e -> Identifier.create()
-				.withType(e.getType())
-				.withValue(e.getValue()))
-			.orElse(null);
-	}
-
-	static IdentifierEmbeddable toIdentifierEmbeddable(final Identifier dto) {
-		return Optional.ofNullable(dto)
-			.map(d -> IdentifierEmbeddable.create()
-				.withType(d.getType())
-				.withValue(d.getValue()))
-			.orElse(null);
-	}
-
-	public static IdentifierEmbeddable fromExecutingUser(final se.sundsvall.dept44.support.Identifier identifier) {
-		return Optional.ofNullable(identifier)
-			.filter(i -> i.getTypeString() != null)
-			.map(i -> IdentifierEmbeddable.create()
-				.withType(i.getTypeString())
-				.withValue(i.getValue()))
 			.orElse(null);
 	}
 
@@ -106,7 +92,7 @@ public final class SubscriberMapper {
 		return Optional.ofNullable(dtos)
 			.map(list -> list.stream()
 				.map(SubscriberMapper::toChannelEmbeddable)
-				.toList())
+				.collect(toCollection(ArrayList::new)))
 			.orElse(null);
 	}
 
@@ -150,7 +136,7 @@ public final class SubscriberMapper {
 		return Optional.ofNullable(dtos)
 			.map(list -> list.stream()
 				.map(SubscriberMapper::toEventFilterEmbeddable)
-				.toList())
+				.collect(toCollection(ArrayList::new)))
 			.orElse(null);
 	}
 

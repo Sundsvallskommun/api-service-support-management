@@ -2,15 +2,24 @@ package se.sundsvall.supportmanagement.api.model.subscriber;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import java.util.Objects;
 
 @Schema(description = "Filter on event type/subtype, used to limit which eventlog events trigger a notification")
 public class EventFilter {
 
 	@NotBlank
-	@Schema(description = "Event type. Matches the eventlog EventType enum (CREATE, READ, UPDATE, DELETE, ACCESS, EXECUTE, CANCEL, DROP).", examples = "UPDATE")
+	@Pattern(regexp = "^(CREATE|READ|UPDATE|DELETE|ACCESS|EXECUTE|CANCEL|DROP)$",
+		message = "type must be one of CREATE, READ, UPDATE, DELETE, ACCESS, EXECUTE, CANCEL, DROP")
+	@Schema(description = "Event type. Matches the eventlog EventType enum.",
+		allowableValues = {
+			"CREATE", "READ", "UPDATE", "DELETE", "ACCESS", "EXECUTE", "CANCEL", "DROP"
+		},
+		examples = "UPDATE")
 	private String type;
 
+	@Size(max = 64)
 	@Schema(description = "Event subtype. If null, all subtypes of the given type match.", examples = "ATTACHMENT")
 	private String subtype;
 

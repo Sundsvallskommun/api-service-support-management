@@ -3,11 +3,14 @@ package se.sundsvall.supportmanagement.api.model.identifier;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import java.util.Objects;
 
 @Schema(description = "Identifier describing a user or subject (AD-account or party-id)")
 public class Identifier {
 
+	// Pattern/Schema literals must mirror IdentifierTypeValues — annotation values require
+	// compile-time constant expressions, and Type.AD_ACCOUNT.getTypeString() is a method call.
 	@NotBlank
 	@Pattern(regexp = "^(adAccount|partyId)$", message = "type must be 'adAccount' or 'partyId'")
 	@Schema(description = "Identifier type", examples = {
@@ -18,6 +21,7 @@ public class Identifier {
 	private String type;
 
 	@NotBlank
+	@Size(max = 255)
 	@Schema(description = "Identifier value (AD-account name or partyId UUID)", examples = "joe01doe")
 	private String value;
 

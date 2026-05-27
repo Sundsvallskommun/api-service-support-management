@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Null;
+import jakarta.validation.constraints.Size;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Objects;
@@ -24,6 +25,7 @@ public class Subscriber {
 	@Schema(description = "Unique identifier of the subscriber", examples = "123e4567-e89b-12d3-a456-426614174000", accessMode = READ_ONLY)
 	private String id;
 
+	@Size(max = 255)
 	@Schema(description = "Optional human-readable label. Useful when a person has several subscribers (e.g. one per role or purpose).", examples = "Servicedesk-bevakning")
 	private String name;
 

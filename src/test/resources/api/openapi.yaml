@@ -7,7 +7,7 @@ info:
     url: https://opensource.org/licenses/MIT
   version: "14.7"
 servers:
-- url: http://localhost:38949
+- url: http://localhost:51255
   description: Generated server url
 tags:
 - name: Errand attachments
@@ -7720,9 +7720,9 @@ components:
         type:
           type: string
           format: uri
-        detail:
-          type: string
         title:
+          type: string
+        detail:
           type: string
         status:
           type: integer
@@ -7745,10 +7745,10 @@ components:
         instance:
           type: string
           format: uri
-        detail:
-          type: string
         causeAsProblem:
           $ref: "#/components/schemas/ThrowableProblem"
+        detail:
+          type: string
     ThrowableProblem:
       type: object
       properties:
@@ -8190,16 +8190,27 @@ components:
       properties:
         type:
           type: string
-          description: "Event type. Matches the eventlog EventType enum (CREATE, READ,\
-            \ UPDATE, DELETE, ACCESS, EXECUTE, CANCEL, DROP)."
+          description: Event type. Matches the eventlog EventType enum.
+          enum:
+          - CREATE
+          - READ
+          - UPDATE
+          - DELETE
+          - ACCESS
+          - EXECUTE
+          - CANCEL
+          - DROP
           examples:
           - UPDATE
           minLength: 1
+          pattern: ^(CREATE|READ|UPDATE|DELETE|ACCESS|EXECUTE|CANCEL|DROP)$
         subtype:
           type: string
           description: "Event subtype. If null, all subtypes of the given type match."
           examples:
           - ATTACHMENT
+          maxLength: 64
+          minLength: 0
       required:
       - type
     Identifier:
@@ -8222,7 +8233,8 @@ components:
           description: Identifier value (AD-account name or partyId UUID)
           examples:
           - joe01doe
-          minLength: 1
+          maxLength: 255
+          minLength: 0
       required:
       - type
       - value
@@ -8246,6 +8258,8 @@ components:
             \ from the subscriber's identifier is used."
           examples:
           - user@example.com
+          maxLength: 255
+          minLength: 0
       required:
       - type
     Subscriber:
@@ -8265,6 +8279,8 @@ components:
             subscribers (e.g. one per role or purpose).
           examples:
           - Servicedesk-bevakning
+          maxLength: 255
+          minLength: 0
         identifier:
           $ref: "#/components/schemas/Identifier"
           description: Identifier of the principal that ultimately receives notifications
@@ -9108,34 +9124,13 @@ components:
           type: boolean
         container:
           type: boolean
-        number:
-          type: boolean
-        pojo:
-          type: boolean
         floatingPointNumber:
-          type: boolean
-        short:
-          type: boolean
-        int:
-          type: boolean
-        long:
-          type: boolean
-        double:
-          type: boolean
-        bigDecimal:
           type: boolean
         bigInteger:
           type: boolean
-        textual:
-          type: boolean
-          deprecated: true
-        boolean:
-          type: boolean
-        binary:
+        bigDecimal:
           type: boolean
         valueNode:
-          type: boolean
-        missingNode:
           type: boolean
         nodeType:
           type: string
@@ -9149,9 +9144,30 @@ components:
           - OBJECT
           - POJO
           - STRING
+        integralNumber:
+          type: boolean
+        missingNode:
+          type: boolean
+        short:
+          type: boolean
+        double:
+          type: boolean
+        pojo:
+          type: boolean
+        int:
+          type: boolean
         string:
           type: boolean
-        integralNumber:
+        long:
+          type: boolean
+        textual:
+          type: boolean
+          deprecated: true
+        binary:
+          type: boolean
+        boolean:
+          type: boolean
+        number:
           type: boolean
         embeddedValue:
           type: boolean
@@ -9921,12 +9937,12 @@ components:
     PageErrand:
       type: object
       properties:
-        totalElements:
-          type: integer
-          format: int64
         totalPages:
           type: integer
           format: int32
+        totalElements:
+          type: integer
+          format: int64
         size:
           type: integer
           format: int32
@@ -9937,17 +9953,17 @@ components:
         number:
           type: integer
           format: int32
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
         sort:
           $ref: "#/components/schemas/SortObject"
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
+        numberOfElements:
+          type: integer
+          format: int32
         first:
           type: boolean
         last:
           type: boolean
-        numberOfElements:
-          type: integer
-          format: int32
         empty:
           type: boolean
     PageableObject:
@@ -9958,14 +9974,14 @@ components:
           format: int64
         paged:
           type: boolean
+        sort:
+          $ref: "#/components/schemas/SortObject"
         pageNumber:
           type: integer
           format: int32
         pageSize:
           type: integer
           format: int32
-        sort:
-          $ref: "#/components/schemas/SortObject"
         unpaged:
           type: boolean
     SortObject:
@@ -10213,12 +10229,12 @@ components:
     PageEvent:
       type: object
       properties:
-        totalElements:
-          type: integer
-          format: int64
         totalPages:
           type: integer
           format: int32
+        totalElements:
+          type: integer
+          format: int64
         size:
           type: integer
           format: int32
@@ -10229,17 +10245,17 @@ components:
         number:
           type: integer
           format: int32
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
         sort:
           $ref: "#/components/schemas/SortObject"
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
+        numberOfElements:
+          type: integer
+          format: int32
         first:
           type: boolean
         last:
           type: boolean
-        numberOfElements:
-          type: integer
-          format: int32
         empty:
           type: boolean
     Communication:
@@ -10446,12 +10462,12 @@ components:
     PageMessage:
       type: object
       properties:
-        totalElements:
-          type: integer
-          format: int64
         totalPages:
           type: integer
           format: int32
+        totalElements:
+          type: integer
+          format: int64
         size:
           type: integer
           format: int32
@@ -10462,17 +10478,17 @@ components:
         number:
           type: integer
           format: int32
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
         sort:
           $ref: "#/components/schemas/SortObject"
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
+        numberOfElements:
+          type: integer
+          format: int32
         first:
           type: boolean
         last:
           type: boolean
-        numberOfElements:
-          type: integer
-          format: int32
         empty:
           type: boolean
     ReadBy:

@@ -15,8 +15,8 @@ import se.sundsvall.supportmanagement.integration.db.model.subscriber.Subscriber
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionEntity;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionTargetType.ERRAND;
-import static se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionTargetType.NAMESPACE;
+import static se.sundsvall.supportmanagement.integration.db.model.subscriber.DbSubscriptionTargetType.ERRAND;
+import static se.sundsvall.supportmanagement.integration.db.model.subscriber.DbSubscriptionTargetType.NAMESPACE;
 
 class SubscriptionMapperTest {
 
