@@ -29,6 +29,12 @@ scheduler:
     cron: 0 */1 * * * *
     shedlock-lock-at-most-for: PT4M
     maximum-execution-time: PT2M
+  notification-dispatch:
+    name: process_notification_dispatch
+    cron: 0 */5 * * * *
+    shedlock-lock-at-most-for: PT9M
+    maximum-execution-time: PT4M
+    max-retries: 3
 integration:
   accessmapper:
     connectTimeout: 5

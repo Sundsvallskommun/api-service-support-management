@@ -1,4 +1,5 @@
 
+
     create table action_config (
         active bit not null,
         created datetime(6),
@@ -362,6 +363,22 @@
         primary key (id)
     ) engine=InnoDB;
 
+    create table notification_dispatch (
+        dead_letter bit not null,
+        retry_count integer not null,
+        created datetime(6) not null,
+        municipality_id varchar(8) not null,
+        next_retry_at datetime(6),
+        namespace varchar(32) not null,
+        event_type varchar(64) not null,
+        errand_id varchar(255) not null,
+        event_id varchar(255) not null,
+        executing_user_id varchar(255),
+        id varchar(255) not null,
+        request_group_id varchar(255),
+        primary key (id)
+    ) engine=InnoDB;
+
     create table parameter (
         display_name varchar(255),
         errand_id varchar(255) not null,
@@ -507,6 +524,21 @@
         type varchar(64) not null,
         subscriber_id varchar(255) not null,
         primary key (sort_order, subscriber_id)
+    ) engine=InnoDB;
+
+    create table subscriber_notification (
+        acknowledged datetime(6),
+        created datetime(6) not null,
+        expires datetime(6),
+        modified datetime(6),
+        municipality_id varchar(8) not null,
+        identifier_type varchar(16) not null,
+        namespace varchar(32) not null,
+        errand_id varchar(36) not null,
+        errand_number varchar(255),
+        id varchar(255) not null,
+        identifier_value varchar(255) not null,
+        primary key (id)
     ) engine=InnoDB;
 
     create table subscription (
@@ -780,8 +812,14 @@
     create index idx_namespace_municipality_id 
        on notification (namespace, municipality_id);
 
-    create index idx_notification_municipality_id_namespace_owner_id 
+    create index idx_notification_municipality_id_namespace_owner_id
        on notification (municipality_id, namespace, owner_id);
+
+    create index idx_dispatch_errand_id
+       on notification_dispatch (errand_id);
+
+    create index idx_dispatch_dead_letter_retry
+       on notification_dispatch (dead_letter, next_retry_at);
 
     create index idx_phase_municipality_id_namespace 
        on phase (municipality_id, namespace);
@@ -831,8 +869,18 @@
     create index idx_subscriber_municipality_id_namespace_identifier 
        on subscriber (municipality_id, namespace, identifier_type, identifier_value);
 
-    alter table if exists subscriber 
+    alter table if exists subscriber
        add constraint uq_subscriber_municipality_namespace_identifier_name unique (municipality_id, namespace, identifier_type, identifier_value, name);
+
+    create index idx_sub_notif_identifier
+       on subscriber_notification (municipality_id, namespace, identifier_type, identifier_value);
+
+    create index idx_sub_notif_errand
+       on subscriber_notification (errand_id);
+
+    alter table if exists subscriber_notification
+       add constraint uq_sub_notif_errand_identifier
+       unique (municipality_id, namespace, errand_id, identifier_type, identifier_value);
 
     create index idx_subscription_subscriber_id 
        on subscription (subscriber_id);

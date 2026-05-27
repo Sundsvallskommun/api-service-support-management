@@ -4,6 +4,7 @@ import generated.se.sundsvall.eventlog.EventType;
 import generated.se.sundsvall.notes.Note;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -11,8 +12,10 @@ import org.springframework.stereotype.Service;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.event.Event;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
+import se.sundsvall.supportmanagement.integration.db.NotificationDispatchRepository;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.NotificationDispatchEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
 import se.sundsvall.supportmanagement.integration.eventlog.EventlogClient;
 import se.sundsvall.supportmanagement.service.mapper.EventlogMapper;
@@ -34,10 +37,12 @@ public class EventService {
 
 	private final EventlogClient eventLogClient;
 	private final NotificationService notificationService;
+	private final NotificationDispatchRepository notificationDispatchRepository;
 
-	public EventService(final EventlogClient eventLogClient, final NotificationService notificationService) {
+	public EventService(final EventlogClient eventLogClient, final NotificationService notificationService, final NotificationDispatchRepository notificationDispatchRepository) {
 		this.eventLogClient = eventLogClient;
 		this.notificationService = notificationService;
+		this.notificationDispatchRepository = notificationDispatchRepository;
 	}
 
 	public void createErrandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final Revision currentRevision, final Revision previousRevision, final boolean sendNotification, final EventSubType subtype) {
@@ -48,6 +53,7 @@ public class EventService {
 
 		if (sendNotification) {
 			createNotification(errandEntity, event);
+			saveDispatchEntry(errandEntity, eventType, requestGroupId);
 		}
 	}
 
@@ -62,6 +68,7 @@ public class EventService {
 		final var event = toEvent(eventType, message, extractId(currentRevision), Note.class, metadata, getExecutingUser(), NOTE.getValue(), requestGroupId);
 		eventLogClient.createEvent(errandEntity.getMunicipalityId(), logKey, event);
 		createNotification(errandEntity, event);
+		saveDispatchEntry(errandEntity, eventType, requestGroupId);
 	}
 
 	public Page<Event> readEvents(final String municipalityId, final String id, final Pageable pageable) {
@@ -75,6 +82,18 @@ public class EventService {
 
 	private String extractId(final Revision currentRevision) {
 		return ofNullable(currentRevision).map(Revision::getId).orElse(null);
+	}
+
+	private void saveDispatchEntry(final ErrandEntity errandEntity, final EventType eventType, final String requestGroupId) {
+		final var executingUser = getExecutingUser();
+		notificationDispatchRepository.save(NotificationDispatchEntity.create()
+			.withEventId(UUID.randomUUID().toString())
+			.withRequestGroupId(requestGroupId)
+			.withErrandId(errandEntity.getId())
+			.withMunicipalityId(errandEntity.getMunicipalityId())
+			.withNamespace(errandEntity.getNamespace())
+			.withEventType(eventType.getValue())
+			.withExecutingUserId(Optional.ofNullable(executingUser).map(u -> u.getValue()).orElse(null)));
 	}
 
 	private void createNotification(final ErrandEntity errandEntity, final generated.se.sundsvall.eventlog.Event event) {

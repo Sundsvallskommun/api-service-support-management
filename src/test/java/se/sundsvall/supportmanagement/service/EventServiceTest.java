@@ -19,6 +19,7 @@ import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.notification.Notification;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
+import se.sundsvall.supportmanagement.integration.db.NotificationDispatchRepository;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
@@ -46,6 +47,9 @@ class EventServiceTest {
 
 	@Mock
 	private EventlogClient eventLogClientMock;
+
+	@Mock
+	private NotificationDispatchRepository notificationDispatchRepositoryMock;
 
 	@Mock
 	private PageEvent pageEventMock;

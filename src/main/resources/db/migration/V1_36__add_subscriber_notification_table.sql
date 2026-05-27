@@ -1,0 +1,24 @@
+create table if not exists subscriber_notification (
+    id               varchar(36)  not null,
+    created          datetime(3)  not null,
+    modified         datetime(3),
+    identifier_type  varchar(16)  not null,
+    identifier_value varchar(255) not null,
+    municipality_id  varchar(8)   not null,
+    namespace        varchar(32)  not null,
+    errand_id        varchar(36)  not null,
+    errand_number    varchar(255),
+    expires          datetime(3),
+    acknowledged     datetime(3),
+    primary key (id)
+) engine=InnoDB;
+
+create index if not exists idx_sub_notif_identifier
+    on subscriber_notification (municipality_id, namespace, identifier_type, identifier_value);
+
+create index if not exists idx_sub_notif_errand
+    on subscriber_notification (errand_id);
+
+alter table if exists subscriber_notification
+    add constraint uq_sub_notif_errand_identifier
+    unique (municipality_id, namespace, errand_id, identifier_type, identifier_value);
