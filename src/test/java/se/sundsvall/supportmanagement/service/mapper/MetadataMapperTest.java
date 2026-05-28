@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
@@ -11,6 +12,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import se.sundsvall.supportmanagement.api.model.metadata.Category;
 import se.sundsvall.supportmanagement.api.model.metadata.ExternalIdType;
 import se.sundsvall.supportmanagement.api.model.metadata.Label;
+import se.sundsvall.supportmanagement.api.model.metadata.LabelAttribute;
 import se.sundsvall.supportmanagement.api.model.metadata.Phase;
 import se.sundsvall.supportmanagement.api.model.metadata.PhaseTransition;
 import se.sundsvall.supportmanagement.api.model.metadata.Role;
@@ -18,6 +20,7 @@ import se.sundsvall.supportmanagement.api.model.metadata.Status;
 import se.sundsvall.supportmanagement.api.model.metadata.Type;
 import se.sundsvall.supportmanagement.integration.db.model.CategoryEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ExternalIdTypeEntity;
+import se.sundsvall.supportmanagement.integration.db.model.LabelAttributeEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.PhaseEntity;
 import se.sundsvall.supportmanagement.integration.db.model.PhaseTransitionEntity;
@@ -284,7 +287,10 @@ class MetadataMapperTest {
 		final var parent = MetadataLabelEntity.create()
 			.withMunicipalityId(municipalityId)
 			.withNamespace(namespace)
-			.withResourceName("parent");
+			.withResourceName("parent")
+			.withAttributes(List.of(
+				LabelAttributeEmbeddable.create().withKey("escalationEmail").withValue("escalation@example.com"),
+				LabelAttributeEmbeddable.create().withKey("owner").withValue("team-a")));
 
 		final var level1 = MetadataLabelEntity.create()
 			.withMunicipalityId(municipalityId)
@@ -323,10 +329,15 @@ class MetadataMapperTest {
 		final var root = labels.getLabelStructure().getFirst();
 
 		assertThat(root.getResourceName()).isEqualTo("parent");
+		assertThat(root.getAttributes())
+			.extracting(LabelAttribute::getKey, LabelAttribute::getValue)
+			.containsExactly(tuple("escalationEmail", "escalation@example.com"), tuple("owner", "team-a"));
 		assertThat(root.getLabels()).hasSize(1);
 
 		final var l1 = root.getLabels().getFirst();
 		assertThat(l1.getResourceName()).isEqualTo("level1");
+		// Labels without attributes carry an empty list; @JsonInclude(NON_EMPTY) omits the field on the wire
+		assertThat(l1.getAttributes()).isEmpty();
 		assertThat(l1.getLabels()).hasSize(2);
 
 		// Sort the children so test is stable regardless of order
@@ -392,7 +403,9 @@ class MetadataMapperTest {
 		final var parent = new Label()
 			.withId("parent-id")
 			.withResourceName("parent")
-			.withLabels(List.of(level1));
+			.withLabels(List.of(level1))
+			.withAttributes(List.of(
+				LabelAttribute.create().withKey("escalationEmail").withValue("escalation@example.com")));
 
 		// Act
 		final var result = MetadataMapper.toMetadataLabelEntityList(namespace, municipalityId, List.of(parent));
@@ -405,11 +418,15 @@ class MetadataMapperTest {
 				assertThat(parentEntity.getResourceName()).isEqualTo("parent");
 				assertThat(parentEntity.getMunicipalityId()).isEqualTo(municipalityId);
 				assertThat(parentEntity.getNamespace()).isEqualTo(namespace);
+				assertThat(parentEntity.getAttributes())
+					.extracting(LabelAttributeEmbeddable::getKey, LabelAttributeEmbeddable::getValue)
+					.containsExactly(tuple("escalationEmail", "escalation@example.com"));
 				assertThat(parentEntity.getMetadataLabels()).hasSize(1);
 
 				final var level1Entity = parentEntity.getMetadataLabels().getFirst();
 				assertThat(level1Entity.getResourceName()).isEqualTo("level1");
 				assertThat(level1Entity.getParent()).isEqualTo(parentEntity);
+				assertThat(level1Entity.getAttributes()).isEmpty();
 				assertThat(level1Entity.getMetadataLabels()).hasSize(2);
 
 				final var level2aEntity = level1Entity.getMetadataLabels().get(0);
@@ -443,6 +460,63 @@ class MetadataMapperTest {
 		final var result = MetadataMapper.toMetadataLabelEntityList("any", "any", null);
 
 		assertThat(result).isEmpty();
+	}
+
+	@Test
+	void updateMetadataLabelEntitiesReplacesAttributesInPlace() {
+
+		// Arrange — existing entity carries the original attribute list reference; we want it preserved
+		final var existing = MetadataLabelEntity.create()
+			.withId("label-id")
+			.withMunicipalityId("2289")
+			.withNamespace("ns")
+			.withResourceName("LABEL")
+			.withAttributes(new ArrayList<>(List.of(
+				LabelAttributeEmbeddable.create().withKey("escalationEmail").withValue("old@example.com"),
+				LabelAttributeEmbeddable.create().withKey("toBeRemoved").withValue("x"))));
+		final var attributesRef = existing.getAttributes();
+
+		final var incoming = new Label()
+			.withId("label-id")
+			.withResourceName("LABEL")
+			.withAttributes(List.of(
+				LabelAttribute.create().withKey("escalationEmail").withValue("new@example.com"),
+				LabelAttribute.create().withKey("owner").withValue("team-a")));
+
+		final var existingList = new ArrayList<>(List.of(existing));
+
+		// Act
+		MetadataMapper.updateMetadataLabelEntities(existingList, List.of(incoming), "ns", "2289");
+
+		// Assert — same list instance is reused (orphan-removal contract), with new contents
+		assertThat(existing.getAttributes()).isSameAs(attributesRef);
+		assertThat(existing.getAttributes())
+			.extracting(LabelAttributeEmbeddable::getKey, LabelAttributeEmbeddable::getValue)
+			.containsExactly(
+				tuple("escalationEmail", "new@example.com"),
+				tuple("owner", "team-a"));
+	}
+
+	@Test
+	void updateMetadataLabelEntitiesClearsAttributesWhenIncomingIsNull() {
+
+		final var existing = MetadataLabelEntity.create()
+			.withId("label-id")
+			.withMunicipalityId("2289")
+			.withNamespace("ns")
+			.withResourceName("LABEL")
+			.withAttributes(new ArrayList<>(List.of(
+				LabelAttributeEmbeddable.create().withKey("escalationEmail").withValue("old@example.com"))));
+
+		final var incoming = new Label()
+			.withId("label-id")
+			.withResourceName("LABEL");
+
+		final var existingList = new ArrayList<>(List.of(existing));
+
+		MetadataMapper.updateMetadataLabelEntities(existingList, List.of(incoming), "ns", "2289");
+
+		assertThat(existing.getAttributes()).isEmpty();
 	}
 
 	// =================================================================

@@ -10,6 +10,7 @@ import se.sundsvall.supportmanagement.api.model.metadata.Category;
 import se.sundsvall.supportmanagement.api.model.metadata.ContactReason;
 import se.sundsvall.supportmanagement.api.model.metadata.ExternalIdType;
 import se.sundsvall.supportmanagement.api.model.metadata.Label;
+import se.sundsvall.supportmanagement.api.model.metadata.LabelAttribute;
 import se.sundsvall.supportmanagement.api.model.metadata.Labels;
 import se.sundsvall.supportmanagement.api.model.metadata.Phase;
 import se.sundsvall.supportmanagement.api.model.metadata.PhaseTransition;
@@ -19,6 +20,7 @@ import se.sundsvall.supportmanagement.api.model.metadata.Type;
 import se.sundsvall.supportmanagement.integration.db.model.CategoryEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ExternalIdTypeEntity;
+import se.sundsvall.supportmanagement.integration.db.model.LabelAttributeEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.PhaseEntity;
 import se.sundsvall.supportmanagement.integration.db.model.PhaseTransitionEntity;
@@ -289,7 +291,8 @@ public class MetadataMapper {
 			.withClassification(entity.getClassification())
 			.withDisplayName(entity.getDisplayName())
 			.withResourceName(entity.getResourceName())
-			.withResourcePath(entity.getResourcePath());
+			.withResourcePath(entity.getResourcePath())
+			.withAttributes(toLabelAttributes(entity.getAttributes()));
 
 		var children = ofNullable(entity.getMetadataLabels())
 			.orElse(emptyList())
@@ -298,6 +301,20 @@ public class MetadataMapper {
 			.toList();
 
 		return label.withLabels(children);
+	}
+
+	private static List<LabelAttribute> toLabelAttributes(List<LabelAttributeEmbeddable> embeddables) {
+		return ofNullable(embeddables).orElse(emptyList()).stream()
+			.filter(Objects::nonNull)
+			.map(e -> LabelAttribute.create().withKey(e.getKey()).withValue(e.getValue()))
+			.toList();
+	}
+
+	private static List<LabelAttributeEmbeddable> toLabelAttributeEmbeddables(List<LabelAttribute> attributes) {
+		return ofNullable(attributes).orElse(emptyList()).stream()
+			.filter(Objects::nonNull)
+			.map(a -> LabelAttributeEmbeddable.create().withKey(a.getKey()).withValue(a.getValue()))
+			.toList();
 	}
 
 	public static List<MetadataLabelEntity> toMetadataLabelEntityList(String namespace, String municipalityId, List<Label> labels) {
@@ -318,7 +335,8 @@ public class MetadataMapper {
 			.withNamespace(namespace)
 			.withClassification(label.getClassification())
 			.withDisplayName(label.getDisplayName())
-			.withResourceName(trim(label.getResourceName()));
+			.withResourceName(trim(label.getResourceName()))
+			.withAttributes(toLabelAttributeEmbeddables(label.getAttributes()));
 
 		// Map children recursively
 		final var children = ofNullable(label.getLabels()).orElse(emptyList())
@@ -357,6 +375,10 @@ public class MetadataMapper {
 				existing.setClassification(label.getClassification());
 				existing.setDisplayName(label.getDisplayName());
 				existing.setResourceName(trim(label.getResourceName()));
+
+				// Replace attributes in-place so Hibernate's orphan removal on the element collection works
+				existing.getAttributes().clear();
+				existing.getAttributes().addAll(toLabelAttributeEmbeddables(label.getAttributes()));
 
 				// Recursively update children
 				updateMetadataLabelEntities(existing.getMetadataLabels(), label.getLabels(), namespace, municipalityId, existing);

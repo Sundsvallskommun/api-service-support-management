@@ -17,6 +17,7 @@ import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.dept44.problem.violations.Violation;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.metadata.Label;
+import se.sundsvall.supportmanagement.api.model.metadata.LabelAttribute;
 import se.sundsvall.supportmanagement.service.MetadataService;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -90,6 +91,17 @@ class MetadataLabelResourceFailureTest {
 
 	private static Stream<Arguments> labelsArguments(String method) {
 		return Stream.of(
+			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabelWithAttributes("class", "RES",
+				LabelAttribute.create().withKey("dup").withValue("a"),
+				LabelAttribute.create().withKey("dup").withValue("b"))),
+				tuples(
+					tuple(method + ".labels", "each label must have unique attribute keys"))),
+			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabel("class", "RES").withLabels(List.of(
+				createLabelWithAttributes("class", "CHILD",
+					LabelAttribute.create().withKey("k").withValue("v1"),
+					LabelAttribute.create().withKey("k").withValue("v2"))))),
+				tuples(
+					tuple(method + ".labels", "each label must have unique attribute keys"))),
 			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabel("class", "RESOURCE_NAME_1"), createLabel("class", "RESOURCE_NAME_1")),
 				tuples(
 					tuple(method + ".labels", "each entry must have unique resourceName compared to its siblings"))),
@@ -127,6 +139,10 @@ class MetadataLabelResourceFailureTest {
 
 	private static Label createLabel(String classification, String resourceName) {
 		return Label.create().withClassification(classification).withResourceName(resourceName);
+	}
+
+	private static Label createLabelWithAttributes(String classification, String resourceName, LabelAttribute... attributes) {
+		return createLabel(classification, resourceName).withAttributes(List.of(attributes));
 	}
 
 	@ParameterizedTest

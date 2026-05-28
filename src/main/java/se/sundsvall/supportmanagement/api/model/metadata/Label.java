@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.api.model.metadata;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
@@ -39,8 +40,10 @@ public class Label {
 	@ArraySchema(arraySchema = @Schema(ref = "#/components/schemas/Label"))
 	private List<Label> labels;
 
-	@Schema(description = "Free-form key/value data owned by the client. Stored and returned as-is by the service, which does not interpret or validate the contents. Keys are conventions agreed between clients (e.g. 'escalationEmail').")
+	@Schema(
+		description = "Free-form key/value data owned by the client. Stored and returned as-is by the service, which does not interpret the contents (apart from rejecting duplicate keys per label). Keys are conventions agreed between clients (e.g. 'escalationEmail').")
 	@Valid
+	@JsonInclude(JsonInclude.Include.NON_EMPTY)
 	private List<LabelAttribute> attributes;
 
 	public static Label create() {

@@ -102,6 +102,11 @@ INSERT INTO metadata_label (created, modified, municipality_id, namespace, class
     ('2025-12-01 10:00:00.000000', NULL, '2309', 'NAMESPACE-2', 'TYPE', 'Child A2', 'aaa00001-0000-0000-0000-000000000004', 'aaa00001-0000-0000-0000-000000000001', 'CHILD_A2', 'ROOT_A/CHILD_A2', false),
     ('2025-12-01 10:00:00.000000', NULL, '2309', 'NAMESPACE-2', 'CATEGORY', 'Root B', 'aaa00001-0000-0000-0000-000000000005', NULL, 'ROOT_B', 'ROOT_B', false);
 
+-- Label attributes (free-form key/value pairs owned by the client)
+INSERT INTO metadata_label_attribute (metadata_label_id, `key`, `value`) VALUES
+    ('a8fe832f-77a7-4906-9a97-ac5cbd73dbe7', 'escalationEmail', 'escalation@example.com'),
+    ('a8fe832f-77a7-4906-9a97-ac5cbd73dbe7', 'owner', 'team-a');
+
 -- -----------------------------------
 -- Validation
 -- -----------------------------------

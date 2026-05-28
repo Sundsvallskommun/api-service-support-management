@@ -5,6 +5,16 @@
 		"displayName": "CATEGORY-DISPLAY-NAME-1",
 		"name": "CATEGORY-1",
 		"resourceName": "CATEGORY_1",
+		"attributes": [
+			{
+				"key": "escalationEmail",
+				"value": "new@example.com"
+			},
+			{
+				"key": "newKey",
+				"value": "newValue"
+			}
+		],
 		"labels": [
 			{
 				"id": "3273e374-855c-4525-b8fc-aeaa710b83c5",
