@@ -303,6 +303,36 @@ class SubscriberServiceTest {
 	}
 
 	@Test
+	void createSubscriberRejectsPausedUntilWithoutPausedFrom() {
+		final var dto = Subscriber.create()
+			.withIdentifier(Identifier.create().withType("adAccount").withValue("joe01doe"))
+			.withPausedUntil(OffsetDateTime.parse("2026-06-30T00:00:00+02:00"));
+
+		assertThatThrownBy(() -> service.createSubscriber(MUNICIPALITY_ID, NAMESPACE, dto))
+			.isInstanceOf(Problem.class)
+			.extracting("status").isEqualTo(BAD_REQUEST);
+
+		verify(subscriberRepositoryMock, never()).saveAndFlush(any());
+	}
+
+	@Test
+	void updateSubscriberRejectsPausedUntilWithoutPausedFrom() {
+		final var id = randomUUID().toString();
+		final var existing = SubscriberEntity.create().withId(id)
+			.withMunicipalityId(MUNICIPALITY_ID).withNamespace(NAMESPACE)
+			.withIdentifier(IdentifierEmbeddable.create().withType("adAccount").withValue("joe01doe"));
+		when(subscriberRepositoryMock.findByIdAndNamespaceAndMunicipalityId(id, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(existing));
+
+		final var patch = Subscriber.create().withPausedUntil(OffsetDateTime.parse("2026-06-30T00:00:00+02:00"));
+
+		assertThatThrownBy(() -> service.updateSubscriber(MUNICIPALITY_ID, NAMESPACE, id, patch))
+			.isInstanceOf(Problem.class)
+			.extracting("status").isEqualTo(BAD_REQUEST);
+
+		verify(subscriberRepositoryMock, never()).saveAndFlush(any());
+	}
+
+	@Test
 	void createSubscriberRaceTranslatesDbViolationToConflict() {
 		// Two concurrent creates may both pass rejectDuplicate (existsBy) before either saves.
 		// The losing transaction hits the unique constraint at flush — we must translate to 409, not 500.

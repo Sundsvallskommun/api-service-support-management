@@ -1,0 +1,42 @@
+[
+	{
+		"id": "bbccddee-0000-0000-0000-000000000003",
+		"target": {
+			"type": "ERRAND",
+			"id": "cc236cf1-c00f-4479-8341-ecf5dd90b5b9"
+		},
+		"eventFilters": [
+			{
+				"type": "UPDATE",
+				"subtype": "ATTACHMENT"
+			}
+		],
+		"created": "${json-unit.any-string}",
+		"createdBy": {
+			"type": "adAccount",
+			"value": "jane11dane"
+		}
+	},
+	{
+		"id": "${json-unit.any-string}",
+		"target": {
+			"type": "ERRAND",
+			"id": "1be673c0-6ba3-4fb0-af4a-43acf23389f6"
+		},
+		"eventFilters": [
+			{
+				"type": "UPDATE",
+				"subtype": "STATUS"
+			},
+			{
+				"type": "CREATE"
+			}
+		],
+		"expiresAt": "${json-unit.any-string}",
+		"created": "${json-unit.any-string}",
+		"createdBy": {
+			"type": "adAccount",
+			"value": "jane11dane"
+		}
+	}
+]

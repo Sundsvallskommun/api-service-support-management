@@ -14,8 +14,6 @@ import se.sundsvall.supportmanagement.integration.db.model.subscriber.Notificati
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static se.sundsvall.dept44.support.Identifier.Type.AD_ACCOUNT;
-import static se.sundsvall.dept44.support.Identifier.Type.PARTY_ID;
 
 class SubscriberMapperTest {
 
@@ -163,30 +161,42 @@ class SubscriberMapperTest {
 		assertThat(entity.getPausedUntil()).isEqualTo(existingUntil);
 	}
 
+	// Regression guard: Hibernate must be able to mutate @ElementCollection @OrderColumn lists
+	// during update flush. Stream.toList() returns an immutable list which would cause
+	// UnsupportedOperationException (translated to 501 NOT_IMPLEMENTED by dept44). See test07_updateSubscriber.
 	@Test
-	void fromExecutingUserMapsAdAccount() {
-		final var emb = SubscriberMapper.fromExecutingUser(
-			se.sundsvall.dept44.support.Identifier.create().withType(AD_ACCOUNT).withValue("joe01doe"));
+	void toSubscriberEntityProducesMutableEmbeddableLists() {
+		final var subscriber = Subscriber.create()
+			.withIdentifier(Identifier.create().withType("adAccount").withValue("joe01doe"))
+			.withChannels(List.of(NotificationChannel.create().withType(NotificationChannelType.INTERNAL)))
+			.withEventFilters(List.of(EventFilter.create().withType("UPDATE")));
 
-		assertThat(emb).isEqualTo(IdentifierEmbeddable.create().withType("adAccount").withValue("joe01doe"));
+		final var entity = SubscriberMapper.toSubscriberEntity("2281", "NAMESPACE-1", subscriber);
+
+		assertThat(entity.getChannels()).isInstanceOf(java.util.ArrayList.class);
+		assertThat(entity.getEventFilters()).isInstanceOf(java.util.ArrayList.class);
+		// Verify they actually accept mutation (catches future use of Stream.toList()).
+		entity.getChannels().add(NotificationChannelEmbeddable.create()
+			.withType(se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType.EMAIL));
+		entity.getEventFilters().add(EventFilterEmbeddable.create().withType("CREATE"));
+		assertThat(entity.getChannels()).hasSize(2);
+		assertThat(entity.getEventFilters()).hasSize(2);
 	}
 
 	@Test
-	void fromExecutingUserMapsPartyId() {
-		final var emb = SubscriberMapper.fromExecutingUser(
-			se.sundsvall.dept44.support.Identifier.create().withType(PARTY_ID).withValue("98c7b451-a14a-4f9f-91da-8834ba01eb81"));
+	void applyPatchProducesMutableEmbeddableLists() {
+		final var entity = SubscriberEntity.create();
+		final var patch = Subscriber.create()
+			.withChannels(List.of(NotificationChannel.create().withType(NotificationChannelType.INTERNAL)))
+			.withEventFilters(List.of(EventFilter.create().withType("UPDATE")));
 
-		assertThat(emb).isEqualTo(IdentifierEmbeddable.create().withType("partyId").withValue("98c7b451-a14a-4f9f-91da-8834ba01eb81"));
-	}
+		SubscriberMapper.applyPatch(entity, patch);
 
-	@Test
-	void fromExecutingUserReturnsNullForNull() {
-		assertThat(SubscriberMapper.fromExecutingUser(null)).isNull();
-	}
-
-	@Test
-	void fromExecutingUserReturnsNullWhenTypeMissing() {
-		assertThat(SubscriberMapper.fromExecutingUser(
-			se.sundsvall.dept44.support.Identifier.create().withValue("joe01doe"))).isNull();
+		assertThat(entity.getChannels()).isInstanceOf(java.util.ArrayList.class);
+		assertThat(entity.getEventFilters()).isInstanceOf(java.util.ArrayList.class);
+		entity.getChannels().clear();
+		entity.getEventFilters().clear();
+		assertThat(entity.getChannels()).isEmpty();
+		assertThat(entity.getEventFilters()).isEmpty();
 	}
 }

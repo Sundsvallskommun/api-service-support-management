@@ -41,7 +41,7 @@ class SubscriptionEntityTest {
 	void hasValidBuilderMethods() {
 		final var id = "123e4567-e89b-12d3-a456-426614174000";
 		final var subscriber = SubscriberEntity.create().withId("subscriber-id");
-		final var targetType = SubscriptionTargetType.ERRAND;
+		final var targetType = DbSubscriptionTargetType.ERRAND;
 		final var errand = ErrandEntity.create().withId("errand-id");
 		final var eventFilters = List.of(EventFilterEmbeddable.create().withType("UPDATE").withSubtype("ATTACHMENT"));
 		final var expiresAt = now().plusDays(7);

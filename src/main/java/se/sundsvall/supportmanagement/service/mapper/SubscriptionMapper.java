@@ -5,6 +5,7 @@ import se.sundsvall.supportmanagement.api.model.subscription.Subscription;
 import se.sundsvall.supportmanagement.api.model.subscription.SubscriptionTarget;
 import se.sundsvall.supportmanagement.api.model.subscription.SubscriptionTargetType;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.subscriber.DbSubscriptionTargetType;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionEntity;
 
@@ -33,17 +34,17 @@ public final class SubscriptionMapper {
 				.withEventFilters(SubscriberMapper.toEventFilters(e.getEventFilters()))
 				.withExpiresAt(e.getExpiresAt())
 				.withCreated(e.getCreated())
-				.withCreatedBy(SubscriberMapper.toIdentifier(e.getCreatedBy())))
+				.withCreatedBy(IdentifierEmbeddableMapper.toIdentifier(e.getCreatedBy())))
 			.orElse(null);
 	}
 
-	public static se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionTargetType toDbTargetType(final SubscriptionTargetType apiType) {
+	public static DbSubscriptionTargetType toDbTargetType(final SubscriptionTargetType apiType) {
 		return Optional.ofNullable(apiType)
-			.map(t -> se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionTargetType.valueOf(t.name()))
+			.map(t -> DbSubscriptionTargetType.valueOf(t.name()))
 			.orElse(null);
 	}
 
-	static SubscriptionTargetType toApiTargetType(final se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionTargetType dbType) {
+	static SubscriptionTargetType toApiTargetType(final DbSubscriptionTargetType dbType) {
 		return Optional.ofNullable(dbType)
 			.map(t -> SubscriptionTargetType.valueOf(t.name()))
 			.orElse(null);

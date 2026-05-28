@@ -521,3 +521,32 @@ VALUES ('11111111-aaaa-bbbb-cccc-ddddeeee0001', 'a1b2c3d4-1111-2222-3333-4444555
 INSERT INTO errand_phase(id, errand_id, phase_id, started, ended)
 VALUES ('aaaa1111-bbbb-cccc-dddd-eeeeffff0001', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', 'a1b2c3d4-1111-2222-3333-444455556666', '2023-06-01 12:00:00.000', '2023-06-02 12:00:00.000'),
        ('aaaa1111-bbbb-cccc-dddd-eeeeffff0002', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', 'b2c3d4e5-1111-2222-3333-444455556666', '2023-06-02 12:00:00.000', '2023-06-03 12:00:00.000');
+
+-- -----------------------------------
+-- Subscribers
+-- -----------------------------------
+INSERT INTO subscriber(id, municipality_id, namespace, name, identifier_type, identifier_value, paused_from, paused_until, created, modified, created_by_type, created_by_value)
+VALUES ('aabbccdd-0000-0000-0000-000000000001', '2281', 'NAMESPACE-1', 'Servicedesk-bevakning', 'adAccount', 'joe01doe', null, null, '2024-01-01 12:00:00.000', null, 'adAccount', 'adm01adm'),
+       ('aabbccdd-0000-0000-0000-000000000002', '2281', 'NAMESPACE-1', 'Tickets', 'adAccount', 'jane11dane', '2026-06-01 00:00:00.000', '2026-06-30 00:00:00.000', '2024-01-02 12:00:00.000', '2024-02-01 12:00:00.000', 'adAccount', 'jane11dane'),
+       ('aabbccdd-0000-0000-0000-000000000003', '2281', 'NAMESPACE-2', 'Other namespace', 'adAccount', 'joe01doe', null, null, '2024-01-03 12:00:00.000', null, null, null),
+       ('aabbccdd-0000-0000-0000-000000000004', '2281', 'NAMESPACE-1', 'To delete', 'adAccount', 'del01usr', null, null, '2024-01-04 12:00:00.000', null, null, null);
+
+INSERT INTO subscriber_channel(subscriber_id, sort_order, type, destination)
+VALUES ('aabbccdd-0000-0000-0000-000000000001', 0, 'INTERNAL', null),
+       ('aabbccdd-0000-0000-0000-000000000002', 0, 'INTERNAL', null),
+       ('aabbccdd-0000-0000-0000-000000000002', 1, 'EMAIL', 'jane@example.com');
+
+INSERT INTO subscriber_event_filter(subscriber_id, sort_order, type, subtype)
+VALUES ('aabbccdd-0000-0000-0000-000000000002', 0, 'UPDATE', 'ATTACHMENT'),
+       ('aabbccdd-0000-0000-0000-000000000002', 1, 'CREATE', null);
+
+-- -----------------------------------
+-- Subscriptions
+-- -----------------------------------
+INSERT INTO subscription(id, subscriber_id, target_type, errand_id, expires_at, created, created_by_type, created_by_value)
+VALUES ('bbccddee-0000-0000-0000-000000000001', 'aabbccdd-0000-0000-0000-000000000001', 'ERRAND', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', null, '2024-01-10 12:00:00.000', 'adAccount', 'adm01adm'),
+       ('bbccddee-0000-0000-0000-000000000002', 'aabbccdd-0000-0000-0000-000000000001', 'NAMESPACE', null, '2026-12-31 23:59:59.000', '2024-01-11 12:00:00.000', 'adAccount', 'adm01adm'),
+       ('bbccddee-0000-0000-0000-000000000003', 'aabbccdd-0000-0000-0000-000000000002', 'ERRAND', 'cc236cf1-c00f-4479-8341-ecf5dd90b5b9', null, '2024-01-12 12:00:00.000', 'adAccount', 'jane11dane');
+
+INSERT INTO subscription_event_filter(subscription_id, sort_order, type, subtype)
+VALUES ('bbccddee-0000-0000-0000-000000000003', 0, 'UPDATE', 'ATTACHMENT');

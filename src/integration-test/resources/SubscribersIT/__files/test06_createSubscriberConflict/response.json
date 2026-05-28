@@ -1,0 +1,5 @@
+{
+	"title": "Conflict",
+	"status": 409,
+	"detail": "Subscriber with identifier (type:'adAccount', value:'joe01doe') and name:'Servicedesk-bevakning' already exists in namespace:'NAMESPACE-1' for municipality with id:'2281'"
+}

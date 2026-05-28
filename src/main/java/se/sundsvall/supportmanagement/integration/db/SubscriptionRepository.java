@@ -7,9 +7,9 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import se.sundsvall.supportmanagement.integration.db.model.subscriber.DbSubscriptionTargetType;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberSubscriptionCount;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionEntity;
-import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionTargetType;
 
 @CircuitBreaker(name = "subscriptionRepository")
 public interface SubscriptionRepository extends JpaRepository<SubscriptionEntity, String> {
@@ -20,9 +20,9 @@ public interface SubscriptionRepository extends JpaRepository<SubscriptionEntity
 	Optional<SubscriptionEntity> findByIdAndSubscriberIdAndSubscriberNamespaceAndSubscriberMunicipalityId(
 		String id, String subscriberId, String namespace, String municipalityId);
 
-	boolean existsBySubscriberIdAndTargetTypeAndErrandId(String subscriberId, SubscriptionTargetType targetType, String errandId);
+	boolean existsBySubscriberIdAndTargetTypeAndErrandId(String subscriberId, DbSubscriptionTargetType targetType, String errandId);
 
-	boolean existsBySubscriberIdAndTargetTypeAndErrandIsNull(String subscriberId, SubscriptionTargetType targetType);
+	boolean existsBySubscriberIdAndTargetTypeAndErrandIsNull(String subscriberId, DbSubscriptionTargetType targetType);
 
 	long countBySubscriberId(String subscriberId);
 
