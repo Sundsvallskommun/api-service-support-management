@@ -1,6 +1,8 @@
 package se.sundsvall.supportmanagement.integration.db.model;
 
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.ForeignKey;
 import jakarta.persistence.Id;
@@ -23,6 +25,7 @@ import org.hibernate.annotations.UuidGenerator;
 import org.springframework.util.StringUtils;
 
 import static jakarta.persistence.CascadeType.ALL;
+import static jakarta.persistence.FetchType.EAGER;
 import static jakarta.persistence.FetchType.LAZY;
 import static java.lang.String.join;
 import static java.time.OffsetDateTime.now;
@@ -89,6 +92,19 @@ public class MetadataLabelEntity {
 
 	@OneToMany(mappedBy = "parent", cascade = ALL, orphanRemoval = true)
 	private List<MetadataLabelEntity> metadataLabels = new ArrayList<>();
+
+	@ElementCollection(fetch = EAGER)
+	@CollectionTable(name = "metadata_label_attribute",
+		indexes = {
+			@Index(name = "idx_metadata_label_attribute_label_id_key", columnList = "metadata_label_id, `key`")
+		},
+		uniqueConstraints = {
+			@UniqueConstraint(name = "uk_metadata_label_attribute_label_id_key", columnNames = {
+				"metadata_label_id", "`key`"
+			})
+		},
+		joinColumns = @JoinColumn(name = "metadata_label_id", referencedColumnName = "id", nullable = false, foreignKey = @ForeignKey(name = "fk_metadata_label_attribute_metadata_label")))
+	private List<LabelAttributeEmbeddable> attributes = new ArrayList<>();
 
 	public static MetadataLabelEntity create() {
 		return new MetadataLabelEntity();
@@ -248,6 +264,19 @@ public class MetadataLabelEntity {
 	public MetadataLabelEntity withMetadataLabels(List<MetadataLabelEntity> metadataLabels) {
 		this.metadataLabels = Optional.ofNullable(metadataLabels).orElseGet(ArrayList::new);
 		this.metadataLabels.forEach(child -> child.setParent(this));
+		return this;
+	}
+
+	public List<LabelAttributeEmbeddable> getAttributes() {
+		return attributes;
+	}
+
+	public void setAttributes(List<LabelAttributeEmbeddable> attributes) {
+		this.attributes = Optional.ofNullable(attributes).orElseGet(ArrayList::new);
+	}
+
+	public MetadataLabelEntity withAttributes(List<LabelAttributeEmbeddable> attributes) {
+		setAttributes(attributes);
 		return this;
 	}
 

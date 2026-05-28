@@ -7943,8 +7943,9 @@ components:
         attributes:
           type: array
           description: "Free-form key/value data owned by the client. Stored and returned\
-            \ as-is by the service, which does not interpret or validate the contents.\
-            \ Keys are conventions agreed between clients (e.g. 'escalationEmail')."
+            \ as-is by the service, which does not interpret the contents (apart from\
+            \ rejecting duplicate keys per label). Keys are conventions agreed between\
+            \ clients (e.g. 'escalationEmail')."
           items:
             $ref: "#/components/schemas/LabelAttribute"
       required:

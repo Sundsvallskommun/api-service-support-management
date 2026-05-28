@@ -32,9 +32,9 @@ class MetadataLabelEntityTest {
 		assertThat(MetadataLabelEntity.class, allOf(
 			hasValidBeanConstructor(),
 			hasValidGettersAndSetters(),
-			hasValidBeanHashCodeExcluding("parent"),
-			hasValidBeanEqualsExcluding("parent"),
-			hasValidBeanToStringExcluding("parent")));
+			hasValidBeanHashCodeExcluding("parent", "attributes"),
+			hasValidBeanEqualsExcluding("parent", "attributes"),
+			hasValidBeanToStringExcluding("parent", "attributes")));
 	}
 
 	@Test
@@ -88,7 +88,7 @@ class MetadataLabelEntityTest {
 		entity.onCreate();
 
 		assertThat(entity.getCreated()).isCloseTo(now(), within(1, SECONDS));
-		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("created", "metadataLabels", "deprecated");
+		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("created", "metadataLabels", "deprecated", "attributes");
 	}
 
 	@Test
@@ -148,7 +148,7 @@ class MetadataLabelEntityTest {
 		entity.onUpdate();
 
 		assertThat(entity.getModified()).isCloseTo(now(), within(1, SECONDS));
-		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("modified", "metadataLabels", "deprecated");
+		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("modified", "metadataLabels", "deprecated", "attributes");
 	}
 
 	@Test
@@ -182,7 +182,7 @@ class MetadataLabelEntityTest {
 
 	@Test
 	void noDirtOnCreatedBean() {
-		assertThat(MetadataLabelEntity.create()).hasAllNullFieldsOrPropertiesExcept("metadataLabels", "deprecated");
-		assertThat(new MetadataLabelEntity()).hasAllNullFieldsOrPropertiesExcept("metadataLabels", "deprecated");
+		assertThat(MetadataLabelEntity.create()).hasAllNullFieldsOrPropertiesExcept("metadataLabels", "deprecated", "attributes");
+		assertThat(new MetadataLabelEntity()).hasAllNullFieldsOrPropertiesExcept("metadataLabels", "deprecated", "attributes");
 	}
 }
