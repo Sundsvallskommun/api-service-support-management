@@ -521,3 +521,10 @@ VALUES ('11111111-aaaa-bbbb-cccc-ddddeeee0001', 'a1b2c3d4-1111-2222-3333-4444555
 INSERT INTO errand_phase(id, errand_id, phase_id, started, ended)
 VALUES ('aaaa1111-bbbb-cccc-dddd-eeeeffff0001', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', 'a1b2c3d4-1111-2222-3333-444455556666', '2023-06-01 12:00:00.000', '2023-06-02 12:00:00.000'),
        ('aaaa1111-bbbb-cccc-dddd-eeeeffff0002', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', 'b2c3d4e5-1111-2222-3333-444455556666', '2023-06-02 12:00:00.000', '2023-06-03 12:00:00.000');
+
+-- -----------------------------------
+-- Subscriber Notifications
+-- -----------------------------------
+INSERT INTO subscriber_notification(id, created, modified, identifier_type, identifier_value, municipality_id, namespace, errand_id, errand_number, expires, acknowledged)
+VALUES ('a1b2c3d4-0000-0000-0000-000000000001', '2023-12-31 23:59:59.999', null, 'adAccount', 'joe01doe', '2281', 'NAMESPACE-1', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', 'KC-23020001', '2024-12-31 23:59:59.999', null),
+       ('a1b2c3d4-0000-0000-0000-000000000002', '2023-12-31 23:59:59.999', null, 'adAccount', 'joe01doe', '2281', 'NAMESPACE-1', 'cc236cf1-c00f-4479-8341-ecf5dd90b5b9', 'KC-23020002', '2024-12-31 23:59:59.999', null);
