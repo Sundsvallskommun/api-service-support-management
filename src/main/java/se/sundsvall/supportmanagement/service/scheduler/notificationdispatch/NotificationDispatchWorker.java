@@ -94,7 +94,7 @@ public class NotificationDispatchWorker {
 			LOG.error("Notification dispatch id: {} has reached max retries, marking as dead-letter", entry.getId());
 			entry.setDeadLetter(true);
 		} else {
-			final long delayMinutes = (long) Math.pow(2, entry.getRetryCount() - 1);
+			final long delayMinutes = (long) Math.pow(2, entry.getRetryCount() - 1.0);
 			entry.setNextRetryAt(now().plusMinutes(delayMinutes));
 			LOG.info("Notification dispatch id: {} scheduled for retry in {} minute(s)", entry.getId(), delayMinutes);
 		}
