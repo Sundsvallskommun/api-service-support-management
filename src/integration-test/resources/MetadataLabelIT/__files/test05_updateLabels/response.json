@@ -66,10 +66,10 @@
 									"resourcePath": "${json-unit.any-string}",
 									"resourceName": "DEEPSUBTYPE_1",
 									"labels": [],
-									"deprecated": false
+									"deprecated": true
 								}
 							],
-							"deprecated": false
+							"deprecated": true
 						}
 					],
 					"deprecated": false

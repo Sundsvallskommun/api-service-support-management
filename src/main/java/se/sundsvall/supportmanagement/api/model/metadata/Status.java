@@ -35,8 +35,8 @@ public class Status {
 	})
 	private Integer sortOrder;
 
-	@Schema(description = "", defaultValue = "false", examples = "true")
-	private boolean deprecated = false;
+	@Schema(description = "Indicates if the status is deprecated", defaultValue = "false", examples = "true")
+	private Boolean deprecated;
 
 	@Schema(description = "Timestamp when the status was created", examples = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	@DateTimeFormat(iso = ISO.DATE_TIME)
@@ -117,15 +117,15 @@ public class Status {
 		return this;
 	}
 
-	public boolean isDeprecated() {
+	public Boolean getDeprecated() {
 		return deprecated;
 	}
 
-	public void setDeprecated(final boolean deprecated) {
+	public void setDeprecated(final Boolean deprecated) {
 		this.deprecated = deprecated;
 	}
 
-	public Status withDeprecated(final boolean deprecated) {
+	public Status withDeprecated(final Boolean deprecated) {
 		this.deprecated = deprecated;
 		return this;
 	}
@@ -169,9 +169,10 @@ public class Status {
 		if (!(obj instanceof final Status other)) {
 			return false;
 		}
-		return Objects.equals(created, other.created) && deprecated == other.deprecated && Objects.equals(displayName, other.displayName) && Objects.equals(externalDisplayName, other.externalDisplayName) && Objects.equals(id, other.id) && Objects.equals(
-			modified, other.modified) && Objects
-				.equals(name, other.name) && Objects.equals(sortOrder, other.sortOrder);
+		return Objects.equals(created, other.created) && Objects.equals(deprecated, other.deprecated) && Objects.equals(displayName, other.displayName) && Objects.equals(externalDisplayName, other.externalDisplayName) && Objects.equals(id, other.id)
+			&& Objects.equals(
+				modified, other.modified) && Objects
+					.equals(name, other.name) && Objects.equals(sortOrder, other.sortOrder);
 	}
 
 	@Override

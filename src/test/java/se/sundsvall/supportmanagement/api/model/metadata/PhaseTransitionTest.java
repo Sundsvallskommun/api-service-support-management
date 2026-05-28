@@ -46,13 +46,13 @@ class PhaseTransitionTest {
 		assertThat(bean.getTargetPhaseId()).isEqualTo(targetPhaseId);
 		assertThat(bean.getTargetPhaseName()).isEqualTo(targetPhaseName);
 		assertThat(bean.getTargetPhaseDisplayName()).isEqualTo(targetPhaseDisplayName);
-		assertThat(bean.isDeprecated()).isEqualTo(deprecated);
+		assertThat(bean.getDeprecated()).isEqualTo(deprecated);
 		assertThat(bean.getDescription()).isEqualTo(description);
 	}
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(PhaseTransition.create()).hasAllNullFieldsOrPropertiesExcept("deprecated");
-		assertThat(new PhaseTransition()).hasAllNullFieldsOrPropertiesExcept("deprecated");
+		assertThat(PhaseTransition.create()).hasAllNullFieldsOrProperties();
+		assertThat(new PhaseTransition()).hasAllNullFieldsOrProperties();
 	}
 }

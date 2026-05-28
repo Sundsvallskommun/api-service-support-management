@@ -34,8 +34,8 @@ public class Label {
 	@Pattern(regexp = "[A-Z0-9_]+", message = "can only contain A-Z, 0-9 and _")
 	private String resourceName;
 
-	@Schema(description = "", defaultValue = "false", examples = "true")
-	private boolean deprecated = false;
+	@Schema(description = "Indicates if the label is deprecated", defaultValue = "false", examples = "true")
+	private Boolean deprecated;
 
 	@ArraySchema(arraySchema = @Schema(ref = "#/components/schemas/Label"))
 	private List<Label> labels;
@@ -115,15 +115,15 @@ public class Label {
 		return this;
 	}
 
-	public boolean isDeprecated() {
+	public Boolean getDeprecated() {
 		return deprecated;
 	}
 
-	public void setDeprecated(final boolean deprecated) {
+	public void setDeprecated(final Boolean deprecated) {
 		this.deprecated = deprecated;
 	}
 
-	public Label withDeprecated(final boolean deprecated) {
+	public Label withDeprecated(final Boolean deprecated) {
 		this.deprecated = deprecated;
 		return this;
 	}
@@ -171,9 +171,8 @@ public class Label {
 			return false;
 		}
 		Label other = (Label) obj;
-		return Objects.equals(attributes, other.attributes) && Objects.equals(classification, other.classification) && deprecated == other.deprecated && Objects.equals(displayName, other.displayName) && Objects.equals(id, other.id) && Objects.equals(
-			labels, other.labels) && Objects
-				.equals(resourceName, other.resourceName) && Objects.equals(resourcePath, other.resourcePath);
+		return Objects.equals(attributes, other.attributes) && Objects.equals(classification, other.classification) && Objects.equals(deprecated, other.deprecated) && Objects.equals(displayName, other.displayName) &&
+			Objects.equals(id, other.id) && Objects.equals(labels, other.labels) && Objects.equals(resourceName, other.resourceName) && Objects.equals(resourcePath, other.resourcePath);
 	}
 
 	@Override

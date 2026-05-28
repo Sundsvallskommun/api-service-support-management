@@ -1,5 +1,6 @@
 {
 	"reason": "new-reason",
 	"displayName": "New Reason",
-	"sortOrder": 10
+	"sortOrder": 10,
+	"deprecated": true
 }

@@ -54,7 +54,7 @@ class StatusTest {
 
 		assertThat(bean.getId()).isEqualTo(id);
 		assertThat(bean.getCreated()).isEqualTo(created);
-		assertThat(bean.isDeprecated()).isEqualTo(deprecated);
+		assertThat(bean.getDeprecated()).isEqualTo(deprecated);
 		assertThat(bean.getModified()).isEqualTo(modified);
 		assertThat(bean.getName()).isEqualTo(name);
 		assertThat(bean.getDisplayName()).isEqualTo(displayName);
@@ -63,7 +63,7 @@ class StatusTest {
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(Status.create()).hasAllNullFieldsOrPropertiesExcept("deprecated");
-		assertThat(new Status()).hasAllNullFieldsOrPropertiesExcept("deprecated");
+		assertThat(Status.create()).hasAllNullFieldsOrProperties();
+		assertThat(new Status()).hasAllNullFieldsOrProperties();
 	}
 }

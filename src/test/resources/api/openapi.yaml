@@ -7933,6 +7933,7 @@ components:
           pattern: "[A-Z0-9_]+"
         deprecated:
           type: boolean
+          description: Indicates if the label is deprecated
           default: false
           examples:
           - "true"
@@ -8435,6 +8436,7 @@ components:
           - 1
         deprecated:
           type: boolean
+          description: Indicates if the status is deprecated
           default: false
           examples:
           - "true"
@@ -8487,6 +8489,7 @@ components:
           - 1
         deprecated:
           type: boolean
+          description: Indicates if the role is deprecated
           default: false
           examples:
           - "true"
@@ -8554,6 +8557,7 @@ components:
           readOnly: true
         deprecated:
           type: boolean
+          description: Indicates if the phase is deprecated
           default: false
           examples:
           - "true"
@@ -8608,6 +8612,7 @@ components:
           - Skicka till utredning
         deprecated:
           type: boolean
+          description: Indicates if the phase transition is deprecated
           default: false
           examples:
           - "true"
@@ -8646,6 +8651,7 @@ components:
           - 1
         deprecated:
           type: boolean
+          description: Indicates if the external ID type is deprecated
           default: false
           examples:
           - "true"
@@ -8698,6 +8704,7 @@ components:
           - 1
         deprecated:
           type: boolean
+          description: Indicates if the contact reason is deprecated
           default: false
           examples:
           - "true"
@@ -8747,6 +8754,7 @@ components:
           - 1
         deprecated:
           type: boolean
+          description: Indicates if the category is deprecated
           default: false
           examples:
           - "true"
@@ -8792,6 +8800,7 @@ components:
           - escalationgroup@sesamestreet.com
         deprecated:
           type: boolean
+          description: Indicates if the type is deprecated
           default: false
           examples:
           - "true"

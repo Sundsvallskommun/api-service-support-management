@@ -48,7 +48,7 @@ class LabelTest {
 			.withAttributes(attributes);
 
 		assertThat(bean.getClassification()).isEqualTo(classification);
-		assertThat(bean.isDeprecated()).isEqualTo(deprecated);
+		assertThat(bean.getDeprecated()).isEqualTo(deprecated);
 		assertThat(bean.getDisplayName()).isEqualTo(displayName);
 		assertThat(bean.getId()).isEqualTo(id);
 		assertThat(bean.getLabels()).isEqualTo(labels);
@@ -59,7 +59,7 @@ class LabelTest {
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(Label.create()).hasAllNullFieldsOrPropertiesExcept("deprecated");
-		assertThat(new Label()).hasAllNullFieldsOrPropertiesExcept("deprecated");
+		assertThat(Label.create()).hasAllNullFieldsOrProperties();
+		assertThat(new Label()).hasAllNullFieldsOrProperties();
 	}
 }

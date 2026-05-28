@@ -38,8 +38,8 @@ public class Phase {
 	@Schema(description = "Transitions from this phase", accessMode = READ_ONLY)
 	private List<PhaseTransition> transitions;
 
-	@Schema(description = "", defaultValue = "false", examples = "true")
-	private boolean deprecated = false;
+	@Schema(description = "Indicates if the phase is deprecated", defaultValue = "false", examples = "true")
+	private Boolean deprecated;
 
 	@Schema(description = "Timestamp when the phase was created", examples = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	@Null
@@ -144,15 +144,15 @@ public class Phase {
 		return this;
 	}
 
-	public boolean isDeprecated() {
+	public Boolean getDeprecated() {
 		return deprecated;
 	}
 
-	public void setDeprecated(final boolean deprecated) {
+	public void setDeprecated(final Boolean deprecated) {
 		this.deprecated = deprecated;
 	}
 
-	public Phase withDeprecated(final boolean deprecated) {
+	public Phase withDeprecated(final Boolean deprecated) {
 		this.deprecated = deprecated;
 		return this;
 	}
@@ -196,8 +196,9 @@ public class Phase {
 		if (!(obj instanceof final Phase other)) {
 			return false;
 		}
-		return Objects.equals(allowedStatuses, other.allowedStatuses) && Objects.equals(created, other.created) && deprecated == other.deprecated && Objects.equals(description, other.description) && Objects.equals(displayName, other.displayName) && Objects
-			.equals(id, other.id)
+		return Objects.equals(allowedStatuses, other.allowedStatuses) && Objects.equals(created, other.created) && Objects.equals(deprecated, other.deprecated) && Objects.equals(description, other.description) && Objects.equals(displayName,
+			other.displayName) && Objects
+				.equals(id, other.id)
 			&& Objects.equals(modified, other.modified) && Objects.equals(name, other.name) && Objects.equals(phaseOrder, other.phaseOrder) && Objects.equals(transitions, other.transitions);
 	}
 
