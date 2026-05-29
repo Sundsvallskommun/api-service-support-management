@@ -7,5 +7,6 @@
 		"IN_PROGRESS",
 		"WAITING",
 		"ON_HOLD"
-	]
+	],
+	"deprecated": true
 }

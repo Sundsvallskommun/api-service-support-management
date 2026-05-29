@@ -32,8 +32,8 @@ public class Category {
 	})
 	private Integer sortOrder;
 
-	@Schema(description = "", defaultValue = "false", examples = "true")
-	private boolean deprecated = false;
+	@Schema(description = "Indicates if the category is deprecated", defaultValue = "false", examples = "true")
+	private Boolean deprecated;
 
 	@ArraySchema(uniqueItems = true)
 	@Valid
@@ -105,15 +105,15 @@ public class Category {
 		return this;
 	}
 
-	public boolean isDeprecated() {
+	public Boolean getDeprecated() {
 		return deprecated;
 	}
 
-	public void setDeprecated(final boolean deprecated) {
+	public void setDeprecated(final Boolean deprecated) {
 		this.deprecated = deprecated;
 	}
 
-	public Category withDeprecated(final boolean deprecated) {
+	public Category withDeprecated(final Boolean deprecated) {
 		this.deprecated = deprecated;
 		return this;
 	}
@@ -174,7 +174,8 @@ public class Category {
 			return false;
 		}
 		final Category other = (Category) obj;
-		return Objects.equals(created, other.created) && deprecated == other.deprecated && Objects.equals(displayName, other.displayName) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(name, other.name)
+		return Objects.equals(created, other.created) && Objects.equals(deprecated, other.deprecated) && Objects.equals(displayName, other.displayName) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(name,
+			other.name)
 			&& Objects.equals(sortOrder,
 				other.sortOrder) && Objects.equals(types, other.types);
 	}

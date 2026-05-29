@@ -33,6 +33,9 @@ class LabelTest {
 		final var labels = List.of(Label.create());
 		final var resourceName = "resourceName";
 		final var resourcePath = "resourcePath";
+		final var attributes = List.of(LabelAttribute.create()
+			.withKey("escalationEmail")
+			.withValue("escalation@example.com"));
 
 		final var bean = Label.create()
 			.withClassification(classification)
@@ -41,20 +44,22 @@ class LabelTest {
 			.withId(id)
 			.withLabels(labels)
 			.withResourceName(resourceName)
-			.withResourcePath(resourcePath);
+			.withResourcePath(resourcePath)
+			.withAttributes(attributes);
 
 		assertThat(bean.getClassification()).isEqualTo(classification);
-		assertThat(bean.isDeprecated()).isEqualTo(deprecated);
+		assertThat(bean.getDeprecated()).isEqualTo(deprecated);
 		assertThat(bean.getDisplayName()).isEqualTo(displayName);
 		assertThat(bean.getId()).isEqualTo(id);
 		assertThat(bean.getLabels()).isEqualTo(labels);
 		assertThat(bean.getResourceName()).isEqualTo(resourceName);
 		assertThat(bean.getResourcePath()).isEqualTo(resourcePath);
+		assertThat(bean.getAttributes()).isEqualTo(attributes);
 	}
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(Label.create()).hasAllNullFieldsOrPropertiesExcept("deprecated");
-		assertThat(new Label()).hasAllNullFieldsOrPropertiesExcept("deprecated");
+		assertThat(Label.create()).hasAllNullFieldsOrProperties();
+		assertThat(new Label()).hasAllNullFieldsOrProperties();
 	}
 }

@@ -28,8 +28,8 @@ public class PhaseTransition {
 	@Schema(description = "Description of the transition", examples = "Skicka till utredning")
 	private String description;
 
-	@Schema(description = "", defaultValue = "false", examples = "true")
-	private boolean deprecated = false;
+	@Schema(description = "Indicates if the phase transition is deprecated", defaultValue = "false", examples = "true")
+	private Boolean deprecated;
 
 	public static PhaseTransition create() {
 		return new PhaseTransition();
@@ -100,15 +100,15 @@ public class PhaseTransition {
 		return this;
 	}
 
-	public boolean isDeprecated() {
+	public Boolean getDeprecated() {
 		return deprecated;
 	}
 
-	public void setDeprecated(final boolean deprecated) {
+	public void setDeprecated(final Boolean deprecated) {
 		this.deprecated = deprecated;
 	}
 
-	public PhaseTransition withDeprecated(final boolean deprecated) {
+	public PhaseTransition withDeprecated(final Boolean deprecated) {
 		this.deprecated = deprecated;
 		return this;
 	}
@@ -126,7 +126,8 @@ public class PhaseTransition {
 		if (!(obj instanceof final PhaseTransition other)) {
 			return false;
 		}
-		return deprecated == other.deprecated && Objects.equals(description, other.description) && Objects.equals(id, other.id) && Objects.equals(targetPhaseDisplayName, other.targetPhaseDisplayName) && Objects.equals(targetPhaseId, other.targetPhaseId)
+		return Objects.equals(deprecated, other.deprecated) && Objects.equals(description, other.description) && Objects.equals(id, other.id) && Objects.equals(targetPhaseDisplayName, other.targetPhaseDisplayName) && Objects.equals(targetPhaseId,
+			other.targetPhaseId)
 			&& Objects.equals(
 				targetPhaseName, other.targetPhaseName);
 	}

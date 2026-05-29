@@ -4,12 +4,14 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Null;
+import jakarta.validation.constraints.Size;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Objects;
 import org.springframework.format.annotation.DateTimeFormat;
 import se.sundsvall.supportmanagement.api.model.identifier.Identifier;
 import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
+import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
 
 import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 import static org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME;
@@ -17,16 +19,20 @@ import static org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME
 @Schema(description = "A subscriber describes who receives notifications, which channels they prefer, and which event types they are interested in.")
 public class Subscriber {
 
-	@Null(groups = OnCreate.class)
+	@Null(groups = {
+		OnCreate.class, OnUpdate.class
+	})
 	@Schema(description = "Unique identifier of the subscriber", examples = "123e4567-e89b-12d3-a456-426614174000", accessMode = READ_ONLY)
 	private String id;
 
+	@Size(max = 255)
 	@Schema(description = "Optional human-readable label. Useful when a person has several subscribers (e.g. one per role or purpose).", examples = "Servicedesk-bevakning")
 	private String name;
 
 	@NotNull(groups = OnCreate.class)
+	@Null(groups = OnUpdate.class, message = "identifier is immutable — delete and recreate the subscriber to change it")
 	@Valid
-	@Schema(description = "Identifier of the principal that ultimately receives notifications (AD-account or partyId).")
+	@Schema(description = "Identifier of the principal that ultimately receives notifications (AD-account or partyId). Immutable once created.")
 	private Identifier identifier;
 
 	@Valid
@@ -45,17 +51,29 @@ public class Subscriber {
 	@Schema(description = "When the subscriber's notifications resume (exclusive). Null means paused indefinitely (only meaningful if pausedFrom is set).", examples = "2026-06-30T00:00:00+02:00")
 	private OffsetDateTime pausedUntil;
 
+	@Null(groups = {
+		OnCreate.class, OnUpdate.class
+	})
 	@DateTimeFormat(iso = DATE_TIME)
 	@Schema(description = "Timestamp when the subscriber was created", accessMode = READ_ONLY)
 	private OffsetDateTime created;
 
+	@Null(groups = {
+		OnCreate.class, OnUpdate.class
+	})
 	@DateTimeFormat(iso = DATE_TIME)
 	@Schema(description = "Timestamp when the subscriber was last modified", accessMode = READ_ONLY)
 	private OffsetDateTime modified;
 
+	@Null(groups = {
+		OnCreate.class, OnUpdate.class
+	})
 	@Schema(description = "Identifier of the principal that created the subscriber", accessMode = READ_ONLY)
 	private Identifier createdBy;
 
+	@Null(groups = {
+		OnCreate.class, OnUpdate.class
+	})
 	@Schema(description = "Number of subscriptions currently owned by this subscriber", examples = "3", accessMode = READ_ONLY)
 	private Integer subscriptionCount;
 

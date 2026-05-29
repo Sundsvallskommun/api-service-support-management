@@ -1,5 +1,6 @@
 {
 	"name": "EXTERNAL-ID-TYPE-1-PATCHED",
 	"displayName": "External Id Type 1 patched",
-	"sortOrder": 7
+	"sortOrder": 7,
+	"deprecated": true
 }

@@ -20,7 +20,7 @@
 			"displayName": "TYPE-DISPLAY-NAME-4",
 			"created": "${json-unit.ignore}",
 			"name": "TYPE-4",
-			"deprecated": false
+			"deprecated": true
 		}
 	],
 	"sortOrder": 5,

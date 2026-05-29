@@ -1,0 +1,16 @@
+{
+	"target": {
+		"type": "ERRAND",
+		"id": "1be673c0-6ba3-4fb0-af4a-43acf23389f6"
+	},
+	"eventFilters": [
+		{
+			"type": "UPDATE",
+			"subtype": "STATUS"
+		},
+		{
+			"type": "CREATE"
+		}
+	],
+	"expiresAt": "2027-06-30T23:59:59+02:00"
+}

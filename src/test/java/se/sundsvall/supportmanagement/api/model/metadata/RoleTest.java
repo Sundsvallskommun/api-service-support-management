@@ -52,7 +52,7 @@ class RoleTest {
 
 		assertThat(bean.getId()).isEqualTo(id);
 		assertThat(bean.getCreated()).isEqualTo(created);
-		assertThat(bean.isDeprecated()).isEqualTo(deprecated);
+		assertThat(bean.getDeprecated()).isEqualTo(deprecated);
 		assertThat(bean.getModified()).isEqualTo(modified);
 		assertThat(bean.getName()).isEqualTo(name);
 		assertThat(bean.getDisplayName()).isEqualTo(displayName);
@@ -60,7 +60,7 @@ class RoleTest {
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(Role.create()).hasAllNullFieldsOrPropertiesExcept("deprecated");
-		assertThat(new Role()).hasAllNullFieldsOrPropertiesExcept("deprecated");
+		assertThat(Role.create()).hasAllNullFieldsOrProperties();
+		assertThat(new Role()).hasAllNullFieldsOrProperties();
 	}
 }

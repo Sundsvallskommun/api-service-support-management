@@ -1,7 +1,9 @@
 package se.sundsvall.supportmanagement.api.model.metadata;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import java.util.List;
@@ -32,11 +34,17 @@ public class Label {
 	@Pattern(regexp = "[A-Z0-9_]+", message = "can only contain A-Z, 0-9 and _")
 	private String resourceName;
 
-	@Schema(description = "", defaultValue = "false", examples = "true")
-	private boolean deprecated = false;
+	@Schema(description = "Indicates if the label is deprecated", defaultValue = "false", examples = "true")
+	private Boolean deprecated;
 
 	@ArraySchema(arraySchema = @Schema(ref = "#/components/schemas/Label"))
 	private List<Label> labels;
+
+	@Schema(
+		description = "Free-form key/value data owned by the client. Stored and returned as-is by the service, which does not interpret the contents (apart from rejecting duplicate keys per label). Keys are conventions agreed between clients (e.g. 'escalationEmail').")
+	@Valid
+	@JsonInclude(JsonInclude.Include.NON_EMPTY)
+	private List<LabelAttribute> attributes;
 
 	public static Label create() {
 		return new Label();
@@ -107,15 +115,15 @@ public class Label {
 		return this;
 	}
 
-	public boolean isDeprecated() {
+	public Boolean getDeprecated() {
 		return deprecated;
 	}
 
-	public void setDeprecated(final boolean deprecated) {
+	public void setDeprecated(final Boolean deprecated) {
 		this.deprecated = deprecated;
 	}
 
-	public Label withDeprecated(final boolean deprecated) {
+	public Label withDeprecated(final Boolean deprecated) {
 		this.deprecated = deprecated;
 		return this;
 	}
@@ -133,9 +141,22 @@ public class Label {
 		return this;
 	}
 
+	public List<LabelAttribute> getAttributes() {
+		return attributes;
+	}
+
+	public void setAttributes(final List<LabelAttribute> attributes) {
+		this.attributes = attributes;
+	}
+
+	public Label withAttributes(final List<LabelAttribute> attributes) {
+		setAttributes(attributes);
+		return this;
+	}
+
 	@Override
 	public int hashCode() {
-		return Objects.hash(classification, deprecated, displayName, id, labels, resourceName, resourcePath);
+		return Objects.hash(attributes, classification, deprecated, displayName, id, labels, resourceName, resourcePath);
 	}
 
 	@Override
@@ -150,12 +171,13 @@ public class Label {
 			return false;
 		}
 		Label other = (Label) obj;
-		return Objects.equals(classification, other.classification) && deprecated == other.deprecated && Objects.equals(displayName, other.displayName) && Objects.equals(id, other.id) && Objects.equals(labels, other.labels) && Objects.equals(
-			resourceName, other.resourceName) && Objects.equals(resourcePath, other.resourcePath);
+		return Objects.equals(attributes, other.attributes) && Objects.equals(classification, other.classification) && Objects.equals(deprecated, other.deprecated) && Objects.equals(displayName, other.displayName) &&
+			Objects.equals(id, other.id) && Objects.equals(labels, other.labels) && Objects.equals(resourceName, other.resourceName) && Objects.equals(resourcePath, other.resourcePath);
 	}
 
 	@Override
 	public String toString() {
-		return "Label [id=" + id + ", classification=" + classification + ", displayName=" + displayName + ", resourcePath=" + resourcePath + ", resourceName=" + resourceName + ", deprecated=" + deprecated + ", labels=" + labels + "]";
+		return "Label [id=" + id + ", classification=" + classification + ", displayName=" + displayName + ", resourcePath=" + resourcePath + ", resourceName=" + resourceName + ", deprecated=" + deprecated + ", labels=" + labels + ", attributes="
+			+ attributes + "]";
 	}
 }

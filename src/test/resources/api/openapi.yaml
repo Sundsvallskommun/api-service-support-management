@@ -5,9 +5,9 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "14.7"
+  version: "14.8"
 servers:
-- url: http://localhost:51834
+- url: http://localhost:61876
   description: Generated server url
 tags:
 - name: Errand attachments
@@ -7909,16 +7909,16 @@ components:
     Problem:
       type: object
       properties:
-        title:
-          type: string
-        detail:
-          type: string
         instance:
           type: string
           format: uri
         type:
           type: string
           format: uri
+        title:
+          type: string
+        detail:
+          type: string
         status:
           type: integer
           format: int32
@@ -7937,10 +7937,13 @@ components:
             $ref: "#/components/schemas/Violation"
         title:
           type: string
-        detail:
+        instance:
           type: string
+          format: uri
         causeAsProblem:
           $ref: "#/components/schemas/ThrowableProblem"
+        detail:
+          type: string
         instance:
           type: string
           format: uri
@@ -8128,6 +8131,7 @@ components:
           pattern: "[A-Z0-9_]+"
         deprecated:
           type: boolean
+          description: Indicates if the label is deprecated
           default: false
           examples:
           - "true"
@@ -8135,9 +8139,38 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Label"
+        attributes:
+          type: array
+          description: "Free-form key/value data owned by the client. Stored and returned\
+            \ as-is by the service, which does not interpret the contents (apart from\
+            \ rejecting duplicate keys per label). Keys are conventions agreed between\
+            \ clients (e.g. 'escalationEmail')."
+          items:
+            $ref: "#/components/schemas/LabelAttribute"
       required:
       - classification
       - resourceName
+    LabelAttribute:
+      type: object
+      description: Label attribute model. Free-form key/value data owned by the client;
+        not interpreted by the service. Keys are conventions agreed between clients
+        (e.g. 'escalationEmail').
+      properties:
+        key:
+          type: string
+          description: Attribute key
+          examples:
+          - escalationEmail
+          minLength: 1
+        value:
+          type: string
+          description: Attribute value
+          examples:
+          - escalation@example.com
+          minLength: 1
+      required:
+      - key
+      - value
     MessageExchangeIntegration:
       type: object
       description: Message exchange worker config model
@@ -8357,16 +8390,27 @@ components:
       properties:
         type:
           type: string
-          description: "Event type. Matches the eventlog EventType enum (CREATE, READ,\
-            \ UPDATE, DELETE, ACCESS, EXECUTE, CANCEL, DROP)."
+          description: Event type. Matches the eventlog EventType enum.
+          enum:
+          - CREATE
+          - READ
+          - UPDATE
+          - DELETE
+          - ACCESS
+          - EXECUTE
+          - CANCEL
+          - DROP
           examples:
           - UPDATE
           minLength: 1
+          pattern: ^(CREATE|READ|UPDATE|DELETE|ACCESS|EXECUTE|CANCEL|DROP)$
         subtype:
           type: string
           description: "Event subtype. If null, all subtypes of the given type match."
           examples:
           - ATTACHMENT
+          maxLength: 64
+          minLength: 0
       required:
       - type
     Identifier:
@@ -8389,7 +8433,8 @@ components:
           description: Identifier value (AD-account name or partyId UUID)
           examples:
           - joe01doe
-          minLength: 1
+          maxLength: 255
+          minLength: 0
       required:
       - type
       - value
@@ -8413,6 +8458,8 @@ components:
             \ from the subscriber's identifier is used."
           examples:
           - user@example.com
+          maxLength: 255
+          minLength: 0
       required:
       - type
     Subscriber:
@@ -8432,10 +8479,12 @@ components:
             subscribers (e.g. one per role or purpose).
           examples:
           - Servicedesk-bevakning
+          maxLength: 255
+          minLength: 0
         identifier:
           $ref: "#/components/schemas/Identifier"
           description: Identifier of the principal that ultimately receives notifications
-            (AD-account or partyId).
+            (AD-account or partyId). Immutable once created.
         channels:
           type: array
           description: "Channels the subscriber wants to receive notifications on.\
@@ -8585,6 +8634,7 @@ components:
           - 1
         deprecated:
           type: boolean
+          description: Indicates if the status is deprecated
           default: false
           examples:
           - "true"
@@ -8637,6 +8687,7 @@ components:
           - 1
         deprecated:
           type: boolean
+          description: Indicates if the role is deprecated
           default: false
           examples:
           - "true"
@@ -8704,6 +8755,7 @@ components:
           readOnly: true
         deprecated:
           type: boolean
+          description: Indicates if the phase is deprecated
           default: false
           examples:
           - "true"
@@ -8758,6 +8810,7 @@ components:
           - Skicka till utredning
         deprecated:
           type: boolean
+          description: Indicates if the phase transition is deprecated
           default: false
           examples:
           - "true"
@@ -8796,6 +8849,7 @@ components:
           - 1
         deprecated:
           type: boolean
+          description: Indicates if the external ID type is deprecated
           default: false
           examples:
           - "true"
@@ -8848,6 +8902,7 @@ components:
           - 1
         deprecated:
           type: boolean
+          description: Indicates if the contact reason is deprecated
           default: false
           examples:
           - "true"
@@ -8897,6 +8952,7 @@ components:
           - 1
         deprecated:
           type: boolean
+          description: Indicates if the category is deprecated
           default: false
           examples:
           - "true"
@@ -8942,6 +8998,7 @@ components:
           - escalationgroup@sesamestreet.com
         deprecated:
           type: boolean
+          description: Indicates if the type is deprecated
           default: false
           examples:
           - "true"
@@ -9263,10 +9320,6 @@ components:
     JsonNode:
       type: object
       properties:
-        floatingPointNumber:
-          type: boolean
-        container:
-          type: boolean
         number:
           type: boolean
         nodeType:
@@ -9281,44 +9334,34 @@ components:
           - OBJECT
           - POJO
           - STRING
-        string:
-          type: boolean
         integralNumber:
           type: boolean
         missingNode:
           type: boolean
-        valueNode:
-          type: boolean
-        pojo:
-          type: boolean
         short:
-          type: boolean
-        int:
-          type: boolean
-        long:
           type: boolean
         double:
           type: boolean
-        bigDecimal:
+        pojo:
           type: boolean
-        bigInteger:
+        int:
+          type: boolean
+        string:
+          type: boolean
+        long:
           type: boolean
         textual:
           type: boolean
           deprecated: true
-        boolean:
-          type: boolean
         binary:
+          type: boolean
+        container:
+          type: boolean
+        floatingPointNumber:
           type: boolean
         empty:
           type: boolean
-        array:
-          type: boolean
-        "null":
-          type: boolean
-        object:
-          type: boolean
-        float:
+        number:
           type: boolean
         embeddedValue:
           type: boolean
@@ -10147,15 +10190,18 @@ components:
           format: int32
         numberOfElements:
           type: integer
-          format: int32
+          format: int64
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
+        sort:
+          $ref: "#/components/schemas/SortObject"
         first:
           type: boolean
         last:
           type: boolean
-        sort:
-          $ref: "#/components/schemas/SortObject"
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
+        numberOfElements:
+          type: integer
+          format: int32
         size:
           type: integer
           format: int32
@@ -10166,15 +10212,26 @@ components:
         number:
           type: integer
           format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
+        numberOfElements:
+          type: integer
+          format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
         empty:
           type: boolean
     PageableObject:
       type: object
       properties:
-        sort:
-          $ref: "#/components/schemas/SortObject"
         paged:
           type: boolean
+        sort:
+          $ref: "#/components/schemas/SortObject"
         pageNumber:
           type: integer
           format: int32
@@ -10183,17 +10240,21 @@ components:
           format: int32
         unpaged:
           type: boolean
+        sort:
+          $ref: "#/components/schemas/SortObject"
         offset:
           type: integer
           format: int64
     SortObject:
       type: object
       properties:
+        unsorted:
+          type: boolean
         sorted:
           type: boolean
         unsorted:
           type: boolean
-        empty:
+        unsorted:
           type: boolean
     Revision:
       type: object
@@ -10439,15 +10500,18 @@ components:
           format: int32
         numberOfElements:
           type: integer
-          format: int32
+          format: int64
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
+        sort:
+          $ref: "#/components/schemas/SortObject"
         first:
           type: boolean
         last:
           type: boolean
-        sort:
-          $ref: "#/components/schemas/SortObject"
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
+        numberOfElements:
+          type: integer
+          format: int32
         size:
           type: integer
           format: int32
@@ -10458,6 +10522,17 @@ components:
         number:
           type: integer
           format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
+        numberOfElements:
+          type: integer
+          format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
         empty:
           type: boolean
     Communication:
@@ -10672,15 +10747,18 @@ components:
           format: int32
         numberOfElements:
           type: integer
-          format: int32
+          format: int64
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
+        sort:
+          $ref: "#/components/schemas/SortObject"
         first:
           type: boolean
         last:
           type: boolean
-        sort:
-          $ref: "#/components/schemas/SortObject"
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
+        numberOfElements:
+          type: integer
+          format: int32
         size:
           type: integer
           format: int32
@@ -10691,6 +10769,17 @@ components:
         number:
           type: integer
           format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
+        numberOfElements:
+          type: integer
+          format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
         empty:
           type: boolean
     ReadBy:

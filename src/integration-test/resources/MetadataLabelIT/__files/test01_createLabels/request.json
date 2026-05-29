@@ -4,6 +4,16 @@
 		"name": "LABEL-1",
 		"resourceName": "RES_1",
 		"classification": "TOP-LEVEL",
+		"attributes": [
+			{
+				"key": "escalationEmail",
+				"value": "escalation@example.com"
+			},
+			{
+				"key": "owner",
+				"value": "team-a"
+			}
+		],
 		"labels": [
 			{
 				"displayName": "Nivå 1.1",
@@ -15,7 +25,13 @@
 						"displayName": "Nivå 1.1.1",
 						"name": "LEVEL-1-1-1",
 						"resourceName": "RES_1_1_1",
-						"classification": "LOWEST-LEVEL"
+						"classification": "LOWEST-LEVEL",
+						"attributes": [
+							{
+								"key": "leafKey",
+								"value": "leafValue"
+							}
+						]
 					},
 					{
 						"displayName": "Nivå 1.1.2",

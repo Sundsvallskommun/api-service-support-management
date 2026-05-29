@@ -1,0 +1,5 @@
+{
+	"title": "Conflict",
+	"status": 409,
+	"detail": "Namespace subscription already exists for subscriber with id:'aabbccdd-0000-0000-0000-000000000001'"
+}

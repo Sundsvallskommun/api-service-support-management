@@ -326,6 +326,12 @@
         primary key (id)
     ) engine=InnoDB;
 
+    create table metadata_label_attribute (
+        `key` varchar(255) not null,
+        metadata_label_id varchar(255) not null,
+        `value` text not null
+    ) engine=InnoDB;
+
     create table namespace_config (
         created datetime(6),
         id bigint not null auto_increment,
@@ -791,10 +797,16 @@
     create index idx_resource_path 
        on metadata_label (resource_path);
 
-    alter table if exists metadata_label 
+    alter table if exists metadata_label
        add constraint uq_namespace_municipality_id_resource_path unique (namespace, municipality_id, resource_path);
 
-    create index idx_namespace_municipality_id 
+    create index idx_metadata_label_attribute_label_id_key
+       on metadata_label_attribute (metadata_label_id, `key`);
+
+    alter table if exists metadata_label_attribute
+       add constraint uk_metadata_label_attribute_label_id_key unique (metadata_label_id, `key`);
+
+    create index idx_namespace_municipality_id
        on namespace_config (namespace, municipality_id);
 
     create index idx_municipality_id 
@@ -821,7 +833,7 @@
     create index idx_dispatch_dead_letter_retry
        on notification_dispatch (dead_letter, next_retry_at);
 
-    create index idx_phase_municipality_id_namespace 
+    create index idx_phase_municipality_id_namespace
        on phase (municipality_id, namespace);
 
     alter table if exists phase 
@@ -882,13 +894,17 @@
        add constraint uq_sub_notif_errand_identifier
        unique (municipality_id, namespace, errand_id, identifier_type, identifier_value);
 
-    create index idx_subscription_subscriber_id 
+    create index idx_subscription_subscriber_id
        on subscription (subscriber_id);
 
     create index idx_subscription_errand_id 
+    create index idx_subscription_errand_id
        on subscription (errand_id);
 
-    alter table if exists `type` 
+    create index idx_subscription_subscriber_target
+       on subscription (subscriber_id, target_type, errand_id);
+
+    alter table if exists `type`
        add constraint uq_category_id_name unique (category_id, name);
 
     create index idx_namespace_municipality_id_type 
@@ -1031,12 +1047,17 @@
        foreign key (errand_id) 
        references errand (id);
 
-    alter table if exists metadata_label 
-       add constraint fk_metadata_label_id 
-       foreign key (parent_id) 
+    alter table if exists metadata_label
+       add constraint fk_metadata_label_id
+       foreign key (parent_id)
        references metadata_label (id);
 
-    alter table if exists namespace_config_value 
+    alter table if exists metadata_label_attribute
+       add constraint fk_metadata_label_attribute_metadata_label
+       foreign key (metadata_label_id)
+       references metadata_label (id);
+
+    alter table if exists namespace_config_value
        add constraint fk_namespace_config_value_namespace_config 
        foreign key (namespace_config_id) 
        references namespace_config (id);

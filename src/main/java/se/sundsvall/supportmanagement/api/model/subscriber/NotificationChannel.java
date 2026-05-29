@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.api.model.subscriber;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.util.Objects;
 
 @Schema(description = "Channel a subscriber wants to receive notifications on")
@@ -11,6 +12,7 @@ public class NotificationChannel {
 	@Schema(description = "Channel type", examples = "EMAIL")
 	private NotificationChannelType type;
 
+	@Size(max = 255)
 	@Schema(description = "Optional destination override (e.g. an alternative e-mail address or phone number). " +
 		"If omitted, the default destination derived from the subscriber's identifier is used.", examples = "user@example.com")
 	private String destination;

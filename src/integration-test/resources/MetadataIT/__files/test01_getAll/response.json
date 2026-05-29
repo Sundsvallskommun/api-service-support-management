@@ -119,6 +119,16 @@
 				"displayName": "CATEGORY-DISPLAY-NAME-1",
 				"resourcePath": "CATEGORY-1",
 				"resourceName": "CATEGORY-1",
+				"attributes": [
+					{
+						"key": "escalationEmail",
+						"value": "escalation@example.com"
+					},
+					{
+						"key": "owner",
+						"value": "team-a"
+					}
+				],
 				"labels": [
 					{
 						"id": "3273e374-855c-4525-b8fc-aeaa710b83c5",
