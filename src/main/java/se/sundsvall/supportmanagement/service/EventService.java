@@ -4,10 +4,12 @@ import generated.se.sundsvall.eventlog.EventType;
 import generated.se.sundsvall.notes.Note;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.event.Event;
@@ -35,6 +37,8 @@ import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getRequest
 @Service
 public class EventService {
 
+	private static final Logger LOG = LoggerFactory.getLogger(EventService.class);
+
 	private final EventlogClient eventLogClient;
 	private final NotificationService notificationService;
 	private final NotificationDispatchRepository notificationDispatchRepository;
@@ -49,11 +53,16 @@ public class EventService {
 		final var requestGroupId = getRequestGroupId();
 		final var metadata = toMetadataMap(errandEntity, currentRevision, previousRevision);
 		final var event = toEvent(eventType, message, extractId(currentRevision), Errand.class, metadata, getExecutingUser(), subtype.getValue(), requestGroupId);
-		eventLogClient.createEvent(errandEntity.getMunicipalityId(), errandEntity.getId(), event);
+		String eventId = null;
+		try {
+			eventId = extractEventId(eventLogClient.createEvent(errandEntity.getMunicipalityId(), errandEntity.getId(), event));
+		} catch (final Exception e) {
+			LOG.warn("Failed to create event log entry for errand {}: {}", errandEntity.getId(), e.getMessage());
+		}
 
 		if (sendNotification) {
 			createNotification(errandEntity, event);
-			saveDispatchEntry(errandEntity, eventType, requestGroupId);
+			saveDispatchEntry(errandEntity, eventType, requestGroupId, eventId);
 		}
 	}
 
@@ -66,9 +75,14 @@ public class EventService {
 		final var caseId = extractCaseId(errandEntity);
 		final var metadata = toMetadataMap(caseId, noteId, currentRevision, previousRevision, errandEntity.getNamespace());
 		final var event = toEvent(eventType, message, extractId(currentRevision), Note.class, metadata, getExecutingUser(), NOTE.getValue(), requestGroupId);
-		eventLogClient.createEvent(errandEntity.getMunicipalityId(), logKey, event);
+		String eventId = null;
+		try {
+			eventId = extractEventId(eventLogClient.createEvent(errandEntity.getMunicipalityId(), logKey, event));
+		} catch (final Exception e) {
+			LOG.warn("Failed to create event log entry for errand note {}: {}", logKey, e.getMessage());
+		}
 		createNotification(errandEntity, event);
-		saveDispatchEntry(errandEntity, eventType, requestGroupId);
+		saveDispatchEntry(errandEntity, eventType, requestGroupId, eventId);
 	}
 
 	public Page<Event> readEvents(final String municipalityId, final String id, final Pageable pageable) {
@@ -84,16 +98,23 @@ public class EventService {
 		return ofNullable(currentRevision).map(Revision::getId).orElse(null);
 	}
 
-	private void saveDispatchEntry(final ErrandEntity errandEntity, final EventType eventType, final String requestGroupId) {
+	private void saveDispatchEntry(final ErrandEntity errandEntity, final EventType eventType, final String requestGroupId, final String eventId) {
 		final var executingUser = getExecutingUser();
 		notificationDispatchRepository.save(NotificationDispatchEntity.create()
-			.withEventId(UUID.randomUUID().toString())
+			.withEventId(eventId)
 			.withRequestGroupId(requestGroupId)
 			.withErrandId(errandEntity.getId())
 			.withMunicipalityId(errandEntity.getMunicipalityId())
 			.withNamespace(errandEntity.getNamespace())
 			.withEventType(eventType.getValue())
 			.withExecutingUserId(Optional.ofNullable(executingUser).map(u -> u.getValue()).orElse(null)));
+	}
+
+	private String extractEventId(final ResponseEntity<Void> response) {
+		return ofNullable(response.getHeaders().getLocation())
+			.map(uri -> uri.getPath())
+			.map(path -> path.substring(path.lastIndexOf('/') + 1))
+			.orElse(null);
 	}
 
 	private void createNotification(final ErrandEntity errandEntity, final generated.se.sundsvall.eventlog.Event event) {

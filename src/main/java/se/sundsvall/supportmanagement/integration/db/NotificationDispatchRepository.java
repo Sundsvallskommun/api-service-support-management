@@ -21,4 +21,6 @@ public interface NotificationDispatchRepository extends JpaRepository<Notificati
 	List<NotificationDispatchEntity> findProcessable(
 		@Param("cutoff") OffsetDateTime cutoff,
 		@Param("now") OffsetDateTime now);
+
+	void deleteByDeadLetterTrueAndCreatedBefore(OffsetDateTime cutoff);
 }

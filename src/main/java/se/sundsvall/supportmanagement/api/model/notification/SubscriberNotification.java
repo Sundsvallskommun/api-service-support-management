@@ -34,11 +34,11 @@ public class SubscriberNotification {
 	private String errandNumber;
 
 	@DateTimeFormat(iso = DATE_TIME)
-	@Schema(description = "Timestamp when the notification expires", example = "2000-10-31T01:30:00.000+02:00")
+	@Schema(description = "Timestamp when the notification expires", example = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	private OffsetDateTime expires;
 
 	@DateTimeFormat(iso = DATE_TIME)
-	@Schema(description = "Timestamp when the notification was acknowledged, null if not yet acknowledged", example = "2000-10-31T01:30:00.000+02:00")
+	@Schema(description = "Timestamp when the notification was acknowledged, null if not yet acknowledged", example = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	private OffsetDateTime acknowledged;
 
 	public static SubscriberNotification create() {

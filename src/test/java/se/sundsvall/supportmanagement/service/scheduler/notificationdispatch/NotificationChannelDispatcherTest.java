@@ -10,6 +10,7 @@ import se.sundsvall.supportmanagement.integration.db.model.subscriber.Notificati
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
 import se.sundsvall.supportmanagement.service.SubscriberNotificationService;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
@@ -36,21 +37,25 @@ class NotificationChannelDispatcherTest {
 	}
 
 	@Test
-	void send_smsChannel_logsWarningOnly() {
+	void send_smsChannel_throwsUnsupportedOperationException() {
 		final var subscriber = SubscriberEntity.create();
 		final var channel = NotificationChannelEmbeddable.create().withType(NotificationChannelType.SMS);
 
-		dispatcher.send(ERRAND_ID, ERRAND_NUMBER, subscriber, channel);
+		assertThatThrownBy(() -> dispatcher.send(ERRAND_ID, ERRAND_NUMBER, subscriber, channel))
+			.isInstanceOf(UnsupportedOperationException.class)
+			.hasMessageContaining("SMS");
 
 		verifyNoInteractions(subscriberNotificationServiceMock);
 	}
 
 	@Test
-	void send_emailChannel_logsWarningOnly() {
+	void send_emailChannel_throwsUnsupportedOperationException() {
 		final var subscriber = SubscriberEntity.create();
 		final var channel = NotificationChannelEmbeddable.create().withType(NotificationChannelType.EMAIL);
 
-		dispatcher.send(ERRAND_ID, ERRAND_NUMBER, subscriber, channel);
+		assertThatThrownBy(() -> dispatcher.send(ERRAND_ID, ERRAND_NUMBER, subscriber, channel))
+			.isInstanceOf(UnsupportedOperationException.class)
+			.hasMessageContaining("EMAIL");
 
 		verifyNoInteractions(subscriberNotificationServiceMock);
 	}

@@ -30,16 +30,25 @@ public class NotificationDispatchScheduler {
 		lockAtMostFor = "${scheduler.notification-dispatch.shedlock-lock-at-most-for}",
 		maximumExecutionTime = "${scheduler.notification-dispatch.maximum-execution-time}")
 	public void processDispatch() {
-		final var groups = worker.fetchProcessable().stream()
-			.collect(Collectors.groupingBy(e -> e.getErrandId()));
+		healthUtility.setHealthIndicatorHealthy(jobName);
 
-		groups.forEach((errandId, group) -> {
-			try {
-				worker.processGroup(group);
-			} catch (final Exception e) {
-				LOG.error("Error processing notification dispatch for errand: {}", errandId, e);
-				healthUtility.setHealthIndicatorUnhealthy(jobName, "Error processing notification dispatch: " + e.getMessage());
-			}
-		});
+		try {
+			final var groups = worker.fetchProcessable().stream()
+				.collect(Collectors.groupingBy(e -> e.getErrandId()));
+
+			groups.forEach((errandId, group) -> {
+				try {
+					worker.processGroup(group);
+				} catch (final Exception e) {
+					LOG.error("Error processing notification dispatch for errand: {}", errandId, e);
+					healthUtility.setHealthIndicatorUnhealthy(jobName, "Error processing notification dispatch: " + e.getMessage());
+				}
+			});
+
+			worker.cleanUpDeadLetters();
+		} catch (final Exception e) {
+			LOG.error("Error fetching processable notification dispatches", e);
+			healthUtility.setHealthIndicatorUnhealthy(jobName, "Error fetching processable notification dispatches: " + e.getMessage());
+		}
 	}
 }

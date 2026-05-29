@@ -1,16 +1,20 @@
 package se.sundsvall.supportmanagement.service;
 
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.notification.SubscriberNotification;
+import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.SubscriberNotificationRepository;
 import se.sundsvall.supportmanagement.integration.db.model.SubscriberNotificationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
+import se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor;
 
 import static java.time.OffsetDateTime.now;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_NOTIFICATION_TTL_IN_DAYS;
 import static se.sundsvall.supportmanagement.service.mapper.SubscriberNotificationMapper.toEntity;
 import static se.sundsvall.supportmanagement.service.mapper.SubscriberNotificationMapper.toModel;
 
@@ -20,16 +24,16 @@ public class SubscriberNotificationService {
 	private static final String NOTIFICATION_NOT_FOUND = "SubscriberNotification with id:'%s' not found in namespace:'%s' for municipality with id:'%s'";
 
 	private final SubscriberNotificationRepository repository;
+	private final NamespaceConfigRepository namespaceConfigRepository;
 
-	public SubscriberNotificationService(final SubscriberNotificationRepository repository) {
+	public SubscriberNotificationService(final SubscriberNotificationRepository repository, final NamespaceConfigRepository namespaceConfigRepository) {
 		this.repository = repository;
+		this.namespaceConfigRepository = namespaceConfigRepository;
 	}
 
-	public List<SubscriberNotification> getNotifications(final String municipalityId, final String namespace, final String identifierType, final String identifierValue) {
-		return repository.findAllByMunicipalityIdAndNamespaceAndIdentifierTypeAndIdentifierValue(municipalityId, namespace, identifierType, identifierValue)
-			.stream()
-			.map(se.sundsvall.supportmanagement.service.mapper.SubscriberNotificationMapper::toModel)
-			.toList();
+	public Page<SubscriberNotification> getNotifications(final String municipalityId, final String namespace, final String identifierType, final String identifierValue, final Pageable pageable) {
+		return repository.findActiveByMunicipalityIdAndNamespaceAndIdentifierTypeAndIdentifierValue(municipalityId, namespace, identifierType, identifierValue, now(), pageable)
+			.map(se.sundsvall.supportmanagement.service.mapper.SubscriberNotificationMapper::toModel);
 	}
 
 	@Transactional
@@ -46,6 +50,10 @@ public class SubscriberNotificationService {
 
 	@Transactional
 	public void upsert(final String errandId, final String errandNumber, final SubscriberEntity subscriber) {
+		final var namespaceConfig = namespaceConfigRepository.findByNamespaceAndMunicipalityId(subscriber.getNamespace(), subscriber.getMunicipalityId())
+			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, "Namespace with name:'%s' and municipalityId '%s' not found!".formatted(subscriber.getNamespace(), subscriber.getMunicipalityId())));
+		final var ttlInDays = ConfigPropertyExtractor.<Integer>getValue(namespaceConfig, PROPERTY_NOTIFICATION_TTL_IN_DAYS);
+
 		repository.findByMunicipalityIdAndNamespaceAndErrandIdAndIdentifierTypeAndIdentifierValue(
 			subscriber.getMunicipalityId(),
 			subscriber.getNamespace(),
@@ -53,8 +61,12 @@ public class SubscriberNotificationService {
 			subscriber.getIdentifier().getType(),
 			subscriber.getIdentifier().getValue())
 			.ifPresentOrElse(
-				existing -> repository.save(existing),
-				() -> repository.save(toEntity(errandId, errandNumber, subscriber)));
+				existing -> {
+					existing.setErrandNumber(errandNumber);
+					existing.setAcknowledged(null);
+					repository.save(existing);
+				},
+				() -> repository.save(toEntity(errandId, errandNumber, subscriber, ttlInDays)));
 	}
 
 	private SubscriberNotificationEntity findOrThrow(final String notificationId, final String municipalityId, final String namespace) {

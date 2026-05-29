@@ -26,16 +26,16 @@ public class NotificationDispatchEntity {
 
 	@Id
 	@UuidGenerator
-	@Column(name = "id")
+	@Column(name = "id", length = 36)
 	private String id;
 
-	@Column(name = "event_id", nullable = false)
+	@Column(name = "event_id", length = 36)
 	private String eventId;
 
-	@Column(name = "request_group_id")
+	@Column(name = "request_group_id", length = 36)
 	private String requestGroupId;
 
-	@Column(name = "errand_id", nullable = false)
+	@Column(name = "errand_id", nullable = false, length = 36)
 	private String errandId;
 
 	@Column(name = "municipality_id", nullable = false, length = 8)

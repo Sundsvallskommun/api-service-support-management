@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.service.scheduler.notificationdispatch;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -19,6 +20,7 @@ import se.sundsvall.supportmanagement.integration.db.model.subscriber.Identifier
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.NotificationChannelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
 
+import static java.time.OffsetDateTime.now;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
@@ -52,6 +54,9 @@ class NotificationDispatchWorkerTest {
 
 	@Captor
 	private ArgumentCaptor<NotificationDispatchEntity> entityCaptor;
+
+	@Captor
+	private ArgumentCaptor<OffsetDateTime> offsetDateTimeCaptor;
 
 	private NotificationDispatchEntity buildEntry(final String executingUserId) {
 		return NotificationDispatchEntity.create()
@@ -172,5 +177,16 @@ class NotificationDispatchWorkerTest {
 
 		verify(channelDispatcherMock).send(any(), any(), any(), any());
 		verify(dispatchRepositoryMock).deleteAll(List.of(entryBySelf, entryByOther));
+	}
+
+	@Test
+	void cleanUpDeadLetters_deletesDeadLettersOlderThanRetentionPeriod() {
+		final var before = now().minusDays(7);
+
+		worker.cleanUpDeadLetters();
+
+		final var after = now().minusDays(7);
+		verify(dispatchRepositoryMock).deleteByDeadLetterTrueAndCreatedBefore(offsetDateTimeCaptor.capture());
+		assertThat(offsetDateTimeCaptor.getValue()).isBetween(before, after);
 	}
 }

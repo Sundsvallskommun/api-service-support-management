@@ -15,6 +15,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.notification.Notification;
@@ -32,7 +33,9 @@ import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static org.assertj.core.groups.Tuple.tuple;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -69,6 +72,7 @@ class EventServiceTest {
 	@BeforeEach
 	void beforeEach() {
 		Identifier.set(Identifier.create().withType(AD_ACCOUNT).withValue("executingUserId"));
+		lenient().when(eventLogClientMock.createEvent(any(), any(), any())).thenReturn(ResponseEntity.ok().build());
 	}
 
 	@Test

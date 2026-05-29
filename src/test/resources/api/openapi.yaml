@@ -5,7 +5,7 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "14.8"
+  version: "14.7"
 servers:
 - url: http://localhost:61876
   description: Generated server url
@@ -6325,6 +6325,33 @@ paths:
         schema:
           type: string
         example: joe01doe
+      - name: page
+        in: query
+        description: Zero-based page index (0..N)
+        required: false
+        schema:
+          type: integer
+          default: 0
+          minimum: 0
+      - name: size
+        in: query
+        description: The size of the page to be returned
+        required: false
+        schema:
+          type: integer
+          default: 10
+          minimum: 1
+      - name: sort
+        in: query
+        description: "Sorting criteria in the format: property,(asc|desc). Default\
+          \ sort order is ascending. Multiple sort criteria are supported."
+        required: false
+        schema:
+          type: array
+          default:
+          - created,DESC
+          items:
+            type: string
       - name: X-Request-Group-Id
         in: header
         description: "Optional UUID that groups related events and notifications for\
@@ -6340,9 +6367,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/SubscriberNotification"
+                $ref: "#/components/schemas/PageSubscriberNotification"
         "400":
           description: Bad request
           content:
@@ -9320,7 +9345,35 @@ components:
     JsonNode:
       type: object
       properties:
-        number:
+        array:
+          type: boolean
+        bigDecimal:
+          type: boolean
+        bigInteger:
+          type: boolean
+        binary:
+          type: boolean
+        boolean:
+          type: boolean
+        container:
+          type: boolean
+        double:
+          type: boolean
+        embeddedValue:
+          type: boolean
+        empty:
+          type: boolean
+        float:
+          type: boolean
+        floatingPointNumber:
+          type: boolean
+        int:
+          type: boolean
+        integralNumber:
+          type: boolean
+        long:
+          type: boolean
+        missingNode:
           type: boolean
         nodeType:
           type: string
@@ -9334,36 +9387,22 @@ components:
           - OBJECT
           - POJO
           - STRING
-        integralNumber:
+        "null":
           type: boolean
-        missingNode:
+        number:
           type: boolean
-        short:
-          type: boolean
-        double:
+        object:
           type: boolean
         pojo:
           type: boolean
-        int:
+        short:
           type: boolean
         string:
-          type: boolean
-        long:
           type: boolean
         textual:
           type: boolean
           deprecated: true
-        binary:
-          type: boolean
-        container:
-          type: boolean
-        floatingPointNumber:
-          type: boolean
-        empty:
-          type: boolean
-        number:
-          type: boolean
-        embeddedValue:
+        valueNode:
           type: boolean
     JsonParameter:
       type: object
@@ -10069,12 +10108,14 @@ components:
           format: date-time
           description: Timestamp when the notification expires
           example: 2000-10-31T01:30:00.000+02:00
+          readOnly: true
         acknowledged:
           type: string
           format: date-time
           description: "Timestamp when the notification was acknowledged, null if\
             \ not yet acknowledged"
           example: 2000-10-31T01:30:00.000+02:00
+          readOnly: true
     ActionDefinition:
       type: object
       description: Action definition model describing an available action and its
@@ -10252,9 +10293,7 @@ components:
           type: boolean
         sorted:
           type: boolean
-        unsorted:
-          type: boolean
-        unsorted:
+        empty:
           type: boolean
     Revision:
       type: object
@@ -10766,6 +10805,52 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Message"
+        number:
+          type: integer
+          format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
+        numberOfElements:
+          type: integer
+          format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
+        empty:
+          type: boolean
+    PageSubscriberNotification:
+      type: object
+      properties:
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+        numberOfElements:
+          type: integer
+          format: int64
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        first:
+          type: boolean
+        last:
+          type: boolean
+        numberOfElements:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/SubscriberNotification"
         number:
           type: integer
           format: int32

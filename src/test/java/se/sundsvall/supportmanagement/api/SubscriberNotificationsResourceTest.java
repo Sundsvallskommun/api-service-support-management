@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
-import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
@@ -15,7 +15,7 @@ import se.sundsvall.supportmanagement.api.model.notification.SubscriberNotificat
 import se.sundsvall.supportmanagement.service.SubscriberNotificationService;
 
 import static java.util.UUID.randomUUID;
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -47,10 +47,10 @@ class SubscriberNotificationsResourceTest {
 			.withIdentifierType(IDENTIFIER_TYPE)
 			.withIdentifierValue(IDENTIFIER_VALUE);
 
-		when(serviceMock.getNotifications(MUNICIPALITY_ID, NAMESPACE, IDENTIFIER_TYPE, IDENTIFIER_VALUE))
-			.thenReturn(List.of(notification));
+		when(serviceMock.getNotifications(any(), any(), any(), any(), any()))
+			.thenReturn(new PageImpl<>(List.of(notification)));
 
-		final var response = webTestClient.get()
+		webTestClient.get()
 			.uri(builder -> builder.path(BASE_PATH + "/{identifierType}/{identifierValue}")
 				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE,
 					"identifierType", IDENTIFIER_TYPE, "identifierValue", IDENTIFIER_VALUE)))
@@ -58,12 +58,11 @@ class SubscriberNotificationsResourceTest {
 			.exchange()
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)
-			.expectBody(new ParameterizedTypeReference<List<SubscriberNotification>>() {})
-			.returnResult();
+			.expectBody()
+			.jsonPath("$.content[0].id").isEqualTo(NOTIFICATION_ID)
+			.jsonPath("$.totalElements").isEqualTo(1);
 
-		assertThat(response.getResponseBody()).hasSize(1);
-		assertThat(response.getResponseBody().getFirst().getId()).isEqualTo(NOTIFICATION_ID);
-		verify(serviceMock).getNotifications(MUNICIPALITY_ID, NAMESPACE, IDENTIFIER_TYPE, IDENTIFIER_VALUE);
+		verify(serviceMock).getNotifications(any(), any(), any(), any(), any());
 	}
 
 	@Test

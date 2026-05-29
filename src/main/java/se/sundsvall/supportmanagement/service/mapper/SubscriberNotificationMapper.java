@@ -4,18 +4,21 @@ import se.sundsvall.supportmanagement.api.model.notification.SubscriberNotificat
 import se.sundsvall.supportmanagement.integration.db.model.SubscriberNotificationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
 
+import static java.time.OffsetDateTime.now;
+
 public final class SubscriberNotificationMapper {
 
 	private SubscriberNotificationMapper() {}
 
-	public static SubscriberNotificationEntity toEntity(final String errandId, final String errandNumber, final SubscriberEntity subscriber) {
+	public static SubscriberNotificationEntity toEntity(final String errandId, final String errandNumber, final SubscriberEntity subscriber, final int notificationTTLInDays) {
 		return SubscriberNotificationEntity.create()
 			.withMunicipalityId(subscriber.getMunicipalityId())
 			.withNamespace(subscriber.getNamespace())
 			.withIdentifierType(subscriber.getIdentifier().getType())
 			.withIdentifierValue(subscriber.getIdentifier().getValue())
 			.withErrandId(errandId)
-			.withErrandNumber(errandNumber);
+			.withErrandNumber(errandNumber)
+			.withExpires(now().plusDays(notificationTTLInDays));
 	}
 
 	public static SubscriberNotification toModel(final SubscriberNotificationEntity entity) {

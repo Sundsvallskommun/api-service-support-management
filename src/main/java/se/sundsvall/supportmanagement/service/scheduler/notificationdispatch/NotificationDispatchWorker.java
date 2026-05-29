@@ -25,6 +25,9 @@ public class NotificationDispatchWorker {
 	@Value("${scheduler.notification-dispatch.max-retries:3}")
 	private int maxRetries = 3;
 
+	@Value("${scheduler.notification-dispatch.dead-letter-retention-days:7}")
+	private int deadLetterRetentionDays = 7;
+
 	private final NotificationDispatchRepository dispatchRepository;
 	private final SubscriberRepository subscriberRepository;
 	private final ErrandsRepository errandsRepository;
@@ -39,6 +42,11 @@ public class NotificationDispatchWorker {
 		this.subscriberRepository = subscriberRepository;
 		this.errandsRepository = errandsRepository;
 		this.channelDispatcher = channelDispatcher;
+	}
+
+	@Transactional
+	public void cleanUpDeadLetters() {
+		dispatchRepository.deleteByDeadLetterTrueAndCreatedBefore(now().minusDays(deadLetterRetentionDays));
 	}
 
 	@Transactional(readOnly = true)

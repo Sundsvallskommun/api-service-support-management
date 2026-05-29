@@ -21,6 +21,8 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class NotificationDispatchSchedulerTest {
 
+	private static final String JOB_NAME = "process_notification_dispatch";
+
 	@Mock
 	private NotificationDispatchWorker workerMock;
 
@@ -32,7 +34,7 @@ class NotificationDispatchSchedulerTest {
 
 	@BeforeEach
 	void setUp() {
-		ReflectionTestUtils.setField(scheduler, "jobName", "process_notification_dispatch");
+		ReflectionTestUtils.setField(scheduler, "jobName", JOB_NAME);
 	}
 
 	@Test
@@ -42,8 +44,10 @@ class NotificationDispatchSchedulerTest {
 
 		scheduler.processDispatch();
 
+		verify(healthUtilityMock).setHealthIndicatorHealthy(JOB_NAME);
 		verify(workerMock).fetchProcessable();
 		verify(workerMock).processGroup(List.of(entry));
+		verify(workerMock).cleanUpDeadLetters();
 		verifyNoMoreInteractions(workerMock, healthUtilityMock);
 	}
 
@@ -56,22 +60,38 @@ class NotificationDispatchSchedulerTest {
 
 		scheduler.processDispatch();
 
+		verify(healthUtilityMock).setHealthIndicatorHealthy(JOB_NAME);
 		verify(workerMock).processGroup(List.of(entry1, entry2));
 		verify(workerMock).processGroup(List.of(entry3));
+		verify(workerMock).cleanUpDeadLetters();
 		verifyNoMoreInteractions(workerMock, healthUtilityMock);
 	}
 
 	@Test
-	void processDispatch_workerThrows_setsHealthIndicatorUnhealthy() {
+	void processDispatch_processGroupThrows_setsUnhealthyAndContinuesToCleanUp() {
 		final var entry = NotificationDispatchEntity.create().withId("some-id").withErrandId("errand-1");
 		when(workerMock.fetchProcessable()).thenReturn(List.of(entry));
 		doThrow(new RuntimeException("channel error")).when(workerMock).processGroup(any());
 
 		scheduler.processDispatch();
 
+		verify(healthUtilityMock).setHealthIndicatorHealthy(JOB_NAME);
 		verify(workerMock).fetchProcessable();
 		verify(workerMock).processGroup(any());
-		verify(healthUtilityMock).setHealthIndicatorUnhealthy(eq("process_notification_dispatch"), any(String.class));
+		verify(healthUtilityMock).setHealthIndicatorUnhealthy(eq(JOB_NAME), any(String.class));
+		verify(workerMock).cleanUpDeadLetters();
+		verifyNoMoreInteractions(workerMock, healthUtilityMock);
+	}
+
+	@Test
+	void processDispatch_fetchProcessableThrows_setsUnhealthyAndSkipsCleanUp() {
+		doThrow(new RuntimeException("db error")).when(workerMock).fetchProcessable();
+
+		scheduler.processDispatch();
+
+		verify(healthUtilityMock).setHealthIndicatorHealthy(JOB_NAME);
+		verify(workerMock).fetchProcessable();
+		verify(healthUtilityMock).setHealthIndicatorUnhealthy(eq(JOB_NAME), any(String.class));
 		verifyNoMoreInteractions(workerMock, healthUtilityMock);
 	}
 }

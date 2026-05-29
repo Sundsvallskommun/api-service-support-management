@@ -7,7 +7,11 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.Pattern;
-import java.util.List;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -52,13 +56,14 @@ class SubscriberNotificationsResource {
 	@Operation(summary = "Get subscriber notifications", description = "Get all notifications for a subscriber in the namespace and municipality", responses = {
 		@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true)
 	})
-	ResponseEntity<List<SubscriberNotification>> getNotifications(
+	ResponseEntity<Page<SubscriberNotification>> getNotifications(
 		@Parameter(name = "municipalityId", description = "Municipality ID", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "identifierType", description = "Identifier type", example = "adAccount") @PathVariable final String identifierType,
-		@Parameter(name = "identifierValue", description = "Identifier value", example = "joe01doe") @PathVariable final String identifierValue) {
+		@Parameter(name = "identifierValue", description = "Identifier value", example = "joe01doe") @PathVariable final String identifierValue,
+		@PageableDefault(sort = "created", direction = Sort.Direction.DESC) @ParameterObject final Pageable pageable) {
 
-		return ok(service.getNotifications(municipalityId, namespace, identifierType, identifierValue));
+		return ok(service.getNotifications(municipalityId, namespace, identifierType, identifierValue, pageable));
 	}
 
 	@DeleteMapping(path = "/{notificationId}", produces = ALL_VALUE)

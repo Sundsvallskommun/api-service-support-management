@@ -376,12 +376,12 @@
         municipality_id varchar(8) not null,
         next_retry_at datetime(6),
         namespace varchar(32) not null,
+        errand_id varchar(36) not null,
+        event_id varchar(36),
+        id varchar(36) not null,
+        request_group_id varchar(36),
         event_type varchar(64) not null,
-        errand_id varchar(255) not null,
-        event_id varchar(255) not null,
         executing_user_id varchar(255),
-        id varchar(255) not null,
-        request_group_id varchar(255),
         primary key (id)
     ) engine=InnoDB;
 
@@ -894,10 +894,6 @@
        add constraint uq_sub_notif_errand_identifier
        unique (municipality_id, namespace, errand_id, identifier_type, identifier_value);
 
-    create index idx_subscription_subscriber_id
-       on subscription (subscriber_id);
-
-    create index idx_subscription_errand_id 
     create index idx_subscription_errand_id
        on subscription (errand_id);
 

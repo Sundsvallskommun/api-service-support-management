@@ -7,8 +7,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import se.sundsvall.dept44.problem.Problem;
+import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.SubscriberNotificationRepository;
+import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity;
+import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigValueEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.SubscriberNotificationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.IdentifierEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
@@ -20,6 +25,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.ValueType.INTEGER;
+import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_NOTIFICATION_TTL_IN_DAYS;
 
 @ExtendWith(MockitoExtension.class)
 class SubscriberNotificationServiceTest {
@@ -35,6 +42,9 @@ class SubscriberNotificationServiceTest {
 	@Mock
 	private SubscriberNotificationRepository repositoryMock;
 
+	@Mock
+	private NamespaceConfigRepository namespaceConfigRepositoryMock;
+
 	@InjectMocks
 	private SubscriberNotificationService service;
 
@@ -49,15 +59,17 @@ class SubscriberNotificationServiceTest {
 			.withErrandId(ERRAND_ID)
 			.withErrandNumber(ERRAND_NUMBER);
 
-		when(repositoryMock.findAllByMunicipalityIdAndNamespaceAndIdentifierTypeAndIdentifierValue(MUNICIPALITY_ID, NAMESPACE, IDENTIFIER_TYPE, IDENTIFIER_VALUE))
-			.thenReturn(List.of(entity));
+		when(repositoryMock.findActiveByMunicipalityIdAndNamespaceAndIdentifierTypeAndIdentifierValue(
+			any(), any(), any(), any(), any(), any()))
+			.thenReturn(new PageImpl<>(List.of(entity)));
 
-		final var result = service.getNotifications(MUNICIPALITY_ID, NAMESPACE, IDENTIFIER_TYPE, IDENTIFIER_VALUE);
+		final var result = service.getNotifications(MUNICIPALITY_ID, NAMESPACE, IDENTIFIER_TYPE, IDENTIFIER_VALUE, Pageable.unpaged());
 
-		assertThat(result).hasSize(1);
-		assertThat(result.getFirst().getId()).isEqualTo(NOTIFICATION_ID);
-		assertThat(result.getFirst().getErrandId()).isEqualTo(ERRAND_ID);
-		verify(repositoryMock).findAllByMunicipalityIdAndNamespaceAndIdentifierTypeAndIdentifierValue(MUNICIPALITY_ID, NAMESPACE, IDENTIFIER_TYPE, IDENTIFIER_VALUE);
+		assertThat(result.getContent()).hasSize(1);
+		assertThat(result.getContent().getFirst().getId()).isEqualTo(NOTIFICATION_ID);
+		assertThat(result.getContent().getFirst().getErrandId()).isEqualTo(ERRAND_ID);
+		verify(repositoryMock).findActiveByMunicipalityIdAndNamespaceAndIdentifierTypeAndIdentifierValue(
+			any(), any(), any(), any(), any(), any());
 	}
 
 	@Test
@@ -105,20 +117,26 @@ class SubscriberNotificationServiceTest {
 	}
 
 	@Test
-	void upsert_existingNotification() {
+	void upsert_existingNotification_resetsAcknowledgedAndUpdatesErrandNumber() {
 		final var subscriber = buildSubscriber();
 		final var existing = SubscriberNotificationEntity.create().withId(NOTIFICATION_ID);
+		when(namespaceConfigRepositoryMock.findByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID))
+			.thenReturn(Optional.of(buildNamespaceConfig()));
 		when(repositoryMock.findByMunicipalityIdAndNamespaceAndErrandIdAndIdentifierTypeAndIdentifierValue(
 			MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, IDENTIFIER_TYPE, IDENTIFIER_VALUE)).thenReturn(Optional.of(existing));
 
 		service.upsert(ERRAND_ID, ERRAND_NUMBER, subscriber);
 
+		assertThat(existing.getErrandNumber()).isEqualTo(ERRAND_NUMBER);
+		assertThat(existing.getAcknowledged()).isNull();
 		verify(repositoryMock).save(existing);
 	}
 
 	@Test
-	void upsert_newNotification() {
+	void upsert_newNotification_setsExpiry() {
 		final var subscriber = buildSubscriber();
+		when(namespaceConfigRepositoryMock.findByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID))
+			.thenReturn(Optional.of(buildNamespaceConfig()));
 		when(repositoryMock.findByMunicipalityIdAndNamespaceAndErrandIdAndIdentifierTypeAndIdentifierValue(
 			MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, IDENTIFIER_TYPE, IDENTIFIER_VALUE)).thenReturn(Optional.empty());
 
@@ -132,5 +150,15 @@ class SubscriberNotificationServiceTest {
 			.withMunicipalityId(MUNICIPALITY_ID)
 			.withNamespace(NAMESPACE)
 			.withIdentifier(IdentifierEmbeddable.create().withType(IDENTIFIER_TYPE).withValue(IDENTIFIER_VALUE));
+	}
+
+	private NamespaceConfigEntity buildNamespaceConfig() {
+		return NamespaceConfigEntity.create()
+			.withNamespace(NAMESPACE)
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withValue(NamespaceConfigValueEmbeddable.create()
+				.withKey(PROPERTY_NOTIFICATION_TTL_IN_DAYS)
+				.withType(INTEGER)
+				.withValue("30"));
 	}
 }
