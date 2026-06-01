@@ -1,0 +1,424 @@
+package se.sundsvall.supportmanagement.service.action;
+
+import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Sort;
+import se.sundsvall.dept44.problem.ThrowableProblem;
+import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
+import se.sundsvall.supportmanagement.api.model.config.action.enums.OperationType;
+import se.sundsvall.supportmanagement.api.model.metadata.Label;
+import se.sundsvall.supportmanagement.api.model.metadata.Labels;
+import se.sundsvall.supportmanagement.api.model.metadata.Status;
+import se.sundsvall.supportmanagement.integration.db.model.ActionConfigConditionEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ActionConfigEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ActionConfigParameterEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
+import se.sundsvall.supportmanagement.service.CommunicationService;
+import se.sundsvall.supportmanagement.service.MetadataService;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.within;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+class SendEmailActionTest {
+
+	private static final String MUNICIPALITY_ID = "2281";
+	private static final String NAMESPACE = "testNamespace";
+	private static final String LABEL_ID_1 = "label-id-1";
+	private static final String LABEL_ID_2 = "label-id-2";
+	private static final String STATUS_OPEN = "OPEN";
+	private static final String STATUS_CLOSED = "CLOSED";
+
+	@Mock
+	private MetadataService metadataService;
+
+	@Mock
+	private CommunicationService communicationService;
+
+	@InjectMocks
+	private SendEmailAction sendEmailAction;
+
+	@Captor
+	private ArgumentCaptor<EmailRequest> emailRequestCaptor;
+
+	@Test
+	void getName() {
+		assertThat(sendEmailAction.getName()).isEqualTo("SEND_EMAIL");
+	}
+
+	@Test
+	void getDescription() {
+		assertThat(sendEmailAction.getDescription()).isEqualTo("Sends an email when conditions are met");
+	}
+
+	@Test
+	void getConditionDefinitions() {
+		when(metadataService.findStatuses(NAMESPACE, MUNICIPALITY_ID, Sort.unsorted())).thenReturn(List.of(
+			Status.create().withName(STATUS_OPEN),
+			Status.create().withName(STATUS_CLOSED)));
+		when(metadataService.findLabels(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Labels.create()
+			.withLabelStructure(List.of(
+				Label.create().withId(LABEL_ID_1).withDisplayName("Label 1").withClassification("type").withResourceName("LABEL_1"),
+				Label.create().withId(LABEL_ID_2).withDisplayName("Label 2").withClassification("type").withResourceName("LABEL_2"))));
+
+		var result = sendEmailAction.getConditionDefinitions(MUNICIPALITY_ID, NAMESPACE);
+
+		assertThat(result).hasSize(3);
+		assertThat(result.get(0).getKey()).isEqualTo("status");
+		assertThat(result.get(0).getMandatory()).isFalse();
+		assertThat(result.get(0).getPossibleValues()).hasSize(2);
+		assertThat(result.get(1).getKey()).isEqualTo("hasLabel");
+		assertThat(result.get(1).getMandatory()).isFalse();
+		assertThat(result.get(1).getPossibleValues()).hasSize(2);
+		assertThat(result.get(2).getKey()).isEqualTo("duration");
+		assertThat(result.get(2).getMandatory()).isFalse();
+
+		verify(metadataService).findStatuses(NAMESPACE, MUNICIPALITY_ID, Sort.unsorted());
+		verify(metadataService).findLabels(NAMESPACE, MUNICIPALITY_ID);
+		verifyNoMoreInteractions(metadataService);
+	}
+
+	@Test
+	void getParameterDefinitions() {
+		var result = sendEmailAction.getParameterDefinitions(MUNICIPALITY_ID, NAMESPACE);
+
+		assertThat(result).hasSize(5);
+		assertThat(result.get(0).getKey()).isEqualTo("recipient");
+		assertThat(result.get(0).getMandatory()).isTrue();
+		assertThat(result.get(1).getKey()).isEqualTo("sender");
+		assertThat(result.get(1).getMandatory()).isTrue();
+		assertThat(result.get(2).getKey()).isEqualTo("subject");
+		assertThat(result.get(2).getMandatory()).isTrue();
+		assertThat(result.get(3).getKey()).isEqualTo("body");
+		assertThat(result.get(3).getMandatory()).isTrue();
+		assertThat(result.get(4).getKey()).isEqualTo("addLinkToErrandInBody");
+		assertThat(result.get(4).getMandatory()).isTrue();
+		assertThat(result.get(4).getPossibleValues()).hasSize(2);
+
+		verifyNoMoreInteractions(metadataService);
+	}
+
+	// validateConditions tests
+
+	@Test
+	void validateConditionsWithValidStatusAndLabel() {
+		when(metadataService.findStatuses(NAMESPACE, MUNICIPALITY_ID, Sort.unsorted())).thenReturn(List.of(Status.create().withName(STATUS_OPEN)));
+		when(metadataService.findLabels(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Labels.create()
+			.withLabelStructure(List.of(Label.create().withId(LABEL_ID_1).withDisplayName("Label 1").withClassification("type").withResourceName("LABEL_1"))));
+
+		sendEmailAction.validateConditions(MUNICIPALITY_ID, NAMESPACE, Map.of(
+			"status", List.of(STATUS_OPEN),
+			"hasLabel", List.of(LABEL_ID_1)));
+
+		verify(metadataService).findStatuses(NAMESPACE, MUNICIPALITY_ID, Sort.unsorted());
+		verify(metadataService).findLabels(NAMESPACE, MUNICIPALITY_ID);
+		verifyNoMoreInteractions(metadataService);
+	}
+
+	@Test
+	void validateConditionsWithValidDuration() {
+		sendEmailAction.validateConditions(MUNICIPALITY_ID, NAMESPACE, Map.of(
+			"duration", List.of("PT1H")));
+	}
+
+	@Test
+	void validateConditionsWithInvalidStatus() {
+		when(metadataService.findStatuses(NAMESPACE, MUNICIPALITY_ID, Sort.unsorted())).thenReturn(List.of(Status.create().withName(STATUS_OPEN)));
+
+		assertThatThrownBy(() -> sendEmailAction.validateConditions(MUNICIPALITY_ID, NAMESPACE, Map.of("status", List.of("INVALID_STATUS"))))
+			.isInstanceOf(ThrowableProblem.class)
+			.hasMessageContaining("Status 'INVALID_STATUS' is not valid for this namespace");
+	}
+
+	@Test
+	void validateConditionsWithInvalidLabel() {
+		when(metadataService.findLabels(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Labels.create()
+			.withLabelStructure(List.of(Label.create().withId(LABEL_ID_1).withDisplayName("Label 1").withClassification("type").withResourceName("LABEL_1"))));
+
+		assertThatThrownBy(() -> sendEmailAction.validateConditions(MUNICIPALITY_ID, NAMESPACE, Map.of("hasLabel", List.of("invalid-label-id"))))
+			.isInstanceOf(ThrowableProblem.class)
+			.hasMessageContaining("Label ID 'invalid-label-id' is not valid");
+	}
+
+	@ParameterizedTest
+	@MethodSource("invalidConditionsProvider")
+	void validateConditionsWithInvalidInput(Map<String, List<String>> conditions, String expectedMessage) {
+		assertThatThrownBy(() -> sendEmailAction.validateConditions(MUNICIPALITY_ID, NAMESPACE, conditions))
+			.isInstanceOf(ThrowableProblem.class)
+			.hasMessageContaining(expectedMessage);
+	}
+
+	private static Stream<Arguments> invalidConditionsProvider() {
+		return Stream.of(
+			Arguments.of(
+				Map.of("invalidKey", List.of("value")),
+				"Key 'invalidKey' is not valid"),
+			Arguments.of(
+				Map.of("duration", List.of("PT1H", "PT2H")),
+				"Cannot handle multiple values of key 'duration'"),
+			Arguments.of(
+				Map.of("duration", List.of("not-a-duration")),
+				"Could not parse duration 'not-a-duration'"));
+	}
+
+	// validateParameters tests
+
+	@Test
+	void validateParametersWithAllValid() {
+		sendEmailAction.validateParameters(MUNICIPALITY_ID, NAMESPACE, Map.of(
+			"recipient", List.of("test@test.com"),
+			"sender", List.of("sender@test.com"),
+			"subject", List.of("Test subject"),
+			"body", List.of("Test body"),
+			"addLinkToErrandInBody", List.of("true")));
+	}
+
+	@ParameterizedTest
+	@MethodSource("invalidParametersProvider")
+	void validateParametersWithInvalidInput(Map<String, List<String>> parameters, String expectedMessage) {
+		assertThatThrownBy(() -> sendEmailAction.validateParameters(MUNICIPALITY_ID, NAMESPACE, parameters))
+			.isInstanceOf(ThrowableProblem.class)
+			.hasMessageContaining(expectedMessage);
+	}
+
+	private static Stream<Arguments> invalidParametersProvider() {
+		return Stream.of(
+			Arguments.of(
+				createParameters("recipient", "test@test.com", "sender", "sender@test.com", "subject", "Test subject", "body", "Test body", "addLinkToErrandInBody", "true", "invalidKey", "value"),
+				"Key 'invalidKey' is not valid"),
+			Arguments.of(
+				Map.of("sender", List.of("sender@test.com"), "subject", List.of("Test subject"), "body", List.of("Test body"), "addLinkToErrandInBody", List.of("true")),
+				"Key 'recipient' is mandatory and cannot be empty"),
+			Arguments.of(
+				Map.of("recipient", List.of("test@test.com"), "subject", List.of("Test subject"), "body", List.of("Test body"), "addLinkToErrandInBody", List.of("true")),
+				"Key 'sender' is mandatory and cannot be empty"),
+			Arguments.of(
+				Map.of("recipient", List.of("test@test.com"), "sender", List.of("sender@test.com"), "body", List.of("Test body"), "addLinkToErrandInBody", List.of("true")),
+				"Key 'subject' is mandatory and cannot be empty"),
+			Arguments.of(
+				Map.of("recipient", List.of("test@test.com"), "sender", List.of("sender@test.com"), "subject", List.of("Test subject"), "addLinkToErrandInBody", List.of("true")),
+				"Key 'body' is mandatory and cannot be empty"),
+			Arguments.of(
+				Map.of("recipient", List.of("test@test.com"), "sender", List.of("sender@test.com"), "subject", List.of("Test subject"), "body", List.of("Test body")),
+				"Key 'addLinkToErrandInBody' is mandatory and cannot be empty"),
+			Arguments.of(
+				Map.of("recipient", List.of("test1@test.com", "test2@test.com"), "sender", List.of("sender@test.com"), "subject", List.of("Test subject"), "body", List.of("Test body"), "addLinkToErrandInBody", List.of("true")),
+				"Cannot handle multiple values of key 'recipient'"),
+			Arguments.of(
+				Map.of("recipient", List.of("test@test.com"), "sender", List.of("sender@test.com"), "subject", List.of("Test subject"), "body", List.of("Test body"), "addLinkToErrandInBody", List.of("notABoolean")),
+				"Value 'notABoolean' is not valid for key 'addLinkToErrandInBody'"));
+	}
+
+	private static Map<String, List<String>> createParameters(String... keyValues) {
+		var map = new HashMap<String, List<String>>();
+		for (int i = 0; i < keyValues.length; i += 2) {
+			map.put(keyValues[i], List.of(keyValues[i + 1]));
+		}
+		return map;
+	}
+
+	// actionFulfilled tests
+
+	@Test
+	void actionFulfilledAlwaysReturnsTrue() {
+		var errand = ErrandEntity.create();
+		assertThat(sendEmailAction.actionFulfilled(errand, Map.of())).isTrue();
+	}
+
+	// createAction tests
+
+	@Test
+	void createActionWhenConditionsMet() {
+		var errand = ErrandEntity.create()
+			.withStatus(STATUS_OPEN)
+			.withLabels(List.of(ErrandLabelEmbeddable.create().withMetadataLabelId(LABEL_ID_1)));
+
+		var config = ActionConfigEntity.create()
+			.withActive(true);
+		config.setConditions(new ArrayList<>(List.of(
+			ActionConfigConditionEntity.create().withKey("status").withValues(List.of(STATUS_OPEN)),
+			ActionConfigConditionEntity.create().withKey("hasLabel").withValues(List.of(LABEL_ID_1)))));
+		config.setParameters(new ArrayList<>());
+
+		var result = sendEmailAction.createAction(errand, config);
+
+		assertThat(result).isPresent();
+		assertThat(result.get().getActionConfigEntity()).isEqualTo(config);
+		assertThat(result.get().getErrandEntity()).isEqualTo(errand);
+		assertThat(result.get().getExecuteAfter()).isCloseTo(OffsetDateTime.now(), within(5, ChronoUnit.SECONDS));
+	}
+
+	@Test
+	void createActionWithDuration() {
+		var errand = ErrandEntity.create()
+			.withStatus(STATUS_OPEN)
+			.withLabels(List.of());
+
+		var config = ActionConfigEntity.create()
+			.withActive(true);
+		config.setConditions(new ArrayList<>(List.of(
+			ActionConfigConditionEntity.create().withKey("duration").withValues(List.of("PT2H")))));
+		config.setParameters(new ArrayList<>());
+
+		var result = sendEmailAction.createAction(errand, config);
+
+		assertThat(result).isPresent();
+		assertThat(result.get().getExecuteAfter()).isCloseTo(OffsetDateTime.now().plusHours(2), within(5, ChronoUnit.SECONDS));
+	}
+
+	@Test
+	void createActionWithoutDuration() {
+		var errand = ErrandEntity.create()
+			.withStatus(STATUS_OPEN)
+			.withLabels(List.of());
+
+		var config = ActionConfigEntity.create()
+			.withActive(true);
+		config.setConditions(new ArrayList<>());
+		config.setParameters(new ArrayList<>());
+
+		var result = sendEmailAction.createAction(errand, config);
+
+		assertThat(result).isPresent();
+		assertThat(result.get().getExecuteAfter()).isCloseTo(OffsetDateTime.now(), within(5, ChronoUnit.SECONDS));
+	}
+
+	@Test
+	void createActionWhenStatusConditionNotMet() {
+		var errand = ErrandEntity.create()
+			.withStatus(STATUS_CLOSED)
+			.withLabels(List.of());
+
+		var config = ActionConfigEntity.create()
+			.withActive(true);
+		config.setConditions(new ArrayList<>(List.of(
+			ActionConfigConditionEntity.create().withKey("status").withValues(List.of(STATUS_OPEN)))));
+		config.setParameters(new ArrayList<>());
+
+		var result = sendEmailAction.createAction(errand, config);
+
+		assertThat(result).isEmpty();
+	}
+
+	@Test
+	void createActionWhenHasLabelConditionNotMet() {
+		var errand = ErrandEntity.create()
+			.withStatus(STATUS_OPEN)
+			.withLabels(List.of());
+
+		var config = ActionConfigEntity.create()
+			.withActive(true);
+		config.setConditions(new ArrayList<>(List.of(
+			ActionConfigConditionEntity.create().withKey("hasLabel").withValues(List.of(LABEL_ID_1)))));
+		config.setParameters(new ArrayList<>());
+
+		var result = sendEmailAction.createAction(errand, config);
+
+		assertThat(result).isEmpty();
+	}
+
+	@Test
+	void createActionWhenNotActive() {
+		var errand = ErrandEntity.create()
+			.withStatus(STATUS_OPEN)
+			.withLabels(List.of());
+
+		var config = ActionConfigEntity.create()
+			.withActive(false);
+		config.setConditions(new ArrayList<>());
+		config.setParameters(new ArrayList<>());
+
+		var result = sendEmailAction.createAction(errand, config);
+
+		assertThat(result).isEmpty();
+	}
+
+	// executeAction tests
+
+	@Test
+	void executeAction() {
+		var errand = ErrandEntity.create();
+
+		var config = ActionConfigEntity.create();
+		config.setParameters(new ArrayList<>(List.of(
+			ActionConfigParameterEntity.create().withKey("recipient").withValues(List.of("recipient@test.com")),
+			ActionConfigParameterEntity.create().withKey("sender").withValues(List.of("sender@test.com")),
+			ActionConfigParameterEntity.create().withKey("subject").withValues(List.of("Test subject")),
+			ActionConfigParameterEntity.create().withKey("body").withValues(List.of("Test body")),
+			ActionConfigParameterEntity.create().withKey("addLinkToErrandInBody").withValues(List.of("false")))));
+
+		sendEmailAction.executeAction(errand, config);
+
+		verify(communicationService).sendEmail(eq(errand), emailRequestCaptor.capture());
+		var capturedRequest = emailRequestCaptor.getValue();
+		assertThat(capturedRequest.getRecipient()).isEqualTo("recipient@test.com");
+		assertThat(capturedRequest.getSender()).isEqualTo("sender@test.com");
+		assertThat(capturedRequest.getSubject()).isEqualTo("Test subject");
+		assertThat(capturedRequest.getMessage()).isEqualTo("Test body");
+		assertThat(capturedRequest.getHtmlMessage()).isEqualTo("Test body");
+	}
+
+	@Test
+	void executeActionWithAddLinkToErrandInBody() {
+		var errand = ErrandEntity.create();
+
+		var config = ActionConfigEntity.create();
+		config.setParameters(new ArrayList<>(List.of(
+			ActionConfigParameterEntity.create().withKey("recipient").withValues(List.of("recipient@test.com")),
+			ActionConfigParameterEntity.create().withKey("sender").withValues(List.of("sender@test.com")),
+			ActionConfigParameterEntity.create().withKey("subject").withValues(List.of("Test subject")),
+			ActionConfigParameterEntity.create().withKey("body").withValues(List.of("Test body")),
+			ActionConfigParameterEntity.create().withKey("addLinkToErrandInBody").withValues(List.of("true")))));
+
+		sendEmailAction.executeAction(errand, config);
+
+		verify(communicationService).sendEmail(eq(errand), emailRequestCaptor.capture());
+		var capturedRequest = emailRequestCaptor.getValue();
+		assertThat(capturedRequest.getRecipient()).isEqualTo("recipient@test.com");
+		assertThat(capturedRequest.getSender()).isEqualTo("sender@test.com");
+		assertThat(capturedRequest.getSubject()).isEqualTo("Test subject");
+	}
+
+	// validForOperationType tests
+
+	@Test
+	void validForOperationTypeCreate() {
+		assertThat(sendEmailAction.validForOperationType(OperationType.CREATE)).isTrue();
+	}
+
+	@Test
+	void validForOperationTypeUpdate() {
+		assertThat(sendEmailAction.validForOperationType(OperationType.UPDATE)).isTrue();
+	}
+
+	@Test
+	void validForOperationTypeDelete() {
+		assertThat(sendEmailAction.validForOperationType(OperationType.DELETE)).isFalse();
+	}
+
+	@Test
+	void validForOperationTypeRead() {
+		assertThat(sendEmailAction.validForOperationType(OperationType.READ)).isFalse();
+	}
+}

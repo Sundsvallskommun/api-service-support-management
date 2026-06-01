@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.dept44.support.Relation;
+import se.sundsvall.supportmanagement.api.model.config.action.enums.OperationType;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.ContactReasonRepository;
@@ -128,7 +129,7 @@ public class ErrandService {
 
 		computeAndSetAccessLabels(errandEntity);
 		final var persistedEntity = repository.save(errandEntity);
-		errandActionService.processErrandActions(persistedEntity);
+		errandActionService.processErrandActions(persistedEntity, OperationType.CREATE);
 		final var revision = revisionService.createErrandRevision(persistedEntity);
 
 		try {
@@ -186,7 +187,7 @@ public class ErrandService {
 			computeAndSetAccessLabels(errandEntity);
 		}
 		final var entity = repository.save(errandEntity);
-		errandActionService.processErrandActions(entity);
+		errandActionService.processErrandActions(entity, OperationType.UPDATE);
 
 		final var revisionResult = revisionService.createErrandRevision(entity);
 

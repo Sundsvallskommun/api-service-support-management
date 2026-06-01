@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.config.action.ActionDefinition;
 import se.sundsvall.supportmanagement.api.model.config.action.Config;
+import se.sundsvall.supportmanagement.api.model.config.action.enums.OperationType;
 import se.sundsvall.supportmanagement.integration.db.ActionConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigParameterEntity;
@@ -102,10 +103,10 @@ public class ErrandActionService {
 	}
 
 	@Transactional
-	public void processErrandActions(ErrandEntity errand) {
+	public void processErrandActions(ErrandEntity errand, OperationType operationType) {
 		removeFulfilledActions(errand);
 
-		var actionsToAdd = createActionsToAdd(errand);
+		var actionsToAdd = createActionsToAdd(errand, operationType);
 
 		if (!actionsToAdd.isEmpty()) {
 			if (errand.getActions() == null) {
@@ -115,7 +116,7 @@ public class ErrandActionService {
 		}
 	}
 
-	private List<ErrandActionEntity> createActionsToAdd(ErrandEntity errand) {
+	private List<ErrandActionEntity> createActionsToAdd(ErrandEntity errand, OperationType operationType) {
 		var actionsToAdd = new ArrayList<ErrandActionEntity>();
 
 		final var configs = actionConfigRepository.findAllByNamespaceAndMunicipalityId(errand.getNamespace(), errand.getMunicipalityId());
@@ -129,6 +130,7 @@ public class ErrandActionService {
 			.filter(config -> actions.get(config.getName()) != null)
 			.filter(config -> !existingConfigIds.contains(config.getId()))
 			.filter(config -> !actions.get(config.getName()).actionFulfilled(errand, toParameterMap(config)))
+			.filter(config -> actions.get(config.getName()).validForOperationType(operationType))
 			.forEach(config -> {
 				final var action = actions.get(config.getName());
 				action.createAction(errand, config).ifPresent(errandAction -> {

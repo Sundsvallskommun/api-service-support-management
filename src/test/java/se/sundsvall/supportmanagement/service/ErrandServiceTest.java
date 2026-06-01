@@ -31,6 +31,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
+import se.sundsvall.supportmanagement.api.model.config.action.enums.OperationType;
 import se.sundsvall.supportmanagement.api.model.errand.Priority;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
@@ -156,7 +157,7 @@ class ErrandServiceTest {
 		verify(errandPhaseServiceMock).processPhaseChange(any(ErrandEntity.class), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
 		verify(errandPhaseServiceMock).validateStatusAgainstActivePhase(any(ErrandEntity.class), any());
 		verify(errandRepositoryMock).save(any(ErrandEntity.class));
-		verify(errandActionServiceMock).processErrandActions(any(ErrandEntity.class));
+		verify(errandActionServiceMock).processErrandActions(any(ErrandEntity.class), eq(OperationType.CREATE));
 		verify(revisionServiceMock).createErrandRevision(any(ErrandEntity.class));
 		verify(eventServiceMock).createErrandEvent(eq(CREATE), eq(EVENT_LOG_CREATE_ERRAND), any(ErrandEntity.class), eq(currentRevisionMock), eq(null), eq(false), eq(ERRAND));
 		verifyNoInteractions(relationClientMock);
@@ -197,7 +198,7 @@ class ErrandServiceTest {
 		verify(errandPhaseServiceMock).processPhaseChange(any(ErrandEntity.class), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
 		verify(errandPhaseServiceMock).validateStatusAgainstActivePhase(any(ErrandEntity.class), any());
 		verify(errandRepositoryMock).save(any(ErrandEntity.class));
-		verify(errandActionServiceMock).processErrandActions(any(ErrandEntity.class));
+		verify(errandActionServiceMock).processErrandActions(any(ErrandEntity.class), eq(OperationType.CREATE));
 		verify(revisionServiceMock).createErrandRevision(any(ErrandEntity.class));
 		verify(eventServiceMock).createErrandEvent(eq(CREATE), eq(EVENT_LOG_CREATE_ERRAND), any(ErrandEntity.class),
 			eq(currentRevisionMock), eq(null), eq(false), eq(ERRAND));
@@ -347,7 +348,7 @@ class ErrandServiceTest {
 		verify(errandPhaseServiceMock).processPhaseChange(eq(entity), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
 		verify(errandPhaseServiceMock).validateStatusAgainstActivePhase(eq(entity), any());
 		verify(errandRepositoryMock).save(entity);
-		verify(errandActionServiceMock).processErrandActions(entity);
+		verify(errandActionServiceMock).processErrandActions(entity, OperationType.UPDATE);
 		verify(revisionServiceMock).createErrandRevision(entity);
 		verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_UPDATE_ERRAND, entity, currentRevisionMock, previousRevisionMock, ERRAND);
 	}
@@ -372,7 +373,7 @@ class ErrandServiceTest {
 		verify(errandPhaseServiceMock).processPhaseChange(eq(entity), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
 		verify(errandPhaseServiceMock).validateStatusAgainstActivePhase(eq(entity), any());
 		verify(errandRepositoryMock).save(entity);
-		verify(errandActionServiceMock).processErrandActions(entity);
+		verify(errandActionServiceMock).processErrandActions(entity, OperationType.UPDATE);
 		verify(revisionServiceMock).createErrandRevision(entity);
 		verify(revisionServiceMock, never()).getErrandRevisionByVersion(any(), any(), any(), anyInt());
 		verify(eventServiceMock, never()).createErrandEvent(any(), any(), any(), any(), any(), any());
@@ -421,7 +422,7 @@ class ErrandServiceTest {
 		service.deleteErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 
 		verify(errandRepositoryMock).deleteById(ERRAND_ID);
-		verify(eventServiceMock).createErrandEvent(eq(DELETE), eq(EVENT_LOG_DELETE_ERRAND), eq(entity), eq(currentRevisionMock), eq(null), eq(false), eq(ERRAND));
+		verify(eventServiceMock).createErrandEvent(DELETE, EVENT_LOG_DELETE_ERRAND, entity, currentRevisionMock, null, false, ERRAND);
 	}
 
 	@Test
@@ -441,7 +442,7 @@ class ErrandServiceTest {
 		service.deleteErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 
 		verify(errandRepositoryMock).deleteById(ERRAND_ID);
-		verify(eventServiceMock).createErrandEvent(eq(DELETE), eq(EVENT_LOG_DELETE_ERRAND), eq(entity), eq(currentRevisionMock), eq(null), eq(false), eq(ERRAND));
+		verify(eventServiceMock).createErrandEvent(DELETE, EVENT_LOG_DELETE_ERRAND, entity, currentRevisionMock, null, false, ERRAND);
 	}
 
 	@Test
