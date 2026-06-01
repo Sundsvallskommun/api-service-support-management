@@ -2,12 +2,10 @@ package se.sundsvall.supportmanagement.service.action;
 
 import java.time.Duration;
 import java.time.OffsetDateTime;
-import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 import se.sundsvall.dept44.problem.Problem;
@@ -15,10 +13,7 @@ import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.supportmanagement.api.model.config.action.Definition;
 import se.sundsvall.supportmanagement.api.model.config.action.PossibleValue;
 import se.sundsvall.supportmanagement.api.model.config.action.enums.OperationType;
-import se.sundsvall.supportmanagement.api.model.metadata.Label;
-import se.sundsvall.supportmanagement.api.model.metadata.Status;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
-import se.sundsvall.supportmanagement.integration.db.model.ActionConfigConditionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandActionEntity;
@@ -29,19 +24,15 @@ import se.sundsvall.supportmanagement.service.MetadataService;
 import static org.springframework.http.HttpStatus.UNPROCESSABLE_CONTENT;
 
 @Component
-public class AddLabelAction implements Action {
+public class AddLabelAction extends AbstractAction {
 
-	private static final String STATUS = "status";
-	private static final String HAS_LABEL = "hasLabel";
-	private static final String DURATION = "duration";
 	private static final String LABEL = "label";
 	private static final Set<OperationType> VALID_OPERATION_TYPES = Set.of(OperationType.CREATE, OperationType.UPDATE);
 
-	private final MetadataService metadataService;
 	private final ErrandsRepository errandsRepository;
 
 	public AddLabelAction(final MetadataService metadataService, final ErrandsRepository errandsRepository) {
-		this.metadataService = metadataService;
+		super(metadataService);
 		this.errandsRepository = errandsRepository;
 	}
 
@@ -90,57 +81,21 @@ public class AddLabelAction implements Action {
 
 	@Override
 	public void validateConditions(String municipalityId, String namespace, Map<String, List<String>> conditions) throws ThrowableProblem {
-		Set<String> validKeys = Set.of(STATUS, HAS_LABEL);
-		conditions.keySet()
-			.forEach(key -> {
-				if (!validKeys.contains(key)) {
-					throw Problem.valueOf(UNPROCESSABLE_CONTENT, String.format("Key '%s' is not valid", key));
-				}
-			});
-
-		if (conditions.containsKey(STATUS)) {
-			var validStatuses = metadataService.findStatuses(namespace, municipalityId, Sort.unsorted()).stream().map(Status::getName).toList();
-			conditions.get(STATUS).forEach(value -> {
-				if (!validStatuses.contains(value)) {
-					throw Problem.valueOf(UNPROCESSABLE_CONTENT, String.format("Status '%s' is not valid for this namespace", value));
-				}
-			});
-		}
-
-		if (conditions.containsKey(HAS_LABEL)) {
-			var validLabelIds = getValidLabelIds(municipalityId, namespace);
-			conditions.get(HAS_LABEL).forEach(value -> {
-				if (!validLabelIds.contains(value)) {
-					throw Problem.valueOf(UNPROCESSABLE_CONTENT, String.format("Label ID '%s' is not valid", value));
-				}
-			});
-		}
+		validateKeys(conditions, Set.of(STATUS, HAS_LABEL));
+		validateStatuses(municipalityId, namespace, conditions);
+		validateLabels(municipalityId, namespace, conditions);
 	}
 
 	@Override
 	public void validateParameters(String municipalityId, String namespace, Map<String, List<String>> parameters) throws ThrowableProblem {
 		Set<String> validKeys = Set.of(DURATION, LABEL);
-		parameters.keySet()
-			.forEach(key -> {
-				if (!validKeys.contains(key)) {
-					throw Problem.valueOf(UNPROCESSABLE_CONTENT, String.format("Key '%s' is not valid", key));
-				}
-			});
+		validateKeys(parameters, validKeys);
 
 		if (!parameters.containsKey(LABEL) || parameters.get(LABEL).isEmpty()) {
 			throw Problem.valueOf(UNPROCESSABLE_CONTENT, String.format("Key '%s' is mandatory and cannot be empty", LABEL));
 		}
 
-		if (parameters.containsKey(DURATION)) {
-			if (parameters.get(DURATION).size() > 1) {
-				throw Problem.valueOf(UNPROCESSABLE_CONTENT, String.format("Cannot handle multiple values of key '%s' ", DURATION));
-			}
-			try {
-				Duration.parse(parameters.get(DURATION).getFirst());
-			} catch (DateTimeParseException _) {
-				throw Problem.valueOf(UNPROCESSABLE_CONTENT, String.format("Could not parse duration '%s'", parameters.get(DURATION).getFirst()));
-			}
-		}
+		validateDuration(parameters);
 
 		var validLabelIds = getValidLabelIds(municipalityId, namespace);
 		parameters.get(LABEL).forEach(value -> {
@@ -157,21 +112,9 @@ public class AddLabelAction implements Action {
 
 	@Override
 	public Optional<ErrandActionEntity> createAction(ErrandEntity errand, ActionConfigEntity actionConfigEntity) {
+		var conditions = toConditionMap(actionConfigEntity);
 
-		var conditions = actionConfigEntity.getConditions().stream()
-			.collect(Collectors.toMap(ActionConfigConditionEntity::getKey, ActionConfigConditionEntity::getValues));
-
-		boolean fulfillsConditions = true;
-
-		if (conditions.containsKey(STATUS)) {
-			fulfillsConditions &= conditions.get(STATUS).contains(errand.getStatus());
-		}
-
-		if (conditions.containsKey(HAS_LABEL)) {
-			fulfillsConditions &= getErrandLabelIds(errand).containsAll(conditions.get(HAS_LABEL));
-		}
-
-		if (fulfillsConditions && actionConfigEntity.getActive()) {
+		if (evaluateConditions(errand, conditions) && actionConfigEntity.getActive()) {
 			var executeAfter = actionConfigEntity.getParameters().stream()
 				.filter(parameterEntity -> parameterEntity.getKey().equals(DURATION))
 				.findFirst()
@@ -181,10 +124,7 @@ public class AddLabelAction implements Action {
 				.map(duration -> OffsetDateTime.now().plus(duration))
 				.orElse(OffsetDateTime.now());
 
-			return Optional.of(ErrandActionEntity.create()
-				.withActionConfigEntity(actionConfigEntity)
-				.withErrandEntity(errand)
-				.withExecuteAfter(executeAfter));
+			return buildErrandAction(errand, actionConfigEntity, executeAfter);
 		} else {
 			return Optional.empty();
 		}
@@ -210,25 +150,5 @@ public class AddLabelAction implements Action {
 	@Override
 	public boolean validForOperationType(OperationType operationType) {
 		return VALID_OPERATION_TYPES.contains(operationType);
-	}
-
-	private List<PossibleValue> getLabelPossibleValues(String municipalityId, String namespace) {
-		return metadataService.findLabels(namespace, municipalityId).flatten().stream()
-			.map(label -> PossibleValue.create()
-				.withValue(label.getId())
-				.withDisplayName(label.getDisplayName()))
-			.toList();
-	}
-
-	private List<String> getValidLabelIds(String municipalityId, String namespace) {
-		return metadataService.findLabels(namespace, municipalityId).flatten().stream()
-			.map(Label::getId)
-			.toList();
-	}
-
-	private Set<String> getErrandLabelIds(ErrandEntity errand) {
-		return errand.getLabels().stream()
-			.map(ErrandLabelEmbeddable::getMetadataLabelId)
-			.collect(Collectors.toSet());
 	}
 }

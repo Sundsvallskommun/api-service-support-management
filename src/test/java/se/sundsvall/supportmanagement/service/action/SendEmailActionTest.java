@@ -120,7 +120,6 @@ class SendEmailActionTest {
 	}
 
 	// validateConditions tests
-
 	@Test
 	void validateConditionsWithValidStatusAndLabel() {
 		when(metadataService.findStatuses(NAMESPACE, MUNICIPALITY_ID, Sort.unsorted())).thenReturn(List.of(Status.create().withName(STATUS_OPEN)));
@@ -183,7 +182,6 @@ class SendEmailActionTest {
 	}
 
 	// validateParameters tests
-
 	@Test
 	void validateParametersWithAllValid() {
 		sendEmailAction.validateParameters(MUNICIPALITY_ID, NAMESPACE, Map.of(
@@ -247,7 +245,6 @@ class SendEmailActionTest {
 	}
 
 	// createAction tests
-
 	@Test
 	void createActionWhenConditionsMet() {
 		var errand = ErrandEntity.create()
@@ -401,7 +398,6 @@ class SendEmailActionTest {
 	}
 
 	// validForOperationType tests
-
 	@Test
 	void validForOperationTypeCreate() {
 		assertThat(sendEmailAction.validForOperationType(OperationType.CREATE)).isTrue();
