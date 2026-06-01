@@ -84,15 +84,13 @@ class SendEmailActionTest {
 
 		var result = sendEmailAction.getConditionDefinitions(MUNICIPALITY_ID, NAMESPACE);
 
-		assertThat(result).hasSize(3);
+		assertThat(result).hasSize(2);
 		assertThat(result.get(0).getKey()).isEqualTo("status");
 		assertThat(result.get(0).getMandatory()).isFalse();
 		assertThat(result.get(0).getPossibleValues()).hasSize(2);
 		assertThat(result.get(1).getKey()).isEqualTo("hasLabel");
 		assertThat(result.get(1).getMandatory()).isFalse();
 		assertThat(result.get(1).getPossibleValues()).hasSize(2);
-		assertThat(result.get(2).getKey()).isEqualTo("duration");
-		assertThat(result.get(2).getMandatory()).isFalse();
 
 		verify(metadataService).findStatuses(NAMESPACE, MUNICIPALITY_ID, Sort.unsorted());
 		verify(metadataService).findLabels(NAMESPACE, MUNICIPALITY_ID);
@@ -103,7 +101,7 @@ class SendEmailActionTest {
 	void getParameterDefinitions() {
 		var result = sendEmailAction.getParameterDefinitions(MUNICIPALITY_ID, NAMESPACE);
 
-		assertThat(result).hasSize(5);
+		assertThat(result).hasSize(6);
 		assertThat(result.get(0).getKey()).isEqualTo("recipient");
 		assertThat(result.get(0).getMandatory()).isTrue();
 		assertThat(result.get(1).getKey()).isEqualTo("sender");
@@ -115,6 +113,8 @@ class SendEmailActionTest {
 		assertThat(result.get(4).getKey()).isEqualTo("addLinkToErrandInBody");
 		assertThat(result.get(4).getMandatory()).isTrue();
 		assertThat(result.get(4).getPossibleValues()).hasSize(2);
+		assertThat(result.get(5).getKey()).isEqualTo("duration");
+		assertThat(result.get(5).getMandatory()).isFalse();
 
 		verifyNoMoreInteractions(metadataService);
 	}
@@ -133,12 +133,6 @@ class SendEmailActionTest {
 		verify(metadataService).findStatuses(NAMESPACE, MUNICIPALITY_ID, Sort.unsorted());
 		verify(metadataService).findLabels(NAMESPACE, MUNICIPALITY_ID);
 		verifyNoMoreInteractions(metadataService);
-	}
-
-	@Test
-	void validateConditionsWithValidDuration() {
-		sendEmailAction.validateConditions(MUNICIPALITY_ID, NAMESPACE, Map.of(
-			"duration", List.of("PT1H")));
 	}
 
 	@Test
@@ -174,14 +168,22 @@ class SendEmailActionTest {
 				Map.of("invalidKey", List.of("value")),
 				"Key 'invalidKey' is not valid"),
 			Arguments.of(
-				Map.of("duration", List.of("PT1H", "PT2H")),
-				"Cannot handle multiple values of key 'duration'"),
-			Arguments.of(
-				Map.of("duration", List.of("not-a-duration")),
-				"Could not parse duration 'not-a-duration'"));
+				Map.of("duration", List.of("PT1H")),
+				"Key 'duration' is not valid"));
 	}
 
 	// validateParameters tests
+	@Test
+	void validateParametersWithValidDuration() {
+		sendEmailAction.validateParameters(MUNICIPALITY_ID, NAMESPACE, Map.of(
+			"recipient", List.of("test@test.com"),
+			"sender", List.of("sender@test.com"),
+			"subject", List.of("Test subject"),
+			"body", List.of("Test body"),
+			"addLinkToErrandInBody", List.of("true"),
+			"duration", List.of("PT1H")));
+	}
+
 	@Test
 	void validateParametersWithAllValid() {
 		sendEmailAction.validateParameters(MUNICIPALITY_ID, NAMESPACE, Map.of(
@@ -225,7 +227,10 @@ class SendEmailActionTest {
 				"Cannot handle multiple values of key 'recipient'"),
 			Arguments.of(
 				Map.of("recipient", List.of("test@test.com"), "sender", List.of("sender@test.com"), "subject", List.of("Test subject"), "body", List.of("Test body"), "addLinkToErrandInBody", List.of("notABoolean")),
-				"Value 'notABoolean' is not valid for key 'addLinkToErrandInBody'"));
+				"Value 'notABoolean' is not valid for key 'addLinkToErrandInBody'"),
+			Arguments.of(
+				createParameters("recipient", "test@test.com", "sender", "sender@test.com", "subject", "Test subject", "body", "Test body", "addLinkToErrandInBody", "true", "duration", "not-a-duration"),
+				"Could not parse duration 'not-a-duration'"));
 	}
 
 	private static Map<String, List<String>> createParameters(String... keyValues) {
@@ -274,9 +279,9 @@ class SendEmailActionTest {
 
 		var config = ActionConfigEntity.create()
 			.withActive(true);
-		config.setConditions(new ArrayList<>(List.of(
-			ActionConfigConditionEntity.create().withKey("duration").withValues(List.of("PT2H")))));
-		config.setParameters(new ArrayList<>());
+		config.setConditions(new ArrayList<>());
+		config.setParameters(new ArrayList<>(List.of(
+			ActionConfigParameterEntity.create().withKey("duration").withValues(List.of("PT2H")))));
 
 		var result = sendEmailAction.createAction(errand, config);
 

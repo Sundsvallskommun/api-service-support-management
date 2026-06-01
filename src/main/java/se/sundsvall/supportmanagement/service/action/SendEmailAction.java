@@ -32,8 +32,10 @@ public class SendEmailAction extends AbstractAction {
 	private static final String SUBJECT = "subject";
 	private static final String BODY = "body";
 	private static final String ADD_LINK_TO_ERRAND_IN_BODY = "addLinkToErrandInBody";
+	private static final String TRUE = "true";
+	private static final String FALSE = "false";
 
-	private static final Set<String> BOOLEAN_VALUES = Set.of("true", "false");
+	private static final Set<String> BOOLEAN_VALUES = Set.of(TRUE, FALSE);
 	private static final Set<OperationType> VALID_OPERATION_TYPES = Set.of(OperationType.CREATE, OperationType.UPDATE);
 
 	private final CommunicationService communicationService;
@@ -69,11 +71,7 @@ public class SendEmailAction extends AbstractAction {
 				.withKey(HAS_LABEL)
 				.withMandatory(false)
 				.withDescription("Errand must have these labels for action to be added")
-				.withPossibleValues(getLabelPossibleValues(municipalityId, namespace)),
-			Definition.create()
-				.withKey(DURATION)
-				.withMandatory(false)
-				.withDescription("Delay before the email is sent. Format follows java Duration ISO-8601 (PnDTnHnMn.nS). If null will be sent directly"));
+				.withPossibleValues(getLabelPossibleValues(municipalityId, namespace)));
 	}
 
 	@Override
@@ -100,21 +98,24 @@ public class SendEmailAction extends AbstractAction {
 				.withMandatory(true)
 				.withDescription("If true, a link to the errand will be appended to the email body")
 				.withPossibleValues(List.of(
-					PossibleValue.create().withValue("true").withDisplayName("true"),
-					PossibleValue.create().withValue("false").withDisplayName("false"))));
+					PossibleValue.create().withValue(TRUE).withDisplayName(TRUE),
+					PossibleValue.create().withValue(FALSE).withDisplayName(FALSE))),
+			Definition.create()
+				.withKey(DURATION)
+				.withMandatory(false)
+				.withDescription("Delay before the email is sent. Format follows java Duration ISO-8601 (PnDTnHnMn.nS). If null will be sent directly"));
 	}
 
 	@Override
 	public void validateConditions(String municipalityId, String namespace, Map<String, List<String>> conditions) throws ThrowableProblem {
-		validateKeys(conditions, Set.of(STATUS, HAS_LABEL, DURATION));
+		validateKeys(conditions, Set.of(STATUS, HAS_LABEL));
 		validateStatuses(municipalityId, namespace, conditions);
 		validateLabels(municipalityId, namespace, conditions);
-		validateDuration(conditions);
 	}
 
 	@Override
 	public void validateParameters(String municipalityId, String namespace, Map<String, List<String>> parameters) throws ThrowableProblem {
-		Set<String> validKeys = Set.of(RECIPIENT, SENDER, SUBJECT, BODY, ADD_LINK_TO_ERRAND_IN_BODY);
+		Set<String> validKeys = Set.of(RECIPIENT, SENDER, SUBJECT, BODY, ADD_LINK_TO_ERRAND_IN_BODY, DURATION);
 		validateKeys(parameters, validKeys);
 
 		for (String mandatoryKey : List.of(RECIPIENT, SENDER, SUBJECT, BODY, ADD_LINK_TO_ERRAND_IN_BODY)) {
@@ -129,6 +130,8 @@ public class SendEmailAction extends AbstractAction {
 		if (!BOOLEAN_VALUES.contains(parameters.get(ADD_LINK_TO_ERRAND_IN_BODY).getFirst())) {
 			throw Problem.valueOf(UNPROCESSABLE_CONTENT, String.format("Value '%s' is not valid for key '%s'. Must be 'true' or 'false'", parameters.get(ADD_LINK_TO_ERRAND_IN_BODY).getFirst(), ADD_LINK_TO_ERRAND_IN_BODY));
 		}
+
+		validateDuration(parameters);
 	}
 
 	@Override
@@ -141,9 +144,14 @@ public class SendEmailAction extends AbstractAction {
 		var conditions = toConditionMap(actionConfigEntity);
 
 		if (evaluateConditions(errand, conditions) && actionConfigEntity.getActive()) {
-			var executeAfter = conditions.containsKey(DURATION)
-				? OffsetDateTime.now().plus(Duration.parse(conditions.get(DURATION).getFirst()))
-				: OffsetDateTime.now();
+			var executeAfter = actionConfigEntity.getParameters().stream()
+				.filter(parameterEntity -> parameterEntity.getKey().equals(DURATION))
+				.findFirst()
+				.map(ActionConfigParameterEntity::getValues)
+				.map(List::getFirst)
+				.map(Duration::parse)
+				.map(duration -> OffsetDateTime.now().plus(duration))
+				.orElse(OffsetDateTime.now());
 
 			return buildErrandAction(errand, actionConfigEntity, executeAfter);
 		} else {
@@ -170,8 +178,7 @@ public class SendEmailAction extends AbstractAction {
 			.withRecipient(recipient)
 			.withSender(sender)
 			.withSubject(subject)
-			.withMessage(body)
-			.withHtmlMessage(body);
+			.withMessage(body);
 
 		communicationService.sendEmail(errand, emailRequest);
 	}
