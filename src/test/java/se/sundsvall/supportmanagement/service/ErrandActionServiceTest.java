@@ -30,6 +30,10 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static se.sundsvall.supportmanagement.api.model.config.action.enums.OperationType.CREATE;
+import static se.sundsvall.supportmanagement.api.model.config.action.enums.OperationType.DELETE;
+import static se.sundsvall.supportmanagement.api.model.config.action.enums.OperationType.READ;
+import static se.sundsvall.supportmanagement.api.model.config.action.enums.OperationType.UPDATE;
 
 @ExtendWith(MockitoExtension.class)
 class ErrandActionServiceTest {
@@ -228,9 +232,10 @@ class ErrandActionServiceTest {
 		when(actionConfigRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of(config));
 		when(actionMock.actionFulfilled(any(), any())).thenReturn(false);
 		when(actionMock.createAction(errand, config)).thenReturn(Optional.of(errandAction));
+		when(actionMock.validForOperationType(CREATE)).thenReturn(true);
 
 		final var service = createService();
-		service.processErrandActions(errand);
+		service.processErrandActions(errand, CREATE);
 
 		assertThat(errand.getActions()).hasSize(1);
 		assertThat(errand.getActions().getFirst()).isEqualTo(errandAction);
@@ -248,7 +253,7 @@ class ErrandActionServiceTest {
 		when(actionConfigRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of(config));
 
 		final var service = createService();
-		service.processErrandActions(errand);
+		service.processErrandActions(errand, CREATE);
 
 		assertThat(errand.getActions()).isEmpty();
 		verify(actionMock, never()).createAction(any(), any());
@@ -265,9 +270,10 @@ class ErrandActionServiceTest {
 		when(actionConfigRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of(config));
 		when(actionMock.actionFulfilled(any(), any())).thenReturn(false);
 		when(actionMock.createAction(errand, config)).thenReturn(Optional.empty());
+		when(actionMock.validForOperationType(CREATE)).thenReturn(true);
 
 		final var service = createService();
-		service.processErrandActions(errand);
+		service.processErrandActions(errand, CREATE);
 
 		assertThat(errand.getActions()).isEmpty();
 		verify(actionMock, never()).executeAction(any(), any());
@@ -285,7 +291,7 @@ class ErrandActionServiceTest {
 		when(actionMock.actionFulfilled(any(), any())).thenReturn(true);
 
 		final var service = createService();
-		service.processErrandActions(errand);
+		service.processErrandActions(errand, UPDATE);
 
 		assertThat(errand.getActions()).isEmpty();
 		verify(actionMock, never()).createAction(any(), any());
@@ -307,9 +313,10 @@ class ErrandActionServiceTest {
 		when(actionConfigRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of(config));
 		when(actionMock.actionFulfilled(any(), any())).thenReturn(false);
 		when(actionMock.createAction(errand, config)).thenReturn(Optional.of(errandAction));
+		when(actionMock.validForOperationType(READ)).thenReturn(true);
 
 		final var service = createService();
-		service.processErrandActions(errand);
+		service.processErrandActions(errand, READ);
 
 		assertThat(errand.getActions()).isEmpty();
 		verify(actionMock).executeAction(errand, config);
@@ -330,7 +337,7 @@ class ErrandActionServiceTest {
 		when(actionMock.actionFulfilled(any(), any())).thenReturn(false);
 
 		final var service = createService();
-		service.processErrandActions(errand);
+		service.processErrandActions(errand, DELETE);
 
 		assertThat(errand.getActions()).hasSize(1);
 		verify(actionMock, never()).createAction(any(), any());
@@ -352,7 +359,7 @@ class ErrandActionServiceTest {
 		when(actionMock.actionFulfilled(any(), any())).thenReturn(true);
 
 		final var service = createService();
-		service.processErrandActions(errand);
+		service.processErrandActions(errand, CREATE);
 
 		assertThat(errand.getActions()).isEmpty();
 	}
@@ -368,7 +375,7 @@ class ErrandActionServiceTest {
 		when(actionConfigRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of(config));
 
 		final var service = createService();
-		service.processErrandActions(errand);
+		service.processErrandActions(errand, CREATE);
 
 		assertThat(errand.getActions()).isEmpty();
 		verify(actionMock, never()).createAction(any(), any());
@@ -389,9 +396,10 @@ class ErrandActionServiceTest {
 		when(actionConfigRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of(config));
 		when(actionMock.actionFulfilled(any(), any())).thenReturn(false);
 		when(actionMock.createAction(errand, config)).thenReturn(Optional.of(errandAction));
+		when(actionMock.validForOperationType(UPDATE)).thenReturn(true);
 
 		final var service = createService();
-		service.processErrandActions(errand);
+		service.processErrandActions(errand, UPDATE);
 
 		assertThat(errand.getActions()).hasSize(1);
 	}
@@ -406,10 +414,30 @@ class ErrandActionServiceTest {
 		when(actionConfigRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of());
 
 		final var service = createService();
-		service.processErrandActions(errand);
+		service.processErrandActions(errand, CREATE);
 
 		assertThat(errand.getActions()).isEmpty();
 		verify(actionMock, never()).createAction(any(), any());
+	}
+
+	@Test
+	void processErrandActionsNotValidOperationType() {
+		final var config = createEntity().withId(CONFIG_ID);
+		final var errand = ErrandEntity.create()
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withNamespace(NAMESPACE)
+			.withActions(new ArrayList<>());
+
+		when(actionConfigRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of(config));
+		when(actionMock.actionFulfilled(any(), any())).thenReturn(false);
+		when(actionMock.validForOperationType(CREATE)).thenReturn(false);
+
+		final var service = createService();
+		service.processErrandActions(errand, CREATE);
+
+		assertThat(errand.getActions()).isEmpty();
+		verify(actionMock, never()).createAction(any(), any());
+		verify(actionMock, never()).executeAction(any(), any());
 	}
 
 	private ErrandActionService createService() {
