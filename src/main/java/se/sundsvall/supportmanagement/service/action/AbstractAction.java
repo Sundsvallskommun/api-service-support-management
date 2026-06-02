@@ -10,11 +10,14 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.data.domain.Sort;
 import se.sundsvall.dept44.problem.Problem;
+import se.sundsvall.dept44.problem.ThrowableProblem;
+import se.sundsvall.supportmanagement.api.model.config.action.Definition;
 import se.sundsvall.supportmanagement.api.model.config.action.PossibleValue;
 import se.sundsvall.supportmanagement.api.model.metadata.Label;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigConditionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ActionConfigParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandActionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
@@ -31,6 +34,51 @@ public abstract class AbstractAction implements Action {
 
 	protected AbstractAction(final MetadataService metadataService) {
 		this.metadataService = metadataService;
+	}
+
+	@Override
+	public List<Definition> getConditionDefinitions(String municipalityId, String namespace) {
+		return List.of(
+			Definition.create()
+				.withKey(STATUS)
+				.withMandatory(false)
+				.withDescription("Errand status. If null action will execute for all statuses")
+				.withPossibleValues(metadataService.findStatuses(namespace, municipalityId, Sort.unsorted()).stream()
+					.map(status -> PossibleValue.create()
+						.withValue(status.getName())
+						.withDisplayName(status.getName()))
+					.toList()),
+			Definition.create()
+				.withKey(HAS_LABEL)
+				.withMandatory(false)
+				.withDescription("Errand must have these labels for action to be added")
+				.withPossibleValues(getLabelPossibleValues(municipalityId, namespace)));
+	}
+
+	@Override
+	public void validateConditions(String municipalityId, String namespace, Map<String, List<String>> conditions) throws ThrowableProblem {
+		validateKeys(conditions, Set.of(STATUS, HAS_LABEL));
+		validateStatuses(municipalityId, namespace, conditions);
+		validateLabels(municipalityId, namespace, conditions);
+	}
+
+	protected Optional<ErrandActionEntity> createActionWithDuration(ErrandEntity errand, ActionConfigEntity actionConfigEntity) {
+		var conditions = toConditionMap(actionConfigEntity);
+
+		if (evaluateConditions(errand, conditions) && actionConfigEntity.getActive()) {
+			var executeAfter = actionConfigEntity.getParameters().stream()
+				.filter(parameterEntity -> parameterEntity.getKey().equals(DURATION))
+				.findFirst()
+				.map(ActionConfigParameterEntity::getValues)
+				.map(List::getFirst)
+				.map(Duration::parse)
+				.map(duration -> OffsetDateTime.now().plus(duration))
+				.orElse(OffsetDateTime.now());
+
+			return buildErrandAction(errand, actionConfigEntity, executeAfter);
+		} else {
+			return Optional.empty();
+		}
 	}
 
 	protected List<PossibleValue> getLabelPossibleValues(String municipalityId, String namespace) {

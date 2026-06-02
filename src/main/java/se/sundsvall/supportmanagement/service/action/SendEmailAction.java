@@ -1,13 +1,10 @@
 package se.sundsvall.supportmanagement.service.action;
 
-import java.time.Duration;
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.ThrowableProblem;
@@ -56,25 +53,6 @@ public class SendEmailAction extends AbstractAction {
 	}
 
 	@Override
-	public List<Definition> getConditionDefinitions(String municipalityId, String namespace) {
-		return List.of(
-			Definition.create()
-				.withKey(STATUS)
-				.withMandatory(false)
-				.withDescription("Errand status. If null action will execute for all statuses")
-				.withPossibleValues(metadataService.findStatuses(namespace, municipalityId, Sort.unsorted()).stream()
-					.map(status -> PossibleValue.create()
-						.withValue(status.getName())
-						.withDisplayName(status.getName()))
-					.toList()),
-			Definition.create()
-				.withKey(HAS_LABEL)
-				.withMandatory(false)
-				.withDescription("Errand must have these labels for action to be added")
-				.withPossibleValues(getLabelPossibleValues(municipalityId, namespace)));
-	}
-
-	@Override
 	public List<Definition> getParameterDefinitions(String municipalityId, String namespace) {
 		return List.of(
 			Definition.create()
@@ -107,13 +85,6 @@ public class SendEmailAction extends AbstractAction {
 	}
 
 	@Override
-	public void validateConditions(String municipalityId, String namespace, Map<String, List<String>> conditions) throws ThrowableProblem {
-		validateKeys(conditions, Set.of(STATUS, HAS_LABEL));
-		validateStatuses(municipalityId, namespace, conditions);
-		validateLabels(municipalityId, namespace, conditions);
-	}
-
-	@Override
 	public void validateParameters(String municipalityId, String namespace, Map<String, List<String>> parameters) throws ThrowableProblem {
 		Set<String> validKeys = Set.of(RECIPIENT, SENDER, SUBJECT, BODY, ADD_LINK_TO_ERRAND_IN_BODY, DURATION);
 		validateKeys(parameters, validKeys);
@@ -141,22 +112,7 @@ public class SendEmailAction extends AbstractAction {
 
 	@Override
 	public Optional<ErrandActionEntity> createAction(ErrandEntity errand, ActionConfigEntity actionConfigEntity) {
-		var conditions = toConditionMap(actionConfigEntity);
-
-		if (evaluateConditions(errand, conditions) && actionConfigEntity.getActive()) {
-			var executeAfter = actionConfigEntity.getParameters().stream()
-				.filter(parameterEntity -> parameterEntity.getKey().equals(DURATION))
-				.findFirst()
-				.map(ActionConfigParameterEntity::getValues)
-				.map(List::getFirst)
-				.map(Duration::parse)
-				.map(duration -> OffsetDateTime.now().plus(duration))
-				.orElse(OffsetDateTime.now());
-
-			return buildErrandAction(errand, actionConfigEntity, executeAfter);
-		} else {
-			return Optional.empty();
-		}
+		return createActionWithDuration(errand, actionConfigEntity);
 	}
 
 	@Override

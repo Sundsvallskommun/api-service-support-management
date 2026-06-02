@@ -1,17 +1,13 @@
 package se.sundsvall.supportmanagement.service.action;
 
-import java.time.Duration;
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.supportmanagement.api.model.config.action.Definition;
-import se.sundsvall.supportmanagement.api.model.config.action.PossibleValue;
 import se.sundsvall.supportmanagement.api.model.config.action.enums.OperationType;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigEntity;
@@ -47,25 +43,6 @@ public class AddLabelAction extends AbstractAction {
 	}
 
 	@Override
-	public List<Definition> getConditionDefinitions(String municipalityId, String namespace) {
-		return List.of(
-			Definition.create()
-				.withKey(STATUS)
-				.withMandatory(false)
-				.withDescription("Errand status. If null action will execute for all statuses")
-				.withPossibleValues(metadataService.findStatuses(namespace, municipalityId, Sort.unsorted()).stream()
-					.map(status -> PossibleValue.create()
-						.withValue(status.getName())
-						.withDisplayName(status.getName()))
-					.toList()),
-			Definition.create()
-				.withKey(HAS_LABEL)
-				.withMandatory(false)
-				.withDescription("Errand must have these labels for action to be added")
-				.withPossibleValues(getLabelPossibleValues(municipalityId, namespace)));
-	}
-
-	@Override
 	public List<Definition> getParameterDefinitions(String municipalityId, String namespace) {
 		return List.of(
 			Definition.create()
@@ -77,13 +54,6 @@ public class AddLabelAction extends AbstractAction {
 				.withKey(DURATION)
 				.withMandatory(false)
 				.withDescription("Duration before label is added. Format follows java Duration ISO-8601 (PnDTnHnMn.nS). If null will be added directly"));
-	}
-
-	@Override
-	public void validateConditions(String municipalityId, String namespace, Map<String, List<String>> conditions) throws ThrowableProblem {
-		validateKeys(conditions, Set.of(STATUS, HAS_LABEL));
-		validateStatuses(municipalityId, namespace, conditions);
-		validateLabels(municipalityId, namespace, conditions);
 	}
 
 	@Override
@@ -112,22 +82,7 @@ public class AddLabelAction extends AbstractAction {
 
 	@Override
 	public Optional<ErrandActionEntity> createAction(ErrandEntity errand, ActionConfigEntity actionConfigEntity) {
-		var conditions = toConditionMap(actionConfigEntity);
-
-		if (evaluateConditions(errand, conditions) && actionConfigEntity.getActive()) {
-			var executeAfter = actionConfigEntity.getParameters().stream()
-				.filter(parameterEntity -> parameterEntity.getKey().equals(DURATION))
-				.findFirst()
-				.map(ActionConfigParameterEntity::getValues)
-				.map(List::getFirst)
-				.map(Duration::parse)
-				.map(duration -> OffsetDateTime.now().plus(duration))
-				.orElse(OffsetDateTime.now());
-
-			return buildErrandAction(errand, actionConfigEntity, executeAfter);
-		} else {
-			return Optional.empty();
-		}
+		return createActionWithDuration(errand, actionConfigEntity);
 	}
 
 	@Override

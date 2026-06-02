@@ -378,7 +378,7 @@ class SendEmailActionTest {
 		assertThat(capturedRequest.getSender()).isEqualTo("sender@test.com");
 		assertThat(capturedRequest.getSubject()).isEqualTo("Test subject");
 		assertThat(capturedRequest.getMessage()).isEqualTo("Test body");
-		assertThat(capturedRequest.getHtmlMessage()).isEqualTo("Test body");
+		assertThat(capturedRequest.getHtmlMessage()).isNull();
 	}
 
 	@Test
