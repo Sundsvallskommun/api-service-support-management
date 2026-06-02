@@ -26,7 +26,7 @@ public class NotificationDispatchEntity {
 
 	@Id
 	@UuidGenerator
-	@Column(name = "id", length = 36)
+	@Column(name = "id")
 	private String id;
 
 	@Column(name = "event_id", length = 36)

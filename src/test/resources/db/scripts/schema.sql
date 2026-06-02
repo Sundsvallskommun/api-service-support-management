@@ -378,10 +378,10 @@
         namespace varchar(32) not null,
         errand_id varchar(36) not null,
         event_id varchar(36),
-        id varchar(36) not null,
         request_group_id varchar(36),
         event_type varchar(64) not null,
         executing_user_id varchar(255),
+        id varchar(255) not null,
         primary key (id)
     ) engine=InnoDB;
 

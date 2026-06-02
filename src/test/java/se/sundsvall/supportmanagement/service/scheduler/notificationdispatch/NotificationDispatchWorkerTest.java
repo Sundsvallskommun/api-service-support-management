@@ -23,7 +23,6 @@ import se.sundsvall.supportmanagement.integration.db.model.subscriber.Subscriber
 import static java.time.OffsetDateTime.now;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -87,10 +86,11 @@ class NotificationDispatchWorkerTest {
 		final var subscriber = buildSubscriber("joe01doe", EVENT_TYPE);
 		when(errandsRepositoryMock.findById(ERRAND_ID)).thenReturn(Optional.of(ErrandEntity.create().withErrandNumber(ERRAND_NUMBER)));
 		when(subscriberRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of(subscriber));
+		when(channelDispatcherMock.send(any(), any(), any())).thenReturn(true);
 
 		worker.processGroup(List.of(entry));
 
-		verify(channelDispatcherMock).send(any(), any(), any(), any());
+		verify(channelDispatcherMock).send(any(), any(), any());
 		verify(dispatchRepositoryMock).deleteAll(List.of(entry));
 		verify(dispatchRepositoryMock, never()).save(any());
 	}
@@ -104,7 +104,7 @@ class NotificationDispatchWorkerTest {
 
 		worker.processGroup(List.of(entry));
 
-		verify(channelDispatcherMock, never()).send(any(), any(), any(), any());
+		verify(channelDispatcherMock, never()).send(any(), any(), any());
 		verify(dispatchRepositoryMock).deleteAll(List.of(entry));
 	}
 
@@ -117,7 +117,7 @@ class NotificationDispatchWorkerTest {
 
 		worker.processGroup(List.of(entry));
 
-		verify(channelDispatcherMock, never()).send(any(), any(), any(), any());
+		verify(channelDispatcherMock, never()).send(any(), any(), any());
 		verify(dispatchRepositoryMock).deleteAll(List.of(entry));
 	}
 
@@ -127,7 +127,7 @@ class NotificationDispatchWorkerTest {
 		final var subscriber = buildSubscriber("joe01doe", EVENT_TYPE);
 		when(errandsRepositoryMock.findById(ERRAND_ID)).thenReturn(Optional.of(ErrandEntity.create().withErrandNumber(ERRAND_NUMBER)));
 		when(subscriberRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of(subscriber));
-		doThrow(new RuntimeException("send failed")).when(channelDispatcherMock).send(any(), any(), any(), any());
+		when(channelDispatcherMock.send(any(), any(), any())).thenReturn(false);
 
 		worker.processGroup(List.of(entry));
 
@@ -144,7 +144,7 @@ class NotificationDispatchWorkerTest {
 		final var subscriber = buildSubscriber("joe01doe", EVENT_TYPE);
 		when(errandsRepositoryMock.findById(ERRAND_ID)).thenReturn(Optional.of(ErrandEntity.create().withErrandNumber(ERRAND_NUMBER)));
 		when(subscriberRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of(subscriber));
-		doThrow(new RuntimeException("send failed")).when(channelDispatcherMock).send(any(), any(), any(), any());
+		when(channelDispatcherMock.send(any(), any(), any())).thenReturn(false);
 
 		worker.processGroup(List.of(entry));
 
@@ -161,7 +161,7 @@ class NotificationDispatchWorkerTest {
 
 		worker.processGroup(List.of(entry));
 
-		verify(channelDispatcherMock, never()).send(any(), any(), any(), any());
+		verify(channelDispatcherMock, never()).send(any(), any(), any());
 		verify(dispatchRepositoryMock).deleteAll(List.of(entry));
 	}
 
@@ -172,10 +172,11 @@ class NotificationDispatchWorkerTest {
 		final var subscriber = buildSubscriber("joe01doe", EVENT_TYPE);
 		when(errandsRepositoryMock.findById(ERRAND_ID)).thenReturn(Optional.of(ErrandEntity.create().withErrandNumber(ERRAND_NUMBER)));
 		when(subscriberRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of(subscriber));
+		when(channelDispatcherMock.send(any(), any(), any())).thenReturn(true);
 
 		worker.processGroup(List.of(entryBySelf, entryByOther));
 
-		verify(channelDispatcherMock).send(any(), any(), any(), any());
+		verify(channelDispatcherMock).send(any(), any(), any());
 		verify(dispatchRepositoryMock).deleteAll(List.of(entryBySelf, entryByOther));
 	}
 

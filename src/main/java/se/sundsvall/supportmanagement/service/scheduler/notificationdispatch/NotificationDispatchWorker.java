@@ -79,13 +79,8 @@ public class NotificationDispatchWorker {
 				continue;
 			}
 
-			for (final var channel : subscriber.getChannels()) {
-				try {
-					channelDispatcher.send(errandId, errandNumber, subscriber, channel);
-				} catch (final Exception e) {
-					LOG.warn("Failed to send notification for errand: {} subscriber: {} channel: {}", errandId, subscriber.getId(), channel.getType(), e);
-					allSucceeded = false;
-				}
+			if (!channelDispatcher.send(errandId, errandNumber, subscriber)) {
+				allSucceeded = false;
 			}
 		}
 
