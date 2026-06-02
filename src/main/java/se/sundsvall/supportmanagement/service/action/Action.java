@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Optional;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.supportmanagement.api.model.config.action.Definition;
+import se.sundsvall.supportmanagement.api.model.config.action.enums.OperationType;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandActionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
@@ -28,4 +29,6 @@ public interface Action {
 	Optional<ErrandActionEntity> createAction(ErrandEntity errand, ActionConfigEntity actionConfigEntity);
 
 	void executeAction(ErrandEntity errand, ActionConfigEntity actionConfigEntity);
+
+	boolean validForOperationType(OperationType operationType);
 }
