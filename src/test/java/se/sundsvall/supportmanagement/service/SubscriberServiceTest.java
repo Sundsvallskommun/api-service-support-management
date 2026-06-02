@@ -18,6 +18,7 @@ import se.sundsvall.supportmanagement.api.model.identifier.Identifier;
 import se.sundsvall.supportmanagement.api.model.subscriber.Subscriber;
 import se.sundsvall.supportmanagement.integration.db.SubscriberRepository;
 import se.sundsvall.supportmanagement.integration.db.SubscriptionRepository;
+import se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.IdentifierEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberSubscriptionCount;
@@ -398,6 +399,50 @@ class SubscriberServiceTest {
 
 		verify(subscriberRepositoryMock).findByIdAndNamespaceAndMunicipalityId(id, NAMESPACE, MUNICIPALITY_ID);
 		verify(subscriberRepositoryMock, never()).delete(any(SubscriberEntity.class));
+		verifyNoMoreInteractions(subscriberRepositoryMock);
+		verifyNoInteractions(subscriptionRepositoryMock);
+	}
+
+	@Test
+	void findOrCreateSubscriberForAssigneeWhenSubscriberExists() {
+		final var assignedUserId = "joe01doe";
+		final var existing = SubscriberEntity.create().withId(randomUUID().toString())
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withNamespace(NAMESPACE)
+			.withIdentifier(IdentifierEmbeddable.create().withType("adAccount").withValue(assignedUserId));
+		when(subscriberRepositoryMock.findAllByNamespaceAndMunicipalityIdAndIdentifierTypeAndIdentifierValue(
+			NAMESPACE, MUNICIPALITY_ID, "adAccount", assignedUserId)).thenReturn(List.of(existing));
+
+		final var result = service.findOrCreateSubscriberForAssignee(MUNICIPALITY_ID, NAMESPACE, assignedUserId);
+
+		assertThat(result).isSameAs(existing);
+		verify(subscriberRepositoryMock).findAllByNamespaceAndMunicipalityIdAndIdentifierTypeAndIdentifierValue(
+			NAMESPACE, MUNICIPALITY_ID, "adAccount", assignedUserId);
+		verify(subscriberRepositoryMock, never()).save(any());
+		verifyNoMoreInteractions(subscriberRepositoryMock);
+		verifyNoInteractions(subscriptionRepositoryMock);
+	}
+
+	@Test
+	void findOrCreateSubscriberForAssigneeWhenSubscriberDoesNotExist() {
+		final var assignedUserId = "joe01doe";
+		when(subscriberRepositoryMock.findAllByNamespaceAndMunicipalityIdAndIdentifierTypeAndIdentifierValue(
+			NAMESPACE, MUNICIPALITY_ID, "adAccount", assignedUserId)).thenReturn(List.of());
+		when(subscriberRepositoryMock.save(any(SubscriberEntity.class)))
+			.thenAnswer(inv -> inv.<SubscriberEntity>getArgument(0).withId(randomUUID().toString()));
+
+		service.findOrCreateSubscriberForAssignee(MUNICIPALITY_ID, NAMESPACE, assignedUserId);
+
+		verify(subscriberRepositoryMock).findAllByNamespaceAndMunicipalityIdAndIdentifierTypeAndIdentifierValue(
+			NAMESPACE, MUNICIPALITY_ID, "adAccount", assignedUserId);
+		verify(subscriberRepositoryMock).save(entityCaptor.capture());
+		final var saved = entityCaptor.getValue();
+		assertThat(saved.getMunicipalityId()).isEqualTo(MUNICIPALITY_ID);
+		assertThat(saved.getNamespace()).isEqualTo(NAMESPACE);
+		assertThat(saved.getIdentifier().getType()).isEqualTo("adAccount");
+		assertThat(saved.getIdentifier().getValue()).isEqualTo(assignedUserId);
+		assertThat(saved.getChannels()).hasSize(1);
+		assertThat(saved.getChannels().get(0).getType()).isEqualTo(NotificationChannelType.INTERNAL);
 		verifyNoMoreInteractions(subscriberRepositoryMock);
 		verifyNoInteractions(subscriptionRepositoryMock);
 	}

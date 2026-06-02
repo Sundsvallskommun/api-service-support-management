@@ -4,6 +4,8 @@ import generated.se.sundsvall.eventlog.EventType;
 import generated.se.sundsvall.notes.Note;
 import java.util.Objects;
 import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -32,12 +34,16 @@ import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getRequest
 @Service
 public class EventService {
 
+	private static final Logger LOG = LoggerFactory.getLogger(EventService.class);
+
 	private final EventlogClient eventLogClient;
 	private final NotificationService notificationService;
+	private final SubscriptionService subscriptionService;
 
-	public EventService(final EventlogClient eventLogClient, final NotificationService notificationService) {
+	public EventService(final EventlogClient eventLogClient, final NotificationService notificationService, final SubscriptionService subscriptionService) {
 		this.eventLogClient = eventLogClient;
 		this.notificationService = notificationService;
+		this.subscriptionService = subscriptionService;
 	}
 
 	public void createErrandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final Revision currentRevision, final Revision previousRevision, final boolean sendNotification, final EventSubType subtype) {
@@ -45,6 +51,7 @@ public class EventService {
 		final var metadata = toMetadataMap(errandEntity, currentRevision, previousRevision);
 		final var event = toEvent(eventType, message, extractId(currentRevision), Errand.class, metadata, getExecutingUser(), subtype.getValue(), requestGroupId);
 		eventLogClient.createEvent(errandEntity.getMunicipalityId(), errandEntity.getId(), event);
+		tryAutoSubscribeErrandAssignee(errandEntity);
 
 		if (sendNotification) {
 			createNotification(errandEntity, event);
@@ -61,6 +68,7 @@ public class EventService {
 		final var metadata = toMetadataMap(caseId, noteId, currentRevision, previousRevision, errandEntity.getNamespace());
 		final var event = toEvent(eventType, message, extractId(currentRevision), Note.class, metadata, getExecutingUser(), NOTE.getValue(), requestGroupId);
 		eventLogClient.createEvent(errandEntity.getMunicipalityId(), logKey, event);
+		tryAutoSubscribeErrandAssignee(errandEntity);
 		createNotification(errandEntity, event);
 	}
 
@@ -75,6 +83,14 @@ public class EventService {
 
 	private String extractId(final Revision currentRevision) {
 		return ofNullable(currentRevision).map(Revision::getId).orElse(null);
+	}
+
+	private void tryAutoSubscribeErrandAssignee(final ErrandEntity errandEntity) {
+		try {
+			subscriptionService.autoSubscribeErrandAssignee(errandEntity);
+		} catch (final Exception e) {
+			LOG.warn("Auto-subscribe failed for errand '{}' – continuing without subscription", errandEntity.getId(), e);
+		}
 	}
 
 	private void createNotification(final ErrandEntity errandEntity, final generated.se.sundsvall.eventlog.Event event) {

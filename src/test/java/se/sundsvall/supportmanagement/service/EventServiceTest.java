@@ -48,6 +48,9 @@ class EventServiceTest {
 	private EventlogClient eventLogClientMock;
 
 	@Mock
+	private SubscriptionService subscriptionServiceMock;
+
+	@Mock
 	private PageEvent pageEventMock;
 
 	@Mock
@@ -122,6 +125,7 @@ class EventServiceTest {
 		assertThat(event.getSourceType()).isEqualTo(sourceType);
 		assertThat(event.getType()).isEqualTo(eventType);
 
+		verify(subscriptionServiceMock).autoSubscribeErrandAssignee(entity);
 		verify(notificationServiceMock).createNotification(eq(entity.getMunicipalityId()), eq(entity.getNamespace()), eq(entity.getId()), notificationCaptor.capture());
 		final var notification = notificationCaptor.getValue();
 		assertThat(notification.getCreatedBy()).isEqualTo(executingUserId);
@@ -161,6 +165,7 @@ class EventServiceTest {
 		assertThat(event.getOwner()).isEqualTo(owner);
 		assertThat(event.getSourceType()).isEqualTo(sourceType);
 		assertThat(event.getType()).isEqualTo(eventType);
+		verify(subscriptionServiceMock).autoSubscribeErrandAssignee(entity);
 	}
 
 	@Test
@@ -206,6 +211,7 @@ class EventServiceTest {
 		assertThat(event.getOwner()).isEqualTo(owner);
 		assertThat(event.getSourceType()).isEqualTo(sourceType);
 		assertThat(event.getType()).isEqualTo(eventType);
+		verify(subscriptionServiceMock).autoSubscribeErrandAssignee(entity);
 	}
 
 	@Test
@@ -260,6 +266,7 @@ class EventServiceTest {
 		assertThat(event.getOwner()).isEqualTo(owner);
 		assertThat(event.getSourceType()).isEqualTo(sourceType);
 		assertThat(event.getType()).isEqualTo(eventType);
+		verify(subscriptionServiceMock).autoSubscribeErrandAssignee(errandEntity);
 	}
 
 	@Test
@@ -308,6 +315,7 @@ class EventServiceTest {
 		assertThat(event.getOwner()).isEqualTo(owner);
 		assertThat(event.getSourceType()).isEqualTo(sourceType);
 		assertThat(event.getType()).isEqualTo(eventType);
+		verify(subscriptionServiceMock).autoSubscribeErrandAssignee(errandEntity);
 	}
 
 	@Test

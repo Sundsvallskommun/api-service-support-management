@@ -331,4 +331,52 @@ class SubscriptionServiceTest {
 		verifyNoMoreInteractions(subscriptionRepositoryMock);
 		verifyNoInteractions(subscriberServiceMock, errandsRepositoryMock);
 	}
+
+	@Test
+	void autoSubscribeErrandAssigneeWhenNoAssignedUser() {
+		final var errand = new ErrandEntity().withId(ERRAND_ID).withMunicipalityId(MUNICIPALITY_ID).withNamespace(NAMESPACE);
+
+		service.autoSubscribeErrandAssignee(errand);
+
+		verifyNoInteractions(subscriberServiceMock, subscriptionRepositoryMock, errandsRepositoryMock);
+	}
+
+	@Test
+	void autoSubscribeErrandAssigneeWhenSubscriptionAlreadyExists() {
+		final var assignedUserId = "joe01doe";
+		final var subscriber = SubscriberEntity.create().withId(SUBSCRIBER_ID);
+		final var errand = new ErrandEntity().withId(ERRAND_ID).withMunicipalityId(MUNICIPALITY_ID).withNamespace(NAMESPACE).withAssignedUserId(assignedUserId);
+		when(subscriberServiceMock.findOrCreateSubscriberForAssignee(MUNICIPALITY_ID, NAMESPACE, assignedUserId)).thenReturn(subscriber);
+		when(subscriptionRepositoryMock.existsBySubscriberIdAndTargetTypeAndErrandId(SUBSCRIBER_ID, DB_ERRAND, ERRAND_ID)).thenReturn(true);
+
+		service.autoSubscribeErrandAssignee(errand);
+
+		verify(subscriberServiceMock).findOrCreateSubscriberForAssignee(MUNICIPALITY_ID, NAMESPACE, assignedUserId);
+		verify(subscriptionRepositoryMock).existsBySubscriberIdAndTargetTypeAndErrandId(SUBSCRIBER_ID, DB_ERRAND, ERRAND_ID);
+		verify(subscriptionRepositoryMock, never()).save(any());
+		verifyNoMoreInteractions(subscriberServiceMock, subscriptionRepositoryMock);
+		verifyNoInteractions(errandsRepositoryMock);
+	}
+
+	@Test
+	void autoSubscribeErrandAssigneeCreatesSubscriberAndSubscription() {
+		final var assignedUserId = "joe01doe";
+		final var subscriber = SubscriberEntity.create().withId(SUBSCRIBER_ID);
+		final var errand = new ErrandEntity().withId(ERRAND_ID).withMunicipalityId(MUNICIPALITY_ID).withNamespace(NAMESPACE).withAssignedUserId(assignedUserId);
+		when(subscriberServiceMock.findOrCreateSubscriberForAssignee(MUNICIPALITY_ID, NAMESPACE, assignedUserId)).thenReturn(subscriber);
+		when(subscriptionRepositoryMock.existsBySubscriberIdAndTargetTypeAndErrandId(SUBSCRIBER_ID, DB_ERRAND, ERRAND_ID)).thenReturn(false);
+		when(subscriptionRepositoryMock.save(any(SubscriptionEntity.class))).thenAnswer(inv -> inv.<SubscriptionEntity>getArgument(0).withId("new-sub-id"));
+
+		service.autoSubscribeErrandAssignee(errand);
+
+		verify(subscriberServiceMock).findOrCreateSubscriberForAssignee(MUNICIPALITY_ID, NAMESPACE, assignedUserId);
+		verify(subscriptionRepositoryMock).existsBySubscriberIdAndTargetTypeAndErrandId(SUBSCRIBER_ID, DB_ERRAND, ERRAND_ID);
+		verify(subscriptionRepositoryMock).save(entityCaptor.capture());
+		final var saved = entityCaptor.getValue();
+		assertThat(saved.getSubscriber()).isSameAs(subscriber);
+		assertThat(saved.getErrand()).isSameAs(errand);
+		assertThat(saved.getTargetType()).isEqualTo(DB_ERRAND);
+		verifyNoMoreInteractions(subscriberServiceMock, subscriptionRepositoryMock);
+		verifyNoInteractions(errandsRepositoryMock);
+	}
 }

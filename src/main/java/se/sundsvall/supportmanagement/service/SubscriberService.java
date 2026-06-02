@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -9,10 +10,13 @@ import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.dept44.support.Identifier;
+import se.sundsvall.supportmanagement.api.model.identifier.IdentifierTypeValues;
 import se.sundsvall.supportmanagement.api.model.subscriber.Subscriber;
 import se.sundsvall.supportmanagement.integration.db.SubscriberRepository;
 import se.sundsvall.supportmanagement.integration.db.SubscriptionRepository;
+import se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.IdentifierEmbeddable;
+import se.sundsvall.supportmanagement.integration.db.model.subscriber.NotificationChannelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberSubscriptionCount;
 import se.sundsvall.supportmanagement.service.mapper.IdentifierEmbeddableMapper;
@@ -92,6 +96,24 @@ public class SubscriberService {
 	public void deleteSubscriber(final String municipalityId, final String namespace, final String subscriberId) {
 		final var entity = findEntity(municipalityId, namespace, subscriberId);
 		subscriberRepository.delete(entity);
+	}
+
+	@Transactional
+	public SubscriberEntity findOrCreateSubscriberForAssignee(final String municipalityId, final String namespace, final String assignedUserId) {
+		final var existing = subscriberRepository.findAllByNamespaceAndMunicipalityIdAndIdentifierTypeAndIdentifierValue(
+			namespace, municipalityId, IdentifierTypeValues.AD_ACCOUNT, assignedUserId);
+		if (!existing.isEmpty()) {
+			return existing.get(0);
+		}
+		return subscriberRepository.save(SubscriberEntity.create()
+			.withMunicipalityId(municipalityId)
+			.withNamespace(namespace)
+			.withIdentifier(IdentifierEmbeddable.create()
+				.withType(IdentifierTypeValues.AD_ACCOUNT)
+				.withValue(assignedUserId))
+			.withChannels(new ArrayList<>(List.of(
+				NotificationChannelEmbeddable.create()
+					.withType(NotificationChannelType.INTERNAL)))));
 	}
 
 	private List<SubscriberEntity> loadSubscribers(final String municipalityId, final String namespace, final String identifierType, final String identifierValue) {
