@@ -25,6 +25,7 @@ import se.sundsvall.supportmanagement.service.mapper.EventlogMapper;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
+import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.Constants.EXTERNAL_TAG_KEY_CASE_ID;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.NOTE;
 import static se.sundsvall.supportmanagement.service.mapper.EventlogMapper.toEvent;
@@ -57,7 +58,7 @@ public class EventService {
 		try {
 			eventId = extractEventId(eventLogClient.createEvent(errandEntity.getMunicipalityId(), errandEntity.getId(), event));
 		} catch (final Exception e) {
-			LOG.warn("Failed to create event log entry for errand {}: {}", errandEntity.getId(), e.getMessage());
+			LOG.warn("Failed to create event log entry for errand {}: {}", sanitizeForLogging(errandEntity.getId()), sanitizeForLogging(e.getMessage()));
 		}
 
 		if (sendNotification) {
@@ -79,7 +80,7 @@ public class EventService {
 		try {
 			eventId = extractEventId(eventLogClient.createEvent(errandEntity.getMunicipalityId(), logKey, event));
 		} catch (final Exception e) {
-			LOG.warn("Failed to create event log entry for errand note {}: {}", logKey, e.getMessage());
+			LOG.warn("Failed to create event log entry for errand note {}: {}", sanitizeForLogging(logKey), sanitizeForLogging(e.getMessage()));
 		}
 		createNotification(errandEntity, event);
 		saveDispatchEntry(errandEntity, eventType, requestGroupId, eventId);
