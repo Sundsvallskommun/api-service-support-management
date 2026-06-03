@@ -7,7 +7,7 @@ info:
     url: https://opensource.org/licenses/MIT
   version: "14.8"
 servers:
-- url: http://localhost:65064
+- url: http://localhost:61531
   description: Generated server url
 tags:
 - name: Errand attachments
@@ -7805,9 +7805,9 @@ components:
         type:
           type: string
           format: uri
-        title:
-          type: string
         detail:
+          type: string
+        title:
           type: string
         status:
           type: integer
@@ -7830,10 +7830,10 @@ components:
         instance:
           type: string
           format: uri
-        detail:
-          type: string
         causeAsProblem:
           $ref: "#/components/schemas/ThrowableProblem"
+        detail:
+          type: string
     ThrowableProblem:
       type: object
       properties:
@@ -9219,10 +9219,6 @@ components:
           type: boolean
         container:
           type: boolean
-        bigDecimal:
-          type: boolean
-        integralNumber:
-          type: boolean
         nodeType:
           type: string
           enum:
@@ -9235,34 +9231,38 @@ components:
           - OBJECT
           - POJO
           - STRING
-        valueNode:
+        integralNumber:
           type: boolean
-        floatingPointNumber:
-          type: boolean
-        missingNode:
+        bigDecimal:
           type: boolean
         bigInteger:
           type: boolean
-        double:
+        floatingPointNumber:
           type: boolean
-        binary:
+        valueNode:
+          type: boolean
+        number:
+          type: boolean
+        string:
           type: boolean
         long:
           type: boolean
+        boolean:
+          type: boolean
         int:
-          type: boolean
-        short:
-          type: boolean
-        string:
           type: boolean
         textual:
           type: boolean
           deprecated: true
+        double:
+          type: boolean
+        binary:
+          type: boolean
         pojo:
           type: boolean
-        boolean:
+        short:
           type: boolean
-        number:
+        missingNode:
           type: boolean
         embeddedValue:
           type: boolean
@@ -9595,7 +9595,10 @@ components:
             type: array
             items:
               type: string
-          description: Selectable types per category in the target namespace
+          description: "Selectable types per category in the target namespace. Always\
+            \ present, may be empty"
+      required:
+      - candidates
     ClassificationOption:
       type: object
       description: A category/type pair describing an errand classification
@@ -9627,9 +9630,12 @@ components:
           - Bygglov
         candidates:
           type: array
-          description: All selectable contact reasons in the target namespace
+          description: "All selectable contact reasons in the target namespace. Always\
+            \ present, may be empty"
           items:
             type: string
+      required:
+      - candidates
     DirectlyCopyable:
       type: object
       description: Fields that are copied automatically to the target namespace without
@@ -9641,10 +9647,8 @@ components:
           examples:
           - Trasig dörr på Storgatan
         priority:
-          type: string
+          $ref: "#/components/schemas/Priority"
           description: Priority of the source errand
-          examples:
-          - HIGH
         stakeholderCount:
           type: integer
           format: int32
@@ -9676,15 +9680,19 @@ components:
           description: Namespace-bound fields that require manual mapping
         notCopyable:
           type: array
-          description: Fields that can not be copied to the target namespace
+          description: "Fields that can not be copied to the target namespace. Always\
+            \ present, may be empty"
           items:
             $ref: "#/components/schemas/NotCopyable"
         warnings:
           type: array
-          description: Warnings raised while building the preview
+          description: "Warnings raised while building the preview. Always present,\
+            \ may be empty"
           items:
             $ref: "#/components/schemas/Warning"
-      readOnly: true
+      required:
+      - notCopyable
+      - warnings
     LabelCandidate:
       type: object
       description: A label that can be chosen as the target for a source label
@@ -9729,17 +9737,16 @@ components:
           examples:
           - uuid-b
         matchReason:
-          type: string
+          $ref: "#/components/schemas/MatchReason"
           description: "Reason the target was suggested, or null if there is no suggestion"
-          enum:
-          - NAME_EXACT
-          - DISPLAY_NAME_EXACT
-          - RESOURCE_PATH_MATCH
         candidates:
           type: array
-          description: All selectable labels in the target namespace
+          description: "All selectable labels in the target namespace. Always present,\
+            \ may be empty"
           items:
             $ref: "#/components/schemas/LabelCandidate"
+      required:
+      - candidates
     MappingRequired:
       type: object
       description: Namespace-bound fields that require a human to decide how they
@@ -9753,12 +9760,25 @@ components:
           description: Classification (category/type) mapping suggestion
         labels:
           type: array
-          description: "Label mapping suggestions, one entry per source label"
+          description: "Label mapping suggestions, one entry per source label. Always\
+            \ present, may be empty"
           items:
             $ref: "#/components/schemas/LabelMapping"
         contactReason:
           $ref: "#/components/schemas/ContactReasonMapping"
           description: Contact reason mapping suggestion
+      required:
+      - labels
+    MatchReason:
+      type: string
+      description: "Reason a target was auto-suggested for a namespace-bound field:\
+        \ NAME_EXACT (exact match on technical name), DISPLAY_NAME_EXACT (case-insensitive\
+        \ exact match on display name), RESOURCE_PATH_MATCH (match on hierarchical\
+        \ resource path, labels only)"
+      enum:
+      - NAME_EXACT
+      - DISPLAY_NAME_EXACT
+      - RESOURCE_PATH_MATCH
     MetadataOption:
       type: object
       description: A selectable metadata option identified by its technical name and
@@ -9802,42 +9822,52 @@ components:
           examples:
           - IN_PROGRESS
         matchReason:
-          type: string
+          $ref: "#/components/schemas/MatchReason"
           description: "Reason the target was suggested, or null if there is no suggestion"
-          enum:
-          - NAME_EXACT
-          - DISPLAY_NAME_EXACT
-          - RESOURCE_PATH_MATCH
         candidates:
           type: array
-          description: All selectable statuses in the target namespace
+          description: "All selectable statuses in the target namespace. Always present,\
+            \ may be empty"
           items:
             $ref: "#/components/schemas/MetadataOption"
+      required:
+      - candidates
     Warning:
       type: object
-      description: A warning raised while building the handover preview
+      description: A warning raised while building the handover preview. The applicable
+        fields depend on 'type'
       properties:
         type:
-          type: string
-          description: Type of warning
-          enum:
-          - PARAMETER_SCHEMA_MISMATCH
-          - ROLE_NOT_IN_TARGET
+          $ref: "#/components/schemas/WarningType"
+          description: "Type of warning, acts as discriminator for which other fields\
+            \ are populated"
         key:
           type: string
-          description: "Key the warning relates to, when applicable"
+          description: Key the warning relates to. Populated for PARAMETER_SCHEMA_MISMATCH
           examples:
           - orgUnit
         detail:
           type: string
-          description: Human readable detail describing the warning
+          description: Human readable detail describing the warning. Populated for
+            PARAMETER_SCHEMA_MISMATCH
           examples:
           - jsonSchema 'orgUnit-v2' not registered in target
         value:
           type: string
-          description: "Value the warning relates to, when applicable"
+          description: Value the warning relates to. Populated for ROLE_NOT_IN_TARGET
           examples:
           - EXTERNAL_REPORTER
+      required:
+      - type
+    WarningType:
+      type: string
+      description: "Type of warning raised while building a handover preview: PARAMETER_SCHEMA_MISMATCH\
+        \ (a parameter references a json schema not registered in the target namespace,\
+        \ see 'key'/'detail'), ROLE_NOT_IN_TARGET (a stakeholder role on the source\
+        \ errand does not exist in the target namespace, see 'value')"
+      enum:
+      - PARAMETER_SCHEMA_MISMATCH
+      - ROLE_NOT_IN_TARGET
     WebMessageAttachment:
       type: object
       description: WebMessageAttachment model
@@ -10320,12 +10350,12 @@ components:
     PageErrand:
       type: object
       properties:
-        totalElements:
-          type: integer
-          format: int64
         totalPages:
           type: integer
           format: int32
+        totalElements:
+          type: integer
+          format: int64
         size:
           type: integer
           format: int32
@@ -10336,17 +10366,17 @@ components:
         number:
           type: integer
           format: int32
-        sort:
-          $ref: "#/components/schemas/SortObject"
-        numberOfElements:
-          type: integer
-          format: int32
         first:
           type: boolean
         last:
           type: boolean
+        sort:
+          $ref: "#/components/schemas/SortObject"
         pageable:
           $ref: "#/components/schemas/PageableObject"
+        numberOfElements:
+          type: integer
+          format: int32
         empty:
           type: boolean
     PageableObject:
@@ -10357,16 +10387,16 @@ components:
           format: int64
         sort:
           $ref: "#/components/schemas/SortObject"
+        pageSize:
+          type: integer
+          format: int32
+        pageNumber:
+          type: integer
+          format: int32
         paged:
           type: boolean
         unpaged:
           type: boolean
-        pageNumber:
-          type: integer
-          format: int32
-        pageSize:
-          type: integer
-          format: int32
     SortObject:
       type: object
       properties:
@@ -10612,12 +10642,12 @@ components:
     PageEvent:
       type: object
       properties:
-        totalElements:
-          type: integer
-          format: int64
         totalPages:
           type: integer
           format: int32
+        totalElements:
+          type: integer
+          format: int64
         size:
           type: integer
           format: int32
@@ -10628,17 +10658,17 @@ components:
         number:
           type: integer
           format: int32
-        sort:
-          $ref: "#/components/schemas/SortObject"
-        numberOfElements:
-          type: integer
-          format: int32
         first:
           type: boolean
         last:
           type: boolean
+        sort:
+          $ref: "#/components/schemas/SortObject"
         pageable:
           $ref: "#/components/schemas/PageableObject"
+        numberOfElements:
+          type: integer
+          format: int32
         empty:
           type: boolean
     Communication:
@@ -10845,12 +10875,12 @@ components:
     PageMessage:
       type: object
       properties:
-        totalElements:
-          type: integer
-          format: int64
         totalPages:
           type: integer
           format: int32
+        totalElements:
+          type: integer
+          format: int64
         size:
           type: integer
           format: int32
@@ -10861,17 +10891,17 @@ components:
         number:
           type: integer
           format: int32
-        sort:
-          $ref: "#/components/schemas/SortObject"
-        numberOfElements:
-          type: integer
-          format: int32
         first:
           type: boolean
         last:
           type: boolean
+        sort:
+          $ref: "#/components/schemas/SortObject"
         pageable:
           $ref: "#/components/schemas/PageableObject"
+        numberOfElements:
+          type: integer
+          format: int32
         empty:
           type: boolean
     ReadBy:

@@ -4,6 +4,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.Objects;
 
+import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
+
 @Schema(description = "Namespace-bound fields that require a human to decide how they should be mapped to the target namespace")
 public class MappingRequired {
 
@@ -13,7 +15,7 @@ public class MappingRequired {
 	@Schema(description = "Classification (category/type) mapping suggestion")
 	private ClassificationMapping classification;
 
-	@Schema(description = "Label mapping suggestions, one entry per source label")
+	@Schema(description = "Label mapping suggestions, one entry per source label. Always present, may be empty", requiredMode = REQUIRED)
 	private List<LabelMapping> labels;
 
 	@Schema(description = "Contact reason mapping suggestion")

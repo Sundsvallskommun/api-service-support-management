@@ -2,12 +2,11 @@ package se.sundsvall.supportmanagement.api.model.handover;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
-@Schema(description = "Type of warning raised while building a handover preview")
+@Schema(description = """
+	Type of warning raised while building a handover preview: \
+	PARAMETER_SCHEMA_MISMATCH (a parameter references a json schema not registered in the target namespace, see 'key'/'detail'), \
+	ROLE_NOT_IN_TARGET (a stakeholder role on the source errand does not exist in the target namespace, see 'value')""", enumAsRef = true)
 public enum WarningType {
-
-	@Schema(description = "A parameter references a json schema that is not registered in the target namespace")
 	PARAMETER_SCHEMA_MISMATCH,
-
-	@Schema(description = "A stakeholder role on the source errand does not exist in the target namespace")
 	ROLE_NOT_IN_TARGET
 }

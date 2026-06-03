@@ -3,6 +3,16 @@ package se.sundsvall.supportmanagement.api.model.handover;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
 
+/**
+ * A deliberately minimal projection of a namespace-bound metadata entry (e.g. a status), carrying only the technical
+ * name and display name needed to render a handover mapping GUI.
+ *
+ * <p>
+ * This is intentionally <em>not</em> the full {@code se.sundsvall.supportmanagement.api.model.metadata.Status} model:
+ * the preview contract only needs name + displayName, and reusing the heavier metadata model would leak unrelated
+ * fields (id, sortOrder, deprecated, timestamps, ...) into the preview response.
+ * </p>
+ */
 @Schema(description = "A selectable metadata option identified by its technical name and display name")
 public class MetadataOption {
 

@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
+
 @Schema(description = "Mapping suggestion for the namespace-bound classification (category/type) field")
 public class ClassificationMapping {
 
@@ -17,7 +19,7 @@ public class ClassificationMapping {
 	@Schema(description = "Auto-suggested target type name, or null if no match was found", examples = "OTHER_ISSUES")
 	private String suggestedType;
 
-	@Schema(description = "Selectable types per category in the target namespace")
+	@Schema(description = "Selectable types per category in the target namespace. Always present, may be empty", requiredMode = REQUIRED)
 	private Map<String, List<String>> candidates;
 
 	public static ClassificationMapping create() {

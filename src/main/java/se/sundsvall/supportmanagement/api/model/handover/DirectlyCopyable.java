@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.api.model.handover;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
+import se.sundsvall.supportmanagement.api.model.errand.Priority;
 
 @Schema(description = "Fields that are copied automatically to the target namespace without manual mapping")
 public class DirectlyCopyable {
@@ -9,8 +10,8 @@ public class DirectlyCopyable {
 	@Schema(description = "Title of the source errand", examples = "Trasig dörr på Storgatan")
 	private String title;
 
-	@Schema(description = "Priority of the source errand", examples = "HIGH")
-	private String priority;
+	@Schema(description = "Priority of the source errand", implementation = Priority.class)
+	private Priority priority;
 
 	@Schema(description = "Number of stakeholders that will be copied", examples = "3")
 	private Integer stakeholderCount;
@@ -38,15 +39,15 @@ public class DirectlyCopyable {
 		return this;
 	}
 
-	public String getPriority() {
+	public Priority getPriority() {
 		return priority;
 	}
 
-	public void setPriority(final String priority) {
+	public void setPriority(final Priority priority) {
 		this.priority = priority;
 	}
 
-	public DirectlyCopyable withPriority(final String priority) {
+	public DirectlyCopyable withPriority(final Priority priority) {
 		this.priority = priority;
 		return this;
 	}

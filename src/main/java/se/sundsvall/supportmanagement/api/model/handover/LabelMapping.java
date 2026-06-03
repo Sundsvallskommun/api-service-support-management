@@ -4,6 +4,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.Objects;
 
+import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
+
 @Schema(description = "Mapping suggestion for a single namespace-bound label")
 public class LabelMapping {
 
@@ -22,7 +24,7 @@ public class LabelMapping {
 	@Schema(description = "Reason the target was suggested, or null if there is no suggestion")
 	private MatchReason matchReason;
 
-	@Schema(description = "All selectable labels in the target namespace")
+	@Schema(description = "All selectable labels in the target namespace. Always present, may be empty", requiredMode = REQUIRED)
 	private List<LabelCandidate> candidates;
 
 	public static LabelMapping create() {

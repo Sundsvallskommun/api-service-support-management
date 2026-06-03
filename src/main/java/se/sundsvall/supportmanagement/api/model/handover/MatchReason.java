@@ -2,15 +2,13 @@ package se.sundsvall.supportmanagement.api.model.handover;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
-@Schema(description = "Reason a target was auto-suggested for a namespace-bound field")
+@Schema(description = """
+	Reason a target was auto-suggested for a namespace-bound field: \
+	NAME_EXACT (exact match on technical name), \
+	DISPLAY_NAME_EXACT (case-insensitive exact match on display name), \
+	RESOURCE_PATH_MATCH (match on hierarchical resource path, labels only)""", enumAsRef = true)
 public enum MatchReason {
-
-	@Schema(description = "Exact match on the technical name")
 	NAME_EXACT,
-
-	@Schema(description = "Case-insensitive exact match on the display name")
 	DISPLAY_NAME_EXACT,
-
-	@Schema(description = "Match on the hierarchical resource path (labels only)")
 	RESOURCE_PATH_MATCH
 }

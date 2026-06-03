@@ -4,6 +4,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.Objects;
 
+import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
+
 @Schema(description = "Mapping suggestion for the namespace-bound contact reason field")
 public class ContactReasonMapping {
 
@@ -13,7 +15,7 @@ public class ContactReasonMapping {
 	@Schema(description = "Auto-suggested target contact reason, or null if no match was found", examples = "Bygglov")
 	private String suggested;
 
-	@Schema(description = "All selectable contact reasons in the target namespace")
+	@Schema(description = "All selectable contact reasons in the target namespace. Always present, may be empty", requiredMode = REQUIRED)
 	private List<String> candidates;
 
 	public static ContactReasonMapping create() {

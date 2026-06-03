@@ -1,10 +1,12 @@
 package se.sundsvall.supportmanagement.service;
 
+import java.util.Objects;
 import org.springframework.stereotype.Service;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.handover.HandoverPreview;
 import se.sundsvall.supportmanagement.api.model.handover.HandoverPreviewRequest;
 
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.NOT_IMPLEMENTED;
 
 /**
@@ -30,6 +32,10 @@ public class HandoverPreviewService {
 	 * @return                a {@link HandoverPreview} describing copyable, mappable and non-copyable fields
 	 */
 	public HandoverPreview previewHandover(final String namespace, final String municipalityId, final String errandId, final HandoverPreviewRequest request) {
+		if (Objects.equals(namespace, request.getTargetNamespace()) && Objects.equals(municipalityId, request.getTargetMunicipalityId())) {
+			throw Problem.valueOf(BAD_REQUEST, "Target namespace and municipalityId must differ from the source errand");
+		}
+
 		throw Problem.valueOf(NOT_IMPLEMENTED, "Handover preview is not yet implemented");
 	}
 }

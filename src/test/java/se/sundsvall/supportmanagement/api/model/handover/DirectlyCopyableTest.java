@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.api.model.handover;
 
 import org.junit.jupiter.api.Test;
+import se.sundsvall.supportmanagement.api.model.errand.Priority;
 
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanEquals;
@@ -26,7 +27,7 @@ class DirectlyCopyableTest {
 	@Test
 	void testCreatePattern() {
 		final var title = "Trasig dörr på Storgatan";
-		final var priority = "HIGH";
+		final var priority = Priority.HIGH;
 		final var stakeholderCount = 3;
 		final var externalTagCount = 5;
 		final var attachmentCount = 2;

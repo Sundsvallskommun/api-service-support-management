@@ -48,4 +48,29 @@ class WarningTest {
 		assertThat(Warning.create()).hasAllNullFieldsOrProperties();
 		assertThat(new Warning()).hasAllNullFieldsOrProperties();
 	}
+
+	@Test
+	void testParameterSchemaMismatchFactory() {
+		final var key = "orgUnit";
+		final var detail = "jsonSchema 'orgUnit-v2' not registered in target";
+
+		final var bean = Warning.parameterSchemaMismatch(key, detail);
+
+		assertThat(bean.getType()).isEqualTo(WarningType.PARAMETER_SCHEMA_MISMATCH);
+		assertThat(bean.getKey()).isEqualTo(key);
+		assertThat(bean.getDetail()).isEqualTo(detail);
+		assertThat(bean.getValue()).isNull();
+	}
+
+	@Test
+	void testRoleNotInTargetFactory() {
+		final var value = "EXTERNAL_REPORTER";
+
+		final var bean = Warning.roleNotInTarget(value);
+
+		assertThat(bean.getType()).isEqualTo(WarningType.ROLE_NOT_IN_TARGET);
+		assertThat(bean.getValue()).isEqualTo(value);
+		assertThat(bean.getKey()).isNull();
+		assertThat(bean.getDetail()).isNull();
+	}
 }

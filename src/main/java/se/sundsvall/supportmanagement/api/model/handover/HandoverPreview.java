@@ -4,9 +4,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.Objects;
 
-import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
+import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 
-@Schema(description = "Preview of how a source errand would be handed over to another namespace, without any side effects", accessMode = READ_ONLY)
+@Schema(description = "Preview of how a source errand would be handed over to another namespace, without any side effects")
 public class HandoverPreview {
 
 	@Schema(description = "Fields that are copied automatically")
@@ -15,10 +15,10 @@ public class HandoverPreview {
 	@Schema(description = "Namespace-bound fields that require manual mapping")
 	private MappingRequired mappingRequired;
 
-	@Schema(description = "Fields that can not be copied to the target namespace")
+	@Schema(description = "Fields that can not be copied to the target namespace. Always present, may be empty", requiredMode = REQUIRED)
 	private List<NotCopyable> notCopyable;
 
-	@Schema(description = "Warnings raised while building the preview")
+	@Schema(description = "Warnings raised while building the preview. Always present, may be empty", requiredMode = REQUIRED)
 	private List<Warning> warnings;
 
 	public static HandoverPreview create() {

@@ -4,6 +4,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.Objects;
 
+import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
+
 @Schema(description = "Mapping suggestion for the namespace-bound status field")
 public class StatusMapping {
 
@@ -16,7 +18,7 @@ public class StatusMapping {
 	@Schema(description = "Reason the target was suggested, or null if there is no suggestion")
 	private MatchReason matchReason;
 
-	@Schema(description = "All selectable statuses in the target namespace")
+	@Schema(description = "All selectable statuses in the target namespace. Always present, may be empty", requiredMode = REQUIRED)
 	private List<MetadataOption> candidates;
 
 	public static StatusMapping create() {
