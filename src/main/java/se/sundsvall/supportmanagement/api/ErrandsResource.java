@@ -107,12 +107,12 @@ class ErrandsResource {
 		// TODO: implement handover logic and return:
 		// Location: /{targetMunicipalityId}/{targetNamespace}/errands/{newErrandId}
 		// {
-		//   "newErrandId": "uuid",
-		//   "newErrandNumber": "KC-23010001",
-		//   "target": { "namespace": "...", "municipalityId": "..." },
-		//   "relationId": "...",
-		//   "appliedMappings": { "...": "..." },
-		//   "warnings": [ "..." ]
+		// "newErrandId": "uuid",
+		// "newErrandNumber": "KC-23010001",
+		// "target": { "namespace": "...", "municipalityId": "..." },
+		// "relationId": "...",
+		// "appliedMappings": { "...": "..." },
+		// "warnings": [ "..." ]
 		// }
 		throw new UnsupportedOperationException("Not yet implemented");
 	}

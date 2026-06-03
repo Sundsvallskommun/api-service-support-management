@@ -5,9 +5,9 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "14.7"
+  version: "14.8"
 servers:
-- url: http://localhost:51255
+- url: http://localhost:61701
   description: Generated server url
 tags:
 - name: Errand attachments
@@ -3016,6 +3016,90 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/errands/{errandId}/handover:
+    post:
+      tags:
+      - Errands
+      summary: Handover errand
+      description: "Hands over an errand to another namespace, optionally copying\
+        \ data and closing the source errand"
+      operationId: handoverErrand
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand id
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: Idempotency-Key
+        in: header
+        description: Optional idempotency key to prevent duplicate handovers
+        required: false
+        schema:
+          type: string
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HandoverErrandRequest"
+        required: true
+      responses:
+        "201":
+          description: Successful operation
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HandoverErrandResponse"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "500":
           description: Internal Server error
           content:
@@ -7714,16 +7798,16 @@ components:
     Problem:
       type: object
       properties:
+        title:
+          type: string
+        detail:
+          type: string
         instance:
           type: string
           format: uri
         type:
           type: string
           format: uri
-        title:
-          type: string
-        detail:
-          type: string
         status:
           type: integer
           format: int32
@@ -7742,13 +7826,13 @@ components:
             $ref: "#/components/schemas/Violation"
         title:
           type: string
+        detail:
+          type: string
+        causeAsProblem:
+          $ref: "#/components/schemas/ThrowableProblem"
         instance:
           type: string
           format: uri
-        causeAsProblem:
-          $ref: "#/components/schemas/ThrowableProblem"
-        detail:
-          type: string
     ThrowableProblem:
       type: object
       properties:
@@ -7933,8 +8017,8 @@ components:
           pattern: "[A-Z0-9_]+"
         deprecated:
           type: boolean
-          description: Indicates if the label is deprecated
           default: false
+          description: Indicates if the label is deprecated
           examples:
           - "true"
         labels:
@@ -8436,8 +8520,8 @@ components:
           - 1
         deprecated:
           type: boolean
-          description: Indicates if the status is deprecated
           default: false
+          description: Indicates if the status is deprecated
           examples:
           - "true"
         created:
@@ -8489,8 +8573,8 @@ components:
           - 1
         deprecated:
           type: boolean
-          description: Indicates if the role is deprecated
           default: false
+          description: Indicates if the role is deprecated
           examples:
           - "true"
         created:
@@ -8557,8 +8641,8 @@ components:
           readOnly: true
         deprecated:
           type: boolean
-          description: Indicates if the phase is deprecated
           default: false
+          description: Indicates if the phase is deprecated
           examples:
           - "true"
         created:
@@ -8612,8 +8696,8 @@ components:
           - Skicka till utredning
         deprecated:
           type: boolean
-          description: Indicates if the phase transition is deprecated
           default: false
+          description: Indicates if the phase transition is deprecated
           examples:
           - "true"
       required:
@@ -8651,8 +8735,8 @@ components:
           - 1
         deprecated:
           type: boolean
-          description: Indicates if the external ID type is deprecated
           default: false
+          description: Indicates if the external ID type is deprecated
           examples:
           - "true"
         created:
@@ -8704,8 +8788,8 @@ components:
           - 1
         deprecated:
           type: boolean
-          description: Indicates if the contact reason is deprecated
           default: false
+          description: Indicates if the contact reason is deprecated
           examples:
           - "true"
         created:
@@ -8754,8 +8838,8 @@ components:
           - 1
         deprecated:
           type: boolean
-          description: Indicates if the category is deprecated
           default: false
+          description: Indicates if the category is deprecated
           examples:
           - "true"
         types:
@@ -8800,8 +8884,8 @@ components:
           - escalationgroup@sesamestreet.com
         deprecated:
           type: boolean
-          description: Indicates if the type is deprecated
           default: false
+          description: Indicates if the type is deprecated
           examples:
           - "true"
         created:
@@ -9122,25 +9206,11 @@ components:
     JsonNode:
       type: object
       properties:
-        empty:
-          type: boolean
-        array:
-          type: boolean
-        "null":
-          type: boolean
-        object:
-          type: boolean
-        float:
+        floatingPointNumber:
           type: boolean
         container:
           type: boolean
-        floatingPointNumber:
-          type: boolean
-        bigInteger:
-          type: boolean
-        bigDecimal:
-          type: boolean
-        valueNode:
+        number:
           type: boolean
         nodeType:
           type: string
@@ -9154,30 +9224,44 @@ components:
           - OBJECT
           - POJO
           - STRING
+        string:
+          type: boolean
         integralNumber:
           type: boolean
         missingNode:
           type: boolean
-        short:
-          type: boolean
-        double:
+        valueNode:
           type: boolean
         pojo:
           type: boolean
+        short:
+          type: boolean
         int:
           type: boolean
-        string:
-          type: boolean
         long:
+          type: boolean
+        double:
+          type: boolean
+        bigDecimal:
+          type: boolean
+        bigInteger:
           type: boolean
         textual:
           type: boolean
           deprecated: true
-        binary:
-          type: boolean
         boolean:
           type: boolean
-        number:
+        binary:
+          type: boolean
+        empty:
+          type: boolean
+        array:
+          type: boolean
+        "null":
+          type: boolean
+        object:
+          type: boolean
+        float:
           type: boolean
         embeddedValue:
           type: boolean
@@ -9465,6 +9549,200 @@ components:
       - createdBy
       - role
       - subject
+    HandoverErrandRequest:
+      type: object
+      description: Request body for handing over an errand to another namespace
+      example:
+        target:
+          namespace: OTHER_NAMESPACE
+          municipalityId: "2281"
+        mapping:
+          status: NEW_CASE
+          classification:
+            category: SUPPORT_CASE
+            type: OTHER_ISSUES
+          labels:
+          - <targetLabelUuid>
+          contactReason: Printer issue
+          channel: WEB_UI
+          activePhaseId: null
+        overrides:
+          title: '...'
+          description: '...'
+          priority: MEDIUM
+          assignedUserId: null
+          assignedGroupId: null
+        include:
+          stakeholders: true
+          externalTags: true
+          parameters: true
+          jsonParameters: true
+          attachments: true
+          businessRelated: true
+          escalationEmail: true
+          contactReasonDescription: true
+        sourceHandling:
+          action: CLOSE
+          resolution: HANDED_OVER
+          closingComment: Överlämnad till annan drake
+      properties:
+        target:
+          $ref: "#/components/schemas/HandoverTarget"
+        mapping:
+          $ref: "#/components/schemas/HandoverMapping"
+        overrides:
+          $ref: "#/components/schemas/HandoverOverrides"
+        include:
+          $ref: "#/components/schemas/HandoverInclude"
+        sourceHandling:
+          $ref: "#/components/schemas/HandoverSourceHandling"
+      required:
+      - mapping
+      - target
+    HandoverInclude:
+      type: object
+      description: Flags controlling what data is copied from the source errand
+      properties:
+        stakeholders:
+          type: boolean
+          default: false
+          description: Include stakeholders
+        externalTags:
+          type: boolean
+          default: false
+          description: Include external tags
+        parameters:
+          type: boolean
+          default: false
+          description: Include parameters
+        jsonParameters:
+          type: boolean
+          default: false
+          description: Include JSON parameters
+        attachments:
+          type: boolean
+          default: false
+          description: Include attachments
+        businessRelated:
+          type: boolean
+          default: false
+          description: Include business related flag
+        escalationEmail:
+          type: boolean
+          default: false
+          description: Include escalation email
+        contactReasonDescription:
+          type: boolean
+          default: false
+          description: Include contact reason description
+    HandoverMapping:
+      type: object
+      description: Field mappings to apply when creating the errand in the target
+        system
+      properties:
+        status:
+          type: string
+          description: Status to set on the new errand
+          example: NEW_CASE
+        classification:
+          $ref: "#/components/schemas/Classification"
+        labels:
+          type: array
+          description: Label UUIDs to apply on the new errand
+          items:
+            type: string
+        contactReason:
+          type: string
+          description: Contact reason to set on the new errand
+          example: Printer issue
+        channel:
+          type: string
+          description: Channel to set on the new errand
+          example: WEB_UI
+        activePhaseId:
+          type: string
+          description: Active phase id to set on the new errand
+    HandoverOverrides:
+      type: object
+      description: Field values that override what is copied from the source errand
+      properties:
+        title:
+          type: string
+          description: Title override
+        description:
+          type: string
+          description: Description override
+        priority:
+          $ref: "#/components/schemas/Priority"
+        assignedUserId:
+          type: string
+          description: Assigned user id override
+        assignedGroupId:
+          type: string
+          description: Assigned group id override
+    HandoverSourceAction:
+      type: string
+      description: Action to take on the source errand after handover
+      enum:
+      - CLOSE
+    HandoverSourceHandling:
+      type: object
+      description: Defines what happens to the source errand after handover
+      properties:
+        action:
+          $ref: "#/components/schemas/HandoverSourceAction"
+        resolution:
+          type: string
+          description: Resolution to set on the source errand
+          example: HANDED_OVER
+        closingComment:
+          type: string
+          description: Closing comment to add to the source errand
+          example: Överlämnad till annan drake
+    HandoverTarget:
+      type: object
+      description: Target system to handover the errand to
+      properties:
+        namespace:
+          type: string
+          description: Target namespace
+          example: OTHER_NAMESPACE
+          minLength: 1
+        municipalityId:
+          type: string
+          description: Target municipality id
+          example: "2281"
+      required:
+      - namespace
+    HandoverErrandResponse:
+      type: object
+      description: Response body for a successful errand handover
+      properties:
+        newErrandId:
+          type: string
+          description: Id of the newly created errand in the target system
+          example: f0882f1d-06bc-47fd-b017-1d8307f5ce95
+        newErrandNumber:
+          type: string
+          description: Errand number of the newly created errand
+          example: KC-23010001
+        target:
+          $ref: "#/components/schemas/HandoverTarget"
+          description: Target namespace and municipality the errand was handed over
+            to
+        relationId:
+          type: string
+          description: Id of the relation created between the source and target errand
+        appliedMappings:
+          type: object
+          additionalProperties:
+            type: string
+          description: Field mappings that were applied when creating the new errand
+        warnings:
+          type: array
+          description: Non-fatal warnings that occurred during handover
+          items:
+            type: string
     WebMessageAttachment:
       type: object
       description: WebMessageAttachment model
@@ -9947,12 +10225,23 @@ components:
     PageErrand:
       type: object
       properties:
-        totalPages:
-          type: integer
-          format: int32
         totalElements:
           type: integer
           format: int64
+        totalPages:
+          type: integer
+          format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
+        numberOfElements:
+          type: integer
+          format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
         size:
           type: integer
           format: int32
@@ -9963,29 +10252,15 @@ components:
         number:
           type: integer
           format: int32
-        sort:
-          $ref: "#/components/schemas/SortObject"
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
-        numberOfElements:
-          type: integer
-          format: int32
-        first:
-          type: boolean
-        last:
-          type: boolean
         empty:
           type: boolean
     PageableObject:
       type: object
       properties:
-        offset:
-          type: integer
-          format: int64
-        paged:
-          type: boolean
         sort:
           $ref: "#/components/schemas/SortObject"
+        paged:
+          type: boolean
         pageNumber:
           type: integer
           format: int32
@@ -9994,14 +10269,17 @@ components:
           format: int32
         unpaged:
           type: boolean
+        offset:
+          type: integer
+          format: int64
     SortObject:
       type: object
       properties:
-        empty:
-          type: boolean
         sorted:
           type: boolean
         unsorted:
+          type: boolean
+        empty:
           type: boolean
     Revision:
       type: object
@@ -10239,12 +10517,23 @@ components:
     PageEvent:
       type: object
       properties:
-        totalPages:
-          type: integer
-          format: int32
         totalElements:
           type: integer
           format: int64
+        totalPages:
+          type: integer
+          format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
+        numberOfElements:
+          type: integer
+          format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
         size:
           type: integer
           format: int32
@@ -10255,17 +10544,6 @@ components:
         number:
           type: integer
           format: int32
-        sort:
-          $ref: "#/components/schemas/SortObject"
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
-        numberOfElements:
-          type: integer
-          format: int32
-        first:
-          type: boolean
-        last:
-          type: boolean
         empty:
           type: boolean
     Communication:
@@ -10472,12 +10750,23 @@ components:
     PageMessage:
       type: object
       properties:
-        totalPages:
-          type: integer
-          format: int32
         totalElements:
           type: integer
           format: int64
+        totalPages:
+          type: integer
+          format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
+        numberOfElements:
+          type: integer
+          format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
         size:
           type: integer
           format: int32
@@ -10488,17 +10777,6 @@ components:
         number:
           type: integer
           format: int32
-        sort:
-          $ref: "#/components/schemas/SortObject"
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
-        numberOfElements:
-          type: integer
-          format: int32
-        first:
-          type: boolean
-        last:
-          type: boolean
         empty:
           type: boolean
     ReadBy:
