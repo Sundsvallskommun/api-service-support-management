@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -33,6 +34,8 @@ import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.supportmanagement.api.model.errand.CountResponse;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
+import se.sundsvall.supportmanagement.api.model.errand.handover.HandoverErrandRequest;
+import se.sundsvall.supportmanagement.api.model.errand.handover.HandoverErrandResponse;
 import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
 import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
@@ -83,6 +86,35 @@ class ErrandsResource {
 			.buildAndExpand(municipalityId, namespace, service.createErrand(namespace, municipalityId, errand, referredFrom)).toUri())
 			.header(CONTENT_TYPE, ALL_VALUE)
 			.build();
+	}
+
+	@PostMapping(path = "/{errandId}/handover", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
+	@Operation(summary = "Handover errand", description = "Hands over an errand to another namespace, optionally copying data and closing the source errand", responses = {
+		@ApiResponse(responseCode = "201", headers = @Header(name = LOCATION, schema = @Schema(type = "string")), description = "Successful operation", useReturnTypeSchema = true),
+		@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
+			Problem.class, ConstraintViolationProblem.class
+		}))),
+		@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
+		@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+	})
+	ResponseEntity<HandoverErrandResponse> handoverErrand(
+		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
+		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
+		@Parameter(name = "errandId", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable final String errandId,
+		@Parameter(name = "Idempotency-Key", description = "Optional idempotency key to prevent duplicate handovers") @RequestHeader(value = "Idempotency-Key", required = false) final String idempotencyKey,
+		@Valid @NotNull @RequestBody final HandoverErrandRequest request) {
+
+		// TODO: implement handover logic and return:
+		// Location: /{targetMunicipalityId}/{targetNamespace}/errands/{newErrandId}
+		// {
+		//   "newErrandId": "uuid",
+		//   "newErrandNumber": "KC-23010001",
+		//   "target": { "namespace": "...", "municipalityId": "..." },
+		//   "relationId": "...",
+		//   "appliedMappings": { "...": "..." },
+		//   "warnings": [ "..." ]
+		// }
+		throw new UnsupportedOperationException("Not yet implemented");
 	}
 
 	@GetMapping(path = "/{errandId}", produces = APPLICATION_JSON_VALUE)
