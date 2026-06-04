@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1120" viewBox="0 0 900 1120" font-family="Arial, Helvetica, sans-serif">
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#555"/>
+    </marker>
+    <style>
+      .box-blue   { fill: #e1f5ff; stroke: #0066aa; stroke-width: 2; }
+      .box-orange { fill: #fff4e1; stroke: #cc8800; stroke-width: 2; }
+      .box-green  { fill: #e1ffe1; stroke: #008800; stroke-width: 2; }
+      .box-red    { fill: #ffe1e1; stroke: #aa0000; stroke-width: 2; }
+      .arrow      { stroke: #555; stroke-width: 2; fill: none; }
+      .title      { font-size: 16px; font-weight: bold; fill: #1a1a1a; }
+      .body       { font-size: 12px; fill: #1a1a1a; }
+      .code       { font-size: 11px; fill: #555; font-family: Consolas, "Courier New", monospace; }
+      .hdr-green  { font-size: 13px; font-weight: bold; fill: #006600; }
+      .hdr-amber  { font-size: 13px; font-weight: bold; fill: #b36b00; }
+      .hdr-red    { font-size: 13px; font-weight: bold; fill: #990000; }
+      .hdr-gray   { font-size: 13px; font-weight: bold; fill: #444; }
+      .button     { fill: #4a90e2; stroke: #2a6db0; stroke-width: 1; }
+      .btn-text   { font-size: 13px; font-weight: bold; fill: white; }
+      .field      { fill: #ffffff; stroke: #b88a00; stroke-width: 1; }
+    </style>
+  </defs>
+
+  <!-- 1. Källärende -->
+  <rect x="275" y="20" width="350" height="70" rx="8" class="box-blue"/>
+  <text x="450" y="48" text-anchor="middle" class="title">Källärende KC-23010001</text>
+  <text x="450" y="72" text-anchor="middle" class="body">namespace A</text>
+
+  <!-- Arrow 1 -->
+  <path d="M 450,90 L 450,138" class="arrow" marker-end="url(#arrowhead)"/>
+  <text x="460" y="118" class="body">Klick &quot;Lämna över&quot;</text>
+
+  <!-- 2. Steg 1 -->
+  <rect x="225" y="140" width="450" height="120" rx="8" class="box-orange"/>
+  <text x="450" y="170" text-anchor="middle" class="title">STEG 1 — Välj mål</text>
+  <text x="265" y="205" class="body">Namespace:</text>
+  <rect x="370" y="190" width="270" height="22" rx="3" class="field"/>
+  <text x="380" y="206" class="body">▼ NAMESPACE_B</text>
+  <text x="265" y="240" class="body">Kommun:</text>
+  <rect x="370" y="225" width="270" height="22" rx="3" class="field"/>
+  <text x="380" y="241" class="body">▼ 2281</text>
+
+  <!-- Arrow 2 -->
+  <path d="M 450,260 L 450,308" class="arrow" marker-end="url(#arrowhead)"/>
+  <text x="460" y="288" class="code">POST /handover/preview</text>
+
+  <!-- 3. Steg 2 -->
+  <rect x="60" y="310" width="780" height="380" rx="8" class="box-orange"/>
+  <text x="450" y="340" text-anchor="middle" class="title">STEG 2 — Granska &amp; mappa</text>
+
+  <!-- Vänsterspalt: kopierings-status -->
+  <text x="85" y="370" class="hdr-green">✓ Kopieras automatiskt</text>
+  <text x="105" y="390" class="body">• Titel, beskrivning, prioritet</text>
+  <text x="105" y="408" class="body">• 3 stakeholders, 5 externa tags</text>
+  <text x="105" y="426" class="body">• 2 bilagor</text>
+
+  <text x="85" y="456" class="hdr-amber">⚠ Måste mappas</text>
+  <text x="105" y="476" class="body">• Status:        Pågående  →  [▼ Pågående]</text>
+  <text x="105" y="494" class="body">• Kategori:      Support   →  [▼ Support]</text>
+  <text x="105" y="512" class="body">• Typ:           Övrigt    →  [▼ (välj)]</text>
+  <text x="105" y="530" class="body">• Labels (2):    Nyckelkort, Akut →  [▼...]</text>
+  <text x="105" y="548" class="body">• Kontaktorsak:  ...       →  [▼ ...]</text>
+
+  <text x="85" y="578" class="hdr-red">✗ Kopieras inte (länkas via Relation)</text>
+  <text x="105" y="598" class="body">• Fas-historik, åtgärder, kommunikation, anteckningar</text>
+
+  <!-- Högerspalt: inkludera och källärendet -->
+  <text x="475" y="370" class="hdr-gray">Inkludera</text>
+  <text x="495" y="390" class="body">[✓] Bilagor</text>
+  <text x="495" y="408" class="body">[✓] Parametrar</text>
+  <text x="495" y="426" class="body">[✓] Stakeholders</text>
+  <text x="495" y="444" class="body">[✓] Externa tags</text>
+
+  <text x="475" y="476" class="hdr-gray">Källärendet</text>
+  <text x="495" y="496" class="body">( ) Behåll öppet</text>
+  <text x="495" y="514" class="body">(•) Stäng (resolution)</text>
+  <text x="495" y="532" class="body">( ) Suspendera</text>
+
+  <!-- Lämna över-knapp -->
+  <rect x="350" y="635" width="200" height="36" rx="4" class="button"/>
+  <text x="450" y="659" text-anchor="middle" class="btn-text">Lämna över</text>
+  <text x="450" y="685" text-anchor="middle" class="code">(disabled tills alla mappningar är klara)</text>
+
+  <!-- Arrow 3 -->
+  <path d="M 450,690 L 450,738" class="arrow" marker-end="url(#arrowhead)"/>
+  <text x="460" y="710" class="code">POST /handover</text>
+  <text x="460" y="724" class="code">Idempotency-Key: &lt;uuid&gt;</text>
+
+  <!-- Branch point -->
+  <circle cx="450" cy="745" r="4" fill="#555"/>
+
+  <!-- 4xx-pil till vänster -->
+  <path d="M 450,745 L 280,805" class="arrow" marker-end="url(#arrowhead)"/>
+  <text x="310" y="780" class="code">4xx</text>
+
+  <!-- 201-pil till höger -->
+  <path d="M 450,745 L 620,805" class="arrow" marker-end="url(#arrowhead)"/>
+  <text x="520" y="780" class="code">201 Created</text>
+
+  <!-- Error box (vänster) -->
+  <rect x="120" y="810" width="290" height="100" rx="8" class="box-red"/>
+  <text x="265" y="842" text-anchor="middle" class="title">Visa fel</text>
+  <text x="265" y="866" text-anchor="middle" class="body">Felmeddelande visas vid rätt fält</text>
+  <text x="265" y="890" text-anchor="middle" class="body">(åter till Steg 2)</text>
+
+  <!-- Steg 3 box (höger) -->
+  <rect x="490" y="810" width="290" height="100" rx="8" class="box-green"/>
+  <text x="635" y="842" text-anchor="middle" class="title">STEG 3 — Klart</text>
+  <text x="635" y="866" text-anchor="middle" class="body">Nytt ärende: KC-23080045</text>
+  <rect x="560" y="878" width="150" height="22" rx="3" fill="#ffffff" stroke="#008800"/>
+  <text x="635" y="894" text-anchor="middle" class="body">[ Öppna ▶ ]</text>
+
+  <!-- Loopback från error tillbaka till Steg 2 -->
+  <path d="M 120,860 C 25,860 25,500 60,500" class="arrow" marker-end="url(#arrowhead)"/>
+  <text x="30" y="690" class="code" transform="rotate(-90 30,690)">åter till Steg 2</text>
+
+  <!-- Arrow från Steg 3 till Nytt ärende -->
+  <path d="M 635,910 L 635,968" class="arrow" marker-end="url(#arrowhead)"/>
+  <text x="645" y="940" class="body">Klick &quot;Öppna&quot;</text>
+
+  <!-- Nytt ärende -->
+  <rect x="490" y="970" width="290" height="80" rx="8" class="box-blue"/>
+  <text x="635" y="1002" text-anchor="middle" class="title">Nytt ärende KC-23080045</text>
+  <text x="635" y="1028" text-anchor="middle" class="body">namespace B</text>
+
+  <!-- Footer -->
+  <text x="450" y="1095" text-anchor="middle" class="code">Handover-flöde mellan namespaces · SupportManagement</text>
+
+</svg>

@@ -7,7 +7,7 @@ info:
     url: https://opensource.org/licenses/MIT
   version: "14.8"
 servers:
-- url: http://localhost:61701
+- url: http://localhost:61531
   description: Generated server url
 tags:
 - name: Errand attachments
@@ -41,6 +41,8 @@ tags:
   description: User notifications operations
 - name: Metadata for external ID types
   description: ExternalIdType metadata operations
+- name: Handover
+  description: Errand handover operations
 - name: Metadata
   description: Metadata operations
 - name: Subscribers
@@ -3022,14 +3024,15 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-  /{municipalityId}/{namespace}/errands/{errandId}/handover:
+  /{municipalityId}/{namespace}/errands/{errandId}/handover/preview:
     post:
       tags:
-      - Errands
-      summary: Handover errand
-      description: "Hands over an errand to another namespace, optionally copying\
-        \ data and closing the source errand"
-      operationId: handoverErrand
+      - Handover
+      summary: Preview errand handover
+      description: "Builds a side-effect free preview describing how the errand would\
+        \ be handed over to another namespace, including auto-suggested mappings for\
+        \ namespace-bound fields"
+      operationId: previewHandover
       parameters:
       - name: namespace
         in: path
@@ -3053,12 +3056,6 @@ paths:
         schema:
           type: string
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
-      - name: Idempotency-Key
-        in: header
-        description: Optional idempotency key to prevent duplicate handovers
-        required: false
-        schema:
-          type: string
       - name: X-Request-Group-Id
         in: header
         description: "Optional UUID that groups related events and notifications for\
@@ -3072,20 +3069,18 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/HandoverErrandRequest"
+              $ref: "#/components/schemas/HandoverPreviewRequest"
         required: true
       responses:
-        "201":
+        "200":
           description: Successful operation
-          headers:
-            Location:
-              style: simple
-              schema:
-                type: string
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/HandoverErrandResponse"
+                $ref: "#/components/schemas/HandoverPreview"
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/HandoverPreview"
         "400":
           description: Bad request
           content:
@@ -3094,6 +3089,12 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "403":
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "404":
           description: Not Found
           content:
@@ -7798,16 +7799,16 @@ components:
     Problem:
       type: object
       properties:
-        title:
-          type: string
-        detail:
-          type: string
         instance:
           type: string
           format: uri
         type:
           type: string
           format: uri
+        detail:
+          type: string
+        title:
+          type: string
         status:
           type: integer
           format: int32
@@ -7826,13 +7827,13 @@ components:
             $ref: "#/components/schemas/Violation"
         title:
           type: string
-        detail:
-          type: string
-        causeAsProblem:
-          $ref: "#/components/schemas/ThrowableProblem"
         instance:
           type: string
           format: uri
+        causeAsProblem:
+          $ref: "#/components/schemas/ThrowableProblem"
+        detail:
+          type: string
     ThrowableProblem:
       type: object
       properties:
@@ -9206,11 +9207,17 @@ components:
     JsonNode:
       type: object
       properties:
-        floatingPointNumber:
+        empty:
+          type: boolean
+        array:
+          type: boolean
+        "null":
+          type: boolean
+        object:
+          type: boolean
+        float:
           type: boolean
         container:
-          type: boolean
-        number:
           type: boolean
         nodeType:
           type: string
@@ -9224,44 +9231,38 @@ components:
           - OBJECT
           - POJO
           - STRING
-        string:
-          type: boolean
         integralNumber:
-          type: boolean
-        missingNode:
-          type: boolean
-        valueNode:
-          type: boolean
-        pojo:
-          type: boolean
-        short:
-          type: boolean
-        int:
-          type: boolean
-        long:
-          type: boolean
-        double:
           type: boolean
         bigDecimal:
           type: boolean
         bigInteger:
           type: boolean
+        floatingPointNumber:
+          type: boolean
+        valueNode:
+          type: boolean
+        number:
+          type: boolean
+        string:
+          type: boolean
+        long:
+          type: boolean
+        boolean:
+          type: boolean
+        int:
+          type: boolean
         textual:
           type: boolean
           deprecated: true
-        boolean:
+        double:
           type: boolean
         binary:
           type: boolean
-        empty:
+        pojo:
           type: boolean
-        array:
+        short:
           type: boolean
-        "null":
-          type: boolean
-        object:
-          type: boolean
-        float:
+        missingNode:
           type: boolean
         embeddedValue:
           type: boolean
@@ -9549,200 +9550,324 @@ components:
       - createdBy
       - role
       - subject
-    HandoverErrandRequest:
+    HandoverPreviewRequest:
       type: object
-      description: Request body for handing over an errand to another namespace
-      example:
-        target:
-          namespace: OTHER_NAMESPACE
-          municipalityId: "2281"
-        mapping:
-          status: NEW_CASE
-          classification:
-            category: SUPPORT_CASE
-            type: OTHER_ISSUES
-          labels:
-          - <targetLabelUuid>
-          contactReason: Printer issue
-          channel: WEB_UI
-          activePhaseId: null
-        overrides:
-          title: '...'
-          description: '...'
-          priority: MEDIUM
-          assignedUserId: null
-          assignedGroupId: null
-        include:
-          stakeholders: true
-          externalTags: true
-          parameters: true
-          jsonParameters: true
-          attachments: true
-          businessRelated: true
-          escalationEmail: true
-          contactReasonDescription: true
-        sourceHandling:
-          action: CLOSE
-          resolution: HANDED_OVER
-          closingComment: Överlämnad till annan drake
+      description: Request describing which namespace a source errand should be previewed
+        for handover to
       properties:
-        target:
-          $ref: "#/components/schemas/HandoverTarget"
-        mapping:
-          $ref: "#/components/schemas/HandoverMapping"
-        overrides:
-          $ref: "#/components/schemas/HandoverOverrides"
-        include:
-          $ref: "#/components/schemas/HandoverInclude"
-        sourceHandling:
-          $ref: "#/components/schemas/HandoverSourceHandling"
-      required:
-      - mapping
-      - target
-    HandoverInclude:
-      type: object
-      description: Flags controlling what data is copied from the source errand
-      properties:
-        stakeholders:
-          type: boolean
-          default: false
-          description: Include stakeholders
-        externalTags:
-          type: boolean
-          default: false
-          description: Include external tags
-        parameters:
-          type: boolean
-          default: false
-          description: Include parameters
-        jsonParameters:
-          type: boolean
-          default: false
-          description: Include JSON parameters
-        attachments:
-          type: boolean
-          default: false
-          description: Include attachments
-        businessRelated:
-          type: boolean
-          default: false
-          description: Include business related flag
-        escalationEmail:
-          type: boolean
-          default: false
-          description: Include escalation email
-        contactReasonDescription:
-          type: boolean
-          default: false
-          description: Include contact reason description
-    HandoverMapping:
-      type: object
-      description: Field mappings to apply when creating the errand in the target
-        system
-      properties:
-        status:
+        targetNamespace:
           type: string
-          description: Status to set on the new errand
-          example: NEW_CASE
-        classification:
-          $ref: "#/components/schemas/Classification"
-        labels:
+          description: Namespace the errand should be handed over to
+          examples:
+          - OTHER_NAMESPACE
+          minLength: 1
+          pattern: "[\\w|\\-]+"
+        targetMunicipalityId:
+          type: string
+          description: Municipality id the errand should be handed over to
+          examples:
+          - "2281"
+      required:
+      - targetMunicipalityId
+      - targetNamespace
+    ClassificationMapping:
+      type: object
+      description: Mapping suggestion for the namespace-bound classification (category/type)
+        field
+      properties:
+        source:
+          $ref: "#/components/schemas/ClassificationOption"
+          description: Classification on the source errand
+        suggestedCategory:
+          type: string
+          description: "Auto-suggested target category name, or null if no match was\
+            \ found"
+          examples:
+          - SUPPORT_CASE
+        suggestedType:
+          type: string
+          description: "Auto-suggested target type name, or null if no match was found"
+          examples:
+          - OTHER_ISSUES
+        candidates:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          description: "Selectable types per category in the target namespace. Always\
+            \ present, may be empty"
+      required:
+      - candidates
+    ClassificationOption:
+      type: object
+      description: A category/type pair describing an errand classification
+      properties:
+        category:
+          type: string
+          description: Category name
+          examples:
+          - SUPPORT_CASE
+        type:
+          type: string
+          description: Type name
+          examples:
+          - OTHER_ISSUES
+    ContactReasonMapping:
+      type: object
+      description: Mapping suggestion for the namespace-bound contact reason field
+      properties:
+        source:
+          type: string
+          description: Contact reason on the source errand
+          examples:
+          - Bygglov
+        suggested:
+          type: string
+          description: "Auto-suggested target contact reason, or null if no match\
+            \ was found"
+          examples:
+          - Bygglov
+        candidates:
           type: array
-          description: Label UUIDs to apply on the new errand
+          description: "All selectable contact reasons in the target namespace. Always\
+            \ present, may be empty"
           items:
             type: string
-        contactReason:
-          type: string
-          description: Contact reason to set on the new errand
-          example: Printer issue
-        channel:
-          type: string
-          description: Channel to set on the new errand
-          example: WEB_UI
-        activePhaseId:
-          type: string
-          description: Active phase id to set on the new errand
-    HandoverOverrides:
+      required:
+      - candidates
+    DirectlyCopyable:
       type: object
-      description: Field values that override what is copied from the source errand
+      description: Fields that are copied automatically to the target namespace without
+        manual mapping
       properties:
         title:
           type: string
-          description: Title override
-        description:
-          type: string
-          description: Description override
+          description: Title of the source errand
+          examples:
+          - Trasig dörr på Storgatan
         priority:
           $ref: "#/components/schemas/Priority"
-        assignedUserId:
-          type: string
-          description: Assigned user id override
-        assignedGroupId:
-          type: string
-          description: Assigned group id override
-    HandoverSourceAction:
-      type: string
-      description: Action to take on the source errand after handover
-      enum:
-      - CLOSE
-    HandoverSourceHandling:
+          description: Priority of the source errand
+        stakeholderCount:
+          type: integer
+          format: int32
+          description: Number of stakeholders that will be copied
+          examples:
+          - 3
+        externalTagCount:
+          type: integer
+          format: int32
+          description: Number of external tags that will be copied
+          examples:
+          - 5
+        attachmentCount:
+          type: integer
+          format: int32
+          description: Number of attachments that will be copied
+          examples:
+          - 2
+    HandoverPreview:
       type: object
-      description: Defines what happens to the source errand after handover
+      description: "Preview of how a source errand would be handed over to another\
+        \ namespace, without any side effects"
       properties:
-        action:
-          $ref: "#/components/schemas/HandoverSourceAction"
-        resolution:
-          type: string
-          description: Resolution to set on the source errand
-          example: HANDED_OVER
-        closingComment:
-          type: string
-          description: Closing comment to add to the source errand
-          example: Överlämnad till annan drake
-    HandoverTarget:
-      type: object
-      description: Target system to handover the errand to
-      properties:
-        namespace:
-          type: string
-          description: Target namespace
-          example: OTHER_NAMESPACE
-          minLength: 1
-        municipalityId:
-          type: string
-          description: Target municipality id
-          example: "2281"
-      required:
-      - namespace
-    HandoverErrandResponse:
-      type: object
-      description: Response body for a successful errand handover
-      properties:
-        newErrandId:
-          type: string
-          description: Id of the newly created errand in the target system
-          example: f0882f1d-06bc-47fd-b017-1d8307f5ce95
-        newErrandNumber:
-          type: string
-          description: Errand number of the newly created errand
-          example: KC-23010001
-        target:
-          $ref: "#/components/schemas/HandoverTarget"
-          description: Target namespace and municipality the errand was handed over
-            to
-        relationId:
-          type: string
-          description: Id of the relation created between the source and target errand
-        appliedMappings:
-          type: object
-          additionalProperties:
-            type: string
-          description: Field mappings that were applied when creating the new errand
+        directlyCopyable:
+          $ref: "#/components/schemas/DirectlyCopyable"
+          description: Fields that are copied automatically
+        mappingRequired:
+          $ref: "#/components/schemas/MappingRequired"
+          description: Namespace-bound fields that require manual mapping
+        notCopyable:
+          type: array
+          description: "Fields that can not be copied to the target namespace. Always\
+            \ present, may be empty"
+          items:
+            $ref: "#/components/schemas/NotCopyable"
         warnings:
           type: array
-          description: Non-fatal warnings that occurred during handover
+          description: "Warnings raised while building the preview. Always present,\
+            \ may be empty"
           items:
-            type: string
+            $ref: "#/components/schemas/Warning"
+      required:
+      - notCopyable
+      - warnings
+    LabelCandidate:
+      type: object
+      description: A label that can be chosen as the target for a source label
+      properties:
+        id:
+          type: string
+          description: Unique id of the label in the target namespace
+          examples:
+          - b82bd8ac-1507-4d9a-958d-369261eecc15
+        displayName:
+          type: string
+          description: Display name of the label
+          examples:
+          - Nyckelkort
+        resourcePath:
+          type: string
+          description: Hierarchical resource path of the label
+          examples:
+          - /access/keycard
+    LabelMapping:
+      type: object
+      description: Mapping suggestion for a single namespace-bound label
+      properties:
+        sourceId:
+          type: string
+          description: Unique id of the label on the source errand
+          examples:
+          - uuid-a
+        sourceDisplayName:
+          type: string
+          description: Display name of the source label
+          examples:
+          - Nyckelkort
+        sourceResourcePath:
+          type: string
+          description: Hierarchical resource path of the source label
+          examples:
+          - /access/keycard
+        suggestedTargetId:
+          type: string
+          description: "Auto-suggested target label id, or null if no match was found"
+          examples:
+          - uuid-b
+        matchReason:
+          $ref: "#/components/schemas/MatchReason"
+          description: "Reason the target was suggested, or null if there is no suggestion"
+        candidates:
+          type: array
+          description: "All selectable labels in the target namespace. Always present,\
+            \ may be empty"
+          items:
+            $ref: "#/components/schemas/LabelCandidate"
+      required:
+      - candidates
+    MappingRequired:
+      type: object
+      description: Namespace-bound fields that require a human to decide how they
+        should be mapped to the target namespace
+      properties:
+        status:
+          $ref: "#/components/schemas/StatusMapping"
+          description: Status mapping suggestion
+        classification:
+          $ref: "#/components/schemas/ClassificationMapping"
+          description: Classification (category/type) mapping suggestion
+        labels:
+          type: array
+          description: "Label mapping suggestions, one entry per source label. Always\
+            \ present, may be empty"
+          items:
+            $ref: "#/components/schemas/LabelMapping"
+        contactReason:
+          $ref: "#/components/schemas/ContactReasonMapping"
+          description: Contact reason mapping suggestion
+      required:
+      - labels
+    MatchReason:
+      type: string
+      description: "Reason a target was auto-suggested for a namespace-bound field:\
+        \ NAME_EXACT (exact match on technical name), DISPLAY_NAME_EXACT (case-insensitive\
+        \ exact match on display name), RESOURCE_PATH_MATCH (match on hierarchical\
+        \ resource path, labels only)"
+      enum:
+      - NAME_EXACT
+      - DISPLAY_NAME_EXACT
+      - RESOURCE_PATH_MATCH
+    MetadataOption:
+      type: object
+      description: A selectable metadata option identified by its technical name and
+        display name
+      properties:
+        name:
+          type: string
+          description: Technical name of the option
+          examples:
+          - IN_PROGRESS
+        displayName:
+          type: string
+          description: Human readable display name of the option
+          examples:
+          - Pågående
+    NotCopyable:
+      type: object
+      description: A field that can not be copied to the target namespace
+      properties:
+        field:
+          type: string
+          description: Name of the field that can not be copied
+          examples:
+          - phases
+        reason:
+          type: string
+          description: Reason the field can not be copied
+          examples:
+          - Phase history is source-specific
+    StatusMapping:
+      type: object
+      description: Mapping suggestion for the namespace-bound status field
+      properties:
+        source:
+          $ref: "#/components/schemas/MetadataOption"
+          description: Status on the source errand
+        suggestedTarget:
+          type: string
+          description: "Auto-suggested target status name, or null if no match was\
+            \ found"
+          examples:
+          - IN_PROGRESS
+        matchReason:
+          $ref: "#/components/schemas/MatchReason"
+          description: "Reason the target was suggested, or null if there is no suggestion"
+        candidates:
+          type: array
+          description: "All selectable statuses in the target namespace. Always present,\
+            \ may be empty"
+          items:
+            $ref: "#/components/schemas/MetadataOption"
+      required:
+      - candidates
+    Warning:
+      type: object
+      description: A warning raised while building the handover preview. The applicable
+        fields depend on 'type'
+      properties:
+        type:
+          $ref: "#/components/schemas/WarningType"
+          description: "Type of warning, acts as discriminator for which other fields\
+            \ are populated"
+        key:
+          type: string
+          description: Key the warning relates to. Populated for PARAMETER_SCHEMA_MISMATCH
+          examples:
+          - orgUnit
+        detail:
+          type: string
+          description: Human readable detail describing the warning. Populated for
+            PARAMETER_SCHEMA_MISMATCH
+          examples:
+          - jsonSchema 'orgUnit-v2' not registered in target
+        value:
+          type: string
+          description: Value the warning relates to. Populated for ROLE_NOT_IN_TARGET
+          examples:
+          - EXTERNAL_REPORTER
+      required:
+      - type
+    WarningType:
+      type: string
+      description: "Type of warning raised while building a handover preview: PARAMETER_SCHEMA_MISMATCH\
+        \ (a parameter references a json schema not registered in the target namespace,\
+        \ see 'key'/'detail'), ROLE_NOT_IN_TARGET (a stakeholder role on the source\
+        \ errand does not exist in the target namespace, see 'value')"
+      enum:
+      - PARAMETER_SCHEMA_MISMATCH
+      - ROLE_NOT_IN_TARGET
     WebMessageAttachment:
       type: object
       description: WebMessageAttachment model
@@ -10225,23 +10350,12 @@ components:
     PageErrand:
       type: object
       properties:
-        totalElements:
-          type: integer
-          format: int64
         totalPages:
           type: integer
           format: int32
-        first:
-          type: boolean
-        last:
-          type: boolean
-        numberOfElements:
+        totalElements:
           type: integer
-          format: int32
-        sort:
-          $ref: "#/components/schemas/SortObject"
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
+          format: int64
         size:
           type: integer
           format: int32
@@ -10252,34 +10366,45 @@ components:
         number:
           type: integer
           format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
+        numberOfElements:
+          type: integer
+          format: int32
         empty:
           type: boolean
     PageableObject:
       type: object
       properties:
-        sort:
-          $ref: "#/components/schemas/SortObject"
-        paged:
-          type: boolean
-        pageNumber:
-          type: integer
-          format: int32
-        pageSize:
-          type: integer
-          format: int32
-        unpaged:
-          type: boolean
         offset:
           type: integer
           format: int64
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        pageSize:
+          type: integer
+          format: int32
+        pageNumber:
+          type: integer
+          format: int32
+        paged:
+          type: boolean
+        unpaged:
+          type: boolean
     SortObject:
       type: object
       properties:
+        empty:
+          type: boolean
         sorted:
           type: boolean
         unsorted:
-          type: boolean
-        empty:
           type: boolean
     Revision:
       type: object
@@ -10517,23 +10642,12 @@ components:
     PageEvent:
       type: object
       properties:
-        totalElements:
-          type: integer
-          format: int64
         totalPages:
           type: integer
           format: int32
-        first:
-          type: boolean
-        last:
-          type: boolean
-        numberOfElements:
+        totalElements:
           type: integer
-          format: int32
-        sort:
-          $ref: "#/components/schemas/SortObject"
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
+          format: int64
         size:
           type: integer
           format: int32
@@ -10542,6 +10656,17 @@ components:
           items:
             $ref: "#/components/schemas/Event"
         number:
+          type: integer
+          format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
+        numberOfElements:
           type: integer
           format: int32
         empty:
@@ -10750,23 +10875,12 @@ components:
     PageMessage:
       type: object
       properties:
-        totalElements:
-          type: integer
-          format: int64
         totalPages:
           type: integer
           format: int32
-        first:
-          type: boolean
-        last:
-          type: boolean
-        numberOfElements:
+        totalElements:
           type: integer
-          format: int32
-        sort:
-          $ref: "#/components/schemas/SortObject"
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
+          format: int64
         size:
           type: integer
           format: int32
@@ -10775,6 +10889,17 @@ components:
           items:
             $ref: "#/components/schemas/Message"
         number:
+          type: integer
+          format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
+        numberOfElements:
           type: integer
           format: int32
         empty:
