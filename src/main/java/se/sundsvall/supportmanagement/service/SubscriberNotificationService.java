@@ -14,6 +14,7 @@ import se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtracto
 
 import static java.time.OffsetDateTime.now;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.transaction.annotation.Propagation.REQUIRES_NEW;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_NOTIFICATION_TTL_IN_DAYS;
 import static se.sundsvall.supportmanagement.service.mapper.SubscriberNotificationMapper.toEntity;
 import static se.sundsvall.supportmanagement.service.mapper.SubscriberNotificationMapper.toModel;
@@ -48,7 +49,7 @@ public class SubscriberNotificationService {
 		repository.save(entity);
 	}
 
-	@Transactional
+	@Transactional(propagation = REQUIRES_NEW)
 	public void upsert(final String errandId, final String errandNumber, final SubscriberEntity subscriber) {
 		final var namespaceConfig = namespaceConfigRepository.findByNamespaceAndMunicipalityId(subscriber.getNamespace(), subscriber.getMunicipalityId())
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, "Namespace with name:'%s' and municipalityId '%s' not found!".formatted(subscriber.getNamespace(), subscriber.getMunicipalityId())));

@@ -6,7 +6,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.transaction.PlatformTransactionManager;
 import se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.NotificationChannelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
@@ -24,9 +23,6 @@ class NotificationChannelDispatcherTest {
 
 	@Mock
 	private SubscriberNotificationService subscriberNotificationServiceMock;
-
-	@Mock
-	private PlatformTransactionManager transactionManagerMock;
 
 	@InjectMocks
 	private NotificationChannelDispatcher dispatcher;
