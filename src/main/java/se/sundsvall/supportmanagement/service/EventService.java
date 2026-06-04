@@ -9,12 +9,15 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.event.Event;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
+import se.sundsvall.supportmanagement.integration.db.NotificationDispatchRepository;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.NotificationDispatchEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
 import se.sundsvall.supportmanagement.integration.eventlog.EventlogClient;
 import se.sundsvall.supportmanagement.service.mapper.EventlogMapper;
@@ -34,16 +37,12 @@ import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getRequest
 @Service
 public class EventService {
 
-	private static final Logger LOG = LoggerFactory.getLogger(EventService.class);
-
 	private final EventlogClient eventLogClient;
 	private final NotificationService notificationService;
-	private final SubscriptionService subscriptionService;
 
-	public EventService(final EventlogClient eventLogClient, final NotificationService notificationService, final SubscriptionService subscriptionService) {
+	public EventService(final EventlogClient eventLogClient, final NotificationService notificationService) {
 		this.eventLogClient = eventLogClient;
 		this.notificationService = notificationService;
-		this.subscriptionService = subscriptionService;
 	}
 
 	public void createErrandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final Revision currentRevision, final Revision previousRevision, final boolean sendNotification, final EventSubType subtype) {
@@ -51,7 +50,6 @@ public class EventService {
 		final var metadata = toMetadataMap(errandEntity, currentRevision, previousRevision);
 		final var event = toEvent(eventType, message, extractId(currentRevision), Errand.class, metadata, getExecutingUser(), subtype.getValue(), requestGroupId);
 		eventLogClient.createEvent(errandEntity.getMunicipalityId(), errandEntity.getId(), event);
-		tryAutoSubscribeErrandAssignee(errandEntity);
 
 		if (sendNotification) {
 			createNotification(errandEntity, event);
@@ -68,7 +66,6 @@ public class EventService {
 		final var metadata = toMetadataMap(caseId, noteId, currentRevision, previousRevision, errandEntity.getNamespace());
 		final var event = toEvent(eventType, message, extractId(currentRevision), Note.class, metadata, getExecutingUser(), NOTE.getValue(), requestGroupId);
 		eventLogClient.createEvent(errandEntity.getMunicipalityId(), logKey, event);
-		tryAutoSubscribeErrandAssignee(errandEntity);
 		createNotification(errandEntity, event);
 	}
 
@@ -91,6 +88,25 @@ public class EventService {
 		} catch (final Exception e) {
 			LOG.warn("Auto-subscribe failed for errand '{}' – continuing without subscription", errandEntity.getId(), e);
 		}
+	}
+
+	private void saveDispatchEntry(final ErrandEntity errandEntity, final EventType eventType, final String requestGroupId, final String eventId) {
+		final var executingUser = getExecutingUser();
+		notificationDispatchRepository.save(NotificationDispatchEntity.create()
+			.withEventId(eventId)
+			.withRequestGroupId(requestGroupId)
+			.withErrandId(errandEntity.getId())
+			.withMunicipalityId(errandEntity.getMunicipalityId())
+			.withNamespace(errandEntity.getNamespace())
+			.withEventType(eventType.getValue())
+			.withExecutingUserId(Optional.ofNullable(executingUser).map(u -> u.getValue()).orElse(null)));
+	}
+
+	private String extractEventId(final ResponseEntity<Void> response) {
+		return ofNullable(response.getHeaders().getLocation())
+			.map(uri -> uri.getPath())
+			.map(path -> path.substring(path.lastIndexOf('/') + 1))
+			.orElse(null);
 	}
 
 	private void createNotification(final ErrandEntity errandEntity, final generated.se.sundsvall.eventlog.Event event) {
