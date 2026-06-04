@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.service;
 import java.util.List;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.support.Identifier;
@@ -74,7 +75,7 @@ public class SubscriptionService {
 		subscriptionRepository.delete(entity);
 	}
 
-	@Transactional
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	public void autoSubscribeErrandAssignee(final ErrandEntity errand) {
 		final var assignedUserId = errand.getAssignedUserId();
 		if (assignedUserId == null) {
