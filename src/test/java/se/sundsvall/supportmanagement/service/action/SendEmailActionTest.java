@@ -49,6 +49,12 @@ class SendEmailActionTest {
 	private static final String LABEL_ID_2 = "label-id-2";
 	private static final String STATUS_OPEN = "OPEN";
 	private static final String STATUS_CLOSED = "CLOSED";
+	private static final String ERRAND_ID = "errand-id";
+	private static final String RECIPIENT_ADDRESS = "recipient@test.com";
+	private static final String SENDER_ADDRESS = "sender@test.com";
+	private static final String EMAIL_SUBJECT = "Test subject";
+	private static final String EMAIL_BODY = "Test body";
+	private static final String ERRAND_BASE_URL = "https://support.sundsvall.se";
 
 	@Mock
 	private MetadataService metadataService;
@@ -85,9 +91,9 @@ class SendEmailActionTest {
 		var result = sendEmailAction.getConditionDefinitions(MUNICIPALITY_ID, NAMESPACE);
 
 		assertThat(result).hasSize(2);
-		assertThat(result.get(0).getKey()).isEqualTo("status");
-		assertThat(result.get(0).getMandatory()).isFalse();
-		assertThat(result.get(0).getPossibleValues()).hasSize(2);
+		assertThat(result.getFirst().getKey()).isEqualTo("status");
+		assertThat(result.getFirst().getMandatory()).isFalse();
+		assertThat(result.getFirst().getPossibleValues()).hasSize(2);
 		assertThat(result.get(1).getKey()).isEqualTo("hasLabel");
 		assertThat(result.get(1).getMandatory()).isFalse();
 		assertThat(result.get(1).getPossibleValues()).hasSize(2);
@@ -101,9 +107,9 @@ class SendEmailActionTest {
 	void getParameterDefinitions() {
 		var result = sendEmailAction.getParameterDefinitions(MUNICIPALITY_ID, NAMESPACE);
 
-		assertThat(result).hasSize(6);
-		assertThat(result.get(0).getKey()).isEqualTo("recipient");
-		assertThat(result.get(0).getMandatory()).isTrue();
+		assertThat(result).hasSize(7);
+		assertThat(result.getFirst().getKey()).isEqualTo("recipient");
+		assertThat(result.getFirst().getMandatory()).isTrue();
 		assertThat(result.get(1).getKey()).isEqualTo("sender");
 		assertThat(result.get(1).getMandatory()).isTrue();
 		assertThat(result.get(2).getKey()).isEqualTo("subject");
@@ -113,8 +119,10 @@ class SendEmailActionTest {
 		assertThat(result.get(4).getKey()).isEqualTo("addLinkToErrandInBody");
 		assertThat(result.get(4).getMandatory()).isTrue();
 		assertThat(result.get(4).getPossibleValues()).hasSize(2);
-		assertThat(result.get(5).getKey()).isEqualTo("duration");
+		assertThat(result.get(5).getKey()).isEqualTo("baseUrl");
 		assertThat(result.get(5).getMandatory()).isFalse();
+		assertThat(result.get(6).getKey()).isEqualTo("duration");
+		assertThat(result.get(6).getMandatory()).isFalse();
 
 		verifyNoMoreInteractions(metadataService);
 	}
@@ -175,23 +183,25 @@ class SendEmailActionTest {
 	// validateParameters tests
 	@Test
 	void validateParametersWithValidDuration() {
-		sendEmailAction.validateParameters(MUNICIPALITY_ID, NAMESPACE, Map.of(
-			"recipient", List.of("test@test.com"),
-			"sender", List.of("sender@test.com"),
-			"subject", List.of("Test subject"),
-			"body", List.of("Test body"),
-			"addLinkToErrandInBody", List.of("true"),
-			"duration", List.of("PT1H")));
+		sendEmailAction.validateParameters(MUNICIPALITY_ID, NAMESPACE, createParameters(
+			"recipient", "test@test.com",
+			"sender", SENDER_ADDRESS,
+			"subject", EMAIL_SUBJECT,
+			"body", EMAIL_BODY,
+			"addLinkToErrandInBody", "true",
+			"baseUrl", ERRAND_BASE_URL,
+			"duration", "PT1H"));
 	}
 
 	@Test
 	void validateParametersWithAllValid() {
-		sendEmailAction.validateParameters(MUNICIPALITY_ID, NAMESPACE, Map.of(
-			"recipient", List.of("test@test.com"),
-			"sender", List.of("sender@test.com"),
-			"subject", List.of("Test subject"),
-			"body", List.of("Test body"),
-			"addLinkToErrandInBody", List.of("true")));
+		sendEmailAction.validateParameters(MUNICIPALITY_ID, NAMESPACE, createParameters(
+			"recipient", "test@test.com",
+			"sender", SENDER_ADDRESS,
+			"subject", EMAIL_SUBJECT,
+			"body", EMAIL_BODY,
+			"addLinkToErrandInBody", "true",
+			"baseUrl", ERRAND_BASE_URL));
 	}
 
 	@ParameterizedTest
@@ -205,31 +215,34 @@ class SendEmailActionTest {
 	private static Stream<Arguments> invalidParametersProvider() {
 		return Stream.of(
 			Arguments.of(
-				createParameters("recipient", "test@test.com", "sender", "sender@test.com", "subject", "Test subject", "body", "Test body", "addLinkToErrandInBody", "true", "invalidKey", "value"),
+				createParameters("recipient", "test@test.com", "sender", SENDER_ADDRESS, "subject", EMAIL_SUBJECT, "body", EMAIL_BODY, "addLinkToErrandInBody", "true", "invalidKey", "value"),
 				"Key 'invalidKey' is not valid"),
 			Arguments.of(
-				Map.of("sender", List.of("sender@test.com"), "subject", List.of("Test subject"), "body", List.of("Test body"), "addLinkToErrandInBody", List.of("true")),
+				Map.of("sender", List.of(SENDER_ADDRESS), "subject", List.of(EMAIL_SUBJECT), "body", List.of(EMAIL_BODY), "addLinkToErrandInBody", List.of("true")),
 				"Key 'recipient' is mandatory and cannot be empty"),
 			Arguments.of(
-				Map.of("recipient", List.of("test@test.com"), "subject", List.of("Test subject"), "body", List.of("Test body"), "addLinkToErrandInBody", List.of("true")),
+				Map.of("recipient", List.of("test@test.com"), "subject", List.of(EMAIL_SUBJECT), "body", List.of(EMAIL_BODY), "addLinkToErrandInBody", List.of("true")),
 				"Key 'sender' is mandatory and cannot be empty"),
 			Arguments.of(
-				Map.of("recipient", List.of("test@test.com"), "sender", List.of("sender@test.com"), "body", List.of("Test body"), "addLinkToErrandInBody", List.of("true")),
+				Map.of("recipient", List.of("test@test.com"), "sender", List.of(SENDER_ADDRESS), "body", List.of(EMAIL_BODY), "addLinkToErrandInBody", List.of("true")),
 				"Key 'subject' is mandatory and cannot be empty"),
 			Arguments.of(
-				Map.of("recipient", List.of("test@test.com"), "sender", List.of("sender@test.com"), "subject", List.of("Test subject"), "addLinkToErrandInBody", List.of("true")),
+				Map.of("recipient", List.of("test@test.com"), "sender", List.of(SENDER_ADDRESS), "subject", List.of(EMAIL_SUBJECT), "addLinkToErrandInBody", List.of("true")),
 				"Key 'body' is mandatory and cannot be empty"),
 			Arguments.of(
-				Map.of("recipient", List.of("test@test.com"), "sender", List.of("sender@test.com"), "subject", List.of("Test subject"), "body", List.of("Test body")),
+				Map.of("recipient", List.of("test@test.com"), "sender", List.of(SENDER_ADDRESS), "subject", List.of(EMAIL_SUBJECT), "body", List.of(EMAIL_BODY)),
 				"Key 'addLinkToErrandInBody' is mandatory and cannot be empty"),
 			Arguments.of(
-				Map.of("recipient", List.of("test1@test.com", "test2@test.com"), "sender", List.of("sender@test.com"), "subject", List.of("Test subject"), "body", List.of("Test body"), "addLinkToErrandInBody", List.of("true")),
+				Map.of("recipient", List.of("test1@test.com", "test2@test.com"), "sender", List.of(SENDER_ADDRESS), "subject", List.of(EMAIL_SUBJECT), "body", List.of(EMAIL_BODY), "addLinkToErrandInBody", List.of("true")),
 				"Cannot handle multiple values of key 'recipient'"),
 			Arguments.of(
-				Map.of("recipient", List.of("test@test.com"), "sender", List.of("sender@test.com"), "subject", List.of("Test subject"), "body", List.of("Test body"), "addLinkToErrandInBody", List.of("notABoolean")),
+				Map.of("recipient", List.of("test@test.com"), "sender", List.of(SENDER_ADDRESS), "subject", List.of(EMAIL_SUBJECT), "body", List.of(EMAIL_BODY), "addLinkToErrandInBody", List.of("notABoolean")),
 				"Value 'notABoolean' is not valid for key 'addLinkToErrandInBody'"),
 			Arguments.of(
-				createParameters("recipient", "test@test.com", "sender", "sender@test.com", "subject", "Test subject", "body", "Test body", "addLinkToErrandInBody", "true", "duration", "not-a-duration"),
+				createParameters("recipient", "test@test.com", "sender", SENDER_ADDRESS, "subject", EMAIL_SUBJECT, "body", EMAIL_BODY, "addLinkToErrandInBody", "true"),
+				"Key 'baseUrl' is required when 'addLinkToErrandInBody' is true"),
+			Arguments.of(
+				createParameters("recipient", "test@test.com", "sender", SENDER_ADDRESS, "subject", EMAIL_SUBJECT, "body", EMAIL_BODY, "addLinkToErrandInBody", "true", "baseUrl", ERRAND_BASE_URL, "duration", "not-a-duration"),
 				"Could not parse duration 'not-a-duration'"));
 	}
 
@@ -244,9 +257,17 @@ class SendEmailActionTest {
 	// actionFulfilled tests
 
 	@Test
-	void actionFulfilledAlwaysReturnsTrue() {
-		var errand = ErrandEntity.create();
-		assertThat(sendEmailAction.actionFulfilled(errand, Map.of())).isTrue();
+	void actionFulfilledAlwaysReturnsFalse() {
+		var errand = ErrandEntity.create()
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withNamespace(NAMESPACE)
+			.withId(ERRAND_ID);
+
+		assertThat(sendEmailAction.actionFulfilled(errand, Map.of(
+			"recipient", List.of(RECIPIENT_ADDRESS),
+			"sender", List.of(SENDER_ADDRESS),
+			"subject", List.of(EMAIL_SUBJECT),
+			"body", List.of(EMAIL_BODY)))).isFalse();
 	}
 
 	// createAction tests
@@ -273,9 +294,7 @@ class SendEmailActionTest {
 
 	@Test
 	void createActionWithDuration() {
-		var errand = ErrandEntity.create()
-			.withStatus(STATUS_OPEN)
-			.withLabels(List.of());
+		var errand = ErrandEntity.create();
 
 		var config = ActionConfigEntity.create()
 			.withActive(true);
@@ -291,10 +310,7 @@ class SendEmailActionTest {
 
 	@Test
 	void createActionWithoutDuration() {
-		var errand = ErrandEntity.create()
-			.withStatus(STATUS_OPEN)
-			.withLabels(List.of());
-
+		var errand = ErrandEntity.create();
 		var config = ActionConfigEntity.create()
 			.withActive(true);
 		config.setConditions(new ArrayList<>());
@@ -364,42 +380,51 @@ class SendEmailActionTest {
 
 		var config = ActionConfigEntity.create();
 		config.setParameters(new ArrayList<>(List.of(
-			ActionConfigParameterEntity.create().withKey("recipient").withValues(List.of("recipient@test.com")),
-			ActionConfigParameterEntity.create().withKey("sender").withValues(List.of("sender@test.com")),
-			ActionConfigParameterEntity.create().withKey("subject").withValues(List.of("Test subject")),
-			ActionConfigParameterEntity.create().withKey("body").withValues(List.of("Test body")),
+			ActionConfigParameterEntity.create().withKey("recipient").withValues(List.of(RECIPIENT_ADDRESS)),
+			ActionConfigParameterEntity.create().withKey("sender").withValues(List.of(SENDER_ADDRESS)),
+			ActionConfigParameterEntity.create().withKey("subject").withValues(List.of(EMAIL_SUBJECT)),
+			ActionConfigParameterEntity.create().withKey("body").withValues(List.of(EMAIL_BODY)),
 			ActionConfigParameterEntity.create().withKey("addLinkToErrandInBody").withValues(List.of("false")))));
 
 		sendEmailAction.executeAction(errand, config);
 
 		verify(communicationService).sendEmail(eq(errand), emailRequestCaptor.capture());
 		var capturedRequest = emailRequestCaptor.getValue();
-		assertThat(capturedRequest.getRecipient()).isEqualTo("recipient@test.com");
-		assertThat(capturedRequest.getSender()).isEqualTo("sender@test.com");
-		assertThat(capturedRequest.getSubject()).isEqualTo("Test subject");
-		assertThat(capturedRequest.getMessage()).isEqualTo("Test body");
+		assertThat(capturedRequest.getRecipient()).isEqualTo(RECIPIENT_ADDRESS);
+		assertThat(capturedRequest.getSender()).isEqualTo(SENDER_ADDRESS);
+		assertThat(capturedRequest.getSubject()).isEqualTo(EMAIL_SUBJECT);
+		assertThat(capturedRequest.getMessage()).isEqualTo(EMAIL_BODY);
 		assertThat(capturedRequest.getHtmlMessage()).isNull();
 	}
 
 	@Test
 	void executeActionWithAddLinkToErrandInBody() {
-		var errand = ErrandEntity.create();
+		var errand = ErrandEntity.create()
+			.withId(ERRAND_ID)
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withNamespace(NAMESPACE)
+			.withStatus(STATUS_OPEN)
+			.withLabels(List.of());
 
-		var config = ActionConfigEntity.create();
+		var config = ActionConfigEntity.create()
+			.withActive(true);
+		config.setConditions(new ArrayList<>());
 		config.setParameters(new ArrayList<>(List.of(
-			ActionConfigParameterEntity.create().withKey("recipient").withValues(List.of("recipient@test.com")),
-			ActionConfigParameterEntity.create().withKey("sender").withValues(List.of("sender@test.com")),
-			ActionConfigParameterEntity.create().withKey("subject").withValues(List.of("Test subject")),
-			ActionConfigParameterEntity.create().withKey("body").withValues(List.of("Test body")),
-			ActionConfigParameterEntity.create().withKey("addLinkToErrandInBody").withValues(List.of("true")))));
+			ActionConfigParameterEntity.create().withKey("recipient").withValues(List.of(RECIPIENT_ADDRESS)),
+			ActionConfigParameterEntity.create().withKey("sender").withValues(List.of(SENDER_ADDRESS)),
+			ActionConfigParameterEntity.create().withKey("subject").withValues(List.of(EMAIL_SUBJECT)),
+			ActionConfigParameterEntity.create().withKey("body").withValues(List.of(EMAIL_BODY)),
+			ActionConfigParameterEntity.create().withKey("addLinkToErrandInBody").withValues(List.of("true")),
+			ActionConfigParameterEntity.create().withKey("baseUrl").withValues(List.of(ERRAND_BASE_URL)))));
 
 		sendEmailAction.executeAction(errand, config);
 
 		verify(communicationService).sendEmail(eq(errand), emailRequestCaptor.capture());
 		var capturedRequest = emailRequestCaptor.getValue();
-		assertThat(capturedRequest.getRecipient()).isEqualTo("recipient@test.com");
-		assertThat(capturedRequest.getSender()).isEqualTo("sender@test.com");
-		assertThat(capturedRequest.getSubject()).isEqualTo("Test subject");
+		assertThat(capturedRequest.getRecipient()).isEqualTo(RECIPIENT_ADDRESS);
+		assertThat(capturedRequest.getSender()).isEqualTo(SENDER_ADDRESS);
+		assertThat(capturedRequest.getSubject()).isEqualTo(EMAIL_SUBJECT);
+		assertThat(capturedRequest.getMessage()).isEqualTo(EMAIL_BODY + "\n\nLänk till ärendet: " + ERRAND_BASE_URL + "/errands/" + ERRAND_ID);
 	}
 
 	// validForOperationType tests
