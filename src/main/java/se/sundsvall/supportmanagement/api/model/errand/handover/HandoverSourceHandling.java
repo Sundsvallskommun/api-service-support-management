@@ -1,11 +1,13 @@
 package se.sundsvall.supportmanagement.api.model.errand.handover;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
 import java.util.Objects;
 
 @Schema(description = "Defines what happens to the source errand after handover")
 public class HandoverSourceHandling {
 
+	@NotNull
 	@Schema(implementation = HandoverSourceAction.class)
 	private HandoverSourceAction action;
 

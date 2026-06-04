@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Objects;
+import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 import se.sundsvall.supportmanagement.api.model.errand.Classification;
 
 @Schema(description = "Field mappings to apply when creating the errand in the target system")
@@ -16,7 +17,7 @@ public class HandoverMapping {
 	private Classification classification;
 
 	@Schema(description = "Label UUIDs to apply on the new errand")
-	private List<String> labels;
+	private List<@ValidUuid String> labels;
 
 	@Schema(description = "Contact reason to set on the new errand", example = "Printer issue")
 	private String contactReason;

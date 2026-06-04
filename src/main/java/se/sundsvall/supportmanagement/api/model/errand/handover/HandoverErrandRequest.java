@@ -5,8 +5,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import java.util.Objects;
 
-@Schema(description = "Request body for handing over an errand to another namespace",
-	example = "{\"target\":{\"namespace\":\"OTHER_NAMESPACE\",\"municipalityId\":\"2281\"},\"mapping\":{\"status\":\"NEW_CASE\",\"classification\":{\"category\":\"SUPPORT_CASE\",\"type\":\"OTHER_ISSUES\"},\"labels\":[\"<targetLabelUuid>\"],\"contactReason\":\"Printer issue\",\"channel\":\"WEB_UI\",\"activePhaseId\":null},\"overrides\":{\"title\":\"...\",\"description\":\"...\",\"priority\":\"MEDIUM\",\"assignedUserId\":null,\"assignedGroupId\":null},\"include\":{\"stakeholders\":true,\"externalTags\":true,\"parameters\":true,\"jsonParameters\":true,\"attachments\":true,\"businessRelated\":true,\"escalationEmail\":true,\"contactReasonDescription\":true},\"sourceHandling\":{\"action\":\"CLOSE\",\"resolution\":\"HANDED_OVER\",\"closingComment\":\"Överlämnad till annan drake\"}}")
+@Schema(description = "Request body for handing over an errand to another namespace")
 public class HandoverErrandRequest {
 
 	@NotNull
