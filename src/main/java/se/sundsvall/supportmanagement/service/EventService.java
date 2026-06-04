@@ -25,6 +25,7 @@ import se.sundsvall.supportmanagement.service.mapper.EventlogMapper;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
+import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.Constants.EXTERNAL_TAG_KEY_CASE_ID;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.NOTE;
 import static se.sundsvall.supportmanagement.service.mapper.EventlogMapper.toEvent;
@@ -37,22 +38,35 @@ import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getRequest
 @Service
 public class EventService {
 
+	private static final Logger LOG = LoggerFactory.getLogger(EventService.class);
+
 	private final EventlogClient eventLogClient;
 	private final NotificationService notificationService;
+	private final SubscriptionService subscriptionService;
+	private final NotificationDispatchRepository notificationDispatchRepository;
 
-	public EventService(final EventlogClient eventLogClient, final NotificationService notificationService) {
+	public EventService(final EventlogClient eventLogClient, final NotificationService notificationService, final SubscriptionService subscriptionService, final NotificationDispatchRepository notificationDispatchRepository) {
 		this.eventLogClient = eventLogClient;
 		this.notificationService = notificationService;
+		this.subscriptionService = subscriptionService;
+		this.notificationDispatchRepository = notificationDispatchRepository;
 	}
 
 	public void createErrandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final Revision currentRevision, final Revision previousRevision, final boolean sendNotification, final EventSubType subtype) {
 		final var requestGroupId = getRequestGroupId();
 		final var metadata = toMetadataMap(errandEntity, currentRevision, previousRevision);
 		final var event = toEvent(eventType, message, extractId(currentRevision), Errand.class, metadata, getExecutingUser(), subtype.getValue(), requestGroupId);
-		eventLogClient.createEvent(errandEntity.getMunicipalityId(), errandEntity.getId(), event);
+		String eventId = null;
+		try {
+			eventId = extractEventId(eventLogClient.createEvent(errandEntity.getMunicipalityId(), errandEntity.getId(), event));
+		} catch (final Exception e) {
+			LOG.warn("Failed to create event log entry for errand {}: {}", sanitizeForLogging(errandEntity.getId()), sanitizeForLogging(e.getMessage()));
+		}
+		tryAutoSubscribeErrandAssignee(errandEntity);
 
 		if (sendNotification) {
 			createNotification(errandEntity, event);
+			saveDispatchEntry(errandEntity, eventType, requestGroupId, eventId);
 		}
 	}
 
@@ -65,8 +79,15 @@ public class EventService {
 		final var caseId = extractCaseId(errandEntity);
 		final var metadata = toMetadataMap(caseId, noteId, currentRevision, previousRevision, errandEntity.getNamespace());
 		final var event = toEvent(eventType, message, extractId(currentRevision), Note.class, metadata, getExecutingUser(), NOTE.getValue(), requestGroupId);
-		eventLogClient.createEvent(errandEntity.getMunicipalityId(), logKey, event);
+		String eventId = null;
+		try {
+			eventId = extractEventId(eventLogClient.createEvent(errandEntity.getMunicipalityId(), logKey, event));
+		} catch (final Exception e) {
+			LOG.warn("Failed to create event log entry for errand note {}: {}", sanitizeForLogging(logKey), sanitizeForLogging(e.getMessage()));
+		}
+		tryAutoSubscribeErrandAssignee(errandEntity);
 		createNotification(errandEntity, event);
+		saveDispatchEntry(errandEntity, eventType, requestGroupId, eventId);
 	}
 
 	public Page<Event> readEvents(final String municipalityId, final String id, final Pageable pageable) {
