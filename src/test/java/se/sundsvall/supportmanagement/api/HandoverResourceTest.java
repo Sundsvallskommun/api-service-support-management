@@ -11,6 +11,9 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.errand.Priority;
+import se.sundsvall.supportmanagement.api.model.errand.handover.HandoverErrandRequest;
+import se.sundsvall.supportmanagement.api.model.errand.handover.HandoverMapping;
+import se.sundsvall.supportmanagement.api.model.errand.handover.HandoverTarget;
 import se.sundsvall.supportmanagement.api.model.handover.ClassificationMapping;
 import se.sundsvall.supportmanagement.api.model.handover.ClassificationOption;
 import se.sundsvall.supportmanagement.api.model.handover.ContactReasonMapping;
@@ -92,6 +95,21 @@ class HandoverResourceTest {
 					.withCandidates(List.of("Bygglov"))))
 			.withNotCopyable(List.of(NotCopyable.create().withField("phases").withReason("Phase history is source-specific")))
 			.withWarnings(List.of(Warning.create().withType(WarningType.ROLE_NOT_IN_TARGET).withValue("EXTERNAL_REPORTER")));
+	}
+
+	@Test
+	void handoverErrand() {
+		final var request = HandoverErrandRequest.create()
+			.withTarget(HandoverTarget.create().withNamespace("OTHER_NAMESPACE").withMunicipalityId("2281"))
+			.withMapping(HandoverMapping.create().withStatus("NEW_CASE"));
+
+		webTestClient.post()
+			.uri(builder -> builder.path("/{municipalityId}/{namespace}/errands/{errandId}/handover")
+				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", ERRAND_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(request)
+			.exchange()
+			.expectStatus().is5xxServerError();
 	}
 
 	@Test
