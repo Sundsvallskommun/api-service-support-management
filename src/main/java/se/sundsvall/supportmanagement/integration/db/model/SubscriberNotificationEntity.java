@@ -31,14 +31,14 @@ public class SubscriberNotificationEntity {
 
 	@Id
 	@UuidGenerator
-	@Column(name = "id")
+	@Column(name = "id", length = 36)
 	private String id;
 
-	@Column(name = "created", nullable = false)
+	@Column(name = "created", nullable = false, columnDefinition = "datetime(3)")
 	@TimeZoneStorage(NORMALIZE)
 	private OffsetDateTime created;
 
-	@Column(name = "modified")
+	@Column(name = "modified", columnDefinition = "datetime(3)")
 	@TimeZoneStorage(NORMALIZE)
 	private OffsetDateTime modified;
 
@@ -60,11 +60,11 @@ public class SubscriberNotificationEntity {
 	@Column(name = "errand_number")
 	private String errandNumber;
 
-	@Column(name = "expires")
+	@Column(name = "expires", columnDefinition = "datetime(3)")
 	@TimeZoneStorage(NORMALIZE)
 	private OffsetDateTime expires;
 
-	@Column(name = "acknowledged")
+	@Column(name = "acknowledged", columnDefinition = "datetime(3)")
 	@TimeZoneStorage(NORMALIZE)
 	private OffsetDateTime acknowledged;
 

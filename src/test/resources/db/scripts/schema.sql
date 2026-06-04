@@ -370,18 +370,18 @@
     ) engine=InnoDB;
 
     create table notification_dispatch (
-        dead_letter bit not null,
-        retry_count integer not null,
-        created datetime(6) not null,
+        dead_letter bit default 0 not null,
+        retry_count integer default 0 not null,
+        created datetime(3) not null,
         municipality_id varchar(8) not null,
-        next_retry_at datetime(6),
+        next_retry_at datetime(3),
         namespace varchar(32) not null,
         errand_id varchar(36) not null,
         event_id varchar(36),
+        id varchar(36) not null,
         request_group_id varchar(36),
         event_type varchar(64) not null,
         executing_user_id varchar(255),
-        id varchar(255) not null,
         primary key (id)
     ) engine=InnoDB;
 
@@ -533,16 +533,16 @@
     ) engine=InnoDB;
 
     create table subscriber_notification (
-        acknowledged datetime(6),
-        created datetime(6) not null,
-        expires datetime(6),
-        modified datetime(6),
+        acknowledged datetime(3),
+        created datetime(3) not null,
+        expires datetime(3),
+        modified datetime(3),
         municipality_id varchar(8) not null,
         identifier_type varchar(16) not null,
         namespace varchar(32) not null,
         errand_id varchar(36) not null,
+        id varchar(36) not null,
         errand_number varchar(255),
-        id varchar(255) not null,
         identifier_value varchar(255) not null,
         primary key (id)
     ) engine=InnoDB;

@@ -8,6 +8,7 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.time.OffsetDateTime;
 import java.util.Objects;
+import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.TimeZoneStorage;
 import org.hibernate.annotations.UuidGenerator;
 
@@ -26,7 +27,7 @@ public class NotificationDispatchEntity {
 
 	@Id
 	@UuidGenerator
-	@Column(name = "id")
+	@Column(name = "id", length = 36)
 	private String id;
 
 	@Column(name = "event_id", length = 36)
@@ -50,18 +51,20 @@ public class NotificationDispatchEntity {
 	@Column(name = "executing_user_id")
 	private String executingUserId;
 
-	@Column(name = "created", nullable = false)
+	@Column(name = "created", nullable = false, columnDefinition = "datetime(3)")
 	@TimeZoneStorage(NORMALIZE)
 	private OffsetDateTime created;
 
 	@Column(name = "retry_count", nullable = false)
+	@ColumnDefault("0")
 	private int retryCount;
 
-	@Column(name = "next_retry_at")
+	@Column(name = "next_retry_at", columnDefinition = "datetime(3)")
 	@TimeZoneStorage(NORMALIZE)
 	private OffsetDateTime nextRetryAt;
 
 	@Column(name = "dead_letter", nullable = false)
+	@ColumnDefault("0")
 	private boolean deadLetter;
 
 	public static NotificationDispatchEntity create() {

@@ -8,9 +8,9 @@ create table if not exists notification_dispatch (
     event_type        varchar(64)  not null,
     executing_user_id varchar(255),
     created           datetime(3)  not null,
-    retry_count       int          not null default 0,
+    retry_count       int          default 0 not null,
     next_retry_at     datetime(3),
-    dead_letter       bit          not null default 0,
+    dead_letter       bit          default 0 not null,
     primary key (id)
 ) engine=InnoDB;
 
