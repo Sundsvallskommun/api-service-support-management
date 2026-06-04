@@ -3081,7 +3081,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/HandoverErrandResponse"
+                $ref: "#/components/schemas/HandoverErrand"
         "400":
           description: Bad request
           content:
@@ -9764,7 +9764,7 @@ components:
           example: "2281"
       required:
       - namespace
-    HandoverErrandResponse:
+    HandoverErrand:
       type: object
       description: Response body for a successful errand handover
       properties:

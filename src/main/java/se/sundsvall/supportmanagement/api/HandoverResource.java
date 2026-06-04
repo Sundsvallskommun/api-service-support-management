@@ -17,8 +17,8 @@ import se.sundsvall.dept44.common.validators.annotation.ValidMunicipalityId;
 import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
+import se.sundsvall.supportmanagement.api.model.errand.handover.HandoverErrand;
 import se.sundsvall.supportmanagement.api.model.errand.handover.HandoverErrandRequest;
-import se.sundsvall.supportmanagement.api.model.errand.handover.HandoverErrandResponse;
 import se.sundsvall.supportmanagement.api.model.handover.HandoverPreview;
 import se.sundsvall.supportmanagement.api.model.handover.HandoverPreviewRequest;
 import se.sundsvall.supportmanagement.service.HandoverPreviewService;
@@ -73,7 +73,7 @@ class HandoverResource {
 		@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	})
 
-	ResponseEntity<HandoverErrandResponse> handoverErrand(
+	ResponseEntity<HandoverErrand> handoverErrand(
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "errandId", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable final String errandId,

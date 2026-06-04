@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.Objects;
 
 @Schema(description = "Response body for a successful errand handover")
-public class HandoverErrandResponse {
+public class HandoverErrand {
 
 	@Schema(description = "Id of the newly created errand in the target system", example = "f0882f1d-06bc-47fd-b017-1d8307f5ce95")
 	private String newErrandId;
@@ -26,8 +26,8 @@ public class HandoverErrandResponse {
 	@Schema(description = "Non-fatal warnings that occurred during handover")
 	private List<String> warnings;
 
-	public static HandoverErrandResponse create() {
-		return new HandoverErrandResponse();
+	public static HandoverErrand create() {
+		return new HandoverErrand();
 	}
 
 	public String getNewErrandId() {
@@ -38,7 +38,7 @@ public class HandoverErrandResponse {
 		this.newErrandId = newErrandId;
 	}
 
-	public HandoverErrandResponse withNewErrandId(final String newErrandId) {
+	public HandoverErrand withNewErrandId(final String newErrandId) {
 		this.newErrandId = newErrandId;
 		return this;
 	}
@@ -51,7 +51,7 @@ public class HandoverErrandResponse {
 		this.newErrandNumber = newErrandNumber;
 	}
 
-	public HandoverErrandResponse withNewErrandNumber(final String newErrandNumber) {
+	public HandoverErrand withNewErrandNumber(final String newErrandNumber) {
 		this.newErrandNumber = newErrandNumber;
 		return this;
 	}
@@ -64,7 +64,7 @@ public class HandoverErrandResponse {
 		this.target = target;
 	}
 
-	public HandoverErrandResponse withTarget(final HandoverTarget target) {
+	public HandoverErrand withTarget(final HandoverTarget target) {
 		this.target = target;
 		return this;
 	}
@@ -77,7 +77,7 @@ public class HandoverErrandResponse {
 		this.relationId = relationId;
 	}
 
-	public HandoverErrandResponse withRelationId(final String relationId) {
+	public HandoverErrand withRelationId(final String relationId) {
 		this.relationId = relationId;
 		return this;
 	}
@@ -90,7 +90,7 @@ public class HandoverErrandResponse {
 		this.appliedMappings = appliedMappings;
 	}
 
-	public HandoverErrandResponse withAppliedMappings(final Map<String, String> appliedMappings) {
+	public HandoverErrand withAppliedMappings(final Map<String, String> appliedMappings) {
 		this.appliedMappings = appliedMappings;
 		return this;
 	}
@@ -103,7 +103,7 @@ public class HandoverErrandResponse {
 		this.warnings = warnings;
 	}
 
-	public HandoverErrandResponse withWarnings(final List<String> warnings) {
+	public HandoverErrand withWarnings(final List<String> warnings) {
 		this.warnings = warnings;
 		return this;
 	}
@@ -114,7 +114,7 @@ public class HandoverErrandResponse {
 			return true;
 		if (o == null || getClass() != o.getClass())
 			return false;
-		final HandoverErrandResponse that = (HandoverErrandResponse) o;
+		final HandoverErrand that = (HandoverErrand) o;
 		return Objects.equals(newErrandId, that.newErrandId) && Objects.equals(newErrandNumber, that.newErrandNumber)
 			&& Objects.equals(target, that.target) && Objects.equals(relationId, that.relationId)
 			&& Objects.equals(appliedMappings, that.appliedMappings) && Objects.equals(warnings, that.warnings);
@@ -127,7 +127,7 @@ public class HandoverErrandResponse {
 
 	@Override
 	public String toString() {
-		return "HandoverErrandResponse{newErrandId='" + newErrandId + "', newErrandNumber='" + newErrandNumber
+		return "HandoverErrand{newErrandId='" + newErrandId + "', newErrandNumber='" + newErrandNumber
 			+ "', target=" + target + ", relationId='" + relationId + "', appliedMappings=" + appliedMappings
 			+ ", warnings=" + warnings + "}";
 	}

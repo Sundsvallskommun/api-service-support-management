@@ -13,11 +13,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-class HandoverErrandResponseTest {
+class HandoverErrandTest {
 
 	@Test
 	void testBean() {
-		assertThat(HandoverErrandResponse.class, allOf(
+		assertThat(HandoverErrand.class, allOf(
 			hasValidBeanConstructor(),
 			hasValidGettersAndSetters(),
 			hasValidBeanHashCode(),
@@ -34,7 +34,7 @@ class HandoverErrandResponseTest {
 		final var appliedMappings = Map.of("status", "NEW_CASE");
 		final var warnings = List.of("Some warning");
 
-		final var response = HandoverErrandResponse.create()
+		final var response = HandoverErrand.create()
 			.withNewErrandId(newErrandId)
 			.withNewErrandNumber(newErrandNumber)
 			.withTarget(target)
@@ -53,7 +53,7 @@ class HandoverErrandResponseTest {
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(HandoverErrandResponse.create()).hasAllNullFieldsOrProperties();
-		assertThat(new HandoverErrandResponse()).hasAllNullFieldsOrProperties();
+		assertThat(HandoverErrand.create()).hasAllNullFieldsOrProperties();
+		assertThat(new HandoverErrand()).hasAllNullFieldsOrProperties();
 	}
 }
