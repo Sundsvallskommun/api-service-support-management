@@ -225,4 +225,5 @@ class ErrandsHandoverResourceFailureTest {
 
 		verifyNoInteractions(errandServiceMock);
 	}
+
 }
