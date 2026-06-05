@@ -1,7 +1,9 @@
 package se.sundsvall.supportmanagement.integration.jsonschema;
 
+import generated.se.sundsvall.jsonschema.JsonSchema;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -31,4 +33,23 @@ public interface JsonSchemaClient {
 		@PathVariable String municipalityId,
 		@PathVariable String schemaId,
 		@RequestBody JsonNode jsonData);
+
+	/**
+	 * Fetches a JSON schema by its id. Read-only and side-effect free (unlike {@link #validateJson}, which increments the
+	 * schema's validation usage counter), making it suitable for checking whether a schema is registered in a namespace.
+	 *
+	 * <p>
+	 * A {@code 404 Not Found} is raised as a {@code NOT_FOUND} problem (the client bypasses 404 in its error decoder rather
+	 * than wrapping it in {@code BAD_GATEWAY}), so callers can tell "schema not registered" apart from a genuine upstream
+	 * error.
+	 * </p>
+	 *
+	 * @param  municipalityId the municipality identifier
+	 * @param  schemaId       the unique identifier of the JSON schema to fetch
+	 * @return                the JSON schema, if it exists
+	 */
+	@GetMapping(path = "/{municipalityId}/schemas/{schemaId}", produces = APPLICATION_JSON_VALUE)
+	JsonSchema getSchemaById(
+		@PathVariable String municipalityId,
+		@PathVariable String schemaId);
 }
