@@ -197,7 +197,7 @@ public class HandoverPreviewService {
 			if (isBlank(schemaId)) {
 				continue;
 			}
-			final var registered = registrationBySchemaId.computeIfAbsent(schemaId, id -> isSchemaRegistered(targetMunicipalityId, id));
+			final boolean registered = registrationBySchemaId.computeIfAbsent(schemaId, id -> isSchemaRegistered(targetMunicipalityId, id));
 			if (!registered) {
 				warnings.add(Warning.parameterSchemaMismatch(jsonParameter.getKey(), SCHEMA_NOT_REGISTERED.formatted(schemaId)));
 			}
