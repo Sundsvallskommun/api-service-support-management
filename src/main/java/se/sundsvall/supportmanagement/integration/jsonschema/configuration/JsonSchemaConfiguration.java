@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.integration.jsonschema.configuration;
 
+import java.util.List;
 import org.springframework.cloud.openfeign.FeignBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
@@ -7,6 +8,8 @@ import org.springframework.security.oauth2.client.registration.ClientRegistratio
 import se.sundsvall.dept44.configuration.feign.FeignConfiguration;
 import se.sundsvall.dept44.configuration.feign.FeignMultiCustomizer;
 import se.sundsvall.dept44.configuration.feign.decoder.ProblemErrorDecoder;
+
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 /**
  * Configuration class for the JSON Schema integration.
@@ -27,7 +30,9 @@ public class JsonSchemaConfiguration {
 	@Bean
 	FeignBuilderCustomizer feignBuilderCustomizer(JsonSchemaProperties jsonSchemaProperties, ClientRegistrationRepository clientRegistrationRepository) {
 		return FeignMultiCustomizer.create()
-			.withErrorDecoder(new ProblemErrorDecoder(CLIENT_ID))
+			// 404 is bypassed (kept as NOT_FOUND instead of being wrapped in BAD_GATEWAY) so that
+			// HandoverPreviewService#isSchemaRegistered can tell "schema not registered" apart from a genuine upstream error.
+			.withErrorDecoder(new ProblemErrorDecoder(CLIENT_ID, List.of(NOT_FOUND.value())))
 			.withRequestTimeoutsInSeconds(jsonSchemaProperties.connectTimeout(), jsonSchemaProperties.readTimeout())
 			.withRetryableOAuth2InterceptorForClientRegistration(clientRegistrationRepository.findByRegistrationId(CLIENT_ID))
 			.composeCustomizersToOne();
