@@ -1,7 +1,9 @@
 package se.sundsvall.supportmanagement.service.action;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.time.OffsetDateTime;
-import java.time.temporal.ChronoUnit;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -34,7 +36,6 @@ import se.sundsvall.supportmanagement.service.MetadataService;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.assertj.core.api.Assertions.within;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -55,12 +56,17 @@ class SendEmailActionTest {
 	private static final String EMAIL_SUBJECT = "Test subject";
 	private static final String EMAIL_BODY = "Test body";
 	private static final String ERRAND_BASE_URL = "https://support.sundsvall.se";
+	private static final Instant FIXED_INSTANT = Instant.parse("2026-06-05T10:00:00Z");
+	private static final ZoneId ZONE_ID = ZoneId.of("UTC");
 
 	@Mock
 	private MetadataService metadataService;
 
 	@Mock
 	private CommunicationService communicationService;
+
+	@Mock
+	private Clock clock;
 
 	@InjectMocks
 	private SendEmailAction sendEmailAction;
@@ -273,6 +279,9 @@ class SendEmailActionTest {
 	// createAction tests
 	@Test
 	void createActionWhenConditionsMet() {
+		when(clock.instant()).thenReturn(FIXED_INSTANT);
+		when(clock.getZone()).thenReturn(ZONE_ID);
+
 		var errand = ErrandEntity.create()
 			.withStatus(STATUS_OPEN)
 			.withLabels(List.of(ErrandLabelEmbeddable.create().withMetadataLabelId(LABEL_ID_1)));
@@ -289,11 +298,14 @@ class SendEmailActionTest {
 		assertThat(result).isPresent();
 		assertThat(result.get().getActionConfigEntity()).isEqualTo(config);
 		assertThat(result.get().getErrandEntity()).isEqualTo(errand);
-		assertThat(result.get().getExecuteAfter()).isCloseTo(OffsetDateTime.now(), within(5, ChronoUnit.SECONDS));
+		assertThat(result.get().getExecuteAfter()).isEqualTo(OffsetDateTime.ofInstant(FIXED_INSTANT, ZONE_ID));
 	}
 
 	@Test
 	void createActionWithDuration() {
+		when(clock.instant()).thenReturn(FIXED_INSTANT);
+		when(clock.getZone()).thenReturn(ZONE_ID);
+
 		var errand = ErrandEntity.create();
 
 		var config = ActionConfigEntity.create()
@@ -305,11 +317,14 @@ class SendEmailActionTest {
 		var result = sendEmailAction.createAction(errand, config);
 
 		assertThat(result).isPresent();
-		assertThat(result.get().getExecuteAfter()).isCloseTo(OffsetDateTime.now().plusHours(2), within(5, ChronoUnit.SECONDS));
+		assertThat(result.get().getExecuteAfter()).isEqualTo(OffsetDateTime.ofInstant(FIXED_INSTANT, ZONE_ID).plusHours(2));
 	}
 
 	@Test
 	void createActionWithoutDuration() {
+		when(clock.instant()).thenReturn(FIXED_INSTANT);
+		when(clock.getZone()).thenReturn(ZONE_ID);
+
 		var errand = ErrandEntity.create();
 		var config = ActionConfigEntity.create()
 			.withActive(true);
@@ -319,7 +334,7 @@ class SendEmailActionTest {
 		var result = sendEmailAction.createAction(errand, config);
 
 		assertThat(result).isPresent();
-		assertThat(result.get().getExecuteAfter()).isCloseTo(OffsetDateTime.now(), within(5, ChronoUnit.SECONDS));
+		assertThat(result.get().getExecuteAfter()).isEqualTo(OffsetDateTime.ofInstant(FIXED_INSTANT, ZONE_ID));
 	}
 
 	@Test

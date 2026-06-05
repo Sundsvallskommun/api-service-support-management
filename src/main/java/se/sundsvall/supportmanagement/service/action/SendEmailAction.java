@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.service.action;
 
+import java.time.Clock;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -43,8 +44,8 @@ public class SendEmailAction extends AbstractAction {
 
 	private final CommunicationService communicationService;
 
-	public SendEmailAction(final MetadataService metadataService, final CommunicationService communicationService) {
-		super(metadataService);
+	public SendEmailAction(final MetadataService metadataService, final CommunicationService communicationService, final Clock clock) {
+		super(metadataService, clock);
 		this.communicationService = communicationService;
 	}
 
