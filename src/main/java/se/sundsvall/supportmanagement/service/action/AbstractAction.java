@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.service.action;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeParseException;
@@ -31,9 +32,11 @@ public abstract class AbstractAction implements Action {
 	protected static final String HAS_LABEL = "hasLabel";
 	protected static final String DURATION = "duration";
 	protected final MetadataService metadataService;
+	protected final Clock clock;
 
-	protected AbstractAction(final MetadataService metadataService) {
+	protected AbstractAction(final MetadataService metadataService, final Clock clock) {
 		this.metadataService = metadataService;
+		this.clock = clock;
 	}
 
 	@Override
@@ -72,8 +75,8 @@ public abstract class AbstractAction implements Action {
 				.map(ActionConfigParameterEntity::getValues)
 				.map(List::getFirst)
 				.map(Duration::parse)
-				.map(duration -> OffsetDateTime.now().plus(duration))
-				.orElse(OffsetDateTime.now());
+				.map(duration -> OffsetDateTime.now(clock).plus(duration))
+				.orElse(OffsetDateTime.now(clock));
 
 			return buildErrandAction(errand, actionConfigEntity, executeAfter);
 		} else {

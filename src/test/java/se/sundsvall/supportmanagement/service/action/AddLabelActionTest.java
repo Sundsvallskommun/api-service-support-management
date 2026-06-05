@@ -1,7 +1,9 @@
 package se.sundsvall.supportmanagement.service.action;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.time.OffsetDateTime;
-import java.time.temporal.ChronoUnit;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -25,7 +27,6 @@ import se.sundsvall.supportmanagement.service.MetadataService;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.assertj.core.api.Assertions.within;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -39,12 +40,17 @@ class AddLabelActionTest {
 	private static final String LABEL_ID_2 = "label-id-2";
 	private static final String STATUS_OPEN = "OPEN";
 	private static final String STATUS_CLOSED = "CLOSED";
+	private static final Instant FIXED_INSTANT = Instant.parse("2026-06-05T10:00:00Z");
+	private static final ZoneId ZONE_ID = ZoneId.of("UTC");
 
 	@Mock
 	private MetadataService metadataService;
 
 	@Mock
 	private ErrandsRepository errandsRepository;
+
+	@Mock
+	private Clock clock;
 
 	@InjectMocks
 	private AddLabelAction addLabelAction;
@@ -240,6 +246,9 @@ class AddLabelActionTest {
 
 	@Test
 	void createActionWhenConditionsMet() {
+		when(clock.instant()).thenReturn(FIXED_INSTANT);
+		when(clock.getZone()).thenReturn(ZONE_ID);
+
 		var errand = ErrandEntity.create()
 			.withStatus(STATUS_OPEN)
 			.withLabels(List.of(ErrandLabelEmbeddable.create().withMetadataLabelId(LABEL_ID_1)));
@@ -257,11 +266,14 @@ class AddLabelActionTest {
 		assertThat(result).isPresent();
 		assertThat(result.get().getActionConfigEntity()).isEqualTo(config);
 		assertThat(result.get().getErrandEntity()).isEqualTo(errand);
-		assertThat(result.get().getExecuteAfter()).isCloseTo(OffsetDateTime.now().plusHours(1), within(5, ChronoUnit.SECONDS));
+		assertThat(result.get().getExecuteAfter()).isEqualTo(OffsetDateTime.ofInstant(FIXED_INSTANT, ZONE_ID).plusHours(1));
 	}
 
 	@Test
 	void createActionWithoutDuration() {
+		when(clock.instant()).thenReturn(FIXED_INSTANT);
+		when(clock.getZone()).thenReturn(ZONE_ID);
+
 		var errand = ErrandEntity.create()
 			.withStatus(STATUS_OPEN)
 			.withLabels(List.of());
@@ -274,7 +286,7 @@ class AddLabelActionTest {
 		var result = addLabelAction.createAction(errand, config);
 
 		assertThat(result).isPresent();
-		assertThat(result.get().getExecuteAfter()).isCloseTo(OffsetDateTime.now(), within(5, ChronoUnit.SECONDS));
+		assertThat(result.get().getExecuteAfter()).isEqualTo(OffsetDateTime.ofInstant(FIXED_INSTANT, ZONE_ID));
 	}
 
 	@Test
