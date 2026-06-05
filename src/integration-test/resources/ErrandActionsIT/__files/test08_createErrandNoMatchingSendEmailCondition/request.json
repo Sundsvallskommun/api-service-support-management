@@ -1,0 +1,10 @@
+{
+	"title": "Errand with no matching email condition",
+	"reporterUserId": "joe01doe",
+	"priority": "LOW",
+	"status": "STATUS-3",
+	"classification": {
+		"category": "CATEGORY-1",
+		"type": "TYPE-1"
+	}
+}
