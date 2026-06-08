@@ -3024,14 +3024,15 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-  /{municipalityId}/{namespace}/errands/{errandId}/handover:
+  /{municipalityId}/{namespace}/errands/{errandId}/handover/execute:
     post:
       tags:
       - Handover
-      summary: Handover errand
-      description: "Hands over an errand to another namespace, optionally copying\
-        \ data and closing the source errand"
-      operationId: handoverErrand
+      summary: Execute errand handover
+      description: "Hands over an errand to another namespace. Copies the errand\
+        \ with applied field mappings, optionally copies attachments, creates a HANDOVER\
+        \ relation, and optionally closes or suspends the source errand."
+      operationId: executeHandover
       parameters:
       - name: namespace
         in: path
@@ -3055,6 +3056,15 @@ paths:
         schema:
           type: string
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: Idempotency-Key
+        in: header
+        description: "Optional idempotency key (UUID). Repeated requests with the\
+          \ same key within 24 hours return the same result without creating a new\
+          \ errand."
+        required: false
+        schema:
+          type: string
+        example: f0882f1d-06bc-47fd-b017-1d8307f5ce95
       - name: X-Request-Group-Id
         in: header
         description: "Optional UUID that groups related events and notifications for\
@@ -3075,11 +3085,15 @@ paths:
           description: Successful operation
           headers:
             Location:
+              description: Location of the newly created errand in the target namespace
               style: simple
               schema:
                 type: string
           content:
             application/json:
+              schema:
+                $ref: "#/components/schemas/HandoverErrand"
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/HandoverErrand"
         "400":
@@ -3090,6 +3104,12 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "403":
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "404":
           description: Not Found
           content:
