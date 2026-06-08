@@ -22,7 +22,8 @@ import se.sundsvall.supportmanagement.Application;
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql",
-	"/db/scripts/testdata-it-errand-actions.sql"
+	"/db/scripts/testdata-it-errand-actions.sql",
+	"/db/scripts/testdata-it-send-email-actions.sql"
 })
 class ErrandActionsIT extends AbstractAppTest {
 
@@ -112,6 +113,96 @@ class ErrandActionsIT extends AbstractAppTest {
 			.sendRequest();
 
 		// Update the errand title - action should not be duplicated
+		setupCall()
+			.withServicePath(location)
+			.withHttpMethod(PATCH)
+			.withRequest("update-request.json")
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse("update-response.json")
+			.sendRequestAndVerifyResponse();
+	}
+
+	// --- SEND_EMAIL action tests ---
+
+	@Test
+	void test06_createErrandWithScheduledSendEmail() {
+		// Create errand with STATUS-4, which matches the SEND_EMAIL config with 24h duration
+		final var location = createErrand(REQUEST_FILE);
+
+		// Verify the errand has a scheduled SEND_EMAIL action
+		setupCall()
+			.withServicePath(location)
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	void test07_createErrandWithImmediateSendEmail() {
+		// Create errand with STATUS-5, which matches the SEND_EMAIL config without duration (immediate execution)
+		final var location = createErrand(REQUEST_FILE);
+
+		// Verify the action was executed immediately (email sent, no pending action)
+		setupCall()
+			.withServicePath(location)
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	void test08_createErrandNoMatchingSendEmailCondition() {
+		// Create errand with STATUS-3, which doesn't match any SEND_EMAIL action config condition
+		final var location = createErrand(REQUEST_FILE);
+
+		// Verify no SEND_EMAIL actions were created
+		setupCall()
+			.withServicePath(location)
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	void test09_updateErrandNoDuplicateSendEmailAction() {
+		// Create errand with STATUS-4 to get a scheduled SEND_EMAIL action
+		final var location = createErrand("create-request.json");
+
+		// Verify one SEND_EMAIL action exists
+		setupCall()
+			.withServicePath(location)
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse("create-response.json")
+			.sendRequest();
+
+		// Update the errand title - action should not be duplicated
+		setupCall()
+			.withServicePath(location)
+			.withHttpMethod(PATCH)
+			.withRequest("update-request.json")
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse("update-response.json")
+			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	void test10_updateErrandTriggersImmediateSendEmail() {
+		// Create errand with STATUS-3 (no matching SEND_EMAIL condition)
+		final var location = createErrand("create-request.json");
+
+		// Verify no actions were created
+		setupCall()
+			.withServicePath(location)
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse("create-response.json")
+			.sendRequest();
+
+		// Update status to STATUS-5 which matches the immediate SEND_EMAIL config
 		setupCall()
 			.withServicePath(location)
 			.withHttpMethod(PATCH)
