@@ -236,7 +236,6 @@ public class HandoverService {
 		} else if (HandoverSourceAction.SUSPEND.equals(action)) {
 			LOG.warn("SUSPEND source action for errand '{}' is not yet fully implemented (no suspension dates provided in request)", errandId);
 		}
-		// RETAIN: no changes to source
 	}
 
 	private void logHandoverEvents(final ErrandEntity source, final ErrandEntity target) {

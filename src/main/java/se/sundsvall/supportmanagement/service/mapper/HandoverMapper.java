@@ -19,20 +19,12 @@ public final class HandoverMapper {
 
 	private HandoverMapper() {}
 
-	/**
-	 * Builds a target {@link Errand} API model ready to be passed to {@code ErrandService.createErrand}.
-	 * <p>
-	 * Namespace-bound fields (status, classification, labels, contactReason, channel, activePhaseId) are taken from the
-	 * request mapping. Directly-copyable fields are taken from the source entity, subject to include flags and overrides.
-	 * Auto-generated fields (id, errandNumber, resolution, suspension) are cleared.
-	 */
 	public static Errand buildTargetErrand(final ErrandEntity source, final HandoverErrandRequest request) {
 		final var errand = ErrandMapper.toErrand(source);
 		final var mapping = request.getMapping();
 		final var overrides = request.getOverrides();
 		final var include = ofNullable(request.getInclude()).orElseGet(HandoverInclude::create);
 
-		// Apply namespace-bound mappings
 		errand.setStatus(mapping.getStatus());
 		errand.setClassification(mapping.getClassification());
 		errand.setLabels(toErrandLabels(mapping.getLabels()));
@@ -40,7 +32,6 @@ public final class HandoverMapper {
 		ofNullable(mapping.getChannel()).ifPresent(errand::setChannel);
 		errand.setActivePhaseId(mapping.getActivePhaseId());
 
-		// Apply overrides — assigned user/group default to null; others only override if explicitly set
 		errand.setAssignedUserId(nonNull(overrides) ? overrides.getAssignedUserId() : null);
 		errand.setAssignedGroupId(nonNull(overrides) ? overrides.getAssignedGroupId() : null);
 		if (nonNull(overrides)) {
@@ -49,7 +40,6 @@ public final class HandoverMapper {
 			ofNullable(overrides.getPriority()).ifPresent(errand::setPriority);
 		}
 
-		// Apply include filters — set to null if not explicitly included
 		if (!include.isStakeholders()) {
 			errand.setStakeholders(null);
 		}
@@ -72,7 +62,6 @@ public final class HandoverMapper {
 			errand.setContactReasonDescription(null);
 		}
 
-		// Clear auto-generated / linked fields so createErrand generates them fresh
 		errand.setId(null);
 		errand.setErrandNumber(null);
 		errand.setResolution(null);
