@@ -35,6 +35,7 @@ import static java.util.Objects.isNull;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.NOT_IMPLEMENTED;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.HANDOVER_IN;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.HANDOVER_OUT;
 
@@ -268,7 +269,7 @@ public class HandoverService {
 				.withStatus(request.getSourceHandling().getStatus())
 				.withResolution(request.getSourceHandling().getResolution()));
 		} else if (HandoverSourceAction.SUSPEND.equals(action)) {
-			LOG.warn("SUSPEND source action for errand '{}' is not yet fully implemented (no suspension dates provided in request)", errandId);
+			throw Problem.valueOf(NOT_IMPLEMENTED, "SUSPEND source action is not yet supported");
 		}
 	}
 
@@ -288,18 +289,14 @@ public class HandoverService {
 	}
 
 	private void saveIdempotencyRecord(final String sourceErrandId, final HandoverErrand response) {
-		try {
-			idempotencyRepository.save(HandoverIdempotencyEntity.create()
-				.withSourceErrandId(sourceErrandId)
-				.withNewErrandId(response.getNewErrandId())
-				.withNewErrandNumber(response.getNewErrandNumber())
-				.withTargetNamespace(response.getTarget() != null ? response.getTarget().getNamespace() : null)
-				.withTargetMunicipalityId(response.getTarget() != null ? response.getTarget().getMunicipalityId() : null)
-				.withRelationId(response.getRelationId())
-				.withWarnings(HandoverMapper.encodeWarnings(response.getWarnings())));
-		} catch (final Exception e) {
-			LOG.warn("Failed to persist handover record for errand '{}': {}", sourceErrandId, e.getMessage());
-		}
+		idempotencyRepository.save(HandoverIdempotencyEntity.create()
+			.withSourceErrandId(sourceErrandId)
+			.withNewErrandId(response.getNewErrandId())
+			.withNewErrandNumber(response.getNewErrandNumber())
+			.withTargetNamespace(response.getTarget() != null ? response.getTarget().getNamespace() : null)
+			.withTargetMunicipalityId(response.getTarget() != null ? response.getTarget().getMunicipalityId() : null)
+			.withRelationId(response.getRelationId())
+			.withWarnings(HandoverMapper.encodeWarnings(response.getWarnings())));
 	}
 
 	private HandoverErrand toHandoverErrand(final HandoverIdempotencyEntity entity) {

@@ -387,15 +387,23 @@ class HandoverServiceTest {
 	}
 
 	@Test
-	void handoverWithSuspendSourceHandlingLogsWarning() {
-		mockGoldenPath();
+	void handoverWithSuspendSourceHandlingThrowsNotImplemented() {
+		when(idempotencyRepositoryMock.findBySourceErrandIdAndTargetNamespaceAndTargetMunicipalityId(ERRAND_ID, TARGET_NAMESPACE, TARGET_MUNICIPALITY_ID)).thenReturn(Optional.empty());
+		when(accessControlServiceMock.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false)).thenReturn(sourceEntity());
+		mockValidations();
+		when(errandServiceMock.createErrand(eq(TARGET_NAMESPACE), eq(TARGET_MUNICIPALITY_ID), any(), isNull())).thenReturn(NEW_ERRAND_ID);
+		when(errandsRepositoryMock.findById(NEW_ERRAND_ID)).thenReturn(Optional.of(targetEntity()));
+		when(relationClientMock.createRelation(eq(TARGET_MUNICIPALITY_ID), any()))
+			.thenReturn(ResponseEntity.created(URI.create("/2282/relations/" + RELATION_ID)).build());
+
 		final var request = minimalRequest()
 			.withSourceHandling(HandoverSourceHandling.create()
 				.withAction(HandoverSourceAction.SUSPEND));
 
-		service.handover(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, request);
-
-		verify(errandServiceMock, never()).updateErrand(anyString(), anyString(), anyString(), any());
+		assertThatException()
+			.isThrownBy(() -> service.handover(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, request))
+			.asInstanceOf(InstanceOfAssertFactories.type(ThrowableProblem.class))
+			.satisfies(problem -> assertThat(problem.getStatus()).isEqualTo(org.springframework.http.HttpStatus.NOT_IMPLEMENTED));
 	}
 
 	@Test
