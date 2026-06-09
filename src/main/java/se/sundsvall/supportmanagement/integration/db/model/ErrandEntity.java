@@ -201,8 +201,7 @@ public class ErrandEntity {
 	@Column(name = "previous_status")
 	private String previousStatus;
 
-	@OneToMany(cascade = ALL, orphanRemoval = true, fetch = EAGER)
-	@JoinColumn(name = "errand_id", referencedColumnName = "id", foreignKey = @ForeignKey(name = "fk_errand_time_measure_errand_id"))
+	@OneToMany(mappedBy = "errandEntity", cascade = ALL, orphanRemoval = true, fetch = EAGER)
 	private List<TimeMeasurementEntity> timeMeasures;
 
 	public static ErrandEntity create() {

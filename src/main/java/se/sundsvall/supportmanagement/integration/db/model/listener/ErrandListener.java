@@ -66,6 +66,7 @@ public class ErrandListener {
 
 	private TimeMeasurementEntity startTimeEntry(final ErrandEntity errandEntity, final OffsetDateTime now) {
 		return new TimeMeasurementEntity()
+			.withErrandEntity(errandEntity)
 			.withAdministrator(errandEntity.getAssignedUserId())
 			.withStatus(errandEntity.getStatus())
 			.withStartTime(now);
