@@ -281,15 +281,13 @@
     ) engine=InnoDB;
 
     create table handover_idempotency (
-        created_at datetime(6),
-        expires_at datetime(6),
-        target_municipality_id varchar(16),
+        target_municipality_id varchar(16) not null,
         new_errand_id varchar(36),
+        source_errand_id varchar(36) not null,
         id varchar(255) not null,
-        idempotency_key varchar(255) not null,
         new_errand_number varchar(255),
         relation_id varchar(255),
-        target_namespace varchar(255),
+        target_namespace varchar(255) not null,
         warnings longtext,
         primary key (id)
     ) engine=InnoDB;
@@ -761,11 +759,8 @@
     alter table if exists external_tag 
        add constraint uq_external_tag_errand_id_key unique (errand_id, `key`);
 
-    create index idx_handover_idempotency_expires_at 
-       on handover_idempotency (expires_at);
-
-    alter table if exists handover_idempotency 
-       add constraint uq_handover_idempotency_key unique (idempotency_key);
+    alter table if exists handover_idempotency
+       add constraint uq_handover_source_target unique (source_errand_id, target_namespace, target_municipality_id);
 
     create index idx_json_parameter_errand_id 
        on json_parameter (errand_id);

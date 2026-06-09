@@ -15,7 +15,6 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -94,12 +93,9 @@ class HandoverResource {
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "errandId", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable final String errandId,
-		@Parameter(name = "Idempotency-Key",
-			description = "Optional idempotency key (UUID). Repeated requests with the same key within 24 hours return the same result without creating a new errand.",
-			example = "f0882f1d-06bc-47fd-b017-1d8307f5ce95") @RequestHeader(name = "Idempotency-Key", required = false) final String idempotencyKey,
 		@Valid @NotNull @RequestBody final HandoverErrandRequest request) {
 
-		final var result = handoverService.handover(namespace, municipalityId, errandId, idempotencyKey, request);
+		final var result = handoverService.handover(namespace, municipalityId, errandId, request);
 		final var location = UriComponentsBuilder.fromPath("/{municipalityId}/{namespace}/errands/{errandId}")
 			.buildAndExpand(request.getTarget().getMunicipalityId(), request.getTarget().getNamespace(), result.getNewErrandId())
 			.toUri();

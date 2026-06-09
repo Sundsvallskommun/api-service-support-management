@@ -3,19 +3,19 @@ package se.sundsvall.supportmanagement.service;
 import generated.se.sundsvall.relation.Relation;
 import generated.se.sundsvall.relation.ResourceIdentifier;
 import java.net.URI;
-import java.time.OffsetDateTime;
-import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 import org.hibernate.Hibernate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.errand.handover.HandoverErrand;
 import se.sundsvall.supportmanagement.api.model.errand.handover.HandoverErrandRequest;
+import se.sundsvall.supportmanagement.api.model.errand.handover.HandoverInclude;
 import se.sundsvall.supportmanagement.api.model.errand.handover.HandoverSourceAction;
 import se.sundsvall.supportmanagement.api.model.errand.handover.HandoverTarget;
 import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
@@ -25,6 +25,7 @@ import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.HandoverIdempotencyEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.EntityType;
 import se.sundsvall.supportmanagement.integration.relation.RelationClient;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 import se.sundsvall.supportmanagement.service.mapper.HandoverMapper;
@@ -42,7 +43,6 @@ public class HandoverService {
 
 	private static final Logger LOG = LoggerFactory.getLogger(HandoverService.class);
 
-	private static final int IDEMPOTENCY_TTL_HOURS = 24;
 	private static final String RELATION_TYPE_HANDOVER = "HANDOVER";
 	private static final String RELATION_RESOURCE_TYPE = "case";
 	private static final String RELATION_SERVICE = "support-management";
@@ -52,6 +52,7 @@ public class HandoverService {
 	private final AccessControlService accessControlService;
 	private final NamespaceConfigService namespaceConfigService;
 	private final ErrandService errandService;
+	private final MetadataService metadataService;
 	private final ErrandsRepository errandsRepository;
 	private final AttachmentRepository attachmentRepository;
 	private final RevisionService revisionService;
@@ -63,6 +64,7 @@ public class HandoverService {
 		final AccessControlService accessControlService,
 		final NamespaceConfigService namespaceConfigService,
 		final ErrandService errandService,
+		final MetadataService metadataService,
 		final ErrandsRepository errandsRepository,
 		final AttachmentRepository attachmentRepository,
 		final RevisionService revisionService,
@@ -73,6 +75,7 @@ public class HandoverService {
 		this.accessControlService = accessControlService;
 		this.namespaceConfigService = namespaceConfigService;
 		this.errandService = errandService;
+		this.metadataService = metadataService;
 		this.errandsRepository = errandsRepository;
 		this.attachmentRepository = attachmentRepository;
 		this.revisionService = revisionService;
@@ -86,22 +89,20 @@ public class HandoverService {
 		final String namespace,
 		final String municipalityId,
 		final String errandId,
-		final String idempotencyKey,
 		final HandoverErrandRequest request) {
 
-		if (!isBlank(idempotencyKey)) {
-			final var cached = idempotencyRepository.findByIdempotencyKeyAndExpiresAtAfter(idempotencyKey, OffsetDateTime.now());
-			if (cached.isPresent()) {
-				LOG.debug("Returning cached handover response for idempotency key '{}'", idempotencyKey);
-				return toHandoverErrand(cached.get());
-			}
+		final var existing = idempotencyRepository.findBySourceErrandIdAndTargetNamespaceAndTargetMunicipalityId(
+			errandId, request.getTarget().getNamespace(), request.getTarget().getMunicipalityId());
+		if (existing.isPresent()) {
+			LOG.debug("Handover already performed for errand '{}' to '{}/{}', returning existing result", errandId, request.getTarget().getNamespace(), request.getTarget().getMunicipalityId());
+			return toHandoverErrand(existing.get());
 		}
 
 		final var source = accessControlService.getErrand(namespace, municipalityId, errandId, false);
 
 		namespaceConfigService.get(request.getTarget().getNamespace(), request.getTarget().getMunicipalityId());
 
-		validateMappings(request);
+		validateMappings(request.getTarget().getNamespace(), request.getTarget().getMunicipalityId(), request);
 
 		final var targetErrand = HandoverMapper.buildTargetErrand(source, request);
 
@@ -135,29 +136,61 @@ public class HandoverService {
 			.withAppliedMappings(appliedMappings)
 			.withWarnings(warnings);
 
-		if (!isBlank(idempotencyKey)) {
-			saveIdempotencyRecord(idempotencyKey, response);
-		}
+		saveIdempotencyRecord(errandId, response);
 
 		return response;
 	}
 
-	private void validateMappings(final HandoverErrandRequest request) {
+	private void validateMappings(final String targetNamespace, final String targetMunicipalityId, final HandoverErrandRequest request) {
 		final var mapping = request.getMapping();
+
 		if (isBlank(mapping.getStatus())) {
 			throw Problem.valueOf(BAD_REQUEST, "Required mapping 'status' is missing");
 		}
+		if (metadataService.isValidated(targetNamespace, targetMunicipalityId, EntityType.STATUS)) {
+			final var validStatus = metadataService.findStatuses(targetNamespace, targetMunicipalityId, Sort.unsorted()).stream()
+				.anyMatch(s -> s.getName().equals(mapping.getStatus()));
+			if (!validStatus) {
+				throw Problem.valueOf(BAD_REQUEST, "Status '%s' does not exist in target namespace '%s'".formatted(mapping.getStatus(), targetNamespace));
+			}
+		}
+
 		if (isNull(mapping.getClassification())) {
 			throw Problem.valueOf(BAD_REQUEST, "Required mapping 'classification' is missing");
 		}
+		final var category = mapping.getClassification().getCategory();
+		final var type = mapping.getClassification().getType();
+		if (metadataService.isValidated(targetNamespace, targetMunicipalityId, EntityType.CATEGORY)) {
+			final var validCategory = metadataService.findCategories(targetNamespace, targetMunicipalityId, Sort.unsorted()).stream()
+				.anyMatch(c -> c.getName().equals(category));
+			if (!validCategory) {
+				throw Problem.valueOf(BAD_REQUEST, "Classification category '%s' does not exist in target namespace '%s'".formatted(category, targetNamespace));
+			}
+		}
+		if (metadataService.isValidated(targetNamespace, targetMunicipalityId, EntityType.TYPE)) {
+			final var validType = metadataService.findTypes(targetNamespace, targetMunicipalityId, category).stream()
+				.anyMatch(t -> t.getName().equals(type));
+			if (!validType) {
+				throw Problem.valueOf(BAD_REQUEST, "Classification type '%s' does not exist under category '%s' in target namespace '%s'".formatted(type, category, targetNamespace));
+			}
+		}
+
 		if (isNull(mapping.getLabels())) {
 			throw Problem.valueOf(BAD_REQUEST, "Required mapping 'labels' is missing (provide an empty list if the target namespace does not use labels)");
+		}
+
+		if (!isBlank(mapping.getContactReason()) && metadataService.isValidated(targetNamespace, targetMunicipalityId, EntityType.CONTACT_REASON)) {
+			final var validContactReason = metadataService.findContactReasons(targetNamespace, targetMunicipalityId, Sort.unsorted()).stream()
+				.anyMatch(cr -> cr.getReason().equalsIgnoreCase(mapping.getContactReason()));
+			if (!validContactReason) {
+				throw Problem.valueOf(BAD_REQUEST, "Contact reason '%s' does not exist in target namespace '%s'".formatted(mapping.getContactReason(), targetNamespace));
+			}
 		}
 	}
 
 	private boolean isIncludeAttachments(final HandoverErrandRequest request) {
 		return Optional.ofNullable(request.getInclude())
-			.map(include -> include.isAttachments())
+			.map(HandoverInclude::isAttachments)
 			.orElse(false);
 	}
 
@@ -231,8 +264,9 @@ public class HandoverService {
 		}
 		final var action = request.getSourceHandling().getAction();
 		if (HandoverSourceAction.CLOSE.equals(action)) {
-			final var resolution = request.getSourceHandling().getResolution();
-			errandService.updateErrand(namespace, municipalityId, errandId, Errand.create().withResolution(resolution));
+			errandService.updateErrand(namespace, municipalityId, errandId, Errand.create()
+				.withStatus(request.getSourceHandling().getStatus())
+				.withResolution(request.getSourceHandling().getResolution()));
 		} else if (HandoverSourceAction.SUSPEND.equals(action)) {
 			LOG.warn("SUSPEND source action for errand '{}' is not yet fully implemented (no suspension dates provided in request)", errandId);
 		}
@@ -253,21 +287,18 @@ public class HandoverService {
 		}
 	}
 
-	private void saveIdempotencyRecord(final String idempotencyKey, final HandoverErrand response) {
+	private void saveIdempotencyRecord(final String sourceErrandId, final HandoverErrand response) {
 		try {
-			final var entity = HandoverIdempotencyEntity.create()
-				.withIdempotencyKey(idempotencyKey)
+			idempotencyRepository.save(HandoverIdempotencyEntity.create()
+				.withSourceErrandId(sourceErrandId)
 				.withNewErrandId(response.getNewErrandId())
 				.withNewErrandNumber(response.getNewErrandNumber())
 				.withTargetNamespace(response.getTarget() != null ? response.getTarget().getNamespace() : null)
 				.withTargetMunicipalityId(response.getTarget() != null ? response.getTarget().getMunicipalityId() : null)
 				.withRelationId(response.getRelationId())
-				.withWarnings(HandoverMapper.encodeWarnings(response.getWarnings()))
-				.withCreatedAt(OffsetDateTime.now(ZoneId.systemDefault()))
-				.withExpiresAt(OffsetDateTime.now(ZoneId.systemDefault()).plusHours(IDEMPOTENCY_TTL_HOURS));
-			idempotencyRepository.save(entity);
+				.withWarnings(HandoverMapper.encodeWarnings(response.getWarnings())));
 		} catch (final Exception e) {
-			LOG.warn("Failed to persist idempotency record for key '{}': {}", idempotencyKey, e.getMessage());
+			LOG.warn("Failed to persist handover record for errand '{}': {}", sourceErrandId, e.getMessage());
 		}
 	}
 

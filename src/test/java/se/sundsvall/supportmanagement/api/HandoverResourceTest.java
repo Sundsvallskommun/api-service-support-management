@@ -37,7 +37,6 @@ import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
@@ -115,7 +114,7 @@ class HandoverResourceTest {
 			.withNewErrandNumber("KC-12340001")
 			.withTarget(request.getTarget());
 
-		when(handoverServiceMock.handover(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), isNull(), any(HandoverErrandRequest.class)))
+		when(handoverServiceMock.handover(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), any(HandoverErrandRequest.class)))
 			.thenReturn(serviceResponse);
 
 		final var response = webTestClient.post()
@@ -131,7 +130,7 @@ class HandoverResourceTest {
 			.getResponseBody();
 
 		assertThat(response).isEqualTo(serviceResponse);
-		verify(handoverServiceMock).handover(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), isNull(), any(HandoverErrandRequest.class));
+		verify(handoverServiceMock).handover(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), any(HandoverErrandRequest.class));
 	}
 
 	@Test

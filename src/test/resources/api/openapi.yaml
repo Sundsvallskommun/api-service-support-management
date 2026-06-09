@@ -3056,15 +3056,6 @@ paths:
         schema:
           type: string
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
-      - name: Idempotency-Key
-        in: header
-        description: "Optional idempotency key (UUID). Repeated requests with the\
-          \ same key within 24 hours return the same result without creating a new\
-          \ errand."
-        required: false
-        schema:
-          type: string
-        example: f0882f1d-06bc-47fd-b017-1d8307f5ce95
       - name: X-Request-Group-Id
         in: header
         description: "Optional UUID that groups related events and notifications for\
@@ -9759,6 +9750,10 @@ components:
       properties:
         action:
           $ref: "#/components/schemas/HandoverSourceAction"
+        status:
+          type: string
+          description: Status to set on the source errand
+          example: SOLVED
         resolution:
           type: string
           description: Resolution to set on the source errand

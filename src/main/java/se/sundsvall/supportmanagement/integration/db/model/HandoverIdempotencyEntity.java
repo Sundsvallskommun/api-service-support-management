@@ -3,21 +3,18 @@ package se.sundsvall.supportmanagement.integration.db.model;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
-import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
-import java.time.OffsetDateTime;
 import java.util.Objects;
-import org.hibernate.annotations.TimeZoneStorage;
 import org.hibernate.annotations.UuidGenerator;
 
 import static org.hibernate.Length.LONG32;
-import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 
 @Entity
 @Table(name = "handover_idempotency",
-	indexes = @Index(name = "idx_handover_idempotency_expires_at", columnList = "expires_at"),
-	uniqueConstraints = @UniqueConstraint(name = "uq_handover_idempotency_key", columnNames = "idempotency_key"))
+	uniqueConstraints = @UniqueConstraint(name = "uq_handover_source_target", columnNames = {
+		"source_errand_id", "target_namespace", "target_municipality_id"
+	}))
 public class HandoverIdempotencyEntity {
 
 	@Id
@@ -25,8 +22,8 @@ public class HandoverIdempotencyEntity {
 	@Column(name = "id")
 	private String id;
 
-	@Column(name = "idempotency_key", nullable = false, length = 255)
-	private String idempotencyKey;
+	@Column(name = "source_errand_id", nullable = false, length = 36)
+	private String sourceErrandId;
 
 	@Column(name = "new_errand_id", length = 36)
 	private String newErrandId;
@@ -34,10 +31,10 @@ public class HandoverIdempotencyEntity {
 	@Column(name = "new_errand_number", length = 255)
 	private String newErrandNumber;
 
-	@Column(name = "target_namespace", length = 255)
+	@Column(name = "target_namespace", nullable = false, length = 255)
 	private String targetNamespace;
 
-	@Column(name = "target_municipality_id", length = 16)
+	@Column(name = "target_municipality_id", nullable = false, length = 16)
 	private String targetMunicipalityId;
 
 	@Column(name = "relation_id", length = 255)
@@ -45,14 +42,6 @@ public class HandoverIdempotencyEntity {
 
 	@Column(name = "warnings", length = LONG32)
 	private String warnings;
-
-	@Column(name = "created_at")
-	@TimeZoneStorage(NORMALIZE)
-	private OffsetDateTime createdAt;
-
-	@Column(name = "expires_at")
-	@TimeZoneStorage(NORMALIZE)
-	private OffsetDateTime expiresAt;
 
 	public static HandoverIdempotencyEntity create() {
 		return new HandoverIdempotencyEntity();
@@ -71,16 +60,16 @@ public class HandoverIdempotencyEntity {
 		return this;
 	}
 
-	public String getIdempotencyKey() {
-		return idempotencyKey;
+	public String getSourceErrandId() {
+		return sourceErrandId;
 	}
 
-	public void setIdempotencyKey(final String idempotencyKey) {
-		this.idempotencyKey = idempotencyKey;
+	public void setSourceErrandId(final String sourceErrandId) {
+		this.sourceErrandId = sourceErrandId;
 	}
 
-	public HandoverIdempotencyEntity withIdempotencyKey(final String idempotencyKey) {
-		this.idempotencyKey = idempotencyKey;
+	public HandoverIdempotencyEntity withSourceErrandId(final String sourceErrandId) {
+		this.sourceErrandId = sourceErrandId;
 		return this;
 	}
 
@@ -162,32 +151,6 @@ public class HandoverIdempotencyEntity {
 		return this;
 	}
 
-	public OffsetDateTime getCreatedAt() {
-		return createdAt;
-	}
-
-	public void setCreatedAt(final OffsetDateTime createdAt) {
-		this.createdAt = createdAt;
-	}
-
-	public HandoverIdempotencyEntity withCreatedAt(final OffsetDateTime createdAt) {
-		this.createdAt = createdAt;
-		return this;
-	}
-
-	public OffsetDateTime getExpiresAt() {
-		return expiresAt;
-	}
-
-	public void setExpiresAt(final OffsetDateTime expiresAt) {
-		this.expiresAt = expiresAt;
-	}
-
-	public HandoverIdempotencyEntity withExpiresAt(final OffsetDateTime expiresAt) {
-		this.expiresAt = expiresAt;
-		return this;
-	}
-
 	@Override
 	public boolean equals(final Object o) {
 		if (this == o)
@@ -195,22 +158,21 @@ public class HandoverIdempotencyEntity {
 		if (o == null || getClass() != o.getClass())
 			return false;
 		final HandoverIdempotencyEntity that = (HandoverIdempotencyEntity) o;
-		return Objects.equals(id, that.id) && Objects.equals(idempotencyKey, that.idempotencyKey)
+		return Objects.equals(id, that.id) && Objects.equals(sourceErrandId, that.sourceErrandId)
 			&& Objects.equals(newErrandId, that.newErrandId) && Objects.equals(newErrandNumber, that.newErrandNumber)
 			&& Objects.equals(targetNamespace, that.targetNamespace) && Objects.equals(targetMunicipalityId, that.targetMunicipalityId)
-			&& Objects.equals(relationId, that.relationId) && Objects.equals(warnings, that.warnings)
-			&& Objects.equals(createdAt, that.createdAt) && Objects.equals(expiresAt, that.expiresAt);
+			&& Objects.equals(relationId, that.relationId) && Objects.equals(warnings, that.warnings);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, idempotencyKey, newErrandId, newErrandNumber, targetNamespace, targetMunicipalityId, relationId, warnings, createdAt, expiresAt);
+		return Objects.hash(id, sourceErrandId, newErrandId, newErrandNumber, targetNamespace, targetMunicipalityId, relationId, warnings);
 	}
 
 	@Override
 	public String toString() {
-		return "HandoverIdempotencyEntity{id='" + id + "', idempotencyKey='" + idempotencyKey + "', newErrandId='" + newErrandId
+		return "HandoverIdempotencyEntity{id='" + id + "', sourceErrandId='" + sourceErrandId + "', newErrandId='" + newErrandId
 			+ "', newErrandNumber='" + newErrandNumber + "', targetNamespace='" + targetNamespace + "', targetMunicipalityId='"
-			+ targetMunicipalityId + "', relationId='" + relationId + "', warnings='" + warnings + "', createdAt=" + createdAt + ", expiresAt=" + expiresAt + "}";
+			+ targetMunicipalityId + "', relationId='" + relationId + "', warnings='" + warnings + "'}";
 	}
 }

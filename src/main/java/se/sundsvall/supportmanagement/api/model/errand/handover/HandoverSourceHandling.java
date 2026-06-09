@@ -11,6 +11,9 @@ public class HandoverSourceHandling {
 	@Schema(implementation = HandoverSourceAction.class)
 	private HandoverSourceAction action;
 
+	@Schema(description = "Status to set on the source errand", example = "SOLVED")
+	private String status;
+
 	@Schema(description = "Resolution to set on the source errand", example = "HANDED_OVER")
 	private String resolution;
 
@@ -31,6 +34,19 @@ public class HandoverSourceHandling {
 
 	public HandoverSourceHandling withAction(final HandoverSourceAction action) {
 		this.action = action;
+		return this;
+	}
+
+	public String getStatus() {
+		return status;
+	}
+
+	public void setStatus(final String status) {
+		this.status = status;
+	}
+
+	public HandoverSourceHandling withStatus(final String status) {
+		this.status = status;
 		return this;
 	}
 
@@ -67,16 +83,16 @@ public class HandoverSourceHandling {
 		if (o == null || getClass() != o.getClass())
 			return false;
 		final HandoverSourceHandling that = (HandoverSourceHandling) o;
-		return action == that.action && Objects.equals(resolution, that.resolution) && Objects.equals(closingComment, that.closingComment);
+		return action == that.action && Objects.equals(status, that.status) && Objects.equals(resolution, that.resolution) && Objects.equals(closingComment, that.closingComment);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(action, resolution, closingComment);
+		return Objects.hash(action, status, resolution, closingComment);
 	}
 
 	@Override
 	public String toString() {
-		return "HandoverSourceHandling{action=" + action + ", resolution='" + resolution + "', closingComment='" + closingComment + "'}";
+		return "HandoverSourceHandling{action=" + action + ", status='" + status + "', resolution='" + resolution + "', closingComment='" + closingComment + "'}";
 	}
 }

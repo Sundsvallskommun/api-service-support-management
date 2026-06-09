@@ -25,10 +25,12 @@ class HandoverSourceHandlingTest {
 	void testEqualsAndHashCode() {
 		final var a = HandoverSourceHandling.create()
 			.withAction(HandoverSourceAction.CLOSE)
+			.withStatus("SOLVED")
 			.withResolution("HANDED_OVER")
 			.withClosingComment("comment");
 		final var b = HandoverSourceHandling.create()
 			.withAction(HandoverSourceAction.CLOSE)
+			.withStatus("SOLVED")
 			.withResolution("HANDED_OVER")
 			.withClosingComment("comment");
 
@@ -40,16 +42,19 @@ class HandoverSourceHandlingTest {
 	@Test
 	void testBuilderMethods() {
 		final var action = HandoverSourceAction.CLOSE;
+		final var status = "SOLVED";
 		final var resolution = "HANDED_OVER";
 		final var closingComment = "Överlämnad till annan drake";
 
 		final var sourceHandling = HandoverSourceHandling.create()
 			.withAction(action)
+			.withStatus(status)
 			.withResolution(resolution)
 			.withClosingComment(closingComment);
 
 		assertThat(sourceHandling).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(sourceHandling.getAction()).isEqualTo(action);
+		assertThat(sourceHandling.getStatus()).isEqualTo(status);
 		assertThat(sourceHandling.getResolution()).isEqualTo(resolution);
 		assertThat(sourceHandling.getClosingComment()).isEqualTo(closingComment);
 	}
