@@ -123,8 +123,6 @@ public class HandoverService {
 		final var relationId = createHandoverRelation(
 			source, newErrandId, namespace, request.getTarget().getNamespace(), request.getTarget().getMunicipalityId());
 
-		handleSourceErrand(namespace, municipalityId, errandId, request);
-
 		logHandoverEvents(source, targetEntity);
 
 		final var warnings = HandoverMapper.buildWarnings(source, request);
@@ -138,6 +136,8 @@ public class HandoverService {
 			.withWarnings(warnings);
 
 		saveIdempotencyRecord(errandId, response);
+
+		handleSourceErrand(namespace, municipalityId, errandId, request);
 
 		return response;
 	}
