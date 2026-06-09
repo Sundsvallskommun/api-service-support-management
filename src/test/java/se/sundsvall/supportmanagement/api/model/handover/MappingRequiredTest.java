@@ -28,7 +28,9 @@ class MappingRequiredTest {
 	void testCreatePattern() {
 		final var status = StatusMapping.create().withSuggestedTarget("IN_PROGRESS");
 		final var classification = ClassificationMapping.create().withSuggestedCategory("SUPPORT_CASE");
-		final var labels = List.of(LabelMapping.create().withSourceId("uuid-a"));
+		final var labels = LabelMappingGroup.create()
+			.withCandidates(List.of(LabelCandidate.create().withId("uuid-b")))
+			.withMappings(List.of(LabelMapping.create().withSourceId("uuid-a")));
 		final var contactReason = ContactReasonMapping.create().withSource("Bygglov");
 
 		final var bean = MappingRequired.create()

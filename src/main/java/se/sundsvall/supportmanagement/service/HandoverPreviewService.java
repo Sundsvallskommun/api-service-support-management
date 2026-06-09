@@ -37,11 +37,10 @@ import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static se.sundsvall.supportmanagement.service.mapper.HandoverPreviewMapper.toClassificationCandidates;
 import static se.sundsvall.supportmanagement.service.mapper.HandoverPreviewMapper.toClassificationMapping;
-import static se.sundsvall.supportmanagement.service.mapper.HandoverPreviewMapper.toContactReasonCandidates;
 import static se.sundsvall.supportmanagement.service.mapper.HandoverPreviewMapper.toContactReasonMapping;
 import static se.sundsvall.supportmanagement.service.mapper.HandoverPreviewMapper.toDirectlyCopyable;
 import static se.sundsvall.supportmanagement.service.mapper.HandoverPreviewMapper.toLabelCandidates;
-import static se.sundsvall.supportmanagement.service.mapper.HandoverPreviewMapper.toLabelMappings;
+import static se.sundsvall.supportmanagement.service.mapper.HandoverPreviewMapper.toLabelMappingGroup;
 import static se.sundsvall.supportmanagement.service.mapper.HandoverPreviewMapper.toNotCopyable;
 import static se.sundsvall.supportmanagement.service.mapper.HandoverPreviewMapper.toStatusCandidates;
 import static se.sundsvall.supportmanagement.service.mapper.HandoverPreviewMapper.toStatusMapping;
@@ -141,15 +140,15 @@ public class HandoverPreviewService {
 		final var statusCandidates = toStatusCandidates(statusRepository.findAllByNamespaceAndMunicipalityId(targetNamespace, targetMunicipalityId, SORT_BY_SORT_ORDER));
 		final var classificationCandidates = toClassificationCandidates(categoryRepository.findAllByNamespaceAndMunicipalityId(targetNamespace, targetMunicipalityId, SORT_BY_SORT_ORDER));
 		final var labelCandidates = toLabelCandidates(metadataLabelRepository.findByNamespaceAndMunicipalityId(targetNamespace, targetMunicipalityId));
-		final var contactReasonCandidates = toContactReasonCandidates(contactReasonRepository.findAllByNamespaceAndMunicipalityId(targetNamespace, targetMunicipalityId, SORT_BY_SORT_ORDER));
+		final var targetContactReasons = contactReasonRepository.findAllByNamespaceAndMunicipalityId(targetNamespace, targetMunicipalityId, SORT_BY_SORT_ORDER);
 
 		final var sourceStatusDisplayName = resolveSourceStatusDisplayName(sourceNamespace, sourceMunicipalityId, errand.getStatus());
 
 		return MappingRequired.create()
 			.withStatus(toStatusMapping(errand, sourceStatusDisplayName, statusCandidates))
 			.withClassification(toClassificationMapping(errand, classificationCandidates))
-			.withLabels(toLabelMappings(errand, labelCandidates))
-			.withContactReason(toContactReasonMapping(errand, contactReasonCandidates));
+			.withLabels(toLabelMappingGroup(errand, labelCandidates))
+			.withContactReason(toContactReasonMapping(errand, targetContactReasons));
 	}
 
 	/**

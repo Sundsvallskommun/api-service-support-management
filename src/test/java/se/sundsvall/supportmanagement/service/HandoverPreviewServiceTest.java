@@ -12,6 +12,7 @@ import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.supportmanagement.api.model.errand.Priority;
 import se.sundsvall.supportmanagement.api.model.handover.HandoverPreviewRequest;
+import se.sundsvall.supportmanagement.api.model.handover.MatchReason;
 import se.sundsvall.supportmanagement.api.model.handover.MetadataOption;
 import se.sundsvall.supportmanagement.api.model.handover.Warning;
 import se.sundsvall.supportmanagement.integration.db.CategoryRepository;
@@ -232,31 +233,32 @@ class HandoverPreviewServiceTest {
 		assertThat(result.getDirectlyCopyable().getExternalTagCount()).isZero();
 		assertThat(result.getDirectlyCopyable().getAttachmentCount()).isZero();
 
-		// mappingRequired - status (source display name resolved from source namespace, no suggestion yet)
+		// mappingRequired - status (source display name resolved from source namespace; suggested via display name match)
 		assertThat(result.getMappingRequired().getStatus().getSource())
 			.isEqualTo(MetadataOption.create().withName("ONGOING").withDisplayName("Pågående"));
-		assertThat(result.getMappingRequired().getStatus().getSuggestedTarget()).isNull();
-		assertThat(result.getMappingRequired().getStatus().getMatchReason()).isNull();
+		assertThat(result.getMappingRequired().getStatus().getSuggestedTarget()).isEqualTo("IN_PROGRESS");
+		assertThat(result.getMappingRequired().getStatus().getMatchReason()).isEqualTo(MatchReason.DISPLAY_NAME_EXACT);
 		assertThat(result.getMappingRequired().getStatus().getCandidates())
 			.containsExactly(MetadataOption.create().withName("IN_PROGRESS").withDisplayName("Pågående"));
 
-		// mappingRequired - classification
+		// mappingRequired - classification (suggested via exact category/type name match)
 		assertThat(result.getMappingRequired().getClassification().getSource().getCategory()).isEqualTo("SUPPORT_CASE");
 		assertThat(result.getMappingRequired().getClassification().getSource().getType()).isEqualTo("OTHER_ISSUES");
 		assertThat(result.getMappingRequired().getClassification().getCandidates()).containsExactly(entry("SUPPORT_CASE", List.of("OTHER_ISSUES")));
-		assertThat(result.getMappingRequired().getClassification().getSuggestedCategory()).isNull();
-		assertThat(result.getMappingRequired().getClassification().getSuggestedType()).isNull();
+		assertThat(result.getMappingRequired().getClassification().getSuggestedCategory()).isEqualTo("SUPPORT_CASE");
+		assertThat(result.getMappingRequired().getClassification().getSuggestedType()).isEqualTo("OTHER_ISSUES");
 
-		// mappingRequired - labels
-		assertThat(result.getMappingRequired().getLabels()).hasSize(1);
-		assertThat(result.getMappingRequired().getLabels().getFirst().getSourceId()).isEqualTo("uuid-a");
-		assertThat(result.getMappingRequired().getLabels().getFirst().getSuggestedTargetId()).isNull();
-		assertThat(result.getMappingRequired().getLabels().getFirst().getCandidates()).hasSize(1);
+		// mappingRequired - labels (no suggestion: the lazy metadataLabel association is unset on the hand-built errand)
+		assertThat(result.getMappingRequired().getLabels().getCandidates()).hasSize(1);
+		assertThat(result.getMappingRequired().getLabels().getMappings()).hasSize(1);
+		assertThat(result.getMappingRequired().getLabels().getMappings().getFirst().getSourceId()).isEqualTo("uuid-a");
+		assertThat(result.getMappingRequired().getLabels().getMappings().getFirst().getSuggestedTargetId()).isNull();
+		assertThat(result.getMappingRequired().getLabels().getMappings().getFirst().getMatchReason()).isNull();
 
-		// mappingRequired - contactReason
+		// mappingRequired - contactReason (suggested via exact match)
 		assertThat(result.getMappingRequired().getContactReason().getSource()).isEqualTo("Bygglov");
 		assertThat(result.getMappingRequired().getContactReason().getCandidates()).containsExactly("Bygglov");
-		assertThat(result.getMappingRequired().getContactReason().getSuggested()).isNull();
+		assertThat(result.getMappingRequired().getContactReason().getSuggested()).isEqualTo("Bygglov");
 
 		// notCopyable
 		assertThat(result.getNotCopyable()).extracting("field").containsExactly("phases", "activePhaseId");
@@ -292,7 +294,8 @@ class HandoverPreviewServiceTest {
 		assertThat(result.getDirectlyCopyable().getStakeholderCount()).isZero();
 		assertThat(result.getMappingRequired().getStatus().getSource()).isNull();
 		assertThat(result.getMappingRequired().getClassification().getSource()).isNull();
-		assertThat(result.getMappingRequired().getLabels()).isEmpty();
+		assertThat(result.getMappingRequired().getLabels().getCandidates()).isEmpty();
+		assertThat(result.getMappingRequired().getLabels().getMappings()).isEmpty();
 		assertThat(result.getMappingRequired().getContactReason().getSource()).isNull();
 		assertThat(result.getWarnings()).isEmpty();
 
