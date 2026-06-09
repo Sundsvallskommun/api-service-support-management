@@ -573,8 +573,8 @@ class HandoverPreviewMapperTest {
 
 	@Test
 	void toContactReasonMappingSuggestsDisplayNameMatchWhenReasonDiffers() {
-		// The source reason matches no target reason, but its display name matches a target display name case-insensitively;
-		// the target reason is returned
+		// The source reason matches no target reason, but its display name matches a target display name case-insensitively,
+		// hence the target reason is returned.
 		final var errand = ErrandEntity.create().withContactReason(
 			ContactReasonEntity.create().withReason("Felanmälan").withDisplayName("Fault report"));
 
