@@ -16,6 +16,7 @@ import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.errand.handover.HandoverErrand;
 import se.sundsvall.supportmanagement.api.model.errand.handover.HandoverErrandRequest;
 import se.sundsvall.supportmanagement.api.model.errand.handover.HandoverInclude;
+import se.sundsvall.supportmanagement.api.model.errand.handover.HandoverMapping;
 import se.sundsvall.supportmanagement.api.model.errand.handover.HandoverSourceAction;
 import se.sundsvall.supportmanagement.api.model.errand.handover.HandoverTarget;
 import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
@@ -180,12 +181,17 @@ public class HandoverService {
 			throw Problem.valueOf(BAD_REQUEST, "Required mapping 'labels' is missing (provide an empty list if the target namespace does not use labels)");
 		}
 
-		if (!isBlank(mapping.getContactReason()) && metadataService.isValidated(targetNamespace, targetMunicipalityId, EntityType.CONTACT_REASON)) {
-			final var validContactReason = metadataService.findContactReasons(targetNamespace, targetMunicipalityId, Sort.unsorted()).stream()
-				.anyMatch(cr -> cr.getReason().equalsIgnoreCase(mapping.getContactReason()));
-			if (!validContactReason) {
-				throw Problem.valueOf(BAD_REQUEST, "Contact reason '%s' does not exist in target namespace '%s'".formatted(mapping.getContactReason(), targetNamespace));
-			}
+		validateContactReasonMapping(targetNamespace, targetMunicipalityId, mapping);
+	}
+
+	private void validateContactReasonMapping(final String targetNamespace, final String targetMunicipalityId, final HandoverMapping mapping) {
+		if (isBlank(mapping.getContactReason()) || !metadataService.isValidated(targetNamespace, targetMunicipalityId, EntityType.CONTACT_REASON)) {
+			return;
+		}
+		final var validContactReason = metadataService.findContactReasons(targetNamespace, targetMunicipalityId, Sort.unsorted()).stream()
+			.anyMatch(cr -> cr.getReason().equalsIgnoreCase(mapping.getContactReason()));
+		if (!validContactReason) {
+			throw Problem.valueOf(BAD_REQUEST, "Contact reason '%s' does not exist in target namespace '%s'".formatted(mapping.getContactReason(), targetNamespace));
 		}
 	}
 
