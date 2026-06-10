@@ -73,7 +73,7 @@ class ErrandsUpdateResourceFailureTest {
 		return Errand.create()
 			.withAssignedGroupId("assignedGroupId")
 			.withAssignedUserId("assignedUserId")
-			.withStakeholders(List.of(Stakeholder.create().withExternalId("id").withExternalIdType("EMPLOYEE")))
+			.withStakeholders(List.of(Stakeholder.create().withExternalId("cb20c51f-fcf3-42c0-b613-de563634a8ec").withExternalIdType("EMPLOYEE")))
 			.withClassification(Classification.create().withCategory("CATEGORY_2").withType("type_1"))
 			.withCreated(OffsetDateTime.now())
 			.withExternalTags(List.of(ExternalTag.create().withKey("externalTagKey").withValue("externalTagValue")))

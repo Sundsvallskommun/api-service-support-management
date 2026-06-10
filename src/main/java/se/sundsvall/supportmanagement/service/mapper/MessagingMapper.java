@@ -308,7 +308,23 @@ public class MessagingMapper {
 			.findFirst()
 			.map(StakeholderEntity::getExternalId)
 			.filter(StringUtils::isNotBlank)
-			.map(UUID::fromString)
+			.map(MessagingMapper::toUuidOrNull)
 			.orElse(null);
+	}
+
+	/**
+	 * Parses the provided value into a UUID. Returns null instead of throwing if the value is not a valid UUID (e.g. an
+	 * organisationsnummer, personnummer or any other arbitrary string), so that a non-UUID externalId does not abort the
+	 * notification flow.
+	 *
+	 * @param  value the value to parse
+	 * @return       the parsed UUID, or null if the value is not a valid UUID
+	 */
+	static UUID toUuidOrNull(final String value) {
+		try {
+			return UUID.fromString(value);
+		} catch (final Exception e) {
+			return null;
+		}
 	}
 }
