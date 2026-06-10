@@ -16,6 +16,7 @@ import se.sundsvall.supportmanagement.integration.db.model.ParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.PhaseTransitionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderParameterEntity;
+import se.sundsvall.supportmanagement.integration.db.model.TimeMeasurementEntity;
 
 public class CircularReferenceExclusionStrategy implements ExclusionStrategy {
 
@@ -36,7 +37,8 @@ public class CircularReferenceExclusionStrategy implements ExclusionStrategy {
 		Map.entry(MetadataLabelEntity.class, Set.of("parent")),
 		Map.entry(NotificationEntity.class, Set.of(ERRAND_ENTITY)),
 		Map.entry(ErrandPhaseEntity.class, Set.of(ERRAND_ENTITY)),
-		Map.entry(PhaseTransitionEntity.class, Set.of(PHASE_ENTITY)));
+		Map.entry(PhaseTransitionEntity.class, Set.of(PHASE_ENTITY)),
+		Map.entry(TimeMeasurementEntity.class, Set.of(ERRAND_ENTITY)));
 
 	public static CircularReferenceExclusionStrategy create() {
 		return new CircularReferenceExclusionStrategy();

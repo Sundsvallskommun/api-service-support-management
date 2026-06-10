@@ -2,8 +2,12 @@ package se.sundsvall.supportmanagement.integration.db.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.OffsetDateTime;
 import java.util.Objects;
@@ -19,6 +23,10 @@ public class TimeMeasurementEntity {
 	@Id
 	@GeneratedValue(strategy = IDENTITY)
 	private Long id;
+
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "errand_id", nullable = false, foreignKey = @ForeignKey(name = "fk_errand_time_measure_errand_id"))
+	private ErrandEntity errandEntity;
 
 	@Column(name = "status")
 	private String status;
@@ -51,6 +59,19 @@ public class TimeMeasurementEntity {
 
 	public TimeMeasurementEntity withId(final Long id) {
 		this.id = id;
+		return this;
+	}
+
+	public ErrandEntity getErrandEntity() {
+		return errandEntity;
+	}
+
+	public void setErrandEntity(final ErrandEntity errandEntity) {
+		this.errandEntity = errandEntity;
+	}
+
+	public TimeMeasurementEntity withErrandEntity(final ErrandEntity errandEntity) {
+		this.errandEntity = errandEntity;
 		return this;
 	}
 
@@ -126,19 +147,20 @@ public class TimeMeasurementEntity {
 		if (o == null || getClass() != o.getClass())
 			return false;
 		final TimeMeasurementEntity that = (TimeMeasurementEntity) o;
-		return Objects.equals(id, that.id) && Objects.equals(status, that.status) && Objects.equals(startTime, that.startTime) && Objects.equals(stopTime, that.stopTime) && Objects.equals(description, that.description) && Objects.equals(administrator,
-			that.administrator);
+		return Objects.equals(id, that.id) && Objects.equals(errandEntity, that.errandEntity) && Objects.equals(status, that.status) && Objects.equals(startTime, that.startTime) && Objects.equals(stopTime, that.stopTime) && Objects.equals(description,
+			that.description) && Objects.equals(administrator, that.administrator);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, status, startTime, stopTime, description, administrator);
+		return Objects.hash(id, errandEntity, status, startTime, stopTime, description, administrator);
 	}
 
 	@Override
 	public String toString() {
 		return "TimeMeasurementEntity{" +
-			"administrator='" + administrator + '\'' +
+			"errandEntity=" + (errandEntity != null ? errandEntity.getId() : "null") +
+			", administrator='" + administrator + '\'' +
 			", description='" + description + '\'' +
 			", stopTime=" + stopTime +
 			", startTime=" + startTime +
