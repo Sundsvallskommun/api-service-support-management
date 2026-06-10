@@ -37,7 +37,8 @@ public class SendEmailAction extends AbstractAction {
 	private static final String BASE_URL = "baseUrl";
 	private static final String TRUE = "true";
 	private static final String FALSE = "false";
-	private static final String LINK_TO_ERRAND_FORMAT = "\n\nLänk till ärendet: %s/errands/%s";
+	private static final String LINK_TO_ERRAND_HTML_FORMAT = "<br><br><a href=\"%s/arende/%s\">Öppna ärendet direkt i Draken</a>";
+	private static final String AUTO_MESSAGE_DISCLAIMER = "<br><br><em>Detta är ett automatiskt meddelande. Svara inte på detta e-postmeddelande</em>";
 
 	private static final Set<String> BOOLEAN_VALUES = Set.of(TRUE, FALSE);
 	private static final Set<OperationType> VALID_OPERATION_TYPES = Set.of(OperationType.CREATE, OperationType.UPDATE);
@@ -142,20 +143,23 @@ public class SendEmailAction extends AbstractAction {
 
 		var recipient = parameterMap.get(RECIPIENT).getFirst();
 		var sender = parameterMap.get(SENDER).getFirst();
-		var subject = parameterMap.get(SUBJECT).getFirst();
-		var body = parameterMap.get(BODY).getFirst();
+		var subject = String.format(Optional.ofNullable(parameterMap.get(SUBJECT).getFirst()).orElse("").concat(" - %s"), errand.getErrandNumber());
 		var addLink = Boolean.parseBoolean(parameterMap.get(ADD_LINK_TO_ERRAND_IN_BODY).getFirst());
+
+		var htmlBody = parameterMap.get(BODY).getFirst();
 
 		if (addLink) {
 			var errandBaseUrl = parameterMap.get(BASE_URL).getFirst();
-			body += String.format(LINK_TO_ERRAND_FORMAT, errandBaseUrl, errand.getId());
+			htmlBody += String.format(LINK_TO_ERRAND_HTML_FORMAT, errandBaseUrl, errand.getErrandNumber());
 		}
+
+		htmlBody += AUTO_MESSAGE_DISCLAIMER;
 
 		var emailRequest = EmailRequest.create()
 			.withRecipient(recipient)
 			.withSender(sender)
 			.withSubject(subject)
-			.withMessage(body);
+			.withHtmlMessage(htmlBody);
 
 		communicationService.sendEmail(errand, emailRequest);
 		LOG.info("SEND_EMAIL action executed for errand '{}'", errand.getId());
