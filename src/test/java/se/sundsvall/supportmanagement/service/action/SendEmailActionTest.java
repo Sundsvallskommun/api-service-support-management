@@ -51,6 +51,7 @@ class SendEmailActionTest {
 	private static final String STATUS_OPEN = "OPEN";
 	private static final String STATUS_CLOSED = "CLOSED";
 	private static final String ERRAND_ID = "errand-id";
+	private static final String ERRAND_NUMBER = "errand-number";
 	private static final String RECIPIENT_ADDRESS = "recipient@test.com";
 	private static final String SENDER_ADDRESS = "sender@test.com";
 	private static final String EMAIL_SUBJECT = "Test subject";
@@ -153,7 +154,8 @@ class SendEmailActionTest {
 	void validateConditionsWithInvalidStatus() {
 		when(metadataService.findStatuses(NAMESPACE, MUNICIPALITY_ID, Sort.unsorted())).thenReturn(List.of(Status.create().withName(STATUS_OPEN)));
 
-		assertThatThrownBy(() -> sendEmailAction.validateConditions(MUNICIPALITY_ID, NAMESPACE, Map.of("status", List.of("INVALID_STATUS"))))
+		final var conditions = Map.of("status", List.of("INVALID_STATUS"));
+		assertThatThrownBy(() -> sendEmailAction.validateConditions(MUNICIPALITY_ID, NAMESPACE, conditions))
 			.isInstanceOf(ThrowableProblem.class)
 			.hasMessageContaining("Status 'INVALID_STATUS' is not valid for this namespace");
 	}
@@ -163,7 +165,8 @@ class SendEmailActionTest {
 		when(metadataService.findLabels(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Labels.create()
 			.withLabelStructure(List.of(Label.create().withId(LABEL_ID_1).withDisplayName("Label 1").withClassification("type").withResourceName("LABEL_1"))));
 
-		assertThatThrownBy(() -> sendEmailAction.validateConditions(MUNICIPALITY_ID, NAMESPACE, Map.of("hasLabel", List.of("invalid-label-id"))))
+		final var conditions = Map.of("hasLabel", List.of("invalid-label-id"));
+		assertThatThrownBy(() -> sendEmailAction.validateConditions(MUNICIPALITY_ID, NAMESPACE, conditions))
 			.isInstanceOf(ThrowableProblem.class)
 			.hasMessageContaining("Label ID 'invalid-label-id' is not valid");
 	}
@@ -267,7 +270,8 @@ class SendEmailActionTest {
 		var errand = ErrandEntity.create()
 			.withMunicipalityId(MUNICIPALITY_ID)
 			.withNamespace(NAMESPACE)
-			.withId(ERRAND_ID);
+			.withId(ERRAND_ID)
+			.withErrandNumber(ERRAND_NUMBER);
 
 		assertThat(sendEmailAction.actionFulfilled(errand, Map.of(
 			"recipient", List.of(RECIPIENT_ADDRESS),
@@ -391,7 +395,8 @@ class SendEmailActionTest {
 
 	@Test
 	void executeAction() {
-		var errand = ErrandEntity.create();
+		var errand = ErrandEntity.create()
+			.withErrandNumber(ERRAND_NUMBER);
 
 		var config = ActionConfigEntity.create();
 		config.setParameters(new ArrayList<>(List.of(
@@ -407,15 +412,17 @@ class SendEmailActionTest {
 		var capturedRequest = emailRequestCaptor.getValue();
 		assertThat(capturedRequest.getRecipient()).isEqualTo(RECIPIENT_ADDRESS);
 		assertThat(capturedRequest.getSender()).isEqualTo(SENDER_ADDRESS);
-		assertThat(capturedRequest.getSubject()).isEqualTo(EMAIL_SUBJECT);
-		assertThat(capturedRequest.getMessage()).isEqualTo(EMAIL_BODY);
-		assertThat(capturedRequest.getHtmlMessage()).isNull();
+		assertThat(capturedRequest.getSubject()).isEqualTo(EMAIL_SUBJECT + " - " + ERRAND_NUMBER);
+		assertThat(capturedRequest.getMessage()).isNull();
+		assertThat(capturedRequest.getHtmlMessage()).isEqualTo(EMAIL_BODY
+			+ "<br><br><em>Detta är ett automatiskt meddelande. Svara inte på detta e-postmeddelande</em>");
 	}
 
 	@Test
 	void executeActionWithAddLinkToErrandInBody() {
 		var errand = ErrandEntity.create()
 			.withId(ERRAND_ID)
+			.withErrandNumber(ERRAND_NUMBER)
 			.withMunicipalityId(MUNICIPALITY_ID)
 			.withNamespace(NAMESPACE)
 			.withStatus(STATUS_OPEN)
@@ -438,8 +445,10 @@ class SendEmailActionTest {
 		var capturedRequest = emailRequestCaptor.getValue();
 		assertThat(capturedRequest.getRecipient()).isEqualTo(RECIPIENT_ADDRESS);
 		assertThat(capturedRequest.getSender()).isEqualTo(SENDER_ADDRESS);
-		assertThat(capturedRequest.getSubject()).isEqualTo(EMAIL_SUBJECT);
-		assertThat(capturedRequest.getMessage()).isEqualTo(EMAIL_BODY + "\n\nLänk till ärendet: " + ERRAND_BASE_URL + "/errands/" + ERRAND_ID);
+		assertThat(capturedRequest.getSubject()).isEqualTo(EMAIL_SUBJECT + " - " + ERRAND_NUMBER);
+		assertThat(capturedRequest.getMessage()).isNull();
+		assertThat(capturedRequest.getHtmlMessage()).isEqualTo(EMAIL_BODY + "<br><br><a href=\"" + ERRAND_BASE_URL + "/arende/" + ERRAND_NUMBER + "\">Öppna ärendet direkt i Draken</a>"
+			+ "<br><br><em>Detta är ett automatiskt meddelande. Svara inte på detta e-postmeddelande</em>");
 	}
 
 	// validForOperationType tests
