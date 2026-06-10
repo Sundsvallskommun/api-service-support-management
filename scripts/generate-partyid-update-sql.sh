@@ -16,7 +16,8 @@
 #     # or via stdin:
 #     cat candidates.csv | ./generate-partyid-update-sql.sh > updates.sql
 #
-# CSV format (comma-separated, optional header, optional double-quotes around fields):
+# CSV format (comma- OR semicolon-separated - auto-detected; optional header, optional
+# double-quotes around fields):
 #     id, external_id, external_id_type, municipality_id
 #
 # Configuration
@@ -28,7 +29,7 @@
 #   TOKEN_URL             OAuth2 token endpoint (client_credentials)
 #   CLIENT_ID CLIENT_SECRET   OAuth2 client credentials for the party service
 #
-# Requirements: bash, curl, and jq (preferred) or python3 (for parsing the OAuth2 token).
+# Requirements: bash, curl, sed, tr (no jq/python needed - the OAuth2 token is parsed with bash).
 #
 # STDOUT = pure SQL (UPDATE statements + comment lines). All progress/diagnostics go to STDERR,
 # so you can safely redirect STDOUT to a .sql file.
@@ -81,14 +82,18 @@ prompt_for() {
 }
 require_cmd() { for c in "$@"; do command -v "$c" >/dev/null 2>&1 || die "Required command not found: $c"; done; }
 
+# Extract a string field's value from a (flat) JSON object using only bash.
+# Matches  "field" : "value"  allowing whitespace around the colon and any
+# backslash-escaped chars inside the value, then unescapes \" \/ \\ . This is
+# enough for an OAuth2 token response, which is a flat object of string fields.
 json_value() {
   local field="$1" json="$2"
-  if command -v jq >/dev/null 2>&1; then
-    printf '%s' "$json" | jq -r --arg f "$field" '.[$f] // empty'
-  elif command -v python3 >/dev/null 2>&1; then
-    printf '%s' "$json" | python3 -c "import sys,json; print(json.load(sys.stdin).get('$field',''))"
-  else
-    die "Need jq or python3 to parse the OAuth2 token response"
+  if [[ "$json" =~ \"$field\"[[:space:]]*:[[:space:]]*\"(([^\"\\]|\\.)*)\" ]]; then
+    local v="${BASH_REMATCH[1]}"
+    v="${v//\\\//\/}"      # \/ -> /
+    v="${v//\\\"/\"}"      # \" -> "
+    v="${v//\\\\/\\}"      # \\ -> \   (do last)
+    printf '%s' "$v"
   fi
 }
 
@@ -166,7 +171,18 @@ echo "-- Review carefully, then run in DBeaver (inside a transaction)."
 echo "-- Each UPDATE is guarded by the original external_id to avoid clobbering changed rows."
 echo
 
-while IFS=',' read -r id external_id external_id_type municipality_id _rest; do
+# Auto-detect the field delimiter from the first data line: DBeaver exports with
+# ';' under a Swedish locale but ',' elsewhere. Detected once, then reused.
+# "|| [[ -n "$line" ]]" makes the loop also process a final line lacking a newline.
+DELIM=""
+while IFS= read -r line || [[ -n "$line" ]]; do
+  line="${line%$'\r'}"
+  [[ -n "$line" ]] || continue
+  if [[ -z "$DELIM" ]]; then
+    if [[ "$line" == *";"* ]]; then DELIM=';'; else DELIM=','; fi
+    log "Using '$DELIM' as CSV delimiter."
+  fi
+  IFS="$DELIM" read -r id external_id external_id_type municipality_id _rest <<< "$line"
   id=$(clean_field "$id")
   external_id=$(clean_field "$external_id")
   external_id_type=$(clean_field "$external_id_type")
