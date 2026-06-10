@@ -5,12 +5,14 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Objects;
+import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 import se.sundsvall.supportmanagement.api.validation.ValidRole;
 
 @Schema(description = "Stakeholder model")
 public class Stakeholder {
 
-	@Schema(description = "Unique identifier for the stakeholder", examples = "cb20c51f-fcf3-42c0-b613-de563634a8ec")
+	@Schema(description = "Unique identifier (partyId) for the stakeholder. Must be null or a valid UUID.", examples = "cb20c51f-fcf3-42c0-b613-de563634a8ec")
+	@ValidUuid(nullable = true)
 	private String externalId;
 
 	@Schema(description = "Type of external id", examples = "PRIVATE")

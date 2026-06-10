@@ -17,7 +17,6 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.transaction.annotation.Propagation.REQUIRES_NEW;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_NOTIFICATION_TTL_IN_DAYS;
 import static se.sundsvall.supportmanagement.service.mapper.SubscriberNotificationMapper.toEntity;
-import static se.sundsvall.supportmanagement.service.mapper.SubscriberNotificationMapper.toModel;
 
 @Service
 public class SubscriberNotificationService {

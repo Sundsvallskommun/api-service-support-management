@@ -78,7 +78,7 @@ class ErrandsCreateResourceFailureTest {
 			.withCreated(null)
 			.withAssignedGroupId("assignedGroupId")
 			.withAssignedUserId("assignedUserId")
-			.withStakeholders(List.of(Stakeholder.create().withExternalId("id").withExternalIdType("EMPLOYEE").withRole("ROLE_1")))
+			.withStakeholders(List.of(Stakeholder.create().withExternalId("cb20c51f-fcf3-42c0-b613-de563634a8ec").withExternalIdType("EMPLOYEE").withRole("ROLE_1")))
 			.withClassification(Classification.create().withCategory("category_1").withType("TYPE_2"))
 			.withExternalTags(List.of(ExternalTag.create().withKey("externalTagKey").withValue("externalTagValue")))
 			.withPriority(Priority.HIGH)
@@ -516,6 +516,32 @@ class ErrandsCreateResourceFailureTest {
 		assertThat(response.getViolations())
 			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple("stakeholders[0].role", "value 'INVALID' doesn't match any of [ROLE_1]"));
+
+		// Verification
+		verify(metadataServiceMock, times(1)).isValidated(any(), any(), any());
+		verify(metadataServiceMock).findRoles(eq(NAMESPACE), eq(MUNICIPALITY_ID), any(Sort.class));
+		verifyNoInteractions(errandServiceMock);
+	}
+
+	@Test
+	void createErrandWithInvalidStakeholderExternalId() {
+		// Call
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(createErrandInstance().withId(null).withCreated(null).withModified(null).withStakeholders(List.of(Stakeholder.create().withExternalId("556002-1361"))))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactly(tuple("stakeholders[0].externalId", "not a valid UUID"));
 
 		// Verification
 		verify(metadataServiceMock, times(1)).isValidated(any(), any(), any());

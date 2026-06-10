@@ -411,4 +411,81 @@ class MessagingMapperTest {
 		assertThat(bean.getMessages().getFirst().getSender().getSms().getName()).isEqualTo(smsSender);
 
 	}
+
+	@Test
+	void findErrandOwnerPartyIdReturnsUuidForValidExternalId() {
+		final var partyId = randomUUID();
+		final var errandEntity = ErrandEntity.create()
+			.withStakeholders(List.of(StakeholderEntity.create()
+				.withRole("PRIMARY")
+				.withExternalIdType("PRIVATE")
+				.withExternalId(partyId.toString())));
+
+		assertThat(MessagingMapper.findErrandOwnerPartyId(errandEntity)).isEqualTo(partyId);
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"556002-1361",      // organisationsnummer
+		"199001011234",     // personnummer
+		"not-a-uuid",
+		""
+	})
+	void findErrandOwnerPartyIdReturnsNullForNonUuidExternalId(final String externalId) {
+		final var errandEntity = ErrandEntity.create()
+			.withStakeholders(List.of(StakeholderEntity.create()
+				.withRole("PRIMARY")
+				.withExternalIdType("COMPANY")
+				.withExternalId(externalId)));
+
+		// A non-UUID externalId must not abort the notification flow - it resolves to a null partyId instead of throwing
+		assertThat(MessagingMapper.findErrandOwnerPartyId(errandEntity)).isNull();
+	}
+
+	@Test
+	void findErrandOwnerPartyIdReturnsNullWhenNoStakeholders() {
+		assertThat(MessagingMapper.findErrandOwnerPartyId(ErrandEntity.create())).isNull();
+	}
+
+	@Test
+	void toMessagingMessageRequestDoesNotThrowForNonUuidExternalId() {
+		final var errandEntity = ErrandEntity.create()
+			.withId("123")
+			.withNamespace("namespace")
+			.withMunicipalityId("2281")
+			.withTitle("Title")
+			.withErrandNumber("KS-26060031")
+			.withStakeholders(List.of(StakeholderEntity.create()
+				.withRole("PRIMARY")
+				.withExternalIdType("COMPANY")
+				.withExternalId("556002-1361")));
+		final var messagingSettings = new MessagingSettings(null, null, null, null, "TestSender", "noreply@example.com", null);
+
+		final var request = MessagingMapper.toMessagingMessageRequest(errandEntity, messagingSettings);
+
+		assertThat(request.getMessages()).hasSize(1);
+		assertThat(request.getMessages().getFirst().getParty().getPartyId()).isNull();
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"556002-1361",
+		"not-a-uuid",
+		"   ",
+		""
+	})
+	void toUuidOrNullReturnsNullForInvalidValues(final String value) {
+		assertThat(MessagingMapper.toUuidOrNull(value)).isNull();
+	}
+
+	@Test
+	void toUuidOrNullReturnsNullForNull() {
+		assertThat(MessagingMapper.toUuidOrNull(null)).isNull();
+	}
+
+	@Test
+	void toUuidOrNullReturnsUuidForValidValue() {
+		final var uuid = randomUUID();
+		assertThat(MessagingMapper.toUuidOrNull(uuid.toString())).isEqualTo(uuid);
+	}
 }
