@@ -6,6 +6,7 @@ import java.util.Objects;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -42,13 +43,13 @@ public class EventService {
 
 	private final EventlogClient eventLogClient;
 	private final NotificationService notificationService;
-	private final SubscriptionService subscriptionService;
+	private final ApplicationEventPublisher eventPublisher;
 	private final NotificationDispatchRepository notificationDispatchRepository;
 
-	public EventService(final EventlogClient eventLogClient, final NotificationService notificationService, final SubscriptionService subscriptionService, final NotificationDispatchRepository notificationDispatchRepository) {
+	public EventService(final EventlogClient eventLogClient, final NotificationService notificationService, final ApplicationEventPublisher eventPublisher, final NotificationDispatchRepository notificationDispatchRepository) {
 		this.eventLogClient = eventLogClient;
 		this.notificationService = notificationService;
-		this.subscriptionService = subscriptionService;
+		this.eventPublisher = eventPublisher;
 		this.notificationDispatchRepository = notificationDispatchRepository;
 	}
 
@@ -62,7 +63,7 @@ public class EventService {
 		} catch (final Exception e) {
 			LOG.warn("Failed to create event log entry for errand {}: {}", sanitizeForLogging(errandEntity.getId()), sanitizeForLogging(e.getMessage()));
 		}
-		tryAutoSubscribeErrandAssignee(errandEntity);
+		eventPublisher.publishEvent(new AutoSubscribeEvent(errandEntity));
 
 		if (sendNotification) {
 			createNotification(errandEntity, event);
@@ -85,7 +86,7 @@ public class EventService {
 		} catch (final Exception e) {
 			LOG.warn("Failed to create event log entry for errand note {}: {}", sanitizeForLogging(logKey), sanitizeForLogging(e.getMessage()));
 		}
-		tryAutoSubscribeErrandAssignee(errandEntity);
+		eventPublisher.publishEvent(new AutoSubscribeEvent(errandEntity));
 		createNotification(errandEntity, event);
 		saveDispatchEntry(errandEntity, eventType, requestGroupId, eventId);
 	}
@@ -101,14 +102,6 @@ public class EventService {
 
 	private String extractId(final Revision currentRevision) {
 		return ofNullable(currentRevision).map(Revision::getId).orElse(null);
-	}
-
-	private void tryAutoSubscribeErrandAssignee(final ErrandEntity errandEntity) {
-		try {
-			subscriptionService.autoSubscribeErrandAssignee(errandEntity);
-		} catch (final Exception e) {
-			LOG.warn("Auto-subscribe failed for errand '{}' – continuing without subscription", errandEntity.getId(), e);
-		}
 	}
 
 	private void saveDispatchEntry(final ErrandEntity errandEntity, final EventType eventType, final String requestGroupId, final String eventId) {

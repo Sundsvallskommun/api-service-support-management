@@ -1,10 +1,14 @@
 package se.sundsvall.supportmanagement.service;
 
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.subscription.Subscription;
@@ -24,6 +28,8 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @Service
 public class SubscriptionService {
+
+	private static final Logger LOG = LoggerFactory.getLogger(SubscriptionService.class);
 
 	private static final String SUBSCRIPTION_NOT_FOUND = "Subscription with id:'%s' not found for subscriber with id:'%s' in namespace:'%s' for municipality with id:'%s'";
 	private static final String ERRAND_NOT_FOUND = "Errand with id:'%s' not found in namespace:'%s' for municipality with id:'%s'";
@@ -75,7 +81,17 @@ public class SubscriptionService {
 		subscriptionRepository.delete(entity);
 	}
 
+	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	public void handleAutoSubscribeEvent(final AutoSubscribeEvent event) {
+		try {
+			autoSubscribeErrandAssignee(event.errandEntity());
+		} catch (final Exception e) {
+			LOG.warn("Auto-subscribe failed for errand '{}' – continuing without subscription", event.errandEntity().getId(), e);
+		}
+	}
+
+	@Transactional
 	public void autoSubscribeErrandAssignee(final ErrandEntity errand) {
 		final var assignedUserId = errand.getAssignedUserId();
 		if (assignedUserId == null) {

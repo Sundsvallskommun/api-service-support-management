@@ -79,3 +79,4 @@ build/
 /docker/init.sql
 *.puml
 RELATIONS.md
+/agent.md

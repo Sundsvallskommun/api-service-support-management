@@ -14,6 +14,7 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import se.sundsvall.dept44.support.Identifier;
@@ -52,7 +53,7 @@ class EventServiceTest {
 	private EventlogClient eventLogClientMock;
 
 	@Mock
-	private SubscriptionService subscriptionServiceMock;
+	private ApplicationEventPublisher eventPublisherMock;
 
 	@Mock
 	private NotificationDispatchRepository notificationDispatchRepositoryMock;
@@ -133,7 +134,7 @@ class EventServiceTest {
 		assertThat(event.getSourceType()).isEqualTo(sourceType);
 		assertThat(event.getType()).isEqualTo(eventType);
 
-		verify(subscriptionServiceMock).autoSubscribeErrandAssignee(entity);
+		verify(eventPublisherMock).publishEvent(new AutoSubscribeEvent(entity));
 		verify(notificationServiceMock).createNotification(eq(entity.getMunicipalityId()), eq(entity.getNamespace()), eq(entity.getId()), notificationCaptor.capture());
 		final var notification = notificationCaptor.getValue();
 		assertThat(notification.getCreatedBy()).isEqualTo(executingUserId);
@@ -173,7 +174,7 @@ class EventServiceTest {
 		assertThat(event.getOwner()).isEqualTo(owner);
 		assertThat(event.getSourceType()).isEqualTo(sourceType);
 		assertThat(event.getType()).isEqualTo(eventType);
-		verify(subscriptionServiceMock).autoSubscribeErrandAssignee(entity);
+		verify(eventPublisherMock).publishEvent(new AutoSubscribeEvent(entity));
 	}
 
 	@Test
@@ -219,7 +220,7 @@ class EventServiceTest {
 		assertThat(event.getOwner()).isEqualTo(owner);
 		assertThat(event.getSourceType()).isEqualTo(sourceType);
 		assertThat(event.getType()).isEqualTo(eventType);
-		verify(subscriptionServiceMock).autoSubscribeErrandAssignee(entity);
+		verify(eventPublisherMock).publishEvent(new AutoSubscribeEvent(entity));
 	}
 
 	@Test
@@ -274,7 +275,7 @@ class EventServiceTest {
 		assertThat(event.getOwner()).isEqualTo(owner);
 		assertThat(event.getSourceType()).isEqualTo(sourceType);
 		assertThat(event.getType()).isEqualTo(eventType);
-		verify(subscriptionServiceMock).autoSubscribeErrandAssignee(errandEntity);
+		verify(eventPublisherMock).publishEvent(new AutoSubscribeEvent(errandEntity));
 	}
 
 	@Test
@@ -323,7 +324,7 @@ class EventServiceTest {
 		assertThat(event.getOwner()).isEqualTo(owner);
 		assertThat(event.getSourceType()).isEqualTo(sourceType);
 		assertThat(event.getType()).isEqualTo(eventType);
-		verify(subscriptionServiceMock).autoSubscribeErrandAssignee(errandEntity);
+		verify(eventPublisherMock).publishEvent(new AutoSubscribeEvent(errandEntity));
 	}
 
 	@Test
