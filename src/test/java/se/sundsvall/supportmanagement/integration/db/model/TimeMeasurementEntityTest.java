@@ -38,6 +38,7 @@ class TimeMeasurementEntityTest {
 
 		// Arrange
 		final var id = 1L;
+		final var errandEntity = ErrandEntity.create().withId("errandId");
 		final var startTime = now();
 		final var stopTime = now();
 		final var description = "description";
@@ -47,6 +48,7 @@ class TimeMeasurementEntityTest {
 		// Act
 		final var result = TimeMeasurementEntity.create()
 			.withId(id)
+			.withErrandEntity(errandEntity)
 			.withStartTime(startTime)
 			.withStopTime(stopTime)
 			.withDescription(description)
@@ -56,6 +58,7 @@ class TimeMeasurementEntityTest {
 		// Assert
 		assertThat(result).hasNoNullFieldsOrProperties();
 		assertThat(result.getId()).isEqualTo(id);
+		assertThat(result.getErrandEntity()).isEqualTo(errandEntity);
 		assertThat(result.getStartTime()).isEqualTo(startTime);
 		assertThat(result.getStopTime()).isEqualTo(stopTime);
 		assertThat(result.getDescription()).isEqualTo(description);
