@@ -63,7 +63,9 @@ public class EventService {
 		} catch (final Exception e) {
 			LOG.warn("Failed to create event log entry for errand {}: {}", sanitizeForLogging(errandEntity.getId()), sanitizeForLogging(e.getMessage()));
 		}
-		eventPublisher.publishEvent(new AutoSubscribeEvent(errandEntity));
+		if (eventType != EventType.DELETE) {
+			eventPublisher.publishEvent(new AutoSubscribeEvent(errandEntity));
+		}
 
 		if (sendNotification) {
 			createNotification(errandEntity, event);

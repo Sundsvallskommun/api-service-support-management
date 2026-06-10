@@ -81,7 +81,7 @@ public class SubscriptionService {
 		subscriptionRepository.delete(entity);
 	}
 
-	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	public void handleAutoSubscribeEvent(final AutoSubscribeEvent event) {
 		try {
