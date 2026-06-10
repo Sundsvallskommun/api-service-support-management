@@ -1,0 +1,17 @@
+{
+	"directlyCopyable": "${json-unit.ignore}",
+	"mappingRequired": {
+		"status": {
+			"source": {
+				"name": "STATUS-1",
+				"displayName": "Status 1"
+			},
+			"candidates": "${json-unit.ignore}"
+		},
+		"classification": "${json-unit.ignore}",
+		"labels": "${json-unit.ignore}",
+		"contactReason": "${json-unit.ignore}"
+	},
+	"notCopyable": "${json-unit.ignore}",
+	"warnings": "${json-unit.ignore}"
+}
