@@ -15,6 +15,9 @@ public class HandoverPreview {
 	@Schema(description = "Namespace-bound fields that require manual mapping")
 	private MappingRequired mappingRequired;
 
+	@Schema(description = "Options for handling the source errand after handover. Always present", requiredMode = REQUIRED)
+	private SourceHandling sourceHandling;
+
 	@Schema(description = "Fields that can not be copied to the target namespace. Always present, may be empty", requiredMode = REQUIRED)
 	private List<NotCopyable> notCopyable;
 
@@ -51,6 +54,19 @@ public class HandoverPreview {
 		return this;
 	}
 
+	public SourceHandling getSourceHandling() {
+		return sourceHandling;
+	}
+
+	public void setSourceHandling(final SourceHandling sourceHandling) {
+		this.sourceHandling = sourceHandling;
+	}
+
+	public HandoverPreview withSourceHandling(final SourceHandling sourceHandling) {
+		this.sourceHandling = sourceHandling;
+		return this;
+	}
+
 	public List<NotCopyable> getNotCopyable() {
 		return notCopyable;
 	}
@@ -79,7 +95,7 @@ public class HandoverPreview {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(directlyCopyable, mappingRequired, notCopyable, warnings);
+		return Objects.hash(directlyCopyable, mappingRequired, sourceHandling, notCopyable, warnings);
 	}
 
 	@Override
@@ -91,12 +107,13 @@ public class HandoverPreview {
 			return false;
 		}
 		return Objects.equals(directlyCopyable, other.directlyCopyable) && Objects.equals(mappingRequired, other.mappingRequired)
-			&& Objects.equals(notCopyable, other.notCopyable) && Objects.equals(warnings, other.warnings);
+			&& Objects.equals(sourceHandling, other.sourceHandling) && Objects.equals(notCopyable, other.notCopyable)
+			&& Objects.equals(warnings, other.warnings);
 	}
 
 	@Override
 	public String toString() {
 		return "HandoverPreview [directlyCopyable=" + directlyCopyable + ", mappingRequired=" + mappingRequired
-			+ ", notCopyable=" + notCopyable + ", warnings=" + warnings + "]";
+			+ ", sourceHandling=" + sourceHandling + ", notCopyable=" + notCopyable + ", warnings=" + warnings + "]";
 	}
 }
