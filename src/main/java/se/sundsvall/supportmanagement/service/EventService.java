@@ -6,6 +6,7 @@ import java.util.Objects;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -42,11 +43,13 @@ public class EventService {
 
 	private final EventlogClient eventLogClient;
 	private final NotificationService notificationService;
+	private final ApplicationEventPublisher eventPublisher;
 	private final NotificationDispatchRepository notificationDispatchRepository;
 
-	public EventService(final EventlogClient eventLogClient, final NotificationService notificationService, final NotificationDispatchRepository notificationDispatchRepository) {
+	public EventService(final EventlogClient eventLogClient, final NotificationService notificationService, final ApplicationEventPublisher eventPublisher, final NotificationDispatchRepository notificationDispatchRepository) {
 		this.eventLogClient = eventLogClient;
 		this.notificationService = notificationService;
+		this.eventPublisher = eventPublisher;
 		this.notificationDispatchRepository = notificationDispatchRepository;
 	}
 
@@ -59,6 +62,9 @@ public class EventService {
 			eventId = extractEventId(eventLogClient.createEvent(errandEntity.getMunicipalityId(), errandEntity.getId(), event));
 		} catch (final Exception e) {
 			LOG.warn("Failed to create event log entry for errand {}: {}", sanitizeForLogging(errandEntity.getId()), sanitizeForLogging(e.getMessage()));
+		}
+		if (eventType != EventType.DELETE) {
+			eventPublisher.publishEvent(new AutoSubscribeEvent(errandEntity));
 		}
 
 		if (sendNotification) {
@@ -82,6 +88,7 @@ public class EventService {
 		} catch (final Exception e) {
 			LOG.warn("Failed to create event log entry for errand note {}: {}", sanitizeForLogging(logKey), sanitizeForLogging(e.getMessage()));
 		}
+		eventPublisher.publishEvent(new AutoSubscribeEvent(errandEntity));
 		createNotification(errandEntity, event);
 		saveDispatchEntry(errandEntity, eventType, requestGroupId, eventId);
 	}

@@ -1,9 +1,14 @@
 package se.sundsvall.supportmanagement.service;
 
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.subscription.Subscription;
@@ -12,6 +17,7 @@ import se.sundsvall.supportmanagement.api.model.subscription.SubscriptionTargetT
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.SubscriptionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.subscriber.DbSubscriptionTargetType;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionEntity;
 import se.sundsvall.supportmanagement.service.mapper.IdentifierEmbeddableMapper;
 import se.sundsvall.supportmanagement.service.mapper.SubscriptionMapper;
@@ -22,6 +28,8 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @Service
 public class SubscriptionService {
+
+	private static final Logger LOG = LoggerFactory.getLogger(SubscriptionService.class);
 
 	private static final String SUBSCRIPTION_NOT_FOUND = "Subscription with id:'%s' not found for subscriber with id:'%s' in namespace:'%s' for municipality with id:'%s'";
 	private static final String ERRAND_NOT_FOUND = "Errand with id:'%s' not found in namespace:'%s' for municipality with id:'%s'";
@@ -71,6 +79,33 @@ public class SubscriptionService {
 	public void deleteSubscription(final String municipalityId, final String namespace, final String subscriberId, final String subscriptionId) {
 		final var entity = loadSubscriptionOrThrow(municipalityId, namespace, subscriberId, subscriptionId);
 		subscriptionRepository.delete(entity);
+	}
+
+	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	public void handleAutoSubscribeEvent(final AutoSubscribeEvent event) {
+		try {
+			autoSubscribeErrandAssignee(event.errandEntity());
+		} catch (final Exception e) {
+			LOG.warn("Auto-subscribe failed for errand '{}' – continuing without subscription", event.errandEntity().getId(), e);
+		}
+	}
+
+	@Transactional
+	public void autoSubscribeErrandAssignee(final ErrandEntity errand) {
+		final var assignedUserId = errand.getAssignedUserId();
+		if (assignedUserId == null) {
+			return;
+		}
+		final var subscriber = subscriberService.findOrCreateSubscriberForAssignee(
+			errand.getMunicipalityId(), errand.getNamespace(), assignedUserId);
+		if (!subscriptionRepository.existsBySubscriberIdAndTargetTypeAndErrandId(
+			subscriber.getId(), DbSubscriptionTargetType.ERRAND, errand.getId())) {
+			subscriptionRepository.save(SubscriptionEntity.create()
+				.withSubscriber(subscriber)
+				.withTargetType(DbSubscriptionTargetType.ERRAND)
+				.withErrand(errand));
+		}
 	}
 
 	private void validateTarget(final SubscriptionTarget target) {
