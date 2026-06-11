@@ -101,6 +101,10 @@ public class HandoverService {
 			return toHandoverErrand(existing.get());
 		}
 
+		if (HandoverSourceAction.SUSPEND.equals(Optional.ofNullable(request.getSourceHandling()).map(s -> s.getAction()).orElse(null))) {
+			throw Problem.valueOf(NOT_IMPLEMENTED, "SUSPEND source action is not yet supported");
+		}
+
 		final var source = accessControlService.getErrand(namespace, municipalityId, errandId, false);
 
 		namespaceConfigService.get(request.getTarget().getNamespace(), request.getTarget().getMunicipalityId());
@@ -280,8 +284,6 @@ public class HandoverService {
 			errandService.updateErrand(namespace, municipalityId, errandId, Errand.create()
 				.withStatus(request.getSourceHandling().getStatus())
 				.withResolution(request.getSourceHandling().getResolution()));
-		} else if (HandoverSourceAction.SUSPEND.equals(action)) {
-			throw Problem.valueOf(NOT_IMPLEMENTED, "SUSPEND source action is not yet supported");
 		}
 	}
 
