@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.api.model.handover;
 
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.Objects;
@@ -9,7 +10,8 @@ import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 @Schema(description = "Options for handling the source errand after handover")
 public class SourceHandling {
 
-	@Schema(description = "Selectable statuses in the source namespace, used when choosing how the source errand is handled after handover. Always present, may be empty", requiredMode = REQUIRED)
+	@ArraySchema(arraySchema = @Schema(description = "Selectable statuses in the source namespace, used when choosing how the source errand is handled after handover. Always present, may be empty", requiredMode = REQUIRED),
+		schema = @Schema(implementation = MetadataOption.class))
 	private List<MetadataOption> statusCandidates;
 
 	public static SourceHandling create() {
