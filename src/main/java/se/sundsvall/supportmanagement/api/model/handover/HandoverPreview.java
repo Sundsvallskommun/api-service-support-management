@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.api.model.handover;
 
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.Objects;
@@ -18,10 +19,12 @@ public class HandoverPreview {
 	@Schema(description = "Options for handling the source errand after handover. Always present", requiredMode = REQUIRED)
 	private SourceHandling sourceHandling;
 
-	@Schema(description = "Fields that can not be copied to the target namespace. Always present, may be empty", requiredMode = REQUIRED)
+	@ArraySchema(arraySchema = @Schema(description = "Fields that can not be copied to the target namespace. Always present, may be empty", requiredMode = REQUIRED),
+		schema = @Schema(implementation = NotCopyable.class))
 	private List<NotCopyable> notCopyable;
 
-	@Schema(description = "Warnings raised while building the preview. Always present, may be empty", requiredMode = REQUIRED)
+	@ArraySchema(arraySchema = @Schema(description = "Warnings raised while building the preview. Always present, may be empty", requiredMode = REQUIRED),
+		schema = @Schema(implementation = Warning.class))
 	private List<Warning> warnings;
 
 	public static HandoverPreview create() {
