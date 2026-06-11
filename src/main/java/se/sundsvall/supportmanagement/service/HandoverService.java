@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.service;
 import generated.se.sundsvall.relation.Relation;
 import generated.se.sundsvall.relation.ResourceIdentifier;
 import java.net.URI;
+import java.sql.Blob;
 import java.util.List;
 import java.util.Optional;
 import org.hibernate.Hibernate;
@@ -202,7 +203,9 @@ public class HandoverService {
 	}
 
 	private void copyAttachments(final ErrandEntity source, final ErrandEntity target, final String targetNamespace, final String targetMunicipalityId) {
-		final var sourceAttachments = Optional.ofNullable(source.getAttachments()).orElse(List.of());
+		final var freshSource = errandsRepository.findByIdAndNamespaceAndMunicipalityId(source.getId(), source.getNamespace(), source.getMunicipalityId())
+			.orElseThrow(() -> Problem.valueOf(INTERNAL_SERVER_ERROR, "Failed to re-fetch source errand '%s' for attachment copy".formatted(source.getId())));
+		final var sourceAttachments = Optional.ofNullable(freshSource.getAttachments()).orElse(List.of());
 		for (final var sourceAttachment : sourceAttachments) {
 			final var sourceData = sourceAttachment.getAttachmentData();
 			if (isNull(sourceData) || isNull(sourceData.getFile())) {
@@ -210,7 +213,10 @@ public class HandoverService {
 			}
 			try {
 				final var blob = sourceData.getFile();
-				final var newBlob = Hibernate.getLobHelper().createBlob(blob.getBinaryStream(), blob.length());
+				final Blob newBlob;
+				try (final var inputStream = blob.getBinaryStream()) {
+					newBlob = Hibernate.getLobHelper().createBlob(inputStream, blob.length());
+				}
 				final var newAttachment = AttachmentEntity.create()
 					.withErrandEntity(target)
 					.withNamespace(targetNamespace)
