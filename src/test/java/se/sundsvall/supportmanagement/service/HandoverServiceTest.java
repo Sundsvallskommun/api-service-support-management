@@ -73,6 +73,9 @@ class HandoverServiceTest {
 	private ErrandService errandServiceMock;
 
 	@Mock
+	private ErrandNoteService errandNoteServiceMock;
+
+	@Mock
 	private ErrandsRepository errandsRepositoryMock;
 
 	@Mock
@@ -203,7 +206,6 @@ class HandoverServiceTest {
 				.withClassification(Classification.create().withCategory(MAPPING_CATEGORY).withType(MAPPING_TYPE))
 				.withLabels(List.of()));
 		when(idempotencyRepositoryMock.findBySourceErrandIdAndTargetNamespaceAndTargetMunicipalityId(ERRAND_ID, TARGET_NAMESPACE, TARGET_MUNICIPALITY_ID)).thenReturn(Optional.empty());
-		when(accessControlServiceMock.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false)).thenReturn(sourceEntity());
 
 		assertThatException()
 			.isThrownBy(() -> service.handover(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, request))
@@ -223,7 +225,6 @@ class HandoverServiceTest {
 				.withClassification(Classification.create().withCategory(MAPPING_CATEGORY).withType(MAPPING_TYPE))
 				.withLabels(List.of()));
 		when(idempotencyRepositoryMock.findBySourceErrandIdAndTargetNamespaceAndTargetMunicipalityId(ERRAND_ID, TARGET_NAMESPACE, TARGET_MUNICIPALITY_ID)).thenReturn(Optional.empty());
-		when(accessControlServiceMock.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false)).thenReturn(sourceEntity());
 		when(metadataServiceMock.isValidated(TARGET_NAMESPACE, TARGET_MUNICIPALITY_ID, EntityType.STATUS)).thenReturn(true);
 		when(metadataServiceMock.findStatuses(eq(TARGET_NAMESPACE), eq(TARGET_MUNICIPALITY_ID), any())).thenReturn(List.of(Status.create().withName(MAPPING_STATUS)));
 
@@ -245,7 +246,6 @@ class HandoverServiceTest {
 				.withClassification(null)
 				.withLabels(List.of()));
 		when(idempotencyRepositoryMock.findBySourceErrandIdAndTargetNamespaceAndTargetMunicipalityId(ERRAND_ID, TARGET_NAMESPACE, TARGET_MUNICIPALITY_ID)).thenReturn(Optional.empty());
-		when(accessControlServiceMock.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false)).thenReturn(sourceEntity());
 		when(metadataServiceMock.isValidated(TARGET_NAMESPACE, TARGET_MUNICIPALITY_ID, EntityType.STATUS)).thenReturn(true);
 		when(metadataServiceMock.findStatuses(eq(TARGET_NAMESPACE), eq(TARGET_MUNICIPALITY_ID), any())).thenReturn(List.of(Status.create().withName(MAPPING_STATUS)));
 
@@ -267,7 +267,6 @@ class HandoverServiceTest {
 				.withClassification(Classification.create().withCategory("UNKNOWN_CAT").withType(MAPPING_TYPE))
 				.withLabels(List.of()));
 		when(idempotencyRepositoryMock.findBySourceErrandIdAndTargetNamespaceAndTargetMunicipalityId(ERRAND_ID, TARGET_NAMESPACE, TARGET_MUNICIPALITY_ID)).thenReturn(Optional.empty());
-		when(accessControlServiceMock.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false)).thenReturn(sourceEntity());
 		when(metadataServiceMock.isValidated(TARGET_NAMESPACE, TARGET_MUNICIPALITY_ID, EntityType.STATUS)).thenReturn(true);
 		when(metadataServiceMock.findStatuses(eq(TARGET_NAMESPACE), eq(TARGET_MUNICIPALITY_ID), any())).thenReturn(List.of(Status.create().withName(MAPPING_STATUS)));
 		when(metadataServiceMock.isValidated(TARGET_NAMESPACE, TARGET_MUNICIPALITY_ID, EntityType.CATEGORY)).thenReturn(true);
@@ -291,7 +290,6 @@ class HandoverServiceTest {
 				.withClassification(Classification.create().withCategory(MAPPING_CATEGORY).withType("UNKNOWN_TYPE"))
 				.withLabels(List.of()));
 		when(idempotencyRepositoryMock.findBySourceErrandIdAndTargetNamespaceAndTargetMunicipalityId(ERRAND_ID, TARGET_NAMESPACE, TARGET_MUNICIPALITY_ID)).thenReturn(Optional.empty());
-		when(accessControlServiceMock.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false)).thenReturn(sourceEntity());
 		when(metadataServiceMock.isValidated(TARGET_NAMESPACE, TARGET_MUNICIPALITY_ID, EntityType.STATUS)).thenReturn(true);
 		when(metadataServiceMock.findStatuses(eq(TARGET_NAMESPACE), eq(TARGET_MUNICIPALITY_ID), any())).thenReturn(List.of(Status.create().withName(MAPPING_STATUS)));
 		when(metadataServiceMock.isValidated(TARGET_NAMESPACE, TARGET_MUNICIPALITY_ID, EntityType.CATEGORY)).thenReturn(true);
@@ -317,7 +315,6 @@ class HandoverServiceTest {
 				.withClassification(Classification.create().withCategory(MAPPING_CATEGORY).withType(MAPPING_TYPE))
 				.withLabels(null));
 		when(idempotencyRepositoryMock.findBySourceErrandIdAndTargetNamespaceAndTargetMunicipalityId(ERRAND_ID, TARGET_NAMESPACE, TARGET_MUNICIPALITY_ID)).thenReturn(Optional.empty());
-		when(accessControlServiceMock.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false)).thenReturn(sourceEntity());
 		mockValidations();
 
 		assertThatException()
@@ -339,7 +336,6 @@ class HandoverServiceTest {
 				.withLabels(List.of())
 				.withContactReason("UNKNOWN_REASON"));
 		when(idempotencyRepositoryMock.findBySourceErrandIdAndTargetNamespaceAndTargetMunicipalityId(ERRAND_ID, TARGET_NAMESPACE, TARGET_MUNICIPALITY_ID)).thenReturn(Optional.empty());
-		when(accessControlServiceMock.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false)).thenReturn(sourceEntity());
 		mockValidations();
 		when(metadataServiceMock.isValidated(TARGET_NAMESPACE, TARGET_MUNICIPALITY_ID, EntityType.CONTACT_REASON)).thenReturn(true);
 		when(metadataServiceMock.findContactReasons(eq(TARGET_NAMESPACE), eq(TARGET_MUNICIPALITY_ID), any())).thenReturn(List.of(ContactReason.create().withReason("OTHER_REASON")));
@@ -354,19 +350,18 @@ class HandoverServiceTest {
 	}
 
 	@Test
-	void handoverRelationCreationFailureDoesNotAbortHandover() {
+	void handoverRelationCreationFailureAbortsHandover() {
 		when(idempotencyRepositoryMock.findBySourceErrandIdAndTargetNamespaceAndTargetMunicipalityId(ERRAND_ID, TARGET_NAMESPACE, TARGET_MUNICIPALITY_ID)).thenReturn(Optional.empty());
 		when(accessControlServiceMock.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false)).thenReturn(sourceEntity());
 		mockValidations();
 		when(errandServiceMock.createErrand(eq(TARGET_NAMESPACE), eq(TARGET_MUNICIPALITY_ID), any(), isNull())).thenReturn(NEW_ERRAND_ID);
 		when(errandsRepositoryMock.findById(NEW_ERRAND_ID)).thenReturn(Optional.of(targetEntity()));
 		when(relationClientMock.createRelation(eq(TARGET_MUNICIPALITY_ID), any())).thenThrow(new RuntimeException("relation service down"));
-		when(revisionServiceMock.getLatestErrandRevision(any())).thenReturn(Revision.create());
 
-		final var result = service.handover(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, minimalRequest());
-
-		assertThat(result.getNewErrandId()).isEqualTo(NEW_ERRAND_ID);
-		assertThat(result.getRelationId()).isNull();
+		assertThatException()
+			.isThrownBy(() -> service.handover(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, minimalRequest()))
+			.isInstanceOf(RuntimeException.class)
+			.withMessageContaining("relation service down");
 	}
 
 	@Test
@@ -384,6 +379,23 @@ class HandoverServiceTest {
 		verify(errandServiceMock).updateErrand(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), errandCaptor.capture());
 		assertThat(errandCaptor.getValue().getStatus()).isEqualTo("SOLVED");
 		assertThat(errandCaptor.getValue().getResolution()).isEqualTo("HANDED_OVER");
+	}
+
+	@Test
+	void handoverWithCloseSourceHandlingAndMissingStatusThrowsBadRequest() {
+		when(idempotencyRepositoryMock.findBySourceErrandIdAndTargetNamespaceAndTargetMunicipalityId(ERRAND_ID, TARGET_NAMESPACE, TARGET_MUNICIPALITY_ID)).thenReturn(Optional.empty());
+
+		final var request = minimalRequest()
+			.withSourceHandling(HandoverSourceHandling.create()
+				.withAction(HandoverSourceAction.CLOSE));
+
+		assertThatException()
+			.isThrownBy(() -> service.handover(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, request))
+			.asInstanceOf(InstanceOfAssertFactories.type(ThrowableProblem.class))
+			.satisfies(problem -> {
+				assertThat(problem.getStatus()).isEqualTo(BAD_REQUEST);
+				assertThat(problem.getMessage()).contains("status").contains("CLOSE");
+			});
 	}
 
 	@Test
@@ -445,6 +457,74 @@ class HandoverServiceTest {
 
 		assertThat(result.getNewErrandId()).isEqualTo(NEW_ERRAND_ID);
 		verify(attachmentRepositoryMock, never()).save(any());
+	}
+
+	@Test
+	void handoverSelfHandoverThrowsBadRequest() {
+		final var request = HandoverErrandRequest.create()
+			.withTarget(HandoverTarget.create().withNamespace(NAMESPACE).withMunicipalityId(MUNICIPALITY_ID))
+			.withMapping(HandoverMapping.create()
+				.withStatus(MAPPING_STATUS)
+				.withClassification(Classification.create().withCategory(MAPPING_CATEGORY).withType(MAPPING_TYPE))
+				.withLabels(List.of()));
+
+		assertThatException()
+			.isThrownBy(() -> service.handover(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, request))
+			.asInstanceOf(InstanceOfAssertFactories.type(ThrowableProblem.class))
+			.satisfies(problem -> {
+				assertThat(problem.getStatus()).isEqualTo(BAD_REQUEST);
+				assertThat(problem.getMessage()).contains("differ");
+			});
+	}
+
+	@Test
+	void handoverTargetNamespaceNotConfiguredThrowsBadRequest() {
+		when(idempotencyRepositoryMock.findBySourceErrandIdAndTargetNamespaceAndTargetMunicipalityId(ERRAND_ID, TARGET_NAMESPACE, TARGET_MUNICIPALITY_ID)).thenReturn(Optional.empty());
+		when(namespaceConfigServiceMock.get(TARGET_NAMESPACE, TARGET_MUNICIPALITY_ID)).thenThrow(new RuntimeException("not found"));
+
+		assertThatException()
+			.isThrownBy(() -> service.handover(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, minimalRequest()))
+			.asInstanceOf(InstanceOfAssertFactories.type(ThrowableProblem.class))
+			.satisfies(problem -> {
+				assertThat(problem.getStatus()).isEqualTo(BAD_REQUEST);
+				assertThat(problem.getMessage()).contains(TARGET_NAMESPACE).contains(TARGET_MUNICIPALITY_ID);
+			});
+	}
+
+	@Test
+	void handoverValidateMappingsLabelNotInTargetNamespace() {
+		final var request = HandoverErrandRequest.create()
+			.withTarget(HandoverTarget.create().withNamespace(TARGET_NAMESPACE).withMunicipalityId(TARGET_MUNICIPALITY_ID))
+			.withMapping(HandoverMapping.create()
+				.withStatus(MAPPING_STATUS)
+				.withClassification(Classification.create().withCategory(MAPPING_CATEGORY).withType(MAPPING_TYPE))
+				.withLabels(List.of("unknown-label-id")));
+		when(idempotencyRepositoryMock.findBySourceErrandIdAndTargetNamespaceAndTargetMunicipalityId(ERRAND_ID, TARGET_NAMESPACE, TARGET_MUNICIPALITY_ID)).thenReturn(Optional.empty());
+		mockValidations();
+		when(metadataServiceMock.hasLabels(TARGET_NAMESPACE, TARGET_MUNICIPALITY_ID)).thenReturn(true);
+		when(metadataServiceMock.labelExistsById("unknown-label-id", TARGET_NAMESPACE, TARGET_MUNICIPALITY_ID)).thenReturn(false);
+
+		assertThatException()
+			.isThrownBy(() -> service.handover(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, request))
+			.asInstanceOf(InstanceOfAssertFactories.type(ThrowableProblem.class))
+			.satisfies(problem -> {
+				assertThat(problem.getStatus()).isEqualTo(BAD_REQUEST);
+				assertThat(problem.getMessage()).contains("unknown-label-id").contains(TARGET_NAMESPACE);
+			});
+	}
+
+	@Test
+	void handoverWithCloseSourceHandlingAndClosingComment() {
+		mockGoldenPath();
+		final var request = minimalRequest()
+			.withSourceHandling(HandoverSourceHandling.create()
+				.withAction(HandoverSourceAction.CLOSE)
+				.withStatus("SOLVED")
+				.withClosingComment("Handed over to another namespace"));
+
+		service.handover(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, request);
+
+		verify(errandNoteServiceMock).createErrandNote(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), any());
 	}
 
 }

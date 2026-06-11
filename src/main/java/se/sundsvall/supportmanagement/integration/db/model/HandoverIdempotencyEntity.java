@@ -19,7 +19,7 @@ public class HandoverIdempotencyEntity {
 
 	@Id
 	@UuidGenerator
-	@Column(name = "id")
+	@Column(name = "id", length = 36)
 	private String id;
 
 	@Column(name = "source_errand_id", nullable = false, length = 36)

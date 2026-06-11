@@ -325,6 +325,14 @@ public class MetadataService {
 		return toLabels(metadataLabelRepository.findByNamespaceAndMunicipalityIdAndParentIsNull(namespace, municipalityId));
 	}
 
+	public boolean labelExistsById(final String id, final String namespace, final String municipalityId) {
+		return metadataLabelRepository.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+	}
+
+	public boolean hasLabels(final String namespace, final String municipalityId) {
+		return metadataLabelRepository.existsByNamespaceAndMunicipalityId(namespace, municipalityId);
+	}
+
 	public void deleteLabels(final String namespace, final String municipalityId) {
 		if (!metadataLabelRepository.existsByNamespaceAndMunicipalityId(namespace, municipalityId)) {
 			throw Problem.valueOf(NOT_FOUND, "Labels are not present in namespace '%s' for municipalityId '%s'".formatted(namespace, municipalityId));

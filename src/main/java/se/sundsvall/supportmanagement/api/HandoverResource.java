@@ -72,9 +72,7 @@ class HandoverResource {
 		return ok(previewService.previewHandover(namespace, municipalityId, errandId, request));
 	}
 
-	@PostMapping(path = "/execute", consumes = APPLICATION_JSON_VALUE, produces = {
-		APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE
-	})
+	@PostMapping(path = "/execute", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
 	@Operation(summary = "Execute errand handover",
 		description = "Hands over an errand to another namespace. Copies the errand with applied field mappings, optionally copies attachments, creates a HANDOVER relation, and optionally closes or suspends the source errand.",
 		responses = {

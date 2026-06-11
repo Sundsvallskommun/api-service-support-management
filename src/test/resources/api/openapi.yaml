@@ -3084,9 +3084,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HandoverErrand"
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/HandoverErrand"
         "400":
           description: Bad request
           content:
