@@ -28,6 +28,7 @@ import se.sundsvall.supportmanagement.api.model.handover.MappingRequired;
 import se.sundsvall.supportmanagement.api.model.handover.MatchReason;
 import se.sundsvall.supportmanagement.api.model.handover.MetadataOption;
 import se.sundsvall.supportmanagement.api.model.handover.NotCopyable;
+import se.sundsvall.supportmanagement.api.model.handover.SourceHandling;
 import se.sundsvall.supportmanagement.api.model.handover.StatusMapping;
 import se.sundsvall.supportmanagement.api.model.handover.Warning;
 import se.sundsvall.supportmanagement.api.model.handover.WarningType;
@@ -101,6 +102,8 @@ class HandoverResourceTest {
 					.withSource("Bygglov")
 					.withSuggested("Bygglov")
 					.withCandidates(List.of("Bygglov"))))
+			.withSourceHandling(SourceHandling.create()
+				.withStatusCandidates(List.of(MetadataOption.create().withName("SOLVED").withDisplayName("Löst"))))
 			.withNotCopyable(List.of(NotCopyable.create().withField("phases").withReason("Phase history is source-specific")))
 			.withWarnings(List.of(Warning.create().withType(WarningType.ROLE_NOT_IN_TARGET).withValue("EXTERNAL_REPORTER")));
 	}

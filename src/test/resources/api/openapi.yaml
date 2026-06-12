@@ -7,7 +7,7 @@ info:
     url: https://opensource.org/licenses/MIT
   version: "14.8"
 servers:
-- url: http://localhost:52915
+- url: http://localhost:57350
   description: Generated server url
 tags:
 - name: Errand attachments
@@ -7885,16 +7885,16 @@ components:
     Problem:
       type: object
       properties:
-        title:
-          type: string
-        detail:
-          type: string
         instance:
           type: string
           format: uri
         type:
           type: string
           format: uri
+        title:
+          type: string
+        detail:
+          type: string
         status:
           type: integer
           format: int32
@@ -7913,13 +7913,13 @@ components:
             $ref: "#/components/schemas/Violation"
         title:
           type: string
+        instance:
+          type: string
+          format: uri
         detail:
           type: string
         causeAsProblem:
           $ref: "#/components/schemas/ThrowableProblem"
-        instance:
-          type: string
-          format: uri
     ThrowableProblem:
       type: object
       properties:
@@ -9293,11 +9293,36 @@ components:
     JsonNode:
       type: object
       properties:
-        floatingPointNumber:
+        empty:
+          type: boolean
+        array:
+          type: boolean
+        "null":
+          type: boolean
+        object:
+          type: boolean
+        float:
           type: boolean
         container:
           type: boolean
-        number:
+        textual:
+          type: boolean
+          deprecated: true
+        boolean:
+          type: boolean
+        string:
+          type: boolean
+        pojo:
+          type: boolean
+        short:
+          type: boolean
+        int:
+          type: boolean
+        binary:
+          type: boolean
+        long:
+          type: boolean
+        double:
           type: boolean
         nodeType:
           type: string
@@ -9311,44 +9336,19 @@ components:
           - OBJECT
           - POJO
           - STRING
-        string:
+        floatingPointNumber:
+          type: boolean
+        valueNode:
+          type: boolean
+        bigDecimal:
           type: boolean
         integralNumber:
           type: boolean
         missingNode:
           type: boolean
-        valueNode:
-          type: boolean
-        pojo:
-          type: boolean
-        short:
-          type: boolean
-        int:
-          type: boolean
-        long:
-          type: boolean
-        double:
-          type: boolean
-        bigDecimal:
-          type: boolean
         bigInteger:
           type: boolean
-        textual:
-          type: boolean
-          deprecated: true
-        boolean:
-          type: boolean
-        binary:
-          type: boolean
-        empty:
-          type: boolean
-        array:
-          type: boolean
-        "null":
-          type: boolean
-        object:
-          type: boolean
-        float:
+        number:
           type: boolean
         embeddedValue:
           type: boolean
@@ -9930,6 +9930,10 @@ components:
         mappingRequired:
           $ref: "#/components/schemas/MappingRequired"
           description: Namespace-bound fields that require manual mapping
+        sourceHandling:
+          $ref: "#/components/schemas/SourceHandling"
+          description: Options for handling the source errand after handover. Always
+            present
         notCopyable:
           type: array
           description: "Fields that can not be copied to the target namespace. Always\
@@ -9944,6 +9948,7 @@ components:
             $ref: "#/components/schemas/Warning"
       required:
       - notCopyable
+      - sourceHandling
       - warnings
     LabelCandidate:
       type: object
@@ -9993,8 +9998,8 @@ components:
           description: "Reason the target was suggested, or null if there is no suggestion"
     LabelMappingGroup:
       type: object
-      description: "Label mapping section: the selectable target labels shared by every\
-        \ mapping, plus one mapping suggestion per source label"
+      description: "Label mapping section: the selectable target labels shared by\
+        \ every mapping, plus one mapping suggestion per source label"
       properties:
         candidates:
           type: array
@@ -10070,6 +10075,19 @@ components:
           description: Reason the field can not be copied
           examples:
           - Phase history is source-specific
+    SourceHandling:
+      type: object
+      description: Options for handling the source errand after handover
+      properties:
+        statusCandidates:
+          type: array
+          description: "Selectable statuses in the source namespace, used when choosing\
+            \ how the source errand is handled after handover. Always present, may\
+            \ be empty"
+          items:
+            $ref: "#/components/schemas/MetadataOption"
+      required:
+      - statusCandidates
     StatusMapping:
       type: object
       description: Mapping suggestion for the namespace-bound status field
@@ -10618,17 +10636,6 @@ components:
         totalPages:
           type: integer
           format: int32
-        numberOfElements:
-          type: integer
-          format: int32
-        first:
-          type: boolean
-        last:
-          type: boolean
-        sort:
-          $ref: "#/components/schemas/SortObject"
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
         size:
           type: integer
           format: int32
@@ -10639,13 +10646,29 @@ components:
         number:
           type: integer
           format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        numberOfElements:
+          type: integer
+          format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
         empty:
           type: boolean
     PageableObject:
       type: object
       properties:
+        offset:
+          type: integer
+          format: int64
         sort:
           $ref: "#/components/schemas/SortObject"
+        unpaged:
+          type: boolean
         paged:
           type: boolean
         pageNumber:
@@ -10654,19 +10677,14 @@ components:
         pageSize:
           type: integer
           format: int32
-        unpaged:
-          type: boolean
-        offset:
-          type: integer
-          format: int64
     SortObject:
       type: object
       properties:
+        empty:
+          type: boolean
         sorted:
           type: boolean
         unsorted:
-          type: boolean
-        empty:
           type: boolean
     Revision:
       type: object
@@ -10910,17 +10928,6 @@ components:
         totalPages:
           type: integer
           format: int32
-        numberOfElements:
-          type: integer
-          format: int32
-        first:
-          type: boolean
-        last:
-          type: boolean
-        sort:
-          $ref: "#/components/schemas/SortObject"
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
         size:
           type: integer
           format: int32
@@ -10931,6 +10938,17 @@ components:
         number:
           type: integer
           format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        numberOfElements:
+          type: integer
+          format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
         empty:
           type: boolean
     Communication:
@@ -11143,17 +11161,6 @@ components:
         totalPages:
           type: integer
           format: int32
-        numberOfElements:
-          type: integer
-          format: int32
-        first:
-          type: boolean
-        last:
-          type: boolean
-        sort:
-          $ref: "#/components/schemas/SortObject"
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
         size:
           type: integer
           format: int32
@@ -11164,6 +11171,17 @@ components:
         number:
           type: integer
           format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        numberOfElements:
+          type: integer
+          format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
         empty:
           type: boolean
     ReadBy:

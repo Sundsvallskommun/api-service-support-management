@@ -28,18 +28,21 @@ class HandoverPreviewTest {
 	void testCreatePattern() {
 		final var directlyCopyable = DirectlyCopyable.create().withTitle("title");
 		final var mappingRequired = MappingRequired.create().withStatus(StatusMapping.create().withSuggestedTarget("IN_PROGRESS"));
+		final var sourceHandling = SourceHandling.create().withStatusCandidates(List.of(MetadataOption.create().withName("SOLVED").withDisplayName("Löst")));
 		final var notCopyable = List.of(NotCopyable.create().withField("phases").withReason("Phase history is source-specific"));
 		final var warnings = List.of(Warning.create().withType(WarningType.ROLE_NOT_IN_TARGET).withValue("EXTERNAL_REPORTER"));
 
 		final var bean = HandoverPreview.create()
 			.withDirectlyCopyable(directlyCopyable)
 			.withMappingRequired(mappingRequired)
+			.withSourceHandling(sourceHandling)
 			.withNotCopyable(notCopyable)
 			.withWarnings(warnings);
 
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(bean.getDirectlyCopyable()).isEqualTo(directlyCopyable);
 		assertThat(bean.getMappingRequired()).isEqualTo(mappingRequired);
+		assertThat(bean.getSourceHandling()).isEqualTo(sourceHandling);
 		assertThat(bean.getNotCopyable()).isEqualTo(notCopyable);
 		assertThat(bean.getWarnings()).isEqualTo(warnings);
 	}
