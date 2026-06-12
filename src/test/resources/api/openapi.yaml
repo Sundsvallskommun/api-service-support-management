@@ -3084,9 +3084,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HandoverErrand"
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/HandoverErrand"
         "400":
           description: Bad request
           content:
@@ -9716,9 +9713,6 @@ components:
           type: string
           description: Channel to set on the new errand
           example: WEB_UI
-        activePhaseId:
-          type: string
-          description: Active phase id to set on the new errand
     HandoverOverrides:
       type: object
       description: Field values that override what is copied from the source errand
@@ -9997,14 +9991,26 @@ components:
         matchReason:
           $ref: "#/components/schemas/MatchReason"
           description: "Reason the target was suggested, or null if there is no suggestion"
+    LabelMappingGroup:
+      type: object
+      description: "Label mapping section: the selectable target labels shared by every\
+        \ mapping, plus one mapping suggestion per source label"
+      properties:
         candidates:
           type: array
-          description: "All selectable labels in the target namespace. Always present,\
-            \ may be empty"
+          description: "All selectable labels in the target namespace, shared by every\
+            \ mapping. Always present, may be empty"
           items:
             $ref: "#/components/schemas/LabelCandidate"
+        mappings:
+          type: array
+          description: "Mapping suggestions, one entry per source label. Always present,\
+            \ may be empty"
+          items:
+            $ref: "#/components/schemas/LabelMapping"
       required:
       - candidates
+      - mappings
     MappingRequired:
       type: object
       description: Namespace-bound fields that require a human to decide how they
@@ -10017,11 +10023,9 @@ components:
           $ref: "#/components/schemas/ClassificationMapping"
           description: Classification (category/type) mapping suggestion
         labels:
-          type: array
-          description: "Label mapping suggestions, one entry per source label. Always\
-            \ present, may be empty"
-          items:
-            $ref: "#/components/schemas/LabelMapping"
+          $ref: "#/components/schemas/LabelMappingGroup"
+          description: "Label mapping section: the selectable target labels plus one\
+            \ mapping suggestion per source label. Always present"
         contactReason:
           $ref: "#/components/schemas/ContactReasonMapping"
           description: Contact reason mapping suggestion

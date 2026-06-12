@@ -282,9 +282,9 @@
 
     create table handover_idempotency (
         target_municipality_id varchar(16) not null,
+        id varchar(36) not null,
         new_errand_id varchar(36),
         source_errand_id varchar(36) not null,
-        id varchar(255) not null,
         new_errand_number varchar(255),
         relation_id varchar(255),
         target_namespace varchar(255) not null,

@@ -30,7 +30,6 @@ public final class HandoverMapper {
 		errand.setLabels(toErrandLabels(mapping.getLabels()));
 		errand.setContactReason(mapping.getContactReason());
 		ofNullable(mapping.getChannel()).ifPresent(errand::setChannel);
-		errand.setActivePhaseId(mapping.getActivePhaseId());
 
 		errand.setAssignedUserId(nonNull(overrides) ? overrides.getAssignedUserId() : null);
 		errand.setAssignedGroupId(nonNull(overrides) ? overrides.getAssignedGroupId() : null);
@@ -84,7 +83,6 @@ public final class HandoverMapper {
 		ofNullable(mapping.getLabels()).ifPresent(v -> applied.put("labels", v.toString()));
 		ofNullable(mapping.getContactReason()).ifPresent(v -> applied.put("contactReason", v));
 		ofNullable(mapping.getChannel()).ifPresent(v -> applied.put("channel", v));
-		ofNullable(mapping.getActivePhaseId()).ifPresent(v -> applied.put("activePhaseId", v));
 		return applied;
 	}
 

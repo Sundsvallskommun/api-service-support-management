@@ -147,8 +147,7 @@ class HandoverMapperTest {
 			.withClassification(Classification.create().withCategory("SUPPORT_CASE").withType("OTHER_ISSUES"))
 			.withLabels(List.of("label-1"))
 			.withContactReason("Printer issue")
-			.withChannel("WEB_UI")
-			.withActivePhaseId("phase-abc");
+			.withChannel("WEB_UI");
 		final var request = HandoverErrandRequest.create().withMapping(mapping);
 
 		final var result = HandoverMapper.buildAppliedMappings(request);
@@ -158,14 +157,12 @@ class HandoverMapperTest {
 			.containsKey("classification.type")
 			.containsKey("labels")
 			.containsKey("contactReason")
-			.containsKey("channel")
-			.containsKey("activePhaseId");
+			.containsKey("channel");
 		assertThat(result.get("status")).isEqualTo("NEW_CASE");
 		assertThat(result.get("classification.category")).isEqualTo("SUPPORT_CASE");
 		assertThat(result.get("classification.type")).isEqualTo("OTHER_ISSUES");
 		assertThat(result.get("contactReason")).isEqualTo("Printer issue");
 		assertThat(result.get("channel")).isEqualTo("WEB_UI");
-		assertThat(result.get("activePhaseId")).isEqualTo("phase-abc");
 	}
 
 	@Test

@@ -1,10 +1,7 @@
 package se.sundsvall.supportmanagement.api.model.handover;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.util.List;
 import java.util.Objects;
-
-import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 
 @Schema(description = "Mapping suggestion for a single namespace-bound label")
 public class LabelMapping {
@@ -23,9 +20,6 @@ public class LabelMapping {
 
 	@Schema(description = "Reason the target was suggested, or null if there is no suggestion")
 	private MatchReason matchReason;
-
-	@Schema(description = "All selectable labels in the target namespace. Always present, may be empty", requiredMode = REQUIRED)
-	private List<LabelCandidate> candidates;
 
 	public static LabelMapping create() {
 		return new LabelMapping();
@@ -96,22 +90,9 @@ public class LabelMapping {
 		return this;
 	}
 
-	public List<LabelCandidate> getCandidates() {
-		return candidates;
-	}
-
-	public void setCandidates(final List<LabelCandidate> candidates) {
-		this.candidates = candidates;
-	}
-
-	public LabelMapping withCandidates(final List<LabelCandidate> candidates) {
-		this.candidates = candidates;
-		return this;
-	}
-
 	@Override
 	public int hashCode() {
-		return Objects.hash(sourceId, sourceDisplayName, sourceResourcePath, suggestedTargetId, matchReason, candidates);
+		return Objects.hash(sourceId, sourceDisplayName, sourceResourcePath, suggestedTargetId, matchReason);
 	}
 
 	@Override
@@ -124,12 +105,12 @@ public class LabelMapping {
 		}
 		return Objects.equals(sourceId, other.sourceId) && Objects.equals(sourceDisplayName, other.sourceDisplayName)
 			&& Objects.equals(sourceResourcePath, other.sourceResourcePath) && Objects.equals(suggestedTargetId, other.suggestedTargetId)
-			&& matchReason == other.matchReason && Objects.equals(candidates, other.candidates);
+			&& matchReason == other.matchReason;
 	}
 
 	@Override
 	public String toString() {
 		return "LabelMapping [sourceId=" + sourceId + ", sourceDisplayName=" + sourceDisplayName + ", sourceResourcePath=" + sourceResourcePath
-			+ ", suggestedTargetId=" + suggestedTargetId + ", matchReason=" + matchReason + ", candidates=" + candidates + "]";
+			+ ", suggestedTargetId=" + suggestedTargetId + ", matchReason=" + matchReason + "]";
 	}
 }

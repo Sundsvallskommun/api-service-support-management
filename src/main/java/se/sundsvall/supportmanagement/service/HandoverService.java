@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.service;
 import generated.se.sundsvall.relation.Relation;
 import generated.se.sundsvall.relation.ResourceIdentifier;
 import java.net.URI;
+import java.sql.Blob;
 import java.util.List;
 import java.util.Optional;
 import org.hibernate.Hibernate;
@@ -19,6 +20,7 @@ import se.sundsvall.supportmanagement.api.model.errand.handover.HandoverInclude;
 import se.sundsvall.supportmanagement.api.model.errand.handover.HandoverMapping;
 import se.sundsvall.supportmanagement.api.model.errand.handover.HandoverSourceAction;
 import se.sundsvall.supportmanagement.api.model.errand.handover.HandoverTarget;
+import se.sundsvall.supportmanagement.api.model.note.CreateErrandNoteRequest;
 import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.HandoverIdempotencyRepository;
@@ -31,6 +33,7 @@ import se.sundsvall.supportmanagement.integration.relation.RelationClient;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 import se.sundsvall.supportmanagement.service.mapper.HandoverMapper;
 
+import static generated.se.sundsvall.eventlog.EventType.CREATE;
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
 import static java.util.Objects.isNull;
 import static org.apache.commons.lang3.StringUtils.isBlank;
@@ -39,6 +42,7 @@ import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_IMPLEMENTED;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.HANDOVER_IN;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.HANDOVER_OUT;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getAdUser;
 
 @Service
 public class HandoverService {
@@ -54,6 +58,7 @@ public class HandoverService {
 	private final AccessControlService accessControlService;
 	private final NamespaceConfigService namespaceConfigService;
 	private final ErrandService errandService;
+	private final ErrandNoteService errandNoteService;
 	private final MetadataService metadataService;
 	private final ErrandsRepository errandsRepository;
 	private final AttachmentRepository attachmentRepository;
@@ -66,6 +71,7 @@ public class HandoverService {
 		final AccessControlService accessControlService,
 		final NamespaceConfigService namespaceConfigService,
 		final ErrandService errandService,
+		final ErrandNoteService errandNoteService,
 		final MetadataService metadataService,
 		final ErrandsRepository errandsRepository,
 		final AttachmentRepository attachmentRepository,
@@ -77,6 +83,7 @@ public class HandoverService {
 		this.accessControlService = accessControlService;
 		this.namespaceConfigService = namespaceConfigService;
 		this.errandService = errandService;
+		this.errandNoteService = errandNoteService;
 		this.metadataService = metadataService;
 		this.errandsRepository = errandsRepository;
 		this.attachmentRepository = attachmentRepository;
@@ -93,6 +100,10 @@ public class HandoverService {
 		final String errandId,
 		final HandoverErrandRequest request) {
 
+		if (namespace.equals(request.getTarget().getNamespace()) && municipalityId.equals(request.getTarget().getMunicipalityId())) {
+			throw Problem.valueOf(BAD_REQUEST, "Source and target namespace/municipalityId must differ");
+		}
+
 		final var existing = idempotencyRepository.findBySourceErrandIdAndTargetNamespaceAndTargetMunicipalityId(
 			errandId, request.getTarget().getNamespace(), request.getTarget().getMunicipalityId());
 		if (existing.isPresent()) {
@@ -100,11 +111,28 @@ public class HandoverService {
 			return toHandoverErrand(existing.get());
 		}
 
-		final var source = accessControlService.getErrand(namespace, municipalityId, errandId, false);
+		if (HandoverSourceAction.SUSPEND.equals(Optional.ofNullable(request.getSourceHandling()).map(s -> s.getAction()).orElse(null))) {
+			throw Problem.valueOf(NOT_IMPLEMENTED, "SUSPEND source action is not yet supported");
+		}
+		if (HandoverSourceAction.CLOSE.equals(Optional.ofNullable(request.getSourceHandling()).map(s -> s.getAction()).orElse(null))
+			&& isBlank(Optional.ofNullable(request.getSourceHandling()).map(s -> s.getStatus()).orElse(null))) {
+			throw Problem.valueOf(BAD_REQUEST, "status is required when sourceHandling action is CLOSE");
+		}
 
-		namespaceConfigService.get(request.getTarget().getNamespace(), request.getTarget().getMunicipalityId());
+		try {
+			namespaceConfigService.get(request.getTarget().getNamespace(), request.getTarget().getMunicipalityId());
+		} catch (final Exception e) {
+			throw Problem.valueOf(BAD_REQUEST, "Target namespace '%s' with municipalityId '%s' has no configuration".formatted(request.getTarget().getNamespace(), request.getTarget().getMunicipalityId()));
+		}
 
 		validateMappings(request.getTarget().getNamespace(), request.getTarget().getMunicipalityId(), request);
+
+		final var idempotencyEntity = idempotencyRepository.save(HandoverIdempotencyEntity.create()
+			.withSourceErrandId(errandId)
+			.withTargetNamespace(request.getTarget().getNamespace())
+			.withTargetMunicipalityId(request.getTarget().getMunicipalityId()));
+
+		final var source = accessControlService.getErrand(namespace, municipalityId, errandId, false);
 
 		final var targetErrand = HandoverMapper.buildTargetErrand(source, request);
 
@@ -136,7 +164,7 @@ public class HandoverService {
 			.withAppliedMappings(appliedMappings)
 			.withWarnings(warnings);
 
-		saveIdempotencyRecord(errandId, response);
+		updateIdempotencyRecord(idempotencyEntity, response);
 
 		handleSourceErrand(namespace, municipalityId, errandId, request);
 
@@ -180,6 +208,14 @@ public class HandoverService {
 		if (isNull(mapping.getLabels())) {
 			throw Problem.valueOf(BAD_REQUEST, "Required mapping 'labels' is missing (provide an empty list if the target namespace does not use labels)");
 		}
+		if (metadataService.hasLabels(targetNamespace, targetMunicipalityId)) {
+			mapping.getLabels().stream()
+				.filter(id -> !metadataService.labelExistsById(id, targetNamespace, targetMunicipalityId))
+				.findFirst()
+				.ifPresent(id -> {
+					throw Problem.valueOf(BAD_REQUEST, "Label '%s' does not exist in target namespace '%s'".formatted(id, targetNamespace));
+				});
+		}
 
 		validateContactReasonMapping(targetNamespace, targetMunicipalityId, mapping);
 	}
@@ -202,7 +238,9 @@ public class HandoverService {
 	}
 
 	private void copyAttachments(final ErrandEntity source, final ErrandEntity target, final String targetNamespace, final String targetMunicipalityId) {
-		final var sourceAttachments = Optional.ofNullable(source.getAttachments()).orElse(List.of());
+		final var freshSource = errandsRepository.findByIdAndNamespaceAndMunicipalityId(source.getId(), source.getNamespace(), source.getMunicipalityId())
+			.orElseThrow(() -> Problem.valueOf(INTERNAL_SERVER_ERROR, "Failed to re-fetch source errand '%s' for attachment copy".formatted(source.getId())));
+		final var sourceAttachments = Optional.ofNullable(freshSource.getAttachments()).orElse(List.of());
 		for (final var sourceAttachment : sourceAttachments) {
 			final var sourceData = sourceAttachment.getAttachmentData();
 			if (isNull(sourceData) || isNull(sourceData.getFile())) {
@@ -210,7 +248,10 @@ public class HandoverService {
 			}
 			try {
 				final var blob = sourceData.getFile();
-				final var newBlob = Hibernate.getLobHelper().createBlob(blob.getBinaryStream(), blob.length());
+				final Blob newBlob;
+				try (final var inputStream = blob.getBinaryStream()) {
+					newBlob = Hibernate.getLobHelper().createBlob(inputStream, blob.length());
+				}
 				final var newAttachment = AttachmentEntity.create()
 					.withErrandEntity(target)
 					.withNamespace(targetNamespace)
@@ -248,16 +289,11 @@ public class HandoverService {
 				.type(RELATION_RESOURCE_TYPE)
 				.service(RELATION_SERVICE)
 				.namespace(targetNamespace));
-		try {
-			final var response = relationClient.createRelation(targetMunicipalityId, relation);
-			return Optional.ofNullable(response.getHeaders().getLocation())
-				.map(URI::getPath)
-				.map(path -> path.substring(path.lastIndexOf('/') + 1))
-				.orElse(null);
-		} catch (final Exception e) {
-			LOG.warn("Failed to create HANDOVER relation between source '{}' and target '{}': {}", source.getId(), newErrandId, e.getMessage());
-			return null;
-		}
+		final var response = relationClient.createRelation(targetMunicipalityId, relation);
+		return Optional.ofNullable(response.getHeaders().getLocation())
+			.map(URI::getPath)
+			.map(path -> path.substring(path.lastIndexOf('/') + 1))
+			.orElse(null);
 	}
 
 	private void handleSourceErrand(
@@ -274,8 +310,14 @@ public class HandoverService {
 			errandService.updateErrand(namespace, municipalityId, errandId, Errand.create()
 				.withStatus(request.getSourceHandling().getStatus())
 				.withResolution(request.getSourceHandling().getResolution()));
-		} else if (HandoverSourceAction.SUSPEND.equals(action)) {
-			throw Problem.valueOf(NOT_IMPLEMENTED, "SUSPEND source action is not yet supported");
+			if (!isBlank(request.getSourceHandling().getClosingComment())) {
+				errandNoteService.createErrandNote(namespace, municipalityId, errandId, CreateErrandNoteRequest.create()
+					.withContext("SUPPORT")
+					.withRole("SYSTEM")
+					.withCreatedBy(getAdUser())
+					.withSubject("Handover closing comment")
+					.withBody(request.getSourceHandling().getClosingComment()));
+			}
 		}
 	}
 
@@ -288,21 +330,18 @@ public class HandoverService {
 		}
 		try {
 			final var targetRevision = revisionService.getLatestErrandRevision(target);
-			eventService.createErrandEvent(UPDATE, EVENT_HANDOVER_IN, target, targetRevision, null, false, HANDOVER_IN);
+			eventService.createErrandEvent(CREATE, EVENT_HANDOVER_IN, target, targetRevision, null, false, HANDOVER_IN);
 		} catch (final Exception e) {
 			LOG.warn("Failed to log HANDOVER_IN event for errand '{}': {}", target.getId(), e.getMessage());
 		}
 	}
 
-	private void saveIdempotencyRecord(final String sourceErrandId, final HandoverErrand response) {
-		idempotencyRepository.save(HandoverIdempotencyEntity.create()
-			.withSourceErrandId(sourceErrandId)
-			.withNewErrandId(response.getNewErrandId())
-			.withNewErrandNumber(response.getNewErrandNumber())
-			.withTargetNamespace(response.getTarget() != null ? response.getTarget().getNamespace() : null)
-			.withTargetMunicipalityId(response.getTarget() != null ? response.getTarget().getMunicipalityId() : null)
-			.withRelationId(response.getRelationId())
-			.withWarnings(HandoverMapper.encodeWarnings(response.getWarnings())));
+	private void updateIdempotencyRecord(final HandoverIdempotencyEntity entity, final HandoverErrand response) {
+		entity.setNewErrandId(response.getNewErrandId());
+		entity.setNewErrandNumber(response.getNewErrandNumber());
+		entity.setRelationId(response.getRelationId());
+		entity.setWarnings(HandoverMapper.encodeWarnings(response.getWarnings()));
+		idempotencyRepository.save(entity);
 	}
 
 	private HandoverErrand toHandoverErrand(final HandoverIdempotencyEntity entity) {
