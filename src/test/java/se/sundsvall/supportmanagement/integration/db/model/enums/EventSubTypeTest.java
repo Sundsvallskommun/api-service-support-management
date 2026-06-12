@@ -6,6 +6,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ATTACHMENT;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.DECISION;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.HANDOVER_IN;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.HANDOVER_OUT;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.NOTE;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.SUSPENSION;
@@ -16,7 +18,7 @@ class EventSubTypeTest {
 
 	@Test
 	void enums() {
-		assertThat(values()).containsExactlyInAnyOrder(ATTACHMENT, DECISION, ERRAND, MESSAGE, NOTE, SYSTEM, SUSPENSION);
+		assertThat(values()).containsExactlyInAnyOrder(ATTACHMENT, DECISION, ERRAND, HANDOVER_IN, HANDOVER_OUT, MESSAGE, NOTE, SYSTEM, SUSPENSION);
 	}
 
 	@Test

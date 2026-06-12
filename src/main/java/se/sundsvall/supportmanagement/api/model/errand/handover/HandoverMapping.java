@@ -25,9 +25,6 @@ public class HandoverMapping {
 	@Schema(description = "Channel to set on the new errand", example = "WEB_UI")
 	private String channel;
 
-	@Schema(description = "Active phase id to set on the new errand")
-	private String activePhaseId;
-
 	public static HandoverMapping create() {
 		return new HandoverMapping();
 	}
@@ -97,19 +94,6 @@ public class HandoverMapping {
 		return this;
 	}
 
-	public String getActivePhaseId() {
-		return activePhaseId;
-	}
-
-	public void setActivePhaseId(final String activePhaseId) {
-		this.activePhaseId = activePhaseId;
-	}
-
-	public HandoverMapping withActivePhaseId(final String activePhaseId) {
-		this.activePhaseId = activePhaseId;
-		return this;
-	}
-
 	@Override
 	public boolean equals(final Object o) {
 		if (this == o)
@@ -119,17 +103,17 @@ public class HandoverMapping {
 		final HandoverMapping that = (HandoverMapping) o;
 		return Objects.equals(status, that.status) && Objects.equals(classification, that.classification)
 			&& Objects.equals(labels, that.labels) && Objects.equals(contactReason, that.contactReason)
-			&& Objects.equals(channel, that.channel) && Objects.equals(activePhaseId, that.activePhaseId);
+			&& Objects.equals(channel, that.channel);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(status, classification, labels, contactReason, channel, activePhaseId);
+		return Objects.hash(status, classification, labels, contactReason, channel);
 	}
 
 	@Override
 	public String toString() {
 		return "HandoverMapping{status='" + status + "', classification=" + classification + ", labels=" + labels
-			+ ", contactReason='" + contactReason + "', channel='" + channel + "', activePhaseId='" + activePhaseId + "'}";
+			+ ", contactReason='" + contactReason + "', channel='" + channel + "'}";
 	}
 }

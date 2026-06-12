@@ -29,7 +29,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
 @ActiveProfiles("junit")
 class ErrandsHandoverResourceFailureTest {
 
-	private static final String PATH = "/{municipalityId}/{namespace}/errands/{errandId}/handover";
+	private static final String PATH = "/{municipalityId}/{namespace}/errands/{errandId}/handover/execute";
 	private static final String NAMESPACE = "namespace";
 	private static final String MUNICIPALITY_ID = "2281";
 	private static final String ERRAND_ID = UUID.randomUUID().toString();
@@ -64,7 +64,7 @@ class ErrandsHandoverResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
 			.extracting(Violation::field, Violation::message)
-			.containsExactly(tuple("handoverErrand.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
+			.containsExactly(tuple("executeHandover.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
 
 		verifyNoInteractions(errandServiceMock);
 	}
@@ -86,7 +86,7 @@ class ErrandsHandoverResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
 			.extracting(Violation::field, Violation::message)
-			.containsExactly(tuple("handoverErrand.municipalityId", "not a valid municipality ID"));
+			.containsExactly(tuple("executeHandover.municipalityId", "not a valid municipality ID"));
 
 		verifyNoInteractions(errandServiceMock);
 	}
@@ -108,7 +108,7 @@ class ErrandsHandoverResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
 			.extracting(Violation::field, Violation::message)
-			.containsExactly(tuple("handoverErrand.errandId", "not a valid UUID"));
+			.containsExactly(tuple("executeHandover.errandId", "not a valid UUID"));
 
 		verifyNoInteractions(errandServiceMock);
 	}
