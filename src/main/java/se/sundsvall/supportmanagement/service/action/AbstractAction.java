@@ -9,6 +9,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Sort;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.ThrowableProblem;
@@ -27,6 +29,8 @@ import se.sundsvall.supportmanagement.service.MetadataService;
 import static org.springframework.http.HttpStatus.UNPROCESSABLE_CONTENT;
 
 public abstract class AbstractAction implements Action {
+
+	private static final Logger LOG = LoggerFactory.getLogger(AbstractAction.class);
 
 	protected static final String STATUS = "status";
 	protected static final String HAS_LABEL = "hasLabel";
@@ -147,17 +151,29 @@ public abstract class AbstractAction implements Action {
 		}
 	}
 
+	@Override
+	public boolean conditionsFulfilled(ErrandEntity errand, ActionConfigEntity actionConfigEntity) {
+		return evaluateConditions(errand, toConditionMap(actionConfigEntity));
+	}
+
 	protected boolean evaluateConditions(ErrandEntity errand, Map<String, List<String>> conditions) {
+		LOG.debug("Evaluating conditions for errand '{}': errand status='{}', conditions={}", errand.getId(), errand.getStatus(), conditions);
+
 		boolean fulfillsConditions = true;
 
 		if (conditions.containsKey(STATUS)) {
-			fulfillsConditions &= conditions.get(STATUS).contains(errand.getStatus());
+			final var statusMatch = conditions.get(STATUS).contains(errand.getStatus());
+			LOG.debug("Status condition check: errand status='{}', allowed statuses={}, match={}", errand.getStatus(), conditions.get(STATUS), statusMatch);
+			fulfillsConditions &= statusMatch;
 		}
 
 		if (conditions.containsKey(HAS_LABEL)) {
-			fulfillsConditions &= getErrandLabelIds(errand).containsAll(conditions.get(HAS_LABEL));
+			final var labelMatch = getErrandLabelIds(errand).containsAll(conditions.get(HAS_LABEL));
+			LOG.debug("Label condition check: errand labels={}, required labels={}, match={}", getErrandLabelIds(errand), conditions.get(HAS_LABEL), labelMatch);
+			fulfillsConditions &= labelMatch;
 		}
 
+		LOG.debug("Conditions evaluation result for errand '{}': {}", errand.getId(), fulfillsConditions);
 		return fulfillsConditions;
 	}
 
