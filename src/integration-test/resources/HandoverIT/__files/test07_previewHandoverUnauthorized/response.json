@@ -1,0 +1,5 @@
+{
+	"title": "Unauthorized",
+	"status": 401,
+	"detail": "Errand not accessible by user 'joe01doe'"
+}

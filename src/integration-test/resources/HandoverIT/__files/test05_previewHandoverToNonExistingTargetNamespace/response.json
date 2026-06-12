@@ -1,0 +1,5 @@
+{
+	"title": "Bad Request",
+	"status": 400,
+	"detail": "Target namespace 'NON-EXISTING-NAMESPACE' for municipality '2281' does not exist"
+}
