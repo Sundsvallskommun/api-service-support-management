@@ -1,15 +1,21 @@
 package se.sundsvall.supportmanagement.service;
 
+import java.io.InputStream;
 import java.net.URI;
+import java.sql.Blob;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.assertj.core.api.InstanceOfAssertFactories;
+import org.hibernate.Hibernate;
+import org.hibernate.LobHelper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
 import se.sundsvall.dept44.problem.ThrowableProblem;
@@ -43,12 +49,15 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 
 @ExtendWith(MockitoExtension.class)
 class HandoverServiceTest {
@@ -468,6 +477,118 @@ class HandoverServiceTest {
 		final var result = service.handover(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, request);
 
 		assertThat(result.getNewErrandId()).isEqualTo(NEW_ERRAND_ID);
+		verify(attachmentRepositoryMock, never()).save(any());
+	}
+
+	@Test
+	void handoverWithIncludeAttachmentsCopiesAttachmentData() throws Exception {
+		final var blobMock = mock(Blob.class);
+		final var inputStreamMock = mock(InputStream.class);
+		when(blobMock.getBinaryStream()).thenReturn(inputStreamMock);
+		when(blobMock.length()).thenReturn(1024L);
+
+		final var sourceAttachment = AttachmentEntity.create()
+			.withFileName("document.pdf")
+			.withMimeType("application/pdf")
+			.withChannel("EMAIL")
+			.withFileSize(1024)
+			.withAttachmentData(AttachmentDataEntity.create().withFile(blobMock));
+		final var freshSource = sourceEntity().withAttachments(new ArrayList<>(List.of(sourceAttachment)));
+		final var target = targetEntity();
+
+		final var newBlobMock = mock(Blob.class);
+		final var lobHelperMock = mock(LobHelper.class);
+		when(lobHelperMock.createBlob(eq(inputStreamMock), eq(1024L))).thenReturn(newBlobMock);
+
+		try (final MockedStatic<Hibernate> hibernateStatic = mockStatic(Hibernate.class)) {
+			hibernateStatic.when(Hibernate::getLobHelper).thenReturn(lobHelperMock);
+
+			when(idempotencyRepositoryMock.findBySourceErrandIdAndTargetNamespaceAndTargetMunicipalityId(ERRAND_ID, TARGET_NAMESPACE, TARGET_MUNICIPALITY_ID)).thenReturn(Optional.empty());
+			when(idempotencyRepositoryMock.save(any(HandoverIdempotencyEntity.class))).thenAnswer(inv -> inv.getArgument(0));
+			when(accessControlServiceMock.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false)).thenReturn(sourceEntity());
+			when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(freshSource));
+			mockValidations();
+			when(errandServiceMock.createErrand(eq(TARGET_NAMESPACE), eq(TARGET_MUNICIPALITY_ID), any(), isNull())).thenReturn(NEW_ERRAND_ID);
+			when(errandsRepositoryMock.findById(NEW_ERRAND_ID)).thenReturn(Optional.of(target));
+			when(relationClientMock.createRelation(eq(TARGET_MUNICIPALITY_ID), any()))
+				.thenReturn(ResponseEntity.created(URI.create("/2282/relations/" + RELATION_ID)).build());
+			when(revisionServiceMock.getLatestErrandRevision(any())).thenReturn(Revision.create());
+
+			service.handover(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, minimalRequest().withInclude(HandoverInclude.create().withAttachments(true)));
+
+			final var captor = ArgumentCaptor.forClass(AttachmentEntity.class);
+			verify(attachmentRepositoryMock).save(captor.capture());
+			assertThat(captor.getValue().getFileName()).isEqualTo("document.pdf");
+			assertThat(captor.getValue().getMimeType()).isEqualTo("application/pdf");
+			assertThat(captor.getValue().getChannel()).isEqualTo("EMAIL");
+			assertThat(captor.getValue().getFileSize()).isEqualTo(1024);
+			assertThat(captor.getValue().getNamespace()).isEqualTo(TARGET_NAMESPACE);
+			assertThat(captor.getValue().getMunicipalityId()).isEqualTo(TARGET_MUNICIPALITY_ID);
+			assertThat(captor.getValue().getAttachmentData().getFile()).isEqualTo(newBlobMock);
+		}
+	}
+
+	@Test
+	void handoverWithIncludeAttachmentsBlobStreamFailureThrowsInternalServerError() throws Exception {
+		final var blobMock = mock(Blob.class);
+		when(blobMock.getBinaryStream()).thenThrow(new SQLException("connection lost"));
+
+		final var freshSource = sourceEntity().withAttachments(new ArrayList<>(List.of(
+			AttachmentEntity.create()
+				.withFileName("broken.pdf")
+				.withAttachmentData(AttachmentDataEntity.create().withFile(blobMock)))));
+
+		when(idempotencyRepositoryMock.findBySourceErrandIdAndTargetNamespaceAndTargetMunicipalityId(ERRAND_ID, TARGET_NAMESPACE, TARGET_MUNICIPALITY_ID)).thenReturn(Optional.empty());
+		when(idempotencyRepositoryMock.save(any(HandoverIdempotencyEntity.class))).thenAnswer(inv -> inv.getArgument(0));
+		when(accessControlServiceMock.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false)).thenReturn(sourceEntity());
+		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(freshSource));
+		mockValidations();
+		when(errandServiceMock.createErrand(eq(TARGET_NAMESPACE), eq(TARGET_MUNICIPALITY_ID), any(), isNull())).thenReturn(NEW_ERRAND_ID);
+		when(errandsRepositoryMock.findById(NEW_ERRAND_ID)).thenReturn(Optional.of(targetEntity()));
+
+		assertThatException()
+			.isThrownBy(() -> service.handover(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, minimalRequest().withInclude(HandoverInclude.create().withAttachments(true))))
+			.asInstanceOf(InstanceOfAssertFactories.type(ThrowableProblem.class))
+			.satisfies(problem -> {
+				assertThat(problem.getStatus()).isEqualTo(INTERNAL_SERVER_ERROR);
+				assertThat(problem.getMessage()).contains("broken.pdf");
+			});
+	}
+
+	@Test
+	void handoverWithIncludeAttachmentsSourceErrandNotFoundThrowsInternalServerError() {
+		when(idempotencyRepositoryMock.findBySourceErrandIdAndTargetNamespaceAndTargetMunicipalityId(ERRAND_ID, TARGET_NAMESPACE, TARGET_MUNICIPALITY_ID)).thenReturn(Optional.empty());
+		when(idempotencyRepositoryMock.save(any(HandoverIdempotencyEntity.class))).thenAnswer(inv -> inv.getArgument(0));
+		when(accessControlServiceMock.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false)).thenReturn(sourceEntity());
+		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.empty());
+		mockValidations();
+		when(errandServiceMock.createErrand(eq(TARGET_NAMESPACE), eq(TARGET_MUNICIPALITY_ID), any(), isNull())).thenReturn(NEW_ERRAND_ID);
+		when(errandsRepositoryMock.findById(NEW_ERRAND_ID)).thenReturn(Optional.of(targetEntity()));
+
+		assertThatException()
+			.isThrownBy(() -> service.handover(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, minimalRequest().withInclude(HandoverInclude.create().withAttachments(true))))
+			.asInstanceOf(InstanceOfAssertFactories.type(ThrowableProblem.class))
+			.satisfies(problem -> {
+				assertThat(problem.getStatus()).isEqualTo(INTERNAL_SERVER_ERROR);
+				assertThat(problem.getMessage()).contains(ERRAND_ID);
+			});
+	}
+
+	@Test
+	void handoverWithIncludeAttachmentsNullAttachmentListSkipsCopy() {
+		when(idempotencyRepositoryMock.findBySourceErrandIdAndTargetNamespaceAndTargetMunicipalityId(ERRAND_ID, TARGET_NAMESPACE, TARGET_MUNICIPALITY_ID)).thenReturn(Optional.empty());
+		when(idempotencyRepositoryMock.save(any(HandoverIdempotencyEntity.class))).thenAnswer(inv -> inv.getArgument(0));
+		when(accessControlServiceMock.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false)).thenReturn(sourceEntity());
+		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(sourceEntity().withAttachments(null)));
+		mockValidations();
+		when(errandServiceMock.createErrand(eq(TARGET_NAMESPACE), eq(TARGET_MUNICIPALITY_ID), any(), isNull())).thenReturn(NEW_ERRAND_ID);
+		when(errandsRepositoryMock.findById(NEW_ERRAND_ID)).thenReturn(Optional.of(targetEntity()));
+		when(relationClientMock.createRelation(eq(TARGET_MUNICIPALITY_ID), any()))
+			.thenReturn(ResponseEntity.created(URI.create("/2282/relations/" + RELATION_ID)).build());
+		when(revisionServiceMock.getLatestErrandRevision(any())).thenReturn(Revision.create());
+
+		service.handover(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, minimalRequest().withInclude(HandoverInclude.create().withAttachments(true)));
+
 		verify(attachmentRepositoryMock, never()).save(any());
 	}
 

@@ -3,7 +3,6 @@ package se.sundsvall.supportmanagement.service;
 import generated.se.sundsvall.relation.Relation;
 import generated.se.sundsvall.relation.ResourceIdentifier;
 import java.net.URI;
-import java.sql.Blob;
 import java.util.List;
 import java.util.Optional;
 import org.hibernate.Hibernate;
@@ -248,21 +247,20 @@ public class HandoverService {
 			}
 			try {
 				final var blob = sourceData.getFile();
-				final Blob newBlob;
 				try (final var inputStream = blob.getBinaryStream()) {
-					newBlob = Hibernate.getLobHelper().createBlob(inputStream, blob.length());
+					final var newBlob = Hibernate.getLobHelper().createBlob(inputStream, blob.length());
+					final var newAttachment = AttachmentEntity.create()
+						.withErrandEntity(target)
+						.withNamespace(targetNamespace)
+						.withMunicipalityId(targetMunicipalityId)
+						.withFileName(sourceAttachment.getFileName())
+						.withMimeType(sourceAttachment.getMimeType())
+						.withChannel(sourceAttachment.getChannel())
+						.withFileSize(sourceAttachment.getFileSize())
+						.withAttachmentData(AttachmentDataEntity.create().withFile(newBlob));
+					attachmentRepository.save(newAttachment);
+					target.getAttachments().add(newAttachment);
 				}
-				final var newAttachment = AttachmentEntity.create()
-					.withErrandEntity(target)
-					.withNamespace(targetNamespace)
-					.withMunicipalityId(targetMunicipalityId)
-					.withFileName(sourceAttachment.getFileName())
-					.withMimeType(sourceAttachment.getMimeType())
-					.withChannel(sourceAttachment.getChannel())
-					.withFileSize(sourceAttachment.getFileSize())
-					.withAttachmentData(AttachmentDataEntity.create().withFile(newBlob));
-				attachmentRepository.save(newAttachment);
-				target.getAttachments().add(newAttachment);
 			} catch (final Exception e) {
 				throw Problem.valueOf(INTERNAL_SERVER_ERROR,
 					"Failed to copy attachment '%s': %s".formatted(sourceAttachment.getFileName(), e.getMessage()));
