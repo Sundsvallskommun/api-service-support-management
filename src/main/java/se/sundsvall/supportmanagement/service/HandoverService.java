@@ -127,6 +127,11 @@ public class HandoverService {
 
 		validateMappings(request.getTarget().getNamespace(), request.getTarget().getMunicipalityId(), request);
 
+		final var idempotencyEntity = idempotencyRepository.save(HandoverIdempotencyEntity.create()
+			.withSourceErrandId(errandId)
+			.withTargetNamespace(request.getTarget().getNamespace())
+			.withTargetMunicipalityId(request.getTarget().getMunicipalityId()));
+
 		final var source = accessControlService.getErrand(namespace, municipalityId, errandId, false);
 
 		final var targetErrand = HandoverMapper.buildTargetErrand(source, request);
@@ -159,7 +164,7 @@ public class HandoverService {
 			.withAppliedMappings(appliedMappings)
 			.withWarnings(warnings);
 
-		saveIdempotencyRecord(errandId, response);
+		updateIdempotencyRecord(idempotencyEntity, response);
 
 		handleSourceErrand(namespace, municipalityId, errandId, request);
 
@@ -331,15 +336,12 @@ public class HandoverService {
 		}
 	}
 
-	private void saveIdempotencyRecord(final String sourceErrandId, final HandoverErrand response) {
-		idempotencyRepository.save(HandoverIdempotencyEntity.create()
-			.withSourceErrandId(sourceErrandId)
-			.withNewErrandId(response.getNewErrandId())
-			.withNewErrandNumber(response.getNewErrandNumber())
-			.withTargetNamespace(response.getTarget() != null ? response.getTarget().getNamespace() : null)
-			.withTargetMunicipalityId(response.getTarget() != null ? response.getTarget().getMunicipalityId() : null)
-			.withRelationId(response.getRelationId())
-			.withWarnings(HandoverMapper.encodeWarnings(response.getWarnings())));
+	private void updateIdempotencyRecord(final HandoverIdempotencyEntity entity, final HandoverErrand response) {
+		entity.setNewErrandId(response.getNewErrandId());
+		entity.setNewErrandNumber(response.getNewErrandNumber());
+		entity.setRelationId(response.getRelationId());
+		entity.setWarnings(HandoverMapper.encodeWarnings(response.getWarnings()));
+		idempotencyRepository.save(entity);
 	}
 
 	private HandoverErrand toHandoverErrand(final HandoverIdempotencyEntity entity) {

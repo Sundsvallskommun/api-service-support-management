@@ -42,7 +42,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -146,6 +148,7 @@ class HandoverServiceTest {
 
 	private void mockGoldenPath() {
 		when(idempotencyRepositoryMock.findBySourceErrandIdAndTargetNamespaceAndTargetMunicipalityId(ERRAND_ID, TARGET_NAMESPACE, TARGET_MUNICIPALITY_ID)).thenReturn(Optional.empty());
+		when(idempotencyRepositoryMock.save(any(HandoverIdempotencyEntity.class))).thenAnswer(inv -> inv.getArgument(0));
 		when(accessControlServiceMock.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false)).thenReturn(sourceEntity());
 		mockValidations();
 		when(errandServiceMock.createErrand(eq(TARGET_NAMESPACE), eq(TARGET_MUNICIPALITY_ID), any(), isNull())).thenReturn(NEW_ERRAND_ID);
@@ -189,12 +192,19 @@ class HandoverServiceTest {
 		assertThat(result.getTarget().getMunicipalityId()).isEqualTo(TARGET_MUNICIPALITY_ID);
 		assertThat(result.getRelationId()).isEqualTo(RELATION_ID);
 
+		// Reservation is saved before errand creation to prevent duplicate errands on concurrent retries
+		final var saveBeforeCreateOrder = inOrder(idempotencyRepositoryMock, errandServiceMock);
+		saveBeforeCreateOrder.verify(idempotencyRepositoryMock).save(any());
+		saveBeforeCreateOrder.verify(errandServiceMock).createErrand(any(), any(), any(), isNull());
+		saveBeforeCreateOrder.verify(idempotencyRepositoryMock).save(any());
+
 		final var captor = ArgumentCaptor.forClass(HandoverIdempotencyEntity.class);
-		verify(idempotencyRepositoryMock).save(captor.capture());
-		assertThat(captor.getValue().getSourceErrandId()).isEqualTo(ERRAND_ID);
-		assertThat(captor.getValue().getNewErrandId()).isEqualTo(NEW_ERRAND_ID);
-		assertThat(captor.getValue().getNewErrandNumber()).isEqualTo(NEW_ERRAND_NUMBER);
-		assertThat(captor.getValue().getRelationId()).isEqualTo(RELATION_ID);
+		verify(idempotencyRepositoryMock, times(2)).save(captor.capture());
+		final var finalRecord = captor.getValue();
+		assertThat(finalRecord.getSourceErrandId()).isEqualTo(ERRAND_ID);
+		assertThat(finalRecord.getNewErrandId()).isEqualTo(NEW_ERRAND_ID);
+		assertThat(finalRecord.getNewErrandNumber()).isEqualTo(NEW_ERRAND_NUMBER);
+		assertThat(finalRecord.getRelationId()).isEqualTo(RELATION_ID);
 	}
 
 	@Test
@@ -415,6 +425,7 @@ class HandoverServiceTest {
 	@Test
 	void handoverEventLoggingFailureDoesNotAbortHandover() {
 		when(idempotencyRepositoryMock.findBySourceErrandIdAndTargetNamespaceAndTargetMunicipalityId(ERRAND_ID, TARGET_NAMESPACE, TARGET_MUNICIPALITY_ID)).thenReturn(Optional.empty());
+		when(idempotencyRepositoryMock.save(any(HandoverIdempotencyEntity.class))).thenAnswer(inv -> inv.getArgument(0));
 		when(accessControlServiceMock.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false)).thenReturn(sourceEntity());
 		mockValidations();
 		when(errandServiceMock.createErrand(eq(TARGET_NAMESPACE), eq(TARGET_MUNICIPALITY_ID), any(), isNull())).thenReturn(NEW_ERRAND_ID);
@@ -441,6 +452,7 @@ class HandoverServiceTest {
 		final var target = targetEntity();
 
 		when(idempotencyRepositoryMock.findBySourceErrandIdAndTargetNamespaceAndTargetMunicipalityId(ERRAND_ID, TARGET_NAMESPACE, TARGET_MUNICIPALITY_ID)).thenReturn(Optional.empty());
+		when(idempotencyRepositoryMock.save(any(HandoverIdempotencyEntity.class))).thenAnswer(inv -> inv.getArgument(0));
 		when(accessControlServiceMock.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false)).thenReturn(source);
 		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(source));
 		mockValidations();
