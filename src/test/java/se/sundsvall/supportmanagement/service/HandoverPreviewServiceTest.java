@@ -91,9 +91,9 @@ class HandoverPreviewServiceTest {
 
 	/**
 	 * Stubs the target namespace existence check, the source errand load and the target namespace metadata lookups used to
-	 * build the candidate lists and the role warnings, plus the source namespace status lookup used to resolve the source
-	 * status display name. The authorization gate ({@code verifyExistingErrandAndAuthorization}) is a void method left as a
-	 * no-op here.
+	 * build the candidate lists and the role warnings, plus the source namespace status lookup used both to resolve the
+	 * source status display name and to build the source handling status candidates. The authorization gate
+	 * ({@code verifyExistingErrandAndAuthorization}) is a void method left as a no-op here.
 	 */
 	private void stubErrandAndTargetMetadata(final ErrandEntity errand) {
 		when(namespaceConfigRepositoryMock.existsByNamespaceAndMunicipalityId(TARGET_NAMESPACE, TARGET_MUNICIPALITY_ID)).thenReturn(true);
@@ -102,9 +102,12 @@ class HandoverPreviewServiceTest {
 		// Target namespace metadata (candidates)
 		when(statusRepositoryMock.findAllByNamespaceAndMunicipalityId(eq(TARGET_NAMESPACE), eq(TARGET_MUNICIPALITY_ID), any()))
 			.thenReturn(List.of(StatusEntity.create().withName("IN_PROGRESS").withDisplayName("Pågående")));
-		// Source namespace metadata (for resolving the source status display name)
+		// Source namespace metadata (source status display name resolution + source handling candidates); the deprecated
+		// status must be excluded from the source handling candidates
 		when(statusRepositoryMock.findAllByNamespaceAndMunicipalityId(eq(NAMESPACE), eq(MUNICIPALITY_ID), any()))
-			.thenReturn(List.of(StatusEntity.create().withName("ONGOING").withDisplayName("Pågående")));
+			.thenReturn(List.of(
+				StatusEntity.create().withName("ONGOING").withDisplayName("Pågående"),
+				StatusEntity.create().withName("OLD").withDisplayName("Gammal").withDeprecated(true)));
 		when(categoryRepositoryMock.findAllByNamespaceAndMunicipalityId(eq(TARGET_NAMESPACE), eq(TARGET_MUNICIPALITY_ID), any()))
 			.thenReturn(List.of(CategoryEntity.create().withName("SUPPORT_CASE").withTypes(List.of(TypeEntity.create().withName("OTHER_ISSUES")))));
 		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityId(TARGET_NAMESPACE, TARGET_MUNICIPALITY_ID))
@@ -260,6 +263,10 @@ class HandoverPreviewServiceTest {
 		assertThat(result.getMappingRequired().getContactReason().getCandidates()).containsExactly("Bygglov");
 		assertThat(result.getMappingRequired().getContactReason().getSuggested()).isEqualTo("Bygglov");
 
+		// sourceHandling - the source namespace statuses selectable for the source handling choice (deprecated excluded)
+		assertThat(result.getSourceHandling().getStatusCandidates())
+			.containsExactly(MetadataOption.create().withName("ONGOING").withDisplayName("Pågående"));
+
 		// notCopyable
 		assertThat(result.getNotCopyable()).extracting("field").containsExactly("phases", "activePhaseId");
 
@@ -279,10 +286,11 @@ class HandoverPreviewServiceTest {
 	@Test
 	void previewHandoverWithMinimalErrandProducesNoWarnings() {
 		// An errand with no status, stakeholders, json parameters or classification exercises the null-collection and
-		// null-status branches; the source status repository is never queried when the errand has no status.
+		// null-status branches; the source statuses are still read once for the source handling candidates.
 		when(namespaceConfigRepositoryMock.existsByNamespaceAndMunicipalityId(TARGET_NAMESPACE, TARGET_MUNICIPALITY_ID)).thenReturn(true);
 		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(ErrandEntity.create().withTitle("Tom")));
 		when(statusRepositoryMock.findAllByNamespaceAndMunicipalityId(eq(TARGET_NAMESPACE), eq(TARGET_MUNICIPALITY_ID), any())).thenReturn(List.of());
+		when(statusRepositoryMock.findAllByNamespaceAndMunicipalityId(eq(NAMESPACE), eq(MUNICIPALITY_ID), any())).thenReturn(List.of());
 		when(categoryRepositoryMock.findAllByNamespaceAndMunicipalityId(eq(TARGET_NAMESPACE), eq(TARGET_MUNICIPALITY_ID), any())).thenReturn(List.of());
 		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityId(TARGET_NAMESPACE, TARGET_MUNICIPALITY_ID)).thenReturn(List.of());
 		when(contactReasonRepositoryMock.findAllByNamespaceAndMunicipalityId(eq(TARGET_NAMESPACE), eq(TARGET_MUNICIPALITY_ID), any())).thenReturn(List.of());
@@ -297,10 +305,12 @@ class HandoverPreviewServiceTest {
 		assertThat(result.getMappingRequired().getLabels().getCandidates()).isEmpty();
 		assertThat(result.getMappingRequired().getLabels().getMappings()).isEmpty();
 		assertThat(result.getMappingRequired().getContactReason().getSource()).isNull();
+		assertThat(result.getSourceHandling().getStatusCandidates()).isEmpty();
 		assertThat(result.getWarnings()).isEmpty();
 
 		verifyAuthorizationAndErrandLoad();
 		verifyTargetMetadataReads();
+		verifySourceStatusRead();
 		verifyNoMoreOnAllMocks();
 	}
 
@@ -338,6 +348,7 @@ class HandoverPreviewServiceTest {
 		when(namespaceConfigRepositoryMock.existsByNamespaceAndMunicipalityId(NAMESPACE, targetMunicipalityId)).thenReturn(true);
 		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(ErrandEntity.create().withTitle("Tom")));
 		when(statusRepositoryMock.findAllByNamespaceAndMunicipalityId(eq(NAMESPACE), eq(targetMunicipalityId), any())).thenReturn(List.of());
+		when(statusRepositoryMock.findAllByNamespaceAndMunicipalityId(eq(NAMESPACE), eq(MUNICIPALITY_ID), any())).thenReturn(List.of());
 		when(categoryRepositoryMock.findAllByNamespaceAndMunicipalityId(eq(NAMESPACE), eq(targetMunicipalityId), any())).thenReturn(List.of());
 		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityId(NAMESPACE, targetMunicipalityId)).thenReturn(List.of());
 		when(contactReasonRepositoryMock.findAllByNamespaceAndMunicipalityId(eq(NAMESPACE), eq(targetMunicipalityId), any())).thenReturn(List.of());
@@ -352,6 +363,7 @@ class HandoverPreviewServiceTest {
 		verify(namespaceConfigRepositoryMock).existsByNamespaceAndMunicipalityId(NAMESPACE, targetMunicipalityId);
 		verify(errandsRepositoryMock).findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(statusRepositoryMock).findAllByNamespaceAndMunicipalityId(eq(NAMESPACE), eq(targetMunicipalityId), any());
+		verify(statusRepositoryMock).findAllByNamespaceAndMunicipalityId(eq(NAMESPACE), eq(MUNICIPALITY_ID), any());
 		verify(categoryRepositoryMock).findAllByNamespaceAndMunicipalityId(eq(NAMESPACE), eq(targetMunicipalityId), any());
 		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityId(NAMESPACE, targetMunicipalityId);
 		verify(contactReasonRepositoryMock).findAllByNamespaceAndMunicipalityId(eq(NAMESPACE), eq(targetMunicipalityId), any());

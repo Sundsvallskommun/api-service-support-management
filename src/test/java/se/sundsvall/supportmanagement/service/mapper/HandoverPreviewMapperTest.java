@@ -28,6 +28,7 @@ import static se.sundsvall.supportmanagement.service.mapper.HandoverPreviewMappe
 import static se.sundsvall.supportmanagement.service.mapper.HandoverPreviewMapper.toLabelCandidates;
 import static se.sundsvall.supportmanagement.service.mapper.HandoverPreviewMapper.toLabelMappingGroup;
 import static se.sundsvall.supportmanagement.service.mapper.HandoverPreviewMapper.toNotCopyable;
+import static se.sundsvall.supportmanagement.service.mapper.HandoverPreviewMapper.toSourceHandling;
 import static se.sundsvall.supportmanagement.service.mapper.HandoverPreviewMapper.toStatusCandidates;
 import static se.sundsvall.supportmanagement.service.mapper.HandoverPreviewMapper.toStatusMapping;
 
@@ -90,6 +91,23 @@ class HandoverPreviewMapperTest {
 			StatusEntity.create().withName("OLD").withDisplayName("Gammal").withDeprecated(true)));
 
 		assertThat(candidates).containsExactly(MetadataOption.create().withName("NEW_CASE").withDisplayName("Nytt ärende"));
+	}
+
+	@Test
+	void toSourceHandlingMapsStatusCandidatesExcludingDeprecated() {
+		final var result = toSourceHandling(List.of(
+			StatusEntity.create().withName("SOLVED").withDisplayName("Löst"),
+			StatusEntity.create().withName("OLD").withDisplayName("Gammal").withDeprecated(true)));
+
+		assertThat(result.getStatusCandidates()).containsExactly(MetadataOption.create().withName("SOLVED").withDisplayName("Löst"));
+	}
+
+	@Test
+	void toSourceHandlingNull() {
+		final var result = toSourceHandling(null);
+
+		assertThat(result).isNotNull();
+		assertThat(result.getStatusCandidates()).isEmpty();
 	}
 
 	@Test

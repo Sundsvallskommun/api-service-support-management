@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.api.model.handover;
 
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.Objects;
@@ -15,10 +16,15 @@ public class HandoverPreview {
 	@Schema(description = "Namespace-bound fields that require manual mapping")
 	private MappingRequired mappingRequired;
 
-	@Schema(description = "Fields that can not be copied to the target namespace. Always present, may be empty", requiredMode = REQUIRED)
+	@Schema(description = "Options for handling the source errand after handover. Always present", requiredMode = REQUIRED)
+	private SourceHandling sourceHandling;
+
+	@ArraySchema(arraySchema = @Schema(description = "Fields that can not be copied to the target namespace. Always present, may be empty", requiredMode = REQUIRED),
+		schema = @Schema(implementation = NotCopyable.class))
 	private List<NotCopyable> notCopyable;
 
-	@Schema(description = "Warnings raised while building the preview. Always present, may be empty", requiredMode = REQUIRED)
+	@ArraySchema(arraySchema = @Schema(description = "Warnings raised while building the preview. Always present, may be empty", requiredMode = REQUIRED),
+		schema = @Schema(implementation = Warning.class))
 	private List<Warning> warnings;
 
 	public static HandoverPreview create() {
@@ -51,6 +57,19 @@ public class HandoverPreview {
 		return this;
 	}
 
+	public SourceHandling getSourceHandling() {
+		return sourceHandling;
+	}
+
+	public void setSourceHandling(final SourceHandling sourceHandling) {
+		this.sourceHandling = sourceHandling;
+	}
+
+	public HandoverPreview withSourceHandling(final SourceHandling sourceHandling) {
+		this.sourceHandling = sourceHandling;
+		return this;
+	}
+
 	public List<NotCopyable> getNotCopyable() {
 		return notCopyable;
 	}
@@ -79,7 +98,7 @@ public class HandoverPreview {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(directlyCopyable, mappingRequired, notCopyable, warnings);
+		return Objects.hash(directlyCopyable, mappingRequired, sourceHandling, notCopyable, warnings);
 	}
 
 	@Override
@@ -91,12 +110,13 @@ public class HandoverPreview {
 			return false;
 		}
 		return Objects.equals(directlyCopyable, other.directlyCopyable) && Objects.equals(mappingRequired, other.mappingRequired)
-			&& Objects.equals(notCopyable, other.notCopyable) && Objects.equals(warnings, other.warnings);
+			&& Objects.equals(sourceHandling, other.sourceHandling) && Objects.equals(notCopyable, other.notCopyable)
+			&& Objects.equals(warnings, other.warnings);
 	}
 
 	@Override
 	public String toString() {
 		return "HandoverPreview [directlyCopyable=" + directlyCopyable + ", mappingRequired=" + mappingRequired
-			+ ", notCopyable=" + notCopyable + ", warnings=" + warnings + "]";
+			+ ", sourceHandling=" + sourceHandling + ", notCopyable=" + notCopyable + ", warnings=" + warnings + "]";
 	}
 }
