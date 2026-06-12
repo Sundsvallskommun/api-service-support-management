@@ -1,6 +1,5 @@
 package se.sundsvall.supportmanagement.api.model.handover;
 
-import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;
@@ -31,15 +30,13 @@ class LabelMappingTest {
 		final var sourceResourcePath = "/access/keycard";
 		final var suggestedTargetId = "uuid-b";
 		final var matchReason = MatchReason.RESOURCE_PATH_MATCH;
-		final var candidates = List.of(LabelCandidate.create().withId("uuid-b").withDisplayName("Nyckelkort").withResourcePath("/access/keycard"));
 
 		final var bean = LabelMapping.create()
 			.withSourceId(sourceId)
 			.withSourceDisplayName(sourceDisplayName)
 			.withSourceResourcePath(sourceResourcePath)
 			.withSuggestedTargetId(suggestedTargetId)
-			.withMatchReason(matchReason)
-			.withCandidates(candidates);
+			.withMatchReason(matchReason);
 
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(bean.getSourceId()).isEqualTo(sourceId);
@@ -47,7 +44,6 @@ class LabelMappingTest {
 		assertThat(bean.getSourceResourcePath()).isEqualTo(sourceResourcePath);
 		assertThat(bean.getSuggestedTargetId()).isEqualTo(suggestedTargetId);
 		assertThat(bean.getMatchReason()).isEqualTo(matchReason);
-		assertThat(bean.getCandidates()).isEqualTo(candidates);
 	}
 
 	@Test

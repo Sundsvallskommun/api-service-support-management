@@ -23,6 +23,7 @@ import se.sundsvall.supportmanagement.api.model.handover.HandoverPreview;
 import se.sundsvall.supportmanagement.api.model.handover.HandoverPreviewRequest;
 import se.sundsvall.supportmanagement.api.model.handover.LabelCandidate;
 import se.sundsvall.supportmanagement.api.model.handover.LabelMapping;
+import se.sundsvall.supportmanagement.api.model.handover.LabelMappingGroup;
 import se.sundsvall.supportmanagement.api.model.handover.MappingRequired;
 import se.sundsvall.supportmanagement.api.model.handover.MatchReason;
 import se.sundsvall.supportmanagement.api.model.handover.MetadataOption;
@@ -88,13 +89,14 @@ class HandoverResourceTest {
 					.withSuggestedCategory("SUPPORT_CASE")
 					.withSuggestedType("OTHER_ISSUES")
 					.withCandidates(Map.of("SUPPORT_CASE", List.of("OTHER_ISSUES"))))
-				.withLabels(List.of(LabelMapping.create()
-					.withSourceId("uuid-a")
-					.withSourceDisplayName("Nyckelkort")
-					.withSourceResourcePath("/access/keycard")
-					.withSuggestedTargetId("uuid-b")
-					.withMatchReason(MatchReason.RESOURCE_PATH_MATCH)
-					.withCandidates(List.of(LabelCandidate.create().withId("uuid-b").withDisplayName("Nyckelkort").withResourcePath("/access/keycard")))))
+				.withLabels(LabelMappingGroup.create()
+					.withCandidates(List.of(LabelCandidate.create().withId("uuid-b").withDisplayName("Nyckelkort").withResourcePath("/access/keycard")))
+					.withMappings(List.of(LabelMapping.create()
+						.withSourceId("uuid-a")
+						.withSourceDisplayName("Nyckelkort")
+						.withSourceResourcePath("/access/keycard")
+						.withSuggestedTargetId("uuid-b")
+						.withMatchReason(MatchReason.RESOURCE_PATH_MATCH))))
 				.withContactReason(ContactReasonMapping.create()
 					.withSource("Bygglov")
 					.withSuggested("Bygglov")

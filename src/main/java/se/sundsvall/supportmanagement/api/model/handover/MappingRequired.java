@@ -1,7 +1,6 @@
 package se.sundsvall.supportmanagement.api.model.handover;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.util.List;
 import java.util.Objects;
 
 import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
@@ -15,8 +14,8 @@ public class MappingRequired {
 	@Schema(description = "Classification (category/type) mapping suggestion")
 	private ClassificationMapping classification;
 
-	@Schema(description = "Label mapping suggestions, one entry per source label. Always present, may be empty", requiredMode = REQUIRED)
-	private List<LabelMapping> labels;
+	@Schema(description = "Label mapping section: the selectable target labels plus one mapping suggestion per source label. Always present", requiredMode = REQUIRED)
+	private LabelMappingGroup labels;
 
 	@Schema(description = "Contact reason mapping suggestion")
 	private ContactReasonMapping contactReason;
@@ -51,15 +50,15 @@ public class MappingRequired {
 		return this;
 	}
 
-	public List<LabelMapping> getLabels() {
+	public LabelMappingGroup getLabels() {
 		return labels;
 	}
 
-	public void setLabels(final List<LabelMapping> labels) {
+	public void setLabels(final LabelMappingGroup labels) {
 		this.labels = labels;
 	}
 
-	public MappingRequired withLabels(final List<LabelMapping> labels) {
+	public MappingRequired withLabels(final LabelMappingGroup labels) {
 		this.labels = labels;
 		return this;
 	}
