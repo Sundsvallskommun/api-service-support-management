@@ -28,6 +28,8 @@ public interface Action {
 
 	Optional<ErrandActionEntity> createAction(ErrandEntity errand, ActionConfigEntity actionConfigEntity);
 
+	boolean conditionsFulfilled(ErrandEntity errand, ActionConfigEntity actionConfigEntity);
+
 	void executeAction(ErrandEntity errand, ActionConfigEntity actionConfigEntity);
 
 	boolean validForOperationType(OperationType operationType);

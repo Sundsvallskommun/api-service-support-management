@@ -53,7 +53,7 @@ public class ActionWorker {
 		final var errand = errandsRepository.findWithLockingById(actionEntity.getErrandEntity().getId()).orElseThrow(() -> new RuntimeException("Could not find errand"));
 		final var parameters = toParameterMap(configEntity);
 
-		if (action.actionFulfilled(errand, parameters)) {
+		if (action.actionFulfilled(errand, parameters) || !action.conditionsFulfilled(errand, configEntity)) {
 			errandActionRepository.delete(actionEntity);
 		} else {
 			action.executeAction(errand, configEntity);
