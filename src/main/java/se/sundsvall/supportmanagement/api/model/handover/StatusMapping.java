@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.api.model.handover;
 
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.Objects;
@@ -18,7 +19,8 @@ public class StatusMapping {
 	@Schema(description = "Reason the target was suggested, or null if there is no suggestion")
 	private MatchReason matchReason;
 
-	@Schema(description = "All selectable statuses in the target namespace. Always present, may be empty", requiredMode = REQUIRED)
+	@ArraySchema(arraySchema = @Schema(description = "All selectable statuses in the target namespace. Always present, may be empty", requiredMode = REQUIRED),
+		schema = @Schema(implementation = MetadataOption.class))
 	private List<MetadataOption> candidates;
 
 	public static StatusMapping create() {

@@ -42,6 +42,7 @@ import static se.sundsvall.supportmanagement.service.mapper.HandoverPreviewMappe
 import static se.sundsvall.supportmanagement.service.mapper.HandoverPreviewMapper.toLabelCandidates;
 import static se.sundsvall.supportmanagement.service.mapper.HandoverPreviewMapper.toLabelMappingGroup;
 import static se.sundsvall.supportmanagement.service.mapper.HandoverPreviewMapper.toNotCopyable;
+import static se.sundsvall.supportmanagement.service.mapper.HandoverPreviewMapper.toSourceHandling;
 import static se.sundsvall.supportmanagement.service.mapper.HandoverPreviewMapper.toStatusCandidates;
 import static se.sundsvall.supportmanagement.service.mapper.HandoverPreviewMapper.toStatusMapping;
 
@@ -50,8 +51,9 @@ import static se.sundsvall.supportmanagement.service.mapper.HandoverPreviewMappe
  *
  * <p>
  * The preview projects the directly copyable fields, the candidate lists for the namespace-bound fields read from the
- * target namespace metadata, the fields that can not be copied, and warnings (unknown stakeholder roles and parameter
- * json schemas that are not registered in the target).
+ * target namespace metadata, the selectable source namespace statuses for the source handling choice, the fields that
+ * can not be copied, and warnings (unknown stakeholder roles and parameter json schemas that are not registered in the
+ * target).
  * </p>
  *
  * <p>
@@ -128,21 +130,26 @@ public class HandoverPreviewService {
 		final var errand = errandsRepository.findByIdAndNamespaceAndMunicipalityId(errandId, namespace, municipalityId)
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, ERRAND_NOT_FOUND.formatted(errandId, namespace, municipalityId)));
 
+		// The source namespace statuses serve two purposes: resolving the display name of the errand's current status, and
+		// the selectable statuses offered for the source handling choice. Read once and reused for both.
+		final var sourceStatuses = statusRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId, SORT_BY_SORT_ORDER);
+
 		return HandoverPreview.create()
 			.withDirectlyCopyable(toDirectlyCopyable(errand))
-			.withMappingRequired(buildMappingRequired(namespace, municipalityId, targetNamespace, targetMunicipalityId, errand))
+			.withMappingRequired(buildMappingRequired(sourceStatuses, targetNamespace, targetMunicipalityId, errand))
+			.withSourceHandling(toSourceHandling(sourceStatuses))
 			.withNotCopyable(toNotCopyable())
 			.withWarnings(buildWarnings(errand, targetNamespace, targetMunicipalityId));
 	}
 
-	private MappingRequired buildMappingRequired(final String sourceNamespace, final String sourceMunicipalityId, final String targetNamespace, final String targetMunicipalityId, final ErrandEntity errand) {
+	private MappingRequired buildMappingRequired(final List<StatusEntity> sourceStatuses, final String targetNamespace, final String targetMunicipalityId, final ErrandEntity errand) {
 		// Candidate lists are the selectable options configured in the target namespace
 		final var statusCandidates = toStatusCandidates(statusRepository.findAllByNamespaceAndMunicipalityId(targetNamespace, targetMunicipalityId, SORT_BY_SORT_ORDER));
 		final var classificationCandidates = toClassificationCandidates(categoryRepository.findAllByNamespaceAndMunicipalityId(targetNamespace, targetMunicipalityId, SORT_BY_SORT_ORDER));
 		final var labelCandidates = toLabelCandidates(metadataLabelRepository.findByNamespaceAndMunicipalityId(targetNamespace, targetMunicipalityId));
 		final var targetContactReasons = contactReasonRepository.findAllByNamespaceAndMunicipalityId(targetNamespace, targetMunicipalityId, SORT_BY_SORT_ORDER);
 
-		final var sourceStatusDisplayName = resolveSourceStatusDisplayName(sourceNamespace, sourceMunicipalityId, errand.getStatus());
+		final var sourceStatusDisplayName = resolveSourceStatusDisplayName(sourceStatuses, errand.getStatus());
 
 		return MappingRequired.create()
 			.withStatus(toStatusMapping(errand, sourceStatusDisplayName, statusCandidates))
@@ -153,12 +160,13 @@ public class HandoverPreviewService {
 
 	/**
 	 * The errand only stores the status technical name, so the human readable display name of the source status is looked
-	 * up in the source namespace to render {@code status.source.displayName}. Returns {@code null} when the errand has no
-	 * status or the status is not (or no longer) configured in the source namespace.
+	 * up among the source namespace statuses to render {@code status.source.displayName}. The lookup deliberately includes
+	 * deprecated statuses — the errand's current status should be rendered even if it has since been deprecated. Returns
+	 * {@code null} when the errand has no status or the status is not (or no longer) configured in the source namespace.
 	 */
-	private String resolveSourceStatusDisplayName(final String sourceNamespace, final String sourceMunicipalityId, final String statusName) {
+	private String resolveSourceStatusDisplayName(final List<StatusEntity> sourceStatuses, final String statusName) {
 		return ofNullable(statusName)
-			.flatMap(name -> statusRepository.findAllByNamespaceAndMunicipalityId(sourceNamespace, sourceMunicipalityId, SORT_BY_SORT_ORDER).stream()
+			.flatMap(name -> sourceStatuses.stream()
 				.filter(status -> name.equals(status.getName()))
 				.findFirst()
 				.map(StatusEntity::getDisplayName))

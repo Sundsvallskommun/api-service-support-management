@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.api.model.handover;
 
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.Objects;
@@ -15,7 +16,8 @@ public class ContactReasonMapping {
 	@Schema(description = "Auto-suggested target contact reason, or null if no match was found", examples = "Bygglov")
 	private String suggested;
 
-	@Schema(description = "All selectable contact reasons in the target namespace. Always present, may be empty", requiredMode = REQUIRED)
+	@ArraySchema(arraySchema = @Schema(description = "All selectable contact reasons in the target namespace. Always present, may be empty", requiredMode = REQUIRED),
+		schema = @Schema(implementation = String.class))
 	private List<String> candidates;
 
 	public static ContactReasonMapping create() {

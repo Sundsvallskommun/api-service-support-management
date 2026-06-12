@@ -17,6 +17,7 @@ import se.sundsvall.supportmanagement.api.model.handover.LabelMappingGroup;
 import se.sundsvall.supportmanagement.api.model.handover.MatchReason;
 import se.sundsvall.supportmanagement.api.model.handover.MetadataOption;
 import se.sundsvall.supportmanagement.api.model.handover.NotCopyable;
+import se.sundsvall.supportmanagement.api.model.handover.SourceHandling;
 import se.sundsvall.supportmanagement.api.model.handover.StatusMapping;
 import se.sundsvall.supportmanagement.integration.db.model.CategoryEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
@@ -88,6 +89,16 @@ public class HandoverPreviewMapper {
 				.withName(status.getName())
 				.withDisplayName(status.getDisplayName()))
 			.toList();
+	}
+
+	/**
+	 * Builds the source handling section: the non-deprecated statuses configured in the <em>source</em> namespace,
+	 * selectable when choosing how the source errand is handled (the {@code sourceHandling} part of the actual handover
+	 * request). Unlike the other candidate lists, these are source namespace options — the status set on the source errand
+	 * after handover must exist there, not in the target.
+	 */
+	public static SourceHandling toSourceHandling(final List<StatusEntity> sourceStatuses) {
+		return SourceHandling.create().withStatusCandidates(toStatusCandidates(sourceStatuses));
 	}
 
 	/**
