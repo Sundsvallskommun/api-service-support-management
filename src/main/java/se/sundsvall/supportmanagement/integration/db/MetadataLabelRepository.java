@@ -18,4 +18,6 @@ public interface MetadataLabelRepository extends JpaRepository<MetadataLabelEnti
 	Optional<MetadataLabelEntity> findByNamespaceAndMunicipalityIdAndResourcePath(String namespace, String municipalityId, String resourcePath);
 
 	boolean existsByNamespaceAndMunicipalityId(String namespace, String municipalityId);
+
+	boolean existsByIdAndNamespaceAndMunicipalityId(String id, String namespace, String municipalityId);
 }

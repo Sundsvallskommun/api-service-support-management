@@ -3024,14 +3024,15 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-  /{municipalityId}/{namespace}/errands/{errandId}/handover:
+  /{municipalityId}/{namespace}/errands/{errandId}/handover/execute:
     post:
       tags:
       - Handover
-      summary: Handover errand
-      description: "Hands over an errand to another namespace, optionally copying\
-        \ data and closing the source errand"
-      operationId: handoverErrand
+      summary: Execute errand handover
+      description: "Hands over an errand to another namespace. Copies the errand\
+        \ with applied field mappings, optionally copies attachments, creates a HANDOVER\
+        \ relation, and optionally closes or suspends the source errand."
+      operationId: executeHandover
       parameters:
       - name: namespace
         in: path
@@ -3075,6 +3076,7 @@ paths:
           description: Successful operation
           headers:
             Location:
+              description: Location of the newly created errand in the target namespace
               style: simple
               schema:
                 type: string
@@ -3090,6 +3092,12 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "403":
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "404":
           description: Not Found
           content:
@@ -9705,9 +9713,6 @@ components:
           type: string
           description: Channel to set on the new errand
           example: WEB_UI
-        activePhaseId:
-          type: string
-          description: Active phase id to set on the new errand
     HandoverOverrides:
       type: object
       description: Field values that override what is copied from the source errand
@@ -9739,6 +9744,10 @@ components:
       properties:
         action:
           $ref: "#/components/schemas/HandoverSourceAction"
+        status:
+          type: string
+          description: Status to set on the source errand
+          example: SOLVED
         resolution:
           type: string
           description: Resolution to set on the source errand

@@ -32,15 +32,13 @@ class HandoverMappingTest {
 		final var labels = List.of("label-uuid-1");
 		final var contactReason = "Printer issue";
 		final var channel = "WEB_UI";
-		final var activePhaseId = "phase-uuid";
 
 		final var mapping = HandoverMapping.create()
 			.withStatus(status)
 			.withClassification(classification)
 			.withLabels(labels)
 			.withContactReason(contactReason)
-			.withChannel(channel)
-			.withActivePhaseId(activePhaseId);
+			.withChannel(channel);
 
 		assertThat(mapping).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(mapping.getStatus()).isEqualTo(status);
@@ -48,7 +46,6 @@ class HandoverMappingTest {
 		assertThat(mapping.getLabels()).isEqualTo(labels);
 		assertThat(mapping.getContactReason()).isEqualTo(contactReason);
 		assertThat(mapping.getChannel()).isEqualTo(channel);
-		assertThat(mapping.getActivePhaseId()).isEqualTo(activePhaseId);
 	}
 
 	@Test

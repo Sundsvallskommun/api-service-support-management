@@ -5,6 +5,8 @@ public enum EventSubType {
 	ATTACHMENT,
 	DECISION,
 	ERRAND,
+	HANDOVER_IN,
+	HANDOVER_OUT,
 	MESSAGE,
 	NOTE,
 	SYSTEM,
