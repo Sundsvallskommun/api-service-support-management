@@ -1,0 +1,22 @@
+{
+	"request": {
+		"headers": {
+			"Authorization": {
+				"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
+			}
+		},
+		"method": "GET",
+		"urlPath": "/api-json-schema/2281/schemas/test-schema-2.0"
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/problem+json"
+		},
+		"jsonBody": {
+			"title": "Not Found",
+			"status": 404
+		},
+		"status": 404
+	},
+	"name": "api-json-schema-getSchemaById-additionalInfo"
+}

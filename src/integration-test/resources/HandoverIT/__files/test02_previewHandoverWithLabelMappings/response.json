@@ -1,0 +1,96 @@
+{
+	"directlyCopyable": {
+		"title": "TITLE-3",
+		"priority": "HIGH",
+		"stakeholderCount": 1,
+		"externalTagCount": 2,
+		"attachmentCount": 1
+	},
+	"mappingRequired": {
+		"status": {
+			"source": {
+				"name": "STATUS-3",
+				"displayName": "Status 3"
+			},
+			"candidates": []
+		},
+		"classification": {
+			"source": {
+				"category": "CATEGORY-3",
+				"type": "TYPE-3"
+			},
+			"candidates": {}
+		},
+		"labels": {
+			"candidates": [
+				{
+					"id": "2f3d54e5-075a-4e21-ae30-b8fa69d24eeb",
+					"displayName": "ROOT-DISPLAY-NAME",
+					"resourcePath": "ROOT"
+				},
+				{
+					"id": "8f78a6ae-b1f6-4a63-87f0-30314c038e02",
+					"displayName": "LEVELONE-1-DISPLAY-NAME",
+					"resourcePath": "ROOT/LEVELONE-1"
+				},
+				{
+					"id": "8f1c6101-8c32-4c77-b72c-3348f23394f1",
+					"displayName": "LEVELTWO-1-DISPLAY-NAME",
+					"resourcePath": "ROOT/LEVELONE-1/LEVELTWO-1"
+				},
+				{
+					"id": "7ac8f12e-7c9b-47dc-ac7f-92a1f62ca53f",
+					"displayName": "LEVELTWO-2-DISPLAY-NAME",
+					"resourcePath": "ROOT/LEVELONE-1/LEVELTWO-2"
+				},
+				{
+					"id": "b1e63167-4bba-4f78-825b-e6ca9ce85903",
+					"displayName": "LEVELONE-2-DISPLAY-NAME",
+					"resourcePath": "ROOT/LEVELONE-2"
+				}
+			],
+			"mappings": [
+				{
+					"sourceId": "926fd3f9-f488-4ba4-93f6-2789dee0c0c3",
+					"sourceDisplayName": "SUBTYPE-DISPLAY-NAME-3",
+					"sourceResourcePath": "CATEGORY-1/TYPE-2/SUBTYPE-3"
+				},
+				{
+					"sourceId": "f4d6e210-633b-48a6-ad0a-7be839b28762",
+					"sourceDisplayName": "SUBTYPE-DISPLAY-NAME-4",
+					"sourceResourcePath": "CATEGORY-1/TYPE-2/SUBTYPE-4"
+				}
+			]
+		},
+		"contactReason": {
+			"candidates": []
+		}
+	},
+	"sourceHandling": {
+		"statusCandidates": [
+			{
+				"name": "STATUS-2",
+				"displayName": "Status 2"
+			},
+			{
+				"name": "STATUS-3",
+				"displayName": "Status 3"
+			},
+			{
+				"name": "STATUS-1",
+				"displayName": "Status 1"
+			}
+		]
+	},
+	"notCopyable": [
+		{
+			"field": "phases",
+			"reason": "Phase history is source-specific"
+		},
+		{
+			"field": "activePhaseId",
+			"reason": "Phase IDs differ per namespace"
+		}
+	],
+	"warnings": []
+}

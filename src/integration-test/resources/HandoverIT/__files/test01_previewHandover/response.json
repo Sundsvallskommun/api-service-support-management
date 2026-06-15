@@ -1,0 +1,87 @@
+{
+	"directlyCopyable": {
+		"title": "TITLE-1",
+		"priority": "LOW",
+		"stakeholderCount": 2,
+		"externalTagCount": 2,
+		"attachmentCount": 1
+	},
+	"mappingRequired": {
+		"status": {
+			"source": {
+				"name": "STATUS-1",
+				"displayName": "Status 1"
+			},
+			"suggestedTarget": "STATUS-1",
+			"matchReason": "NAME_EXACT",
+			"candidates": [
+				{
+					"name": "STATUS-1",
+					"displayName": "Status 1"
+				},
+				{
+					"name": "STATUS-2",
+					"displayName": "Status 2"
+				},
+				{
+					"name": "STATUS-3",
+					"displayName": "Status 3"
+				},
+				{
+					"name": "STATUS-4",
+					"displayName": "Status 4"
+				}
+			]
+		},
+		"classification": {
+			"source": {
+				"category": "CATEGORY-1",
+				"type": "TYPE-1"
+			},
+			"candidates": {}
+		},
+		"labels": {
+			"candidates": [],
+			"mappings": []
+		},
+		"contactReason": {
+			"candidates": []
+		}
+	},
+	"sourceHandling": {
+		"statusCandidates": [
+			{
+				"name": "STATUS-2",
+				"displayName": "Status 2"
+			},
+			{
+				"name": "STATUS-3",
+				"displayName": "Status 3"
+			},
+			{
+				"name": "STATUS-1",
+				"displayName": "Status 1"
+			}
+		]
+	},
+	"notCopyable": [
+		{
+			"field": "phases",
+			"reason": "Phase history is source-specific"
+		},
+		{
+			"field": "activePhaseId",
+			"reason": "Phase IDs differ per namespace"
+		}
+	],
+	"warnings": [
+		{
+			"type": "ROLE_NOT_IN_TARGET",
+			"value": "ROLE-2"
+		},
+		{
+			"type": "ROLE_NOT_IN_TARGET",
+			"value": "ROLE-1"
+		}
+	]
+}

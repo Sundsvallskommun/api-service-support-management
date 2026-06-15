@@ -514,10 +514,12 @@ class HandoverServiceTest {
 				.thenReturn(ResponseEntity.created(URI.create("/2282/relations/" + RELATION_ID)).build());
 			when(revisionServiceMock.getLatestErrandRevision(any())).thenReturn(Revision.create());
 
+			when(attachmentRepositoryMock.saveAndFlush(any(AttachmentEntity.class))).thenAnswer(inv -> inv.getArgument(0));
+
 			service.handover(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, minimalRequest().withInclude(HandoverInclude.create().withAttachments(true)));
 
 			final var captor = ArgumentCaptor.forClass(AttachmentEntity.class);
-			verify(attachmentRepositoryMock).save(captor.capture());
+			verify(attachmentRepositoryMock).saveAndFlush(captor.capture());
 			assertThat(captor.getValue().getFileName()).isEqualTo("document.pdf");
 			assertThat(captor.getValue().getMimeType()).isEqualTo("application/pdf");
 			assertThat(captor.getValue().getChannel()).isEqualTo("EMAIL");

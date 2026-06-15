@@ -258,7 +258,7 @@ public class HandoverService {
 						.withChannel(sourceAttachment.getChannel())
 						.withFileSize(sourceAttachment.getFileSize())
 						.withAttachmentData(AttachmentDataEntity.create().withFile(newBlob));
-					attachmentRepository.save(newAttachment);
+					attachmentRepository.saveAndFlush(newAttachment);
 					target.getAttachments().add(newAttachment);
 				}
 			} catch (final Exception e) {
