@@ -399,6 +399,7 @@ class SendEmailActionTest {
 			.withErrandNumber(ERRAND_NUMBER);
 
 		var config = ActionConfigEntity.create();
+		config.setConditions(new ArrayList<>());
 		config.setParameters(new ArrayList<>(List.of(
 			ActionConfigParameterEntity.create().withKey("recipient").withValues(List.of(RECIPIENT_ADDRESS)),
 			ActionConfigParameterEntity.create().withKey("sender").withValues(List.of(SENDER_ADDRESS)),
@@ -449,6 +450,37 @@ class SendEmailActionTest {
 		assertThat(capturedRequest.getMessage()).isNull();
 		assertThat(capturedRequest.getHtmlMessage()).isEqualTo(EMAIL_BODY + "<br><br><a href=\"" + ERRAND_BASE_URL + "/arende/" + ERRAND_NUMBER + "\">Öppna ärendet direkt i Draken</a>"
 			+ "<br><br><em>Detta är ett automatiskt meddelande. Svara inte på detta e-postmeddelande</em>");
+	}
+
+	// conditionsFulfilled tests
+
+	@Test
+	void conditionsFulfilledWhenStatusMatches() {
+		var errand = ErrandEntity.create().withStatus(STATUS_OPEN).withLabels(List.of());
+		var config = ActionConfigEntity.create();
+		config.setConditions(new ArrayList<>(List.of(
+			ActionConfigConditionEntity.create().withKey("status").withValues(List.of(STATUS_OPEN)))));
+
+		assertThat(sendEmailAction.conditionsFulfilled(errand, config)).isTrue();
+	}
+
+	@Test
+	void conditionsFulfilledWhenStatusDoesNotMatch() {
+		var errand = ErrandEntity.create().withStatus(STATUS_CLOSED).withLabels(List.of());
+		var config = ActionConfigEntity.create();
+		config.setConditions(new ArrayList<>(List.of(
+			ActionConfigConditionEntity.create().withKey("status").withValues(List.of(STATUS_OPEN)))));
+
+		assertThat(sendEmailAction.conditionsFulfilled(errand, config)).isFalse();
+	}
+
+	@Test
+	void conditionsFulfilledWhenNoConditions() {
+		var errand = ErrandEntity.create().withStatus(STATUS_OPEN).withLabels(List.of());
+		var config = ActionConfigEntity.create();
+		config.setConditions(new ArrayList<>());
+
+		assertThat(sendEmailAction.conditionsFulfilled(errand, config)).isTrue();
 	}
 
 	// validForOperationType tests
