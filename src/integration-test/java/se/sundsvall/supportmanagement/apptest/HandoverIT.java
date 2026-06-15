@@ -74,7 +74,7 @@ class HandoverIT extends AbstractAppTest {
 	}
 
     @Test
-    void test01_executeHandover() {
+    void test02_executeHandover() {
         setupCall()
                 .withServicePath(SOURCE_PATH + "/handover/execute")
                 .withHttpMethod(POST)
@@ -91,7 +91,7 @@ class HandoverIT extends AbstractAppTest {
     }
 
 	@Test
-	void test02_previewHandoverWithLabelMappings() {
+	void test03_previewHandoverWithLabelMappings() {
 		setupCall()
 			.withServicePath(PATH + "/1be673c0-6ba3-4fb0-af4a-43acf23389f6" + PREVIEW)
 			.withHttpMethod(POST)
@@ -103,7 +103,7 @@ class HandoverIT extends AbstractAppTest {
 	}
 
     @Test
-    void test02_executeHandoverIdempotent() {
+    void test04_executeHandoverIdempotent() {
         final var location = setupCall()
                 .withServicePath(SOURCE_PATH + "/handover/execute")
                 .withHttpMethod(POST)
@@ -126,7 +126,7 @@ class HandoverIT extends AbstractAppTest {
     }
 
 	@Test
-	void test03_previewHandoverWithSchemaWarning() {
+	void test05_previewHandoverWithSchemaWarning() {
 		// Create an errand carrying json parameters (the source data does not contain any)
 		final var headers = setupCall()
 			.withHeader(SENT_BY_HEADER, "joe01doe; type=adAccount")
@@ -150,7 +150,7 @@ class HandoverIT extends AbstractAppTest {
 	}
 
     @Test
-    void test03_executeHandoverWithSourceClose() {
+    void test06_executeHandoverWithSourceClose() {
         setupCall()
                 .withServicePath(SOURCE_PATH_2 + "/handover/execute")
                 .withHttpMethod(POST)
@@ -165,7 +165,7 @@ class HandoverIT extends AbstractAppTest {
     }
 
 	@Test
-	void test04_previewHandoverToSameNamespace() {
+	void test07_previewHandoverToSameNamespace() {
 		setupCall()
 			.withServicePath(PATH + "/ec677eb3-604c-4935-bff7-f8f0b500c8f4" + PREVIEW)
 			.withHttpMethod(POST)
@@ -177,7 +177,7 @@ class HandoverIT extends AbstractAppTest {
 	}
 
     @Test
-    void test04_executeHandoverMissingStatus() {
+    void test08_executeHandoverMissingStatus() {
         setupCall()
                 .withServicePath(SOURCE_PATH + "/handover/execute")
                 .withHttpMethod(POST)
@@ -189,7 +189,7 @@ class HandoverIT extends AbstractAppTest {
     }
 
     @Test
-    void test05_executeHandoverStatusNotInTargetNamespace() {
+    void test09_executeHandoverStatusNotInTargetNamespace() {
         setupCall()
                 .withServicePath(SOURCE_PATH + "/handover/execute")
                 .withHttpMethod(POST)
@@ -201,7 +201,7 @@ class HandoverIT extends AbstractAppTest {
     }
 
 	@Test
-	void test05_previewHandoverToNonExistingTargetNamespace() {
+	void test10_previewHandoverToNonExistingTargetNamespace() {
 		setupCall()
 			.withServicePath(PATH + "/ec677eb3-604c-4935-bff7-f8f0b500c8f4" + PREVIEW)
 			.withHttpMethod(POST)
@@ -213,7 +213,7 @@ class HandoverIT extends AbstractAppTest {
 	}
 
 	@Test
-	void test06_previewHandoverForNonExistingErrand() {
+	void test11_previewHandoverForNonExistingErrand() {
 		setupCall()
 			.withServicePath(PATH + "/4756ab93-2c64-4f36-a916-0a06ffa77ad9" + PREVIEW)
 			.withHttpMethod(POST)
@@ -225,7 +225,7 @@ class HandoverIT extends AbstractAppTest {
 	}
 
     @Test
-    void test06_previewHandover() {
+    void test12_previewHandover() {
         setupCall()
                 .withServicePath(SOURCE_PATH + "/handover/preview")
                 .withHttpMethod(POST)
@@ -237,7 +237,7 @@ class HandoverIT extends AbstractAppTest {
     }
 
 	@Test
-	void test07_previewHandoverUnauthorized() {
+	void test13_previewHandoverUnauthorized() {
 		// NAMESPACE-2506 has access control enabled and the stubbed accessmapper response does not
 		// grant the user access to any label on the errand
 		setupCall()
@@ -251,7 +251,7 @@ class HandoverIT extends AbstractAppTest {
 			.sendRequestAndVerifyResponse();
 	}
     @Test
-    void test07_executeHandoverWithAttachmentsCopiesContent() throws Exception {
+    void test14_executeHandoverWithAttachmentsCopiesContent() throws Exception {
         // Use sendRequest() so WireMock stub history is preserved for the final sendRequestAndVerifyResponse()
         setupCall()
                 .withServicePath(SOURCE_PATH + "/handover/execute")
@@ -282,7 +282,7 @@ class HandoverIT extends AbstractAppTest {
     }
 
     @Test
-    void test08_executeHandoverWithAttachmentsIdempotentDoesNotDuplicate() {
+    void test15_executeHandoverWithAttachmentsIdempotentDoesNotDuplicate() {
         // First call: use sendRequest() so stub history is available for the second call's verification
         setupCall()
                 .withServicePath(SOURCE_PATH + "/handover/execute")
