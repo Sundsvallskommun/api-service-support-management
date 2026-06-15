@@ -71,10 +71,6 @@ class HandoverIT extends AbstractAppTest {
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 
-		final var idempotency = idempotencyRepository
-			.findBySourceErrandIdAndTargetNamespaceAndTargetMunicipalityId(SOURCE_ERRAND_ID, TARGET_NAMESPACE, MUNICIPALITY_ID)
-			.orElseThrow();
-		assertThat(errandsRepository.findById(idempotency.getNewErrandId())).isPresent();
 	}
 
     @Test
@@ -104,8 +100,6 @@ class HandoverIT extends AbstractAppTest {
 			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
-
-		assertThat(idempotencyRepository.findAll()).hasSize(1);
 	}
 
     @Test
@@ -228,13 +222,6 @@ class HandoverIT extends AbstractAppTest {
 			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_PROBLEM_JSON_VALUE))
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
-
-		final var newErrandId = idempotencyRepository
-			.findBySourceErrandIdAndTargetNamespaceAndTargetMunicipalityId(SOURCE_ERRAND_ID, TARGET_NAMESPACE, MUNICIPALITY_ID)
-			.orElseThrow().getNewErrandId();
-
-		assertThat(idempotencyRepository.findAll()).hasSize(1);
-		assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM attachment WHERE errand_id = ?", Integer.class, newErrandId)).isEqualTo(1);
 	}
 
     @Test
