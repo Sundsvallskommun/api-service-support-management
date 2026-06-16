@@ -26,11 +26,15 @@ import se.sundsvall.supportmanagement.api.model.config.action.enums.OperationTyp
 import se.sundsvall.supportmanagement.api.model.metadata.Label;
 import se.sundsvall.supportmanagement.api.model.metadata.Labels;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
+import se.sundsvall.supportmanagement.integration.db.CommunicationRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigConditionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
+import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationType;
+import se.sundsvall.supportmanagement.integration.db.model.enums.Direction;
 import se.sundsvall.supportmanagement.service.CommunicationService;
 import se.sundsvall.supportmanagement.service.MetadataService;
 
@@ -65,6 +69,9 @@ class SendEmailActionTest {
 
 	@Mock
 	private CommunicationService communicationService;
+
+	@Mock
+	private CommunicationRepository communicationRepository;
 
 	@Mock
 	private Clock clock;
@@ -266,18 +273,74 @@ class SendEmailActionTest {
 	// actionFulfilled tests
 
 	@Test
-	void actionFulfilledAlwaysReturnsFalse() {
+	void actionFulfilledWhenMatchingEmailExists() {
 		var errand = ErrandEntity.create()
 			.withMunicipalityId(MUNICIPALITY_ID)
 			.withNamespace(NAMESPACE)
 			.withId(ERRAND_ID)
 			.withErrandNumber(ERRAND_NUMBER);
 
+		var communication = CommunicationEntity.create()
+			.withType(CommunicationType.EMAIL)
+			.withDirection(Direction.OUTBOUND)
+			.withSender(SENDER_ADDRESS)
+			.withRecipients(List.of(RECIPIENT_ADDRESS))
+			.withSubject(EMAIL_SUBJECT + " - " + ERRAND_NUMBER);
+
+		when(communicationRepository.findByErrandNumber(ERRAND_NUMBER)).thenReturn(List.of(communication));
+
+		assertThat(sendEmailAction.actionFulfilled(errand, Map.of(
+			"recipient", List.of(RECIPIENT_ADDRESS),
+			"sender", List.of(SENDER_ADDRESS),
+			"subject", List.of(EMAIL_SUBJECT),
+			"body", List.of(EMAIL_BODY)))).isTrue();
+
+		verify(communicationRepository).findByErrandNumber(ERRAND_NUMBER);
+	}
+
+	@Test
+	void actionFulfilledWhenNoMatchingEmailExists() {
+		var errand = ErrandEntity.create()
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withNamespace(NAMESPACE)
+			.withId(ERRAND_ID)
+			.withErrandNumber(ERRAND_NUMBER);
+
+		when(communicationRepository.findByErrandNumber(ERRAND_NUMBER)).thenReturn(List.of());
+
 		assertThat(sendEmailAction.actionFulfilled(errand, Map.of(
 			"recipient", List.of(RECIPIENT_ADDRESS),
 			"sender", List.of(SENDER_ADDRESS),
 			"subject", List.of(EMAIL_SUBJECT),
 			"body", List.of(EMAIL_BODY)))).isFalse();
+
+		verify(communicationRepository).findByErrandNumber(ERRAND_NUMBER);
+	}
+
+	@Test
+	void actionFulfilledWhenEmailExistsButDifferentSender() {
+		var errand = ErrandEntity.create()
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withNamespace(NAMESPACE)
+			.withId(ERRAND_ID)
+			.withErrandNumber(ERRAND_NUMBER);
+
+		var communication = CommunicationEntity.create()
+			.withType(CommunicationType.EMAIL)
+			.withDirection(Direction.OUTBOUND)
+			.withSender("other@test.com")
+			.withRecipients(List.of(RECIPIENT_ADDRESS))
+			.withSubject(EMAIL_SUBJECT + " - " + ERRAND_NUMBER);
+
+		when(communicationRepository.findByErrandNumber(ERRAND_NUMBER)).thenReturn(List.of(communication));
+
+		assertThat(sendEmailAction.actionFulfilled(errand, Map.of(
+			"recipient", List.of(RECIPIENT_ADDRESS),
+			"sender", List.of(SENDER_ADDRESS),
+			"subject", List.of(EMAIL_SUBJECT),
+			"body", List.of(EMAIL_BODY)))).isFalse();
+
+		verify(communicationRepository).findByErrandNumber(ERRAND_NUMBER);
 	}
 
 	// createAction tests

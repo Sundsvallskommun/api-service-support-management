@@ -15,10 +15,13 @@ import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
 import se.sundsvall.supportmanagement.api.model.config.action.Definition;
 import se.sundsvall.supportmanagement.api.model.config.action.PossibleValue;
 import se.sundsvall.supportmanagement.api.model.config.action.enums.OperationType;
+import se.sundsvall.supportmanagement.integration.db.CommunicationRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandActionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationType;
+import se.sundsvall.supportmanagement.integration.db.model.enums.Direction;
 import se.sundsvall.supportmanagement.service.CommunicationService;
 import se.sundsvall.supportmanagement.service.MetadataService;
 
@@ -44,10 +47,12 @@ public class SendEmailAction extends AbstractAction {
 	private static final Set<OperationType> VALID_OPERATION_TYPES = Set.of(OperationType.CREATE, OperationType.UPDATE);
 
 	private final CommunicationService communicationService;
+	private final CommunicationRepository communicationRepository;
 
-	public SendEmailAction(final MetadataService metadataService, final CommunicationService communicationService, final Clock clock) {
+	public SendEmailAction(final MetadataService metadataService, final CommunicationService communicationService, final CommunicationRepository communicationRepository, final Clock clock) {
 		super(metadataService, clock);
 		this.communicationService = communicationService;
+		this.communicationRepository = communicationRepository;
 	}
 
 	@Override
@@ -128,7 +133,16 @@ public class SendEmailAction extends AbstractAction {
 
 	@Override
 	public boolean actionFulfilled(ErrandEntity errand, Map<String, List<String>> parameters) {
-		return false; // This action is not based on the state of the errand, it should always be executed when conditions are met
+		final var sender = parameters.get(SENDER).getFirst();
+		final var recipient = parameters.get(RECIPIENT).getFirst();
+		final var expectedSubject = String.format("%s - %s", parameters.get(SUBJECT).getFirst(), errand.getErrandNumber());
+
+		return communicationRepository.findByErrandNumber(errand.getErrandNumber()).stream()
+			.filter(c -> c.getType() == CommunicationType.EMAIL)
+			.filter(c -> c.getDirection() == Direction.OUTBOUND)
+			.anyMatch(c -> sender.equals(c.getSender())
+				&& c.getRecipients().contains(recipient)
+				&& expectedSubject.equals(c.getSubject()));
 	}
 
 	@Override
