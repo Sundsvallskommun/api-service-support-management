@@ -12,7 +12,7 @@
 		"headers": {
 			"Content-Type": "application/json"
 		},
-		"bodyFileName": "test07_previewHandoverUnauthorized/responses/api-accessmapper-getAccess-response.json",
+		"bodyFileName": "test13_previewHandoverUnauthorized/responses/api-accessmapper-getAccess-response.json",
 		"status": 200
 	},
 	"name": "api-accessmapper"
