@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.service.action;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeParseException;
@@ -8,6 +9,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Sort;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.ThrowableProblem;
@@ -24,16 +27,21 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable
 import se.sundsvall.supportmanagement.service.MetadataService;
 
 import static org.springframework.http.HttpStatus.UNPROCESSABLE_CONTENT;
+import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 
 public abstract class AbstractAction implements Action {
+
+	private static final Logger LOG = LoggerFactory.getLogger(AbstractAction.class);
 
 	protected static final String STATUS = "status";
 	protected static final String HAS_LABEL = "hasLabel";
 	protected static final String DURATION = "duration";
 	protected final MetadataService metadataService;
+	protected final Clock clock;
 
-	protected AbstractAction(final MetadataService metadataService) {
+	protected AbstractAction(final MetadataService metadataService, final Clock clock) {
 		this.metadataService = metadataService;
+		this.clock = clock;
 	}
 
 	@Override
@@ -72,8 +80,8 @@ public abstract class AbstractAction implements Action {
 				.map(ActionConfigParameterEntity::getValues)
 				.map(List::getFirst)
 				.map(Duration::parse)
-				.map(duration -> OffsetDateTime.now().plus(duration))
-				.orElse(OffsetDateTime.now());
+				.map(duration -> OffsetDateTime.now(clock).plus(duration))
+				.orElse(OffsetDateTime.now(clock));
 
 			return buildErrandAction(errand, actionConfigEntity, executeAfter);
 		} else {
@@ -144,17 +152,32 @@ public abstract class AbstractAction implements Action {
 		}
 	}
 
+	@Override
+	public boolean conditionsFulfilled(ErrandEntity errand, ActionConfigEntity actionConfigEntity) {
+		return evaluateConditions(errand, toConditionMap(actionConfigEntity));
+	}
+
 	protected boolean evaluateConditions(ErrandEntity errand, Map<String, List<String>> conditions) {
+		LOG.debug("Evaluating conditions for errand '{}': errand status='{}', conditions={}",
+			sanitizeForLogging(errand.getId()), sanitizeForLogging(errand.getStatus()), sanitizeForLogging(String.valueOf(conditions)));
+
 		boolean fulfillsConditions = true;
 
 		if (conditions.containsKey(STATUS)) {
-			fulfillsConditions &= conditions.get(STATUS).contains(errand.getStatus());
+			final var statusMatch = conditions.get(STATUS).contains(errand.getStatus());
+			LOG.debug("Status condition check: errand status='{}', allowed statuses={}, match={}",
+				sanitizeForLogging(errand.getStatus()), sanitizeForLogging(String.valueOf(conditions.get(STATUS))), statusMatch);
+			fulfillsConditions &= statusMatch;
 		}
 
 		if (conditions.containsKey(HAS_LABEL)) {
-			fulfillsConditions &= getErrandLabelIds(errand).containsAll(conditions.get(HAS_LABEL));
+			final var labelMatch = getErrandLabelIds(errand).containsAll(conditions.get(HAS_LABEL));
+			LOG.debug("Label condition check: errand labels={}, required labels={}, match={}",
+				sanitizeForLogging(String.valueOf(getErrandLabelIds(errand))), sanitizeForLogging(String.valueOf(conditions.get(HAS_LABEL))), labelMatch);
+			fulfillsConditions &= labelMatch;
 		}
 
+		LOG.debug("Conditions evaluation result for errand '{}': {}", sanitizeForLogging(errand.getId()), fulfillsConditions);
 		return fulfillsConditions;
 	}
 

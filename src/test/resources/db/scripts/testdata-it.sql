@@ -555,3 +555,10 @@ VALUES ('bbccddee-0000-0000-0000-000000000001', 'aabbccdd-0000-0000-0000-0000000
 
 INSERT INTO subscription_event_filter(subscription_id, sort_order, type, subtype)
 VALUES ('bbccddee-0000-0000-0000-000000000003', 0, 'UPDATE', 'ATTACHMENT');
+
+-- -----------------------------------
+-- Subscriber Notifications
+-- -----------------------------------
+INSERT INTO subscriber_notification(id, created, modified, identifier_type, identifier_value, municipality_id, namespace, errand_id, errand_number, expires, acknowledged)
+VALUES ('a1b2c3d4-0000-0000-0000-000000000001', '2023-12-31 23:59:59.999', null, 'adAccount', 'joe01doe', '2281', 'NAMESPACE-1', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', 'KC-23020001', '2099-12-31 23:59:59.999', null),
+       ('a1b2c3d4-0000-0000-0000-000000000002', '2023-12-31 23:59:59.999', null, 'adAccount', 'joe01doe', '2281', 'NAMESPACE-1', 'cc236cf1-c00f-4479-8341-ecf5dd90b5b9', 'KC-23020002', '2099-12-31 23:59:59.999', null);

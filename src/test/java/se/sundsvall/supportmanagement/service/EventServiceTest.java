@@ -14,11 +14,14 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.notification.Notification;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
+import se.sundsvall.supportmanagement.integration.db.NotificationDispatchRepository;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
@@ -31,7 +34,9 @@ import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static org.assertj.core.groups.Tuple.tuple;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -46,6 +51,12 @@ class EventServiceTest {
 
 	@Mock
 	private EventlogClient eventLogClientMock;
+
+	@Mock
+	private ApplicationEventPublisher eventPublisherMock;
+
+	@Mock
+	private NotificationDispatchRepository notificationDispatchRepositoryMock;
 
 	@Mock
 	private PageEvent pageEventMock;
@@ -65,6 +76,7 @@ class EventServiceTest {
 	@BeforeEach
 	void beforeEach() {
 		Identifier.set(Identifier.create().withType(AD_ACCOUNT).withValue("executingUserId"));
+		lenient().when(eventLogClientMock.createEvent(any(), any(), any())).thenReturn(ResponseEntity.ok().build());
 	}
 
 	@Test
@@ -122,6 +134,7 @@ class EventServiceTest {
 		assertThat(event.getSourceType()).isEqualTo(sourceType);
 		assertThat(event.getType()).isEqualTo(eventType);
 
+		verify(eventPublisherMock).publishEvent(new AutoSubscribeEvent(entity));
 		verify(notificationServiceMock).createNotification(eq(entity.getMunicipalityId()), eq(entity.getNamespace()), eq(entity.getId()), notificationCaptor.capture());
 		final var notification = notificationCaptor.getValue();
 		assertThat(notification.getCreatedBy()).isEqualTo(executingUserId);
@@ -161,6 +174,7 @@ class EventServiceTest {
 		assertThat(event.getOwner()).isEqualTo(owner);
 		assertThat(event.getSourceType()).isEqualTo(sourceType);
 		assertThat(event.getType()).isEqualTo(eventType);
+		verify(eventPublisherMock).publishEvent(new AutoSubscribeEvent(entity));
 	}
 
 	@Test
@@ -206,6 +220,7 @@ class EventServiceTest {
 		assertThat(event.getOwner()).isEqualTo(owner);
 		assertThat(event.getSourceType()).isEqualTo(sourceType);
 		assertThat(event.getType()).isEqualTo(eventType);
+		verify(eventPublisherMock).publishEvent(new AutoSubscribeEvent(entity));
 	}
 
 	@Test
@@ -260,6 +275,7 @@ class EventServiceTest {
 		assertThat(event.getOwner()).isEqualTo(owner);
 		assertThat(event.getSourceType()).isEqualTo(sourceType);
 		assertThat(event.getType()).isEqualTo(eventType);
+		verify(eventPublisherMock).publishEvent(new AutoSubscribeEvent(errandEntity));
 	}
 
 	@Test
@@ -308,6 +324,7 @@ class EventServiceTest {
 		assertThat(event.getOwner()).isEqualTo(owner);
 		assertThat(event.getSourceType()).isEqualTo(sourceType);
 		assertThat(event.getType()).isEqualTo(eventType);
+		verify(eventPublisherMock).publishEvent(new AutoSubscribeEvent(errandEntity));
 	}
 
 	@Test

@@ -39,6 +39,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_IMPLEMENTED;
+import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.HANDOVER_IN;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.HANDOVER_OUT;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getAdUser;
@@ -106,7 +107,7 @@ public class HandoverService {
 		final var existing = idempotencyRepository.findBySourceErrandIdAndTargetNamespaceAndTargetMunicipalityId(
 			errandId, request.getTarget().getNamespace(), request.getTarget().getMunicipalityId());
 		if (existing.isPresent()) {
-			LOG.debug("Handover already performed for errand '{}' to '{}/{}', returning existing result", errandId, request.getTarget().getNamespace(), request.getTarget().getMunicipalityId());
+			LOG.debug("Handover already performed for errand '{}' to '{}/{}', returning existing result", sanitizeForLogging(errandId), sanitizeForLogging(request.getTarget().getNamespace()), sanitizeForLogging(request.getTarget().getMunicipalityId()));
 			return toHandoverErrand(existing.get());
 		}
 

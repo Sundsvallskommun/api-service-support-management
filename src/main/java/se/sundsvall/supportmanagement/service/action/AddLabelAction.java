@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.service.action;
 
+import java.time.Clock;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -27,8 +28,8 @@ public class AddLabelAction extends AbstractAction {
 
 	private final ErrandsRepository errandsRepository;
 
-	public AddLabelAction(final MetadataService metadataService, final ErrandsRepository errandsRepository) {
-		super(metadataService);
+	public AddLabelAction(final MetadataService metadataService, final ErrandsRepository errandsRepository, final Clock clock) {
+		super(metadataService, clock);
 		this.errandsRepository = errandsRepository;
 	}
 

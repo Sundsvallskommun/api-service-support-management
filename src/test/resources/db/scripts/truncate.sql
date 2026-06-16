@@ -57,4 +57,6 @@ TRUNCATE table subscription;
 TRUNCATE table subscriber_event_filter;
 TRUNCATE table subscriber_channel;
 TRUNCATE table subscriber;
+TRUNCATE table notification_dispatch;
+TRUNCATE table subscriber_notification;
 SET FOREIGN_KEY_CHECKS = 1;

@@ -7,25 +7,40 @@ info:
     url: https://opensource.org/licenses/MIT
   version: "14.8"
 servers:
-- url: http://localhost:57350
+- url: http://localhost:60128
   description: Generated server url
 tags:
-- name: Errand attachments
-  description: Errand attachments operations
-- name: Errand Parameters
-  description: Errand parameter operations
 - name: Configuration for namespace
   description: Namespace configuration operations
 - name: Configuration message-exchange sync
   description: Configuration for message-exchange scheduled syncing job
 - name: Metadata for phases
   description: Phase metadata operations
+- name: Metadata for labels
+  description: Label metadata operations
+- name: Errand events
+  description: Errand event operations
+- name: User notifications
+  description: User notifications operations
+- name: Handover
+  description: Errand handover operations
+- name: Subscribers
+  description: "Subscriber CRUD operations. A subscriber describes who receives notifications\
+    \ and how (channels, event filters, optional pause window)."
+- name: Time measures
+  description: Time measure operations
+- name: Metadata for statuses
+  description: Status metadata operations
+- name: Configuration for email integration
+  description: Settings for email integration per municipality/namespace
+- name: Errand attachments
+  description: Errand attachments operations
+- name: Errand Parameters
+  description: Errand parameter operations
 - name: Metadata for categories
   description: Category metadata operations
 - name: Revisions
   description: Errand and errand note revision operations
-- name: Metadata for labels
-  description: Label metadata operations
 - name: Subscriptions
   description: "Subscription operations. A subscription describes what a subscriber\
     \ listens for (an errand or all events in a namespace). Subscriptions support\
@@ -35,34 +50,83 @@ tags:
   description: Errand notes operations
 - name: Metadata for contact reasons
   description: Contact reason metadata operations
-- name: Errand events
-  description: Errand event operations
-- name: User notifications
-  description: User notifications operations
 - name: Metadata for external ID types
   description: ExternalIdType metadata operations
-- name: Handover
-  description: Errand handover operations
 - name: Metadata
   description: Metadata operations
-- name: Subscribers
-  description: "Subscriber CRUD operations. A subscriber describes who receives notifications\
-    \ and how (channels, event filters, optional pause window)."
 - name: Metadata for roles
   description: Role metadata operations
-- name: Time measures
-  description: Time measure operations
-- name: Metadata for statuses
-  description: Status metadata operations
 - name: Errand communication
   description: Errand communication operations
 - name: Configuration for message exchange integration
   description: Settings for message exchange integration per municipality/namespace
-- name: Configuration for email integration
-  description: Settings for email integration per municipality/namespace
 - name: Errands
   description: Errand operations
+- name: Subscriber notifications
+  description: Subscriber notification operations
 paths:
+  /{municipalityId}/{namespace}/notifications/{notificationId}/acknowledge:
+    put:
+      tags:
+      - Subscriber notifications
+      summary: Acknowledge subscriber notification
+      description: Mark a subscriber notification as acknowledged
+      operationId: acknowledgeNotification
+      parameters:
+      - name: municipalityId
+        in: path
+        description: Municipality ID
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: notificationId
+        in: path
+        description: Notification ID
+        required: true
+        schema:
+          type: string
+        example: 74540a24-70e1-4e82-90f7-7d8ad4666cdc
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      responses:
+        "204":
+          description: Successful operation
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/namespace-config:
     get:
       tags:
@@ -3024,92 +3088,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-  /{municipalityId}/{namespace}/errands/{errandId}/handover/execute:
-    post:
-      tags:
-      - Handover
-      summary: Execute errand handover
-      description: "Hands over an errand to another namespace. Copies the errand\
-        \ with applied field mappings, optionally copies attachments, creates a HANDOVER\
-        \ relation, and optionally closes or suspends the source errand."
-      operationId: executeHandover
-      parameters:
-      - name: namespace
-        in: path
-        description: Namespace
-        required: true
-        schema:
-          type: string
-          pattern: "[\\w|\\-]+"
-        example: MY_NAMESPACE
-      - name: municipalityId
-        in: path
-        description: Municipality id
-        required: true
-        schema:
-          type: string
-        example: 2281
-      - name: errandId
-        in: path
-        description: Errand id
-        required: true
-        schema:
-          type: string
-        example: b82bd8ac-1507-4d9a-958d-369261eecc15
-      - name: X-Request-Group-Id
-        in: header
-        description: "Optional UUID that groups related events and notifications for\
-          \ this operation. If omitted, no grouping is applied."
-        required: false
-        schema:
-          type: string
-          format: uuid
-        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/HandoverErrandRequest"
-        required: true
-      responses:
-        "201":
-          description: Successful operation
-          headers:
-            Location:
-              description: Location of the newly created errand in the target namespace
-              style: simple
-              schema:
-                type: string
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/HandoverErrand"
-        "400":
-          description: Bad request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "403":
-          description: Forbidden
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-        "404":
-          description: Not Found
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/errands/{errandId}/handover/preview:
     post:
       tags:
@@ -3167,6 +3145,92 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/HandoverPreview"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "403":
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/errands/{errandId}/handover/execute:
+    post:
+      tags:
+      - Handover
+      summary: Execute errand handover
+      description: "Hands over an errand to another namespace. Copies the errand with\
+        \ applied field mappings, optionally copies attachments, creates a HANDOVER\
+        \ relation, and optionally closes or suspends the source errand."
+      operationId: executeHandover
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand id
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HandoverErrandRequest"
+        required: true
+      responses:
+        "201":
+          description: Successful operation
+          headers:
+            Location:
+              description: Location of the newly created errand in the target namespace
+              style: simple
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HandoverErrand"
         "400":
           description: Bad request
           content:
@@ -6395,6 +6459,100 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/notifications/{identifierType}/{identifierValue}:
+    get:
+      tags:
+      - Subscriber notifications
+      summary: Get subscriber notifications
+      description: Get all notifications for a subscriber in the namespace and municipality
+      operationId: getNotifications
+      parameters:
+      - name: municipalityId
+        in: path
+        description: Municipality ID
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: identifierType
+        in: path
+        description: Identifier type
+        required: true
+        schema:
+          type: string
+        example: adAccount
+      - name: identifierValue
+        in: path
+        description: Identifier value
+        required: true
+        schema:
+          type: string
+        example: joe01doe
+      - name: page
+        in: query
+        description: Zero-based page index (0..N)
+        required: false
+        schema:
+          type: integer
+          default: 0
+          minimum: 0
+      - name: size
+        in: query
+        description: The size of the page to be returned
+        required: false
+        schema:
+          type: integer
+          default: 10
+          minimum: 1
+      - name: sort
+        in: query
+        description: "Sorting criteria in the format: property,(asc|desc). Default\
+          \ sort order is ascending. Multiple sort criteria are supported."
+        required: false
+        schema:
+          type: array
+          default:
+          - "created,DESC"
+          items:
+            type: string
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PageSubscriberNotification"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/namespace-config/action-definition:
     get:
       tags:
@@ -7811,6 +7969,68 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/notifications/{notificationId}:
+    delete:
+      tags:
+      - Subscriber notifications
+      summary: Delete subscriber notification
+      description: Delete a subscriber notification
+      operationId: deleteNotification_1
+      parameters:
+      - name: municipalityId
+        in: path
+        description: Municipality ID
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: notificationId
+        in: path
+        description: Notification ID
+        required: true
+        schema:
+          type: string
+        example: 74540a24-70e1-4e82-90f7-7d8ad4666cdc
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      responses:
+        "204":
+          description: Successful operation
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/metadata/phases/{phaseId}/transitions/{transitionId}:
     delete:
       tags:
@@ -7891,9 +8111,9 @@ components:
         type:
           type: string
           format: uri
-        title:
-          type: string
         detail:
+          type: string
+        title:
           type: string
         status:
           type: integer
@@ -9305,24 +9525,38 @@ components:
           type: boolean
         container:
           type: boolean
-        textual:
-          type: boolean
-          deprecated: true
-        boolean:
-          type: boolean
-        string:
-          type: boolean
         pojo:
           type: boolean
-        short:
-          type: boolean
-        int:
+        double:
           type: boolean
         binary:
           type: boolean
+        int:
+          type: boolean
+        textual:
+          type: boolean
+          deprecated: true
+        string:
+          type: boolean
         long:
           type: boolean
-        double:
+        short:
+          type: boolean
+        boolean:
+          type: boolean
+        number:
+          type: boolean
+        integralNumber:
+          type: boolean
+        floatingPointNumber:
+          type: boolean
+        bigDecimal:
+          type: boolean
+        missingNode:
+          type: boolean
+        bigInteger:
+          type: boolean
+        valueNode:
           type: boolean
         nodeType:
           type: string
@@ -9336,20 +9570,6 @@ components:
           - OBJECT
           - POJO
           - STRING
-        floatingPointNumber:
-          type: boolean
-        valueNode:
-          type: boolean
-        bigDecimal:
-          type: boolean
-        integralNumber:
-          type: boolean
-        missingNode:
-          type: boolean
-        bigInteger:
-          type: boolean
-        number:
-          type: boolean
         embeddedValue:
           type: boolean
     JsonParameter:
@@ -9510,7 +9730,8 @@ components:
       properties:
         externalId:
           type: string
-          description: Unique identifier for the stakeholder
+          description: Unique identifier (partyId) for the stakeholder. Must be null
+            or a valid UUID.
           examples:
           - cb20c51f-fcf3-42c0-b613-de563634a8ec
         externalIdType:
@@ -9636,172 +9857,6 @@ components:
       - createdBy
       - role
       - subject
-    HandoverErrandRequest:
-      type: object
-      description: Request body for handing over an errand to another namespace
-      properties:
-        target:
-          $ref: "#/components/schemas/HandoverTarget"
-        mapping:
-          $ref: "#/components/schemas/HandoverMapping"
-        overrides:
-          $ref: "#/components/schemas/HandoverOverrides"
-        include:
-          $ref: "#/components/schemas/HandoverInclude"
-        sourceHandling:
-          $ref: "#/components/schemas/HandoverSourceHandling"
-      required:
-      - mapping
-      - target
-    HandoverInclude:
-      type: object
-      description: Flags controlling what data is copied from the source errand
-      properties:
-        stakeholders:
-          type: boolean
-          default: false
-          description: Include stakeholders
-        externalTags:
-          type: boolean
-          default: false
-          description: Include external tags
-        parameters:
-          type: boolean
-          default: false
-          description: Include parameters
-        jsonParameters:
-          type: boolean
-          default: false
-          description: Include JSON parameters
-        attachments:
-          type: boolean
-          default: false
-          description: Include attachments
-        businessRelated:
-          type: boolean
-          default: false
-          description: Include business related flag
-        escalationEmail:
-          type: boolean
-          default: false
-          description: Include escalation email
-        contactReasonDescription:
-          type: boolean
-          default: false
-          description: Include contact reason description
-    HandoverMapping:
-      type: object
-      description: Field mappings to apply when creating the errand in the target
-        system
-      properties:
-        status:
-          type: string
-          description: Status to set on the new errand
-          example: NEW_CASE
-        classification:
-          $ref: "#/components/schemas/Classification"
-        labels:
-          type: array
-          description: Label UUIDs to apply on the new errand
-          items:
-            type: string
-        contactReason:
-          type: string
-          description: Contact reason to set on the new errand
-          example: Printer issue
-        channel:
-          type: string
-          description: Channel to set on the new errand
-          example: WEB_UI
-    HandoverOverrides:
-      type: object
-      description: Field values that override what is copied from the source errand
-      properties:
-        title:
-          type: string
-          description: Title override
-        description:
-          type: string
-          description: Description override
-        priority:
-          $ref: "#/components/schemas/Priority"
-        assignedUserId:
-          type: string
-          description: Assigned user id override
-        assignedGroupId:
-          type: string
-          description: Assigned group id override
-    HandoverSourceAction:
-      type: string
-      description: Action to take on the source errand after handover
-      enum:
-      - CLOSE
-      - RETAIN
-      - SUSPEND
-    HandoverSourceHandling:
-      type: object
-      description: Defines what happens to the source errand after handover
-      properties:
-        action:
-          $ref: "#/components/schemas/HandoverSourceAction"
-        status:
-          type: string
-          description: Status to set on the source errand
-          example: SOLVED
-        resolution:
-          type: string
-          description: Resolution to set on the source errand
-          example: HANDED_OVER
-        closingComment:
-          type: string
-          description: Closing comment to add to the source errand
-          example: Överlämnad till annan drake
-      required:
-      - action
-    HandoverTarget:
-      type: object
-      description: Target system to handover the errand to
-      properties:
-        namespace:
-          type: string
-          description: Target namespace
-          example: OTHER_NAMESPACE
-          minLength: 1
-        municipalityId:
-          type: string
-          description: Target municipality id
-          example: "2281"
-      required:
-      - namespace
-    HandoverErrand:
-      type: object
-      description: Response body for a successful errand handover
-      properties:
-        newErrandId:
-          type: string
-          description: Id of the newly created errand in the target system
-          example: f0882f1d-06bc-47fd-b017-1d8307f5ce95
-        newErrandNumber:
-          type: string
-          description: Errand number of the newly created errand
-          example: KC-23010001
-        target:
-          $ref: "#/components/schemas/HandoverTarget"
-          description: Target namespace and municipality the errand was handed over
-            to
-        relationId:
-          type: string
-          description: Id of the relation created between the source and target errand
-        appliedMappings:
-          type: object
-          additionalProperties:
-            type: string
-          description: Field mappings that were applied when creating the new errand
-        warnings:
-          type: array
-          description: Non-fatal warnings that occurred during handover
-          items:
-            type: string
     HandoverPreviewRequest:
       type: object
       description: Request describing which namespace a source errand should be previewed
@@ -10148,6 +10203,172 @@ components:
       enum:
       - PARAMETER_SCHEMA_MISMATCH
       - ROLE_NOT_IN_TARGET
+    HandoverErrandRequest:
+      type: object
+      description: Request body for handing over an errand to another namespace
+      properties:
+        target:
+          $ref: "#/components/schemas/HandoverTarget"
+        mapping:
+          $ref: "#/components/schemas/HandoverMapping"
+        overrides:
+          $ref: "#/components/schemas/HandoverOverrides"
+        include:
+          $ref: "#/components/schemas/HandoverInclude"
+        sourceHandling:
+          $ref: "#/components/schemas/HandoverSourceHandling"
+      required:
+      - mapping
+      - target
+    HandoverInclude:
+      type: object
+      description: Flags controlling what data is copied from the source errand
+      properties:
+        stakeholders:
+          type: boolean
+          default: false
+          description: Include stakeholders
+        externalTags:
+          type: boolean
+          default: false
+          description: Include external tags
+        parameters:
+          type: boolean
+          default: false
+          description: Include parameters
+        jsonParameters:
+          type: boolean
+          default: false
+          description: Include JSON parameters
+        attachments:
+          type: boolean
+          default: false
+          description: Include attachments
+        businessRelated:
+          type: boolean
+          default: false
+          description: Include business related flag
+        escalationEmail:
+          type: boolean
+          default: false
+          description: Include escalation email
+        contactReasonDescription:
+          type: boolean
+          default: false
+          description: Include contact reason description
+    HandoverMapping:
+      type: object
+      description: Field mappings to apply when creating the errand in the target
+        system
+      properties:
+        status:
+          type: string
+          description: Status to set on the new errand
+          example: NEW_CASE
+        classification:
+          $ref: "#/components/schemas/Classification"
+        labels:
+          type: array
+          description: Label UUIDs to apply on the new errand
+          items:
+            type: string
+        contactReason:
+          type: string
+          description: Contact reason to set on the new errand
+          example: Printer issue
+        channel:
+          type: string
+          description: Channel to set on the new errand
+          example: WEB_UI
+    HandoverOverrides:
+      type: object
+      description: Field values that override what is copied from the source errand
+      properties:
+        title:
+          type: string
+          description: Title override
+        description:
+          type: string
+          description: Description override
+        priority:
+          $ref: "#/components/schemas/Priority"
+        assignedUserId:
+          type: string
+          description: Assigned user id override
+        assignedGroupId:
+          type: string
+          description: Assigned group id override
+    HandoverSourceAction:
+      type: string
+      description: Action to take on the source errand after handover
+      enum:
+      - CLOSE
+      - RETAIN
+      - SUSPEND
+    HandoverSourceHandling:
+      type: object
+      description: Defines what happens to the source errand after handover
+      properties:
+        action:
+          $ref: "#/components/schemas/HandoverSourceAction"
+        status:
+          type: string
+          description: Status to set on the source errand
+          example: SOLVED
+        resolution:
+          type: string
+          description: Resolution to set on the source errand
+          example: HANDED_OVER
+        closingComment:
+          type: string
+          description: Closing comment to add to the source errand
+          example: Överlämnad till annan drake
+      required:
+      - action
+    HandoverTarget:
+      type: object
+      description: Target system to handover the errand to
+      properties:
+        namespace:
+          type: string
+          description: Target namespace
+          example: OTHER_NAMESPACE
+          minLength: 1
+        municipalityId:
+          type: string
+          description: Target municipality id
+          example: "2281"
+      required:
+      - namespace
+    HandoverErrand:
+      type: object
+      description: Response body for a successful errand handover
+      properties:
+        newErrandId:
+          type: string
+          description: Id of the newly created errand in the target system
+          example: f0882f1d-06bc-47fd-b017-1d8307f5ce95
+        newErrandNumber:
+          type: string
+          description: Errand number of the newly created errand
+          example: KC-23010001
+        target:
+          $ref: "#/components/schemas/HandoverTarget"
+          description: Target namespace and municipality the errand was handed over
+            to
+        relationId:
+          type: string
+          description: Id of the relation created between the source and target errand
+        appliedMappings:
+          type: object
+          additionalProperties:
+            type: string
+          description: Field mappings that were applied when creating the new errand
+        warnings:
+          type: array
+          description: Non-fatal warnings that occurred during handover
+          items:
+            type: string
     WebMessageAttachment:
       type: object
       description: WebMessageAttachment model
@@ -10523,6 +10744,118 @@ components:
           items:
             $ref: "#/components/schemas/KeyValues"
             description: A list of metadata objects associated with the conversation
+    PageSubscriberNotification:
+      type: object
+      properties:
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/SubscriberNotification"
+        number:
+          type: integer
+          format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        numberOfElements:
+          type: integer
+          format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
+        empty:
+          type: boolean
+    PageableObject:
+      type: object
+      properties:
+        offset:
+          type: integer
+          format: int64
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        paged:
+          type: boolean
+        pageNumber:
+          type: integer
+          format: int32
+        pageSize:
+          type: integer
+          format: int32
+        unpaged:
+          type: boolean
+    SortObject:
+      type: object
+      properties:
+        empty:
+          type: boolean
+        unsorted:
+          type: boolean
+        sorted:
+          type: boolean
+    SubscriberNotification:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the notification
+          example: 123e4567-e89b-12d3-a456-426614174000
+          readOnly: true
+        created:
+          type: string
+          format: date-time
+          description: Timestamp when the notification was created
+          example: 2000-10-31T01:30:00.000+02:00
+          readOnly: true
+        modified:
+          type: string
+          format: date-time
+          description: Timestamp when the notification was last modified
+          example: 2000-10-31T01:30:00.000+02:00
+          readOnly: true
+        identifierType:
+          type: string
+          description: Identifier type of the notification owner
+          example: adAccount
+          readOnly: true
+        identifierValue:
+          type: string
+          description: Identifier value of the notification owner
+          example: joe01doe
+          readOnly: true
+        errandId:
+          type: string
+          description: ID of the errand this notification relates to
+          example: f0882f1d-06bc-47fd-b017-1d8307f5ce95
+          readOnly: true
+        errandNumber:
+          type: string
+          description: Number of the errand this notification relates to
+          example: PRH-2022-000001
+          readOnly: true
+        expires:
+          type: string
+          format: date-time
+          description: Timestamp when the notification expires
+          example: 2000-10-31T01:30:00.000+02:00
+          readOnly: true
+        acknowledged:
+          type: string
+          format: date-time
+          description: "Timestamp when the notification was acknowledged, null if\
+            \ not yet acknowledged"
+          example: 2000-10-31T01:30:00.000+02:00
+          readOnly: true
     ActionDefinition:
       type: object
       description: Action definition model describing an available action and its
@@ -10658,33 +10991,6 @@ components:
         pageable:
           $ref: "#/components/schemas/PageableObject"
         empty:
-          type: boolean
-    PageableObject:
-      type: object
-      properties:
-        offset:
-          type: integer
-          format: int64
-        sort:
-          $ref: "#/components/schemas/SortObject"
-        unpaged:
-          type: boolean
-        paged:
-          type: boolean
-        pageNumber:
-          type: integer
-          format: int32
-        pageSize:
-          type: integer
-          format: int32
-    SortObject:
-      type: object
-      properties:
-        empty:
-          type: boolean
-        sorted:
-          type: boolean
-        unsorted:
           type: boolean
     Revision:
       type: object

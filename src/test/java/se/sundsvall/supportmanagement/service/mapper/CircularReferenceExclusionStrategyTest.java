@@ -13,6 +13,7 @@ import se.sundsvall.supportmanagement.integration.db.model.JsonParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.PhaseTransitionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
+import se.sundsvall.supportmanagement.integration.db.model.TimeMeasurementEntity;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -47,6 +48,7 @@ class CircularReferenceExclusionStrategyTest {
 		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(ParameterEntity.class, "id", true)))).isFalse();
 		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(ErrandPhaseEntity.class, "id", true)))).isFalse();
 		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(PhaseTransitionEntity.class, "id", true)))).isFalse();
+		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(TimeMeasurementEntity.class, "id", true)))).isFalse();
 	}
 
 	@Test
@@ -60,6 +62,7 @@ class CircularReferenceExclusionStrategyTest {
 		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(ParameterEntity.class, "errandEntity", true)))).isTrue();
 		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(ErrandPhaseEntity.class, "errandEntity", true)))).isTrue();
 		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(PhaseTransitionEntity.class, "phaseEntity", true)))).isTrue();
+		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(TimeMeasurementEntity.class, "errandEntity", true)))).isTrue();
 	}
 
 }
