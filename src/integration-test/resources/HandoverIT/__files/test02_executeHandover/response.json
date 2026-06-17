@@ -1,0 +1,16 @@
+{
+	"newErrandId": "${json-unit.any-string}",
+	"newErrandNumber": "${json-unit.any-string}",
+	"target": {
+		"namespace": "NAMESPACE-3",
+		"municipalityId": "2281"
+	},
+	"relationId": "RELATION-ID-123",
+	"appliedMappings": {
+		"status": "STATUS-1",
+		"classification.category": "CATEGORY-1",
+		"classification.type": "TYPE-1",
+		"labels": "[]"
+	},
+	"warnings": []
+}

@@ -1,0 +1,5 @@
+{
+	"title": "Bad Request",
+	"status": 400,
+	"detail": "Target namespace and municipalityId must differ from the source errand"
+}
