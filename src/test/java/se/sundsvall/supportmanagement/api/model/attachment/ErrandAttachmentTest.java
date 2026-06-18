@@ -40,13 +40,15 @@ class ErrandAttachmentTest {
 		final var mimeType = "mimeType";
 		final var channel = "EMAIL";
 		final var created = OffsetDateTime.now();
+		final var hash = "aGVsbG8gd29ybGQ=";
 
 		final var bean = ErrandAttachment.create()
 			.withId(id)
 			.withFileName(fileName)
 			.withMimeType(mimeType)
 			.withChannel(channel)
-			.withCreated(created);
+			.withCreated(created)
+			.withHash(hash);
 
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(bean.getId()).isEqualTo(id);
@@ -54,6 +56,7 @@ class ErrandAttachmentTest {
 		assertThat(bean.getMimeType()).isEqualTo(mimeType);
 		assertThat(bean.getChannel()).isEqualTo(channel);
 		assertThat(bean.getCreated()).isEqualTo(created);
+		assertThat(bean.getHash()).isEqualTo(hash);
 	}
 
 	@Test
