@@ -40,7 +40,7 @@ class ErrandAttachmentTest {
 		final var mimeType = "mimeType";
 		final var channel = "EMAIL";
 		final var created = OffsetDateTime.now();
-		final var hash = "aGVsbG8gd29ybGQ=";
+		final var hash = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
 
 		final var bean = ErrandAttachment.create()
 			.withId(id)

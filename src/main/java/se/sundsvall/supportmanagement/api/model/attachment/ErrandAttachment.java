@@ -35,7 +35,7 @@ public class ErrandAttachment {
 	@Schema(description = "The attachment created date", examples = "2023-01-01T00:00:00Z")
 	private OffsetDateTime created;
 
-	@Schema(description = "SHA-256 hash (hex encoded) of the attachment's raw content", accessMode = READ_ONLY, examples = "aGVsbG8gd29ybGQ=")
+	@Schema(description = "SHA-256 hash (hex encoded) of the attachment's raw content", accessMode = READ_ONLY, examples = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
 	private String hash;
 
 	public static ErrandAttachment create() {
