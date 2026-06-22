@@ -1,7 +1,32 @@
 {
 	"request": {
 		"method": "POST",
-		"url": "/api-messaging/2281/messages"
+		"url": "/api-messaging/2281/messages",
+		"bodyPatterns": [
+			{
+				"equalToJson": {
+					"messages": [
+						{
+							"party": {
+								"externalReferences": []
+							},
+							"subject": "Nytt meddelande kopplat till ärendet KC-23020001",
+							"message": "Hej ,\nDu har fått ett nytt meddelande kopplat till ditt ärende KC-23020001\nGå in på Mina Sidor via länken för att visa meddelandet: https://domain.tld//privat/arenden/KC-23020001\n\nSundsvalls kommun",
+							"filters": {},
+							"sender": {
+								"email": {
+									"name": "no-reply@localhost.local",
+									"address": "no-reply@localhost.local"
+								},
+								"sms": {
+									"name": "SENDER NAME"
+								}
+							}
+						}
+					]
+				}
+			}
+		]
 	},
 	"response": {
 		"headers": {
