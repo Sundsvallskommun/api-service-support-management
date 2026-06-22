@@ -5,7 +5,7 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "14.9"
+  version: "14.10"
 servers:
 - url: http://localhost:60128
   description: Generated server url
@@ -11542,6 +11542,12 @@ components:
           description: The attachment created date
           examples:
           - 2023-01-01T00:00:00Z
+        hash:
+          type: string
+          description: "SHA-256 hash (hex encoded) of the attachment's raw content"
+          examples:
+          - e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+          readOnly: true
     CountResponse:
       type: object
       properties:
